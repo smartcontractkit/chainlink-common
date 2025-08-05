@@ -11,7 +11,7 @@ import (
 	pbvalues "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
-func TestEnoughQuery(t *testing.T) {
+func TestCheckQuerySizeLimit(t *testing.T) {
 	// Helper function to create a simple ID with predictable size
 	createSimpleId := func(workflowExecutionId string) *pbtypes.Id {
 		return &pbtypes.Id{
@@ -202,7 +202,7 @@ func TestEnoughQuery(t *testing.T) {
 				}
 			}
 
-			result := enoughQuery(tt.existingIds, tt.newId, sizeLimit)
+			result := CheckQuerySizeLimit(tt.existingIds, tt.newId, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateQuerySize(tt.existingIds)
@@ -230,7 +230,7 @@ func TestEnoughQuery(t *testing.T) {
 	}
 }
 
-func TestEnoughQueryWithRealSizes(t *testing.T) {
+func TestCheckQuerySizeLimitWithRealSizes(t *testing.T) {
 	// Test with realistic size calculations to verify our understanding
 	simpleId := &pbtypes.Id{
 		WorkflowExecutionId: "exec-123",
@@ -257,19 +257,19 @@ func TestEnoughQueryWithRealSizes(t *testing.T) {
 		t.Logf("Single ID size: %d bytes", singleIdSize)
 
 		// Test that enough function works correctly with these sizes
-		result := enoughQuery([]*pbtypes.Id{}, simpleId, singleIdSize)
+		result := CheckQuerySizeLimit([]*pbtypes.Id{}, simpleId, singleIdSize)
 		if !result {
 			t.Errorf("Should be able to add ID when limit equals exact size")
 		}
 
-		result = enoughQuery([]*pbtypes.Id{}, simpleId, singleIdSize-1)
+		result = CheckQuerySizeLimit([]*pbtypes.Id{}, simpleId, singleIdSize-1)
 		if result {
 			t.Errorf("Should not be able to add ID when limit is one byte less than size")
 		}
 	})
 }
 
-func TestEnoughPerformance(t *testing.T) {
+func TestCheckQuerySizeLimitPerformance(t *testing.T) {
 	// Performance test with many IDs
 	ids := make([]*pbtypes.Id, 100)
 	for i := 0; i < 100; i++ {
@@ -287,13 +287,13 @@ func TestEnoughPerformance(t *testing.T) {
 	}
 
 	t.Run("performance with many IDs", func(t *testing.T) {
-		result := enoughQuery(ids, newId, 10000)
+		result := CheckQuerySizeLimit(ids, newId, 10000)
 		// Just ensure it completes without error
 		_ = result
 	})
 }
 
-func TestEnoughObservation(t *testing.T) {
+func TestCheckObservationSizeLimit(t *testing.T) {
 	// Helper function to create a simple observation
 	createSimpleObservation := func(workflowExecutionId string) *pbtypes.Observation {
 		return &pbtypes.Observation{
@@ -343,86 +343,86 @@ func TestEnoughObservation(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
+		name                 string
 		existingObservations []*pbtypes.Observation
-		newObservation      *pbtypes.Observation
-		sizeLimit           int
-		expected            bool
-		description         string
+		newObservation       *pbtypes.Observation
+		sizeLimit            int
+		expected             bool
+		description          string
 	}{
-		// Zero observation objects tests  
+		// Zero observation objects tests
 		{
-			name:                "empty list, empty new observation, small limit",
+			name:                 "empty list, empty new observation, small limit",
 			existingObservations: []*pbtypes.Observation{},
-			newObservation:      createEmptyObservation(),
-			sizeLimit:           10,
-			expected:            true,
-			description:         "Adding empty observation to empty list should be within any reasonable limit",
+			newObservation:       createEmptyObservation(),
+			sizeLimit:            10,
+			expected:             true,
+			description:          "Adding empty observation to empty list should be within any reasonable limit",
 		},
 		{
-			name:                "empty list, empty new observation, zero limit",
+			name:                 "empty list, empty new observation, zero limit",
 			existingObservations: []*pbtypes.Observation{},
-			newObservation:      createEmptyObservation(),
-			sizeLimit:           0,
-			expected:            true,
-			description:         "Empty observation should fit in zero limit",
+			newObservation:       createEmptyObservation(),
+			sizeLimit:            0,
+			expected:             true,
+			description:          "Empty observation should fit in zero limit",
 		},
 		{
-			name:                "empty list, simple observation, zero limit",
+			name:                 "empty list, simple observation, zero limit",
 			existingObservations: []*pbtypes.Observation{},
-			newObservation:      createSimpleObservation("exec-1"),
-			sizeLimit:           0,
-			expected:            false,
-			description:         "Non-empty observation should not fit in zero limit",
+			newObservation:       createSimpleObservation("exec-1"),
+			sizeLimit:            0,
+			expected:             false,
+			description:          "Non-empty observation should not fit in zero limit",
 		},
 
 		// Within limits tests
 		{
-			name:                "empty list, simple observation, generous limit",
+			name:                 "empty list, simple observation, generous limit",
 			existingObservations: []*pbtypes.Observation{},
-			newObservation:      createSimpleObservation("exec-1"),
-			sizeLimit:           1000,
-			expected:            true,
-			description:         "Simple observation should fit in generous limit",
+			newObservation:       createSimpleObservation("exec-1"),
+			sizeLimit:            1000,
+			expected:             true,
+			description:          "Simple observation should fit in generous limit",
 		},
 		{
-			name:                "one existing observation, add another simple observation, generous limit",
+			name:                 "one existing observation, add another simple observation, generous limit",
 			existingObservations: []*pbtypes.Observation{createSimpleObservation("exec-1")},
-			newObservation:      createSimpleObservation("exec-2"),
-			sizeLimit:           1000,
-			expected:            true,
-			description:         "Two simple observations should fit in generous limit",
+			newObservation:       createSimpleObservation("exec-2"),
+			sizeLimit:            1000,
+			expected:             true,
+			description:          "Two simple observations should fit in generous limit",
 		},
 
 		// Above limits tests
 		{
-			name:                "empty list, simple observation, very small limit",
+			name:                 "empty list, simple observation, very small limit",
 			existingObservations: []*pbtypes.Observation{},
-			newObservation:      createSimpleObservation("exec-1"),
-			sizeLimit:           1,
-			expected:            false,
-			description:         "Simple observation should exceed very small limit",
+			newObservation:       createSimpleObservation("exec-1"),
+			sizeLimit:            1,
+			expected:             false,
+			description:          "Simple observation should exceed very small limit",
 		},
 		{
-			name:                "one existing observation, add large observation, small limit",
+			name:                 "one existing observation, add large observation, small limit",
 			existingObservations: []*pbtypes.Observation{createSimpleObservation("exec-1")},
-			newObservation:      createLargeObservation("large"),
-			sizeLimit:           100,
-			expected:            false,
-			description:         "Large observation should exceed small limit when added to existing",
+			newObservation:       createLargeObservation("large"),
+			sizeLimit:            100,
+			expected:             false,
+			description:          "Large observation should exceed small limit when added to existing",
 		},
 
 		// Edge cases with complex values
 		{
-			name:                "large observation alone",
+			name:                 "large observation alone",
 			existingObservations: []*pbtypes.Observation{},
-			newObservation:      createLargeObservation("huge"),
-			sizeLimit:           50,
-			expected:            false,
-			description:         "Large observation with complex values should exceed moderate limit",
+			newObservation:       createLargeObservation("huge"),
+			sizeLimit:            50,
+			expected:             false,
+			description:          "Large observation with complex values should exceed moderate limit",
 		},
 		{
-			name:                "mix of empty and non-empty existing observations",
+			name: "mix of empty and non-empty existing observations",
 			existingObservations: []*pbtypes.Observation{
 				createEmptyObservation(),
 				createSimpleObservation("exec-1"),
@@ -437,7 +437,7 @@ func TestEnoughObservation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := enoughObservation(tt.existingObservations, tt.newObservation, tt.sizeLimit)
+			result := CheckObservationSizeLimit(tt.existingObservations, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsSize(tt.existingObservations)
@@ -465,7 +465,7 @@ func TestEnoughObservation(t *testing.T) {
 	}
 }
 
-func TestEnoughObservationWithRealSizes(t *testing.T) {
+func TestCheckObservationSizeLimitWithRealSizes(t *testing.T) {
 	// Test with realistic size calculations
 	simpleObs := &pbtypes.Observation{
 		Id: &pbtypes.Id{
@@ -492,25 +492,25 @@ func TestEnoughObservationWithRealSizes(t *testing.T) {
 		t.Logf("Single observation size: %d bytes", singleObsSize)
 
 		// Test that enoughObservation function works correctly with these sizes
-		result := enoughObservation([]*pbtypes.Observation{}, simpleObs, singleObsSize)
+		result := CheckObservationSizeLimit([]*pbtypes.Observation{}, simpleObs, singleObsSize)
 		if !result {
 			t.Errorf("Should be able to add observation when limit equals exact size")
 		}
 
-		result = enoughObservation([]*pbtypes.Observation{}, simpleObs, singleObsSize-1)
+		result = CheckObservationSizeLimit([]*pbtypes.Observation{}, simpleObs, singleObsSize-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than size")
 		}
 	})
 }
 
-func TestEnoughObservations(t *testing.T) {
+func TestCheckObservationsSizeLimit(t *testing.T) {
 	// Helper function to create a simple observations message
 	createSimpleObservations := func(observationsList []*pbtypes.Observation, workflowIds []string) *pbtypes.Observations {
 		return &pbtypes.Observations{
-			Observations:             observationsList,
-			RegisteredWorkflowIds:    workflowIds,
-			Timestamp:                timestamppb.New(time.Unix(1640995200, 0)), // Fixed timestamp for consistent testing
+			Observations:          observationsList,
+			RegisteredWorkflowIds: workflowIds,
+			Timestamp:             timestamppb.New(time.Unix(1640995200, 0)), // Fixed timestamp for consistent testing
 		}
 	}
 
@@ -563,87 +563,87 @@ func TestEnoughObservations(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                   string
-		existingObservations   *pbtypes.Observations
-		newObservation         *pbtypes.Observation
-		sizeLimit              int
-		expected               bool
-		description            string
+		name                 string
+		existingObservations *pbtypes.Observations
+		newObservation       *pbtypes.Observation
+		sizeLimit            int
+		expected             bool
+		description          string
 	}{
-		// Zero observation objects tests  
+		// Zero observation objects tests
 		{
-			name:                   "empty observations message, empty new observation, small limit",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{}, []string{}),
-			newObservation:         createEmptyObservation(),
-			sizeLimit:              100,
-			expected:               true,
-			description:            "Adding empty observation to empty observations message should be within reasonable limit",
+			name:                 "empty observations message, empty new observation, small limit",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{}, []string{}),
+			newObservation:       createEmptyObservation(),
+			sizeLimit:            100,
+			expected:             true,
+			description:          "Adding empty observation to empty observations message should be within reasonable limit",
 		},
 		{
-			name:                   "nil observations message, empty new observation, small limit",
-			existingObservations:   nil,
-			newObservation:         createEmptyObservation(),
-			sizeLimit:              10,
-			expected:               true,
-			description:            "Adding empty observation to nil observations should be within any limit",
+			name:                 "nil observations message, empty new observation, small limit",
+			existingObservations: nil,
+			newObservation:       createEmptyObservation(),
+			sizeLimit:            10,
+			expected:             true,
+			description:          "Adding empty observation to nil observations should be within any limit",
 		},
 		{
-			name:                   "empty observations message, simple observation, zero limit",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{}, []string{}),
-			newObservation:         createSimpleObservation("exec-1"),
-			sizeLimit:              0,
-			expected:               false,
-			description:            "Non-empty observation should not fit in zero limit",
+			name:                 "empty observations message, simple observation, zero limit",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{}, []string{}),
+			newObservation:       createSimpleObservation("exec-1"),
+			sizeLimit:            0,
+			expected:             false,
+			description:          "Non-empty observation should not fit in zero limit",
 		},
 
 		// Within limits tests
 		{
-			name:                   "empty observations message, simple observation, generous limit",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{}, []string{"workflow-1"}),
-			newObservation:         createSimpleObservation("exec-1"),
-			sizeLimit:              1000,
-			expected:               true,
-			description:            "Simple observation should fit in generous limit",
+			name:                 "empty observations message, simple observation, generous limit",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{}, []string{"workflow-1"}),
+			newObservation:       createSimpleObservation("exec-1"),
+			sizeLimit:            1000,
+			expected:             true,
+			description:          "Simple observation should fit in generous limit",
 		},
 		{
-			name:                   "observations with one existing observation, add another simple observation, generous limit",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{createSimpleObservation("exec-1")}, []string{"workflow-1", "workflow-2"}),
-			newObservation:         createSimpleObservation("exec-2"),
-			sizeLimit:              1000,
-			expected:               true,
-			description:            "Two simple observations should fit in generous limit",
+			name:                 "observations with one existing observation, add another simple observation, generous limit",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{createSimpleObservation("exec-1")}, []string{"workflow-1", "workflow-2"}),
+			newObservation:       createSimpleObservation("exec-2"),
+			sizeLimit:            1000,
+			expected:             true,
+			description:          "Two simple observations should fit in generous limit",
 		},
 
 		// Above limits tests
 		{
-			name:                   "empty observations message, simple observation, very small limit",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{}, []string{}),
-			newObservation:         createSimpleObservation("exec-1"),
-			sizeLimit:              1,
-			expected:               false,
-			description:            "Simple observation should exceed very small limit",
+			name:                 "empty observations message, simple observation, very small limit",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{}, []string{}),
+			newObservation:       createSimpleObservation("exec-1"),
+			sizeLimit:            1,
+			expected:             false,
+			description:          "Simple observation should exceed very small limit",
 		},
 		{
-			name:                   "observations with existing observation, add large observation, small limit",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{createSimpleObservation("exec-1")}, []string{"workflow-1"}),
-			newObservation:         createLargeObservation("large"),
-			sizeLimit:              100,
-			expected:               false,
-			description:            "Large observation should exceed small limit when added to existing observations",
+			name:                 "observations with existing observation, add large observation, small limit",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{createSimpleObservation("exec-1")}, []string{"workflow-1"}),
+			newObservation:       createLargeObservation("large"),
+			sizeLimit:            100,
+			expected:             false,
+			description:          "Large observation should exceed small limit when added to existing observations",
 		},
 
 		// Edge cases with complex observations messages
 		{
-			name:                   "large observation alone with many registered workflow IDs",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{}, []string{"workflow-1", "workflow-2", "workflow-3", "very-long-workflow-name-for-testing"}),
-			newObservation:         createLargeObservation("huge"),
-			sizeLimit:              100,
-			expected:               false,
-			description:            "Large observation with many registered workflow IDs should exceed moderate limit",
+			name:                 "large observation alone with many registered workflow IDs",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{}, []string{"workflow-1", "workflow-2", "workflow-3", "very-long-workflow-name-for-testing"}),
+			newObservation:       createLargeObservation("huge"),
+			sizeLimit:            100,
+			expected:             false,
+			description:          "Large observation with many registered workflow IDs should exceed moderate limit",
 		},
 		{
-			name:                   "mix of empty and non-empty existing observations in observations message",
-			existingObservations:   createSimpleObservations([]*pbtypes.Observation{
+			name: "mix of empty and non-empty existing observations in observations message",
+			existingObservations: createSimpleObservations([]*pbtypes.Observation{
 				createEmptyObservation(),
 				createSimpleObservation("exec-1"),
 				createEmptyObservation(),
@@ -657,7 +657,7 @@ func TestEnoughObservations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := enoughObservations(tt.existingObservations, tt.newObservation, tt.sizeLimit)
+			result := CheckObservationsSizeLimit(tt.existingObservations, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsMessageSize(tt.existingObservations)
@@ -685,7 +685,7 @@ func TestEnoughObservations(t *testing.T) {
 	}
 }
 
-func TestEnoughObservationsWithRealSizes(t *testing.T) {
+func TestCheckObservationsSizeLimitWithRealSizes(t *testing.T) {
 	// Test with realistic size calculations
 	simpleObs := &pbtypes.Observation{
 		Id: &pbtypes.Id{
@@ -712,7 +712,7 @@ func TestEnoughObservationsWithRealSizes(t *testing.T) {
 		t.Logf("Empty observations message size: %d bytes", size)
 
 		// Test adding observation
-		result := enoughObservations(observationsMsg, simpleObs, size+100)
+		result := CheckObservationsSizeLimit(observationsMsg, simpleObs, size+100)
 		if !result {
 			t.Errorf("Should be able to add observation when limit has buffer")
 		}
@@ -724,10 +724,10 @@ func TestEnoughObservationsWithRealSizes(t *testing.T) {
 			Timestamp:             timestamppb.New(time.Unix(1640995200, 0)),
 		}
 		sizeWithObs := calculateObservationsMessageSize(observationsWithObs)
-		
+
 		t.Logf("Observations message with one observation size: %d bytes", sizeWithObs)
 
-		result = enoughObservations(observationsMsg, simpleObs, sizeWithObs-1)
+		result = CheckObservationsSizeLimit(observationsMsg, simpleObs, sizeWithObs-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than required")
 		}
@@ -749,7 +749,7 @@ func TestQuerySizeCalculationMatchesRealMarshalling(t *testing.T) {
 
 	// Create test data using existing helper
 	ids := []*pbtypes.Id{
-		createSimpleId("exec-1"), 
+		createSimpleId("exec-1"),
 		createSimpleId("exec-2"),
 		createSimpleId("exec-3"),
 	}

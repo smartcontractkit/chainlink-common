@@ -118,7 +118,7 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 	return totalSize
 }
 
-func enoughQuery(ids []*pbtypes.Id, newId *pbtypes.Id, sizeLimit int) bool {
+func CheckQuerySizeLimit(ids []*pbtypes.Id, newId *pbtypes.Id, sizeLimit int) bool {
 	// Calculate size of current ids
 	currentSize := calculateQuerySize(ids)
 
@@ -199,8 +199,8 @@ func calculateObservationsSize(observations []*pbtypes.Observation) int {
 	return totalSize
 }
 
-// enoughObservation checks if adding a new observation would exceed the size limit
-func enoughObservation(observations []*pbtypes.Observation, newObs *pbtypes.Observation, sizeLimit int) bool {
+// CheckObservationSizeLimit checks if adding a new observation would exceed the size limit
+func CheckObservationSizeLimit(observations []*pbtypes.Observation, newObs *pbtypes.Observation, sizeLimit int) bool {
 	// Calculate size of current observations
 	currentSize := calculateObservationsSize(observations)
 
@@ -265,8 +265,8 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	return size
 }
 
-// enoughObservations checks if adding a new observation to a pbtypes.Observations would exceed the size limit
-func enoughObservations(observations *pbtypes.Observations, newObs *pbtypes.Observation, sizeLimit int) bool {
+// CheckObservationsSizeLimit checks if adding a new observation to a pbtypes.Observations would exceed the size limit
+func CheckObservationsSizeLimit(observations *pbtypes.Observations, newObs *pbtypes.Observation, sizeLimit int) bool {
 	// Calculate size of current observations message
 	currentSize := calculateObservationsMessageSize(observations)
 

@@ -86,7 +86,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		if enoughQuery(ids, newId, ocr3max.MaxMaxQueryLength) {
+		if !CheckQuerySizeLimit(ids, newId, ocr3max.MaxMaxQueryLength) {
 			break
 		}
 
@@ -169,7 +169,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		if enoughObservations(obs, newOb, ocr3max.MaxMaxObservationLength) {
+		if !CheckObservationsSizeLimit(obs, newOb, ocr3max.MaxMaxObservationLength) {
 			break
 		}
 

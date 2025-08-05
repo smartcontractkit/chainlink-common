@@ -167,11 +167,13 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		times = append(times, observation.Timestamp)
 	}
 
-	p.lggr.Debugw("Observed Node Timestamps", "timestamps", times)
+	p.lggr.Infow("Observed Node Timestamps", "timestamps", times)
 	slices.Sort(times)
 	donTime := times[len(times)/2]
 
 	outcome := prevOutcome
+
+	p.lggr.Infow("Previous DON Time: ", "timestamp", outcome.Timestamp)
 
 	// Compare with prior outcome to ensure DON time never goes backward.
 	if donTime < outcome.Timestamp+p.minTimeIncrease {
@@ -213,6 +215,7 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 				Report: types.Report(outcome),
 				Info:   []byte{},
 			},
+			// TODO: Override Transmission Schedule; OracleIDs are 0-N? And have 0 for delays
 			TransmissionScheduleOverride: nil,
 		},
 	}, nil

@@ -36,6 +36,8 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 	}
 	t.store.setLastObservedDonTime(outcome.Timestamp)
 
+	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp)
+
 	for executionID, donTimes := range outcome.ObservedDonTimes {
 		request := t.store.GetRequest(executionID)
 		if request == nil {

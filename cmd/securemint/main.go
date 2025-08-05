@@ -7,8 +7,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/por_mock_ocr3plugin/por"
-	"github.com/smartcontractkit/libocr/commontypes"
 )
 
 func main() {
@@ -57,71 +55,25 @@ func (s *SecureMintPluginServer) Name() string {
 
 func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provider types.SecureMintProvider, config types.SecureMintConfig) (types.SecureMintFactoryGenerator, error) {
 	// Create external adapter implementation using Relayer
-	externalAdapter := NewRelayerExternalAdapter(provider, s.Logger)
-	
+	_ = NewRelayerExternalAdapter(provider, s.Logger)
+
 	// Create contract reader implementation using Relayer
-	contractReader := NewRelayerContractReader(provider, s.Logger)
-	
+	_ = NewRelayerContractReader(provider, s.Logger)
+
 	// Create report marshaler implementation
-	reportMarshaler := NewChainlinkReportMarshaler(s.Logger)
-	
-	// Create a logger adapter for the external plugin
-	loggerAdapter := &LoggerAdapter{Logger: s.Logger}
-	
+	_ = NewChainlinkReportMarshaler(s.Logger)
+
 	// Create the external plugin factory using the imported por package
-	porFactory := &por.PorReportingPluginFactory{
-		Logger:          loggerAdapter,
-		ExternalAdapter: externalAdapter,
-		ContractReader:  contractReader,
-		ReportMarshaler: reportMarshaler,
-	}
-	
+	// TODO(gg): Import and use the external por package when available
+	// porFactory := &por.PorReportingPluginFactory{
+	//     Logger:          s.Logger,
+	//     ExternalAdapter: externalAdapter,
+	//     ContractReader:  contractReader,
+	//     ReportMarshaler: reportMarshaler,
+	// }
+
 	// Wrap the external factory in our LOOPP interface
-	factory := NewSecureMintFactory(config, s.Logger, porFactory)
-	
+	factory := NewSecureMintFactory(config, s.Logger)
+
 	return factory, nil
-}
-
-// LoggerAdapter bridges between our logger and the external plugin's logger
-type LoggerAdapter struct {
-	Logger logger.Logger
-}
-
-// Trace implements commontypes.Logger
-func (l *LoggerAdapter) Trace(msg string, fields commontypes.LogFields) {
-	l.Logger.Debugw(msg, convertFields(fields)...)
-}
-
-// Debug implements commontypes.Logger
-func (l *LoggerAdapter) Debug(msg string, fields commontypes.LogFields) {
-	l.Logger.Debugw(msg, convertFields(fields)...)
-}
-
-// Info implements commontypes.Logger
-func (l *LoggerAdapter) Info(msg string, fields commontypes.LogFields) {
-	l.Logger.Infow(msg, convertFields(fields)...)
-}
-
-// Warn implements commontypes.Logger
-func (l *LoggerAdapter) Warn(msg string, fields commontypes.LogFields) {
-	l.Logger.Warnw(msg, convertFields(fields)...)
-}
-
-// Error implements commontypes.Logger
-func (l *LoggerAdapter) Error(msg string, fields commontypes.LogFields) {
-	l.Logger.Errorw(msg, convertFields(fields)...)
-}
-
-// Critical implements commontypes.Logger
-func (l *LoggerAdapter) Critical(msg string, fields commontypes.LogFields) {
-	l.Logger.Errorw(msg, convertFields(fields)...) // Use Error for Critical since our logger doesn't have Critical
-}
-
-// convertFields converts commontypes.LogFields to []any for our logger
-func convertFields(fields commontypes.LogFields) []any {
-	result := make([]any, 0, len(fields)*2)
-	for k, v := range fields {
-		result = append(result, k, v)
-	}
-	return result
 }

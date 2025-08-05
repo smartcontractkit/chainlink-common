@@ -74,6 +74,8 @@ package types
 
 import (
     "context"
+    "math/big"
+    "time"
     "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
     "github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -160,8 +162,17 @@ type SecureMintPluginFactory interface {
 }
 
 // SecureMintConfig holds configuration for the SecureMint plugin
+// Configuration comes from offchainConfig, not job specification
 type SecureMintConfig struct {
     MaxChains uint32 `json:"maxChains"` // Maximum number of chains to track
+}
+
+// Validate validates the SecureMintConfig
+func (c SecureMintConfig) Validate() error {
+    if c.MaxChains == 0 {
+        return fmt.Errorf("maxChains must be greater than 0")
+    }
+    return nil
 }
 ```
 
@@ -387,6 +398,7 @@ func (r *relayerServer) newSecureMintProvider(ctx context.Context, relayArgs typ
 - External plugins are imported directly (e.g., `chainlink-feeds/median`, `chainlink-data-streams/mercury`)
 - LOOPP services wrap external plugins: `loop.NewMedianService(...)`
 - Fallback to in-process: `median.NewPlugin(lggr).NewMedianFactory(...)`
+- Configuration comes from offchainConfig, not job specification
 
 ```go
 package main
@@ -506,26 +518,30 @@ The external plugin integration will need to:
    - Import the external `por_mock_ocr3plugin` repository directly
    - Follow the same pattern as Median (`chainlink-feeds/median`) and Mercury (`chainlink-data-streams/mercury`)
    - Users will need the external repository as a dependency
-2. **Adapt the interface**: Convert the external plugin's interface to match our LOOPP interface:
-   - Map `ChainSelector` to `uint64` for consistency with chain-selectors package
-   - Adapt `ExternalAdapter`, `ContractReader`, and `ReportMarshaler` interfaces
-   - Convert `PorReportingPluginFactory` to our `SecureMintPluginFactory`
-3. **Handle chain interactions**: Ensure all blockchain interactions go through the Relayer interface:
+2. **Adapter Pattern Implementation**: Based on established LOOPP patterns, create thin wrapper adapters:
+   - `RelayerExternalAdapter`: Thin wrapper that delegates to Relayer interface for external adapter operations
+   - `RelayerContractReader`: Thin wrapper that delegates to Relayer interface for contract reading
+   - `ChainlinkReportMarshaler`: Thin wrapper that handles report serialization using chainlink-common utilities
+3. **Type Conversion Strategy**: Follow established patterns for type conversions:
+   - Convert between external plugin types (`por.ChainSelector`) and LOOPP types (`uint64`)
+   - Use existing chain-selectors package for consistency
+   - Maintain type safety through explicit conversions
+4. **Handle chain interactions**: Ensure all blockchain interactions go through the Relayer interface:
    - Use Relayer for contract reading operations
    - Implement ExternalAdapter using Relayer's contract reading capabilities
    - Ensure all chain-specific operations use the Relayer interface
-4. **Maintain functionality**: Preserve the existing Secure Mint logic:
-   - Multi-chain support with configurable max chains
+5. **Maintain functionality**: Preserve the existing Secure Mint logic:
+   - Multi-chain support with configurable max chains (from offchainConfig)
    - Observation validation and honest block calculation
    - Report generation with mintable amounts
    - PoR (Proof of Reserve) calculations through external adapter
-5. **Key Integration Points**:
+6. **Key Integration Points**:
    - `PorReportingPluginFactory` → `SecureMintPluginFactory`
    - `porReportingPlugin` → LOOPP plugin implementation
    - `ExternalAdapter` → Relayer-based implementation
    - `ContractReader` → Relayer contract reading
    - `ReportMarshaler` → Chainlink-common serialization
-6. **Follow Established Pattern**: Based on the [Chainlink repository](https://github.com/smartcontractkit/chainlink/blob/develop/core/services/ocr2/plugins/median/services.go#L151-L180), the pattern is:
+7. **Follow Established Pattern**: Based on the [Chainlink repository](https://github.com/smartcontractkit/chainlink/blob/develop/core/services/ocr2/plugins/median/services.go#L151-L180), the pattern is:
    - Import external plugin: `"github.com/smartcontractkit/por_mock_ocr3plugin/por"`
    - Use LOOPP service: `loop.NewSecureMintService(...)`
    - Fallback to in-process: `securemint.NewPlugin(lggr).NewSecureMintFactory(...)`
@@ -533,15 +549,20 @@ The external plugin integration will need to:
 ### Phase 6: Testing Infrastructure
 
 #### 6.1 Create Test Files
-- `pkg/loop/securemint_service_test.go`
-- `pkg/loop/internal/reportingplugin/securemint/securemint_test.go`
-- `cmd/securemint/main_test.go`
+Following established LOOPP testing patterns:
+- `pkg/loop/securemint_service_test.go`: Test the LOOPP service wrapper
+- `pkg/loop/internal/reportingplugin/securemint/securemint_test.go`: Test GRPC client/server
+- `cmd/securemint/main_test.go`: Test the external plugin binary
+- `pkg/loop/internal/test/cmd/main.go`: Add Secure Mint to test helper process
 
 #### 6.2 Integration Tests
-- Test the complete LOOPP lifecycle
-- Verify chain interactions go through Relayer interface
-- Test configuration handling
-- Test error scenarios
+Based on established patterns from other LOOPP plugins:
+- **LOOPP Lifecycle Tests**: Test plugin startup, shutdown, and recovery (following `TestLOOPPService` pattern)
+- **Relayer Integration Tests**: Verify all chain interactions go through Relayer interface
+- **Configuration Tests**: Test offchainConfig parsing and validation
+- **Error Handling Tests**: Test error propagation and recovery scenarios
+- **Mock Testing**: Use mock implementations for external plugin interfaces (following `nettest.MockConn` pattern)
+- **Adapter Layer Tests**: Test the adapter layer separately from LOOPP infrastructure
 
 ### Phase 7: Documentation and Configuration
 
@@ -565,10 +586,12 @@ The external plugin integration will need to:
 
 ### External Plugin Integration Strategy
 - **Direct Import**: Import the external `por_mock_ocr3plugin` repository directly
-- **Interface Adaptation**: Create adapter layers to bridge external plugin interfaces with LOOPP interfaces
+- **Thin Adapter Wrappers**: Create thin wrapper adapters that delegate to Relayer interface (following established patterns)
+- **Type Conversions**: Handle conversions between external plugin types and LOOPP types with explicit type safety
 - **Relayer Integration**: All blockchain operations go through the Relayer interface via adapter implementations
 - **Preserve Logic**: Maintain the core Secure Mint logic while adapting the interfaces
 - **External Dependencies**: Users will need the external repository as a dependency (following established pattern)
+- **Configuration Source**: Configuration comes from offchainConfig, not job specification
 
 ### Relayer Interface Integration
 - **Chain Interactions**: All blockchain operations must go through the Relayer interface
@@ -578,15 +601,18 @@ The external plugin integration will need to:
 
 ### Configuration Management
 - **Type Safety**: Strongly typed configuration structures
-- **Validation**: Built-in configuration validation
+- **Validation**: Built-in configuration validation (following established patterns)
 - **Flexibility**: Support for plugin-specific configuration options
-- **Multi-Chain Support**: Configurable max chains parameter from external plugin
+- **Multi-Chain Support**: Configurable max chains parameter from offchainConfig
+- **Source**: Configuration comes from offchainConfig, not job specification
 
 ### Error Handling
 - **Graceful Degradation**: Plugin failures don't crash the main node
 - **Health Reporting**: Comprehensive health reporting for monitoring
 - **Logging**: Structured logging for debugging and monitoring
-- **External Plugin Errors**: Proper error propagation from external plugin to LOOPP layer
+- **Error Propagation**: Follow established patterns for error propagation from external plugin to LOOPP layer
+- **Error Wrapping**: Use standard error wrapping patterns without additional context unless established patterns require it
+- **Recovery**: Automatic plugin recovery following established LOOPP patterns
 
 ## Risk Assessment
 

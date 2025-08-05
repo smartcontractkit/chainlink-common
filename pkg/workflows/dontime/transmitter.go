@@ -35,6 +35,7 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
 		t.store.setDonTimes(id, observedDonTimes.Timestamps)
 	}
+	t.lggr.Infow("Setting Last Observed DON Time", "Timestamp", outcome.Timestamp)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
 
 	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp)

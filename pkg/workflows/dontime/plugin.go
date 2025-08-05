@@ -219,6 +219,9 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 		transmissionDelays[i] = 0
 	}
 
+	p.lggr.Infow("Don Time Reports", "ConfigN", p.config.N, "transmitters",
+		transmitters, "transmissionDelays", transmissionDelays)
+
 	return []ocr3types.ReportPlus[[]byte]{
 		{
 			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{

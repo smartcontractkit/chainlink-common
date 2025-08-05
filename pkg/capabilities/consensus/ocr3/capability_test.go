@@ -139,7 +139,7 @@ func TestOCR3Capability(t *testing.T) {
 			assert.NoError(t, resp.Err)
 
 			assert.Equal(t, mresp, resp.Value)
-			assert.Equal(t, "payload", resp.Metadata.Metering[0].SpendUnit)
+			assert.Equal(t, "RESOURCE_TYPE_NETWORK", resp.Metadata.Metering[0].SpendUnit)
 			assert.Equal(t, "122", resp.Metadata.Metering[0].SpendValue)
 		})
 	}

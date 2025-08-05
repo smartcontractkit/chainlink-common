@@ -9,7 +9,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
@@ -31,9 +31,8 @@ jobs:
     if: always()
     steps:
       - name: SonarQube Scan
-        uses: smartcontractkit/.github/actions/ci-sonarqube-go@5f4a9c9c3407dd499a1ebbc658a45b9beb9bf675 # v0.3.0
+        uses: smartcontractkit/.github/actions/ci-sonarqube-go@ci-sonarqube-go/0.4.0
         with:
-          # sonarqube inputs
           include-lint: "true"
           test-report-workflow: pkg.yml
           lint-report-workflow: golangci_lint.yml

@@ -15,4 +15,3 @@ jobs:
         uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/v2
         with:
           golangci-lint-version: v2.2.2
-          

@@ -101,8 +101,14 @@ func (c *ChainlinkReportMarshaler) Serialize(ctx context.Context, chain uint64, 
 
 // MaxReportSize returns maximum serialized report size
 func (c *ChainlinkReportMarshaler) MaxReportSize(ctx context.Context) int {
-	// TODO(gg): Return appropriate maximum report size based on protocol requirements
-	return 1024
+	// Based on typical OCR report sizes and SecureMint requirements
+	// OCR reports are typically 1-2KB, and SecureMint reports include:
+	// - ConfigDigest (32 bytes)
+	// - SeqNr (8 bytes)
+	// - Block number (8 bytes)
+	// - Mintable amount (32 bytes)
+	// - Additional metadata and padding
+	return 2048 // 2KB should be sufficient for SecureMint reports
 }
 
 // SecureMintFactory wraps the external plugin factory in our LOOPP interface

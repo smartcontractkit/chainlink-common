@@ -721,10 +721,11 @@ func (r *relayerServer) newSecureMintProvider(ctx context.Context, relayArgs typ
 	const name = "SecureMintProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-					// TODO(gg): Register SecureMint provider services when provider implementation is created
-		// securemintprovider.RegisterProviderServices(s, provider)
-	}, providerRes)
+			id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+			// TODO(gg): Register SecureMint provider services when provider implementation is created
+			// For now, we have placeholder implementations in the adapters
+			// The actual services will be registered when the external plugin is integrated
+		}, providerRes)
 	if err != nil {
 		return 0, err
 	}

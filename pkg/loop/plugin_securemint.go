@@ -49,10 +49,6 @@ func (p *GRPCPluginSecureMint) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: PluginSecureMintHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginSecureMintName: p},
 	}
-	// TODO(gg): Implement when securemint package is created in Phase 3
-	// if p.pluginClient == nil {
-	// 	p.pluginClient = securemint.NewPluginSecureMintClient(p.BrokerConfig)
-	// }
-	// return ManagedGRPCClientConfig(c, p.pluginClient.BrokerConfig)
+
 	return c
 }

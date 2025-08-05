@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
@@ -82,13 +81,13 @@ type PorReport struct {
 // PluginSecureMint interface for the LOOPP plugin
 type PluginSecureMint interface {
 	Service
-	NewSecureMintFactory(ctx context.Context, provider SecureMintProvider, config SecureMintConfig) (SecureMintPluginFactory, error)
+	NewSecureMintFactory(ctx context.Context, provider SecureMintProvider, config SecureMintConfig) (SecureMintFactoryGenerator, error)
 }
 
-// SecureMintPluginFactory interface
-type SecureMintPluginFactory interface {
+// SecureMintFactoryGenerator interface
+type SecureMintFactoryGenerator interface {
 	Service
-	ocr3types.ReportingPluginFactory[uint64]
+	NewSecureMintFactory(ctx context.Context, provider SecureMintProvider, config SecureMintConfig) (ReportingPluginFactory, error)
 }
 
 // SecureMintConfig holds configuration for the SecureMint plugin

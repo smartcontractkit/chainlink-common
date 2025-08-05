@@ -33,7 +33,7 @@ type Plugin struct {
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
 func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*Plugin, error) {
-	lggr.Infow("ORACLE ID", config.OracleID)
+	lggr.Infow("ORACLE ID", "OracleID", config.OracleID)
 	offchainCfg := &pb.Config{}
 	err := proto.Unmarshal(config.OffchainConfig, offchainCfg)
 	if err != nil {

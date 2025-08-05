@@ -19,7 +19,6 @@ const (
 	defaultMaxPhaseOutputBytes     = 1000000 // 1 MB
 	defaultMaxReportCount          = 20
 	defaultBatchSize               = 20
-	defaultBatchSizeMiB            = 1024 * 1024 * 5
 	defaultOutcomePruningThreshold = 3600
 	defaultRequestExpiry           = 20 * time.Second
 )

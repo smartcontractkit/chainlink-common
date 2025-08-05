@@ -208,7 +208,7 @@ func (o OutcomeSerializable) Mid(mid int) Serializable {
 			make(map[string]*pbtypes.AggregationOutcome),
 		}
 	}
-	if mid >= len(o.outcomes) {
+	if mid >= len(o.weids) {
 		return o
 	}
 
@@ -236,8 +236,8 @@ func (o OutcomeSerializable) Mid(mid int) Serializable {
 // packToSizeLimit function maximizes the number of requests being included in a batch.
 // It finds the best utilization of space with the protobuf-marshalled structures using logarithmic (binary search)
 // approach to identify the optimal number of Requests that can be serialized without exceeding
-// the limit (defaultBatchSizeMiB).
-func packToSizeLimit(lggr logger.Logger, all Serializable) ([]string, []byte, error) {
+// the limit (sizeLimit).
+func packToSizeLimit(lggr logger.Logger, all Serializable, sizeLimit int) ([]string, []byte, error) {
 	var best []byte
 	var bestRequests Serializable
 	var bestExecutionIDs []string
@@ -264,13 +264,13 @@ func packToSizeLimit(lggr logger.Logger, all Serializable) ([]string, []byte, er
 		}
 		size := len(serialized)
 
-		if size <= defaultBatchSizeMiB {
+		if size <= sizeLimit {
 			best = serialized
 			bestRequests = candidate
 			bestExecutionIDs = executionIDs
 			low = mid + 1 // try more Requests
 		} else {
-			high = mid - 1 // try fewer Requests
+			high = mid // try fewer Requests (fixed: was mid - 1)
 		}
 
 		optRound++
@@ -288,7 +288,7 @@ func packToSizeLimit(lggr logger.Logger, all Serializable) ([]string, []byte, er
 		"size",
 		len(best),
 		"maxSize",
-		defaultBatchSizeMiB,
+		sizeLimit,
 		"optRound",
 		optRound,
 	)

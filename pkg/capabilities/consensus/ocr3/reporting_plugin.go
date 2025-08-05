@@ -66,6 +66,7 @@ func (r *reportingPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (
 	allExecutionIDs, serializedBatch, err := packToSizeLimit(
 		r.lggr,
 		QueriesSerializable{all},
+		ocr3types.MaxMaxQueryLength,
 	)
 	if err != nil {
 		r.lggr.Errorw("could not serialize query batch", "error", err)
@@ -104,6 +105,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	allExecutionIDs, obs, err := packToSizeLimit(
 		r.lggr,
 		ObservationSerializable{reqMap, registeredWorkflowIDs},
+		ocr3types.MaxMaxObservationLength,
 	)
 	if err != nil {
 		r.lggr.Errorw("could not serialize observations batch", "error", err)
@@ -302,6 +304,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 	allExecutionIDs, rawOutcome, err := packToSizeLimit(
 		r.lggr,
 		outcomeSerializable,
+		ocr3types.MaxMaxOutcomeLength,
 	)
 
 	previousOutcome.Outcomes = outcomeSerializable.previousOutcome.Outcomes

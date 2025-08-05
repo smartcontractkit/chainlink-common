@@ -33,7 +33,6 @@ type Plugin struct {
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
 func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*Plugin, error) {
-	lggr.Infow("ORACLE ID", "OracleID", config.OracleID)
 	offchainCfg := &pb.Config{}
 	err := proto.Unmarshal(config.OffchainConfig, offchainCfg)
 	if err != nil {
@@ -221,13 +220,20 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
 	p.lggr.Infow("Reports Outcome", "Outcome", outcome)
 
-	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
-		Transmitters:       make([]commontypes.OracleID, p.config.N),
-		TransmissionDelays: make([]time.Duration, p.config.N),
-	}
+	/*
+		allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
+			Transmitters:       make([]commontypes.OracleID, p.config.N),
+			TransmissionDelays: make([]time.Duration, p.config.N),
+		}
 
-	for i := 0; i < p.config.N; i++ {
-		allOraclesTransmitNow.Transmitters[i] = commontypes.OracleID(i)
+		for i := 0; i < p.config.N; i++ {
+			allOraclesTransmitNow.Transmitters[i] = commontypes.OracleID(i)
+		}
+	*/
+
+	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
+		Transmitters:       []commontypes.OracleID{p.config.OracleID},
+		TransmissionDelays: []time.Duration{0},
 	}
 
 	return []ocr3types.ReportPlus[[]byte]{

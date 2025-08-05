@@ -129,7 +129,9 @@ func (p *Plugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeCont
 }
 
 func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (quorumReached bool, err error) {
-	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
+	quarumReached := quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos)
+	p.lggr.Info("ObservationQuorum", "quarumReached", quarumReached, "NumObservations", len(aos))
+	return quarumReached, nil
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
@@ -207,10 +209,17 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	return proto.Marshal(outcome)
+	outcomeBytes, err := proto.Marshal(outcome)
+	if len(outcomeBytes) == 0 || err != nil {
+		p.lggr.Errorf("failed to marshal outcome")
+	}
+
+	return outcomeBytes, err
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
+	p.lggr.Infow("Reports Outcome", "Outcome", outcome)
+
 	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
 		Transmitters:       make([]commontypes.OracleID, p.config.N),
 		TransmissionDelays: make([]time.Duration, p.config.N),
@@ -224,7 +233,6 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 		{
 			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
 				Report: types.Report(outcome),
-				Info:   []byte{},
 			},
 			TransmissionScheduleOverride: allOraclesTransmitNow,
 		},

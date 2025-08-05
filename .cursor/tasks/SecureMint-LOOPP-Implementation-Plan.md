@@ -383,6 +383,11 @@ func (r *relayerServer) newSecureMintProvider(ctx context.Context, relayArgs typ
 #### 5.1 Create External Plugin Binary
 **File**: `cmd/securemint/main.go`
 
+**Note**: This follows the established pattern from the [Chainlink repository](https://github.com/smartcontractkit/chainlink/blob/develop/core/services/ocr2/plugins/median/services.go#L151-L180) where:
+- External plugins are imported directly (e.g., `chainlink-feeds/median`, `chainlink-data-streams/mercury`)
+- LOOPP services wrap external plugins: `loop.NewMedianService(...)`
+- Fallback to in-process: `median.NewPlugin(lggr).NewMedianFactory(...)`
+
 ```go
 package main
 
@@ -438,7 +443,7 @@ func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provi
         logger: s.Logger,
     }
     
-    // Create the external plugin factory
+    // Create the external plugin factory using the imported por package
     porFactory := &por.PorReportingPluginFactory{
         Logger:          s.Logger,
         ExternalAdapter: externalAdapter,
@@ -497,7 +502,10 @@ func (c *ChainlinkReportMarshaler) MaxReportSize(ctx context.Context) int {
 #### 5.2 Integrate External Plugin Logic
 The external plugin integration will need to:
 
-1. **Import the external plugin**: Reference the `/por` folder from `por_mock_ocr3plugin` repository
+1. **Direct External Repository Import**: 
+   - Import the external `por_mock_ocr3plugin` repository directly
+   - Follow the same pattern as Median (`chainlink-feeds/median`) and Mercury (`chainlink-data-streams/mercury`)
+   - Users will need the external repository as a dependency
 2. **Adapt the interface**: Convert the external plugin's interface to match our LOOPP interface:
    - Map `ChainSelector` to `uint64` for consistency with chain-selectors package
    - Adapt `ExternalAdapter`, `ContractReader`, and `ReportMarshaler` interfaces
@@ -517,6 +525,10 @@ The external plugin integration will need to:
    - `ExternalAdapter` → Relayer-based implementation
    - `ContractReader` → Relayer contract reading
    - `ReportMarshaler` → Chainlink-common serialization
+6. **Follow Established Pattern**: Based on the [Chainlink repository](https://github.com/smartcontractkit/chainlink/blob/develop/core/services/ocr2/plugins/median/services.go#L151-L180), the pattern is:
+   - Import external plugin: `"github.com/smartcontractkit/por_mock_ocr3plugin/por"`
+   - Use LOOPP service: `loop.NewSecureMintService(...)`
+   - Fallback to in-process: `securemint.NewPlugin(lggr).NewSecureMintFactory(...)`
 
 ### Phase 6: Testing Infrastructure
 
@@ -552,10 +564,11 @@ The external plugin integration will need to:
 4. **Reliability**: Process isolation prevents plugin crashes from affecting the main node
 
 ### External Plugin Integration Strategy
-- **Direct Import**: Import the `/por` package directly from the external repository
+- **Direct Import**: Import the external `por_mock_ocr3plugin` repository directly
 - **Interface Adaptation**: Create adapter layers to bridge external plugin interfaces with LOOPP interfaces
 - **Relayer Integration**: All blockchain operations go through the Relayer interface via adapter implementations
 - **Preserve Logic**: Maintain the core Secure Mint logic while adapting the interfaces
+- **External Dependencies**: Users will need the external repository as a dependency (following established pattern)
 
 ### Relayer Interface Integration
 - **Chain Interactions**: All blockchain operations must go through the Relayer interface
@@ -574,23 +587,6 @@ The external plugin integration will need to:
 - **Health Reporting**: Comprehensive health reporting for monitoring
 - **Logging**: Structured logging for debugging and monitoring
 - **External Plugin Errors**: Proper error propagation from external plugin to LOOPP layer
-
-## Migration Strategy
-
-### Phase 1: Parallel Implementation
-1. Implement LOOPP version of the external Secure Mint plugin
-2. Add feature flag to switch between external plugin and LOOPP version
-3. Test both implementations in parallel
-
-### Phase 2: Gradual Migration
-1. Deploy LOOPP version to test environments
-2. Monitor performance and stability
-3. Gradually migrate production environments from external plugin to LOOPP
-
-### Phase 3: Cleanup
-1. Remove external plugin dependency
-2. Clean up unused code and interfaces
-3. Update documentation
 
 ## Risk Assessment
 
@@ -624,7 +620,7 @@ The external plugin integration will need to:
 
 ## Dependencies
 
-1. **External Plugin**: Access to `/por` package from `por_mock_ocr3plugin` repository
+1. **External Plugin Repository**: Direct import of `por_mock_ocr3plugin` repository (following pattern of `chainlink-feeds/median` and `chainlink-data-streams/mercury`)
 2. **Protocol Buffers**: Generated protobuf files for GRPC communication
 3. **Testing Infrastructure**: Test utilities and mock implementations
 4. **Documentation**: Existing LOOPP documentation for reference

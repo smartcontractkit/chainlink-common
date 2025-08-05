@@ -211,16 +211,14 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
-	// All nodes should transmit after each round with no delay
-	transmitters := make([]commontypes.OracleID, p.config.N)
-	transmissionDelays := make([]time.Duration, p.config.N)
-	for i := 0; i < p.config.N; i++ {
-		transmitters[i] = commontypes.OracleID(i)
-		transmissionDelays[i] = time.Millisecond
+	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
+		Transmitters:       make([]commontypes.OracleID, p.config.N),
+		TransmissionDelays: make([]time.Duration, p.config.N),
 	}
 
-	p.lggr.Infow("Don Time Reports", "ConfigN", p.config.N, "transmitters",
-		transmitters, "transmissionDelays", transmissionDelays)
+	for i := 0; i < p.config.N; i++ {
+		allOraclesTransmitNow.Transmitters[i] = commontypes.OracleID(i)
+	}
 
 	return []ocr3types.ReportPlus[[]byte]{
 		{
@@ -228,10 +226,7 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 				Report: types.Report(outcome),
 				Info:   []byte{},
 			},
-			TransmissionScheduleOverride: &ocr3types.TransmissionSchedule{
-				Transmitters:       transmitters,
-				TransmissionDelays: transmissionDelays,
-			},
+			TransmissionScheduleOverride: allOraclesTransmitNow,
 		},
 	}, nil
 }

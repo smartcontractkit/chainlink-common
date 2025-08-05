@@ -26,6 +26,7 @@ func NewTransmitter(lggr logger.Logger, store *Store, fromAccount types.Account)
 }
 
 func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
+	t.lggr.Info("DON TIME TRANSMIT")
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
 		t.lggr.Errorf("failed to unmarshal report")

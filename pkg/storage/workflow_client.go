@@ -2,11 +2,13 @@ package storage
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -28,39 +30,43 @@ type WorkflowClient interface {
 
 // workflowClient is a concrete implementation of WorkflowClient
 type workflowClient struct {
-	client       pb.NodeServiceClient
-	conn         *grpc.ClientConn
-	log          logger.Logger
-	jwtGenerator *nodeauth.NodeJWTGenerator
+	address string
+	client  pb.NodeServiceClient
+	conn    *grpc.ClientConn
+	logger  logger.Logger
+	tlsCert string
+	creds   credentials.TransportCredentials
+	// serverName is the expected server name in the TLS certificate.
+	serverName string
+
+	// JWT-based authentication
+	jwtGenerator nodeauth.JWTGenerator
 }
 
-// DownloadArtifact downloads an artifact from the storage service and returns the raw stream
-func (n workflowClient) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error) {
-	if n.jwtGenerator != nil {
+func (wc *workflowClient) downloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error) {
+	if wc.jwtGenerator != nil {
 		var err error
-		ctx, err = n.injectToken(ctx, req)
+		ctx, err = wc.injectToken(ctx, req)
 		if err != nil {
 			return nil, err
 		}
 	}
-	n.log.Infow("DownloadArtifact RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
-	return n.client.DownloadArtifact(ctx, req)
+	return wc.client.DownloadArtifact(ctx, req)
+}
+
+// DownloadArtifact downloads an artifact from the storage service and returns the raw stream
+func (wc *workflowClient) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error) {
+	wc.logger.Infow("DownloadArtifact RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
+	return wc.downloadArtifact(ctx, req)
 }
 
 // DownloadArtifactStream streams artifact chunks to a callback as they are received
-func (n workflowClient) DownloadArtifactStream(ctx context.Context, req *pb.DownloadArtifactRequest, onChunk func(*pb.DownloadArtifactChunk) error) error {
-	if n.jwtGenerator != nil {
-		var err error
-		ctx, err = n.injectToken(ctx, req)
-		if err != nil {
-			return err
-		}
-	}
-	n.log.Infow("DownloadArtifactStream RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
+func (wc *workflowClient) DownloadArtifactStream(ctx context.Context, req *pb.DownloadArtifactRequest, onChunk func(*pb.DownloadArtifactChunk) error) error {
+	wc.logger.Infow("DownloadArtifactStream RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
 
-	stream, err := n.client.DownloadArtifact(ctx, req)
+	stream, err := wc.downloadArtifact(ctx, req)
 	if err != nil {
-		n.log.Errorw("Failed to initiate artifact download stream", "id", req.Id, "error", err)
+		wc.logger.Errorw("Failed to initiate artifact download stream", "id", req.Id, "error", err)
 		return err
 	}
 
@@ -70,113 +76,145 @@ func (n workflowClient) DownloadArtifactStream(ctx context.Context, req *pb.Down
 			if err == io.EOF {
 				break
 			}
-			n.log.Errorw("Error while receiving artifact chunk", "id", req.Id, "error", err)
+			wc.logger.Errorw("Error while receiving artifact chunk", "id", req.Id, "error", err)
 			return err
 		}
 		if err := onChunk(chunk); err != nil {
-			n.log.Errorw("Error in chunk callback", "id", req.Id, "error", err)
+			wc.logger.Errorw("Error in chunk callback", "id", req.Id, "error", err)
 			return err
 		}
 	}
 
-	n.log.Infow("Successfully streamed artifact", "id", req.Id)
+	wc.logger.Infow("Successfully streamed artifact", "id", req.Id)
 	return nil
 }
-func (n workflowClient) Close() error {
-	err := n.conn.Close()
+func (wc *workflowClient) Close() error {
+	err := wc.conn.Close()
 	if err != nil {
-		n.log.Errorw("Failed to close WorkflowClient connection", "error", err)
+		wc.logger.Errorw("Failed to close WorkflowClient connection", "error", err)
 		return err
 	}
-	n.log.Infow("Closed WorkflowClient connection")
+	wc.logger.Infow("Closed WorkflowClient connection")
 	return nil
 }
 
-// NodeClientOpt is a functional option type for configuring the WorkflowClient
-type NodeClientOpt func(*nodeConfig)
-
-type nodeConfig struct {
+type workflowConfig struct {
 	log                  logger.Logger
 	transportCredentials credentials.TransportCredentials
-	jwtGenerator         *nodeauth.NodeJWTGenerator // Optional JWT manager for authentication
+	tlsCert              string
+	serverName           string
+	jwtGenerator         nodeauth.JWTGenerator // Optional JWT manager for authentication
 }
+
+// WorkflowClientOpt is a functional option type for configuring the WorkflowClient
+type WorkflowClientOpt func(*workflowConfig)
 
 // defaultNodeConfig returns a default configuration for the WorkflowClient
-func defaultNodeConfig() nodeConfig {
-	loggerInst, _ := logger.New()
-	return nodeConfig{
-		log:                  loggerInst,
-		transportCredentials: credentials.NewTLS(nil), // Use default TLS credentials
-		jwtGenerator:         nil,                     // No JWT generator by default
+func defaultWorkflowConfig() workflowConfig {
+	// By default, no JWT manager is set and we fallback to insecure creds.
+	return workflowConfig{
+		transportCredentials: insecure.NewCredentials(),
+		tlsCert:              "",
+		// Default to "localhost" if not overridden.
+		serverName:   "localhost",
+		jwtGenerator: nil,
 	}
 }
 
-// WithLogger sets the logger for the WorkflowClient
-func WithLogger(log logger.Logger) NodeClientOpt {
-	return func(cfg *nodeConfig) {
-		cfg.log = log
-	}
-}
-
-// WithTransportCredentials sets the transport credentials for the WorkflowClient
-func WithTransportCredentials(creds credentials.TransportCredentials) NodeClientOpt {
-	return func(cfg *nodeConfig) {
+func WithWorkflowTransportCredentials(creds credentials.TransportCredentials) WorkflowClientOpt {
+	return func(cfg *workflowConfig) {
 		cfg.transportCredentials = creds
 	}
 }
 
-func WithJWTGenerator(jwtGenerator *nodeauth.NodeJWTGenerator) NodeClientOpt {
-	return func(cfg *nodeConfig) {
+// WithJWTGenerator sets the JWT generator for authentication.
+func WithJWTGenerator(jwtGenerator nodeauth.JWTGenerator) WorkflowClientOpt {
+	return func(cfg *workflowConfig) {
 		cfg.jwtGenerator = jwtGenerator
 	}
 }
 
-// NewNodeClient creates a new WorkflowClient with the specified address and options
+func WithWorkflowTLSCert(cert string) WorkflowClientOpt {
+	return func(cfg *workflowConfig) {
+		cfg.tlsCert = cert
+	}
+}
+
+// WithServerName allows overriding the expected server name in the TLS certificate.
+func WithServerName(name string) WorkflowClientOpt {
+	return func(cfg *workflowConfig) {
+		cfg.serverName = name
+	}
+}
+
+// NewWorkflowClient creates a new WorkflowClient with the specified address and options
 // It returns a WorkflowClient which can DownloadArtifacts
-func NewNodeClient(ctx context.Context, address string, opts ...NodeClientOpt) (WorkflowClient, error) {
-	cfg := defaultNodeConfig()
+func NewWorkflowClient(lggr logger.Logger, address string, opts ...WorkflowClientOpt) (WorkflowClient, error) {
+	cfg := defaultWorkflowConfig()
 
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 
-	grpcOpts := []grpc.DialOption{
-		grpc.WithTransportCredentials(cfg.transportCredentials),
+	wc := &workflowClient{
+		address:      address,
+		logger:       logger.Named(lggr, "WorkflowClient"),
+		tlsCert:      cfg.tlsCert,
+		creds:        cfg.transportCredentials,
+		serverName:   cfg.serverName,
+		jwtGenerator: cfg.jwtGenerator,
 	}
 
-	conn, err := grpc.NewClient(address, grpcOpts...)
+	err := wc.initGrpcConn()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial storage service at %s: %w", address, err)
 	}
 
-	cfg.log.Infow("connected to storage service (WorkflowClient)", "address", address)
-
-	client := pb.NewNodeServiceClient(conn)
-
-	cfg.log.Infow("connected to storage service (NodeClient)", "address", address)
-
-	return &workflowClient{
-		client: client,
-		conn:   conn,
-		log:    cfg.log,
-	}, nil
+	wc.logger.Infow("Connected to Storage service (WorkflowClient)", "address", address)
+	return wc, nil
 }
 
-func (c workflowClient) injectToken(ctx context.Context, req any) (context.Context, error) {
-	if c.jwtGenerator == nil {
-		c.log.Warnw("authentication: no JWT generator")
-		return ctx, fmt.Errorf("authentication: no JWT generator available")
+func (wc *workflowClient) injectToken(ctx context.Context, req any) (context.Context, error) {
+	if wc.jwtGenerator == nil {
+		wc.logger.Warnw("authentication: no JWT generator")
+		return ctx, nil
 	}
-	token, err := c.jwtGenerator.CreateJWTForRequest(req)
+	token, err := wc.jwtGenerator.CreateJWTForRequest(req)
 	if err != nil {
 		return ctx, fmt.Errorf("failed to generate JWT token: %w", err)
 	}
 
 	// Inject the token into the context
-	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", "Bearer "+token))
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token), nil
+}
 
-	// Log the token injection
-	c.log.Infow("JWT token injected into context")
+func (wc *workflowClient) initGrpcConn(opts ...grpc.DialOption) error {
+	if wc.tlsCert != "" {
+		cp := x509.NewCertPool()
+		if !cp.AppendCertsFromPEM([]byte(wc.tlsCert)) {
+			return fmt.Errorf("credentials: failed to append certificates")
+		}
+		wc.logger.Infow("Dialing with TLS (using provided certificate)", "address", wc.address)
+		// Use the provided serverName variable.
+		wc.creds = credentials.NewClientTLSFromCert(cp, wc.serverName)
+	} else {
+		wc.logger.Infow("Dialing with provided credentials", "address", wc.address)
+	}
 
-	return ctx, nil
+	conn, err := grpc.NewClient(
+		wc.address,
+		append(opts,
+			grpc.WithTransportCredentials(wc.creds),
+		)...,
+	)
+	if err != nil {
+		wc.logger.Errorw("Failed to create grpc client", "error", err, "address", wc.address)
+
+		return fmt.Errorf("failed to dial grpc client: %w", err)
+	}
+
+	wc.conn = conn
+	wc.client = pb.NewNodeServiceClient(conn)
+
+	return nil
 }

@@ -289,3 +289,73 @@ func CheckObservationsSizeLimit(observations *pbtypes.Observations, newObs *pbty
 
 	return true
 }
+
+// calculateReportSize calculates the marshalled size of a single pbtypes.Report
+func calculateReportSize(report *pbtypes.Report) int {
+	if report == nil {
+		return 0
+	}
+
+	size := 0
+
+	// Field 1: id (Id message)
+	size += messageFieldSize(1, report.Id)
+
+	// Field 2: outcome (AggregationOutcome message)
+	size += messageFieldSize(2, report.Outcome)
+
+	return size
+}
+
+// calculateReportsSize calculates the precise marshalled size of current_reports from pbtypes.Outcome
+func calculateReportsSize(reports []*pbtypes.Report) int {
+	if len(reports) == 0 {
+		return 0
+	}
+
+	totalSize := 0
+
+	for _, report := range reports {
+		reportSize := calculateReportSize(report)
+		if reportSize > 0 {
+			// Each repeated field element includes:
+			// - tag for field 2 (current_reports field in Outcome message)
+			// - length of the Report message
+			// - the Report message content
+			tagSize := varintSize(uint64(2<<3 | 2)) // field 2, wire type 2
+			lengthSize := varintSize(uint64(reportSize))
+			totalSize += tagSize + lengthSize + reportSize
+		}
+	}
+
+	return totalSize
+}
+
+// CheckReportSizeLimit checks if adding a new report to the outcome would exceed size limits
+func CheckReportSizeLimit(previousOutcome *pbtypes.Outcome, newReport *pbtypes.Report, sizeLimit int) bool {
+	if previousOutcome == nil || newReport == nil {
+		return true
+	}
+
+	// Calculate size of current reports
+	currentSize := calculateReportsSize(previousOutcome.CurrentReports)
+
+	// Calculate size if we add one more report
+	newReportSize := calculateReportSize(newReport)
+	var totalSizeWithNewReport int
+	if newReportSize > 0 {
+		// Only add tag and length overhead if the report has content
+		totalSizeWithNewReport = currentSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
+	} else {
+		// Empty reports don't contribute to the total size
+		totalSizeWithNewReport = currentSize
+	}
+
+	// Check against limits
+	if totalSizeWithNewReport > sizeLimit {
+		// Stop adding more reports
+		return false
+	}
+
+	return true
+}

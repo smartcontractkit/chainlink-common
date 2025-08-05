@@ -816,3 +816,388 @@ func TestObservationsSizeCalculationMatchesRealMarshalling(t *testing.T) {
 
 	t.Logf("Observations size calculation matches: %d bytes", actualSize)
 }
+
+func TestReportSizeCalculationMatchesRealMarshalling(t *testing.T) {
+	// Helper function to create a simple report with realistic data
+	createSimpleReport := func(workflowExecutionId string) *pbtypes.Report {
+		return &pbtypes.Report{
+			Id: &pbtypes.Id{
+				WorkflowExecutionId: workflowExecutionId,
+				WorkflowId:          "workflow-1",
+				WorkflowOwner:       "owner",
+				WorkflowName:        "test",
+				ReportId:            "report-1",
+				KeyId:               "key-1",
+			},
+			Outcome: &pbtypes.AggregationOutcome{
+				EncodableOutcome: &pbvalues.Map{
+					Fields: map[string]*pbvalues.Value{
+						"result": {
+							Value: &pbvalues.Value_StringValue{StringValue: "success"},
+						},
+					},
+				},
+				Metadata:     []byte("test-metadata"),
+				ShouldReport: true,
+				LastSeenAt:   12345,
+				Timestamp:    timestamppb.New(time.Unix(1640995200, 0)),
+				EncoderName:  "test-encoder",
+			},
+		}
+	}
+
+	// Create test report
+	report := createSimpleReport("exec-1")
+
+	// Calculate size using our function
+	calculatedSize := calculateReportSize(report)
+
+	// Marshal the actual message
+	marshalled, err := proto.MarshalOptions{Deterministic: true}.Marshal(report)
+	if err != nil {
+		t.Fatalf("Failed to marshal report: %v", err)
+	}
+	actualSize := len(marshalled)
+
+	// Verify they match
+	if calculatedSize != actualSize {
+		t.Errorf("Report size calculation mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+	}
+
+	t.Logf("Report size calculation matches: %d bytes", actualSize)
+}
+
+func TestCheckReportSizeLimit(t *testing.T) {
+	// Helper function to create a simple report with predictable size
+	createSimpleReport := func(workflowExecutionId string) *pbtypes.Report {
+		return &pbtypes.Report{
+			Id: &pbtypes.Id{
+				WorkflowExecutionId: workflowExecutionId,
+				WorkflowId:          "workflow-1",
+				WorkflowOwner:       "owner",
+				WorkflowName:        "test",
+				ReportId:            "report-1",
+				KeyId:               "key-1",
+			},
+			Outcome: &pbtypes.AggregationOutcome{
+				EncodableOutcome: &pbvalues.Map{
+					Fields: map[string]*pbvalues.Value{
+						"result": {
+							Value: &pbvalues.Value_StringValue{StringValue: "success"},
+						},
+					},
+				},
+				Metadata:     []byte("metadata"),
+				ShouldReport: true,
+				LastSeenAt:   12345,
+				EncoderName:  "encoder",
+			},
+		}
+	}
+
+	// Helper function to create a report with all fields populated for larger size
+	createLargeReport := func(suffix string) *pbtypes.Report {
+		return &pbtypes.Report{
+			Id: &pbtypes.Id{
+				WorkflowExecutionId:      "very-long-workflow-execution-id-" + suffix,
+				WorkflowId:               "very-long-workflow-id-" + suffix,
+				WorkflowOwner:            "very-long-workflow-owner-" + suffix,
+				WorkflowName:             "very-long-workflow-name-" + suffix,
+				ReportId:                 "very-long-report-id-" + suffix,
+				WorkflowDonId:            12345,
+				WorkflowDonConfigVersion: 67890,
+				KeyId:                    "very-long-key-id-" + suffix,
+			},
+			Outcome: &pbtypes.AggregationOutcome{
+				EncodableOutcome: &pbvalues.Map{
+					Fields: map[string]*pbvalues.Value{
+						"very-long-result-key-" + suffix: {
+							Value: &pbvalues.Value_StringValue{StringValue: "very-long-result-value-" + suffix},
+						},
+						"another-long-key-" + suffix: {
+							Value: &pbvalues.Value_StringValue{StringValue: "another-long-value-" + suffix},
+						},
+					},
+				},
+				Metadata:     []byte("very-long-metadata-content-for-testing-" + suffix),
+				ShouldReport: true,
+				LastSeenAt:   123456789,
+				Timestamp:    timestamppb.New(time.Unix(1640995200, 0)),
+				EncoderName:  "very-long-encoder-name-" + suffix,
+				EncoderConfig: &pbvalues.Map{
+					Fields: map[string]*pbvalues.Value{
+						"config-key-" + suffix: {
+							Value: &pbvalues.Value_StringValue{StringValue: "config-value-" + suffix},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	// Helper function to create an empty report (zero values)
+	createEmptyReport := func() *pbtypes.Report {
+		return &pbtypes.Report{}
+	}
+
+	// Helper function to create an outcome with existing reports
+	createOutcomeWithReports := func(reports []*pbtypes.Report) *pbtypes.Outcome {
+		return &pbtypes.Outcome{
+			Outcomes:       map[string]*pbtypes.AggregationOutcome{},
+			CurrentReports: reports,
+		}
+	}
+
+	tests := []struct {
+		name         string
+		existingReports []*pbtypes.Report
+		newReport    *pbtypes.Report
+		sizeLimit    int
+		expected     bool
+		description  string
+	}{
+		// Zero report objects tests
+		{
+			name:         "empty list, empty new report, small limit",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createEmptyReport(),
+			sizeLimit:    10,
+			expected:     true, // Empty report has 0 size, so should be within limit
+			description:  "Adding empty report to empty list should be within any reasonable limit",
+		},
+		{
+			name:         "empty list, empty new report, zero limit",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createEmptyReport(),
+			sizeLimit:    0,
+			expected:     true, // Empty report has 0 size
+			description:  "Empty report should fit in zero limit",
+		},
+		{
+			name:         "empty list, simple report, zero limit",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createSimpleReport("exec-1"),
+			sizeLimit:    0,
+			expected:     false, // Simple report has size > 0, exceeds zero limit
+			description:  "Non-empty report should not fit in zero limit",
+		},
+
+		// Within limits tests
+		{
+			name:         "empty list, simple report, generous limit",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createSimpleReport("exec-1"),
+			sizeLimit:    2000,
+			expected:     true,
+			description:  "Simple report should fit in generous limit",
+		},
+		{
+			name:         "one existing report, add another simple report, generous limit",
+			existingReports: []*pbtypes.Report{createSimpleReport("exec-1")},
+			newReport:    createSimpleReport("exec-2"),
+			sizeLimit:    2000,
+			expected:     true,
+			description:  "Two simple reports should fit in generous limit",
+		},
+		{
+			name: "three existing reports, add fourth, generous limit",
+			existingReports: []*pbtypes.Report{
+				createSimpleReport("exec-1"),
+				createSimpleReport("exec-2"),
+				createSimpleReport("exec-3"),
+			},
+			newReport:   createSimpleReport("exec-4"),
+			sizeLimit:   2000,
+			expected:    true,
+			description: "Four simple reports should fit in generous limit",
+		},
+
+		// Above limits tests
+		{
+			name:         "empty list, simple report, very small limit",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createSimpleReport("exec-1"),
+			sizeLimit:    1,
+			expected:     false,
+			description:  "Simple report should exceed very small limit",
+		},
+		{
+			name:         "one existing report, add large report, small limit",
+			existingReports: []*pbtypes.Report{createSimpleReport("exec-1")},
+			newReport:    createLargeReport("large"),
+			sizeLimit:    200,
+			expected:     false,
+			description:  "Large report should exceed small limit when added to existing",
+		},
+		{
+			name: "multiple existing reports, add another, tight limit",
+			existingReports: []*pbtypes.Report{
+				createSimpleReport("exec-1"),
+				createSimpleReport("exec-2"),
+				createSimpleReport("exec-3"),
+			},
+			newReport:   createSimpleReport("exec-4"),
+			sizeLimit:   400, // Adjust based on actual size calculations
+			expected:    false,
+			description: "Multiple reports should exceed tight limit",
+		},
+
+		// Edge cases
+		{
+			name:         "exactly at limit boundary",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createSimpleReport("exec-1"),
+			sizeLimit:    0, // Will be set to exact size in the test
+			expected:     true,
+			description:  "Report exactly at limit should fit",
+		},
+		{
+			name:         "one byte over limit",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createSimpleReport("exec-1"),
+			sizeLimit:    0, // Will be set to exact size - 1 in the test
+			expected:     false,
+			description:  "Report one byte over limit should not fit",
+		},
+		{
+			name:         "large report alone",
+			existingReports: []*pbtypes.Report{},
+			newReport:    createLargeReport("huge"),
+			sizeLimit:    100,
+			expected:     false,
+			description:  "Large report should exceed moderate limit",
+		},
+		{
+			name: "mix of empty and non-empty existing reports",
+			existingReports: []*pbtypes.Report{
+				createEmptyReport(),
+				createSimpleReport("exec-1"),
+				createEmptyReport(),
+			},
+			newReport:   createSimpleReport("exec-2"),
+			sizeLimit:   2000,
+			expected:    true,
+			description: "Mix of empty and non-empty reports should work correctly",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Handle special edge case tests that need dynamic size calculation
+			sizeLimit := tt.sizeLimit
+			if tt.name == "exactly at limit boundary" {
+				// Calculate exact size needed for the new report
+				newReportSize := calculateReportSize(tt.newReport)
+				if newReportSize > 0 {
+					tagSize := varintSize(uint64(2<<3 | 2))
+					lengthSize := varintSize(uint64(newReportSize))
+					sizeLimit = tagSize + lengthSize + newReportSize
+				} else {
+					sizeLimit = 0
+				}
+			} else if tt.name == "one byte over limit" {
+				// Calculate exact size needed for the new report minus 1
+				newReportSize := calculateReportSize(tt.newReport)
+				if newReportSize > 0 {
+					tagSize := varintSize(uint64(2<<3 | 2))
+					lengthSize := varintSize(uint64(newReportSize))
+					sizeLimit = tagSize + lengthSize + newReportSize - 1
+				} else {
+					sizeLimit = -1 // This would be impossible, but for test completeness
+				}
+			}
+
+			// Create outcome with existing reports
+			previousOutcome := createOutcomeWithReports(tt.existingReports)
+			
+			result := CheckReportSizeLimit(previousOutcome, tt.newReport, sizeLimit)
+			if result != tt.expected {
+				// Provide detailed debugging information
+				currentSize := calculateReportsSize(tt.existingReports)
+				newReportSize := calculateReportSize(tt.newReport)
+				var totalSizeWithNewReport int
+				if newReportSize > 0 {
+					totalSizeWithNewReport = currentSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
+				} else {
+					totalSizeWithNewReport = currentSize
+				}
+
+				t.Errorf("%s: CheckReportSizeLimit() = %v, expected %v\n"+
+					"  Description: %s\n"+
+					"  Current size: %d\n"+
+					"  New report size: %d\n"+
+					"  Total size with new report: %d\n"+
+					"  Size limit: %d\n"+
+					"  Would exceed: %v",
+					tt.name, result, tt.expected,
+					tt.description,
+					currentSize, newReportSize, totalSizeWithNewReport, sizeLimit,
+					totalSizeWithNewReport > sizeLimit)
+			}
+		})
+	}
+}
+
+func TestCheckReportSizeLimitWithRealSizes(t *testing.T) {
+	// Test with realistic size calculations to verify our understanding
+	simpleReport := &pbtypes.Report{
+		Id: &pbtypes.Id{
+			WorkflowExecutionId: "exec-123",
+			WorkflowId:          "workflow-1",
+			WorkflowOwner:       "owner",
+			WorkflowName:        "test",
+			ReportId:            "report-1",
+			KeyId:               "key-1",
+		},
+		Outcome: &pbtypes.AggregationOutcome{
+			EncodableOutcome: &pbvalues.Map{
+				Fields: map[string]*pbvalues.Value{
+					"result": {
+						Value: &pbvalues.Value_StringValue{StringValue: "success"},
+					},
+				},
+			},
+			Metadata:     []byte("metadata"),
+			ShouldReport: true,
+			LastSeenAt:   12345,
+			EncoderName:  "encoder",
+		},
+	}
+
+	// Helper function to create an outcome with reports
+	createOutcomeWithReports := func(reports []*pbtypes.Report) *pbtypes.Outcome {
+		return &pbtypes.Outcome{
+			Outcomes:       map[string]*pbtypes.AggregationOutcome{},
+			CurrentReports: reports,
+		}
+	}
+
+	t.Run("verify size calculations", func(t *testing.T) {
+		// Test empty list
+		emptyOutcome := createOutcomeWithReports([]*pbtypes.Report{})
+		size := calculateReportsSize(emptyOutcome.CurrentReports)
+		if size != 0 {
+			t.Errorf("Empty list should have size 0, got %d", size)
+		}
+
+		// Test single report
+		singleReportOutcome := createOutcomeWithReports([]*pbtypes.Report{simpleReport})
+		singleReportSize := calculateReportsSize(singleReportOutcome.CurrentReports)
+		if singleReportSize <= 0 {
+			t.Errorf("Single report should have positive size, got %d", singleReportSize)
+		}
+
+		t.Logf("Single report size: %d bytes", singleReportSize)
+
+		// Test that size limit function works correctly with these sizes
+		result := CheckReportSizeLimit(emptyOutcome, simpleReport, singleReportSize)
+		if !result {
+			t.Errorf("Should be able to add report when limit equals exact size")
+		}
+
+		result = CheckReportSizeLimit(emptyOutcome, simpleReport, singleReportSize-1)
+		if result {
+			t.Errorf("Should not be able to add report when limit is one byte less than size")
+		}
+	})
+}

@@ -406,6 +406,11 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Outcome: outcome,
 			Id:      weid,
 		}
+
+		if !CheckReportSizeLimit(previousOutcome, report, ocr3max.MaxMaxReportLength) {
+			break
+		}
+
 		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 

@@ -52,7 +52,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		offChainConfig:  offchainCfg,
 		lggr:            logger.Named(lggr, "DONTimePlugin"),
 		batchSize:       int(offchainCfg.MaxBatchSize),
-		minTimeIncrease: offchainCfg.MinTimeIncrease,
+		minTimeIncrease: offchainCfg.MinTimeIncrease / int64(time.Millisecond),
 	}, nil
 }
 

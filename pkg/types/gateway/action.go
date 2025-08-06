@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	// Note: any addition to this list must be reflected in core's HandlerTypeForMethod function.
 	MethodHTTPAction = "http_action"
 )
 

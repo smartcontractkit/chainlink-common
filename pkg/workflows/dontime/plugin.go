@@ -66,52 +66,38 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		p.lggr.Errorf("failed to unmarshal previous outcome in Observation phase")
 	}
 
-	// Collect up to batchSize unexpired requests
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	for batchOffset := 0; batchOffset < p.store.requests.Len() && len(requests) < p.batchSize; {
-		batch, err := p.store.requests.RangeN(batchOffset, p.batchSize)
-		if err != nil {
-			p.lggr.Errorf("failed to get request batch at offset %d: %v", batchOffset, err)
-			batchOffset += p.batchSize
+	timeoutCheck := time.Now()
+	for _, req := range p.store.GetRequests() {
+		if req.ExpiryTime().Before(timeoutCheck) {
+			// Request has been sitting in queue too long
+			p.store.RemoveRequest(req.WorkflowExecutionID)
+			req.SendTimeout(nil)
 			continue
 		}
-		if len(batch) == 0 {
-			break
+
+		// Validate request sequence number
+		numObservedDonTimes := 0
+		times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
+		if ok {
+			// We have seen this workflow before so check against the sequence
+			numObservedDonTimes = len(times.Timestamps)
 		}
 
-		timeoutCheck := time.Now()
-		for _, req := range batch {
-			if req.ExpiryTime().Before(timeoutCheck) {
-				// Request has been sitting in queue too long
-				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendTimeout(nil)
-				continue
-			}
-
-			// Validate request sequence number
-			numObservedDonTimes := 0
-			times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
-			if ok {
-				// We have seen this workflow before so check against the sequence
-				numObservedDonTimes = len(times.Timestamps)
-			}
-
-			if req.SeqNum > numObservedDonTimes {
-				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendResponse(nil,
-					Response{
-						WorkflowExecutionID: req.WorkflowExecutionID,
-						SeqNum:              req.SeqNum,
-						Timestamp:           0,
-						Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
-							req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
-					})
-				continue
-			}
-
-			requests[req.WorkflowExecutionID] = int64(req.SeqNum)
-			batchOffset++
+		if req.SeqNum > numObservedDonTimes {
+			p.store.RemoveRequest(req.WorkflowExecutionID)
+			req.SendResponse(nil,
+				Response{
+					WorkflowExecutionID: req.WorkflowExecutionID,
+					SeqNum:              req.SeqNum,
+					Timestamp:           0,
+					Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
+						req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
+				})
+			continue
 		}
+
+		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 	}
 
 	observation := &pb.Observation{

@@ -115,7 +115,7 @@ type OnRampDynamicConfig struct {
 	AllowListAdmin         []byte `json:"allowListAdmin"`
 }
 
-// GetOnRampDynamicConfigResponse wraps the onRampDynamicConfig this way to map to on-chain return type which is a named struct
+// GetOnRampDynamicConfigResponse wraps the OnRampDynamicConfig this way to map to on-chain return type which is a named struct
 // https://github.com/smartcontractkit/chainlink/blob/12af1de88238e0e918177d6b5622070417f48adf/contracts/src/v0.8/ccip/onRamp/OnRamp.sol#L328
 //
 //nolint:lll

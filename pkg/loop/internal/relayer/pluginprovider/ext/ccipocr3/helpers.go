@@ -304,18 +304,18 @@ func rmnRemoteConfigToPb(config ccipocr3.RMNRemoteConfig) *ccipocr3pb.RMNRemoteC
 	}
 }
 
-func pbToRMNDigestHeader(pb *ccipocr3pb.RMNDigestHeader) ccipocr3.RmnDigestHeader {
+func pbToRMNDigestHeader(pb *ccipocr3pb.RMNDigestHeader) ccipocr3.RMNDigestHeader {
 	if pb == nil {
-		return ccipocr3.RmnDigestHeader{}
+		return ccipocr3.RMNDigestHeader{}
 	}
 	var digestHeader ccipocr3.Bytes32
 	copy(digestHeader[:], pb.DigestHeader)
-	return ccipocr3.RmnDigestHeader{
+	return ccipocr3.RMNDigestHeader{
 		DigestHeader: digestHeader,
 	}
 }
 
-func rmnDigestHeaderToPb(header ccipocr3.RmnDigestHeader) *ccipocr3pb.RMNDigestHeader {
+func rmnDigestHeaderToPb(header ccipocr3.RMNDigestHeader) *ccipocr3pb.RMNDigestHeader {
 	return &ccipocr3pb.RMNDigestHeader{
 		DigestHeader: header.DigestHeader[:],
 	}

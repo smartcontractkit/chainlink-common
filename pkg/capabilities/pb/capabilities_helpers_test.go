@@ -23,6 +23,7 @@ const (
 	testError         = "test-error"
 	anyReferenceID    = "anything"
 	testWorkflowOwner = "testowner"
+	testWorkflowName  = "00112233445566778899"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -88,7 +89,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowID:               "test-workflow-id",
 			WorkflowExecutionID:      testWorkflowID,
 			WorkflowOwner:            "0xaa",
-			WorkflowName:             "test-workflow-name",
+			WorkflowName:             testWorkflowName,
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
 			ReferenceID:              anyReferenceID,
@@ -175,4 +176,44 @@ func TestTriggerResponseFromProto(t *testing.T) {
 		_, err := pb.TriggerResponseFromProto(nil)
 		assert.ErrorContains(t, err, "could not unmarshal nil")
 	})
+}
+
+func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
+	req := capabilities.TriggerRegistrationRequest{
+		TriggerID: "test-trigger-id",
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:               "test-workflow-id",
+			WorkflowExecutionID:      testWorkflowID,
+			WorkflowOwner:            testWorkflowOwner,
+			WorkflowName:             testWorkflowName,
+			WorkflowDonID:            2,
+			WorkflowDonConfigVersion: 3,
+			ReferenceID:              anyReferenceID,
+			DecodedWorkflowName:      "decoded-workflow-name",
+			SpendLimits: []capabilities.SpendLimit{
+				{SpendType: "GAS", Limit: "5000"},
+			},
+			WorkflowTag: "workflow-tag",
+		},
+		Config: &values.Map{Underlying: map[string]values.Value{
+			testConfigKey: &values.String{Underlying: testConfigValue},
+		}},
+		Payload: &anypb.Any{
+			TypeUrl: "example.com/payload",
+			Value:   []byte("payload-bytes"),
+		},
+		Method: "trigger-method",
+	}
+
+	raw, err := pb.MarshalTriggerRegistrationRequest(req)
+	require.NoError(t, err)
+
+	unmarshaled, err := pb.UnmarshalTriggerRegistrationRequest(raw)
+	require.NoError(t, err)
+
+	require.EqualValues(t, req.TriggerID, unmarshaled.TriggerID)
+	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
+	require.EqualValues(t, req.Config, unmarshaled.Config)
+	require.True(t, proto.Equal(req.Payload, unmarshaled.Payload))
+	require.EqualValues(t, req.Method, unmarshaled.Method)
 }

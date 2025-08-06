@@ -17,9 +17,11 @@ type Mailbox[T any] struct {
 
 	// capacity - number of items the mailbox can buffer
 	// NOTE: if the capacity is 1, it's possible that an empty Retrieve may occur after a notification.
-	capacity uint64
+	capacity uint32
 	// onCloseFn is a hook used to stop monitoring, if non-nil
 	onCloseFn func()
+
+	nonBreakingChange bool
 }
 
 // NewHighCapacity create a new mailbox with a capacity
@@ -33,15 +35,16 @@ func NewSingle[T any]() *Mailbox[T] { return New[T](1) }
 
 // New creates a new mailbox instance. If name is non-empty, it must be unique and calling Start will launch
 // prometheus metric monitor that periodically reports mailbox load until Close() is called.
-func New[T any](capacity uint64) *Mailbox[T] {
+func New[T any](capacity uint32) *Mailbox[T] {
 	queueCap := capacity
 	if queueCap == 0 {
 		queueCap = 100
 	}
 	return &Mailbox[T]{
-		chNotify: make(chan struct{}, 1),
-		queue:    make([]T, 0, queueCap),
-		capacity: capacity,
+		chNotify:          make(chan struct{}, 1),
+		queue:             make([]T, 0, queueCap),
+		capacity:          capacity,
+		nonBreakingChange: false,
 	}
 }
 
@@ -59,7 +62,7 @@ func (m *Mailbox[T]) Close() error {
 
 func (m *Mailbox[T]) onClose(fn func()) { m.onCloseFn = fn }
 
-func (m *Mailbox[T]) load() (capacity uint64, loadPercent float64) {
+func (m *Mailbox[T]) load() (capacity uint32, loadPercent float64) {
 	capacity = m.capacity
 	loadPercent = 100 * float64(m.queueLen.Load()) / float64(capacity)
 	return
@@ -71,7 +74,7 @@ func (m *Mailbox[T]) Deliver(x T) (wasOverCapacity bool) {
 	defer m.mu.Unlock()
 
 	m.queue = append([]T{x}, m.queue...)
-	if uint64(len(m.queue)) > m.capacity && m.capacity > 0 {
+	if uint32(len(m.queue)) > m.capacity && m.capacity > 0 {
 		m.queue = m.queue[:len(m.queue)-1]
 		wasOverCapacity = true
 	} else {

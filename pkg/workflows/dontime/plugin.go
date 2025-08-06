@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
@@ -229,10 +230,22 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 		allOraclesTransmitNow.Transmitters[i] = commontypes.OracleID(i)
 	}
 
+	info, err := structpb.NewStruct(map[string]any{
+		"keyBundleName": "evm",
+	})
+	if err != nil {
+		return nil, err
+	}
+	infoBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
+	if err != nil {
+		return nil, err
+	}
+
 	return []ocr3types.ReportPlus[[]byte]{
 		{
 			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
 				Report: types.Report(outcome),
+				Info:   infoBytes,
 			},
 			TransmissionScheduleOverride: allOraclesTransmitNow,
 		},

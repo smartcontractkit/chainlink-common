@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754493923479,
+  "lastUpdate": 1754495705800,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22176,6 +22176,48 @@ window.BENCHMARK_DATA = {
             "value": 28235,
             "unit": "ns/op",
             "extra": "41820 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d805e639a0f7bcab7872dfd69d345b46413f9ea",
+          "message": "update pkg/values in sdk/v2/pb (#1455)\n\n* update pkg/values in sdk/v2/pb\n\n* make gomodtidy",
+          "timestamp": "2025-08-06T08:54:03-07:00",
+          "tree_id": "a7fe16e7b05cd0fa212d23e092336041ef51bc29",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1d805e639a0f7bcab7872dfd69d345b46413f9ea"
+        },
+        "date": 1754495704706,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 375.4,
+            "unit": "ns/op",
+            "extra": "2933464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.3,
+            "unit": "ns/op",
+            "extra": "2939269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28151,
+            "unit": "ns/op",
+            "extra": "42726 times\n4 procs"
           }
         ]
       }

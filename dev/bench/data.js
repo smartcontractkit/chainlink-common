@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754439313552,
+  "lastUpdate": 1754469847825,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22008,6 +22008,48 @@ window.BENCHMARK_DATA = {
             "value": 28312,
             "unit": "ns/op",
             "extra": "42609 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "afbff1add70952a519425925fc6c385d56c91265",
+          "message": "feat: add storage-service workflow client (#1427)\n\nCo-authored-by: Justin Kaseman <justinkaseman@live.com>",
+          "timestamp": "2025-08-06T08:41:45Z",
+          "tree_id": "8749c5ad942010ee7ffc3c49852c26571ff76c61",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/afbff1add70952a519425925fc6c385d56c91265"
+        },
+        "date": 1754469846066,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.9,
+            "unit": "ns/op",
+            "extra": "3339532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.6,
+            "unit": "ns/op",
+            "extra": "2868319 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28532,
+            "unit": "ns/op",
+            "extra": "42168 times\n4 procs"
           }
         ]
       }

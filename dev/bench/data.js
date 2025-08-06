@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754489778084,
+  "lastUpdate": 1754492045820,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22092,6 +22092,48 @@ window.BENCHMARK_DATA = {
             "value": 28122,
             "unit": "ns/op",
             "extra": "42712 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5e5f10c0ae5b685a8a585cffc390308ba055bbb5",
+          "message": "DF-21518 Secure Mint aggregator: chainSelector passed in as string (#1452)\n\n* DF-21518 Secure Mint aggregator: chainSelector passed in as string\n\n* Remove NewSecureMintConfig - only parse through the constructor",
+          "timestamp": "2025-08-06T14:52:59Z",
+          "tree_id": "156d36e6582a4936d079b1817f0e11add78efe31",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5e5f10c0ae5b685a8a585cffc390308ba055bbb5"
+        },
+        "date": 1754492044439,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.2,
+            "unit": "ns/op",
+            "extra": "3344497 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410,
+            "unit": "ns/op",
+            "extra": "2903990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28105,
+            "unit": "ns/op",
+            "extra": "42675 times\n4 procs"
           }
         ]
       }

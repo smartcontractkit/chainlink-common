@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754492045820,
+  "lastUpdate": 1754493923479,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22134,6 +22134,48 @@ window.BENCHMARK_DATA = {
             "value": 28105,
             "unit": "ns/op",
             "extra": "42675 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "159881c7589ce7e09c9859ff7ead59b260c0055f",
+          "message": "bumping cre proto (#1449)",
+          "timestamp": "2025-08-06T15:24:07Z",
+          "tree_id": "72fc6cccc1b2b698da44e86007e36faa11878388",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/159881c7589ce7e09c9859ff7ead59b260c0055f"
+        },
+        "date": 1754493921766,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.6,
+            "unit": "ns/op",
+            "extra": "3224204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.9,
+            "unit": "ns/op",
+            "extra": "2940352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28235,
+            "unit": "ns/op",
+            "extra": "41820 times\n4 procs"
           }
         ]
       }

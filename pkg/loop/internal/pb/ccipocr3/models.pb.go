@@ -436,9 +436,9 @@ func (x *TokenAmount) GetAmount() *BigInt {
 type CommitPluginReport struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	PriceUpdates         *PriceUpdates          `protobuf:"bytes,1,opt,name=price_updates,json=priceUpdates,proto3" json:"price_updates,omitempty"`
-	BlessedMerkleRoots   []*MerkleRootChain     `protobuf:"bytes,2,rep,name=blessed_merkle_roots,json=blessedMerkleRoots,proto3" json:"blessed_merkle_roots,omitempty"`       // Separate blessed merkle roots
-	UnblessedMerkleRoots []*MerkleRootChain     `protobuf:"bytes,3,rep,name=unblessed_merkle_roots,json=unblessedMerkleRoots,proto3" json:"unblessed_merkle_roots,omitempty"` // Separate unblessed merkle roots
-	RmnSignatures        []*RMNECDSASignature   `protobuf:"bytes,4,rep,name=rmn_signatures,json=rmnSignatures,proto3" json:"rmn_signatures,omitempty"`                        // RMN signatures (moved to field 4)
+	BlessedMerkleRoots   []*MerkleRootChain     `protobuf:"bytes,2,rep,name=blessed_merkle_roots,json=blessedMerkleRoots,proto3" json:"blessed_merkle_roots,omitempty"`
+	UnblessedMerkleRoots []*MerkleRootChain     `protobuf:"bytes,3,rep,name=unblessed_merkle_roots,json=unblessedMerkleRoots,proto3" json:"unblessed_merkle_roots,omitempty"`
+	RmnSignatures        []*RMNECDSASignature   `protobuf:"bytes,4,rep,name=rmn_signatures,json=rmnSignatures,proto3" json:"rmn_signatures,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -613,7 +613,7 @@ type MerkleRootChain struct {
 	ChainSelector uint64                 `protobuf:"varint,1,opt,name=chain_selector,json=chainSelector,proto3" json:"chain_selector,omitempty"`
 	MerkleRoot    []byte                 `protobuf:"bytes,2,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
 	SeqNumRange   *SeqNumRange           `protobuf:"bytes,3,opt,name=seq_num_range,json=seqNumRange,proto3" json:"seq_num_range,omitempty"`
-	OnRampAddress []byte                 `protobuf:"bytes,4,opt,name=on_ramp_address,json=onRampAddress,proto3" json:"on_ramp_address,omitempty"` // Missing OnRampAddress field
+	OnRampAddress []byte                 `protobuf:"bytes,4,opt,name=on_ramp_address,json=onRampAddress,proto3" json:"on_ramp_address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

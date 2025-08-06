@@ -14,6 +14,8 @@ import (
 	"github.com/scylladb/go-reflectx"
 	"go.opentelemetry.io/otel"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	// need to make sure pgx driver is registered before opening connection
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -33,9 +35,13 @@ const (
 	DriverInMemoryPostgres = "duckdb"
 )
 
-var (
-	otelOpts = []otelsql.Option{otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
-		otelsql.WithTracerProvider(otel.GetTracerProvider()),
+func otelOptsFunc(tracingEnabled bool) []otelsql.Option {
+	var tracerProvider trace.TracerProvider = tracenoop.NewTracerProvider()
+	if tracingEnabled {
+		tracerProvider = otel.GetTracerProvider()
+	}
+	return []otelsql.Option{otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+		otelsql.WithTracerProvider(tracerProvider),
 		otelsql.WithSQLCommenter(true),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			OmitConnResetSession: true,
@@ -44,12 +50,13 @@ var (
 			OmitConnectorConnect: true,
 			OmitConnQuery:        false,
 		})}
-)
+}
 
 type DBConfig struct {
 	IdleInTxSessionTimeout     time.Duration // idle_in_transaction_session_timeout
 	LockTimeout                time.Duration // lock_timeout
 	MaxOpenConns, MaxIdleConns int
+	EnableTracing              bool
 }
 
 func (config DBConfig) New(ctx context.Context, uri string, driverName string) (*sqlx.DB, error) {
@@ -64,8 +71,17 @@ func (config DBConfig) New(ctx context.Context, uri string, driverName string) (
 	return config.openDB(ctx, uri, driverName)
 }
 
+func (config DBConfig) WithTracing(enabled bool) DBConfig {
+	config.EnableTracing = enabled
+	return config
+}
+
+func (config DBConfig) OtelOpts() []otelsql.Option {
+	return otelOptsFunc(config.EnableTracing)
+}
+
 func (config DBConfig) open(ctx context.Context, uri string, driverName string) (*sqlx.DB, error) {
-	sqlDB, err := otelsql.Open(driverName, uri, otelOpts...)
+	sqlDB, err := otelsql.Open(driverName, uri, config.OtelOpts()...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +104,7 @@ func (config DBConfig) openDB(ctx context.Context, uri string, driverName string
 		return
 	}))
 
-	sqlDB := otelsql.OpenDB(connector, otelOpts...)
+	sqlDB := otelsql.OpenDB(connector, config.OtelOpts()...)
 	return config.newDB(ctx, sqlDB, driverName)
 }
 

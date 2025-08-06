@@ -591,7 +591,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowID: "test-workflow-123",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0x1234567890abcdef",
 				},
 			},
@@ -606,7 +606,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowTag:   "v1.0.0",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0xabcdef1234567890",
 				},
 			},
@@ -619,7 +619,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowOwner: "alice",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0x9876543210fedcba",
 				},
 			},
@@ -632,7 +632,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowID: "workflow-with-input",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0xdeadbeefcafebabe",
 				},
 			},
@@ -664,7 +664,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowTag:   "production",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0x1111222233334444",
 				},
 			},
@@ -685,7 +685,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowName: "process-items",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0x5555666677778888",
 				},
 			},
@@ -699,7 +699,7 @@ func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
 					WorkflowTag:   "latest",
 				},
 				Key: AuthorizedKey{
-					KeyType:   KeyTypeECDSA,
+					KeyType:   KeyTypeECDSAEVM,
 					PublicKey: "0x9999aaaabbbbcccc",
 				},
 			},

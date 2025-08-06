@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754431380472,
+  "lastUpdate": 1754439313552,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21966,6 +21966,48 @@ window.BENCHMARK_DATA = {
             "value": 29210,
             "unit": "ns/op",
             "extra": "41066 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce3566411a1450a49071fabf28d188cdb6602425",
+          "message": "[CRE-612] Fix missing metadata fields in proto helpers (#1447)",
+          "timestamp": "2025-08-05T18:12:51-06:00",
+          "tree_id": "af79210b40b2c2cca63cb673771b1bb088b143a3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ce3566411a1450a49071fabf28d188cdb6602425"
+        },
+        "date": 1754439311981,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 378.3,
+            "unit": "ns/op",
+            "extra": "3351087 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418,
+            "unit": "ns/op",
+            "extra": "2941622 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28312,
+            "unit": "ns/op",
+            "extra": "42609 times\n4 procs"
           }
         ]
       }

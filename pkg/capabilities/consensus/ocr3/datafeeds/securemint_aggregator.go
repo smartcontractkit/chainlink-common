@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -31,7 +32,7 @@ type secureMintReport struct {
 }
 
 // chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
-type chainSelector int64
+type chainSelector uint64
 
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
 // This aggregator is designed to pick out reports for a specific chain selector.
@@ -52,12 +53,30 @@ func (c SecureMintAggregatorConfig) ToMap() (*values.Map, error) {
 }
 
 func NewSecureMintConfig(m values.Map) (SecureMintAggregatorConfig, error) {
-	var config SecureMintAggregatorConfig
-	if err := m.UnwrapTo(&config); err != nil {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map %+v to SecureMintAggregatorConfig: %w", m, err)
+
+	type rawConfig struct {
+		TargetChainSelector string `mapstructure:"targetChainSelector"`
 	}
 
-	return config, nil
+	var config rawConfig
+	if err := m.UnwrapTo(&config); err != nil {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map %+v: %w", m, err)
+	}
+
+	if config.TargetChainSelector == "" {
+		return SecureMintAggregatorConfig{}, errors.New("targetChainSelector is required")
+	}
+
+	sel, err := strconv.ParseUint(config.TargetChainSelector, 10, 64)
+	if err != nil {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid chain selector: %w", err)
+	}
+
+	parsedConfig := SecureMintAggregatorConfig{
+		TargetChainSelector: chainSelector(sel),
+	}
+
+	return parsedConfig, nil
 }
 
 var _ types.Aggregator = (*SecureMintAggregator)(nil)

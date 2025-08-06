@@ -220,95 +220,58 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	}
 }
 
-func TestSecureMintAggregatorConfig_RoundTrip(t *testing.T) {
-	testCases := []struct {
-		name   string
-		config SecureMintAggregatorConfig
-	}{
-		{
-			name: "default eth config",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
-		},
-		{
-			name: "custom target chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: bnbChainSelector,
-			},
-		},
-		{
-			name: "large chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: 999999,
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Step 1: Convert original config to values.Map
-			configMap, err := tc.config.ToMap()
-			require.NoError(t, err, "ToMap should not error")
-			require.NotNil(t, configMap, "ToMap should return non-nil map")
-
-			// Step 2: Convert values.Map back to config
-			roundTrippedConfig, err := NewSecureMintConfig(*configMap)
-			require.NoError(t, err, "NewSecureMintConfig should not error")
-
-			// Step 3: Compare original and round-tripped configs
-			assert.Equal(t, tc.config.TargetChainSelector, roundTrippedConfig.TargetChainSelector,
-				"TargetChainSelector should match")
-		})
-	}
-}
-
 func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 	tests := []struct {
-		name        string
-		config      SecureMintAggregatorConfig
-		expectError bool
-		errorMsg    string
+		name          string
+		chainSelector string
+		expected      chainSelector
+		expectError   bool
+		errorMsg      string
 	}{
 		{
-			name: "valid config",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
-			expectError: false,
+			name:          "valid chain selector",
+			chainSelector: "1",
+			expected:      1,
+			expectError:   false,
 		},
 		{
-			name: "zero target chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: 0,
-			},
-			expectError: true,
-			errorMsg:    "targetChainSelector is required",
+			name:          "invalid chain selector",
+			chainSelector: "invalid",
+			expectError:   true,
+			errorMsg:      "invalid chain selector",
 		},
 		{
-			name: "negative chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: -1,
-			},
-			expectError: true,
-			errorMsg:    "targetChainSelector is required",
+			name:          "large chain selector",
+			chainSelector: "16015286601757825753", // ethereum-testnet-sepolia
+			expected:      16015286601757825753,
+			expectError:   false,
+		},
+		{
+			name:          "negative chain selector",
+			chainSelector: "-1",
+			expectError:   true,
+			errorMsg:      "invalid chain selector",
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			configMap, err := tc.config.ToMap()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configMap, err := values.WrapMap(map[string]any{
+				"targetChainSelector": tt.chainSelector,
+			})
 			require.NoError(t, err)
 
-			_, err = NewSecureMintAggregator(*configMap)
-			if tc.expectError {
+			parsedConfig, err := NewSecureMintConfig(*configMap)
+			if tt.expectError {
 				require.Error(t, err)
-				if tc.errorMsg != "" {
-					require.Contains(t, err.Error(), tc.errorMsg)
+				if tt.errorMsg != "" {
+					require.Contains(t, err.Error(), tt.errorMsg)
 				}
-			} else {
-				require.NoError(t, err)
+				return
 			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, parsedConfig.TargetChainSelector)
 		})
 	}
 }

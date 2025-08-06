@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754469847825,
+  "lastUpdate": 1754489778084,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22050,6 +22050,48 @@ window.BENCHMARK_DATA = {
             "value": 28532,
             "unit": "ns/op",
             "extra": "42168 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d28c6315689f22adace91f43c3f7333a0dd6c8f",
+          "message": "DBConfig: add EnableTracing flag (#1448)\n\n* DBConfig: add EnableTracing flag (default false)\n\n* loop/server: wire up DBConfig.EnableTracing flag",
+          "timestamp": "2025-08-06T14:15:04Z",
+          "tree_id": "d28632dd1294fd2b6fbd0eaa907b3f7a05893c96",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0d28c6315689f22adace91f43c3f7333a0dd6c8f"
+        },
+        "date": 1754489776146,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.6,
+            "unit": "ns/op",
+            "extra": "3340304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.9,
+            "unit": "ns/op",
+            "extra": "2862561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28122,
+            "unit": "ns/op",
+            "extra": "42712 times\n4 procs"
           }
         ]
       }

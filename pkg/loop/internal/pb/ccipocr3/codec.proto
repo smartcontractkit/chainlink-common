@@ -126,7 +126,7 @@ message MessageOffchainTokenData {
   repeated bytes token_data = 1;  // All tokens for this specific message
 }
 
-// MapValue represents a generic map[string]any for decoding purposes
+// MapValue represents a map[string]any to support the SourceChainExtraDataCodec interface
 message MapValue {
   map<string, Value> values = 1;
 }
@@ -141,6 +141,8 @@ message Value {
     bytes bytes_value = 6;
     MapValue map_value = 7;
     ListValue list_value = 8;
+    uint32 uint32_value = 9;
+    BigInt big_int_value = 10;
   }
 }
 

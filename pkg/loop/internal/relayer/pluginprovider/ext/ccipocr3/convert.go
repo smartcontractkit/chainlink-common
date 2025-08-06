@@ -86,7 +86,7 @@ func pbToFeeQuoterDestChainConfigDetailed(pb *ccipocr3pb.FeeQuoterDestChainConfi
 
 	return ccipocr3.FeeQuoterDestChainConfig{
 		IsEnabled:                         pb.IsEnabled,
-		MaxNumberOfTokensPerMsg:           uint16(pb.MaxNumberOfTokensPerMsg),
+		MaxNumberOfTokensPerMsg:           uint16(pb.MaxNumberOfTokensPerMsg), // proto uint32 to Go uint16
 		MaxDataBytes:                      pb.MaxDataBytes,
 		MaxPerMsgGasLimit:                 pb.MaxPerMsgGasLimit,
 		DestGasOverhead:                   pb.DestGasOverhead,
@@ -94,9 +94,9 @@ func pbToFeeQuoterDestChainConfigDetailed(pb *ccipocr3pb.FeeQuoterDestChainConfi
 		DestGasPerPayloadByteHigh:         pb.DestGasPerPayloadByteHigh,
 		DestGasPerPayloadByteThreshold:    pb.DestGasPerPayloadByteThreshold,
 		DestDataAvailabilityOverheadGas:   pb.DestDataAvailabilityOverheadGas,
-		DestGasPerDataAvailabilityByte:    uint16(pb.DestGasPerDataAvailabilityByte),
-		DestDataAvailabilityMultiplierBps: uint16(pb.DestDataAvailabilityMultiplierBps),
-		DefaultTokenFeeUSDCents:           uint16(pb.DefaultTokenFeeUsdcCents),
+		DestGasPerDataAvailabilityByte:    uint16(pb.DestGasPerDataAvailabilityByte),    // proto uint32 to Go uint16
+		DestDataAvailabilityMultiplierBps: uint16(pb.DestDataAvailabilityMultiplierBps), // proto uint32 to Go uint16
+		DefaultTokenFeeUSDCents:           uint16(pb.DefaultTokenFeeUsdcCents),          // proto uint32 to Go uint16
 		DefaultTokenDestGasOverhead:       pb.DefaultTokenDestGasOverhead,
 		DefaultTxGasLimit:                 pb.DefaultTxGasLimit,
 		GasMultiplierWeiPerEth:            pb.GasMultiplierWad,
@@ -111,7 +111,7 @@ func pbToFeeQuoterDestChainConfigDetailed(pb *ccipocr3pb.FeeQuoterDestChainConfi
 func feeQuoterDestChainConfigToPb(config ccipocr3.FeeQuoterDestChainConfig) *ccipocr3pb.FeeQuoterDestChainConfig {
 	return &ccipocr3pb.FeeQuoterDestChainConfig{
 		IsEnabled:                         config.IsEnabled,
-		MaxNumberOfTokensPerMsg:           uint32(config.MaxNumberOfTokensPerMsg),
+		MaxNumberOfTokensPerMsg:           uint32(config.MaxNumberOfTokensPerMsg), // Go uint16 to proto uint32 (safe: 0-65535)
 		MaxDataBytes:                      config.MaxDataBytes,
 		MaxPerMsgGasLimit:                 config.MaxPerMsgGasLimit,
 		DestGasOverhead:                   config.DestGasOverhead,
@@ -119,9 +119,9 @@ func feeQuoterDestChainConfigToPb(config ccipocr3.FeeQuoterDestChainConfig) *cci
 		DestGasPerPayloadByteHigh:         config.DestGasPerPayloadByteHigh,
 		DestGasPerPayloadByteThreshold:    config.DestGasPerPayloadByteThreshold,
 		DestDataAvailabilityOverheadGas:   config.DestDataAvailabilityOverheadGas,
-		DestGasPerDataAvailabilityByte:    uint32(config.DestGasPerDataAvailabilityByte),
-		DestDataAvailabilityMultiplierBps: uint32(config.DestDataAvailabilityMultiplierBps),
-		DefaultTokenFeeUsdcCents:          uint32(config.DefaultTokenFeeUSDCents),
+		DestGasPerDataAvailabilityByte:    uint32(config.DestGasPerDataAvailabilityByte),    // Go uint16 to proto uint32 (safe: 0-65535)
+		DestDataAvailabilityMultiplierBps: uint32(config.DestDataAvailabilityMultiplierBps), // Go uint16 to proto uint32 (safe: 0-65535)
+		DefaultTokenFeeUsdcCents:          uint32(config.DefaultTokenFeeUSDCents),           // Go uint16 to proto uint32 (safe: 0-65535)
 		DefaultTokenDestGasOverhead:       config.DefaultTokenDestGasOverhead,
 		DefaultTxGasLimit:                 config.DefaultTxGasLimit,
 		GasMultiplierWad:                  config.GasMultiplierWeiPerEth,
@@ -607,6 +607,9 @@ func pbMapToGoMap(pbMap *ccipocr3pb.MapValue) map[string]any {
 	return goMap
 }
 
+// anyToPbValue converts Go any type to protobuf Value
+// Supports: string, int64, uint64, uint32, float64, bool, []byte, *big.Int, map[string]any, []any
+// Note: Negative *big.Int values lose their sign due to protobuf encoding limitations
 func anyToPbValue(value any) *ccipocr3pb.Value {
 	switch v := value.(type) {
 	case string:
@@ -615,12 +618,17 @@ func anyToPbValue(value any) *ccipocr3pb.Value {
 		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_IntValue{IntValue: v}}
 	case uint64:
 		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_UintValue{UintValue: v}}
+	case uint32:
+		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_Uint32Value{Uint32Value: v}}
 	case float64:
 		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_DoubleValue{DoubleValue: v}}
 	case bool:
 		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_BoolValue{BoolValue: v}}
 	case []byte:
 		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_BytesValue{BytesValue: v}}
+	case *big.Int:
+		// Note: Negative big.Int values lose their sign due to protobuf encoding limitations
+		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_BigIntValue{BigIntValue: intToPbBigInt(v)}}
 	case map[string]any:
 		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_MapValue{MapValue: goMapToPbMap(v)}}
 	case []any:
@@ -635,6 +643,9 @@ func anyToPbValue(value any) *ccipocr3pb.Value {
 	}
 }
 
+// pbValueToAny converts protobuf Value to Go any type.
+// Supports: string, int64, uint64, uint32, float64, bool, []byte, *big.Int, map[string]any, []any
+// Returns nil for unsupported types or if pbValue is nil
 func pbValueToAny(pbValue *ccipocr3pb.Value) any {
 	if pbValue == nil {
 		return nil
@@ -647,12 +658,16 @@ func pbValueToAny(pbValue *ccipocr3pb.Value) any {
 		return kind.IntValue
 	case *ccipocr3pb.Value_UintValue:
 		return kind.UintValue
+	case *ccipocr3pb.Value_Uint32Value:
+		return kind.Uint32Value
 	case *ccipocr3pb.Value_DoubleValue:
 		return kind.DoubleValue
 	case *ccipocr3pb.Value_BoolValue:
 		return kind.BoolValue
 	case *ccipocr3pb.Value_BytesValue:
 		return kind.BytesValue
+	case *ccipocr3pb.Value_BigIntValue:
+		return pbBigIntToInt(kind.BigIntValue)
 	case *ccipocr3pb.Value_MapValue:
 		return pbMapToGoMap(kind.MapValue)
 	case *ccipocr3pb.Value_ListValue:
@@ -698,4 +713,58 @@ func messageToPb(msg ccipocr3.Message) *ccipocr3pb.Message {
 	}
 
 	return pbMsg
+}
+
+// Convert protobuf Message to ccipocr3.Message
+func pbToMessage(pb *ccipocr3pb.Message) ccipocr3.Message {
+	// Convert header with proper Bytes32 conversion
+	var messageID, msgHash ccipocr3.Bytes32
+	copy(messageID[:], pb.Header.MessageId)
+	copy(msgHash[:], pb.Header.MessageHash)
+
+	return ccipocr3.Message{
+		Header: ccipocr3.RampMessageHeader{
+			MessageID:           messageID,
+			SourceChainSelector: ccipocr3.ChainSelector(pb.Header.SourceChainSelector),
+			DestChainSelector:   ccipocr3.ChainSelector(pb.Header.DestChainSelector),
+			SequenceNumber:      ccipocr3.SeqNum(pb.Header.SequenceNumber),
+			Nonce:               pb.Header.Nonce,
+			MsgHash:             msgHash,
+			OnRamp:              pb.Header.OnRamp,
+			TxHash:              pb.Header.TxHash,
+		},
+		Sender:         pb.Sender,
+		Data:           pb.Data,
+		Receiver:       pb.Receiver,
+		ExtraArgs:      pb.ExtraArgs,
+		FeeToken:       pb.FeeToken,
+		FeeTokenAmount: pbToBigInt(pb.FeeTokenAmount),
+		FeeValueJuels:  pbToBigInt(pb.FeeValueJuels),
+		TokenAmounts:   pbToTokenAmounts(pb.TokenAmounts),
+	}
+}
+
+func pbToTokenAmounts(pbAmounts []*ccipocr3pb.RampTokenAmount) []ccipocr3.RampTokenAmount {
+	var amounts []ccipocr3.RampTokenAmount
+	for _, pb := range pbAmounts {
+		amounts = append(amounts, ccipocr3.RampTokenAmount{
+			SourcePoolAddress: pb.SourcePoolAddress,
+			DestTokenAddress:  pb.DestTokenAddress,
+			ExtraData:         pb.ExtraData,
+			Amount:            pbToBigInt(pb.Amount),
+		})
+	}
+	return amounts
+}
+
+func pbToCurseInfo(pb *ccipocr3pb.CurseInfo) ccipocr3.CurseInfo {
+	result := ccipocr3.CurseInfo{
+		CursedSourceChains: make(map[ccipocr3.ChainSelector]bool),
+		CursedDestination:  pb.CursedDestination,
+		GlobalCurse:        pb.GlobalCurse,
+	}
+	for chainSel, cursed := range pb.CursedSourceChains {
+		result.CursedSourceChains[ccipocr3.ChainSelector(chainSel)] = cursed
+	}
+	return result
 }

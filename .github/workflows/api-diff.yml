@@ -1,0 +1,25 @@
+name: Analyze API Changes
+on:
+  pull_request:
+
+jobs:
+  analyze:
+    permissions:
+      pull-requests: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          only-modules: "true"
+
+      - uses: imjasonh/apidiff-action@57397487bc4339a1b201a84606a7737459cc5c27 # v0.0.3
+        with:
+          fail-on-breaking: false

@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # script/apidiff.sh
-# Compare API of only modified Go packages between PR HEAD and default branch using apidiff.
+# Compare API of only modified Go packages between PR HEAD and default branch using apidiff, formatted for GitHub Actions.
 # Usage: ./script/apidiff.sh
 
 # Ensure apidiff is installed
 if ! command -v apidiff &> /dev/null; then
-  echo "apidiff not found, installing..."
+  echo "::warning::apidiff not found, installing..."
   go install golang.org/x/exp/apidiff@latest
 fi
 
@@ -39,7 +39,9 @@ readarray -t changed_dirs < <(
   sort -u
 )
 
-echo "Modified directories: ${changed_dirs[*]}"
+echo "::group::Modified directories"
+echo "${changed_dirs[@]}"
+echo "::endgroup::"
 
 # Create temporary workspace
 tmp_dir=$(mktemp -d)
@@ -59,7 +61,9 @@ done
 readarray -t pkgs < <(printf '%s
 ' "${pkgs[@]}" | sort -u)
 
-echo "Packages to compare: ${pkgs[*]}"
+echo "::group::Packages to compare"
+echo "${pkgs[@]}"
+echo "::endgroup::"
 
 # Prepare export dirs
 exports_dir="$tmp_dir/exports"
@@ -73,7 +77,6 @@ generate_pkg_exports() {
   pushd "$tree" > /dev/null
   for pkg in "${pkgs[@]}"; do
     local file=${pkg//\//_}.export
-    echo "Exporting $pkg -> $dest/$file"
     apidiff -w "$dest/$file" "$pkg"
   done
   popd > /dev/null
@@ -83,15 +86,35 @@ generate_pkg_exports "$tmp_dir/base" "$base_exports"
 generate_pkg_exports "$tmp_dir/head" "$head_exports"
 
 # Compare exports for breaking changes
-echo -e "\nComparing API for breaking changes..."
+echo "::group::API Comparison"
 broken=false
+declare -a broken_pkgs
 for pkg in "${pkgs[@]}"; do
   file=${pkg//\//_}.export
-  echo -e "\nChecking $pkg"
-  if ! apidiff "$base_exports/$file" "$head_exports/$file"; then
+  echo "::group::Checking $pkg"
+  # show full apidiff output
+  output=$(apidiff "$base_exports/$file" "$head_exports/$file" 2>&1)
+  echo "${output}"
+  if grep -q "Incompatible changes" <<< "$output"; then
     broken=true
+    broken_pkgs+=("$pkg")
+    echo "::error title=API break detected::$pkg has breaking changes"
+  else
+    echo "::notice::$pkg: no incompatible changes"
   fi
+  echo "::endgroup::"
 done
+
+# Summary of broken packages
+if [[ "$broken" == true ]]; then
+  echo "::group::Breaking API Summary"
+  for pkg in "${broken_pkgs[@]}"; do
+    echo "::error::$pkg has breaking changes"
+  done
+  echo "::endgroup::"
+fi
+# end API Comparison
+echo "::endgroup::"
 
 # Clean up worktrees
 git worktree remove "$tmp_dir/base" --force
@@ -99,8 +122,7 @@ git worktree remove "$tmp_dir/head" --force
 
 # Final status
 if [[ "$broken" == true ]]; then
-  echo -e "\nBreaking API changes detected."
   exit 1
 else
-  echo -e "\nNo breaking API changes detected."
+  echo "::notice::No breaking API changes detected."
 fi

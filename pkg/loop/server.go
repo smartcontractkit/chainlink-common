@@ -166,6 +166,7 @@ func (s *Server) start() error {
 			LockTimeout:            s.EnvConfig.DatabaseLockTimeout,
 			MaxOpenConns:           s.EnvConfig.DatabaseMaxOpenConns,
 			MaxIdleConns:           s.EnvConfig.DatabaseMaxIdleConns,
+			EnableTracing:         	s.EnvConfig.DatabaseTracingEnabled,
 		}.New(ctx, dbURL, pg.DriverPostgres)
 		if err != nil {
 			return fmt.Errorf("error connecting to DataBase: %w", err)

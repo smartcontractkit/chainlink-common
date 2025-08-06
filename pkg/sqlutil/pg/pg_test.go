@@ -30,3 +30,17 @@ func Test_disallowReplica(t *testing.T) {
 	_, err = db.Exec("SET session_replication_role= 'not_valid_role'")
 	require.Error(t, err)
 }
+
+func TestDBConfig_WithTracing(t *testing.T) {
+	t.Parallel()
+	cfg := pg.DBConfig{}
+	require.False(t, cfg.EnableTracing)
+
+	cfgWithTrace := cfg.WithTracing(true)
+	require.True(t, cfgWithTrace.EnableTracing)
+	require.False(t, cfg.EnableTracing) // ensure original is not modified
+
+	cfgNoTrace := cfgWithTrace.WithTracing(false)
+	require.False(t, cfgNoTrace.EnableTracing)
+	require.True(t, cfgWithTrace.EnableTracing) // ensure original is not modified
+}

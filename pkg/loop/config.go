@@ -24,6 +24,7 @@ const (
 	envDatabaseLogSQL                       = "CL_DATABASE_LOG_SQL"
 	envDatabaseMaxOpenConns                 = "CL_DATABASE_MAX_OPEN_CONNS"
 	envDatabaseMaxIdleConns                 = "CL_DATABASE_MAX_IDLE_CONNS"
+	envDatabaseTracingEnabled               = "CL_DATABASE_TRACING_ENABLED"
 
 	envFeatureLogPoller = "CL_FEATURE_LOG_POLLER"
 
@@ -77,6 +78,7 @@ type EnvConfig struct {
 	DatabaseLogSQL                       bool
 	DatabaseMaxOpenConns                 int
 	DatabaseMaxIdleConns                 int
+	DatabaseTracingEnabled               bool
 
 	FeatureLogPoller bool
 
@@ -134,6 +136,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		add(envDatabaseLogSQL, strconv.FormatBool(e.DatabaseLogSQL))
 		add(envDatabaseMaxOpenConns, strconv.Itoa(e.DatabaseMaxOpenConns))
 		add(envDatabaseMaxIdleConns, strconv.Itoa(e.DatabaseMaxIdleConns))
+		add(envDatabaseTracingEnabled, strconv.FormatBool(e.DatabaseTracingEnabled))
 	}
 
 	add(envFeatureLogPoller, strconv.FormatBool(e.FeatureLogPoller))
@@ -228,6 +231,10 @@ func (e *EnvConfig) parse() error {
 			return err
 		}
 		e.DatabaseMaxIdleConns, err = getEnv(envDatabaseMaxIdleConns, strconv.Atoi)
+		if err != nil {
+			return err
+		}
+		e.DatabaseTracingEnabled, err = getBool(envDatabaseTracingEnabled)
 		if err != nil {
 			return err
 		}

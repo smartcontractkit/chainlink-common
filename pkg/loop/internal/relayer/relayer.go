@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability"
@@ -288,7 +289,24 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 }
 
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.RelayArgs) (types.CCIPProvider, error) {
-	return nil, fmt.Errorf("ccip provider not supported: %w", errors.ErrUnsupported)
+	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
+			RelayArgs: &pb.RelayArgs{
+				ExternalJobID: rargs.ExternalJobID[:],
+				JobID:         rargs.JobID,
+				ContractID:    rargs.ContractID,
+				New:           rargs.New,
+				RelayConfig:   rargs.RelayConfig,
+				ProviderType:  rargs.ProviderType,
+			},
+		})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.CcipProviderID, nil, nil
+	})
+
+	return ccipocr3.NewCCIPProviderClient(r.WithName(rargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {

@@ -10,7 +10,7 @@ package loop.internal.pb.ccipocr3;
 message RampMessageHeader {
   // MessageID is a unique identifier for the message, it should be unique across all chains.
 	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
-  repeated bytes message_id = 1;
+  bytes message_id = 1;
   // SourceChainSelector is the chain selector of the chain that the message originated from.
   uint64 source_chain_selector = 2;
   // DestChainSelector is the chain selector of the chain that the message is destined for.
@@ -21,9 +21,11 @@ message RampMessageHeader {
   // Nonce is the nonce for this lane for this sender, not unique across senders/lanes
   uint64 nonce = 5;
   // MsgHash is the hash of all the message fields.
-  repeated bytes message_hash = 6;
+  bytes message_hash = 6;
   // OnRamp is the address of the onramp that sent the message.
-  repeated bytes on_ramp = 7;
+  bytes on_ramp = 7;
+  // TxHash is the hash of the transaction that emitted this message.
+  string tx_hash = 8;
 }
 
 // RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
@@ -31,14 +33,14 @@ message RampTokenAmount {
   // SourcePoolAddress is the source pool address, abi encoded. This value is trusted
 	// as it was obtained through the onRamp. It can be relied upon by the destination
 	// pool to validate the source pool.
-  repeated bytes source_pool_address = 1;
+  bytes source_pool_address = 1;
   // DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains
 	// This value is UNTRUSTED as any pool owner can return whatever value they want.
-  repeated bytes dest_token_address = 2;
+  bytes dest_token_address = 2;
   // ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
 	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead
 	// has to be set for the specific token.
-  repeated bytes extra_data = 3;
+  bytes extra_data = 3;
   // Amount is the amount of tokens to be transferred.
   BigInt amount = 4;
 }
@@ -50,21 +52,23 @@ message Message {
   RampMessageHeader header = 1;
   // Sender address on the source chain.
 	// This is an EVM address, so len(Sender) == 20.
-  repeated bytes sender = 2;
+  bytes sender = 2;
   // Data is the arbitrary data payload supplied by the message sender.
-  repeated bytes data = 3;
+  bytes data = 3;
   // Receiver is the receiver address on the destination chain.
 	// This is encoded in the destination chain family specific encoding.
 	// i.e if the destination is EVM, this is abi.encode(receiver).
-  repeated bytes receiver = 4;
+  bytes receiver = 4;
   // ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
-  repeated bytes extra_args = 5;
+  bytes extra_args = 5;
   // FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
-  repeated bytes fee_token = 6;
+  bytes fee_token = 6;
   // FeeTokenAmount is the amount of fee tokens paid.
   BigInt fee_token_amount = 7;
+  // FeeValueJuels is the fee amount in Juels
+  BigInt fee_value_juels = 8;
   // TokenAmounts is the array of tokens and amounts to transfer.
-  repeated RampTokenAmount token_amounts = 8;
+  repeated RampTokenAmount token_amounts = 9;
 }
 
 // BigInt represents a [big.Int].
@@ -82,7 +86,9 @@ message TokenAmount {
 // CommitPluginReport is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CommitPluginReport].
 message CommitPluginReport {
   PriceUpdates price_updates = 1;
-  repeated MerkleRootChain merkle_roots = 2;
+  repeated MerkleRootChain blessed_merkle_roots = 2;
+  repeated MerkleRootChain unblessed_merkle_roots = 3;
+  repeated RMNECDSASignature rmn_signatures = 4;
 }
 
 // PriceUpdates is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.PriceUpdates].
@@ -102,10 +108,37 @@ message MerkleRootChain {
   uint64 chain_selector = 1;
   bytes merkle_root = 2;
   SeqNumRange seq_num_range = 3;
+  bytes on_ramp_address = 4;
 }
 
 // SeqNumRange defines an inclusive range of sequence numbers.
 message SeqNumRange {
   uint64 start = 1;
   uint64 end = 2;
+}
+
+// RMNECDSASignature represents the signature provided by RMN on the RMNReport structure.
+message RMNECDSASignature {
+  bytes r = 1;  // 32 bytes
+  bytes s = 2;  // 32 bytes
+}
+
+// RMNReport is the payload that is signed by the RMN nodes, transmitted and verified onchain.
+message RMNReport {
+  bytes report_version_digest = 1;          // Bytes32
+  BigInt dest_chain_id = 2;                 // BigInt
+  uint64 dest_chain_selector = 3;           // ChainSelector
+  bytes rmn_remote_contract_address = 4;    // UnknownAddress
+  bytes offramp_address = 5;                // UnknownAddress
+  bytes rmn_home_contract_config_digest = 6; // Bytes32
+  repeated RMNLaneUpdate lane_updates = 7;  // []RMNLaneUpdate
+}
+
+// RMNLaneUpdate represents an interval that has been observed by an RMN node.
+message RMNLaneUpdate {
+  uint64 source_chain_selector = 1;  // ChainSelector
+  bytes on_ramp_address = 2;         // UnknownAddress
+  uint64 min_seq_nr = 3;             // SeqNum
+  uint64 max_seq_nr = 4;             // SeqNum
+  bytes merkle_root = 5;             // Bytes32
 }

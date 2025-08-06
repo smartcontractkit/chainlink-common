@@ -32,7 +32,7 @@ const (
 // For example an EVM implementation of CommitPluginCodec would use ABI encoding.
 type CommitPluginCodecClient interface {
 	Encode(ctx context.Context, in *EncodeCommitPluginReportInput, opts ...grpc.CallOption) (*EncodeCommitPluginReportOutput, error)
-	Decode(ctx context.Context, in *DecodeCommitPluginReportInput, opts ...grpc.CallOption) (*EncodeCommitPluginReportOutput, error)
+	Decode(ctx context.Context, in *DecodeCommitPluginReportInput, opts ...grpc.CallOption) (*DecodeCommitPluginReportOutput, error)
 }
 
 type commitPluginCodecClient struct {
@@ -53,9 +53,9 @@ func (c *commitPluginCodecClient) Encode(ctx context.Context, in *EncodeCommitPl
 	return out, nil
 }
 
-func (c *commitPluginCodecClient) Decode(ctx context.Context, in *DecodeCommitPluginReportInput, opts ...grpc.CallOption) (*EncodeCommitPluginReportOutput, error) {
+func (c *commitPluginCodecClient) Decode(ctx context.Context, in *DecodeCommitPluginReportInput, opts ...grpc.CallOption) (*DecodeCommitPluginReportOutput, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EncodeCommitPluginReportOutput)
+	out := new(DecodeCommitPluginReportOutput)
 	err := c.cc.Invoke(ctx, CommitPluginCodec_Decode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (c *commitPluginCodecClient) Decode(ctx context.Context, in *DecodeCommitPl
 // For example an EVM implementation of CommitPluginCodec would use ABI encoding.
 type CommitPluginCodecServer interface {
 	Encode(context.Context, *EncodeCommitPluginReportInput) (*EncodeCommitPluginReportOutput, error)
-	Decode(context.Context, *DecodeCommitPluginReportInput) (*EncodeCommitPluginReportOutput, error)
+	Decode(context.Context, *DecodeCommitPluginReportInput) (*DecodeCommitPluginReportOutput, error)
 	mustEmbedUnimplementedCommitPluginCodecServer()
 }
 
@@ -86,7 +86,7 @@ type UnimplementedCommitPluginCodecServer struct{}
 func (UnimplementedCommitPluginCodecServer) Encode(context.Context, *EncodeCommitPluginReportInput) (*EncodeCommitPluginReportOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Encode not implemented")
 }
-func (UnimplementedCommitPluginCodecServer) Decode(context.Context, *DecodeCommitPluginReportInput) (*EncodeCommitPluginReportOutput, error) {
+func (UnimplementedCommitPluginCodecServer) Decode(context.Context, *DecodeCommitPluginReportInput) (*DecodeCommitPluginReportOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Decode not implemented")
 }
 func (UnimplementedCommitPluginCodecServer) mustEmbedUnimplementedCommitPluginCodecServer() {}

@@ -52,33 +52,6 @@ func (c SecureMintAggregatorConfig) ToMap() (*values.Map, error) {
 	return v, nil
 }
 
-func NewSecureMintConfig(m values.Map) (SecureMintAggregatorConfig, error) {
-
-	type rawConfig struct {
-		TargetChainSelector string `mapstructure:"targetChainSelector"`
-	}
-
-	var config rawConfig
-	if err := m.UnwrapTo(&config); err != nil {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map %+v: %w", m, err)
-	}
-
-	if config.TargetChainSelector == "" {
-		return SecureMintAggregatorConfig{}, errors.New("targetChainSelector is required")
-	}
-
-	sel, err := strconv.ParseUint(config.TargetChainSelector, 10, 64)
-	if err != nil {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid chain selector: %w", err)
-	}
-
-	parsedConfig := SecureMintAggregatorConfig{
-		TargetChainSelector: chainSelector(sel),
-	}
-
-	return parsedConfig, nil
-}
-
 var _ types.Aggregator = (*SecureMintAggregator)(nil)
 
 type SecureMintAggregator struct {
@@ -260,14 +233,26 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
-	var parsedConfig SecureMintAggregatorConfig
-	if err := config.UnwrapTo(&parsedConfig); err != nil {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap config: %w", err)
+	type rawConfig struct {
+		TargetChainSelector string `mapstructure:"targetChainSelector"`
 	}
 
-	// Validate configuration
-	if parsedConfig.TargetChainSelector <= 0 {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("targetChainSelector is required")
+	var rawCfg rawConfig
+	if err := config.UnwrapTo(&rawCfg); err != nil {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map %+v: %w", config, err)
+	}
+
+	if rawCfg.TargetChainSelector == "" {
+		return SecureMintAggregatorConfig{}, errors.New("targetChainSelector is required")
+	}
+
+	sel, err := strconv.ParseUint(rawCfg.TargetChainSelector, 10, 64)
+	if err != nil {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid chain selector: %w", err)
+	}
+
+	parsedConfig := SecureMintAggregatorConfig{
+		TargetChainSelector: chainSelector(sel),
 	}
 
 	return parsedConfig, nil

@@ -130,9 +130,7 @@ func (p *Plugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeCont
 }
 
 func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (quorumReached bool, err error) {
-	quarumReached := quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos)
-	p.lggr.Info("ObservationQuorum", "quarumReached", quarumReached, "NumObservations", len(aos))
-	return quarumReached, nil
+	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
@@ -172,13 +170,11 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		times = append(times, observation.Timestamp)
 	}
 
-	p.lggr.Infow("Observed Node Timestamps", "timestamps", times)
+	p.lggr.Debugw("Observed Node Timestamps", "timestamps", times)
 	slices.Sort(times)
 	donTime := times[len(times)/2]
 
 	outcome := prevOutcome
-
-	p.lggr.Infow("Previous DON Time: ", "timestamp", outcome.Timestamp)
 
 	// Compare with prior outcome to ensure DON time never goes backward.
 	if donTime < outcome.Timestamp+p.minTimeIncrease {
@@ -210,17 +206,10 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	outcomeBytes, err := proto.Marshal(outcome)
-	if len(outcomeBytes) == 0 || err != nil {
-		p.lggr.Errorf("failed to marshal outcome")
-	}
-
-	return outcomeBytes, err
+	return proto.Marshal(outcome)
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
-	p.lggr.Infow("Reports Outcome", "Outcome", outcome)
-
 	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
 		Transmitters:       make([]commontypes.OracleID, p.config.N),
 		TransmissionDelays: make([]time.Duration, p.config.N),
@@ -253,12 +242,10 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 }
 
 func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
-	p.lggr.Infow("ShouldAcceptAttestedReport CALLED")
 	return true, nil
 }
 
 func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
-	p.lggr.Infow("ShouldTransmitAttestedReport CALLED")
 	return true, nil
 }
 

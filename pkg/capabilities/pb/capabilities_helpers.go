@@ -54,15 +54,6 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 		config = req.Config
 	}
 
-	limits := make([]*SpendLimit, len(req.Metadata.SpendLimits))
-
-	for idx, resource := range req.Metadata.SpendLimits {
-		limits[idx] = &SpendLimit{
-			SpendType: string(resource.SpendType),
-			Limit:     resource.Limit,
-		}
-	}
-
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
@@ -73,7 +64,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
-			SpendLimits:              limits,
+			SpendLimits:              spendLimitsToProto(req.Metadata.SpendLimits),
 			WorkflowTag:              req.Metadata.WorkflowTag,
 		},
 		Inputs:        values.ProtoMap(inputs),
@@ -124,14 +115,6 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		return capabilities.CapabilityRequest{}, err
 	}
 
-	limits := make([]capabilities.SpendLimit, len(pr.Metadata.SpendLimits))
-	for idx, resource := range pr.Metadata.SpendLimits {
-		limits[idx] = capabilities.SpendLimit{
-			SpendType: capabilities.CapabilitySpendType(resource.GetSpendType()),
-			Limit:     resource.GetLimit(),
-		}
-	}
-
 	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:               md.WorkflowId,
@@ -142,7 +125,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 			ReferenceID:              md.ReferenceId,
 			DecodedWorkflowName:      md.DecodedWorkflowName,
-			SpendLimits:              limits,
+			SpendLimits:              spendLimitsFromProto(md.SpendLimits),
 			WorkflowTag:              md.WorkflowTag,
 		},
 		Config:        config,
@@ -333,14 +316,28 @@ func TriggerRegistrationRequestToProto(req capabilities.TriggerRegistrationReque
 			WorkflowExecutionId:      md.WorkflowExecutionID,
 			WorkflowOwner:            md.WorkflowOwner,
 			WorkflowName:             md.WorkflowName,
-			WorkflowTag:              md.WorkflowTag,
 			WorkflowDonId:            md.WorkflowDonID,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
+			ReferenceId:              md.ReferenceID,
+			DecodedWorkflowName:      md.DecodedWorkflowName,
+			SpendLimits:              spendLimitsToProto(md.SpendLimits),
+			WorkflowTag:              md.WorkflowTag,
 		},
 		Config:  values.ProtoMap(config),
 		Payload: req.Payload,
 		Method:  req.Method,
 	}
+}
+
+func spendLimitsToProto(limits []capabilities.SpendLimit) []*SpendLimit {
+	result := make([]*SpendLimit, len(limits))
+	for i, limit := range limits {
+		result[i] = &SpendLimit{
+			SpendType: string(limit.SpendType),
+			Limit:     limit.Limit,
+		}
+	}
+	return result
 }
 
 func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capabilities.TriggerRegistrationRequest, error) {
@@ -363,17 +360,31 @@ func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capab
 		TriggerID: req.TriggerId,
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:               md.WorkflowId,
-			WorkflowExecutionID:      md.WorkflowExecutionId,
 			WorkflowOwner:            md.WorkflowOwner,
+			WorkflowExecutionID:      md.WorkflowExecutionId,
 			WorkflowName:             md.WorkflowName,
-			WorkflowTag:              md.WorkflowTag,
 			WorkflowDonID:            md.WorkflowDonId,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
+			ReferenceID:              md.ReferenceId,
+			DecodedWorkflowName:      md.DecodedWorkflowName,
+			SpendLimits:              spendLimitsFromProto(md.SpendLimits),
+			WorkflowTag:              md.WorkflowTag,
 		},
 		Config:  config,
 		Payload: req.Payload,
 		Method:  req.Method,
 	}, nil
+}
+
+func spendLimitsFromProto(limits []*SpendLimit) []capabilities.SpendLimit {
+	result := make([]capabilities.SpendLimit, len(limits))
+	for i, limit := range limits {
+		result[i] = capabilities.SpendLimit{
+			SpendType: capabilities.CapabilitySpendType(limit.GetSpendType()),
+			Limit:     limit.GetLimit(),
+		}
+	}
+	return result
 }
 
 func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse {

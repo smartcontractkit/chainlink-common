@@ -323,21 +323,21 @@ message CurseInfo {
 message FeeQuoterDestChainConfig {
   bool is_enabled = 1;
   uint32 max_number_of_tokens_per_msg = 2;
-  uint32 max_data_bytes = 3;
-  uint32 max_per_msg_gas_limit = 4;
-  uint32 dest_gas_overhead = 5;
-  uint32 dest_gas_per_payload_byte = 6;
-  uint32 dest_gas_per_payload_byte_high = 17;
+  uint32 max_data_bytes = 3;                      
+  uint32 max_per_msg_gas_limit = 4;               
+  uint32 dest_gas_overhead = 5;                   
+  uint32 dest_gas_per_payload_byte = 6;           
+  uint32 dest_gas_per_payload_byte_high = 17;     
   uint32 dest_gas_per_payload_byte_threshold = 18;
   uint32 dest_data_availability_overhead_gas = 7;
-  uint32 dest_gas_per_data_availability_byte = 8;
-  uint32 dest_data_availability_multiplier_bps = 9;
-  uint32 default_token_fee_usdc_cents = 10;
-  uint32 default_token_dest_gas_overhead = 11;
-  uint32 default_tx_gas_limit = 12;
+  uint32 dest_gas_per_data_availability_byte = 8; // uint16 in Go (0-65535)
+  uint32 dest_data_availability_multiplier_bps = 9; // uint16 in Go (0-65535)
+  uint32 default_token_fee_usdc_cents = 10; // uint16 in Go (0-65535)
+  uint32 default_token_dest_gas_overhead = 11;    
+  uint32 default_tx_gas_limit = 12;               
   uint64 gas_multiplier_wad = 13;
-  uint32 network_fee_usdc_cents = 14;
-  uint32 gas_price_staleness_threshold = 19;
+  uint32 network_fee_usdc_cents = 14;             
+  uint32 gas_price_staleness_threshold = 19;      
   bool enforce_out_of_order = 15;
-  bytes chain_family_selector = 16;
+  bytes chain_family_selector = 16; // [4]byte in Go
 }

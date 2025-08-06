@@ -3058,16 +3058,16 @@ type FeeQuoterDestChainConfig struct {
 	DestGasPerPayloadByteHigh         uint32                 `protobuf:"varint,17,opt,name=dest_gas_per_payload_byte_high,json=destGasPerPayloadByteHigh,proto3" json:"dest_gas_per_payload_byte_high,omitempty"`
 	DestGasPerPayloadByteThreshold    uint32                 `protobuf:"varint,18,opt,name=dest_gas_per_payload_byte_threshold,json=destGasPerPayloadByteThreshold,proto3" json:"dest_gas_per_payload_byte_threshold,omitempty"`
 	DestDataAvailabilityOverheadGas   uint32                 `protobuf:"varint,7,opt,name=dest_data_availability_overhead_gas,json=destDataAvailabilityOverheadGas,proto3" json:"dest_data_availability_overhead_gas,omitempty"`
-	DestGasPerDataAvailabilityByte    uint32                 `protobuf:"varint,8,opt,name=dest_gas_per_data_availability_byte,json=destGasPerDataAvailabilityByte,proto3" json:"dest_gas_per_data_availability_byte,omitempty"`
-	DestDataAvailabilityMultiplierBps uint32                 `protobuf:"varint,9,opt,name=dest_data_availability_multiplier_bps,json=destDataAvailabilityMultiplierBps,proto3" json:"dest_data_availability_multiplier_bps,omitempty"`
-	DefaultTokenFeeUsdcCents          uint32                 `protobuf:"varint,10,opt,name=default_token_fee_usdc_cents,json=defaultTokenFeeUsdcCents,proto3" json:"default_token_fee_usdc_cents,omitempty"`
+	DestGasPerDataAvailabilityByte    uint32                 `protobuf:"varint,8,opt,name=dest_gas_per_data_availability_byte,json=destGasPerDataAvailabilityByte,proto3" json:"dest_gas_per_data_availability_byte,omitempty"`        // uint16 in Go (0-65535)
+	DestDataAvailabilityMultiplierBps uint32                 `protobuf:"varint,9,opt,name=dest_data_availability_multiplier_bps,json=destDataAvailabilityMultiplierBps,proto3" json:"dest_data_availability_multiplier_bps,omitempty"` // uint16 in Go (0-65535)
+	DefaultTokenFeeUsdcCents          uint32                 `protobuf:"varint,10,opt,name=default_token_fee_usdc_cents,json=defaultTokenFeeUsdcCents,proto3" json:"default_token_fee_usdc_cents,omitempty"`                           // uint16 in Go (0-65535)
 	DefaultTokenDestGasOverhead       uint32                 `protobuf:"varint,11,opt,name=default_token_dest_gas_overhead,json=defaultTokenDestGasOverhead,proto3" json:"default_token_dest_gas_overhead,omitempty"`
 	DefaultTxGasLimit                 uint32                 `protobuf:"varint,12,opt,name=default_tx_gas_limit,json=defaultTxGasLimit,proto3" json:"default_tx_gas_limit,omitempty"`
 	GasMultiplierWad                  uint64                 `protobuf:"varint,13,opt,name=gas_multiplier_wad,json=gasMultiplierWad,proto3" json:"gas_multiplier_wad,omitempty"`
 	NetworkFeeUsdcCents               uint32                 `protobuf:"varint,14,opt,name=network_fee_usdc_cents,json=networkFeeUsdcCents,proto3" json:"network_fee_usdc_cents,omitempty"`
 	GasPriceStalenessThreshold        uint32                 `protobuf:"varint,19,opt,name=gas_price_staleness_threshold,json=gasPriceStalenessThreshold,proto3" json:"gas_price_staleness_threshold,omitempty"`
 	EnforceOutOfOrder                 bool                   `protobuf:"varint,15,opt,name=enforce_out_of_order,json=enforceOutOfOrder,proto3" json:"enforce_out_of_order,omitempty"`
-	ChainFamilySelector               []byte                 `protobuf:"bytes,16,opt,name=chain_family_selector,json=chainFamilySelector,proto3" json:"chain_family_selector,omitempty"`
+	ChainFamilySelector               []byte                 `protobuf:"bytes,16,opt,name=chain_family_selector,json=chainFamilySelector,proto3" json:"chain_family_selector,omitempty"` // [4]byte in Go
 	unknownFields                     protoimpl.UnknownFields
 	sizeCache                         protoimpl.SizeCache
 }

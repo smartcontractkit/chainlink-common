@@ -716,6 +716,38 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	return id, err
 }
 
+func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIPProviderRequest) (*pb.NewCCIPProviderReply, error) {
+	rargs := request.RelayArgs
+
+	exJobID, err := uuid.FromBytes(rargs.ExternalJobID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
+	}
+	relayArgs := types.RelayArgs{
+		ExternalJobID: exJobID,
+		JobID:         rargs.JobID,
+		ContractID:    rargs.ContractID,
+		New:           rargs.New,
+		RelayConfig:   rargs.RelayConfig,
+		ProviderType:  rargs.ProviderType,
+	}
+
+	provider, err := r.impl.NewCCIPProvider(ctx, relayArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	const name = "CCIPProvider"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		ccipocr3.RegisterProviderServices(s, provider)
+	}, net.Resource{Closer: provider, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewCCIPProviderReply{CcipProviderID: id}, nil
+}
+
 func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest) (*pb.LatestHeadReply, error) {
 	head, err := r.impl.LatestHead(ctx)
 	if err != nil {

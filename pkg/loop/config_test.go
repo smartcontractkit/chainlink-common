@@ -36,6 +36,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envDatabaseLogSQL:                       "true",
 				envDatabaseMaxOpenConns:                 "9999",
 				envDatabaseMaxIdleConns:                 "8080",
+				envDatabaseTracingEnabled:               "true",
 
 				envFeatureLogPoller: "true",
 
@@ -133,6 +134,7 @@ var envCfgFull = EnvConfig{
 	DatabaseLogSQL:                       true,
 	DatabaseMaxOpenConns:                 9999,
 	DatabaseMaxIdleConns:                 8080,
+	DatabaseTracingEnabled:               true,
 
 	FeatureLogPoller: true,
 
@@ -182,6 +184,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	}
 
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
+	assert.Equal(t, "true", got["CL_DATABASE_TRACING_ENABLED"])
 
 	assert.Equal(t, "1ms", got[envMercuryCacheLatestReportDeadline])
 	assert.Equal(t, "1µs", got[envMercuryCacheLatestReportTTL])

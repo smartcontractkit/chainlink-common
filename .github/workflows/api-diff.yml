@@ -20,6 +20,6 @@ jobs:
           go-version-file: "go.mod"
           only-modules: "true"
 
-      - uses: imjasonh/apidiff-action@57397487bc4339a1b201a84606a7737459cc5c27 # v0.0.3
+      - uses: joelanford/go-apidiff@60c4206be8f84348ebda2a3e0c3ac9cb54b8f685 # v0.8.3
         with:
-          fail-on-breaking: false
+          version: "v0.8.3"

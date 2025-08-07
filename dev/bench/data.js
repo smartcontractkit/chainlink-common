@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754495705800,
+  "lastUpdate": 1754527638854,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22218,6 +22218,48 @@ window.BENCHMARK_DATA = {
             "value": 28151,
             "unit": "ns/op",
             "extra": "42726 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "14476cad7c2d51fa0a338073ce2b48ce48f7343f",
+          "message": "update protos for http client and trigger (#1456)\n\n* update protos for http client and trigger\n\n* changes to http action and http trigger data",
+          "timestamp": "2025-08-06T17:45:00-07:00",
+          "tree_id": "b4de8f74d2b40f1baf30a3baf455ccf56147a11d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/14476cad7c2d51fa0a338073ce2b48ce48f7343f"
+        },
+        "date": 1754527637753,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.4,
+            "unit": "ns/op",
+            "extra": "3309348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.5,
+            "unit": "ns/op",
+            "extra": "2931883 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28253,
+            "unit": "ns/op",
+            "extra": "42728 times\n4 procs"
           }
         ]
       }

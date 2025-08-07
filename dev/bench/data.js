@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754527638854,
+  "lastUpdate": 1754558899714,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22260,6 +22260,48 @@ window.BENCHMARK_DATA = {
             "value": 28253,
             "unit": "ns/op",
             "extra": "42728 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0c9f6f6ea9a742cf8d64f6c6339e1aae56f88b82",
+          "message": "Add method to json rpc response (#1451)\n\nDocument that adding new methods must be reflected in\nHandlerTypeForMethod.",
+          "timestamp": "2025-08-07T09:25:58Z",
+          "tree_id": "0099665000e6e32331e7f4f2e25863710996884f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0c9f6f6ea9a742cf8d64f6c6339e1aae56f88b82"
+        },
+        "date": 1754558898499,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 377.7,
+            "unit": "ns/op",
+            "extra": "3258273 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 440,
+            "unit": "ns/op",
+            "extra": "2622964 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28215,
+            "unit": "ns/op",
+            "extra": "41794 times\n4 procs"
           }
         ]
       }

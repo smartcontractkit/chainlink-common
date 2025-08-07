@@ -87,6 +87,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 	ids := []*pbtypes.Id{}
 	allExecutionIDs := []string{}
 	seenIds := make(map[idKey]bool)
+	cachedQuerySize := 0
 
 	for _, rq := range batch {
 		key := getIDKey(rq)
@@ -102,7 +103,8 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		if !CheckQuerySizeLimit(ids, newId, r.limits.MaxQueryLengthBytes) {
+		canAdd, newSize := CheckQuerySizeLimit(cachedQuerySize, newId, r.limits.MaxQueryLengthBytes)
+		if !canAdd {
 			break
 		}
 
@@ -111,6 +113,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			seenIds[key] = true
 			ids = append(ids, newId)
 			allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+			cachedQuerySize = newSize
 		}
 	}
 
@@ -142,8 +145,15 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		reqMap[req.WorkflowExecutionID] = req
 	}
 
-	obs := &pbtypes.Observations{}
+	obs := &pbtypes.Observations{
+		RegisteredWorkflowIds: r.r.GetRegisteredWorkflowsIDs(),
+		Timestamp:             timestamppb.New(time.Now()),
+	}
 	allExecutionIDs := []string{}
+
+	// Initialize cached size with the base message size (RegisteredWorkflowIds and Timestamp)
+	cachedObsSize := calculateObservationsMessageSize(obs)
+
 	for _, weid := range weids {
 		rq, ok := reqMap[weid]
 		if !ok {
@@ -185,15 +195,15 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		if !CheckObservationsSizeLimit(obs, newOb, r.limits.MaxObservationLengthBytes) {
+		canAdd, newSize := CheckObservationsSizeLimit(cachedObsSize, newOb, r.limits.MaxObservationLengthBytes)
+		if !canAdd {
 			break
 		}
 
 		obs.Observations = append(obs.Observations, newOb)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+		cachedObsSize = newSize
 	}
-	obs.RegisteredWorkflowIds = r.r.GetRegisteredWorkflowsIDs()
-	obs.Timestamp = timestamppb.New(time.Now())
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -345,6 +355,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 	// are part of the current Query.
 	previousOutcome.CurrentReports = []*pbtypes.Report{}
 	var allExecutionIDs []string
+	cachedReportSize := 0
 
 	for _, weid := range q.Ids {
 		if weid == nil {
@@ -423,12 +434,14 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 
-		if !CheckReportSizeLimit(previousOutcome, report, r.limits.MaxOutcomeLengthBytes) {
+		canAdd, newSize := CheckReportSizeLimit(cachedReportSize, report, r.limits.MaxOutcomeLengthBytes)
+		if !canAdd {
 			break
 		}
 
 		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
+		cachedReportSize = newSize
 
 		previousOutcome.Outcomes[weid.WorkflowId] = outcome
 	}

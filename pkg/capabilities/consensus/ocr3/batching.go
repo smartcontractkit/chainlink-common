@@ -58,7 +58,7 @@ func uint32FieldSize(fieldNumber int, value uint32) int {
 	if value == 0 {
 		return 0 // zero values are omitted in proto3
 	}
-	tagSize := varintSize(uint64(fieldNumber<<3 | 0)) // wire type 0 for varint
+	tagSize := varintSize(uint64(fieldNumber << 3)) // wire type 0 for varint
 	valueSize := varintSize(uint64(value))
 	return tagSize + valueSize
 }
@@ -118,28 +118,25 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 	return totalSize
 }
 
-func CheckQuerySizeLimit(ids []*pbtypes.Id, newId *pbtypes.Id, sizeLimit int) bool {
-	// Calculate size of current ids
-	currentSize := calculateQuerySize(ids)
-
+func CheckQuerySizeLimit(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more id
 	newIdSize := calculateIdSize(newId)
 	var totalSizeWithNewId int
 	if newIdSize > 0 {
 		// Only add tag and length overhead if the ID has content
-		totalSizeWithNewId = currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newIdSize)) + newIdSize
+		totalSizeWithNewId = cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newIdSize)) + newIdSize
 	} else {
 		// Empty IDs don't contribute to the total size
-		totalSizeWithNewId = currentSize
+		totalSizeWithNewId = cachedSize
 	}
 
 	// Check against limits
 	if totalSizeWithNewId > sizeLimit {
 		// Stop adding more ids
-		return false
+		return false, cachedSize
 	}
 
-	return true
+	return true, totalSizeWithNewId
 }
 
 // messageFieldSize calculates the protobuf wire format size for a message field
@@ -169,7 +166,7 @@ func calculateObservationSize(obs *pbtypes.Observation) int {
 	// Field 5: overriddenEncoderName (string)
 	size += stringFieldSize(5, obs.OverriddenEncoderName)
 
-	// Field 6: overriddenEncoderConfig (values.v1.Map message)  
+	// Field 6: overriddenEncoderConfig (values.v1.Map message)
 	size += messageFieldSize(6, obs.OverriddenEncoderConfig)
 
 	return size
@@ -200,28 +197,25 @@ func calculateObservationsSize(observations []*pbtypes.Observation) int {
 }
 
 // CheckObservationSizeLimit checks if adding a new observation would exceed the size limit
-func CheckObservationSizeLimit(observations []*pbtypes.Observation, newObs *pbtypes.Observation, sizeLimit int) bool {
-	// Calculate size of current observations
-	currentSize := calculateObservationsSize(observations)
-
+func CheckObservationSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation
 	newObsSize := calculateObservationSize(newObs)
 	var totalSizeWithNewObs int
 	if newObsSize > 0 {
 		// Only add tag and length overhead if the observation has content
-		totalSizeWithNewObs = currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
+		totalSizeWithNewObs = cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
 	} else {
 		// Empty observations don't contribute to the total size
-		totalSizeWithNewObs = currentSize
+		totalSizeWithNewObs = cachedSize
 	}
 
 	// Check against limits
 	if totalSizeWithNewObs > sizeLimit {
 		// Stop adding more observations
-		return false
+		return false, cachedSize
 	}
 
-	return true
+	return true, totalSizeWithNewObs
 }
 
 // repeatedStringFieldSize calculates the protobuf wire format size for repeated string fields
@@ -243,7 +237,7 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	if observations == nil {
 		return 0
 	}
-	
+
 	size := 0
 
 	// Field 1: observations (repeated Observation)
@@ -266,28 +260,25 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 }
 
 // CheckObservationsSizeLimit checks if adding a new observation to a pbtypes.Observations would exceed the size limit
-func CheckObservationsSizeLimit(observations *pbtypes.Observations, newObs *pbtypes.Observation, sizeLimit int) bool {
-	// Calculate size of current observations message
-	currentSize := calculateObservationsMessageSize(observations)
-
+func CheckObservationsSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation to the observations field
 	newObsSize := calculateObservationSize(newObs)
 	var totalSizeWithNewObs int
 	if newObsSize > 0 {
 		// Only add tag and length overhead if the observation has content
-		totalSizeWithNewObs = currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
+		totalSizeWithNewObs = cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
 	} else {
 		// Empty observations don't contribute to the total size
-		totalSizeWithNewObs = currentSize
+		totalSizeWithNewObs = cachedSize
 	}
 
 	// Check against limits
 	if totalSizeWithNewObs > sizeLimit {
 		// Stop adding more observations
-		return false
+		return false, cachedSize
 	}
 
-	return true
+	return true, totalSizeWithNewObs
 }
 
 // calculateReportSize calculates the marshalled size of a single pbtypes.Report
@@ -332,30 +323,27 @@ func calculateReportsSize(reports []*pbtypes.Report) int {
 }
 
 // CheckReportSizeLimit checks if adding a new report to the outcome would exceed size limits
-func CheckReportSizeLimit(previousOutcome *pbtypes.Outcome, newReport *pbtypes.Report, sizeLimit int) bool {
-	if previousOutcome == nil || newReport == nil {
-		return true
+func CheckReportSizeLimit(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
+	if newReport == nil {
+		return true, cachedSize
 	}
-
-	// Calculate size of current reports
-	currentSize := calculateReportsSize(previousOutcome.CurrentReports)
 
 	// Calculate size if we add one more report
 	newReportSize := calculateReportSize(newReport)
 	var totalSizeWithNewReport int
 	if newReportSize > 0 {
 		// Only add tag and length overhead if the report has content
-		totalSizeWithNewReport = currentSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
+		totalSizeWithNewReport = cachedSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
 	} else {
 		// Empty reports don't contribute to the total size
-		totalSizeWithNewReport = currentSize
+		totalSizeWithNewReport = cachedSize
 	}
 
 	// Check against limits
 	if totalSizeWithNewReport > sizeLimit {
 		// Stop adding more reports
-		return false
+		return false, cachedSize
 	}
 
-	return true
+	return true, totalSizeWithNewReport
 }

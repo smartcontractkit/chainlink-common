@@ -202,7 +202,8 @@ func TestCheckQuerySizeLimit(t *testing.T) {
 				}
 			}
 
-			result := CheckQuerySizeLimit(tt.existingIds, tt.newId, sizeLimit)
+			currentSize := calculateQuerySize(tt.existingIds)
+			result, _ := CheckQuerySizeLimit(currentSize, tt.newId, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateQuerySize(tt.existingIds)
@@ -257,14 +258,144 @@ func TestCheckQuerySizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Single ID size: %d bytes", singleIdSize)
 
 		// Test that enough function works correctly with these sizes
-		result := CheckQuerySizeLimit([]*pbtypes.Id{}, simpleId, singleIdSize)
+		result, _ := CheckQuerySizeLimit(0, simpleId, singleIdSize)
 		if !result {
 			t.Errorf("Should be able to add ID when limit equals exact size")
 		}
 
-		result = CheckQuerySizeLimit([]*pbtypes.Id{}, simpleId, singleIdSize-1)
+		result, _ = CheckQuerySizeLimit(0, simpleId, singleIdSize-1)
 		if result {
 			t.Errorf("Should not be able to add ID when limit is one byte less than size")
+		}
+	})
+
+	t.Run("verify behavior with empty IDs", func(t *testing.T) {
+		emptyId := &pbtypes.Id{}
+		ids := []*pbtypes.Id{simpleId}
+		currentSize := calculateQuerySize(ids)
+		result, _ := CheckQuerySizeLimit(currentSize, emptyId, 10000)
+		if !result {
+			t.Errorf("Should be able to add empty ID - it doesn't increase size")
+		}
+	})
+}
+
+func TestCheckQuerySizeLimitCaching(t *testing.T) {
+	// Test that the caching mechanism works correctly
+	id1 := &pbtypes.Id{WorkflowExecutionId: "exec-1", WorkflowId: "wf-1"}
+	id2 := &pbtypes.Id{WorkflowExecutionId: "exec-2", WorkflowId: "wf-2"}
+	id3 := &pbtypes.Id{WorkflowExecutionId: "exec-3", WorkflowId: "wf-3"}
+
+	t.Run("incremental size calculation matches full recalculation", func(t *testing.T) {
+		// Build up incrementally using caching
+		cachedSize := 0
+		ids := []*pbtypes.Id{}
+
+		// Add first ID
+		canAdd, newSize := CheckQuerySizeLimit(cachedSize, id1, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add first ID")
+		}
+		ids = append(ids, id1)
+		cachedSize = newSize
+
+		// Verify cached size matches full calculation
+		fullSize := calculateQuerySize(ids)
+		if cachedSize != fullSize {
+			t.Errorf("After adding id1: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+
+		// Add second ID
+		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id2, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add second ID")
+		}
+		ids = append(ids, id2)
+		cachedSize = newSize
+
+		// Verify cached size matches full calculation
+		fullSize = calculateQuerySize(ids)
+		if cachedSize != fullSize {
+			t.Errorf("After adding id2: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+
+		// Add third ID
+		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id3, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add third ID")
+		}
+		ids = append(ids, id3)
+		cachedSize = newSize
+
+		// Verify final cached size matches full calculation
+		fullSize = calculateQuerySize(ids)
+		if cachedSize != fullSize {
+			t.Errorf("After adding id3: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+	})
+
+	t.Run("size limit enforcement with caching", func(t *testing.T) {
+		// Calculate size of first two IDs
+		twoIds := []*pbtypes.Id{id1, id2}
+		twoIdsSize := calculateQuerySize(twoIds)
+
+		// Set limit to exactly fit two IDs
+		limit := twoIdsSize
+
+		// Build incrementally
+		cachedSize := 0
+
+		// Add first ID
+		canAdd, newSize := CheckQuerySizeLimit(cachedSize, id1, limit)
+		if !canAdd {
+			t.Fatal("Should be able to add first ID within limit")
+		}
+		cachedSize = newSize
+
+		// Add second ID
+		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id2, limit)
+		if !canAdd {
+			t.Fatal("Should be able to add second ID within limit")
+		}
+		cachedSize = newSize
+
+		// Try to add third ID - should fail
+		canAdd, unchangedSize := CheckQuerySizeLimit(cachedSize, id3, limit)
+		if canAdd {
+			t.Error("Should not be able to add third ID - would exceed limit")
+		}
+		if unchangedSize != cachedSize {
+			t.Errorf("Size should remain unchanged when limit exceeded: got %d, expected %d", unchangedSize, cachedSize)
+		}
+	})
+
+	t.Run("empty ID handling with caching", func(t *testing.T) {
+		emptyId := &pbtypes.Id{}
+		cachedSize := 0
+
+		// Add empty ID - should not change size
+		canAdd, newSize := CheckQuerySizeLimit(cachedSize, emptyId, 1000)
+		if !canAdd {
+			t.Error("Should be able to add empty ID")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Empty ID should not change size: got %d, expected %d", newSize, cachedSize)
+		}
+
+		// Add real ID first
+		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id1, 1000)
+		if !canAdd {
+			t.Fatal("Should be able to add real ID")
+		}
+		cachedSize = newSize
+
+		// Add empty ID after real ID - should not change size
+		canAdd, newSize = CheckQuerySizeLimit(cachedSize, emptyId, 1000)
+		if !canAdd {
+			t.Error("Should be able to add empty ID after real ID")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Empty ID should not change size after real ID: got %d, expected %d", newSize, cachedSize)
 		}
 	})
 }
@@ -287,7 +418,8 @@ func TestCheckQuerySizeLimitPerformance(t *testing.T) {
 	}
 
 	t.Run("performance with many IDs", func(t *testing.T) {
-		result := CheckQuerySizeLimit(ids, newId, 10000)
+		currentSize := calculateQuerySize(ids)
+		result, _ := CheckQuerySizeLimit(currentSize, newId, 10000)
 		// Just ensure it completes without error
 		_ = result
 	})
@@ -437,7 +569,8 @@ func TestCheckObservationSizeLimit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CheckObservationSizeLimit(tt.existingObservations, tt.newObservation, tt.sizeLimit)
+			currentSize := calculateObservationsSize(tt.existingObservations)
+			result, _ := CheckObservationSizeLimit(currentSize, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsSize(tt.existingObservations)
@@ -492,14 +625,143 @@ func TestCheckObservationSizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Single observation size: %d bytes", singleObsSize)
 
 		// Test that enoughObservation function works correctly with these sizes
-		result := CheckObservationSizeLimit([]*pbtypes.Observation{}, simpleObs, singleObsSize)
+		result, _ := CheckObservationSizeLimit(0, simpleObs, singleObsSize)
 		if !result {
 			t.Errorf("Should be able to add observation when limit equals exact size")
 		}
 
-		result = CheckObservationSizeLimit([]*pbtypes.Observation{}, simpleObs, singleObsSize-1)
+		result, _ = CheckObservationSizeLimit(0, simpleObs, singleObsSize-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than size")
+		}
+	})
+}
+
+func TestCheckObservationSizeLimitCaching(t *testing.T) {
+	// Test that the caching mechanism works correctly for observations
+	obs1 := &pbtypes.Observation{
+		Id:                    &pbtypes.Id{WorkflowExecutionId: "exec-1", WorkflowId: "wf-1"},
+		OverriddenEncoderName: "encoder-1",
+	}
+	obs2 := &pbtypes.Observation{
+		Id:                    &pbtypes.Id{WorkflowExecutionId: "exec-2", WorkflowId: "wf-2"},
+		OverriddenEncoderName: "encoder-2",
+	}
+	obs3 := &pbtypes.Observation{
+		Id:                    &pbtypes.Id{WorkflowExecutionId: "exec-3", WorkflowId: "wf-3"},
+		OverriddenEncoderName: "encoder-3",
+	}
+
+	t.Run("incremental size calculation matches full recalculation", func(t *testing.T) {
+		// Build up incrementally using caching
+		cachedSize := 0
+		observations := []*pbtypes.Observation{}
+
+		// Add first observation
+		canAdd, newSize := CheckObservationSizeLimit(cachedSize, obs1, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add first observation")
+		}
+		observations = append(observations, obs1)
+		cachedSize = newSize
+
+		// Verify cached size matches full calculation
+		fullSize := calculateObservationsSize(observations)
+		if cachedSize != fullSize {
+			t.Errorf("After adding obs1: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+
+		// Add second observation
+		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs2, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add second observation")
+		}
+		observations = append(observations, obs2)
+		cachedSize = newSize
+
+		// Verify cached size matches full calculation
+		fullSize = calculateObservationsSize(observations)
+		if cachedSize != fullSize {
+			t.Errorf("After adding obs2: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+
+		// Add third observation
+		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs3, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add third observation")
+		}
+		observations = append(observations, obs3)
+		cachedSize = newSize
+
+		// Verify final cached size matches full calculation
+		fullSize = calculateObservationsSize(observations)
+		if cachedSize != fullSize {
+			t.Errorf("After adding obs3: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+	})
+
+	t.Run("size limit enforcement with caching", func(t *testing.T) {
+		// Calculate size of first two observations
+		twoObs := []*pbtypes.Observation{obs1, obs2}
+		twoObsSize := calculateObservationsSize(twoObs)
+
+		// Set limit to exactly fit two observations
+		limit := twoObsSize
+
+		// Build incrementally
+		cachedSize := 0
+
+		// Add first observation
+		canAdd, newSize := CheckObservationSizeLimit(cachedSize, obs1, limit)
+		if !canAdd {
+			t.Fatal("Should be able to add first observation within limit")
+		}
+		cachedSize = newSize
+
+		// Add second observation
+		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs2, limit)
+		if !canAdd {
+			t.Fatal("Should be able to add second observation within limit")
+		}
+		cachedSize = newSize
+
+		// Try to add third observation - should fail
+		canAdd, unchangedSize := CheckObservationSizeLimit(cachedSize, obs3, limit)
+		if canAdd {
+			t.Error("Should not be able to add third observation - would exceed limit")
+		}
+		if unchangedSize != cachedSize {
+			t.Errorf("Size should remain unchanged when limit exceeded: got %d, expected %d", unchangedSize, cachedSize)
+		}
+	})
+
+	t.Run("empty observation handling with caching", func(t *testing.T) {
+		emptyObs := &pbtypes.Observation{}
+		cachedSize := 0
+
+		// Add empty observation - should not change size
+		canAdd, newSize := CheckObservationSizeLimit(cachedSize, emptyObs, 1000)
+		if !canAdd {
+			t.Error("Should be able to add empty observation")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Empty observation should not change size: got %d, expected %d", newSize, cachedSize)
+		}
+
+		// Add real observation first
+		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs1, 1000)
+		if !canAdd {
+			t.Fatal("Should be able to add real observation")
+		}
+		cachedSize = newSize
+
+		// Add empty observation after real observation - should not change size
+		canAdd, newSize = CheckObservationSizeLimit(cachedSize, emptyObs, 1000)
+		if !canAdd {
+			t.Error("Should be able to add empty observation after real observation")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Empty observation should not change size after real observation: got %d, expected %d", newSize, cachedSize)
 		}
 	})
 }
@@ -657,7 +919,8 @@ func TestCheckObservationsSizeLimit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CheckObservationsSizeLimit(tt.existingObservations, tt.newObservation, tt.sizeLimit)
+			currentSize := calculateObservationsMessageSize(tt.existingObservations)
+			result, _ := CheckObservationsSizeLimit(currentSize, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsMessageSize(tt.existingObservations)
@@ -712,7 +975,8 @@ func TestCheckObservationsSizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Empty observations message size: %d bytes", size)
 
 		// Test adding observation
-		result := CheckObservationsSizeLimit(observationsMsg, simpleObs, size+100)
+		currentSize := calculateObservationsMessageSize(observationsMsg)
+		result, _ := CheckObservationsSizeLimit(currentSize, simpleObs, size+100)
 		if !result {
 			t.Errorf("Should be able to add observation when limit has buffer")
 		}
@@ -727,7 +991,8 @@ func TestCheckObservationsSizeLimitWithRealSizes(t *testing.T) {
 
 		t.Logf("Observations message with one observation size: %d bytes", sizeWithObs)
 
-		result = CheckObservationsSizeLimit(observationsMsg, simpleObs, sizeWithObs-1)
+		currentSize = calculateObservationsMessageSize(observationsMsg)
+		result, _ = CheckObservationsSizeLimit(currentSize, simpleObs, sizeWithObs-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than required")
 		}
@@ -940,64 +1205,56 @@ func TestCheckReportSizeLimit(t *testing.T) {
 		return &pbtypes.Report{}
 	}
 
-	// Helper function to create an outcome with existing reports
-	createOutcomeWithReports := func(reports []*pbtypes.Report) *pbtypes.Outcome {
-		return &pbtypes.Outcome{
-			Outcomes:       map[string]*pbtypes.AggregationOutcome{},
-			CurrentReports: reports,
-		}
-	}
-
 	tests := []struct {
-		name         string
+		name            string
 		existingReports []*pbtypes.Report
-		newReport    *pbtypes.Report
-		sizeLimit    int
-		expected     bool
-		description  string
+		newReport       *pbtypes.Report
+		sizeLimit       int
+		expected        bool
+		description     string
 	}{
 		// Zero report objects tests
 		{
-			name:         "empty list, empty new report, small limit",
+			name:            "empty list, empty new report, small limit",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createEmptyReport(),
-			sizeLimit:    10,
-			expected:     true, // Empty report has 0 size, so should be within limit
-			description:  "Adding empty report to empty list should be within any reasonable limit",
+			newReport:       createEmptyReport(),
+			sizeLimit:       10,
+			expected:        true, // Empty report has 0 size, so should be within limit
+			description:     "Adding empty report to empty list should be within any reasonable limit",
 		},
 		{
-			name:         "empty list, empty new report, zero limit",
+			name:            "empty list, empty new report, zero limit",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createEmptyReport(),
-			sizeLimit:    0,
-			expected:     true, // Empty report has 0 size
-			description:  "Empty report should fit in zero limit",
+			newReport:       createEmptyReport(),
+			sizeLimit:       0,
+			expected:        true, // Empty report has 0 size
+			description:     "Empty report should fit in zero limit",
 		},
 		{
-			name:         "empty list, simple report, zero limit",
+			name:            "empty list, simple report, zero limit",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createSimpleReport("exec-1"),
-			sizeLimit:    0,
-			expected:     false, // Simple report has size > 0, exceeds zero limit
-			description:  "Non-empty report should not fit in zero limit",
+			newReport:       createSimpleReport("exec-1"),
+			sizeLimit:       0,
+			expected:        false, // Simple report has size > 0, exceeds zero limit
+			description:     "Non-empty report should not fit in zero limit",
 		},
 
 		// Within limits tests
 		{
-			name:         "empty list, simple report, generous limit",
+			name:            "empty list, simple report, generous limit",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createSimpleReport("exec-1"),
-			sizeLimit:    2000,
-			expected:     true,
-			description:  "Simple report should fit in generous limit",
+			newReport:       createSimpleReport("exec-1"),
+			sizeLimit:       2000,
+			expected:        true,
+			description:     "Simple report should fit in generous limit",
 		},
 		{
-			name:         "one existing report, add another simple report, generous limit",
+			name:            "one existing report, add another simple report, generous limit",
 			existingReports: []*pbtypes.Report{createSimpleReport("exec-1")},
-			newReport:    createSimpleReport("exec-2"),
-			sizeLimit:    2000,
-			expected:     true,
-			description:  "Two simple reports should fit in generous limit",
+			newReport:       createSimpleReport("exec-2"),
+			sizeLimit:       2000,
+			expected:        true,
+			description:     "Two simple reports should fit in generous limit",
 		},
 		{
 			name: "three existing reports, add fourth, generous limit",
@@ -1014,20 +1271,20 @@ func TestCheckReportSizeLimit(t *testing.T) {
 
 		// Above limits tests
 		{
-			name:         "empty list, simple report, very small limit",
+			name:            "empty list, simple report, very small limit",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createSimpleReport("exec-1"),
-			sizeLimit:    1,
-			expected:     false,
-			description:  "Simple report should exceed very small limit",
+			newReport:       createSimpleReport("exec-1"),
+			sizeLimit:       1,
+			expected:        false,
+			description:     "Simple report should exceed very small limit",
 		},
 		{
-			name:         "one existing report, add large report, small limit",
+			name:            "one existing report, add large report, small limit",
 			existingReports: []*pbtypes.Report{createSimpleReport("exec-1")},
-			newReport:    createLargeReport("large"),
-			sizeLimit:    200,
-			expected:     false,
-			description:  "Large report should exceed small limit when added to existing",
+			newReport:       createLargeReport("large"),
+			sizeLimit:       200,
+			expected:        false,
+			description:     "Large report should exceed small limit when added to existing",
 		},
 		{
 			name: "multiple existing reports, add another, tight limit",
@@ -1044,28 +1301,28 @@ func TestCheckReportSizeLimit(t *testing.T) {
 
 		// Edge cases
 		{
-			name:         "exactly at limit boundary",
+			name:            "exactly at limit boundary",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createSimpleReport("exec-1"),
-			sizeLimit:    0, // Will be set to exact size in the test
-			expected:     true,
-			description:  "Report exactly at limit should fit",
+			newReport:       createSimpleReport("exec-1"),
+			sizeLimit:       0, // Will be set to exact size in the test
+			expected:        true,
+			description:     "Report exactly at limit should fit",
 		},
 		{
-			name:         "one byte over limit",
+			name:            "one byte over limit",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createSimpleReport("exec-1"),
-			sizeLimit:    0, // Will be set to exact size - 1 in the test
-			expected:     false,
-			description:  "Report one byte over limit should not fit",
+			newReport:       createSimpleReport("exec-1"),
+			sizeLimit:       0, // Will be set to exact size - 1 in the test
+			expected:        false,
+			description:     "Report one byte over limit should not fit",
 		},
 		{
-			name:         "large report alone",
+			name:            "large report alone",
 			existingReports: []*pbtypes.Report{},
-			newReport:    createLargeReport("huge"),
-			sizeLimit:    100,
-			expected:     false,
-			description:  "Large report should exceed moderate limit",
+			newReport:       createLargeReport("huge"),
+			sizeLimit:       100,
+			expected:        false,
+			description:     "Large report should exceed moderate limit",
 		},
 		{
 			name: "mix of empty and non-empty existing reports",
@@ -1107,10 +1364,8 @@ func TestCheckReportSizeLimit(t *testing.T) {
 				}
 			}
 
-			// Create outcome with existing reports
-			previousOutcome := createOutcomeWithReports(tt.existingReports)
-			
-			result := CheckReportSizeLimit(previousOutcome, tt.newReport, sizeLimit)
+			currentSize := calculateReportsSize(tt.existingReports)
+			result, _ := CheckReportSizeLimit(currentSize, tt.newReport, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateReportsSize(tt.existingReports)
@@ -1190,14 +1445,174 @@ func TestCheckReportSizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Single report size: %d bytes", singleReportSize)
 
 		// Test that size limit function works correctly with these sizes
-		result := CheckReportSizeLimit(emptyOutcome, simpleReport, singleReportSize)
+		result, _ := CheckReportSizeLimit(0, simpleReport, singleReportSize)
 		if !result {
 			t.Errorf("Should be able to add report when limit equals exact size")
 		}
 
-		result = CheckReportSizeLimit(emptyOutcome, simpleReport, singleReportSize-1)
+		result, _ = CheckReportSizeLimit(0, simpleReport, singleReportSize-1)
 		if result {
 			t.Errorf("Should not be able to add report when limit is one byte less than size")
+		}
+	})
+}
+
+func TestCheckReportSizeLimitCaching(t *testing.T) {
+	// Test that the caching mechanism works correctly for reports
+	report1 := &pbtypes.Report{
+		Id: &pbtypes.Id{WorkflowExecutionId: "exec-1", WorkflowId: "wf-1"},
+		Outcome: &pbtypes.AggregationOutcome{
+			EncodableOutcome: &pbvalues.Map{
+				Fields: map[string]*pbvalues.Value{
+					"result": {Value: &pbvalues.Value_StringValue{StringValue: "result1"}},
+				},
+			},
+		},
+	}
+	report2 := &pbtypes.Report{
+		Id: &pbtypes.Id{WorkflowExecutionId: "exec-2", WorkflowId: "wf-2"},
+		Outcome: &pbtypes.AggregationOutcome{
+			EncodableOutcome: &pbvalues.Map{
+				Fields: map[string]*pbvalues.Value{
+					"result": {Value: &pbvalues.Value_StringValue{StringValue: "result2"}},
+				},
+			},
+		},
+	}
+	report3 := &pbtypes.Report{
+		Id: &pbtypes.Id{WorkflowExecutionId: "exec-3", WorkflowId: "wf-3"},
+		Outcome: &pbtypes.AggregationOutcome{
+			EncodableOutcome: &pbvalues.Map{
+				Fields: map[string]*pbvalues.Value{
+					"result": {Value: &pbvalues.Value_StringValue{StringValue: "result3"}},
+				},
+			},
+		},
+	}
+
+	t.Run("incremental size calculation matches full recalculation", func(t *testing.T) {
+		// Build up incrementally using caching
+		cachedSize := 0
+		reports := []*pbtypes.Report{}
+
+		// Add first report
+		canAdd, newSize := CheckReportSizeLimit(cachedSize, report1, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add first report")
+		}
+		reports = append(reports, report1)
+		cachedSize = newSize
+
+		// Verify cached size matches full calculation
+		fullSize := calculateReportsSize(reports)
+		if cachedSize != fullSize {
+			t.Errorf("After adding report1: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+
+		// Add second report
+		canAdd, newSize = CheckReportSizeLimit(cachedSize, report2, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add second report")
+		}
+		reports = append(reports, report2)
+		cachedSize = newSize
+
+		// Verify cached size matches full calculation
+		fullSize = calculateReportsSize(reports)
+		if cachedSize != fullSize {
+			t.Errorf("After adding report2: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+
+		// Add third report
+		canAdd, newSize = CheckReportSizeLimit(cachedSize, report3, 10000)
+		if !canAdd {
+			t.Fatal("Should be able to add third report")
+		}
+		reports = append(reports, report3)
+		cachedSize = newSize
+
+		// Verify final cached size matches full calculation
+		fullSize = calculateReportsSize(reports)
+		if cachedSize != fullSize {
+			t.Errorf("After adding report3: cached size %d != full calculation %d", cachedSize, fullSize)
+		}
+	})
+
+	t.Run("size limit enforcement with caching", func(t *testing.T) {
+		// Calculate size of first two reports
+		twoReports := []*pbtypes.Report{report1, report2}
+		twoReportsSize := calculateReportsSize(twoReports)
+
+		// Set limit to exactly fit two reports
+		limit := twoReportsSize
+
+		// Build incrementally
+		cachedSize := 0
+
+		// Add first report
+		canAdd, newSize := CheckReportSizeLimit(cachedSize, report1, limit)
+		if !canAdd {
+			t.Fatal("Should be able to add first report within limit")
+		}
+		cachedSize = newSize
+
+		// Add second report
+		canAdd, newSize = CheckReportSizeLimit(cachedSize, report2, limit)
+		if !canAdd {
+			t.Fatal("Should be able to add second report within limit")
+		}
+		cachedSize = newSize
+
+		// Try to add third report - should fail
+		canAdd, unchangedSize := CheckReportSizeLimit(cachedSize, report3, limit)
+		if canAdd {
+			t.Error("Should not be able to add third report - would exceed limit")
+		}
+		if unchangedSize != cachedSize {
+			t.Errorf("Size should remain unchanged when limit exceeded: got %d, expected %d", unchangedSize, cachedSize)
+		}
+	})
+
+	t.Run("nil report handling with caching", func(t *testing.T) {
+		cachedSize := 100 // Some initial size
+
+		// Add nil report - should not change size and should return true
+		canAdd, newSize := CheckReportSizeLimit(cachedSize, nil, 1000)
+		if !canAdd {
+			t.Error("Should be able to add nil report")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Nil report should not change size: got %d, expected %d", newSize, cachedSize)
+		}
+	})
+
+	t.Run("empty report handling with caching", func(t *testing.T) {
+		emptyReport := &pbtypes.Report{}
+		cachedSize := 0
+
+		// Add empty report - should not change size
+		canAdd, newSize := CheckReportSizeLimit(cachedSize, emptyReport, 1000)
+		if !canAdd {
+			t.Error("Should be able to add empty report")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Empty report should not change size: got %d, expected %d", newSize, cachedSize)
+		}
+
+		// Add real report first
+		canAdd, newSize = CheckReportSizeLimit(cachedSize, report1, 1000)
+		if !canAdd {
+			t.Fatal("Should be able to add real report")
+		}
+		cachedSize = newSize
+
+		// Add empty report after real report - should not change size
+		canAdd, newSize = CheckReportSizeLimit(cachedSize, emptyReport, 1000)
+		if !canAdd {
+			t.Error("Should be able to add empty report after real report")
+		}
+		if newSize != cachedSize {
+			t.Errorf("Empty report should not change size after real report: got %d, expected %d", newSize, cachedSize)
 		}
 	})
 }

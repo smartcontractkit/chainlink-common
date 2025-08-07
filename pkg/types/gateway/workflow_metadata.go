@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	// Note: any addition to this list must be reflected in core's HandlerTypeForMethod function.
+	// Note: any addition to this list must be reflected in the handler's Methods() function.
 	MethodPushWorkflowMetadata         = "push_workflow_metadata"
 	MethodPullWorkflowMetadata         = "pull_workflow_metadata"
 	KeyTypeECDSAEVM            KeyType = "ecdsa_evm"

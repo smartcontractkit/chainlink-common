@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754577325370,
+  "lastUpdate": 1754589698593,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22386,6 +22386,48 @@ window.BENCHMARK_DATA = {
             "value": 28304,
             "unit": "ns/op",
             "extra": "42440 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dabbeb9c0d75ec61b32c8bb7ba53f69d8187e6f0",
+          "message": "DF-21518 Use a correct data ID in the sm aggregator (#1459)",
+          "timestamp": "2025-08-07T13:00:37-05:00",
+          "tree_id": "77aa56254d833bd3b7440ee12593dd4140a4e94b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/dabbeb9c0d75ec61b32c8bb7ba53f69d8187e6f0"
+        },
+        "date": 1754589697538,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.9,
+            "unit": "ns/op",
+            "extra": "2807728 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 398.4,
+            "unit": "ns/op",
+            "extra": "2985315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28165,
+            "unit": "ns/op",
+            "extra": "42019 times\n4 procs"
           }
         ]
       }

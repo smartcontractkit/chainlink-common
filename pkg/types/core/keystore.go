@@ -76,17 +76,21 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 var P2PAccountKey = "P2P_SIGNER"
 var WorkflowAccountKey = "WORKFLOW_DECRYPTER"
 
+type Decrypter interface {
+	Decrypt(encrypted []byte) (decrypted []byte, err error)
+}
+
 // signerDecrypter implements Keystore for a single sign account and decrypt account.
 type signerDecrypter struct {
 	signAccount    *string
 	signer         crypto.Signer
 	decryptAccount *string
-	decrypter      crypto.Decrypter
+	decrypter      Decrypter
 }
 
 var _ Keystore = &signerDecrypter{}
 
-func NewSignerDecrypter(signAccount *string, signer crypto.Signer, decryptAccount *string, decrypter crypto.Decrypter) (*signerDecrypter, error) {
+func NewSignerDecrypter(signAccount *string, signer crypto.Signer, decryptAccount *string, decrypter Decrypter) (*signerDecrypter, error) {
 	return &signerDecrypter{signAccount: signAccount, signer: signer, decryptAccount: decryptAccount, decrypter: decrypter}, nil
 }
 
@@ -113,7 +117,7 @@ func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte)
 
 func (c *signerDecrypter) Decrypt(ctx context.Context, account string, encrypted []byte) (decrypted []byte, err error) {
 	if c.decryptAccount != nil && *c.decryptAccount == account {
-		return c.decrypter.Decrypt(rand.Reader, encrypted, nil)
+		return c.decrypter.Decrypt(encrypted)
 	}
 	return nil, fmt.Errorf("account not found: %s", account)
 }

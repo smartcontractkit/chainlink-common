@@ -45,7 +45,7 @@ func (m *mockDecrypter) Public() crypto.PublicKey {
 	return m.publicKey
 }
 
-func (m *mockDecrypter) Decrypt(rand io.Reader, msg []byte, opts crypto.DecrypterOpts) (plaintext []byte, err error) {
+func (m *mockDecrypter) Decrypt(msg []byte) (plaintext []byte, err error) {
 	if m.decryptError != nil {
 		return nil, m.decryptError
 	}
@@ -298,14 +298,14 @@ type boxDecrypter struct {
 	publicKey  *[32]byte
 }
 
-var _ crypto.Decrypter = (*boxDecrypter)(nil)
+var _ core.Decrypter = (*boxDecrypter)(nil)
 
 func (b *boxDecrypter) Public() crypto.PublicKey {
 	pubKeyBytes := b.publicKey[:]
 	return crypto.PublicKey(pubKeyBytes)
 }
 
-func (b *boxDecrypter) Decrypt(_ io.Reader, ciphertext []byte, _ crypto.DecrypterOpts) ([]byte, error) {
+func (b *boxDecrypter) Decrypt(ciphertext []byte) ([]byte, error) {
 	msg, ok := box.OpenAnonymous(nil, ciphertext, b.publicKey, b.privateKey)
 	if !ok {
 		return nil, fmt.Errorf("decryption failed")

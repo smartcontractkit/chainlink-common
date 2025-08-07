@@ -64,37 +64,15 @@ jobs:
           go-version-file: "chainlink/go.mod"
           only-modules: "true"
 
-      - name: Update chainlink-common in chainlink
+      - name: Build /chainlink
+        shell: bash
         env:
           COMMON_SHA: ${{ github.event.pull_request.head.sha }}
         working-directory: chainlink
         run: |
           go get "github.com/smartcontractkit/chainlink-common@${COMMON_SHA}"
           go mod tidy
-
-      # Necessary to pull private plugins used in the chainlink core Docker image build.
-      - name: GitHub Token from GATI
-        id: get-gh-token
-        uses: smartcontractkit/.github/actions/setup-github-token@setup-github-token/v1
-        with:
-          aws-role-arn: ${{ secrets.AWS_OIDC_GATI_FOUNDATIONS_READONLY_ROLE_ARN }}
-          aws-lambda-url: ${{ secrets.GATI_URL_FOUNDATIONS }}
-          aws-region: us-west-2
-
-      - name: Docker image build
-        id: build
-        uses: smartcontractkit/.github/actions/build-push-docker@build-push-docker/0.8.0
-        with:
-          platform: linux/amd64
-          dockerfile: ./chainlink/core/chainlink.Dockerfile
-          docker-build-args: |
-            CHAINLINK_USER=chainlink
-            COMMIT_SHA=${{ needs.init.outputs.core-ref }}
-          docker-push: false
-          docker-restore-cache: false
-          docker-save-cache: false
-          context: chainlink/.
-          github-token: ${{ steps.get-gh-token.outputs.access-token }}
+          make install-chainlink
 
   solana-build-relay:
     needs: init

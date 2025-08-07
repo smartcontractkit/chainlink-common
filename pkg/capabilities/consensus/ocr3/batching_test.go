@@ -57,16 +57,16 @@ func TestCheckQuerySizeLimit(t *testing.T) {
 			existingIds: []*pbtypes.Id{},
 			newId:       createEmptyId(),
 			sizeLimit:   10,
-			expected:    true, // Empty ID has 0 size, so should be within limit
-			description: "Adding empty ID to empty list should be within any reasonable limit",
+			expected:    true, // Empty ID requires 2 bytes (tag + length), but 10-byte limit is sufficient
+			description: "Adding empty ID to empty list should be within reasonable limit",
 		},
 		{
 			name:        "empty list, empty new ID, zero limit",
 			existingIds: []*pbtypes.Id{},
 			newId:       createEmptyId(),
 			sizeLimit:   0,
-			expected:    true, // Empty ID has 0 size
-			description: "Empty ID should fit in zero limit",
+			expected:    false, // Empty ID requires 2 bytes (tag + length)
+			description: "Empty ID should not fit in zero limit (requires tag + length overhead)",
 		},
 		{
 			name:        "empty list, simple ID, zero limit",
@@ -208,12 +208,8 @@ func TestCheckQuerySizeLimit(t *testing.T) {
 				// Provide detailed debugging information
 				currentSize := calculateQuerySize(tt.existingIds)
 				newIdSize := calculateIdSize(tt.newId)
-				var totalSizeWithNewId int
-				if newIdSize > 0 {
-					totalSizeWithNewId = currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newIdSize)) + newIdSize
-				} else {
-					totalSizeWithNewId = currentSize
-				}
+				// Always add tag and length overhead, even for empty messages
+				totalSizeWithNewId := currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newIdSize)) + newIdSize
 
 				t.Errorf("%s: enough() = %v, expected %v\n"+
 					"  Description: %s\n"+
@@ -373,13 +369,14 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		emptyId := &pbtypes.Id{}
 		cachedSize := 0
 
-		// Add empty ID - should not change size
+		// Add empty ID - should add 2 bytes (tag + length)
 		canAdd, newSize := checkQuerySizeLimit(cachedSize, emptyId, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty ID")
 		}
-		if newSize != cachedSize {
-			t.Errorf("Empty ID should not change size: got %d, expected %d", newSize, cachedSize)
+		expectedSize := cachedSize + 2 // tag + length overhead
+		if newSize != expectedSize {
+			t.Errorf("Empty ID should add 2 bytes: got %d, expected %d", newSize, expectedSize)
 		}
 
 		// Add real ID first
@@ -389,13 +386,14 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		}
 		cachedSize = newSize
 
-		// Add empty ID after real ID - should not change size
+		// Add empty ID after real ID - should add 2 bytes (tag + length)
 		canAdd, newSize = checkQuerySizeLimit(cachedSize, emptyId, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty ID after real ID")
 		}
-		if newSize != cachedSize {
-			t.Errorf("Empty ID should not change size after real ID: got %d, expected %d", newSize, cachedSize)
+		expectedSize = cachedSize + 2 // tag + length overhead
+		if newSize != expectedSize {
+			t.Errorf("Empty ID should add 2 bytes after real ID: got %d, expected %d", newSize, expectedSize)
 		}
 	})
 }
@@ -496,8 +494,8 @@ func TestCheckObservationSizeLimit(t *testing.T) {
 			existingObservations: []*pbtypes.Observation{},
 			newObservation:       createEmptyObservation(),
 			sizeLimit:            0,
-			expected:             true,
-			description:          "Empty observation should fit in zero limit",
+			expected:             false,
+			description:          "Empty observation should not fit in zero limit (requires tag + length overhead)",
 		},
 		{
 			name:                 "empty list, simple observation, zero limit",
@@ -575,12 +573,8 @@ func TestCheckObservationSizeLimit(t *testing.T) {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsSize(tt.existingObservations)
 				newObsSize := calculateObservationSize(tt.newObservation)
-				var totalSizeWithNewObs int
-				if newObsSize > 0 {
-					totalSizeWithNewObs = currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
-				} else {
-					totalSizeWithNewObs = currentSize
-				}
+				// Always add tag and length overhead, even for empty messages
+				totalSizeWithNewObs := currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
 
 				t.Errorf("%s: enoughObservation() = %v, expected %v\n"+
 					"  Description: %s\n"+
@@ -739,13 +733,14 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		emptyObs := &pbtypes.Observation{}
 		cachedSize := 0
 
-		// Add empty observation - should not change size
+		// Add empty observation - should add 2 bytes (tag + length)
 		canAdd, newSize := checkObservationSizeLimit(cachedSize, emptyObs, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty observation")
 		}
-		if newSize != cachedSize {
-			t.Errorf("Empty observation should not change size: got %d, expected %d", newSize, cachedSize)
+		expectedSize := cachedSize + 2 // tag + length overhead
+		if newSize != expectedSize {
+			t.Errorf("Empty observation should add 2 bytes: got %d, expected %d", newSize, expectedSize)
 		}
 
 		// Add real observation first
@@ -755,13 +750,14 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		}
 		cachedSize = newSize
 
-		// Add empty observation after real observation - should not change size
+		// Add empty observation after real observation - should add 2 bytes (tag + length)
 		canAdd, newSize = checkObservationSizeLimit(cachedSize, emptyObs, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty observation after real observation")
 		}
-		if newSize != cachedSize {
-			t.Errorf("Empty observation should not change size after real observation: got %d, expected %d", newSize, cachedSize)
+		expectedSize = cachedSize + 2 // tag + length overhead
+		if newSize != expectedSize {
+			t.Errorf("Empty observation should add 2 bytes after real observation: got %d, expected %d", newSize, expectedSize)
 		}
 	})
 }
@@ -925,12 +921,8 @@ func TestCheckObservationsSizeLimit(t *testing.T) {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsMessageSize(tt.existingObservations)
 				newObsSize := calculateObservationSize(tt.newObservation)
-				var totalSizeWithNewObs int
-				if newObsSize > 0 {
-					totalSizeWithNewObs = currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
-				} else {
-					totalSizeWithNewObs = currentSize
-				}
+				// Always add tag and length overhead, even for empty messages
+				totalSizeWithNewObs := currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
 
 				t.Errorf("%s: enoughObservations() = %v, expected %v\n"+
 					"  Description: %s\n"+
@@ -1219,16 +1211,16 @@ func TestCheckReportSizeLimit(t *testing.T) {
 			existingReports: []*pbtypes.Report{},
 			newReport:       createEmptyReport(),
 			sizeLimit:       10,
-			expected:        true, // Empty report has 0 size, so should be within limit
-			description:     "Adding empty report to empty list should be within any reasonable limit",
+			expected:        true, // Empty report requires 2 bytes (tag + length), but 10-byte limit is sufficient
+			description:     "Adding empty report to empty list should be within reasonable limit",
 		},
 		{
 			name:            "empty list, empty new report, zero limit",
 			existingReports: []*pbtypes.Report{},
 			newReport:       createEmptyReport(),
 			sizeLimit:       0,
-			expected:        true, // Empty report has 0 size
-			description:     "Empty report should fit in zero limit",
+			expected:        false, // Empty report requires 2 bytes (tag + length)
+			description:     "Empty report should not fit in zero limit (requires tag + length overhead)",
 		},
 		{
 			name:            "empty list, simple report, zero limit",
@@ -1345,23 +1337,17 @@ func TestCheckReportSizeLimit(t *testing.T) {
 			if tt.name == "exactly at limit boundary" {
 				// Calculate exact size needed for the new report
 				newReportSize := calculateReportSize(tt.newReport)
-				if newReportSize > 0 {
-					tagSize := varintSize(uint64(2<<3 | 2))
-					lengthSize := varintSize(uint64(newReportSize))
-					sizeLimit = tagSize + lengthSize + newReportSize
-				} else {
-					sizeLimit = 0
-				}
+				// Always include tag and length overhead, even for empty messages
+				tagSize := varintSize(uint64(2<<3 | 2))
+				lengthSize := varintSize(uint64(newReportSize))
+				sizeLimit = tagSize + lengthSize + newReportSize
 			} else if tt.name == "one byte over limit" {
 				// Calculate exact size needed for the new report minus 1
 				newReportSize := calculateReportSize(tt.newReport)
-				if newReportSize > 0 {
-					tagSize := varintSize(uint64(2<<3 | 2))
-					lengthSize := varintSize(uint64(newReportSize))
-					sizeLimit = tagSize + lengthSize + newReportSize - 1
-				} else {
-					sizeLimit = -1 // This would be impossible, but for test completeness
-				}
+				// Always include tag and length overhead, even for empty messages
+				tagSize := varintSize(uint64(2<<3 | 2))
+				lengthSize := varintSize(uint64(newReportSize))
+				sizeLimit = tagSize + lengthSize + newReportSize - 1
 			}
 
 			currentSize := calculateReportsSize(tt.existingReports)
@@ -1370,12 +1356,8 @@ func TestCheckReportSizeLimit(t *testing.T) {
 				// Provide detailed debugging information
 				currentSize := calculateReportsSize(tt.existingReports)
 				newReportSize := calculateReportSize(tt.newReport)
-				var totalSizeWithNewReport int
-				if newReportSize > 0 {
-					totalSizeWithNewReport = currentSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
-				} else {
-					totalSizeWithNewReport = currentSize
-				}
+				// Always add tag and length overhead, even for empty messages
+				totalSizeWithNewReport := currentSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
 
 				t.Errorf("%s: CheckReportSizeLimit() = %v, expected %v\n"+
 					"  Description: %s\n"+
@@ -1590,13 +1572,14 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		emptyReport := &pbtypes.Report{}
 		cachedSize := 0
 
-		// Add empty report - should not change size
+		// Add empty report - should add 2 bytes (tag + length)
 		canAdd, newSize := checkReportSizeLimit(cachedSize, emptyReport, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty report")
 		}
-		if newSize != cachedSize {
-			t.Errorf("Empty report should not change size: got %d, expected %d", newSize, cachedSize)
+		expectedSize := cachedSize + 2 // tag + length overhead
+		if newSize != expectedSize {
+			t.Errorf("Empty report should add 2 bytes: got %d, expected %d", newSize, expectedSize)
 		}
 
 		// Add real report first
@@ -1606,13 +1589,270 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		}
 		cachedSize = newSize
 
-		// Add empty report after real report - should not change size
+		// Add empty report after real report - should add 2 bytes (tag + length)
 		canAdd, newSize = checkReportSizeLimit(cachedSize, emptyReport, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty report after real report")
 		}
-		if newSize != cachedSize {
-			t.Errorf("Empty report should not change size after real report: got %d, expected %d", newSize, cachedSize)
+		expectedSize = cachedSize + 2 // tag + length overhead
+		if newSize != expectedSize {
+			t.Errorf("Empty report should add 2 bytes after real report: got %d, expected %d", newSize, expectedSize)
 		}
+	})
+}
+
+func TestSizeCalculationAccuracy(t *testing.T) {
+	t.Run("verify size calculations against real marshaling", func(t *testing.T) {
+		// Test 1: Empty messages
+		t.Run("empty messages", func(t *testing.T) {
+			// Empty ID
+			emptyId := &pbtypes.Id{}
+			calculatedSize := calculateIdSize(emptyId)
+			actualSize := proto.Size(emptyId)
+			if calculatedSize != actualSize {
+				t.Errorf("Empty ID size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Empty Observation
+			emptyObs := &pbtypes.Observation{}
+			calculatedSize = calculateObservationSize(emptyObs)
+			actualSize = proto.Size(emptyObs)
+			if calculatedSize != actualSize {
+				t.Errorf("Empty Observation size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Empty Report
+			emptyReport := &pbtypes.Report{}
+			calculatedSize = calculateReportSize(emptyReport)
+			actualSize = proto.Size(emptyReport)
+			if calculatedSize != actualSize {
+				t.Errorf("Empty Report size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+		})
+
+		// Test 2: Simple messages with basic data
+		t.Run("simple messages", func(t *testing.T) {
+			// Simple ID
+			simpleId := &pbtypes.Id{
+				WorkflowExecutionId:      "exec-123",
+				WorkflowId:               "workflow-456",
+				WorkflowOwner:            "owner-789",
+				WorkflowName:             "test-workflow",
+				WorkflowDonId:            uint32(123),
+				WorkflowDonConfigVersion: uint32(456),
+				ReportId:                 "report-789",
+				KeyId:                    "key-012",
+			}
+			calculatedSize := calculateIdSize(simpleId)
+			actualSize := proto.Size(simpleId)
+			if calculatedSize != actualSize {
+				t.Errorf("Simple ID size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Simple Observation with List
+			simpleObs := &pbtypes.Observation{
+				Id: simpleId,
+				Observations: &pbvalues.List{
+					Fields: []*pbvalues.Value{
+						{Value: &pbvalues.Value_StringValue{StringValue: "test-observation-1"}},
+						{Value: &pbvalues.Value_Int64Value{Int64Value: 12345}},
+					},
+				},
+			}
+			calculatedSize = calculateObservationSize(simpleObs)
+			actualSize = proto.Size(simpleObs)
+			if calculatedSize != actualSize {
+				t.Errorf("Simple Observation size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Simple Report
+			simpleReport := &pbtypes.Report{
+				Id: simpleId,
+				Outcome: &pbtypes.AggregationOutcome{
+					EncodableOutcome: &pbvalues.Map{
+						Fields: map[string]*pbvalues.Value{
+							"result": {Value: &pbvalues.Value_StringValue{StringValue: "test-result"}},
+						},
+					},
+				},
+			}
+			calculatedSize = calculateReportSize(simpleReport)
+			actualSize = proto.Size(simpleReport)
+			if calculatedSize != actualSize {
+				t.Errorf("Simple Report size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+		})
+
+		// Test 3: Complex messages with various field types
+		t.Run("complex messages", func(t *testing.T) {
+			// Complex ID with all fields populated
+			complexId := &pbtypes.Id{
+				WorkflowExecutionId:      "very-long-workflow-execution-id-for-testing-purposes",
+				WorkflowId:               "complex-workflow-id-with-special-chars-@#$%",
+				WorkflowOwner:            "owner-with-long-name-and-special-characters",
+				WorkflowName:             "test-workflow-with-very-descriptive-name",
+				WorkflowDonId:            uint32(999999),
+				WorkflowDonConfigVersion: uint32(888888),
+				ReportId:                 "report-id-with-uuid-like-structure-12345678",
+				KeyId:                    "key-id-with-cryptographic-hash-abcdef",
+			}
+			calculatedSize := calculateIdSize(complexId)
+			actualSize := proto.Size(complexId)
+			if calculatedSize != actualSize {
+				t.Errorf("Complex ID size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Complex Observation with nested structures
+			complexObs := &pbtypes.Observation{
+				Id: complexId,
+				Observations: &pbvalues.List{
+					Fields: []*pbvalues.Value{
+						{Value: &pbvalues.Value_StringValue{StringValue: "complex-string-observation-with-lots-of-data"}},
+						{Value: &pbvalues.Value_Int64Value{Int64Value: 9223372036854775807}}, // max int64
+						{Value: &pbvalues.Value_Float64Value{Float64Value: 3.141592653589793}},
+						{Value: &pbvalues.Value_BoolValue{BoolValue: true}},
+					},
+				},
+			}
+			calculatedSize = calculateObservationSize(complexObs)
+			actualSize = proto.Size(complexObs)
+			if calculatedSize != actualSize {
+				t.Errorf("Complex Observation size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Complex Report with nested result
+			complexReport := &pbtypes.Report{
+				Id: complexId,
+				Outcome: &pbtypes.AggregationOutcome{
+					EncodableOutcome: &pbvalues.Map{
+						Fields: map[string]*pbvalues.Value{
+							"nested": {
+								Value: &pbvalues.Value_ListValue{
+									ListValue: &pbvalues.List{
+										Fields: []*pbvalues.Value{
+											{Value: &pbvalues.Value_StringValue{StringValue: "nested-result-1"}},
+											{Value: &pbvalues.Value_StringValue{StringValue: "nested-result-2"}},
+										},
+									},
+								},
+							},
+						},
+					},
+					Metadata:     []byte("complex-metadata"),
+					ShouldReport: true,
+				},
+			}
+			calculatedSize = calculateReportSize(complexReport)
+			actualSize = proto.Size(complexReport)
+			if calculatedSize != actualSize {
+				t.Errorf("Complex Report size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+		})
+
+		// Test 4: Container message size calculations
+		t.Run("container messages", func(t *testing.T) {
+			// Test Query with mixed IDs (including empty)
+			emptyId := &pbtypes.Id{}
+			simpleId := &pbtypes.Id{
+				WorkflowExecutionId: "exec-1",
+				WorkflowId:          "workflow-1",
+				WorkflowOwner:       "owner",
+				WorkflowName:        "test",
+				ReportId:            "report-1",
+				KeyId:               "key-1",
+			}
+
+			query := &pbtypes.Query{
+				Ids: []*pbtypes.Id{emptyId, simpleId, emptyId},
+			}
+			calculatedSize := calculateQuerySize(query.Ids)
+			actualSize := proto.Size(query)
+			if calculatedSize != actualSize {
+				t.Errorf("Mixed IDs Query size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Test Observations with mixed observations
+			emptyObs := &pbtypes.Observation{}
+			simpleObs := &pbtypes.Observation{
+				Id: simpleId,
+				Observations: &pbvalues.List{
+					Fields: []*pbvalues.Value{
+						{Value: &pbvalues.Value_StringValue{StringValue: "test-observation"}},
+					},
+				},
+			}
+
+			observations := &pbtypes.Observations{
+				Observations: []*pbtypes.Observation{emptyObs, simpleObs},
+			}
+			calculatedSize = calculateObservationsMessageSize(observations)
+			actualSize = proto.Size(observations)
+			if calculatedSize != actualSize {
+				t.Errorf("Mixed Observations size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Test Reports with mixed reports
+			emptyReport := &pbtypes.Report{}
+			simpleReport := &pbtypes.Report{
+				Id: simpleId,
+				Outcome: &pbtypes.AggregationOutcome{
+					EncodableOutcome: &pbvalues.Map{
+						Fields: map[string]*pbvalues.Value{
+							"result": {Value: &pbvalues.Value_StringValue{StringValue: "success"}},
+						},
+					},
+				},
+			}
+
+			reports := []*pbtypes.Report{emptyReport, simpleReport}
+			calculatedSize = calculateReportsSize(reports)
+
+			// For reports, we need to calculate the size as part of an Outcome message
+			outcome := &pbtypes.Outcome{
+				CurrentReports: reports,
+			}
+			actualSize = proto.Size(outcome)
+			if calculatedSize != actualSize {
+				t.Errorf("Mixed Reports size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+		})
+
+		// Test 5: Edge cases
+		t.Run("edge cases", func(t *testing.T) {
+			// ID with zero numeric values (should be omitted in proto3)
+			zeroId := &pbtypes.Id{
+				WorkflowExecutionId:      "exec",
+				WorkflowId:               "workflow",
+				WorkflowOwner:            "owner",
+				WorkflowName:             "name",
+				WorkflowDonId:            0, // zero value
+				WorkflowDonConfigVersion: 0, // zero value
+				ReportId:                 "report",
+				KeyId:                    "key",
+			}
+			calculatedSize := calculateIdSize(zeroId)
+			actualSize := proto.Size(zeroId)
+			if calculatedSize != actualSize {
+				t.Errorf("Zero values ID size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+
+			// Observation with empty list
+			emptyListObs := &pbtypes.Observation{
+				Id: &pbtypes.Id{
+					WorkflowExecutionId: "exec-1",
+					WorkflowId:          "workflow-1",
+					WorkflowOwner:       "owner",
+					WorkflowName:        "test",
+					ReportId:            "report-1",
+					KeyId:               "key-1",
+				},
+				Observations: &pbvalues.List{Fields: []*pbvalues.Value{}}, // empty list
+			}
+			calculatedSize = calculateObservationSize(emptyListObs)
+			actualSize = proto.Size(emptyListObs)
+			if calculatedSize != actualSize {
+				t.Errorf("Empty list Observation size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)
+			}
+		})
 	})
 }

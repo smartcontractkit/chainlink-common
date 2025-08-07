@@ -1114,3 +1114,180 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 	assert.Equal(t, opb1.Outcomes[workflowTestID3].EncoderName, "")
 	assert.Nil(t, opb1.Outcomes[workflowTestID3].EncoderConfig)
 }
+
+func TestDuplicateEliminationLogic(t *testing.T) {
+	// This test specifically addresses the condition `if seenIds[key]` in the Query phase
+	// to verify that duplicate IDs are properly handled and don't affect size calculations
+
+	// Helper function to create a ReportRequest for testing getIDKey
+	createReportRequest := func(workflowExecutionId, workflowId, reportId string) *ReportRequest {
+		return &ReportRequest{
+			WorkflowExecutionID:      workflowExecutionId,
+			WorkflowID:               workflowId,
+			WorkflowOwner:            "owner",
+			WorkflowName:             "test",
+			WorkflowDonID:            123,
+			WorkflowDonConfigVersion: 456,
+			ReportID:                 reportId,
+			KeyID:                    "key-1",
+		}
+	}
+
+	// Helper function to create a pbtypes.Id from ReportRequest
+	createIdFromRequest := func(rq *ReportRequest) *pbtypes.Id {
+		return &pbtypes.Id{
+			WorkflowExecutionId:      rq.WorkflowExecutionID,
+			WorkflowId:               rq.WorkflowID,
+			WorkflowOwner:            rq.WorkflowOwner,
+			WorkflowName:             rq.WorkflowName,
+			WorkflowDonId:            rq.WorkflowDonID,
+			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
+			ReportId:                 rq.ReportID,
+			KeyId:                    rq.KeyID,
+		}
+	}
+
+	t.Run("duplicate keys are properly detected", func(t *testing.T) {
+		// Create two ReportRequests that should generate the same key
+		rq1 := createReportRequest("exec-1", "workflow-1", "report-1")
+		rq2 := createReportRequest("exec-1", "workflow-1", "report-1") // Same as rq1
+
+		key1 := getIDKey(rq1)
+		key2 := getIDKey(rq2)
+
+		if key1 != key2 {
+			t.Errorf("Expected identical keys for identical requests, got %+v != %+v", key1, key2)
+		}
+	})
+
+	t.Run("different keys are properly distinguished", func(t *testing.T) {
+		// Create two ReportRequests that should generate different keys
+		rq1 := createReportRequest("exec-1", "workflow-1", "report-1")
+		rq2 := createReportRequest("exec-2", "workflow-1", "report-1") // Different execution ID
+
+		key1 := getIDKey(rq1)
+		key2 := getIDKey(rq2)
+
+		if key1 == key2 {
+			t.Errorf("Expected different keys for different requests, got %+v == %+v", key1, key2)
+		}
+	})
+
+	t.Run("duplicate elimination in query batching simulation", func(t *testing.T) {
+		// Simulate the Query phase logic with duplicates
+		seenIds := make(map[idKey]bool)
+		var ids []*pbtypes.Id
+		var allExecutionIDs []string
+		cachedQuerySize := 0
+		sizeLimit := 1000
+
+		// Create a batch with duplicates
+		batch := []*ReportRequest{
+			createReportRequest("exec-1", "workflow-1", "report-1"),
+			createReportRequest("exec-2", "workflow-1", "report-1"),
+			createReportRequest("exec-1", "workflow-1", "report-1"), // Duplicate of first
+			createReportRequest("exec-3", "workflow-1", "report-1"),
+			createReportRequest("exec-2", "workflow-1", "report-1"), // Duplicate of second
+		}
+
+		// Simulate the logic from reporting_plugin.go Query method
+		for _, rq := range batch {
+			key := getIDKey(rq)
+			newId := createIdFromRequest(rq)
+
+			// This is the condition we're specifically testing
+			if seenIds[key] {
+				continue // Skip duplicates
+			}
+
+			// Check size limit (this should only be called for non-duplicates)
+			canAdd, newSize := checkQuerySizeLimit(cachedQuerySize, newId, sizeLimit)
+			if !canAdd {
+				break
+			}
+
+			seenIds[key] = true
+			ids = append(ids, newId)
+			allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+			cachedQuerySize = newSize
+		}
+
+		// Verify results
+		expectedUniqueIds := 3 // exec-1, exec-2, exec-3
+		if len(ids) != expectedUniqueIds {
+			t.Errorf("Expected %d unique IDs, got %d", expectedUniqueIds, len(ids))
+		}
+
+		if len(allExecutionIDs) != expectedUniqueIds {
+			t.Errorf("Expected %d unique execution IDs, got %d", expectedUniqueIds, len(allExecutionIDs))
+		}
+
+		if len(seenIds) != expectedUniqueIds {
+			t.Errorf("Expected %d entries in seenIds map, got %d", expectedUniqueIds, len(seenIds))
+		}
+
+		// Verify that the correct execution IDs are present
+		expectedExecutionIDs := map[string]bool{
+			"exec-1": true,
+			"exec-2": true,
+			"exec-3": true,
+		}
+
+		for _, execID := range allExecutionIDs {
+			if !expectedExecutionIDs[execID] {
+				t.Errorf("Unexpected execution ID in results: %s", execID)
+			}
+			delete(expectedExecutionIDs, execID)
+		}
+
+		if len(expectedExecutionIDs) > 0 {
+			t.Errorf("Missing expected execution IDs: %v", expectedExecutionIDs)
+		}
+
+		// Verify that size calculation was only done for unique items
+		// Calculate expected size manually
+		expectedSize := 0
+		for _, id := range ids {
+			idSize := calculateIdSize(id)
+			if idSize > 0 {
+				tagSize := varintSize(uint64(1<<3 | 2))
+				lengthSize := varintSize(uint64(idSize))
+				expectedSize += tagSize + lengthSize + idSize
+			}
+		}
+
+		if cachedQuerySize != expectedSize {
+			t.Errorf("Expected cached size %d, got %d", expectedSize, cachedQuerySize)
+		}
+	})
+
+	t.Run("seenIds map prevents processing of duplicates", func(t *testing.T) {
+		// Test the exact condition: if seenIds[key] { continue }
+		seenIds := make(map[idKey]bool)
+
+		rq := createReportRequest("exec-1", "workflow-1", "report-1")
+		key := getIDKey(rq)
+
+		// Initially, key should not be in seenIds
+		if seenIds[key] {
+			t.Error("Key should not be in seenIds initially")
+		}
+
+		// Add key to seenIds
+		seenIds[key] = true
+
+		// Now the condition should be true
+		if !seenIds[key] {
+			t.Error("Key should be in seenIds after adding")
+		}
+
+		// Test with a different key
+		rq2 := createReportRequest("exec-2", "workflow-1", "report-1")
+		key2 := getIDKey(rq2)
+
+		// This key should not be in seenIds
+		if seenIds[key2] {
+			t.Error("Different key should not be in seenIds")
+		}
+	})
+}

@@ -4,6 +4,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	pbvalues "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type idKey struct {
@@ -104,15 +105,14 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 
 	for _, id := range ids {
 		idSize := calculateIdSize(id)
-		if idSize > 0 {
-			// Each repeated field element includes:
-			// - tag for field 1 (ids field in Query message)
-			// - length of the Id message
-			// - the Id message content
-			tagSize := varintSize(uint64(1<<3 | 2)) // field 1, wire type 2
-			lengthSize := varintSize(uint64(idSize))
-			totalSize += tagSize + lengthSize + idSize
-		}
+		// Each repeated field element includes:
+		// - tag for field 1 (ids field in Query message)
+		// - length of the Id message
+		// - the Id message content
+		// Note: Even empty messages (idSize=0) contribute tag+length overhead
+		tagSize := varintSize(uint64(1<<3 | 2)) // field 1, wire type 2
+		lengthSize := varintSize(uint64(idSize))
+		totalSize += tagSize + lengthSize + idSize
 	}
 
 	return totalSize
@@ -121,14 +121,8 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 func checkQuerySizeLimit(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more id
 	newIdSize := calculateIdSize(newId)
-	var totalSizeWithNewId int
-	if newIdSize > 0 {
-		// Only add tag and length overhead if the ID has content
-		totalSizeWithNewId = cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newIdSize)) + newIdSize
-	} else {
-		// Empty IDs don't contribute to the total size
-		totalSizeWithNewId = cachedSize
-	}
+	// Always add tag and length overhead, even for empty messages
+	totalSizeWithNewId := cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newIdSize)) + newIdSize
 
 	// Check against limits
 	if totalSizeWithNewId > sizeLimit {
@@ -153,6 +147,32 @@ func messageFieldSize(fieldNumber int, msg proto.Message) int {
 	return tagSize + lengthSize + msgSize
 }
 
+// listFieldSize calculates the protobuf wire format size for a List field
+// This handles the special case where empty List{Fields: []} contributes tag+length overhead
+func listFieldSize(fieldNumber int, list *pbvalues.List) int {
+	if list == nil {
+		return 0 // nil lists are omitted in proto3
+	}
+	msgSize := proto.Size(list)
+	// Even empty lists contribute tag + length overhead when explicitly set
+	tagSize := varintSize(uint64(fieldNumber<<3 | 2)) // wire type 2 for length-delimited
+	lengthSize := varintSize(uint64(msgSize))
+	return tagSize + lengthSize + msgSize
+}
+
+// mapFieldSize calculates the protobuf wire format size for a Map field
+// This handles the special case where empty Map{Fields: map[string]*Value{}} contributes tag+length overhead
+func mapFieldSize(fieldNumber int, mapField *pbvalues.Map) int {
+	if mapField == nil {
+		return 0 // nil maps are omitted in proto3
+	}
+	msgSize := proto.Size(mapField)
+	// Even empty maps contribute tag + length overhead when explicitly set
+	tagSize := varintSize(uint64(fieldNumber<<3 | 2)) // wire type 2 for length-delimited
+	lengthSize := varintSize(uint64(msgSize))
+	return tagSize + lengthSize + msgSize
+}
+
 // calculateObservationSize calculates the marshalled size of a single pbtypes.Observation
 func calculateObservationSize(obs *pbtypes.Observation) int {
 	size := 0
@@ -161,13 +181,13 @@ func calculateObservationSize(obs *pbtypes.Observation) int {
 	size += messageFieldSize(1, obs.Id)
 
 	// Field 4: observations (values.v1.List message)
-	size += messageFieldSize(4, obs.Observations)
+	size += listFieldSize(4, obs.Observations)
 
 	// Field 5: overriddenEncoderName (string)
 	size += stringFieldSize(5, obs.OverriddenEncoderName)
 
 	// Field 6: overriddenEncoderConfig (values.v1.Map message)
-	size += messageFieldSize(6, obs.OverriddenEncoderConfig)
+	size += mapFieldSize(6, obs.OverriddenEncoderConfig)
 
 	return size
 }
@@ -182,15 +202,14 @@ func calculateObservationsSize(observations []*pbtypes.Observation) int {
 
 	for _, obs := range observations {
 		obsSize := calculateObservationSize(obs)
-		if obsSize > 0 {
-			// Each repeated field element includes:
-			// - tag for field 1 (observations field in Observations message)
-			// - length of the Observation message
-			// - the Observation message content
-			tagSize := varintSize(uint64(1<<3 | 2)) // field 1, wire type 2
-			lengthSize := varintSize(uint64(obsSize))
-			totalSize += tagSize + lengthSize + obsSize
-		}
+		// Each repeated field element includes:
+		// - tag for field 1 (observations field in Observations message)
+		// - length of the Observation message
+		// - the Observation message content
+		// Note: Even empty messages (obsSize=0) contribute tag+length overhead
+		tagSize := varintSize(uint64(1<<3 | 2)) // field 1, wire type 2
+		lengthSize := varintSize(uint64(obsSize))
+		totalSize += tagSize + lengthSize + obsSize
 	}
 
 	return totalSize
@@ -200,14 +219,8 @@ func calculateObservationsSize(observations []*pbtypes.Observation) int {
 func checkObservationSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation
 	newObsSize := calculateObservationSize(newObs)
-	var totalSizeWithNewObs int
-	if newObsSize > 0 {
-		// Only add tag and length overhead if the observation has content
-		totalSizeWithNewObs = cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
-	} else {
-		// Empty observations don't contribute to the total size
-		totalSizeWithNewObs = cachedSize
-	}
+	// Always add tag and length overhead, even for empty messages
+	totalSizeWithNewObs := cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
 
 	// Check against limits
 	if totalSizeWithNewObs > sizeLimit {
@@ -243,11 +256,10 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	// Field 1: observations (repeated Observation)
 	for _, obs := range observations.Observations {
 		obsSize := calculateObservationSize(obs)
-		if obsSize > 0 {
-			tagSize := varintSize(uint64(1<<3 | 2)) // field 1, wire type 2
-			lengthSize := varintSize(uint64(obsSize))
-			size += tagSize + lengthSize + obsSize
-		}
+		// Always include tag and length overhead, even for empty messages
+		tagSize := varintSize(uint64(1<<3 | 2)) // field 1, wire type 2
+		lengthSize := varintSize(uint64(obsSize))
+		size += tagSize + lengthSize + obsSize
 	}
 
 	// Field 2: registeredWorkflowIds (repeated string)
@@ -263,14 +275,8 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 func checkObservationsSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation to the observations field
 	newObsSize := calculateObservationSize(newObs)
-	var totalSizeWithNewObs int
-	if newObsSize > 0 {
-		// Only add tag and length overhead if the observation has content
-		totalSizeWithNewObs = cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
-	} else {
-		// Empty observations don't contribute to the total size
-		totalSizeWithNewObs = cachedSize
-	}
+	// Always add tag and length overhead, even for empty messages
+	totalSizeWithNewObs := cachedSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
 
 	// Check against limits
 	if totalSizeWithNewObs > sizeLimit {
@@ -279,6 +285,50 @@ func checkObservationsSizeLimit(cachedSize int, newObs *pbtypes.Observation, siz
 	}
 
 	return true, totalSizeWithNewObs
+}
+
+// calculateAggregationOutcomeSize calculates the marshalled size of a single pbtypes.AggregationOutcome
+func calculateAggregationOutcomeSize(outcome *pbtypes.AggregationOutcome) int {
+	if outcome == nil {
+		return 0
+	}
+
+	size := 0
+
+	// Field 1: encodableOutcome (values.v1.Map message)
+	size += mapFieldSize(1, outcome.EncodableOutcome)
+
+	// Field 2: metadata (bytes)
+	if len(outcome.Metadata) > 0 {
+		tagSize := varintSize(uint64(2<<3 | 2)) // wire type 2 for length-delimited
+		lengthSize := varintSize(uint64(len(outcome.Metadata)))
+		size += tagSize + lengthSize + len(outcome.Metadata)
+	}
+
+	// Field 3: shouldReport (bool)
+	if outcome.ShouldReport {
+		tagSize := varintSize(uint64(3 << 3)) // wire type 0 for varint
+		valueSize := 1                        // bool encoded as varint, true = 1 byte
+		size += tagSize + valueSize
+	}
+
+	// Field 4: lastSeenAt (uint64)
+	if outcome.LastSeenAt != 0 {
+		tagSize := varintSize(uint64(4 << 3)) // wire type 0 for varint
+		valueSize := varintSize(outcome.LastSeenAt)
+		size += tagSize + valueSize
+	}
+
+	// Field 5: timestamp (google.protobuf.Timestamp message)
+	size += messageFieldSize(5, outcome.Timestamp)
+
+	// Field 6: encoderName (string)
+	size += stringFieldSize(6, outcome.EncoderName)
+
+	// Field 7: encoderConfig (values.v1.Map message)
+	size += mapFieldSize(7, outcome.EncoderConfig)
+
+	return size
 }
 
 // calculateReportSize calculates the marshalled size of a single pbtypes.Report
@@ -308,15 +358,14 @@ func calculateReportsSize(reports []*pbtypes.Report) int {
 
 	for _, report := range reports {
 		reportSize := calculateReportSize(report)
-		if reportSize > 0 {
-			// Each repeated field element includes:
-			// - tag for field 2 (current_reports field in Outcome message)
-			// - length of the Report message
-			// - the Report message content
-			tagSize := varintSize(uint64(2<<3 | 2)) // field 2, wire type 2
-			lengthSize := varintSize(uint64(reportSize))
-			totalSize += tagSize + lengthSize + reportSize
-		}
+		// Each repeated field element includes:
+		// - tag for field 2 (current_reports field in Outcome message)
+		// - length of the Report message
+		// - the Report message content
+		// Note: Even empty messages (reportSize=0) contribute tag+length overhead
+		tagSize := varintSize(uint64(2<<3 | 2)) // field 2, wire type 2
+		lengthSize := varintSize(uint64(reportSize))
+		totalSize += tagSize + lengthSize + reportSize
 	}
 
 	return totalSize
@@ -330,14 +379,8 @@ func checkReportSizeLimit(cachedSize int, newReport *pbtypes.Report, sizeLimit i
 
 	// Calculate size if we add one more report
 	newReportSize := calculateReportSize(newReport)
-	var totalSizeWithNewReport int
-	if newReportSize > 0 {
-		// Only add tag and length overhead if the report has content
-		totalSizeWithNewReport = cachedSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
-	} else {
-		// Empty reports don't contribute to the total size
-		totalSizeWithNewReport = cachedSize
-	}
+	// Always add tag and length overhead, even for empty messages
+	totalSizeWithNewReport := cachedSize + varintSize(uint64(2<<3|2)) + varintSize(uint64(newReportSize)) + newReportSize
 
 	// Check against limits
 	if totalSizeWithNewReport > sizeLimit {

@@ -102,19 +102,21 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			KeyId:                    rq.KeyID,
 		}
 
+		// Simple duplicate elimination using a map
+		if seenIds[key] {
+			continue
+		}
+
 		// If the new id would exceed the max query size, stop adding more ids
 		canAdd, newSize := checkQuerySizeLimit(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
 		if !canAdd {
 			break
 		}
 
-		// Simple duplicate elimination using a map
-		if !seenIds[key] {
-			seenIds[key] = true
-			ids = append(ids, newId)
-			allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
-			cachedQuerySize = newSize
-		}
+		seenIds[key] = true
+		ids = append(ids, newId)
+		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+		cachedQuerySize = newSize
 	}
 
 	r.lggr.Debugw("Query complete", "len", len(ids), "allExecutionIDs", allExecutionIDs)

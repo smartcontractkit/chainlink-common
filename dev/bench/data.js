@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754589698593,
+  "lastUpdate": 1754599902753,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22428,6 +22428,48 @@ window.BENCHMARK_DATA = {
             "value": 28165,
             "unit": "ns/op",
             "extra": "42019 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c72fb15ec55cf0998cc2b26177acf8cc5ada4b14",
+          "message": "update kvstore to include prune method (#1462)",
+          "timestamp": "2025-08-07T13:50:24-07:00",
+          "tree_id": "74a1e82b9b0f3dbda83673e545ac4944568353db",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c72fb15ec55cf0998cc2b26177acf8cc5ada4b14"
+        },
+        "date": 1754599901477,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.7,
+            "unit": "ns/op",
+            "extra": "3371366 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406,
+            "unit": "ns/op",
+            "extra": "2938680 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28317,
+            "unit": "ns/op",
+            "extra": "42651 times\n4 procs"
           }
         ]
       }

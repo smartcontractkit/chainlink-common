@@ -18,7 +18,7 @@ type idKey struct {
 	KeyId                    string
 }
 
-func getIDKey(rq *ReportRequest) idKey {
+func GetIDKey(rq *ReportRequest) idKey {
 	return idKey{
 		WorkflowExecutionId:      rq.WorkflowExecutionID,
 		WorkflowId:               rq.WorkflowID,
@@ -118,7 +118,7 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 	return totalSize
 }
 
-func queryBatchHasCapacity(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
+func QueryBatchHasCapacity(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more id
 	newIdSize := calculateIdSize(newId)
 	// Always add tag and length overhead, even for empty messages
@@ -246,7 +246,7 @@ func repeatedStringFieldSize(fieldNumber int, strings []string) int {
 }
 
 // calculateObservationsMessageSize calculates the marshalled size of a pbtypes.Observations message
-func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
+func CalculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	if observations == nil {
 		return 0
 	}
@@ -272,7 +272,7 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 }
 
 // observationsBatchHasCapacity checks if adding a new observation to a pbtypes.Observations would exceed the size limit
-func observationsBatchHasCapacity(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
+func ObservationsBatchHasCapacity(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation to the observations field
 	newObsSize := calculateObservationSize(newObs)
 	// Always add tag and length overhead, even for empty messages
@@ -372,7 +372,7 @@ func calculateReportsSize(reports []*pbtypes.Report) int {
 }
 
 // reportBatchHasCapacity checks if adding a new report to the outcome would exceed size limits
-func reportBatchHasCapacity(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
+func ReportBatchHasCapacity(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
 	if newReport == nil {
 		return true, cachedSize
 	}

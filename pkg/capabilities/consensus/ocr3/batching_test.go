@@ -203,7 +203,7 @@ func TestQueryBatchHasCapacity(t *testing.T) {
 			}
 
 			currentSize := calculateQuerySize(tt.existingIds)
-			result, _ := queryBatchHasCapacity(currentSize, tt.newId, sizeLimit)
+			result, _ := QueryBatchHasCapacity(currentSize, tt.newId, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateQuerySize(tt.existingIds)
@@ -254,12 +254,12 @@ func TestQueryBatchHasCapacityWithRealSizes(t *testing.T) {
 		t.Logf("Single ID size: %d bytes", singleIdSize)
 
 		// Test that enough function works correctly with these sizes
-		result, _ := queryBatchHasCapacity(0, simpleId, singleIdSize)
+		result, _ := QueryBatchHasCapacity(0, simpleId, singleIdSize)
 		if !result {
 			t.Errorf("Should be able to add ID when limit equals exact size")
 		}
 
-		result, _ = queryBatchHasCapacity(0, simpleId, singleIdSize-1)
+		result, _ = QueryBatchHasCapacity(0, simpleId, singleIdSize-1)
 		if result {
 			t.Errorf("Should not be able to add ID when limit is one byte less than size")
 		}
@@ -269,7 +269,7 @@ func TestQueryBatchHasCapacityWithRealSizes(t *testing.T) {
 		emptyId := &pbtypes.Id{}
 		ids := []*pbtypes.Id{simpleId}
 		currentSize := calculateQuerySize(ids)
-		result, _ := queryBatchHasCapacity(currentSize, emptyId, 10000)
+		result, _ := QueryBatchHasCapacity(currentSize, emptyId, 10000)
 		if !result {
 			t.Errorf("Should be able to add empty ID - it doesn't increase size")
 		}
@@ -288,7 +288,7 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 		ids := []*pbtypes.Id{}
 
 		// Add first ID
-		canAdd, newSize := queryBatchHasCapacity(cachedSize, id1, 10000)
+		canAdd, newSize := QueryBatchHasCapacity(cachedSize, id1, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add first ID")
 		}
@@ -302,7 +302,7 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 		}
 
 		// Add second ID
-		canAdd, newSize = queryBatchHasCapacity(cachedSize, id2, 10000)
+		canAdd, newSize = QueryBatchHasCapacity(cachedSize, id2, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add second ID")
 		}
@@ -316,7 +316,7 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 		}
 
 		// Add third ID
-		canAdd, newSize = queryBatchHasCapacity(cachedSize, id3, 10000)
+		canAdd, newSize = QueryBatchHasCapacity(cachedSize, id3, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add third ID")
 		}
@@ -342,21 +342,21 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add first ID
-		canAdd, newSize := queryBatchHasCapacity(cachedSize, id1, limit)
+		canAdd, newSize := QueryBatchHasCapacity(cachedSize, id1, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add first ID within limit")
 		}
 		cachedSize = newSize
 
 		// Add second ID
-		canAdd, newSize = queryBatchHasCapacity(cachedSize, id2, limit)
+		canAdd, newSize = QueryBatchHasCapacity(cachedSize, id2, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add second ID within limit")
 		}
 		cachedSize = newSize
 
 		// Try to add third ID - should fail
-		canAdd, unchangedSize := queryBatchHasCapacity(cachedSize, id3, limit)
+		canAdd, unchangedSize := QueryBatchHasCapacity(cachedSize, id3, limit)
 		if canAdd {
 			t.Error("Should not be able to add third ID - would exceed limit")
 		}
@@ -370,7 +370,7 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add empty ID - should add 2 bytes (tag + length)
-		canAdd, newSize := queryBatchHasCapacity(cachedSize, emptyId, 1000)
+		canAdd, newSize := QueryBatchHasCapacity(cachedSize, emptyId, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty ID")
 		}
@@ -380,14 +380,14 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 		}
 
 		// Add real ID first
-		canAdd, newSize = queryBatchHasCapacity(cachedSize, id1, 1000)
+		canAdd, newSize = QueryBatchHasCapacity(cachedSize, id1, 1000)
 		if !canAdd {
 			t.Fatal("Should be able to add real ID")
 		}
 		cachedSize = newSize
 
 		// Add empty ID after real ID - should add 2 bytes (tag + length)
-		canAdd, newSize = queryBatchHasCapacity(cachedSize, emptyId, 1000)
+		canAdd, newSize = QueryBatchHasCapacity(cachedSize, emptyId, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty ID after real ID")
 		}
@@ -417,7 +417,7 @@ func TestQueryBatchHasCapacityPerformance(t *testing.T) {
 
 	t.Run("performance with many IDs", func(t *testing.T) {
 		currentSize := calculateQuerySize(ids)
-		result, _ := queryBatchHasCapacity(currentSize, newId, 10000)
+		result, _ := QueryBatchHasCapacity(currentSize, newId, 10000)
 		// Just ensure it completes without error
 		_ = result
 	})
@@ -915,11 +915,11 @@ func TestObservationsBatchHasCapacity(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			currentSize := calculateObservationsMessageSize(tt.existingObservations)
-			result, _ := observationsBatchHasCapacity(currentSize, tt.newObservation, tt.sizeLimit)
+			currentSize := CalculateObservationsMessageSize(tt.existingObservations)
+			result, _ := ObservationsBatchHasCapacity(currentSize, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
-				currentSize := calculateObservationsMessageSize(tt.existingObservations)
+				currentSize := CalculateObservationsMessageSize(tt.existingObservations)
 				newObsSize := calculateObservationSize(tt.newObservation)
 				// Always add tag and length overhead, even for empty messages
 				totalSizeWithNewObs := currentSize + varintSize(uint64(1<<3|2)) + varintSize(uint64(newObsSize)) + newObsSize
@@ -959,7 +959,7 @@ func TestObservationsBatchHasCapacityWithRealSizes(t *testing.T) {
 
 	t.Run("verify observations message size calculations", func(t *testing.T) {
 		// Test empty observations message
-		size := calculateObservationsMessageSize(observationsMsg)
+		size := CalculateObservationsMessageSize(observationsMsg)
 		if size <= 0 {
 			t.Errorf("Observations message with workflow IDs and timestamp should have positive size, got %d", size)
 		}
@@ -967,8 +967,8 @@ func TestObservationsBatchHasCapacityWithRealSizes(t *testing.T) {
 		t.Logf("Empty observations message size: %d bytes", size)
 
 		// Test adding observation
-		currentSize := calculateObservationsMessageSize(observationsMsg)
-		result, _ := observationsBatchHasCapacity(currentSize, simpleObs, size+100)
+		currentSize := CalculateObservationsMessageSize(observationsMsg)
+		result, _ := ObservationsBatchHasCapacity(currentSize, simpleObs, size+100)
 		if !result {
 			t.Errorf("Should be able to add observation when limit has buffer")
 		}
@@ -979,12 +979,12 @@ func TestObservationsBatchHasCapacityWithRealSizes(t *testing.T) {
 			RegisteredWorkflowIds: []string{"workflow-1", "workflow-2"},
 			Timestamp:             timestamppb.New(time.Unix(1640995200, 0)),
 		}
-		sizeWithObs := calculateObservationsMessageSize(observationsWithObs)
+		sizeWithObs := CalculateObservationsMessageSize(observationsWithObs)
 
 		t.Logf("Observations message with one observation size: %d bytes", sizeWithObs)
 
-		currentSize = calculateObservationsMessageSize(observationsMsg)
-		result, _ = observationsBatchHasCapacity(currentSize, simpleObs, sizeWithObs-1)
+		currentSize = CalculateObservationsMessageSize(observationsMsg)
+		result, _ = ObservationsBatchHasCapacity(currentSize, simpleObs, sizeWithObs-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than required")
 		}
@@ -1057,7 +1057,7 @@ func TestObservationsSizeCalculationMatchesRealMarshalling(t *testing.T) {
 	}
 
 	// Calculate size using our function
-	calculatedSize := calculateObservationsMessageSize(observations)
+	calculatedSize := CalculateObservationsMessageSize(observations)
 
 	// Marshal the actual message
 	marshalled, err := proto.MarshalOptions{Deterministic: true}.Marshal(observations)
@@ -1351,7 +1351,7 @@ func TestReportBatchHasCapacity(t *testing.T) {
 			}
 
 			currentSize := calculateReportsSize(tt.existingReports)
-			result, _ := reportBatchHasCapacity(currentSize, tt.newReport, sizeLimit)
+			result, _ := ReportBatchHasCapacity(currentSize, tt.newReport, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateReportsSize(tt.existingReports)
@@ -1427,12 +1427,12 @@ func TestReportBatchHasCapacityWithRealSizes(t *testing.T) {
 		t.Logf("Single report size: %d bytes", singleReportSize)
 
 		// Test that size limit function works correctly with these sizes
-		result, _ := reportBatchHasCapacity(0, simpleReport, singleReportSize)
+		result, _ := ReportBatchHasCapacity(0, simpleReport, singleReportSize)
 		if !result {
 			t.Errorf("Should be able to add report when limit equals exact size")
 		}
 
-		result, _ = reportBatchHasCapacity(0, simpleReport, singleReportSize-1)
+		result, _ = ReportBatchHasCapacity(0, simpleReport, singleReportSize-1)
 		if result {
 			t.Errorf("Should not be able to add report when limit is one byte less than size")
 		}
@@ -1478,7 +1478,7 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		reports := []*pbtypes.Report{}
 
 		// Add first report
-		canAdd, newSize := reportBatchHasCapacity(cachedSize, report1, 10000)
+		canAdd, newSize := ReportBatchHasCapacity(cachedSize, report1, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add first report")
 		}
@@ -1492,7 +1492,7 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		}
 
 		// Add second report
-		canAdd, newSize = reportBatchHasCapacity(cachedSize, report2, 10000)
+		canAdd, newSize = ReportBatchHasCapacity(cachedSize, report2, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add second report")
 		}
@@ -1506,7 +1506,7 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		}
 
 		// Add third report
-		canAdd, newSize = reportBatchHasCapacity(cachedSize, report3, 10000)
+		canAdd, newSize = ReportBatchHasCapacity(cachedSize, report3, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add third report")
 		}
@@ -1532,21 +1532,21 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add first report
-		canAdd, newSize := reportBatchHasCapacity(cachedSize, report1, limit)
+		canAdd, newSize := ReportBatchHasCapacity(cachedSize, report1, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add first report within limit")
 		}
 		cachedSize = newSize
 
 		// Add second report
-		canAdd, newSize = reportBatchHasCapacity(cachedSize, report2, limit)
+		canAdd, newSize = ReportBatchHasCapacity(cachedSize, report2, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add second report within limit")
 		}
 		cachedSize = newSize
 
 		// Try to add third report - should fail
-		canAdd, unchangedSize := reportBatchHasCapacity(cachedSize, report3, limit)
+		canAdd, unchangedSize := ReportBatchHasCapacity(cachedSize, report3, limit)
 		if canAdd {
 			t.Error("Should not be able to add third report - would exceed limit")
 		}
@@ -1559,7 +1559,7 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		cachedSize := 100 // Some initial size
 
 		// Add nil report - should not change size and should return true
-		canAdd, newSize := reportBatchHasCapacity(cachedSize, nil, 1000)
+		canAdd, newSize := ReportBatchHasCapacity(cachedSize, nil, 1000)
 		if !canAdd {
 			t.Error("Should be able to add nil report")
 		}
@@ -1573,7 +1573,7 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add empty report - should add 2 bytes (tag + length)
-		canAdd, newSize := reportBatchHasCapacity(cachedSize, emptyReport, 1000)
+		canAdd, newSize := ReportBatchHasCapacity(cachedSize, emptyReport, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty report")
 		}
@@ -1583,14 +1583,14 @@ func TestReportBatchHasCapacityCaching(t *testing.T) {
 		}
 
 		// Add real report first
-		canAdd, newSize = reportBatchHasCapacity(cachedSize, report1, 1000)
+		canAdd, newSize = ReportBatchHasCapacity(cachedSize, report1, 1000)
 		if !canAdd {
 			t.Fatal("Should be able to add real report")
 		}
 		cachedSize = newSize
 
 		// Add empty report after real report - should add 2 bytes (tag + length)
-		canAdd, newSize = reportBatchHasCapacity(cachedSize, emptyReport, 1000)
+		canAdd, newSize = ReportBatchHasCapacity(cachedSize, emptyReport, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty report after real report")
 		}
@@ -1785,7 +1785,7 @@ func TestSizeCalculationAccuracy(t *testing.T) {
 			observations := &pbtypes.Observations{
 				Observations: []*pbtypes.Observation{emptyObs, simpleObs},
 			}
-			calculatedSize = calculateObservationsMessageSize(observations)
+			calculatedSize = CalculateObservationsMessageSize(observations)
 			actualSize = proto.Size(observations)
 			if calculatedSize != actualSize {
 				t.Errorf("Mixed Observations size mismatch: calculated=%d, actual=%d", calculatedSize, actualSize)

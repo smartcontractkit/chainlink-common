@@ -90,7 +90,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 	cachedQuerySize := 0
 
 	for _, rq := range batch {
-		key := getIDKey(rq)
+		key := GetIDKey(rq)
 		newId := &pbtypes.Id{
 			WorkflowExecutionId:      rq.WorkflowExecutionID,
 			WorkflowId:               rq.WorkflowID,
@@ -108,7 +108,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		ok, newSize := queryBatchHasCapacity(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
+		ok, newSize := QueryBatchHasCapacity(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
 		if !ok {
 			break
 		}
@@ -154,7 +154,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	allExecutionIDs := []string{}
 
 	// Initialize cached size with the base message size (RegisteredWorkflowIds and Timestamp)
-	cachedObsSize := calculateObservationsMessageSize(obs)
+	cachedObsSize := CalculateObservationsMessageSize(obs)
 
 	for _, weid := range weids {
 		rq, ok := reqMap[weid]
@@ -197,7 +197,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		ok, newSize := observationsBatchHasCapacity(cachedObsSize, newOb, r.limits.maxObservationLengthBytes)
+		ok, newSize := ObservationsBatchHasCapacity(cachedObsSize, newOb, r.limits.maxObservationLengthBytes)
 		if !ok {
 			break
 		}
@@ -436,7 +436,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 
-		ok, newSize := reportBatchHasCapacity(cachedReportSize, report, r.limits.maxOutcomeLengthBytes)
+		ok, newSize := ReportBatchHasCapacity(cachedReportSize, report, r.limits.maxOutcomeLengthBytes)
 		if !ok {
 			break
 		}

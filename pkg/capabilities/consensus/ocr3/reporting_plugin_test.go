@@ -1119,7 +1119,7 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 	// This test specifically addresses the condition `if seenIds[key]` in the Query phase
 	// to verify that duplicate IDs are properly handled and don't affect size calculations
 
-	// Helper function to create a ReportRequest for testing getIDKey
+	// Helper function to create a ReportRequest for testing GetIDKey
 	createReportRequest := func(workflowExecutionId, workflowId, reportId string) *ReportRequest {
 		return &ReportRequest{
 			WorkflowExecutionID:      workflowExecutionId,
@@ -1152,8 +1152,8 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 		rq1 := createReportRequest("exec-1", "workflow-1", "report-1")
 		rq2 := createReportRequest("exec-1", "workflow-1", "report-1") // Same as rq1
 
-		key1 := getIDKey(rq1)
-		key2 := getIDKey(rq2)
+		key1 := GetIDKey(rq1)
+		key2 := GetIDKey(rq2)
 
 		if key1 != key2 {
 			t.Errorf("Expected identical keys for identical requests, got %+v != %+v", key1, key2)
@@ -1165,8 +1165,8 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 		rq1 := createReportRequest("exec-1", "workflow-1", "report-1")
 		rq2 := createReportRequest("exec-2", "workflow-1", "report-1") // Different execution ID
 
-		key1 := getIDKey(rq1)
-		key2 := getIDKey(rq2)
+		key1 := GetIDKey(rq1)
+		key2 := GetIDKey(rq2)
 
 		if key1 == key2 {
 			t.Errorf("Expected different keys for different requests, got %+v == %+v", key1, key2)
@@ -1192,7 +1192,7 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 
 		// Simulate the logic from reporting_plugin.go Query method
 		for _, rq := range batch {
-			key := getIDKey(rq)
+			key := GetIDKey(rq)
 			newId := createIdFromRequest(rq)
 
 			// This is the condition we're specifically testing
@@ -1201,7 +1201,7 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 			}
 
 			// Check size limit (this should only be called for non-duplicates)
-			canAdd, newSize := queryBatchHasCapacity(cachedQuerySize, newId, sizeLimit)
+			canAdd, newSize := QueryBatchHasCapacity(cachedQuerySize, newId, sizeLimit)
 			if !canAdd {
 				break
 			}
@@ -1266,7 +1266,7 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 		seenIds := make(map[idKey]bool)
 
 		rq := createReportRequest("exec-1", "workflow-1", "report-1")
-		key := getIDKey(rq)
+		key := GetIDKey(rq)
 
 		// Initially, key should not be in seenIds
 		if seenIds[key] {
@@ -1283,7 +1283,7 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 
 		// Test with a different key
 		rq2 := createReportRequest("exec-2", "workflow-1", "report-1")
-		key2 := getIDKey(rq2)
+		key2 := GetIDKey(rq2)
 
 		// This key should not be in seenIds
 		if seenIds[key2] {

@@ -118,7 +118,7 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 	return totalSize
 }
 
-func checkQuerySizeLimit(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
+func queryBatchHasCapacity(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more id
 	newIdSize := calculateIdSize(newId)
 	// Always add tag and length overhead, even for empty messages
@@ -271,8 +271,8 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	return size
 }
 
-// checkObservationsSizeLimit checks if adding a new observation to a pbtypes.Observations would exceed the size limit
-func checkObservationsSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
+// observationsBatchHasCapacity checks if adding a new observation to a pbtypes.Observations would exceed the size limit
+func observationsBatchHasCapacity(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation to the observations field
 	newObsSize := calculateObservationSize(newObs)
 	// Always add tag and length overhead, even for empty messages
@@ -371,8 +371,8 @@ func calculateReportsSize(reports []*pbtypes.Report) int {
 	return totalSize
 }
 
-// checkReportSizeLimit checks if adding a new report to the outcome would exceed size limits
-func checkReportSizeLimit(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
+// reportBatchHasCapacity checks if adding a new report to the outcome would exceed size limits
+func reportBatchHasCapacity(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
 	if newReport == nil {
 		return true, cachedSize
 	}

@@ -1201,7 +1201,7 @@ func TestDuplicateEliminationLogic(t *testing.T) {
 			}
 
 			// Check size limit (this should only be called for non-duplicates)
-			canAdd, newSize := checkQuerySizeLimit(cachedQuerySize, newId, sizeLimit)
+			canAdd, newSize := queryBatchHasCapacity(cachedQuerySize, newId, sizeLimit)
 			if !canAdd {
 				break
 			}

@@ -108,8 +108,8 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		canAdd, newSize := checkQuerySizeLimit(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
-		if !canAdd {
+		ok, newSize := queryBatchHasCapacity(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
+		if !ok {
 			break
 		}
 
@@ -197,8 +197,8 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		canAdd, newSize := checkObservationsSizeLimit(cachedObsSize, newOb, r.limits.maxObservationLengthBytes)
-		if !canAdd {
+		ok, newSize := observationsBatchHasCapacity(cachedObsSize, newOb, r.limits.maxObservationLengthBytes)
+		if !ok {
 			break
 		}
 
@@ -436,8 +436,8 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 
-		canAdd, newSize := checkReportSizeLimit(cachedReportSize, report, r.limits.maxOutcomeLengthBytes)
-		if !canAdd {
+		ok, newSize := reportBatchHasCapacity(cachedReportSize, report, r.limits.maxOutcomeLengthBytes)
+		if !ok {
 			break
 		}
 

@@ -24,11 +24,9 @@ const (
 )
 
 type factory struct {
-	store                   *requests.Store[*ReportRequest]
-	capability              *capability
-	batchSize               int
-	outcomePruningThreshold uint64
-	lggr                    logger.Logger
+	store      *requests.Store[*ReportRequest]
+	capability *capability
+	lggr       logger.Logger
 
 	services.StateMachine
 }
@@ -73,15 +71,7 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.RequestTimeout = durationpb.New(defaultRequestExpiry)
 	}
 	o.capability.setRequestTimeout(configProto.RequestTimeout.AsDuration())
-	limits := reportingPluginLimits{
-		maxQueryLengthBytes:       int(configProto.MaxQueryLengthBytes),
-		maxObservationLengthBytes: int(configProto.MaxObservationLengthBytes),
-		maxOutcomeLengthBytes:     int(configProto.MaxOutcomeLengthBytes),
-	}
-	rp, err := NewReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
-	if rp != nil {
-		rp = rp.WithLimits(limits)
-	}
+	rp, err := NewReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, &configProto, o.lggr)
 	rpInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{

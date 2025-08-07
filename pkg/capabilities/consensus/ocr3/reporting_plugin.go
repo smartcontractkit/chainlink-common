@@ -38,41 +38,23 @@ type CapabilityIface interface {
 }
 
 type reportingPlugin struct {
-	batchSize               int
-	s                       *requests.Store[*ReportRequest]
-	r                       CapabilityIface
-	config                  ocr3types.ReportingPluginConfig
-	outcomePruningThreshold uint64
-	limits                  reportingPluginLimits
-	lggr                    logger.Logger
-}
-
-type reportingPluginLimits struct {
-	maxQueryLengthBytes       int
-	maxObservationLengthBytes int
-	maxOutcomeLengthBytes     int
-}
-
-func (r *reportingPlugin) WithLimits(limits reportingPluginLimits) *reportingPlugin {
-	newRP := *r // shallow copy
-	newRP.limits = limits
-	return &newRP
+	batchSize int
+	s         *requests.Store[*ReportRequest]
+	r         CapabilityIface
+	config    ocr3types.ReportingPluginConfig
+	limits    *pbtypes.ReportingPluginConfig
+	lggr      logger.Logger
 }
 
 func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
-	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
+	limits *pbtypes.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
-		s:                       s,
-		r:                       r,
-		batchSize:               batchSize,
-		config:                  config,
-		outcomePruningThreshold: outcomePruningThreshold,
-		limits: reportingPluginLimits{
-			maxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
-			maxObservationLengthBytes: defaultMaxPhaseOutputBytes,
-			maxOutcomeLengthBytes:     defaultMaxPhaseOutputBytes,
-		},
-		lggr: logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
+		s:         s,
+		r:         r,
+		batchSize: batchSize,
+		config:    config,
+		limits:    limits,
+		lggr:      logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
 }
 
@@ -108,7 +90,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		ok, newSize := QueryBatchHasCapacity(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
+		ok, newSize := QueryBatchHasCapacity(cachedQuerySize, newId, int(r.limits.MaxQueryLengthBytes))
 		if !ok {
 			break
 		}
@@ -197,7 +179,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		ok, newSize := ObservationsBatchHasCapacity(cachedObsSize, newOb, r.limits.maxObservationLengthBytes)
+		ok, newSize := ObservationsBatchHasCapacity(cachedObsSize, newOb, int(r.limits.MaxObservationLengthBytes))
 		if !ok {
 			break
 		}
@@ -436,7 +418,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 
-		ok, newSize := ReportBatchHasCapacity(cachedReportSize, report, r.limits.maxOutcomeLengthBytes)
+		ok, newSize := ReportBatchHasCapacity(cachedReportSize, report, int(r.limits.MaxOutcomeLengthBytes))
 		if !ok {
 			break
 		}
@@ -454,7 +436,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.limits.OutcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
 			delete(previousOutcome.Outcomes, workflowID)
 			r.r.UnregisterWorkflowID(workflowID)

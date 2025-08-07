@@ -27,18 +27,18 @@ type KeyType int32
 
 const (
 	KeyType_KEY_TYPE_UNSPECIFIED KeyType = 0
-	KeyType_KEY_TYPE_ECDSA       KeyType = 1
+	KeyType_KEY_TYPE_ECDSA_EVM   KeyType = 1
 )
 
 // Enum value maps for KeyType.
 var (
 	KeyType_name = map[int32]string{
 		0: "KEY_TYPE_UNSPECIFIED",
-		1: "KEY_TYPE_ECDSA",
+		1: "KEY_TYPE_ECDSA_EVM",
 	}
 	KeyType_value = map[string]int32{
 		"KEY_TYPE_UNSPECIFIED": 0,
-		"KEY_TYPE_ECDSA":       1,
+		"KEY_TYPE_ECDSA_EVM":   1,
 	}
 )
 
@@ -234,10 +234,10 @@ const file_capabilities_networking_http_v1alpha_trigger_proto_rawDesc = "" +
 	"\rAuthorizedKey\x12A\n" +
 	"\x04type\x18\x01 \x01(\x0e2-.capabilities.networking.http.v1alpha.KeyTypeR\x04type\x12\x1d\n" +
 	"\n" +
-	"public_key\x18\x02 \x01(\tR\tpublicKey*7\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey*;\n" +
 	"\aKeyType\x12\x18\n" +
-	"\x14KEY_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
-	"\x0eKEY_TYPE_ECDSA\x10\x012\x92\x01\n" +
+	"\x14KEY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12KEY_TYPE_ECDSA_EVM\x10\x012\x92\x01\n" +
 	"\x04HTTP\x12h\n" +
 	"\aTrigger\x12,.capabilities.networking.http.v1alpha.Config\x1a-.capabilities.networking.http.v1alpha.Payload0\x01\x1a \x82\xb5\x18\x1c\b\x01\x12\x18http-trigger@1.0.0-alphab\x06proto3"
 

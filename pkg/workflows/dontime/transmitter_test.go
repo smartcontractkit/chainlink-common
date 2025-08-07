@@ -49,5 +49,5 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 		t.Fatal("failed to retrieve donTime from request channel")
 	}
 
-	require.Empty(t, store.requests.Get(executionID))
+	require.Empty(t, store.GetRequest(executionID))
 }

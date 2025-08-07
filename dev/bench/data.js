@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754599902753,
+  "lastUpdate": 1754603605572,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22470,6 +22470,48 @@ window.BENCHMARK_DATA = {
             "value": 28317,
             "unit": "ns/op",
             "extra": "42651 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "96362174+chainchad@users.noreply.github.com",
+            "name": "chainchad",
+            "username": "chainchad"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "605af6c00a4b1888b0666b01a24e79f6f546c1b6",
+          "message": "Fix broken external chainlink builds in CI (#1463)\n\n* Fix broken external chainlink builds in CI\n\n* Build chainlink without Docker\n\n* Fix job name",
+          "timestamp": "2025-08-07T16:52:09-05:00",
+          "tree_id": "cb6dcac6e670785835e996df081d1e4e3dd81e99",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/605af6c00a4b1888b0666b01a24e79f6f546c1b6"
+        },
+        "date": 1754603604298,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.7,
+            "unit": "ns/op",
+            "extra": "3355630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.9,
+            "unit": "ns/op",
+            "extra": "2932527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28127,
+            "unit": "ns/op",
+            "extra": "42534 times\n4 procs"
           }
         ]
       }

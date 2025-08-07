@@ -7,9 +7,10 @@ import (
 )
 
 const (
+	// Note: any addition to this list must be reflected in the handler's Methods() function.
 	MethodPushWorkflowMetadata         = "push_workflow_metadata"
 	MethodPullWorkflowMetadata         = "pull_workflow_metadata"
-	KeyTypeECDSA               KeyType = "ecdsa"
+	KeyTypeECDSAEVM            KeyType = "ecdsa_evm"
 )
 
 type KeyType string

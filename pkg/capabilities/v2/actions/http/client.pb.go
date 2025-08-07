@@ -22,11 +22,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// CacheSettings defines cache control options for outbound HTTP requests.
 type CacheSettings struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ReadFromCache bool                   `protobuf:"varint,1,opt,name=read_from_cache,json=readFromCache,proto3" json:"read_from_cache,omitempty"` // If true, attempt to read a cached response for the request.
-	StoreInCache  bool                   `protobuf:"varint,2,opt,name=store_in_cache,json=storeInCache,proto3" json:"store_in_cache,omitempty"`    // If true, store the response in cache for the given TTL.
-	TtlMs         int32                  `protobuf:"varint,3,opt,name=ttl_ms,json=ttlMs,proto3" json:"ttl_ms,omitempty"`                           // Time-to-live for the cache entry in milliseconds.
+	MaxAgeMs      int32                  `protobuf:"varint,2,opt,name=max_age_ms,json=maxAgeMs,proto3" json:"max_age_ms,omitempty"`                // Maximum age of a cached response in milliseconds.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,16 +68,9 @@ func (x *CacheSettings) GetReadFromCache() bool {
 	return false
 }
 
-func (x *CacheSettings) GetStoreInCache() bool {
+func (x *CacheSettings) GetMaxAgeMs() int32 {
 	if x != nil {
-		return x.StoreInCache
-	}
-	return false
-}
-
-func (x *CacheSettings) GetTtlMs() int32 {
-	if x != nil {
-		return x.TtlMs
+		return x.MaxAgeMs
 	}
 	return 0
 }
@@ -230,11 +223,11 @@ var File_capabilities_networking_http_v1alpha_client_proto protoreflect.FileDesc
 
 const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"1capabilities/networking/http/v1alpha/client.proto\x12$capabilities.networking.http.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"t\n" +
+	"1capabilities/networking/http/v1alpha/client.proto\x12$capabilities.networking.http.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"U\n" +
 	"\rCacheSettings\x12&\n" +
-	"\x0fread_from_cache\x18\x01 \x01(\bR\rreadFromCache\x12$\n" +
-	"\x0estore_in_cache\x18\x02 \x01(\bR\fstoreInCache\x12\x15\n" +
-	"\x06ttl_ms\x18\x03 \x01(\x05R\x05ttlMs\"\xd4\x02\n" +
+	"\x0fread_from_cache\x18\x01 \x01(\bR\rreadFromCache\x12\x1c\n" +
+	"\n" +
+	"max_age_ms\x18\x02 \x01(\x05R\bmaxAgeMs\"\xd4\x02\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12T\n" +

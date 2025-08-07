@@ -13,12 +13,10 @@ import (
 
 	"github.com/smartcontractkit/libocr/quorumhelper"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-	ocr3max "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -45,7 +43,20 @@ type reportingPlugin struct {
 	r                       CapabilityIface
 	config                  ocr3types.ReportingPluginConfig
 	outcomePruningThreshold uint64
+	limits                  reportingPluginLimits
 	lggr                    logger.Logger
+}
+
+type reportingPluginLimits struct {
+	MaxQueryLengthBytes       int
+	MaxObservationLengthBytes int
+	MaxOutcomeLengthBytes     int
+}
+
+func (r *reportingPlugin) WithLimits(limits reportingPluginLimits) *reportingPlugin {
+	newRP := *r // shallow copy
+	newRP.limits = limits
+	return &newRP
 }
 
 func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
@@ -56,7 +67,12 @@ func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, ba
 		batchSize:               batchSize,
 		config:                  config,
 		outcomePruningThreshold: outcomePruningThreshold,
-		lggr:                    logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
+		limits: reportingPluginLimits{
+			MaxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
+			MaxObservationLengthBytes: defaultMaxPhaseOutputBytes,
+			MaxOutcomeLengthBytes:     defaultMaxPhaseOutputBytes,
+		},
+		lggr: logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
 }
 
@@ -86,7 +102,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		if !CheckQuerySizeLimit(ids, newId, ocr3max.MaxMaxQueryLength) {
+		if !CheckQuerySizeLimit(ids, newId, r.limits.MaxQueryLengthBytes) {
 			break
 		}
 
@@ -169,7 +185,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		if !CheckObservationsSizeLimit(obs, newOb, ocr3max.MaxMaxObservationLength) {
+		if !CheckObservationsSizeLimit(obs, newOb, r.limits.MaxObservationLengthBytes) {
 			break
 		}
 
@@ -407,7 +423,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 
-		if !CheckReportSizeLimit(previousOutcome, report, ocr3max.MaxMaxReportLength) {
+		if !CheckReportSizeLimit(previousOutcome, report, r.limits.MaxOutcomeLengthBytes) {
 			break
 		}
 

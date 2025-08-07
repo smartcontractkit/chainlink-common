@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    name: Build Chainlink Image
+    name: Build Chainlink
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

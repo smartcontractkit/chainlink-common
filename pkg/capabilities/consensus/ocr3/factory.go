@@ -74,9 +74,9 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	}
 	o.capability.setRequestTimeout(configProto.RequestTimeout.AsDuration())
 	limits := reportingPluginLimits{
-		MaxQueryLengthBytes:       int(configProto.MaxQueryLengthBytes),
-		MaxObservationLengthBytes: int(configProto.MaxObservationLengthBytes),
-		MaxOutcomeLengthBytes:     int(configProto.MaxOutcomeLengthBytes),
+		maxQueryLengthBytes:       int(configProto.MaxQueryLengthBytes),
+		maxObservationLengthBytes: int(configProto.MaxObservationLengthBytes),
+		maxOutcomeLengthBytes:     int(configProto.MaxOutcomeLengthBytes),
 	}
 	rp, err := NewReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
 	if rp != nil {

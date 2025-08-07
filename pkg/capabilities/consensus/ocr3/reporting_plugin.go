@@ -48,9 +48,9 @@ type reportingPlugin struct {
 }
 
 type reportingPluginLimits struct {
-	MaxQueryLengthBytes       int
-	MaxObservationLengthBytes int
-	MaxOutcomeLengthBytes     int
+	maxQueryLengthBytes       int
+	maxObservationLengthBytes int
+	maxOutcomeLengthBytes     int
 }
 
 func (r *reportingPlugin) WithLimits(limits reportingPluginLimits) *reportingPlugin {
@@ -68,9 +68,9 @@ func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, ba
 		config:                  config,
 		outcomePruningThreshold: outcomePruningThreshold,
 		limits: reportingPluginLimits{
-			MaxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
-			MaxObservationLengthBytes: defaultMaxPhaseOutputBytes,
-			MaxOutcomeLengthBytes:     defaultMaxPhaseOutputBytes,
+			maxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
+			maxObservationLengthBytes: defaultMaxPhaseOutputBytes,
+			maxOutcomeLengthBytes:     defaultMaxPhaseOutputBytes,
 		},
 		lggr: logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
@@ -103,7 +103,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		}
 
 		// If the new id would exceed the max query size, stop adding more ids
-		canAdd, newSize := CheckQuerySizeLimit(cachedQuerySize, newId, r.limits.MaxQueryLengthBytes)
+		canAdd, newSize := checkQuerySizeLimit(cachedQuerySize, newId, r.limits.maxQueryLengthBytes)
 		if !canAdd {
 			break
 		}
@@ -195,7 +195,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
-		canAdd, newSize := CheckObservationsSizeLimit(cachedObsSize, newOb, r.limits.MaxObservationLengthBytes)
+		canAdd, newSize := checkObservationsSizeLimit(cachedObsSize, newOb, r.limits.maxObservationLengthBytes)
 		if !canAdd {
 			break
 		}
@@ -434,7 +434,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 
-		canAdd, newSize := CheckReportSizeLimit(cachedReportSize, report, r.limits.MaxOutcomeLengthBytes)
+		canAdd, newSize := checkReportSizeLimit(cachedReportSize, report, r.limits.maxOutcomeLengthBytes)
 		if !canAdd {
 			break
 		}

@@ -118,7 +118,7 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 	return totalSize
 }
 
-func CheckQuerySizeLimit(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
+func checkQuerySizeLimit(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more id
 	newIdSize := calculateIdSize(newId)
 	var totalSizeWithNewId int
@@ -196,8 +196,8 @@ func calculateObservationsSize(observations []*pbtypes.Observation) int {
 	return totalSize
 }
 
-// CheckObservationSizeLimit checks if adding a new observation would exceed the size limit
-func CheckObservationSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
+// checkObservationSizeLimit checks if adding a new observation would exceed the size limit
+func checkObservationSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation
 	newObsSize := calculateObservationSize(newObs)
 	var totalSizeWithNewObs int
@@ -259,8 +259,8 @@ func calculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	return size
 }
 
-// CheckObservationsSizeLimit checks if adding a new observation to a pbtypes.Observations would exceed the size limit
-func CheckObservationsSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
+// checkObservationsSizeLimit checks if adding a new observation to a pbtypes.Observations would exceed the size limit
+func checkObservationsSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation to the observations field
 	newObsSize := calculateObservationSize(newObs)
 	var totalSizeWithNewObs int
@@ -322,8 +322,8 @@ func calculateReportsSize(reports []*pbtypes.Report) int {
 	return totalSize
 }
 
-// CheckReportSizeLimit checks if adding a new report to the outcome would exceed size limits
-func CheckReportSizeLimit(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
+// checkReportSizeLimit checks if adding a new report to the outcome would exceed size limits
+func checkReportSizeLimit(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
 	if newReport == nil {
 		return true, cachedSize
 	}

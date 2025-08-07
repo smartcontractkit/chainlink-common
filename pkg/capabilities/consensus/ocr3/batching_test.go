@@ -203,7 +203,7 @@ func TestCheckQuerySizeLimit(t *testing.T) {
 			}
 
 			currentSize := calculateQuerySize(tt.existingIds)
-			result, _ := CheckQuerySizeLimit(currentSize, tt.newId, sizeLimit)
+			result, _ := checkQuerySizeLimit(currentSize, tt.newId, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateQuerySize(tt.existingIds)
@@ -258,12 +258,12 @@ func TestCheckQuerySizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Single ID size: %d bytes", singleIdSize)
 
 		// Test that enough function works correctly with these sizes
-		result, _ := CheckQuerySizeLimit(0, simpleId, singleIdSize)
+		result, _ := checkQuerySizeLimit(0, simpleId, singleIdSize)
 		if !result {
 			t.Errorf("Should be able to add ID when limit equals exact size")
 		}
 
-		result, _ = CheckQuerySizeLimit(0, simpleId, singleIdSize-1)
+		result, _ = checkQuerySizeLimit(0, simpleId, singleIdSize-1)
 		if result {
 			t.Errorf("Should not be able to add ID when limit is one byte less than size")
 		}
@@ -273,7 +273,7 @@ func TestCheckQuerySizeLimitWithRealSizes(t *testing.T) {
 		emptyId := &pbtypes.Id{}
 		ids := []*pbtypes.Id{simpleId}
 		currentSize := calculateQuerySize(ids)
-		result, _ := CheckQuerySizeLimit(currentSize, emptyId, 10000)
+		result, _ := checkQuerySizeLimit(currentSize, emptyId, 10000)
 		if !result {
 			t.Errorf("Should be able to add empty ID - it doesn't increase size")
 		}
@@ -292,7 +292,7 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		ids := []*pbtypes.Id{}
 
 		// Add first ID
-		canAdd, newSize := CheckQuerySizeLimit(cachedSize, id1, 10000)
+		canAdd, newSize := checkQuerySizeLimit(cachedSize, id1, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add first ID")
 		}
@@ -306,7 +306,7 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		}
 
 		// Add second ID
-		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id2, 10000)
+		canAdd, newSize = checkQuerySizeLimit(cachedSize, id2, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add second ID")
 		}
@@ -320,7 +320,7 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		}
 
 		// Add third ID
-		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id3, 10000)
+		canAdd, newSize = checkQuerySizeLimit(cachedSize, id3, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add third ID")
 		}
@@ -346,21 +346,21 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add first ID
-		canAdd, newSize := CheckQuerySizeLimit(cachedSize, id1, limit)
+		canAdd, newSize := checkQuerySizeLimit(cachedSize, id1, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add first ID within limit")
 		}
 		cachedSize = newSize
 
 		// Add second ID
-		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id2, limit)
+		canAdd, newSize = checkQuerySizeLimit(cachedSize, id2, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add second ID within limit")
 		}
 		cachedSize = newSize
 
 		// Try to add third ID - should fail
-		canAdd, unchangedSize := CheckQuerySizeLimit(cachedSize, id3, limit)
+		canAdd, unchangedSize := checkQuerySizeLimit(cachedSize, id3, limit)
 		if canAdd {
 			t.Error("Should not be able to add third ID - would exceed limit")
 		}
@@ -374,7 +374,7 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add empty ID - should not change size
-		canAdd, newSize := CheckQuerySizeLimit(cachedSize, emptyId, 1000)
+		canAdd, newSize := checkQuerySizeLimit(cachedSize, emptyId, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty ID")
 		}
@@ -383,14 +383,14 @@ func TestCheckQuerySizeLimitCaching(t *testing.T) {
 		}
 
 		// Add real ID first
-		canAdd, newSize = CheckQuerySizeLimit(cachedSize, id1, 1000)
+		canAdd, newSize = checkQuerySizeLimit(cachedSize, id1, 1000)
 		if !canAdd {
 			t.Fatal("Should be able to add real ID")
 		}
 		cachedSize = newSize
 
 		// Add empty ID after real ID - should not change size
-		canAdd, newSize = CheckQuerySizeLimit(cachedSize, emptyId, 1000)
+		canAdd, newSize = checkQuerySizeLimit(cachedSize, emptyId, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty ID after real ID")
 		}
@@ -419,7 +419,7 @@ func TestCheckQuerySizeLimitPerformance(t *testing.T) {
 
 	t.Run("performance with many IDs", func(t *testing.T) {
 		currentSize := calculateQuerySize(ids)
-		result, _ := CheckQuerySizeLimit(currentSize, newId, 10000)
+		result, _ := checkQuerySizeLimit(currentSize, newId, 10000)
 		// Just ensure it completes without error
 		_ = result
 	})
@@ -570,7 +570,7 @@ func TestCheckObservationSizeLimit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			currentSize := calculateObservationsSize(tt.existingObservations)
-			result, _ := CheckObservationSizeLimit(currentSize, tt.newObservation, tt.sizeLimit)
+			result, _ := checkObservationSizeLimit(currentSize, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsSize(tt.existingObservations)
@@ -625,12 +625,12 @@ func TestCheckObservationSizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Single observation size: %d bytes", singleObsSize)
 
 		// Test that enoughObservation function works correctly with these sizes
-		result, _ := CheckObservationSizeLimit(0, simpleObs, singleObsSize)
+		result, _ := checkObservationSizeLimit(0, simpleObs, singleObsSize)
 		if !result {
 			t.Errorf("Should be able to add observation when limit equals exact size")
 		}
 
-		result, _ = CheckObservationSizeLimit(0, simpleObs, singleObsSize-1)
+		result, _ = checkObservationSizeLimit(0, simpleObs, singleObsSize-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than size")
 		}
@@ -658,7 +658,7 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		observations := []*pbtypes.Observation{}
 
 		// Add first observation
-		canAdd, newSize := CheckObservationSizeLimit(cachedSize, obs1, 10000)
+		canAdd, newSize := checkObservationSizeLimit(cachedSize, obs1, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add first observation")
 		}
@@ -672,7 +672,7 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		}
 
 		// Add second observation
-		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs2, 10000)
+		canAdd, newSize = checkObservationSizeLimit(cachedSize, obs2, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add second observation")
 		}
@@ -686,7 +686,7 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		}
 
 		// Add third observation
-		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs3, 10000)
+		canAdd, newSize = checkObservationSizeLimit(cachedSize, obs3, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add third observation")
 		}
@@ -712,21 +712,21 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add first observation
-		canAdd, newSize := CheckObservationSizeLimit(cachedSize, obs1, limit)
+		canAdd, newSize := checkObservationSizeLimit(cachedSize, obs1, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add first observation within limit")
 		}
 		cachedSize = newSize
 
 		// Add second observation
-		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs2, limit)
+		canAdd, newSize = checkObservationSizeLimit(cachedSize, obs2, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add second observation within limit")
 		}
 		cachedSize = newSize
 
 		// Try to add third observation - should fail
-		canAdd, unchangedSize := CheckObservationSizeLimit(cachedSize, obs3, limit)
+		canAdd, unchangedSize := checkObservationSizeLimit(cachedSize, obs3, limit)
 		if canAdd {
 			t.Error("Should not be able to add third observation - would exceed limit")
 		}
@@ -740,7 +740,7 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add empty observation - should not change size
-		canAdd, newSize := CheckObservationSizeLimit(cachedSize, emptyObs, 1000)
+		canAdd, newSize := checkObservationSizeLimit(cachedSize, emptyObs, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty observation")
 		}
@@ -749,14 +749,14 @@ func TestCheckObservationSizeLimitCaching(t *testing.T) {
 		}
 
 		// Add real observation first
-		canAdd, newSize = CheckObservationSizeLimit(cachedSize, obs1, 1000)
+		canAdd, newSize = checkObservationSizeLimit(cachedSize, obs1, 1000)
 		if !canAdd {
 			t.Fatal("Should be able to add real observation")
 		}
 		cachedSize = newSize
 
 		// Add empty observation after real observation - should not change size
-		canAdd, newSize = CheckObservationSizeLimit(cachedSize, emptyObs, 1000)
+		canAdd, newSize = checkObservationSizeLimit(cachedSize, emptyObs, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty observation after real observation")
 		}
@@ -920,7 +920,7 @@ func TestCheckObservationsSizeLimit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			currentSize := calculateObservationsMessageSize(tt.existingObservations)
-			result, _ := CheckObservationsSizeLimit(currentSize, tt.newObservation, tt.sizeLimit)
+			result, _ := checkObservationsSizeLimit(currentSize, tt.newObservation, tt.sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateObservationsMessageSize(tt.existingObservations)
@@ -976,7 +976,7 @@ func TestCheckObservationsSizeLimitWithRealSizes(t *testing.T) {
 
 		// Test adding observation
 		currentSize := calculateObservationsMessageSize(observationsMsg)
-		result, _ := CheckObservationsSizeLimit(currentSize, simpleObs, size+100)
+		result, _ := checkObservationsSizeLimit(currentSize, simpleObs, size+100)
 		if !result {
 			t.Errorf("Should be able to add observation when limit has buffer")
 		}
@@ -992,7 +992,7 @@ func TestCheckObservationsSizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Observations message with one observation size: %d bytes", sizeWithObs)
 
 		currentSize = calculateObservationsMessageSize(observationsMsg)
-		result, _ = CheckObservationsSizeLimit(currentSize, simpleObs, sizeWithObs-1)
+		result, _ = checkObservationsSizeLimit(currentSize, simpleObs, sizeWithObs-1)
 		if result {
 			t.Errorf("Should not be able to add observation when limit is one byte less than required")
 		}
@@ -1365,7 +1365,7 @@ func TestCheckReportSizeLimit(t *testing.T) {
 			}
 
 			currentSize := calculateReportsSize(tt.existingReports)
-			result, _ := CheckReportSizeLimit(currentSize, tt.newReport, sizeLimit)
+			result, _ := checkReportSizeLimit(currentSize, tt.newReport, sizeLimit)
 			if result != tt.expected {
 				// Provide detailed debugging information
 				currentSize := calculateReportsSize(tt.existingReports)
@@ -1445,12 +1445,12 @@ func TestCheckReportSizeLimitWithRealSizes(t *testing.T) {
 		t.Logf("Single report size: %d bytes", singleReportSize)
 
 		// Test that size limit function works correctly with these sizes
-		result, _ := CheckReportSizeLimit(0, simpleReport, singleReportSize)
+		result, _ := checkReportSizeLimit(0, simpleReport, singleReportSize)
 		if !result {
 			t.Errorf("Should be able to add report when limit equals exact size")
 		}
 
-		result, _ = CheckReportSizeLimit(0, simpleReport, singleReportSize-1)
+		result, _ = checkReportSizeLimit(0, simpleReport, singleReportSize-1)
 		if result {
 			t.Errorf("Should not be able to add report when limit is one byte less than size")
 		}
@@ -1496,7 +1496,7 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		reports := []*pbtypes.Report{}
 
 		// Add first report
-		canAdd, newSize := CheckReportSizeLimit(cachedSize, report1, 10000)
+		canAdd, newSize := checkReportSizeLimit(cachedSize, report1, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add first report")
 		}
@@ -1510,7 +1510,7 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		}
 
 		// Add second report
-		canAdd, newSize = CheckReportSizeLimit(cachedSize, report2, 10000)
+		canAdd, newSize = checkReportSizeLimit(cachedSize, report2, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add second report")
 		}
@@ -1524,7 +1524,7 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		}
 
 		// Add third report
-		canAdd, newSize = CheckReportSizeLimit(cachedSize, report3, 10000)
+		canAdd, newSize = checkReportSizeLimit(cachedSize, report3, 10000)
 		if !canAdd {
 			t.Fatal("Should be able to add third report")
 		}
@@ -1550,21 +1550,21 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add first report
-		canAdd, newSize := CheckReportSizeLimit(cachedSize, report1, limit)
+		canAdd, newSize := checkReportSizeLimit(cachedSize, report1, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add first report within limit")
 		}
 		cachedSize = newSize
 
 		// Add second report
-		canAdd, newSize = CheckReportSizeLimit(cachedSize, report2, limit)
+		canAdd, newSize = checkReportSizeLimit(cachedSize, report2, limit)
 		if !canAdd {
 			t.Fatal("Should be able to add second report within limit")
 		}
 		cachedSize = newSize
 
 		// Try to add third report - should fail
-		canAdd, unchangedSize := CheckReportSizeLimit(cachedSize, report3, limit)
+		canAdd, unchangedSize := checkReportSizeLimit(cachedSize, report3, limit)
 		if canAdd {
 			t.Error("Should not be able to add third report - would exceed limit")
 		}
@@ -1577,7 +1577,7 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		cachedSize := 100 // Some initial size
 
 		// Add nil report - should not change size and should return true
-		canAdd, newSize := CheckReportSizeLimit(cachedSize, nil, 1000)
+		canAdd, newSize := checkReportSizeLimit(cachedSize, nil, 1000)
 		if !canAdd {
 			t.Error("Should be able to add nil report")
 		}
@@ -1591,7 +1591,7 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		cachedSize := 0
 
 		// Add empty report - should not change size
-		canAdd, newSize := CheckReportSizeLimit(cachedSize, emptyReport, 1000)
+		canAdd, newSize := checkReportSizeLimit(cachedSize, emptyReport, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty report")
 		}
@@ -1600,14 +1600,14 @@ func TestCheckReportSizeLimitCaching(t *testing.T) {
 		}
 
 		// Add real report first
-		canAdd, newSize = CheckReportSizeLimit(cachedSize, report1, 1000)
+		canAdd, newSize = checkReportSizeLimit(cachedSize, report1, 1000)
 		if !canAdd {
 			t.Fatal("Should be able to add real report")
 		}
 		cachedSize = newSize
 
 		// Add empty report after real report - should not change size
-		canAdd, newSize = CheckReportSizeLimit(cachedSize, emptyReport, 1000)
+		canAdd, newSize = checkReportSizeLimit(cachedSize, emptyReport, 1000)
 		if !canAdd {
 			t.Error("Should be able to add empty report after real report")
 		}

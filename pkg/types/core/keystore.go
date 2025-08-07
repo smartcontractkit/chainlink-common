@@ -76,7 +76,7 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 var P2PAccountKey = "P2P_SIGNER"
 var WorkflowAccountKey = "WORKFLOW_DECRYPTER"
 
-// signerDecrypter implements Keystore for a single sign account and decrypt.
+// signerDecrypter implements Keystore for a single sign account and decrypt account.
 type signerDecrypter struct {
 	signAccount    *string
 	signer         crypto.Signer

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754562561154,
+  "lastUpdate": 1754577325370,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22344,6 +22344,48 @@ window.BENCHMARK_DATA = {
             "value": 28157,
             "unit": "ns/op",
             "extra": "42572 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b74219c46eebf624066a24dd35605d739e647cad",
+          "message": "Refactor DonTimeStore (#1457)",
+          "timestamp": "2025-08-07T14:34:22Z",
+          "tree_id": "8599a0cb156e46ab4d177bf2d5e78eb785bfa376",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b74219c46eebf624066a24dd35605d739e647cad"
+        },
+        "date": 1754577324288,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.5,
+            "unit": "ns/op",
+            "extra": "3304881 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.4,
+            "unit": "ns/op",
+            "extra": "2974845 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28304,
+            "unit": "ns/op",
+            "extra": "42440 times\n4 procs"
           }
         ]
       }

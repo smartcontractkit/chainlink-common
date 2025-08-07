@@ -20,20 +20,9 @@ jobs:
           go-version-file: "go.mod"
           only-modules: "true"
 
-      - name: Find branch point
-        id: find-base-sha
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: |-
-          BASE_SHA=$(git merge-base "$BASE_REF" "$HEAD_REF")
-          echo "base-sha=$BASE_SHA" | tee -a "$GITHUB_OUTPUT"
-
       - uses: smartcontractkit/.github/actions/apidiff-go@feat/goalng-apidiff-action # todo
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        with:
-          base-ref: ${{ steps.find-base-sha.outputs.base-sha }}
 
   # analyze-apidiff:
   #   permissions:

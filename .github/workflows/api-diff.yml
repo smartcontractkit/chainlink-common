@@ -20,14 +20,9 @@ jobs:
           go-version-file: "go.mod"
           only-modules: "true"
 
-      - uses: /imjasonh/apidiff-action@57397487bc4339a1b201a84606a7737459cc5c27 # v0.0.3
-        with:
-          fail-on-breaking: "false"
-
-      - uses: /imjasonh/apidiff-action@57397487bc4339a1b201a84606a7737459cc5c27 # v0.0.3
-        with:
-          working-directory: "./pkg"
-          fail-on-breaking: "false"
+      - uses: smartcontractkit/.github/actions/apidiff-go@feat/goalng-apidiff-action # todo
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   # analyze-apidiff:
   #   permissions:

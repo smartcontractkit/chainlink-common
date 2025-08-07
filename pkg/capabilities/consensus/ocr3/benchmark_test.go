@@ -21,6 +21,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
+	captypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
@@ -161,7 +162,9 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 			N: numOracles,
 			F: f,
 		},
-		100, // outcomePruningThreshold
+		&captypes.ReportingPluginConfig{
+			OutcomePruningThreshold: 100,
+		},
 		lggr,
 	)
 	require.NoError(b, err)
@@ -255,7 +258,9 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 			N: numOracles,
 			F: f,
 		},
-		100, // outcomePruningThreshold
+		&captypes.ReportingPluginConfig{
+			OutcomePruningThreshold: 100,
+		},
 		lggr,
 	)
 	require.NoError(b, err)

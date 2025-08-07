@@ -11,10 +11,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
 
+	captypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
-	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
@@ -39,23 +40,23 @@ type CapabilityIface interface {
 }
 
 type reportingPlugin struct {
-	batchSize               int
-	s                       *requests.Store[*ReportRequest]
-	r                       CapabilityIface
-	config                  ocr3types.ReportingPluginConfig
-	outcomePruningThreshold uint64
-	lggr                    logger.Logger
+	batchSize int
+	s         *requests.Store[*ReportRequest]
+	r         CapabilityIface
+	config    ocr3types.ReportingPluginConfig
+	limits    *captypes.ReportingPluginConfig
+	lggr      logger.Logger
 }
 
 func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
-	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
+	limits *captypes.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
-		s:                       s,
-		r:                       r,
-		batchSize:               batchSize,
-		config:                  config,
-		outcomePruningThreshold: outcomePruningThreshold,
-		lggr:                    logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
+		s:         s,
+		r:         r,
+		batchSize: batchSize,
+		config:    config,
+		limits:    limits,
+		lggr:      logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
 }
 
@@ -398,7 +399,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.limits.OutcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
 			delete(previousOutcome.Outcomes, workflowID)
 			r.r.UnregisterWorkflowID(workflowID)

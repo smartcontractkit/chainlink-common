@@ -13,11 +13,10 @@ import (
 
 	"github.com/smartcontractkit/libocr/quorumhelper"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -39,28 +38,29 @@ type CapabilityIface interface {
 }
 
 type reportingPlugin struct {
-	batchSize               int
-	s                       *requests.Store[*ReportRequest]
-	r                       CapabilityIface
-	config                  ocr3types.ReportingPluginConfig
-	outcomePruningThreshold uint64
-	lggr                    logger.Logger
+	batchSize int
+	s         *requests.Store[*ReportRequest]
+	r         CapabilityIface
+	config    ocr3types.ReportingPluginConfig
+	limits    *pbtypes.ReportingPluginConfig
+	lggr      logger.Logger
 }
 
 func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
-	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
+	limits *pbtypes.ReportingPluginConfig, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
-		s:                       s,
-		r:                       r,
-		batchSize:               batchSize,
-		config:                  config,
-		outcomePruningThreshold: outcomePruningThreshold,
-		lggr:                    logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
+		s:         s,
+		r:         r,
+		batchSize: batchSize,
+		config:    config,
+		limits:    limits,
+		lggr:      logger.Named(lggr, "OCR3ConsensusReportingPlugin"),
 	}, nil
 }
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
 	batch, err := r.s.FirstN(r.batchSize)
+
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -68,8 +68,12 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 
 	ids := []*pbtypes.Id{}
 	allExecutionIDs := []string{}
+	seenIds := make(map[idKey]bool)
+	cachedQuerySize := 0
+
 	for _, rq := range batch {
-		ids = append(ids, &pbtypes.Id{
+		key := GetIDKey(rq)
+		newId := &pbtypes.Id{
 			WorkflowExecutionId:      rq.WorkflowExecutionID,
 			WorkflowId:               rq.WorkflowID,
 			WorkflowOwner:            rq.WorkflowOwner,
@@ -78,8 +82,23 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
 			ReportId:                 rq.ReportID,
 			KeyId:                    rq.KeyID,
-		})
+		}
+
+		// Simple duplicate elimination using a map
+		if seenIds[key] {
+			continue
+		}
+
+		// If the new id would exceed the max query size, stop adding more ids
+		ok, newSize := QueryBatchHasCapacity(cachedQuerySize, newId, int(r.limits.MaxQueryLengthBytes))
+		if !ok {
+			break
+		}
+
+		seenIds[key] = true
+		ids = append(ids, newId)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+		cachedQuerySize = newSize
 	}
 
 	r.lggr.Debugw("Query complete", "len", len(ids), "allExecutionIDs", allExecutionIDs)
@@ -110,8 +129,15 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		reqMap[req.WorkflowExecutionID] = req
 	}
 
-	obs := &pbtypes.Observations{}
+	obs := &pbtypes.Observations{
+		RegisteredWorkflowIds: r.r.GetRegisteredWorkflowsIDs(),
+		Timestamp:             timestamppb.New(time.Now()),
+	}
 	allExecutionIDs := []string{}
+
+	// Initialize cached size with the base message size (RegisteredWorkflowIds and Timestamp)
+	cachedObsSize := CalculateObservationsMessageSize(obs)
+
 	for _, weid := range weids {
 		rq, ok := reqMap[weid]
 		if !ok {
@@ -153,11 +179,15 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			OverriddenEncoderConfig: cfgProto,
 		}
 
+		ok, newSize := ObservationsBatchHasCapacity(cachedObsSize, newOb, int(r.limits.MaxObservationLengthBytes))
+		if !ok {
+			break
+		}
+
 		obs.Observations = append(obs.Observations, newOb)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+		cachedObsSize = newSize
 	}
-	obs.RegisteredWorkflowIds = r.r.GetRegisteredWorkflowsIDs()
-	obs.Timestamp = timestamppb.New(time.Now())
 
 	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
 	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
@@ -309,6 +339,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 	// are part of the current Query.
 	previousOutcome.CurrentReports = []*pbtypes.Report{}
 	var allExecutionIDs []string
+	cachedReportSize := 0
 
 	for _, weid := range q.Ids {
 		if weid == nil {
@@ -386,8 +417,15 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Outcome: outcome,
 			Id:      weid,
 		}
+
+		ok, newSize := ReportBatchHasCapacity(cachedReportSize, report, int(r.limits.MaxOutcomeLengthBytes))
+		if !ok {
+			break
+		}
+
 		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
+		cachedReportSize = newSize
 
 		previousOutcome.Outcomes[weid.WorkflowId] = outcome
 	}
@@ -398,7 +436,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
 			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
 			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.limits.OutcomePruningThreshold {
 			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
 			delete(previousOutcome.Outcomes, workflowID)
 			r.r.UnregisterWorkflowID(workflowID)

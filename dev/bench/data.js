@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754664993067,
+  "lastUpdate": 1754692768185,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22596,6 +22596,48 @@ window.BENCHMARK_DATA = {
             "value": 28126,
             "unit": "ns/op",
             "extra": "42596 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c6d6b4922c30ba9b7da43afc4f1016f10ed6b29",
+          "message": "CCIP - make required config types public and update legacy snapshot function args (#1464)",
+          "timestamp": "2025-08-08T17:38:06-05:00",
+          "tree_id": "3b42ea61e68e5e5face23e0b535ecce12fcbfa0b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3c6d6b4922c30ba9b7da43afc4f1016f10ed6b29"
+        },
+        "date": 1754692766580,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.3,
+            "unit": "ns/op",
+            "extra": "3391640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.7,
+            "unit": "ns/op",
+            "extra": "2997534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28137,
+            "unit": "ns/op",
+            "extra": "42626 times\n4 procs"
           }
         ]
       }

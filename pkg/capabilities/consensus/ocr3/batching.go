@@ -3,8 +3,8 @@ package ocr3
 import (
 	"google.golang.org/protobuf/proto"
 
-	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	pbvalues "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type idKey struct {
@@ -64,8 +64,8 @@ func uint32FieldSize(fieldNumber int, value uint32) int {
 	return tagSize + valueSize
 }
 
-// calculateIdSize calculates the marshalled size of a single pbtypes.Id
-func calculateIdSize(id *pbtypes.Id) int {
+// calculateIdSize calculates the marshalled size of a single types.Id
+func calculateIdSize(id *types.Id) int {
 	size := 0
 
 	// Field 1: workflowExecutionId (string)
@@ -95,8 +95,8 @@ func calculateIdSize(id *pbtypes.Id) int {
 	return size
 }
 
-// calculateQuerySize calculates the precise marshalled size of a pbtypes.Query
-func calculateQuerySize(ids []*pbtypes.Id) int {
+// calculateQuerySize calculates the precise marshalled size of a types.Query
+func calculateQuerySize(ids []*types.Id) int {
 	if len(ids) == 0 {
 		return 0
 	}
@@ -118,7 +118,7 @@ func calculateQuerySize(ids []*pbtypes.Id) int {
 	return totalSize
 }
 
-func QueryBatchHasCapacity(cachedSize int, newId *pbtypes.Id, sizeLimit int) (bool, int) {
+func QueryBatchHasCapacity(cachedSize int, newId *types.Id, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more id
 	newIdSize := calculateIdSize(newId)
 	// Always add tag and length overhead, even for empty messages
@@ -149,7 +149,7 @@ func messageFieldSize(fieldNumber int, msg proto.Message) int {
 
 // listFieldSize calculates the protobuf wire format size for a List field
 // This handles the special case where empty List{Fields: []} contributes tag+length overhead
-func listFieldSize(fieldNumber int, list *pbvalues.List) int {
+func listFieldSize(fieldNumber int, list *pb.List) int {
 	if list == nil {
 		return 0 // nil lists are omitted in proto3
 	}
@@ -162,7 +162,7 @@ func listFieldSize(fieldNumber int, list *pbvalues.List) int {
 
 // mapFieldSize calculates the protobuf wire format size for a Map field
 // This handles the special case where empty Map{Fields: map[string]*Value{}} contributes tag+length overhead
-func mapFieldSize(fieldNumber int, mapField *pbvalues.Map) int {
+func mapFieldSize(fieldNumber int, mapField *pb.Map) int {
 	if mapField == nil {
 		return 0 // nil maps are omitted in proto3
 	}
@@ -173,8 +173,8 @@ func mapFieldSize(fieldNumber int, mapField *pbvalues.Map) int {
 	return tagSize + lengthSize + msgSize
 }
 
-// calculateObservationSize calculates the marshalled size of a single pbtypes.Observation
-func calculateObservationSize(obs *pbtypes.Observation) int {
+// calculateObservationSize calculates the marshalled size of a single types.Observation
+func calculateObservationSize(obs *types.Observation) int {
 	size := 0
 
 	// Field 1: id (Id message)
@@ -192,8 +192,8 @@ func calculateObservationSize(obs *pbtypes.Observation) int {
 	return size
 }
 
-// calculateObservationsSize calculates the precise marshalled size of a pbtypes.Observations
-func calculateObservationsSize(observations []*pbtypes.Observation) int {
+// calculateObservationsSize calculates the precise marshalled size of a types.Observations
+func calculateObservationsSize(observations []*types.Observation) int {
 	if len(observations) == 0 {
 		return 0
 	}
@@ -216,7 +216,7 @@ func calculateObservationsSize(observations []*pbtypes.Observation) int {
 }
 
 // checkObservationSizeLimit checks if adding a new observation would exceed the size limit
-func checkObservationSizeLimit(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
+func checkObservationSizeLimit(cachedSize int, newObs *types.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation
 	newObsSize := calculateObservationSize(newObs)
 	// Always add tag and length overhead, even for empty messages
@@ -245,8 +245,8 @@ func repeatedStringFieldSize(fieldNumber int, strings []string) int {
 	return totalSize
 }
 
-// calculateObservationsMessageSize calculates the marshalled size of a pbtypes.Observations message
-func CalculateObservationsMessageSize(observations *pbtypes.Observations) int {
+// CalculateObservationsMessageSize calculates the marshalled size of a types.Observations message
+func CalculateObservationsMessageSize(observations *types.Observations) int {
 	if observations == nil {
 		return 0
 	}
@@ -271,8 +271,8 @@ func CalculateObservationsMessageSize(observations *pbtypes.Observations) int {
 	return size
 }
 
-// observationsBatchHasCapacity checks if adding a new observation to a pbtypes.Observations would exceed the size limit
-func ObservationsBatchHasCapacity(cachedSize int, newObs *pbtypes.Observation, sizeLimit int) (bool, int) {
+// ObservationsBatchHasCapacity checks if adding a new observation to a types.Observations would exceed the size limit
+func ObservationsBatchHasCapacity(cachedSize int, newObs *types.Observation, sizeLimit int) (bool, int) {
 	// Calculate size if we add one more observation to the observations field
 	newObsSize := calculateObservationSize(newObs)
 	// Always add tag and length overhead, even for empty messages
@@ -287,52 +287,8 @@ func ObservationsBatchHasCapacity(cachedSize int, newObs *pbtypes.Observation, s
 	return true, totalSizeWithNewObs
 }
 
-// calculateAggregationOutcomeSize calculates the marshalled size of a single pbtypes.AggregationOutcome
-func calculateAggregationOutcomeSize(outcome *pbtypes.AggregationOutcome) int {
-	if outcome == nil {
-		return 0
-	}
-
-	size := 0
-
-	// Field 1: encodableOutcome (values.v1.Map message)
-	size += mapFieldSize(1, outcome.EncodableOutcome)
-
-	// Field 2: metadata (bytes)
-	if len(outcome.Metadata) > 0 {
-		tagSize := varintSize(uint64(2<<3 | 2)) // wire type 2 for length-delimited
-		lengthSize := varintSize(uint64(len(outcome.Metadata)))
-		size += tagSize + lengthSize + len(outcome.Metadata)
-	}
-
-	// Field 3: shouldReport (bool)
-	if outcome.ShouldReport {
-		tagSize := varintSize(uint64(3 << 3)) // wire type 0 for varint
-		valueSize := 1                        // bool encoded as varint, true = 1 byte
-		size += tagSize + valueSize
-	}
-
-	// Field 4: lastSeenAt (uint64)
-	if outcome.LastSeenAt != 0 {
-		tagSize := varintSize(uint64(4 << 3)) // wire type 0 for varint
-		valueSize := varintSize(outcome.LastSeenAt)
-		size += tagSize + valueSize
-	}
-
-	// Field 5: timestamp (google.protobuf.Timestamp message)
-	size += messageFieldSize(5, outcome.Timestamp)
-
-	// Field 6: encoderName (string)
-	size += stringFieldSize(6, outcome.EncoderName)
-
-	// Field 7: encoderConfig (values.v1.Map message)
-	size += mapFieldSize(7, outcome.EncoderConfig)
-
-	return size
-}
-
-// calculateReportSize calculates the marshalled size of a single pbtypes.Report
-func calculateReportSize(report *pbtypes.Report) int {
+// calculateReportSize calculates the marshalled size of a single types.Report
+func calculateReportSize(report *types.Report) int {
 	if report == nil {
 		return 0
 	}
@@ -348,8 +304,8 @@ func calculateReportSize(report *pbtypes.Report) int {
 	return size
 }
 
-// calculateReportsSize calculates the precise marshalled size of current_reports from pbtypes.Outcome
-func calculateReportsSize(reports []*pbtypes.Report) int {
+// calculateReportsSize calculates the precise marshalled size of current_reports from types.Outcome
+func calculateReportsSize(reports []*types.Report) int {
 	if len(reports) == 0 {
 		return 0
 	}
@@ -371,8 +327,8 @@ func calculateReportsSize(reports []*pbtypes.Report) int {
 	return totalSize
 }
 
-// reportBatchHasCapacity checks if adding a new report to the outcome would exceed size limits
-func ReportBatchHasCapacity(cachedSize int, newReport *pbtypes.Report, sizeLimit int) (bool, int) {
+// ReportBatchHasCapacity checks if adding a new report to the outcome would exceed size limits
+func ReportBatchHasCapacity(cachedSize int, newReport *types.Report, sizeLimit int) (bool, int) {
 	if newReport == nil {
 		return true, cachedSize
 	}

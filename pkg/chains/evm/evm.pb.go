@@ -1444,6 +1444,7 @@ type CallContractRequest struct {
 	//   - "Finalized": returns error if call is executed at block that is not safe
 	//   - "Safe": returns error if call is executed at block that is not safe
 	ConfidenceLevel chain_common.Confidence `protobuf:"varint,3,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
+	IsExternal      bool                    `protobuf:"varint,4,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1497,6 +1498,13 @@ func (x *CallContractRequest) GetConfidenceLevel() chain_common.Confidence {
 		return x.ConfidenceLevel
 	}
 	return chain_common.Confidence(0)
+}
+
+func (x *CallContractRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 type CallContractReply struct {
@@ -1641,6 +1649,7 @@ type FilterLogsRequest struct {
 	//   - "Finalized": returns error if specified filter_query.toBlock is not finalized
 	//   - "Safe": returns error if specified filter_query.toBlock is not safe
 	ConfidenceLevel chain_common.Confidence `protobuf:"varint,2,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
+	IsExternal      bool                    `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1687,6 +1696,13 @@ func (x *FilterLogsRequest) GetConfidenceLevel() chain_common.Confidence {
 		return x.ConfidenceLevel
 	}
 	return chain_common.Confidence(0)
+}
+
+func (x *FilterLogsRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 type FilterLogsReply struct {
@@ -1935,7 +1951,8 @@ func (x *EstimateGasReply) GetGas() uint64 {
 
 type GetTransactionByHashRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"` // in [32]byte fix-sized array format
+	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`                                // in [32]byte fix-sized array format
+	IsExternal    bool                   `protobuf:"varint,2,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1975,6 +1992,13 @@ func (x *GetTransactionByHashRequest) GetHash() []byte {
 		return x.Hash
 	}
 	return nil
+}
+
+func (x *GetTransactionByHashRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 type GetTransactionByHashReply struct {
@@ -2023,7 +2047,8 @@ func (x *GetTransactionByHashReply) GetTransaction() *Transaction {
 
 type GetTransactionReceiptRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"` // in [32]byte fix-sized array format
+	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`                                // in [32]byte fix-sized array format
+	IsExternal    bool                   `protobuf:"varint,2,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2063,6 +2088,13 @@ func (x *GetTransactionReceiptRequest) GetHash() []byte {
 		return x.Hash
 	}
 	return nil
+}
+
+func (x *GetTransactionReceiptRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 type GetTransactionReceiptReply struct {
@@ -2937,20 +2969,24 @@ const file_evm_proto_rawDesc = "" +
 	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12H\n" +
 	"\x10confidence_level\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\"?\n" +
 	"\x13HeaderByNumberReply\x12(\n" +
-	"\x06header\x18\x01 \x01(\v2\x10.loop.evm.HeaderR\x06header\"\xbc\x01\n" +
+	"\x06header\x18\x01 \x01(\v2\x10.loop.evm.HeaderR\x06header\"\xdd\x01\n" +
 	"\x13CallContractRequest\x12%\n" +
 	"\x04call\x18\x01 \x01(\v2\x11.loop.evm.CallMsgR\x04call\x124\n" +
 	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12H\n" +
-	"\x10confidence_level\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\"'\n" +
+	"\x10confidence_level\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\x12\x1f\n" +
+	"\vis_external\x18\x04 \x01(\bR\n" +
+	"isExternal\"'\n" +
 	"\x11CallContractReply\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\fR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"T\n" +
 	"\x16GetTransactionFeeReply\x12:\n" +
-	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"\x97\x01\n" +
+	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"\xb8\x01\n" +
 	"\x11FilterLogsRequest\x128\n" +
 	"\ffilter_query\x18\x01 \x01(\v2\x15.loop.evm.FilterQueryR\vfilterQuery\x12H\n" +
-	"\x10confidence_level\x18\x02 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\"4\n" +
+	"\x10confidence_level\x18\x02 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\x12\x1f\n" +
+	"\vis_external\x18\x03 \x01(\bR\n" +
+	"isExternal\"4\n" +
 	"\x0fFilterLogsReply\x12!\n" +
 	"\x04logs\x18\x01 \x03(\v2\r.loop.evm.LogR\x04logs\"\xac\x01\n" +
 	"\x10BalanceAtRequest\x12\x18\n" +
@@ -2962,13 +2998,17 @@ const file_evm_proto_rawDesc = "" +
 	"\x12EstimateGasRequest\x12#\n" +
 	"\x03msg\x18\x01 \x01(\v2\x11.loop.evm.CallMsgR\x03msg\"$\n" +
 	"\x10EstimateGasReply\x12\x10\n" +
-	"\x03gas\x18\x01 \x01(\x04R\x03gas\"1\n" +
+	"\x03gas\x18\x01 \x01(\x04R\x03gas\"R\n" +
 	"\x1bGetTransactionByHashRequest\x12\x12\n" +
-	"\x04hash\x18\x01 \x01(\fR\x04hash\"T\n" +
+	"\x04hash\x18\x01 \x01(\fR\x04hash\x12\x1f\n" +
+	"\vis_external\x18\x02 \x01(\bR\n" +
+	"isExternal\"T\n" +
 	"\x19GetTransactionByHashReply\x127\n" +
-	"\vtransaction\x18\x01 \x01(\v2\x15.loop.evm.TransactionR\vtransaction\"2\n" +
+	"\vtransaction\x18\x01 \x01(\v2\x15.loop.evm.TransactionR\vtransaction\"S\n" +
 	"\x1cGetTransactionReceiptRequest\x12\x12\n" +
-	"\x04hash\x18\x01 \x01(\fR\x04hash\"I\n" +
+	"\x04hash\x18\x01 \x01(\fR\x04hash\x12\x1f\n" +
+	"\vis_external\x18\x02 \x01(\bR\n" +
+	"isExternal\"I\n" +
 	"\x1aGetTransactionReceiptReply\x12+\n" +
 	"\areceipt\x18\x01 \x01(\v2\x11.loop.evm.ReceiptR\areceipt\"H\n" +
 	"\x1aRegisterLogTrackingRequest\x12*\n" +

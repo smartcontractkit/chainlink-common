@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KeyValueStore_StoreKeyValue_FullMethodName  = "/loop.KeyValueStore/StoreKeyValue"
-	KeyValueStore_GetValueForKey_FullMethodName = "/loop.KeyValueStore/GetValueForKey"
+	KeyValueStore_StoreKeyValue_FullMethodName       = "/loop.KeyValueStore/StoreKeyValue"
+	KeyValueStore_GetValueForKey_FullMethodName      = "/loop.KeyValueStore/GetValueForKey"
+	KeyValueStore_PruneExpiredEntries_FullMethodName = "/loop.KeyValueStore/PruneExpiredEntries"
 )
 
 // KeyValueStoreClient is the client API for KeyValueStore service.
@@ -30,6 +31,7 @@ const (
 type KeyValueStoreClient interface {
 	StoreKeyValue(ctx context.Context, in *StoreKeyValueRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetValueForKey(ctx context.Context, in *GetValueForKeyRequest, opts ...grpc.CallOption) (*GetValueForKeyResponse, error)
+	PruneExpiredEntries(ctx context.Context, in *PruneExpiredEntriesRequest, opts ...grpc.CallOption) (*PruneExpiredEntriesResponse, error)
 }
 
 type keyValueStoreClient struct {
@@ -60,12 +62,23 @@ func (c *keyValueStoreClient) GetValueForKey(ctx context.Context, in *GetValueFo
 	return out, nil
 }
 
+func (c *keyValueStoreClient) PruneExpiredEntries(ctx context.Context, in *PruneExpiredEntriesRequest, opts ...grpc.CallOption) (*PruneExpiredEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PruneExpiredEntriesResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_PruneExpiredEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeyValueStoreServer is the server API for KeyValueStore service.
 // All implementations must embed UnimplementedKeyValueStoreServer
 // for forward compatibility.
 type KeyValueStoreServer interface {
 	StoreKeyValue(context.Context, *StoreKeyValueRequest) (*emptypb.Empty, error)
 	GetValueForKey(context.Context, *GetValueForKeyRequest) (*GetValueForKeyResponse, error)
+	PruneExpiredEntries(context.Context, *PruneExpiredEntriesRequest) (*PruneExpiredEntriesResponse, error)
 	mustEmbedUnimplementedKeyValueStoreServer()
 }
 
@@ -81,6 +94,9 @@ func (UnimplementedKeyValueStoreServer) StoreKeyValue(context.Context, *StoreKey
 }
 func (UnimplementedKeyValueStoreServer) GetValueForKey(context.Context, *GetValueForKeyRequest) (*GetValueForKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetValueForKey not implemented")
+}
+func (UnimplementedKeyValueStoreServer) PruneExpiredEntries(context.Context, *PruneExpiredEntriesRequest) (*PruneExpiredEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PruneExpiredEntries not implemented")
 }
 func (UnimplementedKeyValueStoreServer) mustEmbedUnimplementedKeyValueStoreServer() {}
 func (UnimplementedKeyValueStoreServer) testEmbeddedByValue()                       {}
@@ -139,6 +155,24 @@ func _KeyValueStore_GetValueForKey_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeyValueStore_PruneExpiredEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PruneExpiredEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).PruneExpiredEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_PruneExpiredEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).PruneExpiredEntries(ctx, req.(*PruneExpiredEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeyValueStore_ServiceDesc is the grpc.ServiceDesc for KeyValueStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -153,6 +187,10 @@ var KeyValueStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetValueForKey",
 			Handler:    _KeyValueStore_GetValueForKey_Handler,
+		},
+		{
+			MethodName: "PruneExpiredEntries",
+			Handler:    _KeyValueStore_PruneExpiredEntries_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

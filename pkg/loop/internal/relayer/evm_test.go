@@ -247,12 +247,9 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			BlockNumber:       blockNum,
 			TransactionIndex:  uint64(txIndex),
 		}
-		evmService.EXPECT().GetTransactionReceipt(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
-			require.Equal(t, txHash, got)
-			return expReceipt, nil
-		})
+		evmService.EXPECT().GetTransactionReceipt(mock.Anything, evm.GeTransactionReceiptRequest{Hash: txHash}).Return(expReceipt, nil).Once()
 
-		got, err := client.GetTransactionReceipt(ctx, txHash)
+		got, err := client.GetTransactionReceipt(ctx, evm.GeTransactionReceiptRequest{Hash: txHash})
 		require.NoError(t, err)
 		require.Equal(t, expReceipt, got)
 
@@ -267,12 +264,9 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			Gas:      gas,
 			GasPrice: gasPrice,
 		}
-		evmService.EXPECT().GetTransactionByHash(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
-			require.Equal(t, txHash, hash)
-			return expTx, nil
-		})
+		evmService.EXPECT().GetTransactionByHash(mock.Anything, evm.GetTransactionByHashRequest{Hash: txHash}).Return(expTx, nil).Once()
 
-		got, err := client.GetTransactionByHash(ctx, txHash)
+		got, err := client.GetTransactionByHash(ctx, evm.GetTransactionByHashRequest{Hash: txHash})
 		require.NoError(t, err)
 		require.Equal(t, expTx, got)
 	})

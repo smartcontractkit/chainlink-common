@@ -9,47 +9,73 @@ concurrency:
   group: integration-build-check-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
+  init:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      core-ref: ${{ steps.set-git-refs.outputs.core-ref }}
+      solana-ref: ${{ steps.set-git-refs.outputs.solana-ref }}
+      starknet-ref: ${{ steps.set-git-refs.outputs.starknet-ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Get refs from PR body
+        id: set-git-refs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/scripts/get-refs-from-pr-body.js')
+            await script({ github, context, core })
+
   build-chainlink:
+    needs: init
     environment: integration
     permissions:
-      id-token: write
       contents: read
-    name: Build Chainlink Image
+      id-token: write
+    name: Build Chainlink
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Get core ref from PR body
-        if: github.event_name == 'pull_request'
-        run: |
-          comment=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json body -q '.body')
-          core_ref=$(echo $comment | grep -oP 'core ref: \K\S+' || true)
-          if [ ! -z "$core_ref" ]; then
-            echo "CUSTOM_CORE_REF=${core_ref}" >> "${GITHUB_ENV}"
-          else
-            echo "CUSTOM_CORE_REF=develop" >> "${GITHUB_ENV}"
-          fi
-
-      - name: Checkout the repo
+      - name: Checkout the chainlink-common repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          repository: smartcontractkit/chainlink-common
+          persist-credentials: false
+          path: chainlink-common
 
-      - name: Build the image
-        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@e29366cdecfe6befff9ab8c3cfe4825218505d58 # v2.3.16
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Checkout the chainlink core repo
+        uses: actions/checkout@v4
         with:
-          push_tag: ""
-          cl_repo: smartcontractkit/chainlink
-          cl_ref: ${{ env.CUSTOM_CORE_REF }}
-          dep_common_sha: ${{ github.event.pull_request.head.sha }}
-          should_checkout: true
-          QA_AWS_REGION: ""
-          QA_AWS_ROLE_TO_ASSUME: ""
+          repository: smartcontractkit/chainlink
+          ref: ${{ needs.init.outputs.core-ref }}
+          persist-credentials: false
+          path: chainlink
+
+      - name: Setup Go
+        uses: ./chainlink-common/.github/actions/setup-go
+        with:
+          go-version-file: "chainlink/go.mod"
+          only-modules: "true"
+
+      - name: Build /chainlink
+        shell: bash
+        env:
+          COMMON_SHA: ${{ github.event.pull_request.head.sha }}
+        working-directory: chainlink
+        run: |
+          go get "github.com/smartcontractkit/chainlink-common@${COMMON_SHA}"
+          go mod tidy
+          make install-chainlink
 
   solana-build-relay:
+    needs: init
     environment: integration
     permissions:
       id-token: write
@@ -59,22 +85,11 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     steps:
-      - name: Get solana ref from PR body
-        if: github.event_name == 'pull_request'
-        run: |
-          comment=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json body -q '.body')
-          solana_ref=$(echo $comment | grep -oP 'solana ref: \K\S+' || true)
-          if [ ! -z "$solana_ref" ]; then
-            echo "CUSTOM_SOLANA_REF=${solana_ref}" >> "${GITHUB_ENV}"
-          else
-            echo "CUSTOM_SOLANA_REF=develop" >> "${GITHUB_ENV}"
-          fi
-
       - name: Checkout the solana repo
         uses: actions/checkout@v4
         with:
           repository: smartcontractkit/chainlink-solana
-          ref: ${{ env.CUSTOM_SOLANA_REF }}
+          ref: ${{ needs.init.outputs.solana-ref }}
 
       - name: Setup Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -93,6 +108,7 @@ jobs:
         run: make test_relay_unit
 
   starknet-build-relay:
+    needs: init
     environment: integration
     permissions:
       id-token: write
@@ -102,22 +118,11 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     steps:
-      - name: Get starknet ref from PR body
-        if: github.event_name == 'pull_request'
-        run: |
-          comment=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json body -q '.body')
-          starknet_ref=$(echo $comment | grep -oP 'starknet ref: \K\S+' || true)
-          if [ ! -z "$starknet_ref" ]; then
-            echo "CUSTOM_STARKNET_REF=${starknet_ref}" >> "${GITHUB_ENV}"
-          else
-            echo "CUSTOM_STARKNET_REF=develop" >> "${GITHUB_ENV}"
-          fi
-
       - name: Checkout the starknet repo
         uses: actions/checkout@v4
         with:
           repository: smartcontractkit/chainlink-starknet
-          ref: ${{ env.CUSTOM_STARKNET_REF }}
+          ref: ${{ needs.init.outputs.starknet-ref }}
 
       - name: Setup Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -126,9 +131,9 @@ jobs:
 
       - name: Replace chainlink-common deps
         run: |
-            cd relayer
-            go get github.com/smartcontractkit/chainlink-common@${{ github.event.pull_request.head.sha }}
-            go mod tidy
+          cd relayer
+          go get github.com/smartcontractkit/chainlink-common@${{ github.event.pull_request.head.sha }}
+          go mod tidy
 
       - name: Install Nix
         uses: cachix/install-nix-action@8887e596b4ee1134dae06b98d573bd674693f47c # v26

@@ -9,20 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
-	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
-	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
+	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 var (
 	// Test chain selectors
-	ethChainSelector = chainSelector(1)
-	bnbChainSelector = chainSelector(56)
+	ethSepoliaChainSelector = chainSelector(16015286601757825753) // Ethereum Sepolia testnet
+	bnbTestnetChainSelector = chainSelector(13264668187771770619) // Binance Smart Chain testnet
 )
 
 func TestSecureMintAggregator_Aggregate(t *testing.T) {
@@ -30,7 +29,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 
 	tests := []struct {
 		name                  string
-		config                SecureMintAggregatorConfig
+		config                *values.Map
 		previousOutcome       *types.AggregationOutcome
 		observations          map[ocrcommon.OracleID][]values.Value
 		f                     int
@@ -40,13 +39,11 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		errorContains         string
 	}{
 		{
-			name: "successful eth report extraction",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
+			name:   "successful eth report extraction",
+			config: configWithChainSelector(t, "16015286601757825753"),
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: ethChainSelector,
+					chainSelector: ethSepoliaChainSelector,
 					seqNr:         10,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -56,7 +53,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				{
-					chainSelector: bnbChainSelector,
+					chainSelector: bnbTestnetChainSelector,
 					seqNr:         11,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
@@ -68,17 +65,15 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			}),
 			f:                     1,
 			expectedShouldReport:  true,
-			expectedChainSelector: ethChainSelector,
+			expectedChainSelector: ethSepoliaChainSelector,
 			expectError:           false,
 		},
 		{
-			name: "no matching chain selector found",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
+			name:   "no matching chain selector found",
+			config: configWithChainSelector(t, "16015286601757825753"),
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: bnbChainSelector,
+					chainSelector: bnbTestnetChainSelector,
 					seqNr:         10,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -93,16 +88,14 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			expectedShouldReport: false,
 		},
 		{
-			name: "sequence number too low",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
+			name:   "sequence number too low",
+			config: configWithChainSelector(t, "16015286601757825753"),
 			previousOutcome: &types.AggregationOutcome{
 				LastSeenAt: 10, // Previous sequence number
 			},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: ethChainSelector,
+					chainSelector: ethSepoliaChainSelector,
 					seqNr:         9, // Lower than previous
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -117,26 +110,22 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			errorContains: "sequence number too low",
 		},
 		{
-			name: "no observations",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
+			name:          "no observations",
+			config:        configWithChainSelector(t, "16015286601757825753"),
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
 			errorContains: "no observations",
 		},
 		{
-			name: "sequence number equal to previous (should be ignored)",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
+			name:   "sequence number equal to previous (should be ignored)",
+			config: configWithChainSelector(t, "16015286601757825753"),
 			previousOutcome: &types.AggregationOutcome{
 				LastSeenAt: 10, // Previous sequence number
 			},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: ethChainSelector,
+					chainSelector: ethSepoliaChainSelector,
 					seqNr:         10, // Equal to previous
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -154,12 +143,8 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create config map
-			cfgMap, err := tc.config.ToMap()
-			require.NoErrorf(t, err, "Failed to convert config %+v to values.Map", tc.config)
-
 			// Create aggregator
-			aggregator, err := NewSecureMintAggregator(*cfgMap)
+			aggregator, err := NewSecureMintAggregator(*tc.config)
 			require.NoError(t, err)
 
 			// Run aggregation
@@ -197,21 +182,19 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				require.True(t, ok)
 
 				// Verify dataID
-				dataIDBytes, ok := report[FeedIDOutputFieldName].([]byte)
+				dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
 				require.True(t, ok)
 				// Should be 0x04 + chain selector as bytes + right padded with 0s
-				var expectedChainSelectorBytes [32]byte
+				var expectedChainSelectorBytes [16]byte
 				expectedChainSelectorBytes[0] = 0x04
 				binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
-				for i := 9; i < 32; i++ {
-					expectedChainSelectorBytes[i] = 0x00
-				}
 				require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
+				t.Logf("Data ID: 0x%x", dataIDBytes)
 
 				// Verify other fields exist
-				price, ok := report[PriceOutputFieldName].(*big.Int)
+				answer, ok := report[AnswerOutputFieldName].(*big.Int)
 				require.True(t, ok)
-				require.NotNil(t, price)
+				require.NotNil(t, answer)
 
 				timestamp := report[TimestampOutputFieldName].(int64)
 				require.Equal(t, int64(1000), timestamp)
@@ -220,95 +203,66 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	}
 }
 
-func TestSecureMintAggregatorConfig_RoundTrip(t *testing.T) {
-	testCases := []struct {
-		name   string
-		config SecureMintAggregatorConfig
-	}{
-		{
-			name: "default eth config",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
-		},
-		{
-			name: "custom target chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: bnbChainSelector,
-			},
-		},
-		{
-			name: "large chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: 999999,
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Step 1: Convert original config to values.Map
-			configMap, err := tc.config.ToMap()
-			require.NoError(t, err, "ToMap should not error")
-			require.NotNil(t, configMap, "ToMap should return non-nil map")
-
-			// Step 2: Convert values.Map back to config
-			roundTrippedConfig, err := NewSecureMintConfig(*configMap)
-			require.NoError(t, err, "NewSecureMintConfig should not error")
-
-			// Step 3: Compare original and round-tripped configs
-			assert.Equal(t, tc.config.TargetChainSelector, roundTrippedConfig.TargetChainSelector,
-				"TargetChainSelector should match")
-		})
-	}
+func configWithChainSelector(t *testing.T, chainSelector string) *values.Map {
+	m, err := values.NewMap(map[string]any{
+		"targetChainSelector": chainSelector,
+	})
+	require.NoError(t, err)
+	return m
 }
 
 func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 	tests := []struct {
-		name        string
-		config      SecureMintAggregatorConfig
-		expectError bool
-		errorMsg    string
+		name          string
+		chainSelector string
+		expected      chainSelector
+		expectError   bool
+		errorMsg      string
 	}{
 		{
-			name: "valid config",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: ethChainSelector,
-			},
-			expectError: false,
+			name:          "valid chain selector",
+			chainSelector: "1",
+			expected:      1,
+			expectError:   false,
 		},
 		{
-			name: "zero target chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: 0,
-			},
-			expectError: true,
-			errorMsg:    "targetChainSelector is required",
+			name:          "invalid chain selector",
+			chainSelector: "invalid",
+			expectError:   true,
+			errorMsg:      "invalid chain selector",
 		},
 		{
-			name: "negative chain selector",
-			config: SecureMintAggregatorConfig{
-				TargetChainSelector: -1,
-			},
-			expectError: true,
-			errorMsg:    "targetChainSelector is required",
+			name:          "large chain selector",
+			chainSelector: "16015286601757825753", // ethereum-testnet-sepolia
+			expected:      16015286601757825753,
+			expectError:   false,
+		},
+		{
+			name:          "negative chain selector",
+			chainSelector: "-1",
+			expectError:   true,
+			errorMsg:      "invalid chain selector",
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			configMap, err := tc.config.ToMap()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configMap, err := values.WrapMap(map[string]any{
+				"targetChainSelector": tt.chainSelector,
+			})
 			require.NoError(t, err)
 
-			_, err = NewSecureMintAggregator(*configMap)
-			if tc.expectError {
+			aggregator, err := NewSecureMintAggregator(*configMap)
+			if tt.expectError {
 				require.Error(t, err)
-				if tc.errorMsg != "" {
-					require.Contains(t, err.Error(), tc.errorMsg)
+				if tt.errorMsg != "" {
+					require.Contains(t, err.Error(), tt.errorMsg)
 				}
-			} else {
-				require.NoError(t, err)
+				return
 			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
 		})
 	}
 }

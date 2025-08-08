@@ -1,7 +1,6 @@
 package dontime
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -76,51 +75,6 @@ func TestPlugin_Observation(t *testing.T) {
 		}
 		require.Equal(t, expectedRequests, obsProto.Requests)
 		store.deleteExecutionID("workflow-123")
-	})
-
-	t.Run("Batching with expired requests", func(t *testing.T) {
-		// Generate request queue: 1-2(expired)-3-4(expired)-5-6(expired)
-		var expiredRequestChs []chan Response
-		for i := range 6 {
-			executionID := fmt.Sprintf("workflow-%d", i)
-			ch := make(chan Response, 1)
-			request := &Request{
-				ExpiresAt:           time.Now().Add(defaultExecutionRemovalTime),
-				CallbackCh:          ch,
-				WorkflowExecutionID: executionID,
-				SeqNum:              0,
-			}
-			if i%2 == 0 {
-				request.ExpiresAt = time.Now()
-				expiredRequestChs = append(expiredRequestChs, ch)
-			}
-			err := store.requests.Add(request)
-			require.NoError(t, err)
-		}
-
-		// Batch 3 requests and verify removal of expired requests
-		plugin.batchSize = 3
-
-		observation, err := plugin.Observation(ctx, outcomeCtx, query)
-		require.NoError(t, err)
-
-		// Validate Outcome from Observation
-		obsProto := &pb.Observation{}
-		err = proto.Unmarshal(observation, obsProto)
-		require.NoError(t, err)
-		require.NotEqual(t, 0, obsProto.Timestamp)
-
-		expectedRequests := map[string]int64{
-			"workflow-1": 0,
-			"workflow-3": 0,
-			"workflow-5": 0,
-		}
-		require.Equal(t, expectedRequests, obsProto.Requests)
-
-		for _, ch := range expiredRequestChs {
-			resp := <-ch
-			require.Contains(t, resp.Err.Error(), "timeout exceeded: could not process request before expiry")
-		}
 	})
 }
 

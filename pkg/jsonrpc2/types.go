@@ -82,6 +82,7 @@ func (r *Request[Params]) Digest() (string, error) {
 type Response[Result any] struct {
 	Version string     `json:"jsonrpc"`
 	ID      string     `json:"id"`
+	Method  string     `json:"method"`
 	Result  *Result    `json:"result,omitempty"`
 	Error   *WireError `json:"error,omitempty"`
 }

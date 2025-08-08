@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754655072984,
+  "lastUpdate": 1754664993067,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22554,6 +22554,48 @@ window.BENCHMARK_DATA = {
             "value": 28284,
             "unit": "ns/op",
             "extra": "42700 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "maciej.wisniewski@smartcontract.com",
+            "name": "mchain0",
+            "username": "mchain0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d855910a2dcda2a4260ab4eca8c79fbf449a8c07",
+          "message": "CRE-362: dynamic batching via sizing (#1444)\n\n* CRE-362: dynamic batching via sizing",
+          "timestamp": "2025-08-08T14:55:21Z",
+          "tree_id": "e57389b2ffdd729bf304bd5365d5e102ac9fdc34",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d855910a2dcda2a4260ab4eca8c79fbf449a8c07"
+        },
+        "date": 1754664991212,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.8,
+            "unit": "ns/op",
+            "extra": "3387687 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.6,
+            "unit": "ns/op",
+            "extra": "2972842 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28126,
+            "unit": "ns/op",
+            "extra": "42596 times\n4 procs"
           }
         ]
       }

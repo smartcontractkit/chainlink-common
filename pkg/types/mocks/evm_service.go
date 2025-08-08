@@ -440,9 +440,9 @@ func (_c *EVMService_GetForwarderForEOA_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
-// GetTransactionByHash provides a mock function with given fields: ctx, hash
-func (_m *EVMService) GetTransactionByHash(ctx context.Context, hash [32]byte) (*evm.Transaction, error) {
-	ret := _m.Called(ctx, hash)
+// GetTransactionByHash provides a mock function with given fields: ctx, request
+func (_m *EVMService) GetTransactionByHash(ctx context.Context, request evm.GetTransactionByHashRequest) (*evm.Transaction, error) {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTransactionByHash")
@@ -450,19 +450,19 @@ func (_m *EVMService) GetTransactionByHash(ctx context.Context, hash [32]byte) (
 
 	var r0 *evm.Transaction
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (*evm.Transaction, error)); ok {
-		return rf(ctx, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.GetTransactionByHashRequest) (*evm.Transaction, error)); ok {
+		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) *evm.Transaction); ok {
-		r0 = rf(ctx, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.GetTransactionByHashRequest) *evm.Transaction); ok {
+		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*evm.Transaction)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
-		r1 = rf(ctx, hash)
+	if rf, ok := ret.Get(1).(func(context.Context, evm.GetTransactionByHashRequest) error); ok {
+		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -477,14 +477,14 @@ type EVMService_GetTransactionByHash_Call struct {
 
 // GetTransactionByHash is a helper method to define mock.On call
 //   - ctx context.Context
-//   - hash [32]byte
-func (_e *EVMService_Expecter) GetTransactionByHash(ctx interface{}, hash interface{}) *EVMService_GetTransactionByHash_Call {
-	return &EVMService_GetTransactionByHash_Call{Call: _e.mock.On("GetTransactionByHash", ctx, hash)}
+//   - request evm.GetTransactionByHashRequest
+func (_e *EVMService_Expecter) GetTransactionByHash(ctx interface{}, request interface{}) *EVMService_GetTransactionByHash_Call {
+	return &EVMService_GetTransactionByHash_Call{Call: _e.mock.On("GetTransactionByHash", ctx, request)}
 }
 
-func (_c *EVMService_GetTransactionByHash_Call) Run(run func(ctx context.Context, hash [32]byte)) *EVMService_GetTransactionByHash_Call {
+func (_c *EVMService_GetTransactionByHash_Call) Run(run func(ctx context.Context, request evm.GetTransactionByHashRequest)) *EVMService_GetTransactionByHash_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([32]byte))
+		run(args[0].(context.Context), args[1].(evm.GetTransactionByHashRequest))
 	})
 	return _c
 }
@@ -494,7 +494,7 @@ func (_c *EVMService_GetTransactionByHash_Call) Return(_a0 *evm.Transaction, _a1
 	return _c
 }
 
-func (_c *EVMService_GetTransactionByHash_Call) RunAndReturn(run func(context.Context, [32]byte) (*evm.Transaction, error)) *EVMService_GetTransactionByHash_Call {
+func (_c *EVMService_GetTransactionByHash_Call) RunAndReturn(run func(context.Context, evm.GetTransactionByHashRequest) (*evm.Transaction, error)) *EVMService_GetTransactionByHash_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -558,9 +558,9 @@ func (_c *EVMService_GetTransactionFee_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// GetTransactionReceipt provides a mock function with given fields: ctx, txHash
-func (_m *EVMService) GetTransactionReceipt(ctx context.Context, txHash [32]byte) (*evm.Receipt, error) {
-	ret := _m.Called(ctx, txHash)
+// GetTransactionReceipt provides a mock function with given fields: ctx, request
+func (_m *EVMService) GetTransactionReceipt(ctx context.Context, request evm.GeTransactionReceiptRequest) (*evm.Receipt, error) {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTransactionReceipt")
@@ -568,19 +568,19 @@ func (_m *EVMService) GetTransactionReceipt(ctx context.Context, txHash [32]byte
 
 	var r0 *evm.Receipt
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (*evm.Receipt, error)); ok {
-		return rf(ctx, txHash)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.GeTransactionReceiptRequest) (*evm.Receipt, error)); ok {
+		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) *evm.Receipt); ok {
-		r0 = rf(ctx, txHash)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.GeTransactionReceiptRequest) *evm.Receipt); ok {
+		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*evm.Receipt)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
-		r1 = rf(ctx, txHash)
+	if rf, ok := ret.Get(1).(func(context.Context, evm.GeTransactionReceiptRequest) error); ok {
+		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -595,14 +595,14 @@ type EVMService_GetTransactionReceipt_Call struct {
 
 // GetTransactionReceipt is a helper method to define mock.On call
 //   - ctx context.Context
-//   - txHash [32]byte
-func (_e *EVMService_Expecter) GetTransactionReceipt(ctx interface{}, txHash interface{}) *EVMService_GetTransactionReceipt_Call {
-	return &EVMService_GetTransactionReceipt_Call{Call: _e.mock.On("GetTransactionReceipt", ctx, txHash)}
+//   - request evm.GeTransactionReceiptRequest
+func (_e *EVMService_Expecter) GetTransactionReceipt(ctx interface{}, request interface{}) *EVMService_GetTransactionReceipt_Call {
+	return &EVMService_GetTransactionReceipt_Call{Call: _e.mock.On("GetTransactionReceipt", ctx, request)}
 }
 
-func (_c *EVMService_GetTransactionReceipt_Call) Run(run func(ctx context.Context, txHash [32]byte)) *EVMService_GetTransactionReceipt_Call {
+func (_c *EVMService_GetTransactionReceipt_Call) Run(run func(ctx context.Context, request evm.GeTransactionReceiptRequest)) *EVMService_GetTransactionReceipt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([32]byte))
+		run(args[0].(context.Context), args[1].(evm.GeTransactionReceiptRequest))
 	})
 	return _c
 }
@@ -612,7 +612,7 @@ func (_c *EVMService_GetTransactionReceipt_Call) Return(_a0 *evm.Receipt, _a1 er
 	return _c
 }
 
-func (_c *EVMService_GetTransactionReceipt_Call) RunAndReturn(run func(context.Context, [32]byte) (*evm.Receipt, error)) *EVMService_GetTransactionReceipt_Call {
+func (_c *EVMService_GetTransactionReceipt_Call) RunAndReturn(run func(context.Context, evm.GeTransactionReceiptRequest) (*evm.Receipt, error)) *EVMService_GetTransactionReceipt_Call {
 	_c.Call.Return(run)
 	return _c
 }

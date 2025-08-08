@@ -83,6 +83,7 @@ func (e *EVMClient) CallContract(ctx context.Context, request evmtypes.CallContr
 		Call:            protoCallMsg,
 		BlockNumber:     valuespb.NewBigIntFromInt(request.BlockNumber),
 		ConfidenceLevel: protoConfidenceLevel,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -100,6 +101,7 @@ func (e *EVMClient) FilterLogs(ctx context.Context, request evmtypes.FilterLogsR
 	reply, err := e.grpcClient.FilterLogs(ctx, &evmpb.FilterLogsRequest{
 		FilterQuery:     evmpb.ConvertFilterToProto(request.FilterQuery),
 		ConfidenceLevel: protoConfidenceLevel,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -140,8 +142,11 @@ func (e *EVMClient) EstimateGas(ctx context.Context, msg *evmtypes.CallMsg) (uin
 	return reply.GetGas(), nil
 }
 
-func (e *EVMClient) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
-	reply, err := e.grpcClient.GetTransactionByHash(ctx, &evmpb.GetTransactionByHashRequest{Hash: hash[:]})
+func (e *EVMClient) GetTransactionByHash(ctx context.Context, request evmtypes.GetTransactionByHashRequest) (*evmtypes.Transaction, error) {
+	reply, err := e.grpcClient.GetTransactionByHash(ctx, &evmpb.GetTransactionByHashRequest{
+		Hash:       request.Hash[:],
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -149,8 +154,11 @@ func (e *EVMClient) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash
 	return evmpb.ConvertTransactionFromProto(reply.GetTransaction())
 }
 
-func (e *EVMClient) GetTransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
-	reply, err := e.grpcClient.GetTransactionReceipt(ctx, &evmpb.GetTransactionReceiptRequest{Hash: txHash[:]})
+func (e *EVMClient) GetTransactionReceipt(ctx context.Context, request evmtypes.GeTransactionReceiptRequest) (*evmtypes.Receipt, error) {
+	reply, err := e.grpcClient.GetTransactionReceipt(ctx, &evmpb.GetTransactionReceiptRequest{
+		Hash:       request.Hash[:],
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -282,6 +290,7 @@ func (e *evmServer) CallContract(ctx context.Context, request *evmpb.CallContrac
 		Msg:             callMsg,
 		BlockNumber:     valuespb.NewIntFromBigInt(request.GetBlockNumber()),
 		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, err
@@ -307,6 +316,7 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 	reply, err := e.impl.FilterLogs(ctx, evmtypes.FilterLogsRequest{
 		FilterQuery:     filter,
 		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, err
@@ -359,7 +369,10 @@ func (e *evmServer) EstimateGas(ctx context.Context, request *evmpb.EstimateGasR
 }
 
 func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
-	tx, err := e.impl.GetTransactionByHash(ctx, evmtypes.Hash(request.GetHash()))
+	tx, err := e.impl.GetTransactionByHash(ctx, evmtypes.GetTransactionByHashRequest{
+		Hash:       evmtypes.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +386,10 @@ func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.Get
 }
 
 func (e *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
-	receipt, err := e.impl.GetTransactionReceipt(ctx, evmtypes.Hash(request.GetHash()))
+	receipt, err := e.impl.GetTransactionReceipt(ctx, evmtypes.GeTransactionReceiptRequest{
+		Hash:       evmtypes.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, err
 	}

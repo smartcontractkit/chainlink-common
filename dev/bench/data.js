@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754603605572,
+  "lastUpdate": 1754655072984,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22512,6 +22512,48 @@ window.BENCHMARK_DATA = {
             "value": 28127,
             "unit": "ns/op",
             "extra": "42534 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "95cf0acc9828281fa9724a07ec82cb6e2886e70a",
+          "message": "EVM Relayer: allow to mark request as external (#1441)",
+          "timestamp": "2025-08-08T14:08:48+02:00",
+          "tree_id": "9656670ef59962c0c0c73bb755b7e1b6dc936554",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/95cf0acc9828281fa9724a07ec82cb6e2886e70a"
+        },
+        "date": 1754655071393,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3376070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.3,
+            "unit": "ns/op",
+            "extra": "2978702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28284,
+            "unit": "ns/op",
+            "extra": "42700 times\n4 procs"
           }
         ]
       }

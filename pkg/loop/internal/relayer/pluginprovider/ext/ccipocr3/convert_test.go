@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 // TestMessageProtobufFlattening tests the critical fix for Message field flattening
@@ -434,229 +435,122 @@ func TestFeeQuoterDestChainConfigUint16Boundaries(t *testing.T) {
 	})
 }
 
-func TestAnyToPbValueAndPbValueToAny(t *testing.T) {
+// TestMapConversionUsingValuesPackage tests the conversion between Go maps and protobuf Maps
+func TestMapConversion(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       any
-		expectedVal any
+		name     string
+		input    map[string]any
+		expected map[string]any
 	}{
 		{
-			name:        "string conversion",
-			input:       "hello world",
-			expectedVal: "hello world",
+			name:     "empty map",
+			input:    map[string]any{},
+			expected: map[string]any{},
 		},
 		{
-			name:        "int64 conversion",
-			input:       int64(42),
-			expectedVal: int64(42),
-		},
-		{
-			name:        "uint64 conversion",
-			input:       uint64(123),
-			expectedVal: uint64(123),
-		},
-		{
-			name:        "uint32 conversion",
-			input:       uint32(456),
-			expectedVal: uint32(456),
-		},
-		{
-			name:        "float64 conversion",
-			input:       float64(3.14),
-			expectedVal: float64(3.14),
-		},
-		{
-			name:        "bool true conversion",
-			input:       true,
-			expectedVal: true,
-		},
-		{
-			name:        "bool false conversion",
-			input:       false,
-			expectedVal: false,
-		},
-		{
-			name:        "bytes conversion",
-			input:       []byte{0x01, 0x02, 0x03},
-			expectedVal: []byte{0x01, 0x02, 0x03},
-		},
-		{
-			name:        "big.Int zero conversion",
-			input:       big.NewInt(0),
-			expectedVal: big.NewInt(0),
-		},
-		{
-			name:        "big.Int positive conversion",
-			input:       big.NewInt(123456789),
-			expectedVal: big.NewInt(123456789),
-		},
-		{
-			name:        "big.Int negative conversion",
-			input:       big.NewInt(-987654321),
-			expectedVal: big.NewInt(987654321), // Note: Sign is lost due to Bytes()/SetBytes() limitation
-		},
-		{
-			name: "big.Int large number conversion",
-			input: func() *big.Int {
-				val, _ := new(big.Int).SetString("123456789012345678901234567890", 10)
-				return val
-			}(),
-			expectedVal: func() *big.Int {
-				val, _ := new(big.Int).SetString("123456789012345678901234567890", 10)
-				return val
-			}(),
-		},
-		{
-			name:        "nil big.Int conversion",
-			input:       (*big.Int)(nil),
-			expectedVal: big.NewInt(0), // pbBigIntToInt returns zero for nil
-		},
-		{
-			name:        "map conversion",
-			input:       map[string]any{"key1": "value1", "key2": int64(42)},
-			expectedVal: map[string]any{"key1": "value1", "key2": int64(42)},
-		},
-		{
-			name:        "slice conversion",
-			input:       []any{"item1", int64(123), uint32(456)},
-			expectedVal: []any{"item1", int64(123), uint32(456)},
-		},
-		{
-			name:        "nested map with big.Int",
-			input:       map[string]any{"amount": big.NewInt(1000), "count": uint32(5)},
-			expectedVal: map[string]any{"amount": big.NewInt(1000), "count": uint32(5)},
-		},
-		{
-			name: "complex nested structure",
+			name: "simple values",
 			input: map[string]any{
-				"header": map[string]any{
-					"version": uint32(1),
-					"hash":    []byte{0xFF, 0xEE},
-				},
-				"amounts": []any{
-					big.NewInt(1000),
-					big.NewInt(2000),
-				},
-				"enabled": true,
+				"string":  "hello",
+				"int64":   int64(42),
+				"float64": float64(3.14),
+				"bool":    true,
+				"bytes":   []byte{0x01, 0x02, 0x03},
 			},
-			expectedVal: map[string]any{
-				"header": map[string]any{
-					"version": uint32(1),
-					"hash":    []byte{0xFF, 0xEE},
+			expected: map[string]any{
+				"string":  "hello",
+				"int64":   int64(42),
+				"float64": float64(3.14),
+				"bool":    true,
+				"bytes":   []byte{0x01, 0x02, 0x03},
+			},
+		},
+		{
+			name: "big.Int values",
+			input: map[string]any{
+				"bigint_zero":     big.NewInt(0),
+				"bigint_positive": big.NewInt(123456789),
+				"bigint_negative": big.NewInt(-987654321),
+			},
+			expected: map[string]any{
+				"bigint_zero":     big.NewInt(0),
+				"bigint_positive": big.NewInt(123456789),
+				"bigint_negative": big.NewInt(-987654321),
+			},
+		},
+		{
+			name: "nested maps and lists",
+			input: map[string]any{
+				"nested_map": map[string]any{
+					"inner_key": "inner_value",
+					"inner_num": int64(100),
 				},
-				"amounts": []any{
-					big.NewInt(1000),
-					big.NewInt(2000),
+				"list": []any{
+					"item1",
+					int64(200),
+					big.NewInt(300),
 				},
-				"enabled": true,
+			},
+			expected: map[string]any{
+				"nested_map": map[string]any{
+					"inner_key": "inner_value",
+					"inner_num": int64(100),
+				},
+				"list": []any{
+					"item1",
+					int64(200),
+					big.NewInt(300),
+				},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Convert Go any -> protobuf Value
-			pbVal := anyToPbValue(tt.input)
-			require.NotNil(t, pbVal, "protobuf value should not be nil")
+			// Convert Go map -> protobuf Map
+			pbMap, err := goMapToPbMap(tt.input)
+			require.NoError(t, err, "conversion to protobuf Map should not fail")
 
-			// Convert protobuf Value -> Go any
-			result := pbValueToAny(pbVal)
+			// Convert protobuf Map -> Go map
+			result, err := pbMapToGoMap(pbMap)
+			require.NoError(t, err, "conversion from protobuf Map should not fail")
 
 			// Compare the result
-			if bigInt, ok := tt.expectedVal.(*big.Int); ok && bigInt != nil {
-				resultBigInt, ok := result.(*big.Int)
-				require.True(t, ok, "result should be *big.Int")
-				assert.Equal(t, bigInt.String(), resultBigInt.String(), "big.Int values should be equal")
-			} else {
-				assert.Equal(t, tt.expectedVal, result, "round-trip conversion should preserve the value")
+			for key, expectedVal := range tt.expected {
+				actualVal, exists := result[key]
+				require.True(t, exists, "key %s should exist in result", key)
+
+				if bigInt, ok := expectedVal.(*big.Int); ok {
+					resultBigInt, ok := actualVal.(*big.Int)
+					require.True(t, ok, "result[%s] should be *big.Int", key)
+					assert.Equal(t, bigInt.String(), resultBigInt.String(), "big.Int values should be equal for key %s", key)
+				} else {
+					assert.Equal(t, expectedVal, actualVal, "values should be equal for key %s", key)
+				}
 			}
 		})
 	}
 }
 
-func TestAnyToPbValueUnsupportedType(t *testing.T) {
-	// Test unsupported type falls back to string representation
-	type customStruct struct {
-		Field string
-	}
+func TestMapConversionNilHandling(t *testing.T) {
+	t.Run("nil Go map to protobuf", func(t *testing.T) {
+		pbMap, err := goMapToPbMap(nil)
+		require.NoError(t, err)
+		assert.Nil(t, pbMap)
+	})
 
-	input := customStruct{Field: "test"}
-	pbVal := anyToPbValue(input)
-	result := pbValueToAny(pbVal)
+	t.Run("nil protobuf map to Go", func(t *testing.T) {
+		goMap, err := pbMapToGoMap(nil)
+		require.NoError(t, err)
+		assert.Nil(t, goMap)
+	})
 
-	// Should be converted to string representation
-	assert.Equal(t, "{test}", result)
-}
-
-func TestPbValueToAnyNil(t *testing.T) {
-	result := pbValueToAny(nil)
-	assert.Nil(t, result)
-}
-
-func TestBigIntEdgeCases(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *big.Int
-		expected string
-	}{
-		{
-			name:     "max uint64",
-			input:    new(big.Int).SetUint64(^uint64(0)), // max uint64
-			expected: "18446744073709551615",
-		},
-		{
-			name:     "very large number",
-			input:    new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil),
-			expected: "115792089237316195423570985008687907853269984665640564039457584007913129639936",
-		},
-		{
-			name:     "negative large number",
-			input:    new(big.Int).Neg(new(big.Int).Exp(big.NewInt(2), big.NewInt(128), nil)),
-			expected: "340282366920938463463374607431768211456", // Note: Sign is lost due to Bytes()/SetBytes() limitation
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pbVal := anyToPbValue(tt.input)
-			result := pbValueToAny(pbVal)
-
-			resultBigInt, ok := result.(*big.Int)
-			require.True(t, ok, "result should be *big.Int")
-			assert.Equal(t, tt.expected, resultBigInt.String())
-		})
-	}
-}
-
-func TestUint32Boundaries(t *testing.T) {
-	tests := []struct {
-		name  string
-		input uint32
-	}{
-		{
-			name:  "zero",
-			input: 0,
-		},
-		{
-			name:  "max uint32",
-			input: ^uint32(0), // 4294967295
-		},
-		{
-			name:  "mid range",
-			input: 2147483647, // max int32
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pbVal := anyToPbValue(tt.input)
-			result := pbValueToAny(pbVal)
-
-			resultUint32, ok := result.(uint32)
-			require.True(t, ok, "result should be uint32")
-			assert.Equal(t, tt.input, resultUint32)
-		})
-	}
+	t.Run("empty protobuf map to Go", func(t *testing.T) {
+		emptyPbMap := &pb.Map{Fields: map[string]*pb.Value{}}
+		goMap, err := pbMapToGoMap(emptyPbMap)
+		require.NoError(t, err)
+		assert.NotNil(t, goMap)
+		assert.Equal(t, map[string]any{}, goMap)
+	})
 }
 
 // TestSourceChainConfigConversion tests the new SourceChainConfig conversion functions

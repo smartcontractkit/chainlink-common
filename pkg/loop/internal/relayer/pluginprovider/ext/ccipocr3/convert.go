@@ -7,6 +7,8 @@ import (
 	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 // Helper function to convert protobuf BigInt to big.Int
@@ -607,103 +609,38 @@ func pbToRMNLaneUpdate(pb *ccipocr3pb.RMNLaneUpdate) ccipocr3.RMNLaneUpdate {
 	}
 }
 
-func goMapToPbMap(goMap map[string]any) *ccipocr3pb.MapValue {
-	pbMap := &ccipocr3pb.MapValue{
-		Values: make(map[string]*ccipocr3pb.Value),
+// goMapToPbMap converts a Go map[string]any to protobuf Map using the values package
+func goMapToPbMap(goMap map[string]any) (*pb.Map, error) {
+	if goMap == nil {
+		return nil, nil
 	}
 
-	for key, value := range goMap {
-		pbMap.Values[key] = anyToPbValue(value)
+	valuesMap, err := values.NewMap(goMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert Go map to values.Map: %w", err)
 	}
 
-	return pbMap
+	return values.ProtoMap(valuesMap), nil
 }
 
-func pbMapToGoMap(pbMap *ccipocr3pb.MapValue) map[string]any {
+// pbMapToGoMap converts a protobuf Map to Go map[string]any using the values package
+func pbMapToGoMap(pbMap *pb.Map) (map[string]any, error) {
 	if pbMap == nil {
-		return nil
+		return nil, nil
 	}
 
-	goMap := make(map[string]any)
-	for key, pbValue := range pbMap.Values {
-		goMap[key] = pbValueToAny(pbValue)
+	valuesMap, err := values.FromMapValueProto(pbMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert protobuf Map to values.Map: %w", err)
 	}
 
-	return goMap
-}
-
-// anyToPbValue converts Go any type to protobuf Value
-// Supports: string, int64, uint64, uint32, float64, bool, []byte, *big.Int, map[string]any, []any
-// Note: Negative *big.Int values lose their sign due to protobuf encoding limitations
-func anyToPbValue(value any) *ccipocr3pb.Value {
-	switch v := value.(type) {
-	case string:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_StringValue{StringValue: v}}
-	case int64:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_IntValue{IntValue: v}}
-	case uint64:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_UintValue{UintValue: v}}
-	case uint32:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_Uint32Value{Uint32Value: v}}
-	case float64:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_DoubleValue{DoubleValue: v}}
-	case bool:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_BoolValue{BoolValue: v}}
-	case []byte:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_BytesValue{BytesValue: v}}
-	case *big.Int:
-		// Note: Negative big.Int values lose their sign due to protobuf encoding limitations
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_BigIntValue{BigIntValue: intToPbBigInt(v)}}
-	case map[string]any:
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_MapValue{MapValue: goMapToPbMap(v)}}
-	case []any:
-		listValue := &ccipocr3pb.ListValue{}
-		for _, item := range v {
-			listValue.Values = append(listValue.Values, anyToPbValue(item))
-		}
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_ListValue{ListValue: listValue}}
-	default:
-		// Default to string representation
-		return &ccipocr3pb.Value{Kind: &ccipocr3pb.Value_StringValue{StringValue: fmt.Sprintf("%v", v)}}
-	}
-}
-
-// pbValueToAny converts protobuf Value to Go any type.
-// Supports: string, int64, uint64, uint32, float64, bool, []byte, *big.Int, map[string]any, []any
-// Returns nil for unsupported types or if pbValue is nil
-func pbValueToAny(pbValue *ccipocr3pb.Value) any {
-	if pbValue == nil {
-		return nil
+	var goMap map[string]any
+	err = valuesMap.UnwrapTo(&goMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unwrap values.Map to Go map: %w", err)
 	}
 
-	switch kind := pbValue.Kind.(type) {
-	case *ccipocr3pb.Value_StringValue:
-		return kind.StringValue
-	case *ccipocr3pb.Value_IntValue:
-		return kind.IntValue
-	case *ccipocr3pb.Value_UintValue:
-		return kind.UintValue
-	case *ccipocr3pb.Value_Uint32Value:
-		return kind.Uint32Value
-	case *ccipocr3pb.Value_DoubleValue:
-		return kind.DoubleValue
-	case *ccipocr3pb.Value_BoolValue:
-		return kind.BoolValue
-	case *ccipocr3pb.Value_BytesValue:
-		return kind.BytesValue
-	case *ccipocr3pb.Value_BigIntValue:
-		return pbBigIntToInt(kind.BigIntValue)
-	case *ccipocr3pb.Value_MapValue:
-		return pbMapToGoMap(kind.MapValue)
-	case *ccipocr3pb.Value_ListValue:
-		var list []any
-		for _, item := range kind.ListValue.Values {
-			list = append(list, pbValueToAny(item))
-		}
-		return list
-	default:
-		return nil
-	}
+	return goMap, nil
 }
 
 func messageToPb(msg ccipocr3.Message) *ccipocr3pb.Message {

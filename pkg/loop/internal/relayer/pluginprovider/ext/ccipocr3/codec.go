@@ -2,6 +2,7 @@ package ccipocr3
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 
@@ -456,7 +457,7 @@ func (c *sourceChainExtraDataCodecClient) DecodeExtraArgsToMap(extraArgs ccipocr
 	if err != nil {
 		return nil, err
 	}
-	return pbMapToGoMap(resp.DecodedMap), nil
+	return pbMapToGoMap(resp.DecodedMap)
 }
 
 func (c *sourceChainExtraDataCodecClient) DecodeDestExecDataToMap(destExecData ccipocr3.Bytes) (map[string]any, error) {
@@ -466,7 +467,7 @@ func (c *sourceChainExtraDataCodecClient) DecodeDestExecDataToMap(destExecData c
 	if err != nil {
 		return nil, err
 	}
-	return pbMapToGoMap(resp.DecodedMap), nil
+	return pbMapToGoMap(resp.DecodedMap)
 }
 
 // SourceChainExtraDataCodec server
@@ -486,8 +487,12 @@ func (s *sourceChainExtraDataCodecServer) DecodeExtraArgsToMap(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+	pbMap, err := goMapToPbMap(decodedMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert decoded map to protobuf: %w", err)
+	}
 	return &ccipocr3pb.DecodeExtraArgsToMapResponse{
-		DecodedMap: goMapToPbMap(decodedMap),
+		DecodedMap: pbMap,
 	}, nil
 }
 
@@ -496,8 +501,12 @@ func (s *sourceChainExtraDataCodecServer) DecodeDestExecDataToMap(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
+	pbMap, err := goMapToPbMap(decodedMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert decoded map to protobuf: %w", err)
+	}
 	return &ccipocr3pb.DecodeDestExecDataToMapResponse{
-		DecodedMap: goMapToPbMap(decodedMap),
+		DecodedMap: pbMap,
 	}, nil
 }
 

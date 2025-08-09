@@ -7,6 +7,7 @@
 package ccipocr3pb
 
 import (
+	pb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -695,7 +696,7 @@ func (x *DecodeExtraArgsToMapRequest) GetExtraArgs() []byte {
 
 type DecodeExtraArgsToMapResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	DecodedMap    *MapValue              `protobuf:"bytes,1,opt,name=decoded_map,json=decodedMap,proto3" json:"decoded_map,omitempty"`
+	DecodedMap    *pb.Map                `protobuf:"bytes,1,opt,name=decoded_map,json=decodedMap,proto3" json:"decoded_map,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -730,7 +731,7 @@ func (*DecodeExtraArgsToMapResponse) Descriptor() ([]byte, []int) {
 	return file_codec_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *DecodeExtraArgsToMapResponse) GetDecodedMap() *MapValue {
+func (x *DecodeExtraArgsToMapResponse) GetDecodedMap() *pb.Map {
 	if x != nil {
 		return x.DecodedMap
 	}
@@ -783,7 +784,7 @@ func (x *DecodeDestExecDataToMapRequest) GetDestExecData() []byte {
 
 type DecodeDestExecDataToMapResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	DecodedMap    *MapValue              `protobuf:"bytes,1,opt,name=decoded_map,json=decodedMap,proto3" json:"decoded_map,omitempty"`
+	DecodedMap    *pb.Map                `protobuf:"bytes,1,opt,name=decoded_map,json=decodedMap,proto3" json:"decoded_map,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -818,7 +819,7 @@ func (*DecodeDestExecDataToMapResponse) Descriptor() ([]byte, []int) {
 	return file_codec_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *DecodeDestExecDataToMapResponse) GetDecodedMap() *MapValue {
+func (x *DecodeDestExecDataToMapResponse) GetDecodedMap() *pb.Map {
 	if x != nil {
 		return x.DecodedMap
 	}
@@ -991,310 +992,11 @@ func (x *MessageOffchainTokenData) GetTokenData() [][]byte {
 	return nil
 }
 
-// MapValue represents a map[string]any to support the SourceChainExtraDataCodec interface
-type MapValue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        map[string]*Value      `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MapValue) Reset() {
-	*x = MapValue{}
-	mi := &file_codec_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MapValue) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MapValue) ProtoMessage() {}
-
-func (x *MapValue) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MapValue.ProtoReflect.Descriptor instead.
-func (*MapValue) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *MapValue) GetValues() map[string]*Value {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
-type Value struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Kind:
-	//
-	//	*Value_StringValue
-	//	*Value_IntValue
-	//	*Value_UintValue
-	//	*Value_DoubleValue
-	//	*Value_BoolValue
-	//	*Value_BytesValue
-	//	*Value_MapValue
-	//	*Value_ListValue
-	//	*Value_Uint32Value
-	//	*Value_BigIntValue
-	Kind          isValue_Kind `protobuf_oneof:"kind"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Value) Reset() {
-	*x = Value{}
-	mi := &file_codec_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Value) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Value) ProtoMessage() {}
-
-func (x *Value) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Value.ProtoReflect.Descriptor instead.
-func (*Value) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *Value) GetKind() isValue_Kind {
-	if x != nil {
-		return x.Kind
-	}
-	return nil
-}
-
-func (x *Value) GetStringValue() string {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_StringValue); ok {
-			return x.StringValue
-		}
-	}
-	return ""
-}
-
-func (x *Value) GetIntValue() int64 {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_IntValue); ok {
-			return x.IntValue
-		}
-	}
-	return 0
-}
-
-func (x *Value) GetUintValue() uint64 {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_UintValue); ok {
-			return x.UintValue
-		}
-	}
-	return 0
-}
-
-func (x *Value) GetDoubleValue() float64 {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_DoubleValue); ok {
-			return x.DoubleValue
-		}
-	}
-	return 0
-}
-
-func (x *Value) GetBoolValue() bool {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_BoolValue); ok {
-			return x.BoolValue
-		}
-	}
-	return false
-}
-
-func (x *Value) GetBytesValue() []byte {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_BytesValue); ok {
-			return x.BytesValue
-		}
-	}
-	return nil
-}
-
-func (x *Value) GetMapValue() *MapValue {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_MapValue); ok {
-			return x.MapValue
-		}
-	}
-	return nil
-}
-
-func (x *Value) GetListValue() *ListValue {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_ListValue); ok {
-			return x.ListValue
-		}
-	}
-	return nil
-}
-
-func (x *Value) GetUint32Value() uint32 {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_Uint32Value); ok {
-			return x.Uint32Value
-		}
-	}
-	return 0
-}
-
-func (x *Value) GetBigIntValue() *BigInt {
-	if x != nil {
-		if x, ok := x.Kind.(*Value_BigIntValue); ok {
-			return x.BigIntValue
-		}
-	}
-	return nil
-}
-
-type isValue_Kind interface {
-	isValue_Kind()
-}
-
-type Value_StringValue struct {
-	StringValue string `protobuf:"bytes,1,opt,name=string_value,json=stringValue,proto3,oneof"`
-}
-
-type Value_IntValue struct {
-	IntValue int64 `protobuf:"varint,2,opt,name=int_value,json=intValue,proto3,oneof"`
-}
-
-type Value_UintValue struct {
-	UintValue uint64 `protobuf:"varint,3,opt,name=uint_value,json=uintValue,proto3,oneof"`
-}
-
-type Value_DoubleValue struct {
-	DoubleValue float64 `protobuf:"fixed64,4,opt,name=double_value,json=doubleValue,proto3,oneof"`
-}
-
-type Value_BoolValue struct {
-	BoolValue bool `protobuf:"varint,5,opt,name=bool_value,json=boolValue,proto3,oneof"`
-}
-
-type Value_BytesValue struct {
-	BytesValue []byte `protobuf:"bytes,6,opt,name=bytes_value,json=bytesValue,proto3,oneof"`
-}
-
-type Value_MapValue struct {
-	MapValue *MapValue `protobuf:"bytes,7,opt,name=map_value,json=mapValue,proto3,oneof"`
-}
-
-type Value_ListValue struct {
-	ListValue *ListValue `protobuf:"bytes,8,opt,name=list_value,json=listValue,proto3,oneof"`
-}
-
-type Value_Uint32Value struct {
-	Uint32Value uint32 `protobuf:"varint,9,opt,name=uint32_value,json=uint32Value,proto3,oneof"`
-}
-
-type Value_BigIntValue struct {
-	BigIntValue *BigInt `protobuf:"bytes,10,opt,name=big_int_value,json=bigIntValue,proto3,oneof"`
-}
-
-func (*Value_StringValue) isValue_Kind() {}
-
-func (*Value_IntValue) isValue_Kind() {}
-
-func (*Value_UintValue) isValue_Kind() {}
-
-func (*Value_DoubleValue) isValue_Kind() {}
-
-func (*Value_BoolValue) isValue_Kind() {}
-
-func (*Value_BytesValue) isValue_Kind() {}
-
-func (*Value_MapValue) isValue_Kind() {}
-
-func (*Value_ListValue) isValue_Kind() {}
-
-func (*Value_Uint32Value) isValue_Kind() {}
-
-func (*Value_BigIntValue) isValue_Kind() {}
-
-type ListValue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []*Value               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListValue) Reset() {
-	*x = ListValue{}
-	mi := &file_codec_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListValue) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListValue) ProtoMessage() {}
-
-func (x *ListValue) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListValue.ProtoReflect.Descriptor instead.
-func (*ListValue) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *ListValue) GetValues() []*Value {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
 var File_codec_proto protoreflect.FileDescriptor
 
 const file_codec_proto_rawDesc = "" +
 	"\n" +
-	"\vcodec.proto\x12\x19loop.internal.pb.ccipocr3\x1a\fmodels.proto\"7\n" +
+	"\vcodec.proto\x12\x19loop.internal.pb.ccipocr3\x1a\fmodels.proto\x1a\x16values/v1/values.proto\"7\n" +
 	"\x1bAddressBytesToStringRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\"E\n" +
 	"\x1cAddressBytesToStringResponse\x12%\n" +
@@ -1326,14 +1028,14 @@ const file_codec_proto_rawDesc = "" +
 	"\fencoded_data\x18\x01 \x01(\fR\vencodedData\"<\n" +
 	"\x1bDecodeExtraArgsToMapRequest\x12\x1d\n" +
 	"\n" +
-	"extra_args\x18\x01 \x01(\fR\textraArgs\"d\n" +
-	"\x1cDecodeExtraArgsToMapResponse\x12D\n" +
-	"\vdecoded_map\x18\x01 \x01(\v2#.loop.internal.pb.ccipocr3.MapValueR\n" +
+	"extra_args\x18\x01 \x01(\fR\textraArgs\"O\n" +
+	"\x1cDecodeExtraArgsToMapResponse\x12/\n" +
+	"\vdecoded_map\x18\x01 \x01(\v2\x0e.values.v1.MapR\n" +
 	"decodedMap\"F\n" +
 	"\x1eDecodeDestExecDataToMapRequest\x12$\n" +
-	"\x0edest_exec_data\x18\x01 \x01(\fR\fdestExecData\"g\n" +
-	"\x1fDecodeDestExecDataToMapResponse\x12D\n" +
-	"\vdecoded_map\x18\x01 \x01(\v2#.loop.internal.pb.ccipocr3.MapValueR\n" +
+	"\x0edest_exec_data\x18\x01 \x01(\fR\fdestExecData\"R\n" +
+	"\x1fDecodeDestExecDataToMapResponse\x12/\n" +
+	"\vdecoded_map\x18\x01 \x01(\v2\x0e.values.v1.MapR\n" +
 	"decodedMap\"b\n" +
 	"\x13ExecutePluginReport\x12K\n" +
 	"\rchain_reports\x18\x01 \x03(\v2&.loop.internal.pb.ccipocr3.ChainReportR\fchainReports\"\xc9\x02\n" +
@@ -1345,31 +1047,7 @@ const file_codec_proto_rawDesc = "" +
 	"\x0fproof_flag_bits\x18\x05 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\rproofFlagBits\"9\n" +
 	"\x18MessageOffchainTokenData\x12\x1d\n" +
 	"\n" +
-	"token_data\x18\x01 \x03(\fR\ttokenData\"\xb0\x01\n" +
-	"\bMapValue\x12G\n" +
-	"\x06values\x18\x01 \x03(\v2/.loop.internal.pb.ccipocr3.MapValue.ValuesEntryR\x06values\x1a[\n" +
-	"\vValuesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x126\n" +
-	"\x05value\x18\x02 \x01(\v2 .loop.internal.pb.ccipocr3.ValueR\x05value:\x028\x01\"\xd6\x03\n" +
-	"\x05Value\x12#\n" +
-	"\fstring_value\x18\x01 \x01(\tH\x00R\vstringValue\x12\x1d\n" +
-	"\tint_value\x18\x02 \x01(\x03H\x00R\bintValue\x12\x1f\n" +
-	"\n" +
-	"uint_value\x18\x03 \x01(\x04H\x00R\tuintValue\x12#\n" +
-	"\fdouble_value\x18\x04 \x01(\x01H\x00R\vdoubleValue\x12\x1f\n" +
-	"\n" +
-	"bool_value\x18\x05 \x01(\bH\x00R\tboolValue\x12!\n" +
-	"\vbytes_value\x18\x06 \x01(\fH\x00R\n" +
-	"bytesValue\x12B\n" +
-	"\tmap_value\x18\a \x01(\v2#.loop.internal.pb.ccipocr3.MapValueH\x00R\bmapValue\x12E\n" +
-	"\n" +
-	"list_value\x18\b \x01(\v2$.loop.internal.pb.ccipocr3.ListValueH\x00R\tlistValue\x12#\n" +
-	"\fuint32_value\x18\t \x01(\rH\x00R\vuint32Value\x12G\n" +
-	"\rbig_int_value\x18\n" +
-	" \x01(\v2!.loop.internal.pb.ccipocr3.BigIntH\x00R\vbigIntValueB\x06\n" +
-	"\x04kind\"E\n" +
-	"\tListValue\x128\n" +
-	"\x06values\x18\x01 \x03(\v2 .loop.internal.pb.ccipocr3.ValueR\x06values2\xd5\x04\n" +
+	"token_data\x18\x01 \x03(\fR\ttokenData2\xd5\x04\n" +
 	"\x19ChainSpecificAddressCodec\x12\x87\x01\n" +
 	"\x14AddressBytesToString\x126.loop.internal.pb.ccipocr3.AddressBytesToStringRequest\x1a7.loop.internal.pb.ccipocr3.AddressBytesToStringResponse\x12\x87\x01\n" +
 	"\x14AddressStringToBytes\x126.loop.internal.pb.ccipocr3.AddressStringToBytesRequest\x1a7.loop.internal.pb.ccipocr3.AddressStringToBytesResponse\x12\x8d\x01\n" +
@@ -1397,7 +1075,7 @@ func file_codec_proto_rawDescGZIP() []byte {
 	return file_codec_proto_rawDescData
 }
 
-var file_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_codec_proto_goTypes = []any{
 	(*AddressBytesToStringRequest)(nil),       // 0: loop.internal.pb.ccipocr3.AddressBytesToStringRequest
 	(*AddressBytesToStringResponse)(nil),      // 1: loop.internal.pb.ccipocr3.AddressBytesToStringResponse
@@ -1420,51 +1098,42 @@ var file_codec_proto_goTypes = []any{
 	(*ExecutePluginReport)(nil),               // 18: loop.internal.pb.ccipocr3.ExecutePluginReport
 	(*ChainReport)(nil),                       // 19: loop.internal.pb.ccipocr3.ChainReport
 	(*MessageOffchainTokenData)(nil),          // 20: loop.internal.pb.ccipocr3.MessageOffchainTokenData
-	(*MapValue)(nil),                          // 21: loop.internal.pb.ccipocr3.MapValue
-	(*Value)(nil),                             // 22: loop.internal.pb.ccipocr3.Value
-	(*ListValue)(nil),                         // 23: loop.internal.pb.ccipocr3.ListValue
-	nil,                                       // 24: loop.internal.pb.ccipocr3.MapValue.ValuesEntry
-	(*Message)(nil),                           // 25: loop.internal.pb.ccipocr3.Message
-	(*BigInt)(nil),                            // 26: loop.internal.pb.ccipocr3.BigInt
+	(*pb.Map)(nil),                            // 21: values.v1.Map
+	(*Message)(nil),                           // 22: loop.internal.pb.ccipocr3.Message
+	(*BigInt)(nil),                            // 23: loop.internal.pb.ccipocr3.BigInt
 }
 var file_codec_proto_depIdxs = []int32{
 	18, // 0: loop.internal.pb.ccipocr3.EncodeExecutePluginReportRequest.report:type_name -> loop.internal.pb.ccipocr3.ExecutePluginReport
 	18, // 1: loop.internal.pb.ccipocr3.DecodeExecutePluginReportResponse.report:type_name -> loop.internal.pb.ccipocr3.ExecutePluginReport
-	21, // 2: loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse.decoded_map:type_name -> loop.internal.pb.ccipocr3.MapValue
-	21, // 3: loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse.decoded_map:type_name -> loop.internal.pb.ccipocr3.MapValue
+	21, // 2: loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse.decoded_map:type_name -> values.v1.Map
+	21, // 3: loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse.decoded_map:type_name -> values.v1.Map
 	19, // 4: loop.internal.pb.ccipocr3.ExecutePluginReport.chain_reports:type_name -> loop.internal.pb.ccipocr3.ChainReport
-	25, // 5: loop.internal.pb.ccipocr3.ChainReport.messages:type_name -> loop.internal.pb.ccipocr3.Message
+	22, // 5: loop.internal.pb.ccipocr3.ChainReport.messages:type_name -> loop.internal.pb.ccipocr3.Message
 	20, // 6: loop.internal.pb.ccipocr3.ChainReport.offchain_token_data:type_name -> loop.internal.pb.ccipocr3.MessageOffchainTokenData
-	26, // 7: loop.internal.pb.ccipocr3.ChainReport.proof_flag_bits:type_name -> loop.internal.pb.ccipocr3.BigInt
-	24, // 8: loop.internal.pb.ccipocr3.MapValue.values:type_name -> loop.internal.pb.ccipocr3.MapValue.ValuesEntry
-	21, // 9: loop.internal.pb.ccipocr3.Value.map_value:type_name -> loop.internal.pb.ccipocr3.MapValue
-	23, // 10: loop.internal.pb.ccipocr3.Value.list_value:type_name -> loop.internal.pb.ccipocr3.ListValue
-	26, // 11: loop.internal.pb.ccipocr3.Value.big_int_value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	22, // 12: loop.internal.pb.ccipocr3.ListValue.values:type_name -> loop.internal.pb.ccipocr3.Value
-	22, // 13: loop.internal.pb.ccipocr3.MapValue.ValuesEntry.value:type_name -> loop.internal.pb.ccipocr3.Value
-	0,  // 14: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:input_type -> loop.internal.pb.ccipocr3.AddressBytesToStringRequest
-	2,  // 15: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:input_type -> loop.internal.pb.ccipocr3.AddressStringToBytesRequest
-	4,  // 16: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:input_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesRequest
-	6,  // 17: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:input_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringRequest
-	8,  // 18: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:input_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportRequest
-	10, // 19: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:input_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportRequest
-	12, // 20: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:input_type -> loop.internal.pb.ccipocr3.EncodeUSDCRequest
-	14, // 21: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:input_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapRequest
-	16, // 22: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:input_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapRequest
-	1,  // 23: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:output_type -> loop.internal.pb.ccipocr3.AddressBytesToStringResponse
-	3,  // 24: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:output_type -> loop.internal.pb.ccipocr3.AddressStringToBytesResponse
-	5,  // 25: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:output_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesResponse
-	7,  // 26: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:output_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringResponse
-	9,  // 27: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:output_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportResponse
-	11, // 28: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:output_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportResponse
-	13, // 29: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:output_type -> loop.internal.pb.ccipocr3.EncodeUSDCResponse
-	15, // 30: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:output_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse
-	17, // 31: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:output_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse
-	23, // [23:32] is the sub-list for method output_type
-	14, // [14:23] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	23, // 7: loop.internal.pb.ccipocr3.ChainReport.proof_flag_bits:type_name -> loop.internal.pb.ccipocr3.BigInt
+	0,  // 8: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:input_type -> loop.internal.pb.ccipocr3.AddressBytesToStringRequest
+	2,  // 9: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:input_type -> loop.internal.pb.ccipocr3.AddressStringToBytesRequest
+	4,  // 10: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:input_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesRequest
+	6,  // 11: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:input_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringRequest
+	8,  // 12: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:input_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportRequest
+	10, // 13: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:input_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportRequest
+	12, // 14: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:input_type -> loop.internal.pb.ccipocr3.EncodeUSDCRequest
+	14, // 15: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:input_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapRequest
+	16, // 16: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:input_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapRequest
+	1,  // 17: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:output_type -> loop.internal.pb.ccipocr3.AddressBytesToStringResponse
+	3,  // 18: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:output_type -> loop.internal.pb.ccipocr3.AddressStringToBytesResponse
+	5,  // 19: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:output_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesResponse
+	7,  // 20: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:output_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringResponse
+	9,  // 21: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:output_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportResponse
+	11, // 22: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:output_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportResponse
+	13, // 23: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:output_type -> loop.internal.pb.ccipocr3.EncodeUSDCResponse
+	15, // 24: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:output_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse
+	17, // 25: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:output_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse
+	17, // [17:26] is the sub-list for method output_type
+	8,  // [8:17] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_codec_proto_init() }
@@ -1473,25 +1142,13 @@ func file_codec_proto_init() {
 		return
 	}
 	file_models_proto_init()
-	file_codec_proto_msgTypes[22].OneofWrappers = []any{
-		(*Value_StringValue)(nil),
-		(*Value_IntValue)(nil),
-		(*Value_UintValue)(nil),
-		(*Value_DoubleValue)(nil),
-		(*Value_BoolValue)(nil),
-		(*Value_BytesValue)(nil),
-		(*Value_MapValue)(nil),
-		(*Value_ListValue)(nil),
-		(*Value_Uint32Value)(nil),
-		(*Value_BigIntValue)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codec_proto_rawDesc), len(file_codec_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   4,
 		},

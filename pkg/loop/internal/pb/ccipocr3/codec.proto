@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.ccipocr3;
 
 import "models.proto";
+import "values/v1/values.proto";
 
 // ChainSpecificAddressCodec service for address encoding/decoding
 service ChainSpecificAddressCodec {
@@ -97,7 +98,7 @@ message DecodeExtraArgsToMapRequest {
 }
 
 message DecodeExtraArgsToMapResponse {
-  MapValue decoded_map = 1;
+  values.v1.Map decoded_map = 1;
 }
 
 message DecodeDestExecDataToMapRequest {
@@ -105,7 +106,7 @@ message DecodeDestExecDataToMapRequest {
 }
 
 message DecodeDestExecDataToMapResponse {
-  MapValue decoded_map = 1;
+  values.v1.Map decoded_map = 1;
 }
 
 // Supporting types
@@ -126,26 +127,3 @@ message MessageOffchainTokenData {
   repeated bytes token_data = 1;  // All tokens for this specific message
 }
 
-// MapValue represents a map[string]any to support the SourceChainExtraDataCodec interface
-message MapValue {
-  map<string, Value> values = 1;
-}
-
-message Value {
-  oneof kind {
-    string string_value = 1;
-    int64 int_value = 2;
-    uint64 uint_value = 3;
-    double double_value = 4;
-    bool bool_value = 5;
-    bytes bytes_value = 6;
-    MapValue map_value = 7;
-    ListValue list_value = 8;
-    uint32 uint32_value = 9;
-    BigInt big_int_value = 10;
-  }
-}
-
-message ListValue {
-  repeated Value values = 1;
-}

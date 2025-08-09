@@ -11,7 +11,7 @@ import "google/protobuf/timestamp.proto";
 service ChainAccessor {
   // AllAccessors methods
   rpc GetContractAddress(GetContractAddressRequest) returns (GetContractAddressResponse);
-  rpc GetAllConfigLegacySnapshot(GetAllConfigLegacySnapshotRequest) returns (GetAllConfigLegacySnapshotResponse);
+  rpc GetAllConfigsLegacy(GetAllConfigsLegacyRequest) returns (GetAllConfigsLegacyResponse);
   rpc GetChainFeeComponents(GetChainFeeComponentsRequest) returns (GetChainFeeComponentsResponse);
   rpc Sync(SyncRequest) returns (SyncResponse);
   
@@ -43,10 +43,14 @@ message GetContractAddressResponse {
   bytes address = 1;
 }
 
-message GetAllConfigLegacySnapshotRequest {}
+message GetAllConfigsLegacyRequest {
+  uint64 dest_chain_selector = 1;
+  repeated uint64 source_chain_selectors = 2;
+}
 
-message GetAllConfigLegacySnapshotResponse {
+message GetAllConfigsLegacyResponse {
   ChainConfigSnapshot snapshot = 1;
+  map<uint64, SourceChainConfig> source_chain_configs = 2; // key is chain selector
 }
 
 message GetChainFeeComponentsRequest {}
@@ -318,6 +322,14 @@ message CurseInfo {
   map<uint64, bool> cursed_source_chains = 1; // chain selector -> cursed
   bool cursed_destination = 2;
   bool global_curse = 3;
+}
+
+message SourceChainConfig {
+  bytes router = 1; // local router
+  bool is_enabled = 2;
+  bool is_rmn_verification_disabled = 3;
+  uint64 min_seq_nr = 4;
+  bytes on_ramp = 5; // UnknownAddress
 }
 
 message FeeQuoterDestChainConfig {

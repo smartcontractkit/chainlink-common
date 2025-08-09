@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ChainAccessor_GetContractAddress_FullMethodName            = "/loop.internal.pb.ccipocr3.ChainAccessor/GetContractAddress"
-	ChainAccessor_GetAllConfigLegacySnapshot_FullMethodName    = "/loop.internal.pb.ccipocr3.ChainAccessor/GetAllConfigLegacySnapshot"
+	ChainAccessor_GetAllConfigsLegacy_FullMethodName           = "/loop.internal.pb.ccipocr3.ChainAccessor/GetAllConfigsLegacy"
 	ChainAccessor_GetChainFeeComponents_FullMethodName         = "/loop.internal.pb.ccipocr3.ChainAccessor/GetChainFeeComponents"
 	ChainAccessor_Sync_FullMethodName                          = "/loop.internal.pb.ccipocr3.ChainAccessor/Sync"
 	ChainAccessor_CommitReportsGTETimestamp_FullMethodName     = "/loop.internal.pb.ccipocr3.ChainAccessor/CommitReportsGTETimestamp"
@@ -45,7 +45,7 @@ const (
 type ChainAccessorClient interface {
 	// AllAccessors methods
 	GetContractAddress(ctx context.Context, in *GetContractAddressRequest, opts ...grpc.CallOption) (*GetContractAddressResponse, error)
-	GetAllConfigLegacySnapshot(ctx context.Context, in *GetAllConfigLegacySnapshotRequest, opts ...grpc.CallOption) (*GetAllConfigLegacySnapshotResponse, error)
+	GetAllConfigsLegacy(ctx context.Context, in *GetAllConfigsLegacyRequest, opts ...grpc.CallOption) (*GetAllConfigsLegacyResponse, error)
 	GetChainFeeComponents(ctx context.Context, in *GetChainFeeComponentsRequest, opts ...grpc.CallOption) (*GetChainFeeComponentsResponse, error)
 	Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
 	// DestinationAccessor methods
@@ -83,10 +83,10 @@ func (c *chainAccessorClient) GetContractAddress(ctx context.Context, in *GetCon
 	return out, nil
 }
 
-func (c *chainAccessorClient) GetAllConfigLegacySnapshot(ctx context.Context, in *GetAllConfigLegacySnapshotRequest, opts ...grpc.CallOption) (*GetAllConfigLegacySnapshotResponse, error) {
+func (c *chainAccessorClient) GetAllConfigsLegacy(ctx context.Context, in *GetAllConfigsLegacyRequest, opts ...grpc.CallOption) (*GetAllConfigsLegacyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllConfigLegacySnapshotResponse)
-	err := c.cc.Invoke(ctx, ChainAccessor_GetAllConfigLegacySnapshot_FullMethodName, in, out, cOpts...)
+	out := new(GetAllConfigsLegacyResponse)
+	err := c.cc.Invoke(ctx, ChainAccessor_GetAllConfigsLegacy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (c *chainAccessorClient) GetRMNCurseInfo(ctx context.Context, in *GetRMNCur
 type ChainAccessorServer interface {
 	// AllAccessors methods
 	GetContractAddress(context.Context, *GetContractAddressRequest) (*GetContractAddressResponse, error)
-	GetAllConfigLegacySnapshot(context.Context, *GetAllConfigLegacySnapshotRequest) (*GetAllConfigLegacySnapshotResponse, error)
+	GetAllConfigsLegacy(context.Context, *GetAllConfigsLegacyRequest) (*GetAllConfigsLegacyResponse, error)
 	GetChainFeeComponents(context.Context, *GetChainFeeComponentsRequest) (*GetChainFeeComponentsResponse, error)
 	Sync(context.Context, *SyncRequest) (*SyncResponse, error)
 	// DestinationAccessor methods
@@ -272,8 +272,8 @@ type UnimplementedChainAccessorServer struct{}
 func (UnimplementedChainAccessorServer) GetContractAddress(context.Context, *GetContractAddressRequest) (*GetContractAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetContractAddress not implemented")
 }
-func (UnimplementedChainAccessorServer) GetAllConfigLegacySnapshot(context.Context, *GetAllConfigLegacySnapshotRequest) (*GetAllConfigLegacySnapshotResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllConfigLegacySnapshot not implemented")
+func (UnimplementedChainAccessorServer) GetAllConfigsLegacy(context.Context, *GetAllConfigsLegacyRequest) (*GetAllConfigsLegacyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllConfigsLegacy not implemented")
 }
 func (UnimplementedChainAccessorServer) GetChainFeeComponents(context.Context, *GetChainFeeComponentsRequest) (*GetChainFeeComponentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChainFeeComponents not implemented")
@@ -356,20 +356,20 @@ func _ChainAccessor_GetContractAddress_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ChainAccessor_GetAllConfigLegacySnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllConfigLegacySnapshotRequest)
+func _ChainAccessor_GetAllConfigsLegacy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllConfigsLegacyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ChainAccessorServer).GetAllConfigLegacySnapshot(ctx, in)
+		return srv.(ChainAccessorServer).GetAllConfigsLegacy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ChainAccessor_GetAllConfigLegacySnapshot_FullMethodName,
+		FullMethod: ChainAccessor_GetAllConfigsLegacy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainAccessorServer).GetAllConfigLegacySnapshot(ctx, req.(*GetAllConfigLegacySnapshotRequest))
+		return srv.(ChainAccessorServer).GetAllConfigsLegacy(ctx, req.(*GetAllConfigsLegacyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -638,8 +638,8 @@ var ChainAccessor_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ChainAccessor_GetContractAddress_Handler,
 		},
 		{
-			MethodName: "GetAllConfigLegacySnapshot",
-			Handler:    _ChainAccessor_GetAllConfigLegacySnapshot_Handler,
+			MethodName: "GetAllConfigsLegacy",
+			Handler:    _ChainAccessor_GetAllConfigsLegacy_Handler,
 		},
 		{
 			MethodName: "GetChainFeeComponents",

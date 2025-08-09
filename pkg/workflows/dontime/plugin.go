@@ -8,12 +8,15 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
+	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
-	"google.golang.org/protobuf/proto"
 )
 
 type Plugin struct {
@@ -52,7 +55,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		offChainConfig:  offchainCfg,
 		lggr:            logger.Named(lggr, "DONTimePlugin"),
 		batchSize:       int(offchainCfg.MaxBatchSize),
-		minTimeIncrease: offchainCfg.MinTimeIncrease,
+		minTimeIncrease: offchainCfg.MinTimeIncrease / int64(time.Millisecond),
 	}, nil
 }
 
@@ -193,13 +196,33 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
+	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
+		Transmitters:       make([]commontypes.OracleID, p.config.N),
+		TransmissionDelays: make([]time.Duration, p.config.N),
+	}
+
+	for i := 0; i < p.config.N; i++ {
+		allOraclesTransmitNow.Transmitters[i] = commontypes.OracleID(i)
+	}
+
+	info, err := structpb.NewStruct(map[string]any{
+		"keyBundleName": "evm",
+	})
+	if err != nil {
+		return nil, err
+	}
+	infoBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
+	if err != nil {
+		return nil, err
+	}
+
 	return []ocr3types.ReportPlus[[]byte]{
 		{
 			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
 				Report: types.Report(outcome),
-				Info:   []byte{},
+				Info:   infoBytes,
 			},
-			TransmissionScheduleOverride: nil,
+			TransmissionScheduleOverride: allOraclesTransmitNow,
 		},
 	}, nil
 }

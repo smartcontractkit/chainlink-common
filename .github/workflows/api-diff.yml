@@ -1,0 +1,25 @@
+name: Analyze API Changes
+on:
+  pull_request:
+
+jobs:
+  analyze:
+    permissions:
+      pull-requests: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          only-modules: "true"
+
+      - uses: smartcontractkit/.github/actions/apidiff-go@feat/goalng-apidiff-action # todo
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

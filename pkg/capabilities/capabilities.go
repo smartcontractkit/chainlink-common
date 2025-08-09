@@ -371,6 +371,14 @@ const (
 	idMaxLength = 128
 )
 
+func VerifyCapabilityId(id string) error {
+	if !idRegex.MatchString(id) {
+		return fmt.Errorf("invalid id: %s. Allowed: %s", id, idRegex)
+	}
+
+	return nil
+}
+
 func newCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
@@ -382,8 +390,8 @@ func newCapabilityInfo(
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
 	}
-	if !idRegex.MatchString(id) {
-		return CapabilityInfo{}, fmt.Errorf("invalid id: %s. Allowed: %s", id, idRegex)
+	if err := VerifyCapabilityId(id); err != nil {
+		return CapabilityInfo{}, err
 	}
 
 	if err := capabilityType.IsValid(); err != nil {

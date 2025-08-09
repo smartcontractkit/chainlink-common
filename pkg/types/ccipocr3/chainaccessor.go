@@ -37,7 +37,7 @@ type AllAccessors interface {
 	// TODO(NONEVM-1865): do we want to mark this as deprecated in favor of Metadata()?
 	GetContractAddress(contractName string) ([]byte, error)
 
-	// GetAllConfig is the next iteration of GetAllConfigLegacySnapshot(). Instead of returning a large snapshot
+	// GetAllConfig is the next iteration of GetAllConfigsLegacy(). Instead of returning a large snapshot
 	// struct, it will ideally return a ChainConfigInterface that can be used to selectively fetch individual configs
 	// depending on that particular chain's needs.
 	/*
@@ -46,9 +46,11 @@ type AllAccessors interface {
 		) (ChainConfigInterface, error) // TBD...
 	*/
 
-	// GetAllConfigLegacySnapshot returns the existing ChainConfigSnapshot struct. This function replaces
-	// prepareBatchConfigRequests and is a temporary mechanism to support the mirgation to CAL until we can
-	// build out GetAllConfig() above.
+	// GetAllConfigsLegacy returns a snapshot of all chain configurations for this chain using the legacy
+	// config structs.
+	//
+	// destChainSelector is used to determine whether or not destination chain specific configs should be fetched.
+	// sourceChainSelectors is used to determine which source chain configs should be fetched.
 	//
 	// This includes the following contracts:
 	// - Router
@@ -62,7 +64,11 @@ type AllAccessors interface {
 	// Access Type: Method(many, see code)
 	// Contract: Many
 	// Confidence: Unconfirmed
-	GetAllConfigLegacySnapshot(ctx context.Context) (ChainConfigSnapshot, error)
+	GetAllConfigsLegacy(
+		ctx context.Context,
+		destChainSelector ChainSelector,
+		sourceChainSelectors []ChainSelector,
+	) (ChainConfigSnapshot, map[ChainSelector]SourceChainConfig, error)
 
 	// GetChainFeeComponents Returns all fee components for given chains if corresponding
 	// chain writer is available.

@@ -45,6 +45,31 @@ func confidenceLevelToPb(confidence primitives.ConfidenceLevel) uint32 {
 	}
 }
 
+// Convert protobuf SourceChainConfig to ccipocr3.SourceChainConfig
+func pbToSourceChainConfig(pb *ccipocr3pb.SourceChainConfig) ccipocr3.SourceChainConfig {
+	if pb == nil {
+		return ccipocr3.SourceChainConfig{}
+	}
+	return ccipocr3.SourceChainConfig{
+		Router:                    pb.Router,
+		IsEnabled:                 pb.IsEnabled,
+		IsRMNVerificationDisabled: pb.IsRmnVerificationDisabled,
+		MinSeqNr:                  pb.MinSeqNr,
+		OnRamp:                    ccipocr3.UnknownAddress(pb.OnRamp),
+	}
+}
+
+// Convert ccipocr3.SourceChainConfig to protobuf SourceChainConfig
+func sourceChainConfigToPb(config ccipocr3.SourceChainConfig) *ccipocr3pb.SourceChainConfig {
+	return &ccipocr3pb.SourceChainConfig{
+		Router:                    config.Router,
+		IsEnabled:                 config.IsEnabled,
+		IsRmnVerificationDisabled: config.IsRMNVerificationDisabled,
+		MinSeqNr:                  config.MinSeqNr,
+		OnRamp:                    []byte(config.OnRamp),
+	}
+}
+
 // Convert protobuf ChainConfigSnapshot to ccipocr3.ChainConfigSnapshot
 func pbToChainConfigSnapshotDetailed(pb *ccipocr3pb.ChainConfigSnapshot) ccipocr3.ChainConfigSnapshot {
 	if pb == nil {

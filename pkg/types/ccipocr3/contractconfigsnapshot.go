@@ -1,6 +1,6 @@
 package ccipocr3
 
-// ChainConfigSnapshot is a legacy type used in chain accessor's GetAllConfigLegacySnapshot() function. This will
+// ChainConfigSnapshot is a legacy type used in chain accessor's GetAllConfigsLegacy() function. This will
 // eventually be replaced by a more explicit approach using an interface returned by a future GetAllConfig() function.
 type ChainConfigSnapshot struct {
 	Offramp   OfframpConfig

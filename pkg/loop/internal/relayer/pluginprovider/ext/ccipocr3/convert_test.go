@@ -658,3 +658,99 @@ func TestUint32Boundaries(t *testing.T) {
 		})
 	}
 }
+
+// TestSourceChainConfigConversion tests the new SourceChainConfig conversion functions
+func TestSourceChainConfigConversion(t *testing.T) {
+	testCases := []struct {
+		name   string
+		config ccipocr3.SourceChainConfig
+	}{
+		{
+			name: "SourceChainConfig with all fields populated",
+			config: ccipocr3.SourceChainConfig{
+				Router:                    []byte("router-address-123"),
+				IsEnabled:                 true,
+				IsRMNVerificationDisabled: false,
+				MinSeqNr:                  uint64(1000),
+				OnRamp:                    ccipocr3.UnknownAddress("onramp-address-456"),
+			},
+		},
+		{
+			name: "SourceChainConfig with disabled state",
+			config: ccipocr3.SourceChainConfig{
+				Router:                    []byte("disabled-router"),
+				IsEnabled:                 false,
+				IsRMNVerificationDisabled: true,
+				MinSeqNr:                  uint64(0),
+				OnRamp:                    ccipocr3.UnknownAddress("disabled-onramp"),
+			},
+		},
+		{
+			name: "SourceChainConfig with empty addresses",
+			config: ccipocr3.SourceChainConfig{
+				Router:                    []byte{},
+				IsEnabled:                 true,
+				IsRMNVerificationDisabled: false,
+				MinSeqNr:                  uint64(9999999),
+				OnRamp:                    ccipocr3.UnknownAddress{},
+			},
+		},
+		{
+			name: "SourceChainConfig with max sequence number",
+			config: ccipocr3.SourceChainConfig{
+				Router:                    []byte("max-seq-router"),
+				IsEnabled:                 true,
+				IsRMNVerificationDisabled: true,
+				MinSeqNr:                  ^uint64(0), // max uint64
+				OnRamp:                    ccipocr3.UnknownAddress("max-seq-onramp"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert Go -> Protobuf
+			pbConfig := sourceChainConfigToPb(tc.config)
+			require.NotNil(t, pbConfig, "protobuf config should not be nil")
+
+			// Verify protobuf values
+			assert.Equal(t, tc.config.Router, pbConfig.Router, "Router should be preserved")
+			assert.Equal(t, tc.config.IsEnabled, pbConfig.IsEnabled, "IsEnabled should be preserved")
+			assert.Equal(t, tc.config.IsRMNVerificationDisabled, pbConfig.IsRmnVerificationDisabled, "IsRMNVerificationDisabled should be preserved")
+			assert.Equal(t, tc.config.MinSeqNr, pbConfig.MinSeqNr, "MinSeqNr should be preserved")
+			assert.Equal(t, []byte(tc.config.OnRamp), pbConfig.OnRamp, "OnRamp should be preserved as bytes")
+
+			// Convert Protobuf -> Go (round-trip)
+			convertedConfig := pbToSourceChainConfig(pbConfig)
+
+			// Verify round-trip conversion preserves all data
+			assert.Equal(t, tc.config.Router, convertedConfig.Router, "Router should survive round-trip")
+			assert.Equal(t, tc.config.IsEnabled, convertedConfig.IsEnabled, "IsEnabled should survive round-trip")
+			assert.Equal(t, tc.config.IsRMNVerificationDisabled, convertedConfig.IsRMNVerificationDisabled, "IsRMNVerificationDisabled should survive round-trip")
+			assert.Equal(t, tc.config.MinSeqNr, convertedConfig.MinSeqNr, "MinSeqNr should survive round-trip")
+			assert.Equal(t, []byte(tc.config.OnRamp), []byte(convertedConfig.OnRamp), "OnRamp should survive round-trip as UnknownAddress")
+		})
+	}
+}
+
+// TestSourceChainConfigNilHandling tests nil handling for SourceChainConfig conversion
+func TestSourceChainConfigNilHandling(t *testing.T) {
+	t.Run("pbToSourceChainConfig with nil input", func(t *testing.T) {
+		result := pbToSourceChainConfig(nil)
+		expected := ccipocr3.SourceChainConfig{}
+		assert.Equal(t, expected, result, "nil protobuf should convert to zero value SourceChainConfig")
+	})
+
+	t.Run("sourceChainConfigToPb with zero value", func(t *testing.T) {
+		zeroConfig := ccipocr3.SourceChainConfig{}
+		pbConfig := sourceChainConfigToPb(zeroConfig)
+		require.NotNil(t, pbConfig, "protobuf should not be nil even for zero value input")
+
+		// Verify zero values are preserved
+		assert.Equal(t, []byte(nil), pbConfig.Router)
+		assert.Equal(t, false, pbConfig.IsEnabled)
+		assert.Equal(t, false, pbConfig.IsRmnVerificationDisabled)
+		assert.Equal(t, uint64(0), pbConfig.MinSeqNr)
+		assert.Equal(t, []byte(nil), pbConfig.OnRamp)
+	})
+}

@@ -111,26 +111,28 @@ func (x *GetContractAddressResponse) GetAddress() []byte {
 	return nil
 }
 
-type GetAllConfigLegacySnapshotRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type GetAllConfigsLegacyRequest struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	DestChainSelector    uint64                 `protobuf:"varint,1,opt,name=dest_chain_selector,json=destChainSelector,proto3" json:"dest_chain_selector,omitempty"`
+	SourceChainSelectors []uint64               `protobuf:"varint,2,rep,packed,name=source_chain_selectors,json=sourceChainSelectors,proto3" json:"source_chain_selectors,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
-func (x *GetAllConfigLegacySnapshotRequest) Reset() {
-	*x = GetAllConfigLegacySnapshotRequest{}
+func (x *GetAllConfigsLegacyRequest) Reset() {
+	*x = GetAllConfigsLegacyRequest{}
 	mi := &file_chainaccessor_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetAllConfigLegacySnapshotRequest) String() string {
+func (x *GetAllConfigsLegacyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetAllConfigLegacySnapshotRequest) ProtoMessage() {}
+func (*GetAllConfigsLegacyRequest) ProtoMessage() {}
 
-func (x *GetAllConfigLegacySnapshotRequest) ProtoReflect() protoreflect.Message {
+func (x *GetAllConfigsLegacyRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_chainaccessor_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,32 +144,47 @@ func (x *GetAllConfigLegacySnapshotRequest) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetAllConfigLegacySnapshotRequest.ProtoReflect.Descriptor instead.
-func (*GetAllConfigLegacySnapshotRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetAllConfigsLegacyRequest.ProtoReflect.Descriptor instead.
+func (*GetAllConfigsLegacyRequest) Descriptor() ([]byte, []int) {
 	return file_chainaccessor_proto_rawDescGZIP(), []int{2}
 }
 
-type GetAllConfigLegacySnapshotResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Snapshot      *ChainConfigSnapshot   `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+func (x *GetAllConfigsLegacyRequest) GetDestChainSelector() uint64 {
+	if x != nil {
+		return x.DestChainSelector
+	}
+	return 0
 }
 
-func (x *GetAllConfigLegacySnapshotResponse) Reset() {
-	*x = GetAllConfigLegacySnapshotResponse{}
+func (x *GetAllConfigsLegacyRequest) GetSourceChainSelectors() []uint64 {
+	if x != nil {
+		return x.SourceChainSelectors
+	}
+	return nil
+}
+
+type GetAllConfigsLegacyResponse struct {
+	state              protoimpl.MessageState        `protogen:"open.v1"`
+	Snapshot           *ChainConfigSnapshot          `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	SourceChainConfigs map[uint64]*SourceChainConfig `protobuf:"bytes,2,rep,name=source_chain_configs,json=sourceChainConfigs,proto3" json:"source_chain_configs,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // key is chain selector
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GetAllConfigsLegacyResponse) Reset() {
+	*x = GetAllConfigsLegacyResponse{}
 	mi := &file_chainaccessor_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetAllConfigLegacySnapshotResponse) String() string {
+func (x *GetAllConfigsLegacyResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetAllConfigLegacySnapshotResponse) ProtoMessage() {}
+func (*GetAllConfigsLegacyResponse) ProtoMessage() {}
 
-func (x *GetAllConfigLegacySnapshotResponse) ProtoReflect() protoreflect.Message {
+func (x *GetAllConfigsLegacyResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_chainaccessor_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -179,14 +196,21 @@ func (x *GetAllConfigLegacySnapshotResponse) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetAllConfigLegacySnapshotResponse.ProtoReflect.Descriptor instead.
-func (*GetAllConfigLegacySnapshotResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetAllConfigsLegacyResponse.ProtoReflect.Descriptor instead.
+func (*GetAllConfigsLegacyResponse) Descriptor() ([]byte, []int) {
 	return file_chainaccessor_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetAllConfigLegacySnapshotResponse) GetSnapshot() *ChainConfigSnapshot {
+func (x *GetAllConfigsLegacyResponse) GetSnapshot() *ChainConfigSnapshot {
 	if x != nil {
 		return x.Snapshot
+	}
+	return nil
+}
+
+func (x *GetAllConfigsLegacyResponse) GetSourceChainConfigs() map[uint64]*SourceChainConfig {
+	if x != nil {
+		return x.SourceChainConfigs
 	}
 	return nil
 }
@@ -3047,6 +3071,82 @@ func (x *CurseInfo) GetGlobalCurse() bool {
 	return false
 }
 
+type SourceChainConfig struct {
+	state                     protoimpl.MessageState `protogen:"open.v1"`
+	Router                    []byte                 `protobuf:"bytes,1,opt,name=router,proto3" json:"router,omitempty"` // local router
+	IsEnabled                 bool                   `protobuf:"varint,2,opt,name=is_enabled,json=isEnabled,proto3" json:"is_enabled,omitempty"`
+	IsRmnVerificationDisabled bool                   `protobuf:"varint,3,opt,name=is_rmn_verification_disabled,json=isRmnVerificationDisabled,proto3" json:"is_rmn_verification_disabled,omitempty"`
+	MinSeqNr                  uint64                 `protobuf:"varint,4,opt,name=min_seq_nr,json=minSeqNr,proto3" json:"min_seq_nr,omitempty"`
+	OnRamp                    []byte                 `protobuf:"bytes,5,opt,name=on_ramp,json=onRamp,proto3" json:"on_ramp,omitempty"` // UnknownAddress
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *SourceChainConfig) Reset() {
+	*x = SourceChainConfig{}
+	mi := &file_chainaccessor_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SourceChainConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SourceChainConfig) ProtoMessage() {}
+
+func (x *SourceChainConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_chainaccessor_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SourceChainConfig.ProtoReflect.Descriptor instead.
+func (*SourceChainConfig) Descriptor() ([]byte, []int) {
+	return file_chainaccessor_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *SourceChainConfig) GetRouter() []byte {
+	if x != nil {
+		return x.Router
+	}
+	return nil
+}
+
+func (x *SourceChainConfig) GetIsEnabled() bool {
+	if x != nil {
+		return x.IsEnabled
+	}
+	return false
+}
+
+func (x *SourceChainConfig) GetIsRmnVerificationDisabled() bool {
+	if x != nil {
+		return x.IsRmnVerificationDisabled
+	}
+	return false
+}
+
+func (x *SourceChainConfig) GetMinSeqNr() uint64 {
+	if x != nil {
+		return x.MinSeqNr
+	}
+	return 0
+}
+
+func (x *SourceChainConfig) GetOnRamp() []byte {
+	if x != nil {
+		return x.OnRamp
+	}
+	return nil
+}
+
 type FeeQuoterDestChainConfig struct {
 	state                             protoimpl.MessageState `protogen:"open.v1"`
 	IsEnabled                         bool                   `protobuf:"varint,1,opt,name=is_enabled,json=isEnabled,proto3" json:"is_enabled,omitempty"`
@@ -3074,7 +3174,7 @@ type FeeQuoterDestChainConfig struct {
 
 func (x *FeeQuoterDestChainConfig) Reset() {
 	*x = FeeQuoterDestChainConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[61]
+	mi := &file_chainaccessor_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3086,7 +3186,7 @@ func (x *FeeQuoterDestChainConfig) String() string {
 func (*FeeQuoterDestChainConfig) ProtoMessage() {}
 
 func (x *FeeQuoterDestChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[61]
+	mi := &file_chainaccessor_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3099,7 +3199,7 @@ func (x *FeeQuoterDestChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FeeQuoterDestChainConfig.ProtoReflect.Descriptor instead.
 func (*FeeQuoterDestChainConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{61}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *FeeQuoterDestChainConfig) GetIsEnabled() bool {
@@ -3243,10 +3343,16 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x19GetContractAddressRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\"6\n" +
 	"\x1aGetContractAddressResponse\x12\x18\n" +
-	"\aaddress\x18\x01 \x01(\fR\aaddress\"#\n" +
-	"!GetAllConfigLegacySnapshotRequest\"p\n" +
-	"\"GetAllConfigLegacySnapshotResponse\x12J\n" +
-	"\bsnapshot\x18\x01 \x01(\v2..loop.internal.pb.ccipocr3.ChainConfigSnapshotR\bsnapshot\"\x1e\n" +
+	"\aaddress\x18\x01 \x01(\fR\aaddress\"\x82\x01\n" +
+	"\x1aGetAllConfigsLegacyRequest\x12.\n" +
+	"\x13dest_chain_selector\x18\x01 \x01(\x04R\x11destChainSelector\x124\n" +
+	"\x16source_chain_selectors\x18\x02 \x03(\x04R\x14sourceChainSelectors\"\xe1\x02\n" +
+	"\x1bGetAllConfigsLegacyResponse\x12J\n" +
+	"\bsnapshot\x18\x01 \x01(\v2..loop.internal.pb.ccipocr3.ChainConfigSnapshotR\bsnapshot\x12\x80\x01\n" +
+	"\x14source_chain_configs\x18\x02 \x03(\v2N.loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntryR\x12sourceChainConfigs\x1as\n" +
+	"\x17SourceChainConfigsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x04R\x03key\x12B\n" +
+	"\x05value\x18\x02 \x01(\v2,.loop.internal.pb.ccipocr3.SourceChainConfigR\x05value:\x028\x01\"\x1e\n" +
 	"\x1cGetChainFeeComponentsRequest\"u\n" +
 	"\x1dGetChainFeeComponentsResponse\x12T\n" +
 	"\x0efee_components\x18\x01 \x01(\v2-.loop.internal.pb.ccipocr3.ChainFeeComponentsR\rfeeComponents\"]\n" +
@@ -3440,7 +3546,15 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\fglobal_curse\x18\x03 \x01(\bR\vglobalCurse\x1aE\n" +
 	"\x17CursedSourceChainsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"\xf5\b\n" +
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"\xc2\x01\n" +
+	"\x11SourceChainConfig\x12\x16\n" +
+	"\x06router\x18\x01 \x01(\fR\x06router\x12\x1d\n" +
+	"\n" +
+	"is_enabled\x18\x02 \x01(\bR\tisEnabled\x12?\n" +
+	"\x1cis_rmn_verification_disabled\x18\x03 \x01(\bR\x19isRmnVerificationDisabled\x12\x1c\n" +
+	"\n" +
+	"min_seq_nr\x18\x04 \x01(\x04R\bminSeqNr\x12\x17\n" +
+	"\aon_ramp\x18\x05 \x01(\fR\x06onRamp\"\xf5\b\n" +
 	"\x18FeeQuoterDestChainConfig\x12\x1d\n" +
 	"\n" +
 	"is_enabled\x18\x01 \x01(\bR\tisEnabled\x12=\n" +
@@ -3462,10 +3576,10 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x16network_fee_usdc_cents\x18\x0e \x01(\rR\x13networkFeeUsdcCents\x12A\n" +
 	"\x1dgas_price_staleness_threshold\x18\x13 \x01(\rR\x1agasPriceStalenessThreshold\x12/\n" +
 	"\x14enforce_out_of_order\x18\x0f \x01(\bR\x11enforceOutOfOrder\x122\n" +
-	"\x15chain_family_selector\x18\x10 \x01(\fR\x13chainFamilySelector2\xc5\x10\n" +
+	"\x15chain_family_selector\x18\x10 \x01(\fR\x13chainFamilySelector2\xb0\x10\n" +
 	"\rChainAccessor\x12\x81\x01\n" +
-	"\x12GetContractAddress\x124.loop.internal.pb.ccipocr3.GetContractAddressRequest\x1a5.loop.internal.pb.ccipocr3.GetContractAddressResponse\x12\x99\x01\n" +
-	"\x1aGetAllConfigLegacySnapshot\x12<.loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotRequest\x1a=.loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotResponse\x12\x8a\x01\n" +
+	"\x12GetContractAddress\x124.loop.internal.pb.ccipocr3.GetContractAddressRequest\x1a5.loop.internal.pb.ccipocr3.GetContractAddressResponse\x12\x84\x01\n" +
+	"\x13GetAllConfigsLegacy\x125.loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest\x1a6.loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse\x12\x8a\x01\n" +
 	"\x15GetChainFeeComponents\x127.loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest\x1a8.loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse\x12W\n" +
 	"\x04Sync\x12&.loop.internal.pb.ccipocr3.SyncRequest\x1a'.loop.internal.pb.ccipocr3.SyncResponse\x12\x96\x01\n" +
 	"\x19CommitReportsGTETimestamp\x12;.loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest\x1a<.loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse\x12{\n" +
@@ -3494,12 +3608,12 @@ func file_chainaccessor_proto_rawDescGZIP() []byte {
 	return file_chainaccessor_proto_rawDescData
 }
 
-var file_chainaccessor_proto_msgTypes = make([]protoimpl.MessageInfo, 70)
+var file_chainaccessor_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
 var file_chainaccessor_proto_goTypes = []any{
 	(*GetContractAddressRequest)(nil),             // 0: loop.internal.pb.ccipocr3.GetContractAddressRequest
 	(*GetContractAddressResponse)(nil),            // 1: loop.internal.pb.ccipocr3.GetContractAddressResponse
-	(*GetAllConfigLegacySnapshotRequest)(nil),     // 2: loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotRequest
-	(*GetAllConfigLegacySnapshotResponse)(nil),    // 3: loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotResponse
+	(*GetAllConfigsLegacyRequest)(nil),            // 2: loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest
+	(*GetAllConfigsLegacyResponse)(nil),           // 3: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse
 	(*GetChainFeeComponentsRequest)(nil),          // 4: loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest
 	(*GetChainFeeComponentsResponse)(nil),         // 5: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
 	(*SyncRequest)(nil),                           // 6: loop.internal.pb.ccipocr3.SyncRequest
@@ -3557,111 +3671,115 @@ var file_chainaccessor_proto_goTypes = []any{
 	(*RouterConfigStruct)(nil),                    // 58: loop.internal.pb.ccipocr3.RouterConfigStruct
 	(*ChainConfigSnapshot)(nil),                   // 59: loop.internal.pb.ccipocr3.ChainConfigSnapshot
 	(*CurseInfo)(nil),                             // 60: loop.internal.pb.ccipocr3.CurseInfo
-	(*FeeQuoterDestChainConfig)(nil),              // 61: loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
-	nil,                                           // 62: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
-	nil,                                           // 63: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
-	nil,                                           // 64: loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
-	nil,                                           // 65: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
-	nil,                                           // 66: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
-	nil,                                           // 67: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
-	nil,                                           // 68: loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
-	nil,                                           // 69: loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
-	(*timestamppb.Timestamp)(nil),                 // 70: google.protobuf.Timestamp
-	(*SeqNumRange)(nil),                           // 71: loop.internal.pb.ccipocr3.SeqNumRange
-	(*Message)(nil),                               // 72: loop.internal.pb.ccipocr3.Message
-	(*BigInt)(nil),                                // 73: loop.internal.pb.ccipocr3.BigInt
-	(*CommitPluginReport)(nil),                    // 74: loop.internal.pb.ccipocr3.CommitPluginReport
+	(*SourceChainConfig)(nil),                     // 61: loop.internal.pb.ccipocr3.SourceChainConfig
+	(*FeeQuoterDestChainConfig)(nil),              // 62: loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
+	nil,                                           // 63: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
+	nil,                                           // 64: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
+	nil,                                           // 65: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
+	nil,                                           // 66: loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
+	nil,                                           // 67: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
+	nil,                                           // 68: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
+	nil,                                           // 69: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
+	nil,                                           // 70: loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
+	nil,                                           // 71: loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
+	(*timestamppb.Timestamp)(nil),                 // 72: google.protobuf.Timestamp
+	(*SeqNumRange)(nil),                           // 73: loop.internal.pb.ccipocr3.SeqNumRange
+	(*Message)(nil),                               // 74: loop.internal.pb.ccipocr3.Message
+	(*BigInt)(nil),                                // 75: loop.internal.pb.ccipocr3.BigInt
+	(*CommitPluginReport)(nil),                    // 76: loop.internal.pb.ccipocr3.CommitPluginReport
 }
 var file_chainaccessor_proto_depIdxs = []int32{
-	59, // 0: loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotResponse.snapshot:type_name -> loop.internal.pb.ccipocr3.ChainConfigSnapshot
-	32, // 1: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse.fee_components:type_name -> loop.internal.pb.ccipocr3.ChainFeeComponents
-	70, // 2: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
-	33, // 3: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse.reports:type_name -> loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
-	62, // 4: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.ranges:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
-	63, // 5: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.executed_messages:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
-	64, // 6: loop.internal.pb.ccipocr3.NextSeqNumResponse.next_seq_nums:type_name -> loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
-	65, // 7: loop.internal.pb.ccipocr3.NoncesRequest.addresses:type_name -> loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
-	66, // 8: loop.internal.pb.ccipocr3.NoncesResponse.nonces:type_name -> loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
-	67, // 9: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.fee_price_updates:type_name -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
-	71, // 10: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	72, // 11: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse.messages:type_name -> loop.internal.pb.ccipocr3.Message
-	35, // 12: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse.price:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
-	61, // 13: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse.config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
-	60, // 14: loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
-	73, // 15: loop.internal.pb.ccipocr3.ChainFeeComponents.execution_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
-	73, // 16: loop.internal.pb.ccipocr3.ChainFeeComponents.data_availability_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
-	74, // 17: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.report:type_name -> loop.internal.pb.ccipocr3.CommitPluginReport
-	70, // 18: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.timestamp:type_name -> google.protobuf.Timestamp
-	70, // 19: loop.internal.pb.ccipocr3.TimestampedBig.timestamp:type_name -> google.protobuf.Timestamp
-	73, // 20: loop.internal.pb.ccipocr3.TimestampedBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	73, // 21: loop.internal.pb.ccipocr3.TimestampedUnixBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	71, // 22: loop.internal.pb.ccipocr3.SequenceNumberRangeList.ranges:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	68, // 23: loop.internal.pb.ccipocr3.NonceMap.nonces:type_name -> loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
-	41, // 24: loop.internal.pb.ccipocr3.OfframpConfig.commit_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
-	41, // 25: loop.internal.pb.ccipocr3.OfframpConfig.exec_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
-	44, // 26: loop.internal.pb.ccipocr3.OfframpConfig.static_config:type_name -> loop.internal.pb.ccipocr3.OffRampStaticChainConfig
-	45, // 27: loop.internal.pb.ccipocr3.OfframpConfig.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OffRampDynamicChainConfig
-	42, // 28: loop.internal.pb.ccipocr3.OCRConfigResponse.ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfig
-	43, // 29: loop.internal.pb.ccipocr3.OCRConfig.config_info:type_name -> loop.internal.pb.ccipocr3.ConfigInfo
-	48, // 30: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.digest_header:type_name -> loop.internal.pb.ccipocr3.RMNDigestHeader
-	49, // 31: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.versioned_config:type_name -> loop.internal.pb.ccipocr3.VersionedConfig
-	50, // 32: loop.internal.pb.ccipocr3.VersionedConfig.config:type_name -> loop.internal.pb.ccipocr3.RMNConfig
-	51, // 33: loop.internal.pb.ccipocr3.RMNConfig.signers:type_name -> loop.internal.pb.ccipocr3.SignerInfo
-	53, // 34: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct.static_config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
-	73, // 35: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct.max_fee_juels_per_msg:type_name -> loop.internal.pb.ccipocr3.BigInt
-	55, // 36: loop.internal.pb.ccipocr3.OnRampConfigStruct.dynamic_config:type_name -> loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
-	57, // 37: loop.internal.pb.ccipocr3.OnRampConfigStruct.dest_chain_config:type_name -> loop.internal.pb.ccipocr3.OnRampDestChainConfig
-	56, // 38: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OnRampDynamicConfig
-	40, // 39: loop.internal.pb.ccipocr3.ChainConfigSnapshot.offramp:type_name -> loop.internal.pb.ccipocr3.OfframpConfig
-	46, // 40: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_proxy:type_name -> loop.internal.pb.ccipocr3.RMNProxyConfig
-	47, // 41: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_remote:type_name -> loop.internal.pb.ccipocr3.RMNRemoteConfigStruct
-	52, // 42: loop.internal.pb.ccipocr3.ChainConfigSnapshot.fee_quoter:type_name -> loop.internal.pb.ccipocr3.FeeQuoterConfigStruct
-	54, // 43: loop.internal.pb.ccipocr3.ChainConfigSnapshot.on_ramp:type_name -> loop.internal.pb.ccipocr3.OnRampConfigStruct
-	58, // 44: loop.internal.pb.ccipocr3.ChainConfigSnapshot.router:type_name -> loop.internal.pb.ccipocr3.RouterConfigStruct
-	60, // 45: loop.internal.pb.ccipocr3.ChainConfigSnapshot.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
-	69, // 46: loop.internal.pb.ccipocr3.CurseInfo.cursed_source_chains:type_name -> loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
-	36, // 47: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberRangeList
-	37, // 48: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
-	38, // 49: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
-	39, // 50: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
-	34, // 51: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedBig
-	0,  // 52: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:input_type -> loop.internal.pb.ccipocr3.GetContractAddressRequest
-	2,  // 53: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigLegacySnapshot:input_type -> loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotRequest
-	4,  // 54: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:input_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest
-	6,  // 55: loop.internal.pb.ccipocr3.ChainAccessor.Sync:input_type -> loop.internal.pb.ccipocr3.SyncRequest
-	8,  // 56: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:input_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
-	10, // 57: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:input_type -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest
-	12, // 58: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:input_type -> loop.internal.pb.ccipocr3.NextSeqNumRequest
-	14, // 59: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:input_type -> loop.internal.pb.ccipocr3.NoncesRequest
-	16, // 60: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:input_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
-	18, // 61: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:input_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrRequest
-	20, // 62: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:input_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
-	22, // 63: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:input_type -> loop.internal.pb.ccipocr3.LatestMessageToRequest
-	24, // 64: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:input_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
-	26, // 65: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:input_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
-	28, // 66: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
-	30, // 67: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:input_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoRequest
-	1,  // 68: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:output_type -> loop.internal.pb.ccipocr3.GetContractAddressResponse
-	3,  // 69: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigLegacySnapshot:output_type -> loop.internal.pb.ccipocr3.GetAllConfigLegacySnapshotResponse
-	5,  // 70: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:output_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
-	7,  // 71: loop.internal.pb.ccipocr3.ChainAccessor.Sync:output_type -> loop.internal.pb.ccipocr3.SyncResponse
-	9,  // 72: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:output_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
-	11, // 73: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:output_type -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse
-	13, // 74: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:output_type -> loop.internal.pb.ccipocr3.NextSeqNumResponse
-	15, // 75: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:output_type -> loop.internal.pb.ccipocr3.NoncesResponse
-	17, // 76: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:output_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
-	19, // 77: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:output_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
-	21, // 78: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:output_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
-	23, // 79: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:output_type -> loop.internal.pb.ccipocr3.LatestMessageToResponse
-	25, // 80: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:output_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
-	27, // 81: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:output_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
-	29, // 82: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
-	31, // 83: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:output_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse
-	68, // [68:84] is the sub-list for method output_type
-	52, // [52:68] is the sub-list for method input_type
-	52, // [52:52] is the sub-list for extension type_name
-	52, // [52:52] is the sub-list for extension extendee
-	0,  // [0:52] is the sub-list for field type_name
+	59, // 0: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.snapshot:type_name -> loop.internal.pb.ccipocr3.ChainConfigSnapshot
+	63, // 1: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.source_chain_configs:type_name -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
+	32, // 2: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse.fee_components:type_name -> loop.internal.pb.ccipocr3.ChainFeeComponents
+	72, // 3: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
+	33, // 4: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse.reports:type_name -> loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
+	64, // 5: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.ranges:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
+	65, // 6: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.executed_messages:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
+	66, // 7: loop.internal.pb.ccipocr3.NextSeqNumResponse.next_seq_nums:type_name -> loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
+	67, // 8: loop.internal.pb.ccipocr3.NoncesRequest.addresses:type_name -> loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
+	68, // 9: loop.internal.pb.ccipocr3.NoncesResponse.nonces:type_name -> loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
+	69, // 10: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.fee_price_updates:type_name -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
+	73, // 11: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	74, // 12: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse.messages:type_name -> loop.internal.pb.ccipocr3.Message
+	35, // 13: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse.price:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
+	62, // 14: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse.config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
+	60, // 15: loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
+	75, // 16: loop.internal.pb.ccipocr3.ChainFeeComponents.execution_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
+	75, // 17: loop.internal.pb.ccipocr3.ChainFeeComponents.data_availability_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
+	76, // 18: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.report:type_name -> loop.internal.pb.ccipocr3.CommitPluginReport
+	72, // 19: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.timestamp:type_name -> google.protobuf.Timestamp
+	72, // 20: loop.internal.pb.ccipocr3.TimestampedBig.timestamp:type_name -> google.protobuf.Timestamp
+	75, // 21: loop.internal.pb.ccipocr3.TimestampedBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	75, // 22: loop.internal.pb.ccipocr3.TimestampedUnixBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	73, // 23: loop.internal.pb.ccipocr3.SequenceNumberRangeList.ranges:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	70, // 24: loop.internal.pb.ccipocr3.NonceMap.nonces:type_name -> loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
+	41, // 25: loop.internal.pb.ccipocr3.OfframpConfig.commit_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
+	41, // 26: loop.internal.pb.ccipocr3.OfframpConfig.exec_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
+	44, // 27: loop.internal.pb.ccipocr3.OfframpConfig.static_config:type_name -> loop.internal.pb.ccipocr3.OffRampStaticChainConfig
+	45, // 28: loop.internal.pb.ccipocr3.OfframpConfig.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OffRampDynamicChainConfig
+	42, // 29: loop.internal.pb.ccipocr3.OCRConfigResponse.ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfig
+	43, // 30: loop.internal.pb.ccipocr3.OCRConfig.config_info:type_name -> loop.internal.pb.ccipocr3.ConfigInfo
+	48, // 31: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.digest_header:type_name -> loop.internal.pb.ccipocr3.RMNDigestHeader
+	49, // 32: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.versioned_config:type_name -> loop.internal.pb.ccipocr3.VersionedConfig
+	50, // 33: loop.internal.pb.ccipocr3.VersionedConfig.config:type_name -> loop.internal.pb.ccipocr3.RMNConfig
+	51, // 34: loop.internal.pb.ccipocr3.RMNConfig.signers:type_name -> loop.internal.pb.ccipocr3.SignerInfo
+	53, // 35: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct.static_config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
+	75, // 36: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct.max_fee_juels_per_msg:type_name -> loop.internal.pb.ccipocr3.BigInt
+	55, // 37: loop.internal.pb.ccipocr3.OnRampConfigStruct.dynamic_config:type_name -> loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
+	57, // 38: loop.internal.pb.ccipocr3.OnRampConfigStruct.dest_chain_config:type_name -> loop.internal.pb.ccipocr3.OnRampDestChainConfig
+	56, // 39: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OnRampDynamicConfig
+	40, // 40: loop.internal.pb.ccipocr3.ChainConfigSnapshot.offramp:type_name -> loop.internal.pb.ccipocr3.OfframpConfig
+	46, // 41: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_proxy:type_name -> loop.internal.pb.ccipocr3.RMNProxyConfig
+	47, // 42: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_remote:type_name -> loop.internal.pb.ccipocr3.RMNRemoteConfigStruct
+	52, // 43: loop.internal.pb.ccipocr3.ChainConfigSnapshot.fee_quoter:type_name -> loop.internal.pb.ccipocr3.FeeQuoterConfigStruct
+	54, // 44: loop.internal.pb.ccipocr3.ChainConfigSnapshot.on_ramp:type_name -> loop.internal.pb.ccipocr3.OnRampConfigStruct
+	58, // 45: loop.internal.pb.ccipocr3.ChainConfigSnapshot.router:type_name -> loop.internal.pb.ccipocr3.RouterConfigStruct
+	60, // 46: loop.internal.pb.ccipocr3.ChainConfigSnapshot.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
+	71, // 47: loop.internal.pb.ccipocr3.CurseInfo.cursed_source_chains:type_name -> loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
+	61, // 48: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry.value:type_name -> loop.internal.pb.ccipocr3.SourceChainConfig
+	36, // 49: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberRangeList
+	37, // 50: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
+	38, // 51: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
+	39, // 52: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
+	34, // 53: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedBig
+	0,  // 54: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:input_type -> loop.internal.pb.ccipocr3.GetContractAddressRequest
+	2,  // 55: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:input_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest
+	4,  // 56: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:input_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest
+	6,  // 57: loop.internal.pb.ccipocr3.ChainAccessor.Sync:input_type -> loop.internal.pb.ccipocr3.SyncRequest
+	8,  // 58: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:input_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
+	10, // 59: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:input_type -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest
+	12, // 60: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:input_type -> loop.internal.pb.ccipocr3.NextSeqNumRequest
+	14, // 61: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:input_type -> loop.internal.pb.ccipocr3.NoncesRequest
+	16, // 62: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:input_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
+	18, // 63: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:input_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrRequest
+	20, // 64: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:input_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
+	22, // 65: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:input_type -> loop.internal.pb.ccipocr3.LatestMessageToRequest
+	24, // 66: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:input_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
+	26, // 67: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:input_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
+	28, // 68: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
+	30, // 69: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:input_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoRequest
+	1,  // 70: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:output_type -> loop.internal.pb.ccipocr3.GetContractAddressResponse
+	3,  // 71: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:output_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse
+	5,  // 72: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:output_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
+	7,  // 73: loop.internal.pb.ccipocr3.ChainAccessor.Sync:output_type -> loop.internal.pb.ccipocr3.SyncResponse
+	9,  // 74: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:output_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
+	11, // 75: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:output_type -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse
+	13, // 76: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:output_type -> loop.internal.pb.ccipocr3.NextSeqNumResponse
+	15, // 77: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:output_type -> loop.internal.pb.ccipocr3.NoncesResponse
+	17, // 78: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:output_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
+	19, // 79: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:output_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
+	21, // 80: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:output_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
+	23, // 81: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:output_type -> loop.internal.pb.ccipocr3.LatestMessageToResponse
+	25, // 82: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:output_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
+	27, // 83: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:output_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
+	29, // 84: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
+	31, // 85: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:output_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse
+	70, // [70:86] is the sub-list for method output_type
+	54, // [54:70] is the sub-list for method input_type
+	54, // [54:54] is the sub-list for extension type_name
+	54, // [54:54] is the sub-list for extension extendee
+	0,  // [0:54] is the sub-list for field type_name
 }
 
 func init() { file_chainaccessor_proto_init() }
@@ -3676,7 +3794,7 @@ func file_chainaccessor_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chainaccessor_proto_rawDesc), len(file_chainaccessor_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   70,
+			NumMessages:   72,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

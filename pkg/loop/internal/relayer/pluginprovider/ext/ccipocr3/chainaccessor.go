@@ -38,12 +38,31 @@ func (c *chainAccessorClient) GetContractAddress(contractName string) ([]byte, e
 	return resp.Address, nil
 }
 
-func (c *chainAccessorClient) GetAllConfigLegacySnapshot(ctx context.Context) (ccipocr3.ChainConfigSnapshot, error) {
-	resp, err := c.grpc.GetAllConfigLegacySnapshot(ctx, &ccipocr3pb.GetAllConfigLegacySnapshotRequest{})
-	if err != nil {
-		return ccipocr3.ChainConfigSnapshot{}, err
+func (c *chainAccessorClient) GetAllConfigsLegacy(
+	ctx context.Context,
+	destChainSelector ccipocr3.ChainSelector,
+	sourceChainSelectors []ccipocr3.ChainSelector,
+) (ccipocr3.ChainConfigSnapshot, map[ccipocr3.ChainSelector]ccipocr3.SourceChainConfig, error) {
+	var sourceSels []uint64
+	for _, sel := range sourceChainSelectors {
+		sourceSels = append(sourceSels, uint64(sel))
 	}
-	return pbToChainConfigSnapshotDetailed(resp.Snapshot), nil
+
+	resp, err := c.grpc.GetAllConfigsLegacy(ctx, &ccipocr3pb.GetAllConfigsLegacyRequest{
+		DestChainSelector:    uint64(destChainSelector),
+		SourceChainSelectors: sourceSels,
+	})
+	if err != nil {
+		return ccipocr3.ChainConfigSnapshot{}, nil, err
+	}
+
+	// Convert response source chain configs
+	sourceConfigs := make(map[ccipocr3.ChainSelector]ccipocr3.SourceChainConfig)
+	for chainSel, pbConfig := range resp.SourceChainConfigs {
+		sourceConfigs[ccipocr3.ChainSelector(chainSel)] = pbToSourceChainConfig(pbConfig)
+	}
+
+	return pbToChainConfigSnapshotDetailed(resp.Snapshot), sourceConfigs, nil
 }
 
 func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context) (ccipocr3.ChainFeeComponents, error) {
@@ -300,13 +319,31 @@ func (s *chainAccessorServer) GetContractAddress(ctx context.Context, req *ccipo
 	return &ccipocr3pb.GetContractAddressResponse{Address: addr}, nil
 }
 
-func (s *chainAccessorServer) GetAllConfigLegacySnapshot(ctx context.Context, req *ccipocr3pb.GetAllConfigLegacySnapshotRequest) (*ccipocr3pb.GetAllConfigLegacySnapshotResponse, error) {
-	snapshot, err := s.impl.GetAllConfigLegacySnapshot(ctx)
+func (s *chainAccessorServer) GetAllConfigsLegacy(ctx context.Context, req *ccipocr3pb.GetAllConfigsLegacyRequest) (*ccipocr3pb.GetAllConfigsLegacyResponse, error) {
+	// Convert request parameters
+	var sourceChainSelectors []ccipocr3.ChainSelector
+	for _, sel := range req.SourceChainSelectors {
+		sourceChainSelectors = append(sourceChainSelectors, ccipocr3.ChainSelector(sel))
+	}
+
+	snapshot, sourceConfigs, err := s.impl.GetAllConfigsLegacy(
+		ctx,
+		ccipocr3.ChainSelector(req.DestChainSelector),
+		sourceChainSelectors,
+	)
 	if err != nil {
 		return nil, err
 	}
-	return &ccipocr3pb.GetAllConfigLegacySnapshotResponse{
-		Snapshot: chainConfigSnapshotToPbDetailed(snapshot),
+
+	// Convert response source chain configs
+	pbSourceConfigs := make(map[uint64]*ccipocr3pb.SourceChainConfig)
+	for chainSel, config := range sourceConfigs {
+		pbSourceConfigs[uint64(chainSel)] = sourceChainConfigToPb(config)
+	}
+
+	return &ccipocr3pb.GetAllConfigsLegacyResponse{
+		Snapshot:           chainConfigSnapshotToPbDetailed(snapshot),
+		SourceChainConfigs: pbSourceConfigs,
 	}, nil
 }
 

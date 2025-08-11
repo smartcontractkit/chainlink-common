@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -46,15 +47,15 @@ type ChainAccessorClient interface {
 	// AllAccessors methods
 	GetContractAddress(ctx context.Context, in *GetContractAddressRequest, opts ...grpc.CallOption) (*GetContractAddressResponse, error)
 	GetAllConfigsLegacy(ctx context.Context, in *GetAllConfigsLegacyRequest, opts ...grpc.CallOption) (*GetAllConfigsLegacyResponse, error)
-	GetChainFeeComponents(ctx context.Context, in *GetChainFeeComponentsRequest, opts ...grpc.CallOption) (*GetChainFeeComponentsResponse, error)
-	Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
+	GetChainFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetChainFeeComponentsResponse, error)
+	Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// DestinationAccessor methods
 	CommitReportsGTETimestamp(ctx context.Context, in *CommitReportsGTETimestampRequest, opts ...grpc.CallOption) (*CommitReportsGTETimestampResponse, error)
 	ExecutedMessages(ctx context.Context, in *ExecutedMessagesRequest, opts ...grpc.CallOption) (*ExecutedMessagesResponse, error)
 	NextSeqNum(ctx context.Context, in *NextSeqNumRequest, opts ...grpc.CallOption) (*NextSeqNumResponse, error)
 	Nonces(ctx context.Context, in *NoncesRequest, opts ...grpc.CallOption) (*NoncesResponse, error)
 	GetChainFeePriceUpdate(ctx context.Context, in *GetChainFeePriceUpdateRequest, opts ...grpc.CallOption) (*GetChainFeePriceUpdateResponse, error)
-	GetLatestPriceSeqNr(ctx context.Context, in *GetLatestPriceSeqNrRequest, opts ...grpc.CallOption) (*GetLatestPriceSeqNrResponse, error)
+	GetLatestPriceSeqNr(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestPriceSeqNrResponse, error)
 	// SourceAccessor methods
 	MsgsBetweenSeqNums(ctx context.Context, in *MsgsBetweenSeqNumsRequest, opts ...grpc.CallOption) (*MsgsBetweenSeqNumsResponse, error)
 	LatestMessageTo(ctx context.Context, in *LatestMessageToRequest, opts ...grpc.CallOption) (*LatestMessageToResponse, error)
@@ -62,7 +63,7 @@ type ChainAccessorClient interface {
 	GetTokenPriceUSD(ctx context.Context, in *GetTokenPriceUSDRequest, opts ...grpc.CallOption) (*GetTokenPriceUSDResponse, error)
 	GetFeeQuoterDestChainConfig(ctx context.Context, in *GetFeeQuoterDestChainConfigRequest, opts ...grpc.CallOption) (*GetFeeQuoterDestChainConfigResponse, error)
 	// RMNAccessor methods
-	GetRMNCurseInfo(ctx context.Context, in *GetRMNCurseInfoRequest, opts ...grpc.CallOption) (*GetRMNCurseInfoResponse, error)
+	GetRMNCurseInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetRMNCurseInfoResponse, error)
 }
 
 type chainAccessorClient struct {
@@ -93,7 +94,7 @@ func (c *chainAccessorClient) GetAllConfigsLegacy(ctx context.Context, in *GetAl
 	return out, nil
 }
 
-func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context, in *GetChainFeeComponentsRequest, opts ...grpc.CallOption) (*GetChainFeeComponentsResponse, error) {
+func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetChainFeeComponentsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetChainFeeComponentsResponse)
 	err := c.cc.Invoke(ctx, ChainAccessor_GetChainFeeComponents_FullMethodName, in, out, cOpts...)
@@ -103,9 +104,9 @@ func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context, in *Get
 	return out, nil
 }
 
-func (c *chainAccessorClient) Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error) {
+func (c *chainAccessorClient) Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SyncResponse)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ChainAccessor_Sync_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -163,7 +164,7 @@ func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, in *Ge
 	return out, nil
 }
 
-func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context, in *GetLatestPriceSeqNrRequest, opts ...grpc.CallOption) (*GetLatestPriceSeqNrResponse, error) {
+func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestPriceSeqNrResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetLatestPriceSeqNrResponse)
 	err := c.cc.Invoke(ctx, ChainAccessor_GetLatestPriceSeqNr_FullMethodName, in, out, cOpts...)
@@ -223,7 +224,7 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, i
 	return out, nil
 }
 
-func (c *chainAccessorClient) GetRMNCurseInfo(ctx context.Context, in *GetRMNCurseInfoRequest, opts ...grpc.CallOption) (*GetRMNCurseInfoResponse, error) {
+func (c *chainAccessorClient) GetRMNCurseInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetRMNCurseInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRMNCurseInfoResponse)
 	err := c.cc.Invoke(ctx, ChainAccessor_GetRMNCurseInfo_FullMethodName, in, out, cOpts...)
@@ -242,15 +243,15 @@ type ChainAccessorServer interface {
 	// AllAccessors methods
 	GetContractAddress(context.Context, *GetContractAddressRequest) (*GetContractAddressResponse, error)
 	GetAllConfigsLegacy(context.Context, *GetAllConfigsLegacyRequest) (*GetAllConfigsLegacyResponse, error)
-	GetChainFeeComponents(context.Context, *GetChainFeeComponentsRequest) (*GetChainFeeComponentsResponse, error)
-	Sync(context.Context, *SyncRequest) (*SyncResponse, error)
+	GetChainFeeComponents(context.Context, *emptypb.Empty) (*GetChainFeeComponentsResponse, error)
+	Sync(context.Context, *SyncRequest) (*emptypb.Empty, error)
 	// DestinationAccessor methods
 	CommitReportsGTETimestamp(context.Context, *CommitReportsGTETimestampRequest) (*CommitReportsGTETimestampResponse, error)
 	ExecutedMessages(context.Context, *ExecutedMessagesRequest) (*ExecutedMessagesResponse, error)
 	NextSeqNum(context.Context, *NextSeqNumRequest) (*NextSeqNumResponse, error)
 	Nonces(context.Context, *NoncesRequest) (*NoncesResponse, error)
 	GetChainFeePriceUpdate(context.Context, *GetChainFeePriceUpdateRequest) (*GetChainFeePriceUpdateResponse, error)
-	GetLatestPriceSeqNr(context.Context, *GetLatestPriceSeqNrRequest) (*GetLatestPriceSeqNrResponse, error)
+	GetLatestPriceSeqNr(context.Context, *emptypb.Empty) (*GetLatestPriceSeqNrResponse, error)
 	// SourceAccessor methods
 	MsgsBetweenSeqNums(context.Context, *MsgsBetweenSeqNumsRequest) (*MsgsBetweenSeqNumsResponse, error)
 	LatestMessageTo(context.Context, *LatestMessageToRequest) (*LatestMessageToResponse, error)
@@ -258,7 +259,7 @@ type ChainAccessorServer interface {
 	GetTokenPriceUSD(context.Context, *GetTokenPriceUSDRequest) (*GetTokenPriceUSDResponse, error)
 	GetFeeQuoterDestChainConfig(context.Context, *GetFeeQuoterDestChainConfigRequest) (*GetFeeQuoterDestChainConfigResponse, error)
 	// RMNAccessor methods
-	GetRMNCurseInfo(context.Context, *GetRMNCurseInfoRequest) (*GetRMNCurseInfoResponse, error)
+	GetRMNCurseInfo(context.Context, *emptypb.Empty) (*GetRMNCurseInfoResponse, error)
 	mustEmbedUnimplementedChainAccessorServer()
 }
 
@@ -275,10 +276,10 @@ func (UnimplementedChainAccessorServer) GetContractAddress(context.Context, *Get
 func (UnimplementedChainAccessorServer) GetAllConfigsLegacy(context.Context, *GetAllConfigsLegacyRequest) (*GetAllConfigsLegacyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllConfigsLegacy not implemented")
 }
-func (UnimplementedChainAccessorServer) GetChainFeeComponents(context.Context, *GetChainFeeComponentsRequest) (*GetChainFeeComponentsResponse, error) {
+func (UnimplementedChainAccessorServer) GetChainFeeComponents(context.Context, *emptypb.Empty) (*GetChainFeeComponentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChainFeeComponents not implemented")
 }
-func (UnimplementedChainAccessorServer) Sync(context.Context, *SyncRequest) (*SyncResponse, error) {
+func (UnimplementedChainAccessorServer) Sync(context.Context, *SyncRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sync not implemented")
 }
 func (UnimplementedChainAccessorServer) CommitReportsGTETimestamp(context.Context, *CommitReportsGTETimestampRequest) (*CommitReportsGTETimestampResponse, error) {
@@ -296,7 +297,7 @@ func (UnimplementedChainAccessorServer) Nonces(context.Context, *NoncesRequest) 
 func (UnimplementedChainAccessorServer) GetChainFeePriceUpdate(context.Context, *GetChainFeePriceUpdateRequest) (*GetChainFeePriceUpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChainFeePriceUpdate not implemented")
 }
-func (UnimplementedChainAccessorServer) GetLatestPriceSeqNr(context.Context, *GetLatestPriceSeqNrRequest) (*GetLatestPriceSeqNrResponse, error) {
+func (UnimplementedChainAccessorServer) GetLatestPriceSeqNr(context.Context, *emptypb.Empty) (*GetLatestPriceSeqNrResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestPriceSeqNr not implemented")
 }
 func (UnimplementedChainAccessorServer) MsgsBetweenSeqNums(context.Context, *MsgsBetweenSeqNumsRequest) (*MsgsBetweenSeqNumsResponse, error) {
@@ -314,7 +315,7 @@ func (UnimplementedChainAccessorServer) GetTokenPriceUSD(context.Context, *GetTo
 func (UnimplementedChainAccessorServer) GetFeeQuoterDestChainConfig(context.Context, *GetFeeQuoterDestChainConfigRequest) (*GetFeeQuoterDestChainConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeQuoterDestChainConfig not implemented")
 }
-func (UnimplementedChainAccessorServer) GetRMNCurseInfo(context.Context, *GetRMNCurseInfoRequest) (*GetRMNCurseInfoResponse, error) {
+func (UnimplementedChainAccessorServer) GetRMNCurseInfo(context.Context, *emptypb.Empty) (*GetRMNCurseInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRMNCurseInfo not implemented")
 }
 func (UnimplementedChainAccessorServer) mustEmbedUnimplementedChainAccessorServer() {}
@@ -375,7 +376,7 @@ func _ChainAccessor_GetAllConfigsLegacy_Handler(srv interface{}, ctx context.Con
 }
 
 func _ChainAccessor_GetChainFeeComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetChainFeeComponentsRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -387,7 +388,7 @@ func _ChainAccessor_GetChainFeeComponents_Handler(srv interface{}, ctx context.C
 		FullMethod: ChainAccessor_GetChainFeeComponents_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainAccessorServer).GetChainFeeComponents(ctx, req.(*GetChainFeeComponentsRequest))
+		return srv.(ChainAccessorServer).GetChainFeeComponents(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -501,7 +502,7 @@ func _ChainAccessor_GetChainFeePriceUpdate_Handler(srv interface{}, ctx context.
 }
 
 func _ChainAccessor_GetLatestPriceSeqNr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLatestPriceSeqNrRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -513,7 +514,7 @@ func _ChainAccessor_GetLatestPriceSeqNr_Handler(srv interface{}, ctx context.Con
 		FullMethod: ChainAccessor_GetLatestPriceSeqNr_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainAccessorServer).GetLatestPriceSeqNr(ctx, req.(*GetLatestPriceSeqNrRequest))
+		return srv.(ChainAccessorServer).GetLatestPriceSeqNr(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -609,7 +610,7 @@ func _ChainAccessor_GetFeeQuoterDestChainConfig_Handler(srv interface{}, ctx con
 }
 
 func _ChainAccessor_GetRMNCurseInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRMNCurseInfoRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -621,7 +622,7 @@ func _ChainAccessor_GetRMNCurseInfo_Handler(srv interface{}, ctx context.Context
 		FullMethod: ChainAccessor_GetRMNCurseInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainAccessorServer).GetRMNCurseInfo(ctx, req.(*GetRMNCurseInfoRequest))
+		return srv.(ChainAccessorServer).GetRMNCurseInfo(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

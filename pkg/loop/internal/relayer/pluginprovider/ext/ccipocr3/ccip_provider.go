@@ -31,7 +31,7 @@ type CCIPProviderClient struct {
 	sourceChainExtraDataCodec ccipocr3.SourceChainExtraDataCodec
 }
 
-func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPProviderClient {
+func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) types.CCIPProvider {
 	c := &CCIPProviderClient{
 		ServiceClient: goplugin.NewServiceClient(b.WithName("CCIPProviderClient"), cc),
 	}

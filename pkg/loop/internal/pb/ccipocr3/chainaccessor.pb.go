@@ -9,6 +9,7 @@ package ccipocr3pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -215,42 +216,6 @@ func (x *GetAllConfigsLegacyResponse) GetSourceChainConfigs() map[uint64]*Source
 	return nil
 }
 
-type GetChainFeeComponentsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetChainFeeComponentsRequest) Reset() {
-	*x = GetChainFeeComponentsRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetChainFeeComponentsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetChainFeeComponentsRequest) ProtoMessage() {}
-
-func (x *GetChainFeeComponentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetChainFeeComponentsRequest.ProtoReflect.Descriptor instead.
-func (*GetChainFeeComponentsRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{4}
-}
-
 type GetChainFeeComponentsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FeeComponents *ChainFeeComponents    `protobuf:"bytes,1,opt,name=fee_components,json=feeComponents,proto3" json:"fee_components,omitempty"`
@@ -260,7 +225,7 @@ type GetChainFeeComponentsResponse struct {
 
 func (x *GetChainFeeComponentsResponse) Reset() {
 	*x = GetChainFeeComponentsResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[5]
+	mi := &file_chainaccessor_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -272,7 +237,7 @@ func (x *GetChainFeeComponentsResponse) String() string {
 func (*GetChainFeeComponentsResponse) ProtoMessage() {}
 
 func (x *GetChainFeeComponentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[5]
+	mi := &file_chainaccessor_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -285,7 +250,7 @@ func (x *GetChainFeeComponentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainFeeComponentsResponse.ProtoReflect.Descriptor instead.
 func (*GetChainFeeComponentsResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{5}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetChainFeeComponentsResponse) GetFeeComponents() *ChainFeeComponents {
@@ -305,7 +270,7 @@ type SyncRequest struct {
 
 func (x *SyncRequest) Reset() {
 	*x = SyncRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[6]
+	mi := &file_chainaccessor_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -317,7 +282,7 @@ func (x *SyncRequest) String() string {
 func (*SyncRequest) ProtoMessage() {}
 
 func (x *SyncRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[6]
+	mi := &file_chainaccessor_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -330,7 +295,7 @@ func (x *SyncRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncRequest.ProtoReflect.Descriptor instead.
 func (*SyncRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{6}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SyncRequest) GetContractName() string {
@@ -347,42 +312,6 @@ func (x *SyncRequest) GetContractAddress() []byte {
 	return nil
 }
 
-type SyncResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SyncResponse) Reset() {
-	*x = SyncResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SyncResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SyncResponse) ProtoMessage() {}
-
-func (x *SyncResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SyncResponse.ProtoReflect.Descriptor instead.
-func (*SyncResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{7}
-}
-
 // DestinationAccessor request/response messages
 type CommitReportsGTETimestampRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -395,7 +324,7 @@ type CommitReportsGTETimestampRequest struct {
 
 func (x *CommitReportsGTETimestampRequest) Reset() {
 	*x = CommitReportsGTETimestampRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[8]
+	mi := &file_chainaccessor_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +336,7 @@ func (x *CommitReportsGTETimestampRequest) String() string {
 func (*CommitReportsGTETimestampRequest) ProtoMessage() {}
 
 func (x *CommitReportsGTETimestampRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[8]
+	mi := &file_chainaccessor_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +349,7 @@ func (x *CommitReportsGTETimestampRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitReportsGTETimestampRequest.ProtoReflect.Descriptor instead.
 func (*CommitReportsGTETimestampRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{8}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CommitReportsGTETimestampRequest) GetTimestamp() *timestamppb.Timestamp {
@@ -453,7 +382,7 @@ type CommitReportsGTETimestampResponse struct {
 
 func (x *CommitReportsGTETimestampResponse) Reset() {
 	*x = CommitReportsGTETimestampResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[9]
+	mi := &file_chainaccessor_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -465,7 +394,7 @@ func (x *CommitReportsGTETimestampResponse) String() string {
 func (*CommitReportsGTETimestampResponse) ProtoMessage() {}
 
 func (x *CommitReportsGTETimestampResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[9]
+	mi := &file_chainaccessor_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +407,7 @@ func (x *CommitReportsGTETimestampResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CommitReportsGTETimestampResponse.ProtoReflect.Descriptor instead.
 func (*CommitReportsGTETimestampResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{9}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CommitReportsGTETimestampResponse) GetReports() []*CommitPluginReportWithMeta {
@@ -498,7 +427,7 @@ type ExecutedMessagesRequest struct {
 
 func (x *ExecutedMessagesRequest) Reset() {
 	*x = ExecutedMessagesRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[10]
+	mi := &file_chainaccessor_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -510,7 +439,7 @@ func (x *ExecutedMessagesRequest) String() string {
 func (*ExecutedMessagesRequest) ProtoMessage() {}
 
 func (x *ExecutedMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[10]
+	mi := &file_chainaccessor_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -523,7 +452,7 @@ func (x *ExecutedMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutedMessagesRequest.ProtoReflect.Descriptor instead.
 func (*ExecutedMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{10}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ExecutedMessagesRequest) GetRanges() map[uint64]*SequenceNumberRangeList {
@@ -549,7 +478,7 @@ type ExecutedMessagesResponse struct {
 
 func (x *ExecutedMessagesResponse) Reset() {
 	*x = ExecutedMessagesResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[11]
+	mi := &file_chainaccessor_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -561,7 +490,7 @@ func (x *ExecutedMessagesResponse) String() string {
 func (*ExecutedMessagesResponse) ProtoMessage() {}
 
 func (x *ExecutedMessagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[11]
+	mi := &file_chainaccessor_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -574,7 +503,7 @@ func (x *ExecutedMessagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutedMessagesResponse.ProtoReflect.Descriptor instead.
 func (*ExecutedMessagesResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{11}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ExecutedMessagesResponse) GetExecutedMessages() map[uint64]*SequenceNumberList {
@@ -593,7 +522,7 @@ type NextSeqNumRequest struct {
 
 func (x *NextSeqNumRequest) Reset() {
 	*x = NextSeqNumRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[12]
+	mi := &file_chainaccessor_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -605,7 +534,7 @@ func (x *NextSeqNumRequest) String() string {
 func (*NextSeqNumRequest) ProtoMessage() {}
 
 func (x *NextSeqNumRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[12]
+	mi := &file_chainaccessor_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -618,7 +547,7 @@ func (x *NextSeqNumRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextSeqNumRequest.ProtoReflect.Descriptor instead.
 func (*NextSeqNumRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{12}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NextSeqNumRequest) GetSourceChainSelectors() []uint64 {
@@ -637,7 +566,7 @@ type NextSeqNumResponse struct {
 
 func (x *NextSeqNumResponse) Reset() {
 	*x = NextSeqNumResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[13]
+	mi := &file_chainaccessor_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -649,7 +578,7 @@ func (x *NextSeqNumResponse) String() string {
 func (*NextSeqNumResponse) ProtoMessage() {}
 
 func (x *NextSeqNumResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[13]
+	mi := &file_chainaccessor_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -662,7 +591,7 @@ func (x *NextSeqNumResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextSeqNumResponse.ProtoReflect.Descriptor instead.
 func (*NextSeqNumResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{13}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NextSeqNumResponse) GetNextSeqNums() map[uint64]uint64 {
@@ -681,7 +610,7 @@ type NoncesRequest struct {
 
 func (x *NoncesRequest) Reset() {
 	*x = NoncesRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[14]
+	mi := &file_chainaccessor_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +622,7 @@ func (x *NoncesRequest) String() string {
 func (*NoncesRequest) ProtoMessage() {}
 
 func (x *NoncesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[14]
+	mi := &file_chainaccessor_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +635,7 @@ func (x *NoncesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NoncesRequest.ProtoReflect.Descriptor instead.
 func (*NoncesRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{14}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NoncesRequest) GetAddresses() map[uint64]*UnknownEncodedAddressList {
@@ -725,7 +654,7 @@ type NoncesResponse struct {
 
 func (x *NoncesResponse) Reset() {
 	*x = NoncesResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[15]
+	mi := &file_chainaccessor_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -737,7 +666,7 @@ func (x *NoncesResponse) String() string {
 func (*NoncesResponse) ProtoMessage() {}
 
 func (x *NoncesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[15]
+	mi := &file_chainaccessor_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -750,7 +679,7 @@ func (x *NoncesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NoncesResponse.ProtoReflect.Descriptor instead.
 func (*NoncesResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{15}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NoncesResponse) GetNonces() map[uint64]*NonceMap {
@@ -769,7 +698,7 @@ type GetChainFeePriceUpdateRequest struct {
 
 func (x *GetChainFeePriceUpdateRequest) Reset() {
 	*x = GetChainFeePriceUpdateRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[16]
+	mi := &file_chainaccessor_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -781,7 +710,7 @@ func (x *GetChainFeePriceUpdateRequest) String() string {
 func (*GetChainFeePriceUpdateRequest) ProtoMessage() {}
 
 func (x *GetChainFeePriceUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[16]
+	mi := &file_chainaccessor_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -794,7 +723,7 @@ func (x *GetChainFeePriceUpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainFeePriceUpdateRequest.ProtoReflect.Descriptor instead.
 func (*GetChainFeePriceUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{16}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetChainFeePriceUpdateRequest) GetChainSelectors() []uint64 {
@@ -813,7 +742,7 @@ type GetChainFeePriceUpdateResponse struct {
 
 func (x *GetChainFeePriceUpdateResponse) Reset() {
 	*x = GetChainFeePriceUpdateResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[17]
+	mi := &file_chainaccessor_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -825,7 +754,7 @@ func (x *GetChainFeePriceUpdateResponse) String() string {
 func (*GetChainFeePriceUpdateResponse) ProtoMessage() {}
 
 func (x *GetChainFeePriceUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[17]
+	mi := &file_chainaccessor_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -838,7 +767,7 @@ func (x *GetChainFeePriceUpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainFeePriceUpdateResponse.ProtoReflect.Descriptor instead.
 func (*GetChainFeePriceUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{17}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetChainFeePriceUpdateResponse) GetFeePriceUpdates() map[uint64]*TimestampedBig {
@@ -846,42 +775,6 @@ func (x *GetChainFeePriceUpdateResponse) GetFeePriceUpdates() map[uint64]*Timest
 		return x.FeePriceUpdates
 	}
 	return nil
-}
-
-type GetLatestPriceSeqNrRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetLatestPriceSeqNrRequest) Reset() {
-	*x = GetLatestPriceSeqNrRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetLatestPriceSeqNrRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetLatestPriceSeqNrRequest) ProtoMessage() {}
-
-func (x *GetLatestPriceSeqNrRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetLatestPriceSeqNrRequest.ProtoReflect.Descriptor instead.
-func (*GetLatestPriceSeqNrRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{18}
 }
 
 type GetLatestPriceSeqNrResponse struct {
@@ -893,7 +786,7 @@ type GetLatestPriceSeqNrResponse struct {
 
 func (x *GetLatestPriceSeqNrResponse) Reset() {
 	*x = GetLatestPriceSeqNrResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[19]
+	mi := &file_chainaccessor_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -905,7 +798,7 @@ func (x *GetLatestPriceSeqNrResponse) String() string {
 func (*GetLatestPriceSeqNrResponse) ProtoMessage() {}
 
 func (x *GetLatestPriceSeqNrResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[19]
+	mi := &file_chainaccessor_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -918,7 +811,7 @@ func (x *GetLatestPriceSeqNrResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestPriceSeqNrResponse.ProtoReflect.Descriptor instead.
 func (*GetLatestPriceSeqNrResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{19}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetLatestPriceSeqNrResponse) GetSeqNr() uint64 {
@@ -939,7 +832,7 @@ type MsgsBetweenSeqNumsRequest struct {
 
 func (x *MsgsBetweenSeqNumsRequest) Reset() {
 	*x = MsgsBetweenSeqNumsRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[20]
+	mi := &file_chainaccessor_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +844,7 @@ func (x *MsgsBetweenSeqNumsRequest) String() string {
 func (*MsgsBetweenSeqNumsRequest) ProtoMessage() {}
 
 func (x *MsgsBetweenSeqNumsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[20]
+	mi := &file_chainaccessor_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +857,7 @@ func (x *MsgsBetweenSeqNumsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgsBetweenSeqNumsRequest.ProtoReflect.Descriptor instead.
 func (*MsgsBetweenSeqNumsRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{20}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *MsgsBetweenSeqNumsRequest) GetDestChainSelector() uint64 {
@@ -990,7 +883,7 @@ type MsgsBetweenSeqNumsResponse struct {
 
 func (x *MsgsBetweenSeqNumsResponse) Reset() {
 	*x = MsgsBetweenSeqNumsResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[21]
+	mi := &file_chainaccessor_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1002,7 +895,7 @@ func (x *MsgsBetweenSeqNumsResponse) String() string {
 func (*MsgsBetweenSeqNumsResponse) ProtoMessage() {}
 
 func (x *MsgsBetweenSeqNumsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[21]
+	mi := &file_chainaccessor_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1015,7 +908,7 @@ func (x *MsgsBetweenSeqNumsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgsBetweenSeqNumsResponse.ProtoReflect.Descriptor instead.
 func (*MsgsBetweenSeqNumsResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{21}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MsgsBetweenSeqNumsResponse) GetMessages() []*Message {
@@ -1034,7 +927,7 @@ type LatestMessageToRequest struct {
 
 func (x *LatestMessageToRequest) Reset() {
 	*x = LatestMessageToRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[22]
+	mi := &file_chainaccessor_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1046,7 +939,7 @@ func (x *LatestMessageToRequest) String() string {
 func (*LatestMessageToRequest) ProtoMessage() {}
 
 func (x *LatestMessageToRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[22]
+	mi := &file_chainaccessor_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1059,7 +952,7 @@ func (x *LatestMessageToRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestMessageToRequest.ProtoReflect.Descriptor instead.
 func (*LatestMessageToRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{22}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *LatestMessageToRequest) GetDestChainSelector() uint64 {
@@ -1078,7 +971,7 @@ type LatestMessageToResponse struct {
 
 func (x *LatestMessageToResponse) Reset() {
 	*x = LatestMessageToResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[23]
+	mi := &file_chainaccessor_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1090,7 +983,7 @@ func (x *LatestMessageToResponse) String() string {
 func (*LatestMessageToResponse) ProtoMessage() {}
 
 func (x *LatestMessageToResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[23]
+	mi := &file_chainaccessor_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1103,7 +996,7 @@ func (x *LatestMessageToResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestMessageToResponse.ProtoReflect.Descriptor instead.
 func (*LatestMessageToResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{23}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *LatestMessageToResponse) GetSeqNum() uint64 {
@@ -1122,7 +1015,7 @@ type GetExpectedNextSequenceNumberRequest struct {
 
 func (x *GetExpectedNextSequenceNumberRequest) Reset() {
 	*x = GetExpectedNextSequenceNumberRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[24]
+	mi := &file_chainaccessor_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1134,7 +1027,7 @@ func (x *GetExpectedNextSequenceNumberRequest) String() string {
 func (*GetExpectedNextSequenceNumberRequest) ProtoMessage() {}
 
 func (x *GetExpectedNextSequenceNumberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[24]
+	mi := &file_chainaccessor_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1147,7 +1040,7 @@ func (x *GetExpectedNextSequenceNumberRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetExpectedNextSequenceNumberRequest.ProtoReflect.Descriptor instead.
 func (*GetExpectedNextSequenceNumberRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{24}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetExpectedNextSequenceNumberRequest) GetDestChainSelector() uint64 {
@@ -1166,7 +1059,7 @@ type GetExpectedNextSequenceNumberResponse struct {
 
 func (x *GetExpectedNextSequenceNumberResponse) Reset() {
 	*x = GetExpectedNextSequenceNumberResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[25]
+	mi := &file_chainaccessor_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1178,7 +1071,7 @@ func (x *GetExpectedNextSequenceNumberResponse) String() string {
 func (*GetExpectedNextSequenceNumberResponse) ProtoMessage() {}
 
 func (x *GetExpectedNextSequenceNumberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[25]
+	mi := &file_chainaccessor_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1191,7 +1084,7 @@ func (x *GetExpectedNextSequenceNumberResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetExpectedNextSequenceNumberResponse.ProtoReflect.Descriptor instead.
 func (*GetExpectedNextSequenceNumberResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{25}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetExpectedNextSequenceNumberResponse) GetSeqNum() uint64 {
@@ -1210,7 +1103,7 @@ type GetTokenPriceUSDRequest struct {
 
 func (x *GetTokenPriceUSDRequest) Reset() {
 	*x = GetTokenPriceUSDRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[26]
+	mi := &file_chainaccessor_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1222,7 +1115,7 @@ func (x *GetTokenPriceUSDRequest) String() string {
 func (*GetTokenPriceUSDRequest) ProtoMessage() {}
 
 func (x *GetTokenPriceUSDRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[26]
+	mi := &file_chainaccessor_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1235,7 +1128,7 @@ func (x *GetTokenPriceUSDRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTokenPriceUSDRequest.ProtoReflect.Descriptor instead.
 func (*GetTokenPriceUSDRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{26}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetTokenPriceUSDRequest) GetAddress() []byte {
@@ -1254,7 +1147,7 @@ type GetTokenPriceUSDResponse struct {
 
 func (x *GetTokenPriceUSDResponse) Reset() {
 	*x = GetTokenPriceUSDResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[27]
+	mi := &file_chainaccessor_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1266,7 +1159,7 @@ func (x *GetTokenPriceUSDResponse) String() string {
 func (*GetTokenPriceUSDResponse) ProtoMessage() {}
 
 func (x *GetTokenPriceUSDResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[27]
+	mi := &file_chainaccessor_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1172,7 @@ func (x *GetTokenPriceUSDResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTokenPriceUSDResponse.ProtoReflect.Descriptor instead.
 func (*GetTokenPriceUSDResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{27}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetTokenPriceUSDResponse) GetPrice() *TimestampedUnixBig {
@@ -1298,7 +1191,7 @@ type GetFeeQuoterDestChainConfigRequest struct {
 
 func (x *GetFeeQuoterDestChainConfigRequest) Reset() {
 	*x = GetFeeQuoterDestChainConfigRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[28]
+	mi := &file_chainaccessor_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1310,7 +1203,7 @@ func (x *GetFeeQuoterDestChainConfigRequest) String() string {
 func (*GetFeeQuoterDestChainConfigRequest) ProtoMessage() {}
 
 func (x *GetFeeQuoterDestChainConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[28]
+	mi := &file_chainaccessor_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1323,7 +1216,7 @@ func (x *GetFeeQuoterDestChainConfigRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetFeeQuoterDestChainConfigRequest.ProtoReflect.Descriptor instead.
 func (*GetFeeQuoterDestChainConfigRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{28}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetFeeQuoterDestChainConfigRequest) GetDestChainSelector() uint64 {
@@ -1342,7 +1235,7 @@ type GetFeeQuoterDestChainConfigResponse struct {
 
 func (x *GetFeeQuoterDestChainConfigResponse) Reset() {
 	*x = GetFeeQuoterDestChainConfigResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[29]
+	mi := &file_chainaccessor_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1354,7 +1247,7 @@ func (x *GetFeeQuoterDestChainConfigResponse) String() string {
 func (*GetFeeQuoterDestChainConfigResponse) ProtoMessage() {}
 
 func (x *GetFeeQuoterDestChainConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[29]
+	mi := &file_chainaccessor_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1367,7 +1260,7 @@ func (x *GetFeeQuoterDestChainConfigResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetFeeQuoterDestChainConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetFeeQuoterDestChainConfigResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{29}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetFeeQuoterDestChainConfigResponse) GetConfig() *FeeQuoterDestChainConfig {
@@ -1378,42 +1271,6 @@ func (x *GetFeeQuoterDestChainConfigResponse) GetConfig() *FeeQuoterDestChainCon
 }
 
 // RMNAccessor request/response messages
-type GetRMNCurseInfoRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetRMNCurseInfoRequest) Reset() {
-	*x = GetRMNCurseInfoRequest{}
-	mi := &file_chainaccessor_proto_msgTypes[30]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetRMNCurseInfoRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetRMNCurseInfoRequest) ProtoMessage() {}
-
-func (x *GetRMNCurseInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[30]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetRMNCurseInfoRequest.ProtoReflect.Descriptor instead.
-func (*GetRMNCurseInfoRequest) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{30}
-}
-
 type GetRMNCurseInfoResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CurseInfo     *CurseInfo             `protobuf:"bytes,1,opt,name=curse_info,json=curseInfo,proto3" json:"curse_info,omitempty"`
@@ -1423,7 +1280,7 @@ type GetRMNCurseInfoResponse struct {
 
 func (x *GetRMNCurseInfoResponse) Reset() {
 	*x = GetRMNCurseInfoResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[31]
+	mi := &file_chainaccessor_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1435,7 +1292,7 @@ func (x *GetRMNCurseInfoResponse) String() string {
 func (*GetRMNCurseInfoResponse) ProtoMessage() {}
 
 func (x *GetRMNCurseInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[31]
+	mi := &file_chainaccessor_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1448,7 +1305,7 @@ func (x *GetRMNCurseInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRMNCurseInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetRMNCurseInfoResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{31}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetRMNCurseInfoResponse) GetCurseInfo() *CurseInfo {
@@ -1469,7 +1326,7 @@ type ChainFeeComponents struct {
 
 func (x *ChainFeeComponents) Reset() {
 	*x = ChainFeeComponents{}
-	mi := &file_chainaccessor_proto_msgTypes[32]
+	mi := &file_chainaccessor_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1481,7 +1338,7 @@ func (x *ChainFeeComponents) String() string {
 func (*ChainFeeComponents) ProtoMessage() {}
 
 func (x *ChainFeeComponents) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[32]
+	mi := &file_chainaccessor_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1494,7 +1351,7 @@ func (x *ChainFeeComponents) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainFeeComponents.ProtoReflect.Descriptor instead.
 func (*ChainFeeComponents) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{32}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ChainFeeComponents) GetExecutionFee() *BigInt {
@@ -1522,7 +1379,7 @@ type CommitPluginReportWithMeta struct {
 
 func (x *CommitPluginReportWithMeta) Reset() {
 	*x = CommitPluginReportWithMeta{}
-	mi := &file_chainaccessor_proto_msgTypes[33]
+	mi := &file_chainaccessor_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1534,7 +1391,7 @@ func (x *CommitPluginReportWithMeta) String() string {
 func (*CommitPluginReportWithMeta) ProtoMessage() {}
 
 func (x *CommitPluginReportWithMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[33]
+	mi := &file_chainaccessor_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1547,7 +1404,7 @@ func (x *CommitPluginReportWithMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitPluginReportWithMeta.ProtoReflect.Descriptor instead.
 func (*CommitPluginReportWithMeta) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{33}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *CommitPluginReportWithMeta) GetReport() *CommitPluginReport {
@@ -1581,7 +1438,7 @@ type TimestampedBig struct {
 
 func (x *TimestampedBig) Reset() {
 	*x = TimestampedBig{}
-	mi := &file_chainaccessor_proto_msgTypes[34]
+	mi := &file_chainaccessor_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1593,7 +1450,7 @@ func (x *TimestampedBig) String() string {
 func (*TimestampedBig) ProtoMessage() {}
 
 func (x *TimestampedBig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[34]
+	mi := &file_chainaccessor_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1606,7 +1463,7 @@ func (x *TimestampedBig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimestampedBig.ProtoReflect.Descriptor instead.
 func (*TimestampedBig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{34}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *TimestampedBig) GetTimestamp() *timestamppb.Timestamp {
@@ -1633,7 +1490,7 @@ type TimestampedUnixBig struct {
 
 func (x *TimestampedUnixBig) Reset() {
 	*x = TimestampedUnixBig{}
-	mi := &file_chainaccessor_proto_msgTypes[35]
+	mi := &file_chainaccessor_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1645,7 +1502,7 @@ func (x *TimestampedUnixBig) String() string {
 func (*TimestampedUnixBig) ProtoMessage() {}
 
 func (x *TimestampedUnixBig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[35]
+	mi := &file_chainaccessor_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1658,7 +1515,7 @@ func (x *TimestampedUnixBig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimestampedUnixBig.ProtoReflect.Descriptor instead.
 func (*TimestampedUnixBig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{35}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *TimestampedUnixBig) GetValue() *BigInt {
@@ -1684,7 +1541,7 @@ type SequenceNumberRangeList struct {
 
 func (x *SequenceNumberRangeList) Reset() {
 	*x = SequenceNumberRangeList{}
-	mi := &file_chainaccessor_proto_msgTypes[36]
+	mi := &file_chainaccessor_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1696,7 +1553,7 @@ func (x *SequenceNumberRangeList) String() string {
 func (*SequenceNumberRangeList) ProtoMessage() {}
 
 func (x *SequenceNumberRangeList) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[36]
+	mi := &file_chainaccessor_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1709,7 +1566,7 @@ func (x *SequenceNumberRangeList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SequenceNumberRangeList.ProtoReflect.Descriptor instead.
 func (*SequenceNumberRangeList) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{36}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *SequenceNumberRangeList) GetRanges() []*SeqNumRange {
@@ -1728,7 +1585,7 @@ type SequenceNumberList struct {
 
 func (x *SequenceNumberList) Reset() {
 	*x = SequenceNumberList{}
-	mi := &file_chainaccessor_proto_msgTypes[37]
+	mi := &file_chainaccessor_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1740,7 +1597,7 @@ func (x *SequenceNumberList) String() string {
 func (*SequenceNumberList) ProtoMessage() {}
 
 func (x *SequenceNumberList) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[37]
+	mi := &file_chainaccessor_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1753,7 +1610,7 @@ func (x *SequenceNumberList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SequenceNumberList.ProtoReflect.Descriptor instead.
 func (*SequenceNumberList) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{37}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *SequenceNumberList) GetSeqNums() []uint64 {
@@ -1772,7 +1629,7 @@ type UnknownEncodedAddressList struct {
 
 func (x *UnknownEncodedAddressList) Reset() {
 	*x = UnknownEncodedAddressList{}
-	mi := &file_chainaccessor_proto_msgTypes[38]
+	mi := &file_chainaccessor_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1784,7 +1641,7 @@ func (x *UnknownEncodedAddressList) String() string {
 func (*UnknownEncodedAddressList) ProtoMessage() {}
 
 func (x *UnknownEncodedAddressList) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[38]
+	mi := &file_chainaccessor_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1797,7 +1654,7 @@ func (x *UnknownEncodedAddressList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnknownEncodedAddressList.ProtoReflect.Descriptor instead.
 func (*UnknownEncodedAddressList) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{38}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *UnknownEncodedAddressList) GetAddresses() []string {
@@ -1816,7 +1673,7 @@ type NonceMap struct {
 
 func (x *NonceMap) Reset() {
 	*x = NonceMap{}
-	mi := &file_chainaccessor_proto_msgTypes[39]
+	mi := &file_chainaccessor_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1828,7 +1685,7 @@ func (x *NonceMap) String() string {
 func (*NonceMap) ProtoMessage() {}
 
 func (x *NonceMap) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[39]
+	mi := &file_chainaccessor_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1841,7 +1698,7 @@ func (x *NonceMap) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NonceMap.ProtoReflect.Descriptor instead.
 func (*NonceMap) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{39}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *NonceMap) GetNonces() map[string]uint64 {
@@ -1863,7 +1720,7 @@ type OfframpConfig struct {
 
 func (x *OfframpConfig) Reset() {
 	*x = OfframpConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[40]
+	mi := &file_chainaccessor_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1875,7 +1732,7 @@ func (x *OfframpConfig) String() string {
 func (*OfframpConfig) ProtoMessage() {}
 
 func (x *OfframpConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[40]
+	mi := &file_chainaccessor_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1888,7 +1745,7 @@ func (x *OfframpConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OfframpConfig.ProtoReflect.Descriptor instead.
 func (*OfframpConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{40}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *OfframpConfig) GetCommitLatestOcrConfig() *OCRConfigResponse {
@@ -1928,7 +1785,7 @@ type OCRConfigResponse struct {
 
 func (x *OCRConfigResponse) Reset() {
 	*x = OCRConfigResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[41]
+	mi := &file_chainaccessor_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1940,7 +1797,7 @@ func (x *OCRConfigResponse) String() string {
 func (*OCRConfigResponse) ProtoMessage() {}
 
 func (x *OCRConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[41]
+	mi := &file_chainaccessor_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1953,7 +1810,7 @@ func (x *OCRConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OCRConfigResponse.ProtoReflect.Descriptor instead.
 func (*OCRConfigResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{41}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *OCRConfigResponse) GetOcrConfig() *OCRConfig {
@@ -1974,7 +1831,7 @@ type OCRConfig struct {
 
 func (x *OCRConfig) Reset() {
 	*x = OCRConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[42]
+	mi := &file_chainaccessor_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1986,7 +1843,7 @@ func (x *OCRConfig) String() string {
 func (*OCRConfig) ProtoMessage() {}
 
 func (x *OCRConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[42]
+	mi := &file_chainaccessor_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1999,7 +1856,7 @@ func (x *OCRConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OCRConfig.ProtoReflect.Descriptor instead.
 func (*OCRConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{42}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *OCRConfig) GetConfigInfo() *ConfigInfo {
@@ -2035,7 +1892,7 @@ type ConfigInfo struct {
 
 func (x *ConfigInfo) Reset() {
 	*x = ConfigInfo{}
-	mi := &file_chainaccessor_proto_msgTypes[43]
+	mi := &file_chainaccessor_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2047,7 +1904,7 @@ func (x *ConfigInfo) String() string {
 func (*ConfigInfo) ProtoMessage() {}
 
 func (x *ConfigInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[43]
+	mi := &file_chainaccessor_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2060,7 +1917,7 @@ func (x *ConfigInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigInfo.ProtoReflect.Descriptor instead.
 func (*ConfigInfo) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{43}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ConfigInfo) GetConfigDigest() []byte {
@@ -2104,7 +1961,7 @@ type OffRampStaticChainConfig struct {
 
 func (x *OffRampStaticChainConfig) Reset() {
 	*x = OffRampStaticChainConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[44]
+	mi := &file_chainaccessor_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2116,7 +1973,7 @@ func (x *OffRampStaticChainConfig) String() string {
 func (*OffRampStaticChainConfig) ProtoMessage() {}
 
 func (x *OffRampStaticChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[44]
+	mi := &file_chainaccessor_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2129,7 +1986,7 @@ func (x *OffRampStaticChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OffRampStaticChainConfig.ProtoReflect.Descriptor instead.
 func (*OffRampStaticChainConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{44}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *OffRampStaticChainConfig) GetChainSelector() uint64 {
@@ -2179,7 +2036,7 @@ type OffRampDynamicChainConfig struct {
 
 func (x *OffRampDynamicChainConfig) Reset() {
 	*x = OffRampDynamicChainConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[45]
+	mi := &file_chainaccessor_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2191,7 +2048,7 @@ func (x *OffRampDynamicChainConfig) String() string {
 func (*OffRampDynamicChainConfig) ProtoMessage() {}
 
 func (x *OffRampDynamicChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[45]
+	mi := &file_chainaccessor_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2204,7 +2061,7 @@ func (x *OffRampDynamicChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OffRampDynamicChainConfig.ProtoReflect.Descriptor instead.
 func (*OffRampDynamicChainConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{45}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *OffRampDynamicChainConfig) GetFeeQuoter() []byte {
@@ -2244,7 +2101,7 @@ type RMNProxyConfig struct {
 
 func (x *RMNProxyConfig) Reset() {
 	*x = RMNProxyConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[46]
+	mi := &file_chainaccessor_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2256,7 +2113,7 @@ func (x *RMNProxyConfig) String() string {
 func (*RMNProxyConfig) ProtoMessage() {}
 
 func (x *RMNProxyConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[46]
+	mi := &file_chainaccessor_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2269,7 +2126,7 @@ func (x *RMNProxyConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RMNProxyConfig.ProtoReflect.Descriptor instead.
 func (*RMNProxyConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{46}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *RMNProxyConfig) GetRemoteAddress() []byte {
@@ -2289,7 +2146,7 @@ type RMNRemoteConfigStruct struct {
 
 func (x *RMNRemoteConfigStruct) Reset() {
 	*x = RMNRemoteConfigStruct{}
-	mi := &file_chainaccessor_proto_msgTypes[47]
+	mi := &file_chainaccessor_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2301,7 +2158,7 @@ func (x *RMNRemoteConfigStruct) String() string {
 func (*RMNRemoteConfigStruct) ProtoMessage() {}
 
 func (x *RMNRemoteConfigStruct) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[47]
+	mi := &file_chainaccessor_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2314,7 +2171,7 @@ func (x *RMNRemoteConfigStruct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RMNRemoteConfigStruct.ProtoReflect.Descriptor instead.
 func (*RMNRemoteConfigStruct) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{47}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *RMNRemoteConfigStruct) GetDigestHeader() *RMNDigestHeader {
@@ -2340,7 +2197,7 @@ type RMNDigestHeader struct {
 
 func (x *RMNDigestHeader) Reset() {
 	*x = RMNDigestHeader{}
-	mi := &file_chainaccessor_proto_msgTypes[48]
+	mi := &file_chainaccessor_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2352,7 +2209,7 @@ func (x *RMNDigestHeader) String() string {
 func (*RMNDigestHeader) ProtoMessage() {}
 
 func (x *RMNDigestHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[48]
+	mi := &file_chainaccessor_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2365,7 +2222,7 @@ func (x *RMNDigestHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RMNDigestHeader.ProtoReflect.Descriptor instead.
 func (*RMNDigestHeader) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{48}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *RMNDigestHeader) GetDigestHeader() []byte {
@@ -2385,7 +2242,7 @@ type VersionedConfig struct {
 
 func (x *VersionedConfig) Reset() {
 	*x = VersionedConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[49]
+	mi := &file_chainaccessor_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2397,7 +2254,7 @@ func (x *VersionedConfig) String() string {
 func (*VersionedConfig) ProtoMessage() {}
 
 func (x *VersionedConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[49]
+	mi := &file_chainaccessor_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2410,7 +2267,7 @@ func (x *VersionedConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionedConfig.ProtoReflect.Descriptor instead.
 func (*VersionedConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{49}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *VersionedConfig) GetVersion() uint32 {
@@ -2438,7 +2295,7 @@ type RMNConfig struct {
 
 func (x *RMNConfig) Reset() {
 	*x = RMNConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[50]
+	mi := &file_chainaccessor_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2450,7 +2307,7 @@ func (x *RMNConfig) String() string {
 func (*RMNConfig) ProtoMessage() {}
 
 func (x *RMNConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[50]
+	mi := &file_chainaccessor_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2463,7 +2320,7 @@ func (x *RMNConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RMNConfig.ProtoReflect.Descriptor instead.
 func (*RMNConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{50}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *RMNConfig) GetRmnHomeContractConfigDigest() []byte {
@@ -2497,7 +2354,7 @@ type SignerInfo struct {
 
 func (x *SignerInfo) Reset() {
 	*x = SignerInfo{}
-	mi := &file_chainaccessor_proto_msgTypes[51]
+	mi := &file_chainaccessor_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2509,7 +2366,7 @@ func (x *SignerInfo) String() string {
 func (*SignerInfo) ProtoMessage() {}
 
 func (x *SignerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[51]
+	mi := &file_chainaccessor_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2522,7 +2379,7 @@ func (x *SignerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignerInfo.ProtoReflect.Descriptor instead.
 func (*SignerInfo) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{51}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *SignerInfo) GetOnchainPublicKey() []byte {
@@ -2548,7 +2405,7 @@ type FeeQuoterConfigStruct struct {
 
 func (x *FeeQuoterConfigStruct) Reset() {
 	*x = FeeQuoterConfigStruct{}
-	mi := &file_chainaccessor_proto_msgTypes[52]
+	mi := &file_chainaccessor_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2560,7 +2417,7 @@ func (x *FeeQuoterConfigStruct) String() string {
 func (*FeeQuoterConfigStruct) ProtoMessage() {}
 
 func (x *FeeQuoterConfigStruct) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[52]
+	mi := &file_chainaccessor_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2573,7 +2430,7 @@ func (x *FeeQuoterConfigStruct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FeeQuoterConfigStruct.ProtoReflect.Descriptor instead.
 func (*FeeQuoterConfigStruct) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{52}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *FeeQuoterConfigStruct) GetStaticConfig() *FeeQuoterStaticConfigStruct {
@@ -2594,7 +2451,7 @@ type FeeQuoterStaticConfigStruct struct {
 
 func (x *FeeQuoterStaticConfigStruct) Reset() {
 	*x = FeeQuoterStaticConfigStruct{}
-	mi := &file_chainaccessor_proto_msgTypes[53]
+	mi := &file_chainaccessor_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2606,7 +2463,7 @@ func (x *FeeQuoterStaticConfigStruct) String() string {
 func (*FeeQuoterStaticConfigStruct) ProtoMessage() {}
 
 func (x *FeeQuoterStaticConfigStruct) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[53]
+	mi := &file_chainaccessor_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2619,7 +2476,7 @@ func (x *FeeQuoterStaticConfigStruct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FeeQuoterStaticConfigStruct.ProtoReflect.Descriptor instead.
 func (*FeeQuoterStaticConfigStruct) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{53}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *FeeQuoterStaticConfigStruct) GetMaxFeeJuelsPerMsg() *BigInt {
@@ -2653,7 +2510,7 @@ type OnRampConfigStruct struct {
 
 func (x *OnRampConfigStruct) Reset() {
 	*x = OnRampConfigStruct{}
-	mi := &file_chainaccessor_proto_msgTypes[54]
+	mi := &file_chainaccessor_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2665,7 +2522,7 @@ func (x *OnRampConfigStruct) String() string {
 func (*OnRampConfigStruct) ProtoMessage() {}
 
 func (x *OnRampConfigStruct) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[54]
+	mi := &file_chainaccessor_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2678,7 +2535,7 @@ func (x *OnRampConfigStruct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnRampConfigStruct.ProtoReflect.Descriptor instead.
 func (*OnRampConfigStruct) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{54}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *OnRampConfigStruct) GetDynamicConfig() *GetOnRampDynamicConfigResponse {
@@ -2704,7 +2561,7 @@ type GetOnRampDynamicConfigResponse struct {
 
 func (x *GetOnRampDynamicConfigResponse) Reset() {
 	*x = GetOnRampDynamicConfigResponse{}
-	mi := &file_chainaccessor_proto_msgTypes[55]
+	mi := &file_chainaccessor_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2716,7 +2573,7 @@ func (x *GetOnRampDynamicConfigResponse) String() string {
 func (*GetOnRampDynamicConfigResponse) ProtoMessage() {}
 
 func (x *GetOnRampDynamicConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[55]
+	mi := &file_chainaccessor_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2729,7 +2586,7 @@ func (x *GetOnRampDynamicConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOnRampDynamicConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetOnRampDynamicConfigResponse) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{55}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *GetOnRampDynamicConfigResponse) GetDynamicConfig() *OnRampDynamicConfig {
@@ -2752,7 +2609,7 @@ type OnRampDynamicConfig struct {
 
 func (x *OnRampDynamicConfig) Reset() {
 	*x = OnRampDynamicConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[56]
+	mi := &file_chainaccessor_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2764,7 +2621,7 @@ func (x *OnRampDynamicConfig) String() string {
 func (*OnRampDynamicConfig) ProtoMessage() {}
 
 func (x *OnRampDynamicConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[56]
+	mi := &file_chainaccessor_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2777,7 +2634,7 @@ func (x *OnRampDynamicConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnRampDynamicConfig.ProtoReflect.Descriptor instead.
 func (*OnRampDynamicConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{56}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *OnRampDynamicConfig) GetFeeQuoter() []byte {
@@ -2826,7 +2683,7 @@ type OnRampDestChainConfig struct {
 
 func (x *OnRampDestChainConfig) Reset() {
 	*x = OnRampDestChainConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[57]
+	mi := &file_chainaccessor_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2838,7 +2695,7 @@ func (x *OnRampDestChainConfig) String() string {
 func (*OnRampDestChainConfig) ProtoMessage() {}
 
 func (x *OnRampDestChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[57]
+	mi := &file_chainaccessor_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2851,7 +2708,7 @@ func (x *OnRampDestChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnRampDestChainConfig.ProtoReflect.Descriptor instead.
 func (*OnRampDestChainConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{57}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *OnRampDestChainConfig) GetSequenceNumber() uint64 {
@@ -2884,7 +2741,7 @@ type RouterConfigStruct struct {
 
 func (x *RouterConfigStruct) Reset() {
 	*x = RouterConfigStruct{}
-	mi := &file_chainaccessor_proto_msgTypes[58]
+	mi := &file_chainaccessor_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2896,7 +2753,7 @@ func (x *RouterConfigStruct) String() string {
 func (*RouterConfigStruct) ProtoMessage() {}
 
 func (x *RouterConfigStruct) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[58]
+	mi := &file_chainaccessor_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2909,7 +2766,7 @@ func (x *RouterConfigStruct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RouterConfigStruct.ProtoReflect.Descriptor instead.
 func (*RouterConfigStruct) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{58}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *RouterConfigStruct) GetWrappedNativeAddress() []byte {
@@ -2934,7 +2791,7 @@ type ChainConfigSnapshot struct {
 
 func (x *ChainConfigSnapshot) Reset() {
 	*x = ChainConfigSnapshot{}
-	mi := &file_chainaccessor_proto_msgTypes[59]
+	mi := &file_chainaccessor_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2946,7 +2803,7 @@ func (x *ChainConfigSnapshot) String() string {
 func (*ChainConfigSnapshot) ProtoMessage() {}
 
 func (x *ChainConfigSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[59]
+	mi := &file_chainaccessor_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2959,7 +2816,7 @@ func (x *ChainConfigSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainConfigSnapshot.ProtoReflect.Descriptor instead.
 func (*ChainConfigSnapshot) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{59}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ChainConfigSnapshot) GetOfframp() *OfframpConfig {
@@ -3022,7 +2879,7 @@ type CurseInfo struct {
 
 func (x *CurseInfo) Reset() {
 	*x = CurseInfo{}
-	mi := &file_chainaccessor_proto_msgTypes[60]
+	mi := &file_chainaccessor_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3034,7 +2891,7 @@ func (x *CurseInfo) String() string {
 func (*CurseInfo) ProtoMessage() {}
 
 func (x *CurseInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[60]
+	mi := &file_chainaccessor_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3047,7 +2904,7 @@ func (x *CurseInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CurseInfo.ProtoReflect.Descriptor instead.
 func (*CurseInfo) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{60}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *CurseInfo) GetCursedSourceChains() map[uint64]bool {
@@ -3084,7 +2941,7 @@ type SourceChainConfig struct {
 
 func (x *SourceChainConfig) Reset() {
 	*x = SourceChainConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[61]
+	mi := &file_chainaccessor_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3096,7 +2953,7 @@ func (x *SourceChainConfig) String() string {
 func (*SourceChainConfig) ProtoMessage() {}
 
 func (x *SourceChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[61]
+	mi := &file_chainaccessor_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3109,7 +2966,7 @@ func (x *SourceChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SourceChainConfig.ProtoReflect.Descriptor instead.
 func (*SourceChainConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{61}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *SourceChainConfig) GetRouter() []byte {
@@ -3174,7 +3031,7 @@ type FeeQuoterDestChainConfig struct {
 
 func (x *FeeQuoterDestChainConfig) Reset() {
 	*x = FeeQuoterDestChainConfig{}
-	mi := &file_chainaccessor_proto_msgTypes[62]
+	mi := &file_chainaccessor_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3186,7 +3043,7 @@ func (x *FeeQuoterDestChainConfig) String() string {
 func (*FeeQuoterDestChainConfig) ProtoMessage() {}
 
 func (x *FeeQuoterDestChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_chainaccessor_proto_msgTypes[62]
+	mi := &file_chainaccessor_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3199,7 +3056,7 @@ func (x *FeeQuoterDestChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FeeQuoterDestChainConfig.ProtoReflect.Descriptor instead.
 func (*FeeQuoterDestChainConfig) Descriptor() ([]byte, []int) {
-	return file_chainaccessor_proto_rawDescGZIP(), []int{62}
+	return file_chainaccessor_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *FeeQuoterDestChainConfig) GetIsEnabled() bool {
@@ -3339,7 +3196,7 @@ var File_chainaccessor_proto protoreflect.FileDescriptor
 
 const file_chainaccessor_proto_rawDesc = "" +
 	"\n" +
-	"\x13chainaccessor.proto\x12\x19loop.internal.pb.ccipocr3\x1a\fmodels.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"@\n" +
+	"\x13chainaccessor.proto\x12\x19loop.internal.pb.ccipocr3\x1a\fmodels.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"@\n" +
 	"\x19GetContractAddressRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\"6\n" +
 	"\x1aGetContractAddressResponse\x12\x18\n" +
@@ -3352,14 +3209,12 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x14source_chain_configs\x18\x02 \x03(\v2N.loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntryR\x12sourceChainConfigs\x1as\n" +
 	"\x17SourceChainConfigsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12B\n" +
-	"\x05value\x18\x02 \x01(\v2,.loop.internal.pb.ccipocr3.SourceChainConfigR\x05value:\x028\x01\"\x1e\n" +
-	"\x1cGetChainFeeComponentsRequest\"u\n" +
+	"\x05value\x18\x02 \x01(\v2,.loop.internal.pb.ccipocr3.SourceChainConfigR\x05value:\x028\x01\"u\n" +
 	"\x1dGetChainFeeComponentsResponse\x12T\n" +
 	"\x0efee_components\x18\x01 \x01(\v2-.loop.internal.pb.ccipocr3.ChainFeeComponentsR\rfeeComponents\"]\n" +
 	"\vSyncRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\x12)\n" +
-	"\x10contract_address\x18\x02 \x01(\fR\x0fcontractAddress\"\x0e\n" +
-	"\fSyncResponse\"\x9d\x01\n" +
+	"\x10contract_address\x18\x02 \x01(\fR\x0fcontractAddress\"\x9d\x01\n" +
 	" CommitReportsGTETimestampRequest\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12)\n" +
 	"\x10confidence_level\x18\x02 \x01(\rR\x0fconfidenceLevel\x12\x14\n" +
@@ -3400,8 +3255,7 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x11fee_price_updates\x18\x01 \x03(\v2N.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntryR\x0ffeePriceUpdates\x1am\n" +
 	"\x14FeePriceUpdatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12?\n" +
-	"\x05value\x18\x02 \x01(\v2).loop.internal.pb.ccipocr3.TimestampedBigR\x05value:\x028\x01\"\x1c\n" +
-	"\x1aGetLatestPriceSeqNrRequest\"4\n" +
+	"\x05value\x18\x02 \x01(\v2).loop.internal.pb.ccipocr3.TimestampedBigR\x05value:\x028\x01\"4\n" +
 	"\x1bGetLatestPriceSeqNrResponse\x12\x15\n" +
 	"\x06seq_nr\x18\x01 \x01(\x04R\x05seqNr\"\x97\x01\n" +
 	"\x19MsgsBetweenSeqNumsRequest\x12.\n" +
@@ -3424,8 +3278,7 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\"GetFeeQuoterDestChainConfigRequest\x12.\n" +
 	"\x13dest_chain_selector\x18\x01 \x01(\x04R\x11destChainSelector\"r\n" +
 	"#GetFeeQuoterDestChainConfigResponse\x12K\n" +
-	"\x06config\x18\x01 \x01(\v23.loop.internal.pb.ccipocr3.FeeQuoterDestChainConfigR\x06config\"\x18\n" +
-	"\x16GetRMNCurseInfoRequest\"^\n" +
+	"\x06config\x18\x01 \x01(\v23.loop.internal.pb.ccipocr3.FeeQuoterDestChainConfigR\x06config\"^\n" +
 	"\x17GetRMNCurseInfoResponse\x12C\n" +
 	"\n" +
 	"curse_info\x18\x01 \x01(\v2$.loop.internal.pb.ccipocr3.CurseInfoR\tcurseInfo\"\xb3\x01\n" +
@@ -3576,25 +3429,25 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x16network_fee_usdc_cents\x18\x0e \x01(\rR\x13networkFeeUsdcCents\x12A\n" +
 	"\x1dgas_price_staleness_threshold\x18\x13 \x01(\rR\x1agasPriceStalenessThreshold\x12/\n" +
 	"\x14enforce_out_of_order\x18\x0f \x01(\bR\x11enforceOutOfOrder\x122\n" +
-	"\x15chain_family_selector\x18\x10 \x01(\fR\x13chainFamilySelector2\xb0\x10\n" +
+	"\x15chain_family_selector\x18\x10 \x01(\fR\x13chainFamilySelector2\xc2\x0f\n" +
 	"\rChainAccessor\x12\x81\x01\n" +
 	"\x12GetContractAddress\x124.loop.internal.pb.ccipocr3.GetContractAddressRequest\x1a5.loop.internal.pb.ccipocr3.GetContractAddressResponse\x12\x84\x01\n" +
-	"\x13GetAllConfigsLegacy\x125.loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest\x1a6.loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse\x12\x8a\x01\n" +
-	"\x15GetChainFeeComponents\x127.loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest\x1a8.loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse\x12W\n" +
-	"\x04Sync\x12&.loop.internal.pb.ccipocr3.SyncRequest\x1a'.loop.internal.pb.ccipocr3.SyncResponse\x12\x96\x01\n" +
+	"\x13GetAllConfigsLegacy\x125.loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest\x1a6.loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse\x12i\n" +
+	"\x15GetChainFeeComponents\x12\x16.google.protobuf.Empty\x1a8.loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse\x12F\n" +
+	"\x04Sync\x12&.loop.internal.pb.ccipocr3.SyncRequest\x1a\x16.google.protobuf.Empty\x12\x96\x01\n" +
 	"\x19CommitReportsGTETimestamp\x12;.loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest\x1a<.loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse\x12{\n" +
 	"\x10ExecutedMessages\x122.loop.internal.pb.ccipocr3.ExecutedMessagesRequest\x1a3.loop.internal.pb.ccipocr3.ExecutedMessagesResponse\x12i\n" +
 	"\n" +
 	"NextSeqNum\x12,.loop.internal.pb.ccipocr3.NextSeqNumRequest\x1a-.loop.internal.pb.ccipocr3.NextSeqNumResponse\x12]\n" +
 	"\x06Nonces\x12(.loop.internal.pb.ccipocr3.NoncesRequest\x1a).loop.internal.pb.ccipocr3.NoncesResponse\x12\x8d\x01\n" +
-	"\x16GetChainFeePriceUpdate\x128.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest\x1a9.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse\x12\x84\x01\n" +
-	"\x13GetLatestPriceSeqNr\x125.loop.internal.pb.ccipocr3.GetLatestPriceSeqNrRequest\x1a6.loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse\x12\x81\x01\n" +
+	"\x16GetChainFeePriceUpdate\x128.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest\x1a9.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse\x12e\n" +
+	"\x13GetLatestPriceSeqNr\x12\x16.google.protobuf.Empty\x1a6.loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse\x12\x81\x01\n" +
 	"\x12MsgsBetweenSeqNums\x124.loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest\x1a5.loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse\x12x\n" +
 	"\x0fLatestMessageTo\x121.loop.internal.pb.ccipocr3.LatestMessageToRequest\x1a2.loop.internal.pb.ccipocr3.LatestMessageToResponse\x12\xa2\x01\n" +
 	"\x1dGetExpectedNextSequenceNumber\x12?.loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest\x1a@.loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse\x12{\n" +
 	"\x10GetTokenPriceUSD\x122.loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest\x1a3.loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse\x12\x9c\x01\n" +
-	"\x1bGetFeeQuoterDestChainConfig\x12=.loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest\x1a>.loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse\x12x\n" +
-	"\x0fGetRMNCurseInfo\x121.loop.internal.pb.ccipocr3.GetRMNCurseInfoRequest\x1a2.loop.internal.pb.ccipocr3.GetRMNCurseInfoResponseBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pbb\x06proto3"
+	"\x1bGetFeeQuoterDestChainConfig\x12=.loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest\x1a>.loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse\x12]\n" +
+	"\x0fGetRMNCurseInfo\x12\x16.google.protobuf.Empty\x1a2.loop.internal.pb.ccipocr3.GetRMNCurseInfoResponseBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pbb\x06proto3"
 
 var (
 	file_chainaccessor_proto_rawDescOnce sync.Once
@@ -3608,173 +3461,170 @@ func file_chainaccessor_proto_rawDescGZIP() []byte {
 	return file_chainaccessor_proto_rawDescData
 }
 
-var file_chainaccessor_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
+var file_chainaccessor_proto_msgTypes = make([]protoimpl.MessageInfo, 68)
 var file_chainaccessor_proto_goTypes = []any{
 	(*GetContractAddressRequest)(nil),             // 0: loop.internal.pb.ccipocr3.GetContractAddressRequest
 	(*GetContractAddressResponse)(nil),            // 1: loop.internal.pb.ccipocr3.GetContractAddressResponse
 	(*GetAllConfigsLegacyRequest)(nil),            // 2: loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest
 	(*GetAllConfigsLegacyResponse)(nil),           // 3: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse
-	(*GetChainFeeComponentsRequest)(nil),          // 4: loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest
-	(*GetChainFeeComponentsResponse)(nil),         // 5: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
-	(*SyncRequest)(nil),                           // 6: loop.internal.pb.ccipocr3.SyncRequest
-	(*SyncResponse)(nil),                          // 7: loop.internal.pb.ccipocr3.SyncResponse
-	(*CommitReportsGTETimestampRequest)(nil),      // 8: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
-	(*CommitReportsGTETimestampResponse)(nil),     // 9: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
-	(*ExecutedMessagesRequest)(nil),               // 10: loop.internal.pb.ccipocr3.ExecutedMessagesRequest
-	(*ExecutedMessagesResponse)(nil),              // 11: loop.internal.pb.ccipocr3.ExecutedMessagesResponse
-	(*NextSeqNumRequest)(nil),                     // 12: loop.internal.pb.ccipocr3.NextSeqNumRequest
-	(*NextSeqNumResponse)(nil),                    // 13: loop.internal.pb.ccipocr3.NextSeqNumResponse
-	(*NoncesRequest)(nil),                         // 14: loop.internal.pb.ccipocr3.NoncesRequest
-	(*NoncesResponse)(nil),                        // 15: loop.internal.pb.ccipocr3.NoncesResponse
-	(*GetChainFeePriceUpdateRequest)(nil),         // 16: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
-	(*GetChainFeePriceUpdateResponse)(nil),        // 17: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
-	(*GetLatestPriceSeqNrRequest)(nil),            // 18: loop.internal.pb.ccipocr3.GetLatestPriceSeqNrRequest
-	(*GetLatestPriceSeqNrResponse)(nil),           // 19: loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
-	(*MsgsBetweenSeqNumsRequest)(nil),             // 20: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
-	(*MsgsBetweenSeqNumsResponse)(nil),            // 21: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
-	(*LatestMessageToRequest)(nil),                // 22: loop.internal.pb.ccipocr3.LatestMessageToRequest
-	(*LatestMessageToResponse)(nil),               // 23: loop.internal.pb.ccipocr3.LatestMessageToResponse
-	(*GetExpectedNextSequenceNumberRequest)(nil),  // 24: loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
-	(*GetExpectedNextSequenceNumberResponse)(nil), // 25: loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
-	(*GetTokenPriceUSDRequest)(nil),               // 26: loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
-	(*GetTokenPriceUSDResponse)(nil),              // 27: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
-	(*GetFeeQuoterDestChainConfigRequest)(nil),    // 28: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
-	(*GetFeeQuoterDestChainConfigResponse)(nil),   // 29: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
-	(*GetRMNCurseInfoRequest)(nil),                // 30: loop.internal.pb.ccipocr3.GetRMNCurseInfoRequest
-	(*GetRMNCurseInfoResponse)(nil),               // 31: loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse
-	(*ChainFeeComponents)(nil),                    // 32: loop.internal.pb.ccipocr3.ChainFeeComponents
-	(*CommitPluginReportWithMeta)(nil),            // 33: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
-	(*TimestampedBig)(nil),                        // 34: loop.internal.pb.ccipocr3.TimestampedBig
-	(*TimestampedUnixBig)(nil),                    // 35: loop.internal.pb.ccipocr3.TimestampedUnixBig
-	(*SequenceNumberRangeList)(nil),               // 36: loop.internal.pb.ccipocr3.SequenceNumberRangeList
-	(*SequenceNumberList)(nil),                    // 37: loop.internal.pb.ccipocr3.SequenceNumberList
-	(*UnknownEncodedAddressList)(nil),             // 38: loop.internal.pb.ccipocr3.UnknownEncodedAddressList
-	(*NonceMap)(nil),                              // 39: loop.internal.pb.ccipocr3.NonceMap
-	(*OfframpConfig)(nil),                         // 40: loop.internal.pb.ccipocr3.OfframpConfig
-	(*OCRConfigResponse)(nil),                     // 41: loop.internal.pb.ccipocr3.OCRConfigResponse
-	(*OCRConfig)(nil),                             // 42: loop.internal.pb.ccipocr3.OCRConfig
-	(*ConfigInfo)(nil),                            // 43: loop.internal.pb.ccipocr3.ConfigInfo
-	(*OffRampStaticChainConfig)(nil),              // 44: loop.internal.pb.ccipocr3.OffRampStaticChainConfig
-	(*OffRampDynamicChainConfig)(nil),             // 45: loop.internal.pb.ccipocr3.OffRampDynamicChainConfig
-	(*RMNProxyConfig)(nil),                        // 46: loop.internal.pb.ccipocr3.RMNProxyConfig
-	(*RMNRemoteConfigStruct)(nil),                 // 47: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct
-	(*RMNDigestHeader)(nil),                       // 48: loop.internal.pb.ccipocr3.RMNDigestHeader
-	(*VersionedConfig)(nil),                       // 49: loop.internal.pb.ccipocr3.VersionedConfig
-	(*RMNConfig)(nil),                             // 50: loop.internal.pb.ccipocr3.RMNConfig
-	(*SignerInfo)(nil),                            // 51: loop.internal.pb.ccipocr3.SignerInfo
-	(*FeeQuoterConfigStruct)(nil),                 // 52: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct
-	(*FeeQuoterStaticConfigStruct)(nil),           // 53: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
-	(*OnRampConfigStruct)(nil),                    // 54: loop.internal.pb.ccipocr3.OnRampConfigStruct
-	(*GetOnRampDynamicConfigResponse)(nil),        // 55: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
-	(*OnRampDynamicConfig)(nil),                   // 56: loop.internal.pb.ccipocr3.OnRampDynamicConfig
-	(*OnRampDestChainConfig)(nil),                 // 57: loop.internal.pb.ccipocr3.OnRampDestChainConfig
-	(*RouterConfigStruct)(nil),                    // 58: loop.internal.pb.ccipocr3.RouterConfigStruct
-	(*ChainConfigSnapshot)(nil),                   // 59: loop.internal.pb.ccipocr3.ChainConfigSnapshot
-	(*CurseInfo)(nil),                             // 60: loop.internal.pb.ccipocr3.CurseInfo
-	(*SourceChainConfig)(nil),                     // 61: loop.internal.pb.ccipocr3.SourceChainConfig
-	(*FeeQuoterDestChainConfig)(nil),              // 62: loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
-	nil,                                           // 63: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
-	nil,                                           // 64: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
-	nil,                                           // 65: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
-	nil,                                           // 66: loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
-	nil,                                           // 67: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
-	nil,                                           // 68: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
-	nil,                                           // 69: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
-	nil,                                           // 70: loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
-	nil,                                           // 71: loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
-	(*timestamppb.Timestamp)(nil),                 // 72: google.protobuf.Timestamp
-	(*SeqNumRange)(nil),                           // 73: loop.internal.pb.ccipocr3.SeqNumRange
-	(*Message)(nil),                               // 74: loop.internal.pb.ccipocr3.Message
-	(*BigInt)(nil),                                // 75: loop.internal.pb.ccipocr3.BigInt
-	(*CommitPluginReport)(nil),                    // 76: loop.internal.pb.ccipocr3.CommitPluginReport
+	(*GetChainFeeComponentsResponse)(nil),         // 4: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
+	(*SyncRequest)(nil),                           // 5: loop.internal.pb.ccipocr3.SyncRequest
+	(*CommitReportsGTETimestampRequest)(nil),      // 6: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
+	(*CommitReportsGTETimestampResponse)(nil),     // 7: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
+	(*ExecutedMessagesRequest)(nil),               // 8: loop.internal.pb.ccipocr3.ExecutedMessagesRequest
+	(*ExecutedMessagesResponse)(nil),              // 9: loop.internal.pb.ccipocr3.ExecutedMessagesResponse
+	(*NextSeqNumRequest)(nil),                     // 10: loop.internal.pb.ccipocr3.NextSeqNumRequest
+	(*NextSeqNumResponse)(nil),                    // 11: loop.internal.pb.ccipocr3.NextSeqNumResponse
+	(*NoncesRequest)(nil),                         // 12: loop.internal.pb.ccipocr3.NoncesRequest
+	(*NoncesResponse)(nil),                        // 13: loop.internal.pb.ccipocr3.NoncesResponse
+	(*GetChainFeePriceUpdateRequest)(nil),         // 14: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
+	(*GetChainFeePriceUpdateResponse)(nil),        // 15: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
+	(*GetLatestPriceSeqNrResponse)(nil),           // 16: loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
+	(*MsgsBetweenSeqNumsRequest)(nil),             // 17: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
+	(*MsgsBetweenSeqNumsResponse)(nil),            // 18: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
+	(*LatestMessageToRequest)(nil),                // 19: loop.internal.pb.ccipocr3.LatestMessageToRequest
+	(*LatestMessageToResponse)(nil),               // 20: loop.internal.pb.ccipocr3.LatestMessageToResponse
+	(*GetExpectedNextSequenceNumberRequest)(nil),  // 21: loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
+	(*GetExpectedNextSequenceNumberResponse)(nil), // 22: loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
+	(*GetTokenPriceUSDRequest)(nil),               // 23: loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
+	(*GetTokenPriceUSDResponse)(nil),              // 24: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
+	(*GetFeeQuoterDestChainConfigRequest)(nil),    // 25: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
+	(*GetFeeQuoterDestChainConfigResponse)(nil),   // 26: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
+	(*GetRMNCurseInfoResponse)(nil),               // 27: loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse
+	(*ChainFeeComponents)(nil),                    // 28: loop.internal.pb.ccipocr3.ChainFeeComponents
+	(*CommitPluginReportWithMeta)(nil),            // 29: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
+	(*TimestampedBig)(nil),                        // 30: loop.internal.pb.ccipocr3.TimestampedBig
+	(*TimestampedUnixBig)(nil),                    // 31: loop.internal.pb.ccipocr3.TimestampedUnixBig
+	(*SequenceNumberRangeList)(nil),               // 32: loop.internal.pb.ccipocr3.SequenceNumberRangeList
+	(*SequenceNumberList)(nil),                    // 33: loop.internal.pb.ccipocr3.SequenceNumberList
+	(*UnknownEncodedAddressList)(nil),             // 34: loop.internal.pb.ccipocr3.UnknownEncodedAddressList
+	(*NonceMap)(nil),                              // 35: loop.internal.pb.ccipocr3.NonceMap
+	(*OfframpConfig)(nil),                         // 36: loop.internal.pb.ccipocr3.OfframpConfig
+	(*OCRConfigResponse)(nil),                     // 37: loop.internal.pb.ccipocr3.OCRConfigResponse
+	(*OCRConfig)(nil),                             // 38: loop.internal.pb.ccipocr3.OCRConfig
+	(*ConfigInfo)(nil),                            // 39: loop.internal.pb.ccipocr3.ConfigInfo
+	(*OffRampStaticChainConfig)(nil),              // 40: loop.internal.pb.ccipocr3.OffRampStaticChainConfig
+	(*OffRampDynamicChainConfig)(nil),             // 41: loop.internal.pb.ccipocr3.OffRampDynamicChainConfig
+	(*RMNProxyConfig)(nil),                        // 42: loop.internal.pb.ccipocr3.RMNProxyConfig
+	(*RMNRemoteConfigStruct)(nil),                 // 43: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct
+	(*RMNDigestHeader)(nil),                       // 44: loop.internal.pb.ccipocr3.RMNDigestHeader
+	(*VersionedConfig)(nil),                       // 45: loop.internal.pb.ccipocr3.VersionedConfig
+	(*RMNConfig)(nil),                             // 46: loop.internal.pb.ccipocr3.RMNConfig
+	(*SignerInfo)(nil),                            // 47: loop.internal.pb.ccipocr3.SignerInfo
+	(*FeeQuoterConfigStruct)(nil),                 // 48: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct
+	(*FeeQuoterStaticConfigStruct)(nil),           // 49: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
+	(*OnRampConfigStruct)(nil),                    // 50: loop.internal.pb.ccipocr3.OnRampConfigStruct
+	(*GetOnRampDynamicConfigResponse)(nil),        // 51: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
+	(*OnRampDynamicConfig)(nil),                   // 52: loop.internal.pb.ccipocr3.OnRampDynamicConfig
+	(*OnRampDestChainConfig)(nil),                 // 53: loop.internal.pb.ccipocr3.OnRampDestChainConfig
+	(*RouterConfigStruct)(nil),                    // 54: loop.internal.pb.ccipocr3.RouterConfigStruct
+	(*ChainConfigSnapshot)(nil),                   // 55: loop.internal.pb.ccipocr3.ChainConfigSnapshot
+	(*CurseInfo)(nil),                             // 56: loop.internal.pb.ccipocr3.CurseInfo
+	(*SourceChainConfig)(nil),                     // 57: loop.internal.pb.ccipocr3.SourceChainConfig
+	(*FeeQuoterDestChainConfig)(nil),              // 58: loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
+	nil,                                           // 59: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
+	nil,                                           // 60: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
+	nil,                                           // 61: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
+	nil,                                           // 62: loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
+	nil,                                           // 63: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
+	nil,                                           // 64: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
+	nil,                                           // 65: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
+	nil,                                           // 66: loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
+	nil,                                           // 67: loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
+	(*timestamppb.Timestamp)(nil),                 // 68: google.protobuf.Timestamp
+	(*SeqNumRange)(nil),                           // 69: loop.internal.pb.ccipocr3.SeqNumRange
+	(*Message)(nil),                               // 70: loop.internal.pb.ccipocr3.Message
+	(*BigInt)(nil),                                // 71: loop.internal.pb.ccipocr3.BigInt
+	(*CommitPluginReport)(nil),                    // 72: loop.internal.pb.ccipocr3.CommitPluginReport
+	(*emptypb.Empty)(nil),                         // 73: google.protobuf.Empty
 }
 var file_chainaccessor_proto_depIdxs = []int32{
-	59, // 0: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.snapshot:type_name -> loop.internal.pb.ccipocr3.ChainConfigSnapshot
-	63, // 1: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.source_chain_configs:type_name -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
-	32, // 2: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse.fee_components:type_name -> loop.internal.pb.ccipocr3.ChainFeeComponents
-	72, // 3: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
-	33, // 4: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse.reports:type_name -> loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
-	64, // 5: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.ranges:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
-	65, // 6: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.executed_messages:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
-	66, // 7: loop.internal.pb.ccipocr3.NextSeqNumResponse.next_seq_nums:type_name -> loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
-	67, // 8: loop.internal.pb.ccipocr3.NoncesRequest.addresses:type_name -> loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
-	68, // 9: loop.internal.pb.ccipocr3.NoncesResponse.nonces:type_name -> loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
-	69, // 10: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.fee_price_updates:type_name -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
-	73, // 11: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	74, // 12: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse.messages:type_name -> loop.internal.pb.ccipocr3.Message
-	35, // 13: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse.price:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
-	62, // 14: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse.config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
-	60, // 15: loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
-	75, // 16: loop.internal.pb.ccipocr3.ChainFeeComponents.execution_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
-	75, // 17: loop.internal.pb.ccipocr3.ChainFeeComponents.data_availability_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
-	76, // 18: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.report:type_name -> loop.internal.pb.ccipocr3.CommitPluginReport
-	72, // 19: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.timestamp:type_name -> google.protobuf.Timestamp
-	72, // 20: loop.internal.pb.ccipocr3.TimestampedBig.timestamp:type_name -> google.protobuf.Timestamp
-	75, // 21: loop.internal.pb.ccipocr3.TimestampedBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	75, // 22: loop.internal.pb.ccipocr3.TimestampedUnixBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	73, // 23: loop.internal.pb.ccipocr3.SequenceNumberRangeList.ranges:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	70, // 24: loop.internal.pb.ccipocr3.NonceMap.nonces:type_name -> loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
-	41, // 25: loop.internal.pb.ccipocr3.OfframpConfig.commit_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
-	41, // 26: loop.internal.pb.ccipocr3.OfframpConfig.exec_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
-	44, // 27: loop.internal.pb.ccipocr3.OfframpConfig.static_config:type_name -> loop.internal.pb.ccipocr3.OffRampStaticChainConfig
-	45, // 28: loop.internal.pb.ccipocr3.OfframpConfig.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OffRampDynamicChainConfig
-	42, // 29: loop.internal.pb.ccipocr3.OCRConfigResponse.ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfig
-	43, // 30: loop.internal.pb.ccipocr3.OCRConfig.config_info:type_name -> loop.internal.pb.ccipocr3.ConfigInfo
-	48, // 31: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.digest_header:type_name -> loop.internal.pb.ccipocr3.RMNDigestHeader
-	49, // 32: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.versioned_config:type_name -> loop.internal.pb.ccipocr3.VersionedConfig
-	50, // 33: loop.internal.pb.ccipocr3.VersionedConfig.config:type_name -> loop.internal.pb.ccipocr3.RMNConfig
-	51, // 34: loop.internal.pb.ccipocr3.RMNConfig.signers:type_name -> loop.internal.pb.ccipocr3.SignerInfo
-	53, // 35: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct.static_config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
-	75, // 36: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct.max_fee_juels_per_msg:type_name -> loop.internal.pb.ccipocr3.BigInt
-	55, // 37: loop.internal.pb.ccipocr3.OnRampConfigStruct.dynamic_config:type_name -> loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
-	57, // 38: loop.internal.pb.ccipocr3.OnRampConfigStruct.dest_chain_config:type_name -> loop.internal.pb.ccipocr3.OnRampDestChainConfig
-	56, // 39: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OnRampDynamicConfig
-	40, // 40: loop.internal.pb.ccipocr3.ChainConfigSnapshot.offramp:type_name -> loop.internal.pb.ccipocr3.OfframpConfig
-	46, // 41: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_proxy:type_name -> loop.internal.pb.ccipocr3.RMNProxyConfig
-	47, // 42: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_remote:type_name -> loop.internal.pb.ccipocr3.RMNRemoteConfigStruct
-	52, // 43: loop.internal.pb.ccipocr3.ChainConfigSnapshot.fee_quoter:type_name -> loop.internal.pb.ccipocr3.FeeQuoterConfigStruct
-	54, // 44: loop.internal.pb.ccipocr3.ChainConfigSnapshot.on_ramp:type_name -> loop.internal.pb.ccipocr3.OnRampConfigStruct
-	58, // 45: loop.internal.pb.ccipocr3.ChainConfigSnapshot.router:type_name -> loop.internal.pb.ccipocr3.RouterConfigStruct
-	60, // 46: loop.internal.pb.ccipocr3.ChainConfigSnapshot.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
-	71, // 47: loop.internal.pb.ccipocr3.CurseInfo.cursed_source_chains:type_name -> loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
-	61, // 48: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry.value:type_name -> loop.internal.pb.ccipocr3.SourceChainConfig
-	36, // 49: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberRangeList
-	37, // 50: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
-	38, // 51: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
-	39, // 52: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
-	34, // 53: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedBig
+	55, // 0: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.snapshot:type_name -> loop.internal.pb.ccipocr3.ChainConfigSnapshot
+	59, // 1: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.source_chain_configs:type_name -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
+	28, // 2: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse.fee_components:type_name -> loop.internal.pb.ccipocr3.ChainFeeComponents
+	68, // 3: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
+	29, // 4: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse.reports:type_name -> loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
+	60, // 5: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.ranges:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
+	61, // 6: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.executed_messages:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
+	62, // 7: loop.internal.pb.ccipocr3.NextSeqNumResponse.next_seq_nums:type_name -> loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
+	63, // 8: loop.internal.pb.ccipocr3.NoncesRequest.addresses:type_name -> loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
+	64, // 9: loop.internal.pb.ccipocr3.NoncesResponse.nonces:type_name -> loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
+	65, // 10: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.fee_price_updates:type_name -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
+	69, // 11: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	70, // 12: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse.messages:type_name -> loop.internal.pb.ccipocr3.Message
+	31, // 13: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse.price:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
+	58, // 14: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse.config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
+	56, // 15: loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
+	71, // 16: loop.internal.pb.ccipocr3.ChainFeeComponents.execution_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
+	71, // 17: loop.internal.pb.ccipocr3.ChainFeeComponents.data_availability_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
+	72, // 18: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.report:type_name -> loop.internal.pb.ccipocr3.CommitPluginReport
+	68, // 19: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.timestamp:type_name -> google.protobuf.Timestamp
+	68, // 20: loop.internal.pb.ccipocr3.TimestampedBig.timestamp:type_name -> google.protobuf.Timestamp
+	71, // 21: loop.internal.pb.ccipocr3.TimestampedBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	71, // 22: loop.internal.pb.ccipocr3.TimestampedUnixBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	69, // 23: loop.internal.pb.ccipocr3.SequenceNumberRangeList.ranges:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	66, // 24: loop.internal.pb.ccipocr3.NonceMap.nonces:type_name -> loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
+	37, // 25: loop.internal.pb.ccipocr3.OfframpConfig.commit_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
+	37, // 26: loop.internal.pb.ccipocr3.OfframpConfig.exec_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
+	40, // 27: loop.internal.pb.ccipocr3.OfframpConfig.static_config:type_name -> loop.internal.pb.ccipocr3.OffRampStaticChainConfig
+	41, // 28: loop.internal.pb.ccipocr3.OfframpConfig.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OffRampDynamicChainConfig
+	38, // 29: loop.internal.pb.ccipocr3.OCRConfigResponse.ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfig
+	39, // 30: loop.internal.pb.ccipocr3.OCRConfig.config_info:type_name -> loop.internal.pb.ccipocr3.ConfigInfo
+	44, // 31: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.digest_header:type_name -> loop.internal.pb.ccipocr3.RMNDigestHeader
+	45, // 32: loop.internal.pb.ccipocr3.RMNRemoteConfigStruct.versioned_config:type_name -> loop.internal.pb.ccipocr3.VersionedConfig
+	46, // 33: loop.internal.pb.ccipocr3.VersionedConfig.config:type_name -> loop.internal.pb.ccipocr3.RMNConfig
+	47, // 34: loop.internal.pb.ccipocr3.RMNConfig.signers:type_name -> loop.internal.pb.ccipocr3.SignerInfo
+	49, // 35: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct.static_config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
+	71, // 36: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct.max_fee_juels_per_msg:type_name -> loop.internal.pb.ccipocr3.BigInt
+	51, // 37: loop.internal.pb.ccipocr3.OnRampConfigStruct.dynamic_config:type_name -> loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
+	53, // 38: loop.internal.pb.ccipocr3.OnRampConfigStruct.dest_chain_config:type_name -> loop.internal.pb.ccipocr3.OnRampDestChainConfig
+	52, // 39: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OnRampDynamicConfig
+	36, // 40: loop.internal.pb.ccipocr3.ChainConfigSnapshot.offramp:type_name -> loop.internal.pb.ccipocr3.OfframpConfig
+	42, // 41: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_proxy:type_name -> loop.internal.pb.ccipocr3.RMNProxyConfig
+	43, // 42: loop.internal.pb.ccipocr3.ChainConfigSnapshot.rmn_remote:type_name -> loop.internal.pb.ccipocr3.RMNRemoteConfigStruct
+	48, // 43: loop.internal.pb.ccipocr3.ChainConfigSnapshot.fee_quoter:type_name -> loop.internal.pb.ccipocr3.FeeQuoterConfigStruct
+	50, // 44: loop.internal.pb.ccipocr3.ChainConfigSnapshot.on_ramp:type_name -> loop.internal.pb.ccipocr3.OnRampConfigStruct
+	54, // 45: loop.internal.pb.ccipocr3.ChainConfigSnapshot.router:type_name -> loop.internal.pb.ccipocr3.RouterConfigStruct
+	56, // 46: loop.internal.pb.ccipocr3.ChainConfigSnapshot.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
+	67, // 47: loop.internal.pb.ccipocr3.CurseInfo.cursed_source_chains:type_name -> loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
+	57, // 48: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry.value:type_name -> loop.internal.pb.ccipocr3.SourceChainConfig
+	32, // 49: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberRangeList
+	33, // 50: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
+	34, // 51: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
+	35, // 52: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
+	30, // 53: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedBig
 	0,  // 54: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:input_type -> loop.internal.pb.ccipocr3.GetContractAddressRequest
 	2,  // 55: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:input_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest
-	4,  // 56: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:input_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsRequest
-	6,  // 57: loop.internal.pb.ccipocr3.ChainAccessor.Sync:input_type -> loop.internal.pb.ccipocr3.SyncRequest
-	8,  // 58: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:input_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
-	10, // 59: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:input_type -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest
-	12, // 60: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:input_type -> loop.internal.pb.ccipocr3.NextSeqNumRequest
-	14, // 61: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:input_type -> loop.internal.pb.ccipocr3.NoncesRequest
-	16, // 62: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:input_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
-	18, // 63: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:input_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrRequest
-	20, // 64: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:input_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
-	22, // 65: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:input_type -> loop.internal.pb.ccipocr3.LatestMessageToRequest
-	24, // 66: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:input_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
-	26, // 67: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:input_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
-	28, // 68: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
-	30, // 69: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:input_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoRequest
+	73, // 56: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:input_type -> google.protobuf.Empty
+	5,  // 57: loop.internal.pb.ccipocr3.ChainAccessor.Sync:input_type -> loop.internal.pb.ccipocr3.SyncRequest
+	6,  // 58: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:input_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
+	8,  // 59: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:input_type -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest
+	10, // 60: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:input_type -> loop.internal.pb.ccipocr3.NextSeqNumRequest
+	12, // 61: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:input_type -> loop.internal.pb.ccipocr3.NoncesRequest
+	14, // 62: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:input_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
+	73, // 63: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:input_type -> google.protobuf.Empty
+	17, // 64: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:input_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
+	19, // 65: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:input_type -> loop.internal.pb.ccipocr3.LatestMessageToRequest
+	21, // 66: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:input_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
+	23, // 67: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:input_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
+	25, // 68: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
+	73, // 69: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:input_type -> google.protobuf.Empty
 	1,  // 70: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:output_type -> loop.internal.pb.ccipocr3.GetContractAddressResponse
 	3,  // 71: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:output_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse
-	5,  // 72: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:output_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
-	7,  // 73: loop.internal.pb.ccipocr3.ChainAccessor.Sync:output_type -> loop.internal.pb.ccipocr3.SyncResponse
-	9,  // 74: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:output_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
-	11, // 75: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:output_type -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse
-	13, // 76: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:output_type -> loop.internal.pb.ccipocr3.NextSeqNumResponse
-	15, // 77: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:output_type -> loop.internal.pb.ccipocr3.NoncesResponse
-	17, // 78: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:output_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
-	19, // 79: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:output_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
-	21, // 80: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:output_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
-	23, // 81: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:output_type -> loop.internal.pb.ccipocr3.LatestMessageToResponse
-	25, // 82: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:output_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
-	27, // 83: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:output_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
-	29, // 84: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
-	31, // 85: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:output_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse
+	4,  // 72: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:output_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
+	73, // 73: loop.internal.pb.ccipocr3.ChainAccessor.Sync:output_type -> google.protobuf.Empty
+	7,  // 74: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:output_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
+	9,  // 75: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:output_type -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse
+	11, // 76: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:output_type -> loop.internal.pb.ccipocr3.NextSeqNumResponse
+	13, // 77: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:output_type -> loop.internal.pb.ccipocr3.NoncesResponse
+	15, // 78: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:output_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
+	16, // 79: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:output_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
+	18, // 80: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:output_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
+	20, // 81: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:output_type -> loop.internal.pb.ccipocr3.LatestMessageToResponse
+	22, // 82: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:output_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
+	24, // 83: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:output_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
+	26, // 84: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
+	27, // 85: loop.internal.pb.ccipocr3.ChainAccessor.GetRMNCurseInfo:output_type -> loop.internal.pb.ccipocr3.GetRMNCurseInfoResponse
 	70, // [70:86] is the sub-list for method output_type
 	54, // [54:70] is the sub-list for method input_type
 	54, // [54:54] is the sub-list for extension type_name
@@ -3794,7 +3644,7 @@ func file_chainaccessor_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chainaccessor_proto_rawDesc), len(file_chainaccessor_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   72,
+			NumMessages:   68,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

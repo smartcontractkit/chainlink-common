@@ -6,14 +6,15 @@ package loop.internal.pb.ccipocr3;
 
 import "models.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 // ChainAccessor service for all direct chain access
 service ChainAccessor {
   // AllAccessors methods
   rpc GetContractAddress(GetContractAddressRequest) returns (GetContractAddressResponse);
   rpc GetAllConfigsLegacy(GetAllConfigsLegacyRequest) returns (GetAllConfigsLegacyResponse);
-  rpc GetChainFeeComponents(GetChainFeeComponentsRequest) returns (GetChainFeeComponentsResponse);
-  rpc Sync(SyncRequest) returns (SyncResponse);
+  rpc GetChainFeeComponents(google.protobuf.Empty) returns (GetChainFeeComponentsResponse);
+  rpc Sync(SyncRequest) returns (google.protobuf.Empty);
   
   // DestinationAccessor methods
   rpc CommitReportsGTETimestamp(CommitReportsGTETimestampRequest) returns (CommitReportsGTETimestampResponse);
@@ -21,7 +22,7 @@ service ChainAccessor {
   rpc NextSeqNum(NextSeqNumRequest) returns (NextSeqNumResponse);
   rpc Nonces(NoncesRequest) returns (NoncesResponse);
   rpc GetChainFeePriceUpdate(GetChainFeePriceUpdateRequest) returns (GetChainFeePriceUpdateResponse);
-  rpc GetLatestPriceSeqNr(GetLatestPriceSeqNrRequest) returns (GetLatestPriceSeqNrResponse);
+  rpc GetLatestPriceSeqNr(google.protobuf.Empty) returns (GetLatestPriceSeqNrResponse);
   
   // SourceAccessor methods
   rpc MsgsBetweenSeqNums(MsgsBetweenSeqNumsRequest) returns (MsgsBetweenSeqNumsResponse);
@@ -31,7 +32,7 @@ service ChainAccessor {
   rpc GetFeeQuoterDestChainConfig(GetFeeQuoterDestChainConfigRequest) returns (GetFeeQuoterDestChainConfigResponse);
   
   // RMNAccessor methods
-  rpc GetRMNCurseInfo(GetRMNCurseInfoRequest) returns (GetRMNCurseInfoResponse);
+  rpc GetRMNCurseInfo(google.protobuf.Empty) returns (GetRMNCurseInfoResponse);
 }
 
 // AllAccessors request/response messages
@@ -53,8 +54,6 @@ message GetAllConfigsLegacyResponse {
   map<uint64, SourceChainConfig> source_chain_configs = 2; // key is chain selector
 }
 
-message GetChainFeeComponentsRequest {}
-
 message GetChainFeeComponentsResponse {
   ChainFeeComponents fee_components = 1;
 }
@@ -63,8 +62,6 @@ message SyncRequest {
   string contract_name = 1;
   bytes contract_address = 2;
 }
-
-message SyncResponse {}
 
 // DestinationAccessor request/response messages
 message CommitReportsGTETimestampRequest {
@@ -109,8 +106,6 @@ message GetChainFeePriceUpdateRequest {
 message GetChainFeePriceUpdateResponse {
   map<uint64, TimestampedBig> fee_price_updates = 1; // key is chain selector
 }
-
-message GetLatestPriceSeqNrRequest {}
 
 message GetLatestPriceSeqNrResponse {
   uint64 seq_nr = 1;
@@ -159,8 +154,6 @@ message GetFeeQuoterDestChainConfigResponse {
 }
 
 // RMNAccessor request/response messages
-message GetRMNCurseInfoRequest {}
-
 message GetRMNCurseInfoResponse {
   CurseInfo curse_info = 1;
 }

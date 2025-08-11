@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -66,7 +67,7 @@ func (c *chainAccessorClient) GetAllConfigsLegacy(
 }
 
 func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context) (ccipocr3.ChainFeeComponents, error) {
-	resp, err := c.grpc.GetChainFeeComponents(ctx, &ccipocr3pb.GetChainFeeComponentsRequest{})
+	resp, err := c.grpc.GetChainFeeComponents(ctx, &emptypb.Empty{})
 	if err != nil {
 		return ccipocr3.ChainFeeComponents{}, err
 	}
@@ -219,7 +220,7 @@ func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, select
 }
 
 func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context) (uint64, error) {
-	resp, err := c.grpc.GetLatestPriceSeqNr(ctx, &ccipocr3pb.GetLatestPriceSeqNrRequest{})
+	resp, err := c.grpc.GetLatestPriceSeqNr(ctx, &emptypb.Empty{})
 	if err != nil {
 		return 0, err
 	}
@@ -291,7 +292,7 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, d
 
 // RMNAccessor methods
 func (c *chainAccessorClient) GetRMNCurseInfo(ctx context.Context) (ccipocr3.CurseInfo, error) {
-	resp, err := c.grpc.GetRMNCurseInfo(ctx, &ccipocr3pb.GetRMNCurseInfoRequest{})
+	resp, err := c.grpc.GetRMNCurseInfo(ctx, &emptypb.Empty{})
 	if err != nil {
 		return ccipocr3.CurseInfo{}, err
 	}
@@ -347,7 +348,7 @@ func (s *chainAccessorServer) GetAllConfigsLegacy(ctx context.Context, req *ccip
 	}, nil
 }
 
-func (s *chainAccessorServer) GetChainFeeComponents(ctx context.Context, req *ccipocr3pb.GetChainFeeComponentsRequest) (*ccipocr3pb.GetChainFeeComponentsResponse, error) {
+func (s *chainAccessorServer) GetChainFeeComponents(ctx context.Context, req *emptypb.Empty) (*ccipocr3pb.GetChainFeeComponentsResponse, error) {
 	feeComponents, err := s.impl.GetChainFeeComponents(ctx)
 	if err != nil {
 		return nil, err
@@ -360,9 +361,9 @@ func (s *chainAccessorServer) GetChainFeeComponents(ctx context.Context, req *cc
 	}, nil
 }
 
-func (s *chainAccessorServer) Sync(ctx context.Context, req *ccipocr3pb.SyncRequest) (*ccipocr3pb.SyncResponse, error) {
+func (s *chainAccessorServer) Sync(ctx context.Context, req *ccipocr3pb.SyncRequest) (*emptypb.Empty, error) {
 	err := s.impl.Sync(ctx, req.ContractName, ccipocr3.UnknownAddress(req.ContractAddress))
-	return &ccipocr3pb.SyncResponse{}, err
+	return &emptypb.Empty{}, err
 }
 
 // Additional DestinationAccessor server methods
@@ -436,7 +437,7 @@ func (s *chainAccessorServer) GetChainFeePriceUpdate(ctx context.Context, req *c
 	}, nil
 }
 
-func (s *chainAccessorServer) GetLatestPriceSeqNr(ctx context.Context, req *ccipocr3pb.GetLatestPriceSeqNrRequest) (*ccipocr3pb.GetLatestPriceSeqNrResponse, error) {
+func (s *chainAccessorServer) GetLatestPriceSeqNr(ctx context.Context, req *emptypb.Empty) (*ccipocr3pb.GetLatestPriceSeqNrResponse, error) {
 	seqNr, err := s.impl.GetLatestPriceSeqNr(ctx)
 	if err != nil {
 		return nil, err
@@ -508,7 +509,7 @@ func (s *chainAccessorServer) GetFeeQuoterDestChainConfig(ctx context.Context, r
 }
 
 // RMNAccessor server methods
-func (s *chainAccessorServer) GetRMNCurseInfo(ctx context.Context, req *ccipocr3pb.GetRMNCurseInfoRequest) (*ccipocr3pb.GetRMNCurseInfoResponse, error) {
+func (s *chainAccessorServer) GetRMNCurseInfo(ctx context.Context, req *emptypb.Empty) (*ccipocr3pb.GetRMNCurseInfoResponse, error) {
 	curseInfo, err := s.impl.GetRMNCurseInfo(ctx)
 	if err != nil {
 		return nil, err

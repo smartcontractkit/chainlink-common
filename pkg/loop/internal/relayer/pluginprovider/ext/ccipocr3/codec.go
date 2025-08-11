@@ -19,7 +19,7 @@ type chainSpecificAddressCodecClient struct {
 	grpc ccipocr3pb.ChainSpecificAddressCodecClient
 }
 
-func NewChainSpecificAddressCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *chainSpecificAddressCodecClient {
+func NewChainSpecificAddressCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ChainSpecificAddressCodec {
 	return &chainSpecificAddressCodecClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewChainSpecificAddressCodecClient(cc),
@@ -125,7 +125,7 @@ type commitPluginCodecClient struct {
 	grpc ccipocr3pb.CommitPluginCodecClient
 }
 
-func NewCommitPluginCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *commitPluginCodecClient {
+func NewCommitPluginCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.CommitPluginCodec {
 	return &commitPluginCodecClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewCommitPluginCodecClient(cc),
@@ -293,7 +293,7 @@ type commitPluginCodecServer struct {
 	impl ccipocr3.CommitPluginCodec
 }
 
-func NewCommitPluginCodecServer(impl ccipocr3.CommitPluginCodec) *commitPluginCodecServer {
+func NewCommitPluginCodecServer(impl ccipocr3.CommitPluginCodec) ccipocr3pb.CommitPluginCodecServer {
 	return &commitPluginCodecServer{impl: impl}
 }
 
@@ -327,7 +327,7 @@ type executePluginCodecClient struct {
 	grpc ccipocr3pb.ExecutePluginCodecClient
 }
 
-func NewExecutePluginCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *executePluginCodecClient {
+func NewExecutePluginCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ExecutePluginCodec {
 	return &executePluginCodecClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewExecutePluginCodecClient(cc),
@@ -362,7 +362,7 @@ type executePluginCodecServer struct {
 	impl ccipocr3.ExecutePluginCodec
 }
 
-func NewExecutePluginCodecServer(impl ccipocr3.ExecutePluginCodec) *executePluginCodecServer {
+func NewExecutePluginCodecServer(impl ccipocr3.ExecutePluginCodec) ccipocr3pb.ExecutePluginCodecServer {
 	return &executePluginCodecServer{impl: impl}
 }
 
@@ -395,7 +395,7 @@ type tokenDataEncoderClient struct {
 	grpc ccipocr3pb.TokenDataEncoderClient
 }
 
-func NewTokenDataEncoderClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *tokenDataEncoderClient {
+func NewTokenDataEncoderClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.TokenDataEncoder {
 	return &tokenDataEncoderClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewTokenDataEncoderClient(cc),
@@ -421,7 +421,7 @@ type tokenDataEncoderServer struct {
 	impl ccipocr3.TokenDataEncoder
 }
 
-func NewTokenDataEncoderServer(impl ccipocr3.TokenDataEncoder) *tokenDataEncoderServer {
+func NewTokenDataEncoderServer(impl ccipocr3.TokenDataEncoder) ccipocr3pb.TokenDataEncoderServer {
 	return &tokenDataEncoderServer{impl: impl}
 }
 
@@ -443,7 +443,7 @@ type sourceChainExtraDataCodecClient struct {
 	grpc ccipocr3pb.SourceChainExtraDataCodecClient
 }
 
-func NewSourceChainExtraDataCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *sourceChainExtraDataCodecClient {
+func NewSourceChainExtraDataCodecClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.SourceChainExtraDataCodec {
 	return &sourceChainExtraDataCodecClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewSourceChainExtraDataCodecClient(cc),
@@ -478,7 +478,7 @@ type sourceChainExtraDataCodecServer struct {
 	impl ccipocr3.SourceChainExtraDataCodec
 }
 
-func NewSourceChainExtraDataCodecServer(impl ccipocr3.SourceChainExtraDataCodec) *sourceChainExtraDataCodecServer {
+func NewSourceChainExtraDataCodecServer(impl ccipocr3.SourceChainExtraDataCodec) ccipocr3pb.SourceChainExtraDataCodecServer {
 	return &sourceChainExtraDataCodecServer{impl: impl}
 }
 

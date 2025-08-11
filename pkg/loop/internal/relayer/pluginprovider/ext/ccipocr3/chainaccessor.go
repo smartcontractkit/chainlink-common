@@ -21,7 +21,7 @@ type chainAccessorClient struct {
 	grpc ccipocr3pb.ChainAccessorClient
 }
 
-func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *chainAccessorClient {
+func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ChainAccessor {
 	return &chainAccessorClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewChainAccessorClient(cc),

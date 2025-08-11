@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754903665189,
+  "lastUpdate": 1754915234184,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22680,6 +22680,48 @@ window.BENCHMARK_DATA = {
             "value": 28185,
             "unit": "ns/op",
             "extra": "42400 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9242c88f1c99f936f312bde0fb539722edcf6459",
+          "message": "feat: update storage-node-service client (#1466)",
+          "timestamp": "2025-08-11T12:24:49Z",
+          "tree_id": "dd52aa59f97435a12c6a7bafeb5edc77b48ce4be",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9242c88f1c99f936f312bde0fb539722edcf6459"
+        },
+        "date": 1754915232855,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.6,
+            "unit": "ns/op",
+            "extra": "3356956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.3,
+            "unit": "ns/op",
+            "extra": "2757670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28418,
+            "unit": "ns/op",
+            "extra": "42615 times\n4 procs"
           }
         ]
       }

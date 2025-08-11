@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754692768185,
+  "lastUpdate": 1754903665189,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22638,6 +22638,48 @@ window.BENCHMARK_DATA = {
             "value": 28137,
             "unit": "ns/op",
             "extra": "42626 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c9eaa5dc13fbd34be4b581fa00de0f92d852713",
+          "message": "fix: NodeAuth digest check for proto (#1465)",
+          "timestamp": "2025-08-11T11:13:00+02:00",
+          "tree_id": "eb89cebccd353b9b5c2b91ff4376ea2a61b96ae5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2c9eaa5dc13fbd34be4b581fa00de0f92d852713"
+        },
+        "date": 1754903663577,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.2,
+            "unit": "ns/op",
+            "extra": "3330549 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.9,
+            "unit": "ns/op",
+            "extra": "2925894 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28185,
+            "unit": "ns/op",
+            "extra": "42400 times\n4 procs"
           }
         ]
       }

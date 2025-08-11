@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"net"
 	"os"
 	"testing"
@@ -18,10 +19,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	pb "github.com/smartcontractkit/chainlink-protos/storage-service/go"
-)
-
-var (
-	fileContent = make([]byte, 3*1024*1024)
 )
 
 // mockRequest is a simple type that implements fmt.Stringer.
@@ -40,17 +37,13 @@ type testWorkflowServer struct {
 	pb.UnsafeNodeServiceServer
 }
 
-func (s *testWorkflowServer) DownloadArtifact(req *pb.DownloadArtifactRequest, stream pb.NodeService_DownloadArtifactServer) error {
+func (s *testWorkflowServer) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (*pb.DownloadArtifactResponse, error) {
 
-	chunk := &pb.DownloadArtifactChunk{
-		Artifact: &pb.WorkflowArtifact{
-			Id:          req.Id,
-			Type:        req.Type,
-			Environment: req.Environment,
-		},
-		ContentChunk: fileContent,
+	resp := &pb.DownloadArtifactResponse{
+		Url:    "pre-signed-url",
+		Expiry: timestamppb.New(time.Now().Add(time.Hour)),
 	}
-	return stream.Send(chunk)
+	return resp, nil
 }
 
 // ---------- Test GRPC Dial with TLS Credentials ----------
@@ -98,7 +91,6 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 		Id:          "test",
 		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
-		ChunkSize:   0,
 	}).Return("test.jwt.token", nil).Once()
 
 	lggr := logger.Test(t)
@@ -120,23 +112,13 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	// Call a method to verify that the client and server communicate over TLS.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	var receivedChunks []*pb.DownloadArtifactChunk
-	err = wc.DownloadArtifactStream(ctx, &pb.DownloadArtifactRequest{
+	resp, err := wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
 		Id:          "test",
 		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
-		ChunkSize:   0,
-	}, func(chunk *pb.DownloadArtifactChunk) error {
-		receivedChunks = append(receivedChunks, chunk)
-		return nil
-	},
-	)
-	require.NoError(t, err, "DownloadArtifactStream should succeed over TLS")
-	require.Len(t, receivedChunks, 1)
-	assert.Equal(t, "test", receivedChunks[0].Artifact.Id)
-	assert.Equal(t, pb.ArtifactType_ARTIFACT_TYPE_BINARY, receivedChunks[0].Artifact.Type)
-	assert.Equal(t, pb.EnvironmentName_PRODUCTION_TESTNET, receivedChunks[0].Artifact.Environment)
-	assert.Equal(t, fileContent, receivedChunks[0].ContentChunk)
+	})
+	require.NoError(t, err, "DownloadArtifact should succeed over TLS")
+	assert.Equal(t, "pre-signed-url", resp.Url)
 }
 
 func TestIntegration_GRPC_Insecure(t *testing.T) {
@@ -160,7 +142,6 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 		Id:          "test",
 		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
-		ChunkSize:   0,
 	}).Return("test.jwt.token", nil).Once()
 
 	lggr := logger.Test(t)
@@ -180,14 +161,12 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = wc.DownloadArtifactStream(ctx, &pb.DownloadArtifactRequest{
+	_, err = wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
 		Id:          "test",
 		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
-		ChunkSize:   0,
-	}, func(chunk *pb.DownloadArtifactChunk) error { return nil },
-	)
-	require.NoError(t, err, "DownloadArtifactStream should succeed over insecure connection")
+	})
+	require.NoError(t, err, "DownloadArtifact should succeed over insecure connection")
 }
 
 func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
@@ -202,13 +181,11 @@ func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = wc.DownloadArtifactStream(ctx, &pb.DownloadArtifactRequest{
+	_, err = wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
 		Id:          "test",
 		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
-		ChunkSize:   0,
-	}, func(chunk *pb.DownloadArtifactChunk) error { return nil },
-	)
+	})
 
 	require.Error(t, err, "Expected error when dialing an invalid address")
 }
@@ -251,13 +228,11 @@ func TestWorkflowClient_DialUnreachable(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = wc.DownloadArtifactStream(ctx, &pb.DownloadArtifactRequest{
+	_, err = wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
 		Id:          "test",
 		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
-		ChunkSize:   0,
-	}, func(chunk *pb.DownloadArtifactChunk) error { return nil },
-	)
+	})
 
 	require.Error(t, err, "Expected dialing an unreachable address to fail")
 }

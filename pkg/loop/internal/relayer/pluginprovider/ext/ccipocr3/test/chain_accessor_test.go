@@ -112,12 +112,6 @@ func TestChainAccessor(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 	})
-
-	t.Run("GetRMNCurseInfo", func(t *testing.T) {
-		curseInfo, err := chainAccessor.GetRMNCurseInfo(ctx)
-		assert.NoError(t, err)
-		assert.NotNil(t, curseInfo)
-	})
 }
 
 func TestChainAccessorEvaluate(t *testing.T) {

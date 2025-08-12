@@ -290,15 +290,6 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, d
 	return pbToFeeQuoterDestChainConfigDetailed(resp.Config), nil
 }
 
-// RMNAccessor methods
-func (c *chainAccessorClient) GetRMNCurseInfo(ctx context.Context) (ccipocr3.CurseInfo, error) {
-	resp, err := c.grpc.GetRMNCurseInfo(ctx, &emptypb.Empty{})
-	if err != nil {
-		return ccipocr3.CurseInfo{}, err
-	}
-	return pbToCurseInfo(resp.CurseInfo), nil
-}
-
 // Server implementation
 var _ ccipocr3pb.ChainAccessorServer = (*chainAccessorServer)(nil)
 
@@ -505,16 +496,5 @@ func (s *chainAccessorServer) GetFeeQuoterDestChainConfig(ctx context.Context, r
 	}
 	return &ccipocr3pb.GetFeeQuoterDestChainConfigResponse{
 		Config: feeQuoterDestChainConfigToPb(config),
-	}, nil
-}
-
-// RMNAccessor server methods
-func (s *chainAccessorServer) GetRMNCurseInfo(ctx context.Context, req *emptypb.Empty) (*ccipocr3pb.GetRMNCurseInfoResponse, error) {
-	curseInfo, err := s.impl.GetRMNCurseInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &ccipocr3pb.GetRMNCurseInfoResponse{
-		CurseInfo: curseInfoToPb(curseInfo),
 	}, nil
 }

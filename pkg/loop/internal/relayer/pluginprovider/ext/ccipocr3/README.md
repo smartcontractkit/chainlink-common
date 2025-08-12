@@ -34,7 +34,6 @@ Implements the complete ChainAccessor interface with methods for:
 - **AllAccessors**: Common functionality (GetContractAddress, GetAllConfigsLegacy, etc.)
 - **DestinationAccessor**: Destination chain operations (CommitReports, ExecutedMessages, etc.)
 - **SourceAccessor**: Source chain operations (MsgsBetweenSeqNums, TokenPriceUSD, etc.)
-- **RMNAccessor**: RMN operations (GetRMNCurseInfo)
 
 ### Codec
 Implements all codec interfaces:

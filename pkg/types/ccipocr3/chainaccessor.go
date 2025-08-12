@@ -26,7 +26,6 @@ type ChainAccessor interface {
 	AllAccessors
 	SourceAccessor
 	DestinationAccessor
-	RMNAccessor
 }
 
 // AllAccessors contains functionality that is available to all types of accessors.
@@ -194,12 +193,6 @@ type SourceAccessor interface {
 	GetFeeQuoterDestChainConfig(ctx context.Context, dest ChainSelector) (FeeQuoterDestChainConfig, error)
 }
 
-type RMNAccessor interface {
-	// GetRMNCurseInfo returns rmn curse/pausing information about the provided chains
-	// from the destination chain RMN remote contract. Caller should be able to access destination.
-	GetRMNCurseInfo(ctx context.Context) (CurseInfo, error)
-}
-
 ////////////////////////////////////////////////////////////////
 // TODO: Find a better location for the types below this line //
 //       For the purpose of designing these interfaces, the   //
@@ -253,6 +246,18 @@ type CommitReportsByConfidenceLevel struct {
 // ContractAddresses is a map of contract names across all chain selectors and their address.
 // Currently only one contract per chain per name is supported.
 type ContractAddresses map[string]map[ChainSelector]UnknownAddress
+
+func (ca ContractAddresses) Append(contract string, chain ChainSelector, address []byte) ContractAddresses {
+	resp := ca
+	if resp == nil {
+		resp = make(ContractAddresses)
+	}
+	if resp[contract] == nil {
+		resp[contract] = make(map[ChainSelector]UnknownAddress)
+	}
+	resp[contract][chain] = address
+	return resp
+}
 
 // CurseInfo contains cursing information that are fetched from the rmn remote contract.
 type CurseInfo struct {

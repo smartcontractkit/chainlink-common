@@ -35,7 +35,6 @@ const (
 	ChainAccessor_GetExpectedNextSequenceNumber_FullMethodName = "/loop.internal.pb.ccipocr3.ChainAccessor/GetExpectedNextSequenceNumber"
 	ChainAccessor_GetTokenPriceUSD_FullMethodName              = "/loop.internal.pb.ccipocr3.ChainAccessor/GetTokenPriceUSD"
 	ChainAccessor_GetFeeQuoterDestChainConfig_FullMethodName   = "/loop.internal.pb.ccipocr3.ChainAccessor/GetFeeQuoterDestChainConfig"
-	ChainAccessor_GetRMNCurseInfo_FullMethodName               = "/loop.internal.pb.ccipocr3.ChainAccessor/GetRMNCurseInfo"
 )
 
 // ChainAccessorClient is the client API for ChainAccessor service.
@@ -62,8 +61,6 @@ type ChainAccessorClient interface {
 	GetExpectedNextSequenceNumber(ctx context.Context, in *GetExpectedNextSequenceNumberRequest, opts ...grpc.CallOption) (*GetExpectedNextSequenceNumberResponse, error)
 	GetTokenPriceUSD(ctx context.Context, in *GetTokenPriceUSDRequest, opts ...grpc.CallOption) (*GetTokenPriceUSDResponse, error)
 	GetFeeQuoterDestChainConfig(ctx context.Context, in *GetFeeQuoterDestChainConfigRequest, opts ...grpc.CallOption) (*GetFeeQuoterDestChainConfigResponse, error)
-	// RMNAccessor methods
-	GetRMNCurseInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetRMNCurseInfoResponse, error)
 }
 
 type chainAccessorClient struct {
@@ -224,16 +221,6 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, i
 	return out, nil
 }
 
-func (c *chainAccessorClient) GetRMNCurseInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetRMNCurseInfoResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetRMNCurseInfoResponse)
-	err := c.cc.Invoke(ctx, ChainAccessor_GetRMNCurseInfo_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ChainAccessorServer is the server API for ChainAccessor service.
 // All implementations must embed UnimplementedChainAccessorServer
 // for forward compatibility.
@@ -258,8 +245,6 @@ type ChainAccessorServer interface {
 	GetExpectedNextSequenceNumber(context.Context, *GetExpectedNextSequenceNumberRequest) (*GetExpectedNextSequenceNumberResponse, error)
 	GetTokenPriceUSD(context.Context, *GetTokenPriceUSDRequest) (*GetTokenPriceUSDResponse, error)
 	GetFeeQuoterDestChainConfig(context.Context, *GetFeeQuoterDestChainConfigRequest) (*GetFeeQuoterDestChainConfigResponse, error)
-	// RMNAccessor methods
-	GetRMNCurseInfo(context.Context, *emptypb.Empty) (*GetRMNCurseInfoResponse, error)
 	mustEmbedUnimplementedChainAccessorServer()
 }
 
@@ -314,9 +299,6 @@ func (UnimplementedChainAccessorServer) GetTokenPriceUSD(context.Context, *GetTo
 }
 func (UnimplementedChainAccessorServer) GetFeeQuoterDestChainConfig(context.Context, *GetFeeQuoterDestChainConfigRequest) (*GetFeeQuoterDestChainConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeQuoterDestChainConfig not implemented")
-}
-func (UnimplementedChainAccessorServer) GetRMNCurseInfo(context.Context, *emptypb.Empty) (*GetRMNCurseInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRMNCurseInfo not implemented")
 }
 func (UnimplementedChainAccessorServer) mustEmbedUnimplementedChainAccessorServer() {}
 func (UnimplementedChainAccessorServer) testEmbeddedByValue()                       {}
@@ -609,24 +591,6 @@ func _ChainAccessor_GetFeeQuoterDestChainConfig_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ChainAccessor_GetRMNCurseInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChainAccessorServer).GetRMNCurseInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChainAccessor_GetRMNCurseInfo_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChainAccessorServer).GetRMNCurseInfo(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ChainAccessor_ServiceDesc is the grpc.ServiceDesc for ChainAccessor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -693,10 +657,6 @@ var ChainAccessor_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFeeQuoterDestChainConfig",
 			Handler:    _ChainAccessor_GetFeeQuoterDestChainConfig_Handler,
-		},
-		{
-			MethodName: "GetRMNCurseInfo",
-			Handler:    _ChainAccessor_GetRMNCurseInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

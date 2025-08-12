@@ -381,12 +381,6 @@ func (s staticChainAccessor) GetFeeQuoterDestChainConfig(ctx context.Context, de
 	return s.feeQuoterDestChainConfig, nil
 }
 
-// RMNAccessor implementation
-
-func (s staticChainAccessor) GetRMNCurseInfo(ctx context.Context) (ccipocr3.CurseInfo, error) {
-	return s.rmnCurseInfo, nil
-}
-
 // Evaluate implements ChainAccessorEvaluator.
 func (s staticChainAccessor) Evaluate(ctx context.Context, other ccipocr3.ChainAccessor) error {
 	// Delegate to individual evaluation functions for better readability
@@ -406,7 +400,6 @@ func (s staticChainAccessor) Evaluate(ctx context.Context, other ccipocr3.ChainA
 		s.evaluateGetExpectedNextSequenceNumber,
 		s.evaluateGetTokenPriceUSD,
 		s.evaluateGetFeeQuoterDestChainConfig,
-		s.evaluateGetRMNCurseInfo,
 	}
 
 	for _, evaluate := range evaluators {
@@ -907,41 +900,6 @@ func (s staticChainAccessor) evaluateGetFeeQuoterDestChainConfig(ctx context.Con
 	}
 	if otherConfig.ChainFamilySelector != myConfig.ChainFamilySelector {
 		return fmt.Errorf("GetFeeQuoterDestChainConfig ChainFamilySelector mismatch: got %x, expected %x", otherConfig.ChainFamilySelector, myConfig.ChainFamilySelector)
-	}
-	return nil
-}
-
-func (s staticChainAccessor) evaluateGetRMNCurseInfo(ctx context.Context, other ccipocr3.ChainAccessor) error {
-	otherCurseInfo, err := other.GetRMNCurseInfo(ctx)
-	if err != nil {
-		return fmt.Errorf("GetRMNCurseInfo failed: %w", err)
-	}
-	myCurseInfo, err := s.GetRMNCurseInfo(ctx)
-	if err != nil {
-		return fmt.Errorf("GetRMNCurseInfo failed: %w", err)
-	}
-
-	// Compare all CurseInfo fields
-	if otherCurseInfo.CursedDestination != myCurseInfo.CursedDestination {
-		return fmt.Errorf("GetRMNCurseInfo CursedDestination mismatch: got %t, expected %t", otherCurseInfo.CursedDestination, myCurseInfo.CursedDestination)
-	}
-	if otherCurseInfo.GlobalCurse != myCurseInfo.GlobalCurse {
-		return fmt.Errorf("GetRMNCurseInfo GlobalCurse mismatch: got %t, expected %t", otherCurseInfo.GlobalCurse, myCurseInfo.GlobalCurse)
-	}
-	// Compare CursedSourceChains map
-	if len(otherCurseInfo.CursedSourceChains) != len(myCurseInfo.CursedSourceChains) {
-		return fmt.Errorf("GetRMNCurseInfo CursedSourceChains length mismatch: got %d, expected %d",
-			len(otherCurseInfo.CursedSourceChains), len(myCurseInfo.CursedSourceChains))
-	}
-	for chainSel, myCursed := range myCurseInfo.CursedSourceChains {
-		otherCursed, exists := otherCurseInfo.CursedSourceChains[chainSel]
-		if !exists {
-			return fmt.Errorf("GetRMNCurseInfo CursedSourceChains missing chain %d in other curse info", chainSel)
-		}
-		if otherCursed != myCursed {
-			return fmt.Errorf("GetRMNCurseInfo CursedSourceChains chain %d mismatch: got %t, expected %t",
-				chainSel, otherCursed, myCursed)
-		}
 	}
 	return nil
 }

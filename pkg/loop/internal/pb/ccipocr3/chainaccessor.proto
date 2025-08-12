@@ -30,9 +30,6 @@ service ChainAccessor {
   rpc GetExpectedNextSequenceNumber(GetExpectedNextSequenceNumberRequest) returns (GetExpectedNextSequenceNumberResponse);
   rpc GetTokenPriceUSD(GetTokenPriceUSDRequest) returns (GetTokenPriceUSDResponse);
   rpc GetFeeQuoterDestChainConfig(GetFeeQuoterDestChainConfigRequest) returns (GetFeeQuoterDestChainConfigResponse);
-  
-  // RMNAccessor methods
-  rpc GetRMNCurseInfo(google.protobuf.Empty) returns (GetRMNCurseInfoResponse);
 }
 
 // AllAccessors request/response messages
@@ -151,11 +148,6 @@ message GetFeeQuoterDestChainConfigRequest {
 
 message GetFeeQuoterDestChainConfigResponse {
   FeeQuoterDestChainConfig config = 1;
-}
-
-// RMNAccessor request/response messages
-message GetRMNCurseInfoResponse {
-  CurseInfo curse_info = 1;
 }
 
 // Supporting message types

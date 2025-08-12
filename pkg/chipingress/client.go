@@ -44,6 +44,7 @@ type clientConfig struct {
 	headerProvider       HeaderProvider
 	insecureConnection   bool
 	host                 string
+	forceIPV4            bool
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -51,6 +52,7 @@ func newClientConfig(host string) *clientConfig {
 		headerProvider:    nil,
 		perRPCCredentials: nil,
 		host:              host,
+		forceIPV4:         false,
 	}
 	WithInsecureConnection()(cfg) // Default to insecure connection
 	return cfg
@@ -72,6 +74,11 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
 	}
+	// Add our custom dialer if IPv4 is forced
+	if cfg.forceIPV4 {
+		grpcOpts = append(grpcOpts, grpc.WithContextDialer(forceIPV4Dialer))
+	}
+
 	// Auth
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))
@@ -108,6 +115,13 @@ func (c *client) StreamEvents(_ context.Context, _ ...grpc.CallOption) (grpc.Bid
 
 func (c *client) Close() error {
 	return c.conn.Close()
+}
+
+// WithForceIPV4 forces the client to use IPv4 for connections.
+func WithForceIPV4() Opt {
+	return func(c *clientConfig) {
+		c.forceIPV4 = true
+	}
 }
 
 // WithBasicAuth sets the basic-auth credentials for the ChipIngress service.
@@ -170,6 +184,40 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
+}
+
+// forceIPV4Dialer is a custom dialer that resolves a hostname and forces the connection over IPv4.
+func forceIPV4Dialer(ctx context.Context, addr string) (net.Conn, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to split host and port: %w", err)
+	}
+
+	// Resolve the hostname to a list of IP addresses.
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve IP addresses for host %s: %w", host, err)
+	}
+
+	var ipv4Addr string
+	// Find the first IPv4 address.
+	for _, ip := range ips {
+		if ip.To4() != nil {
+			ipv4Addr = ip.String()
+			break
+		}
+	}
+
+	if ipv4Addr == "" {
+		return nil, fmt.Errorf("no IPv4 address found for host: %s", host)
+	}
+
+	// Create the new address with the resolved IPv4 and original port.
+	ipv4AddrWithPort := net.JoinHostPort(ipv4Addr, port)
+
+	// Dial the new IPv4 address, explicitly using "tcp4".
+	var d net.Dialer
+	return d.DialContext(ctx, "tcp4", ipv4AddrWithPort)
 }
 
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.

@@ -392,6 +392,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 
 		// Note: no need to check the observation count here,
 		// we've checked this above when we checked the observations count.
+		// TODO(gg): somehow an empty encoder is used here
 		var encCfg *encoderConfig
 		for sha, count := range shaToCount {
 			if count >= 2*r.config.F+1 {

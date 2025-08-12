@@ -167,6 +167,7 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 }
 
 func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
+	// TODO: Pass Node mode
 	donTime, err := e.timeFetcher.GetTime(e.mode)
 	if err != nil {
 		return ErrnoInval
@@ -193,6 +194,10 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	binary.LittleEndian.PutUint64(trg, uint64(val))
 	wasmWrite(caller, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
+}
+
+func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+
 }
 
 // Loosely based off the implementation here:

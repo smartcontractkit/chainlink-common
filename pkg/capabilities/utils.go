@@ -84,6 +84,7 @@ func FromValueOrAny(value values.Value, any *anypb.Any, into proto.Message) (boo
 	return migrated, nil
 }
 
+// ResponseAndMetadata is the action's output structure that includes both the response and its metadata (billing).
 type ResponseAndMetadata[T proto.Message] struct {
 	Response         T
 	ResponseMetadata ResponseMetadata
@@ -91,8 +92,6 @@ type ResponseAndMetadata[T proto.Message] struct {
 
 // Execute is a helper function for capabilities that allows them to use their native types for input, config, and response
 // while adhering to the standard capability interface.
-// func Execute[I, C, O ResponseAndMetadata[proto.Message]](
-// func Execute[I, C, O proto.Message](
 func Execute[I, C, O proto.Message](
 	ctx context.Context,
 	request CapabilityRequest,
@@ -108,6 +107,9 @@ func Execute[I, C, O proto.Message](
 
 	output, err := exec(ctx, request.Metadata, input, config)
 	if err != nil {
+		if output != nil {
+			response.Metadata = output.ResponseMetadata
+		}
 		return response, err
 	}
 

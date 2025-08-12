@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754915234184,
+  "lastUpdate": 1755007209196,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22722,6 +22722,48 @@ window.BENCHMARK_DATA = {
             "value": 28418,
             "unit": "ns/op",
             "extra": "42615 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5076b00976f5bf097117a2f6aa977335caa7263",
+          "message": "[PRIV-77] Add ReportingPluginConfig proto (#1469)",
+          "timestamp": "2025-08-12T15:58:58+02:00",
+          "tree_id": "29f8e1833f9bd7ea9eb078b0390914cc1948b66f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e5076b00976f5bf097117a2f6aa977335caa7263"
+        },
+        "date": 1755007207566,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.8,
+            "unit": "ns/op",
+            "extra": "3361598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.5,
+            "unit": "ns/op",
+            "extra": "2985508 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28185,
+            "unit": "ns/op",
+            "extra": "42595 times\n4 procs"
           }
         ]
       }

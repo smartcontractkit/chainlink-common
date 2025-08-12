@@ -166,9 +166,10 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 	e.mode = sdkpb.Mode(mode)
 }
 
+// clockTimeGet is the default time.Now() which is also called by Go many times.
+// This implementation uses Node Mode to not have to wait for OCR rounds.
 func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
-	// TODO: Pass Node mode
-	donTime, err := e.timeFetcher.GetTime(e.mode)
+	donTime, err := e.timeFetcher.GetTime(sdkpb.Mode_MODE_NODE)
 	if err != nil {
 		return ErrnoInval
 	}
@@ -196,11 +197,36 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	return ErrnoSuccess
 }
 
-/*
+// getTime is used for Workflows and should be called instead of time.Now().
 func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+	donTime, err := e.timeFetcher.GetTime(e.mode)
+	if err != nil {
+		return ErrnoInval
+	}
 
+	if e.baseTime == nil {
+		// baseTime must be before the first poll or Go panics
+		t := donTime.Add(-time.Nanosecond)
+		e.baseTime = &t
+	}
+
+	// TODO: monotonic or realtime?
+	var val int64
+	switch id {
+	case clockIDMonotonic:
+		val = donTime.Sub(*e.baseTime).Nanoseconds()
+	case clockIDRealtime:
+		val = donTime.UnixNano()
+	default:
+		return ErrnoInval
+	}
+
+	uint64Size := int32(8)
+	trg := make([]byte, uint64Size)
+	binary.LittleEndian.PutUint64(trg, uint64(val))
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	return ErrnoSuccess
 }
-*/
 
 // Loosely based off the implementation here:
 // https://github.com/tetratelabs/wazero/blob/main/imports/wasi_snapshot_preview1/poll.go#L52

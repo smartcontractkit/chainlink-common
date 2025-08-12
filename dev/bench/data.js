@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755007209196,
+  "lastUpdate": 1755017618981,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22764,6 +22764,48 @@ window.BENCHMARK_DATA = {
             "value": 28185,
             "unit": "ns/op",
             "extra": "42595 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "694386faccdd4eeb0e1a188ffffd6c0eefe24f16",
+          "message": "DON Time MinTimeIncrase Fix + Transmitter Schedule (#1445)\n\n* Add logging\n\n* Fix minTimeIncrease\n\n* Create transmission schedule\n\n* Update transmitter.go\n\n* Add logging\n\n* Try milisecond transmitter delays\n\n* allOraclesTransmitNow\n\n* Add logging\n\n* Log oracle ID\n\n* Update plugin.go\n\n* Update plugin.go\n\n* Add logging\n\n* Transmit all\n\n* Add keyBundleName to info\n\n* Remove logs",
+          "timestamp": "2025-08-12T18:52:31+02:00",
+          "tree_id": "3926ff0bad10456f33de29a1ba7f65212d68b2ec",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/694386faccdd4eeb0e1a188ffffd6c0eefe24f16"
+        },
+        "date": 1755017617968,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3283728 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.3,
+            "unit": "ns/op",
+            "extra": "2980473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28155,
+            "unit": "ns/op",
+            "extra": "42585 times\n4 procs"
           }
         ]
       }

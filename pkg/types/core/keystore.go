@@ -73,8 +73,38 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 	return s.signFn(ctx, s.account, digest)
 }
 
-var P2PAccountKey = "P2P_SIGNER"
-var WorkflowAccountKey = "WORKFLOW_DECRYPTER"
+var StandardCapabilityAccount = "STANDARD_CAPABILITY_ACCOUNT"
+
+// singleAccountSigner implements Keystore for a single account.
+type singleAccountSigner struct {
+	account *string
+	signer  crypto.Signer
+}
+
+var _ Keystore = &singleAccountSigner{}
+
+func NewSingleAccountSigner(account *string, signer crypto.Signer) (*singleAccountSigner, error) {
+	return &singleAccountSigner{account: account, signer: signer}, nil
+}
+
+func (c *singleAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
+	if c.account == nil {
+		return nil, fmt.Errorf("account is nil")
+	}
+
+	return []string{*c.account}, nil
+}
+
+func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+	if c.account != nil && *c.account == account {
+		return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
+	}
+	return nil, fmt.Errorf("account not found: %s", account)
+}
+
+func (c *singleAccountSigner) Decrypt(ctx context.Context, account string, encrypted []byte) (decrypted []byte, err error) {
+	return nil, fmt.Errorf("decrypt not supported for single account signer")
+}
 
 type Decrypter interface {
 	Decrypt(encrypted []byte) (decrypted []byte, err error)
@@ -82,41 +112,34 @@ type Decrypter interface {
 
 // signerDecrypter implements Keystore for a single sign account and decrypt account.
 type signerDecrypter struct {
-	signAccount    *string
-	signer         crypto.Signer
-	decryptAccount *string
-	decrypter      Decrypter
+	account   *string
+	signer    crypto.Signer
+	decrypter Decrypter
 }
 
 var _ Keystore = &signerDecrypter{}
 
-func NewSignerDecrypter(signAccount *string, signer crypto.Signer, decryptAccount *string, decrypter Decrypter) (*signerDecrypter, error) {
-	return &signerDecrypter{signAccount: signAccount, signer: signer, decryptAccount: decryptAccount, decrypter: decrypter}, nil
+func NewSignerDecrypter(account *string, signer crypto.Signer, decrypter Decrypter) (*signerDecrypter, error) {
+	return &signerDecrypter{account: account, signer: signer, decrypter: decrypter}, nil
 }
 
 func (c *signerDecrypter) Accounts(ctx context.Context) ([]string, error) {
-	var accounts []string
-	if c.signAccount != nil {
-		accounts = append(accounts, *c.signAccount)
+	if c.account == nil {
+		return nil, fmt.Errorf("account is nil")
 	}
-	if c.decryptAccount != nil {
-		accounts = append(accounts, *c.decryptAccount)
-	}
-	if len(accounts) == 0 {
-		return nil, fmt.Errorf("no accounts found")
-	}
-	return accounts, nil
+
+	return []string{*c.account}, nil
 }
 
 func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
-	if c.signAccount != nil && *c.signAccount == account {
+	if c.account != nil && *c.account == account {
 		return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
 	}
 	return nil, fmt.Errorf("account not found: %s", account)
 }
 
 func (c *signerDecrypter) Decrypt(ctx context.Context, account string, encrypted []byte) (decrypted []byte, err error) {
-	if c.decryptAccount != nil && *c.decryptAccount == account {
+	if c.account != nil && *c.account == account {
 		return c.decrypter.Decrypt(encrypted)
 	}
 	return nil, fmt.Errorf("account not found: %s", account)

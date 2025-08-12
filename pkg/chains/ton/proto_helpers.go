@@ -4,7 +4,7 @@ import (
 	"time"
 
 	types "github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 func NewBlockIDExt(block *types.BlockIDExt) *BlockIDExt {

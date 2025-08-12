@@ -5,7 +5,7 @@ package host
 import (
 	context "context"
 
-	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdk "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -25,27 +25,27 @@ func (_m *MockExecutionHelper) EXPECT() *MockExecutionHelper_Expecter {
 }
 
 // CallCapability provides a mock function with given fields: ctx, request
-func (_m *MockExecutionHelper) CallCapability(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+func (_m *MockExecutionHelper) CallCapability(ctx context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
 	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CallCapability")
 	}
 
-	var r0 *pb.CapabilityResponse
+	var r0 *sdk.CapabilityResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.CapabilityRequest) (*pb.CapabilityResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error)); ok {
 		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.CapabilityRequest) *pb.CapabilityResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *sdk.CapabilityRequest) *sdk.CapabilityResponse); ok {
 		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*pb.CapabilityResponse)
+			r0 = ret.Get(0).(*sdk.CapabilityResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *pb.CapabilityRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *sdk.CapabilityRequest) error); ok {
 		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
@@ -61,24 +61,24 @@ type MockExecutionHelper_CallCapability_Call struct {
 
 // CallCapability is a helper method to define mock.On call
 //   - ctx context.Context
-//   - request *pb.CapabilityRequest
+//   - request *sdk.CapabilityRequest
 func (_e *MockExecutionHelper_Expecter) CallCapability(ctx interface{}, request interface{}) *MockExecutionHelper_CallCapability_Call {
 	return &MockExecutionHelper_CallCapability_Call{Call: _e.mock.On("CallCapability", ctx, request)}
 }
 
-func (_c *MockExecutionHelper_CallCapability_Call) Run(run func(ctx context.Context, request *pb.CapabilityRequest)) *MockExecutionHelper_CallCapability_Call {
+func (_c *MockExecutionHelper_CallCapability_Call) Run(run func(ctx context.Context, request *sdk.CapabilityRequest)) *MockExecutionHelper_CallCapability_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*pb.CapabilityRequest))
+		run(args[0].(context.Context), args[1].(*sdk.CapabilityRequest))
 	})
 	return _c
 }
 
-func (_c *MockExecutionHelper_CallCapability_Call) Return(_a0 *pb.CapabilityResponse, _a1 error) *MockExecutionHelper_CallCapability_Call {
+func (_c *MockExecutionHelper_CallCapability_Call) Return(_a0 *sdk.CapabilityResponse, _a1 error) *MockExecutionHelper_CallCapability_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockExecutionHelper_CallCapability_Call) RunAndReturn(run func(context.Context, *pb.CapabilityRequest) (*pb.CapabilityResponse, error)) *MockExecutionHelper_CallCapability_Call {
+func (_c *MockExecutionHelper_CallCapability_Call) RunAndReturn(run func(context.Context, *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error)) *MockExecutionHelper_CallCapability_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -230,27 +230,27 @@ func (_c *MockExecutionHelper_GetNodeTime_Call) RunAndReturn(run func() time.Tim
 }
 
 // GetSecrets provides a mock function with given fields: ctx, request
-func (_m *MockExecutionHelper) GetSecrets(ctx context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {
+func (_m *MockExecutionHelper) GetSecrets(ctx context.Context, request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
 	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSecrets")
 	}
 
-	var r0 []*pb.SecretResponse
+	var r0 []*sdk.SecretResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.GetSecretsRequest) ([]*pb.SecretResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error)); ok {
 		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.GetSecretsRequest) []*pb.SecretResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *sdk.GetSecretsRequest) []*sdk.SecretResponse); ok {
 		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*pb.SecretResponse)
+			r0 = ret.Get(0).([]*sdk.SecretResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *pb.GetSecretsRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *sdk.GetSecretsRequest) error); ok {
 		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
@@ -266,24 +266,24 @@ type MockExecutionHelper_GetSecrets_Call struct {
 
 // GetSecrets is a helper method to define mock.On call
 //   - ctx context.Context
-//   - request *pb.GetSecretsRequest
+//   - request *sdk.GetSecretsRequest
 func (_e *MockExecutionHelper_Expecter) GetSecrets(ctx interface{}, request interface{}) *MockExecutionHelper_GetSecrets_Call {
 	return &MockExecutionHelper_GetSecrets_Call{Call: _e.mock.On("GetSecrets", ctx, request)}
 }
 
-func (_c *MockExecutionHelper_GetSecrets_Call) Run(run func(ctx context.Context, request *pb.GetSecretsRequest)) *MockExecutionHelper_GetSecrets_Call {
+func (_c *MockExecutionHelper_GetSecrets_Call) Run(run func(ctx context.Context, request *sdk.GetSecretsRequest)) *MockExecutionHelper_GetSecrets_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*pb.GetSecretsRequest))
+		run(args[0].(context.Context), args[1].(*sdk.GetSecretsRequest))
 	})
 	return _c
 }
 
-func (_c *MockExecutionHelper_GetSecrets_Call) Return(_a0 []*pb.SecretResponse, _a1 error) *MockExecutionHelper_GetSecrets_Call {
+func (_c *MockExecutionHelper_GetSecrets_Call) Return(_a0 []*sdk.SecretResponse, _a1 error) *MockExecutionHelper_GetSecrets_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockExecutionHelper_GetSecrets_Call) RunAndReturn(run func(context.Context, *pb.GetSecretsRequest) ([]*pb.SecretResponse, error)) *MockExecutionHelper_GetSecrets_Call {
+func (_c *MockExecutionHelper_GetSecrets_Call) RunAndReturn(run func(context.Context, *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error)) *MockExecutionHelper_GetSecrets_Call {
 	_c.Call.Return(run)
 	return _c
 }

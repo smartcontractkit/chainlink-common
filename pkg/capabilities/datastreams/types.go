@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // hex-encoded 32-byte value, prefixed with "0x", all lowercase

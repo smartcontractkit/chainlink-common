@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	pb2 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -19,9 +19,9 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], error)
 
-	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest) (*capabilities.ResponseAndMetadata[*pb2.ReportResponse], error)
+	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest) (*capabilities.ResponseAndMetadata[*sdk.ReportResponse], error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -121,9 +121,9 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "Simple":
-		input := &pb2.SimpleConsensusInputs{}
+		input := &sdk.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, capabilities.ResponseMetadata, error) {
 			output, err := c.ConsensusCapability.Simple(ctx, metadata, input)
 			if output == nil && err == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Simple(..) (if output is nil error must be present)")
@@ -132,9 +132,9 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "Report":
-		input := &pb2.ReportRequest{}
+		input := &sdk.ReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest, _ *emptypb.Empty) (*pb2.ReportResponse, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest, _ *emptypb.Empty) (*sdk.ReportResponse, capabilities.ResponseMetadata, error) {
 			output, err := c.ConsensusCapability.Report(ctx, metadata, input)
 			if output == nil && err == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Report(..) (if output is nil error must be present)")

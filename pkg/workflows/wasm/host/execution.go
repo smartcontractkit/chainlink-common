@@ -196,9 +196,11 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	return ErrnoSuccess
 }
 
+/*
 func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
 
 }
+*/
 
 // Loosely based off the implementation here:
 // https://github.com/tetratelabs/wazero/blob/main/imports/wasi_snapshot_preview1/poll.go#L52

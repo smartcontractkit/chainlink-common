@@ -20,7 +20,6 @@ import (
 
 var (
 	ErrNoMatchingChainSelector = errors.New("no matching chain selector found")
-	ErrSequenceNumberTooLow    = errors.New("sequence number too low")
 )
 
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
@@ -114,12 +113,7 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 // extractAndValidateReports extracts OCRTriggerEvent from observations and validates them
 func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*secureMintReport, error) {
 	var validReports []*secureMintReport
-	var sequenceNumberTooLow bool
 	var foundMatchingChainSelector bool
-	previousSeqNr := uint64(0)
-	if previousOutcome != nil {
-		previousSeqNr = previousOutcome.LastSeenAt
-	}
 
 	for nodeID, nodeObservations := range observations {
 		lggr = logger.With(lggr, "nodeID", nodeID)

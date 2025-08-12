@@ -8,14 +8,14 @@ import (
 )
 
 const (
+	// Note: any addition to this list must be reflected in the handler's Methods() function.
 	MethodHTTPAction = "http_action"
 )
 
 // CacheSettings defines cache control options for outbound HTTP requests.
 type CacheSettings struct {
 	ReadFromCache bool  `json:"readFromCache,omitempty"` // If true, attempt to read a cached response for the request
-	StoreInCache  bool  `json:"storeInCache,omitempty"`  // If true, store the response in cache for the given TTL
-	TTLMs         int32 `json:"ttlMs,omitempty"`         // Time-to-live for the cache entry in milliseconds. Only applicable if StoreInCache is true.
+	MaxAgeMs      int32 `json:"maxAgeMs,omitempty"`      // Maximum age of a cached response in milliseconds.
 }
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.

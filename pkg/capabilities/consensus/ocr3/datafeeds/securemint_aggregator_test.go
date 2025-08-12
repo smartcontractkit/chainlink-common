@@ -20,8 +20,8 @@ import (
 
 var (
 	// Test chain selectors
-	ethChainSelector = chainSelector(1)
-	bnbChainSelector = chainSelector(56)
+	ethSepoliaChainSelector = chainSelector(16015286601757825753) // Ethereum Sepolia testnet
+	bnbTestnetChainSelector = chainSelector(13264668187771770619) // Binance Smart Chain testnet
 )
 
 func TestSecureMintAggregator_Aggregate(t *testing.T) {
@@ -40,10 +40,10 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	}{
 		{
 			name:   "successful eth report extraction",
-			config: configWithChainSelector(t, "1"),
+			config: configWithChainSelector(t, "16015286601757825753"),
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: ethChainSelector,
+					chainSelector: ethSepoliaChainSelector,
 					seqNr:         10,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -53,7 +53,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 				{
-					chainSelector: bnbChainSelector,
+					chainSelector: bnbTestnetChainSelector,
 					seqNr:         11,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
@@ -65,15 +65,15 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			}),
 			f:                     1,
 			expectedShouldReport:  true,
-			expectedChainSelector: ethChainSelector,
+			expectedChainSelector: ethSepoliaChainSelector,
 			expectError:           false,
 		},
 		{
 			name:   "no matching chain selector found",
-			config: configWithChainSelector(t, "1"),
+			config: configWithChainSelector(t, "16015286601757825753"),
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: bnbChainSelector,
+					chainSelector: bnbTestnetChainSelector,
 					seqNr:         10,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -89,13 +89,13 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		},
 		{
 			name:   "sequence number too low",
-			config: configWithChainSelector(t, "1"),
+			config: configWithChainSelector(t, "16015286601757825753"),
 			previousOutcome: &types.AggregationOutcome{
 				LastSeenAt: 10, // Previous sequence number
 			},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: ethChainSelector,
+					chainSelector: ethSepoliaChainSelector,
 					seqNr:         9, // Lower than previous
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -111,7 +111,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		},
 		{
 			name:          "no observations",
-			config:        configWithChainSelector(t, "1"),
+			config:        configWithChainSelector(t, "16015286601757825753"),
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
@@ -119,13 +119,13 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		},
 		{
 			name:   "sequence number equal to previous (should be ignored)",
-			config: configWithChainSelector(t, "1"),
+			config: configWithChainSelector(t, "16015286601757825753"),
 			previousOutcome: &types.AggregationOutcome{
 				LastSeenAt: 10, // Previous sequence number
 			},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					chainSelector: ethChainSelector,
+					chainSelector: ethSepoliaChainSelector,
 					seqNr:         10, // Equal to previous
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
@@ -182,21 +182,19 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				require.True(t, ok)
 
 				// Verify dataID
-				dataIDBytes, ok := report[FeedIDOutputFieldName].([]byte)
+				dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
 				require.True(t, ok)
 				// Should be 0x04 + chain selector as bytes + right padded with 0s
-				var expectedChainSelectorBytes [32]byte
+				var expectedChainSelectorBytes [16]byte
 				expectedChainSelectorBytes[0] = 0x04
 				binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
-				for i := 9; i < 32; i++ {
-					expectedChainSelectorBytes[i] = 0x00
-				}
 				require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
+				t.Logf("Data ID: 0x%x", dataIDBytes)
 
 				// Verify other fields exist
-				price, ok := report[PriceOutputFieldName].(*big.Int)
+				answer, ok := report[AnswerOutputFieldName].(*big.Int)
 				require.True(t, ok)
-				require.NotNil(t, price)
+				require.NotNil(t, answer)
 
 				timestamp := report[TimestampOutputFieldName].(int64)
 				require.Equal(t, int64(1000), timestamp)

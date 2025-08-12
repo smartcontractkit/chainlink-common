@@ -38,6 +38,8 @@ const (
 	TimestampOutputFieldName    = EVMEncoderKey("Timestamp")
 	RemappedIDOutputFieldName   = EVMEncoderKey("RemappedID")
 	StreamIDOutputFieldName     = EVMEncoderKey("StreamID")
+	DataIDOutputFieldName       = EVMEncoderKey("DataID")
+	AnswerOutputFieldName       = EVMEncoderKey("Answer")
 
 	addrLen = 20
 )

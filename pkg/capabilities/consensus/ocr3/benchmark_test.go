@@ -161,7 +161,9 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 			N: numOracles,
 			F: f,
 		},
-		100, // outcomePruningThreshold
+		&pbtypes.ReportingPluginConfig{
+			OutcomePruningThreshold: 100,
+		},
 		lggr,
 	)
 	require.NoError(b, err)
@@ -255,7 +257,9 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 			N: numOracles,
 			F: f,
 		},
-		100, // outcomePruningThreshold
+		&pbtypes.ReportingPluginConfig{
+			OutcomePruningThreshold: 100,
+		},
 		lggr,
 	)
 	require.NoError(b, err)

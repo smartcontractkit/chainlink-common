@@ -71,6 +71,7 @@ func TestResponseDigest(t *testing.T) {
 		resp := Response[ResultType]{
 			Version: JsonRpcVersion,
 			ID:      "42",
+			Method:  "service.method",
 			Result: &ResultType{
 				Value: "success",
 			},
@@ -78,13 +79,14 @@ func TestResponseDigest(t *testing.T) {
 		digest, err := resp.Digest()
 		require.NoError(t, err)
 		require.NotEmpty(t, digest)
-		require.Equal(t, "1dcc380a15b81b33bda5b69b8ea1e01671a7633cdc989df65e68c53aba587087", digest)
+		require.Equal(t, "4d255b455d6394594ea08abb31f02cbc09d6a33b84cb9617edb34d5b489e46a9", digest)
 	})
 
 	t.Run("Response.Digest - with error", func(t *testing.T) {
 		resp := Response[any]{
 			Version: JsonRpcVersion,
 			ID:      "err1",
+			Method:  "service.method",
 			Error: &WireError{
 				Code:    ErrInvalidRequest,
 				Message: "bad request",
@@ -93,7 +95,7 @@ func TestResponseDigest(t *testing.T) {
 		digest, err := resp.Digest()
 		require.NoError(t, err)
 		require.NotEmpty(t, digest)
-		require.Equal(t, "df7b0b7347b46915adab6e50b4c9475fc42106dd61c8d2340b7dec260248204c", digest)
+		require.Equal(t, "71f971121945d17b6f32a486ebfc2576c1eaf6d26e46987af46c898fc7fa9166", digest)
 	})
 
 	t.Run("Response.Digest - JSON marshal error", func(t *testing.T) {
@@ -103,6 +105,7 @@ func TestResponseDigest(t *testing.T) {
 		resp := Response[UnmarshalableResult]{
 			Version: JsonRpcVersion,
 			ID:      "bad",
+			Method:  "service.method",
 			Result: &UnmarshalableResult{
 				Ch: make(chan int),
 			},

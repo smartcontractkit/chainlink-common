@@ -73,6 +73,7 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 	return s.signFn(ctx, s.account, digest)
 }
 
+var P2PAccountKey = "P2P_SIGNER"
 var StandardCapabilityAccount = "STANDARD_CAPABILITY_ACCOUNT"
 
 // singleAccountSigner implements Keystore for a single account.

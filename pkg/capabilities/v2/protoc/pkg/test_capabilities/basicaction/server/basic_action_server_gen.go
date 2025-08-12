@@ -18,7 +18,7 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicActionCapability interface {
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error)
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*capabilities.ResponseAndMetadata[*basicaction.Outputs], error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -120,7 +120,7 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	case "PerformAction":
 		input := &basicaction.Inputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs, _ *emptypb.Empty) (*basicaction.Outputs, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*basicaction.Outputs], error) {
 			return c.BasicActionCapability.PerformAction(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

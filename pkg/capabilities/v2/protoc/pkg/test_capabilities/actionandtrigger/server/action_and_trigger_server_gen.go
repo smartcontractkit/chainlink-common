@@ -18,7 +18,7 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicCapability interface {
-	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*actionandtrigger.Output, error)
+	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], error)
 
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
@@ -139,7 +139,7 @@ func (c *basicCapability) Execute(ctx context.Context, request capabilities.Capa
 	case "Action":
 		input := &actionandtrigger.Input{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*actionandtrigger.Output, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], error) {
 			return c.BasicCapability.Action(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

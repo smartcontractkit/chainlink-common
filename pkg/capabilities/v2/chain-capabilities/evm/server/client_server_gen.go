@@ -19,28 +19,28 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*evm.CallContractReply, error)
+	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*capabilities.ResponseAndMetadata[*evm.CallContractReply], error)
 
-	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*capabilities.ResponseAndMetadata[*evm.FilterLogsReply], error)
 
-	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*capabilities.ResponseAndMetadata[*evm.BalanceAtReply], error)
 
-	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
+	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*capabilities.ResponseAndMetadata[*evm.EstimateGasReply], error)
 
-	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionByHashReply], error)
 
-	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
+	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionReceiptReply], error)
 
-	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
+	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], error)
 
-	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*capabilities.ResponseAndMetadata[*emptypb.Empty], error)
 
-	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*capabilities.ResponseAndMetadata[*emptypb.Empty], error)
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], error)
 
 	ChainSelector() uint64
 
@@ -160,70 +160,70 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	case "CallContract":
 		input := &evm.CallContractRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.CallContractReply], error) {
 			return c.ClientCapability.CallContract(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "FilterLogs":
 		input := &evm.FilterLogsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.FilterLogsReply], error) {
 			return c.ClientCapability.FilterLogs(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "BalanceAt":
 		input := &evm.BalanceAtRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.BalanceAtReply], error) {
 			return c.ClientCapability.BalanceAt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "EstimateGas":
 		input := &evm.EstimateGasRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.EstimateGasReply], error) {
 			return c.ClientCapability.EstimateGas(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionByHash":
 		input := &evm.GetTransactionByHashRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.GetTransactionByHashReply], error) {
 			return c.ClientCapability.GetTransactionByHash(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionReceipt":
 		input := &evm.GetTransactionReceiptRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*evm.GetTransactionReceiptReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.GetTransactionReceiptReply], error) {
 			return c.ClientCapability.GetTransactionReceipt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "HeaderByNumber":
 		input := &evm.HeaderByNumberRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], error) {
 			return c.ClientCapability.HeaderByNumber(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "RegisterLogTracking":
 		input := &evm.RegisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*emptypb.Empty], error) {
 			return c.ClientCapability.RegisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "UnregisterLogTracking":
 		input := &evm.UnregisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*emptypb.Empty], error) {
 			return c.ClientCapability.UnregisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":
 		input := &evm.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], error) {
 			return c.ClientCapability.WriteReport(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

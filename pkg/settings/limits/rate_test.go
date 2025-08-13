@@ -188,7 +188,7 @@ func TestFactory_NewRateLimiter(t *testing.T) {
 			s.Key = "foo.bar"
 			s.Scope = tt.scope
 			s.Unit = "{action}"
-			rl, err := f.NewRateLimiter(s)
+			rl, err := f.MakeRateLimiter(s)
 			require.NoError(t, err)
 			t.Cleanup(func() { assert.NoError(t, rl.Close()) })
 

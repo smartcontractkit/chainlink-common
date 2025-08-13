@@ -51,7 +51,7 @@ func (wc *workflowClient) downloadArtifact(ctx context.Context, req *pb.Download
 
 // DownloadArtifact returns pre-signed URL for downloading artifacts
 func (wc *workflowClient) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (*pb.DownloadArtifactResponse, error) {
-	wc.logger.Infow("DownloadArtifact RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
+	wc.logger.Infow("DownloadArtifact RPC called", "id", req.Id, "type", req.Type.String())
 	return wc.downloadArtifact(ctx, req)
 }
 

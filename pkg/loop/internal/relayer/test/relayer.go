@@ -19,6 +19,7 @@ import (
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
+	ccipocr3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccipocr3/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
 	ocr3capabilitytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/test"
@@ -306,7 +307,10 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 }
 
 func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.RelayArgs) (types.CCIPProvider, error) {
-	return nil, errors.New("not implemented")
+	if s.StaticChecks && !equalRelayArgs(r, s.relayArgs) {
+		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
+	}
+	return ccipocr3test.CCIPProvider(logger.Nop()), nil
 }
 
 func (s staticRelayer) LatestHead(ctx context.Context) (types.Head, error) {

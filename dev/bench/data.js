@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755091732795,
+  "lastUpdate": 1755099082071,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22890,6 +22890,48 @@ window.BENCHMARK_DATA = {
             "value": 26601,
             "unit": "ns/op",
             "extra": "45158 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a1a613c0f2a8bb59bb63011537785fcd4a610eda",
+          "message": "CCIP - implement CCIPProvider and ChainAccessor protobuf type conversion (#1450)\n\n* CCIP - add initial LOOPP type conversion for CCIPProvider and ChainAccessor\n\n* rerun make generate\n\n* some type naming updates\n\n* address feedback\n\n* Update legacy function interface to GetAllConfigsLegacy\n\n* Reuse existing chainlink-protos CRE map values instead of creating a new message type\n\n* implement static relayer test support for CCIPProvider and ChainAccessor\n\n* use google.protobuf.Empty instead of empty messages\n\n* export interfaces instead of type impls\n\n* remove GetRMNCurseInfo from ChainAccessor interface",
+          "timestamp": "2025-08-13T08:30:02-07:00",
+          "tree_id": "84a49aebc4e6c2c2b883d4fb9f613e29811d52a0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a1a613c0f2a8bb59bb63011537785fcd4a610eda"
+        },
+        "date": 1755099080869,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.1,
+            "unit": "ns/op",
+            "extra": "3356095 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.5,
+            "unit": "ns/op",
+            "extra": "2832339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26622,
+            "unit": "ns/op",
+            "extra": "45114 times\n4 procs"
           }
         ]
       }

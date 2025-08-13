@@ -1,6 +1,6 @@
 package ccipocr3
 
-// ChainConfigSnapshot is a legacy type used in chain accessor's GetAllConfigLegacySnapshot() function. This will
+// ChainConfigSnapshot is a legacy type used in chain accessor's GetAllConfigsLegacy() function. This will
 // eventually be replaced by a more explicit approach using an interface returned by a future GetAllConfig() function.
 type ChainConfigSnapshot struct {
 	Offramp   OfframpConfig
@@ -106,7 +106,7 @@ type OffRampDynamicChainConfig struct {
 	MessageInterceptor                      []byte `json:"messageInterceptor"`
 }
 
-// See DynamicChainConfig in OnRamp.sol
+// OnRampDynamicConfig - See DynamicChainConfig in OnRamp.sol
 type OnRampDynamicConfig struct {
 	FeeQuoter              []byte `json:"feeQuoter"`
 	ReentrancyGuardEntered bool   `json:"reentrancyGuardEntered"`
@@ -115,7 +115,7 @@ type OnRampDynamicConfig struct {
 	AllowListAdmin         []byte `json:"allowListAdmin"`
 }
 
-// We're wrapping the OnRampDynamicConfig this way to map to on-chain return type which is a named struct
+// GetOnRampDynamicConfigResponse wraps the OnRampDynamicConfig this way to map to on-chain return type which is a named struct
 // https://github.com/smartcontractkit/chainlink/blob/12af1de88238e0e918177d6b5622070417f48adf/contracts/src/v0.8/ccip/onRamp/OnRamp.sol#L328
 //
 //nolint:lll
@@ -123,7 +123,7 @@ type GetOnRampDynamicConfigResponse struct {
 	DynamicConfig OnRampDynamicConfig `json:"dynamicConfig"`
 }
 
-// See DestChainConfig in OnRamp.sol
+// OnRampDestChainConfig - See DestChainConfig in OnRamp.sol
 type OnRampDestChainConfig struct {
 	SequenceNumber   uint64 `json:"sequenceNumber"`
 	AllowListEnabled bool   `json:"allowListEnabled"`
@@ -145,7 +145,7 @@ type Config struct {
 	FSign                       uint64   `json:"fSign"` // previously: MinSigners
 }
 
-// versionedConfig is used to parse the response from the RMNRemote contract's getVersionedConfig method.
+// VersionedConfig is used to parse the response from the RMNRemote contract's getVersionedConfig method.
 // See: https://github.com/smartcontractkit/ccip/blob/ccip-develop/contracts/src/v0.8/ccip/rmn/RMNRemote.sol#L167-L169
 type VersionedConfig struct {
 	Version uint32 `json:"version"`

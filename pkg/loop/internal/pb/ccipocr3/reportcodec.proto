@@ -11,7 +11,7 @@ import "models.proto";
 // For example an EVM implementation of CommitPluginCodec would use ABI encoding.
 service CommitPluginCodec {
   rpc Encode(EncodeCommitPluginReportInput) returns (EncodeCommitPluginReportOutput) {}
-  rpc Decode(DecodeCommitPluginReportInput) returns (EncodeCommitPluginReportOutput) {}
+  rpc Decode(DecodeCommitPluginReportInput) returns (DecodeCommitPluginReportOutput) {}
 }
 
 message EncodeCommitPluginReportInput {

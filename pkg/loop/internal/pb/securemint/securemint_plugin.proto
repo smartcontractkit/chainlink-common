@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/securemint;securemintpb";
+
+package loop.internal.pb.securemint;
+
+import "google/protobuf/empty.proto";
+
+// SecureMintFactoryGenerator is a gRPC service that generates a SecureMint factory
+// It is a gRPC service adapter for the SecureMint plugin factory
+service SecureMintFactoryGenerator {
+    rpc NewSecureMintFactory(NewSecureMintFactoryRequest) returns (NewSecureMintFactoryResponse);
+}
+
+// NewSecureMintFactoryRequest is a gRPC adapter to the factory configuration
+message NewSecureMintFactoryRequest {
+    uint32 provider_service_id = 1;
+    SecureMintConfig config = 2;
+}
+
+// NewSecureMintFactoryResponse is a reference to the factory generator service
+message NewSecureMintFactoryResponse {
+    uint32 securemint_factory_service_id = 1;
+}
+
+// SecureMintConfig holds configuration for the SecureMint plugin
+message SecureMintConfig {
+    uint32 max_chains = 1; // Maximum number of chains to track
+} 

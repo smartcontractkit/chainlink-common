@@ -88,9 +88,8 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	mockJWT := mocks.NewJWTGenerator(t)
 	// Since we're making a real call, expect JWT creation
 	mockJWT.EXPECT().CreateJWTForRequest(&pb.DownloadArtifactRequest{
-		Id:          "test",
-		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
-		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
+		Id:   "test",
+		Type: pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 	}).Return("test.jwt.token", nil).Once()
 
 	lggr := logger.Test(t)
@@ -113,9 +112,8 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	resp, err := wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
-		Id:          "test",
-		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
-		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
+		Id:   "test",
+		Type: pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 	})
 	require.NoError(t, err, "DownloadArtifact should succeed over TLS")
 	assert.Equal(t, "pre-signed-url", resp.Url)
@@ -139,9 +137,8 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	mockJWT := mocks.NewJWTGenerator(t)
 	// Since we're making a real call, expect JWT creation
 	mockJWT.EXPECT().CreateJWTForRequest(&pb.DownloadArtifactRequest{
-		Id:          "test",
-		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
-		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
+		Id:   "test",
+		Type: pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 	}).Return("test.jwt.token", nil).Once()
 
 	lggr := logger.Test(t)
@@ -162,9 +159,8 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err = wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
-		Id:          "test",
-		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
-		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
+		Id:   "test",
+		Type: pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 	})
 	require.NoError(t, err, "DownloadArtifact should succeed over insecure connection")
 }
@@ -182,9 +178,8 @@ func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err = wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
-		Id:          "test",
-		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
-		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
+		Id:   "test",
+		Type: pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 	})
 
 	require.Error(t, err, "Expected error when dialing an invalid address")
@@ -229,9 +224,8 @@ func TestWorkflowClient_DialUnreachable(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err = wc.DownloadArtifact(ctx, &pb.DownloadArtifactRequest{
-		Id:          "test",
-		Type:        pb.ArtifactType_ARTIFACT_TYPE_BINARY,
-		Environment: pb.EnvironmentName_PRODUCTION_TESTNET,
+		Id:   "test",
+		Type: pb.ArtifactType_ARTIFACT_TYPE_BINARY,
 	})
 
 	require.Error(t, err, "Expected dialing an unreachable address to fail")

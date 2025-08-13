@@ -139,8 +139,12 @@ func (c *basicCapability) Execute(ctx context.Context, request capabilities.Capa
 	case "Action":
 		input := &actionandtrigger.Input{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], error) {
-			return c.BasicCapability.Action(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*actionandtrigger.Output, capabilities.ResponseMetadata, error) {
+			output, err := c.BasicCapability.Action(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Action(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

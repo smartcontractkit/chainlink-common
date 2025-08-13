@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755083681359,
+  "lastUpdate": 1755091732795,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22848,6 +22848,48 @@ window.BENCHMARK_DATA = {
             "value": 26895,
             "unit": "ns/op",
             "extra": "44929 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bcb59fd89693904b186d783c45b4e324138bd9ec",
+          "message": "DF-21518 Remove seq nr validation in secure mint aggregator  (#1470)\n\n* Remove seq nr validation in aggregator (this is done in the consensus capability itself) + add TODO\n\n* Cleanup\n\n* More logging\n\n* Revert too much logging\n\n* Update test\n\n* Revert more logging\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-08-13T08:27:38-05:00",
+          "tree_id": "fafff8d1830eb61c92a37485ce34019076985c33",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bcb59fd89693904b186d783c45b4e324138bd9ec"
+        },
+        "date": 1755091731016,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.5,
+            "unit": "ns/op",
+            "extra": "3392343 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.4,
+            "unit": "ns/op",
+            "extra": "3002348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26601,
+            "unit": "ns/op",
+            "extra": "45158 times\n4 procs"
           }
         ]
       }

@@ -7,21 +7,29 @@ import (
 	"fmt"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+	"google.golang.org/protobuf/proto"
 )
 
 // CalculateRequestDigest creates a SHA256 digest of the request for integrity verification
 // This function is shared between client (JWT generation) and server (JWT validation)
 func CalculateRequestDigest(req any) string {
-	// Create canonical string representation
-	var canonical string
-	if s, ok := req.(fmt.Stringer); ok {
-		canonical = s.String()
+	var data []byte
+	if m, ok := req.(proto.Message); ok {
+		// Use protobuf canonical serialization
+		serialized, err := proto.Marshal(m)
+		if err == nil {
+			data = serialized
+		} else {
+			// fallback to string representation if marshal fails
+			data = []byte(fmt.Sprintf("%v", req))
+		}
+	} else if s, ok := req.(fmt.Stringer); ok {
+		data = []byte(s.String())
 	} else {
-		canonical = fmt.Sprintf("%v", req)
+		data = []byte(fmt.Sprintf("%v", req))
 	}
 
-	// Hash and encode as hex
-	hash := sha256.Sum256([]byte(canonical))
+	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
 

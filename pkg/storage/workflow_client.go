@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
-	"io"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,13 +14,10 @@ import (
 	pb "github.com/smartcontractkit/chainlink-protos/storage-service/go"
 )
 
-// WorkflowClient is a gRPC client for the node service to be used by workflow node.
+// WorkflowClient is a gRPC client for the storage service (node) to be used by workflow node.
 type WorkflowClient interface {
 	// DownloadArtifact downloads an artifact from the storage service
-	DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error)
-
-	// DownloadArtifactStream streams artifact chunks to a callback as they are received
-	DownloadArtifactStream(ctx context.Context, req *pb.DownloadArtifactRequest, onChunk func(*pb.DownloadArtifactChunk) error) error
+	DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (*pb.DownloadArtifactResponse, error)
 
 	// Close closes the gRPC connection
 	Close() error
@@ -43,7 +38,7 @@ type workflowClient struct {
 	jwtGenerator nodeauth.JWTGenerator
 }
 
-func (wc *workflowClient) downloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error) {
+func (wc *workflowClient) downloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (*pb.DownloadArtifactResponse, error) {
 	if wc.jwtGenerator != nil {
 		var err error
 		ctx, err = wc.injectToken(ctx, req)
@@ -54,40 +49,12 @@ func (wc *workflowClient) downloadArtifact(ctx context.Context, req *pb.Download
 	return wc.client.DownloadArtifact(ctx, req)
 }
 
-// DownloadArtifact downloads an artifact from the storage service and returns the raw stream
-func (wc *workflowClient) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error) {
-	wc.logger.Infow("DownloadArtifact RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
+// DownloadArtifact returns pre-signed URL for downloading artifacts
+func (wc *workflowClient) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (*pb.DownloadArtifactResponse, error) {
+	wc.logger.Infow("DownloadArtifact RPC called", "id", req.Id, "type", req.Type.String())
 	return wc.downloadArtifact(ctx, req)
 }
 
-// DownloadArtifactStream streams artifact chunks to a callback as they are received
-func (wc *workflowClient) DownloadArtifactStream(ctx context.Context, req *pb.DownloadArtifactRequest, onChunk func(*pb.DownloadArtifactChunk) error) error {
-	wc.logger.Infow("DownloadArtifactStream RPC called", "id", req.Id, "type", req.Type.String(), "environment", req.Environment.String())
-
-	stream, err := wc.downloadArtifact(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("Failed to initiate artifact download stream", "id", req.Id, "error", err)
-		return err
-	}
-
-	for {
-		chunk, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			wc.logger.Errorw("Error while receiving artifact chunk", "id", req.Id, "error", err)
-			return err
-		}
-		if err := onChunk(chunk); err != nil {
-			wc.logger.Errorw("Error in chunk callback", "id", req.Id, "error", err)
-			return err
-		}
-	}
-
-	wc.logger.Infow("Successfully streamed artifact", "id", req.Id)
-	return nil
-}
 func (wc *workflowClient) Close() error {
 	err := wc.conn.Close()
 	if err != nil {

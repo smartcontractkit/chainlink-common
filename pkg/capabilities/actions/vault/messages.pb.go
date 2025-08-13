@@ -1866,6 +1866,148 @@ func (x *StoredMetadata) GetSecretIdentifiers() []*SecretIdentifier {
 	return nil
 }
 
+type ReportingPluginConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Plugin-specific configuration
+	BatchSize                         int32 `protobuf:"varint,1,opt,name=BatchSize,proto3" json:"BatchSize,omitempty"`
+	MaxSecretsPerOwner                int32 `protobuf:"varint,2,opt,name=MaxSecretsPerOwner,proto3" json:"MaxSecretsPerOwner,omitempty"`
+	MaxCiphertextLengthBytes          int32 `protobuf:"varint,3,opt,name=MaxCiphertextLengthBytes,proto3" json:"MaxCiphertextLengthBytes,omitempty"`
+	MaxIdentifierKeyLengthBytes       int32 `protobuf:"varint,4,opt,name=MaxIdentifierKeyLengthBytes,proto3" json:"MaxIdentifierKeyLengthBytes,omitempty"`
+	MaxIdentifierOwnerLengthBytes     int32 `protobuf:"varint,5,opt,name=MaxIdentifierOwnerLengthBytes,proto3" json:"MaxIdentifierOwnerLengthBytes,omitempty"`
+	MaxIdentifierNamespaceLengthBytes int32 `protobuf:"varint,6,opt,name=MaxIdentifierNamespaceLengthBytes,proto3" json:"MaxIdentifierNamespaceLengthBytes,omitempty"`
+	// OCR 3.1 ReportInfo configuration
+	LimitsMaxQueryLength                          int32 `protobuf:"varint,7,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
+	LimitsMaxObservationLength                    int32 `protobuf:"varint,8,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
+	LimitsMaxReportsPlusPrecursorLength           int32 `protobuf:"varint,9,opt,name=LimitsMaxReportsPlusPrecursorLength,proto3" json:"LimitsMaxReportsPlusPrecursorLength,omitempty"`
+	LimitsMaxReportLength                         int32 `protobuf:"varint,10,opt,name=LimitsMaxReportLength,proto3" json:"LimitsMaxReportLength,omitempty"`
+	LimitsMaxReportCount                          int32 `protobuf:"varint,11,opt,name=LimitsMaxReportCount,proto3" json:"LimitsMaxReportCount,omitempty"`
+	LimitsMaxKeyValueModifiedKeysPlusValuesLength int32 `protobuf:"varint,12,opt,name=LimitsMaxKeyValueModifiedKeysPlusValuesLength,proto3" json:"LimitsMaxKeyValueModifiedKeysPlusValuesLength,omitempty"`
+	LimitsMaxBlobPayloadLength                    int32 `protobuf:"varint,13,opt,name=LimitsMaxBlobPayloadLength,proto3" json:"LimitsMaxBlobPayloadLength,omitempty"`
+	unknownFields                                 protoimpl.UnknownFields
+	sizeCache                                     protoimpl.SizeCache
+}
+
+func (x *ReportingPluginConfig) Reset() {
+	*x = ReportingPluginConfig{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportingPluginConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportingPluginConfig) ProtoMessage() {}
+
+func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportingPluginConfig.ProtoReflect.Descriptor instead.
+func (*ReportingPluginConfig) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ReportingPluginConfig) GetBatchSize() int32 {
+	if x != nil {
+		return x.BatchSize
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxSecretsPerOwner() int32 {
+	if x != nil {
+		return x.MaxSecretsPerOwner
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxCiphertextLengthBytes() int32 {
+	if x != nil {
+		return x.MaxCiphertextLengthBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxIdentifierKeyLengthBytes() int32 {
+	if x != nil {
+		return x.MaxIdentifierKeyLengthBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxIdentifierOwnerLengthBytes() int32 {
+	if x != nil {
+		return x.MaxIdentifierOwnerLengthBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxIdentifierNamespaceLengthBytes() int32 {
+	if x != nil {
+		return x.MaxIdentifierNamespaceLengthBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxQueryLength() int32 {
+	if x != nil {
+		return x.LimitsMaxQueryLength
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxObservationLength() int32 {
+	if x != nil {
+		return x.LimitsMaxObservationLength
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxReportsPlusPrecursorLength() int32 {
+	if x != nil {
+		return x.LimitsMaxReportsPlusPrecursorLength
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxReportLength() int32 {
+	if x != nil {
+		return x.LimitsMaxReportLength
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxReportCount() int32 {
+	if x != nil {
+		return x.LimitsMaxReportCount
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxKeyValueModifiedKeysPlusValuesLength() int32 {
+	if x != nil {
+		return x.LimitsMaxKeyValueModifiedKeysPlusValuesLength
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxBlobPayloadLength() int32 {
+	if x != nil {
+		return x.LimitsMaxBlobPayloadLength
+	}
+	return 0
+}
+
 var File_capabilities_actions_vault_messages_proto protoreflect.FileDescriptor
 
 const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
@@ -1980,7 +2122,22 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\fStoredSecret\x12)\n" +
 	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"X\n" +
 	"\x0eStoredMetadata\x12F\n" +
-	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers*\x84\x01\n" +
+	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"\xcd\x06\n" +
+	"\x15ReportingPluginConfig\x12\x1c\n" +
+	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
+	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +
+	"\x18MaxCiphertextLengthBytes\x18\x03 \x01(\x05R\x18MaxCiphertextLengthBytes\x12@\n" +
+	"\x1bMaxIdentifierKeyLengthBytes\x18\x04 \x01(\x05R\x1bMaxIdentifierKeyLengthBytes\x12D\n" +
+	"\x1dMaxIdentifierOwnerLengthBytes\x18\x05 \x01(\x05R\x1dMaxIdentifierOwnerLengthBytes\x12L\n" +
+	"!MaxIdentifierNamespaceLengthBytes\x18\x06 \x01(\x05R!MaxIdentifierNamespaceLengthBytes\x122\n" +
+	"\x14LimitsMaxQueryLength\x18\a \x01(\x05R\x14LimitsMaxQueryLength\x12>\n" +
+	"\x1aLimitsMaxObservationLength\x18\b \x01(\x05R\x1aLimitsMaxObservationLength\x12P\n" +
+	"#LimitsMaxReportsPlusPrecursorLength\x18\t \x01(\x05R#LimitsMaxReportsPlusPrecursorLength\x124\n" +
+	"\x15LimitsMaxReportLength\x18\n" +
+	" \x01(\x05R\x15LimitsMaxReportLength\x122\n" +
+	"\x14LimitsMaxReportCount\x18\v \x01(\x05R\x14LimitsMaxReportCount\x12d\n" +
+	"-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x18\f \x01(\x05R-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x12>\n" +
+	"\x1aLimitsMaxBlobPayloadLength\x18\r \x01(\x05R\x1aLimitsMaxBlobPayloadLength*\x84\x01\n" +
 	"\vRequestType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0f\n" +
 	"\vGET_SECRETS\x10\x01\x12\x12\n" +
@@ -2006,7 +2163,7 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(RequestType)(0),                      // 0: vault.RequestType
 	(ReportFormat)(0),                     // 1: vault.ReportFormat
@@ -2036,6 +2193,7 @@ var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(*ReportInfo)(nil),                    // 25: vault.ReportInfo
 	(*StoredSecret)(nil),                  // 26: vault.StoredSecret
 	(*StoredMetadata)(nil),                // 27: vault.StoredMetadata
+	(*ReportingPluginConfig)(nil),         // 28: vault.ReportingPluginConfig
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	2,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
@@ -2128,7 +2286,7 @@ func file_capabilities_actions_vault_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -179,6 +179,7 @@ type CallContractRequest struct {
 	Msg             *CallMsg
 	BlockNumber     *big.Int
 	ConfidenceLevel primitives.ConfidenceLevel
+	IsExternal      bool // if true, limits like response size limit may be applied
 }
 
 type CallContractReply struct {
@@ -188,6 +189,7 @@ type CallContractReply struct {
 type FilterLogsRequest struct {
 	FilterQuery     FilterQuery
 	ConfidenceLevel primitives.ConfidenceLevel
+	IsExternal      bool // if true, limits like response size limit may be applied
 }
 
 type FilterLogsReply struct {
@@ -197,6 +199,17 @@ type FilterLogsReply struct {
 type HeaderByNumberRequest struct {
 	Number          *big.Int
 	ConfidenceLevel primitives.ConfidenceLevel
+	IsExternal      bool // if true, limits like response size limit may be applied
+}
+
+type GetTransactionByHashRequest struct {
+	Hash       Hash
+	IsExternal bool // if true, limits like response size limit may be applied
+}
+
+type GeTransactionReceiptRequest struct {
+	Hash       Hash
+	IsExternal bool // if true, limits like response size limit may be applied
 }
 
 type HeaderByNumberReply struct {

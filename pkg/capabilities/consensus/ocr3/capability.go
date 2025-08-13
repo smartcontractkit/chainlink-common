@@ -90,7 +90,6 @@ func NewCapability(s *requests.Store[*ReportRequest], clock clockwork.Clock, req
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
-	o.eng.Debugf("Registering to workflow: %+v", request)
 	c, err := o.ValidateConfig(request.Config)
 	if err != nil {
 		return err
@@ -103,7 +102,6 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 		return err
 	}
 	o.aggregators[request.Metadata.WorkflowID] = agg
-	o.eng.Debugf("Registered aggregator for workflowID %s: %+v", request.Metadata.WorkflowID, agg)
 
 	encoder, err := o.encoderFactory(c.Encoder, c.EncoderConfig, o.eng)
 	if err != nil {
@@ -111,8 +109,6 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 	}
 	o.encoders[request.Metadata.WorkflowID] = encoder
 	o.registeredWorkflowsIDs[request.Metadata.WorkflowID] = true
-	o.eng.Debugf("Registered encoder for workflowID %s: %+v", request.Metadata.WorkflowID, encoder)
-
 	return nil
 }
 
@@ -126,7 +122,6 @@ func (o *capability) GetAggregator(workflowID string) (types.Aggregator, error) 
 }
 
 func (o *capability) GetEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
-	o.eng.Debugf("getting encoder for workflowID: %s, current encoders: %+v", workflowID, o.encoders)
 	enc, ok := o.encoders[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no encoder found for workflowID %s", workflowID)

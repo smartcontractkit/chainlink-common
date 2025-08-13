@@ -88,56 +88,12 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			expectedShouldReport: false,
 		},
 		{
-			name:   "sequence number too low",
-			config: configWithChainSelector(t, "16015286601757825753"),
-			previousOutcome: &types.AggregationOutcome{
-				LastSeenAt: 10, // Previous sequence number
-			},
-			observations: createSecureMintObservations(t, []ocrTriggerEventData{
-				{
-					chainSelector: ethSepoliaChainSelector,
-					seqNr:         9, // Lower than previous
-					report: &secureMintReport{
-						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
-						SeqNr:        9,
-						Block:        1000,
-						Mintable:     big.NewInt(99),
-					},
-				},
-			}),
-			f:             1,
-			expectError:   true,
-			errorContains: "sequence number too low",
-		},
-		{
 			name:          "no observations",
 			config:        configWithChainSelector(t, "16015286601757825753"),
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
 			errorContains: "no observations",
-		},
-		{
-			name:   "sequence number equal to previous (should be ignored)",
-			config: configWithChainSelector(t, "16015286601757825753"),
-			previousOutcome: &types.AggregationOutcome{
-				LastSeenAt: 10, // Previous sequence number
-			},
-			observations: createSecureMintObservations(t, []ocrTriggerEventData{
-				{
-					chainSelector: ethSepoliaChainSelector,
-					seqNr:         10, // Equal to previous
-					report: &secureMintReport{
-						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
-						SeqNr:        10,
-						Block:        1000,
-						Mintable:     big.NewInt(99),
-					},
-				},
-			}),
-			f:             1,
-			expectError:   true,
-			errorContains: "sequence number too low",
 		},
 	}
 

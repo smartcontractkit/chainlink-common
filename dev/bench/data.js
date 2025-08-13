@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755099082071,
+  "lastUpdate": 1755100204278,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22932,6 +22932,48 @@ window.BENCHMARK_DATA = {
             "value": 26622,
             "unit": "ns/op",
             "extra": "45114 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1652ea0f05009dbe15476b383cfe1b911d92b175",
+          "message": "PLEX-1656: expose billing to capabilities actions (#1468)\n\n* PLEX-1656: expose billing to capabilities actions\n\n* dead code\n\n* moving the type outside a utils file\n\n* avoiding panic",
+          "timestamp": "2025-08-13T17:48:23+02:00",
+          "tree_id": "5349fd3a520c30cdc1b2cedcbd176bc42952683d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1652ea0f05009dbe15476b383cfe1b911d92b175"
+        },
+        "date": 1755100202515,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3248259 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.8,
+            "unit": "ns/op",
+            "extra": "2700697 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26618,
+            "unit": "ns/op",
+            "extra": "44947 times\n4 procs"
           }
         ]
       }

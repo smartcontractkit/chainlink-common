@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -229,6 +230,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		if len(cfg.AuthHeaders) > 0 {
 			headerProvider := NewStaticAuthHeaderProvider(cfg.AuthHeaders)
 			chipIngressOpts = append(chipIngressOpts, chipingress.WithTokenAuth(headerProvider))
+		}
+		if !cfg.ChipIngressIPv6Enabled {
+			// Force the use of IPv4 addresses for the chip ingress connection
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithForceIPV4())
 		}
 
 		chipIngressClient, err := chipingress.NewClient(

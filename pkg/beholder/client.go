@@ -231,7 +231,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			headerProvider := NewStaticAuthHeaderProvider(cfg.AuthHeaders)
 			chipIngressOpts = append(chipIngressOpts, chipingress.WithTokenAuth(headerProvider))
 		}
-		if !cfg.ChipIngressIPv6Enabled {
+		if cfg.ChipIngressForceIPV4 {
 			// Force the use of IPv4 addresses for the chip ingress connection
 			chipIngressOpts = append(chipIngressOpts, chipingress.WithForceIPV4())
 		}

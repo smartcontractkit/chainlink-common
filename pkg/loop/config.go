@@ -64,6 +64,7 @@ const (
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressForceIPV4          = "CL_CHIP_INGRESS_FORCE_IPV4"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -119,6 +120,7 @@ type EnvConfig struct {
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
+	ChipIngressForceIPV4          bool
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -187,6 +189,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
+	add(envChipIngressForceIPV4, strconv.FormatBool(e.ChipIngressForceIPV4))
 
 	return
 }
@@ -349,6 +352,10 @@ func (e *EnvConfig) parse() error {
 		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressInsecureConnection, err)
+		}
+		e.ChipIngressForceIPV4, err = getBool(envChipIngressForceIPV4)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressForceIPV4, err)
 		}
 	}
 

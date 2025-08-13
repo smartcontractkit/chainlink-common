@@ -38,7 +38,7 @@ type Config struct {
 	ChipIngressEmitterEnabled      bool
 	ChipIngressEmitterGRPCEndpoint string
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
-	ChipIngressIPv6Enabled         bool
+	ChipIngressForceIPV4           bool // Forces IPv4 connections for Chip Ingress Emitter
 
 	// OTel Log
 	LogExportTimeout      time.Duration

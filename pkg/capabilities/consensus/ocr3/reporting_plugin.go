@@ -392,7 +392,6 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 
 		// Note: no need to check the observation count here,
 		// we've checked this above when we checked the observations count.
-		// TODO(gg): somehow an empty encoder is used here
 		var encCfg *encoderConfig
 		for sha, count := range shaToCount {
 			if count >= 2*r.config.F+1 {
@@ -513,7 +512,6 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 			Id:           id,
 			ShouldReport: outcome.ShouldReport,
 		}
-		lggr.Debugf("info is: %+v", info)
 
 		var rawReport []byte
 		if info.ShouldReport {
@@ -547,8 +545,6 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 					}
 				}
 			}
-			lggr.Debugf("newOutcome is: %+v", newOutcome)
-			lggr.Debugf("encoder is: %+v", encoder)
 
 			if encoder == nil {
 				encoder, err = r.r.GetEncoderByWorkflowID(id.WorkflowId)
@@ -557,7 +553,6 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 					continue
 				}
 			}
-			lggr.Debugf("using encoder for workflow: %+v", encoder)
 
 			mv, err := values.FromMapValueProto(newOutcome.EncodableOutcome)
 			if err != nil {
@@ -565,7 +560,6 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 				continue
 			}
 
-			lggr.Debugf("encoding report: %+v", mv)
 			rawReport, err = encoder.Encode(ctx, *mv)
 			if err != nil {
 				if cerr := ctx.Err(); cerr != nil {
@@ -592,7 +586,7 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 		})
 	}
 
-	r.lggr.Debugw("Reports complete", "len", len(reports), "reports", reports)
+	r.lggr.Debugw("Reports complete", "len", len(reports))
 	return reports, nil
 }
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755017618981,
+  "lastUpdate": 1755083681359,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -22806,6 +22806,48 @@ window.BENCHMARK_DATA = {
             "value": 28155,
             "unit": "ns/op",
             "extra": "42585 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2f17e8baed5c7383c83d7a1794ecd39cd12c81d8",
+          "message": "feat(storage-service): remove environment type selection (#1473)",
+          "timestamp": "2025-08-13T15:12:19+04:00",
+          "tree_id": "10fb93e718a73cd028b3a08bbffe2b02824b680f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2f17e8baed5c7383c83d7a1794ecd39cd12c81d8"
+        },
+        "date": 1755083680185,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3369435 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.4,
+            "unit": "ns/op",
+            "extra": "2905551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26895,
+            "unit": "ns/op",
+            "extra": "44929 times\n4 procs"
           }
         ]
       }

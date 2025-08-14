@@ -101,8 +101,6 @@ func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []b
 	return nil, fmt.Errorf("account not found: %s", account)
 }
 
-var _ Keystore = &UnimplementedKeystore{}
-
 type UnimplementedKeystore struct{}
 
 func (u *UnimplementedKeystore) Accounts(ctx context.Context) (accounts []string, err error) {
@@ -111,4 +109,8 @@ func (u *UnimplementedKeystore) Accounts(ctx context.Context) (accounts []string
 
 func (u *UnimplementedKeystore) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sign not implemented")
+}
+
+func (u *UnimplementedKeystore) Decrypt(ctx context.Context, account string, ctxt []byte) (msg []byte, err error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Decrypt not implemented")
 }

@@ -101,6 +101,8 @@ func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []b
 	return nil, fmt.Errorf("account not found: %s", account)
 }
 
+var _ Keystore = &UnimplementedKeystore{}
+
 type UnimplementedKeystore struct{}
 
 func (u *UnimplementedKeystore) Accounts(ctx context.Context) (accounts []string, err error) {

@@ -10,6 +10,9 @@ import (
 	"io"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -96,4 +99,16 @@ func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []b
 		return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
 	}
 	return nil, fmt.Errorf("account not found: %s", account)
+}
+
+var _ Keystore = &UnimplementedKeystore{}
+
+type UnimplementedKeystore struct{}
+
+func (u *UnimplementedKeystore) Accounts(ctx context.Context) (accounts []string, err error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Accounts not implemented")
+}
+
+func (u *UnimplementedKeystore) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sign not implemented")
 }

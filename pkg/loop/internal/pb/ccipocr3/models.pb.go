@@ -28,7 +28,7 @@ type RampMessageHeader struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// MessageID is a unique identifier for the message, it should be unique across all chains.
 	// It is generated on the chain that the CCIP send is requested (i.e. the source chain of a message).
-	MessageId [][]byte `protobuf:"bytes,1,rep,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	MessageId []byte `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
 	// SourceChainSelector is the chain selector of the chain that the message originated from.
 	SourceChainSelector uint64 `protobuf:"varint,2,opt,name=source_chain_selector,json=sourceChainSelector,proto3" json:"source_chain_selector,omitempty"`
 	// DestChainSelector is the chain selector of the chain that the message is destined for.
@@ -39,9 +39,11 @@ type RampMessageHeader struct {
 	// Nonce is the nonce for this lane for this sender, not unique across senders/lanes
 	Nonce uint64 `protobuf:"varint,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// MsgHash is the hash of all the message fields.
-	MessageHash [][]byte `protobuf:"bytes,6,rep,name=message_hash,json=messageHash,proto3" json:"message_hash,omitempty"`
+	MessageHash []byte `protobuf:"bytes,6,opt,name=message_hash,json=messageHash,proto3" json:"message_hash,omitempty"`
 	// OnRamp is the address of the onramp that sent the message.
-	OnRamp        [][]byte `protobuf:"bytes,7,rep,name=on_ramp,json=onRamp,proto3" json:"on_ramp,omitempty"`
+	OnRamp []byte `protobuf:"bytes,7,opt,name=on_ramp,json=onRamp,proto3" json:"on_ramp,omitempty"`
+	// TxHash is the hash of the transaction that emitted this message.
+	TxHash        string `protobuf:"bytes,8,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -76,7 +78,7 @@ func (*RampMessageHeader) Descriptor() ([]byte, []int) {
 	return file_models_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RampMessageHeader) GetMessageId() [][]byte {
+func (x *RampMessageHeader) GetMessageId() []byte {
 	if x != nil {
 		return x.MessageId
 	}
@@ -111,18 +113,25 @@ func (x *RampMessageHeader) GetNonce() uint64 {
 	return 0
 }
 
-func (x *RampMessageHeader) GetMessageHash() [][]byte {
+func (x *RampMessageHeader) GetMessageHash() []byte {
 	if x != nil {
 		return x.MessageHash
 	}
 	return nil
 }
 
-func (x *RampMessageHeader) GetOnRamp() [][]byte {
+func (x *RampMessageHeader) GetOnRamp() []byte {
 	if x != nil {
 		return x.OnRamp
 	}
 	return nil
+}
+
+func (x *RampMessageHeader) GetTxHash() string {
+	if x != nil {
+		return x.TxHash
+	}
+	return ""
 }
 
 // RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
@@ -131,14 +140,14 @@ type RampTokenAmount struct {
 	// SourcePoolAddress is the source pool address, abi encoded. This value is trusted
 	// as it was obtained through the onRamp. It can be relied upon by the destination
 	// pool to validate the source pool.
-	SourcePoolAddress [][]byte `protobuf:"bytes,1,rep,name=source_pool_address,json=sourcePoolAddress,proto3" json:"source_pool_address,omitempty"`
+	SourcePoolAddress []byte `protobuf:"bytes,1,opt,name=source_pool_address,json=sourcePoolAddress,proto3" json:"source_pool_address,omitempty"`
 	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains
 	// This value is UNTRUSTED as any pool owner can return whatever value they want.
-	DestTokenAddress [][]byte `protobuf:"bytes,2,rep,name=dest_token_address,json=destTokenAddress,proto3" json:"dest_token_address,omitempty"`
+	DestTokenAddress []byte `protobuf:"bytes,2,opt,name=dest_token_address,json=destTokenAddress,proto3" json:"dest_token_address,omitempty"`
 	// ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
 	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead
 	// has to be set for the specific token.
-	ExtraData [][]byte `protobuf:"bytes,3,rep,name=extra_data,json=extraData,proto3" json:"extra_data,omitempty"`
+	ExtraData []byte `protobuf:"bytes,3,opt,name=extra_data,json=extraData,proto3" json:"extra_data,omitempty"`
 	// Amount is the amount of tokens to be transferred.
 	Amount        *BigInt `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -175,21 +184,21 @@ func (*RampTokenAmount) Descriptor() ([]byte, []int) {
 	return file_models_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RampTokenAmount) GetSourcePoolAddress() [][]byte {
+func (x *RampTokenAmount) GetSourcePoolAddress() []byte {
 	if x != nil {
 		return x.SourcePoolAddress
 	}
 	return nil
 }
 
-func (x *RampTokenAmount) GetDestTokenAddress() [][]byte {
+func (x *RampTokenAmount) GetDestTokenAddress() []byte {
 	if x != nil {
 		return x.DestTokenAddress
 	}
 	return nil
 }
 
-func (x *RampTokenAmount) GetExtraData() [][]byte {
+func (x *RampTokenAmount) GetExtraData() []byte {
 	if x != nil {
 		return x.ExtraData
 	}
@@ -211,21 +220,23 @@ type Message struct {
 	Header *RampMessageHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
 	// Sender address on the source chain.
 	// This is an EVM address, so len(Sender) == 20.
-	Sender [][]byte `protobuf:"bytes,2,rep,name=sender,proto3" json:"sender,omitempty"`
+	Sender []byte `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
 	// Data is the arbitrary data payload supplied by the message sender.
-	Data [][]byte `protobuf:"bytes,3,rep,name=data,proto3" json:"data,omitempty"`
+	Data []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	// Receiver is the receiver address on the destination chain.
 	// This is encoded in the destination chain family specific encoding.
 	// i.e if the destination is EVM, this is abi.encode(receiver).
-	Receiver [][]byte `protobuf:"bytes,4,rep,name=receiver,proto3" json:"receiver,omitempty"`
+	Receiver []byte `protobuf:"bytes,4,opt,name=receiver,proto3" json:"receiver,omitempty"`
 	// ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains
-	ExtraArgs [][]byte `protobuf:"bytes,5,rep,name=extra_args,json=extraArgs,proto3" json:"extra_args,omitempty"`
+	ExtraArgs []byte `protobuf:"bytes,5,opt,name=extra_args,json=extraArgs,proto3" json:"extra_args,omitempty"`
 	// FeeToken is the fee token address. len(FeeToken) == 20 (i.e, is not abi-encoded)
-	FeeToken [][]byte `protobuf:"bytes,6,rep,name=fee_token,json=feeToken,proto3" json:"fee_token,omitempty"`
+	FeeToken []byte `protobuf:"bytes,6,opt,name=fee_token,json=feeToken,proto3" json:"fee_token,omitempty"`
 	// FeeTokenAmount is the amount of fee tokens paid.
 	FeeTokenAmount *BigInt `protobuf:"bytes,7,opt,name=fee_token_amount,json=feeTokenAmount,proto3" json:"fee_token_amount,omitempty"`
+	// FeeValueJuels is the fee amount in Juels
+	FeeValueJuels *BigInt `protobuf:"bytes,8,opt,name=fee_value_juels,json=feeValueJuels,proto3" json:"fee_value_juels,omitempty"`
 	// TokenAmounts is the array of tokens and amounts to transfer.
-	TokenAmounts  []*RampTokenAmount `protobuf:"bytes,8,rep,name=token_amounts,json=tokenAmounts,proto3" json:"token_amounts,omitempty"`
+	TokenAmounts  []*RampTokenAmount `protobuf:"bytes,9,rep,name=token_amounts,json=tokenAmounts,proto3" json:"token_amounts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -267,35 +278,35 @@ func (x *Message) GetHeader() *RampMessageHeader {
 	return nil
 }
 
-func (x *Message) GetSender() [][]byte {
+func (x *Message) GetSender() []byte {
 	if x != nil {
 		return x.Sender
 	}
 	return nil
 }
 
-func (x *Message) GetData() [][]byte {
+func (x *Message) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-func (x *Message) GetReceiver() [][]byte {
+func (x *Message) GetReceiver() []byte {
 	if x != nil {
 		return x.Receiver
 	}
 	return nil
 }
 
-func (x *Message) GetExtraArgs() [][]byte {
+func (x *Message) GetExtraArgs() []byte {
 	if x != nil {
 		return x.ExtraArgs
 	}
 	return nil
 }
 
-func (x *Message) GetFeeToken() [][]byte {
+func (x *Message) GetFeeToken() []byte {
 	if x != nil {
 		return x.FeeToken
 	}
@@ -305,6 +316,13 @@ func (x *Message) GetFeeToken() [][]byte {
 func (x *Message) GetFeeTokenAmount() *BigInt {
 	if x != nil {
 		return x.FeeTokenAmount
+	}
+	return nil
+}
+
+func (x *Message) GetFeeValueJuels() *BigInt {
+	if x != nil {
+		return x.FeeValueJuels
 	}
 	return nil
 }
@@ -416,11 +434,13 @@ func (x *TokenAmount) GetAmount() *BigInt {
 
 // CommitPluginReport is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.CommitPluginReport].
 type CommitPluginReport struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PriceUpdates  *PriceUpdates          `protobuf:"bytes,1,opt,name=price_updates,json=priceUpdates,proto3" json:"price_updates,omitempty"`
-	MerkleRoots   []*MerkleRootChain     `protobuf:"bytes,2,rep,name=merkle_roots,json=merkleRoots,proto3" json:"merkle_roots,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	PriceUpdates         *PriceUpdates          `protobuf:"bytes,1,opt,name=price_updates,json=priceUpdates,proto3" json:"price_updates,omitempty"`
+	BlessedMerkleRoots   []*MerkleRootChain     `protobuf:"bytes,2,rep,name=blessed_merkle_roots,json=blessedMerkleRoots,proto3" json:"blessed_merkle_roots,omitempty"`
+	UnblessedMerkleRoots []*MerkleRootChain     `protobuf:"bytes,3,rep,name=unblessed_merkle_roots,json=unblessedMerkleRoots,proto3" json:"unblessed_merkle_roots,omitempty"`
+	RmnSignatures        []*RMNECDSASignature   `protobuf:"bytes,4,rep,name=rmn_signatures,json=rmnSignatures,proto3" json:"rmn_signatures,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CommitPluginReport) Reset() {
@@ -460,9 +480,23 @@ func (x *CommitPluginReport) GetPriceUpdates() *PriceUpdates {
 	return nil
 }
 
-func (x *CommitPluginReport) GetMerkleRoots() []*MerkleRootChain {
+func (x *CommitPluginReport) GetBlessedMerkleRoots() []*MerkleRootChain {
 	if x != nil {
-		return x.MerkleRoots
+		return x.BlessedMerkleRoots
+	}
+	return nil
+}
+
+func (x *CommitPluginReport) GetUnblessedMerkleRoots() []*MerkleRootChain {
+	if x != nil {
+		return x.UnblessedMerkleRoots
+	}
+	return nil
+}
+
+func (x *CommitPluginReport) GetRmnSignatures() []*RMNECDSASignature {
+	if x != nil {
+		return x.RmnSignatures
 	}
 	return nil
 }
@@ -579,6 +613,7 @@ type MerkleRootChain struct {
 	ChainSelector uint64                 `protobuf:"varint,1,opt,name=chain_selector,json=chainSelector,proto3" json:"chain_selector,omitempty"`
 	MerkleRoot    []byte                 `protobuf:"bytes,2,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
 	SeqNumRange   *SeqNumRange           `protobuf:"bytes,3,opt,name=seq_num_range,json=seqNumRange,proto3" json:"seq_num_range,omitempty"`
+	OnRampAddress []byte                 `protobuf:"bytes,4,opt,name=on_ramp_address,json=onRampAddress,proto3" json:"on_ramp_address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -630,6 +665,13 @@ func (x *MerkleRootChain) GetMerkleRoot() []byte {
 func (x *MerkleRootChain) GetSeqNumRange() *SeqNumRange {
 	if x != nil {
 		return x.SeqNumRange
+	}
+	return nil
+}
+
+func (x *MerkleRootChain) GetOnRampAddress() []byte {
+	if x != nil {
+		return x.OnRampAddress
 	}
 	return nil
 }
@@ -687,58 +729,306 @@ func (x *SeqNumRange) GetEnd() uint64 {
 	return 0
 }
 
+// RMNECDSASignature represents the signature provided by RMN on the RMNReport structure.
+type RMNECDSASignature struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	R             []byte                 `protobuf:"bytes,1,opt,name=r,proto3" json:"r,omitempty"` // 32 bytes
+	S             []byte                 `protobuf:"bytes,2,opt,name=s,proto3" json:"s,omitempty"` // 32 bytes
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RMNECDSASignature) Reset() {
+	*x = RMNECDSASignature{}
+	mi := &file_models_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RMNECDSASignature) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RMNECDSASignature) ProtoMessage() {}
+
+func (x *RMNECDSASignature) ProtoReflect() protoreflect.Message {
+	mi := &file_models_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RMNECDSASignature.ProtoReflect.Descriptor instead.
+func (*RMNECDSASignature) Descriptor() ([]byte, []int) {
+	return file_models_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RMNECDSASignature) GetR() []byte {
+	if x != nil {
+		return x.R
+	}
+	return nil
+}
+
+func (x *RMNECDSASignature) GetS() []byte {
+	if x != nil {
+		return x.S
+	}
+	return nil
+}
+
+// RMNReport is the payload that is signed by the RMN nodes, transmitted and verified onchain.
+type RMNReport struct {
+	state                       protoimpl.MessageState `protogen:"open.v1"`
+	ReportVersionDigest         []byte                 `protobuf:"bytes,1,opt,name=report_version_digest,json=reportVersionDigest,proto3" json:"report_version_digest,omitempty"`                             // Bytes32
+	DestChainId                 *BigInt                `protobuf:"bytes,2,opt,name=dest_chain_id,json=destChainId,proto3" json:"dest_chain_id,omitempty"`                                                     // BigInt
+	DestChainSelector           uint64                 `protobuf:"varint,3,opt,name=dest_chain_selector,json=destChainSelector,proto3" json:"dest_chain_selector,omitempty"`                                  // ChainSelector
+	RmnRemoteContractAddress    []byte                 `protobuf:"bytes,4,opt,name=rmn_remote_contract_address,json=rmnRemoteContractAddress,proto3" json:"rmn_remote_contract_address,omitempty"`            // UnknownAddress
+	OfframpAddress              []byte                 `protobuf:"bytes,5,opt,name=offramp_address,json=offrampAddress,proto3" json:"offramp_address,omitempty"`                                              // UnknownAddress
+	RmnHomeContractConfigDigest []byte                 `protobuf:"bytes,6,opt,name=rmn_home_contract_config_digest,json=rmnHomeContractConfigDigest,proto3" json:"rmn_home_contract_config_digest,omitempty"` // Bytes32
+	LaneUpdates                 []*RMNLaneUpdate       `protobuf:"bytes,7,rep,name=lane_updates,json=laneUpdates,proto3" json:"lane_updates,omitempty"`                                                       // []RMNLaneUpdate
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
+}
+
+func (x *RMNReport) Reset() {
+	*x = RMNReport{}
+	mi := &file_models_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RMNReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RMNReport) ProtoMessage() {}
+
+func (x *RMNReport) ProtoReflect() protoreflect.Message {
+	mi := &file_models_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RMNReport.ProtoReflect.Descriptor instead.
+func (*RMNReport) Descriptor() ([]byte, []int) {
+	return file_models_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RMNReport) GetReportVersionDigest() []byte {
+	if x != nil {
+		return x.ReportVersionDigest
+	}
+	return nil
+}
+
+func (x *RMNReport) GetDestChainId() *BigInt {
+	if x != nil {
+		return x.DestChainId
+	}
+	return nil
+}
+
+func (x *RMNReport) GetDestChainSelector() uint64 {
+	if x != nil {
+		return x.DestChainSelector
+	}
+	return 0
+}
+
+func (x *RMNReport) GetRmnRemoteContractAddress() []byte {
+	if x != nil {
+		return x.RmnRemoteContractAddress
+	}
+	return nil
+}
+
+func (x *RMNReport) GetOfframpAddress() []byte {
+	if x != nil {
+		return x.OfframpAddress
+	}
+	return nil
+}
+
+func (x *RMNReport) GetRmnHomeContractConfigDigest() []byte {
+	if x != nil {
+		return x.RmnHomeContractConfigDigest
+	}
+	return nil
+}
+
+func (x *RMNReport) GetLaneUpdates() []*RMNLaneUpdate {
+	if x != nil {
+		return x.LaneUpdates
+	}
+	return nil
+}
+
+// RMNLaneUpdate represents an interval that has been observed by an RMN node.
+type RMNLaneUpdate struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	SourceChainSelector uint64                 `protobuf:"varint,1,opt,name=source_chain_selector,json=sourceChainSelector,proto3" json:"source_chain_selector,omitempty"` // ChainSelector
+	OnRampAddress       []byte                 `protobuf:"bytes,2,opt,name=on_ramp_address,json=onRampAddress,proto3" json:"on_ramp_address,omitempty"`                    // UnknownAddress
+	MinSeqNr            uint64                 `protobuf:"varint,3,opt,name=min_seq_nr,json=minSeqNr,proto3" json:"min_seq_nr,omitempty"`                                  // SeqNum
+	MaxSeqNr            uint64                 `protobuf:"varint,4,opt,name=max_seq_nr,json=maxSeqNr,proto3" json:"max_seq_nr,omitempty"`                                  // SeqNum
+	MerkleRoot          []byte                 `protobuf:"bytes,5,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`                               // Bytes32
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *RMNLaneUpdate) Reset() {
+	*x = RMNLaneUpdate{}
+	mi := &file_models_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RMNLaneUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RMNLaneUpdate) ProtoMessage() {}
+
+func (x *RMNLaneUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_models_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RMNLaneUpdate.ProtoReflect.Descriptor instead.
+func (*RMNLaneUpdate) Descriptor() ([]byte, []int) {
+	return file_models_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RMNLaneUpdate) GetSourceChainSelector() uint64 {
+	if x != nil {
+		return x.SourceChainSelector
+	}
+	return 0
+}
+
+func (x *RMNLaneUpdate) GetOnRampAddress() []byte {
+	if x != nil {
+		return x.OnRampAddress
+	}
+	return nil
+}
+
+func (x *RMNLaneUpdate) GetMinSeqNr() uint64 {
+	if x != nil {
+		return x.MinSeqNr
+	}
+	return 0
+}
+
+func (x *RMNLaneUpdate) GetMaxSeqNr() uint64 {
+	if x != nil {
+		return x.MaxSeqNr
+	}
+	return 0
+}
+
+func (x *RMNLaneUpdate) GetMerkleRoot() []byte {
+	if x != nil {
+		return x.MerkleRoot
+	}
+	return nil
+}
+
 var File_models_proto protoreflect.FileDescriptor
 
 const file_models_proto_rawDesc = "" +
 	"\n" +
-	"\fmodels.proto\x12\x19loop.internal.pb.ccipocr3\"\x91\x02\n" +
+	"\fmodels.proto\x12\x19loop.internal.pb.ccipocr3\"\xaa\x02\n" +
 	"\x11RampMessageHeader\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x01 \x03(\fR\tmessageId\x122\n" +
+	"message_id\x18\x01 \x01(\fR\tmessageId\x122\n" +
 	"\x15source_chain_selector\x18\x02 \x01(\x04R\x13sourceChainSelector\x12.\n" +
 	"\x13dest_chain_selector\x18\x03 \x01(\x04R\x11destChainSelector\x12'\n" +
 	"\x0fsequence_number\x18\x04 \x01(\x04R\x0esequenceNumber\x12\x14\n" +
 	"\x05nonce\x18\x05 \x01(\x04R\x05nonce\x12!\n" +
-	"\fmessage_hash\x18\x06 \x03(\fR\vmessageHash\x12\x17\n" +
-	"\aon_ramp\x18\a \x03(\fR\x06onRamp\"\xc9\x01\n" +
+	"\fmessage_hash\x18\x06 \x01(\fR\vmessageHash\x12\x17\n" +
+	"\aon_ramp\x18\a \x01(\fR\x06onRamp\x12\x17\n" +
+	"\atx_hash\x18\b \x01(\tR\x06txHash\"\xc9\x01\n" +
 	"\x0fRampTokenAmount\x12.\n" +
-	"\x13source_pool_address\x18\x01 \x03(\fR\x11sourcePoolAddress\x12,\n" +
-	"\x12dest_token_address\x18\x02 \x03(\fR\x10destTokenAddress\x12\x1d\n" +
+	"\x13source_pool_address\x18\x01 \x01(\fR\x11sourcePoolAddress\x12,\n" +
+	"\x12dest_token_address\x18\x02 \x01(\fR\x10destTokenAddress\x12\x1d\n" +
 	"\n" +
-	"extra_data\x18\x03 \x03(\fR\textraData\x129\n" +
-	"\x06amount\x18\x04 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\"\xf1\x02\n" +
+	"extra_data\x18\x03 \x01(\fR\textraData\x129\n" +
+	"\x06amount\x18\x04 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\"\xbc\x03\n" +
 	"\aMessage\x12D\n" +
 	"\x06header\x18\x01 \x01(\v2,.loop.internal.pb.ccipocr3.RampMessageHeaderR\x06header\x12\x16\n" +
-	"\x06sender\x18\x02 \x03(\fR\x06sender\x12\x12\n" +
-	"\x04data\x18\x03 \x03(\fR\x04data\x12\x1a\n" +
-	"\breceiver\x18\x04 \x03(\fR\breceiver\x12\x1d\n" +
+	"\x06sender\x18\x02 \x01(\fR\x06sender\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x12\x1a\n" +
+	"\breceiver\x18\x04 \x01(\fR\breceiver\x12\x1d\n" +
 	"\n" +
-	"extra_args\x18\x05 \x03(\fR\textraArgs\x12\x1b\n" +
-	"\tfee_token\x18\x06 \x03(\fR\bfeeToken\x12K\n" +
-	"\x10fee_token_amount\x18\a \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x0efeeTokenAmount\x12O\n" +
-	"\rtoken_amounts\x18\b \x03(\v2*.loop.internal.pb.ccipocr3.RampTokenAmountR\ftokenAmounts\"\x1e\n" +
+	"extra_args\x18\x05 \x01(\fR\textraArgs\x12\x1b\n" +
+	"\tfee_token\x18\x06 \x01(\fR\bfeeToken\x12K\n" +
+	"\x10fee_token_amount\x18\a \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x0efeeTokenAmount\x12I\n" +
+	"\x0ffee_value_juels\x18\b \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\rfeeValueJuels\x12O\n" +
+	"\rtoken_amounts\x18\t \x03(\v2*.loop.internal.pb.ccipocr3.RampTokenAmountR\ftokenAmounts\"\x1e\n" +
 	"\x06BigInt\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\fR\x05value\"^\n" +
 	"\vTokenAmount\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
-	"\x06amount\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\"\xb1\x01\n" +
+	"\x06amount\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\"\xf7\x02\n" +
 	"\x12CommitPluginReport\x12L\n" +
-	"\rprice_updates\x18\x01 \x01(\v2'.loop.internal.pb.ccipocr3.PriceUpdatesR\fpriceUpdates\x12M\n" +
-	"\fmerkle_roots\x18\x02 \x03(\v2*.loop.internal.pb.ccipocr3.MerkleRootChainR\vmerkleRoots\"\xbc\x01\n" +
+	"\rprice_updates\x18\x01 \x01(\v2'.loop.internal.pb.ccipocr3.PriceUpdatesR\fpriceUpdates\x12\\\n" +
+	"\x14blessed_merkle_roots\x18\x02 \x03(\v2*.loop.internal.pb.ccipocr3.MerkleRootChainR\x12blessedMerkleRoots\x12`\n" +
+	"\x16unblessed_merkle_roots\x18\x03 \x03(\v2*.loop.internal.pb.ccipocr3.MerkleRootChainR\x14unblessedMerkleRoots\x12S\n" +
+	"\x0ermn_signatures\x18\x04 \x03(\v2,.loop.internal.pb.ccipocr3.RMNECDSASignatureR\rrmnSignatures\"\xbc\x01\n" +
 	"\fPriceUpdates\x12V\n" +
 	"\x13token_price_updates\x18\x01 \x03(\v2&.loop.internal.pb.ccipocr3.TokenAmountR\x11tokenPriceUpdates\x12T\n" +
 	"\x11gas_price_updates\x18\x02 \x03(\v2(.loop.internal.pb.ccipocr3.GasPriceChainR\x0fgasPriceUpdates\"o\n" +
 	"\rGasPriceChain\x12%\n" +
 	"\x0echain_selector\x18\x01 \x01(\x04R\rchainSelector\x127\n" +
-	"\x05price\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x05price\"\xa5\x01\n" +
+	"\x05price\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x05price\"\xcd\x01\n" +
 	"\x0fMerkleRootChain\x12%\n" +
 	"\x0echain_selector\x18\x01 \x01(\x04R\rchainSelector\x12\x1f\n" +
 	"\vmerkle_root\x18\x02 \x01(\fR\n" +
 	"merkleRoot\x12J\n" +
-	"\rseq_num_range\x18\x03 \x01(\v2&.loop.internal.pb.ccipocr3.SeqNumRangeR\vseqNumRange\"5\n" +
+	"\rseq_num_range\x18\x03 \x01(\v2&.loop.internal.pb.ccipocr3.SeqNumRangeR\vseqNumRange\x12&\n" +
+	"\x0fon_ramp_address\x18\x04 \x01(\fR\ronRampAddress\"5\n" +
 	"\vSeqNumRange\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\x04R\x05start\x12\x10\n" +
-	"\x03end\x18\x02 \x01(\x04R\x03endBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pbb\x06proto3"
+	"\x03end\x18\x02 \x01(\x04R\x03end\"/\n" +
+	"\x11RMNECDSASignature\x12\f\n" +
+	"\x01r\x18\x01 \x01(\fR\x01r\x12\f\n" +
+	"\x01s\x18\x02 \x01(\fR\x01s\"\xb1\x03\n" +
+	"\tRMNReport\x122\n" +
+	"\x15report_version_digest\x18\x01 \x01(\fR\x13reportVersionDigest\x12E\n" +
+	"\rdest_chain_id\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\vdestChainId\x12.\n" +
+	"\x13dest_chain_selector\x18\x03 \x01(\x04R\x11destChainSelector\x12=\n" +
+	"\x1brmn_remote_contract_address\x18\x04 \x01(\fR\x18rmnRemoteContractAddress\x12'\n" +
+	"\x0fofframp_address\x18\x05 \x01(\fR\x0eofframpAddress\x12D\n" +
+	"\x1frmn_home_contract_config_digest\x18\x06 \x01(\fR\x1brmnHomeContractConfigDigest\x12K\n" +
+	"\flane_updates\x18\a \x03(\v2(.loop.internal.pb.ccipocr3.RMNLaneUpdateR\vlaneUpdates\"\xc8\x01\n" +
+	"\rRMNLaneUpdate\x122\n" +
+	"\x15source_chain_selector\x18\x01 \x01(\x04R\x13sourceChainSelector\x12&\n" +
+	"\x0fon_ramp_address\x18\x02 \x01(\fR\ronRampAddress\x12\x1c\n" +
+	"\n" +
+	"min_seq_nr\x18\x03 \x01(\x04R\bminSeqNr\x12\x1c\n" +
+	"\n" +
+	"max_seq_nr\x18\x04 \x01(\x04R\bmaxSeqNr\x12\x1f\n" +
+	"\vmerkle_root\x18\x05 \x01(\fR\n" +
+	"merkleRootBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pbb\x06proto3"
 
 var (
 	file_models_proto_rawDescOnce sync.Once
@@ -752,7 +1042,7 @@ func file_models_proto_rawDescGZIP() []byte {
 	return file_models_proto_rawDescData
 }
 
-var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_models_proto_goTypes = []any{
 	(*RampMessageHeader)(nil),  // 0: loop.internal.pb.ccipocr3.RampMessageHeader
 	(*RampTokenAmount)(nil),    // 1: loop.internal.pb.ccipocr3.RampTokenAmount
@@ -764,24 +1054,32 @@ var file_models_proto_goTypes = []any{
 	(*GasPriceChain)(nil),      // 7: loop.internal.pb.ccipocr3.GasPriceChain
 	(*MerkleRootChain)(nil),    // 8: loop.internal.pb.ccipocr3.MerkleRootChain
 	(*SeqNumRange)(nil),        // 9: loop.internal.pb.ccipocr3.SeqNumRange
+	(*RMNECDSASignature)(nil),  // 10: loop.internal.pb.ccipocr3.RMNECDSASignature
+	(*RMNReport)(nil),          // 11: loop.internal.pb.ccipocr3.RMNReport
+	(*RMNLaneUpdate)(nil),      // 12: loop.internal.pb.ccipocr3.RMNLaneUpdate
 }
 var file_models_proto_depIdxs = []int32{
 	3,  // 0: loop.internal.pb.ccipocr3.RampTokenAmount.amount:type_name -> loop.internal.pb.ccipocr3.BigInt
 	0,  // 1: loop.internal.pb.ccipocr3.Message.header:type_name -> loop.internal.pb.ccipocr3.RampMessageHeader
 	3,  // 2: loop.internal.pb.ccipocr3.Message.fee_token_amount:type_name -> loop.internal.pb.ccipocr3.BigInt
-	1,  // 3: loop.internal.pb.ccipocr3.Message.token_amounts:type_name -> loop.internal.pb.ccipocr3.RampTokenAmount
-	3,  // 4: loop.internal.pb.ccipocr3.TokenAmount.amount:type_name -> loop.internal.pb.ccipocr3.BigInt
-	6,  // 5: loop.internal.pb.ccipocr3.CommitPluginReport.price_updates:type_name -> loop.internal.pb.ccipocr3.PriceUpdates
-	8,  // 6: loop.internal.pb.ccipocr3.CommitPluginReport.merkle_roots:type_name -> loop.internal.pb.ccipocr3.MerkleRootChain
-	4,  // 7: loop.internal.pb.ccipocr3.PriceUpdates.token_price_updates:type_name -> loop.internal.pb.ccipocr3.TokenAmount
-	7,  // 8: loop.internal.pb.ccipocr3.PriceUpdates.gas_price_updates:type_name -> loop.internal.pb.ccipocr3.GasPriceChain
-	3,  // 9: loop.internal.pb.ccipocr3.GasPriceChain.price:type_name -> loop.internal.pb.ccipocr3.BigInt
-	9,  // 10: loop.internal.pb.ccipocr3.MerkleRootChain.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	3,  // 3: loop.internal.pb.ccipocr3.Message.fee_value_juels:type_name -> loop.internal.pb.ccipocr3.BigInt
+	1,  // 4: loop.internal.pb.ccipocr3.Message.token_amounts:type_name -> loop.internal.pb.ccipocr3.RampTokenAmount
+	3,  // 5: loop.internal.pb.ccipocr3.TokenAmount.amount:type_name -> loop.internal.pb.ccipocr3.BigInt
+	6,  // 6: loop.internal.pb.ccipocr3.CommitPluginReport.price_updates:type_name -> loop.internal.pb.ccipocr3.PriceUpdates
+	8,  // 7: loop.internal.pb.ccipocr3.CommitPluginReport.blessed_merkle_roots:type_name -> loop.internal.pb.ccipocr3.MerkleRootChain
+	8,  // 8: loop.internal.pb.ccipocr3.CommitPluginReport.unblessed_merkle_roots:type_name -> loop.internal.pb.ccipocr3.MerkleRootChain
+	10, // 9: loop.internal.pb.ccipocr3.CommitPluginReport.rmn_signatures:type_name -> loop.internal.pb.ccipocr3.RMNECDSASignature
+	4,  // 10: loop.internal.pb.ccipocr3.PriceUpdates.token_price_updates:type_name -> loop.internal.pb.ccipocr3.TokenAmount
+	7,  // 11: loop.internal.pb.ccipocr3.PriceUpdates.gas_price_updates:type_name -> loop.internal.pb.ccipocr3.GasPriceChain
+	3,  // 12: loop.internal.pb.ccipocr3.GasPriceChain.price:type_name -> loop.internal.pb.ccipocr3.BigInt
+	9,  // 13: loop.internal.pb.ccipocr3.MerkleRootChain.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	3,  // 14: loop.internal.pb.ccipocr3.RMNReport.dest_chain_id:type_name -> loop.internal.pb.ccipocr3.BigInt
+	12, // 15: loop.internal.pb.ccipocr3.RMNReport.lane_updates:type_name -> loop.internal.pb.ccipocr3.RMNLaneUpdate
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_models_proto_init() }
@@ -795,7 +1093,7 @@ func file_models_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_models_proto_rawDesc), len(file_models_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -21,11 +21,12 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -496,9 +497,10 @@ func runWasm[I, O proto.Message](
 		}
 	}
 
+	println(fmt.Sprintf("Setting limit for the max memmory %d", int64(m.cfg.MaxMemoryMBs)*int64(math.Pow(10, 6))))
 	// Limit memory to max memory megabytes per instance.
 	store.Limiter(
-		int64(m.cfg.MaxMemoryMBs)*int64(math.Pow(10, 6)),
+		int64(m.cfg.MaxMemoryMBs)*int64(math.Pow(10, 8)),
 		-1, // tableElements, -1 == default
 		1,  // instances
 		1,  // tables

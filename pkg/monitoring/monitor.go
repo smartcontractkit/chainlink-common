@@ -42,6 +42,8 @@ type Monitor struct {
 	Manager Manager
 
 	HTTPServer HTTPServer
+
+	NewParam uint64
 }
 
 // NewMonitor builds a new Monitor instance using dependency injection.
@@ -56,6 +58,7 @@ func NewMonitor(
 	txResultsSourceFactory SourceFactory,
 	feedsParser FeedsParser,
 	nodesParser NodesParser,
+	newParam uint64,
 ) (*Monitor, error) {
 	cfg, err := config.Parse()
 	if err != nil {
@@ -147,6 +150,7 @@ func NewMonitor(
 		RDDPoller:         rddPoller,
 		Manager:           manager,
 		HTTPServer:        httpServer,
+		NewParam:          newParam,
 	}, nil
 }
 

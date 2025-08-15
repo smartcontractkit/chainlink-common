@@ -197,8 +197,7 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	return ErrnoSuccess
 }
 
-// getTime is used for Workflows and should be called instead of time.Now().
-// TODO: Change Standard Tests to accept this
+// now is used by rawsdk for Workflows and should be called instead of Go's time.Now().
 func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32 {
 	donTime, err := e.timeFetcher.GetTime(e.mode)
 	if err != nil {

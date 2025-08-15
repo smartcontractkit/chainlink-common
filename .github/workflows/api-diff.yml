@@ -23,9 +23,12 @@ jobs:
           go-version-file: "go.mod"
           cache: false
 
+      - uses: smartcontractkit/.github/actions/changed-modules-go@feat/changed-modules-go
+        id: changed-modules
+
       - uses: smartcontractkit/.github/actions/apidiff-go@apidiff-go/0.1.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          go-mod-paths: "./"
+          go-mod-paths: "${{ steps.changed-modules.outputs.modified-modules }}"
           enforce-compatible: "false" # dont fail on breaking changes

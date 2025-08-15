@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755268077692,
+  "lastUpdate": 1755290700959,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23058,6 +23058,48 @@ window.BENCHMARK_DATA = {
             "value": 26668,
             "unit": "ns/op",
             "extra": "45121 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d562598c73ff756f5bf3ffb6e67f6bc5f2a6f819",
+          "message": "Use values and cre sdk from protos repo (#1477)",
+          "timestamp": "2025-08-15T16:42:35-04:00",
+          "tree_id": "a64f3584a678dbfc1cf49ec9d7581d908b0d2937",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d562598c73ff756f5bf3ffb6e67f6bc5f2a6f819"
+        },
+        "date": 1755290699716,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.7,
+            "unit": "ns/op",
+            "extra": "3299370 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 398.6,
+            "unit": "ns/op",
+            "extra": "3029558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26840,
+            "unit": "ns/op",
+            "extra": "43815 times\n4 procs"
           }
         ]
       }

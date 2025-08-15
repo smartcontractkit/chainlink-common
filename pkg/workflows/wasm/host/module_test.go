@@ -3,20 +3,21 @@ package host
 import (
 	"context"
 	"encoding/binary"
+	"sync"
+	"testing"
+
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
-	"sync"
-	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 type mockMessageEmitter struct {

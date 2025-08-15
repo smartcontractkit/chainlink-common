@@ -8,7 +8,7 @@ import (
 	"github.com/invopop/jsonschema"
 	jsonvalidate "github.com/santhosh-tekuri/jsonschema/v5"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // A Validator can validate the config, inputs, and outputs of a capability.

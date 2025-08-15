@@ -9,7 +9,7 @@ import (
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 // tonClient wraps the TONRelayerSetClient by attaching a RelayerID to TONClient requests.

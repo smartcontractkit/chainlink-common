@@ -8,6 +8,8 @@ import (
 	"math/big"
 	"strconv"
 
+	solana "github.com/gagliardetto/solana-go"
+	chainselectors "github.com/smartcontractkit/chain-selectors"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
@@ -34,11 +36,17 @@ type secureMintReport struct {
 // chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
 type chainSelector uint64
 
+type SolanaConfig struct {
+	// Add Solana-specific configuration fields here
+	AccountContext map[string]solana.AccountMetaSlice `mapstructure:"account_context"`
+}
+
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
 // This aggregator is designed to pick out reports for a specific chain selector.
 type SecureMintAggregatorConfig struct {
 	// TargetChainSelector is the chain selector to look for
 	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
+	Solana              SolanaConfig  `mapstructure:"solana"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -55,7 +63,98 @@ func (c SecureMintAggregatorConfig) ToMap() (*values.Map, error) {
 var _ types.Aggregator = (*SecureMintAggregator)(nil)
 
 type SecureMintAggregator struct {
-	config SecureMintAggregatorConfig
+	config   SecureMintAggregatorConfig
+	registry FormatterFactory
+}
+
+type ChainReportFormatter interface {
+	PackReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error)
+}
+
+type EVMReportFormatter struct {
+	TargetChainSelector uint64
+}
+
+func (f *EVMReportFormatter) PackReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error) {
+	// Convert chain selector to bytes for data ID
+	// Secure Mint dataID: 0x04 + chain selector as bytes + right padded with 0s
+	var chainSelectorAsDataID [16]byte
+	chainSelectorAsDataID[0] = 0x04
+	binary.BigEndian.PutUint64(chainSelectorAsDataID[1:], uint64(f.TargetChainSelector))
+
+	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
+	}
+
+	lggr.Debugw("packed report into answer", "smReportAsAnswer", smReportAsAnswer)
+
+	// This is what the DF Cache contract expects:
+	// abi: "(bytes16 dataId, uint32 timestamp, uint224 answer)[] Reports"
+	toWrap := []any{
+		map[EVMEncoderKey]any{
+			DataIDOutputFieldName:    chainSelectorAsDataID,
+			AnswerOutputFieldName:    smReportAsAnswer,
+			TimestampOutputFieldName: int64(report.Block),
+		},
+	}
+
+	wrappedReport, err := values.NewMap(map[string]any{
+		TopLevelListOutputFieldName: toWrap,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to wrap report: %w", err)
+	}
+
+	return wrappedReport, nil
+}
+
+func NewEVMReportFormatter(chainSelector uint64, config any) (ChainReportFormatter, error) {
+	return &EVMReportFormatter{TargetChainSelector: chainSelector}, nil
+}
+
+type SolanaReportFormatter struct {
+	TargetChainSelector uint64
+	OnReportAccounts    solana.AccountMetaSlice
+}
+
+type FormatterFactory interface {
+	Register(chainSelector uint64, builder Builder)
+	Get(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error)
+}
+
+type DefaultFormatterFactory struct {
+	builders map[uint64]Builder
+}
+
+func (r *DefaultFormatterFactory) Register(chainSelector uint64, builder Builder) {
+	r.builders[chainSelector] = builder
+}
+
+func (r *DefaultFormatterFactory) Get(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error) {
+	b, ok := r.builders[chainSelector]
+	if !ok {
+		return nil, fmt.Errorf("no formatter registered for chain selector: %d", chainSelector)
+	}
+
+	return b(chainSelector, config)
+}
+
+type Builder func(chainSelector uint64, config any) (ChainReportFormatter, error)
+
+func NewDefaultFormatterFactory() FormatterFactory {
+	r := DefaultFormatterFactory{
+		builders: map[uint64]Builder{},
+	}
+
+	// EVM
+	for _, selector := range chainselectors.EvmChainIdToChainSelector() {
+		r.Register(selector, NewEVMReportFormatter)
+	}
+
+	// TODO: Solana
+
+	return &r
 }
 
 // NewSecureMintAggregator creates a new SecureMintAggregator instance based on the provided configuration.
@@ -65,8 +164,11 @@ func NewSecureMintAggregator(config values.Map) (types.Aggregator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config (%+v): %w", config, err)
 	}
+	registry := NewDefaultFormatterFactory()
+
 	return &SecureMintAggregator{
-		config: parsedConfig,
+		config:   parsedConfig,
+		registry: registry,
 	}, nil
 }
 
@@ -189,31 +291,21 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	lggr = logger.Named(lggr, "SecureMintAggregator")
 	lggr.Debugw("createOutcome called", "report", report)
 
-	// Convert chain selector to bytes for data ID
-	// Secure Mint dataID: 0x04 + chain selector as bytes + right padded with 0s
-	var chainSelectorAsDataID [16]byte
-	chainSelectorAsDataID[0] = 0x04
-	binary.BigEndian.PutUint64(chainSelectorAsDataID[1:], uint64(a.config.TargetChainSelector))
+	reportFormatter, err := a.registry.Get(
+		uint64(a.config.TargetChainSelector),
+		a.config,
+	)
 
-	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
 	if err != nil {
-		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
-	}
-	lggr.Debugw("packed report into answer", "smReportAsAnswer", smReportAsAnswer)
-
-	// This is what the DF Cache contract expects:
-	// abi: "(bytes16 dataId, uint32 timestamp, uint224 answer)[] Reports"
-	toWrap := []any{
-		map[EVMEncoderKey]any{
-			DataIDOutputFieldName:    chainSelectorAsDataID,
-			AnswerOutputFieldName:    smReportAsAnswer,
-			TimestampOutputFieldName: int64(report.Block),
-		},
+		return nil, fmt.Errorf("encountered issue fetching report formatter in createOutcome %w", err)
 	}
 
-	wrappedReport, err := values.NewMap(map[string]any{
-		TopLevelListOutputFieldName: toWrap,
-	})
+	wrappedReport, err := reportFormatter.PackReport(lggr, report)
+
+	if err != nil {
+		return nil, fmt.Errorf("encountered issue generating report in createOutcome %w", err)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to wrap report: %w", err)
 	}

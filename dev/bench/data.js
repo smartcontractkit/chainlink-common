@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755170349539,
+  "lastUpdate": 1755268077692,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23016,6 +23016,48 @@ window.BENCHMARK_DATA = {
             "value": 26603,
             "unit": "ns/op",
             "extra": "44838 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "64e0a796595819d2e1b3a58fe24327adec5fa090",
+          "message": "Remove context from GetDONTime (#1471)\n\n* Use node time\n\n* Update execution.go\n\n* Remove ctx\n\n* Use Node Mode for clockTimeGet\n\n* Undo secondary hook\n\n* Use mode",
+          "timestamp": "2025-08-15T14:25:32Z",
+          "tree_id": "489631989c4f5eec583d9e9cb96709d7f314feae",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/64e0a796595819d2e1b3a58fe24327adec5fa090"
+        },
+        "date": 1755268076440,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.2,
+            "unit": "ns/op",
+            "extra": "3320752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.3,
+            "unit": "ns/op",
+            "extra": "3012294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26668,
+            "unit": "ns/op",
+            "extra": "45121 times\n4 procs"
           }
         ]
       }

@@ -169,7 +169,7 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 // clockTimeGet is the default time.Now() which is also called by Go many times.
 // This implementation uses Node Mode to not have to wait for OCR rounds.
 func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
-	donTime, err := e.timeFetcher.GetTime(sdkpb.Mode_MODE_NODE)
+	donTime, err := e.timeFetcher.GetTime(e.mode)
 	if err != nil {
 		return ErrnoInval
 	}

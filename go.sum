@@ -308,8 +308,8 @@ github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.1 h1:ca2z5OXgn
 github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.1/go.mod h1:NZv/qKYGFRnkjOYBouajnDfFoZ+WDa6H2KNmSf1dnKc=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250722175102-6dcdf5122683 h1:Qjiw8yaKi42jjknW1+ox6+QHc4aJVm0uhVoKTlmZryU=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250722175102-6dcdf5122683/go.mod h1:HHGeDUpAsPa0pmOx7wrByCitjQ0mbUxf0R9v+g67uCA=
-github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20250815141632-9fdef84ea5d8 h1:hcTgswz3BZxsFvNzBvtPDuD/v4cJ13ZH5yH7frivwRA=
-github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20250815141632-9fdef84ea5d8/go.mod h1:jUC52kZzEnWF9tddHh85zolKybmLpbQ1oNA4FjOHt1Q=
+github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20250815182425-f8fca0955840 h1:se93gDiGw/6Bg+IQBo5l6svz9l0V04Jxq2QGmiXeFU0=
+github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20250815182425-f8fca0955840/go.mod h1:jUC52kZzEnWF9tddHh85zolKybmLpbQ1oNA4FjOHt1Q=
 github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0 h1:B7itmjy+CMJ26elVw/cAJqqhBQ3Xa/mBYWK0/rQ5MuI=
 github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0/go.mod h1:h6kqaGajbNRrezm56zhx03p0mVmmA2xxj7E/M4ytLUA=
 github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20250430163438-97d324ef9061 h1:5BKk6j2QWmb5TFoWYVLuL8U2XUIzTUUo5HBkCHTX2kM=

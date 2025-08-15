@@ -169,14 +169,26 @@ func TestExecute(t *testing.T) {
 		a, err := anypb.New(msg)
 		require.NoError(t, err)
 
+		meteringNodeDetail := capabilities.MeteringNodeDetail{
+			Peer2PeerID: "node-1",
+			SpendUnit:   "1",
+			SpendValue:  "0.00001",
+		}
 		req := capabilities.CapabilityRequest{ConfigPayload: a, Payload: a}
 
-		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{}, func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, error) {
-			return &pb.TriggerEvent{Id: "out"}, nil
-		})
+		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{},
+			func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, capabilities.ResponseMetadata, error) {
+				return &pb.TriggerEvent{Id: "out"}, capabilities.ResponseMetadata{
+					Metering: []capabilities.MeteringNodeDetail{
+						meteringNodeDetail,
+					},
+				}, nil
+			})
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Payload)
 		assert.Nil(t, resp.Value)
+		assert.Len(t, resp.Metadata.Metering, 1)
+		assert.Equal(t, meteringNodeDetail, resp.Metadata.Metering[0])
 	})
 
 	t.Run("with value", func(t *testing.T) {
@@ -184,16 +196,29 @@ func TestExecute(t *testing.T) {
 		wrapped, err := values.WrapMap(msg)
 		require.NoError(t, err)
 
+		meteringNodeDetail := capabilities.MeteringNodeDetail{
+			Peer2PeerID: "node-1",
+			SpendUnit:   "1",
+			SpendValue:  "0.00001",
+		}
 		req := capabilities.CapabilityRequest{Inputs: wrapped, Config: wrapped}
 
-		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{}, func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, error) {
-			assert.Equal(t, "input", i.Id)
-			assert.Equal(t, "input", c.Id)
-			return &pb.TriggerEvent{Id: "out"}, nil
-		})
+		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{},
+			func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, capabilities.ResponseMetadata, error) {
+				assert.Equal(t, "input", i.Id)
+				assert.Equal(t, "input", c.Id)
+				return &pb.TriggerEvent{Id: "out"}, capabilities.ResponseMetadata{
+					Metering: []capabilities.MeteringNodeDetail{
+						meteringNodeDetail,
+					},
+				}, nil
+			})
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Value)
 		assert.Nil(t, resp.Payload)
+		assert.NotNil(t, resp.Metadata)
+		assert.Len(t, resp.Metadata.Metering, 1)
+		assert.Equal(t, meteringNodeDetail, resp.Metadata.Metering[0])
 	})
 }
 

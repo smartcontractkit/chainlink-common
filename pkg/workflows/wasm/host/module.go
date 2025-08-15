@@ -330,13 +330,6 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping getSeed func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"get_time",
-		exec.getTime); err != nil {
-		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
-	}
-
 	return linker.Instantiate(store, m.module)
 }
 

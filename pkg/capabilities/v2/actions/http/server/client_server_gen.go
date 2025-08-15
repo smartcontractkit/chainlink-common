@@ -18,7 +18,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	SendRequest(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request) (*http.Response, error)
+	SendRequest(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request) (*capabilities.ResponseAndMetadata[*http.Response], error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -120,8 +120,12 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	case "SendRequest":
 		input := &http.Request{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request, _ *emptypb.Empty) (*http.Response, error) {
-			return c.ClientCapability.SendRequest(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request, _ *emptypb.Empty) (*http.Response, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.SendRequest(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method SendRequest(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

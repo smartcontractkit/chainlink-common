@@ -120,11 +120,10 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		// Node calls may occur on initialization depending on the language.
-		var donCall1 bool
+		var donCall bool
 		var nodeCall bool
-		var donCall2 bool
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
-			if donCall1 {
+			if donCall {
 				nodeCall = true
 			}
 			return time.Now()
@@ -132,13 +131,9 @@ func TestStandardModeSwitch(t *testing.T) {
 
 		// We want to make sure time.Now() is called at least twice in DON mode and once in node Mode
 		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
-			if nodeCall {
-				donCall2 = true
-			} else {
-				donCall1 = true
-			}
+			donCall = true
 			return time.Now(), nil
-		})
+		}).Times(2)
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			if request.Id == "basic-test-action@1.0.0" {
 				input := &basicaction.Inputs{}
@@ -157,9 +152,8 @@ func TestStandardModeSwitch(t *testing.T) {
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result := executeWithResult[string](t, m, request, mockExecutionHelper)
 		require.Equal(t, "test556", result)
-		require.True(t, donCall1)
+		require.True(t, donCall)
 		require.True(t, nodeCall)
-		require.True(t, donCall2)
 	})
 
 	t.Run("node runtime in don mode", func(t *testing.T) {

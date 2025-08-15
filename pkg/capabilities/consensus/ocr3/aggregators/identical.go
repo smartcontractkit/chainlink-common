@@ -6,11 +6,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-
-	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // Aggregates by the most frequent observation for each index of a data set

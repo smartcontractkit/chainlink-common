@@ -19,28 +19,28 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*evm.CallContractReply, error)
+	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*capabilities.ResponseAndMetadata[*evm.CallContractReply], error)
 
-	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*capabilities.ResponseAndMetadata[*evm.FilterLogsReply], error)
 
-	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*capabilities.ResponseAndMetadata[*evm.BalanceAtReply], error)
 
-	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
+	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*capabilities.ResponseAndMetadata[*evm.EstimateGasReply], error)
 
-	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionByHashReply], error)
 
-	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
+	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionReceiptReply], error)
 
-	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
+	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], error)
 
-	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*capabilities.ResponseAndMetadata[*emptypb.Empty], error)
 
-	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*capabilities.ResponseAndMetadata[*emptypb.Empty], error)
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], error)
 
 	ChainSelector() uint64
 
@@ -160,71 +160,111 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	case "CallContract":
 		input := &evm.CallContractRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, error) {
-			return c.ClientCapability.CallContract(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.CallContract(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method CallContract(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "FilterLogs":
 		input := &evm.FilterLogsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, error) {
-			return c.ClientCapability.FilterLogs(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.FilterLogs(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method FilterLogs(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "BalanceAt":
 		input := &evm.BalanceAtRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, error) {
-			return c.ClientCapability.BalanceAt(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.BalanceAt(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method BalanceAt(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "EstimateGas":
 		input := &evm.EstimateGasRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, error) {
-			return c.ClientCapability.EstimateGas(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.EstimateGas(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method EstimateGas(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionByHash":
 		input := &evm.GetTransactionByHashRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, error) {
-			return c.ClientCapability.GetTransactionByHash(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.GetTransactionByHash(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetTransactionByHash(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionReceipt":
 		input := &evm.GetTransactionReceiptRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*evm.GetTransactionReceiptReply, error) {
-			return c.ClientCapability.GetTransactionReceipt(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*evm.GetTransactionReceiptReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.GetTransactionReceipt(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetTransactionReceipt(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "HeaderByNumber":
 		input := &evm.HeaderByNumberRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, error) {
-			return c.ClientCapability.HeaderByNumber(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.HeaderByNumber(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method HeaderByNumber(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "RegisterLogTracking":
 		input := &evm.RegisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
-			return c.ClientCapability.RegisterLogTracking(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.RegisterLogTracking(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method RegisterLogTracking(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "UnregisterLogTracking":
 		input := &evm.UnregisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
-			return c.ClientCapability.UnregisterLogTracking(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.UnregisterLogTracking(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method UnregisterLogTracking(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":
 		input := &evm.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, error) {
-			return c.ClientCapability.WriteReport(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

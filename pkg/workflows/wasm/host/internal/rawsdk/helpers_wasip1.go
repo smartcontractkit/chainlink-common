@@ -54,6 +54,11 @@ func SendSubscription(subscriptions *pb.TriggerSubscriptionRequest) {
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
 }
 
+func Now() time.Time {
+	// TODO: Call
+	return time.Time{getTime()}
+}
+
 var donCall = int32(0)
 var nodeCall = int32(-1)
 
@@ -210,6 +215,9 @@ func sendResponse(response unsafe.Pointer, responseLen int32) int32
 
 //go:wasmimport env switch_modes
 func SwitchModes(mode int32)
+
+//go:wasmimport env now
+func now(response unsafe.Pointer) int32
 
 //go:wasmimport env call_capability
 func callCapability(req unsafe.Pointer, reqLen int32) int64

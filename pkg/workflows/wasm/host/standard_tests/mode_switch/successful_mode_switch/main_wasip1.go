@@ -49,6 +49,7 @@ func main() {
 }
 
 // ignoreTimeCall makes a time now call and forces the compiler not to optimize it away.
+// TODO: Change this to make runtime calls to now
 func ignoreTimeCall() {
 	t := time.Now()
 	if t.Before(time.Unix(-1, 322)) {

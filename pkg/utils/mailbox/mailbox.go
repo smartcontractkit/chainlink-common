@@ -31,6 +31,9 @@ func NewHighCapacity[T any]() *Mailbox[T] {
 // NewSingle returns a new Mailbox with capacity one.
 func NewSingle[T any]() *Mailbox[T] { return New[T](1) }
 
+// NewSingleDuplicate copies the above function to demonstrate API analysis
+func NewSingleDuplicate[T any]() *Mailbox[T] { return New[T](1) }
+
 // New creates a new mailbox instance. If name is non-empty, it must be unique and calling Start will launch
 // prometheus metric monitor that periodically reports mailbox load until Close() is called.
 func New[T any](capacity uint32) *Mailbox[T] {

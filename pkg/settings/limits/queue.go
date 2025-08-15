@@ -31,9 +31,10 @@ type QueueLimiter[T any] interface {
 // NewQueueLimiter returns a simple static QueueLimiter.
 func NewQueueLimiter[T any](capacity int) QueueLimiter[T] {
 	q := &queue[T]{
-		cap:         capacity,
-		recordLimit: func(context.Context, int) {},
-		recordUsage: func(context.Context, int) {},
+		cap:          capacity,
+		recordLimit:  func(context.Context, int) {},
+		recordUsage:  func(context.Context, int) {},
+		recordDenied: func(context.Context, int) {},
 	}
 	q.cond.L = &q.mu
 	return q
@@ -46,8 +47,9 @@ type queue[T any] struct {
 	scope  settings.Scope // optional
 	tenant string         // optional
 
-	recordLimit func(context.Context, int)
-	recordUsage func(context.Context, int)
+	recordLimit  func(context.Context, int)
+	recordUsage  func(context.Context, int)
+	recordDenied func(context.Context, int)
 
 	cap  int
 	list list.List
@@ -81,8 +83,9 @@ func (q *queue[T]) Put(ctx context.Context, t T) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if q.list.Len() >= q.cap {
-		return ErrorQueueFull{Key: q.key, Scope: q.scope, Tenant: q.tenant, Limit: q.cap}
+	if c := q.cap; q.list.Len() >= c {
+		q.recordDenied(ctx, 1)
+		return ErrorQueueFull{Key: q.key, Scope: q.scope, Tenant: q.tenant, Limit: c}
 	}
 	q.list.PushBack(t)
 	q.cond.Signal()
@@ -158,12 +161,23 @@ func newUnscopedQueue[T any](f Factory, limit settings.Setting[int]) (QueueLimit
 		if err != nil {
 			return nil, err
 		}
+		deniedHist, err := f.Meter.Int64Histogram("queue."+limit.Key+".denied", metric.WithUnit(limit.Unit))
+		if err != nil {
+			return nil, err
+		}
 		q.recordLimit = func(ctx context.Context, i int) {
 			limitGauge.Record(ctx, int64(i))
 		}
 		q.recordUsage = func(ctx context.Context, i int) {
 			usageGauge.Record(ctx, int64(i))
 		}
+		q.recordDenied = func(ctx context.Context, i int) {
+			deniedHist.Record(ctx, int64(i))
+		}
+	} else {
+		q.recordLimit = func(context.Context, int) {}
+		q.recordUsage = func(context.Context, int) {}
+		q.recordDenied = func(context.Context, int) {}
 	}
 
 	if f.Settings != nil {
@@ -174,7 +188,6 @@ func newUnscopedQueue[T any](f Factory, limit settings.Setting[int]) (QueueLimit
 			q.subFn = func(ctx context.Context) (updates <-chan settings.Update[int], cancelSub func()) {
 				return limit.Subscribe(ctx, registry)
 			}
-
 		}
 	}
 
@@ -204,6 +217,10 @@ func newScopedQueue[T any](f Factory, limit settings.Setting[int]) (QueueLimiter
 			return nil, err
 		}
 		q.usageGauge, err = f.Meter.Int64Gauge("queue."+limit.Key+".usage", metric.WithUnit(limit.Unit))
+		if err != nil {
+			return nil, err
+		}
+		q.deniedHist, err = f.Meter.Int64Histogram("queue."+limit.Key+".denied", metric.WithUnit(limit.Unit))
 		if err != nil {
 			return nil, err
 		}
@@ -237,8 +254,9 @@ type scopedQueue[T any] struct {
 
 	key string // optional
 
-	limitGauge metric.Int64Gauge // optional
-	usageGauge metric.Int64Gauge // optional
+	limitGauge metric.Int64Gauge     // optional
+	usageGauge metric.Int64Gauge     // optional
+	deniedHist metric.Int64Histogram // optional
 
 	// opt: reap after period of non-use
 	queues sync.Map           // map[string]*queue
@@ -342,6 +360,11 @@ func (s *scopedQueue[T]) newQueue(tenant string) *queue[T] {
 		recordUsage: func(ctx context.Context, c int) {
 			if s.usageGauge != nil {
 				s.usageGauge.Record(ctx, int64(c), withScope(ctx, s.scope))
+			}
+		},
+		recordDenied: func(ctx context.Context, c int) {
+			if s.deniedHist != nil {
+				s.deniedHist.Record(ctx, int64(c), withScope(ctx, s.scope))
 			}
 		},
 	}

@@ -3,6 +3,7 @@
 //  - [ResourceLimiter]/[ResourcePoolLimiter]: for allocating resources
 //  - [TimeLimiter]: for enforcing timeouts
 //  - [BoundLimiter]: for enforcing bounds
+//  - [QueueLimiter]: for limited capacity queues
 //
 // Every limit requires a default value. Additional features like Otel metrics and dynamic updates are available by
 // using the [settings.Setting] variants.

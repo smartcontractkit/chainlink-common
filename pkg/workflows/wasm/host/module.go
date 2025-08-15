@@ -100,7 +100,7 @@ type ExecutionHelper interface {
 
 	GetNodeTime() time.Time
 
-	GetDONTime(ctx context.Context) (time.Time, error)
+	GetDONTime() (time.Time, error)
 
 	EmitUserLog(log string) error
 }

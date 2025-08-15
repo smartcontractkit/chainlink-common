@@ -60,14 +60,14 @@ func SendSubscription(subscriptions *pb.TriggerSubscriptionRequest) {
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
 }
 
-func Now() (time.Time, error) {
+func Now() time.Time {
 	var buf [8]byte // host writes UnixNano as little-endian uint64
 	rc := now(unsafe.Pointer(&buf[0]))
 	if rc != ErrnoSuccess {
-		return time.Time{}, fmt.Errorf("failed to fetch time from host: now() returned errno %d", rc)
+		panic(fmt.Errorf("failed to fetch time from host: now() returned errno %d", rc))
 	}
 	ns := int64(binary.LittleEndian.Uint64(buf[:]))
-	return time.Unix(0, ns), nil
+	return time.Unix(0, ns)
 }
 
 var donCall = int32(0)

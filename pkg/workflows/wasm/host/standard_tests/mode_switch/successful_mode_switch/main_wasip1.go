@@ -50,10 +50,7 @@ func main() {
 
 // ignoreTimeCall makes a rawsdk now call and forces the compiler not to optimize it away.
 func ignoreTimeCall() {
-	t, err := rawsdk.Now()
-	if err != nil {
-		panic(err)
-	}
+	t := rawsdk.Now()
 	if t.Before(time.Unix(-1, 322)) {
 		panic("Test should not run before 1970")
 	}

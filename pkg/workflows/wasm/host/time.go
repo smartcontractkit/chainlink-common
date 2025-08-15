@@ -64,7 +64,7 @@ func (t *timeFetcher) runLoop() {
 
 			switch mode {
 			case sdkpb.Mode_MODE_DON:
-				donTime, err = t.executor.GetDONTime(t.ctx)
+				donTime, err = t.executor.GetDONTime()
 			default:
 				donTime = t.executor.GetNodeTime()
 			}

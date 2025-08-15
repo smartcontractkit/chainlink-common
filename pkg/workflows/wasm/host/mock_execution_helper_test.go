@@ -129,9 +129,9 @@ func (_c *MockExecutionHelper_EmitUserLog_Call) RunAndReturn(run func(string) er
 	return _c
 }
 
-// GetDONTime provides a mock function with given fields: ctx
-func (_m *MockExecutionHelper) GetDONTime(ctx context.Context) (time.Time, error) {
-	ret := _m.Called(ctx)
+// GetDONTime provides a mock function with no fields
+func (_m *MockExecutionHelper) GetDONTime() (time.Time, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDONTime")
@@ -139,17 +139,17 @@ func (_m *MockExecutionHelper) GetDONTime(ctx context.Context) (time.Time, error
 
 	var r0 time.Time
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (time.Time, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func() (time.Time, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) time.Time); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() time.Time); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(time.Time)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -163,14 +163,13 @@ type MockExecutionHelper_GetDONTime_Call struct {
 }
 
 // GetDONTime is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockExecutionHelper_Expecter) GetDONTime(ctx interface{}) *MockExecutionHelper_GetDONTime_Call {
-	return &MockExecutionHelper_GetDONTime_Call{Call: _e.mock.On("GetDONTime", ctx)}
+func (_e *MockExecutionHelper_Expecter) GetDONTime() *MockExecutionHelper_GetDONTime_Call {
+	return &MockExecutionHelper_GetDONTime_Call{Call: _e.mock.On("GetDONTime")}
 }
 
-func (_c *MockExecutionHelper_GetDONTime_Call) Run(run func(ctx context.Context)) *MockExecutionHelper_GetDONTime_Call {
+func (_c *MockExecutionHelper_GetDONTime_Call) Run(run func()) *MockExecutionHelper_GetDONTime_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run()
 	})
 	return _c
 }
@@ -180,7 +179,7 @@ func (_c *MockExecutionHelper_GetDONTime_Call) Return(_a0 time.Time, _a1 error) 
 	return _c
 }
 
-func (_c *MockExecutionHelper_GetDONTime_Call) RunAndReturn(run func(context.Context) (time.Time, error)) *MockExecutionHelper_GetDONTime_Call {
+func (_c *MockExecutionHelper_GetDONTime_Call) RunAndReturn(run func() (time.Time, error)) *MockExecutionHelper_GetDONTime_Call {
 	_c.Call.Return(run)
 	return _c
 }

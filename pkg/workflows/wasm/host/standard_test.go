@@ -79,7 +79,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 	m := makeTestModule(t)
@@ -131,7 +131,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		})
 
 		// We want to make sure time.Now() is called at least twice in DON mode and once in node Mode
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			if nodeCall {
 				donCall2 = true
 			} else {
@@ -168,7 +168,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
@@ -193,7 +193,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
@@ -228,7 +228,7 @@ func TestStandardLogging(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
@@ -346,7 +346,7 @@ func TestStandardRandom(t *testing.T) {
 	gte100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	gte100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	gte100Exec.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 	// RunAndReturn
@@ -376,7 +376,7 @@ func TestStandardRandom(t *testing.T) {
 		lt100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		lt100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		lt100Exec.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
 
@@ -400,7 +400,7 @@ func TestStandardRandom(t *testing.T) {
 		gte100Exec2.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		gte100Exec2.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		gte100Exec2.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
 
@@ -576,7 +576,7 @@ func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 

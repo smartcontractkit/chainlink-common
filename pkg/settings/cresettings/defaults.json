@@ -1,6 +1,7 @@
 {
 	"WorkflowLimit": "200",
 	"WorkflowRegistrationQueueLimit": "20",
+	"WorkflowExecutionConcurrencyLimit": "50",
 	"HTTPTrigger": {
 		"AuthRateLimit": "100rps:-1"
 	},
@@ -9,7 +10,7 @@
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
 	"PerOwner": {
-		"ExecutionConcurrencyLimit": "50"
+		"WorkflowExecutionConcurrencyLimit": "50"
 	},
 	"PerWorkflow": {
 		"TriggerLimit": "10",

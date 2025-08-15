@@ -12,18 +12,20 @@ import (
 )
 
 func init() {
-	err := InitConfig(&Config)
+	err := InitConfig(&Default)
 	if err != nil {
 		log.Fatalf("failed to initialize keys: %v", err)
 	}
+	Config = Default
 }
 
 // Deprecated: use Default
-var Config = Default
+var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                  Int(200),
-	WorkflowRegistrationQueueLimit: Int(20),
+	WorkflowLimit:                     Int(200),
+	WorkflowRegistrationQueueLimit:    Int(20),
+	WorkflowExecutionConcurrencyLimit: Int(50),
 
 	HTTPTrigger: httpTriggerGlobal{
 		AuthRateLimit: Rate(100, -1), //TODO
@@ -34,7 +36,7 @@ var Default = Schema{
 		ZeroBalancePruningTimeout:   Duration(24 * time.Hour),
 	},
 	PerOwner: Owners{
-		ExecutionConcurrencyLimit: Int(50),
+		WorkflowExecutionConcurrencyLimit: Int(50),
 	},
 	PerWorkflow: Workflows{
 		TriggerLimit:                  Int(10),
@@ -97,8 +99,9 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                  Setting[int] `unit:"{workflow}"`
-	WorkflowRegistrationQueueLimit Setting[int] `unit:"{workflow}"`
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowRegistrationQueueLimit    Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 
 	HTTPTrigger httpTriggerGlobal
 
@@ -112,7 +115,7 @@ type Orgs struct {
 }
 
 type Owners struct {
-	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 }
 
 type Workflows struct {

@@ -34,7 +34,7 @@ func (f Factory) NewRateLimiter(rate settings.Setting[config.Rate]) (RateLimiter
 //  - rate.*.limit - float gauge
 //  - rate.*.burst - int gauge
 //  - rate.*.usage - int counter
-// opt: .denied
+//  - rate.*.denied - int histogram
 func (f Factory) MakeRateLimiter(rate settings.Setting[config.Rate]) (RateLimiter, error) {
 	if rate.Scope == settings.ScopeGlobal {
 		return f.globalRateLimiter(rate)
@@ -68,7 +68,7 @@ func NewResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (Res
 //  - resource.*.limit - gauge
 //  - resource.*.usage - gauge
 //  - resource.*.amount - histogram
-// opt: .denied
+//  - queue.*.denied - histogram
 func MakeResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (ResourcePoolLimiter[N], error) {
 	if limit.Scope == settings.ScopeGlobal {
 		return newGlobalResourcePoolLimiter(f, limit)
@@ -87,9 +87,9 @@ func MakeBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimi
 
 // MakeQueueLimiter returns a QueueLimiter for the given limit and configured by the Factory.
 // If Meter is set, the following metrics will be emitted
-//  - queue.*limit - gauge
-//  - queue.*usage - gauge
-// opt: .denied
+//  - queue.*.limit - int gauge
+//  - queue.*.usage - int gauge
+//  - queue.*.denied - int histogram
 func MakeQueueLimiter[T any](f Factory, limit settings.Setting[int]) (QueueLimiter[T], error) {
 	if limit.Scope == settings.ScopeGlobal {
 		return newUnscopedQueue[T](f, limit)

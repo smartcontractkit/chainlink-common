@@ -131,6 +131,7 @@ func (e *exporter) lastResourceFirstScopeMetric(t *testing.T) metrics {
 type metrics []metricdata.Metrics
 
 func redactHistogramVals[N int64 | float64](t *testing.T, ms metrics, name string) {
+	t.Helper()
 	i := ms.forName(name)
 	if i < 0 {
 		t.Fatalf("failed to find histogram named: %s", name)

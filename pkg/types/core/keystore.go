@@ -116,37 +116,39 @@ type Decrypter interface {
 
 // signerDecrypter implements Keystore for a single sign account and decrypt account.
 type signerDecrypter struct {
-	account   *string
+	account   string
 	signer    crypto.Signer
 	decrypter Decrypter
 }
 
 var _ Keystore = &signerDecrypter{}
 
-func NewSignerDecrypter(account *string, signer crypto.Signer, decrypter Decrypter) (*signerDecrypter, error) {
+func NewSignerDecrypter(account string, signer crypto.Signer, decrypter Decrypter) (*signerDecrypter, error) {
 	return &signerDecrypter{account: account, signer: signer, decrypter: decrypter}, nil
 }
 
 func (c *signerDecrypter) Accounts(ctx context.Context) ([]string, error) {
-	if c.account == nil {
-		return nil, fmt.Errorf("account is nil")
-	}
-
-	return []string{*c.account}, nil
+	return []string{c.account}, nil
 }
 
 func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
-	if c.account != nil && *c.account == account {
-		return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
+	if c.account != account {
+		return nil, fmt.Errorf("account not found: %s", account)
 	}
-	return nil, fmt.Errorf("account not found: %s", account)
+	if c.signer == nil {
+		return nil, fmt.Errorf("signer is nil")
+	}
+	return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
 }
 
 func (c *signerDecrypter) Decrypt(ctx context.Context, account string, encrypted []byte) (decrypted []byte, err error) {
-	if c.account != nil && *c.account == account {
-		return c.decrypter.Decrypt(encrypted)
+	if c.account != account {
+		return nil, fmt.Errorf("account not found: %s", account)
 	}
-	return nil, fmt.Errorf("account not found: %s", account)
+	if c.decrypter == nil {
+		return nil, fmt.Errorf("decrypter is nil")
+	}
+	return c.decrypter.Decrypt(encrypted)
 }
 
 var _ Keystore = &UnimplementedKeystore{}

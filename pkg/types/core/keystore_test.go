@@ -198,7 +198,7 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 	t.Run("real ed25519 keys integration", func(t *testing.T) {
 		privKey := ed25519.NewKeyFromSeed([]byte("test_seed_that_is_32_bytes_long!"))
 		account := "sign_account1"
-		singleSigner, err := core.NewSignerDecrypter(&account, privKey, nil)
+		singleSigner, err := core.NewSignerDecrypter(account, privKey, nil)
 		require.NoError(t, err)
 
 		accounts, err := singleSigner.Accounts(t.Context())
@@ -221,7 +221,7 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 		require.NoError(t, err)
 		account := "decrypt_account1"
 
-		signerDecrypter, err := core.NewSignerDecrypter(&account, nil, &boxDecrypter{
+		signerDecrypter, err := core.NewSignerDecrypter(account, nil, &boxDecrypter{
 			privateKey: privKey,
 			publicKey:  pubKey,
 		})
@@ -237,18 +237,20 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 		assert.Equal(t, msg, decrypted)
 	})
 
-	t.Run("empty SignerDecrypter", func(t *testing.T) {
-		signerDecrypter, err := core.NewSignerDecrypter(nil, nil, nil)
+	t.Run("nil signer & decrypter", func(t *testing.T) {
+		account := "account1"
+		signerDecrypter, err := core.NewSignerDecrypter(account, nil, nil)
 		require.NoError(t, err)
 
-		_, err = signerDecrypter.Accounts(t.Context())
-		require.ErrorContains(t, err, "account is nil")
+		accounts, err := signerDecrypter.Accounts(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, []string{account}, accounts)
 
 		ctx := context.Background()
-		_, err = signerDecrypter.Sign(ctx, "account1", nil)
-		require.ErrorContains(t, err, "account not found")
+		_, err = signerDecrypter.Sign(ctx, account, nil)
+		require.ErrorContains(t, err, "signer is nil")
 
-		_, err = signerDecrypter.Decrypt(ctx, "account1", nil)
-		require.ErrorContains(t, err, "account not found")
+		_, err = signerDecrypter.Decrypt(ctx, account, nil)
+		require.ErrorContains(t, err, "decrypter is nil")
 	})
 }

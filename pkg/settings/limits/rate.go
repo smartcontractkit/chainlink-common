@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 // A RateLimiter applies rate limits. These methods are a subset of [rate.Limiter], with context.Context based scoping,
 // and some *Err variants. Methods with errors will return ErrorRateLimited when limits are encountered.
 type RateLimiter interface {
-	Limiter
+	Limiter[config.Rate]
 
 	// Allow reports whether an event may happen now.
 	Allow(ctx context.Context) bool
@@ -205,6 +206,7 @@ type rateLimiter struct {
 	recordLimit func(ctx context.Context, value float64)
 	recordBurst func(ctx context.Context, value int64)
 	addUsage    func(ctx context.Context, incr int64)
+	// opt: addDenied
 
 	limiter *rate.Limiter
 }
@@ -215,6 +217,10 @@ func (l *rateLimiter) getRate(ctx context.Context) config.Rate {
 		l.lggr.Errorw("Failed to get limit. Using default value", "default", r, "err", err)
 	}
 	return r
+}
+
+func (l *rateLimiter) Limit(ctx context.Context) (config.Rate, error) {
+	return l.getRate(ctx), nil
 }
 
 func (l *rateLimiter) Allow(ctx context.Context) bool {
@@ -230,6 +236,7 @@ func (l *rateLimiter) AllowN(ctx context.Context, t time.Time, n int) bool {
 		l.addUsage(ctx, int64(n))
 		return true
 	}
+	// opt: track denied
 	return false
 }
 
@@ -402,6 +409,7 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 	l := &rateLimiter{
 		scope:   s.scope,
+		tenant:  tenant,
 		updater: newUpdater[config.Rate](logger.With(s.lggr, s.scope.String(), tenant), s.rateFn, s.subFn),
 		limiter: rate.NewLimiter(s.defaultRate.Limit, s.defaultRate.Burst),
 		recordLimit: func(ctx context.Context, value float64) {
@@ -427,6 +435,15 @@ func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 		l.recordBurst(ctx, int64(r.Burst))
 	}
 	return l
+}
+
+func (s *scopedRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
+	l, done, err := s.getOrCreate(ctx)
+	if err != nil {
+		return config.Rate{}, err
+	}
+	defer done()
+	return l.Limit(ctx)
 }
 
 func (s *scopedRateLimiter) Allow(ctx context.Context) bool {
@@ -511,6 +528,13 @@ func (m MultiRateLimiter) Close() (err error) {
 		err = errors.Join(err, l.Close())
 	}
 	return
+}
+
+func (m MultiRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
+	if len(m) == 0 {
+		return config.Rate{}, fmt.Errorf("empty")
+	}
+	return m[0].Limit(ctx)
 }
 
 func (m MultiRateLimiter) Allow(ctx context.Context) bool {
@@ -676,6 +700,10 @@ func (m *multiReservation) AllowErr() error {
 }
 
 type unlimitedRate struct{}
+
+func (r unlimitedRate) Limit(context.Context) (config.Rate, error) {
+	return config.Rate{Limit: rate.Inf, Burst: math.MaxInt}, nil
+}
 
 // UnlimitedRateLimiter returns a RateLimiter without any limit. Every call is allowed, all reservations are accepted
 // without delay, and no calls have to wait.

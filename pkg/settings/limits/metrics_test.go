@@ -138,7 +138,7 @@ func redactHistogramVals[N int64 | float64](t *testing.T, ms metrics, name strin
 	}
 	h, ok := ms[i].Data.(metricdata.Histogram[N])
 	if !ok {
-		t.Fatalf("failed to find histogram named: %s", name)
+		t.Fatalf("failed to find histogram named: %s: %#v", name, ms)
 		return
 	}
 	for j := range h.DataPoints {

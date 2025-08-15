@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"sync"
 	"time"
 
@@ -19,12 +18,14 @@ import (
 
 // ResourceLimiter is a limiter for resources, where each interaction is typically single-action.
 type ResourceLimiter[N Number] interface {
-	Limiter
+	Limiter[N]
 	// Use increases the resource count by amount, or returns an error if the limit is reached.
 	// It does not block. Use a ResourcePoolLimiter for blocking semantics.
 	Use(ctx context.Context, amount N) error
 	// Free is the counterpart to Use and releases amount of resources from use.
 	Free(ctx context.Context, amount N) error
+	// Available returns
+	Available(ctx context.Context) (N, error)
 }
 
 // ResourcePoolLimiter is a limiter for a pool of resources, with concurrent active use, and extends the ResourceLimiter
@@ -37,7 +38,7 @@ type ResourcePoolLimiter[N Number] interface {
 }
 
 // GlobalResourcePoolLimiter returns an unscoped ResourcePoolLimiter with default options.
-// See [NewResourcePoolLimiter] for dynamic limits, metering, and more.
+// See [MakeResourcePoolLimiter] for dynamic limits, metering, and more.
 func GlobalResourcePoolLimiter[N Number](limit N) ResourcePoolLimiter[N] {
 	return newUnscopedResourcePoolLimiter(limit)
 }
@@ -105,44 +106,23 @@ func (l *resourcePoolLimiter[N]) createGauges(meter metric.Meter, unit string) e
 	if l.key == "" {
 		return errors.New("metrics require Key to be set")
 	}
-	var gaugeFn func(key string) (gauge[N], error)
-	var histogramFn func(key string) (histogram[N], error)
-	var n N
-	if k := reflect.TypeOf(n).Kind(); k == reflect.Float64 || k == reflect.Float32 {
-		gaugeFn = func(key string) (gauge[N], error) {
-			g, err := meter.Float64Gauge(key, metric.WithUnit(unit))
-			return &floatRecorder[N]{g}, err
-		}
-		histogramFn = func(key string) (histogram[N], error) {
-			g, err := meter.Float64Histogram(key, metric.WithUnit(unit))
-			return &floatRecorder[N]{g}, err
-		}
-	} else {
-		gaugeFn = func(key string) (gauge[N], error) {
-			g, err := meter.Int64Gauge(key, metric.WithUnit(unit))
-			return &intRecorder[N]{g}, err
-		}
-		histogramFn = func(key string) (histogram[N], error) {
-			g, err := meter.Int64Histogram(key, metric.WithUnit(unit))
-			return &intRecorder[N]{g}, err
-		}
-	}
+	newGauge, newHist := metricConstructors[N](meter, unit)
 
-	limitGauge, err := gaugeFn("resource." + l.key + ".limit")
+	limitGauge, err := newGauge("resource." + l.key + ".limit")
 	if err != nil {
 		return err
 	}
 	l.recordLimit = func(ctx context.Context, value N, options ...metric.RecordOption) {
 		limitGauge.Record(ctx, value, options...)
 	}
-	usageGauge, err := gaugeFn("resource." + l.key + ".usage")
+	usageGauge, err := newGauge("resource." + l.key + ".usage")
 	if err != nil {
 		return err
 	}
 	l.recordUsage = func(ctx context.Context, value N, options ...metric.RecordOption) {
 		usageGauge.Record(ctx, value, options...)
 	}
-	amountHistogram, err := histogramFn("resource." + l.key + ".amount")
+	amountHistogram, err := newHist("resource." + l.key + ".amount")
 	if err != nil {
 		return err
 	}
@@ -221,17 +201,38 @@ func (u *resourcePoolUsage[N]) newErrorLimitReached(limit, amount N) ErrorResour
 	}
 }
 
+func (u *resourcePoolUsage[N]) get(ctx context.Context) (N, error) {
+	limit := u.getLimit(ctx)
+	u.recordLimit(ctx, limit)
+	return limit, nil
+}
+
+func (u *resourcePoolUsage[N]) available(ctx context.Context) (N, error) {
+	limit, err := u.get(ctx)
+	if err != nil {
+		var zero N
+		return zero, err
+	}
+
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return limit - u.used, nil
+}
+
 //opt: queue instead of racing for the [sync.Mutex] & [sync.Cond]
 func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) error {
+	limit, err := u.get(ctx)
+	if err != nil {
+		return err
+	}
+
 	start := time.Now()
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	limit := u.getLimit(ctx)
-	u.recordLimit(ctx, limit)
-
 	if u.used+amount > limit {
 		if !block {
+			//opt: recordDenied
 			return u.newErrorLimitReached(limit, amount)
 		}
 		// Ensure cond.Wait() yields to context expiration
@@ -245,6 +246,7 @@ func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) er
 		for u.used+amount > limit {
 			u.cond.Wait() // wait until some resources are freed, or context expiration
 			if err := ctx.Err(); err != nil {
+				// opt: recordDenied
 				return fmt.Errorf("context error (%w) after waiting %s for limit: %w", err, time.Since(start), u.newErrorLimitReached(limit, amount))
 			}
 		}
@@ -283,16 +285,24 @@ func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourceP
 
 func recordNoop[T any](ctx context.Context, value T) {}
 
+func (u *unscopedResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
+	return u.get(ctx)
+}
+
+func (u *unscopedResourcePoolLimiter[N]) Available(ctx context.Context) (N, error) {
+	return u.available(ctx)
+}
+
 func (u *unscopedResourcePoolLimiter[N]) Wait(ctx context.Context, amount N) (func(), error) {
-	return u.resourcePoolUsage.wait(ctx, amount)
+	return u.wait(ctx, amount)
 }
 
 func (u *unscopedResourcePoolLimiter[N]) Use(ctx context.Context, amount N) error {
-	return u.resourcePoolUsage.use(ctx, amount, false)
+	return u.use(ctx, amount, false)
 }
 
 func (u *unscopedResourcePoolLimiter[N]) Free(_ context.Context, amount N) error {
-	u.resourcePoolUsage.free(amount)
+	u.free(amount)
 	return nil
 }
 
@@ -308,6 +318,22 @@ func (m MultiResourcePoolLimiter[N]) Close() (errs error) {
 		}
 	}
 	return
+}
+
+func (m MultiResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
+	if len(m) == 0 {
+		var zero N
+		return zero, fmt.Errorf("no limiters")
+	}
+	return m[0].Limit(ctx)
+}
+
+func (m MultiResourcePoolLimiter[N]) Available(ctx context.Context) (N, error) {
+	if len(m) == 0 {
+		var zero N
+		return zero, fmt.Errorf("no limiters")
+	}
+	return m[0].Available(ctx)
 }
 
 func (m MultiResourcePoolLimiter[N]) Wait(ctx context.Context, amount N) (func(), error) {
@@ -427,6 +453,26 @@ func (s *scopedResourcePoolLimiter[N]) Close() (err error) {
 	return
 }
 
+func (s *scopedResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
+	usage, done, err := s.getOrCreate(ctx)
+	if err != nil {
+		var zero N
+		return zero, err
+	}
+	defer done()
+	return usage.get(ctx)
+}
+
+func (s *scopedResourcePoolLimiter[N]) Available(ctx context.Context) (N, error) {
+	usage, done, err := s.getOrCreate(ctx)
+	if err != nil {
+		var zero N
+		return zero, err
+	}
+	defer done()
+	return usage.available(ctx)
+}
+
 func (s *scopedResourcePoolLimiter[N]) Wait(ctx context.Context, amount N) (func(), error) {
 	usage, done, err := s.getOrCreate(ctx)
 	if err != nil {
@@ -459,15 +505,25 @@ func (s *scopedResourcePoolLimiter[N]) Free(ctx context.Context, amount N) error
 	return nil
 }
 
-type resourcePool[N any] interface {
+type resourcePool[N Number] interface {
 	use(ctx context.Context, amount N, block bool) error
 	free(N)
+	get(context.Context) (N, error)
+	available(context.Context) (N, error)
 }
 
 // unlimitedResourcePool is a no-op resourcePool.
-type unlimitedResourcePool[N any] struct{}
+type unlimitedResourcePool[N Number] struct{}
 
 func (u unlimitedResourcePool[N]) use(ctx context.Context, amount N, block bool) error { return nil }
+
+func (u unlimitedResourcePool[N]) get(ctx context.Context) (N, error) {
+	return maxVal[N]()
+}
+
+func (u unlimitedResourcePool[N]) available(ctx context.Context) (N, error) {
+	return maxVal[N]()
+}
 
 func (u unlimitedResourcePool[N]) free(n N) {}
 
@@ -552,6 +608,13 @@ func UnlimitedResourceLimiter[N Number]() ResourceLimiter[N] {
 }
 
 func (u unlimitedResourceLimiter[N]) Close() error { return nil }
+
+func (u unlimitedResourceLimiter[N]) Limit(ctx context.Context) (n N, err error) {
+	return maxVal[N]()
+}
+func (u unlimitedResourceLimiter[N]) Available(ctx context.Context) (n N, err error) {
+	return maxVal[N]()
+}
 
 func (u unlimitedResourceLimiter[N]) Use(ctx context.Context, amount N) error { return nil }
 

@@ -6,8 +6,6 @@
 	},
 	"PerOrg": {
 		"WorkflowDeploymentRateLimit": "every1m0s:1",
-		"TriggerEventQueueLimit": "1000",
-		"TriggerEventQueueTimeout": "10m0s",
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
 	"PerOwner": {
@@ -16,15 +14,20 @@
 	"PerWorkflow": {
 		"TriggerLimit": "10",
 		"TriggerRateLimit": "every30s:3",
-		"TriggerRegistrationTimeout": "10s",
+		"TriggerRegistrationsTimeout": "10s",
 		"TriggerSubscriptionTimeout": "5s",
+		"TriggerSubscriptionLimit": "10",
+		"TriggerEventQueueLimit": "1000",
+		"TriggerEventQueueTimeout": "10m0s",
 		"CapabilityConcurrencyLimit": "3",
+		"CapabilityCallTimeout": "8m0s",
+		"SecretsConcurrencyLimit": "3",
 		"ExecutionConcurrencyLimit": "10",
-		"ExecutionTimeout": "5m0s",
+		"ExecutionTimeout": "10m0s",
 		"ExecutionResponseLimit": "100kb",
 		"WASMExecutionTimeout": "1m0s",
 		"WASMMemoryLimit": "100mb",
-		"BinarySizeLimit": "30mb",
+		"WASMBinarySizeLimit": "30mb",
 		"ConsensusObservationSizeLimit": "10kb",
 		"ConsensusCallsLimit": "2",
 		"LogLineLimit": "1kb",

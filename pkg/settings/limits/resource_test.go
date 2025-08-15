@@ -124,7 +124,7 @@ func ExampleMultiResourcePoolLimiter() {
 	// <nil>
 }
 
-func TestNewResourcePoolLimiter(t *testing.T) {
+func TestMakeResourcePoolLimiter(t *testing.T) {
 	t.Parallel()
 	for _, tt := range []struct {
 		scope settings.Scope
@@ -141,7 +141,7 @@ func TestNewResourcePoolLimiter(t *testing.T) {
 			limit := settings.Size(42)
 			limit.Key = "foo.bar"
 			limit.Scope = tt.scope
-			rl, err := NewResourcePoolLimiter(f, limit)
+			rl, err := MakeResourcePoolLimiter(f, limit)
 			require.NoError(t, err)
 			t.Cleanup(func() { assert.NoError(t, rl.Close()) })
 

@@ -508,7 +508,8 @@ func runWasm[I, O proto.Message](
 	)
 
 	deadline := *m.cfg.Timeout / m.cfg.TickInterval
-	store.SetEpochDeadline(uint64(deadline))
+	println(fmt.Sprintf("Setting the deadline to %d", deadline))
+	store.SetEpochDeadline(uint64(deadline * 10))
 
 	h := fnv.New64a()
 	if helper != nil {

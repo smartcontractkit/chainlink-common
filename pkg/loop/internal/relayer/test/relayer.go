@@ -635,6 +635,8 @@ type fuzzerKeystore struct {
 	acctErr       bool
 	signed        []byte
 	signErr       bool
+	decrypted     []byte
+	decryptErr    bool
 	valuesWithErr bool
 	errStr        string
 }
@@ -667,4 +669,22 @@ func (k fuzzerKeystore) Sign(ctx context.Context, account string, data []byte) (
 	}
 
 	return k.signed, nil
+}
+
+func (k fuzzerKeystore) Decrypt(ctx context.Context, account string, encrypted []byte) ([]byte, error) {
+	if k.decryptErr {
+		err := errors.New(k.errStr)
+
+		if k.valuesWithErr {
+			return k.decrypted, err
+		}
+
+		return nil, err
+	}
+
+	if len(k.decrypted) == 0 {
+		return nil, fmt.Errorf("no decrypted data for account %s", account)
+	}
+
+	return k.decrypted, nil
 }

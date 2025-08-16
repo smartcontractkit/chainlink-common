@@ -95,7 +95,7 @@ func TestMakeQueueLimiter(t *testing.T) {
 			limit := settings.Int(2)
 			limit.Key = "foo.bar"
 			limit.Scope = tt.scope
-			limit.Unit = "task"
+			limit.Unit = "{task}"
 			ql, err := MakeQueueLimiter[string](f, limit)
 			require.NoError(t, err)
 			t.Cleanup(func() { assert.NoError(t, ql.Close()) })
@@ -111,11 +111,12 @@ func TestMakeQueueLimiter(t *testing.T) {
 			require.Equal(t, "foo", v)
 
 			ms := mc.lastResourceFirstScopeMetric(t)
+			redactHistogramVals[int64](t, ms, "queue.foo.bar.denied")
 			attrs := attribute.NewSet(kvsFromScope(ctx, tt.scope)...)
 			require.Equal(t, metrics{
 				metricdata.Metrics{
 					Name: "queue.foo.bar.limit",
-					Unit: "task",
+					Unit: "{task}",
 					Data: metricdata.Gauge[int64]{
 						DataPoints: []metricdata.DataPoint[int64]{
 							{Attributes: attrs, Value: 2}},
@@ -123,10 +124,25 @@ func TestMakeQueueLimiter(t *testing.T) {
 				},
 				metricdata.Metrics{
 					Name: "queue.foo.bar.usage",
-					Unit: "task",
+					Unit: "{task}",
 					Data: metricdata.Gauge[int64]{
 						DataPoints: []metricdata.DataPoint[int64]{
 							{Attributes: attrs, Value: 1}},
+					},
+				},
+				{
+					Name: "queue.foo.bar.denied",
+					Unit: "{task}",
+					Data: metricdata.Histogram[int64]{
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{
+								Attributes:   attrs,
+								Count:        1,
+								Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+								BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+						},
+						Temporality: metricdata.CumulativeTemporality,
 					},
 				},
 			}, ms)

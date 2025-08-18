@@ -184,3 +184,22 @@ message StoredSecret {
 message StoredMetadata {
   repeated SecretIdentifier secret_identifiers = 2;
 }
+
+message ReportingPluginConfig {
+  // Plugin-specific configuration
+  int32 BatchSize = 1;
+  int32 MaxSecretsPerOwner = 2;
+  int32 MaxCiphertextLengthBytes = 3;
+  int32 MaxIdentifierKeyLengthBytes = 4;
+  int32 MaxIdentifierOwnerLengthBytes = 5;
+  int32 MaxIdentifierNamespaceLengthBytes = 6;
+
+  // OCR 3.1 ReportInfo configuration
+  int32 LimitsMaxQueryLength = 7;
+  int32 LimitsMaxObservationLength = 8;
+  int32 LimitsMaxReportsPlusPrecursorLength = 9;
+  int32 LimitsMaxReportLength = 10;
+  int32 LimitsMaxReportCount = 11;
+  int32 LimitsMaxKeyValueModifiedKeysPlusValuesLength = 12;
+  int32 LimitsMaxBlobPayloadLength = 13;
+}

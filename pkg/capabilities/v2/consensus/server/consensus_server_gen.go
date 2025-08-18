@@ -19,9 +19,9 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs) (*pb.Value, error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], error)
 
-	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest) (*pb2.ReportResponse, error)
+	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest) (*capabilities.ResponseAndMetadata[*pb2.ReportResponse], error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -123,15 +123,23 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	case "Simple":
 		input := &pb2.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, error) {
-			return c.ConsensusCapability.Simple(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, capabilities.ResponseMetadata, error) {
+			output, err := c.ConsensusCapability.Simple(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Simple(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "Report":
 		input := &pb2.ReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest, _ *emptypb.Empty) (*pb2.ReportResponse, error) {
-			return c.ConsensusCapability.Report(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest, _ *emptypb.Empty) (*pb2.ReportResponse, capabilities.ResponseMetadata, error) {
+			output, err := c.ConsensusCapability.Report(ctx, metadata, input)
+			if output == nil && err == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Report(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

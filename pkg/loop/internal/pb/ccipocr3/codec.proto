@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pb";
+
+package loop.internal.pb.ccipocr3;
+
+import "models.proto";
+import "values/v1/values.proto";
+
+// ChainSpecificAddressCodec service for address encoding/decoding
+service ChainSpecificAddressCodec {
+  rpc AddressBytesToString(AddressBytesToStringRequest) returns (AddressBytesToStringResponse);
+  rpc AddressStringToBytes(AddressStringToBytesRequest) returns (AddressStringToBytesResponse);
+  rpc OracleIDAsAddressBytes(OracleIDAsAddressBytesRequest) returns (OracleIDAsAddressBytesResponse);
+  rpc TransmitterBytesToString(TransmitterBytesToStringRequest) returns (TransmitterBytesToStringResponse);
+}
+
+// ExecutePluginCodec service for execute plugin report encoding/decoding
+service ExecutePluginCodec {
+  rpc Encode(EncodeExecutePluginReportRequest) returns (EncodeExecutePluginReportResponse);
+  rpc Decode(DecodeExecutePluginReportRequest) returns (DecodeExecutePluginReportResponse);
+}
+
+// TokenDataEncoder service for encoding offchain token data
+service TokenDataEncoder {
+  rpc EncodeUSDC(EncodeUSDCRequest) returns (EncodeUSDCResponse);
+}
+
+// SourceChainExtraDataCodec service for decoding source chain specific data
+service SourceChainExtraDataCodec {
+  rpc DecodeExtraArgsToMap(DecodeExtraArgsToMapRequest) returns (DecodeExtraArgsToMapResponse);
+  rpc DecodeDestExecDataToMap(DecodeDestExecDataToMapRequest) returns (DecodeDestExecDataToMapResponse);
+}
+
+// ChainSpecificAddressCodec messages
+message AddressBytesToStringRequest {
+  bytes address = 1;
+}
+
+message AddressBytesToStringResponse {
+  string address_string = 1;
+}
+
+message AddressStringToBytesRequest {
+  string address_string = 1;
+}
+
+message AddressStringToBytesResponse {
+  bytes address = 1;
+}
+
+message OracleIDAsAddressBytesRequest {
+  uint32 oracle_id = 1; // uint8 but proto doesn't support it
+}
+
+message OracleIDAsAddressBytesResponse {
+  bytes address = 1;
+}
+
+message TransmitterBytesToStringRequest {
+  bytes transmitter = 1;
+}
+
+message TransmitterBytesToStringResponse {
+  string transmitter_string = 1;
+}
+
+// ExecutePluginCodec messages
+message EncodeExecutePluginReportRequest {
+  ExecutePluginReport report = 1;
+}
+
+message EncodeExecutePluginReportResponse {
+  bytes encoded_report = 1;
+}
+
+message DecodeExecutePluginReportRequest {
+  bytes encoded_report = 1;
+}
+
+message DecodeExecutePluginReportResponse {
+  ExecutePluginReport report = 1;
+}
+
+// TokenDataEncoder messages
+message EncodeUSDCRequest {
+  bytes message = 1;
+  bytes attestation = 2;
+}
+
+message EncodeUSDCResponse {
+  bytes encoded_data = 1;
+}
+
+// SourceChainExtraDataCodec messages
+message DecodeExtraArgsToMapRequest {
+  bytes extra_args = 1;
+}
+
+message DecodeExtraArgsToMapResponse {
+  values.v1.Map decoded_map = 1;
+}
+
+message DecodeDestExecDataToMapRequest {
+  bytes dest_exec_data = 1;
+}
+
+message DecodeDestExecDataToMapResponse {
+  values.v1.Map decoded_map = 1;
+}
+
+// Supporting types
+message ExecutePluginReport {
+  repeated ChainReport chain_reports = 1;
+}
+
+message ChainReport {
+  uint64 source_chain_selector = 1;
+  repeated Message messages = 2;
+  repeated MessageOffchainTokenData offchain_token_data = 3;
+  repeated bytes proofs = 4;
+  BigInt proof_flag_bits = 5;
+}
+
+// MessageOffchainTokenData maintains the per-message token data mapping
+message MessageOffchainTokenData {
+  repeated bytes token_data = 1;  // All tokens for this specific message
+}
+

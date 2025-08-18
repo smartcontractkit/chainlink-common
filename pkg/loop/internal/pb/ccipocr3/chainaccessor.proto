@@ -1,0 +1,340 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pb";
+
+package loop.internal.pb.ccipocr3;
+
+import "models.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ChainAccessor service for all direct chain access
+service ChainAccessor {
+  // AllAccessors methods
+  rpc GetContractAddress(GetContractAddressRequest) returns (GetContractAddressResponse);
+  rpc GetAllConfigsLegacy(GetAllConfigsLegacyRequest) returns (GetAllConfigsLegacyResponse);
+  rpc GetChainFeeComponents(google.protobuf.Empty) returns (GetChainFeeComponentsResponse);
+  rpc Sync(SyncRequest) returns (google.protobuf.Empty);
+  
+  // DestinationAccessor methods
+  rpc CommitReportsGTETimestamp(CommitReportsGTETimestampRequest) returns (CommitReportsGTETimestampResponse);
+  rpc ExecutedMessages(ExecutedMessagesRequest) returns (ExecutedMessagesResponse);
+  rpc NextSeqNum(NextSeqNumRequest) returns (NextSeqNumResponse);
+  rpc Nonces(NoncesRequest) returns (NoncesResponse);
+  rpc GetChainFeePriceUpdate(GetChainFeePriceUpdateRequest) returns (GetChainFeePriceUpdateResponse);
+  rpc GetLatestPriceSeqNr(google.protobuf.Empty) returns (GetLatestPriceSeqNrResponse);
+  
+  // SourceAccessor methods
+  rpc MsgsBetweenSeqNums(MsgsBetweenSeqNumsRequest) returns (MsgsBetweenSeqNumsResponse);
+  rpc LatestMessageTo(LatestMessageToRequest) returns (LatestMessageToResponse);
+  rpc GetExpectedNextSequenceNumber(GetExpectedNextSequenceNumberRequest) returns (GetExpectedNextSequenceNumberResponse);
+  rpc GetTokenPriceUSD(GetTokenPriceUSDRequest) returns (GetTokenPriceUSDResponse);
+  rpc GetFeeQuoterDestChainConfig(GetFeeQuoterDestChainConfigRequest) returns (GetFeeQuoterDestChainConfigResponse);
+}
+
+// AllAccessors request/response messages
+message GetContractAddressRequest {
+  string contract_name = 1;
+}
+
+message GetContractAddressResponse {
+  bytes address = 1;
+}
+
+message GetAllConfigsLegacyRequest {
+  uint64 dest_chain_selector = 1;
+  repeated uint64 source_chain_selectors = 2;
+}
+
+message GetAllConfigsLegacyResponse {
+  ChainConfigSnapshot snapshot = 1;
+  map<uint64, SourceChainConfig> source_chain_configs = 2; // key is chain selector
+}
+
+message GetChainFeeComponentsResponse {
+  ChainFeeComponents fee_components = 1;
+}
+
+message SyncRequest {
+  string contract_name = 1;
+  bytes contract_address = 2;
+}
+
+// DestinationAccessor request/response messages
+message CommitReportsGTETimestampRequest {
+  google.protobuf.Timestamp timestamp = 1;
+  uint32 confidence_level = 2;
+  int32 limit = 3;
+}
+
+message CommitReportsGTETimestampResponse {
+  repeated CommitPluginReportWithMeta reports = 1;
+}
+
+message ExecutedMessagesRequest {
+  map<uint64, SequenceNumberRangeList> ranges = 1; // key is chain selector
+  uint32 confidence_level = 2;
+}
+
+message ExecutedMessagesResponse {
+  map<uint64, SequenceNumberList> executed_messages = 1; // key is chain selector
+}
+
+message NextSeqNumRequest {
+  repeated uint64 source_chain_selectors = 1;
+}
+
+message NextSeqNumResponse {
+  map<uint64, uint64> next_seq_nums = 1; // key is chain selector, value is seq num
+}
+
+message NoncesRequest {
+  map<uint64, UnknownEncodedAddressList> addresses = 1; // key is chain selector
+}
+
+message NoncesResponse {
+  map<uint64, NonceMap> nonces = 1; // key is chain selector
+}
+
+message GetChainFeePriceUpdateRequest {
+  repeated uint64 chain_selectors = 1;
+}
+
+message GetChainFeePriceUpdateResponse {
+  map<uint64, TimestampedBig> fee_price_updates = 1; // key is chain selector
+}
+
+message GetLatestPriceSeqNrResponse {
+  uint64 seq_nr = 1;
+}
+
+// SourceAccessor request/response messages
+message MsgsBetweenSeqNumsRequest {
+  uint64 dest_chain_selector = 1;
+  SeqNumRange seq_num_range = 2;
+}
+
+message MsgsBetweenSeqNumsResponse {
+  repeated Message messages = 1;
+}
+
+message LatestMessageToRequest {
+  uint64 dest_chain_selector = 1;
+}
+
+message LatestMessageToResponse {
+  uint64 seq_num = 1;
+}
+
+message GetExpectedNextSequenceNumberRequest {
+  uint64 dest_chain_selector = 1;
+}
+
+message GetExpectedNextSequenceNumberResponse {
+  uint64 seq_num = 1;
+}
+
+message GetTokenPriceUSDRequest {
+  bytes address = 1;
+}
+
+message GetTokenPriceUSDResponse {
+  TimestampedUnixBig price = 1;
+}
+
+message GetFeeQuoterDestChainConfigRequest {
+  uint64 dest_chain_selector = 1;
+}
+
+message GetFeeQuoterDestChainConfigResponse {
+  FeeQuoterDestChainConfig config = 1;
+}
+
+// Supporting message types
+message ChainFeeComponents {
+  BigInt execution_fee = 1;
+  BigInt data_availability_fee = 2;
+}
+
+message CommitPluginReportWithMeta {
+  CommitPluginReport report = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  uint64 block_num = 3;
+}
+
+message TimestampedBig {
+  google.protobuf.Timestamp timestamp = 1;
+  BigInt value = 2;
+}
+
+message TimestampedUnixBig {
+  BigInt value = 1;
+  uint32 timestamp = 2;
+}
+
+message SequenceNumberRangeList {
+  repeated SeqNumRange ranges = 1;
+}
+
+message SequenceNumberList {
+  repeated uint64 seq_nums = 1;
+}
+
+message UnknownEncodedAddressList {
+  repeated string addresses = 1;
+}
+
+message NonceMap {
+  map<string, uint64> nonces = 1; // key is address string, value is nonce
+}
+
+message OfframpConfig {
+  OCRConfigResponse commit_latest_ocr_config = 1;
+  OCRConfigResponse exec_latest_ocr_config = 2;
+  OffRampStaticChainConfig static_config = 3;
+  OffRampDynamicChainConfig dynamic_config = 4;
+}
+
+message OCRConfigResponse {
+  OCRConfig ocr_config = 1;
+}
+
+message OCRConfig {
+  ConfigInfo config_info = 1;
+  repeated bytes signers = 2;
+  repeated bytes transmitters = 3;
+}
+
+message ConfigInfo {
+  bytes config_digest = 1;
+  uint32 f = 2;
+  uint32 n = 3;
+  bool is_signature_verification_enabled = 4;
+}
+
+message OffRampStaticChainConfig {
+  uint64 chain_selector = 1;
+  uint32 gas_for_call_exact_check = 2;
+  bytes rmn_remote = 3;
+  bytes token_admin_registry = 4;
+  bytes nonce_manager = 5;
+}
+
+message OffRampDynamicChainConfig {
+  bytes fee_quoter = 1;
+  uint32 permission_less_execution_threshold_seconds = 2;
+  bool is_rmn_verification_disabled = 3;
+  bytes message_interceptor = 4;
+}
+
+message RMNProxyConfig {
+  bytes remote_address = 1;
+}
+
+message RMNRemoteConfigStruct {
+  RMNDigestHeader digest_header = 1;
+  VersionedConfig versioned_config = 2;
+}
+
+message RMNDigestHeader {
+  bytes digest_header = 1;
+}
+
+message VersionedConfig {
+  uint32 version = 1;
+  RMNConfig config = 2;
+}
+
+message RMNConfig {
+  bytes rmn_home_contract_config_digest = 1;
+  repeated SignerInfo signers = 2;
+  uint64 f_sign = 3;
+}
+
+message SignerInfo {
+  bytes onchain_public_key = 1;
+  uint64 node_index = 2;
+}
+
+message FeeQuoterConfigStruct {
+  FeeQuoterStaticConfigStruct static_config = 1;
+}
+
+message FeeQuoterStaticConfigStruct {
+  BigInt max_fee_juels_per_msg = 1;
+  bytes link_token = 2;
+  uint32 staleness_threshold = 3;
+}
+
+message OnRampConfigStruct {
+  GetOnRampDynamicConfigResponse dynamic_config = 1;
+  OnRampDestChainConfig dest_chain_config = 2;
+}
+
+message GetOnRampDynamicConfigResponse {
+  OnRampDynamicConfig dynamic_config = 1;
+}
+
+message OnRampDynamicConfig {
+  bytes fee_quoter = 1;
+  bool reentrancy_guard_entered = 2;
+  bytes message_interceptor = 3;
+  bytes fee_aggregator = 4;
+  bytes allow_list_admin = 5;
+}
+
+message OnRampDestChainConfig {
+  uint64 sequence_number = 1;
+  bool allow_list_enabled = 2;
+  bytes router = 3;
+}
+
+message RouterConfigStruct {
+  bytes wrapped_native_address = 1;
+}
+
+message ChainConfigSnapshot {
+  OfframpConfig offramp = 1;
+  RMNProxyConfig rmn_proxy = 2;
+  RMNRemoteConfigStruct rmn_remote = 3;
+  FeeQuoterConfigStruct fee_quoter = 4;
+  OnRampConfigStruct on_ramp = 5;
+  RouterConfigStruct router = 6;
+  CurseInfo curse_info = 7;
+}
+
+message CurseInfo {
+  map<uint64, bool> cursed_source_chains = 1; // chain selector -> cursed
+  bool cursed_destination = 2;
+  bool global_curse = 3;
+}
+
+message SourceChainConfig {
+  bytes router = 1; // local router
+  bool is_enabled = 2;
+  bool is_rmn_verification_disabled = 3;
+  uint64 min_seq_nr = 4;
+  bytes on_ramp = 5; // UnknownAddress
+}
+
+message FeeQuoterDestChainConfig {
+  bool is_enabled = 1;
+  uint32 max_number_of_tokens_per_msg = 2;
+  uint32 max_data_bytes = 3;                      
+  uint32 max_per_msg_gas_limit = 4;               
+  uint32 dest_gas_overhead = 5;                   
+  uint32 dest_gas_per_payload_byte = 6;           
+  uint32 dest_gas_per_payload_byte_high = 17;     
+  uint32 dest_gas_per_payload_byte_threshold = 18;
+  uint32 dest_data_availability_overhead_gas = 7;
+  uint32 dest_gas_per_data_availability_byte = 8; // uint16 in Go (0-65535)
+  uint32 dest_data_availability_multiplier_bps = 9; // uint16 in Go (0-65535)
+  uint32 default_token_fee_usdc_cents = 10; // uint16 in Go (0-65535)
+  uint32 default_token_dest_gas_overhead = 11;    
+  uint32 default_tx_gas_limit = 12;               
+  uint64 gas_multiplier_wad = 13;
+  uint32 network_fee_usdc_cents = 14;             
+  uint32 gas_price_staleness_threshold = 19;      
+  bool enforce_out_of_order = 15;
+  bytes chain_family_selector = 16; // [4]byte in Go
+}

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
-	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
@@ -172,10 +174,20 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 		return nil, errEmptyMsg
 	}
 
+	from, err := evm.ConvertOptionalAddressFromProto(protoMsg.From)
+	if err != nil {
+		return nil, fmt.Errorf("from address is invalid: %w", err)
+	}
+
+	to, err := evm.ConvertAddressFromProto(protoMsg.GetTo())
+	if err != nil {
+		return nil, fmt.Errorf("to address is invalid: %w", err)
+	}
+
 	return &evmtypes.CallMsg{
-		From: evmtypes.Address(protoMsg.GetFrom()),
+		From: from,
 		Data: protoMsg.GetData(),
-		To:   evmtypes.Address(protoMsg.GetTo()),
+		To:   to,
 	}, nil
 }
 

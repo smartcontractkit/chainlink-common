@@ -58,19 +58,7 @@ func newGlobalResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]
 		if err := l.createGauges(f.Meter, limit.Unit); err != nil {
 			return nil, err
 		}
-		l.resourcePoolUsage = l.newLimitUsage(func(ctx context.Context, value N) {
-			if l.resourcePoolLimiter.recordUsage != nil {
-				l.resourcePoolLimiter.recordUsage(ctx, value)
-			}
-		}, func(ctx context.Context, value N) {
-			if l.resourcePoolLimiter.recordLimit != nil {
-				l.resourcePoolLimiter.recordLimit(ctx, value)
-			}
-		}, func(ctx context.Context, value time.Duration) {
-			if l.resourcePoolLimiter.recordBlockTime != nil {
-				l.resourcePoolLimiter.recordBlockTime(ctx, int64(value))
-			}
-		})
+		l.resourcePoolUsage = l.newLimitUsage()
 	}
 
 	if f.Settings != nil {
@@ -81,7 +69,6 @@ func newGlobalResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]
 			l.subFn = func(ctx context.Context) (updates <-chan settings.Update[N], cancelSub func()) {
 				return limit.Subscribe(ctx, registry)
 			}
-
 		}
 	}
 
@@ -96,10 +83,11 @@ type resourcePoolLimiter[N Number] struct {
 
 	key string // optional
 
-	recordUsage     func(ctx context.Context, value N, options ...metric.RecordOption)    // optional
-	recordLimit     func(ctx context.Context, value N, options ...metric.RecordOption)    // optional
-	recordBlockTime func(ctx context.Context, incr int64, options ...metric.RecordOption) // optional
-	recordAmount    func(ctx context.Context, value N, options ...metric.RecordOption)    // optional
+	recordUsage     func(context.Context, N, ...metric.RecordOption)       // optional
+	recordLimit     func(context.Context, N, ...metric.RecordOption)       // optional
+	recordBlockTime func(context.Context, float64, ...metric.RecordOption) // optional
+	recordAmount    func(context.Context, N, ...metric.RecordOption)       // optional
+	recordDenied    func(context.Context, N, ...metric.RecordOption)       // optional
 }
 
 func (l *resourcePoolLimiter[N]) createGauges(meter metric.Meter, unit string) error {
@@ -122,12 +110,26 @@ func (l *resourcePoolLimiter[N]) createGauges(meter metric.Meter, unit string) e
 	l.recordUsage = func(ctx context.Context, value N, options ...metric.RecordOption) {
 		usageGauge.Record(ctx, value, options...)
 	}
+	blockTimeHistogram, err := meter.Float64Histogram("resource."+l.key+".block_time", metric.WithUnit(unit))
+	if err != nil {
+		return err
+	}
+	l.recordBlockTime = func(ctx context.Context, value float64, options ...metric.RecordOption) {
+		blockTimeHistogram.Record(ctx, value, options...)
+	}
 	amountHistogram, err := newHist("resource." + l.key + ".amount")
 	if err != nil {
 		return err
 	}
 	l.recordAmount = func(ctx context.Context, value N, options ...metric.RecordOption) {
 		amountHistogram.Record(ctx, value, options...)
+	}
+	deniedHistogram, err := newHist("resource." + l.key + ".denied")
+	if err != nil {
+		return err
+	}
+	l.recordDenied = func(ctx context.Context, value N, options ...metric.RecordOption) {
+		deniedHistogram.Record(ctx, value, options...)
 	}
 	return nil
 }
@@ -148,9 +150,11 @@ type resourcePoolUsage[N Number] struct {
 	cond   sync.Cond
 	used   N
 
-	recordLimit   func(ctx context.Context, value N)
-	recordUsage   func(ctx context.Context, value N)
-	recordBlocked func(ctx context.Context, value time.Duration)
+	recordUsage     func(context.Context, N)
+	recordLimit     func(context.Context, N)
+	recordBlockTime func(context.Context, float64)
+	recordAmount    func(context.Context, N)
+	recordDenied    func(context.Context, N)
 
 	stopOnce  sync.Once
 	stopCh    services.StopChan
@@ -158,18 +162,36 @@ type resourcePoolUsage[N Number] struct {
 	cancelSub func() // optional
 }
 
-func (l *resourcePoolLimiter[N]) newLimitUsage(
-	recordUsage func(ctx context.Context, value N),
-	recordLimit func(ctx context.Context, value N),
-	recordBlocked func(ctx context.Context, value time.Duration),
-) *resourcePoolUsage[N] {
+func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *resourcePoolUsage[N] {
 	u := resourcePoolUsage[N]{
 		resourcePoolLimiter: l,
-		recordUsage:         recordUsage,
-		recordLimit:         recordLimit,
-		recordBlocked:       recordBlocked,
 		stopCh:              make(services.StopChan),
 		done:                make(chan struct{}),
+		recordUsage: func(ctx context.Context, n N) {
+			if l.recordUsage != nil {
+				l.recordUsage(ctx, n, opts...)
+			}
+		},
+		recordLimit: func(ctx context.Context, n N) {
+			if l.recordLimit != nil {
+				l.recordLimit(ctx, n, opts...)
+			}
+		},
+		recordBlockTime: func(ctx context.Context, n float64) {
+			if l.recordBlockTime != nil {
+				l.recordBlockTime(ctx, n, opts...)
+			}
+		},
+		recordAmount: func(ctx context.Context, n N) {
+			if l.recordAmount != nil {
+				l.recordAmount(ctx, n, opts...)
+			}
+		},
+		recordDenied: func(ctx context.Context, n N) {
+			if l.recordDenied != nil {
+				l.recordDenied(ctx, n, opts...)
+			}
+		},
 	}
 	u.cond.L = &u.mu
 	return &u
@@ -232,7 +254,7 @@ func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) er
 
 	if u.used+amount > limit {
 		if !block {
-			//opt: recordDenied
+			u.recordDenied(ctx, amount)
 			return u.newErrorLimitReached(limit, amount)
 		}
 		// Ensure cond.Wait() yields to context expiration
@@ -246,14 +268,15 @@ func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) er
 		for u.used+amount > limit {
 			u.cond.Wait() // wait until some resources are freed, or context expiration
 			if err := ctx.Err(); err != nil {
-				// opt: recordDenied
+				u.recordDenied(ctx, amount)
 				return fmt.Errorf("context error (%w) after waiting %s for limit: %w", err, time.Since(start), u.newErrorLimitReached(limit, amount))
 			}
 		}
 	}
 	u.used += amount
 	u.recordUsage(ctx, u.used)
-	u.recordBlocked(ctx, time.Since(start))
+	u.recordAmount(ctx, amount)
+	u.recordBlockTime(ctx, time.Since(start).Seconds())
 	return nil
 }
 
@@ -279,7 +302,7 @@ func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourceP
 			updater: newUpdater[N](nil, func(ctx context.Context) (N, error) { return defaultLimit, nil }, nil),
 		},
 	}
-	l.resourcePoolUsage = l.newLimitUsage(recordNoop[N], recordNoop[N], recordNoop[time.Duration])
+	l.resourcePoolUsage = l.newLimitUsage()
 	return l
 }
 
@@ -558,35 +581,10 @@ func (s *scopedResourcePoolLimiter[N]) getOrCreate(ctx context.Context) (resourc
 }
 
 func (s *scopedResourcePoolLimiter[N]) newLimitUsage(tenant string) *resourcePoolUsage[N] {
-	u := s.resourcePoolLimiter.newLimitUsage(s.recordScoped(tenant))
+	u := s.resourcePoolLimiter.newLimitUsage(metric.WithAttributes(attribute.String(s.scope.String(), tenant)))
 	u.scope = s.scope
 	u.tenant = tenant
 	return u
-}
-
-func (s *scopedResourcePoolLimiter[N]) recordScoped(tenant string) (usage, limit func(context.Context, N), blocked func(ctx context.Context, value time.Duration)) {
-	if s.recordUsage == nil {
-		usage = func(ctx context.Context, n N) {}
-	} else {
-		usage = func(ctx context.Context, value N) {
-			s.recordUsage(ctx, value, metric.WithAttributes(attribute.String(s.scope.String(), tenant)))
-		}
-	}
-	if s.recordLimit == nil {
-		limit = func(ctx context.Context, n N) {}
-	} else {
-		limit = func(ctx context.Context, value N) {
-			s.recordLimit(ctx, value, metric.WithAttributes(attribute.String(s.scope.String(), tenant)))
-		}
-	}
-	if s.recordBlockTime == nil {
-		blocked = func(ctx context.Context, value time.Duration) {}
-	} else {
-		blocked = func(ctx context.Context, value time.Duration) {
-			s.recordBlockTime(ctx, int64(value), metric.WithAttributes(attribute.String(s.scope.String(), tenant)))
-		}
-	}
-	return
 }
 
 type unlimitedResourcePoolLimiter[N Number] struct {

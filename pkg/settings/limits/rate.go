@@ -127,9 +127,10 @@ func newRateLimiter(scope settings.Scope, limit rate.Limit, burst int) RateLimit
 
 			limiter: rate.NewLimiter(limit, burst),
 
-			recordLimit: func(ctx context.Context, value float64) {},
-			recordBurst: func(ctx context.Context, value int64) {},
-			addUsage:    func(ctx context.Context, incr int64) {},
+			recordLimit:  func(ctx context.Context, value float64) {},
+			recordBurst:  func(ctx context.Context, value int64) {},
+			addUsage:     func(ctx context.Context, incr int64) {},
+			recordDenied: func(ctx context.Context, incr int) {},
 		}
 		close(rl.updater.done) // no background routine
 		return rl
@@ -148,9 +149,10 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 			return limit.GetOrDefault(ctx, f.Settings)
 		}, nil),
 
-		recordLimit: func(ctx context.Context, value float64) {},
-		recordBurst: func(ctx context.Context, value int64) {},
-		addUsage:    func(ctx context.Context, incr int64) {},
+		recordLimit:  func(ctx context.Context, value float64) {},
+		recordBurst:  func(ctx context.Context, value int64) {},
+		addUsage:     func(ctx context.Context, incr int64) {},
+		recordDenied: func(ctx context.Context, incr int) {},
 
 		limiter: rate.NewLimiter(limit.DefaultValue.Limit, limit.DefaultValue.Burst),
 	}
@@ -175,6 +177,16 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 		} else {
 			l.addUsage = func(ctx context.Context, value int64) { usageCounter.Add(ctx, value) }
 		}
+		if deniedCounter, err := f.Meter.Int64Histogram("rate."+limit.Key+".denied", metric.WithUnit(limit.Unit)); err != nil {
+			return nil, err
+		} else {
+			l.recordDenied = func(ctx context.Context, value int) { deniedCounter.Record(ctx, int64(value)) }
+		}
+	} else {
+		l.recordLimit = func(ctx context.Context, value float64) {}
+		l.recordBurst = func(ctx context.Context, value int64) {}
+		l.addUsage = func(ctx context.Context, value int64) {}
+		l.recordDenied = func(ctx context.Context, value int) {}
 	}
 
 	if f.Settings != nil {
@@ -203,10 +215,10 @@ type rateLimiter struct {
 	scope  settings.Scope // optional
 	tenant string         // optional
 
-	recordLimit func(ctx context.Context, value float64)
-	recordBurst func(ctx context.Context, value int64)
-	addUsage    func(ctx context.Context, incr int64)
-	// opt: addDenied
+	recordLimit  func(ctx context.Context, value float64)
+	recordBurst  func(ctx context.Context, value int64)
+	addUsage     func(ctx context.Context, incr int64)
+	recordDenied func(ctx context.Context, value int)
 
 	limiter *rate.Limiter
 }
@@ -228,6 +240,7 @@ func (l *rateLimiter) Allow(ctx context.Context) bool {
 		l.addUsage(ctx, 1)
 		return true
 	}
+	l.recordDenied(ctx, 1)
 	return false
 }
 
@@ -236,7 +249,7 @@ func (l *rateLimiter) AllowN(ctx context.Context, t time.Time, n int) bool {
 		l.addUsage(ctx, int64(n))
 		return true
 	}
-	// opt: track denied
+	l.recordDenied(ctx, n)
 	return false
 }
 
@@ -244,6 +257,7 @@ func (l *rateLimiter) AllowErr(ctx context.Context) error {
 	if !l.Allow(ctx) {
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1}
 	}
+	l.recordDenied(ctx, 1)
 	return nil
 }
 
@@ -251,6 +265,7 @@ func (l *rateLimiter) AllowNErr(ctx context.Context, t time.Time, n int) error {
 	if !l.AllowN(ctx, t, n) {
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1}
 	}
+	l.recordDenied(ctx, n)
 	return nil
 }
 
@@ -266,6 +281,7 @@ func (l *rateLimiter) Reserve(ctx context.Context) (Reservation, error) {
 			n:           1,
 		}, nil
 	}
+	l.recordDenied(ctx, 1)
 	return nil, ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1}
 }
 
@@ -281,11 +297,13 @@ func (l *rateLimiter) ReserveN(ctx context.Context, t time.Time, n int) (Reserva
 			n:           n,
 		}, nil
 	}
+	l.recordDenied(ctx, n)
 	return nil, ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: n}
 }
 
 func (l *rateLimiter) Wait(ctx context.Context) error {
 	if err := l.limiter.Wait(ctx); err != nil {
+		l.recordDenied(ctx, 1)
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1, Err: err}
 	}
 	l.addUsage(ctx, 1)
@@ -294,6 +312,7 @@ func (l *rateLimiter) Wait(ctx context.Context) error {
 
 func (l *rateLimiter) WaitN(ctx context.Context, n int) error {
 	if err := l.limiter.WaitN(ctx, n); err != nil {
+		l.recordDenied(ctx, n)
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: n, Err: err}
 	}
 	l.addUsage(ctx, int64(n))
@@ -328,6 +347,10 @@ func (f Factory) newScopedRateLimiter(limit settings.Setting[config.Rate]) (Rate
 		if err != nil {
 			return nil, err
 		}
+		l.deniedHist, err = f.Meter.Int64Histogram("rate."+limit.Key+".denied", metric.WithUnit(limit.Unit))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if f.Settings != nil {
@@ -356,9 +379,10 @@ type scopedRateLimiter struct {
 	rateFn func(context.Context) (config.Rate, error)
 	subFn  func(ctx context.Context) (<-chan settings.Update[config.Rate], func()) // optional
 
-	limitGauge   metric.Float64Gauge // optional
-	burstGauge   metric.Int64Gauge   // optional
-	usageCounter metric.Int64Counter // optional
+	limitGauge   metric.Float64Gauge   // optional
+	burstGauge   metric.Int64Gauge     // optional
+	usageCounter metric.Int64Counter   // optional
+	deniedHist   metric.Int64Histogram // optional
 
 	// opt: reap after period of non-use
 	limiters sync.Map           // map[string]*rateLimiter
@@ -425,6 +449,11 @@ func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 		addUsage: func(ctx context.Context, incr int64) {
 			if s.usageCounter != nil {
 				s.usageCounter.Add(ctx, incr, withScope(ctx, s.scope))
+			}
+		},
+		recordDenied: func(ctx context.Context, value int) {
+			if s.deniedHist != nil {
+				s.deniedHist.Record(ctx, int64(value), withScope(ctx, s.scope))
 			}
 		},
 	}

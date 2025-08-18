@@ -151,6 +151,7 @@ func TestMakeResourcePoolLimiter(t *testing.T) {
 			require.NoError(t, rl.Use(ctx, 1))
 			require.NoError(t, rl.Use(ctx, 40))
 			require.NoError(t, rl.Use(ctx, 1))
+			require.Error(t, rl.Use(ctx, 1))
 			require.NoError(t, rl.Free(ctx, 42))
 
 			require.NoError(t, rl.Use(ctx, 42))
@@ -164,6 +165,9 @@ func TestMakeResourcePoolLimiter(t *testing.T) {
 			}(ctx))
 
 			ms := mc.lastResourceFirstScopeMetric(t)
+			redactHistogramVals[int64](t, ms, "resource.foo.bar.amount")
+			redactHistogramVals[int64](t, ms, "resource.foo.bar.denied")
+			redactHistogramVals[float64](t, ms, "resource.foo.bar.block_time")
 			attrs := attribute.NewSet(kvsFromScope(ctx, tt.scope)...)
 			require.Equal(t, metrics{
 				metricdata.Metrics{
@@ -182,7 +186,103 @@ func TestMakeResourcePoolLimiter(t *testing.T) {
 							{Attributes: attrs, Value: 42}},
 					},
 				},
+				metricdata.Metrics{
+					Name: "resource.foo.bar.block_time",
+					Unit: "By",
+					Data: metricdata.Histogram[float64]{
+						DataPoints: []metricdata.HistogramDataPoint[float64]{
+							{
+								Attributes:   attrs,
+								Count:        0x5,
+								Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+								BucketCounts: []uint64{0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+						},
+						Temporality: metricdata.CumulativeTemporality},
+				},
+				{
+					Name: "resource.foo.bar.amount",
+					Unit: "By",
+					Data: metricdata.Histogram[int64]{
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{
+								Attributes:   attrs,
+								Count:        5,
+								Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+								BucketCounts: []uint64{0, 2, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+						},
+						Temporality: metricdata.CumulativeTemporality,
+					},
+				},
+				{
+					Name: "resource.foo.bar.denied",
+					Unit: "By",
+					Data: metricdata.Histogram[int64]{
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{
+								Attributes:   attrs,
+								Count:        1,
+								Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+								BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+						},
+						Temporality: metricdata.CumulativeTemporality,
+					},
+				},
 			}, ms)
 		})
 	}
+}
+
+func TestOwnerResourcePoolLimiter(t *testing.T) {
+	ctx1 := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "foo"})
+	ctx2 := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "bar"})
+	l := OwnerResourcePoolLimiter(1)
+	require.NoError(t, l.Use(ctx1, 1))
+	t.Cleanup(func() {
+		assert.NoError(t, l.Free(ctx1, 1))
+	})
+	var err ErrorResourceLimited[int]
+	if assert.ErrorAs(t, l.Use(ctx1, 1), &err) {
+		assert.Equal(t, "", err.Key)
+		assert.Equal(t, settings.ScopeOwner, err.Scope)
+		assert.Equal(t, "foo", err.Tenant)
+		assert.Equal(t, 1, err.Used)
+		assert.Equal(t, 1, err.Limit)
+		assert.Equal(t, 1, err.Amount)
+	}
+	require.NoError(t, l.Use(ctx2, 1))
+	t.Cleanup(func() {
+		assert.NoError(t, l.Free(ctx2, 1))
+	})
+	require.Error(t, l.Use(ctx2, 1))
+}
+
+func Test_newScopedResourcePoolLimiterFromFactory(t *testing.T) {
+	ctx1 := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "foo"})
+	ctx2 := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "bar"})
+	limit := settings.Int(1)
+	limit.Scope = settings.ScopeOwner
+	l, err := newScopedResourcePoolLimiterFromFactory(Factory{}, limit)
+	require.NoError(t, err)
+	require.NoError(t, l.Use(ctx1, 1))
+	t.Cleanup(func() {
+		assert.NoError(t, l.Free(ctx1, 1))
+	})
+	var errLimited ErrorResourceLimited[int]
+	if assert.ErrorAs(t, l.Use(ctx1, 1), &errLimited) {
+		t.Log(errLimited)
+		assert.Equal(t, "", errLimited.Key)
+		assert.Equal(t, settings.ScopeOwner, errLimited.Scope)
+		assert.Equal(t, "foo", errLimited.Tenant)
+		assert.Equal(t, 1, errLimited.Used)
+		assert.Equal(t, 1, errLimited.Limit)
+		assert.Equal(t, 1, errLimited.Amount)
+	}
+	require.NoError(t, l.Use(ctx2, 1))
+	t.Cleanup(func() {
+		assert.NoError(t, l.Free(ctx2, 1))
+	})
+	require.Error(t, l.Use(ctx2, 1))
 }

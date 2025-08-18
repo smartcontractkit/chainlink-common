@@ -109,7 +109,7 @@ func (m *HTTPActionCapabilityMetrics) init() {
 
 	m.gatewayNodeThrottled, m.err = meter.Int64Counter(
 		"http_action_capability_gateway_node_throttled_count",
-		metric.WithDescription("Capability node metric. Number of HTTP action capability throttled requests by gateway while receiving response from gateway"),
+		metric.WithDescription("Capability node metric. Number of throttled requests while receiving HTTP action response from gateway. Per-gateway-node rate limit"),
 	)
 	if m.err != nil {
 		m.err = fmt.Errorf("failed to create capability gateway node throttled metric: %w", m.err)
@@ -118,7 +118,7 @@ func (m *HTTPActionCapabilityMetrics) init() {
 
 	m.gatewayGlobalThrottled, m.err = meter.Int64Counter(
 		"http_action_capability_gateway_global_throttled_count",
-		metric.WithDescription("Capability node metric. Number of HTTP action capability throttled requests globally while receiving response from gateway"),
+		metric.WithDescription("Capability node metric. Number of thro throttled requests while receiving HTTP action response from gateway. Global limit."),
 	)
 	if m.err != nil {
 		m.err = fmt.Errorf("failed to create capability gateway global throttled metric: %w", m.err)
@@ -135,7 +135,6 @@ func (m *HTTPActionCapabilityMetrics) init() {
 	}
 }
 
-// IncrementHTTPActionRequestCount increments the HTTP action request count metric
 func IncrementHTTPActionRequestCount(ctx context.Context, lggr logger.Logger) {
 	httpActionCapabilityMetrics.once.Do(httpActionCapabilityMetrics.init)
 	if httpActionCapabilityMetrics.err != nil {
@@ -147,7 +146,6 @@ func IncrementHTTPActionRequestCount(ctx context.Context, lggr logger.Logger) {
 	httpActionCapabilityMetrics.requestCount.Add(ctx, 1)
 }
 
-// IncrementHTTPActionInputValidationFailures increments the HTTP action input validation failures metric
 func IncrementHTTPActionInputValidationFailures(ctx context.Context, lggr logger.Logger) {
 	httpActionCapabilityMetrics.once.Do(httpActionCapabilityMetrics.init)
 	if httpActionCapabilityMetrics.err != nil {
@@ -203,7 +201,6 @@ func IncrementHTTPActionCapabilityGatewaySendError(ctx context.Context, nodeAddr
 	httpActionCapabilityMetrics.gatewaySendError.Add(ctx, 1, metric.WithAttributes(attribute.String(AttrNodeAddress, nodeAddress)))
 }
 
-// IncrementHTTPActionSuccessfulResponse increments regardless of status code returned from customer's endpoint
 func IncrementHTTPActionSuccessfulResponse(ctx context.Context, lggr logger.Logger) {
 	httpActionCapabilityMetrics.once.Do(httpActionCapabilityMetrics.init)
 	if httpActionCapabilityMetrics.err != nil {
@@ -215,12 +212,11 @@ func IncrementHTTPActionSuccessfulResponse(ctx context.Context, lggr logger.Logg
 	httpActionCapabilityMetrics.successfulResponse.Add(ctx, 1)
 }
 
-// IncrementHTTPActionExecutionError increments when an internal execution error occurs, such as timeouts, request serialization/deserialization failures, or other errors that happen before reaching or after receiving a response from the customer's endpoint (i.e., not errors returned by the customer's endpoint itself).
 func IncrementHTTPActionExecutionError(ctx context.Context, lggr logger.Logger) {
 	httpActionCapabilityMetrics.once.Do(httpActionCapabilityMetrics.init)
 	if httpActionCapabilityMetrics.err != nil {
 		if lggr != nil {
-			lggr.Errorw("Failed to initialize HTTP action execution error metric", "error", httpActionCapabilityMetrics.err)
+			lggr.Errorw("Failed to initialize HTTP action internal execution error metric. Any errors that happen before or after receiving a response from the customer's endpoint", "error", httpActionCapabilityMetrics.err)
 		}
 		return
 	}

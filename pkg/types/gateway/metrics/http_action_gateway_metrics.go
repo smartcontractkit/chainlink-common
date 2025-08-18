@@ -17,7 +17,7 @@ type HTTPActionGatewayMetrics struct {
 	requestCount                   metric.Int64Counter
 	requestFailures                metric.Int64Counter
 	capabilityNodeThrottled        metric.Int64Counter
-	gatewayGlobalThrottled         metric.Int64Counter
+	globalThrottled                metric.Int64Counter
 	requestLatency                 metric.Int64Histogram
 	customerEndpointRequestLatency metric.Int64Histogram
 	customerEndpointResponseCount  metric.Int64Counter
@@ -64,7 +64,7 @@ func (m *HTTPActionGatewayMetrics) init() {
 		return
 	}
 
-	m.gatewayGlobalThrottled, m.err = meter.Int64Counter(
+	m.globalThrottled, m.err = meter.Int64Counter(
 		"http_action_gateway_global_throttled",
 		metric.WithDescription("Gateway node metric. Number of HTTP action gateway requests throttled due to global rate limit"),
 	)
@@ -93,7 +93,7 @@ func (m *HTTPActionGatewayMetrics) init() {
 
 	m.customerEndpointResponseCount, m.err = meter.Int64Counter(
 		"http_action_customer_endpoint_response_count",
-		metric.WithDescription("Gateway node metric. Number of external calls to customer endpoints"),
+		metric.WithDescription("Gateway node metric. Number of customer endpoint responses by status code"),
 	)
 	if m.err != nil {
 		m.err = fmt.Errorf("failed to create HTTP action customer endpoint response count metric: %w", m.err)
@@ -196,7 +196,7 @@ func IncrementHTTPActionGatewayGlobalThrottled(ctx context.Context, lggr logger.
 		}
 		return
 	}
-	httpActionGatewayMetrics.gatewayGlobalThrottled.Add(ctx, 1)
+	httpActionGatewayMetrics.globalThrottled.Add(ctx, 1)
 }
 
 func RecordHTTPActionGatewayRequestLatency(ctx context.Context, latencyMs int64, lggr logger.Logger) {

@@ -515,9 +515,9 @@ func verifyBitLayout(t *testing.T, packed *big.Int, mintable *big.Int, blockNumb
 func TestMaxMintableConstant(t *testing.T) {
 	// Verify the maxMintable constant is correctly defined
 	expectedMax := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
-	assert.Equal(t, expectedMax, maxMintable, "maxMintable should be 2^128 - 1")
+	assert.Equal(t, expectedMax, maxMintableEVM, "maxMintable should be 2^128 - 1")
 
 	// Verify it's exactly 128 bits
-	bitLen := maxMintable.BitLen()
+	bitLen := maxMintableEVM.BitLen()
 	assert.Equal(t, 128, bitLen, "maxMintable should be exactly 128 bits")
 }

@@ -16,6 +16,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
+// Implementations of this interface should embed the UnimplementedKeystore struct,
+// as to ensure forward compatibility with changes to the Keystore interface.
 type Keystore interface {
 	Accounts(ctx context.Context) (accounts []string, err error)
 	// Sign returns data signed by account.

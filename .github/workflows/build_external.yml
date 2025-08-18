@@ -104,9 +104,10 @@ jobs:
       - name: Install Solana CLI
         run: ./scripts/install-solana-ci.sh
 
-      - name: Update generated files
+      - name: Update mocks
         run: |
           make mockery
+          make rm-mocked
           mockery
 
       - name: Build & Test

@@ -22,8 +22,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 const (

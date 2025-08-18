@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const (

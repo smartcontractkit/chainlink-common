@@ -85,7 +85,7 @@ func (u *updater[N]) updateLoop(cre contexts.CRE) {
 		defer cancelSub()
 		// opt: poll now to initialize
 	} else {
-		t := time.NewTicker(pollPeriod)
+		t := services.TickerConfig{}.NewTicker(pollPeriod)
 		defer t.Stop()
 		c = t.C
 	}

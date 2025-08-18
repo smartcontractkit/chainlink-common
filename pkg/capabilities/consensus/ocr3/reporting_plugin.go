@@ -20,8 +20,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 // timeFetcher safely retrieves DON or Node time from a background goroutine.
@@ -64,7 +64,7 @@ func (t *timeFetcher) runLoop() {
 
 			switch mode {
 			case sdkpb.Mode_MODE_DON:
-				donTime, err = t.executor.GetDONTime(t.ctx)
+				donTime, err = t.executor.GetDONTime()
 			default:
 				donTime = t.executor.GetNodeTime()
 			}

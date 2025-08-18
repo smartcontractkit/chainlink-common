@@ -55,7 +55,7 @@ func TestFactory_NewTimeLimiter(t *testing.T) {
 			s.Key = "foo.bar"
 			s.Scope = tt.scope
 			s.Unit = "{action}"
-			tl, err := f.NewTimeLimiter(s)
+			tl, err := f.MakeTimeLimiter(s)
 			require.NoError(t, err)
 			t.Cleanup(func() { assert.NoError(t, tl.Close()) })
 

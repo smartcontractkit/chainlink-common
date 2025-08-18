@@ -7,21 +7,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/installer/pkg"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/installer/pkg"
 )
 
 func main() {
-	gen := &pkg.ProtocGen{}
-	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
-	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "sdk/v1alpha/sdk.proto"})
-
+	gen := &pkg.ProtocGen{Plugins: []pkg.Plugin{pkg.GoPlugin}}
 	capDir := flag.String("pkg", "", "the go package to generate in")
 	file := flag.String("file", "", "the go file to generate from")
 	defaultPathToV2 := filepath.Join("..", "..")
 	pathToV2 := flag.String("pathToV2", defaultPathToV2, "How to get to the ")
 	flag.Parse()
 
-	gen.Plugins = []pkg.Plugin{{Name: "cre", Path: filepath.Join(*pathToV2, "protoc")}}
+	gen.Plugins = []pkg.Plugin{pkg.GoPlugin, {Name: "cre", Path: filepath.Join(*pathToV2, "protoc")}}
 
 	gen.LinkPackage(pkg.Packages{Go: *capDir, Proto: *file})
 

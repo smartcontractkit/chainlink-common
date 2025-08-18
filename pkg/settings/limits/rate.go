@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 // A RateLimiter applies rate limits. These methods are a subset of [rate.Limiter], with context.Context based scoping,
 // and some *Err variants. Methods with errors will return ErrorRateLimited when limits are encountered.
 type RateLimiter interface {
-	Limiter
+	Limiter[config.Rate]
 
 	// Allow reports whether an event may happen now.
 	Allow(ctx context.Context) bool
@@ -126,9 +127,10 @@ func newRateLimiter(scope settings.Scope, limit rate.Limit, burst int) RateLimit
 
 			limiter: rate.NewLimiter(limit, burst),
 
-			recordLimit: func(ctx context.Context, value float64) {},
-			recordBurst: func(ctx context.Context, value int64) {},
-			addUsage:    func(ctx context.Context, incr int64) {},
+			recordLimit:  func(ctx context.Context, value float64) {},
+			recordBurst:  func(ctx context.Context, value int64) {},
+			addUsage:     func(ctx context.Context, incr int64) {},
+			recordDenied: func(ctx context.Context, incr int) {},
 		}
 		close(rl.updater.done) // no background routine
 		return rl
@@ -147,9 +149,10 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 			return limit.GetOrDefault(ctx, f.Settings)
 		}, nil),
 
-		recordLimit: func(ctx context.Context, value float64) {},
-		recordBurst: func(ctx context.Context, value int64) {},
-		addUsage:    func(ctx context.Context, incr int64) {},
+		recordLimit:  func(ctx context.Context, value float64) {},
+		recordBurst:  func(ctx context.Context, value int64) {},
+		addUsage:     func(ctx context.Context, incr int64) {},
+		recordDenied: func(ctx context.Context, incr int) {},
 
 		limiter: rate.NewLimiter(limit.DefaultValue.Limit, limit.DefaultValue.Burst),
 	}
@@ -174,6 +177,16 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 		} else {
 			l.addUsage = func(ctx context.Context, value int64) { usageCounter.Add(ctx, value) }
 		}
+		if deniedCounter, err := f.Meter.Int64Histogram("rate."+limit.Key+".denied", metric.WithUnit(limit.Unit)); err != nil {
+			return nil, err
+		} else {
+			l.recordDenied = func(ctx context.Context, value int) { deniedCounter.Record(ctx, int64(value)) }
+		}
+	} else {
+		l.recordLimit = func(ctx context.Context, value float64) {}
+		l.recordBurst = func(ctx context.Context, value int64) {}
+		l.addUsage = func(ctx context.Context, value int64) {}
+		l.recordDenied = func(ctx context.Context, value int) {}
 	}
 
 	if f.Settings != nil {
@@ -202,9 +215,10 @@ type rateLimiter struct {
 	scope  settings.Scope // optional
 	tenant string         // optional
 
-	recordLimit func(ctx context.Context, value float64)
-	recordBurst func(ctx context.Context, value int64)
-	addUsage    func(ctx context.Context, incr int64)
+	recordLimit  func(ctx context.Context, value float64)
+	recordBurst  func(ctx context.Context, value int64)
+	addUsage     func(ctx context.Context, incr int64)
+	recordDenied func(ctx context.Context, value int)
 
 	limiter *rate.Limiter
 }
@@ -217,11 +231,16 @@ func (l *rateLimiter) getRate(ctx context.Context) config.Rate {
 	return r
 }
 
+func (l *rateLimiter) Limit(ctx context.Context) (config.Rate, error) {
+	return l.getRate(ctx), nil
+}
+
 func (l *rateLimiter) Allow(ctx context.Context) bool {
 	if l.limiter.Allow() {
 		l.addUsage(ctx, 1)
 		return true
 	}
+	l.recordDenied(ctx, 1)
 	return false
 }
 
@@ -230,6 +249,7 @@ func (l *rateLimiter) AllowN(ctx context.Context, t time.Time, n int) bool {
 		l.addUsage(ctx, int64(n))
 		return true
 	}
+	l.recordDenied(ctx, n)
 	return false
 }
 
@@ -237,6 +257,7 @@ func (l *rateLimiter) AllowErr(ctx context.Context) error {
 	if !l.Allow(ctx) {
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1}
 	}
+	l.recordDenied(ctx, 1)
 	return nil
 }
 
@@ -244,6 +265,7 @@ func (l *rateLimiter) AllowNErr(ctx context.Context, t time.Time, n int) error {
 	if !l.AllowN(ctx, t, n) {
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1}
 	}
+	l.recordDenied(ctx, n)
 	return nil
 }
 
@@ -259,6 +281,7 @@ func (l *rateLimiter) Reserve(ctx context.Context) (Reservation, error) {
 			n:           1,
 		}, nil
 	}
+	l.recordDenied(ctx, 1)
 	return nil, ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1}
 }
 
@@ -274,11 +297,13 @@ func (l *rateLimiter) ReserveN(ctx context.Context, t time.Time, n int) (Reserva
 			n:           n,
 		}, nil
 	}
+	l.recordDenied(ctx, n)
 	return nil, ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: n}
 }
 
 func (l *rateLimiter) Wait(ctx context.Context) error {
 	if err := l.limiter.Wait(ctx); err != nil {
+		l.recordDenied(ctx, 1)
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: 1, Err: err}
 	}
 	l.addUsage(ctx, 1)
@@ -287,6 +312,7 @@ func (l *rateLimiter) Wait(ctx context.Context) error {
 
 func (l *rateLimiter) WaitN(ctx context.Context, n int) error {
 	if err := l.limiter.WaitN(ctx, n); err != nil {
+		l.recordDenied(ctx, n)
 		return ErrorRateLimited{Key: l.key, Scope: l.scope, Tenant: l.tenant, N: n, Err: err}
 	}
 	l.addUsage(ctx, int64(n))
@@ -321,6 +347,10 @@ func (f Factory) newScopedRateLimiter(limit settings.Setting[config.Rate]) (Rate
 		if err != nil {
 			return nil, err
 		}
+		l.deniedHist, err = f.Meter.Int64Histogram("rate."+limit.Key+".denied", metric.WithUnit(limit.Unit))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if f.Settings != nil {
@@ -349,9 +379,10 @@ type scopedRateLimiter struct {
 	rateFn func(context.Context) (config.Rate, error)
 	subFn  func(ctx context.Context) (<-chan settings.Update[config.Rate], func()) // optional
 
-	limitGauge   metric.Float64Gauge // optional
-	burstGauge   metric.Int64Gauge   // optional
-	usageCounter metric.Int64Counter // optional
+	limitGauge   metric.Float64Gauge   // optional
+	burstGauge   metric.Int64Gauge     // optional
+	usageCounter metric.Int64Counter   // optional
+	deniedHist   metric.Int64Histogram // optional
 
 	// opt: reap after period of non-use
 	limiters sync.Map           // map[string]*rateLimiter
@@ -402,6 +433,7 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 	l := &rateLimiter{
 		scope:   s.scope,
+		tenant:  tenant,
 		updater: newUpdater[config.Rate](logger.With(s.lggr, s.scope.String(), tenant), s.rateFn, s.subFn),
 		limiter: rate.NewLimiter(s.defaultRate.Limit, s.defaultRate.Burst),
 		recordLimit: func(ctx context.Context, value float64) {
@@ -419,6 +451,11 @@ func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 				s.usageCounter.Add(ctx, incr, withScope(ctx, s.scope))
 			}
 		},
+		recordDenied: func(ctx context.Context, value int) {
+			if s.deniedHist != nil {
+				s.deniedHist.Record(ctx, int64(value), withScope(ctx, s.scope))
+			}
+		},
 	}
 	l.updater.recordLimit = func(ctx context.Context, r config.Rate) {
 		l.limiter.SetLimit(r.Limit)
@@ -427,6 +464,15 @@ func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 		l.recordBurst(ctx, int64(r.Burst))
 	}
 	return l
+}
+
+func (s *scopedRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
+	l, done, err := s.getOrCreate(ctx)
+	if err != nil {
+		return config.Rate{}, err
+	}
+	defer done()
+	return l.Limit(ctx)
 }
 
 func (s *scopedRateLimiter) Allow(ctx context.Context) bool {
@@ -511,6 +557,13 @@ func (m MultiRateLimiter) Close() (err error) {
 		err = errors.Join(err, l.Close())
 	}
 	return
+}
+
+func (m MultiRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
+	if len(m) == 0 {
+		return config.Rate{}, fmt.Errorf("empty")
+	}
+	return m[0].Limit(ctx)
 }
 
 func (m MultiRateLimiter) Allow(ctx context.Context) bool {
@@ -676,6 +729,10 @@ func (m *multiReservation) AllowErr() error {
 }
 
 type unlimitedRate struct{}
+
+func (r unlimitedRate) Limit(context.Context) (config.Rate, error) {
+	return config.Rate{Limit: rate.Inf, Burst: math.MaxInt}, nil
+}
 
 // UnlimitedRateLimiter returns a RateLimiter without any limit. Every call is allowed, all reservations are accepted
 // without delay, and no calls have to wait.

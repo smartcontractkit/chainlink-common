@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 
 	"github.com/stretchr/testify/require"
 )
@@ -39,8 +40,8 @@ func Test_Sleep_Timeout(t *testing.T) {
 		return time.Now()
 	})
 
-	req := &pb.ExecuteRequest{
-		Request: &pb.ExecuteRequest_Trigger{},
+	req := &sdk.ExecuteRequest{
+		Request: &sdk.ExecuteRequest_Trigger{},
 	}
 
 	start := time.Now()
@@ -64,8 +65,8 @@ func Test_NoDag_Run(t *testing.T) {
 		defer m.Close()
 
 		ctx := t.Context()
-		req := &pb.ExecuteRequest{
-			Request: &pb.ExecuteRequest_Trigger{},
+		req := &sdk.ExecuteRequest{
+			Request: &sdk.ExecuteRequest_Trigger{},
 		}
 
 		_, err = m.Execute(ctx, req, nil)
@@ -94,13 +95,13 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	}
 }
 
-func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscriptionRequest, error) {
+func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdk.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
 	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	helper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
-	execResult, err := m.Execute(t.Context(), &pb.ExecuteRequest{
+	execResult, err := m.Execute(t.Context(), &sdk.ExecuteRequest{
 		Config:  config,
-		Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
+		Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
 	}, helper)
 
 	if err != nil {
@@ -108,9 +109,9 @@ func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscr
 	}
 
 	switch r := execResult.Result.(type) {
-	case *pb.ExecutionResult_TriggerSubscriptions:
+	case *sdk.ExecutionResult_TriggerSubscriptions:
 		return r.TriggerSubscriptions, nil
-	case *pb.ExecutionResult_Error:
+	case *sdk.ExecutionResult_Error:
 		return nil, errors.New(r.Error)
 	default:
 		return nil, errors.New("unexpected response from WASM binary: got nil spec response")

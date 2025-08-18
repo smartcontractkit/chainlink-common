@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/installer/pkg"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/installer/pkg"
 )
 
 func main() {
 	gen := &pkg.ProtocGen{
 		ProtocHelper: ProtocHelper{},
-		Plugins:      []pkg.Plugin{{Name: "cre", Path: "../.."}},
+		Plugins:      []pkg.Plugin{pkg.GoPlugin, {Name: "cre", Path: "../.."}},
 	}
 
 	internalProtos := []*pkg.CapabilityConfig{

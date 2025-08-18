@@ -3,26 +3,27 @@ package main
 import (
 	"fmt"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 func main() {
 	switch request := rawsdk.GetRequest().Request.(type) {
-	case *pb.ExecuteRequest_Subscribe:
+	case *sdk.ExecuteRequest_Subscribe:
 		subscribe()
-	case *pb.ExecuteRequest_Trigger:
+	case *sdk.ExecuteRequest_Trigger:
 		trigger(request)
 	}
 }
 
 func subscribe() {
-	subscription := &pb.TriggerSubscriptionRequest{
-		Subscriptions: []*pb.TriggerSubscription{
+	subscription := &sdk.TriggerSubscriptionRequest{
+		Subscriptions: []*sdk.TriggerSubscription{
 			{
 				Id: "basic-test-trigger@1.0.0",
 				Payload: rawsdk.Must(anypb.New(&basictrigger.Config{
@@ -53,7 +54,7 @@ func subscribe() {
 	rawsdk.SendSubscription(subscription)
 }
 
-func trigger(request *pb.ExecuteRequest_Trigger) {
+func trigger(request *sdk.ExecuteRequest_Trigger) {
 	switch request.Trigger.Id {
 	case 0, 2:
 		proveTrigger(request.Trigger, &basictrigger.Outputs{})
@@ -64,7 +65,7 @@ func trigger(request *pb.ExecuteRequest_Trigger) {
 	}
 }
 
-func proveTrigger(trigger *pb.Trigger, outputs interface {
+func proveTrigger(trigger *sdk.Trigger, outputs interface {
 	GetCoolOutput() string
 	proto.Message
 }) {

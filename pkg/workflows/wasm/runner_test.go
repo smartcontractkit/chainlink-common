@@ -21,9 +21,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func Test_Runner_Config_InvalidRequest(t *testing.T) {
@@ -468,12 +468,12 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 
 	// Do some massaging due to protos lossy conversion of types
 	gotSpec.Triggers[0].Inputs.Mapping = map[string]any{}
-	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(uint64))
-	gotSpec.Targets[0].Config["number"] = int64(gotSpec.Targets[0].Config["number"].(uint64))
+	gotSpec.Triggers[0].Config["number"] = gotSpec.Triggers[0].Config["number"].(uint64)
+	gotSpec.Targets[0].Config["number"] = gotSpec.Targets[0].Config["number"].(uint64)
 	assert.Equal(t, &gotSpec, spc)
 
 	// Verify the target is included in the workflow spec
-	assert.Equal(t, targetConfig.Number, uint64(gotSpec.Targets[0].Config["number"].(int64)))
+	assert.Equal(t, targetConfig.Number, gotSpec.Targets[0].Config["number"].(uint64))
 }
 
 // Test_createEmitFn validates the runtime's emit function implementation.  Uses mocks of the

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel/metric"
@@ -17,7 +18,7 @@ import (
 
 // TimeLimiter is a Limiter that enforces timeouts.
 type TimeLimiter interface {
-	Limiter
+	Limiter[time.Duration]
 	// WithTimeout is like context.WithTimeout, but automatically applies the timeout
 	// from this TimeLimiter, and returns a done func() that must be called to signal completion.
 	WithTimeout(context.Context) (ctx context.Context, done func(), err error)
@@ -25,14 +26,27 @@ type TimeLimiter interface {
 
 // NewTimeLimiter returns a simple TimeLimiter with the given time out.
 func NewTimeLimiter(timeout time.Duration) TimeLimiter {
-	tl := &timeLimiter{
-		updater: newUpdater[time.Duration](nil, func(ctx context.Context) (time.Duration, error) {
-			return timeout, nil
-		}, nil),
-		defaultTimeout: timeout,
+	return &simpleTimeLimiter{timeout: timeout}
+}
+
+type simpleTimeLimiter struct {
+	timeout time.Duration
+	closed  atomic.Bool
+}
+
+func (s *simpleTimeLimiter) Limit(ctx context.Context) (time.Duration, error) {
+	return s.timeout, nil
+}
+
+func (s *simpleTimeLimiter) Close() error { s.closed.Store(true); return nil }
+
+func (s *simpleTimeLimiter) WithTimeout(ctx context.Context) (context.Context, func(), error) {
+	if s.closed.Load() {
+		return nil, nil, errors.New("closed")
 	}
-	close(tl.done) // no update routine
-	return tl
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, s.timeout)
+	return ctx, cancel, nil
 }
 
 func (f Factory) newTimeLimiter(timeout settings.Setting[time.Duration]) (TimeLimiter, error) {
@@ -153,16 +167,58 @@ func (l *timeLimiter) WithTimeout(ctx context.Context) (context.Context, func(),
 	}
 	defer l.wg.Done()
 
-	var tenant string
+	tenant, timeout, err := l.get(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if tenant == "" && l.scope != settings.ScopeGlobal {
+		return ctx, func() {}, nil // fail open
+	}
+
+	countTimeout := func() { l.countTimeout(ctx) } // constructing this first to reference the original ctx
+	ctx, cancel := context.WithTimeoutCause(ctx, timeout, ErrorTimeLimited{Key: l.key, Scope: l.scope, Tenant: tenant, Timeout: timeout})
+	stop := context.AfterFunc(ctx, countTimeout)
+
+	start := time.Now()
+	return ctx, func() {
+		elapsed := time.Since(start)
+
+		l.recordRuntime(ctx, elapsed)
+		if stop() {
+			l.countSuccess(ctx)
+		}
+		cancel()
+	}, nil
+}
+
+func (l *timeLimiter) Limit(ctx context.Context) (time.Duration, error) {
+	if err := l.wg.TryAdd(1); err != nil {
+		return -1, err
+	}
+	defer l.wg.Done()
+
+	tenant, timeout, err := l.get(ctx)
+	if err != nil {
+		return -1, err
+	}
+	if tenant == "" && l.scope != settings.ScopeGlobal {
+		return -1, nil // fail open
+	}
+
+	return timeout, nil
+}
+
+func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Duration, err error) {
 	if l.scope != settings.ScopeGlobal {
 		tenant = l.scope.Value(ctx)
 		if tenant == "" {
 			if !l.scope.IsTenantRequired() {
 				kvs := contexts.CREValue(ctx).LoggerKVs()
-				l.lggr.Warnw("Unable to apply scoped time limit due to missing tenant: failing open", append([]any{"scope", l.scope}, kvs...)...)
-				return ctx, nil, nil
+				l.lggr.Warnw("Unable to get scoped time limit due to missing tenant: failing open", append([]any{"scope", l.scope}, kvs...)...)
+				return
 			}
-			return nil, nil, fmt.Errorf("unable to apply scoped time limit due to missing tenant for scope: %s", l.scope)
+			err = fmt.Errorf("unable to get scoped time limit due to missing tenant for scope: %s", l.scope)
+			return
 		}
 
 		u := newUpdater(l.lggr, l.getLimitFn, l.subFn)
@@ -177,24 +233,11 @@ func (l *timeLimiter) WithTimeout(ctx context.Context) (context.Context, func(),
 		}
 	}
 
-	to, err := l.getLimitFn(ctx)
+	timeout, err = l.getLimitFn(ctx)
 	if err != nil {
-		l.lggr.Errorw("Failed to get limit. Using default value", "default", to, "err", err)
+		l.lggr.Errorw("Failed to get limit. Using default value", "default", timeout, "err", err)
 	}
-	l.recordTimeout(ctx, to)
+	l.recordTimeout(ctx, timeout)
 
-	countTimeout := func() { l.countTimeout(ctx) } // constructing this first to reference the original ctx
-	ctx, cancel := context.WithTimeoutCause(ctx, to, ErrorTimeLimited{Key: l.key, Scope: l.scope, Tenant: tenant, Timeout: to})
-	stop := context.AfterFunc(ctx, countTimeout)
-
-	start := time.Now()
-	return ctx, func() {
-		elapsed := time.Since(start)
-
-		l.recordRuntime(ctx, elapsed)
-		if stop() {
-			l.countSuccess(ctx)
-		}
-		cancel()
-	}, nil
+	return
 }

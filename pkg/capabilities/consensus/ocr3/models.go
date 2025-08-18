@@ -1,7 +1,7 @@
 package ocr3
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 type config struct {

@@ -170,6 +170,55 @@ func TestErrorTimeLimited(t *testing.T) {
 	}
 }
 
+func TestErrorBoundLimited(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		err  ErrorBoundLimited[int]
+		exp  string
+	}{
+		{
+			name: "full",
+			err: ErrorBoundLimited[int]{
+				Key:    "foo",
+				Scope:  settings.ScopeWorkflow,
+				Tenant: "wf",
+				Limit:  13,
+				Amount: 100,
+			},
+			exp: "foo limited for workflow[wf]: cannot use 100, limit is 13",
+		},
+		{
+			name: "no-tenant",
+			err: ErrorBoundLimited[int]{
+				Key:    "foo",
+				Scope:  settings.ScopeWorkflow,
+				Limit:  13,
+				Amount: 100,
+			},
+			exp: "foo limited: cannot use 100, limit is 13",
+		},
+		{
+			name: "no-tenant-key",
+			err: ErrorBoundLimited[int]{
+				Limit:  13,
+				Amount: 100,
+			},
+			exp: "limited: cannot use 100, limit is 13",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.ErrorIs(t, error(tt.err), ErrorBoundLimited[int]{})
+			assert.EqualError(t, tt.err, tt.exp)
+			require.Equal(t, codes.ResourceExhausted, status.Code(tt.err))
+
+			got := marshalUnmarshalError(t, tt.err)
+
+			assert.ErrorContains(t, got, tt.exp)
+			require.Equal(t, codes.ResourceExhausted, status.Code(got))
+		})
+	}
+}
+
 // Round-trip marshal/unmarshal to simulated grpc call
 func marshalUnmarshalError(t *testing.T, err error) error {
 	s, ok := status.FromError(err)

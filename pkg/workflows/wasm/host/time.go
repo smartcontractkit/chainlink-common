@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 // timeFetcher safely retrieves DON or Node time from a background goroutine.

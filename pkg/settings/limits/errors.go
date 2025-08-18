@@ -96,3 +96,51 @@ func errArgs(key string, scope settings.Scope, tenant string) (which, who string
 	}
 	return
 }
+
+type ErrorBoundLimited[N Number] struct {
+	Key string
+
+	Scope  settings.Scope
+	Tenant string
+
+	Limit, Amount N
+}
+
+func (e ErrorBoundLimited[N]) GRPCStatus() *status.Status {
+	return status.New(codes.ResourceExhausted, e.Error())
+}
+
+func (e ErrorBoundLimited[N]) Is(target error) bool {
+	_, ok := target.(ErrorBoundLimited[N]) //nolint:errcheck // implementing errors.Is
+	return ok
+}
+
+func (e ErrorBoundLimited[N]) Error() string {
+	which, who := errArgs(e.Key, e.Scope, e.Tenant)
+	return fmt.Sprintf("%slimited%s: cannot use %v, limit is %v", which, who, e.Amount, e.Limit)
+}
+
+type ErrorQueueFull struct {
+	Key string
+
+	Scope  settings.Scope
+	Tenant string
+
+	Limit int
+}
+
+func (e ErrorQueueFull) GRPCStatus() *status.Status {
+	return status.New(codes.ResourceExhausted, e.Error())
+}
+
+func (e ErrorQueueFull) Is(target error) bool {
+	_, ok := target.(ErrorQueueFull) //nolint:errcheck // implementing errors.Is
+	return ok
+}
+
+func (e ErrorQueueFull) Error() string {
+	which, who := errArgs(e.Key, e.Scope, e.Tenant)
+	return fmt.Sprintf("%slimited%s: queue of %d is full", which, who, e.Limit)
+}
+
+var ErrQueueEmpty = fmt.Errorf("queue is empty")

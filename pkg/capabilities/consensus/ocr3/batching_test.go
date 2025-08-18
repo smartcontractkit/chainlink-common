@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	pbvalues "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	pbvalues "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 func TestQueryBatchHasCapacity(t *testing.T) {

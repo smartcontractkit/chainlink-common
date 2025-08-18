@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 type execution[T any] struct {

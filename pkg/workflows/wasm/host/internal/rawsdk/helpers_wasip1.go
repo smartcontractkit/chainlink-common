@@ -12,16 +12,16 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 const (
 	ErrnoSuccess = 0
 )
 
-func GetRequest() *pb.ExecuteRequest {
+func GetRequest() *sdk.ExecuteRequest {
 	if len(os.Args) != 2 {
 		SendError(errors.New("invalid request: request must contain a payload"))
 	}
@@ -33,7 +33,7 @@ func GetRequest() *pb.ExecuteRequest {
 
 	b := Must(base64.StdEncoding.DecodeString(request))
 
-	req := &pb.ExecuteRequest{}
+	req := &sdk.ExecuteRequest{}
 	if err := proto.Unmarshal(b, req); err != nil {
 		SendError(err)
 	}
@@ -42,21 +42,21 @@ func GetRequest() *pb.ExecuteRequest {
 
 func SendResponse(result any) {
 	wrapped := values.Proto(Must(values.Wrap(result)))
-	execResult := &pb.ExecutionResult{Result: &pb.ExecutionResult_Value{Value: wrapped}}
+	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_Value{Value: wrapped}}
 	bytes := Must(proto.Marshal(execResult))
 	sendResponse(BufferToPointerLen(bytes))
 	os.Exit(0)
 }
 
 func SendError(err error) {
-	execResult := &pb.ExecutionResult{Result: &pb.ExecutionResult_Error{Error: err.Error()}}
+	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_Error{Error: err.Error()}}
 	bytes := Must(proto.Marshal(execResult))
 	sendResponse(BufferToPointerLen(bytes))
 	os.Exit(0)
 }
 
-func SendSubscription(subscriptions *pb.TriggerSubscriptionRequest) {
-	execResult := &pb.ExecutionResult{Result: &pb.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
+func SendSubscription(subscriptions *sdk.TriggerSubscriptionRequest) {
+	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
 }
 
@@ -73,13 +73,13 @@ func Now() time.Time {
 var donCall = int32(0)
 var nodeCall = int32(-1)
 
-var NodeOutputConsensusDescriptor = &pb.ConsensusDescriptor{
-	Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
-		FieldsMap: &pb.FieldsMap{
-			Fields: map[string]*pb.ConsensusDescriptor{
+var NodeOutputConsensusDescriptor = &sdk.ConsensusDescriptor{
+	Descriptor_: &sdk.ConsensusDescriptor_FieldsMap{
+		FieldsMap: &sdk.FieldsMap{
+			Fields: map[string]*sdk.ConsensusDescriptor{
 				"OutputThing": {
-					Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-						Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
+					Descriptor_: &sdk.ConsensusDescriptor_Aggregation{
+						Aggregation: sdk.AggregationType_AGGREGATION_TYPE_MEDIAN,
 					},
 				},
 			},
@@ -87,9 +87,9 @@ var NodeOutputConsensusDescriptor = &pb.ConsensusDescriptor{
 	},
 }
 
-func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Message) int32 {
+func DoRequestAsync(capabilityId, method string, mode sdk.Mode, input proto.Message) int32 {
 	var callbackId int32
-	if mode == pb.Mode_MODE_NODE {
+	if mode == sdk.Mode_MODE_NODE {
 		callbackId = nodeCall
 		nodeCall--
 	} else {
@@ -97,7 +97,7 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 		donCall++
 	}
 
-	req := &pb.CapabilityRequest{
+	req := &sdk.CapabilityRequest{
 		Id:         capabilityId,
 		Payload:    Must(anypb.New(input)),
 		Method:     method,
@@ -111,19 +111,19 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 	return callbackId
 }
 
-func DoConsensusRequest(capabilityId string, input *pb.SimpleConsensusInputs, output *valuespb.Value) {
-	Await(DoRequestAsync(capabilityId, "Simple", pb.Mode_MODE_DON, input), output)
+func DoConsensusRequest(capabilityId string, input *sdk.SimpleConsensusInputs, output *valuespb.Value) {
+	Await(DoRequestAsync(capabilityId, "Simple", sdk.Mode_MODE_DON, input), output)
 }
 
-func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {
+func DoRequest[I, O proto.Message](capabilityId, method string, mode sdk.Mode, input I, output O) {
 	Await(DoRequestAsync(capabilityId, method, mode, input), output)
 }
 
-func DoRequestErr[I proto.Message](capabilityId, method string, mode pb.Mode, input I) error {
+func DoRequestErr[I proto.Message](capabilityId, method string, mode sdk.Mode, input I) error {
 	callbackId := DoRequestAsync(capabilityId, method, mode, input)
 
-	resp := &pb.AwaitCapabilitiesResponse{}
-	await(&pb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
+	resp := &sdk.AwaitCapabilitiesResponse{}
+	await(&sdk.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
 
 	errMsg := resp.Responses[callbackId].GetError()
 	return errors.New(errMsg)
@@ -132,8 +132,8 @@ func DoRequestErr[I proto.Message](capabilityId, method string, mode pb.Mode, in
 func GetSecret(id string) (string, error) {
 	callbackId := donCall
 	donCall++
-	marshalled := Must(proto.Marshal(&pb.GetSecretsRequest{
-		Requests: []*pb.SecretRequest{
+	marshalled := Must(proto.Marshal(&sdk.GetSecretsRequest{
+		Requests: []*sdk.SecretRequest{
 			{
 				Id: id,
 			},
@@ -151,8 +151,8 @@ func GetSecret(id string) (string, error) {
 		SendError(errors.New("callCapability returned an error"))
 	}
 
-	req := &pb.AwaitSecretsRequest{Ids: []int32{callbackId}}
-	resp := &pb.AwaitSecretsResponse{}
+	req := &sdk.AwaitSecretsRequest{Ids: []int32{callbackId}}
+	resp := &sdk.AwaitSecretsResponse{}
 	await(req, resp, awaitSecrets)
 	if len(resp.Responses) != 1 {
 		SendError(fmt.Errorf("expected 1 response, got %d", len(resp.Responses)))
@@ -164,9 +164,9 @@ func GetSecret(id string) (string, error) {
 	}
 
 	switch r := responses[0].Response.(type) {
-	case *pb.SecretResponse_Secret:
+	case *sdk.SecretResponse_Secret:
 		return r.Secret.Value, nil
-	case *pb.SecretResponse_Error:
+	case *sdk.SecretResponse_Error:
 		return "", errors.New(r.Error.Error)
 	default:
 		SendError(fmt.Errorf("unexpected response type: %T", r))
@@ -176,8 +176,8 @@ func GetSecret(id string) (string, error) {
 }
 
 func Await[O proto.Message](callbackId int32, output O) {
-	resp := &pb.AwaitCapabilitiesResponse{}
-	await(&pb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
+	resp := &sdk.AwaitCapabilitiesResponse{}
+	await(&sdk.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
 
 	payload := resp.Responses[callbackId].GetPayload()
 	if payload.UnmarshalTo(output) != nil {

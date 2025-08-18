@@ -105,7 +105,9 @@ jobs:
         run: ./scripts/install-solana-ci.sh
 
       - name: Update generated files
-        run: make generate
+        run: |
+          make mockery
+          mockery
 
       - name: Build & Test
         run: make test_relay_unit

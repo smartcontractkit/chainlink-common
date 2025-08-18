@@ -215,7 +215,7 @@ func IncrementHTTPActionSuccessfulResponse(ctx context.Context, lggr logger.Logg
 	httpActionCapabilityMetrics.successfulResponse.Add(ctx, 1)
 }
 
-// IncrementHTTPActionExecutionError increments if there were errors not related to the customer's endpoint
+// IncrementHTTPActionExecutionError increments when an internal execution error occurs, such as timeouts, request serialization/deserialization failures, or other errors that happen before reaching or after receiving a response from the customer's endpoint (i.e., not errors returned by the customer's endpoint itself).
 func IncrementHTTPActionExecutionError(ctx context.Context, lggr logger.Logger) {
 	httpActionCapabilityMetrics.once.Do(httpActionCapabilityMetrics.init)
 	if httpActionCapabilityMetrics.err != nil {

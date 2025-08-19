@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755618572690,
+  "lastUpdate": 1755619882491,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23352,6 +23352,48 @@ window.BENCHMARK_DATA = {
             "value": 26585,
             "unit": "ns/op",
             "extra": "45129 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d0db4b8c9c50944d9d7e328a2cf4422d4fcb221",
+          "message": "deny solana-go module (#1485)",
+          "timestamp": "2025-08-19T16:10:14Z",
+          "tree_id": "e017f266ac8297458367d8f5e568aebfc708122c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1d0db4b8c9c50944d9d7e328a2cf4422d4fcb221"
+        },
+        "date": 1755619881288,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369,
+            "unit": "ns/op",
+            "extra": "2822695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.1,
+            "unit": "ns/op",
+            "extra": "3004405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26903,
+            "unit": "ns/op",
+            "extra": "45103 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755611945295,
+  "lastUpdate": 1755618572690,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23310,6 +23310,48 @@ window.BENCHMARK_DATA = {
             "value": 26649,
             "unit": "ns/op",
             "extra": "44694 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "73aa8dc9bf8c56ad9bb0a695fe2bd4495141cd0a",
+          "message": "Allow uint64 in reduce aggregator so the new primitive in values package is supported (#1492)",
+          "timestamp": "2025-08-19T11:46:59-04:00",
+          "tree_id": "df426ba63b217c1d00a649fb3d4e3e4a8d060482",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/73aa8dc9bf8c56ad9bb0a695fe2bd4495141cd0a"
+        },
+        "date": 1755618570852,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 370.3,
+            "unit": "ns/op",
+            "extra": "3186070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.8,
+            "unit": "ns/op",
+            "extra": "2993379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26585,
+            "unit": "ns/op",
+            "extra": "45129 times\n4 procs"
           }
         ]
       }

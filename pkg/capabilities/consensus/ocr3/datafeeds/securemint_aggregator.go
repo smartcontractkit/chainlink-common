@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"strconv"
 
-	solana "github.com/gagliardetto/solana-go"
 	chainselectors "github.com/smartcontractkit/chain-selectors"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -18,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -136,8 +136,8 @@ func (f *SolanaReportFormatter) PackReport(lggr logger.Logger, report *secureMin
 
 	// hash account contexts
 	var accounts = make([]byte, 0)
-	for i := 0; i < f.OnReportAccounts.Len(); i++ {
-		accounts = append(accounts, f.OnReportAccounts.Get(i).PublicKey.Bytes()...)
+	for _, acc := range f.OnReportAccounts {
+		accounts = append(accounts, acc.PublicKey[:]...)
 	}
 	accountContextHash := sha256.Sum256(accounts)
 	lggr.Debugw("calculated account context hash", "accountContextHash", accountContextHash)
@@ -363,10 +363,6 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 		return nil, fmt.Errorf("encountered issue generating report in createOutcome %w", err)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to wrap report: %w", err)
-	}
-
 	reportsProto := values.Proto(wrappedReport)
 
 	// Store the sequence number in metadata for next round
@@ -383,7 +379,8 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
 	type rawConfig struct {
-		TargetChainSelector string `mapstructure:"targetChainSelector"`
+		TargetChainSelector string       `mapstructure:"targetChainSelector"`
+		Solana              SolanaConfig `mapstructure:"solana"`
 	}
 
 	var rawCfg rawConfig
@@ -402,6 +399,7 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 
 	parsedConfig := SecureMintAggregatorConfig{
 		TargetChainSelector: chainSelector(sel),
+		Solana:              rawCfg.Solana,
 	}
 
 	return parsedConfig, nil

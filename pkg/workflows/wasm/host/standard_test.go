@@ -29,9 +29,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 // See the README.md in standard_tests for more information.
@@ -79,7 +79,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 	m := makeTestModule(t)
@@ -87,7 +87,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	callsSeen := map[bool]bool{}
 	mt := sync.Mutex{}
 	mt.Lock()
-	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
 		assert.Equal(t, "basic-test-action@1.0.0", request.Id)
 		assert.Equal(t, "PerformAction", request.Method)
 		input := &basicaction.Inputs{}
@@ -104,8 +104,8 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 			}
 			defer mt.Unlock()
 		}()
-		return &pb.CapabilityResponse{
-			Response: &pb.CapabilityResponse_Payload{Payload: payload},
+		return &sdk.CapabilityResponse{
+			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
 		}, nil
 	})
 
@@ -131,7 +131,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		})
 
 		// We want to make sure time.Now() is called at least twice in DON mode and once in node Mode
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			if nodeCall {
 				donCall2 = true
 			} else {
@@ -139,15 +139,15 @@ func TestStandardModeSwitch(t *testing.T) {
 			}
 			return time.Now(), nil
 		})
-		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
 			if request.Id == "basic-test-action@1.0.0" {
 				input := &basicaction.Inputs{}
 				assert.NoError(t, request.Payload.UnmarshalTo(input))
 				assert.True(t, input.InputThing)
 				payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("test")})
 				require.NoError(t, err)
-				return &pb.CapabilityResponse{
-					Response: &pb.CapabilityResponse_Payload{Payload: payload},
+				return &sdk.CapabilityResponse{
+					Response: &sdk.CapabilityResponse_Payload{Payload: payload},
 				}, nil
 			}
 			return setupNodeCallAndConsensusCall(t, 555)(ctx, request)
@@ -168,15 +168,15 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
-		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
 			response := values.Proto(values.NewString("hi"))
 			payload, err := anypb.New(response)
 			require.NoError(t, err)
-			return &pb.CapabilityResponse{
-				Response: &pb.CapabilityResponse_Payload{
+			return &sdk.CapabilityResponse{
+				Response: &sdk.CapabilityResponse_Payload{
 					Payload: payload,
 				},
 			}, nil
@@ -193,23 +193,23 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
-		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
 			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
-			input := &pb.SimpleConsensusInputs{}
+			input := &sdk.SimpleConsensusInputs{}
 			require.NoError(t, request.Payload.UnmarshalTo(input))
 
 			var errMsg string
 			switch msg := input.Observation.(type) {
-			case *pb.SimpleConsensusInputs_Error:
+			case *sdk.SimpleConsensusInputs_Error:
 				errMsg = msg.Error
 			default:
 				require.Fail(t, "observation must be an error")
 			}
-			return &pb.CapabilityResponse{
-				Response: &pb.CapabilityResponse_Error{Error: errMsg},
+			return &sdk.CapabilityResponse{
+				Response: &sdk.CapabilityResponse_Error{Error: errMsg},
 			}, nil
 		}).Once()
 		m := makeTestModule(t)
@@ -228,7 +228,7 @@ func TestStandardLogging(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
@@ -249,7 +249,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 			return time.Now()
 		}).Maybe()
 
-		subscribe := &pb.ExecuteRequest{Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+		subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
 		actual, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
 		require.NoError(t, err)
 
@@ -271,8 +271,8 @@ func TestStandardMultipleTriggers(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		expected := &pb.TriggerSubscriptionRequest{
-			Subscriptions: []*pb.TriggerSubscription{
+		expected := &sdk.TriggerSubscriptionRequest{
+			Subscriptions: []*sdk.TriggerSubscription{
 				{
 					Id:      "basic-test-trigger@1.0.0",
 					Payload: payload0,
@@ -346,7 +346,7 @@ func TestStandardRandom(t *testing.T) {
 	gte100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	gte100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	gte100Exec.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 	// RunAndReturn
@@ -358,9 +358,9 @@ func TestStandardRandom(t *testing.T) {
 	trigger := &basictrigger.Outputs{CoolOutput: "trigger1"}
 	triggerPayload, err := anypb.New(trigger)
 	require.NoError(t, err)
-	anyRequest := &pb.ExecuteRequest{
-		Request: &pb.ExecuteRequest_Trigger{
-			Trigger: &pb.Trigger{
+	anyRequest := &sdk.ExecuteRequest{
+		Request: &sdk.ExecuteRequest_Trigger{
+			Trigger: &sdk.Trigger{
 				Id:      uint64(0),
 				Payload: triggerPayload,
 			},
@@ -376,7 +376,7 @@ func TestStandardRandom(t *testing.T) {
 		lt100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		lt100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		lt100Exec.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
 
@@ -400,7 +400,7 @@ func TestStandardRandom(t *testing.T) {
 		gte100Exec2.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
-		gte100Exec2.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		gte100Exec2.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 			return time.Now(), nil
 		}).Maybe()
 
@@ -418,9 +418,9 @@ func TestStandardSecrets(t *testing.T) {
 	m := makeTestModule(t)
 
 	t.Run("returns the secret value", func(t *testing.T) {
-		result := runSecretTest(t, m, &pb.SecretResponse{
-			Response: &pb.SecretResponse_Secret{
-				Secret: &pb.Secret{
+		result := runSecretTest(t, m, &sdk.SecretResponse{
+			Response: &sdk.SecretResponse_Secret{
+				Secret: &sdk.Secret{
 					Value: "Bar",
 				},
 			},
@@ -429,9 +429,9 @@ func TestStandardSecrets(t *testing.T) {
 	})
 
 	t.Run("returns an error if the secret doesn't exist", func(t *testing.T) {
-		resp := runSecretTest(t, m, &pb.SecretResponse{
-			Response: &pb.SecretResponse_Error{
-				Error: &pb.SecretError{
+		resp := runSecretTest(t, m, &sdk.SecretResponse{
+			Response: &sdk.SecretResponse_Error{
+				Error: &sdk.SecretError{
 					Error: "could not find secret",
 				},
 			},
@@ -440,19 +440,19 @@ func TestStandardSecrets(t *testing.T) {
 	})
 }
 
-func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *pb.ExecuteRequest {
+func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)
-	return &pb.ExecuteRequest{
+	return &sdk.ExecuteRequest{
 		Config: anyTestConfig,
-		Request: &pb.ExecuteRequest_Trigger{
-			Trigger: &pb.Trigger{Id: id, Payload: wrappedTrigger},
+		Request: &sdk.ExecuteRequest_Trigger{
+			Trigger: &sdk.Trigger{Id: id, Payload: wrappedTrigger},
 		},
 		MaxResponseSize: uint64(defaultMaxResponseSizeBytes),
 	}
 }
 
-func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionResult {
+func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionResult {
 	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
 	executeRequest := triggerExecuteRequest(t, 0, trigger)
 	m := makeTestModule(t)
@@ -496,8 +496,8 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 	return mod
 }
 
-func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
-	return func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+	return func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
 		nodeResponse := &nodeaction.NodeOutputs{OutputThing: output}
 		var err error
 		var payload *anypb.Any
@@ -511,18 +511,18 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 				require.Fail(t, err.Error())
 			}
 		case "consensus@1.0.0-alpha":
-			input := &pb.SimpleConsensusInputs{}
+			input := &sdk.SimpleConsensusInputs{}
 			require.NoError(t, request.Payload.UnmarshalTo(input))
 			expectedObservation := wrapValue(t, nodeResponse)
-			expectedInput := &pb.SimpleConsensusInputs{
-				Observation: &pb.SimpleConsensusInputs_Value{Value: expectedObservation},
-				Descriptors: &pb.ConsensusDescriptor{
-					Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
-						FieldsMap: &pb.FieldsMap{
-							Fields: map[string]*pb.ConsensusDescriptor{
+			expectedInput := &sdk.SimpleConsensusInputs{
+				Observation: &sdk.SimpleConsensusInputs_Value{Value: expectedObservation},
+				Descriptors: &sdk.ConsensusDescriptor{
+					Descriptor_: &sdk.ConsensusDescriptor_FieldsMap{
+						FieldsMap: &sdk.FieldsMap{
+							Fields: map[string]*sdk.ConsensusDescriptor{
 								"OutputThing": {
-									Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-										Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
+									Descriptor_: &sdk.ConsensusDescriptor_Aggregation{
+										Aggregation: sdk.AggregationType_AGGREGATION_TYPE_MEDIAN,
 									},
 								},
 							},
@@ -543,8 +543,8 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			return nil, err
 		}
 
-		return &pb.CapabilityResponse{
-			Response: &pb.CapabilityResponse_Payload{
+		return &sdk.CapabilityResponse{
+			Response: &sdk.CapabilityResponse_Payload{
 				Payload: payload,
 			},
 		}, nil
@@ -570,21 +570,21 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 	assert.Empty(t, sb.String())
 }
 
-func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *pb.ExecutionResult {
+func runSecretTest(t *testing.T, m *module, secretResponse *sdk.SecretResponse) *sdk.ExecutionResult {
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
 		return time.Now(), nil
 	}).Maybe()
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
-		RunAndReturn(func(_ context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {
+		RunAndReturn(func(_ context.Context, request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
 			assert.Len(t, request.Requests, 1)
 			assert.Equal(t, "Foo", request.Requests[0].Id)
-			return []*pb.SecretResponse{secretResponse}, nil
+			return []*sdk.SecretResponse{secretResponse}, nil
 		}).
 		Once()
 
@@ -595,16 +595,16 @@ func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *
 	return response
 }
 
-func executeWithResult[T any](t *testing.T, m *module, req *pb.ExecuteRequest, executor ExecutionHelper) T {
+func executeWithResult[T any](t *testing.T, m *module, req *sdk.ExecuteRequest, executor ExecutionHelper) T {
 	res, err := m.Execute(t.Context(), req, executor)
 	require.NoError(t, err)
 	var result T
 	switch v := res.Result.(type) {
-	case *pb.ExecutionResult_Value:
+	case *sdk.ExecutionResult_Value:
 		wrappedValue, err := values.FromProto(v.Value)
 		require.NoError(t, err)
 		require.NoError(t, wrappedValue.UnwrapTo(&result))
-	case *pb.ExecutionResult_Error:
+	case *sdk.ExecutionResult_Error:
 		require.Failf(t, "unexpected error in result", "error: %s", v.Error)
 	default:
 		require.Failf(t, "unexpected result type", "result: %v", res)
@@ -613,11 +613,11 @@ func executeWithResult[T any](t *testing.T, m *module, req *pb.ExecuteRequest, e
 	return result
 }
 
-func executeWithError(t *testing.T, m *module, req *pb.ExecuteRequest, executor ExecutionHelper) string {
+func executeWithError(t *testing.T, m *module, req *sdk.ExecuteRequest, executor ExecutionHelper) string {
 	res, err := m.Execute(t.Context(), req, executor)
 	require.NoError(t, err)
 	switch e := res.Result.(type) {
-	case *pb.ExecutionResult_Error:
+	case *sdk.ExecutionResult_Error:
 		return e.Error
 	default:
 		require.Failf(t, "unexpected result type", "%T", e)

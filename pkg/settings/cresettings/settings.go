@@ -12,41 +12,49 @@ import (
 )
 
 func init() {
-	err := InitConfig(&Config)
+	err := InitConfig(&Default)
 	if err != nil {
 		log.Fatalf("failed to initialize keys: %v", err)
 	}
+	Config = Default
 }
 
-var Config = cfg{
-	WorkflowLimit:                  Int(200),
-	WorkflowRegistrationQueueLimit: Int(20),
+// Deprecated: use Default
+var Config Schema
+
+var Default = Schema{
+	WorkflowLimit:                     Int(200),
+	WorkflowRegistrationQueueLimit:    Int(20),
+	WorkflowExecutionConcurrencyLimit: Int(50),
 
 	HTTPTrigger: httpTriggerGlobal{
 		AuthRateLimit: Rate(100, -1), //TODO
 	},
 
-	PerOrg: orgs{
+	PerOrg: Orgs{
 		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
-		TriggerEventQueueLimit:      Int(1_000),
-		TriggerEventQueueTimeout:    Duration(10 * time.Minute),
 		ZeroBalancePruningTimeout:   Duration(24 * time.Hour),
 	},
-	PerOwner: owners{
-		ExecutionConcurrencyLimit: Int(50),
+	PerOwner: Owners{
+		WorkflowExecutionConcurrencyLimit: Int(50),
 	},
-	PerWorkflow: workflows{
+	PerWorkflow: Workflows{
 		TriggerLimit:                  Int(10),
 		TriggerRateLimit:              Rate(rate.Every(30*time.Second), 3),
-		TriggerRegistrationTimeout:    Duration(10 * time.Second),
+		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
+		TriggerEventQueueLimit:        Int(1_000),
+		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
 		TriggerSubscriptionTimeout:    Duration(5 * time.Second),
+		TriggerSubscriptionLimit:      Int(10),
 		CapabilityConcurrencyLimit:    Int(3),
+		CapabilityCallTimeout:         Duration(8 * time.Minute),
+		SecretsConcurrencyLimit:       Int(3),
 		ExecutionConcurrencyLimit:     Int(10),
-		ExecutionTimeout:              Duration(5 * time.Minute),
+		ExecutionTimeout:              Duration(10 * time.Minute),
 		ExecutionResponseLimit:        Size(100 * config.KByte),
 		WASMExecutionTimeout:          Duration(60 * time.Second),
 		WASMMemoryLimit:               Size(100 * config.MByte),
-		BinarySizeLimit:               Size(30 * config.MByte),
+		WASMBinarySizeLimit:           Size(30 * config.MByte),
 		ConsensusObservationSizeLimit: Size(10 * config.KByte),
 		ConsensusCallsLimit:           Int(2),
 		LogLineLimit:                  Size(config.KByte),
@@ -90,43 +98,53 @@ var Config = cfg{
 	},
 }
 
-type cfg struct {
-	WorkflowLimit                  Setting[int] `unit:"{workflow}"`
-	WorkflowRegistrationQueueLimit Setting[int] `unit:"{workflow}"`
+type Schema struct {
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowRegistrationQueueLimit    Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 
 	HTTPTrigger httpTriggerGlobal
 
-	PerOrg      orgs      `scope:"org"`
-	PerOwner    owners    `scope:"owner"`
-	PerWorkflow workflows `scope:"workflow"`
+	PerOrg      Orgs      `scope:"org"`
+	PerOwner    Owners    `scope:"owner"`
+	PerWorkflow Workflows `scope:"workflow"`
 }
-type orgs struct {
+type Orgs struct {
 	WorkflowDeploymentRateLimit Setting[config.Rate]
-	TriggerEventQueueLimit      Setting[int] `unit:"{trigger}"`
-	TriggerEventQueueTimeout    Setting[time.Duration]
 	ZeroBalancePruningTimeout   Setting[time.Duration]
 }
 
-type owners struct {
-	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+type Owners struct {
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 }
 
-type workflows struct {
-	TriggerLimit                  Setting[int] `unit:"{trigger}"`
-	TriggerRateLimit              Setting[config.Rate]
-	TriggerRegistrationTimeout    Setting[time.Duration]
-	TriggerSubscriptionTimeout    Setting[time.Duration]
-	CapabilityConcurrencyLimit    Setting[int] `unit:"{capability}"`
-	ExecutionConcurrencyLimit     Setting[int] `unit:"{workflow}"`
-	ExecutionTimeout              Setting[time.Duration]
-	ExecutionResponseLimit        Setting[config.Size]
-	WASMExecutionTimeout          Setting[time.Duration]
-	WASMMemoryLimit               Setting[config.Size]
-	BinarySizeLimit               Setting[config.Size]
+type Workflows struct {
+	TriggerLimit                Setting[int] `unit:"{trigger}"`
+	TriggerRateLimit            Setting[config.Rate]
+	TriggerRegistrationsTimeout Setting[time.Duration]
+	TriggerSubscriptionTimeout  Setting[time.Duration]
+	TriggerSubscriptionLimit    Setting[int] `unit:"{subscription}"`
+	TriggerEventQueueLimit      Setting[int] `unit:"{trigger}"`
+	TriggerEventQueueTimeout    Setting[time.Duration]
+
+	CapabilityConcurrencyLimit Setting[int] `unit:"{capability}"`
+	CapabilityCallTimeout      Setting[time.Duration]
+
+	SecretsConcurrencyLimit Setting[int] `unit:"{secret}"`
+
+	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	ExecutionTimeout          Setting[time.Duration]
+	ExecutionResponseLimit    Setting[config.Size]
+
+	WASMExecutionTimeout Setting[time.Duration]
+	WASMMemoryLimit      Setting[config.Size]
+	WASMBinarySizeLimit  Setting[config.Size]
+
 	ConsensusObservationSizeLimit Setting[config.Size]
 	ConsensusCallsLimit           Setting[int] `unit:"{call}"`
-	LogLineLimit                  Setting[config.Size]
-	LogEventLimit                 Setting[int] `unit:"{log}"`
+
+	LogLineLimit  Setting[config.Size]
+	LogEventLimit Setting[int] `unit:"{log}"`
 
 	CRONTrigger cronTrigger
 	HTTPTrigger httpTrigger

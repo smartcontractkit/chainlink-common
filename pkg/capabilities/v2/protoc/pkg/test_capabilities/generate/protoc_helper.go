@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/installer/pkg"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/installer/pkg"
 )
 
 type ProtocHelper struct{}

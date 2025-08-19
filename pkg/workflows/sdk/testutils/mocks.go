@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func MockCapability[I, O any](id string, fn func(I) (O, error)) *Mock[I, O] {

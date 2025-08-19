@@ -29,6 +29,7 @@ func NewTransmitter(lggr logger.Logger, store *Store, fromAccount types.Account)
 func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
+		t.lggr.Errorf("failed to unmarshal report")
 		return err
 	}
 
@@ -36,6 +37,8 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		t.store.setDonTimes(id, observedDonTimes.Timestamps)
 	}
 	t.store.setLastObservedDonTime(outcome.Timestamp)
+
+	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp)
 
 	for executionID, donTimes := range outcome.ObservedDonTimes {
 		request := t.store.GetRequest(executionID)

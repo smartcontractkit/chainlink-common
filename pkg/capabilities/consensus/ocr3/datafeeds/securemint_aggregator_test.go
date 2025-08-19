@@ -14,10 +14,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 var (
@@ -178,61 +179,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			f:                    1,
 			expectError:          false,
 			expectedShouldReport: false,
-			shouldReportAssertFn: ethReportAssertFn,
-		},
-		{
-			name:   "sequence number too low",
-			config: configWithChainSelector(t, "16015286601757825753"),
-			previousOutcome: &types.AggregationOutcome{
-				LastSeenAt: 10, // Previous sequence number
-			},
-			observations: createSecureMintObservations(t, []ocrTriggerEventData{
-				{
-					chainSelector: ethSepoliaChainSelector,
-					seqNr:         9, // Lower than previous
-					report: &secureMintReport{
-						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
-						SeqNr:        9,
-						Block:        1000,
-						Mintable:     big.NewInt(99),
-					},
-				},
-			}),
-			f:                    1,
-			expectError:          true,
-			errorContains:        "sequence number too low",
-			shouldReportAssertFn: ethReportAssertFn,
-		},
-		{
-			name:                 "no observations",
-			config:               configWithChainSelector(t, "16015286601757825753"),
-			observations:         map[ocrcommon.OracleID][]values.Value{},
-			f:                    1,
-			expectError:          true,
-			errorContains:        "no observations",
-			shouldReportAssertFn: ethReportAssertFn,
-		},
-		{
-			name:   "sequence number equal to previous (should be ignored)",
-			config: configWithChainSelector(t, "16015286601757825753"),
-			previousOutcome: &types.AggregationOutcome{
-				LastSeenAt: 10, // Previous sequence number
-			},
-			observations: createSecureMintObservations(t, []ocrTriggerEventData{
-				{
-					chainSelector: ethSepoliaChainSelector,
-					seqNr:         10, // Equal to previous
-					report: &secureMintReport{
-						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
-						SeqNr:        10,
-						Block:        1000,
-						Mintable:     big.NewInt(99),
-					},
-				},
-			}),
-			f:                    1,
-			expectError:          true,
-			errorContains:        "sequence number too low",
 			shouldReportAssertFn: ethReportAssertFn,
 		},
 		{

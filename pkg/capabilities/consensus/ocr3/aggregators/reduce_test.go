@@ -15,8 +15,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 var (
@@ -86,6 +86,55 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					"FeedID":    idABytes[:],
 					"Timestamp": int64(12341414929),
 					"Price":     int64(100),
+				},
+			},
+			{
+				name: "aggregate on uint64 median",
+				fields: []aggregators.AggregationField{
+					{
+						InputKey:  "FeedID",
+						OutputKey: "FeedID",
+						Method:    "mode",
+					},
+					{
+						InputKey:        "BenchmarkPrice",
+						OutputKey:       "Price",
+						Method:          "median",
+						DeviationString: "10",
+						DeviationType:   "percent",
+					},
+					{
+						InputKey:        "Timestamp",
+						OutputKey:       "Timestamp",
+						Method:          "median",
+						DeviationString: "100",
+						DeviationType:   "absolute",
+					},
+				},
+				extraConfig: map[string]any{},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.WrapMap(map[string]any{
+						"FeedID":         idABytes[:],
+						"BenchmarkPrice": uint64(100),
+						"Timestamp":      12341414929,
+					})
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
+				},
+				shouldReport: true,
+				expectedOutcome: map[string]any{
+					"Reports": []any{
+						map[string]any{
+							"FeedID":    idABytes[:],
+							"Timestamp": int64(12341414929),
+							"Price":     uint64(100),
+						},
+					},
+				},
+				expectedState: map[string]any{
+					"FeedID":    idABytes[:],
+					"Timestamp": int64(12341414929),
+					"Price":     uint64(100),
 				},
 			},
 			{

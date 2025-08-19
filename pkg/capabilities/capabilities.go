@@ -8,9 +8,10 @@ import (
 	"time"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // CapabilityType is an enum for the type of capability.
@@ -78,6 +79,12 @@ type MeteringNodeDetail struct {
 	Peer2PeerID string
 	SpendUnit   string
 	SpendValue  string
+}
+
+// ResponseAndMetadata is the action's output structure that includes both the response and its metadata (billing).
+type ResponseAndMetadata[T proto.Message] struct {
+	Response         T
+	ResponseMetadata ResponseMetadata
 }
 
 type SpendLimit struct {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755619882491,
+  "lastUpdate": 1755642478839,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23394,6 +23394,48 @@ window.BENCHMARK_DATA = {
             "value": 26903,
             "unit": "ns/op",
             "extra": "45103 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0fa26089e17153645dc9adcd573fe4c04b7e6d01",
+          "message": "feat(nodeauth): remove p2pId from Claim (#1489)",
+          "timestamp": "2025-08-19T22:26:55Z",
+          "tree_id": "298e07e2fbe613590e88916c823f9eda9563b2c8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0fa26089e17153645dc9adcd573fe4c04b7e6d01"
+        },
+        "date": 1755642477810,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.8,
+            "unit": "ns/op",
+            "extra": "3350930 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 395.5,
+            "unit": "ns/op",
+            "extra": "3056412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26648,
+            "unit": "ns/op",
+            "extra": "44632 times\n4 procs"
           }
         ]
       }

@@ -20,8 +20,8 @@ import (
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {

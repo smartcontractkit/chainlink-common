@@ -24,36 +24,75 @@ type Factory struct {
 	Logger logger.Logger // optional
 }
 
-// NewRateLimiter creates a RateLimiter for the given settings.Setting and configured by the Factory.
+// Deprecated: use MakeRateLimiter
+func (f Factory) NewRateLimiter(rate settings.Setting[config.Rate]) (RateLimiter, error) {
+	return f.MakeRateLimiter(rate)
+}
+
+// MakeRateLimiter creates a RateLimiter for the given rate and configured by the Factory.
 // If Meter is set, the following metrics will be emitted
 //  - rate.*.limit - float gauge
 //  - rate.*.burst - int gauge
 //  - rate.*.usage - int counter
-func (f Factory) NewRateLimiter(rate settings.Setting[config.Rate]) (RateLimiter, error) {
+//  - rate.*.denied - int histogram
+func (f Factory) MakeRateLimiter(rate settings.Setting[config.Rate]) (RateLimiter, error) {
 	if rate.Scope == settings.ScopeGlobal {
 		return f.globalRateLimiter(rate)
 	}
 	return f.newScopedRateLimiter(rate)
 }
 
-// NewTimeLimiter returns a TimeLimiter for given timeout, and configured by the Factory.
-// If Meter is set, the following metrics will be emitted
-//  - time.*.limit - float gauge
-//  - time.*.usage - float gauge
-//  - time.*.timeout - int counter
-//  - time.*.success - int counter
-// Note: Unit will be ignored. All TimeLimiters emit seconds as "s".
+// Deprecated: use MakeTimeLimiter
 func (f Factory) NewTimeLimiter(timeout settings.Setting[time.Duration]) (TimeLimiter, error) {
 	return f.newTimeLimiter(timeout)
 }
 
-// NewResourcePoolLimiter returns a ResourcePoolLimiter for the given limit, and configured by the Factory.
+// MakeTimeLimiter returns a TimeLimiter for given timeout, and configured by the Factory.
+// If Meter is set, the following metrics will be emitted
+//  - time.*.limit - float gauge
+//  - time.*.runtime - float gauge
+//  - time.*.success - int counter
+//  - time.*.timeout - int counter
+// Note: Unit will be ignored. All TimeLimiters emit seconds as "s".
+func (f Factory) MakeTimeLimiter(timeout settings.Setting[time.Duration]) (TimeLimiter, error) {
+	return f.newTimeLimiter(timeout)
+}
+
+// Deprecated: use MakeResourcePoolLimiter
+func NewResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (ResourcePoolLimiter[N], error) {
+	return MakeResourcePoolLimiter(f, limit)
+}
+
+// MakeResourcePoolLimiter returns a ResourcePoolLimiter for the given limit, and configured by the Factory.
 // If Meter is set, the following metrics will be emitted
 //  - resource.*.limit - gauge
 //  - resource.*.usage - gauge
-func NewResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (ResourcePoolLimiter[N], error) {
+//  - resource.*.amount - histogram
+//  - queue.*.denied - histogram
+func MakeResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (ResourcePoolLimiter[N], error) {
 	if limit.Scope == settings.ScopeGlobal {
 		return newGlobalResourcePoolLimiter(f, limit)
 	}
 	return newScopedResourcePoolLimiterFromFactory(f, limit)
+}
+
+// MakeBoundLimiter returns a BoundLimiter for the given bound and configured by the Factory.
+// If Meter is set, the following metrics will be emitted
+//  - bound.*.limit - gauge
+//  - bound.*.usage - histogram
+//  - bound.*.denied - histogram
+func MakeBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimiter[N], error) {
+	return newBoundLimiter(f, bound)
+}
+
+// MakeQueueLimiter returns a QueueLimiter for the given limit and configured by the Factory.
+// If Meter is set, the following metrics will be emitted
+//  - queue.*.limit - int gauge
+//  - queue.*.usage - int gauge
+//  - queue.*.denied - int histogram
+func MakeQueueLimiter[T any](f Factory, limit settings.Setting[int]) (QueueLimiter[T], error) {
+	if limit.Scope == settings.ScopeGlobal {
+		return newUnscopedQueue[T](f, limit)
+	}
+	return newScopedQueue[T](f, limit)
 }

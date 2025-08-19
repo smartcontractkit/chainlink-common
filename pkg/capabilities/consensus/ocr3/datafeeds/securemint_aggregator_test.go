@@ -182,6 +182,14 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			shouldReportAssertFn: ethReportAssertFn,
 		},
 		{
+			name:          "no observations",
+			config:        configWithChainSelector(t, "16015286601757825753"),
+			observations:  map[ocrcommon.OracleID][]values.Value{},
+			f:             1,
+			expectError:   true,
+			errorContains: "no observations",
+		},
+		{
 			name: "successful sol report extraction",
 			config: solConfig(t, "16423721717087811551", // solana devnet
 				solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}}),

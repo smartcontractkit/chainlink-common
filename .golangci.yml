@@ -34,6 +34,8 @@ linters:
               desc: Use the standard library instead
             - pkg: github.com/ethereum/go-ethereum
               desc: This is a chain-agnostic repo
+            - pkg: github.com/gagliardetto/solana-go
+              desc: This is a chain-agnostic repo
             - pkg: github.com/go-gorm/gorm
               desc: Use github.com/jmoiron/sqlx directly instead
             - pkg: github.com/gofrs/uuid

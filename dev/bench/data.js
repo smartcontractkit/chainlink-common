@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755526104603,
+  "lastUpdate": 1755591297601,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23184,6 +23184,48 @@ window.BENCHMARK_DATA = {
             "value": 26604,
             "unit": "ns/op",
             "extra": "45068 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "85b86bcb59731e8e4c823e95d9fe41e716faffcf",
+          "message": "beholder: config option to enable streaming logs to OTel (#1486)",
+          "timestamp": "2025-08-19T10:12:28+02:00",
+          "tree_id": "c4ff33fe3ea93ec39b9728581960bc58d2109cf4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/85b86bcb59731e8e4c823e95d9fe41e716faffcf"
+        },
+        "date": 1755591295831,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.1,
+            "unit": "ns/op",
+            "extra": "3291013 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.4,
+            "unit": "ns/op",
+            "extra": "3003229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26626,
+            "unit": "ns/op",
+            "extra": "45157 times\n4 procs"
           }
         ]
       }

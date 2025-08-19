@@ -3,6 +3,9 @@ package ccipocr3
 import (
 	"fmt"
 	"math/big"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
@@ -739,6 +742,137 @@ func pbToCurseInfo(pb *ccipocr3pb.CurseInfo) ccipocr3.CurseInfo {
 	}
 	for chainSel, cursed := range pb.CursedSourceChains {
 		result.CursedSourceChains[ccipocr3.ChainSelector(chainSel)] = cursed
+	}
+	return result
+}
+
+func pbToBigIntPreservingZero(b *ccipocr3pb.BigInt) ccipocr3.BigInt {
+	if b == nil {
+		return ccipocr3.BigInt{Int: nil}
+	}
+	return ccipocr3.NewBigInt(new(big.Int).SetBytes(b.Value))
+}
+
+func pbToTokenPriceMap(pbMap map[string]*ccipocr3pb.BigInt) ccipocr3.TokenPriceMap {
+	if pbMap == nil {
+		return nil
+	}
+	result := make(ccipocr3.TokenPriceMap)
+	for token, pbPrice := range pbMap {
+		result[ccipocr3.UnknownEncodedAddress(token)] = pbToBigIntPreservingZero(pbPrice)
+	}
+	return result
+}
+
+func tokenPriceMapToPb(priceMap ccipocr3.TokenPriceMap) map[string]*ccipocr3pb.BigInt {
+	if priceMap == nil {
+		return nil
+	}
+	result := make(map[string]*ccipocr3pb.BigInt)
+	for token, price := range priceMap {
+		result[string(token)] = intToPbBigInt(price.Int)
+	}
+	return result
+}
+
+func pbToMessageTokenIDMap(pbTokens map[string]*ccipocr3pb.RampTokenAmount) (map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount, error) {
+	if pbTokens == nil {
+		return nil, nil
+	}
+	result := make(map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount)
+	for tokenIDStr, pbAmount := range pbTokens {
+		// Parse MessageTokenID from string (format: "seqNr_index")
+		var seqNr uint64
+		var index int
+		if _, err := fmt.Sscanf(tokenIDStr, "%d_%d", &seqNr, &index); err != nil {
+			return nil, fmt.Errorf("failed to parse MessageTokenID from string %s: %w", tokenIDStr, err)
+		}
+
+		tokenID := ccipocr3.NewMessageTokenID(ccipocr3.SeqNum(seqNr), index)
+		result[tokenID] = ccipocr3.RampTokenAmount{
+			SourcePoolAddress: ccipocr3.UnknownAddress(pbAmount.SourcePoolAddress),
+			DestTokenAddress:  ccipocr3.UnknownAddress(pbAmount.DestTokenAddress),
+			ExtraData:         ccipocr3.Bytes(pbAmount.ExtraData),
+			Amount:            pbToBigIntPreservingZero(pbAmount.Amount),
+		}
+	}
+	return result, nil
+}
+
+func messageTokenIDMapToPb(tokens map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount) map[string]*ccipocr3pb.RampTokenAmount {
+	if tokens == nil {
+		return nil
+	}
+	result := make(map[string]*ccipocr3pb.RampTokenAmount)
+	for tokenID, amount := range tokens {
+		result[tokenID.String()] = &ccipocr3pb.RampTokenAmount{
+			SourcePoolAddress: []byte(amount.SourcePoolAddress),
+			DestTokenAddress:  []byte(amount.DestTokenAddress),
+			ExtraData:         []byte(amount.ExtraData),
+			Amount:            intToPbBigInt(amount.Amount.Int),
+		}
+	}
+	return result
+}
+
+func pbToMessagesByTokenID(pbMessages map[string][]byte) (map[ccipocr3.MessageTokenID]ccipocr3.Bytes, error) {
+	if pbMessages == nil {
+		return nil, nil
+	}
+	result := make(map[ccipocr3.MessageTokenID]ccipocr3.Bytes)
+	for tokenIDStr, messageBytes := range pbMessages {
+		// Parse MessageTokenID from string (format: "seqNr_index")
+		var seqNr uint64
+		var index int
+		if _, err := fmt.Sscanf(tokenIDStr, "%d_%d", &seqNr, &index); err != nil {
+			return nil, fmt.Errorf("failed to parse MessageTokenID from string %s: %w", tokenIDStr, err)
+		}
+
+		tokenID := ccipocr3.NewMessageTokenID(ccipocr3.SeqNum(seqNr), index)
+		result[tokenID] = ccipocr3.Bytes(messageBytes)
+	}
+	return result, nil
+}
+
+func messagesByTokenIDToPb(messages map[ccipocr3.MessageTokenID]ccipocr3.Bytes) map[string][]byte {
+	if messages == nil {
+		return nil
+	}
+	result := make(map[string][]byte)
+	for tokenID, messageBytes := range messages {
+		result[tokenID.String()] = []byte(messageBytes)
+	}
+	return result
+}
+
+func pbToTokenUpdates(pbUpdates map[string]*ccipocr3pb.TimestampedBig) map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig {
+	if pbUpdates == nil {
+		return nil
+	}
+	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig)
+	for token, pbUpdate := range pbUpdates {
+		var timestamp time.Time
+		if pbUpdate.Timestamp != nil {
+			timestamp = pbUpdate.Timestamp.AsTime()
+		}
+		result[ccipocr3.UnknownEncodedAddress(token)] = ccipocr3.TimestampedBig{
+			Timestamp: timestamp,
+			Value:     pbToBigIntPreservingZero(pbUpdate.Value),
+		}
+	}
+	return result
+}
+
+func tokenUpdatesToPb(updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig) map[string]*ccipocr3pb.TimestampedBig {
+	if updates == nil {
+		return nil
+	}
+	result := make(map[string]*ccipocr3pb.TimestampedBig)
+	for token, update := range updates {
+		result[string(token)] = &ccipocr3pb.TimestampedBig{
+			Timestamp: timestamppb.New(update.Timestamp),
+			Value:     intToPbBigInt(update.Value.Int),
+		}
 	}
 	return result
 }

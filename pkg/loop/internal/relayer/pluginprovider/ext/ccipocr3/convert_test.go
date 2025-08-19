@@ -4,10 +4,12 @@ import (
 	"math"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
@@ -646,5 +648,436 @@ func TestSourceChainConfigNilHandling(t *testing.T) {
 		assert.Equal(t, false, pbConfig.IsRmnVerificationDisabled)
 		assert.Equal(t, uint64(0), pbConfig.MinSeqNr)
 		assert.Equal(t, []byte(nil), pbConfig.OnRamp)
+	})
+}
+
+// TestTokenPriceMapConversion tests the new TokenPriceMap conversion functions
+func TestTokenPriceMapConversion(t *testing.T) {
+	testCases := []struct {
+		name     string
+		priceMap ccipocr3.TokenPriceMap
+	}{
+		{
+			name: "TokenPriceMap with multiple tokens",
+			priceMap: ccipocr3.TokenPriceMap{
+				ccipocr3.UnknownEncodedAddress("token1"): ccipocr3.NewBigInt(big.NewInt(1000000)),
+				ccipocr3.UnknownEncodedAddress("token2"): ccipocr3.NewBigInt(big.NewInt(2500000)),
+				ccipocr3.UnknownEncodedAddress("token3"): ccipocr3.NewBigInt(big.NewInt(500000)),
+			},
+		},
+		{
+			name:     "Empty TokenPriceMap",
+			priceMap: ccipocr3.TokenPriceMap{},
+		},
+		{
+			name: "TokenPriceMap with zero prices",
+			priceMap: ccipocr3.TokenPriceMap{
+				ccipocr3.UnknownEncodedAddress("zero-token"): ccipocr3.NewBigInt(big.NewInt(0)),
+			},
+		},
+		{
+			name: "TokenPriceMap with large prices",
+			priceMap: ccipocr3.TokenPriceMap{
+				ccipocr3.UnknownEncodedAddress("large-token"): func() ccipocr3.BigInt {
+					val, _ := new(big.Int).SetString("999999999999999999999999999999", 10)
+					return ccipocr3.NewBigInt(val)
+				}(),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert Go -> Protobuf
+			pbMap := tokenPriceMapToPb(tc.priceMap)
+
+			if tc.priceMap == nil {
+				assert.Nil(t, pbMap)
+				return
+			}
+
+			require.NotNil(t, pbMap)
+			assert.Equal(t, len(tc.priceMap), len(pbMap))
+
+			// Verify protobuf values
+			for token, price := range tc.priceMap {
+				pbPrice, exists := pbMap[string(token)]
+				require.True(t, exists, "token %s should exist in protobuf map", string(token))
+				require.NotNil(t, pbPrice)
+				assert.Equal(t, price.Int.Bytes(), pbPrice.Value)
+			}
+
+			// Convert Protobuf -> Go (round-trip)
+			convertedMap := pbToTokenPriceMap(pbMap)
+
+			// Verify round-trip conversion
+			assert.Equal(t, len(tc.priceMap), len(convertedMap))
+			for token, originalPrice := range tc.priceMap {
+				convertedPrice, exists := convertedMap[token]
+				require.True(t, exists, "token %s should exist in converted map", string(token))
+				assert.Equal(t, originalPrice.Int.String(), convertedPrice.Int.String(), "price should survive round-trip for token %s", string(token))
+			}
+		})
+	}
+}
+
+func TestTokenPriceMapNilHandling(t *testing.T) {
+	t.Run("nil TokenPriceMap to protobuf", func(t *testing.T) {
+		pbMap := tokenPriceMapToPb(nil)
+		assert.Nil(t, pbMap)
+	})
+
+	t.Run("nil protobuf map to TokenPriceMap", func(t *testing.T) {
+		priceMap := pbToTokenPriceMap(nil)
+		assert.Nil(t, priceMap)
+	})
+
+	t.Run("empty protobuf map to TokenPriceMap", func(t *testing.T) {
+		emptyPbMap := make(map[string]*ccipocr3pb.BigInt)
+		priceMap := pbToTokenPriceMap(emptyPbMap)
+		require.NotNil(t, priceMap)
+		assert.Equal(t, 0, len(priceMap))
+	})
+}
+
+// TestMessageTokenIDMapConversion tests the MessageTokenID map conversion functions
+func TestMessageTokenIDMapConversion(t *testing.T) {
+	testCases := []struct {
+		name     string
+		tokenMap map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount
+	}{
+		{
+			name: "MessageTokenID map with multiple tokens",
+			tokenMap: map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{
+				ccipocr3.NewMessageTokenID(1, 0): {
+					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-1"),
+					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-1"),
+					ExtraData:         ccipocr3.Bytes("extra-data-1"),
+					Amount:            ccipocr3.NewBigInt(big.NewInt(1000)),
+				},
+				ccipocr3.NewMessageTokenID(2, 1): {
+					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-2"),
+					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-2"),
+					ExtraData:         ccipocr3.Bytes("extra-data-2"),
+					Amount:            ccipocr3.NewBigInt(big.NewInt(2000)),
+				},
+				ccipocr3.NewMessageTokenID(10, 5): {
+					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-10"),
+					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-10"),
+					ExtraData:         ccipocr3.Bytes(""),
+					Amount:            ccipocr3.NewBigInt(big.NewInt(0)),
+				},
+			},
+		},
+		{
+			name:     "Empty MessageTokenID map",
+			tokenMap: map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{},
+		},
+		{
+			name: "Single MessageTokenID with large values",
+			tokenMap: map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{
+				ccipocr3.NewMessageTokenID(999999, 255): {
+					SourcePoolAddress: ccipocr3.UnknownAddress("very-long-source-pool-address-with-many-characters"),
+					DestTokenAddress:  ccipocr3.UnknownAddress("very-long-dest-token-address-with-many-characters"),
+					ExtraData:         ccipocr3.Bytes("very long extra data with many characters that tests the handling of large data"),
+					Amount: func() ccipocr3.BigInt {
+						val, _ := new(big.Int).SetString("123456789012345678901234567890", 10)
+						return ccipocr3.NewBigInt(val)
+					}(),
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert Go -> Protobuf
+			pbMap := messageTokenIDMapToPb(tc.tokenMap)
+
+			if tc.tokenMap == nil {
+				assert.Nil(t, pbMap)
+				return
+			}
+
+			require.NotNil(t, pbMap)
+			assert.Equal(t, len(tc.tokenMap), len(pbMap))
+
+			// Verify protobuf values
+			for tokenID, amount := range tc.tokenMap {
+				tokenIDStr := tokenID.String()
+				pbAmount, exists := pbMap[tokenIDStr]
+				require.True(t, exists, "tokenID %s should exist in protobuf map", tokenIDStr)
+				require.NotNil(t, pbAmount)
+				assert.Equal(t, []byte(amount.SourcePoolAddress), pbAmount.SourcePoolAddress)
+				assert.Equal(t, []byte(amount.DestTokenAddress), pbAmount.DestTokenAddress)
+				assert.Equal(t, []byte(amount.ExtraData), pbAmount.ExtraData)
+				assert.Equal(t, amount.Amount.Int.Bytes(), pbAmount.Amount.Value)
+			}
+
+			// Convert Protobuf -> Go (round-trip)
+			convertedMap, err := pbToMessageTokenIDMap(pbMap)
+			require.NoError(t, err)
+
+			// Verify round-trip conversion
+			assert.Equal(t, len(tc.tokenMap), len(convertedMap))
+			for tokenID, originalAmount := range tc.tokenMap {
+				convertedAmount, exists := convertedMap[tokenID]
+				require.True(t, exists, "tokenID %s should exist in converted map", tokenID.String())
+				assert.Equal(t, []byte(originalAmount.SourcePoolAddress), []byte(convertedAmount.SourcePoolAddress))
+				assert.Equal(t, []byte(originalAmount.DestTokenAddress), []byte(convertedAmount.DestTokenAddress))
+				assert.Equal(t, []byte(originalAmount.ExtraData), []byte(convertedAmount.ExtraData))
+				assert.Equal(t, originalAmount.Amount.Int.String(), convertedAmount.Amount.Int.String())
+			}
+		})
+	}
+}
+
+func TestMessageTokenIDMapErrorHandling(t *testing.T) {
+	t.Run("invalid tokenID string should return error", func(t *testing.T) {
+		pbMap := map[string]*ccipocr3pb.RampTokenAmount{
+			"invalid-format": {
+				SourcePoolAddress: []byte("test"),
+				DestTokenAddress:  []byte("test"),
+				ExtraData:         []byte("test"),
+				Amount:            &ccipocr3pb.BigInt{Value: []byte{0x01}},
+			},
+		}
+
+		_, err := pbToMessageTokenIDMap(pbMap)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse MessageTokenID")
+	})
+
+	t.Run("nil protobuf map should not error", func(t *testing.T) {
+		result, err := pbToMessageTokenIDMap(nil)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("nil Go map should return nil", func(t *testing.T) {
+		result := messageTokenIDMapToPb(nil)
+		assert.Nil(t, result)
+	})
+}
+
+// TestMessagesByTokenIDConversion tests the messages by token ID conversion functions
+func TestMessagesByTokenIDConversion(t *testing.T) {
+	testCases := []struct {
+		name     string
+		messages map[ccipocr3.MessageTokenID]ccipocr3.Bytes
+	}{
+		{
+			name: "Messages with multiple token IDs",
+			messages: map[ccipocr3.MessageTokenID]ccipocr3.Bytes{
+				ccipocr3.NewMessageTokenID(1, 0): ccipocr3.Bytes("usdc-message-data-1"),
+				ccipocr3.NewMessageTokenID(2, 1): ccipocr3.Bytes("usdc-message-data-2"),
+				ccipocr3.NewMessageTokenID(5, 3): ccipocr3.Bytes("usdc-message-data-5"),
+			},
+		},
+		{
+			name:     "Empty messages map",
+			messages: map[ccipocr3.MessageTokenID]ccipocr3.Bytes{},
+		},
+		{
+			name: "Messages with binary data",
+			messages: map[ccipocr3.MessageTokenID]ccipocr3.Bytes{
+				ccipocr3.NewMessageTokenID(100, 50): ccipocr3.Bytes([]byte{0x01, 0x02, 0x03, 0xFF, 0xFE, 0xFD}),
+			},
+		},
+		{
+			name: "Messages with empty data",
+			messages: map[ccipocr3.MessageTokenID]ccipocr3.Bytes{
+				ccipocr3.NewMessageTokenID(0, 0): ccipocr3.Bytes(""),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert Go -> Protobuf
+			pbMap := messagesByTokenIDToPb(tc.messages)
+
+			if tc.messages == nil {
+				assert.Nil(t, pbMap)
+				return
+			}
+
+			require.NotNil(t, pbMap)
+			assert.Equal(t, len(tc.messages), len(pbMap))
+
+			// Verify protobuf values
+			for tokenID, messageBytes := range tc.messages {
+				tokenIDStr := tokenID.String()
+				pbBytes, exists := pbMap[tokenIDStr]
+				require.True(t, exists, "tokenID %s should exist in protobuf map", tokenIDStr)
+				assert.Equal(t, []byte(messageBytes), pbBytes)
+			}
+
+			// Convert Protobuf -> Go (round-trip)
+			convertedMap, err := pbToMessagesByTokenID(pbMap)
+			require.NoError(t, err)
+
+			// Verify round-trip conversion
+			assert.Equal(t, len(tc.messages), len(convertedMap))
+			for tokenID, originalBytes := range tc.messages {
+				convertedBytes, exists := convertedMap[tokenID]
+				require.True(t, exists, "tokenID %s should exist in converted map", tokenID.String())
+				assert.Equal(t, []byte(originalBytes), []byte(convertedBytes))
+			}
+		})
+	}
+}
+
+func TestMessagesByTokenIDErrorHandling(t *testing.T) {
+	t.Run("invalid tokenID string should return error", func(t *testing.T) {
+		pbMap := map[string][]byte{
+			"not-a-valid-format": []byte("test-message"),
+		}
+
+		_, err := pbToMessagesByTokenID(pbMap)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse MessageTokenID")
+	})
+
+	t.Run("nil protobuf map should not error", func(t *testing.T) {
+		result, err := pbToMessagesByTokenID(nil)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("nil Go map should return nil", func(t *testing.T) {
+		result := messagesByTokenIDToPb(nil)
+		assert.Nil(t, result)
+	})
+}
+
+// TestTokenUpdatesConversion tests the token updates conversion functions
+func TestTokenUpdatesConversion(t *testing.T) {
+	testTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+
+	testCases := []struct {
+		name    string
+		updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig
+	}{
+		{
+			name: "Token updates with multiple tokens",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{
+				ccipocr3.UnknownEncodedAddress("token1"): {
+					Timestamp: testTime,
+					Value:     ccipocr3.NewBigInt(big.NewInt(1500000)),
+				},
+				ccipocr3.UnknownEncodedAddress("token2"): {
+					Timestamp: testTime.Add(time.Hour),
+					Value:     ccipocr3.NewBigInt(big.NewInt(2500000)),
+				},
+				ccipocr3.UnknownEncodedAddress("token3"): {
+					Timestamp: testTime.Add(2 * time.Hour),
+					Value:     ccipocr3.NewBigInt(big.NewInt(750000)),
+				},
+			},
+		},
+		{
+			name:    "Empty token updates",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{},
+		},
+		{
+			name: "Token update with zero value",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{
+				ccipocr3.UnknownEncodedAddress("zero-token"): {
+					Timestamp: testTime,
+					Value:     ccipocr3.NewBigInt(big.NewInt(0)),
+				},
+			},
+		},
+		{
+			name: "Token update with large value",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{
+				ccipocr3.UnknownEncodedAddress("large-token"): {
+					Timestamp: testTime,
+					Value: func() ccipocr3.BigInt {
+						val, _ := new(big.Int).SetString("999999999999999999999999999999", 10)
+						return ccipocr3.NewBigInt(val)
+					}(),
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert Go -> Protobuf
+			pbMap := tokenUpdatesToPb(tc.updates)
+
+			if tc.updates == nil {
+				assert.Nil(t, pbMap)
+				return
+			}
+
+			require.NotNil(t, pbMap)
+			assert.Equal(t, len(tc.updates), len(pbMap))
+
+			// Verify protobuf values
+			for token, update := range tc.updates {
+				pbUpdate, exists := pbMap[string(token)]
+				require.True(t, exists, "token %s should exist in protobuf map", string(token))
+				require.NotNil(t, pbUpdate)
+				require.NotNil(t, pbUpdate.Timestamp)
+				require.NotNil(t, pbUpdate.Value)
+
+				assert.Equal(t, update.Timestamp.Unix(), pbUpdate.Timestamp.AsTime().Unix())
+				assert.Equal(t, update.Value.Int.Bytes(), pbUpdate.Value.Value)
+			}
+
+			// Convert Protobuf -> Go (round-trip)
+			convertedMap := pbToTokenUpdates(pbMap)
+
+			// Verify round-trip conversion
+			assert.Equal(t, len(tc.updates), len(convertedMap))
+			for token, originalUpdate := range tc.updates {
+				convertedUpdate, exists := convertedMap[token]
+				require.True(t, exists, "token %s should exist in converted map", string(token))
+
+				// Compare timestamps (allowing for some precision loss in conversion)
+				assert.Equal(t, originalUpdate.Timestamp.Unix(), convertedUpdate.Timestamp.Unix())
+				assert.Equal(t, originalUpdate.Value.Int.String(), convertedUpdate.Value.Int.String())
+			}
+		})
+	}
+}
+
+func TestTokenUpdatesNilHandling(t *testing.T) {
+	t.Run("nil token updates to protobuf", func(t *testing.T) {
+		pbMap := tokenUpdatesToPb(nil)
+		assert.Nil(t, pbMap)
+	})
+
+	t.Run("nil protobuf map to token updates", func(t *testing.T) {
+		updates := pbToTokenUpdates(nil)
+		assert.Nil(t, updates)
+	})
+
+	t.Run("empty protobuf map to token updates", func(t *testing.T) {
+		emptyPbMap := make(map[string]*ccipocr3pb.TimestampedBig)
+		updates := pbToTokenUpdates(emptyPbMap)
+		require.NotNil(t, updates)
+		assert.Equal(t, 0, len(updates))
+	})
+
+	t.Run("protobuf map with nil timestamp", func(t *testing.T) {
+		pbMap := map[string]*ccipocr3pb.TimestampedBig{
+			"test-token": {
+				Timestamp: nil,
+				Value:     &ccipocr3pb.BigInt{Value: []byte{0x01}},
+			},
+		}
+
+		// Should not panic and handle gracefully
+		updates := pbToTokenUpdates(pbMap)
+		require.NotNil(t, updates)
+		require.Contains(t, updates, ccipocr3.UnknownEncodedAddress("test-token"))
+
+		// When timestamp is nil, should default to zero time
+		update := updates[ccipocr3.UnknownEncodedAddress("test-token")]
+		assert.True(t, update.Timestamp.IsZero())
 	})
 }

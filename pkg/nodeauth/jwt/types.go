@@ -5,7 +5,6 @@ import (
 	"crypto/ed25519"
 
 	nodeauthtypes "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 // ---------- JWT Generator Interfaces ----------
@@ -27,8 +26,8 @@ type JWTAuthenticator interface {
 // Each service that uses NodeJWTAuthenticator must provide an implementation for this interface.
 type NodeAuthProvider interface {
 
-	// IsNodePubKeyTrusted checks if a node's public key and p2pId is trusted
+	// IsNodePubKeyTrusted checks if a node's public key is trusted
 	// Usually, this is done by checking the node aginst DON's on-chain topology.
 	// The check can be done aginst on-chain contracts or cache, depending on the each service's implementation.
-	IsNodePubKeyTrusted(ctx context.Context, p2pId p2ptypes.PeerID, publicKey ed25519.PublicKey, environment string) (bool, error)
+	IsNodePubKeyTrusted(ctx context.Context, publicKey ed25519.PublicKey) (bool, error)
 }

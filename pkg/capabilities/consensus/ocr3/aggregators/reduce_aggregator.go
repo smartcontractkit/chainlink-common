@@ -59,7 +59,7 @@ type ReduceAggConfig struct {
 
 type AggregationField struct {
 	// An optional check to only report when the difference from the previous report exceeds a certain threshold.
-	// Can only be used when the field is of a numeric type: string, decimal, int64, big.Int, time.Time, float64
+	// Can only be used when the field is of a numeric type: string, decimal, uint64, int64, big.Int, time.Time, float64
 	// If no deviation is provided on any field, there will always be a report once minimum observations are reached.
 	Deviation       decimal.Decimal `mapstructure:"-"  json:"-"`
 	DeviationString string          `mapstructure:"deviation"  json:"deviation,omitempty"`
@@ -402,22 +402,24 @@ func toDecimal(item values.Value) (decimal.Decimal, error) {
 
 	switch v := unwrapped.(type) {
 	case string:
-		deci, err := decimal.NewFromString(unwrapped.(string))
+		deci, err := decimal.NewFromString(v)
 		if err != nil {
 			return decimal.NewFromInt(0), err
 		}
 		return deci, nil
 	case decimal.Decimal:
-		return unwrapped.(decimal.Decimal), nil
+		return v, nil
 	case int64:
-		return decimal.NewFromInt(unwrapped.(int64)), nil
+		return decimal.NewFromInt(v), nil
+	case uint64:
+		return decimal.NewFromUint64(v), nil
 	case *big.Int:
 		big := unwrapped.(*big.Int)
 		return decimal.NewFromBigInt(big, 10), nil
 	case time.Time:
-		return decimal.NewFromInt(unwrapped.(time.Time).Unix()), nil
+		return decimal.NewFromInt(v.Unix()), nil
 	case float64:
-		return decimal.NewFromFloat(unwrapped.(float64)), nil
+		return decimal.NewFromFloat(v), nil
 	default:
 		// unsupported type
 		return decimal.NewFromInt(0), fmt.Errorf("unable to convert type %T to decimal", v)

@@ -61,6 +61,7 @@ const (
 	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
+	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
 
 	envChipIngressEndpoint = "CL_CHIP_INGRESS_ENDPOINT"
 )
@@ -115,6 +116,7 @@ type EnvConfig struct {
 	TelemetryEmitterExportInterval     time.Duration
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
+	TelemetryLogStreamingEnabled       bool
 
 	ChipIngressEndpoint string
 }
@@ -182,6 +184,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
+	add(envTelemetryLogStreamingEnabled, strconv.FormatBool(e.TelemetryLogStreamingEnabled))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 
@@ -340,6 +343,10 @@ func (e *EnvConfig) parse() error {
 		e.TelemetryEmitterMaxQueueSize, err = getInt(envTelemetryEmitterMaxQueueSize)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
+		}
+		e.TelemetryLogStreamingEnabled, err = getBool(envTelemetryLogStreamingEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogStreamingEnabled, err)
 		}
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)

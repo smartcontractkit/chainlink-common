@@ -1,6 +1,7 @@
 package datafeeds
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"math/big"
@@ -12,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -22,12 +24,13 @@ var (
 	// Test chain selectors
 	ethSepoliaChainSelector = chainSelector(16015286601757825753) // Ethereum Sepolia testnet
 	bnbTestnetChainSelector = chainSelector(13264668187771770619) // Binance Smart Chain testnet
+	solDevnetChainSelector  = chainSelector(16423721717087811551) // Solana devnet
 )
 
 func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
 
-	tests := []struct {
+	type tcase struct {
 		name                  string
 		config                *values.Map
 		previousOutcome       *types.AggregationOutcome
@@ -37,7 +40,95 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		expectedChainSelector chainSelector
 		expectError           bool
 		errorContains         string
-	}{
+		shouldReportAssertFn  func(t *testing.T, tc tcase, outcome *types.AggregationOutcome)
+	}
+	acc1 := [32]byte{4, 5, 6}
+	acc2 := [32]byte{3, 2, 1}
+
+	ethReportAssertFn := func(t *testing.T, tc tcase, outcome *types.AggregationOutcome) {
+		// Verify the output structure matches the feeds aggregator format
+		val, err := values.FromMapValueProto(outcome.EncodableOutcome)
+		require.NoError(t, err)
+
+		topLevelMap, err := val.Unwrap()
+		require.NoError(t, err)
+		mm, ok := topLevelMap.(map[string]any)
+		require.True(t, ok)
+
+		// Check that we have the expected reports
+		reportsList, ok := mm[TopLevelListOutputFieldName].([]any)
+		require.True(t, ok)
+		require.Len(t, reportsList, 1)
+
+		// Check the first (and only) report
+		report, ok := reportsList[0].(map[string]any)
+		require.True(t, ok)
+
+		// Verify dataID
+		dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
+		require.True(t, ok)
+		// Should be 0x04 + chain selector as bytes + right padded with 0s
+		var expectedChainSelectorBytes [16]byte
+		expectedChainSelectorBytes[0] = 0x04
+		binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
+		require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
+		t.Logf("Data ID: 0x%x", dataIDBytes)
+
+		// Verify other fields exist
+		answer, ok := report[AnswerOutputFieldName].(*big.Int)
+		require.True(t, ok)
+		require.NotNil(t, answer)
+
+		timestamp := report[TimestampOutputFieldName].(int64)
+		require.Equal(t, int64(1000), timestamp)
+	}
+
+	solReportAssertFn := func(t *testing.T, tc tcase, outcome *types.AggregationOutcome) {
+		// Verify the output structure matches the feeds aggregator format
+		val, err := values.FromMapValueProto(outcome.EncodableOutcome)
+		require.NoError(t, err)
+
+		topLevelMap, err := val.Unwrap()
+		require.NoError(t, err)
+		mm, ok := topLevelMap.(map[string]any)
+		require.True(t, ok)
+
+		// Check that we have the expected reports
+		reportsList, ok := mm[TopLevelPayloadListFieldName].([]any)
+		require.True(t, ok)
+		require.Len(t, reportsList, 1)
+
+		// Check that we have expected account hash
+		var accHash [32]byte
+		err = val.Underlying[TopLevelAccountCtxHashFieldName].UnwrapTo(&accHash)
+		require.NoError(t, err)
+		expHash := sha256.Sum256(append(acc1[:], acc2[:]...))
+
+		require.Equal(t, expHash, accHash)
+
+		// Check the first (and only) report
+		report, ok := reportsList[0].(map[string]any)
+		require.True(t, ok)
+		// Verify dataID
+		dataIDBytes, ok := report[SolDataIDOutputFieldName].([]byte)
+		require.True(t, ok)
+		// Should be 0x04 + chain selector as bytes + right padded with 0s
+		var expectedChainSelectorBytes [16]byte
+		expectedChainSelectorBytes[0] = 0x04
+		binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
+		require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
+		t.Logf("Data ID: 0x%x", dataIDBytes)
+
+		// Verify other fields exist
+		answer, ok := report[SolAnswerOutputFieldName].(*big.Int)
+		require.True(t, ok)
+		require.NotNil(t, answer)
+
+		timestamp := report[SolTimestampOutputFieldName].(int64)
+		require.Equal(t, int64(1000), timestamp)
+	}
+
+	tests := []tcase{
 		{
 			name:   "successful eth report extraction",
 			config: configWithChainSelector(t, "16015286601757825753"),
@@ -67,6 +158,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			expectedShouldReport:  true,
 			expectedChainSelector: ethSepoliaChainSelector,
 			expectError:           false,
+			shouldReportAssertFn:  ethReportAssertFn,
 		},
 		{
 			name:   "no matching chain selector found",
@@ -86,6 +178,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			f:                    1,
 			expectError:          false,
 			expectedShouldReport: false,
+			shouldReportAssertFn: ethReportAssertFn,
 		},
 		{
 			name:   "sequence number too low",
@@ -105,17 +198,19 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 			}),
-			f:             1,
-			expectError:   true,
-			errorContains: "sequence number too low",
+			f:                    1,
+			expectError:          true,
+			errorContains:        "sequence number too low",
+			shouldReportAssertFn: ethReportAssertFn,
 		},
 		{
-			name:          "no observations",
-			config:        configWithChainSelector(t, "16015286601757825753"),
-			observations:  map[ocrcommon.OracleID][]values.Value{},
-			f:             1,
-			expectError:   true,
-			errorContains: "no observations",
+			name:                 "no observations",
+			config:               configWithChainSelector(t, "16015286601757825753"),
+			observations:         map[ocrcommon.OracleID][]values.Value{},
+			f:                    1,
+			expectError:          true,
+			errorContains:        "no observations",
+			shouldReportAssertFn: ethReportAssertFn,
 		},
 		{
 			name:   "sequence number equal to previous (should be ignored)",
@@ -135,9 +230,42 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 			}),
-			f:             1,
-			expectError:   true,
-			errorContains: "sequence number too low",
+			f:                    1,
+			expectError:          true,
+			errorContains:        "sequence number too low",
+			shouldReportAssertFn: ethReportAssertFn,
+		},
+		{
+			name: "successful sol report extraction",
+			config: solConfig(t, "16423721717087811551", // solana devnet
+				solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}}),
+			observations: createSecureMintObservations(t, []ocrTriggerEventData{
+				{
+					chainSelector: solDevnetChainSelector,
+					seqNr:         10,
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
+						SeqNr:        10,
+						Block:        1000,
+						Mintable:     big.NewInt(99),
+					},
+				},
+				{
+					chainSelector: bnbTestnetChainSelector,
+					seqNr:         11,
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
+						SeqNr:        11,
+						Block:        1100,
+						Mintable:     big.NewInt(200),
+					},
+				},
+			}),
+			f:                     1,
+			expectedShouldReport:  true,
+			expectedChainSelector: solDevnetChainSelector,
+			expectError:           false,
+			shouldReportAssertFn:  solReportAssertFn,
 		},
 	}
 
@@ -163,41 +291,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			require.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
 
 			if outcome.ShouldReport {
-				// Verify the output structure matches the feeds aggregator format
-				val, err := values.FromMapValueProto(outcome.EncodableOutcome)
-				require.NoError(t, err)
-
-				topLevelMap, err := val.Unwrap()
-				require.NoError(t, err)
-				mm, ok := topLevelMap.(map[string]any)
-				require.True(t, ok)
-
-				// Check that we have the expected reports
-				reportsList, ok := mm[TopLevelListOutputFieldName].([]any)
-				require.True(t, ok)
-				require.Len(t, reportsList, 1)
-
-				// Check the first (and only) report
-				report, ok := reportsList[0].(map[string]any)
-				require.True(t, ok)
-
-				// Verify dataID
-				dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
-				require.True(t, ok)
-				// Should be 0x04 + chain selector as bytes + right padded with 0s
-				var expectedChainSelectorBytes [16]byte
-				expectedChainSelectorBytes[0] = 0x04
-				binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
-				require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
-				t.Logf("Data ID: 0x%x", dataIDBytes)
-
-				// Verify other fields exist
-				answer, ok := report[AnswerOutputFieldName].(*big.Int)
-				require.True(t, ok)
-				require.NotNil(t, answer)
-
-				timestamp := report[TimestampOutputFieldName].(int64)
-				require.Equal(t, int64(1000), timestamp)
+				tc.shouldReportAssertFn(t, tc, outcome)
 			}
 		})
 	}
@@ -207,6 +301,18 @@ func configWithChainSelector(t *testing.T, chainSelector string) *values.Map {
 	m, err := values.NewMap(map[string]any{
 		"targetChainSelector": chainSelector,
 	})
+	require.NoError(t, err)
+	return m
+}
+
+func solConfig(t *testing.T, chainSelector string, meta solana.AccountMetaSlice) *values.Map {
+	m, err := values.NewMap(map[string]any{
+		"targetChainSelector": chainSelector,
+		"solana": map[string]any{
+			"remaining_accounts": meta,
+		},
+	})
+
 	require.NoError(t, err)
 	return m
 }

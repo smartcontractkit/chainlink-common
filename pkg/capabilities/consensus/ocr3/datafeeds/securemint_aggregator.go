@@ -26,6 +26,44 @@ var (
 	ErrSequenceNumberTooLow    = errors.New("sequence number too low")
 )
 
+type SolanaEncoderKey = string
+
+const (
+	/*
+		OutputFormat for solana:
+		"account_context_hash": <"hash">,
+		"payload": []reports{timestamp uint32, answer *big.Int, dataId [16]byte }
+		Solana encoder compatible idl config:
+		encoderConfig := map[string]any{
+			report_schema": `{
+			"kind": "struct",
+			"fields": [
+			{ "name": "payload", "type": { "vec": { "defined": "DecimalReport" } } }
+			]
+			}`,
+			"defined_types": `[
+			      {
+				"name":"DecimalReport",
+				 "type":{
+				  "kind":"struct",
+				  "fields":[
+				    { "name":"timestamp", "type":"u32" },
+				    { "name":"answer",    "type":"u128" },
+				    { "name": "dataId",   "type": {"array": ["u8",16]}}
+				  ]
+				}
+			      }
+			]`,
+				}
+
+	*/
+	TopLevelPayloadListFieldName    = SolanaEncoderKey("payload")
+	TopLevelAccountCtxHashFieldName = SolanaEncoderKey("account_context_hash")
+	SolTimestampOutputFieldName     = SolanaEncoderKey("timestamp")
+	SolAnswerOutputFieldName        = SolanaEncoderKey("answer")
+	SolDataIDOutputFieldName        = SolanaEncoderKey("dataId")
+)
+
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
 type secureMintReport struct {
 	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
@@ -39,7 +77,7 @@ type chainSelector uint64
 
 type SolanaConfig struct {
 	// Add Solana-specific configuration fields here
-	AccountContext map[string]solana.AccountMetaSlice `mapstructure:"account_context"`
+	AccountContext solana.AccountMetaSlice `mapstructure:"remaining_accounts"`
 }
 
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
@@ -146,19 +184,17 @@ func (f *SolanaReportFormatter) PackReport(lggr logger.Logger, report *secureMin
 		return nil, fmt.Errorf("timestamp exceeds u32 bounds: %v", report.Block)
 	}
 
-	toWrap := map[string]any{
-		"account_context_hash": accountContextHash,
-		"payload": []any{
-			map[string]any{
-				"timestamp": uint32(report.Block), // TODO: Verify with Michael/Geert timestamp should be block number?
-				"answer":    smReportAsAnswer,
-				"data_id":   chainSelectorAsDataID,
-			},
+	toWrap := []any{
+		map[SolanaEncoderKey]any{
+			SolTimestampOutputFieldName: uint32(report.Block), // TODO: Verify with Michael/Geert timestamp should be block number?
+			SolAnswerOutputFieldName:    smReportAsAnswer,
+			SolDataIDOutputFieldName:    chainSelectorAsDataID,
 		},
 	}
 
 	wrappedReport, err := values.NewMap(map[string]any{
-		TopLevelListOutputFieldName: toWrap,
+		TopLevelAccountCtxHashFieldName: accountContextHash,
+		TopLevelPayloadListFieldName:    toWrap,
 	})
 
 	if err != nil {
@@ -169,7 +205,7 @@ func (f *SolanaReportFormatter) PackReport(lggr logger.Logger, report *secureMin
 }
 
 func NewSolanaReportFormatter(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error) {
-	return &SolanaReportFormatter{TargetChainSelector: chainSelector, OnReportAccounts: config.Solana.AccountContext["remaining_accounts"]}, nil
+	return &SolanaReportFormatter{TargetChainSelector: chainSelector, OnReportAccounts: config.Solana.AccountContext}, nil
 }
 
 type Builder func(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error)

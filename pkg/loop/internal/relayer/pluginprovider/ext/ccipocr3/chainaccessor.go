@@ -290,6 +290,51 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, d
 	return pbToFeeQuoterDestChainConfigDetailed(resp.Config), nil
 }
 
+// USDCMessageReader methods
+func (c *chainAccessorClient) MessagesByTokenID(ctx context.Context, source, dest ccipocr3.ChainSelector, tokens map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount) (map[ccipocr3.MessageTokenID]ccipocr3.Bytes, error) {
+	resp, err := c.grpc.MessagesByTokenID(ctx, &ccipocr3pb.MessagesByTokenIDRequest{
+		SourceChainSelector: uint64(source),
+		DestChainSelector:   uint64(dest),
+		Tokens:              messageTokenIDMapToPb(tokens),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbToMessagesByTokenID(resp.Messages)
+}
+
+// PriceReader methods
+func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress) (ccipocr3.TokenPriceMap, error) {
+	var tokenStrs []string
+	for _, token := range tokens {
+		tokenStrs = append(tokenStrs, string(token))
+	}
+
+	resp, err := c.grpc.GetFeedPricesUSD(ctx, &ccipocr3pb.GetFeedPricesUSDRequest{
+		Tokens: tokenStrs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbToTokenPriceMap(resp.Prices), nil
+}
+
+func (c *chainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig, error) {
+	var tokenStrs []string
+	for _, token := range tokens {
+		tokenStrs = append(tokenStrs, string(token))
+	}
+
+	resp, err := c.grpc.GetFeeQuoterTokenUpdates(ctx, &ccipocr3pb.GetFeeQuoterTokenUpdatesRequest{
+		Tokens:        tokenStrs,
+		ChainSelector: uint64(chain),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbToTokenUpdates(resp.TokenUpdates), nil
+}
+
 // Server implementation
 var _ ccipocr3pb.ChainAccessorServer = (*chainAccessorServer)(nil)
 
@@ -553,5 +598,64 @@ func (s *chainAccessorServer) GetFeeQuoterDestChainConfig(ctx context.Context, r
 	}
 	return &ccipocr3pb.GetFeeQuoterDestChainConfigResponse{
 		Config: feeQuoterDestChainConfigToPb(config),
+	}, nil
+}
+
+// USDCMessageReader server methods
+func (s *chainAccessorServer) MessagesByTokenID(ctx context.Context, req *ccipocr3pb.MessagesByTokenIDRequest) (*ccipocr3pb.MessagesByTokenIDResponse, error) {
+	tokens, err := pbToMessageTokenIDMap(req.Tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	messages, err := s.impl.MessagesByTokenID(
+		ctx,
+		ccipocr3.ChainSelector(req.SourceChainSelector),
+		ccipocr3.ChainSelector(req.DestChainSelector),
+		tokens,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ccipocr3pb.MessagesByTokenIDResponse{
+		Messages: messagesByTokenIDToPb(messages),
+	}, nil
+}
+
+// PriceReader server methods
+func (s *chainAccessorServer) GetFeedPricesUSD(ctx context.Context, req *ccipocr3pb.GetFeedPricesUSDRequest) (*ccipocr3pb.GetFeedPricesUSDResponse, error) {
+	var tokens []ccipocr3.UnknownEncodedAddress
+	for _, tokenStr := range req.Tokens {
+		tokens = append(tokens, ccipocr3.UnknownEncodedAddress(tokenStr))
+	}
+
+	prices, err := s.impl.GetFeedPricesUSD(ctx, tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ccipocr3pb.GetFeedPricesUSDResponse{
+		Prices: tokenPriceMapToPb(prices),
+	}, nil
+}
+
+func (s *chainAccessorServer) GetFeeQuoterTokenUpdates(ctx context.Context, req *ccipocr3pb.GetFeeQuoterTokenUpdatesRequest) (*ccipocr3pb.GetFeeQuoterTokenUpdatesResponse, error) {
+	var tokens []ccipocr3.UnknownEncodedAddress
+	for _, tokenStr := range req.Tokens {
+		tokens = append(tokens, ccipocr3.UnknownEncodedAddress(tokenStr))
+	}
+
+	updates, err := s.impl.GetFeeQuoterTokenUpdates(
+		ctx,
+		tokens,
+		ccipocr3.ChainSelector(req.ChainSelector),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ccipocr3pb.GetFeeQuoterTokenUpdatesResponse{
+		TokenUpdates: tokenUpdatesToPb(updates),
 	}, nil
 }

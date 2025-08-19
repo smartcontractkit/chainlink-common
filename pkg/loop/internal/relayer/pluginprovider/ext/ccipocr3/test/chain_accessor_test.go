@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"math/big"
 	"testing"
 	"time"
 
@@ -111,6 +112,39 @@ func TestChainAccessor(t *testing.T) {
 		config, err := chainAccessor.GetFeeQuoterDestChainConfig(ctx, 1)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
+	})
+
+	// USDCMessageReader tests
+	t.Run("MessagesByTokenID", func(t *testing.T) {
+		tokens := map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{
+			ccipocr3.NewMessageTokenID(1, 0): {
+				SourcePoolAddress: ccipocr3.UnknownAddress("test-source-pool"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("test-dest-token"),
+				ExtraData:         ccipocr3.Bytes("test-extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+			},
+		}
+		messages, err := chainAccessor.MessagesByTokenID(ctx, ccipocr3.ChainSelector(1), ccipocr3.ChainSelector(2), tokens)
+		assert.NoError(t, err)
+		assert.NotNil(t, messages)
+		assert.Len(t, messages, 1)
+	})
+
+	// PriceReader tests
+	t.Run("GetFeedPricesUSD", func(t *testing.T) {
+		tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2", "token3"}
+		prices, err := chainAccessor.GetFeedPricesUSD(ctx, tokens)
+		assert.NoError(t, err)
+		assert.NotNil(t, prices)
+		assert.Len(t, prices, 3)
+	})
+
+	t.Run("GetFeeQuoterTokenUpdates", func(t *testing.T) {
+		tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2"}
+		updates, err := chainAccessor.GetFeeQuoterTokenUpdates(ctx, tokens, ccipocr3.ChainSelector(1))
+		assert.NoError(t, err)
+		assert.NotNil(t, updates)
+		assert.Len(t, updates, 2)
 	})
 }
 

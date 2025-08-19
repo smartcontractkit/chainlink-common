@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // CommitPluginReport contains the necessary information to commit CCIP
@@ -104,4 +105,15 @@ func DecodeCommitReportInfo(data []byte) (CommitReportInfo, error) {
 	default:
 		return CommitReportInfo{}, fmt.Errorf("unknown execute report info version (%d)", data[0])
 	}
+}
+
+type CommitPluginReportWithMeta struct {
+	Report    CommitPluginReport `json:"report"`
+	Timestamp time.Time          `json:"timestamp"`
+	BlockNum  uint64             `json:"blockNum"`
+}
+
+type CommitReportsByConfidenceLevel struct {
+	Finalized   []CommitPluginReportWithMeta `json:"finalized"`
+	Unfinalized []CommitPluginReportWithMeta `json:"unfinalized"`
 }

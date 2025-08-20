@@ -14,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 // Test request type
@@ -27,7 +26,7 @@ func (r mockRequest) String() string {
 }
 
 // Helper function to create test signer and keys
-func createTestSigner() (*core.Ed25519Signer, ed25519.PublicKey, p2ptypes.PeerID) {
+func createTestSigner() (*core.Ed25519Signer, ed25519.PublicKey) {
 	// Generate a private key for signing
 	csaPubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -44,27 +43,15 @@ func createTestSigner() (*core.Ed25519Signer, ed25519.PublicKey, p2ptypes.PeerID
 		panic("Failed to create Ed25519Signer: " + err.Error())
 	}
 
-	// Generate a separate public key for p2pId
-	p2pIdKey, _, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		panic("Failed to generate Ed25519 p2pId: " + err.Error())
-	}
-
-	// Create PeerID from ed25519 public key
-	p2pId, err := p2ptypes.PeerIDFromPublicKey(p2pIdKey)
-	if err != nil {
-		panic("Failed to create PeerID from public key: " + err.Error())
-	}
-
-	return signer, csaPubKey, p2pId
+	return signer, csaPubKey
 }
 
 func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 	// prepare test data
-	signer, csaPubKey, p2pId := createTestSigner()
+	signer, csaPubKey := createTestSigner()
 	req := mockRequest{Field: "test request"}
 
-	jwtGenerator := NewNodeJWTGenerator(signer, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtGenerator := NewNodeJWTGenerator(signer, csaPubKey)
 
 	jwtToken, err := jwtGenerator.CreateJWTForRequest(req)
 	require.NoError(t, err)
@@ -76,22 +63,16 @@ func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 
 	claims, ok := token.Claims.(*types.NodeJWTClaims)
 	require.True(t, ok)
-	assert.Equal(t, p2pId.String(), claims.Issuer)
+	assert.Equal(t, hex.EncodeToString(csaPubKey), claims.Issuer)
 
-	expectedP2PIdStr := p2pId.String()
-	expectedCSAPubKeyHex := hex.EncodeToString(csaPubKey)
-
-	assert.Equal(t, expectedP2PIdStr, claims.Subject)
-	assert.Equal(t, expectedP2PIdStr, claims.P2PId)
-	assert.Equal(t, expectedCSAPubKeyHex, claims.PublicKey)
+	assert.Equal(t, hex.EncodeToString(csaPubKey), claims.Subject)
+	assert.Equal(t, hex.EncodeToString(csaPubKey), claims.PublicKey)
 
 	expectedDigest := utils.CalculateRequestDigest(req)
 	assert.Equal(t, expectedDigest, claims.Digest)
 
 	assert.NotNil(t, claims.ExpiresAt)
 	assert.NotNil(t, claims.IssuedAt)
-
-	assert.Equal(t, p2pId.String(), claims.P2PId, "P2P ID should match string representation")
 
 	decodedCSAPubKey, err := hex.DecodeString(claims.PublicKey)
 	require.NoError(t, err)
@@ -100,11 +81,11 @@ func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 
 func TestNodeJWTGenerator_DigestTampering(t *testing.T) {
 	// prepare test data
-	signer, csaPubKey, p2pId := createTestSigner()
+	signer, csaPubKey := createTestSigner()
 	originalReq := mockRequest{Field: "original"}
 	tamperedReq := mockRequest{Field: "tampered"}
 
-	jwtGenerator := NewNodeJWTGenerator(signer, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtGenerator := NewNodeJWTGenerator(signer, csaPubKey)
 
 	jwtToken, err := jwtGenerator.CreateJWTForRequest(originalReq)
 	require.NoError(t, err)
@@ -124,10 +105,10 @@ func TestNodeJWTGenerator_DigestTampering(t *testing.T) {
 
 func TestNodeJWTGenerator_NoSigner(t *testing.T) {
 	// Test that generator returns error when no signer is configured
-	_, csaPubKey, p2pId := createTestSigner()
+	_, csaPubKey := createTestSigner()
 	req := mockRequest{Field: "test"}
 
-	jwtGenerator := NewNodeJWTGenerator(nil, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtGenerator := NewNodeJWTGenerator(nil, csaPubKey)
 
 	_, err := jwtGenerator.CreateJWTForRequest(req)
 	require.Error(t, err)
@@ -136,10 +117,10 @@ func TestNodeJWTGenerator_NoSigner(t *testing.T) {
 
 func TestNodeJWTGenerator_ValidateSignature(t *testing.T) {
 	// prepare test data
-	signer, csaPubKey, p2pId := createTestSigner()
+	signer, csaPubKey := createTestSigner()
 	req := mockRequest{Field: "test request"}
 
-	jwtGenerator := NewNodeJWTGenerator(signer, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtGenerator := NewNodeJWTGenerator(signer, csaPubKey)
 
 	jwtToken, err := jwtGenerator.CreateJWTForRequest(req)
 	require.NoError(t, err)
@@ -158,5 +139,5 @@ func TestNodeJWTGenerator_ValidateSignature(t *testing.T) {
 
 	claims, ok := token.Claims.(*types.NodeJWTClaims)
 	require.True(t, ok)
-	assert.NotEmpty(t, claims.P2PId)
+	assert.NotEmpty(t, claims.PublicKey)
 }

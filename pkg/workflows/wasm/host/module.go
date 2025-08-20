@@ -23,18 +23,18 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const v2ImportPrefix = "version_v2"
 
 var (
 	defaultTickInterval              = 100 * time.Millisecond
-	defaultTimeout                   = 10 * time.Second
+	defaultTimeout                   = 10 * time.Minute
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5

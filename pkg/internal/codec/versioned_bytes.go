@@ -11,8 +11,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 type EncodingVersion uint32

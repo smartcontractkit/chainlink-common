@@ -1,6 +1,6 @@
 package exec
 
-import "github.com/smartcontractkit/chainlink-common/pkg/values"
+import "github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 type Results interface {
 	ResultForStep(string) (*Result, bool)

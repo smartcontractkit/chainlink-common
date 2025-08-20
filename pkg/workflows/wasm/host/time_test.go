@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 func TestTimeFetcher_GetTime_NODE(t *testing.T) {
@@ -22,7 +22,7 @@ func TestTimeFetcher_GetTime_NODE(t *testing.T) {
 	tf := newTimeFetcher(ctx, mockExec)
 	tf.Start()
 
-	actual, err := tf.GetTime(pb.Mode_MODE_NODE)
+	actual, err := tf.GetTime(sdk.Mode_MODE_NODE)
 	require.NoError(t, err)
 	require.WithinDuration(t, expected, actual, time.Millisecond)
 }
@@ -38,7 +38,7 @@ func TestTimeFetcher_GetTime_DON(t *testing.T) {
 	tf := newTimeFetcher(ctx, mockExec)
 	tf.Start()
 
-	actual, err := tf.GetTime(pb.Mode_MODE_DON)
+	actual, err := tf.GetTime(sdk.Mode_MODE_DON)
 	require.NoError(t, err)
 	require.WithinDuration(t, expected, actual, time.Millisecond)
 }
@@ -53,7 +53,7 @@ func TestTimeFetcher_GetTime_DON_Error(t *testing.T) {
 	tf := newTimeFetcher(ctx, mockExec)
 	tf.Start()
 
-	_, err := tf.GetTime(pb.Mode_MODE_DON)
+	_, err := tf.GetTime(sdk.Mode_MODE_DON)
 	require.ErrorContains(t, err, "don error")
 }
 
@@ -76,7 +76,7 @@ func TestTimeFetcher_ContextCancelledBeforeRequest(t *testing.T) {
 		<-done // wait for runLoop to exit to avoid mock usage after test ends
 	})
 
-	_, err := tf.GetTime(pb.Mode_MODE_DON)
+	_, err := tf.GetTime(sdk.Mode_MODE_DON)
 	require.ErrorIs(t, err, context.Canceled)
 }
 
@@ -92,6 +92,6 @@ func TestTimeFetcher_ContextCancelledDuringResponse(t *testing.T) {
 	tf := newTimeFetcher(ctx, mockExec)
 	tf.Start()
 
-	_, err := tf.GetTime(pb.Mode_MODE_DON)
+	_, err := tf.GetTime(sdk.Mode_MODE_DON)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 }

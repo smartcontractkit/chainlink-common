@@ -188,7 +188,7 @@ func TestFactory_NewRateLimiter(t *testing.T) {
 			s.Key = "foo.bar"
 			s.Scope = tt.scope
 			s.Unit = "{action}"
-			rl, err := f.NewRateLimiter(s)
+			rl, err := f.MakeRateLimiter(s)
 			require.NoError(t, err)
 			t.Cleanup(func() { assert.NoError(t, rl.Close()) })
 
@@ -203,6 +203,7 @@ func TestFactory_NewRateLimiter(t *testing.T) {
 
 			attrs := attribute.NewSet(kvsFromScope(ctx, tt.scope)...)
 			ms := mc.lastResourceFirstScopeMetric(t)
+			redactHistogramVals[int64](t, ms, "rate.foo.bar.denied")
 			require.Equal(t, metrics{
 				{
 					Name: "rate.foo.bar.limit",
@@ -231,6 +232,21 @@ func TestFactory_NewRateLimiter(t *testing.T) {
 						},
 						Temporality: metricdata.CumulativeTemporality,
 						IsMonotonic: true,
+					},
+				},
+				{
+					Name: "rate.foo.bar.denied",
+					Unit: "{action}",
+					Data: metricdata.Histogram[int64]{
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{
+								Attributes:   attrs,
+								Count:        2,
+								Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+								BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+						},
+						Temporality: metricdata.CumulativeTemporality,
 					},
 				},
 			}, ms)

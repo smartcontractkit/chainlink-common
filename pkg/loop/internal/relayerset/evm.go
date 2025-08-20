@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
@@ -331,7 +331,7 @@ func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &evmpb.GetFiltersNamesReply{Items: names}, nil
 }
 

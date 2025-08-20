@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func TestInterpolateKey(t *testing.T) {

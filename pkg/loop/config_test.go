@@ -74,6 +74,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
+				envTelemetryLogStreamingEnabled:       "false",
 
 				envChipIngressEndpoint:           "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection: "true",
@@ -172,6 +173,7 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterExportInterval:     2 * time.Second,
 	TelemetryEmitterExportMaxBatchSize: 100,
 	TelemetryEmitterMaxQueueSize:       1000,
+	TelemetryLogStreamingEnabled:       false,
 
 	ChipIngressEndpoint:           "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection: true,
@@ -221,6 +223,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
+	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])

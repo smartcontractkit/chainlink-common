@@ -27,9 +27,9 @@ var (
 	defaultsTOML string
 )
 
-func TestConfig(t *testing.T) {
+func TestDefault(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
-		b, err := json.MarshalIndent(Config, "", "\t")
+		b, err := json.MarshalIndent(Default, "", "\t")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -41,7 +41,7 @@ func TestConfig(t *testing.T) {
 	})
 
 	t.Run("toml", func(t *testing.T) {
-		b, err := toml.Marshal(Config)
+		b, err := toml.Marshal(Default)
 		if err != nil {
 			log.Fatal(err)
 		}

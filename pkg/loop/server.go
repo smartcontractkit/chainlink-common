@@ -125,7 +125,7 @@ func (s *Server) start() error {
 			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
-			ChipIngressInsecureConnection:  s.EnvConfig.TelemetryInsecureConnection,
+			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
 
 		if tracingConfig.Enabled {
@@ -166,7 +166,7 @@ func (s *Server) start() error {
 			LockTimeout:            s.EnvConfig.DatabaseLockTimeout,
 			MaxOpenConns:           s.EnvConfig.DatabaseMaxOpenConns,
 			MaxIdleConns:           s.EnvConfig.DatabaseMaxIdleConns,
-			EnableTracing:         	s.EnvConfig.DatabaseTracingEnabled,
+			EnableTracing:          s.EnvConfig.DatabaseTracingEnabled,
 		}.New(ctx, dbURL, pg.DriverPostgres)
 		if err != nil {
 			return fmt.Errorf("error connecting to DataBase: %w", err)

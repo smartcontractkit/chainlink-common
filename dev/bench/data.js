@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755657745682,
+  "lastUpdate": 1755705757128,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23478,6 +23478,48 @@ window.BENCHMARK_DATA = {
             "value": 26626,
             "unit": "ns/op",
             "extra": "45063 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "410cca3822a3b71a7db286be53c635dd1b7717a6",
+          "message": "pkg/services/promhealth: new isolated package for prometheus health reporting (#1097)",
+          "timestamp": "2025-08-20T10:01:09-06:00",
+          "tree_id": "c7ca8d353294ad0b03b139bea82e25c5c98e8d03",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/410cca3822a3b71a7db286be53c635dd1b7717a6"
+        },
+        "date": 1755705755295,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.7,
+            "unit": "ns/op",
+            "extra": "3377442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 393.6,
+            "unit": "ns/op",
+            "extra": "3030789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26627,
+            "unit": "ns/op",
+            "extra": "44977 times\n4 procs"
           }
         ]
       }

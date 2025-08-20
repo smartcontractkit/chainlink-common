@@ -18,7 +18,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 // Test request type
@@ -31,43 +30,29 @@ func (r testRequest) String() string {
 }
 
 // Helper function to create test keys
-func createValidatorTestKeys() (ed25519.PrivateKey, ed25519.PublicKey, p2ptypes.PeerID) {
+func createValidatorTestKeys() (ed25519.PrivateKey, ed25519.PublicKey) {
 	// Generate a private key for signing
 	csaPubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		panic("Failed to generate Ed25519 key pair: " + err.Error())
 	}
 
-	// Generate a separate public key for p2pId
-	p2pIdKey, _, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		panic("Failed to generate Ed25519 p2pId: " + err.Error())
-	}
-
-	// Create PeerID from ed25519 public key
-	p2pId, err := p2ptypes.PeerIDFromPublicKey(p2pIdKey)
-	if err != nil {
-		panic("Failed to create PeerID from public key: " + err.Error())
-	}
-
-	return privateKey, csaPubKey, p2pId
+	return privateKey, csaPubKey
 }
 
 // Helper function to create a valid JWT token
-func createValidJWT(privateKey ed25519.PrivateKey, csaPubKey ed25519.PublicKey, p2pId p2ptypes.PeerID, environment types.EnvironmentName) string {
+func createValidJWT(privateKey ed25519.PrivateKey, csaPubKey ed25519.PublicKey) string {
 	testRequest := testRequest{Field: "test-request"}
 	digest := utils.CalculateRequestDigest(testRequest)
 
 	// Create JWT claims
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
-		P2PId:       p2pId.String(),
-		PublicKey:   hex.EncodeToString(csaPubKey),
-		Environment: string(environment),
-		Digest:      digest,
+		PublicKey: hex.EncodeToString(csaPubKey),
+		Digest:    digest,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    p2pId.String(), // Issuer: Node's P2P ID
-			Subject:   p2pId.String(), // Subject: Node's P2P ID
+			Issuer:    hex.EncodeToString(csaPubKey), // Issuer: Node's CSA PubKey
+			Subject:   hex.EncodeToString(csaPubKey), // Subject: Node's CSA PubKey
 			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
@@ -88,12 +73,12 @@ func createTestLogger() *slog.Logger {
 func TestNodeJWTAuthenticator_AuthenticateJWT_ValidToken(t *testing.T) {
 
 	// Given
-	privateKey, csaPubKey, p2pId := createValidatorTestKeys()
+	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
-	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, p2pId, csaPubKey, string(types.EnvironmentNameProductionTestnet)).Return(true, nil)
+	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
-	jwtToken := createValidJWT(privateKey, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtToken := createValidJWT(privateKey, csaPubKey)
 
 	// Test
 	testRequest := testRequest{Field: "test-request"}
@@ -103,19 +88,18 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ValidToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, valid)
 	assert.NotNil(t, claims)
-	assert.Equal(t, p2pId.String(), claims.P2PId)
-	assert.Equal(t, string(types.EnvironmentNameProductionTestnet), claims.Environment)
+	assert.Equal(t, hex.EncodeToString(csaPubKey), claims.PublicKey)
 	mockProvider.AssertExpectations(t)
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_TamperedRequest(t *testing.T) {
 
 	// Given
-	privateKey, csaPubKey, p2pId := createValidatorTestKeys()
+	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
-	jwtToken := createValidJWT(privateKey, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtToken := createValidJWT(privateKey, csaPubKey)
 
 	// When - tampered request
 	valid, claims, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, "different-request")
@@ -128,7 +112,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_TamperedRequest(t *testing.T) {
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 
-	privateKey, csaPubKey, p2pId := createValidatorTestKeys()
+	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
@@ -138,13 +122,11 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
-		P2PId:       p2pId.String(),
-		PublicKey:   hex.EncodeToString(csaPubKey),
-		Environment: string(types.EnvironmentNameProductionTestnet),
-		Digest:      digest,
+		PublicKey: hex.EncodeToString(csaPubKey),
+		Digest:    digest,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    p2pId.String(),
-			Subject:   p2pId.String(),
+			Issuer:    hex.EncodeToString(csaPubKey),           // Issuer: Node's CSA PubKey
+			Subject:   hex.EncodeToString(csaPubKey),           // Subject: Node's CSA PubKey
 			ExpiresAt: jwt.NewNumericDate(now.Add(-time.Hour)), // Expired
 			IssuedAt:  jwt.NewNumericDate(now.Add(-2 * time.Hour)),
 		},
@@ -166,8 +148,8 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testing.T) {
 
 	// Given - create two different key pairs
-	privateKey1, _, _ := createValidatorTestKeys()
-	_, csaPubKey2, p2pId2 := createValidatorTestKeys()
+	privateKey1, _ := createValidatorTestKeys()
+	_, csaPubKey2 := createValidatorTestKeys()
 
 	mockProvider := &mocks.NodeAuthProvider{}
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
@@ -178,13 +160,11 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testi
 
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
-		P2PId:       p2pId2.String(), // Claim to be from node 2 but signed with node 1's private key
-		PublicKey:   hex.EncodeToString(csaPubKey2),
-		Environment: string(types.EnvironmentNameProductionTestnet),
-		Digest:      digest,
+		PublicKey: hex.EncodeToString(csaPubKey2),
+		Digest:    digest,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    p2pId2.String(),
-			Subject:   p2pId2.String(),
+			Issuer:    hex.EncodeToString(csaPubKey2), // Issuer: Node's CSA PubKey
+			Subject:   hex.EncodeToString(csaPubKey2), // Subject: Node's CSA PubKey
 			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
@@ -205,14 +185,14 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testi
 func TestNodeJWTAuthenticator_AuthenticateJWT_UntrustedPublicKey(t *testing.T) {
 
 	// Given
-	privateKey, csaPubKey, p2pId := createValidatorTestKeys()
+	privateKey, csaPubKey := createValidatorTestKeys()
 
 	mockProvider := &mocks.NodeAuthProvider{}
-	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, p2pId, csaPubKey, string(types.EnvironmentNameProductionTestnet)).Return(false, nil)
+	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, nil)
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Given: Valid JWT
-	jwtToken := createValidJWT(privateKey, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtToken := createValidJWT(privateKey, csaPubKey)
 
 	// Test
 	testRequest := testRequest{Field: "test-request"}
@@ -230,17 +210,16 @@ func TestNodeJWTAuthenticator_parseJWTClaims_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeAuthProvider(t)
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
-	privateKey, csaPubKey, p2pId := createValidatorTestKeys()
+	privateKey, csaPubKey := createValidatorTestKeys()
 
 	// Create valid JWT
-	jwtToken := createValidJWT(privateKey, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtToken := createValidJWT(privateKey, csaPubKey)
 
 	// When: Parse JWT claims
 	claims, err := authenticator.parseJWTClaims(jwtToken)
 
 	// Expect
 	require.NoError(t, err)
-	assert.Equal(t, p2pId.String(), claims.P2PId)
 	assert.Equal(t, hex.EncodeToString(csaPubKey), claims.PublicKey)
 }
 
@@ -260,10 +239,10 @@ func TestNodeJWTAuthenticator_verifyJWTSignature_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeAuthProvider(t)
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
-	privateKey, csaPubKey, p2pId := createValidatorTestKeys()
+	privateKey, csaPubKey := createValidatorTestKeys()
 
 	// Create valid JWT
-	jwtToken := createValidJWT(privateKey, csaPubKey, p2pId, types.EnvironmentNameProductionTestnet)
+	jwtToken := createValidJWT(privateKey, csaPubKey)
 
 	// Test
 	err := authenticator.verifyJWTSignature(jwtToken, csaPubKey)

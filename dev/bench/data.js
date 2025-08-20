@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755642478839,
+  "lastUpdate": 1755657745682,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23436,6 +23436,48 @@ window.BENCHMARK_DATA = {
             "value": 26648,
             "unit": "ns/op",
             "extra": "44632 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "14297860+augustbleeds@users.noreply.github.com",
+            "name": "Augustus",
+            "username": "augustbleeds"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4aeae906dccf8b0c872fb8a7637444ca5cdfebc7",
+          "message": "Multichain Securemint Aggregator (#1484)\n\n* implement solana report formatter\n\n* add equivalent solana type\n\n* add test case\n\nCo-authored-by: Vladimir Shchukin <vladimir.shchukin@smartcontract.com>\nCo-authored-by: Vladimir <vladimiramnell@gmail.com>",
+          "timestamp": "2025-08-19T22:41:20-04:00",
+          "tree_id": "cbf1ba216ef7e1af993acba2f76d9316a0d1d805",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4aeae906dccf8b0c872fb8a7637444ca5cdfebc7"
+        },
+        "date": 1755657744501,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.2,
+            "unit": "ns/op",
+            "extra": "2948263 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.1,
+            "unit": "ns/op",
+            "extra": "2895319 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26626,
+            "unit": "ns/op",
+            "extra": "45063 times\n4 procs"
           }
         ]
       }

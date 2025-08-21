@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755785294361,
+  "lastUpdate": 1755788870407,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23730,6 +23730,48 @@ window.BENCHMARK_DATA = {
             "value": 26627,
             "unit": "ns/op",
             "extra": "45099 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0dc24eeb508025f4d8b70bc5a4e273c2e5f1bc4b",
+          "message": "Create SDK Time Hook (#1478)\n\n* Use node time\n\n* Update execution.go\n\n* Remove ctx\n\n* Use Node Mode for clockTimeGet\n\n* Undo secondary hook\n\n* Use mode\n\n* Secondary time hook\n\n* Implement SDK now\n\n* Fix expected DonTime calls\n\n* Panic on err",
+          "timestamp": "2025-08-21T10:06:25-05:00",
+          "tree_id": "0f1dfc91f8eee522eba6e1ee06753e23181c2b1d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0dc24eeb508025f4d8b70bc5a4e273c2e5f1bc4b"
+        },
+        "date": 1755788868742,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.1,
+            "unit": "ns/op",
+            "extra": "3321495 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 436.1,
+            "unit": "ns/op",
+            "extra": "2963530 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26605,
+            "unit": "ns/op",
+            "extra": "44912 times\n4 procs"
           }
         ]
       }

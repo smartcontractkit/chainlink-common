@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
@@ -154,7 +155,17 @@ func (s *Server) start() error {
 		return fmt.Errorf("error starting prometheus server: %w", err)
 	}
 
-	s.checker = promhealth.NewChecker("", "")
+	var healthCfg services.HealthCheckerConfig
+	healthCfg = promhealth.ConfigureHooks(healthCfg)
+	if bc := beholder.GetClient(); bc != nil {
+		var err error
+		healthCfg, err = otelhealth.ConfigureHooks(healthCfg, bc.Meter)
+		if err != nil {
+			return fmt.Errorf("failed to configure health checker otel hooks: %w", err)
+		}
+	}
+	s.checker = healthCfg.New()
+
 	if err := s.checker.Start(); err != nil {
 		return fmt.Errorf("error starting health checker: %w", err)
 	}

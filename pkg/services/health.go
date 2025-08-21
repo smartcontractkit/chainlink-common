@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"maps"
@@ -88,13 +89,13 @@ type HealthCheckerConfig struct {
 	// Optionally override debug.BuildInfo
 	Ver, Sha string
 	// Optional hooks for reporting.
-	IncVersion func(ver string, sha string)
-	AddUptime  func(duration time.Duration)
-	SetStatus  func(name string, status int)
-	Delete     func(name string)
+	IncVersion func(ctx context.Context, ver string, sha string)
+	AddUptime  func(ctx context.Context, duration time.Duration)
+	SetStatus  func(ctx context.Context, name string, status int)
+	Delete     func(ctx context.Context, name string)
 }
 
-func (cfg HealthCheckerConfig) initVerSha() {
+func (cfg *HealthCheckerConfig) initVerSha() {
 	if cfg.Ver == "" || cfg.Sha == "" {
 		if bi, ok := debug.ReadBuildInfo(); ok {
 			if cfg.Ver == "" {
@@ -110,18 +111,18 @@ func (cfg HealthCheckerConfig) initVerSha() {
 	}
 }
 
-func (cfg HealthCheckerConfig) setNoopHooks() {
+func (cfg *HealthCheckerConfig) setNoopHooks() {
 	if cfg.IncVersion == nil {
-		cfg.IncVersion = func(ver, sha string) {}
+		cfg.IncVersion = func(ctx context.Context, ver, sha string) {}
 	}
 	if cfg.AddUptime == nil {
-		cfg.AddUptime = func(d time.Duration) {}
+		cfg.AddUptime = func(ctx context.Context, d time.Duration) {}
 	}
 	if cfg.SetStatus == nil {
-		cfg.SetStatus = func(name string, status int) {}
+		cfg.SetStatus = func(ctx context.Context, name string, status int) {}
 	}
 	if cfg.Delete == nil {
-		cfg.Delete = func(name string) {}
+		cfg.Delete = func(ctx context.Context, name string) {}
 	}
 }
 
@@ -140,10 +141,11 @@ func (cfg HealthCheckerConfig) New() *HealthChecker {
 
 func (c *HealthChecker) Start() error {
 	return c.StartOnce("HealthCheck", func() error {
-		c.cfg.IncVersion(c.cfg.Ver, c.cfg.Sha)
+		ctx := context.Background()
+		c.cfg.IncVersion(ctx, c.cfg.Ver, c.cfg.Sha)
 
 		// update immediately
-		c.update()
+		c.update(ctx)
 
 		go c.run()
 
@@ -162,19 +164,20 @@ func (c *HealthChecker) Close() error {
 func (c *HealthChecker) run() {
 	defer close(c.chDone)
 
+	ctx := context.Background()
 	ticker := time.NewTicker(interval)
 
 	for {
 		select {
 		case <-ticker.C:
-			c.update()
+			c.update(ctx)
 		case <-c.chStop:
 			return
 		}
 	}
 }
 
-func (c *HealthChecker) update() {
+func (c *HealthChecker) update(ctx context.Context) {
 	// copy services into a new map to avoid lock contention while doing checks
 	c.servicesMu.RLock()
 	l := len(c.services)
@@ -196,10 +199,10 @@ func (c *HealthChecker) update() {
 			}
 
 			// report metrics to prometheus
-			c.cfg.SetStatus(name, value)
+			c.cfg.SetStatus(ctx, name, value)
 		}
 	}
-	c.cfg.AddUptime(interval)
+	c.cfg.AddUptime(ctx, interval)
 
 	// save state
 	c.stateMu.Lock()
@@ -231,11 +234,12 @@ func (c *HealthChecker) Unregister(name string) error {
 	if name == "" {
 		return fmt.Errorf("name cannot be empty")
 	}
+	ctx := context.Background()
 
 	c.servicesMu.Lock()
 	defer c.servicesMu.Unlock()
 	delete(c.services, name)
-	c.cfg.Delete(name)
+	c.cfg.Delete(ctx, name)
 	return nil
 }
 

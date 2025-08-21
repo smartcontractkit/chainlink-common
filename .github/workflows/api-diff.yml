@@ -1,0 +1,31 @@
+name: Analyze API Changes
+description: Runs apidiff-go action to check for breaking changes to modules' public APIs
+
+on:
+  pull_request:
+
+jobs:
+  root-module:
+    name: Root Module
+    permissions:
+      pull-requests: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: false
+
+      - uses: smartcontractkit/.github/actions/apidiff-go@apidiff-go/0.1.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          go-mod-paths: "./"
+          enforce-compatible: "false" # dont fail on breaking changes

@@ -16,6 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 )
@@ -126,7 +127,7 @@ func (s *Server) start() error {
 			LogStreamingEnabled:            s.EnvConfig.TelemetryLogStreamingEnabled,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
-			ChipIngressInsecureConnection:  s.EnvConfig.TelemetryInsecureConnection,
+			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
 
 		if tracingConfig.Enabled {
@@ -153,7 +154,7 @@ func (s *Server) start() error {
 		return fmt.Errorf("error starting prometheus server: %w", err)
 	}
 
-	s.checker = services.NewChecker("", "")
+	s.checker = promhealth.NewChecker("", "")
 	if err := s.checker.Start(); err != nil {
 		return fmt.Errorf("error starting health checker: %w", err)
 	}

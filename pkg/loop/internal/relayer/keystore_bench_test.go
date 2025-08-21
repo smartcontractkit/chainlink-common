@@ -92,3 +92,7 @@ func (k benchKeystore) Accounts(ctx context.Context) ([]string, error) {
 func (k benchKeystore) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
 	return k.sign(ctx, account, data)
 }
+
+func (k benchKeystore) Decrypt(ctx context.Context, account string, encrypted []byte) ([]byte, error) {
+	return nil, nil
+}

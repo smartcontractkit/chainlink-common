@@ -128,7 +128,7 @@ func (s *Server) start() error {
 			LogStreamingEnabled:            s.EnvConfig.TelemetryLogStreamingEnabled,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
-			ChipIngressInsecureConnection:  s.EnvConfig.TelemetryInsecureConnection,
+			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
 
 		if tracingConfig.Enabled {

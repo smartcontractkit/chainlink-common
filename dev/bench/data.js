@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755795278034,
+  "lastUpdate": 1755812864261,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23856,6 +23856,48 @@ window.BENCHMARK_DATA = {
             "value": 26614,
             "unit": "ns/op",
             "extra": "45114 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "49b229821cb504f43f42e803de8b14feb97ae7bf",
+          "message": "pkg/utils: add LazyLoadCtx variant (#1496)\n\n* pkg/utils: add LazyLoadCtx variant\n\n* add docs",
+          "timestamp": "2025-08-21T15:45:22-06:00",
+          "tree_id": "ae11bd6a000b13c39bc3380443e94d81f4370ab6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/49b229821cb504f43f42e803de8b14feb97ae7bf"
+        },
+        "date": 1755812863166,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.5,
+            "unit": "ns/op",
+            "extra": "3194335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.6,
+            "unit": "ns/op",
+            "extra": "3025894 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27091,
+            "unit": "ns/op",
+            "extra": "45044 times\n4 procs"
           }
         ]
       }

@@ -18,14 +18,25 @@ import (
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 )
 
+func bytesToHex(b []byte) string {
+	return fmt.Sprintf("0x%x", b)
+}
+
 func ConvertAddressesFromProto(protoAddresses [][]byte) ([]evmtypes.Address, error) {
 	addresses := make([]evmtypes.Address, 0, len(protoAddresses))
+	var errs []error
+
 	for i, protoAddress := range protoAddresses {
 		address, err := ConvertAddressFromProto(protoAddress)
 		if err != nil {
-			return nil, fmt.Errorf("address[%d]: %w", i, err)
+			errs = append(errs, fmt.Errorf("failed to convert address at index %d: %w", i, err))
+			continue
 		}
 		addresses = append(addresses, address)
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
 	}
 	return addresses, nil
 }
@@ -40,12 +51,19 @@ func ConvertAddressesToProto(addresses []evmtypes.Address) [][]byte {
 
 func ConvertHashesFromProto(protoHashes [][]byte) ([]evmtypes.Hash, error) {
 	hashes := make([]evmtypes.Hash, 0, len(protoHashes))
+	var errs []error
+
 	for i, protoHash := range protoHashes {
 		hash, err := ConvertHashFromProto(protoHash)
 		if err != nil {
-			return nil, fmt.Errorf("hashes[%d]: %w", i, err)
+			errs = append(errs, fmt.Errorf("failed to convert hash at index %d: %w", i, err))
+			continue
 		}
 		hashes = append(hashes, hash)
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
 	}
 	return hashes, nil
 }
@@ -95,12 +113,12 @@ func ConvertHeaderFromProto(protoHeader *Header) (evmtypes.Header, error) {
 
 	hash, err := ConvertHashFromProto(protoHeader.GetHash())
 	if err != nil {
-		return evmtypes.Header{}, fmt.Errorf("failed to convert hash err: %w", err)
+		return evmtypes.Header{}, fmt.Errorf("failed to convert hash: %w", err)
 	}
 
 	parentHash, err := ConvertHashFromProto(protoHeader.GetParentHash())
 	if err != nil {
-		return evmtypes.Header{}, fmt.Errorf("failed to convert parent hash err: %w", err)
+		return evmtypes.Header{}, fmt.Errorf("failed to convert parent hash: %w", err)
 	}
 
 	return evmtypes.Header{
@@ -148,18 +166,18 @@ func ConvertReceiptFromProto(protoReceipt *Receipt) (*evmtypes.Receipt, error) {
 
 	txHash, err := ConvertHashFromProto(protoReceipt.GetTxHash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert tx hash err: %w", err)
+		return nil, fmt.Errorf("failed to convert tx hash: %w", err)
 	}
 
 	// can be empty on contract creation
 	contractAddress, err := ConvertOptionalAddressFromProto(protoReceipt.GetContractAddress())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert contract address: %w", err)
 	}
 
 	blockHash, err := ConvertHashFromProto(protoReceipt.GetBlockHash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert block hash err: %w", err)
+		return nil, fmt.Errorf("failed to convert block hash: %w", err)
 	}
 
 	return &evmtypes.Receipt{
@@ -205,12 +223,12 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 
 	toAddress, err := ConvertOptionalAddressFromProto(protoTx.GetTo())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert to address, err: %w", err)
+		return nil, fmt.Errorf("failed to convert 'to' address: %w", err)
 	}
 
 	txHash, err := ConvertHashFromProto(protoTx.GetHash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert tx hash, err: %w", err)
+		return nil, fmt.Errorf("failed to convert tx hash: %w", err)
 	}
 
 	return &evmtypes.Transaction{
@@ -245,12 +263,12 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 
 	fromAddress, err := ConvertAddressFromProto(protoMsg.GetFrom())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert from address err: %w", err)
+		return nil, fmt.Errorf("failed to convert 'from' address: %w", err)
 	}
 
 	toAddress, err := ConvertOptionalAddressFromProto(protoMsg.GetTo())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert to address err: %w", err)
+		return nil, fmt.Errorf("failed to convert 'to' address: %w", err)
 	}
 
 	return &evmtypes.CallMsg{
@@ -285,29 +303,29 @@ func ConvertLPFilterFromProto(protoFilter *LPFilter) (evmtypes.LPFilterQuery, er
 	for i, protoAddress := range protoFilter.GetAddresses() {
 		address, err := ConvertOptionalAddressFromProto(protoAddress)
 		if err != nil {
-			return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert address[%d], err: %w", i, err)
+			return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert address[%d]: %w", i, err)
 		}
 		addresses = append(addresses, address)
 	}
 
 	sigs, err := ConvertHashesFromProto(protoFilter.GetEventSigs())
 	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert event sigs err: %w", err)
+		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert event sigs: %w", err)
 	}
 
 	t2, err := ConvertHashesFromProto(protoFilter.GetTopic2())
 	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic2 err: %w", err)
+		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic2: %w", err)
 	}
 
 	t3, err := ConvertHashesFromProto(protoFilter.GetTopic3())
 	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic3 err: %w", err)
+		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic3: %w", err)
 	}
 
 	t4, err := ConvertHashesFromProto(protoFilter.GetTopic4())
 	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic4 err: %w", err)
+		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic4: %w", err)
 	}
 
 	return evmtypes.LPFilterQuery{
@@ -362,12 +380,12 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 
 	blockHash, err := ConvertOptionalHashFromProto(protoFilter.GetBlockHash())
 	if err != nil {
-		return evmtypes.FilterQuery{}, fmt.Errorf("failed to convert blockHash err: %w", err)
+		return evmtypes.FilterQuery{}, fmt.Errorf("failed to convert blockHash: %w", err)
 	}
 
 	addresses, err := ConvertAddressesFromProto(protoFilter.GetAddresses())
 	if err != nil {
-		return evmtypes.FilterQuery{}, fmt.Errorf("failed to convert addresses err: %w", err)
+		return evmtypes.FilterQuery{}, fmt.Errorf("failed to convert addresses: %w", err)
 	}
 
 	topics, err := ConvertTopicsFromProto(protoFilter.GetTopics())
@@ -390,16 +408,24 @@ func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
 	}
 
 	logs := make([]*evmtypes.Log, 0, len(protoLogs))
+	var errs []error
+
 	for i, protoLog := range protoLogs {
 		if protoLog == nil {
-			return nil, fmt.Errorf("log[%d] can't be nil", i)
+			errs = append(errs, fmt.Errorf("log at index %d can't be nil", i))
+			continue
 		}
 
 		l, err := convertLogFromProto(protoLog)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert log[%d] err: %w", i, err)
+			errs = append(errs, fmt.Errorf("failed to convert log at index %d: %w", i, err))
+			continue
 		}
 		logs = append(logs, l)
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
 	}
 	return logs, nil
 }
@@ -411,7 +437,7 @@ func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 
 	blockHash, err := ConvertHashFromProto(protoLog.GetBlockHash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert block hash err: %w", err)
+		return nil, fmt.Errorf("failed to convert block hash: %w", err)
 	}
 
 	topics, err := ConvertHashesFromProto(protoLog.GetTopics())
@@ -421,17 +447,17 @@ func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 
 	eventSigs, err := ConvertHashFromProto(protoLog.GetEventSig())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert event sigs err: %w", err)
+		return nil, fmt.Errorf("failed to convert event sig: %w", err)
 	}
 
 	address, err := ConvertAddressFromProto(protoLog.GetAddress())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert address: %w", err)
 	}
 
 	txHash, err := ConvertHashFromProto(protoLog.GetTxHash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert tx hash err: %w", err)
+		return nil, fmt.Errorf("failed to convert tx hash: %w", err)
 	}
 
 	return &evmtypes.Log{
@@ -454,17 +480,25 @@ func ConvertTopicsFromProto(protoTopics []*Topics) ([][]evmtypes.Hash, error) {
 	}
 
 	topics := make([][]evmtypes.Hash, 0, len(protoTopics))
+	var errs []error
+
 	for i, protoTopic := range protoTopics {
 		if protoTopic == nil {
-			return nil, fmt.Errorf("topic[%d] can't be nil", i)
+			errs = append(errs, fmt.Errorf("topic at index %d can't be nil", i))
+			continue
 		}
 
 		hashes, err := ConvertHashesFromProto(protoTopic.GetTopic())
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert topics[%d]: %w", i, err)
+			errs = append(errs, fmt.Errorf("failed to convert topic at index %d: %w", i, err))
+			continue
 		}
 
 		topics = append(topics, hashes)
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
 	}
 	return topics, nil
 }
@@ -754,7 +788,7 @@ func validateAddressBytes(b []byte) error {
 	}
 
 	if len(b) != evmtypes.AddressLength {
-		return fmt.Errorf("invalid address: got %d bytes, expected %d", len(b), evmtypes.AddressLength)
+		return fmt.Errorf("invalid address: got %d bytes, expected %d, value=%s", len(b), evmtypes.AddressLength, bytesToHex(b))
 	}
 	return nil
 }
@@ -765,7 +799,7 @@ func validateHashBytes(b []byte) error {
 	}
 
 	if len(b) != evmtypes.HashLength {
-		return fmt.Errorf("invalid hash: got %d bytes, expected %d", len(b), evmtypes.HashLength)
+		return fmt.Errorf("invalid hash: got %d bytes, expected %d, value=%s", len(b), evmtypes.HashLength, bytesToHex(b))
 	}
 	return nil
 }

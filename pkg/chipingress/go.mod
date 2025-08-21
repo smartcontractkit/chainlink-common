@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/pkg/chipingress
 
-go 1.24.5
+go 1.24.2
 
 require (
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1

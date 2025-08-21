@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755715969404,
+  "lastUpdate": 1755741414060,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23562,6 +23562,48 @@ window.BENCHMARK_DATA = {
             "value": 26668,
             "unit": "ns/op",
             "extra": "45090 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "59b148ecb12465a90cc24a402f8003ed92724733",
+          "message": "loop/server: wire up ChipIngressInsecureConnection option (#1495)\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-08-20T19:55:44-06:00",
+          "tree_id": "c7fd2e6b79c51c1bddbc84898e0e1e45a37ff67e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/59b148ecb12465a90cc24a402f8003ed92724733"
+        },
+        "date": 1755741413049,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.8,
+            "unit": "ns/op",
+            "extra": "3393733 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 395.2,
+            "unit": "ns/op",
+            "extra": "3016807 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26862,
+            "unit": "ns/op",
+            "extra": "45100 times\n4 procs"
           }
         ]
       }

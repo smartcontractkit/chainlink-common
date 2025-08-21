@@ -3,5 +3,4 @@ package vault
 
 const (
 	CapabilityID     = "vault@1.0.0"
-	MethodGetSecrets = "GetSecrets"
 )

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755741414060,
+  "lastUpdate": 1755764513824,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23604,6 +23604,48 @@ window.BENCHMARK_DATA = {
             "value": 26862,
             "unit": "ns/op",
             "extra": "45100 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4506e5765c5c48b55bb09bd9eea01cc5186634e9",
+          "message": "PLEX-1471 Fix nil-pointer on capability call (#1493)\n\n* fix CallContract conversion panic\n\n* Fix nil pointer in case of capability error",
+          "timestamp": "2025-08-21T08:20:31Z",
+          "tree_id": "e910619f05206f940636a16371a20dcb1c3e520f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4506e5765c5c48b55bb09bd9eea01cc5186634e9"
+        },
+        "date": 1755764512188,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 387.7,
+            "unit": "ns/op",
+            "extra": "3227328 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.9,
+            "unit": "ns/op",
+            "extra": "2967097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26565,
+            "unit": "ns/op",
+            "extra": "45056 times\n4 procs"
           }
         ]
       }

@@ -76,7 +76,8 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterMaxQueueSize:       "1000",
 				envTelemetryLogStreamingEnabled:       "false",
 
-				envChipIngressEndpoint: "http://chip-ingress.example.com",
+				envChipIngressEndpoint:           "chip-ingress.example.com:50051",
+				envChipIngressInsecureConnection: "true",
 			},
 			expectError:  false,
 			expectConfig: envCfgFull,
@@ -174,7 +175,8 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
 
-	ChipIngressEndpoint: "http://chip-ingress.example.com",
+	ChipIngressEndpoint:           "chip-ingress.example.com:50051",
+	ChipIngressInsecureConnection: true,
 }
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
@@ -224,7 +226,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 
 	// Assert ChipIngress environment variables
-	assert.Equal(t, "http://chip-ingress.example.com", got[envChipIngressEndpoint])
+	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
+	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
 }
 
 func TestGetMap(t *testing.T) {

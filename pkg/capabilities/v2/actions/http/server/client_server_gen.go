@@ -122,7 +122,10 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request, _ *emptypb.Empty) (*http.Response, capabilities.ResponseMetadata, error) {
 			output, err := c.ClientCapability.SendRequest(ctx, metadata, input)
-			if output == nil && err == nil {
+			if err != nil {
+				return nil, capabilities.ResponseMetadata{}, err
+			}
+			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method SendRequest(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err

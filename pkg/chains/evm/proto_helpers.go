@@ -192,11 +192,19 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 	if protoMsg == nil {
 		return nil, errEmptyMsg
 	}
+	from, err := ConvertOptionalAddressFromProto(protoMsg.From)
+	if err != nil {
+		return nil, fmt.Errorf("from address is invalid: %w", err)
+	}
 
+	to, err := ConvertAddressFromProto(protoMsg.GetTo())
+	if err != nil {
+		return nil, fmt.Errorf("to address is invalid: %w", err)
+	}
 	return &evmtypes.CallMsg{
-		From: evmtypes.Address(protoMsg.GetFrom()),
+		From: from,
 		Data: protoMsg.GetData(),
-		To:   evmtypes.Address(protoMsg.GetTo()),
+		To:   to,
 	}, nil
 }
 
@@ -560,6 +568,14 @@ func ConvertAddressFromProto(b []byte) (evmtypes.Address, error) {
 	}
 
 	return evmtypes.Address(b), nil
+}
+
+func ConvertOptionalAddressFromProto(b []byte) (evmtypes.Address, error) {
+	if len(b) == 0 {
+		return evmtypes.Address{}, nil // Return zero address if empty
+	}
+
+	return ConvertAddressFromProto(b)
 }
 
 func ConvertHashFromProto(b []byte) (evmtypes.Hash, error) {

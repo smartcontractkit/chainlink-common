@@ -23,24 +23,6 @@ message NewRelayerReply {
   uint32 relayerID = 1;
 }
 
-service Keystore {
-  rpc Accounts (google.protobuf.Empty) returns (AccountsReply) {}
-  rpc Sign (SignRequest) returns (SignReply) {}
-}
-
-message AccountsReply {
-  repeated string accounts = 1;
-}
-
-message SignRequest {
-  string account = 1;
-  bytes data = 2;
-}
-
-message SignReply {
-  bytes signedData = 1;
-}
-
 service Relayer {
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterReply) {}
   rpc NewContractReader (NewContractReaderRequest) returns (NewContractReaderReply) {}

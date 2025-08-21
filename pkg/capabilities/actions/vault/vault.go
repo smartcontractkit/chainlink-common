@@ -3,5 +3,6 @@ package vault
 
 const (
 	CapabilityID     = "vault@1.0.0"
-	MethodGetSecrets = "GetSecrets"
+	// Deprecated - use the types in core instead.
+	MethodGetSecrets = "vault.secrets.get"
 )

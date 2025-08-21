@@ -141,7 +141,10 @@ func (c *basicCapability) Execute(ctx context.Context, request capabilities.Capa
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*actionandtrigger.Output, capabilities.ResponseMetadata, error) {
 			output, err := c.BasicCapability.Action(ctx, metadata, input)
-			if output == nil && err == nil {
+			if err != nil {
+				return nil, capabilities.ResponseMetadata{}, err
+			}
+			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Action(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err

@@ -2,9 +2,11 @@ package rawsdk
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
+	"time"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
@@ -13,6 +15,10 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
+)
+
+const (
+	ErrnoSuccess = 0
 )
 
 func GetRequest() *sdk.ExecuteRequest {
@@ -52,6 +58,16 @@ func SendError(err error) {
 func SendSubscription(subscriptions *sdk.TriggerSubscriptionRequest) {
 	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
+}
+
+func Now() time.Time {
+	var buf [8]byte // host writes UnixNano as little-endian uint64
+	rc := now(unsafe.Pointer(&buf[0]))
+	if rc != ErrnoSuccess {
+		panic(fmt.Errorf("failed to fetch time from host: now() returned errno %d", rc))
+	}
+	ns := int64(binary.LittleEndian.Uint64(buf[:]))
+	return time.Unix(0, ns)
 }
 
 var donCall = int32(0)
@@ -210,6 +226,9 @@ func sendResponse(response unsafe.Pointer, responseLen int32) int32
 
 //go:wasmimport env switch_modes
 func SwitchModes(mode int32)
+
+//go:wasmimport env now
+func now(response unsafe.Pointer) int32
 
 //go:wasmimport env call_capability
 func callCapability(req unsafe.Pointer, reqLen int32) int64

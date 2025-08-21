@@ -63,7 +63,8 @@ const (
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
 
-	envChipIngressEndpoint = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -118,7 +119,8 @@ type EnvConfig struct {
 	TelemetryEmitterMaxQueueSize       int
 	TelemetryLogStreamingEnabled       bool
 
-	ChipIngressEndpoint string
+	ChipIngressEndpoint           string
+	ChipIngressInsecureConnection bool
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -187,6 +189,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogStreamingEnabled, strconv.FormatBool(e.TelemetryLogStreamingEnabled))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
+	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 
 	return
 }
@@ -350,6 +353,10 @@ func (e *EnvConfig) parse() error {
 		}
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
+		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressInsecureConnection, err)
+		}
 	}
 
 	return nil

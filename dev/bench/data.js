@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755793679365,
+  "lastUpdate": 1755795278034,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23814,6 +23814,48 @@ window.BENCHMARK_DATA = {
             "value": 26747,
             "unit": "ns/op",
             "extra": "44842 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cbb8fcc9bedd25dc5ac410abf350d604f2ae71c8",
+          "message": "[PRIV-128] Split capabilities registry interfaces (#1500)",
+          "timestamp": "2025-08-21T12:53:13-04:00",
+          "tree_id": "d1175a512851901f98107d8fbfd5676ce7653688",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cbb8fcc9bedd25dc5ac410abf350d604f2ae71c8"
+        },
+        "date": 1755795276960,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.3,
+            "unit": "ns/op",
+            "extra": "3315268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.8,
+            "unit": "ns/op",
+            "extra": "2922181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26614,
+            "unit": "ns/op",
+            "extra": "45114 times\n4 procs"
           }
         ]
       }

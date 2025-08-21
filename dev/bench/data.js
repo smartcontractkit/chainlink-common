@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755784002595,
+  "lastUpdate": 1755785294361,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23688,6 +23688,48 @@ window.BENCHMARK_DATA = {
             "value": 26634,
             "unit": "ns/op",
             "extra": "45068 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "Chris Cushman",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "40de7f5ae3c6674d43cac85e6eda5cc1a8f2c21e",
+          "message": "Extend Keystore Interface with Decrypt function (#1467)\n\n* Enable decryption in keystore service\n\n* fix comment\n\n* update decrypter interface\n\n* update keystore impls\n\n* Restore old tests and add test for signerdecrypter\n\n* restore p2p signer account\n\n* improve test coverage\n\n* improve test coverage\n\n* fix merge conflicts\n\n* refactor SignerDecrypter to check for nil signers & decrypters\n\n* add comment recommending embedding the UnimplementedKeytore struct\n\n* Add CI step for Solana build relay to allow for forward interface compatibility.\n\n* fix ci\n\n* Remove mocks before generating them fresh\n\n* Update mockery version in keystore.pb.go",
+          "timestamp": "2025-08-21T14:06:51Z",
+          "tree_id": "8083a39024e0e167c1d1915a29999fca4d88cfed",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/40de7f5ae3c6674d43cac85e6eda5cc1a8f2c21e"
+        },
+        "date": 1755785292749,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.6,
+            "unit": "ns/op",
+            "extra": "3330126 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399,
+            "unit": "ns/op",
+            "extra": "2950416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26627,
+            "unit": "ns/op",
+            "extra": "45099 times\n4 procs"
           }
         ]
       }

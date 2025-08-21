@@ -3,7 +3,8 @@ package evm_test
 import (
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
+	protoevm "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
+	chainevm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
@@ -11,222 +12,210 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConvertFilterFromProto(t *testing.T) {
-	validBlockHash := make([]byte, 32)
+func h32(b byte) evmtypes.Hash {
+	var h [32]byte
 	for i := 0; i < 32; i++ {
-		validBlockHash[i] = byte(i)
+		h[i] = b + byte(i)
 	}
-
-	validAddress := make([]byte, 20)
+	return h
+}
+func a20(b byte) evmtypes.Address {
+	var a [20]byte
 	for i := 0; i < 20; i++ {
-		validAddress[i] = byte(i + 10)
+		a[i] = b + byte(i)
 	}
-
-	validTopic := make([]byte, 32)
+	return a
+}
+func b32(b byte) []byte {
+	out := make([]byte, 32)
 	for i := 0; i < 32; i++ {
-		validTopic[i] = byte(i + 20)
+		out[i] = b + byte(i)
 	}
+	return out
+}
+func b20(b byte) []byte {
+	out := make([]byte, 20)
+	for i := 0; i < 20; i++ {
+		out[i] = b + byte(i)
+	}
+	return out
+}
 
-	t.Run("nil protoFilter returns error", func(t *testing.T) {
-		_, err := evm.ConvertFilterFromProto(nil)
-		assert.ErrorContains(t, err, "filter can't be nil")
+func TestConvertHeaderToProto(t *testing.T) {
+	t.Run("nil header returns error", func(t *testing.T) {
+		_, err := protoevm.ConvertHeaderToProto(nil)
+		assert.ErrorIs(t, err, chainevm.ErrEmptyHead)
 	})
 
-	t.Run("successful conversion", func(t *testing.T) {
-		fromBlock := &valuespb.BigInt{AbsVal: []byte{1, 2, 3}, Sign: 0}
-		toBlock := &valuespb.BigInt{AbsVal: []byte{1, 2, 4}, Sign: 0}
-		validTopics := []*evm.Topics{{Topic: [][]byte{validTopic}}}
-		input := &evm.FilterQuery{
-			BlockHash: validBlockHash,
-			FromBlock: fromBlock,
-			ToBlock:   toBlock,
-			Addresses: [][]byte{validAddress},
-			Topics:    validTopics,
+	t.Run("happy path", func(t *testing.T) {
+		h := &evmtypes.Header{
+			Timestamp:  123456,
+			Hash:       h32(0x10),
+			ParentHash: h32(0x11),
+			Number:     valuespb.NewIntFromBigInt(&valuespb.BigInt{AbsVal: []byte{0x01}, Sign: 0}),
 		}
-
-		// expected outputs from conversions
-		expectedAddr := [20]byte(validAddress)
-		expectedTopics := evm.ConvertTopicsFromProto(validTopics)
-
-		result, err := evm.ConvertFilterFromProto(input)
+		p, err := protoevm.ConvertHeaderToProto(h)
 		require.NoError(t, err)
-
-		assert.ElementsMatch(t, validBlockHash, result.BlockHash)
-		assert.Equal(t, valuespb.NewIntFromBigInt(fromBlock), result.FromBlock)
-		assert.Equal(t, valuespb.NewIntFromBigInt(toBlock), result.ToBlock)
-		assert.ElementsMatch(t, [][20]byte{expectedAddr}, result.Addresses)
-		assert.ElementsMatch(t, expectedTopics, result.Topics)
+		assert.Equal(t, h.Timestamp, p.Timestamp)
+		assert.Equal(t, h.Hash[:], p.Hash)
+		assert.Equal(t, h.ParentHash[:], p.ParentHash)
+		assert.Equal(t, valuespb.NewBigIntFromInt(h.Number), p.BlockNumber)
 	})
 }
 
-func TestConvertAddressesFromProto(t *testing.T) {
-	t.Run("empty input", func(t *testing.T) {
-		addrs := evm.ConvertAddressesFromProto(nil)
-		assert.Empty(t, addrs)
+func TestConvertHeaderFromProto(t *testing.T) {
+	t.Run("nil proto returns error", func(t *testing.T) {
+		_, err := protoevm.ConvertHeaderFromProto(nil)
+		assert.ErrorIs(t, err, chainevm.ErrEmptyHead)
 	})
 
-	t.Run("invalid and valid addresses", func(t *testing.T) {
-		valid := make([]byte, 20)
-		for i := 0; i < 20; i++ {
-			valid[i] = byte(i + 1)
-		}
-		invalid := []byte{0x01, 0x02}
-
-		result := evm.ConvertAddressesFromProto([][]byte{valid, invalid})
-		assert.Len(t, result, 1)
-		assert.Equal(t, evmtypes.Address(valid), result[0])
-	})
-}
-
-func TestConvertHashesFromProto(t *testing.T) {
-	t.Run("empty input", func(t *testing.T) {
-		hashes := evm.ConvertHashesFromProto(nil)
-		assert.Empty(t, hashes)
-	})
-
-	t.Run("invalid and valid hashes", func(t *testing.T) {
-		valid := make([]byte, 32)
-		for i := 0; i < 32; i++ {
-			valid[i] = byte(i + 10)
-		}
-		invalid := []byte{0xAA}
-
-		result := evm.ConvertHashesFromProto([][]byte{valid, invalid})
-		assert.Len(t, result, 1)
-		assert.Equal(t, evmtypes.Hash(valid), result[0])
-	})
-}
-
-func TestConvertTopicsFromProto(t *testing.T) {
-	t.Run("single topic with one hash", func(t *testing.T) {
-		topicBytes := make([]byte, 32)
-		for i := 0; i < 32; i++ {
-			topicBytes[i] = byte(i + 100)
-		}
-		input := []*evm.Topics{
-			{Topic: [][]byte{topicBytes}},
-		}
-		result := evm.ConvertTopicsFromProto(input)
-		assert.Len(t, result, 1)
-		assert.Len(t, result[0], 1)
-		assert.Equal(t, evmtypes.Hash(topicBytes), result[0][0])
-	})
-}
-
-func TestConvertHeadFromProto(t *testing.T) {
-	t.Run("nil input returns error", func(t *testing.T) {
-		_, err := evm.ConvertHeadFromProto(nil)
-		assert.ErrorContains(t, err, "head is nil")
-	})
-
-	t.Run("valid head", func(t *testing.T) {
-		hash := make([]byte, 32)
-		parent := make([]byte, 32)
-		for i := 0; i < 32; i++ {
-			hash[i] = byte(i + 30)
-			parent[i] = byte(i + 60)
-		}
-		num := &valuespb.BigInt{AbsVal: []byte{0x01, 0x02, 0x03}, Sign: 1}
-		timestamp := uint64(42)
-
-		proto := &evm.Header{
-			Timestamp:   timestamp,
+	t.Run("happy path", func(t *testing.T) {
+		num := &valuespb.BigInt{AbsVal: []byte{0x01}, Sign: 0}
+		p := &protoevm.Header{
+			Timestamp:   42,
 			BlockNumber: num,
-			Hash:        hash,
-			ParentHash:  parent,
+			Hash:        b32(0x20),
+			ParentHash:  b32(0x21),
 		}
-
-		result, err := evm.ConvertHeadFromProto(proto)
+		h, err := protoevm.ConvertHeaderFromProto(p)
 		require.NoError(t, err)
-		assert.Equal(t, timestamp, result.Timestamp)
-		assert.Equal(t, evmtypes.Hash(hash), result.Hash)
-		assert.Equal(t, evmtypes.Hash(parent), result.ParentHash)
-		assert.Equal(t, valuespb.NewIntFromBigInt(num), result.Number)
+		assert.Equal(t, uint64(42), h.Timestamp)
+		assert.Equal(t, evmtypes.Hash(b32(0x20)), h.Hash)
+		assert.Equal(t, evmtypes.Hash(b32(0x21)), h.ParentHash)
+		assert.Equal(t, valuespb.NewIntFromBigInt(num), h.Number)
+	})
+}
+
+func TestConvertReceiptToProto(t *testing.T) {
+	t.Run("nil receipt returns error", func(t *testing.T) {
+		_, err := protoevm.ConvertReceiptToProto(nil)
+		assert.ErrorIs(t, err, chainevm.ErrEmptyReceipt)
+	})
+
+	t.Run("happy path", func(t *testing.T) {
+		r := &evmtypes.Receipt{
+			Status:            1,
+			Logs:              []*evmtypes.Log{{}},
+			TxHash:            h32(0x30),
+			ContractAddress:   a20(0x31),
+			GasUsed:           21000,
+			BlockHash:         h32(0x32),
+			BlockNumber:       valuespb.NewIntFromBigInt(&valuespb.BigInt{AbsVal: []byte{0x02}, Sign: 0}),
+			TransactionIndex:  9,
+			EffectiveGasPrice: valuespb.NewIntFromBigInt(&valuespb.BigInt{AbsVal: []byte{0x03}, Sign: 0}),
+		}
+		p, err := protoevm.ConvertReceiptToProto(r)
+		require.NoError(t, err)
+		assert.Equal(t, r.Status, p.Status)
+		assert.Equal(t, r.TxHash[:], p.TxHash)
+		assert.Equal(t, r.ContractAddress[:], p.ContractAddress)
+		assert.Equal(t, r.GasUsed, p.GasUsed)
+		assert.Equal(t, r.BlockHash[:], p.BlockHash)
+		assert.Equal(t, valuespb.NewBigIntFromInt(r.BlockNumber), p.BlockNumber)
+		assert.Equal(t, r.TransactionIndex, p.TxIndex)
+		assert.Equal(t, valuespb.NewBigIntFromInt(r.EffectiveGasPrice), p.EffectiveGasPrice)
 	})
 }
 
 func TestConvertReceiptFromProto(t *testing.T) {
-	t.Run("nil input returns error", func(t *testing.T) {
-		_, err := evm.ConvertReceiptFromProto(nil)
-		assert.ErrorContains(t, err, "receipt is nil")
+	t.Run("nil proto returns error", func(t *testing.T) {
+		_, err := protoevm.ConvertReceiptFromProto(nil)
+		assert.ErrorIs(t, err, chainevm.ErrEmptyReceipt)
 	})
 
-	t.Run("valid receipt", func(t *testing.T) {
-		txHash := make([]byte, 32)
-		addr := make([]byte, 20)
-		blockHash := make([]byte, 32)
-		for i := range txHash {
-			txHash[i] = byte(i + 1)
-		}
-		for i := range addr {
-			addr[i] = byte(i + 50)
-		}
-		for i := range blockHash {
-			blockHash[i] = byte(i + 100)
-		}
-
-		num := &valuespb.BigInt{AbsVal: []byte{0x01, 0x02, 0x03}, Sign: 1}
-		price := &valuespb.BigInt{AbsVal: []byte{0x0A, 0x0B}, Sign: 1}
-
-		proto := &evm.Receipt{
+	t.Run("empty logs slice ok + happy path", func(t *testing.T) {
+		num := &valuespb.BigInt{AbsVal: []byte{0x01}, Sign: 0}
+		price := &valuespb.BigInt{AbsVal: []byte{0x02}, Sign: 0}
+		p := &protoevm.Receipt{
 			Status:            1,
-			Logs:              []*evm.Log{},
-			TxHash:            txHash,
-			ContractAddress:   addr,
+			Logs:              []*protoevm.Log{},
+			TxHash:            b32(0x40),
+			ContractAddress:   b20(0x41),
 			GasUsed:           21000,
-			BlockHash:         blockHash,
+			BlockHash:         b32(0x42),
 			BlockNumber:       num,
 			TxIndex:           3,
 			EffectiveGasPrice: price,
 		}
-
-		result, err := evm.ConvertReceiptFromProto(proto)
+		r, err := protoevm.ConvertReceiptFromProto(p)
 		require.NoError(t, err)
-		assert.Equal(t, evmtypes.Hash(txHash), result.TxHash)
-		assert.Equal(t, evmtypes.Address(addr), result.ContractAddress)
-		assert.Equal(t, evmtypes.Hash(blockHash), result.BlockHash)
-		assert.Equal(t, valuespb.NewIntFromBigInt(num), result.BlockNumber)
-		assert.Equal(t, valuespb.NewIntFromBigInt(price), result.EffectiveGasPrice)
+		assert.Equal(t, evmtypes.Hash(b32(0x40)), r.TxHash)
+		assert.Equal(t, evmtypes.Address(b20(0x41)), r.ContractAddress)
+		assert.Equal(t, evmtypes.Hash(b32(0x42)), r.BlockHash)
+		assert.Equal(t, valuespb.NewIntFromBigInt(num), r.BlockNumber)
+		assert.Equal(t, valuespb.NewIntFromBigInt(price), r.EffectiveGasPrice)
+		assert.Equal(t, uint64(21000), r.GasUsed)
+		assert.Equal(t, uint64(3), r.TransactionIndex)
+	})
+}
+
+func TestConvertTransactionToProto(t *testing.T) {
+	t.Run("nil tx returns error", func(t *testing.T) {
+		_, err := protoevm.ConvertTransactionToProto(nil)
+		assert.ErrorIs(t, err, chainevm.ErrEmptyTx)
+	})
+
+	t.Run("happy path", func(t *testing.T) {
+		tx := &evmtypes.Transaction{
+			To:       a20(0x50),
+			Data:     []byte{0xDE, 0xAD},
+			Hash:     h32(0x51),
+			Nonce:    7,
+			Gas:      50000,
+			GasPrice: valuespb.NewIntFromBigInt(&valuespb.BigInt{AbsVal: []byte{0x0F}, Sign: 1}),
+			Value:    valuespb.NewIntFromBigInt(&valuespb.BigInt{AbsVal: []byte{0x0E}, Sign: 1}),
+		}
+		p, err := protoevm.ConvertTransactionToProto(tx)
+		require.NoError(t, err)
+		assert.Equal(t, tx.To[:], p.To)
+		assert.Equal(t, tx.Data, p.Data)
+		assert.Equal(t, tx.Hash[:], p.Hash)
+		assert.Equal(t, tx.Nonce, p.Nonce)
+		assert.Equal(t, tx.Gas, p.Gas)
+		assert.Equal(t, valuespb.NewBigIntFromInt(tx.GasPrice), p.GasPrice)
+		assert.Equal(t, valuespb.NewBigIntFromInt(tx.Value), p.Value)
 	})
 }
 
 func TestConvertTransactionFromProto(t *testing.T) {
-	t.Run("nil input returns error", func(t *testing.T) {
-		_, err := evm.ConvertTransactionFromProto(nil)
-		assert.ErrorContains(t, err, "transaction is nil")
+	t.Run("nil proto returns error", func(t *testing.T) {
+		_, err := protoevm.ConvertTransactionFromProto(nil)
+		assert.ErrorIs(t, err, chainevm.ErrEmptyTx)
 	})
 
-	t.Run("valid transaction", func(t *testing.T) {
-		to := make([]byte, 20)
-		hash := make([]byte, 32)
-		for i := 0; i < 20; i++ {
-			to[i] = byte(i + 9)
-		}
-		for i := 0; i < 32; i++ {
-			hash[i] = byte(i + 33)
-		}
-
-		gasPrice := &valuespb.BigInt{AbsVal: []byte{0x05, 0x06}, Sign: 1}
-		value := &valuespb.BigInt{AbsVal: []byte{0x07, 0x08}, Sign: 1}
-
-		proto := &evm.Transaction{
-			To:       to,
+	t.Run("happy path", func(t *testing.T) {
+		gp := &valuespb.BigInt{AbsVal: []byte{0x05}, Sign: 1}
+		val := &valuespb.BigInt{AbsVal: []byte{0x06}, Sign: 1}
+		p := &protoevm.Transaction{
+			To:       b20(0x60),
 			Data:     []byte{0x01, 0x02},
-			Hash:     hash,
+			Hash:     b32(0x61),
 			Nonce:    1,
 			Gas:      30000,
-			GasPrice: gasPrice,
-			Value:    value,
+			GasPrice: gp,
+			Value:    val,
 		}
-
-		result, err := evm.ConvertTransactionFromProto(proto)
+		tx, err := protoevm.ConvertTransactionFromProto(p)
 		require.NoError(t, err)
-		assert.Equal(t, evmtypes.Address(to), result.To)
-		assert.Equal(t, []byte{0x01, 0x02}, result.Data)
-		assert.Equal(t, evmtypes.Hash(hash), result.Hash)
-		assert.Equal(t, uint64(1), result.Nonce)
-		assert.Equal(t, uint64(30000), result.Gas)
-		assert.Equal(t, valuespb.NewIntFromBigInt(gasPrice), result.GasPrice)
-		assert.Equal(t, valuespb.NewIntFromBigInt(value), result.Value)
+		assert.Equal(t, evmtypes.Address(b20(0x60)), tx.To)
+		assert.Equal(t, []byte{0x01, 0x02}, tx.Data)
+		assert.Equal(t, evmtypes.Hash(b32(0x61)), tx.Hash)
+		assert.Equal(t, uint64(1), tx.Nonce)
+		assert.Equal(t, uint64(30000), tx.Gas)
+		assert.Equal(t, valuespb.NewIntFromBigInt(gp), tx.GasPrice)
+		assert.Equal(t, valuespb.NewIntFromBigInt(val), tx.Value)
+	})
+
+	t.Run("optional To nil is accepted", func(t *testing.T) {
+		p := &protoevm.Transaction{
+			Hash:     b32(0x62),
+			GasPrice: &valuespb.BigInt{AbsVal: []byte{0x01}, Sign: 1},
+			Value:    &valuespb.BigInt{AbsVal: []byte{0x02}, Sign: 1},
+		}
+		tx, err := protoevm.ConvertTransactionFromProto(p)
+		require.NoError(t, err)
+
+		var zero evmtypes.Address
+		assert.Equal(t, zero, tx.To)
 	})
 }

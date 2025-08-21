@@ -124,7 +124,7 @@ func (e *EVMClient) FilterLogs(ctx context.Context, request evmtypes.FilterLogsR
 
 	logs, err := evmpb.ConvertLogsFromProto(reply.GetLogs())
 	if err != nil {
-		return nil, net.WrapRPCErr(fmt.Errorf("failed to convert logs response err: %w", err))
+		return nil, err
 	}
 
 	return &evmtypes.FilterLogsReply{Logs: logs}, nil
@@ -236,7 +236,7 @@ func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 
 	logs, err := evmpb.ConvertLogsFromProto(reply.GetLogs())
 	if err != nil {
-		return nil, net.WrapRPCErr(fmt.Errorf("failed to convert logs response err: %w", err))
+		return nil, err
 	}
 
 	return logs, nil
@@ -350,7 +350,7 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 
 	logs, err := evmpb.ConvertLogsToProto(reply.Logs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert logs response")
+		return nil, err
 	}
 
 	return &evmpb.FilterLogsReply{Logs: logs}, nil

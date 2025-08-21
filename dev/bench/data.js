@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755764513824,
+  "lastUpdate": 1755784002595,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23646,6 +23646,48 @@ window.BENCHMARK_DATA = {
             "value": 26565,
             "unit": "ns/op",
             "extra": "45056 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "68af09027840e3e3914487301ee94ae2021d05cc",
+          "message": "Add unimplemented registry type (#1498)\n\n* Add unimplemented registry type\n\n* Add unimplemented registry type",
+          "timestamp": "2025-08-21T09:45:23-04:00",
+          "tree_id": "6b43f43e1782492fd2801d7b9a7c53c32994810d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/68af09027840e3e3914487301ee94ae2021d05cc"
+        },
+        "date": 1755784001504,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.4,
+            "unit": "ns/op",
+            "extra": "3334137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.7,
+            "unit": "ns/op",
+            "extra": "2961488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26634,
+            "unit": "ns/op",
+            "extra": "45068 times\n4 procs"
           }
         ]
       }

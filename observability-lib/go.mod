@@ -1,8 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/observability-lib
 
-go 1.24.2
-
-toolchain go1.24.4
+go 1.24.5
 
 require (
 	github.com/go-resty/resty/v2 v2.15.3

@@ -35,6 +35,15 @@ func (k Client) Sign(ctx context.Context, account string, data []byte) ([]byte, 
 	return resp.SignedData, nil
 }
 
+func (k Client) Decrypt(ctx context.Context, account string, data []byte) ([]byte, error) {
+	resp, err := k.grpc.Decrypt(ctx, &pb.DecryptRequest{Account: account, Data: data})
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt data for account: %s: %w", account, err)
+	}
+
+	return resp.DecryptedData, nil
+}
+
 func NewClient(cc grpc.ClientConnInterface) *Client {
 	return &Client{pb.NewKeystoreClient(cc)}
 }
@@ -65,4 +74,13 @@ func (s Server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignReply, e
 	}
 
 	return &pb.SignReply{SignedData: signedData}, nil
+}
+
+func (s Server) Decrypt(ctx context.Context, req *pb.DecryptRequest) (*pb.DecryptReply, error) {
+	decryptedData, err := s.impl.Decrypt(ctx, req.Account, req.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt data for account: %s: %w", req.Account, err)
+	}
+
+	return &pb.DecryptReply{DecryptedData: decryptedData}, nil
 }

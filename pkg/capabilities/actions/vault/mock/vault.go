@@ -28,7 +28,7 @@ func (m Vault) Execute(ctx context.Context, req capabilities.CapabilityRequest) 
 	if err != nil {
 		return capabilities.CapabilityResponse{}, errors.New("received unexpected payload: want *vault.GetSecretsRequest")
 	}
-	if req.Method != vault.MethodGetSecrets {
+	if req.Method != "vault.secrets.get" {
 		return capabilities.CapabilityResponse{}, errors.New("received unexpected method: want vault.MethodGetSecrets")
 	}
 

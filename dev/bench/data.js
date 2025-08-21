@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755788870407,
+  "lastUpdate": 1755793679365,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23772,6 +23772,48 @@ window.BENCHMARK_DATA = {
             "value": 26605,
             "unit": "ns/op",
             "extra": "44912 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e3e586f8b5d63151f8c53e4e3c689f8645b96000",
+          "message": "pkg/services/otelhealth: add otelhealth; update promhealth (#1494)",
+          "timestamp": "2025-08-21T16:26:31Z",
+          "tree_id": "b19a80596aa4cf5cac3c77d725ce4d41ecf7b3ec",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e3e586f8b5d63151f8c53e4e3c689f8645b96000"
+        },
+        "date": 1755793677752,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.1,
+            "unit": "ns/op",
+            "extra": "3310240 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.9,
+            "unit": "ns/op",
+            "extra": "2933382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26747,
+            "unit": "ns/op",
+            "extra": "44842 times\n4 procs"
           }
         ]
       }

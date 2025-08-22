@@ -130,6 +130,69 @@ func (_c *CapabilitiesRegistry_ConfigForCapability_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// TypeAndVersion provides a mock function with given fields: ctx
+func (_m *CapabilitiesRegistry) TypeAndVersion(ctx context.Context) (string, string, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeAndVersion")
+	}
+
+	var r0 string
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) string); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// CapabilitiesRegistry_TypeAndVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeAndVersion'
+type CapabilitiesRegistry_TypeAndVersion_Call struct {
+	*mock.Call
+}
+
+// TypeAndVersion is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *CapabilitiesRegistry_Expecter) TypeAndVersion(ctx interface{}) *CapabilitiesRegistry_TypeAndVersion_Call {
+	return &CapabilitiesRegistry_TypeAndVersion_Call{Call: _e.mock.On("TypeAndVersion", ctx)}
+}
+
+func (_c *CapabilitiesRegistry_TypeAndVersion_Call) Run(run func(context.Context)) *CapabilitiesRegistry_TypeAndVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_TypeAndVersion_Call) Return(_a0 string, _a1 string, _a2 error) *CapabilitiesRegistry_TypeAndVersion_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_TypeAndVersion_Call) RunAndReturn(run func(context.Context) (string, string, error)) *CapabilitiesRegistry_TypeAndVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: ctx, ID
 func (_m *CapabilitiesRegistry) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
 	ret := _m.Called(ctx, ID)

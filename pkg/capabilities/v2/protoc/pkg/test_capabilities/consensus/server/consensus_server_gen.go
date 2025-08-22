@@ -125,7 +125,10 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, capabilities.ResponseMetadata, error) {
 			output, err := c.ConsensusCapability.Simple(ctx, metadata, input)
-			if output == nil && err == nil {
+			if err != nil {
+				return nil, capabilities.ResponseMetadata{}, err
+			}
+			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Simple(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err
@@ -136,7 +139,10 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest, _ *emptypb.Empty) (*sdk.ReportResponse, capabilities.ResponseMetadata, error) {
 			output, err := c.ConsensusCapability.Report(ctx, metadata, input)
-			if output == nil && err == nil {
+			if err != nil {
+				return nil, capabilities.ResponseMetadata{}, err
+			}
+			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Report(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err

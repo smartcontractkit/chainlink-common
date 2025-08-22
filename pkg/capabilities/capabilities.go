@@ -43,6 +43,24 @@ const (
 	CapabilityTypeCombined CapabilityType = "combined"
 )
 
+// MethodType is an enum for the type of method
+type MethodType string
+
+// MethodType enum values.
+const (
+	MethodAction  MethodType = "unknown"
+	MethodTrigger MethodType = "trigger"
+)
+
+// ActionSchedule is an enum for the type of method
+type ActionSchedule string
+
+// ActionSchedule enum values.
+const (
+	ActionScheduleOneAtATime ActionSchedule = "one_at_a_time"
+	ActionScheduleAllAtOnce  ActionSchedule = "all_at_once"
+)
+
 // IsValid checks if the capability type is valid.
 func (c CapabilityType) IsValid() error {
 	switch c {
@@ -488,35 +506,10 @@ type RemoteTriggerConfig struct {
 type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
-
-// CapabilityMethodConfig holds configuration for a capability method (action or trigger).
-type CapabilityMethodConfig struct {
-	Type       CapabilityType
-	Schedule   string
-	DeltaStage int
-}
-
-//example from Bolek
-//var CapabilityMethodConfigs = map[string]CapabilityMethodConfig{
-//	"CallContract": {
-//		Type:     CapabilityTypeAction, // or CapabilityTypeExecutable if defined
-//		Schedule: "all_at_once",
-//	},
-//	"LogTrigger": {
-//		Type: CapabilityTypeTrigger,
-//	},
-//	"WriteReport": {
-//		Type:       CapabilityTypeAction, // or CapabilityTypeExecutable if defined
-//		Schedule:   "one_at_a_time",
-//		DeltaStage: 10,
-//	},
-//}
-
 type RemoteExecutableConfig struct {
 	RequestHashExcludedAttributes []string
 	RegistrationRefresh           time.Duration
 	RegistrationExpiry            time.Duration
-	CapabilityMethodConfigs       map[string]CapabilityMethodConfig
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
@@ -554,6 +547,29 @@ func (c *RemoteExecutableConfig) ApplyDefaults() {
 	}
 }
 
+// CapabilityMethodConfig holds configuration for a capability method (action or trigger).
+type CapabilityMethodConfig struct {
+	Type           MethodType
+	ActionSchedule *ActionSchedule
+	DeltaStage     *time.Duration
+}
+
+//example from Bolek
+//var CapabilityMethodConfigs = map[string]CapabilityMethodConfig{
+//	"CallContract": {
+//		Type:     CapabilityTypeAction, // or CapabilityTypeExecutable if defined
+//		Schedule: "all_at_once",
+//	},
+//	"LogTrigger": {
+//		Type: CapabilityTypeTrigger,
+//	},
+//	"WriteReport": {
+//		Type:       CapabilityTypeAction, // or CapabilityTypeExecutable if defined
+//		Schedule:   "one_at_a_time",
+//		DeltaStage: 10,
+//	},
+//}
+
 type CapabilityConfiguration struct {
 	DefaultConfig *values.Map
 	// RestrictedKeys is a list of keys that can't be provided by users in their
@@ -565,4 +581,7 @@ type CapabilityConfiguration struct {
 	RemoteTriggerConfig    *RemoteTriggerConfig
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig
+	// CapabilityMethodConfig contains all the methods supported by this capability declaring the type of method
+	//(trigger or action), and for all the actions it will have different scheduling configurations.
+	CapabilityMethodConfig map[string]CapabilityMethodConfig
 }

@@ -32,6 +32,22 @@ message RemoteExecutableConfig {
   google.protobuf.Duration registrationExpiry = 3;
 }
 
+enum MethodType {
+  EXECUTABLE = 0;
+  TRIGGER = 1;
+}
+
+enum ActionSchedule {
+  OneAtATime = 0;
+  AllAtOnce = 1;
+}
+
+message CapabilityMethodConfig {
+  MethodType type = 1;
+  ActionSchedule schedule = 2;
+  google.protobuf.Duration delta_stage = 3;
+}
+
 message CapabilityConfig {
   values.v1.Map default_config = 1;
 
@@ -43,5 +59,6 @@ message CapabilityConfig {
 
   values.v1.Map restricted_config = 5;
   repeated string restricted_keys = 6;
+  map<string, CapabilityMethodConfig> method_configs = 7;
 }
 

@@ -489,10 +489,34 @@ type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
 
+// CapabilityMethodConfig holds configuration for a capability method (action or trigger).
+type CapabilityMethodConfig struct {
+	Type       CapabilityType
+	Schedule   string
+	DeltaStage int
+}
+
+//example from Bolek
+//var CapabilityMethodConfigs = map[string]CapabilityMethodConfig{
+//	"CallContract": {
+//		Type:     CapabilityTypeAction, // or CapabilityTypeExecutable if defined
+//		Schedule: "all_at_once",
+//	},
+//	"LogTrigger": {
+//		Type: CapabilityTypeTrigger,
+//	},
+//	"WriteReport": {
+//		Type:       CapabilityTypeAction, // or CapabilityTypeExecutable if defined
+//		Schedule:   "one_at_a_time",
+//		DeltaStage: 10,
+//	},
+//}
+
 type RemoteExecutableConfig struct {
 	RequestHashExcludedAttributes []string
 	RegistrationRefresh           time.Duration
 	RegistrationExpiry            time.Duration
+	CapabilityMethodConfigs       map[string]CapabilityMethodConfig
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)

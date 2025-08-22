@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	CapabilitiesRegistry_TypeAndVersion_FullMethodName      = "/loop.CapabilitiesRegistry/TypeAndVersion"
 	CapabilitiesRegistry_LocalNode_FullMethodName           = "/loop.CapabilitiesRegistry/LocalNode"
 	CapabilitiesRegistry_NodeByPeerID_FullMethodName        = "/loop.CapabilitiesRegistry/NodeByPeerID"
 	CapabilitiesRegistry_ConfigForCapability_FullMethodName = "/loop.CapabilitiesRegistry/ConfigForCapability"
@@ -35,6 +36,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CapabilitiesRegistryClient interface {
+	TypeAndVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TypeAndVersionReply, error)
 	LocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodeReply, error)
 	NodeByPeerID(ctx context.Context, in *NodeRequest, opts ...grpc.CallOption) (*NodeReply, error)
 	ConfigForCapability(ctx context.Context, in *ConfigForCapabilityRequest, opts ...grpc.CallOption) (*ConfigForCapabilityReply, error)
@@ -52,6 +54,16 @@ type capabilitiesRegistryClient struct {
 
 func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface) CapabilitiesRegistryClient {
 	return &capabilitiesRegistryClient{cc}
+}
+
+func (c *capabilitiesRegistryClient) TypeAndVersion(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TypeAndVersionReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TypeAndVersionReply)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_TypeAndVersion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *capabilitiesRegistryClient) LocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodeReply, error) {
@@ -148,6 +160,7 @@ func (c *capabilitiesRegistryClient) Remove(ctx context.Context, in *RemoveReque
 // All implementations must embed UnimplementedCapabilitiesRegistryServer
 // for forward compatibility.
 type CapabilitiesRegistryServer interface {
+	TypeAndVersion(context.Context, *emptypb.Empty) (*TypeAndVersionReply, error)
 	LocalNode(context.Context, *emptypb.Empty) (*NodeReply, error)
 	NodeByPeerID(context.Context, *NodeRequest) (*NodeReply, error)
 	ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error)
@@ -167,6 +180,9 @@ type CapabilitiesRegistryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCapabilitiesRegistryServer struct{}
 
+func (UnimplementedCapabilitiesRegistryServer) TypeAndVersion(context.Context, *emptypb.Empty) (*TypeAndVersionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TypeAndVersion not implemented")
+}
 func (UnimplementedCapabilitiesRegistryServer) LocalNode(context.Context, *emptypb.Empty) (*NodeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LocalNode not implemented")
 }
@@ -213,6 +229,24 @@ func RegisterCapabilitiesRegistryServer(s grpc.ServiceRegistrar, srv Capabilitie
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&CapabilitiesRegistry_ServiceDesc, srv)
+}
+
+func _CapabilitiesRegistry_TypeAndVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CapabilitiesRegistryServer).TypeAndVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CapabilitiesRegistry_TypeAndVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CapabilitiesRegistryServer).TypeAndVersion(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CapabilitiesRegistry_LocalNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -384,6 +418,10 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.CapabilitiesRegistry",
 	HandlerType: (*CapabilitiesRegistryServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "TypeAndVersion",
+			Handler:    _CapabilitiesRegistry_TypeAndVersion_Handler,
+		},
 		{
 			MethodName: "LocalNode",
 			Handler:    _CapabilitiesRegistry_LocalNode_Handler,

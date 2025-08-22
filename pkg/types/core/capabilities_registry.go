@@ -15,11 +15,11 @@ type CapabilitiesRegistry interface {
 }
 
 type CapabilitiesRegistryMetadata interface {
+	TypeAndVersion(ctx context.Context) (string, string, error)
 	LocalNode(ctx context.Context) (capabilities.Node, error)
 	NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
 }
-
 
 type CapabilitiesRegistryBase interface {
 	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
@@ -50,6 +50,10 @@ func (UnimplementedCapabilitiesRegistryMetadata) NodeByPeerID(ctx context.Contex
 
 func (UnimplementedCapabilitiesRegistryMetadata) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
 	return capabilities.CapabilityConfiguration{}, errors.New("ConfigForCapability not implemented")
+}
+
+func (UnimplementedCapabilitiesRegistryMetadata) TypeAndVersion(ctx context.Context) (string, string, error) {
+	return "", "", errors.New("TypeAndVersion not implemented")
 }
 
 type UnimplementedCapabilitiesRegistryBase struct {

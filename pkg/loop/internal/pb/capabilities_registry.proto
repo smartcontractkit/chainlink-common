@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 import "capabilities/pb/registry.proto";
 
 service CapabilitiesRegistry {
+  rpc TypeAndVersion (google.protobuf.Empty) returns (TypeAndVersionReply) {}
   rpc LocalNode (google.protobuf.Empty) returns (NodeReply) {}
   rpc NodeByPeerID(NodeRequest) returns (NodeReply) {}
   rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
@@ -17,6 +18,11 @@ service CapabilitiesRegistry {
   rpc List (google.protobuf.Empty) returns (ListReply) {}
   rpc Add (AddRequest) returns (google.protobuf.Empty) {}
   rpc Remove (RemoveRequest) returns (google.protobuf.Empty) {}
+}
+
+message TypeAndVersionReply {
+  string type = 1;
+  string version = 2;
 }
 
 enum ExecuteAPIType {

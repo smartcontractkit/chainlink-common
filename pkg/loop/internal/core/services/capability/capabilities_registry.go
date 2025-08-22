@@ -78,6 +78,14 @@ func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p
 	return cr.nodeFromNodeReply(res), nil
 }
 
+func (cr *capabilitiesRegistryClient) TypeAndVersion(ctx context.Context) (string, string, error) {
+	res, err := cr.grpc.TypeAndVersion(ctx, &emptypb.Empty{})
+	if err != nil {
+		return "", "", err
+	}
+	return res.Type, res.Version, nil
+}
+
 func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
 	var pid *p2ptypes.PeerID
 	if len(nodeReply.PeerID) > 0 {

@@ -48,7 +48,7 @@ type MethodType string
 
 // MethodType enum values.
 const (
-	MethodAction  MethodType = "unknown"
+	MethodAction  MethodType = "executable"
 	MethodTrigger MethodType = "trigger"
 )
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755862889914,
+  "lastUpdate": 1755878206754,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -23940,6 +23940,48 @@ window.BENCHMARK_DATA = {
             "value": 26632,
             "unit": "ns/op",
             "extra": "44732 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db9b1bc22027288e5d87e790070a30f906ad310c",
+          "message": "pkg/types/solana: move CR/CW config types from solana repo (#1308)",
+          "timestamp": "2025-08-22T15:54:19Z",
+          "tree_id": "3c324ae1189971e5ff5513be4c9b2b6728e6b11b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/db9b1bc22027288e5d87e790070a30f906ad310c"
+        },
+        "date": 1755878205012,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.8,
+            "unit": "ns/op",
+            "extra": "3369207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.7,
+            "unit": "ns/op",
+            "extra": "2959230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26602,
+            "unit": "ns/op",
+            "extra": "45105 times\n4 procs"
           }
         ]
       }

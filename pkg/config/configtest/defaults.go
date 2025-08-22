@@ -10,6 +10,7 @@ import (
 
 // DocDefaultsOnly reads only the default values from a docs TOML file and decodes in to cfg.
 // Fields without defaults will set to zero values.
+// Arrays of tables are ignored.
 func DocDefaultsOnly(r io.Reader, cfg any, decode func(io.Reader, any) error) error {
 	pr, pw := io.Pipe()
 	defer pr.Close()
@@ -26,10 +27,23 @@ func DocDefaultsOnly(r io.Reader, cfg any, decode func(io.Reader, any) error) er
 func writeDefaults(r io.Reader, w *io.PipeWriter) {
 	defer w.Close()
 	s := bufio.NewScanner(r)
+	var skipUntil func(line string) bool
 	for s.Scan() {
 		t := s.Text()
+		if skipUntil != nil {
+			if skipUntil(t) {
+				skipUntil = nil
+			}
+			continue
+		}
 		// Skip comments and examples (which become zero values)
 		if strings.HasPrefix(t, "#") || strings.HasSuffix(t, "# Example") {
+			continue
+		}
+		// Skip arrays of tables
+		if strings.HasPrefix(t, "[[") {
+			// skip fields until next empty line
+			skipUntil = func(line string) bool { return strings.TrimSpace(line) == "" }
 			continue
 		}
 		if _, err := io.WriteString(w, t); err != nil {

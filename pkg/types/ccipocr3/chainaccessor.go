@@ -3,7 +3,6 @@ package ccipocr3
 import (
 	"context"
 	"math/big"
-	"sort"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -26,6 +25,8 @@ type ChainAccessor interface {
 	AllAccessors
 	SourceAccessor
 	DestinationAccessor
+	USDCMessageReader
+	PriceReader
 }
 
 // AllAccessors contains functionality that is available to all types of accessors.
@@ -193,132 +194,29 @@ type SourceAccessor interface {
 	GetFeeQuoterDestChainConfig(ctx context.Context, dest ChainSelector) (FeeQuoterDestChainConfig, error)
 }
 
-////////////////////////////////////////////////////////////////
-// TODO: Find a better location for the types below this line //
-//       For the purpose of designing these interfaces, the   //
-//       location is not critical.                            //
-////////////////////////////////////////////////////////////////
-
-// Random types. These are defined here mainly to bring focus to types which should
-// probably be removed or replaced.
-
-type TimestampedBig struct {
-	Timestamp time.Time `json:"timestamp"`
-	Value     BigInt    `json:"value"`
+// USDCMessageReader retrieves each of the CCTPv1 MessageSent event created
+// when a ccipSend is made with USDC token transfer. The events are created
+// when the USDC Token pool calls the 3rd party MessageTransmitter contract.
+type USDCMessageReader interface {
+	MessagesByTokenID(ctx context.Context,
+		source, dest ChainSelector,
+		tokens map[MessageTokenID]RampTokenAmount,
+	) (map[MessageTokenID]Bytes, error)
 }
 
-// TimestampedUnixBig Maps to on-chain struct
-// https://github.com/smartcontractkit/chainlink/blob/37f3132362ec90b0b1c12fb1b69b9c16c46b399d/contracts/src/v0.8/ccip/libraries/Internal.sol#L43-L47
-//
-//nolint:lll //url
-type TimestampedUnixBig struct {
-	// Value in uint224, can contain several packed fields
-	Value *big.Int `json:"value"`
-	// Timestamp in seconds since epoch of most recent update
-	Timestamp uint32 `json:"timestamp"`
-}
+type PriceReader interface {
+	// GetFeedPricesUSD returns the prices of the provided tokens in USD normalized to e18.
+	//	1 USDC = 1.00 USD per full token, each full token is 1e6 units -> 1 * 1e18 * 1e18 / 1e6 = 1e30
+	//	1 ETH = 2,000 USD per full token, each full token is 1e18 units -> 2000 * 1e18 * 1e18 / 1e18 = 2_000e18
+	//	1 LINK = 5.00 USD per full token, each full token is 1e18 units -> 5 * 1e18 * 1e18 / 1e18 = 5e18
+	// The order of the returned prices corresponds to the order of the provided tokens.
+	GetFeedPricesUSD(ctx context.Context,
+		tokens []UnknownEncodedAddress) (TokenPriceMap, error)
 
-func NewTimestampedBig(value int64, timestamp time.Time) TimestampedBig {
-	return TimestampedBig{
-		Value:     BigInt{Int: big.NewInt(value)},
-		Timestamp: timestamp,
-	}
-}
-
-func TimeStampedBigFromUnix(input TimestampedUnixBig) TimestampedBig {
-	return TimestampedBig{
-		Value:     NewBigInt(input.Value),
-		Timestamp: time.Unix(int64(input.Timestamp), 0),
-	}
-}
-
-type CommitPluginReportWithMeta struct {
-	Report    CommitPluginReport `json:"report"`
-	Timestamp time.Time          `json:"timestamp"`
-	BlockNum  uint64             `json:"blockNum"`
-}
-
-type CommitReportsByConfidenceLevel struct {
-	Finalized   []CommitPluginReportWithMeta `json:"finalized"`
-	Unfinalized []CommitPluginReportWithMeta `json:"unfinalized"`
-}
-
-// ContractAddresses is a map of contract names across all chain selectors and their address.
-// Currently only one contract per chain per name is supported.
-type ContractAddresses map[string]map[ChainSelector]UnknownAddress
-
-func (ca ContractAddresses) Append(contract string, chain ChainSelector, address []byte) ContractAddresses {
-	resp := ca
-	if resp == nil {
-		resp = make(ContractAddresses)
-	}
-	if resp[contract] == nil {
-		resp[contract] = make(map[ChainSelector]UnknownAddress)
-	}
-	resp[contract][chain] = address
-	return resp
-}
-
-// CurseInfo contains cursing information that are fetched from the rmn remote contract.
-type CurseInfo struct {
-	// CursedSourceChains contains the cursed source chains.
-	CursedSourceChains map[ChainSelector]bool
-	// CursedDestination indicates that the destination chain is cursed.
-	CursedDestination bool
-	// GlobalCurse indicates that all chains are cursed.
-	GlobalCurse bool
-}
-
-func (ci CurseInfo) NonCursedSourceChains(inputChains []ChainSelector) []ChainSelector {
-	if ci.GlobalCurse {
-		return nil
-	}
-
-	sourceChains := make([]ChainSelector, 0, len(inputChains))
-	for _, ch := range inputChains {
-		if !ci.CursedSourceChains[ch] {
-			sourceChains = append(sourceChains, ch)
-		}
-	}
-	sort.Slice(sourceChains, func(i, j int) bool { return sourceChains[i] < sourceChains[j] })
-
-	return sourceChains
-}
-
-// GlobalCurseSubject Defined as a const in RMNRemote.sol
-// Docs of RMNRemote:
-// An active curse on this subject will cause isCursed() and isCursed(bytes16) to return true. Use this subject
-// for issues affecting all of CCIP chains, or pertaining to the chain that this contract is deployed on, instead of
-// using the local chain selector as a subject.
-var GlobalCurseSubject = [16]byte{
-	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-}
-
-// RemoteConfig contains the configuration fetched from the RMNRemote contract.
-type RemoteConfig struct {
-	ContractAddress UnknownAddress     `json:"contractAddress"`
-	ConfigDigest    Bytes32            `json:"configDigest"`
-	Signers         []RemoteSignerInfo `json:"signers"`
-	// F defines the max number of faulty RMN nodes; F+1 signers are required to verify a report.
-	FSign            uint64  `json:"fSign"` // previously: MinSigners
-	ConfigVersion    uint32  `json:"configVersion"`
-	RmnReportVersion Bytes32 `json:"rmnReportVersion"` // e.g., keccak256("RMN_V1_6_ANY2EVM_REPORT")
-}
-
-func (r RemoteConfig) IsEmpty() bool {
-	// NOTE: contract address will always be present, since the code auto populates it
-	return r.ConfigDigest == (Bytes32{}) &&
-		len(r.Signers) == 0 &&
-		r.FSign == 0 &&
-		r.ConfigVersion == 0 &&
-		r.RmnReportVersion == (Bytes32{})
-}
-
-// RemoteSignerInfo contains information about a signer from the RMNRemote contract.
-type RemoteSignerInfo struct {
-	// The signer's onchain address, used to verify report signature
-	OnchainPublicKey UnknownAddress `json:"onchainPublicKey"`
-	// The index of the node in the RMN config
-	NodeIndex uint64 `json:"nodeIndex"`
+	// GetFeeQuoterTokenUpdates returns the latest token prices from the FeeQuoter on the specified chain
+	GetFeeQuoterTokenUpdates(
+		ctx context.Context,
+		tokens []UnknownEncodedAddress,
+		chain ChainSelector,
+	) (map[UnknownEncodedAddress]TimestampedBig, error)
 }

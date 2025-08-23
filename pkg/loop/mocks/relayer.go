@@ -461,7 +461,7 @@ func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call 
 }
 
 // NewCCIPProvider provides a mock function with given fields: _a0, _a1
-func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.RelayArgs) (types.CCIPProvider, error) {
+func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
@@ -470,10 +470,10 @@ func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.RelayArgs) (ty
 
 	var r0 types.CCIPProvider
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.RelayArgs) (types.CCIPProvider, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, types.CCIPProviderArgs) (types.CCIPProvider, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.RelayArgs) types.CCIPProvider); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, types.CCIPProviderArgs) types.CCIPProvider); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -481,7 +481,7 @@ func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.RelayArgs) (ty
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.RelayArgs) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, types.CCIPProviderArgs) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -497,14 +497,14 @@ type Relayer_NewCCIPProvider_Call struct {
 
 // NewCCIPProvider is a helper method to define mock.On call
 //   - _a0 context.Context
-//   - _a1 types.RelayArgs
+//   - _a1 types.CCIPProviderArgs
 func (_e *Relayer_Expecter) NewCCIPProvider(_a0 interface{}, _a1 interface{}) *Relayer_NewCCIPProvider_Call {
 	return &Relayer_NewCCIPProvider_Call{Call: _e.mock.On("NewCCIPProvider", _a0, _a1)}
 }
 
-func (_c *Relayer_NewCCIPProvider_Call) Run(run func(_a0 context.Context, _a1 types.RelayArgs)) *Relayer_NewCCIPProvider_Call {
+func (_c *Relayer_NewCCIPProvider_Call) Run(run func(_a0 context.Context, _a1 types.CCIPProviderArgs)) *Relayer_NewCCIPProvider_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(types.RelayArgs))
+		run(args[0].(context.Context), args[1].(types.CCIPProviderArgs))
 	})
 	return _c
 }
@@ -514,7 +514,7 @@ func (_c *Relayer_NewCCIPProvider_Call) Return(_a0 types.CCIPProvider, _a1 error
 	return _c
 }
 
-func (_c *Relayer_NewCCIPProvider_Call) RunAndReturn(run func(context.Context, types.RelayArgs) (types.CCIPProvider, error)) *Relayer_NewCCIPProvider_Call {
+func (_c *Relayer_NewCCIPProvider_Call) RunAndReturn(run func(context.Context, types.CCIPProviderArgs) (types.CCIPProvider, error)) *Relayer_NewCCIPProvider_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -96,6 +96,16 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 	return &logger{core.Sugar()}, nil
 }
 
+func NewWithCore(cfgFn func(*zap.Config), core zapcore.Core) (Logger, error) {
+	cfg := zap.NewProductionConfig()
+	cfgFn(&cfg)
+	c, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+	return &logger{zap.New(zapcore.NewTee(c.Core(), core)).Sugar()}, nil
+}
+
 // NewWithSync returns a new Logger with a given SyncWriter.
 func NewWithSync(w io.Writer) Logger {
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(w), zapcore.InfoLevel)

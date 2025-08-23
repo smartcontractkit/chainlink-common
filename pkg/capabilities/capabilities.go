@@ -43,15 +43,6 @@ const (
 	CapabilityTypeCombined CapabilityType = "combined"
 )
 
-// MethodType is an enum for the type of method
-type MethodType string
-
-// MethodType enum values.
-const (
-	MethodAction  MethodType = "executable"
-	MethodTrigger MethodType = "trigger"
-)
-
 // ActionSchedule is an enum for the type of method
 type ActionSchedule string
 
@@ -549,26 +540,10 @@ func (c *RemoteExecutableConfig) ApplyDefaults() {
 
 // CapabilityMethodConfig holds configuration for a capability method (action or trigger).
 type CapabilityMethodConfig struct {
-	Type           MethodType
+	IsTrigger      bool //default false
 	ActionSchedule *ActionSchedule
 	DeltaStage     *time.Duration
 }
-
-//example from Bolek
-//var CapabilityMethodConfigs = map[string]CapabilityMethodConfig{
-//	"CallContract": {
-//		Type:     CapabilityTypeAction, // or CapabilityTypeExecutable if defined
-//		Schedule: "all_at_once",
-//	},
-//	"LogTrigger": {
-//		Type: CapabilityTypeTrigger,
-//	},
-//	"WriteReport": {
-//		Type:       CapabilityTypeAction, // or CapabilityTypeExecutable if defined
-//		Schedule:   "one_at_a_time",
-//		DeltaStage: 10,
-//	},
-//}
 
 type CapabilityConfiguration struct {
 	DefaultConfig *values.Map

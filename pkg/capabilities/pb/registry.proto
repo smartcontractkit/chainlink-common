@@ -32,18 +32,13 @@ message RemoteExecutableConfig {
   google.protobuf.Duration registrationExpiry = 3;
 }
 
-enum MethodType {
-  EXECUTABLE = 0;
-  TRIGGER = 1;
-}
-
 enum ActionSchedule {
-  OneAtATime = 0;
-  AllAtOnce = 1;
+  AllAtOnce = 0;
+  OneAtATime = 1;
 }
 
 message CapabilityMethodConfig {
-  MethodType type = 1;
+  bool isTrigger = 1; //defaut false (action), true (trigger)
   ActionSchedule schedule = 2;
   google.protobuf.Duration delta_stage = 3;
 }

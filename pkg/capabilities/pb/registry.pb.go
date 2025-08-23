@@ -23,68 +23,22 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type MethodType int32
-
-const (
-	MethodType_EXECUTABLE MethodType = 0
-	MethodType_TRIGGER    MethodType = 1
-)
-
-// Enum value maps for MethodType.
-var (
-	MethodType_name = map[int32]string{
-		0: "EXECUTABLE",
-		1: "TRIGGER",
-	}
-	MethodType_value = map[string]int32{
-		"EXECUTABLE": 0,
-		"TRIGGER":    1,
-	}
-)
-
-func (x MethodType) Enum() *MethodType {
-	p := new(MethodType)
-	*p = x
-	return p
-}
-
-func (x MethodType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (MethodType) Descriptor() protoreflect.EnumDescriptor {
-	return file_registry_proto_enumTypes[0].Descriptor()
-}
-
-func (MethodType) Type() protoreflect.EnumType {
-	return &file_registry_proto_enumTypes[0]
-}
-
-func (x MethodType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use MethodType.Descriptor instead.
-func (MethodType) EnumDescriptor() ([]byte, []int) {
-	return file_registry_proto_rawDescGZIP(), []int{0}
-}
-
 type ActionSchedule int32
 
 const (
-	ActionSchedule_OneAtATime ActionSchedule = 0
-	ActionSchedule_AllAtOnce  ActionSchedule = 1
+	ActionSchedule_AllAtOnce  ActionSchedule = 0
+	ActionSchedule_OneAtATime ActionSchedule = 1
 )
 
 // Enum value maps for ActionSchedule.
 var (
 	ActionSchedule_name = map[int32]string{
-		0: "OneAtATime",
-		1: "AllAtOnce",
+		0: "AllAtOnce",
+		1: "OneAtATime",
 	}
 	ActionSchedule_value = map[string]int32{
-		"OneAtATime": 0,
-		"AllAtOnce":  1,
+		"AllAtOnce":  0,
+		"OneAtATime": 1,
 	}
 )
 
@@ -99,11 +53,11 @@ func (x ActionSchedule) String() string {
 }
 
 func (ActionSchedule) Descriptor() protoreflect.EnumDescriptor {
-	return file_registry_proto_enumTypes[1].Descriptor()
+	return file_registry_proto_enumTypes[0].Descriptor()
 }
 
 func (ActionSchedule) Type() protoreflect.EnumType {
-	return &file_registry_proto_enumTypes[1]
+	return &file_registry_proto_enumTypes[0]
 }
 
 func (x ActionSchedule) Number() protoreflect.EnumNumber {
@@ -112,7 +66,7 @@ func (x ActionSchedule) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ActionSchedule.Descriptor instead.
 func (ActionSchedule) EnumDescriptor() ([]byte, []int) {
-	return file_registry_proto_rawDescGZIP(), []int{1}
+	return file_registry_proto_rawDescGZIP(), []int{0}
 }
 
 type RemoteTriggerConfig struct {
@@ -311,7 +265,7 @@ func (x *RemoteExecutableConfig) GetRegistrationExpiry() *durationpb.Duration {
 
 type CapabilityMethodConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          MethodType             `protobuf:"varint,1,opt,name=type,proto3,enum=loop.MethodType" json:"type,omitempty"`
+	IsTrigger     bool                   `protobuf:"varint,1,opt,name=isTrigger,proto3" json:"isTrigger,omitempty"` //defaut false (action), true (trigger)
 	Schedule      ActionSchedule         `protobuf:"varint,2,opt,name=schedule,proto3,enum=loop.ActionSchedule" json:"schedule,omitempty"`
 	DeltaStage    *durationpb.Duration   `protobuf:"bytes,3,opt,name=delta_stage,json=deltaStage,proto3" json:"delta_stage,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -348,18 +302,18 @@ func (*CapabilityMethodConfig) Descriptor() ([]byte, []int) {
 	return file_registry_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *CapabilityMethodConfig) GetType() MethodType {
+func (x *CapabilityMethodConfig) GetIsTrigger() bool {
 	if x != nil {
-		return x.Type
+		return x.IsTrigger
 	}
-	return MethodType_EXECUTABLE
+	return false
 }
 
 func (x *CapabilityMethodConfig) GetSchedule() ActionSchedule {
 	if x != nil {
 		return x.Schedule
 	}
-	return ActionSchedule_OneAtATime
+	return ActionSchedule_AllAtOnce
 }
 
 func (x *CapabilityMethodConfig) GetDeltaStage() *durationpb.Duration {
@@ -516,9 +470,9 @@ const file_registry_proto_rawDesc = "" +
 	"\x16RemoteExecutableConfig\x12D\n" +
 	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\x12K\n" +
 	"\x13registrationRefresh\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x13registrationRefresh\x12I\n" +
-	"\x12registrationExpiry\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\"\xac\x01\n" +
-	"\x16CapabilityMethodConfig\x12$\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x10.loop.MethodTypeR\x04type\x120\n" +
+	"\x12registrationExpiry\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\"\xa4\x01\n" +
+	"\x16CapabilityMethodConfig\x12\x1c\n" +
+	"\tisTrigger\x18\x01 \x01(\bR\tisTrigger\x120\n" +
 	"\bschedule\x18\x02 \x01(\x0e2\x14.loop.ActionScheduleR\bschedule\x12:\n" +
 	"\vdelta_stage\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\n" +
 	"deltaStage\"\xeb\x04\n" +
@@ -533,16 +487,11 @@ const file_registry_proto_rawDesc = "" +
 	"\x12MethodConfigsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
 	"\x05value\x18\x02 \x01(\v2\x1c.loop.CapabilityMethodConfigR\x05value:\x028\x01B\x0f\n" +
-	"\rremote_config*)\n" +
+	"\rremote_config*/\n" +
+	"\x0eActionSchedule\x12\r\n" +
+	"\tAllAtOnce\x10\x00\x12\x0e\n" +
 	"\n" +
-	"MethodType\x12\x0e\n" +
-	"\n" +
-	"EXECUTABLE\x10\x00\x12\v\n" +
-	"\aTRIGGER\x10\x01*/\n" +
-	"\x0eActionSchedule\x12\x0e\n" +
-	"\n" +
-	"OneAtATime\x10\x00\x12\r\n" +
-	"\tAllAtOnce\x10\x01BBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
+	"OneAtATime\x10\x01BBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
 
 var (
 	file_registry_proto_rawDescOnce sync.Once
@@ -556,42 +505,40 @@ func file_registry_proto_rawDescGZIP() []byte {
 	return file_registry_proto_rawDescData
 }
 
-var file_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_registry_proto_goTypes = []any{
-	(MethodType)(0),                // 0: loop.MethodType
-	(ActionSchedule)(0),            // 1: loop.ActionSchedule
-	(*RemoteTriggerConfig)(nil),    // 2: loop.RemoteTriggerConfig
-	(*RemoteTargetConfig)(nil),     // 3: loop.RemoteTargetConfig
-	(*RemoteExecutableConfig)(nil), // 4: loop.RemoteExecutableConfig
-	(*CapabilityMethodConfig)(nil), // 5: loop.CapabilityMethodConfig
-	(*CapabilityConfig)(nil),       // 6: loop.CapabilityConfig
-	nil,                            // 7: loop.CapabilityConfig.MethodConfigsEntry
-	(*durationpb.Duration)(nil),    // 8: google.protobuf.Duration
-	(*pb.Map)(nil),                 // 9: values.v1.Map
+	(ActionSchedule)(0),            // 0: loop.ActionSchedule
+	(*RemoteTriggerConfig)(nil),    // 1: loop.RemoteTriggerConfig
+	(*RemoteTargetConfig)(nil),     // 2: loop.RemoteTargetConfig
+	(*RemoteExecutableConfig)(nil), // 3: loop.RemoteExecutableConfig
+	(*CapabilityMethodConfig)(nil), // 4: loop.CapabilityMethodConfig
+	(*CapabilityConfig)(nil),       // 5: loop.CapabilityConfig
+	nil,                            // 6: loop.CapabilityConfig.MethodConfigsEntry
+	(*durationpb.Duration)(nil),    // 7: google.protobuf.Duration
+	(*pb.Map)(nil),                 // 8: values.v1.Map
 }
 var file_registry_proto_depIdxs = []int32{
-	8,  // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
-	8,  // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	8,  // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
-	8,  // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
-	8,  // 4: loop.RemoteExecutableConfig.registrationRefresh:type_name -> google.protobuf.Duration
-	8,  // 5: loop.RemoteExecutableConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	0,  // 6: loop.CapabilityMethodConfig.type:type_name -> loop.MethodType
-	1,  // 7: loop.CapabilityMethodConfig.schedule:type_name -> loop.ActionSchedule
-	8,  // 8: loop.CapabilityMethodConfig.delta_stage:type_name -> google.protobuf.Duration
-	9,  // 9: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
-	2,  // 10: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
-	3,  // 11: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
-	4,  // 12: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
-	9,  // 13: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
-	7,  // 14: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
-	5,  // 15: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	7,  // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
+	7,  // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
+	7,  // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
+	7,  // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
+	7,  // 4: loop.RemoteExecutableConfig.registrationRefresh:type_name -> google.protobuf.Duration
+	7,  // 5: loop.RemoteExecutableConfig.registrationExpiry:type_name -> google.protobuf.Duration
+	0,  // 6: loop.CapabilityMethodConfig.schedule:type_name -> loop.ActionSchedule
+	7,  // 7: loop.CapabilityMethodConfig.delta_stage:type_name -> google.protobuf.Duration
+	8,  // 8: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
+	1,  // 9: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
+	2,  // 10: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
+	3,  // 11: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
+	8,  // 12: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
+	6,  // 13: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
+	4,  // 14: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_registry_proto_init() }
@@ -609,7 +556,7 @@ func file_registry_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_registry_proto_rawDesc), len(file_registry_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,

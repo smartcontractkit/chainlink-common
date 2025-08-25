@@ -263,7 +263,7 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 	}
 
 	// fromAddress is optional
-	if ValidateAddressBytes(protoMsg.GetFrom()) != nil {
+	if ValidateAddressBytes(protoMsg.GetFrom()) == nil {
 		callMsg.From, err = ConvertAddressFromProto(protoMsg.GetFrom())
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert 'from' address: %w", err)

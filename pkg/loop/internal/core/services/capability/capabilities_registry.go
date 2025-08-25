@@ -78,6 +78,22 @@ func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p
 	return cr.nodeFromNodeReply(res), nil
 }
 
+func (cr *capabilitiesRegistryClient) DONForCapability(ctx context.Context, capabilityID string) (capabilities.DON, []capabilities.Node, error) {
+	res, err := cr.grpc.DONForCapability(ctx, &pb.DONForCapabilityRequest{CapabilityID: capabilityID})
+	if err != nil {
+		return capabilities.DON{}, nil, err
+	}
+
+	don := toDON(res.Don)
+
+	var nodes []capabilities.Node
+	for _, n := range res.Nodes {
+		nodes = append(nodes, cr.nodeFromNodeReply(n))
+	}
+
+	return don, nodes, nil
+}
+
 func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
 	var pid *p2ptypes.PeerID
 	if len(nodeReply.PeerID) > 0 {
@@ -363,6 +379,23 @@ func (c *capabilitiesRegistryServer) NodeByPeerID(ctx context.Context, nodeReque
 	}
 
 	return c.nodeReplyFromNode(node), nil
+}
+
+func (c *capabilitiesRegistryServer) DONForCapability(ctx context.Context, req *pb.DONForCapabilityRequest) (*pb.DONForCapabilityReply, error) {
+	don, nodes, err := c.impl.DONForCapability(ctx, req.CapabilityID)
+	if err != nil {
+		return nil, err
+	}
+
+	var nodesPb []*pb.NodeReply
+	for _, n := range nodes {
+		nodesPb = append(nodesPb, c.nodeReplyFromNode(n))
+	}
+
+	return &pb.DONForCapabilityReply{
+		Don:   toPbDON(don),
+		Nodes: nodesPb,
+	}, nil
 }
 
 func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *pb.NodeReply {

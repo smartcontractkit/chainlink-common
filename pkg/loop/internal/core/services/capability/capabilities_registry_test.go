@@ -496,6 +496,70 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	assert.Equal(t, 2*time.Minute, capConf.RemoteExecutableConfig.RegistrationExpiry)
 }
 
+func TestCapabilitiesRegistry_DONForCapability(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+
+	donID := uint32(1)
+	expectedDON := capabilities.DON{
+		ID: donID,
+		F:  1,
+		Members: []p2ptypes.PeerID{
+			[32]byte{0: 1},
+			[32]byte{0: 2},
+		},
+	}
+	expectedNodes := []capabilities.Node{
+		{
+			PeerID:              &p2ptypes.PeerID{0: 1},
+			NodeOperatorID:      1,
+			EncryptionPublicKey: [32]byte{0: 1},
+			CapabilityDONs:      []capabilities.DON{},
+		},
+		{
+			PeerID:              &p2ptypes.PeerID{0: 2},
+			NodeOperatorID:      2,
+			EncryptionPublicKey: [32]byte{0: 2},
+			CapabilityDONs:      []capabilities.DON{},
+		},
+	}
+	reg.On("DONForCapability", mock.Anything, capID).Once().Return(expectedDON, expectedNodes, nil)
+
+	don, nodes, err := rc.DONForCapability(t.Context(), capID)
+	require.NoError(t, err)
+	assert.Equal(t, expectedDON, don)
+	assert.Equal(t, expectedNodes, nodes)
+}
+
 func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
 	// check local node struct
 	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)

@@ -77,10 +77,6 @@ func ConvertHashesToProto(hashes []evmtypes.Hash) [][]byte {
 }
 
 func convertTopicsToProto(topics [][]evmtypes.Hash) ([]*Topics, error) {
-	if topics == nil {
-		return nil, fmt.Errorf("topics can't be nil")
-	}
-
 	protoTopics := make([]*Topics, 0, len(topics))
 	for i, topic := range topics {
 		if topic == nil {
@@ -216,11 +212,6 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 		return nil, ErrEmptyTx
 	}
 
-	var data []byte
-	if protoTx.GetData() != nil {
-		data = protoTx.GetData()
-	}
-
 	toAddress, err := ConvertOptionalAddressFromProto(protoTx.GetTo())
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert 'to' address: %w", err)
@@ -233,7 +224,7 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 
 	return &evmtypes.Transaction{
 		To:       toAddress,
-		Data:     data,
+		Data:     protoTx.GetData(),
 		Hash:     txHash,
 		Nonce:    protoTx.GetNonce(),
 		Gas:      protoTx.GetGas(),
@@ -261,21 +252,25 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 		return nil, ErrEmptyMsg
 	}
 
-	fromAddress, err := ConvertAddressFromProto(protoMsg.GetFrom())
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert 'from' address: %w", err)
-	}
-
 	toAddress, err := ConvertOptionalAddressFromProto(protoMsg.GetTo())
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert 'to' address: %w", err)
 	}
 
-	return &evmtypes.CallMsg{
-		From: fromAddress,
+	callMsg := &evmtypes.CallMsg{
 		Data: protoMsg.GetData(),
 		To:   toAddress,
-	}, nil
+	}
+
+	// fromAddress is optional
+	if ValidateAddressBytes(protoMsg.GetFrom()) != nil {
+		callMsg.From, err = ConvertAddressFromProto(protoMsg.GetFrom())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert 'from' address: %w", err)
+		}
+	}
+
+	return callMsg, nil
 }
 
 var ErrEmptyFilter = errors.New("filter can't be nil")
@@ -346,7 +341,7 @@ var ErrTopicsConversion = errors.New("failed to convert topics")
 func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {
 	topics, err := convertTopicsToProto(filter.Topics)
 	if err != nil {
-		return nil, errors.Join(ErrTopicsConversion, err)
+		return nil, fmt.Errorf("%w: %w", ErrTopicsConversion, err)
 	}
 
 	return &FilterQuery{
@@ -359,10 +354,6 @@ func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {
 }
 
 func ConvertLogsToProto(logs []*evmtypes.Log) ([]*Log, error) {
-	if logs == nil {
-		return nil, fmt.Errorf("logs are nil")
-	}
-
 	protoLogs := make([]*Log, 0, len(logs))
 	for i, log := range logs {
 		if log == nil {
@@ -390,7 +381,7 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 
 	topics, err := ConvertTopicsFromProto(protoFilter.GetTopics())
 	if err != nil {
-		return evmtypes.FilterQuery{}, errors.Join(ErrTopicsConversion, err)
+		return evmtypes.FilterQuery{}, fmt.Errorf("%w: %w", ErrTopicsConversion, err)
 	}
 
 	return evmtypes.FilterQuery{
@@ -403,10 +394,6 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 }
 
 func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
-	if protoLogs == nil {
-		return nil, fmt.Errorf("logs can't be nil")
-	}
-
 	logs := make([]*evmtypes.Log, 0, len(protoLogs))
 	var errs []error
 
@@ -442,7 +429,7 @@ func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 
 	topics, err := ConvertHashesFromProto(protoLog.GetTopics())
 	if err != nil {
-		return nil, errors.Join(ErrTopicsConversion, err)
+		return nil, fmt.Errorf("%w: %w", ErrTopicsConversion, err)
 	}
 
 	eventSigs, err := ConvertHashFromProto(protoLog.GetEventSig())
@@ -475,10 +462,6 @@ func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 }
 
 func ConvertTopicsFromProto(protoTopics []*Topics) ([][]evmtypes.Hash, error) {
-	if protoTopics == nil {
-		return nil, fmt.Errorf("topics can't be nil")
-	}
-
 	topics := make([][]evmtypes.Hash, 0, len(protoTopics))
 	var errs []error
 
@@ -752,7 +735,7 @@ func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionReques
 }
 
 func ConvertAddressFromProto(protoAddress []byte) (evmtypes.Address, error) {
-	if err := validateAddressBytes(protoAddress); err != nil {
+	if err := ValidateAddressBytes(protoAddress); err != nil {
 		return evmtypes.Address{}, err
 	}
 
@@ -760,7 +743,7 @@ func ConvertAddressFromProto(protoAddress []byte) (evmtypes.Address, error) {
 }
 
 func ConvertOptionalAddressFromProto(b []byte) (evmtypes.Address, error) {
-	if len(b) == 0 || b == nil {
+	if len(b) == 0 {
 		return evmtypes.Address{}, nil
 	}
 
@@ -768,7 +751,7 @@ func ConvertOptionalAddressFromProto(b []byte) (evmtypes.Address, error) {
 }
 
 func ConvertOptionalHashFromProto(b []byte) (evmtypes.Hash, error) {
-	if len(b) == 0 || b == nil {
+	if len(b) == 0 {
 		return evmtypes.Hash{}, nil
 	}
 
@@ -782,7 +765,7 @@ func ConvertHashFromProto(b []byte) (evmtypes.Hash, error) {
 	return evmtypes.Hash(b), nil
 }
 
-func validateAddressBytes(b []byte) error {
+func ValidateAddressBytes(b []byte) error {
 	if b == nil {
 		return fmt.Errorf("address can't be nil")
 	}

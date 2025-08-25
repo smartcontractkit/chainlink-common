@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -129,11 +128,6 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 		return nil, evm.ErrEmptyTx
 	}
 
-	var data []byte
-	if protoTx.GetData() != nil {
-		data = protoTx.GetData()
-	}
-
 	toAddress, err := evm.ConvertOptionalAddressFromProto(protoTx.GetTo())
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert 'to' address: %w", err)
@@ -146,7 +140,7 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 
 	return &evmtypes.Transaction{
 		To:       toAddress,
-		Data:     data,
+		Data:     protoTx.GetData(),
 		Hash:     txHash,
 		Nonce:    protoTx.GetNonce(),
 		Gas:      protoTx.GetGas(),
@@ -172,21 +166,25 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 		return nil, evm.ErrEmptyMsg
 	}
 
-	fromAddress, err := evm.ConvertAddressFromProto(protoMsg.GetFrom())
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert 'from' address: %w", err)
-	}
-
 	toAddress, err := evm.ConvertOptionalAddressFromProto(protoMsg.GetTo())
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert 'to' address: %w", err)
 	}
 
-	return &evmtypes.CallMsg{
-		From: fromAddress,
+	callMsg := &evmtypes.CallMsg{
 		Data: protoMsg.GetData(),
 		To:   toAddress,
-	}, nil
+	}
+
+	// fromAddress is optional
+	if evm.ValidateAddressBytes(protoMsg.GetFrom()) != nil {
+		callMsg.From, err = evm.ConvertAddressFromProto(protoMsg.GetFrom())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert 'from' address: %w", err)
+		}
+	}
+
+	return callMsg, nil
 }
 
 func ConvertLPFilterToProto(filter evmtypes.LPFilterQuery) *LPFilter {
@@ -253,7 +251,8 @@ func ConvertLPFilterFromProto(protoFilter *LPFilter) (evmtypes.LPFilterQuery, er
 func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {
 	topics, err := convertTopicsToProto(filter.Topics)
 	if err != nil {
-		return nil, errors.Join(evm.ErrTopicsConversion, err)
+
+		return nil, fmt.Errorf("%w: %w", evm.ErrTopicsConversion, err)
 	}
 
 	return &FilterQuery{
@@ -266,10 +265,6 @@ func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {
 }
 
 func ConvertLogsToProto(logs []*evmtypes.Log) ([]*Log, error) {
-	if logs == nil {
-		return nil, fmt.Errorf("logs are nil")
-	}
-
 	protoLogs := make([]*Log, 0, len(logs))
 	for i, log := range logs {
 		if log == nil {
@@ -297,7 +292,7 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 
 	topics, err := ConvertTopicsFromProto(protoFilter.GetTopics())
 	if err != nil {
-		return evmtypes.FilterQuery{}, errors.Join(evm.ErrTopicsConversion, err)
+		return evmtypes.FilterQuery{}, fmt.Errorf("%w: %w", evm.ErrTopicsConversion, err)
 	}
 
 	return evmtypes.FilterQuery{
@@ -310,10 +305,6 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 }
 
 func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
-	if protoLogs == nil {
-		return nil, fmt.Errorf("logs can't be nil")
-	}
-
 	logs := make([]*evmtypes.Log, 0, len(protoLogs))
 	for i, protoLog := range protoLogs {
 		if protoLog == nil {
@@ -330,10 +321,6 @@ func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
 }
 
 func ConvertTopicsFromProto(protoTopics []*Topics) ([][]evmtypes.Hash, error) {
-	if protoTopics == nil {
-		return nil, fmt.Errorf("topics can't be nil")
-	}
-
 	topics := make([][]evmtypes.Hash, 0, len(protoTopics))
 	for i, protoTopic := range protoTopics {
 		if protoTopic == nil {
@@ -367,10 +354,6 @@ func ConvertLogToProto(log evmtypes.Log) *Log {
 }
 
 func convertTopicsToProto(topics [][]evmtypes.Hash) ([]*Topics, error) {
-	if topics == nil {
-		return nil, fmt.Errorf("topics can't be nil")
-	}
-
 	protoTopics := make([]*Topics, 0, len(topics))
 	for i, topic := range topics {
 		if topic == nil {
@@ -394,7 +377,7 @@ func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 
 	topics, err := evm.ConvertHashesFromProto(protoLog.GetTopics())
 	if err != nil {
-		return nil, errors.Join(evm.ErrTopicsConversion, err)
+		return nil, fmt.Errorf("%w: %w", evm.ErrTopicsConversion, err)
 	}
 
 	eventSigs, err := evm.ConvertHashFromProto(protoLog.GetEventSig())

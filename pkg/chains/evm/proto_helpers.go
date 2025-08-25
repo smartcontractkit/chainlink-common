@@ -457,7 +457,7 @@ func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 		TxHash:      txHash,
 		Data:        protoLog.GetData(),
 		Removed:     protoLog.GetRemoved(),
-		// TODO TxIndex
+		// TODO TxIndex PRODCRE-1709
 	}, nil
 }
 

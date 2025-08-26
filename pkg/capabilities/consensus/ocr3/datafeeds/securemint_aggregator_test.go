@@ -286,18 +286,38 @@ func solConfig(t *testing.T, chainSelector string, meta solana.AccountMetaSlice)
 
 func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 	tests := []struct {
-		name          string
-		chainSelector string
-		expected      chainSelector
-		expectError   bool
-		errorMsg      string
+		name                  string
+		chainSelector         string
+		dataID                string
+		expectedChainSelector chainSelector
+		expectedDataID        [16]byte
+		expectError           bool
+		errorMsg              string
 	}{
 		{
-			name:          "valid chain selector",
-			chainSelector: "1",
-			expected:      1,
-			expectError:   false,
+
+			name:                  "valid chain selector and dataID",
+			chainSelector:         "1",
+			dataID:                "0x01c508f42b0201320000000000000000",
+			expectedChainSelector: 1,
+			expectedDataID:        [16]byte{0x01, 0xc5, 0x08, 0xf4, 0x2b, 0x02, 0x01, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			expectError:           false,
 		},
+		{
+			name:                  "large chain selector",
+			chainSelector:         "16015286601757825753", // ethereum-testnet-sepolia
+			dataID:                "0x01c508f42b0201320000000000000000",
+			expectedChainSelector: 16015286601757825753,
+			expectedDataID:        [16]byte{0x01, 0xc5, 0x08, 0xf4, 0x2b, 0x02, 0x01, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			expectError:           false,
+		},
+		{
+			name:                  "dataID without 0x prefix",
+			chainSelector:         "1",
+			dataID:                "01c508f42b0201320000000000000000",
+			expectedChainSelector: 1,
+			expectedDataID:        [16]byte{0x01, 0xc5, 0x08, 0xf4, 0x2b, 0x02, 0x01, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			expectError:           false},
 		{
 			name:          "invalid chain selector",
 			chainSelector: "invalid",
@@ -305,37 +325,64 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			errorMsg:      "invalid chain selector",
 		},
 		{
-			name:          "large chain selector",
-			chainSelector: "16015286601757825753", // ethereum-testnet-sepolia
-			expected:      16015286601757825753,
-			expectError:   false,
-		},
-		{
 			name:          "negative chain selector",
 			chainSelector: "-1",
+			dataID:        "0x01c508f42b0201320000000000000000",
 			expectError:   true,
 			errorMsg:      "invalid chain selector",
 		},
+		{
+			name:          "invalid dataID",
+			chainSelector: "1",
+			dataID:        "invalid_data_id",
+			expectError:   true,
+			errorMsg:      "invalid dataID",
+		},
+		{
+			name:          "dataID too short",
+			chainSelector: "1",
+			dataID:        "0x0000",
+			expectError:   true,
+			errorMsg:      "dataID must be 16 bytes",
+		},
+		{
+			name:          "dataID with odd length",
+			chainSelector: "1",
+			dataID:        "0x0",
+			expectError:   true,
+			errorMsg:      "odd length hex string",
+		},
+		{
+			name:          "dataID too long",
+			chainSelector: "1",
+			dataID:        "0x01111111111111111111111111111111111111111111",
+			expectError:   true,
+			errorMsg:      "dataID must be 16 bytes",
+		},
 	}
+
+	// TODO(gg): add tests for solana config?
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			configMap, err := values.WrapMap(map[string]any{
 				"targetChainSelector": tt.chainSelector,
+				"dataID":              tt.dataID,
 			})
 			require.NoError(t, err)
 
 			aggregator, err := NewSecureMintAggregator(*configMap)
 			if tt.expectError {
-				require.Error(t, err)
+				assert.Error(t, err)
 				if tt.errorMsg != "" {
-					require.Contains(t, err.Error(), tt.errorMsg)
+					assert.Contains(t, err.Error(), tt.errorMsg)
 				}
 				return
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
+			assert.Equal(t, tt.expectedChainSelector, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
+			assert.Equal(t, tt.expectedDataID, aggregator.(*SecureMintAggregator).config.DataID)
 		})
 	}
 }

@@ -1,7 +1,6 @@
 package datafeeds
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -28,19 +27,20 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
 
 	tests := []struct {
-		name                  string
-		config                *values.Map
-		previousOutcome       *types.AggregationOutcome
-		observations          map[ocrcommon.OracleID][]values.Value
-		f                     int
-		expectedShouldReport  bool
-		expectedChainSelector chainSelector
-		expectError           bool
-		errorContains         string
+		name                 string
+		chainSelector        string
+		dataID               string
+		previousOutcome      *types.AggregationOutcome
+		observations         map[ocrcommon.OracleID][]values.Value
+		f                    int
+		expectedShouldReport bool
+		expectError          bool
+		errorContains        string
 	}{
 		{
-			name:   "successful eth report extraction",
-			config: configWithChainSelector(t, "16015286601757825753"),
+			name:          "successful eth report extraction",
+			chainSelector: "16015286601757825753",               // eth-testnet-sepolia
+			dataID:        "0x01c508f42b0201320000000000000000", // test data id for a secure mint feed
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: ethSepoliaChainSelector,
@@ -63,14 +63,14 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 			}),
-			f:                     1,
-			expectedShouldReport:  true,
-			expectedChainSelector: ethSepoliaChainSelector,
-			expectError:           false,
+			f:                    1,
+			expectedShouldReport: true,
+			expectError:          false,
 		},
 		{
-			name:   "no matching chain selector found",
-			config: configWithChainSelector(t, "16015286601757825753"),
+			name:          "no matching chain selector found",
+			chainSelector: "16015286601757825753",               // eth-testnet-sepolia
+			dataID:        "0x01c508f42b0201320000000000000000", // test data id for a secure mint feed
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: bnbTestnetChainSelector,
@@ -89,7 +89,8 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		},
 		{
 			name:          "no observations",
-			config:        configWithChainSelector(t, "16015286601757825753"),
+			chainSelector: "16015286601757825753",               // eth-testnet-sepolia
+			dataID:        "0x01c508f42b0201320000000000000000", // test data id for a secure mint feed
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
@@ -100,7 +101,12 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create aggregator
-			aggregator, err := NewSecureMintAggregator(*tc.config)
+			configMap, err := values.WrapMap(map[string]any{
+				"targetChainSelector": tc.chainSelector,
+				"dataID":              tc.dataID,
+			})
+			require.NoError(t, err)
+			aggregator, err := NewSecureMintAggregator(*configMap)
 			require.NoError(t, err)
 
 			// Run aggregation
@@ -140,12 +146,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				// Verify dataID
 				dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
 				require.True(t, ok)
-				// Should be 0x04 + chain selector as bytes + right padded with 0s
-				var expectedChainSelectorBytes [16]byte
-				expectedChainSelectorBytes[0] = 0x04
-				binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
-				require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
-				t.Logf("Data ID: 0x%x", dataIDBytes)
+				require.Equal(t, tc.dataID, dataIDBytes)
 
 				// Verify other fields exist
 				answer, ok := report[AnswerOutputFieldName].(*big.Int)
@@ -157,14 +158,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			}
 		})
 	}
-}
-
-func configWithChainSelector(t *testing.T, chainSelector string) *values.Map {
-	m, err := values.NewMap(map[string]any{
-		"targetChainSelector": chainSelector,
-	})
-	require.NoError(t, err)
-	return m
 }
 
 func TestSecureMintAggregatorConfig_Validation(t *testing.T) {

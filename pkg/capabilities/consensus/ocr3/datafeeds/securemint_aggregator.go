@@ -442,10 +442,18 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 		return SecureMintAggregatorConfig{}, fmt.Errorf("dataID must be 16 bytes, got %d", len(decodedDataID))
 	}
 
+	if len(rawCfg.Solana.AccountContext) > 0 {
+		for _, acc := range rawCfg.Solana.AccountContext {
+			if acc.PublicKey == [32]byte{} {
+				return SecureMintAggregatorConfig{}, errors.New("solana account context public key must not be all zeros")
+			}
+		}
+	}
+
 	parsedConfig := SecureMintAggregatorConfig{
 		TargetChainSelector: chainSelector(sel),
 		DataID:              [16]byte(decodedDataID),
-		Solana:              rawCfg.Solana, // TODO(gg): validate?
+		Solana:              rawCfg.Solana,
 	}
 
 	return parsedConfig, nil

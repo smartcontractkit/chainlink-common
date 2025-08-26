@@ -264,41 +264,24 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	}
 }
 
-func configWithChainSelector(t *testing.T, chainSelector string) *values.Map {
-	m, err := values.NewMap(map[string]any{
-		"targetChainSelector": chainSelector,
-	})
-	require.NoError(t, err)
-	return m
-}
-
-func solConfig(t *testing.T, chainSelector string, meta solana.AccountMetaSlice) *values.Map {
-	m, err := values.NewMap(map[string]any{
-		"targetChainSelector": chainSelector,
-		"solana": map[string]any{
-			"remaining_accounts": meta,
-		},
-	})
-
-	require.NoError(t, err)
-	return m
-}
-
 func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
+	acc1 := [32]byte{4, 5, 6}
+
 	tests := []struct {
 		name                  string
 		chainSelector         string
 		dataID                string
+		solanaAccounts        solana.AccountMetaSlice
 		expectedChainSelector chainSelector
 		expectedDataID        [16]byte
 		expectError           bool
 		errorMsg              string
 	}{
 		{
-
-			name:                  "valid chain selector and dataID",
+			name:                  "valid chain selector, dataID and solana accounts",
 			chainSelector:         "1",
 			dataID:                "0x01c508f42b0201320000000000000000",
+			solanaAccounts:        solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1, IsWritable: true, IsSigner: false}},
 			expectedChainSelector: 1,
 			expectedDataID:        [16]byte{0x01, 0xc5, 0x08, 0xf4, 0x2b, 0x02, 0x01, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 			expectError:           false,
@@ -359,16 +342,29 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			expectError:   true,
 			errorMsg:      "dataID must be 16 bytes",
 		},
+		{
+			name:           "solana account context with invalid public key",
+			chainSelector:  "1",
+			dataID:         "0x01c508f42b0201320000000000000000",
+			solanaAccounts: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: [32]byte{}}},
+			expectError:    true,
+			errorMsg:       "solana account context public key must not be all zeros",
+		},
 	}
-
-	// TODO(gg): add tests for solana config?
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configMap, err := values.WrapMap(map[string]any{
+			rawCfg := map[string]any{
 				"targetChainSelector": tt.chainSelector,
 				"dataID":              tt.dataID,
-			})
+			}
+			if len(tt.solanaAccounts) > 0 {
+				rawCfg["solana"] = map[string]any{
+					"remaining_accounts": tt.solanaAccounts,
+				}
+			}
+
+			configMap, err := values.WrapMap(rawCfg)
 			require.NoError(t, err)
 
 			aggregator, err := NewSecureMintAggregator(*configMap)
@@ -383,6 +379,7 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedChainSelector, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
 			assert.Equal(t, tt.expectedDataID, aggregator.(*SecureMintAggregator).config.DataID)
+			assert.Equal(t, tt.solanaAccounts, aggregator.(*SecureMintAggregator).config.Solana.AccountContext)
 		})
 	}
 }

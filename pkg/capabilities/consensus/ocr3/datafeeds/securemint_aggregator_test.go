@@ -42,24 +42,14 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		expectedShouldReport bool
 		expectError          bool
 		errorContains        string
-		shouldReportAssertFn func(t *testing.T, tc tcase, outcome *types.AggregationOutcome)
+		shouldReportAssertFn func(t *testing.T, tc tcase, topLevelMap map[string]any)
 	}
 	acc1 := [32]byte{4, 5, 6}
 	acc2 := [32]byte{3, 2, 1}
 
-	ethReportAssertFn := func(t *testing.T, tc tcase, outcome *types.AggregationOutcome) {
-		// Verify the output structure matches the feeds aggregator format
-		val, err := values.FromMapValueProto(outcome.EncodableOutcome)
-		require.NoError(t, err)
-		// TODO(gg): share some stuff?
-
-		topLevelMap, err := val.Unwrap()
-		require.NoError(t, err)
-		mm, ok := topLevelMap.(map[string]any)
-		require.True(t, ok)
-
+	ethReportAssertFn := func(t *testing.T, tc tcase, topLevelMap map[string]any) {
 		// Check that we have the expected reports
-		reportsList, ok := mm[TopLevelListOutputFieldName].([]any)
+		reportsList, ok := topLevelMap[TopLevelListOutputFieldName].([]any)
 		require.True(t, ok)
 		assert.Len(t, reportsList, 1)
 
@@ -82,28 +72,18 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		assert.Equal(t, int64(1000), timestamp)
 	}
 
-	solReportAssertFn := func(t *testing.T, tc tcase, outcome *types.AggregationOutcome) {
-		// Verify the output structure matches the feeds aggregator format
-		val, err := values.FromMapValueProto(outcome.EncodableOutcome)
-		require.NoError(t, err)
-
-		topLevelMap, err := val.Unwrap()
-		require.NoError(t, err)
-		mm, ok := topLevelMap.(map[string]any)
-		require.True(t, ok)
-
+	solReportAssertFn := func(t *testing.T, tc tcase, topLevelMap map[string]any) {
 		// Check that we have the expected reports
-		reportsList, ok := mm[TopLevelPayloadListFieldName].([]any)
+		reportsList, ok := topLevelMap[TopLevelPayloadListFieldName].([]any)
 		assert.True(t, ok)
 		assert.Len(t, reportsList, 1)
 
 		// Check that we have expected account hash
-		var accHash [32]byte
-		err = val.Underlying[TopLevelAccountCtxHashFieldName].UnwrapTo(&accHash)
-		require.NoError(t, err)
+		accHash, ok := topLevelMap[TopLevelAccountCtxHashFieldName].([]byte)
+		require.True(t, ok, "expected account hash to be []byte but got %T", topLevelMap[TopLevelAccountCtxHashFieldName])
+		require.Len(t, accHash, 32)
 		expHash := sha256.Sum256(append(acc1[:], acc2[:]...))
-
-		assert.Equal(t, expHash, accHash)
+		assert.Equal(t, expHash, ([32]byte)(accHash))
 
 		// Check the first (and only) report
 		report, ok := reportsList[0].(map[string]any)
@@ -258,7 +238,16 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			assert.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
 
 			if outcome.ShouldReport {
-				tc.shouldReportAssertFn(t, tc, outcome)
+				// Verify the output structure matches the feeds aggregator format
+				val, err := values.FromMapValueProto(outcome.EncodableOutcome)
+				require.NoError(t, err)
+
+				topLevelMap, err := val.Unwrap()
+				require.NoError(t, err)
+				mm, ok := topLevelMap.(map[string]any)
+				require.True(t, ok)
+
+				tc.shouldReportAssertFn(t, tc, mm)
 			}
 		})
 	}

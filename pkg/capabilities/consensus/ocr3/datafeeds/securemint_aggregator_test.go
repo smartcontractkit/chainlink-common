@@ -2,7 +2,7 @@ package datafeeds
 
 import (
 	"crypto/sha256"
-	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -32,16 +32,17 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
 
 	type tcase struct {
-		name                  string
-		config                *values.Map
-		previousOutcome       *types.AggregationOutcome
-		observations          map[ocrcommon.OracleID][]values.Value
-		f                     int
-		expectedShouldReport  bool
-		expectedChainSelector chainSelector
-		expectError           bool
-		errorContains         string
-		shouldReportAssertFn  func(t *testing.T, tc tcase, outcome *types.AggregationOutcome)
+		name                 string
+		chainSelector        string
+		dataID               string
+		solAccounts          [][32]byte
+		previousOutcome      *types.AggregationOutcome
+		observations         map[ocrcommon.OracleID][]values.Value
+		f                    int
+		expectedShouldReport bool
+		expectError          bool
+		errorContains        string
+		shouldReportAssertFn func(t *testing.T, tc tcase, outcome *types.AggregationOutcome)
 	}
 	acc1 := [32]byte{4, 5, 6}
 	acc2 := [32]byte{3, 2, 1}
@@ -50,6 +51,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		// Verify the output structure matches the feeds aggregator format
 		val, err := values.FromMapValueProto(outcome.EncodableOutcome)
 		require.NoError(t, err)
+		// TODO(gg): share some stuff?
 
 		topLevelMap, err := val.Unwrap()
 		require.NoError(t, err)
@@ -59,29 +61,25 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		// Check that we have the expected reports
 		reportsList, ok := mm[TopLevelListOutputFieldName].([]any)
 		require.True(t, ok)
-		require.Len(t, reportsList, 1)
+		assert.Len(t, reportsList, 1)
 
 		// Check the first (and only) report
 		report, ok := reportsList[0].(map[string]any)
-		require.True(t, ok)
+		assert.True(t, ok)
 
 		// Verify dataID
 		dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
-		require.True(t, ok)
-		// Should be 0x04 + chain selector as bytes + right padded with 0s
-		var expectedChainSelectorBytes [16]byte
-		expectedChainSelectorBytes[0] = 0x04
-		binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
-		require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
-		t.Logf("Data ID: 0x%x", dataIDBytes)
+		assert.True(t, ok, "expected dataID to be []byte but got %T", report[DataIDOutputFieldName])
+		assert.Len(t, dataIDBytes, 16)
+		assert.Equal(t, tc.dataID, "0x"+hex.EncodeToString(dataIDBytes))
 
 		// Verify other fields exist
 		answer, ok := report[AnswerOutputFieldName].(*big.Int)
-		require.True(t, ok)
-		require.NotNil(t, answer)
+		assert.True(t, ok)
+		assert.NotNil(t, answer)
 
 		timestamp := report[TimestampOutputFieldName].(int64)
-		require.Equal(t, int64(1000), timestamp)
+		assert.Equal(t, int64(1000), timestamp)
 	}
 
 	solReportAssertFn := func(t *testing.T, tc tcase, outcome *types.AggregationOutcome) {
@@ -96,8 +94,8 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 
 		// Check that we have the expected reports
 		reportsList, ok := mm[TopLevelPayloadListFieldName].([]any)
-		require.True(t, ok)
-		require.Len(t, reportsList, 1)
+		assert.True(t, ok)
+		assert.Len(t, reportsList, 1)
 
 		// Check that we have expected account hash
 		var accHash [32]byte
@@ -105,34 +103,31 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		require.NoError(t, err)
 		expHash := sha256.Sum256(append(acc1[:], acc2[:]...))
 
-		require.Equal(t, expHash, accHash)
+		assert.Equal(t, expHash, accHash)
 
 		// Check the first (and only) report
 		report, ok := reportsList[0].(map[string]any)
-		require.True(t, ok)
+		assert.True(t, ok)
 		// Verify dataID
 		dataIDBytes, ok := report[SolDataIDOutputFieldName].([]byte)
-		require.True(t, ok)
-		// Should be 0x04 + chain selector as bytes + right padded with 0s
-		var expectedChainSelectorBytes [16]byte
-		expectedChainSelectorBytes[0] = 0x04
-		binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
-		require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
-		t.Logf("Data ID: 0x%x", dataIDBytes)
+		assert.True(t, ok, "expected dataID to be []byte but got %T", report[DataIDOutputFieldName])
+		assert.Len(t, dataIDBytes, 16)
+		assert.Equal(t, tc.dataID, "0x"+hex.EncodeToString(dataIDBytes))
 
 		// Verify other fields exist
 		answer, ok := report[SolAnswerOutputFieldName].(*big.Int)
-		require.True(t, ok)
-		require.NotNil(t, answer)
+		assert.True(t, ok)
+		assert.NotNil(t, answer)
 
 		timestamp := report[SolTimestampOutputFieldName].(int64)
-		require.Equal(t, int64(1000), timestamp)
+		assert.Equal(t, int64(1000), timestamp)
 	}
 
 	tests := []tcase{
 		{
-			name:   "successful eth report extraction",
-			config: configWithChainSelector(t, "16015286601757825753"),
+			name:          "successful eth report extraction",
+			chainSelector: "16015286601757825753",
+			dataID:        "0x01c508f42b0201320000000000000000",
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: ethSepoliaChainSelector,
@@ -155,15 +150,15 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 			}),
-			f:                     1,
-			expectedShouldReport:  true,
-			expectedChainSelector: ethSepoliaChainSelector,
-			expectError:           false,
-			shouldReportAssertFn:  ethReportAssertFn,
+			f:                    1,
+			expectedShouldReport: true,
+			expectError:          false,
+			shouldReportAssertFn: ethReportAssertFn,
 		},
 		{
-			name:   "no matching chain selector found",
-			config: configWithChainSelector(t, "16015286601757825753"),
+			name:          "no matching chain selector found",
+			chainSelector: "16015286601757825753",
+			dataID:        "0x01c508f42b0201320000000000000000",
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: bnbTestnetChainSelector,
@@ -183,16 +178,18 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		},
 		{
 			name:          "no observations",
-			config:        configWithChainSelector(t, "16015286601757825753"),
+			chainSelector: "16015286601757825753",
+			dataID:        "0x01c508f42b0201320000000000000000",
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
 			errorContains: "no observations",
 		},
 		{
-			name: "successful sol report extraction",
-			config: solConfig(t, "16423721717087811551", // solana devnet
-				solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}}),
+			name:          "successful sol report extraction",
+			chainSelector: "16423721717087811551", // solana devnet
+			dataID:        "0x01c508f42b0201320000000000000000",
+			solAccounts:   [][32]byte{acc1, acc2},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: solDevnetChainSelector,
@@ -215,18 +212,34 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 					},
 				},
 			}),
-			f:                     1,
-			expectedShouldReport:  true,
-			expectedChainSelector: solDevnetChainSelector,
-			expectError:           false,
-			shouldReportAssertFn:  solReportAssertFn,
+			f:                    1,
+			expectedShouldReport: true,
+			expectError:          false,
+			shouldReportAssertFn: solReportAssertFn,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create aggregator
-			aggregator, err := NewSecureMintAggregator(*tc.config)
+			rawCfg := map[string]any{
+				"targetChainSelector": tc.chainSelector,
+				"dataID":              tc.dataID,
+			}
+			if len(tc.solAccounts) > 0 {
+				accountMetaSlice := make(solana.AccountMetaSlice, len(tc.solAccounts))
+				for i, acc := range tc.solAccounts {
+					accountMetaSlice[i] = &solana.AccountMeta{PublicKey: acc}
+				}
+
+				rawCfg["solana"] = map[string]any{
+					"remaining_accounts": accountMetaSlice,
+				}
+			}
+
+			configMap, err := values.WrapMap(rawCfg)
+			require.NoError(t, err)
+			aggregator, err := NewSecureMintAggregator(*configMap)
 			require.NoError(t, err)
 
 			// Run aggregation
@@ -234,15 +247,15 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 
 			// Check error expectations
 			if tc.expectError {
-				require.Error(t, err)
+				assert.Error(t, err)
 				if tc.errorContains != "" {
-					require.Contains(t, err.Error(), tc.errorContains)
+					assert.Contains(t, err.Error(), tc.errorContains)
 				}
 				return
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
+			assert.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
 
 			if outcome.ShouldReport {
 				tc.shouldReportAssertFn(t, tc, outcome)

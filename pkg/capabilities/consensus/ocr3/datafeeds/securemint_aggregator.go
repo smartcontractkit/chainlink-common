@@ -3,11 +3,13 @@ package datafeeds
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 
 	chainselectors "github.com/smartcontractkit/chain-selectors"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -84,6 +86,7 @@ type SolanaConfig struct {
 type SecureMintAggregatorConfig struct {
 	// TargetChainSelector is the chain selector to look for
 	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
+	DataID              [16]byte      `mapstructure:"dataID"`
 	Solana              SolanaConfig  `mapstructure:"solana"`
 }
 
@@ -111,6 +114,7 @@ type ChainReportFormatter interface {
 
 type EVMReportFormatter struct {
 	TargetChainSelector uint64
+	DataID              [16]byte
 }
 
 func (f *EVMReportFormatter) PackReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error) {
@@ -131,9 +135,9 @@ func (f *EVMReportFormatter) PackReport(lggr logger.Logger, report *secureMintRe
 	// abi: "(bytes16 dataId, uint32 timestamp, uint224 answer)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
-			DataIDOutputFieldName:    chainSelectorAsDataID,
+			DataIDOutputFieldName:    f.DataID,
 			AnswerOutputFieldName:    smReportAsAnswer,
-			TimestampOutputFieldName: int64(report.Block),
+			TimestampOutputFieldName: uint32(report.Block), // TODO: check if this change from int64 to uint32 is correct
 		},
 	}
 
@@ -148,11 +152,12 @@ func (f *EVMReportFormatter) PackReport(lggr logger.Logger, report *secureMintRe
 }
 
 func NewEVMReportFormatter(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error) {
-	return &EVMReportFormatter{TargetChainSelector: chainSelector}, nil
+	return &EVMReportFormatter{TargetChainSelector: chainSelector, DataID: config.DataID}, nil
 }
 
 type SolanaReportFormatter struct {
 	TargetChainSelector uint64
+	DataID              [16]byte
 	OnReportAccounts    solana.AccountMetaSlice
 }
 
@@ -187,7 +192,7 @@ func (f *SolanaReportFormatter) PackReport(lggr logger.Logger, report *secureMin
 		map[SolanaEncoderKey]any{
 			SolTimestampOutputFieldName: uint32(report.Block), // TODO: Verify with Michael/Geert timestamp should be block number?
 			SolAnswerOutputFieldName:    smReportAsAnswer,
-			SolDataIDOutputFieldName:    chainSelectorAsDataID,
+			SolDataIDOutputFieldName:    f.DataID,
 		},
 	}
 
@@ -204,7 +209,7 @@ func (f *SolanaReportFormatter) PackReport(lggr logger.Logger, report *secureMin
 }
 
 func NewSolanaReportFormatter(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error) {
-	return &SolanaReportFormatter{TargetChainSelector: chainSelector, OnReportAccounts: config.Solana.AccountContext}, nil
+	return &SolanaReportFormatter{TargetChainSelector: chainSelector, OnReportAccounts: config.Solana.AccountContext, DataID: config.DataID}, nil
 }
 
 type Builder func(chainSelector uint64, config SecureMintAggregatorConfig) (ChainReportFormatter, error)
@@ -371,6 +376,7 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 		uint64(a.config.TargetChainSelector),
 		a.config,
 	)
+	// TODO(gg): simplify?
 
 	if err != nil {
 		return nil, fmt.Errorf("encountered issue fetching report formatter in createOutcome %w", err)
@@ -402,6 +408,7 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
 	type rawConfig struct {
 		TargetChainSelector string       `mapstructure:"targetChainSelector"`
+		DataID              string       `mapstructure:"dataID"`
 		Solana              SolanaConfig `mapstructure:"solana"`
 	}
 
@@ -419,9 +426,26 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid chain selector: %w", err)
 	}
 
+	if rawCfg.DataID == "" {
+		return SecureMintAggregatorConfig{}, errors.New("dataID is required")
+	}
+
+	// strip 0x prefix if present
+	dataID := strings.TrimPrefix(rawCfg.DataID, "0x")
+
+	decodedDataID, err := hex.DecodeString(dataID)
+	if err != nil {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid dataID: %v %w", dataID, err)
+	}
+
+	if len(decodedDataID) != 16 {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("dataID must be 16 bytes, got %d", len(decodedDataID))
+	}
+
 	parsedConfig := SecureMintAggregatorConfig{
 		TargetChainSelector: chainSelector(sel),
-		Solana:              rawCfg.Solana,
+		DataID:              [16]byte(decodedDataID),
+		Solana:              rawCfg.Solana, // TODO(gg): validate?
 	}
 
 	return parsedConfig, nil

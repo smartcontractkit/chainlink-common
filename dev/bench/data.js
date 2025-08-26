@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755896506127,
+  "lastUpdate": 1756226322162,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24024,6 +24024,48 @@ window.BENCHMARK_DATA = {
             "value": 26595,
             "unit": "ns/op",
             "extra": "45021 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3241d73e9ae34fdcddd51676b3769eb1dbd9a1c9",
+          "message": "PLEX-1577 fix proto helpers (#1490)\n\n* fix CallContract conversion panic\n\n(cherry picked from commit a6d3f489a7f53b48d8fc8eb011954862cc36ad0d)\n\n* Fix CallContract conversion for capaiblity\n\n* Fix proto helpers\n\n* Fix proto helpers\n\n* minor fix\n\n* add tests\n\n* Add tests for proto helpers\n\n* improvements to proto conversion helpers\n\n* Add TODO\n\n* Fix ConvertCallMsgFromProto\n\n---------\n\nCo-authored-by: ilija <pavlovicilija42@gmail.com>\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2025-08-26T18:37:29+02:00",
+          "tree_id": "5b61081ba8e875643e0a1ff1db4ee9c3c1880c94",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3241d73e9ae34fdcddd51676b3769eb1dbd9a1c9"
+        },
+        "date": 1756226321092,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.9,
+            "unit": "ns/op",
+            "extra": "3312346 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 393,
+            "unit": "ns/op",
+            "extra": "3022416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26714,
+            "unit": "ns/op",
+            "extra": "45072 times\n4 procs"
           }
         ]
       }

@@ -1,6 +1,7 @@
 package datafeeds
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -114,20 +115,20 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 
 			// Check error expectations
 			if tc.expectError {
-				require.Error(t, err)
+				assert.Error(t, err)
 				if tc.errorContains != "" {
-					require.Contains(t, err.Error(), tc.errorContains)
+					assert.Contains(t, err.Error(), tc.errorContains)
 				}
 				return
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
+			assert.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
 
 			if outcome.ShouldReport {
 				// Verify the output structure matches the feeds aggregator format
 				val, err := values.FromMapValueProto(outcome.EncodableOutcome)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				topLevelMap, err := val.Unwrap()
 				require.NoError(t, err)
@@ -136,25 +137,26 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 
 				// Check that we have the expected reports
 				reportsList, ok := mm[TopLevelListOutputFieldName].([]any)
-				require.True(t, ok)
-				require.Len(t, reportsList, 1)
+				assert.True(t, ok)
+				assert.Len(t, reportsList, 1)
 
 				// Check the first (and only) report
 				report, ok := reportsList[0].(map[string]any)
-				require.True(t, ok)
+				assert.True(t, ok)
 
 				// Verify dataID
 				dataIDBytes, ok := report[DataIDOutputFieldName].([]byte)
-				require.True(t, ok)
-				require.Equal(t, tc.dataID, dataIDBytes)
+				assert.True(t, ok, "expected dataID to be []byte but got %T", report[DataIDOutputFieldName])
+				assert.Len(t, dataIDBytes, 16)
+				assert.Equal(t, tc.dataID, "0x"+hex.EncodeToString(dataIDBytes))
 
 				// Verify other fields exist
 				answer, ok := report[AnswerOutputFieldName].(*big.Int)
-				require.True(t, ok)
-				require.NotNil(t, answer)
+				assert.True(t, ok)
+				assert.NotNil(t, answer)
 
 				timestamp := report[TimestampOutputFieldName].(int64)
-				require.Equal(t, int64(1000), timestamp)
+				assert.Equal(t, int64(1000), timestamp)
 			}
 		})
 	}

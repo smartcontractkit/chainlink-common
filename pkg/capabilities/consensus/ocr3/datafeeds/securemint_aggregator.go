@@ -1,12 +1,13 @@
 package datafeeds
 
 import (
-	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -38,6 +39,7 @@ type chainSelector uint64
 type SecureMintAggregatorConfig struct {
 	// TargetChainSelector is the chain selector to look for
 	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
+	DataID              [16]byte      `mapstructure:"dataID"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -172,12 +174,6 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	lggr = logger.Named(lggr, "SecureMintAggregator")
 	lggr.Debugw("createOutcome called", "report", report)
 
-	// Convert chain selector to bytes for data ID
-	// Secure Mint dataID: 0x04 + chain selector as bytes + right padded with 0s
-	var chainSelectorAsDataID [16]byte
-	chainSelectorAsDataID[0] = 0x04
-	binary.BigEndian.PutUint64(chainSelectorAsDataID[1:], uint64(a.config.TargetChainSelector))
-
 	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
@@ -188,9 +184,9 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	// abi: "(bytes16 dataId, uint32 timestamp, uint224 answer)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
-			DataIDOutputFieldName:    chainSelectorAsDataID,
+			DataIDOutputFieldName:    a.config.DataID,
 			AnswerOutputFieldName:    smReportAsAnswer,
-			TimestampOutputFieldName: int64(report.Block),
+			TimestampOutputFieldName: uint32(report.Block), // TODO: check if this change from int64 to uint32 is correct
 		},
 	}
 
@@ -221,6 +217,7 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
 	type rawConfig struct {
 		TargetChainSelector string `mapstructure:"targetChainSelector"`
+		DataID              string `mapstructure:"dataID"`
 	}
 
 	var rawCfg rawConfig
@@ -237,8 +234,25 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid chain selector: %w", err)
 	}
 
+	if rawCfg.DataID == "" {
+		return SecureMintAggregatorConfig{}, errors.New("dataID is required")
+	}
+
+	// strip 0x prefix if present
+	dataID := strings.TrimPrefix(rawCfg.DataID, "0x")
+
+	decodedDataID, err := hex.DecodeString(dataID)
+	if err != nil {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("invalid dataID: %v %w", dataID, err)
+	}
+
+	if len(decodedDataID) != 16 {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("dataID must be 16 bytes, got %d", len(decodedDataID))
+	}
+
 	parsedConfig := SecureMintAggregatorConfig{
 		TargetChainSelector: chainSelector(sel),
+		DataID:              [16]byte(decodedDataID),
 	}
 
 	return parsedConfig, nil

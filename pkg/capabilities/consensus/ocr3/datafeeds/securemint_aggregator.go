@@ -126,7 +126,7 @@ func (f *evmReportFormatter) packReport(lggr logger.Logger, report *secureMintRe
 		map[EVMEncoderKey]any{
 			DataIDOutputFieldName:    f.dataID,
 			AnswerOutputFieldName:    smReportAsAnswer,
-			TimestampOutputFieldName: uint32(report.Block), // TODO: check if this change from int64 to uint32 is correct
+			TimestampOutputFieldName: uint32(report.Block),
 		},
 	}
 

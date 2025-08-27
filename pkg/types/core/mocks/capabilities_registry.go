@@ -130,68 +130,61 @@ func (_c *CapabilitiesRegistry_ConfigForCapability_Call) RunAndReturn(run func(c
 	return _c
 }
 
-// DONForCapability provides a mock function with given fields: ctx, capabilityID
-func (_m *CapabilitiesRegistry) DONForCapability(ctx context.Context, capabilityID string) (capabilities.DON, []capabilities.Node, error) {
+// DONsForCapability provides a mock function with given fields: ctx, capabilityID
+func (_m *CapabilitiesRegistry) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
 	ret := _m.Called(ctx, capabilityID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DONForCapability")
+		panic("no return value specified for DONsForCapability")
 	}
 
-	var r0 capabilities.DON
-	var r1 []capabilities.Node
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.DON, []capabilities.Node, error)); ok {
+	var r0 []capabilities.DONWithNodes
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]capabilities.DONWithNodes, error)); ok {
 		return rf(ctx, capabilityID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.DON); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []capabilities.DONWithNodes); ok {
 		r0 = rf(ctx, capabilityID)
 	} else {
-		r0 = ret.Get(0).(capabilities.DON)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) []capabilities.Node); ok {
-		r1 = rf(ctx, capabilityID)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]capabilities.Node)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]capabilities.DONWithNodes)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
-		r2 = rf(ctx, capabilityID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, capabilityID)
 	} else {
-		r2 = ret.Error(2)
+		r1 = ret.Error(1)
 	}
 
-	return r0, r1, r2
+	return r0, r1
 }
 
-// CapabilitiesRegistry_DONForCapability_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DONForCapability'
-type CapabilitiesRegistry_DONForCapability_Call struct {
+// CapabilitiesRegistry_DONsForCapability_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DONsForCapability'
+type CapabilitiesRegistry_DONsForCapability_Call struct {
 	*mock.Call
 }
 
-// DONForCapability is a helper method to define mock.On call
+// DONsForCapability is a helper method to define mock.On call
 //   - ctx context.Context
 //   - capabilityID string
-func (_e *CapabilitiesRegistry_Expecter) DONForCapability(ctx interface{}, capabilityID interface{}) *CapabilitiesRegistry_DONForCapability_Call {
-	return &CapabilitiesRegistry_DONForCapability_Call{Call: _e.mock.On("DONForCapability", ctx, capabilityID)}
+func (_e *CapabilitiesRegistry_Expecter) DONsForCapability(ctx interface{}, capabilityID interface{}) *CapabilitiesRegistry_DONsForCapability_Call {
+	return &CapabilitiesRegistry_DONsForCapability_Call{Call: _e.mock.On("DONsForCapability", ctx, capabilityID)}
 }
 
-func (_c *CapabilitiesRegistry_DONForCapability_Call) Run(run func(ctx context.Context, capabilityID string)) *CapabilitiesRegistry_DONForCapability_Call {
+func (_c *CapabilitiesRegistry_DONsForCapability_Call) Run(run func(ctx context.Context, capabilityID string)) *CapabilitiesRegistry_DONsForCapability_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_DONForCapability_Call) Return(_a0 capabilities.DON, _a1 []capabilities.Node, _a2 error) *CapabilitiesRegistry_DONForCapability_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *CapabilitiesRegistry_DONsForCapability_Call) Return(_a0 []capabilities.DONWithNodes, _a1 error) *CapabilitiesRegistry_DONsForCapability_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_DONForCapability_Call) RunAndReturn(run func(context.Context, string) (capabilities.DON, []capabilities.Node, error)) *CapabilitiesRegistry_DONForCapability_Call {
+func (_c *CapabilitiesRegistry_DONsForCapability_Call) RunAndReturn(run func(context.Context, string) ([]capabilities.DONWithNodes, error)) *CapabilitiesRegistry_DONsForCapability_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -11,7 +11,7 @@ service CapabilitiesRegistry {
   rpc LocalNode (google.protobuf.Empty) returns (NodeReply) {}
   rpc NodeByPeerID(NodeRequest) returns (NodeReply) {}
   rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
-  rpc DONForCapability (DONForCapabilityRequest) returns (DONForCapabilityReply) {}
+  rpc DONsForCapability (DONForCapabilityRequest) returns (DONForCapabilityReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
   rpc GetExecutable (GetExecutableRequest) returns (GetExecutableReply) {}
@@ -118,7 +118,11 @@ message DONForCapabilityRequest {
   string capabilityID = 1;
 }
 
-message DONForCapabilityReply {
+message DONWithNodes {
   DON don = 1;
   repeated NodeReply nodes = 2;
+}
+
+message DONForCapabilityReply {
+  repeated DONWithNodes dons = 1;
 }

@@ -18,7 +18,7 @@ type CapabilitiesRegistryMetadata interface {
 	LocalNode(ctx context.Context) (capabilities.Node, error)
 	NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
-	DONForCapability(ctx context.Context, capabilityID string) (capabilities.DON, []capabilities.Node, error)
+	DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error)
 }
 
 type CapabilitiesRegistryBase interface {
@@ -52,8 +52,8 @@ func (UnimplementedCapabilitiesRegistryMetadata) ConfigForCapability(ctx context
 	return capabilities.CapabilityConfiguration{}, errors.New("ConfigForCapability not implemented")
 }
 
-func (UnimplementedCapabilitiesRegistryMetadata) DONForCapability(ctx context.Context, capabilityID string) (capabilities.DON, []capabilities.Node, error) {
-	return capabilities.DON{}, nil, errors.New("DONForCapability not implemented")
+func (UnimplementedCapabilitiesRegistryMetadata) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
+	return nil, errors.New("DONsForCapability not implemented")
 }
 
 type UnimplementedCapabilitiesRegistryBase struct {

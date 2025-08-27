@@ -364,6 +364,7 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.Description, gotInfo.Description)
 	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
 }
+
 func TestToDON(t *testing.T) {
 	don := &pb.DON{
 		Id:   0,
@@ -496,7 +497,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	assert.Equal(t, 2*time.Minute, capConf.RemoteExecutableConfig.RegistrationExpiry)
 }
 
-func TestCapabilitiesRegistry_DONForCapability(t *testing.T) {
+func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
 	reg := mocks.NewCapabilitiesRegistry(t)
@@ -552,12 +553,17 @@ func TestCapabilitiesRegistry_DONForCapability(t *testing.T) {
 			CapabilityDONs:      []capabilities.DON{},
 		},
 	}
-	reg.On("DONForCapability", mock.Anything, capID).Once().Return(expectedDON, expectedNodes, nil)
+	expectedDONs := []capabilities.DONWithNodes{
+		{
+			DON:   expectedDON,
+			Nodes: expectedNodes,
+		},
+	}
+	reg.On("DONsForCapability", mock.Anything, capID).Once().Return(expectedDONs, nil)
 
-	don, nodes, err := rc.DONForCapability(t.Context(), capID)
+	dons, err := rc.DONsForCapability(t.Context(), capID)
 	require.NoError(t, err)
-	assert.Equal(t, expectedDON, don)
-	assert.Equal(t, expectedNodes, nodes)
+	assert.Equal(t, expectedDONs, dons)
 }
 
 func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {

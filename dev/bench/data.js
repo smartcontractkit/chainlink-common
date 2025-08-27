@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756226322162,
+  "lastUpdate": 1756299749877,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24066,6 +24066,48 @@ window.BENCHMARK_DATA = {
             "value": 26714,
             "unit": "ns/op",
             "extra": "45072 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "75577ebd4ed4e6431f78a4ddfe9f1622c1ed7ec2",
+          "message": "DF-21546 Configure secure mint aggregator with data id (#1506)\n\n* DF-21546 Test + implementation\n\n* Add validation tests\n\n* Validate solana config\n\n* Make test a bit simpler\n\n* Simplify formatter and unexport\n\n* Checked todo",
+          "timestamp": "2025-08-27T08:01:12-05:00",
+          "tree_id": "d1be130003ccf72bfbe9d199afc69ffd2227df4e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/75577ebd4ed4e6431f78a4ddfe9f1622c1ed7ec2"
+        },
+        "date": 1756299748489,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.9,
+            "unit": "ns/op",
+            "extra": "3312460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.4,
+            "unit": "ns/op",
+            "extra": "2896412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26570,
+            "unit": "ns/op",
+            "extra": "45019 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756299749877,
+  "lastUpdate": 1756402858150,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24108,6 +24108,48 @@ window.BENCHMARK_DATA = {
             "value": 26570,
             "unit": "ns/op",
             "extra": "45019 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcae05ee4a0bdf0498e606a8004d0162506d768d",
+          "message": "[PRIV-128] Add DONForCapability to capability registry (#1504)\n\n* [PRIV-128] Add DONForCapability to capability registry\n\n* Address feedback: DONForCapability -> DONsForCapability",
+          "timestamp": "2025-08-28T18:39:26+01:00",
+          "tree_id": "4ebc310292ad37858c20c82a8d916e5da3c033df",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fcae05ee4a0bdf0498e606a8004d0162506d768d"
+        },
+        "date": 1756402857038,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.7,
+            "unit": "ns/op",
+            "extra": "2818680 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.6,
+            "unit": "ns/op",
+            "extra": "2951736 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26680,
+            "unit": "ns/op",
+            "extra": "44413 times\n4 procs"
           }
         ]
       }

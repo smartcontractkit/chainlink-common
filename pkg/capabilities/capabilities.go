@@ -43,6 +43,15 @@ const (
 	CapabilityTypeCombined CapabilityType = "combined"
 )
 
+// ActionSchedule is an enum for the type of method
+type ActionSchedule string
+
+// ActionSchedule enum values.
+const (
+	ActionScheduleOneAtATime ActionSchedule = "one_at_a_time"
+	ActionScheduleAllAtOnce  ActionSchedule = "all_at_once"
+)
+
 // IsValid checks if the capability type is valid.
 func (c CapabilityType) IsValid() error {
 	switch c {
@@ -493,7 +502,6 @@ type RemoteTriggerConfig struct {
 type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
-
 type RemoteExecutableConfig struct {
 	RequestHashExcludedAttributes []string
 	RegistrationRefresh           time.Duration
@@ -535,6 +543,13 @@ func (c *RemoteExecutableConfig) ApplyDefaults() {
 	}
 }
 
+// CapabilityMethodConfig holds configuration for a capability method (action or trigger).
+type CapabilityMethodConfig struct {
+	IsTrigger      bool //default false
+	ActionSchedule *ActionSchedule
+	DeltaStage     *time.Duration
+}
+
 type CapabilityConfiguration struct {
 	DefaultConfig *values.Map
 	// RestrictedKeys is a list of keys that can't be provided by users in their
@@ -546,4 +561,7 @@ type CapabilityConfiguration struct {
 	RemoteTriggerConfig    *RemoteTriggerConfig
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig
+	// CapabilityMethodConfig contains all the methods supported by this capability declaring the type of method
+	//(trigger or action), and for all the actions it will have different scheduling configurations.
+	CapabilityMethodConfig map[string]CapabilityMethodConfig
 }

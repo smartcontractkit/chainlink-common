@@ -2,7 +2,9 @@
 package cresettings
 
 import (
+	"encoding/json"
 	"log"
+	"os"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -12,6 +14,12 @@ import (
 )
 
 func init() {
+	if v, ok := os.LookupEnv("CL_CRE_SETTINGS"); ok {
+		err := json.Unmarshal([]byte(v), &Default)
+		if err != nil {
+			log.Fatalf("failed to initialize defaults: %v", err)
+		}
+	}
 	err := InitConfig(&Default)
 	if err != nil {
 		log.Fatalf("failed to initialize keys: %v", err)

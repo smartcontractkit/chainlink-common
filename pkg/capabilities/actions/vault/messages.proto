@@ -195,7 +195,7 @@ message ReportingPluginConfig {
   int32 MaxIdentifierKeyLengthBytes = 4;
   int32 MaxIdentifierOwnerLengthBytes = 5;
   int32 MaxIdentifierNamespaceLengthBytes = 6;
-  optional string InstanceID = 7;
+  optional string DKGInstanceID = 7;
 
   // OCR 3.1 ReportInfo configuration
   int32 LimitsMaxQueryLength = 20;

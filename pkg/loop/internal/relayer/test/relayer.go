@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -72,6 +73,7 @@ type staticRelayerConfig struct {
 	relayArgs              types.RelayArgs
 	pluginArgs             types.PluginArgs
 	contractReaderConfig   []byte
+	chainWriterConfig      []byte
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
@@ -96,6 +98,7 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		relayArgs:              RelayArgs,
 		pluginArgs:             PluginArgs,
 		contractReaderConfig:   []byte("test"),
+		chainWriterConfig:      []byte("chainwriterconfig"),
 		medianProvider:         mediantest.MedianProvider(lggr),
 		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
@@ -306,8 +309,13 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 	return nil, errors.New("not implemented")
 }
 
-func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.RelayArgs) (types.CCIPProvider, error) {
-	if s.StaticChecks && !equalRelayArgs(r, s.relayArgs) {
+func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	ccipProviderArgs := types.CCIPProviderArgs {
+		ExternalJobID: s.relayArgs.ExternalJobID,
+		ContractReaderConfig: s.contractReaderConfig,
+		ChainWriterConfig: s.chainWriterConfig,
+	}
+	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
 	}
 	return ccipocr3test.CCIPProvider(logger.Nop()), nil
@@ -457,6 +465,12 @@ func equalRelayArgs(a, b types.RelayArgs) bool {
 		a.ContractID == b.ContractID &&
 		a.New == b.New &&
 		bytes.Equal(a.RelayConfig, b.RelayConfig)
+}
+
+func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
+	return a.ExternalJobID == b.ExternalJobID &&
+		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
+		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig)
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

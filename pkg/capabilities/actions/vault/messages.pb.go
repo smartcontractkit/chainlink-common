@@ -1885,20 +1885,21 @@ func (x *StoredMetadata) GetSecretIdentifiers() []*SecretIdentifier {
 type ReportingPluginConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Plugin-specific configuration
-	BatchSize                         int32 `protobuf:"varint,1,opt,name=BatchSize,proto3" json:"BatchSize,omitempty"`
-	MaxSecretsPerOwner                int32 `protobuf:"varint,2,opt,name=MaxSecretsPerOwner,proto3" json:"MaxSecretsPerOwner,omitempty"`
-	MaxCiphertextLengthBytes          int32 `protobuf:"varint,3,opt,name=MaxCiphertextLengthBytes,proto3" json:"MaxCiphertextLengthBytes,omitempty"`
-	MaxIdentifierKeyLengthBytes       int32 `protobuf:"varint,4,opt,name=MaxIdentifierKeyLengthBytes,proto3" json:"MaxIdentifierKeyLengthBytes,omitempty"`
-	MaxIdentifierOwnerLengthBytes     int32 `protobuf:"varint,5,opt,name=MaxIdentifierOwnerLengthBytes,proto3" json:"MaxIdentifierOwnerLengthBytes,omitempty"`
-	MaxIdentifierNamespaceLengthBytes int32 `protobuf:"varint,6,opt,name=MaxIdentifierNamespaceLengthBytes,proto3" json:"MaxIdentifierNamespaceLengthBytes,omitempty"`
+	BatchSize                         int32   `protobuf:"varint,1,opt,name=BatchSize,proto3" json:"BatchSize,omitempty"`
+	MaxSecretsPerOwner                int32   `protobuf:"varint,2,opt,name=MaxSecretsPerOwner,proto3" json:"MaxSecretsPerOwner,omitempty"`
+	MaxCiphertextLengthBytes          int32   `protobuf:"varint,3,opt,name=MaxCiphertextLengthBytes,proto3" json:"MaxCiphertextLengthBytes,omitempty"`
+	MaxIdentifierKeyLengthBytes       int32   `protobuf:"varint,4,opt,name=MaxIdentifierKeyLengthBytes,proto3" json:"MaxIdentifierKeyLengthBytes,omitempty"`
+	MaxIdentifierOwnerLengthBytes     int32   `protobuf:"varint,5,opt,name=MaxIdentifierOwnerLengthBytes,proto3" json:"MaxIdentifierOwnerLengthBytes,omitempty"`
+	MaxIdentifierNamespaceLengthBytes int32   `protobuf:"varint,6,opt,name=MaxIdentifierNamespaceLengthBytes,proto3" json:"MaxIdentifierNamespaceLengthBytes,omitempty"`
+	InstanceID                        *string `protobuf:"bytes,7,opt,name=InstanceID,proto3,oneof" json:"InstanceID,omitempty"`
 	// OCR 3.1 ReportInfo configuration
-	LimitsMaxQueryLength                          int32 `protobuf:"varint,7,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
-	LimitsMaxObservationLength                    int32 `protobuf:"varint,8,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
-	LimitsMaxReportsPlusPrecursorLength           int32 `protobuf:"varint,9,opt,name=LimitsMaxReportsPlusPrecursorLength,proto3" json:"LimitsMaxReportsPlusPrecursorLength,omitempty"`
-	LimitsMaxReportLength                         int32 `protobuf:"varint,10,opt,name=LimitsMaxReportLength,proto3" json:"LimitsMaxReportLength,omitempty"`
-	LimitsMaxReportCount                          int32 `protobuf:"varint,11,opt,name=LimitsMaxReportCount,proto3" json:"LimitsMaxReportCount,omitempty"`
-	LimitsMaxKeyValueModifiedKeysPlusValuesLength int32 `protobuf:"varint,12,opt,name=LimitsMaxKeyValueModifiedKeysPlusValuesLength,proto3" json:"LimitsMaxKeyValueModifiedKeysPlusValuesLength,omitempty"`
-	LimitsMaxBlobPayloadLength                    int32 `protobuf:"varint,13,opt,name=LimitsMaxBlobPayloadLength,proto3" json:"LimitsMaxBlobPayloadLength,omitempty"`
+	LimitsMaxQueryLength                          int32 `protobuf:"varint,20,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
+	LimitsMaxObservationLength                    int32 `protobuf:"varint,21,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
+	LimitsMaxReportsPlusPrecursorLength           int32 `protobuf:"varint,22,opt,name=LimitsMaxReportsPlusPrecursorLength,proto3" json:"LimitsMaxReportsPlusPrecursorLength,omitempty"`
+	LimitsMaxReportLength                         int32 `protobuf:"varint,23,opt,name=LimitsMaxReportLength,proto3" json:"LimitsMaxReportLength,omitempty"`
+	LimitsMaxReportCount                          int32 `protobuf:"varint,24,opt,name=LimitsMaxReportCount,proto3" json:"LimitsMaxReportCount,omitempty"`
+	LimitsMaxKeyValueModifiedKeysPlusValuesLength int32 `protobuf:"varint,25,opt,name=LimitsMaxKeyValueModifiedKeysPlusValuesLength,proto3" json:"LimitsMaxKeyValueModifiedKeysPlusValuesLength,omitempty"`
+	LimitsMaxBlobPayloadLength                    int32 `protobuf:"varint,26,opt,name=LimitsMaxBlobPayloadLength,proto3" json:"LimitsMaxBlobPayloadLength,omitempty"`
 	unknownFields                                 protoimpl.UnknownFields
 	sizeCache                                     protoimpl.SizeCache
 }
@@ -1973,6 +1974,13 @@ func (x *ReportingPluginConfig) GetMaxIdentifierNamespaceLengthBytes() int32 {
 		return x.MaxIdentifierNamespaceLengthBytes
 	}
 	return 0
+}
+
+func (x *ReportingPluginConfig) GetInstanceID() string {
+	if x != nil && x.InstanceID != nil {
+		return *x.InstanceID
+	}
+	return ""
 }
 
 func (x *ReportingPluginConfig) GetLimitsMaxQueryLength() int32 {
@@ -2140,22 +2148,25 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\fStoredSecret\x12)\n" +
 	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"X\n" +
 	"\x0eStoredMetadata\x12F\n" +
-	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"\xcd\x06\n" +
+	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"\x81\a\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
 	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +
 	"\x18MaxCiphertextLengthBytes\x18\x03 \x01(\x05R\x18MaxCiphertextLengthBytes\x12@\n" +
 	"\x1bMaxIdentifierKeyLengthBytes\x18\x04 \x01(\x05R\x1bMaxIdentifierKeyLengthBytes\x12D\n" +
 	"\x1dMaxIdentifierOwnerLengthBytes\x18\x05 \x01(\x05R\x1dMaxIdentifierOwnerLengthBytes\x12L\n" +
-	"!MaxIdentifierNamespaceLengthBytes\x18\x06 \x01(\x05R!MaxIdentifierNamespaceLengthBytes\x122\n" +
-	"\x14LimitsMaxQueryLength\x18\a \x01(\x05R\x14LimitsMaxQueryLength\x12>\n" +
-	"\x1aLimitsMaxObservationLength\x18\b \x01(\x05R\x1aLimitsMaxObservationLength\x12P\n" +
-	"#LimitsMaxReportsPlusPrecursorLength\x18\t \x01(\x05R#LimitsMaxReportsPlusPrecursorLength\x124\n" +
-	"\x15LimitsMaxReportLength\x18\n" +
-	" \x01(\x05R\x15LimitsMaxReportLength\x122\n" +
-	"\x14LimitsMaxReportCount\x18\v \x01(\x05R\x14LimitsMaxReportCount\x12d\n" +
-	"-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x18\f \x01(\x05R-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x12>\n" +
-	"\x1aLimitsMaxBlobPayloadLength\x18\r \x01(\x05R\x1aLimitsMaxBlobPayloadLength*\x84\x01\n" +
+	"!MaxIdentifierNamespaceLengthBytes\x18\x06 \x01(\x05R!MaxIdentifierNamespaceLengthBytes\x12#\n" +
+	"\n" +
+	"InstanceID\x18\a \x01(\tH\x00R\n" +
+	"InstanceID\x88\x01\x01\x122\n" +
+	"\x14LimitsMaxQueryLength\x18\x14 \x01(\x05R\x14LimitsMaxQueryLength\x12>\n" +
+	"\x1aLimitsMaxObservationLength\x18\x15 \x01(\x05R\x1aLimitsMaxObservationLength\x12P\n" +
+	"#LimitsMaxReportsPlusPrecursorLength\x18\x16 \x01(\x05R#LimitsMaxReportsPlusPrecursorLength\x124\n" +
+	"\x15LimitsMaxReportLength\x18\x17 \x01(\x05R\x15LimitsMaxReportLength\x122\n" +
+	"\x14LimitsMaxReportCount\x18\x18 \x01(\x05R\x14LimitsMaxReportCount\x12d\n" +
+	"-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x18\x19 \x01(\x05R-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x12>\n" +
+	"\x1aLimitsMaxBlobPayloadLength\x18\x1a \x01(\x05R\x1aLimitsMaxBlobPayloadLengthB\r\n" +
+	"\v_InstanceID*\x84\x01\n" +
 	"\vRequestType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0f\n" +
 	"\vGET_SECRETS\x10\x01\x12\x12\n" +
@@ -2298,6 +2309,7 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*Outcome_DeleteSecretsResponse)(nil),
 		(*Outcome_ListSecretIdentifiersResponse)(nil),
 	}
+	file_capabilities_actions_vault_messages_proto_msgTypes[26].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

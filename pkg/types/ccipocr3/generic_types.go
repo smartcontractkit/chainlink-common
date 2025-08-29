@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"sort"
 	"strconv"
+	"time"
 )
 
 type TokenPrice struct {
@@ -269,4 +270,66 @@ type RampTokenAmount struct {
 	// NOTE: this must be decoded before providing it as an execution input to the destination chain
 	// or hashing it. See Internal._hash(Any2EVMRampMessage) for more details as an example.
 	DestExecData Bytes `json:"destExecData"`
+}
+
+// MessageTokenID is a unique identifier for a message token data (per chain selector). It's a composite key of
+// the message sequence number and the token index within the message. It's used to easier identify token data for
+// messages without having to deal with nested maps.
+type MessageTokenID struct {
+	SeqNr SeqNum
+	Index int
+}
+
+func NewMessageTokenID(seqNr SeqNum, index int) MessageTokenID {
+	return MessageTokenID{SeqNr: seqNr, Index: index}
+}
+
+func (mti MessageTokenID) String() string {
+	return fmt.Sprintf("%d_%d", mti.SeqNr, mti.Index)
+}
+
+type TimestampedBig struct {
+	Timestamp time.Time `json:"timestamp"`
+	Value     BigInt    `json:"value"`
+}
+
+// TimestampedUnixBig Maps to on-chain struct
+// https://github.com/smartcontractkit/chainlink/blob/37f3132362ec90b0b1c12fb1b69b9c16c46b399d/contracts/src/v0.8/ccip/libraries/Internal.sol#L43-L47
+//
+//nolint:lll //url
+type TimestampedUnixBig struct {
+	// Value in uint224, can contain several packed fields
+	Value *big.Int `json:"value"`
+	// Timestamp in seconds since epoch of most recent update
+	Timestamp uint32 `json:"timestamp"`
+}
+
+func NewTimestampedBig(value int64, timestamp time.Time) TimestampedBig {
+	return TimestampedBig{
+		Value:     BigInt{Int: big.NewInt(value)},
+		Timestamp: timestamp,
+	}
+}
+
+func TimeStampedBigFromUnix(input TimestampedUnixBig) TimestampedBig {
+	return TimestampedBig{
+		Value:     NewBigInt(input.Value),
+		Timestamp: time.Unix(int64(input.Timestamp), 0),
+	}
+}
+
+// ContractAddresses is a map of contract names across all chain selectors and their address.
+// Currently only one contract per chain per name is supported.
+type ContractAddresses map[string]map[ChainSelector]UnknownAddress
+
+func (ca ContractAddresses) Append(contract string, chain ChainSelector, address []byte) ContractAddresses {
+	resp := ca
+	if resp == nil {
+		resp = make(ContractAddresses)
+	}
+	if resp[contract] == nil {
+		resp[contract] = make(map[ChainSelector]UnknownAddress)
+	}
+	resp[contract][chain] = address
+	return resp
 }

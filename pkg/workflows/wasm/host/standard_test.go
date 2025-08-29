@@ -40,9 +40,11 @@ var anyTestConfig = []byte("config")
 var anyTestTriggerValue = "test value"
 
 var testPath string
+var importWasmFileName string
 
 func init() {
 	flag.StringVar(&testPath, "path", "./standard_tests", "Path to the standard tests")
+	flag.StringVar(&importWasmFileName, "importWasmFileName", "", "File name to import WASM instead of compiling")
 }
 
 func TestStandardConfig(t *testing.T) {
@@ -461,11 +463,21 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionR
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+
+	if importWasmFileName != "" {
+		return importTestModuleByName(t, testName, nil)
+	}
+
 	return makeTestModuleByName(t, testName, nil)
 }
 
 func makeTestModuleWithCfg(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+
+	if importWasmFileName != "" {
+		return importTestModuleByName(t, testName, nil)
+	}
+
 	return makeTestModuleByName(t, testName, cfg)
 }
 
@@ -481,6 +493,25 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 
 	binary, err := os.ReadFile(filepath.Join(absPath, wasmName))
 	require.NoError(t, err)
+
+	if cfg == nil {
+		cfg = defaultNoDAGModCfg(t)
+	}
+	mod, err := NewModule(cfg, binary)
+	require.NoError(t, err)
+	return mod
+}
+
+// importTestModuleByName imports pre-compiled test modules in the testPath directory
+// The test to import and run is determined by the test name.
+func importTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
+	wasmName := path.Join(testName, importWasmFileName)
+	absPath, err := filepath.Abs(testPath)
+	require.NoError(t, err, "Failed to get absolute path for test directory")
+
+	wasmPath := filepath.Join(absPath, wasmName)
+	binary, err := os.ReadFile(wasmPath)
+	require.NoError(t, err, "Failed to read WASM file at %s", wasmPath)
 
 	if cfg == nil {
 		cfg = defaultNoDAGModCfg(t)

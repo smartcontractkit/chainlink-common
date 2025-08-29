@@ -364,6 +364,7 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.Description, gotInfo.Description)
 	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
 }
+
 func TestToDON(t *testing.T) {
 	don := &pb.DON{
 		Id:   0,
@@ -494,6 +495,75 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	assert.Equal(t, expectedCapConfig, capConf)
 	assert.Equal(t, 30*time.Second, capConf.RemoteExecutableConfig.RegistrationRefresh)
 	assert.Equal(t, 2*time.Minute, capConf.RemoteExecutableConfig.RegistrationExpiry)
+}
+
+func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+
+	donID := uint32(1)
+	expectedDON := capabilities.DON{
+		ID: donID,
+		F:  1,
+		Members: []p2ptypes.PeerID{
+			[32]byte{0: 1},
+			[32]byte{0: 2},
+		},
+	}
+	expectedNodes := []capabilities.Node{
+		{
+			PeerID:              &p2ptypes.PeerID{0: 1},
+			NodeOperatorID:      1,
+			EncryptionPublicKey: [32]byte{0: 1},
+			CapabilityDONs:      []capabilities.DON{},
+		},
+		{
+			PeerID:              &p2ptypes.PeerID{0: 2},
+			NodeOperatorID:      2,
+			EncryptionPublicKey: [32]byte{0: 2},
+			CapabilityDONs:      []capabilities.DON{},
+		},
+	}
+	expectedDONs := []capabilities.DONWithNodes{
+		{
+			DON:   expectedDON,
+			Nodes: expectedNodes,
+		},
+	}
+	reg.On("DONsForCapability", mock.Anything, capID).Once().Return(expectedDONs, nil)
+
+	dons, err := rc.DONsForCapability(t.Context(), capID)
+	require.NoError(t, err)
+	assert.Equal(t, expectedDONs, dons)
 }
 
 func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {

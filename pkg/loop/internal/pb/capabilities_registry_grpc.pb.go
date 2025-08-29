@@ -23,6 +23,7 @@ const (
 	CapabilitiesRegistry_LocalNode_FullMethodName           = "/loop.CapabilitiesRegistry/LocalNode"
 	CapabilitiesRegistry_NodeByPeerID_FullMethodName        = "/loop.CapabilitiesRegistry/NodeByPeerID"
 	CapabilitiesRegistry_ConfigForCapability_FullMethodName = "/loop.CapabilitiesRegistry/ConfigForCapability"
+	CapabilitiesRegistry_DONsForCapability_FullMethodName   = "/loop.CapabilitiesRegistry/DONsForCapability"
 	CapabilitiesRegistry_Get_FullMethodName                 = "/loop.CapabilitiesRegistry/Get"
 	CapabilitiesRegistry_GetTrigger_FullMethodName          = "/loop.CapabilitiesRegistry/GetTrigger"
 	CapabilitiesRegistry_GetExecutable_FullMethodName       = "/loop.CapabilitiesRegistry/GetExecutable"
@@ -38,6 +39,7 @@ type CapabilitiesRegistryClient interface {
 	LocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodeReply, error)
 	NodeByPeerID(ctx context.Context, in *NodeRequest, opts ...grpc.CallOption) (*NodeReply, error)
 	ConfigForCapability(ctx context.Context, in *ConfigForCapabilityRequest, opts ...grpc.CallOption) (*ConfigForCapabilityReply, error)
+	DONsForCapability(ctx context.Context, in *DONForCapabilityRequest, opts ...grpc.CallOption) (*DONForCapabilityReply, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error)
 	GetTrigger(ctx context.Context, in *GetTriggerRequest, opts ...grpc.CallOption) (*GetTriggerReply, error)
 	GetExecutable(ctx context.Context, in *GetExecutableRequest, opts ...grpc.CallOption) (*GetExecutableReply, error)
@@ -78,6 +80,16 @@ func (c *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, in
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ConfigForCapabilityReply)
 	err := c.cc.Invoke(ctx, CapabilitiesRegistry_ConfigForCapability_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, in *DONForCapabilityRequest, opts ...grpc.CallOption) (*DONForCapabilityReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DONForCapabilityReply)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_DONsForCapability_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +163,7 @@ type CapabilitiesRegistryServer interface {
 	LocalNode(context.Context, *emptypb.Empty) (*NodeReply, error)
 	NodeByPeerID(context.Context, *NodeRequest) (*NodeReply, error)
 	ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error)
+	DONsForCapability(context.Context, *DONForCapabilityRequest) (*DONForCapabilityReply, error)
 	Get(context.Context, *GetRequest) (*GetReply, error)
 	GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error)
 	GetExecutable(context.Context, *GetExecutableRequest) (*GetExecutableReply, error)
@@ -175,6 +188,9 @@ func (UnimplementedCapabilitiesRegistryServer) NodeByPeerID(context.Context, *No
 }
 func (UnimplementedCapabilitiesRegistryServer) ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfigForCapability not implemented")
+}
+func (UnimplementedCapabilitiesRegistryServer) DONsForCapability(context.Context, *DONForCapabilityRequest) (*DONForCapabilityReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DONsForCapability not implemented")
 }
 func (UnimplementedCapabilitiesRegistryServer) Get(context.Context, *GetRequest) (*GetReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
@@ -265,6 +281,24 @@ func _CapabilitiesRegistry_ConfigForCapability_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CapabilitiesRegistryServer).ConfigForCapability(ctx, req.(*ConfigForCapabilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CapabilitiesRegistry_DONsForCapability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DONForCapabilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CapabilitiesRegistryServer).DONsForCapability(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CapabilitiesRegistry_DONsForCapability_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CapabilitiesRegistryServer).DONsForCapability(ctx, req.(*DONForCapabilityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -395,6 +429,10 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConfigForCapability",
 			Handler:    _CapabilitiesRegistry_ConfigForCapability_Handler,
+		},
+		{
+			MethodName: "DONsForCapability",
+			Handler:    _CapabilitiesRegistry_DONsForCapability_Handler,
 		},
 		{
 			MethodName: "Get",

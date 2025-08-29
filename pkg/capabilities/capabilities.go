@@ -292,6 +292,11 @@ type ExecutableAndTriggerCapability interface {
 	ExecutableCapability
 }
 
+type DONWithNodes struct {
+	DON   DON
+	Nodes []Node
+}
+
 // DON represents a network of connected nodes.
 //
 // For an example of an empty DON check, see the following link:

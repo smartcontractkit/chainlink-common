@@ -130,6 +130,65 @@ func (_c *CapabilitiesRegistry_ConfigForCapability_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// DONsForCapability provides a mock function with given fields: ctx, capabilityID
+func (_m *CapabilitiesRegistry) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
+	ret := _m.Called(ctx, capabilityID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DONsForCapability")
+	}
+
+	var r0 []capabilities.DONWithNodes
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]capabilities.DONWithNodes, error)); ok {
+		return rf(ctx, capabilityID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []capabilities.DONWithNodes); ok {
+		r0 = rf(ctx, capabilityID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]capabilities.DONWithNodes)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, capabilityID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CapabilitiesRegistry_DONsForCapability_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DONsForCapability'
+type CapabilitiesRegistry_DONsForCapability_Call struct {
+	*mock.Call
+}
+
+// DONsForCapability is a helper method to define mock.On call
+//   - ctx context.Context
+//   - capabilityID string
+func (_e *CapabilitiesRegistry_Expecter) DONsForCapability(ctx interface{}, capabilityID interface{}) *CapabilitiesRegistry_DONsForCapability_Call {
+	return &CapabilitiesRegistry_DONsForCapability_Call{Call: _e.mock.On("DONsForCapability", ctx, capabilityID)}
+}
+
+func (_c *CapabilitiesRegistry_DONsForCapability_Call) Run(run func(ctx context.Context, capabilityID string)) *CapabilitiesRegistry_DONsForCapability_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_DONsForCapability_Call) Return(_a0 []capabilities.DONWithNodes, _a1 error) *CapabilitiesRegistry_DONsForCapability_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_DONsForCapability_Call) RunAndReturn(run func(context.Context, string) ([]capabilities.DONWithNodes, error)) *CapabilitiesRegistry_DONsForCapability_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: ctx, ID
 func (_m *CapabilitiesRegistry) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
 	ret := _m.Called(ctx, ID)

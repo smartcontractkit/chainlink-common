@@ -34,7 +34,7 @@ const v2ImportPrefix = "version_v2"
 
 var (
 	defaultTickInterval              = 100 * time.Millisecond
-	defaultTimeout                   = 10 * time.Second
+	defaultTimeout                   = 10 * time.Minute
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
@@ -328,6 +328,13 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		"random_seed",
 		exec.getSeed); err != nil {
 		return nil, fmt.Errorf("error wrapping getSeed func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"now",
+		exec.now); err != nil {
+		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
 	return linker.Instantiate(store, m.module)

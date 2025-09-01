@@ -59,7 +59,6 @@ var Default = Schema{
 		ConsensusCallsLimit:           Int(2),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
-
 		CRONTrigger: cronTrigger{
 			RateLimit: Rate(rate.Every(30*time.Second), 1),
 		},
@@ -81,6 +80,7 @@ var Default = Schema{
 			ResponseSizeLimit: Size(10 * config.KByte),
 			ConnectionTimeout: Duration(10 * time.Second),
 			RequestSizeLimit:  Size(100 * config.KByte),
+			CacheAgeLimit:     Duration(10 * time.Minute),
 		},
 		ChainWrite: chainWrite{
 			RateLimit:       Rate(rate.Every(30*time.Second), 3),
@@ -178,6 +178,7 @@ type httpAction struct {
 	ResponseSizeLimit Setting[config.Size]
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
+	CacheAgeLimit     Setting[time.Duration]
 }
 type chainWrite struct {
 	RateLimit       Setting[config.Rate]

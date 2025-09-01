@@ -53,7 +53,8 @@
 			"RateLimit": "every30s:3",
 			"ResponseSizeLimit": "10kb",
 			"ConnectionTimeout": "10s",
-			"RequestSizeLimit": "100kb"
+			"RequestSizeLimit": "100kb",
+			"CacheAgeLimit": "10m0s"
 		},
 		"ChainWrite": {
 			"RateLimit": "every30s:3",

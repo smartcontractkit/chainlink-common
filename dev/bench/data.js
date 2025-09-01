@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756402858150,
+  "lastUpdate": 1756720240235,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24150,6 +24150,48 @@ window.BENCHMARK_DATA = {
             "value": 26680,
             "unit": "ns/op",
             "extra": "44413 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "99c1fc59d32ce130da2fabc806f4a759c3d96fdf",
+          "message": "DF-21815 Use seqNr as timestamp in the secure mint report (#1509)",
+          "timestamp": "2025-09-01T11:49:03+02:00",
+          "tree_id": "6752cecd148f7783299b2162a8d106735d160b6b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/99c1fc59d32ce130da2fabc806f4a759c3d96fdf"
+        },
+        "date": 1756720238868,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.1,
+            "unit": "ns/op",
+            "extra": "2830826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.2,
+            "unit": "ns/op",
+            "extra": "2924271 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26866,
+            "unit": "ns/op",
+            "extra": "45214 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756825481569,
+  "lastUpdate": 1756827608894,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24276,6 +24276,48 @@ window.BENCHMARK_DATA = {
             "value": 26842,
             "unit": "ns/op",
             "extra": "44524 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d3af2df943bfa6e51ec898ab4c94bf7924e5c01e",
+          "message": "pkg/settings/cresettings: add CL_CRE_SETTINGS for default overrides (#1499)",
+          "timestamp": "2025-09-02T10:38:27-05:00",
+          "tree_id": "c237fa7b53ae207859c9a4e68b625acaddaa762f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d3af2df943bfa6e51ec898ab4c94bf7924e5c01e"
+        },
+        "date": 1756827607526,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 373.9,
+            "unit": "ns/op",
+            "extra": "3233217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.6,
+            "unit": "ns/op",
+            "extra": "2935425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26604,
+            "unit": "ns/op",
+            "extra": "45106 times\n4 procs"
           }
         ]
       }

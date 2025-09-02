@@ -62,10 +62,11 @@ const (
 
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
 type secureMintReport struct {
-	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
-	SeqNr        uint64                 `json:"seqNr"`
-	Block        uint64                 `json:"block"`
-	Mintable     *big.Int               `json:"mintable"`
+	ConfigDigest   ocr2types.ConfigDigest  `json:"configDigest"`
+	SeqNr          uint64                  `json:"seqNr"`
+	Block          uint64                  `json:"block"`
+	Mintable       *big.Int                `json:"mintable"`
+	AccountContext solana.AccountMetaSlice `json:"-"`
 }
 
 // chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
@@ -303,11 +304,19 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			lggr.Debugw("processing observation", "observation", observation)
 
 			// Extract OCRTriggerEvent from the observation
-			triggerEvent := &capabilities.OCRTriggerEvent{}
-			if err := observation.UnwrapTo(triggerEvent); err != nil {
+			type ObsWithCtx struct {
+				Event  *capabilities.OCRTriggerEvent `mapstructure:"event"`
+				Solana *struct {
+					RemainingAccounts solana.AccountMetaSlice `mapstructure:"remaining_accounts"`
+				} `mapstructure:"solana"`
+			}
+			obsWithContext := &ObsWithCtx{}
+
+			if err := observation.UnwrapTo(obsWithContext); err != nil {
 				lggr.Warnw("could not unwrap OCRTriggerEvent", "err", err, "observation", observation)
 				continue
 			}
+			triggerEvent := obsWithContext.Event
 
 			lggr.Debugw("triggerEvent", "triggerEvent", triggerEvent)
 
@@ -333,6 +342,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 				lggr.Errorw("failed to unmarshal secureMintReport", "err", err)
 				continue
 			}
+			innerReport.AccountContext = obsWithContext.Solana.RemainingAccounts
 
 			validReports = append(validReports, &innerReport)
 		}

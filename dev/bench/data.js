@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756815912722,
+  "lastUpdate": 1756825481569,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24234,6 +24234,48 @@ window.BENCHMARK_DATA = {
             "value": 26594,
             "unit": "ns/op",
             "extra": "45194 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b8178015fde0ec88710e7d86043b8c869dcab415",
+          "message": "[PRIV-158] Add UnimplementedGatewayConnector type (#1512)",
+          "timestamp": "2025-09-02T16:02:53+01:00",
+          "tree_id": "0545489ab960b210891355485a4f7eb01a28ae07",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b8178015fde0ec88710e7d86043b8c869dcab415"
+        },
+        "date": 1756825479775,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.9,
+            "unit": "ns/op",
+            "extra": "3318679 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.1,
+            "unit": "ns/op",
+            "extra": "2946206 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26842,
+            "unit": "ns/op",
+            "extra": "44524 times\n4 procs"
           }
         ]
       }

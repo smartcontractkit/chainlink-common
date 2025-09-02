@@ -13,9 +13,10 @@ import (
 
 var Keystore = staticKeystore{
 	staticKeystoreConfig: staticKeystoreConfig{
-		Account: libocr.Account("testaccount"),
-		encoded: []byte{5: 11},
-		signed:  []byte{13: 37},
+		Account:   libocr.Account("testaccount"),
+		encoded:   []byte{5: 11},
+		signed:    []byte{13: 37},
+		decrypted: []byte{17: 41},
 	},
 }
 
@@ -23,9 +24,10 @@ var _ core.Keystore = (*staticKeystore)(nil)
 var _ testtypes.Evaluator[core.Keystore] = (*staticKeystore)(nil)
 
 type staticKeystoreConfig struct {
-	Account libocr.Account
-	encoded []byte
-	signed  []byte
+	Account   libocr.Account
+	encoded   []byte
+	signed    []byte
+	decrypted []byte
 }
 
 type staticKeystore struct {
@@ -44,6 +46,16 @@ func (s staticKeystore) Sign(ctx context.Context, id string, data []byte) ([]byt
 		return nil, fmt.Errorf("expected encoded data %x but got %x", s.encoded, data)
 	}
 	return s.signed, nil
+}
+
+func (s staticKeystore) Decrypt(ctx context.Context, id string, encrypted []byte) ([]byte, error) {
+	if string(s.Account) != id {
+		return nil, fmt.Errorf("expected id %q but got %q", s.Account, id)
+	}
+	if !bytes.Equal(s.encoded, encrypted) {
+		return nil, fmt.Errorf("expected encoded data %x but got %x", s.encoded, encrypted)
+	}
+	return s.decrypted, nil
 }
 
 func (s staticKeystore) Evaluate(ctx context.Context, other core.Keystore) error {
@@ -65,5 +77,14 @@ func (s staticKeystore) Evaluate(ctx context.Context, other core.Keystore) error
 	if !bytes.Equal(s.signed, signed) {
 		return fmt.Errorf("expected signed data %x but got %x", s.signed, signed)
 	}
+
+	decrypted, err := other.Decrypt(ctx, string(s.Account), s.encoded)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt: %w", err)
+	}
+	if !bytes.Equal(s.decrypted, decrypted) {
+		return fmt.Errorf("expected decrypted data %x but got %x", s.decrypted, decrypted)
+	}
+
 	return nil
 }

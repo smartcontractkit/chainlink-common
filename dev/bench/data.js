@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756720240235,
+  "lastUpdate": 1756815912722,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24192,6 +24192,48 @@ window.BENCHMARK_DATA = {
             "value": 26866,
             "unit": "ns/op",
             "extra": "45214 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d271aac7c9f9377db5cfcf914731992df861b9e",
+          "message": "pkg/types/aptos: move CR/CW types from aptos repo (#1307)",
+          "timestamp": "2025-09-02T12:23:32Z",
+          "tree_id": "d7a2669d2016d6a4643d35863c6329bdd32211cd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1d271aac7c9f9377db5cfcf914731992df861b9e"
+        },
+        "date": 1756815911315,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.9,
+            "unit": "ns/op",
+            "extra": "3270674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.4,
+            "unit": "ns/op",
+            "extra": "2926486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26594,
+            "unit": "ns/op",
+            "extra": "45194 times\n4 procs"
           }
         ]
       }

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	GatewayConnector_AddHandler_FullMethodName      = "/loop.GatewayConnector/AddHandler"
+	GatewayConnector_RemoveHandler_FullMethodName   = "/loop.GatewayConnector/RemoveHandler"
 	GatewayConnector_SendToGateway_FullMethodName   = "/loop.GatewayConnector/SendToGateway"
 	GatewayConnector_SignMessage_FullMethodName     = "/loop.GatewayConnector/SignMessage"
 	GatewayConnector_GatewayIDs_FullMethodName      = "/loop.GatewayConnector/GatewayIDs"
@@ -33,6 +34,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GatewayConnectorClient interface {
 	AddHandler(ctx context.Context, in *AddHandlerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveHandler(ctx context.Context, in *RemoveHandlerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SendToGateway(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SignMessage(ctx context.Context, in *SignMessageRequest, opts ...grpc.CallOption) (*SignMessageReply, error)
 	GatewayIDs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayIDsReply, error)
@@ -52,6 +54,16 @@ func (c *gatewayConnectorClient) AddHandler(ctx context.Context, in *AddHandlerR
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, GatewayConnector_AddHandler_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gatewayConnectorClient) RemoveHandler(ctx context.Context, in *RemoveHandlerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, GatewayConnector_RemoveHandler_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +125,7 @@ func (c *gatewayConnectorClient) AwaitConnection(ctx context.Context, in *Gatewa
 // for forward compatibility.
 type GatewayConnectorServer interface {
 	AddHandler(context.Context, *AddHandlerRequest) (*emptypb.Empty, error)
+	RemoveHandler(context.Context, *RemoveHandlerRequest) (*emptypb.Empty, error)
 	SendToGateway(context.Context, *SendMessageRequest) (*emptypb.Empty, error)
 	SignMessage(context.Context, *SignMessageRequest) (*SignMessageReply, error)
 	GatewayIDs(context.Context, *emptypb.Empty) (*GatewayIDsReply, error)
@@ -130,6 +143,9 @@ type UnimplementedGatewayConnectorServer struct{}
 
 func (UnimplementedGatewayConnectorServer) AddHandler(context.Context, *AddHandlerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddHandler not implemented")
+}
+func (UnimplementedGatewayConnectorServer) RemoveHandler(context.Context, *RemoveHandlerRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveHandler not implemented")
 }
 func (UnimplementedGatewayConnectorServer) SendToGateway(context.Context, *SendMessageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendToGateway not implemented")
@@ -181,6 +197,24 @@ func _GatewayConnector_AddHandler_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GatewayConnectorServer).AddHandler(ctx, req.(*AddHandlerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GatewayConnector_RemoveHandler_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveHandlerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GatewayConnectorServer).RemoveHandler(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GatewayConnector_RemoveHandler_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GatewayConnectorServer).RemoveHandler(ctx, req.(*RemoveHandlerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -285,6 +319,10 @@ var GatewayConnector_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddHandler",
 			Handler:    _GatewayConnector_AddHandler_Handler,
+		},
+		{
+			MethodName: "RemoveHandler",
+			Handler:    _GatewayConnector_RemoveHandler_Handler,
 		},
 		{
 			MethodName: "SendToGateway",

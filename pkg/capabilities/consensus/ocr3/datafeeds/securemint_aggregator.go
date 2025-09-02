@@ -77,18 +77,12 @@ type wrappedMintReport struct {
 // chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
 type chainSelector uint64
 
-type SolanaConfig struct {
-	// Add Solana-specific configuration fields here
-	AccountContext solana.AccountMetaSlice `mapstructure:"remaining_accounts"`
-}
-
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
 // This aggregator is designed to pick out reports for a specific chain selector.
 type SecureMintAggregatorConfig struct {
 	// TargetChainSelector is the chain selector to look for
 	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
 	DataID              [16]byte      `mapstructure:"dataID"`
-	Solana              SolanaConfig  `mapstructure:"solana"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -154,7 +148,6 @@ func newEVMReportFormatter(chainSelector chainSelector, config SecureMintAggrega
 type solanaReportFormatter struct {
 	targetChainSelector chainSelector
 	dataID              [16]byte
-	onReportAccounts    solana.AccountMetaSlice
 }
 
 func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
@@ -171,7 +164,7 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedM
 	for _, acc := range wreport.solanaAccountContext {
 		accounts = append(accounts, acc.PublicKey[:]...)
 	}
-	lggr.Debugf("accounts length: %d", len(accounts))
+	lggr.Debugf("accounts length: %d", len(wreport.solanaAccountContext))
 	accountContextHash := sha256.Sum256(accounts)
 	lggr.Debugw("calculated account context hash", "accountContextHash", accountContextHash)
 
@@ -186,6 +179,7 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedM
 			SolDataIDOutputFieldName:    f.dataID,
 		},
 	}
+	lggr.Debugf("pass dataID %x", f.dataID)
 
 	wrappedReport, err := values.NewMap(map[string]any{
 		TopLevelAccountCtxHashFieldName: accountContextHash,
@@ -200,7 +194,7 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedM
 }
 
 func newSolanaReportFormatter(chainSelector chainSelector, config SecureMintAggregatorConfig) chainReportFormatter {
-	return &solanaReportFormatter{targetChainSelector: chainSelector, onReportAccounts: config.Solana.AccountContext, dataID: config.DataID}
+	return &solanaReportFormatter{targetChainSelector: chainSelector, dataID: config.DataID}
 }
 
 // chainReportFormatterBuilder is a function that returns a chainReportFormatter for a given chain selector and config
@@ -407,9 +401,8 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *wrapped
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
 	type rawConfig struct {
-		TargetChainSelector string       `mapstructure:"targetChainSelector"`
-		DataID              string       `mapstructure:"dataID"`
-		Solana              SolanaConfig `mapstructure:"solana"`
+		TargetChainSelector string `mapstructure:"targetChainSelector"`
+		DataID              string `mapstructure:"dataID"`
 	}
 
 	var rawCfg rawConfig
@@ -442,18 +435,9 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 		return SecureMintAggregatorConfig{}, fmt.Errorf("dataID must be 16 bytes, got %d", len(decodedDataID))
 	}
 
-	if len(rawCfg.Solana.AccountContext) > 0 {
-		for _, acc := range rawCfg.Solana.AccountContext {
-			if acc.PublicKey == [32]byte{} {
-				return SecureMintAggregatorConfig{}, errors.New("solana account context public key must not be all zeros")
-			}
-		}
-	}
-
 	parsedConfig := SecureMintAggregatorConfig{
 		TargetChainSelector: chainSelector(sel),
 		DataID:              [16]byte(decodedDataID),
-		Solana:              rawCfg.Solana,
 	}
 
 	return parsedConfig, nil

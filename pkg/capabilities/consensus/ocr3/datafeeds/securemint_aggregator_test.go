@@ -373,7 +373,6 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedChainSelector, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
 			assert.Equal(t, tt.expectedDataID, aggregator.(*SecureMintAggregator).config.DataID)
-			assert.Equal(t, tt.solanaAccounts, aggregator.(*SecureMintAggregator).config.Solana.AccountContext)
 		})
 	}
 }

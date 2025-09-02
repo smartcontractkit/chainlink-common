@@ -305,11 +305,10 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 
 			// Extract OCRTriggerEvent from the observation
 			type ObsWithCtx struct {
-				Event  *capabilities.OCRTriggerEvent `mapstructure:"event"`
-				Solana *struct {
-					RemainingAccounts solana.AccountMetaSlice `mapstructure:"remaining_accounts"`
-				} `mapstructure:"solana"`
+				Event  capabilities.OCRTriggerEvent `mapstructure:"event"`
+				Solana solana.AccountMetaSlice      `mapstructure:"solana"`
 			}
+
 			obsWithContext := &ObsWithCtx{}
 
 			if err := observation.UnwrapTo(obsWithContext); err != nil {
@@ -342,7 +341,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 				lggr.Errorw("failed to unmarshal secureMintReport", "err", err)
 				continue
 			}
-			innerReport.AccountContext = obsWithContext.Solana.RemainingAccounts
+			innerReport.AccountContext = obsWithContext.Solana
 
 			validReports = append(validReports, &innerReport)
 		}

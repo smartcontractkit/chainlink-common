@@ -317,6 +317,8 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			}
 			triggerEvent := obsWithContext.Event
 
+			lggr.Debugw("Meta slice", obsWithContext.Solana)
+
 			lggr.Debugw("triggerEvent", "triggerEvent", triggerEvent)
 
 			// Deserialize the ReportWithInfo

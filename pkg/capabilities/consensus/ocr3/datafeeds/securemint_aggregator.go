@@ -69,6 +69,11 @@ type secureMintReport struct {
 	AccountContext solana.AccountMetaSlice `json:"-"`
 }
 
+type wrappedMintReport struct {
+	report               secureMintReport        `json:"report"`
+	solanaAccountContext solana.AccountMetaSlice `json:"solanaAccountContext"`
+}
+
 // chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
 type chainSelector uint64
 
@@ -105,7 +110,7 @@ type SecureMintAggregator struct {
 }
 
 type chainReportFormatter interface {
-	packReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error)
+	packReport(lggr logger.Logger, report *wrappedMintReport) (*values.Map, error)
 }
 
 type evmReportFormatter struct {
@@ -113,7 +118,8 @@ type evmReportFormatter struct {
 	dataID              [16]byte
 }
 
-func (f *evmReportFormatter) packReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error) {
+func (f *evmReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
+	report := wreport.report
 	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
@@ -151,7 +157,8 @@ type solanaReportFormatter struct {
 	onReportAccounts    solana.AccountMetaSlice
 }
 
-func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error) {
+func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
+	report := wreport.report
 	// pack answer
 	smReportAsAnswer, err := packSecureMintReportIntoU128ForSolana(report.Mintable, report.Block)
 	if err != nil {
@@ -161,9 +168,10 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMin
 
 	// hash account contexts
 	var accounts = make([]byte, 0)
-	for _, acc := range f.onReportAccounts {
+	for _, acc := range wreport.solanaAccountContext {
 		accounts = append(accounts, acc.PublicKey[:]...)
 	}
+	lggr.Debugf("accounts length: %d", len(accounts))
 	accountContextHash := sha256.Sum256(accounts)
 	lggr.Debugw("calculated account context hash", "accountContextHash", accountContextHash)
 
@@ -293,8 +301,8 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 }
 
 // extractAndValidateReports extracts OCRTriggerEvent from observations and validates them
-func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*secureMintReport, error) {
-	var validReports []*secureMintReport
+func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*wrappedMintReport, error) {
+	var validReports []*wrappedMintReport
 	var foundMatchingChainSelector bool
 
 	for nodeID, nodeObservations := range observations {
@@ -317,7 +325,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			}
 			triggerEvent := obsWithContext.Event
 
-			lggr.Debugw("Meta slice", obsWithContext.Solana)
+			lggr.Debugw("Obs with context", "obs with ctx", obsWithContext)
 
 			lggr.Debugw("triggerEvent", "triggerEvent", triggerEvent)
 
@@ -343,9 +351,12 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 				lggr.Errorw("failed to unmarshal secureMintReport", "err", err)
 				continue
 			}
-			innerReport.AccountContext = obsWithContext.Solana
+			report := &wrappedMintReport{
+				report:               innerReport,
+				solanaAccountContext: obsWithContext.Solana,
+			}
 
-			validReports = append(validReports, &innerReport)
+			validReports = append(validReports, report)
 		}
 	}
 
@@ -359,7 +370,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 }
 
 // createOutcome creates the final aggregation outcome which can be sent to the KeystoneForwarder
-func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureMintReport) (*types.AggregationOutcome, error) {
+func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *wrappedMintReport) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "SecureMintAggregator")
 	lggr.Debugw("createOutcome called", "report", report)
 
@@ -380,12 +391,12 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	reportsProto := values.Proto(wrappedReport)
 
 	// Store the sequence number in metadata for next round
-	metadata := []byte{byte(report.SeqNr)} // Simple metadata for now
+	metadata := []byte{byte(report.report.SeqNr)} // Simple metadata for now
 
 	aggOutcome := &types.AggregationOutcome{
 		EncodableOutcome: reportsProto.GetMapValue(),
 		Metadata:         metadata,
-		LastSeenAt:       report.SeqNr,
+		LastSeenAt:       report.report.SeqNr,
 		ShouldReport:     true, // Always report since we found and verified the target report
 	}
 

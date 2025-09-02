@@ -10,10 +10,15 @@ import (
 )
 
 type CapabilitiesRegistry interface {
+	CapabilitiesRegistryBase
+	CapabilitiesRegistryMetadata
+}
+
+type CapabilitiesRegistryMetadata interface {
 	LocalNode(ctx context.Context) (capabilities.Node, error)
 	NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
-	CapabilitiesRegistryBase
+	DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error)
 }
 
 type CapabilitiesRegistryBase interface {
@@ -29,19 +34,26 @@ var _ CapabilitiesRegistry = UnimplementedCapabilitiesRegistry{}
 var _ CapabilitiesRegistryBase = UnimplementedCapabilitiesRegistryBase{}
 
 type UnimplementedCapabilitiesRegistry struct {
+	UnimplementedCapabilitiesRegistryMetadata
 	UnimplementedCapabilitiesRegistryBase
 }
 
-func (UnimplementedCapabilitiesRegistry) LocalNode(ctx context.Context) (capabilities.Node, error) {
+type UnimplementedCapabilitiesRegistryMetadata struct{}
+
+func (UnimplementedCapabilitiesRegistryMetadata) LocalNode(ctx context.Context) (capabilities.Node, error) {
 	return capabilities.Node{}, errors.New("LocalNode not implemented")
 }
 
-func (UnimplementedCapabilitiesRegistry) NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error) {
+func (UnimplementedCapabilitiesRegistryMetadata) NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error) {
 	return capabilities.Node{}, errors.New("NodeByPeerID not implemented")
 }
 
-func (UnimplementedCapabilitiesRegistry) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+func (UnimplementedCapabilitiesRegistryMetadata) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
 	return capabilities.CapabilityConfiguration{}, errors.New("ConfigForCapability not implemented")
+}
+
+func (UnimplementedCapabilitiesRegistryMetadata) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
+	return nil, errors.New("DONsForCapability not implemented")
 }
 
 type UnimplementedCapabilitiesRegistryBase struct {

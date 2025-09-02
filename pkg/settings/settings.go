@@ -44,6 +44,17 @@ func (s Setting[T]) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("%v", s.DefaultValue)), nil
 }
 
+func (s *Setting[T]) UnmarshalText(b []byte) (err error) {
+	if len(b) >= 2 && b[0] == '"' && b[len(b)-1] == '"' {
+		b = b[1 : len(b)-1] // unquote string
+	}
+	s.DefaultValue, err = s.Parse(string(b))
+	if err != nil {
+		err = fmt.Errorf("%s: failed to parse %s: %w", s.Key, string(b), err)
+	}
+	return
+}
+
 func (s *Setting[T]) initSetting(key string, scope Scope, unit *string) error {
 	s.Key = key
 	s.Scope = scope

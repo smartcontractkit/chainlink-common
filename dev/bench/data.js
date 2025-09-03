@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756916092381,
+  "lastUpdate": 1756922259106,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24444,6 +24444,48 @@ window.BENCHMARK_DATA = {
             "value": 26818,
             "unit": "ns/op",
             "extra": "44977 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "24aec112839bc34b1b1849b479bf864048b2c09f",
+          "message": "CCIP - add remaining implementations for grpc server dest accessor interface (#1521)",
+          "timestamp": "2025-09-03T14:56:08-03:00",
+          "tree_id": "a61f34a528e75ae73102dd189d477518bed7aab3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/24aec112839bc34b1b1849b479bf864048b2c09f"
+        },
+        "date": 1756922257300,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.6,
+            "unit": "ns/op",
+            "extra": "3288192 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407,
+            "unit": "ns/op",
+            "extra": "2935441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26632,
+            "unit": "ns/op",
+            "extra": "44892 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756839607701,
+  "lastUpdate": 1756905319942,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24360,6 +24360,48 @@ window.BENCHMARK_DATA = {
             "value": 26606,
             "unit": "ns/op",
             "extra": "44205 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "108959691+amit-momin@users.noreply.github.com",
+            "name": "amit-momin",
+            "username": "amit-momin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5f5c55ea90f9b6563c56af92a274baf2ca1961d9",
+          "message": "Updated relayer ccip provider interface to use dedicated args (#1497)",
+          "timestamp": "2025-09-03T10:13:51-03:00",
+          "tree_id": "ab7469edad3649e173d471b31a8b566e8c4cc570",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5f5c55ea90f9b6563c56af92a274baf2ca1961d9"
+        },
+        "date": 1756905318240,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.6,
+            "unit": "ns/op",
+            "extra": "3352638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.2,
+            "unit": "ns/op",
+            "extra": "2870906 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26672,
+            "unit": "ns/op",
+            "extra": "44198 times\n4 procs"
           }
         ]
       }

@@ -434,6 +434,39 @@ func TestStandardSecrets(t *testing.T) {
 	})
 }
 
+func TestStandardSecretsFailInNodeMode(t *testing.T) {
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+		assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
+		input := &sdk.SimpleConsensusInputs{}
+		require.NoError(t, request.Payload.UnmarshalTo(input))
+
+		var errMsg string
+		switch msg := input.Observation.(type) {
+		case *sdk.SimpleConsensusInputs_Error:
+			errMsg = msg.Error
+		default:
+			require.Fail(t, "observation must be an error")
+		}
+		return &sdk.CapabilityResponse{
+			Response: &sdk.CapabilityResponse_Error{Error: errMsg},
+		}, nil
+	}).Once()
+	m := makeTestModule(t)
+	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+
+	errStr := executeWithError(t, m, request, mockExecutionHelper)
+
+	require.Contains(t, errStr, "cannot use Runtime inside RunInNodeMode")
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)

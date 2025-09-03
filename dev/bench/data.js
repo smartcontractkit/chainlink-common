@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756922259106,
+  "lastUpdate": 1756923150892,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24486,6 +24486,48 @@ window.BENCHMARK_DATA = {
             "value": 26632,
             "unit": "ns/op",
             "extra": "44892 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "96362174+chainchad@users.noreply.github.com",
+            "name": "chainchad",
+            "username": "chainchad"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6a3e47672959ce2f6400bd1e413009616a3c558f",
+          "message": "Make linting work with remote golangci-lint config (#1522)\n\n* Remove local golangci-lint config\n\n* Make linting work with remote config",
+          "timestamp": "2025-09-03T18:11:06Z",
+          "tree_id": "5150cc63b3de4becf1d7cb611996d8e36f63ffea",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6a3e47672959ce2f6400bd1e413009616a3c558f"
+        },
+        "date": 1756923149137,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.4,
+            "unit": "ns/op",
+            "extra": "3331981 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.1,
+            "unit": "ns/op",
+            "extra": "2929846 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26720,
+            "unit": "ns/op",
+            "extra": "44743 times\n4 procs"
           }
         ]
       }

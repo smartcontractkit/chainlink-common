@@ -185,6 +185,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 						Block:        1000,
 						Mintable:     big.NewInt(99),
 					},
+					accCtx: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}},
 				},
 				{
 					chainSelector: bnbTestnetChainSelector,
@@ -195,6 +196,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 						Block:        1100,
 						Mintable:     big.NewInt(200),
 					},
+					accCtx: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}},
 				},
 			}),
 			f:                    1,
@@ -383,6 +385,7 @@ type ocrTriggerEventData struct {
 	chainSelector chainSelector
 	seqNr         uint64
 	report        *secureMintReport
+	accCtx        solana.AccountMetaSlice
 }
 
 func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) map[ocrcommon.OracleID][]values.Value {
@@ -420,10 +423,12 @@ func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) ma
 				},
 			}
 
-			// Wrap in values.Value
-			val, err := values.Wrap(triggerEvent)
+			// wrap with account context if present
+			val, err := values.Wrap(map[string]any{
+				"event":  triggerEvent,
+				"solana": event.accCtx,
+			})
 			require.NoError(t, err)
-
 			oracleObservations = append(oracleObservations, val)
 		}
 

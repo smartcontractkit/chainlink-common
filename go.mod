@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common
 
-go 1.24.5
+go 1.25
 
 require (
 	github.com/XSAM/otelsql v0.29.0

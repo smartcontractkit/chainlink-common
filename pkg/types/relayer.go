@@ -255,7 +255,7 @@ type Relayer interface {
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
 
-	NewCCIPProvider(ctx context.Context, rargs RelayArgs) (CCIPProvider, error)
+	NewCCIPProvider(ctx context.Context, rargs CCIPProviderArgs) (CCIPProvider, error)
 }
 
 var _ Relayer = &UnimplementedRelayer{}
@@ -366,6 +366,6 @@ func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, ra
 	return nil, status.Errorf(codes.Unimplemented, "method NewOCR3CapabilityProvider not implemented")
 }
 
-func (u *UnimplementedRelayer) NewCCIPProvider(ctx context.Context, rargs RelayArgs) (CCIPProvider, error) {
+func (u *UnimplementedRelayer) NewCCIPProvider(ctx context.Context, rargs CCIPProviderArgs) (CCIPProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPProvider not implemented")
 }

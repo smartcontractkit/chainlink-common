@@ -85,7 +85,7 @@ func (r *RelayerService) NewLLOProvider(ctx context.Context, rargs types.RelayAr
 	return r.Service.NewLLOProvider(ctx, rargs, pargs)
 }
 
-func (r *RelayerService) NewCCIPProvider(ctx context.Context, rargs types.RelayArgs) (types.CCIPProvider, error) {
+func (r *RelayerService) NewCCIPProvider(ctx context.Context, rargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}

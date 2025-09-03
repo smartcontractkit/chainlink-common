@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-plugin"
@@ -23,6 +24,27 @@ const (
 	WARN
 	DEBUG
 )
+
+func FormatLevel(l int) string {
+	switch l {
+	case PANIC:
+		return "panic"
+	case FATAL:
+		return "fatal"
+	case CRITICAL:
+		return "critical"
+	case ERROR:
+		return "error"
+	case INFO:
+		return "info"
+	case WARN:
+		return "warn"
+	case DEBUG:
+		return "debug"
+	default:
+		return "unknown-" + strconv.Itoa(l)
+	}
+}
 
 // NOTE: This is part of the test package because it needs to be imported by the test binary at `./internal/test/cmd`
 // as well as the test at `./pkg/loop/logger_loop_test.go`

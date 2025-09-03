@@ -357,7 +357,64 @@ func (s *chainAccessorServer) Sync(ctx context.Context, req *ccipocr3pb.SyncRequ
 	return &emptypb.Empty{}, err
 }
 
-// Additional DestinationAccessor server methods
+// DestinationAccessor server methods
+func (s *chainAccessorServer) CommitReportsGTETimestamp(ctx context.Context, req *ccipocr3pb.CommitReportsGTETimestampRequest) (*ccipocr3pb.CommitReportsGTETimestampResponse, error) {
+	reports, err := s.impl.CommitReportsGTETimestamp(
+		ctx,
+		req.Timestamp.AsTime(),
+		pbToConfidenceLevel(req.ConfidenceLevel),
+		int(req.Limit),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var pbReports []*ccipocr3pb.CommitPluginReportWithMeta
+	for _, report := range reports {
+		pbReports = append(pbReports, &ccipocr3pb.CommitPluginReportWithMeta{
+			Report:    commitPluginReportToPb(report.Report),
+			Timestamp: timestamppb.New(report.Timestamp),
+			BlockNum:  report.BlockNum,
+		})
+	}
+
+	return &ccipocr3pb.CommitReportsGTETimestampResponse{Reports: pbReports}, nil
+}
+
+func (s *chainAccessorServer) ExecutedMessages(ctx context.Context, req *ccipocr3pb.ExecutedMessagesRequest) (*ccipocr3pb.ExecutedMessagesResponse, error) {
+	ranges := make(map[ccipocr3.ChainSelector][]ccipocr3.SeqNumRange)
+	for chainSel, rangeList := range req.Ranges {
+		var seqRanges []ccipocr3.SeqNumRange
+		for _, pbRange := range rangeList.Ranges {
+			seqRanges = append(seqRanges, ccipocr3.NewSeqNumRange(
+				ccipocr3.SeqNum(pbRange.Start),
+				ccipocr3.SeqNum(pbRange.End),
+			))
+		}
+		ranges[ccipocr3.ChainSelector(chainSel)] = seqRanges
+	}
+
+	executedMessages, err := s.impl.ExecutedMessages(
+		ctx,
+		ranges,
+		pbToConfidenceLevel(req.ConfidenceLevel),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pbExecutedMessages := make(map[uint64]*ccipocr3pb.SequenceNumberList)
+	for chainSel, seqNums := range executedMessages {
+		seqNumList := &ccipocr3pb.SequenceNumberList{}
+		for _, seqNum := range seqNums {
+			seqNumList.SeqNums = append(seqNumList.SeqNums, uint64(seqNum))
+		}
+		pbExecutedMessages[uint64(chainSel)] = seqNumList
+	}
+
+	return &ccipocr3pb.ExecutedMessagesResponse{ExecutedMessages: pbExecutedMessages}, nil
+}
+
 func (s *chainAccessorServer) NextSeqNum(ctx context.Context, req *ccipocr3pb.NextSeqNumRequest) (*ccipocr3pb.NextSeqNumResponse, error) {
 	// Convert request: []uint64 -> []ChainSelector
 	var sources []ccipocr3.ChainSelector

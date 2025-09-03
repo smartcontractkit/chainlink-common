@@ -288,13 +288,15 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
-func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
-				ExternalJobID: rargs.ExternalJobID[:],
-				ContractReaderConfig: rargs.ContractReaderConfig,
-				ChainWriterConfig: rargs.ChainWriterConfig,
+				ExternalJobID:        cargs.ExternalJobID[:],
+				ContractReaderConfig: cargs.ContractReaderConfig,
+				ChainWriterConfig:    cargs.ChainWriterConfig,
+				OffRampAddress:       cargs.OffRampAddress,
+				PluginType:           cargs.PluginType,
 			},
 		})
 		if err != nil {
@@ -303,7 +305,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.CCIPPro
 		return reply.CcipProviderID, nil, nil
 	})
 
-	return ccipocr3.NewCCIPProviderClient(r.WithName(rargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
+	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
@@ -721,9 +723,11 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
 	}
 	ccipProviderArgs := types.CCIPProviderArgs{
-		ExternalJobID: exJobID,
+		ExternalJobID:        exJobID,
 		ContractReaderConfig: rargs.ContractReaderConfig,
-		ChainWriterConfig: rargs.ChainWriterConfig,
+		ChainWriterConfig:    rargs.ChainWriterConfig,
+		OffRampAddress:       rargs.OffRampAddress,
+		PluginType:           rargs.PluginType,
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)

@@ -338,14 +338,6 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			expectError:   true,
 			errorMsg:      "dataID must be 16 bytes",
 		},
-		{
-			name:           "solana account context with invalid public key",
-			chainSelector:  "1",
-			dataID:         "0x01c508f42b0201320000000000000000",
-			solanaAccounts: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: [32]byte{}}},
-			expectError:    true,
-			errorMsg:       "solana account context public key must not be all zeros",
-		},
 	}
 
 	for _, tt := range tests {

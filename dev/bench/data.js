@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756905319942,
+  "lastUpdate": 1756916092381,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24402,6 +24402,48 @@ window.BENCHMARK_DATA = {
             "value": 26672,
             "unit": "ns/op",
             "extra": "44198 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42482bbf57ef7e741c9695962dcc6ff6279be79a",
+          "message": "Add a standard test for secrets failing in node mode (#1517)",
+          "timestamp": "2025-09-03T11:13:36-05:00",
+          "tree_id": "2e2242e467f2e605ecf010fcf522d13c82574d19",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/42482bbf57ef7e741c9695962dcc6ff6279be79a"
+        },
+        "date": 1756916091274,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.4,
+            "unit": "ns/op",
+            "extra": "3323852 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.2,
+            "unit": "ns/op",
+            "extra": "2947180 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26818,
+            "unit": "ns/op",
+            "extra": "44977 times\n4 procs"
           }
         ]
       }

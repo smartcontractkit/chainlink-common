@@ -22,6 +22,7 @@ import (
 func HCLogLogger(l logger.Logger) hclog.Logger {
 	hcl := hclog.NewInterceptLogger(&hclog.LoggerOptions{
 		Output: io.Discard, // only write through p.Logger Sink
+		Level:  hclog.Debug,
 	})
 	hcl.RegisterSink(&hclSinkAdapter{l: logger.Sugared(l)})
 	return hcl
@@ -116,23 +117,22 @@ func parseJSON(input string) (*logMessage, error) {
 	return entry, nil
 }
 
-// logDebug will parse msg and figure out if it's a panic, fatal or critical log message, this is done here because the hashicorp plugin will push any
-// unrecognizable message from stderr as a debug statement
-func logDebug(msg string, l logger.SugaredLogger, args ...any) {
+// maybeCritical recognizes panic, fatal or critical log message, and logs them again at critical level.
+func maybeCritical(msg string, l logger.SugaredLogger, args ...any) bool {
 	if strings.HasPrefix(msg, "panic:") {
 		l.Criticalw(fmt.Sprintf("[PANIC] %s", msg), args...)
+		return true
 	} else if log, err := parseJSON(msg); err == nil {
 		switch log.Level {
 		case "fatal":
 			l.Criticalw(fmt.Sprintf("[FATAL] %s", log.Message), flattenExtraArgs(log)...)
+			return true
 		case "critical", "dpanic":
 			l.Criticalw(log.Message, flattenExtraArgs(log)...)
-		default:
-			l.Debugw(log.Message, flattenExtraArgs(log)...)
+			return true
 		}
-	} else {
-		l.Debugw(msg, args...)
 	}
+	return false
 }
 
 func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...any) {
@@ -152,13 +152,17 @@ func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ..
 	case hclog.Trace:
 		l.Debugw(msg, args...)
 	case hclog.Debug:
-		logDebug(msg, l, args...)
+		if !maybeCritical(msg, l, args...) { // panic/fatal/critical used to come through as stderr/out which maps to debug
+			l.Debugw(msg, args...)
+		}
 	case hclog.Info:
 		l.Infow(msg, args...)
 	case hclog.Warn:
 		l.Warnw(msg, args...)
 	case hclog.Error:
-		l.Errorw(msg, args...)
+		if !maybeCritical(msg, l, args...) { // as of v1.7.0, panic/fatal errors are send at error level
+			l.Errorw(msg, args...)
+		}
 	}
 }
 

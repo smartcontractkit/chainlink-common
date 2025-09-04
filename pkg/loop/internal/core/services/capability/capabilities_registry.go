@@ -145,25 +145,31 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 
 	switch res.CapabilityConfig.RemoteConfig.(type) {
 	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
-		prtc := res.CapabilityConfig.GetRemoteTriggerConfig()
-		remoteTriggerConfig = &capabilities.RemoteTriggerConfig{}
-		remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
-		remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
-		remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-		remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
-		remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
-		remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
-
+		remoteTriggerConfig = decodeRemoteTriggerConfig(res.CapabilityConfig.GetRemoteTriggerConfig())
 	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
 		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
 		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
 		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
 	case *capabilitiespb.CapabilityConfig_RemoteExecutableConfig:
-		prtc := res.CapabilityConfig.GetRemoteExecutableConfig()
-		remoteExecutableConfig = &capabilities.RemoteExecutableConfig{}
-		remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
-		remoteExecutableConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
-		remoteExecutableConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+		remoteExecutableConfig = decodeRemoteExecutableConfig(res.CapabilityConfig.GetRemoteExecutableConfig())
+	}
+
+	var methodConfig map[string]capabilities.CapabilityMethodConfig
+	if res.CapabilityConfig.MethodConfigs != nil {
+		methodConfig = make(map[string]capabilities.CapabilityMethodConfig, len(res.CapabilityConfig.MethodConfigs))
+		for mName, mConfig := range res.CapabilityConfig.MethodConfigs {
+			newCapCfg := capabilities.CapabilityMethodConfig{}
+			switch mConfig.RemoteConfig.(type) {
+			case *capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig:
+				newCapCfg.RemoteTriggerConfig = decodeRemoteTriggerConfig(mConfig.GetRemoteTriggerConfig())
+			case *capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig:
+				newCapCfg.RemoteExecutableConfig = decodeRemoteExecutableConfig(mConfig.GetRemoteExecutableConfig())
+			}
+			if mConfig.AggregatorConfig != nil {
+				newCapCfg.AggregatorConfig = &capabilities.AggregatorConfig{AggregatorType: capabilities.AggregatorType(mConfig.AggregatorConfig.AggregatorType)}
+			}
+			methodConfig[mName] = newCapCfg
+		}
 	}
 
 	return capabilities.CapabilityConfiguration{
@@ -171,7 +177,30 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		RemoteTriggerConfig:    remoteTriggerConfig,
 		RemoteTargetConfig:     remoteTargetConfig,
 		RemoteExecutableConfig: remoteExecutableConfig,
+		CapabilityMethodConfig: methodConfig,
 	}, nil
+}
+
+func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabilities.RemoteTriggerConfig {
+	remoteTriggerConfig := &capabilities.RemoteTriggerConfig{}
+	remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+	remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+	remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
+	remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
+	remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
+	remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
+	return remoteTriggerConfig
+}
+
+func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *capabilities.RemoteExecutableConfig {
+	remoteExecutableConfig := &capabilities.RemoteExecutableConfig{}
+	remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
+	remoteExecutableConfig.TransmissionSchedule = capabilities.TransmissionSchedule(prtc.TransmissionSchedule)
+	remoteExecutableConfig.DeltaStage = prtc.DeltaStage.AsDuration()
+	remoteExecutableConfig.RequestTimeout = prtc.RequestTimeout.AsDuration()
+	remoteExecutableConfig.ServerMaxParallelRequests = prtc.ServerMaxParallelRequests
+	remoteExecutableConfig.RequestHasherType = capabilities.RequestHasherType(prtc.RequestHasherType)
+	return remoteExecutableConfig
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -357,9 +386,57 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteExecutableConfig{
 			RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
 				RequestHashExcludedAttributes: cc.RemoteExecutableConfig.RequestHashExcludedAttributes,
-				RegistrationRefresh:           durationpb.New(cc.RemoteExecutableConfig.RegistrationRefresh),
-				RegistrationExpiry:            durationpb.New(cc.RemoteExecutableConfig.RegistrationExpiry),
+				TransmissionSchedule:          capabilitiespb.TransmissionSchedule(cc.RemoteExecutableConfig.TransmissionSchedule),
+				DeltaStage:                    durationpb.New(cc.RemoteExecutableConfig.DeltaStage),
+				RequestTimeout:                durationpb.New(cc.RemoteExecutableConfig.RequestTimeout),
+				ServerMaxParallelRequests:     cc.RemoteExecutableConfig.ServerMaxParallelRequests,
+				RequestHasherType:             capabilitiespb.RequestHasherType(cc.RemoteExecutableConfig.RequestHasherType),
 			},
+		}
+	}
+
+	// Handle method configs
+	if cc.CapabilityMethodConfig != nil {
+		ccp.MethodConfigs = make(map[string]*capabilitiespb.CapabilityMethodConfig, len(cc.CapabilityMethodConfig))
+		for mName, mConfig := range cc.CapabilityMethodConfig {
+			pbMethodConfig := &capabilitiespb.CapabilityMethodConfig{}
+
+			// Handle remote trigger config for method
+			if mConfig.RemoteTriggerConfig != nil {
+				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig{
+					RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
+						RegistrationRefresh:     durationpb.New(mConfig.RemoteTriggerConfig.RegistrationRefresh),
+						RegistrationExpiry:      durationpb.New(mConfig.RemoteTriggerConfig.RegistrationExpiry),
+						MinResponsesToAggregate: mConfig.RemoteTriggerConfig.MinResponsesToAggregate,
+						MessageExpiry:           durationpb.New(mConfig.RemoteTriggerConfig.MessageExpiry),
+						MaxBatchSize:            mConfig.RemoteTriggerConfig.MaxBatchSize,
+						BatchCollectionPeriod:   durationpb.New(mConfig.RemoteTriggerConfig.BatchCollectionPeriod),
+					},
+				}
+			}
+
+			// Handle remote executable config for method
+			if mConfig.RemoteExecutableConfig != nil {
+				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig{
+					RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
+						RequestHashExcludedAttributes: mConfig.RemoteExecutableConfig.RequestHashExcludedAttributes,
+						TransmissionSchedule:          capabilitiespb.TransmissionSchedule(mConfig.RemoteExecutableConfig.TransmissionSchedule),
+						DeltaStage:                    durationpb.New(mConfig.RemoteExecutableConfig.DeltaStage),
+						RequestTimeout:                durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
+						ServerMaxParallelRequests:     mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
+						RequestHasherType:             capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
+					},
+				}
+			}
+
+			// Handle aggregator config for method
+			if mConfig.AggregatorConfig != nil {
+				pbMethodConfig.AggregatorConfig = &capabilitiespb.AggregatorConfig{
+					AggregatorType: capabilitiespb.AggregatorType(mConfig.AggregatorConfig.AggregatorType),
+				}
+			}
+
+			ccp.MethodConfigs[mName] = pbMethodConfig
 		}
 	}
 

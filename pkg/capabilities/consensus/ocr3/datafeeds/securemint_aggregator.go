@@ -62,19 +62,20 @@ const (
 
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
 type secureMintReport struct {
-	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
-	SeqNr        uint64                 `json:"seqNr"`
-	Block        uint64                 `json:"block"`
-	Mintable     *big.Int               `json:"mintable"`
+	ConfigDigest   ocr2types.ConfigDigest  `json:"configDigest"`
+	SeqNr          uint64                  `json:"seqNr"`
+	Block          uint64                  `json:"block"`
+	Mintable       *big.Int                `json:"mintable"`
+	AccountContext solana.AccountMetaSlice `json:"-"`
+}
+
+type wrappedMintReport struct {
+	report               secureMintReport        `json:"report"`
+	solanaAccountContext solana.AccountMetaSlice `json:"solanaAccountContext"`
 }
 
 // chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
 type chainSelector uint64
-
-type SolanaConfig struct {
-	// Add Solana-specific configuration fields here
-	AccountContext solana.AccountMetaSlice `mapstructure:"remaining_accounts"`
-}
 
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
 // This aggregator is designed to pick out reports for a specific chain selector.
@@ -82,7 +83,6 @@ type SecureMintAggregatorConfig struct {
 	// TargetChainSelector is the chain selector to look for
 	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
 	DataID              [16]byte      `mapstructure:"dataID"`
-	Solana              SolanaConfig  `mapstructure:"solana"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -104,7 +104,7 @@ type SecureMintAggregator struct {
 }
 
 type chainReportFormatter interface {
-	packReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error)
+	packReport(lggr logger.Logger, report *wrappedMintReport) (*values.Map, error)
 }
 
 type evmReportFormatter struct {
@@ -112,7 +112,8 @@ type evmReportFormatter struct {
 	dataID              [16]byte
 }
 
-func (f *evmReportFormatter) packReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error) {
+func (f *evmReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
+	report := wreport.report
 	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
@@ -147,10 +148,10 @@ func newEVMReportFormatter(chainSelector chainSelector, config SecureMintAggrega
 type solanaReportFormatter struct {
 	targetChainSelector chainSelector
 	dataID              [16]byte
-	onReportAccounts    solana.AccountMetaSlice
 }
 
-func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMintReport) (*values.Map, error) {
+func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
+	report := wreport.report
 	// pack answer
 	smReportAsAnswer, err := packSecureMintReportIntoU128ForSolana(report.Mintable, report.Block)
 	if err != nil {
@@ -160,9 +161,10 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMin
 
 	// hash account contexts
 	var accounts = make([]byte, 0)
-	for _, acc := range f.onReportAccounts {
+	for _, acc := range wreport.solanaAccountContext {
 		accounts = append(accounts, acc.PublicKey[:]...)
 	}
+	lggr.Debugf("accounts length: %d", len(wreport.solanaAccountContext))
 	accountContextHash := sha256.Sum256(accounts)
 	lggr.Debugw("calculated account context hash", "accountContextHash", accountContextHash)
 
@@ -177,6 +179,7 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMin
 			SolDataIDOutputFieldName:    f.dataID,
 		},
 	}
+	lggr.Debugf("pass dataID %x", f.dataID)
 
 	wrappedReport, err := values.NewMap(map[string]any{
 		TopLevelAccountCtxHashFieldName: accountContextHash,
@@ -191,7 +194,7 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMin
 }
 
 func newSolanaReportFormatter(chainSelector chainSelector, config SecureMintAggregatorConfig) chainReportFormatter {
-	return &solanaReportFormatter{targetChainSelector: chainSelector, onReportAccounts: config.Solana.AccountContext, dataID: config.DataID}
+	return &solanaReportFormatter{targetChainSelector: chainSelector, dataID: config.DataID}
 }
 
 // chainReportFormatterBuilder is a function that returns a chainReportFormatter for a given chain selector and config
@@ -292,8 +295,8 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 }
 
 // extractAndValidateReports extracts OCRTriggerEvent from observations and validates them
-func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*secureMintReport, error) {
-	var validReports []*secureMintReport
+func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*wrappedMintReport, error) {
+	var validReports []*wrappedMintReport
 	var foundMatchingChainSelector bool
 
 	for nodeID, nodeObservations := range observations {
@@ -303,11 +306,20 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			lggr.Debugw("processing observation", "observation", observation)
 
 			// Extract OCRTriggerEvent from the observation
-			triggerEvent := &capabilities.OCRTriggerEvent{}
-			if err := observation.UnwrapTo(triggerEvent); err != nil {
+			type ObsWithCtx struct {
+				Event  capabilities.OCRTriggerEvent `mapstructure:"event"`
+				Solana solana.AccountMetaSlice      `mapstructure:"solana"`
+			}
+
+			obsWithContext := &ObsWithCtx{}
+
+			if err := observation.UnwrapTo(obsWithContext); err != nil {
 				lggr.Warnw("could not unwrap OCRTriggerEvent", "err", err, "observation", observation)
 				continue
 			}
+			triggerEvent := obsWithContext.Event
+
+			lggr.Debugw("Obs with context", "obs with ctx", obsWithContext)
 
 			lggr.Debugw("triggerEvent", "triggerEvent", triggerEvent)
 
@@ -333,8 +345,12 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 				lggr.Errorw("failed to unmarshal secureMintReport", "err", err)
 				continue
 			}
+			report := &wrappedMintReport{
+				report:               innerReport,
+				solanaAccountContext: obsWithContext.Solana,
+			}
 
-			validReports = append(validReports, &innerReport)
+			validReports = append(validReports, report)
 		}
 	}
 
@@ -348,7 +364,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 }
 
 // createOutcome creates the final aggregation outcome which can be sent to the KeystoneForwarder
-func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureMintReport) (*types.AggregationOutcome, error) {
+func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *wrappedMintReport) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "SecureMintAggregator")
 	lggr.Debugw("createOutcome called", "report", report)
 
@@ -369,12 +385,12 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	reportsProto := values.Proto(wrappedReport)
 
 	// Store the sequence number in metadata for next round
-	metadata := []byte{byte(report.SeqNr)} // Simple metadata for now
+	metadata := []byte{byte(report.report.SeqNr)} // Simple metadata for now
 
 	aggOutcome := &types.AggregationOutcome{
 		EncodableOutcome: reportsProto.GetMapValue(),
 		Metadata:         metadata,
-		LastSeenAt:       report.SeqNr,
+		LastSeenAt:       report.report.SeqNr,
 		ShouldReport:     true, // Always report since we found and verified the target report
 	}
 
@@ -385,9 +401,8 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
 	type rawConfig struct {
-		TargetChainSelector string       `mapstructure:"targetChainSelector"`
-		DataID              string       `mapstructure:"dataID"`
-		Solana              SolanaConfig `mapstructure:"solana"`
+		TargetChainSelector string `mapstructure:"targetChainSelector"`
+		DataID              string `mapstructure:"dataID"`
 	}
 
 	var rawCfg rawConfig
@@ -420,18 +435,9 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 		return SecureMintAggregatorConfig{}, fmt.Errorf("dataID must be 16 bytes, got %d", len(decodedDataID))
 	}
 
-	if len(rawCfg.Solana.AccountContext) > 0 {
-		for _, acc := range rawCfg.Solana.AccountContext {
-			if acc.PublicKey == [32]byte{} {
-				return SecureMintAggregatorConfig{}, errors.New("solana account context public key must not be all zeros")
-			}
-		}
-	}
-
 	parsedConfig := SecureMintAggregatorConfig{
 		TargetChainSelector: chainSelector(sel),
 		DataID:              [16]byte(decodedDataID),
-		Solana:              rawCfg.Solana,
 	}
 
 	return parsedConfig, nil

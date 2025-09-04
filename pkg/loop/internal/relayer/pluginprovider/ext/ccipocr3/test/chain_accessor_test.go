@@ -74,14 +74,15 @@ func TestChainAccessor(t *testing.T) {
 	})
 
 	t.Run("GetChainFeePriceUpdate", func(t *testing.T) {
-		updates := chainAccessor.GetChainFeePriceUpdate(ctx, []ccipocr3.ChainSelector{1, 2})
+		updates, err := chainAccessor.GetChainFeePriceUpdate(ctx, []ccipocr3.ChainSelector{1, 2})
+		assert.NoError(t, err)
 		assert.NotNil(t, updates)
 	})
 
 	t.Run("GetLatestPriceSeqNr", func(t *testing.T) {
 		seqNr, err := chainAccessor.GetLatestPriceSeqNr(ctx)
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(42), seqNr)
+		assert.Equal(t, ccipocr3.SeqNum(42), seqNr)
 	})
 
 	t.Run("MsgsBetweenSeqNums", func(t *testing.T) {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757007210928,
+  "lastUpdate": 1757016910738,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24654,6 +24654,48 @@ window.BENCHMARK_DATA = {
             "value": 26607,
             "unit": "ns/op",
             "extra": "44991 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8cf4f542a5502ba6c3b1689bdf03cb066f634687",
+          "message": "remove auth rate limit check and payload size from CRESettings (#1510)\n\n* remove auth rate limit check and payload size from CRESettings. Add cache timeout\n\n* add unauthenticated request rate limit globally and per IP. create a global limit for incoming paylaod limit\n\n* add gateway prefix to global limits\n\n* remove incoming payload size limit from workflow\n\n* fix test",
+          "timestamp": "2025-09-05T05:13:54+09:00",
+          "tree_id": "94e53228860fffe4a2c7c8752d21e03021217e00",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8cf4f542a5502ba6c3b1689bdf03cb066f634687"
+        },
+        "date": 1757016909671,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.6,
+            "unit": "ns/op",
+            "extra": "3407203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.4,
+            "unit": "ns/op",
+            "extra": "2996126 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26589,
+            "unit": "ns/op",
+            "extra": "45012 times\n4 procs"
           }
         ]
       }

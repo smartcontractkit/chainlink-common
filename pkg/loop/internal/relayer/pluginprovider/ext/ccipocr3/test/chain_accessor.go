@@ -205,14 +205,14 @@ func ChainAccessor(lggr logger.Logger) staticChainAccessor {
 				"sender3": 5,
 			},
 		},
-		chainFeePriceUpdates: map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig{
+		chainFeePriceUpdates: map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig{
 			ccipocr3.ChainSelector(1): {
-				Timestamp: testTime,
-				Value:     ccipocr3.NewBigInt(big.NewInt(2000000000)),
+				Timestamp: uint32(testTime.Unix()),
+				Value:     big.NewInt(2000000000),
 			},
 			ccipocr3.ChainSelector(2): {
-				Timestamp: testTime.Add(time.Hour),
-				Value:     ccipocr3.NewBigInt(big.NewInt(1800000000)),
+				Timestamp: uint32(testTime.Add(time.Hour).Unix()),
+				Value:     big.NewInt(1800000000),
 			},
 		},
 		latestPriceSeqNr: 42,
@@ -294,7 +294,7 @@ type staticChainAccessorConfig struct {
 	executedMessages         map[ccipocr3.ChainSelector][]ccipocr3.SeqNum
 	nextSeqNums              map[ccipocr3.ChainSelector]ccipocr3.SeqNum
 	nonces                   map[ccipocr3.ChainSelector]map[string]uint64
-	chainFeePriceUpdates     map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig
+	chainFeePriceUpdates     map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig
 	latestPriceSeqNr         uint64
 	messages                 []ccipocr3.Message
 	latestMessageSeqNr       ccipocr3.SeqNum
@@ -351,12 +351,12 @@ func (s staticChainAccessor) Nonces(ctx context.Context, addresses map[ccipocr3.
 	return s.nonces, nil
 }
 
-func (s staticChainAccessor) GetChainFeePriceUpdate(ctx context.Context, chains []ccipocr3.ChainSelector) map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig {
-	return s.chainFeePriceUpdates
+func (s staticChainAccessor) GetChainFeePriceUpdate(ctx context.Context, chains []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig, error) {
+	return s.chainFeePriceUpdates, nil
 }
 
-func (s staticChainAccessor) GetLatestPriceSeqNr(ctx context.Context) (uint64, error) {
-	return s.latestPriceSeqNr, nil
+func (s staticChainAccessor) GetLatestPriceSeqNr(ctx context.Context) (ccipocr3.SeqNum, error) {
+	return ccipocr3.SeqNum(s.latestPriceSeqNr), nil
 }
 
 // SourceAccessor implementation
@@ -774,8 +774,14 @@ func (s staticChainAccessor) evaluateNonces(ctx context.Context, other ccipocr3.
 
 func (s staticChainAccessor) evaluateGetChainFeePriceUpdate(ctx context.Context, other ccipocr3.ChainAccessor) error {
 	chains := []ccipocr3.ChainSelector{1, 2}
-	otherUpdates := other.GetChainFeePriceUpdate(ctx, chains)
-	myUpdates := s.GetChainFeePriceUpdate(ctx, chains)
+	otherUpdates, err := other.GetChainFeePriceUpdate(ctx, chains)
+	if err != nil {
+		return fmt.Errorf("GetChainFeePriceUpdate failed: %w", err)
+	}
+	myUpdates, err := s.GetChainFeePriceUpdate(ctx, chains)
+	if err != nil {
+		return fmt.Errorf("GetChainFeePriceUpdate failed: %w", err)
+	}
 	if len(otherUpdates) != len(myUpdates) {
 		return fmt.Errorf("GetChainFeePriceUpdate length mismatch: got %d, expected %d", len(otherUpdates), len(myUpdates))
 	}
@@ -784,13 +790,13 @@ func (s staticChainAccessor) evaluateGetChainFeePriceUpdate(ctx context.Context,
 		if !exists {
 			return fmt.Errorf("GetChainFeePriceUpdate missing chain %d in other updates", chainSel)
 		}
-		if otherUpdate.Value.Cmp(myUpdate.Value.Int) != 0 {
+		if otherUpdate.Value.Cmp(myUpdate.Value) != 0 {
 			return fmt.Errorf("GetChainFeePriceUpdate chain %d Value mismatch: got %s, expected %s",
 				chainSel, otherUpdate.Value.String(), myUpdate.Value.String())
 		}
-		if !otherUpdate.Timestamp.Equal(myUpdate.Timestamp) {
-			return fmt.Errorf("GetChainFeePriceUpdate chain %d Timestamp mismatch: got %s, expected %s",
-				chainSel, otherUpdate.Timestamp.Format(time.RFC3339), myUpdate.Timestamp.Format(time.RFC3339))
+		if otherUpdate.Timestamp != myUpdate.Timestamp {
+			return fmt.Errorf("GetChainFeePriceUpdate chain %d Timestamp mismatch: got %d, expected %d",
+				chainSel, otherUpdate.Timestamp, myUpdate.Timestamp)
 		}
 	}
 	return nil

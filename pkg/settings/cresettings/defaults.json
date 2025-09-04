@@ -37,8 +37,7 @@
 			"RateLimit": "every30s:1"
 		},
 		"HTTPTrigger": {
-			"RateLimit": "every30s:3",
-			"IncomingPayloadSizeLimit": "10kb"
+			"RateLimit": "every30s:3"
 		},
 		"LogTrigger": {
 			"RateLimit": "every10s:-1",

@@ -63,8 +63,7 @@ var Default = Schema{
 			RateLimit: Rate(rate.Every(30*time.Second), 1),
 		},
 		HTTPTrigger: httpTrigger{
-			RateLimit:                Rate(rate.Every(30*time.Second), 3),
-			IncomingPayloadSizeLimit: Size(10 * config.KByte),
+			RateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
 		LogTrigger: logTrigger{
 			RateLimit:                Rate(rate.Every(10*time.Second), -1), //TODO
@@ -157,8 +156,7 @@ type cronTrigger struct {
 	RateLimit Setting[config.Rate]
 }
 type httpTrigger struct {
-	RateLimit                Setting[config.Rate]
-	IncomingPayloadSizeLimit Setting[config.Size]
+	RateLimit Setting[config.Rate]
 }
 type logTrigger struct {
 	RateLimit                Setting[config.Rate]

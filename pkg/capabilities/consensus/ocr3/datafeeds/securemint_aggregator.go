@@ -62,11 +62,10 @@ const (
 
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
 type secureMintReport struct {
-	ConfigDigest   ocr2types.ConfigDigest  `json:"configDigest"`
-	SeqNr          uint64                  `json:"seqNr"`
-	Block          uint64                  `json:"block"`
-	Mintable       *big.Int                `json:"mintable"`
-	AccountContext solana.AccountMetaSlice `json:"-"`
+	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
+	SeqNr        uint64                 `json:"seqNr"`
+	Block        uint64                 `json:"block"`
+	Mintable     *big.Int               `json:"mintable"`
 }
 
 type wrappedMintReport struct {

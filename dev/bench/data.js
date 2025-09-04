@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756923150892,
+  "lastUpdate": 1756992789024,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24526,6 +24526,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkKeystore_Sign/ed25519/in-process",
             "value": 26720,
+            "unit": "ns/op",
+            "extra": "44743 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "joe.huang@smartcontract.com",
+            "name": "Joe Huang",
+            "username": "huangzhen1997"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "17f17c8f8a30c8b1198cc7ba8e15286bcba78958",
+          "message": "add offramp address and plugin type for the ccip provider (#1523)\n\n* add offramp address and plugin type for the ccip provider\n\n* address pr comments",
+          "timestamp": "2025-09-04T08:30:43-05:00",
+          "tree_id": "147a750fb50c10d677b2f216be4bcf9ddd827e86",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/17f17c8f8a30c8b1198cc7ba8e15286bcba78958"
+        },
+        "date": 1756992787625,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.4,
+            "unit": "ns/op",
+            "extra": "3309402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.7,
+            "unit": "ns/op",
+            "extra": "3022122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26651,
             "unit": "ns/op",
             "extra": "44743 times\n4 procs"
           }

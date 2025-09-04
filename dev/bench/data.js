@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757005324495,
+  "lastUpdate": 1757007210928,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24612,6 +24612,48 @@ window.BENCHMARK_DATA = {
             "value": 28661,
             "unit": "ns/op",
             "extra": "41079 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "Chris Cushman",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bcc18fd19c63889365dd2c54c971b8433594b06e",
+          "message": "Add optional DKGInstanceID to vault protos (#1508)\n\n* Add optional InstanceID to vault protos\n\n* improve naming",
+          "timestamp": "2025-09-04T17:32:07Z",
+          "tree_id": "de64e5e6acea78dd5e76d710bcb001b64b221834",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bcc18fd19c63889365dd2c54c971b8433594b06e"
+        },
+        "date": 1757007209363,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.4,
+            "unit": "ns/op",
+            "extra": "3221979 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.3,
+            "unit": "ns/op",
+            "extra": "2962251 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26607,
+            "unit": "ns/op",
+            "extra": "44991 times\n4 procs"
           }
         ]
       }

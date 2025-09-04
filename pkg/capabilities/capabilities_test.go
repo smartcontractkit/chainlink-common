@@ -154,8 +154,8 @@ func Test_RemoteExecutableConfig_ApplyDefaults(t *testing.T) {
 	rec := &RemoteExecutableConfig{}
 	rec.ApplyDefaults()
 
-	assert.Equal(t, DefaultRegistrationRefresh, rec.RegistrationRefresh)
-	assert.Equal(t, DefaultRegistrationExpiry, rec.RegistrationExpiry)
+	assert.Equal(t, DefaultExecutableRequestTimeout, rec.RequestTimeout)
+	assert.Equal(t, DefaultServerMaxParallelRequests, rec.ServerMaxParallelRequests)
 }
 
 func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {

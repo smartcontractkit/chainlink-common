@@ -2,7 +2,9 @@
 package cresettings
 
 import (
+	"encoding/json"
 	"log"
+	"os"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -12,6 +14,12 @@ import (
 )
 
 func init() {
+	if v, ok := os.LookupEnv("CL_CRE_SETTINGS"); ok {
+		err := json.Unmarshal([]byte(v), &Default)
+		if err != nil {
+			log.Fatalf("failed to initialize defaults: %v", err)
+		}
+	}
 	err := InitConfig(&Default)
 	if err != nil {
 		log.Fatalf("failed to initialize keys: %v", err)
@@ -23,13 +31,12 @@ func init() {
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(200),
-	WorkflowRegistrationQueueLimit:    Int(20),
-	WorkflowExecutionConcurrencyLimit: Int(50),
-
-	HTTPTrigger: httpTriggerGlobal{
-		AuthRateLimit: Rate(100, -1), //TODO
-	},
+	WorkflowLimit:                               Int(200),
+	WorkflowRegistrationQueueLimit:              Int(20),
+	WorkflowExecutionConcurrencyLimit:           Int(50),
+	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
+	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
+	GatewayIncomingPayloadSizeLimit:             Size(10 * config.KByte),
 
 	PerOrg: Orgs{
 		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
@@ -63,10 +70,7 @@ var Default = Schema{
 			RateLimit: Rate(rate.Every(30*time.Second), 1),
 		},
 		HTTPTrigger: httpTrigger{
-			RateLimit:                Rate(rate.Every(30*time.Second), 3),
-			AuthRateLimit:            Rate(1, -1), //TODO
-			IncomingPayloadSizeLimit: Size(10 * config.KByte),
-			OutgoingPayloadSizeLimit: Size(-1), //TODO
+			RateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
 		LogTrigger: logTrigger{
 			RateLimit:                Rate(rate.Every(10*time.Second), -1), //TODO
@@ -99,11 +103,12 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
-	WorkflowRegistrationQueueLimit    Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-
-	HTTPTrigger httpTriggerGlobal
+	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
+	WorkflowRegistrationQueueLimit              Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	GatewayUnauthenticatedRequestRateLimit      Setting[config.Rate]
+	GatewayUnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
+	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
@@ -157,14 +162,8 @@ type Workflows struct {
 type cronTrigger struct {
 	RateLimit Setting[config.Rate]
 }
-type httpTriggerGlobal struct {
-	AuthRateLimit Setting[config.Rate]
-}
 type httpTrigger struct {
-	RateLimit                Setting[config.Rate]
-	AuthRateLimit            Setting[config.Rate]
-	IncomingPayloadSizeLimit Setting[config.Size]
-	OutgoingPayloadSizeLimit Setting[config.Size]
+	RateLimit Setting[config.Rate]
 }
 type logTrigger struct {
 	RateLimit                Setting[config.Rate]

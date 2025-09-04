@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757016910738,
+  "lastUpdate": 1757020556508,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24696,6 +24696,48 @@ window.BENCHMARK_DATA = {
             "value": 26589,
             "unit": "ns/op",
             "extra": "45012 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0bc8c4723c1dfba94261273e0c63cb8ccd2b6cf6",
+          "message": "PLEX-1716 add observations wrapper with account context (#1520)\n\n* add account context to observations\n\n* change report structure\n\n* add debug log\n\n* pass context through observations\n\n* log passed dataID\n\n* fix tests\n\n* rm obsolete test\n\n* revert add borsh encoder\n\n* generate borsh encoder const\n\n* removed unused AccountContext",
+          "timestamp": "2025-09-04T16:14:30-05:00",
+          "tree_id": "584af58f5340d1fc4f9986a428f8738662974a78",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0bc8c4723c1dfba94261273e0c63cb8ccd2b6cf6"
+        },
+        "date": 1757020554713,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.1,
+            "unit": "ns/op",
+            "extra": "3359671 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.8,
+            "unit": "ns/op",
+            "extra": "3007686 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26575,
+            "unit": "ns/op",
+            "extra": "45170 times\n4 procs"
           }
         ]
       }

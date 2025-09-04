@@ -106,6 +106,10 @@ func (c *client) StreamEvents(_ context.Context, _ ...grpc.CallOption) (grpc.Bid
 	return nil, fmt.Errorf("not implemented: StreamEvents is experimental and not supported yet")
 }
 
+func (c *client) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaRequest, opts ...grpc.CallOption) (*pb.RegisterSchemaResponse, error) {
+	return c.client.RegisterSchema(ctx, in, opts...)
+}
+
 func (c *client) Close() error {
 	return c.conn.Close()
 }

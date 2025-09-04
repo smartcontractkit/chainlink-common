@@ -185,6 +185,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 						Block:        1000,
 						Mintable:     big.NewInt(99),
 					},
+					accCtx: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}},
 				},
 				{
 					chainSelector: bnbTestnetChainSelector,
@@ -195,6 +196,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 						Block:        1100,
 						Mintable:     big.NewInt(200),
 					},
+					accCtx: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}},
 				},
 			}),
 			f:                    1,
@@ -336,14 +338,6 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			expectError:   true,
 			errorMsg:      "dataID must be 16 bytes",
 		},
-		{
-			name:           "solana account context with invalid public key",
-			chainSelector:  "1",
-			dataID:         "0x01c508f42b0201320000000000000000",
-			solanaAccounts: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: [32]byte{}}},
-			expectError:    true,
-			errorMsg:       "solana account context public key must not be all zeros",
-		},
 	}
 
 	for _, tt := range tests {
@@ -373,7 +367,6 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedChainSelector, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
 			assert.Equal(t, tt.expectedDataID, aggregator.(*SecureMintAggregator).config.DataID)
-			assert.Equal(t, tt.solanaAccounts, aggregator.(*SecureMintAggregator).config.Solana.AccountContext)
 		})
 	}
 }
@@ -384,6 +377,7 @@ type ocrTriggerEventData struct {
 	chainSelector chainSelector
 	seqNr         uint64
 	report        *secureMintReport
+	accCtx        solana.AccountMetaSlice
 }
 
 func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) map[ocrcommon.OracleID][]values.Value {
@@ -421,10 +415,12 @@ func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) ma
 				},
 			}
 
-			// Wrap in values.Value
-			val, err := values.Wrap(triggerEvent)
+			// wrap with account context if present
+			val, err := values.Wrap(map[string]any{
+				"event":  triggerEvent,
+				"solana": event.accCtx,
+			})
 			require.NoError(t, err)
-
 			oracleObservations = append(oracleObservations, val)
 		}
 

@@ -194,7 +194,7 @@ func (c *chainAccessorClient) Nonces(ctx context.Context, addresses map[ccipocr3
 	return result, nil
 }
 
-func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, selectors []ccipocr3.ChainSelector) map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig {
+func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, selectors []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig, error) {
 	var chainSelectors []uint64
 	for _, sel := range selectors {
 		chainSelectors = append(chainSelectors, uint64(sel))
@@ -204,27 +204,25 @@ func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, select
 		ChainSelectors: chainSelectors,
 	})
 	if err != nil {
-		// This method returns a map, not error, so we need to handle errors differently
-		// Return empty map for now - this matches the interface signature
-		return make(map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig)
+		return nil, err
 	}
 
-	result := make(map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig)
-	for chainSel, timestampedBig := range resp.FeePriceUpdates {
-		result[ccipocr3.ChainSelector(chainSel)] = ccipocr3.TimestampedBig{
-			Timestamp: timestampedBig.Timestamp.AsTime(),
-			Value:     pbToBigInt(timestampedBig.Value),
+	result := make(map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig)
+	for chainSel, timestampedUnixBig := range resp.FeePriceUpdates {
+		result[ccipocr3.ChainSelector(chainSel)] = ccipocr3.TimestampedUnixBig{
+			Value:     pbToBigInt(timestampedUnixBig.Value).Int,
+			Timestamp: timestampedUnixBig.Timestamp,
 		}
 	}
-	return result
+	return result, nil
 }
 
-func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context) (uint64, error) {
+func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context) (ccipocr3.SeqNum, error) {
 	resp, err := c.grpc.GetLatestPriceSeqNr(ctx, &emptypb.Empty{})
 	if err != nil {
 		return 0, err
 	}
-	return resp.SeqNr, nil
+	return ccipocr3.SeqNum(resp.SeqNr), nil
 }
 
 // SourceAccessor methods
@@ -515,13 +513,16 @@ func (s *chainAccessorServer) GetChainFeePriceUpdate(ctx context.Context, req *c
 		chainSelectors = append(chainSelectors, ccipocr3.ChainSelector(sel))
 	}
 
-	priceUpdates := s.impl.GetChainFeePriceUpdate(ctx, chainSelectors)
+	priceUpdates, err := s.impl.GetChainFeePriceUpdate(ctx, chainSelectors)
+	if err != nil {
+		return nil, err
+	}
 
-	pbUpdates := make(map[uint64]*ccipocr3pb.TimestampedBig)
+	pbUpdates := make(map[uint64]*ccipocr3pb.TimestampedUnixBig)
 	for chainSel, update := range priceUpdates {
-		pbUpdates[uint64(chainSel)] = &ccipocr3pb.TimestampedBig{
-			Value:     intToPbBigInt(update.Value.Int),
-			Timestamp: timestamppb.New(update.Timestamp),
+		pbUpdates[uint64(chainSel)] = &ccipocr3pb.TimestampedUnixBig{
+			Value:     intToPbBigInt(update.Value),
+			Timestamp: update.Timestamp,
 		}
 	}
 
@@ -535,7 +536,7 @@ func (s *chainAccessorServer) GetLatestPriceSeqNr(ctx context.Context, req *empt
 	if err != nil {
 		return nil, err
 	}
-	return &ccipocr3pb.GetLatestPriceSeqNrResponse{SeqNr: seqNr}, nil
+	return &ccipocr3pb.GetLatestPriceSeqNrResponse{SeqNr: uint64(seqNr)}, nil
 }
 
 // SourceAccessor server methods

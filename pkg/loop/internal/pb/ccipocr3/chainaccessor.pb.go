@@ -734,8 +734,8 @@ func (x *GetChainFeePriceUpdateRequest) GetChainSelectors() []uint64 {
 }
 
 type GetChainFeePriceUpdateResponse struct {
-	state           protoimpl.MessageState     `protogen:"open.v1"`
-	FeePriceUpdates map[uint64]*TimestampedBig `protobuf:"bytes,1,rep,name=fee_price_updates,json=feePriceUpdates,proto3" json:"fee_price_updates,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // key is chain selector
+	state           protoimpl.MessageState         `protogen:"open.v1"`
+	FeePriceUpdates map[uint64]*TimestampedUnixBig `protobuf:"bytes,1,rep,name=fee_price_updates,json=feePriceUpdates,proto3" json:"fee_price_updates,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // key is chain selector
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -770,7 +770,7 @@ func (*GetChainFeePriceUpdateResponse) Descriptor() ([]byte, []int) {
 	return file_chainaccessor_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *GetChainFeePriceUpdateResponse) GetFeePriceUpdates() map[uint64]*TimestampedBig {
+func (x *GetChainFeePriceUpdateResponse) GetFeePriceUpdates() map[uint64]*TimestampedUnixBig {
 	if x != nil {
 		return x.FeePriceUpdates
 	}
@@ -3548,12 +3548,12 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x129\n" +
 	"\x05value\x18\x02 \x01(\v2#.loop.internal.pb.ccipocr3.NonceMapR\x05value:\x028\x01\"H\n" +
 	"\x1dGetChainFeePriceUpdateRequest\x12'\n" +
-	"\x0fchain_selectors\x18\x01 \x03(\x04R\x0echainSelectors\"\x8b\x02\n" +
+	"\x0fchain_selectors\x18\x01 \x03(\x04R\x0echainSelectors\"\x8f\x02\n" +
 	"\x1eGetChainFeePriceUpdateResponse\x12z\n" +
-	"\x11fee_price_updates\x18\x01 \x03(\v2N.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntryR\x0ffeePriceUpdates\x1am\n" +
+	"\x11fee_price_updates\x18\x01 \x03(\v2N.loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntryR\x0ffeePriceUpdates\x1aq\n" +
 	"\x14FeePriceUpdatesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\x04R\x03key\x12?\n" +
-	"\x05value\x18\x02 \x01(\v2).loop.internal.pb.ccipocr3.TimestampedBigR\x05value:\x028\x01\"4\n" +
+	"\x03key\x18\x01 \x01(\x04R\x03key\x12C\n" +
+	"\x05value\x18\x02 \x01(\v2-.loop.internal.pb.ccipocr3.TimestampedUnixBigR\x05value:\x028\x01\"4\n" +
 	"\x1bGetLatestPriceSeqNrResponse\x12\x15\n" +
 	"\x06seq_nr\x18\x01 \x01(\x04R\x05seqNr\"\x97\x01\n" +
 	"\x19MsgsBetweenSeqNumsRequest\x12.\n" +
@@ -3933,7 +3933,7 @@ var file_chainaccessor_proto_depIdxs = []int32{
 	32, // 53: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
 	33, // 54: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
 	34, // 55: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
-	29, // 56: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedBig
+	30, // 56: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
 	83, // 57: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry.value:type_name -> loop.internal.pb.ccipocr3.RampTokenAmount
 	81, // 58: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry.value:type_name -> loop.internal.pb.ccipocr3.BigInt
 	29, // 59: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedBig

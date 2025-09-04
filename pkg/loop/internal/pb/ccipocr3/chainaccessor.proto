@@ -108,7 +108,7 @@ message GetChainFeePriceUpdateRequest {
 }
 
 message GetChainFeePriceUpdateResponse {
-  map<uint64, TimestampedBig> fee_price_updates = 1; // key is chain selector
+  map<uint64, TimestampedUnixBig> fee_price_updates = 1; // key is chain selector
 }
 
 message GetLatestPriceSeqNrResponse {

@@ -134,7 +134,7 @@ type DestinationAccessor interface {
 	// Access Type: Method(GetChainFeePriceUpdate)
 	// Contract: FeeQuoter
 	// Confidence: Unconfirmed
-	GetChainFeePriceUpdate(ctx context.Context, selectors []ChainSelector) map[ChainSelector]TimestampedBig
+	GetChainFeePriceUpdate(ctx context.Context, selectors []ChainSelector) (map[ChainSelector]TimestampedUnixBig, error)
 
 	// GetLatestPriceSeqNr returns the latest price sequence number for the destination chain.
 	// Not to confuse with the sequence number of the messages. This is the OCR sequence number.
@@ -142,7 +142,7 @@ type DestinationAccessor interface {
 	// Access Type: Method(GetLatestPriceSequenceNumber)
 	// Contract: OffRamp
 	// Confidence: Unconfirmed
-	GetLatestPriceSeqNr(ctx context.Context) (uint64, error)
+	GetLatestPriceSeqNr(ctx context.Context) (SeqNum, error)
 }
 
 type SourceAccessor interface {

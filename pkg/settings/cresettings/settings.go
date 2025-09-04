@@ -66,7 +66,6 @@ var Default = Schema{
 		ConsensusCallsLimit:           Int(2),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
-
 		CRONTrigger: cronTrigger{
 			RateLimit: Rate(rate.Every(30*time.Second), 1),
 		},

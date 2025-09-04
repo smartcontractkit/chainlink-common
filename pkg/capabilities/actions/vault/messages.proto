@@ -195,13 +195,14 @@ message ReportingPluginConfig {
   int32 MaxIdentifierKeyLengthBytes = 4;
   int32 MaxIdentifierOwnerLengthBytes = 5;
   int32 MaxIdentifierNamespaceLengthBytes = 6;
+  optional string DKGInstanceID = 7;
 
   // OCR 3.1 ReportInfo configuration
-  int32 LimitsMaxQueryLength = 7;
-  int32 LimitsMaxObservationLength = 8;
-  int32 LimitsMaxReportsPlusPrecursorLength = 9;
-  int32 LimitsMaxReportLength = 10;
-  int32 LimitsMaxReportCount = 11;
-  int32 LimitsMaxKeyValueModifiedKeysPlusValuesLength = 12;
-  int32 LimitsMaxBlobPayloadLength = 13;
+  int32 LimitsMaxQueryLength = 20;
+  int32 LimitsMaxObservationLength = 21;
+  int32 LimitsMaxReportsPlusPrecursorLength = 22;
+  int32 LimitsMaxReportLength = 23;
+  int32 LimitsMaxReportCount = 24;
+  int32 LimitsMaxKeyValueModifiedKeysPlusValuesLength = 25;
+  int32 LimitsMaxBlobPayloadLength = 26;
 }

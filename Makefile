@@ -42,8 +42,12 @@ generate: mockery install-protoc gomods cre-protoc modgraph
 cre-protoc:
 	cd pkg/capabilities/v2/protoc && go build -o protoc-gen-cre .
 
+
 .PHONY: lint-workspace lint
-GOLANGCI_LINT_VERSION := 1.64.8
+# If GOLANGCI_LINT_VERSION is not set, extract it from .tool-versions
+ifndef GOLANGCI_LINT_VERSION
+GOLANGCI_LINT_VERSION := $(shell grep '^golangci-lint ' .tool-versions | awk '{print $$2}')
+endif
 GOLANGCI_LINT_COMMON_OPTS := --max-issues-per-linter 0 --max-same-issues 0
 GOLANGCI_LINT_DIRECTORY := ./golangci-lint
 

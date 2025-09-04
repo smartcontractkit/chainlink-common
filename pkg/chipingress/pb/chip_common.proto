@@ -49,8 +49,8 @@ message Path {
 enum PathType {
   S3 = 0;                      // S3 storage
   LOCAL = 1;                   // Local file system
-  GITHUB = 3;                // GitHub storage
-  OTHER = 4;                   // Other storage types
+  GITHUB = 2;                // GitHub storage
+  OTHER = 3;                   // Other storage types
 }
 
 // Response message for schema registration

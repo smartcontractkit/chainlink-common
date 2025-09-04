@@ -58,7 +58,9 @@ type CCIPProvider interface {
 // CCIPProviderArgs are the args required to create a CCIP Provider through a Relayer.
 // The are common to all relayer implementations.
 type CCIPProviderArgs struct {
-	ExternalJobID        uuid.UUID 
+	ExternalJobID        uuid.UUID
 	ContractReaderConfig []byte
 	ChainWriterConfig    []byte
+	OffRampAddress       string
+	PluginType           uint32
 }

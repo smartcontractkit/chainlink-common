@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto";
+import "pb/chip_common.proto";
 
 package chipingress.pb;
 
@@ -22,6 +23,9 @@ service ChipIngress {
 // StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
 // This API is experimental and may change in the future.
     rpc StreamEvents (stream StreamEventsRequest) returns (stream StreamEventsResponse) {} // New streaming endpoint
+
+// RegisterSchema allows registering one or more schemas that define the structure of CloudEvent data.
+    rpc RegisterSchema(RegisterSchemaRequest) returns (RegisterSchemaResponse) {}
 }
 
 // CloudEventBatch is used to send many ChipIngress
@@ -53,4 +57,14 @@ message StreamEventsRequest {
 message StreamEventsResponse {
     string eventId = 1;
     string status = 2; // e.g., "success", "error"
+}
+
+// RegisterSchema request message
+message RegisterSchemaRequest {
+    repeated chip_common.Schema schemas = 1;
+}
+
+// RegisterSchema response message
+message RegisterSchemaResponse {
+    repeated chip_common.RegisteredSchema registered = 1; // List of registered schema subjects
 }

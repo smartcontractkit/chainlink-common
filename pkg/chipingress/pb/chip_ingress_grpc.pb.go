@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: chip_ingress.proto
+// source: pb/chip_ingress.proto
 
 package pb
 
@@ -20,10 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChipIngress_Publish_FullMethodName      = "/chipingress.pb.ChipIngress/Publish"
-	ChipIngress_PublishBatch_FullMethodName = "/chipingress.pb.ChipIngress/PublishBatch"
-	ChipIngress_Ping_FullMethodName         = "/chipingress.pb.ChipIngress/Ping"
-	ChipIngress_StreamEvents_FullMethodName = "/chipingress.pb.ChipIngress/StreamEvents"
+	ChipIngress_Publish_FullMethodName        = "/chipingress.pb.ChipIngress/Publish"
+	ChipIngress_PublishBatch_FullMethodName   = "/chipingress.pb.ChipIngress/PublishBatch"
+	ChipIngress_Ping_FullMethodName           = "/chipingress.pb.ChipIngress/Ping"
+	ChipIngress_StreamEvents_FullMethodName   = "/chipingress.pb.ChipIngress/StreamEvents"
+	ChipIngress_RegisterSchema_FullMethodName = "/chipingress.pb.ChipIngress/RegisterSchema"
 )
 
 // ChipIngressClient is the client API for ChipIngress service.
@@ -46,6 +47,8 @@ type ChipIngressClient interface {
 	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
 	// This API is experimental and may change in the future.
 	StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error)
+	// RegisterSchema allows registering one or more schemas that define the structure of CloudEvent data.
+	RegisterSchema(ctx context.Context, in *RegisterSchemaRequest, opts ...grpc.CallOption) (*RegisterSchemaResponse, error)
 }
 
 type chipIngressClient struct {
@@ -99,6 +102,16 @@ func (c *chipIngressClient) StreamEvents(ctx context.Context, opts ...grpc.CallO
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChipIngress_StreamEventsClient = grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse]
 
+func (c *chipIngressClient) RegisterSchema(ctx context.Context, in *RegisterSchemaRequest, opts ...grpc.CallOption) (*RegisterSchemaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterSchemaResponse)
+	err := c.cc.Invoke(ctx, ChipIngress_RegisterSchema_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChipIngressServer is the server API for ChipIngress service.
 // All implementations must embed UnimplementedChipIngressServer
 // for forward compatibility.
@@ -119,6 +132,8 @@ type ChipIngressServer interface {
 	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
 	// This API is experimental and may change in the future.
 	StreamEvents(grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]) error
+	// RegisterSchema allows registering one or more schemas that define the structure of CloudEvent data.
+	RegisterSchema(context.Context, *RegisterSchemaRequest) (*RegisterSchemaResponse, error)
 	mustEmbedUnimplementedChipIngressServer()
 }
 
@@ -140,6 +155,9 @@ func (UnimplementedChipIngressServer) Ping(context.Context, *EmptyRequest) (*Pin
 }
 func (UnimplementedChipIngressServer) StreamEvents(grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method StreamEvents not implemented")
+}
+func (UnimplementedChipIngressServer) RegisterSchema(context.Context, *RegisterSchemaRequest) (*RegisterSchemaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterSchema not implemented")
 }
 func (UnimplementedChipIngressServer) mustEmbedUnimplementedChipIngressServer() {}
 func (UnimplementedChipIngressServer) testEmbeddedByValue()                     {}
@@ -223,6 +241,24 @@ func _ChipIngress_StreamEvents_Handler(srv interface{}, stream grpc.ServerStream
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChipIngress_StreamEventsServer = grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]
 
+func _ChipIngress_RegisterSchema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterSchemaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChipIngressServer).RegisterSchema(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChipIngress_RegisterSchema_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChipIngressServer).RegisterSchema(ctx, req.(*RegisterSchemaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChipIngress_ServiceDesc is the grpc.ServiceDesc for ChipIngress service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -242,6 +278,10 @@ var ChipIngress_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Ping",
 			Handler:    _ChipIngress_Ping_Handler,
 		},
+		{
+			MethodName: "RegisterSchema",
+			Handler:    _ChipIngress_RegisterSchema_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -251,5 +291,5 @@ var ChipIngress_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "chip_ingress.proto",
+	Metadata: "pb/chip_ingress.proto",
 }

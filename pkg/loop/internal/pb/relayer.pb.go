@@ -278,6 +278,8 @@ type CCIPProviderArgs struct {
 	ExternalJobID        []byte                 `protobuf:"bytes,1,opt,name=externalJobID,proto3" json:"externalJobID,omitempty"` // [32]byte
 	ContractReaderConfig []byte                 `protobuf:"bytes,2,opt,name=contractReaderConfig,proto3" json:"contractReaderConfig,omitempty"`
 	ChainWriterConfig    []byte                 `protobuf:"bytes,3,opt,name=chainWriterConfig,proto3" json:"chainWriterConfig,omitempty"`
+	OffRampAddress       string                 `protobuf:"bytes,4,opt,name=OffRampAddress,proto3" json:"OffRampAddress,omitempty"`
+	PluginType           uint32                 `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -331,6 +333,20 @@ func (x *CCIPProviderArgs) GetChainWriterConfig() []byte {
 		return x.ChainWriterConfig
 	}
 	return nil
+}
+
+func (x *CCIPProviderArgs) GetOffRampAddress() string {
+	if x != nil {
+		return x.OffRampAddress
+	}
+	return ""
+}
+
+func (x *CCIPProviderArgs) GetPluginType() uint32 {
+	if x != nil {
+		return x.PluginType
+	}
+	return 0
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
@@ -2699,11 +2715,15 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\n" +
 	"PluginArgs\x12$\n" +
 	"\rtransmitterID\x18\x01 \x01(\tR\rtransmitterID\x12\"\n" +
-	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\x9a\x01\n" +
+	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xe2\x01\n" +
 	"\x10CCIPProviderArgs\x12$\n" +
 	"\rexternalJobID\x18\x01 \x01(\fR\rexternalJobID\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\x12,\n" +
-	"\x11chainWriterConfig\x18\x03 \x01(\fR\x11chainWriterConfig\"N\n" +
+	"\x11chainWriterConfig\x18\x03 \x01(\fR\x11chainWriterConfig\x12&\n" +
+	"\x0eOffRampAddress\x18\x04 \x01(\tR\x0eOffRampAddress\x12\x1e\n" +
+	"\n" +
+	"pluginType\x18\x05 \x01(\rR\n" +
+	"pluginType\"N\n" +
 	"\x18NewContractWriterRequest\x122\n" +
 	"\x14contractWriterConfig\x18\x01 \x01(\fR\x14contractWriterConfig\"D\n" +
 	"\x16NewContractWriterReply\x12*\n" +

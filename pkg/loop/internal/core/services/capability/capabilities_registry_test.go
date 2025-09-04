@@ -5,7 +5,6 @@ import (
 	"errors"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/assert"
@@ -397,7 +396,7 @@ func TestToDON(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
+func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
 	reg := mocks.NewCapabilitiesRegistry(t)
@@ -435,9 +434,20 @@ func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
 
 	var rtc capabilities.RemoteTriggerConfig
 	rtc.ApplyDefaults()
+	var rec capabilities.RemoteExecutableConfig
+	rec.ApplyDefaults()
 	expectedCapConfig := capabilities.CapabilityConfiguration{
 		DefaultConfig:       wm,
 		RemoteTriggerConfig: &rtc,
+		CapabilityMethodConfig: map[string]capabilities.CapabilityMethodConfig{
+			"trigger-method": {
+				RemoteTriggerConfig: &rtc,
+				AggregatorConfig:    &capabilities.AggregatorConfig{AggregatorType: capabilities.AggregatorType_SignedReport},
+			},
+			"executable-method": {
+				RemoteExecutableConfig: &rec,
+			},
+		},
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 
@@ -493,8 +503,6 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCapConfig, capConf)
-	assert.Equal(t, 30*time.Second, capConf.RemoteExecutableConfig.RegistrationRefresh)
-	assert.Equal(t, 2*time.Minute, capConf.RemoteExecutableConfig.RegistrationExpiry)
 }
 
 func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {

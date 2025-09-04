@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757020556508,
+  "lastUpdate": 1757021317853,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24738,6 +24738,48 @@ window.BENCHMARK_DATA = {
             "value": 26575,
             "unit": "ns/op",
             "extra": "45170 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8fa1bdd4e2d348fbc72ba05234668100f4e2f90a",
+          "message": "augment OutboundHTTPResponse with helpful fields for metrics (#1519)\n\n* add IsExternalEndpointError and ExternalEndpointLatency to OutboundHTTPResponse\n\n* add cache settings to cresettings",
+          "timestamp": "2025-09-04T21:27:19Z",
+          "tree_id": "452720017e35ada70c8a7520ec19c837f68496b9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8fa1bdd4e2d348fbc72ba05234668100f4e2f90a"
+        },
+        "date": 1757021316760,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 349.3,
+            "unit": "ns/op",
+            "extra": "3332257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.4,
+            "unit": "ns/op",
+            "extra": "2877271 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26568,
+            "unit": "ns/op",
+            "extra": "45049 times\n4 procs"
           }
         ]
       }

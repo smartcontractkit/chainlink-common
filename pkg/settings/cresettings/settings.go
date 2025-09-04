@@ -23,12 +23,12 @@ func init() {
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                        Int(200),
-	WorkflowRegistrationQueueLimit:       Int(20),
-	WorkflowExecutionConcurrencyLimit:    Int(50),
-	UnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
-	UnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
-	IncomingPayloadSizeLimit:             Size(10 * config.KByte),
+	WorkflowLimit:                               Int(200),
+	WorkflowRegistrationQueueLimit:              Int(20),
+	WorkflowExecutionConcurrencyLimit:           Int(50),
+	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
+	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
+	GatewayIncomingPayloadSizeLimit:             Size(10 * config.KByte),
 
 	PerOrg: Orgs{
 		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
@@ -97,12 +97,12 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                        Setting[int] `unit:"{workflow}"`
-	WorkflowRegistrationQueueLimit       Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit    Setting[int] `unit:"{workflow}"`
-	UnauthenticatedRequestRateLimit      Setting[config.Rate]
-	UnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
-	IncomingPayloadSizeLimit             Setting[config.Size]
+	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
+	WorkflowRegistrationQueueLimit              Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	GatewayUnauthenticatedRequestRateLimit      Setting[config.Rate]
+	GatewayUnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
+	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`

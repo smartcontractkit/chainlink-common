@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756992789024,
+  "lastUpdate": 1757005324495,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24570,6 +24570,48 @@ window.BENCHMARK_DATA = {
             "value": 26651,
             "unit": "ns/op",
             "extra": "44743 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2674110962ca86ebcb0fd5bf154691531b4175af",
+          "message": "[PRODCRE-792] Per-method onchain config for capabilities V2 (#1507)",
+          "timestamp": "2025-09-04T10:00:26-07:00",
+          "tree_id": "146fef8bdb564637d02358b69fcd49119797bd86",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2674110962ca86ebcb0fd5bf154691531b4175af"
+        },
+        "date": 1757005323126,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 1014,
+            "unit": "ns/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 447.2,
+            "unit": "ns/op",
+            "extra": "2626323 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28661,
+            "unit": "ns/op",
+            "extra": "41079 times\n4 procs"
           }
         ]
       }

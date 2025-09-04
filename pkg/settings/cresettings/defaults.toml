@@ -1,6 +1,9 @@
 WorkflowLimit = '200'
 WorkflowRegistrationQueueLimit = '20'
 WorkflowExecutionConcurrencyLimit = '50'
+UnauthenticatedRequestRateLimit = '100rps:-1'
+UnauthenticatedRequestRateLimitPerIP = '1rps:-1'
+IncomingPayloadSizeLimit = '10kb'
 
 [PerOrg]
 WorkflowDeploymentRateLimit = 'every1m0s:1'
@@ -36,6 +39,7 @@ RateLimit = 'every30s:1'
 
 [PerWorkflow.HTTPTrigger]
 RateLimit = 'every30s:3'
+IncomingPayloadSizeLimit = '10kb'
 
 [PerWorkflow.LogTrigger]
 RateLimit = 'every10s:-1'

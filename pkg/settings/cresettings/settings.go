@@ -23,9 +23,12 @@ func init() {
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(200),
-	WorkflowRegistrationQueueLimit:    Int(20),
-	WorkflowExecutionConcurrencyLimit: Int(50),
+	WorkflowLimit:                        Int(200),
+	WorkflowRegistrationQueueLimit:       Int(20),
+	WorkflowExecutionConcurrencyLimit:    Int(50),
+	UnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
+	UnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
+	IncomingPayloadSizeLimit:             Size(10 * config.KByte),
 
 	PerOrg: Orgs{
 		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
@@ -60,7 +63,8 @@ var Default = Schema{
 			RateLimit: Rate(rate.Every(30*time.Second), 1),
 		},
 		HTTPTrigger: httpTrigger{
-			RateLimit: Rate(rate.Every(30*time.Second), 3),
+			RateLimit:                Rate(rate.Every(30*time.Second), 3),
+			IncomingPayloadSizeLimit: Size(10 * config.KByte),
 		},
 		LogTrigger: logTrigger{
 			RateLimit:                Rate(rate.Every(10*time.Second), -1), //TODO
@@ -93,9 +97,12 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
-	WorkflowRegistrationQueueLimit    Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	WorkflowLimit                        Setting[int] `unit:"{workflow}"`
+	WorkflowRegistrationQueueLimit       Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit    Setting[int] `unit:"{workflow}"`
+	UnauthenticatedRequestRateLimit      Setting[config.Rate]
+	UnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
+	IncomingPayloadSizeLimit             Setting[config.Size]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
@@ -150,7 +157,8 @@ type cronTrigger struct {
 	RateLimit Setting[config.Rate]
 }
 type httpTrigger struct {
-	RateLimit Setting[config.Rate]
+	RateLimit                Setting[config.Rate]
+	IncomingPayloadSizeLimit Setting[config.Size]
 }
 type logTrigger struct {
 	RateLimit                Setting[config.Rate]

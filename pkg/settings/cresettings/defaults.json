@@ -2,6 +2,9 @@
 	"WorkflowLimit": "200",
 	"WorkflowRegistrationQueueLimit": "20",
 	"WorkflowExecutionConcurrencyLimit": "50",
+	"UnauthenticatedRequestRateLimit": "100rps:-1",
+	"UnauthenticatedRequestRateLimitPerIP": "1rps:-1",
+	"IncomingPayloadSizeLimit": "10kb",
 	"PerOrg": {
 		"WorkflowDeploymentRateLimit": "every1m0s:1",
 		"ZeroBalancePruningTimeout": "24h0m0s"
@@ -35,6 +38,7 @@
 		},
 		"HTTPTrigger": {
 			"RateLimit": "every30s:3",
+			"IncomingPayloadSizeLimit": "10kb"
 		},
 		"LogTrigger": {
 			"RateLimit": "every10s:-1",

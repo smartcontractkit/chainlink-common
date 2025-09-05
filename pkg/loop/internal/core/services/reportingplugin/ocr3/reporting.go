@@ -2,6 +2,8 @@ package ocr3
 
 import (
 	"context"
+	"encoding"
+	"fmt"
 	"math"
 	"time"
 
@@ -12,10 +14,10 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
+	"github.com/smartcontractkit/tmp-sm-plugin-loopp/v2/internal/goplugin"
+	"github.com/smartcontractkit/tmp-sm-plugin-loopp/v2/internal/net"
+	"github.com/smartcontractkit/tmp-sm-plugin-loopp/v2/internal/pb"
+	ocr3 "github.com/smartcontractkit/tmp-sm-plugin-loopp/v2/internal/pb/ocr3"
 )
 
 type reportingPluginFactoryClient struct {
@@ -65,15 +67,23 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, c
 
 var _ ocr3.ReportingPluginFactoryServer = (*reportingPluginFactoryServer)(nil)
 
+// var _ encoding.BinaryMarshaler = (BinaryRI)(nil)
+// var _ encoding.BinaryUnmarshaler = (BinaryRI)(nil)
+
+type BinaryRI interface {
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+}
+
 type reportingPluginFactoryServer struct {
 	ocr3.UnimplementedReportingPluginFactoryServer
 
 	*net.BrokerExt
 
-	impl ocr3types.ReportingPluginFactory[[]byte]
+	impl ocr3types.ReportingPluginFactory[BinaryRI]
 }
 
-func NewReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[[]byte], b *net.BrokerExt) *reportingPluginFactoryServer {
+func NewReportingPluginFactoryServer(impl ocr3types.ReportingPluginFactory[BinaryRI], b *net.BrokerExt) *reportingPluginFactoryServer {
 	return &reportingPluginFactoryServer{impl: impl, BrokerExt: b.WithName("OCR3ReportingPluginFactoryServer")}
 }
 
@@ -233,7 +243,7 @@ var _ ocr3.ReportingPluginServer = (*reportingPluginServer)(nil)
 type reportingPluginServer struct {
 	ocr3.UnimplementedReportingPluginServer
 
-	impl ocr3types.ReportingPlugin[[]byte]
+	impl ocr3types.ReportingPlugin[BinaryRI]
 }
 
 func (o *reportingPluginServer) Query(ctx context.Context, request *ocr3.QueryRequest) (*ocr3.QueryReply, error) {
@@ -299,9 +309,15 @@ func (o *reportingPluginServer) Reports(ctx context.Context, request *ocr3.Repor
 }
 
 func (o *reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, request *ocr3.ShouldAcceptAttestedReportRequest) (*ocr3.ShouldAcceptAttestedReportReply, error) {
-	sa, err := o.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[[]byte]{
+	var b BinaryRI
+	err := b.UnmarshalBinary(request.Ri.Info)
+	if err != nil {
+		return nil, err
+	}
+
+	sa, err := o.impl.ShouldAcceptAttestedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[BinaryRI]{
 		Report: request.Ri.Report,
-		Info:   request.Ri.Info,
+		Info:   b,
 	})
 	if err != nil {
 		return nil, err
@@ -312,13 +328,20 @@ func (o *reportingPluginServer) ShouldAcceptAttestedReport(ctx context.Context, 
 }
 
 func (o *reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context, request *ocr3.ShouldTransmitAcceptedReportRequest) (*ocr3.ShouldTransmitAcceptedReportReply, error) {
-	st, err := o.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[[]byte]{
+	var b BinaryRI
+	err := b.UnmarshalBinary(request.Ri.Info)
+	if err != nil {
+		return nil, err
+	}
+
+	st, err := o.impl.ShouldTransmitAcceptedReport(ctx, request.SegNr, ocr3types.ReportWithInfo[BinaryRI]{
 		Report: request.Ri.Report,
-		Info:   request.Ri.Info,
+		Info:   b,
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return &ocr3.ShouldTransmitAcceptedReportReply{
 		ShouldTransmit: st,
 	}, nil
@@ -344,12 +367,16 @@ func pbAttributedObservation(ao libocr.AttributedObservation) *ocr3.AttributedOb
 	}
 }
 
-func pbReportsPlus(rwi []ocr3types.ReportPlus[[]byte]) (ri []*ocr3.ReportPlus) {
+func pbReportsPlus(rwi []ocr3types.ReportPlus[BinaryRI]) (ri []*ocr3.ReportPlus) {
 	for _, r := range rwi {
+		info, err := r.ReportWithInfo.Info.MarshalBinary()
+		if err != nil {
+			panic(fmt.Sprintf("can't marshal %v to bytes: %v", r.ReportWithInfo.Info, err))
+		}
 		ri = append(ri, &ocr3.ReportPlus{
 			ReportWithInfo: &ocr3.ReportWithInfo{
 				Report: r.ReportWithInfo.Report,
-				Info:   r.ReportWithInfo.Info,
+				Info:   info,
 			},
 			TransmissionScheduleOverride: pbTransmissionSchedule(r.TransmissionScheduleOverride),
 		})

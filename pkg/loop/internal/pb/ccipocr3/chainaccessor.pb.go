@@ -3255,7 +3255,8 @@ func (x *MessagesByTokenIDResponse) GetMessages() map[string][]byte {
 // PriceReader request/response messages
 type GetFeedPricesUSDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tokens        []string               `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"` // UnknownEncodedAddress
+	Tokens        []string               `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`                                                                                                  // UnknownEncodedAddress
+	TokenInfo     map[string]*TokenInfo  `protobuf:"bytes,2,rep,name=token_info,json=tokenInfo,proto3" json:"token_info,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // key is UnknownEncodedAddress
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3293,6 +3294,13 @@ func (*GetFeedPricesUSDRequest) Descriptor() ([]byte, []int) {
 func (x *GetFeedPricesUSDRequest) GetTokens() []string {
 	if x != nil {
 		return x.Tokens
+	}
+	return nil
+}
+
+func (x *GetFeedPricesUSDRequest) GetTokenInfo() map[string]*TokenInfo {
+	if x != nil {
+		return x.TokenInfo
 	}
 	return nil
 }
@@ -3486,6 +3494,66 @@ func (x *MessageTokenID) GetSeqNr() uint64 {
 func (x *MessageTokenID) GetIndex() int32 {
 	if x != nil {
 		return x.Index
+	}
+	return 0
+}
+
+type TokenInfo struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	AggregatorAddress string                 `protobuf:"bytes,1,opt,name=aggregator_address,json=aggregatorAddress,proto3" json:"aggregator_address,omitempty"` // UnknownEncodedAddress
+	DeviationPpb      *BigInt                `protobuf:"bytes,2,opt,name=deviation_ppb,json=deviationPpb,proto3" json:"deviation_ppb,omitempty"`
+	Decimals          uint32                 `protobuf:"varint,3,opt,name=decimals,proto3" json:"decimals,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *TokenInfo) Reset() {
+	*x = TokenInfo{}
+	mi := &file_chainaccessor_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TokenInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TokenInfo) ProtoMessage() {}
+
+func (x *TokenInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_chainaccessor_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TokenInfo.ProtoReflect.Descriptor instead.
+func (*TokenInfo) Descriptor() ([]byte, []int) {
+	return file_chainaccessor_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *TokenInfo) GetAggregatorAddress() string {
+	if x != nil {
+		return x.AggregatorAddress
+	}
+	return ""
+}
+
+func (x *TokenInfo) GetDeviationPpb() *BigInt {
+	if x != nil {
+		return x.DeviationPpb
+	}
+	return nil
+}
+
+func (x *TokenInfo) GetDecimals() uint32 {
+	if x != nil {
+		return x.Decimals
 	}
 	return 0
 }
@@ -3736,9 +3804,14 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\bmessages\x18\x01 \x03(\v2B.loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.MessagesEntryR\bmessages\x1a;\n" +
 	"\rMessagesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01\"1\n" +
+	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01\"\xf7\x01\n" +
 	"\x17GetFeedPricesUSDRequest\x12\x16\n" +
-	"\x06tokens\x18\x01 \x03(\tR\x06tokens\"\xd1\x01\n" +
+	"\x06tokens\x18\x01 \x03(\tR\x06tokens\x12`\n" +
+	"\n" +
+	"token_info\x18\x02 \x03(\v2A.loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest.TokenInfoEntryR\ttokenInfo\x1ab\n" +
+	"\x0eTokenInfoEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12:\n" +
+	"\x05value\x18\x02 \x01(\v2$.loop.internal.pb.ccipocr3.TokenInfoR\x05value:\x028\x01\"\xd1\x01\n" +
 	"\x18GetFeedPricesUSDResponse\x12W\n" +
 	"\x06prices\x18\x01 \x03(\v2?.loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntryR\x06prices\x1a\\\n" +
 	"\vPricesEntry\x12\x10\n" +
@@ -3754,7 +3827,11 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2-.loop.internal.pb.ccipocr3.TimestampedUnixBigR\x05value:\x028\x01\"=\n" +
 	"\x0eMessageTokenID\x12\x15\n" +
 	"\x06seq_nr\x18\x01 \x01(\x04R\x05seqNr\x12\x14\n" +
-	"\x05index\x18\x02 \x01(\x05R\x05index2\xf6\x11\n" +
+	"\x05index\x18\x02 \x01(\x05R\x05index\"\x9e\x01\n" +
+	"\tTokenInfo\x12-\n" +
+	"\x12aggregator_address\x18\x01 \x01(\tR\x11aggregatorAddress\x12F\n" +
+	"\rdeviation_ppb\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\fdeviationPpb\x12\x1a\n" +
+	"\bdecimals\x18\x03 \x01(\rR\bdecimals2\xf6\x11\n" +
 	"\rChainAccessor\x12\x81\x01\n" +
 	"\x12GetContractAddress\x124.loop.internal.pb.ccipocr3.GetContractAddressRequest\x1a5.loop.internal.pb.ccipocr3.GetContractAddressResponse\x12\x84\x01\n" +
 	"\x13GetAllConfigsLegacy\x125.loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest\x1a6.loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse\x12i\n" +
@@ -3788,7 +3865,7 @@ func file_chainaccessor_proto_rawDescGZIP() []byte {
 	return file_chainaccessor_proto_rawDescData
 }
 
-var file_chainaccessor_proto_msgTypes = make([]protoimpl.MessageInfo, 78)
+var file_chainaccessor_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
 var file_chainaccessor_proto_goTypes = []any{
 	(*GetContractAddressRequest)(nil),             // 0: loop.internal.pb.ccipocr3.GetContractAddressRequest
 	(*GetContractAddressResponse)(nil),            // 1: loop.internal.pb.ccipocr3.GetContractAddressResponse
@@ -3855,52 +3932,54 @@ var file_chainaccessor_proto_goTypes = []any{
 	(*GetFeeQuoterTokenUpdatesRequest)(nil),       // 62: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesRequest
 	(*GetFeeQuoterTokenUpdatesResponse)(nil),      // 63: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse
 	(*MessageTokenID)(nil),                        // 64: loop.internal.pb.ccipocr3.MessageTokenID
-	nil,                                           // 65: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
-	nil,                                           // 66: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
-	nil,                                           // 67: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
-	nil,                                           // 68: loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
-	nil,                                           // 69: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
-	nil,                                           // 70: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
-	nil,                                           // 71: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
-	nil,                                           // 72: loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
-	nil,                                           // 73: loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
-	nil,                                           // 74: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry
-	nil,                                           // 75: loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.MessagesEntry
-	nil,                                           // 76: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry
-	nil,                                           // 77: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry
-	(*timestamppb.Timestamp)(nil),                 // 78: google.protobuf.Timestamp
-	(*SeqNumRange)(nil),                           // 79: loop.internal.pb.ccipocr3.SeqNumRange
-	(*Message)(nil),                               // 80: loop.internal.pb.ccipocr3.Message
-	(*BigInt)(nil),                                // 81: loop.internal.pb.ccipocr3.BigInt
-	(*CommitPluginReport)(nil),                    // 82: loop.internal.pb.ccipocr3.CommitPluginReport
-	(*RampTokenAmount)(nil),                       // 83: loop.internal.pb.ccipocr3.RampTokenAmount
-	(*emptypb.Empty)(nil),                         // 84: google.protobuf.Empty
+	(*TokenInfo)(nil),                             // 65: loop.internal.pb.ccipocr3.TokenInfo
+	nil,                                           // 66: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
+	nil,                                           // 67: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
+	nil,                                           // 68: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
+	nil,                                           // 69: loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
+	nil,                                           // 70: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
+	nil,                                           // 71: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
+	nil,                                           // 72: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
+	nil,                                           // 73: loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
+	nil,                                           // 74: loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
+	nil,                                           // 75: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry
+	nil,                                           // 76: loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.MessagesEntry
+	nil,                                           // 77: loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest.TokenInfoEntry
+	nil,                                           // 78: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry
+	nil,                                           // 79: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry
+	(*timestamppb.Timestamp)(nil),                 // 80: google.protobuf.Timestamp
+	(*SeqNumRange)(nil),                           // 81: loop.internal.pb.ccipocr3.SeqNumRange
+	(*Message)(nil),                               // 82: loop.internal.pb.ccipocr3.Message
+	(*BigInt)(nil),                                // 83: loop.internal.pb.ccipocr3.BigInt
+	(*CommitPluginReport)(nil),                    // 84: loop.internal.pb.ccipocr3.CommitPluginReport
+	(*RampTokenAmount)(nil),                       // 85: loop.internal.pb.ccipocr3.RampTokenAmount
+	(*emptypb.Empty)(nil),                         // 86: google.protobuf.Empty
 }
 var file_chainaccessor_proto_depIdxs = []int32{
 	54, // 0: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.snapshot:type_name -> loop.internal.pb.ccipocr3.ChainConfigSnapshot
-	65, // 1: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.source_chain_configs:type_name -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
+	66, // 1: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.source_chain_configs:type_name -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry
 	27, // 2: loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse.fee_components:type_name -> loop.internal.pb.ccipocr3.ChainFeeComponents
-	78, // 3: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
+	80, // 3: loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
 	28, // 4: loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse.reports:type_name -> loop.internal.pb.ccipocr3.CommitPluginReportWithMeta
-	66, // 5: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.ranges:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
-	67, // 6: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.executed_messages:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
-	68, // 7: loop.internal.pb.ccipocr3.NextSeqNumResponse.next_seq_nums:type_name -> loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
-	69, // 8: loop.internal.pb.ccipocr3.NoncesRequest.addresses:type_name -> loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
-	70, // 9: loop.internal.pb.ccipocr3.NoncesResponse.nonces:type_name -> loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
-	71, // 10: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.fee_price_updates:type_name -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
-	79, // 11: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	80, // 12: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse.messages:type_name -> loop.internal.pb.ccipocr3.Message
+	67, // 5: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.ranges:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry
+	68, // 6: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.executed_messages:type_name -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry
+	69, // 7: loop.internal.pb.ccipocr3.NextSeqNumResponse.next_seq_nums:type_name -> loop.internal.pb.ccipocr3.NextSeqNumResponse.NextSeqNumsEntry
+	70, // 8: loop.internal.pb.ccipocr3.NoncesRequest.addresses:type_name -> loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry
+	71, // 9: loop.internal.pb.ccipocr3.NoncesResponse.nonces:type_name -> loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry
+	72, // 10: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.fee_price_updates:type_name -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry
+	81, // 11: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest.seq_num_range:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	82, // 12: loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse.messages:type_name -> loop.internal.pb.ccipocr3.Message
 	30, // 13: loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse.price:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
 	57, // 14: loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse.config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterDestChainConfig
-	81, // 15: loop.internal.pb.ccipocr3.ChainFeeComponents.execution_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
-	81, // 16: loop.internal.pb.ccipocr3.ChainFeeComponents.data_availability_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
-	82, // 17: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.report:type_name -> loop.internal.pb.ccipocr3.CommitPluginReport
-	78, // 18: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.timestamp:type_name -> google.protobuf.Timestamp
-	78, // 19: loop.internal.pb.ccipocr3.TimestampedBig.timestamp:type_name -> google.protobuf.Timestamp
-	81, // 20: loop.internal.pb.ccipocr3.TimestampedBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	81, // 21: loop.internal.pb.ccipocr3.TimestampedUnixBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	79, // 22: loop.internal.pb.ccipocr3.SequenceNumberRangeList.ranges:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
-	72, // 23: loop.internal.pb.ccipocr3.NonceMap.nonces:type_name -> loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
+	83, // 15: loop.internal.pb.ccipocr3.ChainFeeComponents.execution_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
+	83, // 16: loop.internal.pb.ccipocr3.ChainFeeComponents.data_availability_fee:type_name -> loop.internal.pb.ccipocr3.BigInt
+	84, // 17: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.report:type_name -> loop.internal.pb.ccipocr3.CommitPluginReport
+	80, // 18: loop.internal.pb.ccipocr3.CommitPluginReportWithMeta.timestamp:type_name -> google.protobuf.Timestamp
+	80, // 19: loop.internal.pb.ccipocr3.TimestampedBig.timestamp:type_name -> google.protobuf.Timestamp
+	83, // 20: loop.internal.pb.ccipocr3.TimestampedBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	83, // 21: loop.internal.pb.ccipocr3.TimestampedUnixBig.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	81, // 22: loop.internal.pb.ccipocr3.SequenceNumberRangeList.ranges:type_name -> loop.internal.pb.ccipocr3.SeqNumRange
+	73, // 23: loop.internal.pb.ccipocr3.NonceMap.nonces:type_name -> loop.internal.pb.ccipocr3.NonceMap.NoncesEntry
 	36, // 24: loop.internal.pb.ccipocr3.OfframpConfig.commit_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
 	36, // 25: loop.internal.pb.ccipocr3.OfframpConfig.exec_latest_ocr_config:type_name -> loop.internal.pb.ccipocr3.OCRConfigResponse
 	39, // 26: loop.internal.pb.ccipocr3.OfframpConfig.static_config:type_name -> loop.internal.pb.ccipocr3.OffRampStaticChainConfig
@@ -3912,7 +3991,7 @@ var file_chainaccessor_proto_depIdxs = []int32{
 	45, // 32: loop.internal.pb.ccipocr3.VersionedConfig.config:type_name -> loop.internal.pb.ccipocr3.RMNConfig
 	46, // 33: loop.internal.pb.ccipocr3.RMNConfig.signers:type_name -> loop.internal.pb.ccipocr3.SignerInfo
 	48, // 34: loop.internal.pb.ccipocr3.FeeQuoterConfigStruct.static_config:type_name -> loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct
-	81, // 35: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct.max_fee_juels_per_msg:type_name -> loop.internal.pb.ccipocr3.BigInt
+	83, // 35: loop.internal.pb.ccipocr3.FeeQuoterStaticConfigStruct.max_fee_juels_per_msg:type_name -> loop.internal.pb.ccipocr3.BigInt
 	50, // 36: loop.internal.pb.ccipocr3.OnRampConfigStruct.dynamic_config:type_name -> loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse
 	52, // 37: loop.internal.pb.ccipocr3.OnRampConfigStruct.dest_chain_config:type_name -> loop.internal.pb.ccipocr3.OnRampDestChainConfig
 	51, // 38: loop.internal.pb.ccipocr3.GetOnRampDynamicConfigResponse.dynamic_config:type_name -> loop.internal.pb.ccipocr3.OnRampDynamicConfig
@@ -3923,61 +4002,64 @@ var file_chainaccessor_proto_depIdxs = []int32{
 	49, // 43: loop.internal.pb.ccipocr3.ChainConfigSnapshot.on_ramp:type_name -> loop.internal.pb.ccipocr3.OnRampConfigStruct
 	53, // 44: loop.internal.pb.ccipocr3.ChainConfigSnapshot.router:type_name -> loop.internal.pb.ccipocr3.RouterConfigStruct
 	55, // 45: loop.internal.pb.ccipocr3.ChainConfigSnapshot.curse_info:type_name -> loop.internal.pb.ccipocr3.CurseInfo
-	73, // 46: loop.internal.pb.ccipocr3.CurseInfo.cursed_source_chains:type_name -> loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
-	74, // 47: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.tokens:type_name -> loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry
-	75, // 48: loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.messages:type_name -> loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.MessagesEntry
-	76, // 49: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.prices:type_name -> loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry
-	77, // 50: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.token_updates:type_name -> loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry
-	56, // 51: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry.value:type_name -> loop.internal.pb.ccipocr3.SourceChainConfig
-	31, // 52: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberRangeList
-	32, // 53: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
-	33, // 54: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
-	34, // 55: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
-	30, // 56: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
-	83, // 57: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry.value:type_name -> loop.internal.pb.ccipocr3.RampTokenAmount
-	81, // 58: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry.value:type_name -> loop.internal.pb.ccipocr3.BigInt
-	30, // 59: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
-	0,  // 60: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:input_type -> loop.internal.pb.ccipocr3.GetContractAddressRequest
-	2,  // 61: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:input_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest
-	84, // 62: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:input_type -> google.protobuf.Empty
-	5,  // 63: loop.internal.pb.ccipocr3.ChainAccessor.Sync:input_type -> loop.internal.pb.ccipocr3.SyncRequest
-	6,  // 64: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:input_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
-	8,  // 65: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:input_type -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest
-	10, // 66: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:input_type -> loop.internal.pb.ccipocr3.NextSeqNumRequest
-	12, // 67: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:input_type -> loop.internal.pb.ccipocr3.NoncesRequest
-	14, // 68: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:input_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
-	84, // 69: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:input_type -> google.protobuf.Empty
-	17, // 70: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:input_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
-	19, // 71: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:input_type -> loop.internal.pb.ccipocr3.LatestMessageToRequest
-	21, // 72: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:input_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
-	23, // 73: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:input_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
-	25, // 74: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
-	58, // 75: loop.internal.pb.ccipocr3.ChainAccessor.MessagesByTokenID:input_type -> loop.internal.pb.ccipocr3.MessagesByTokenIDRequest
-	60, // 76: loop.internal.pb.ccipocr3.ChainAccessor.GetFeedPricesUSD:input_type -> loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest
-	62, // 77: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterTokenUpdates:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesRequest
-	1,  // 78: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:output_type -> loop.internal.pb.ccipocr3.GetContractAddressResponse
-	3,  // 79: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:output_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse
-	4,  // 80: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:output_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
-	84, // 81: loop.internal.pb.ccipocr3.ChainAccessor.Sync:output_type -> google.protobuf.Empty
-	7,  // 82: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:output_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
-	9,  // 83: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:output_type -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse
-	11, // 84: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:output_type -> loop.internal.pb.ccipocr3.NextSeqNumResponse
-	13, // 85: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:output_type -> loop.internal.pb.ccipocr3.NoncesResponse
-	15, // 86: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:output_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
-	16, // 87: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:output_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
-	18, // 88: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:output_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
-	20, // 89: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:output_type -> loop.internal.pb.ccipocr3.LatestMessageToResponse
-	22, // 90: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:output_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
-	24, // 91: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:output_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
-	26, // 92: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
-	59, // 93: loop.internal.pb.ccipocr3.ChainAccessor.MessagesByTokenID:output_type -> loop.internal.pb.ccipocr3.MessagesByTokenIDResponse
-	61, // 94: loop.internal.pb.ccipocr3.ChainAccessor.GetFeedPricesUSD:output_type -> loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse
-	63, // 95: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterTokenUpdates:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse
-	78, // [78:96] is the sub-list for method output_type
-	60, // [60:78] is the sub-list for method input_type
-	60, // [60:60] is the sub-list for extension type_name
-	60, // [60:60] is the sub-list for extension extendee
-	0,  // [0:60] is the sub-list for field type_name
+	74, // 46: loop.internal.pb.ccipocr3.CurseInfo.cursed_source_chains:type_name -> loop.internal.pb.ccipocr3.CurseInfo.CursedSourceChainsEntry
+	75, // 47: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.tokens:type_name -> loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry
+	76, // 48: loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.messages:type_name -> loop.internal.pb.ccipocr3.MessagesByTokenIDResponse.MessagesEntry
+	77, // 49: loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest.token_info:type_name -> loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest.TokenInfoEntry
+	78, // 50: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.prices:type_name -> loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry
+	79, // 51: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.token_updates:type_name -> loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry
+	83, // 52: loop.internal.pb.ccipocr3.TokenInfo.deviation_ppb:type_name -> loop.internal.pb.ccipocr3.BigInt
+	56, // 53: loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse.SourceChainConfigsEntry.value:type_name -> loop.internal.pb.ccipocr3.SourceChainConfig
+	31, // 54: loop.internal.pb.ccipocr3.ExecutedMessagesRequest.RangesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberRangeList
+	32, // 55: loop.internal.pb.ccipocr3.ExecutedMessagesResponse.ExecutedMessagesEntry.value:type_name -> loop.internal.pb.ccipocr3.SequenceNumberList
+	33, // 56: loop.internal.pb.ccipocr3.NoncesRequest.AddressesEntry.value:type_name -> loop.internal.pb.ccipocr3.UnknownEncodedAddressList
+	34, // 57: loop.internal.pb.ccipocr3.NoncesResponse.NoncesEntry.value:type_name -> loop.internal.pb.ccipocr3.NonceMap
+	30, // 58: loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse.FeePriceUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
+	85, // 59: loop.internal.pb.ccipocr3.MessagesByTokenIDRequest.TokensEntry.value:type_name -> loop.internal.pb.ccipocr3.RampTokenAmount
+	65, // 60: loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest.TokenInfoEntry.value:type_name -> loop.internal.pb.ccipocr3.TokenInfo
+	83, // 61: loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntry.value:type_name -> loop.internal.pb.ccipocr3.BigInt
+	30, // 62: loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntry.value:type_name -> loop.internal.pb.ccipocr3.TimestampedUnixBig
+	0,  // 63: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:input_type -> loop.internal.pb.ccipocr3.GetContractAddressRequest
+	2,  // 64: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:input_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyRequest
+	86, // 65: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:input_type -> google.protobuf.Empty
+	5,  // 66: loop.internal.pb.ccipocr3.ChainAccessor.Sync:input_type -> loop.internal.pb.ccipocr3.SyncRequest
+	6,  // 67: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:input_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampRequest
+	8,  // 68: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:input_type -> loop.internal.pb.ccipocr3.ExecutedMessagesRequest
+	10, // 69: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:input_type -> loop.internal.pb.ccipocr3.NextSeqNumRequest
+	12, // 70: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:input_type -> loop.internal.pb.ccipocr3.NoncesRequest
+	14, // 71: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:input_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateRequest
+	86, // 72: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:input_type -> google.protobuf.Empty
+	17, // 73: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:input_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsRequest
+	19, // 74: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:input_type -> loop.internal.pb.ccipocr3.LatestMessageToRequest
+	21, // 75: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:input_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberRequest
+	23, // 76: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:input_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDRequest
+	25, // 77: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigRequest
+	58, // 78: loop.internal.pb.ccipocr3.ChainAccessor.MessagesByTokenID:input_type -> loop.internal.pb.ccipocr3.MessagesByTokenIDRequest
+	60, // 79: loop.internal.pb.ccipocr3.ChainAccessor.GetFeedPricesUSD:input_type -> loop.internal.pb.ccipocr3.GetFeedPricesUSDRequest
+	62, // 80: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterTokenUpdates:input_type -> loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesRequest
+	1,  // 81: loop.internal.pb.ccipocr3.ChainAccessor.GetContractAddress:output_type -> loop.internal.pb.ccipocr3.GetContractAddressResponse
+	3,  // 82: loop.internal.pb.ccipocr3.ChainAccessor.GetAllConfigsLegacy:output_type -> loop.internal.pb.ccipocr3.GetAllConfigsLegacyResponse
+	4,  // 83: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeeComponents:output_type -> loop.internal.pb.ccipocr3.GetChainFeeComponentsResponse
+	86, // 84: loop.internal.pb.ccipocr3.ChainAccessor.Sync:output_type -> google.protobuf.Empty
+	7,  // 85: loop.internal.pb.ccipocr3.ChainAccessor.CommitReportsGTETimestamp:output_type -> loop.internal.pb.ccipocr3.CommitReportsGTETimestampResponse
+	9,  // 86: loop.internal.pb.ccipocr3.ChainAccessor.ExecutedMessages:output_type -> loop.internal.pb.ccipocr3.ExecutedMessagesResponse
+	11, // 87: loop.internal.pb.ccipocr3.ChainAccessor.NextSeqNum:output_type -> loop.internal.pb.ccipocr3.NextSeqNumResponse
+	13, // 88: loop.internal.pb.ccipocr3.ChainAccessor.Nonces:output_type -> loop.internal.pb.ccipocr3.NoncesResponse
+	15, // 89: loop.internal.pb.ccipocr3.ChainAccessor.GetChainFeePriceUpdate:output_type -> loop.internal.pb.ccipocr3.GetChainFeePriceUpdateResponse
+	16, // 90: loop.internal.pb.ccipocr3.ChainAccessor.GetLatestPriceSeqNr:output_type -> loop.internal.pb.ccipocr3.GetLatestPriceSeqNrResponse
+	18, // 91: loop.internal.pb.ccipocr3.ChainAccessor.MsgsBetweenSeqNums:output_type -> loop.internal.pb.ccipocr3.MsgsBetweenSeqNumsResponse
+	20, // 92: loop.internal.pb.ccipocr3.ChainAccessor.LatestMessageTo:output_type -> loop.internal.pb.ccipocr3.LatestMessageToResponse
+	22, // 93: loop.internal.pb.ccipocr3.ChainAccessor.GetExpectedNextSequenceNumber:output_type -> loop.internal.pb.ccipocr3.GetExpectedNextSequenceNumberResponse
+	24, // 94: loop.internal.pb.ccipocr3.ChainAccessor.GetTokenPriceUSD:output_type -> loop.internal.pb.ccipocr3.GetTokenPriceUSDResponse
+	26, // 95: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterDestChainConfig:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterDestChainConfigResponse
+	59, // 96: loop.internal.pb.ccipocr3.ChainAccessor.MessagesByTokenID:output_type -> loop.internal.pb.ccipocr3.MessagesByTokenIDResponse
+	61, // 97: loop.internal.pb.ccipocr3.ChainAccessor.GetFeedPricesUSD:output_type -> loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse
+	63, // 98: loop.internal.pb.ccipocr3.ChainAccessor.GetFeeQuoterTokenUpdates:output_type -> loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse
+	81, // [81:99] is the sub-list for method output_type
+	63, // [63:81] is the sub-list for method input_type
+	63, // [63:63] is the sub-list for extension type_name
+	63, // [63:63] is the sub-list for extension extendee
+	0,  // [0:63] is the sub-list for field type_name
 }
 
 func init() { file_chainaccessor_proto_init() }
@@ -3992,7 +4074,7 @@ func file_chainaccessor_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chainaccessor_proto_rawDesc), len(file_chainaccessor_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   78,
+			NumMessages:   80,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

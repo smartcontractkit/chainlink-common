@@ -393,7 +393,7 @@ func (s staticChainAccessor) MessagesByTokenID(ctx context.Context, source, dest
 }
 
 // PriceReader implementation
-func (s staticChainAccessor) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress) (ccipocr3.TokenPriceMap, error) {
+func (s staticChainAccessor) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, tokenInfo map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo) (ccipocr3.TokenPriceMap, error) {
 	// Return static test prices
 	result := make(ccipocr3.TokenPriceMap)
 	for i, token := range tokens {
@@ -989,12 +989,19 @@ func (s staticChainAccessor) evaluateMessagesByTokenID(ctx context.Context, othe
 
 func (s staticChainAccessor) evaluateGetFeedPricesUSD(ctx context.Context, other ccipocr3.ChainAccessor) error {
 	tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2", "token3"}
+	tokenInfo := map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo{
+		"token1": {
+			AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x1234567890123456789012345678901234567890"),
+			DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1000000000)), // 1%
+			Decimals:          18,
+		},
+	}
 
-	otherPrices, err := other.GetFeedPricesUSD(ctx, tokens)
+	otherPrices, err := other.GetFeedPricesUSD(ctx, tokens, tokenInfo)
 	if err != nil {
 		return fmt.Errorf("GetFeedPricesUSD failed: %w", err)
 	}
-	myPrices, err := s.GetFeedPricesUSD(ctx, tokens)
+	myPrices, err := s.GetFeedPricesUSD(ctx, tokens, tokenInfo)
 	if err != nil {
 		return fmt.Errorf("GetFeedPricesUSD failed: %w", err)
 	}

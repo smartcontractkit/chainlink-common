@@ -134,7 +134,14 @@ func TestChainAccessor(t *testing.T) {
 	// PriceReader tests
 	t.Run("GetFeedPricesUSD", func(t *testing.T) {
 		tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2", "token3"}
-		prices, err := chainAccessor.GetFeedPricesUSD(ctx, tokens)
+		tokenInfo := map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo{
+			"token1": {
+				AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x1234567890123456789012345678901234567890"),
+				DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1000000000)), // 1%
+				Decimals:          18,
+			},
+		}
+		prices, err := chainAccessor.GetFeedPricesUSD(ctx, tokens, tokenInfo)
 		assert.NoError(t, err)
 		assert.NotNil(t, prices)
 		assert.Len(t, prices, 3)

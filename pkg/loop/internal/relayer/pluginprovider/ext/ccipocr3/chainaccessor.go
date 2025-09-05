@@ -302,14 +302,15 @@ func (c *chainAccessorClient) MessagesByTokenID(ctx context.Context, source, des
 }
 
 // PriceReader methods
-func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress) (ccipocr3.TokenPriceMap, error) {
+func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, tokenInfo map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo) (ccipocr3.TokenPriceMap, error) {
 	var tokenStrs []string
 	for _, token := range tokens {
 		tokenStrs = append(tokenStrs, string(token))
 	}
 
 	resp, err := c.grpc.GetFeedPricesUSD(ctx, &ccipocr3pb.GetFeedPricesUSDRequest{
-		Tokens: tokenStrs,
+		Tokens:    tokenStrs,
+		TokenInfo: tokenInfoMapToPb(tokenInfo),
 	})
 	if err != nil {
 		return nil, err
@@ -630,8 +631,9 @@ func (s *chainAccessorServer) GetFeedPricesUSD(ctx context.Context, req *ccipocr
 	for _, tokenStr := range req.Tokens {
 		tokens = append(tokens, ccipocr3.UnknownEncodedAddress(tokenStr))
 	}
+	tokenInfo := pbToTokenInfoMap(req.TokenInfo)
 
-	prices, err := s.impl.GetFeedPricesUSD(ctx, tokens)
+	prices, err := s.impl.GetFeedPricesUSD(ctx, tokens, tokenInfo)
 	if err != nil {
 		return nil, err
 	}

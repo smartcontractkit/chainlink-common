@@ -884,3 +884,44 @@ func tokenUpdatesUnixToPb(updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.Ti
 	}
 	return result
 }
+
+func pbToTokenInfo(pb *ccipocr3pb.TokenInfo) ccipocr3.TokenInfo {
+	if pb == nil {
+		return ccipocr3.TokenInfo{}
+	}
+	return ccipocr3.TokenInfo{
+		AggregatorAddress: ccipocr3.UnknownEncodedAddress(pb.AggregatorAddress),
+		DeviationPPB:      pbToBigInt(pb.DeviationPpb),
+		Decimals:          uint8(pb.Decimals),
+	}
+}
+
+func tokenInfoToPb(info ccipocr3.TokenInfo) *ccipocr3pb.TokenInfo {
+	return &ccipocr3pb.TokenInfo{
+		AggregatorAddress: string(info.AggregatorAddress),
+		DeviationPpb:      intToPbBigInt(info.DeviationPPB.Int),
+		Decimals:          uint32(info.Decimals),
+	}
+}
+
+func pbToTokenInfoMap(pbMap map[string]*ccipocr3pb.TokenInfo) map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo {
+	if pbMap == nil {
+		return nil
+	}
+	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo)
+	for token, pbInfo := range pbMap {
+		result[ccipocr3.UnknownEncodedAddress(token)] = pbToTokenInfo(pbInfo)
+	}
+	return result
+}
+
+func tokenInfoMapToPb(infoMap map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo) map[string]*ccipocr3pb.TokenInfo {
+	if infoMap == nil {
+		return nil
+	}
+	result := make(map[string]*ccipocr3pb.TokenInfo)
+	for token, info := range infoMap {
+		result[string(token)] = tokenInfoToPb(info)
+	}
+	return result
+}

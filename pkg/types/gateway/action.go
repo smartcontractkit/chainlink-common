@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"sort"
 	"strconv"
+	"time"
 )
 
 const (
@@ -65,8 +66,10 @@ func (req OutboundHTTPRequest) Hash() string {
 
 // OutboundHTTPResponse represents the response from gateway to workflow node.
 type OutboundHTTPResponse struct {
-	ErrorMessage string            `json:"errorMessage,omitempty"` // error message in case of execution errors. i.e. errors before or after attempting HTTP call to external client
-	StatusCode   int               `json:"statusCode,omitempty"`   // HTTP status code
-	Headers      map[string]string `json:"headers,omitempty"`      // HTTP headers
-	Body         []byte            `json:"body,omitempty"`         // HTTP response body
+	ErrorMessage            string            `json:"errorMessage,omitempty"`            // error message for all errors except HTTP errors returned by external endpoints
+	IsExternalEndpointError bool              `json:"isExternalEndpointError,omitempty"` // indicates whether the error is from a faulty external endpoint (e.g. timeout, response size) vs error introduced internally by gateway execution
+	StatusCode              int               `json:"statusCode,omitempty"`              // HTTP status code
+	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers
+	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body
+	ExternalEndpointLatency time.Duration     `json:"externalEndpointLatency,omitempty"` // Latency of the external endpoint
 }

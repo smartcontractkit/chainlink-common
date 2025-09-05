@@ -1,9 +1,9 @@
 WorkflowLimit = '200'
 WorkflowRegistrationQueueLimit = '20'
 WorkflowExecutionConcurrencyLimit = '50'
-
-[HTTPTrigger]
-AuthRateLimit = '100rps:-1'
+GatewayUnauthenticatedRequestRateLimit = '100rps:-1'
+GatewayUnauthenticatedRequestRateLimitPerIP = '1rps:-1'
+GatewayIncomingPayloadSizeLimit = '10kb'
 
 [PerOrg]
 WorkflowDeploymentRateLimit = 'every1m0s:1'
@@ -39,9 +39,6 @@ RateLimit = 'every30s:1'
 
 [PerWorkflow.HTTPTrigger]
 RateLimit = 'every30s:3'
-AuthRateLimit = '1rps:-1'
-IncomingPayloadSizeLimit = '10kb'
-OutgoingPayloadSizeLimit = '-1b'
 
 [PerWorkflow.LogTrigger]
 RateLimit = 'every10s:-1'
@@ -55,6 +52,7 @@ RateLimit = 'every30s:3'
 ResponseSizeLimit = '10kb'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '100kb'
+CacheAgeLimit = '10m0s'
 
 [PerWorkflow.ChainWrite]
 RateLimit = 'every30s:3'

@@ -1404,7 +1404,6 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 
 			// Handle nil case specially
 			if originalValue.Int == nil {
-				// When original is nil, intToPbBigInt now returns nil protobuf which pbToBigInt preserves as nil
 				assert.Nil(t, convertedValue.Int, "nil should round-trip to nil")
 			} else {
 				assert.NotNil(t, convertedValue.Int, "converted value should not be nil for non-nil input")
@@ -1495,4 +1494,103 @@ func TestPbBigIntConsistency(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestTokenInfoConversion tests the TokenInfo conversion functions
+func TestTokenInfoConversion(t *testing.T) {
+	testCases := []struct {
+		name     string
+		info     ccipocr3.TokenInfo
+		expected ccipocr3.TokenInfo
+	}{
+		{
+			name: "complete TokenInfo",
+			info: ccipocr3.TokenInfo{
+				AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x1234567890123456789012345678901234567890"),
+				DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1000000000)), // 1%
+				Decimals:          18,
+			},
+			expected: ccipocr3.TokenInfo{
+				AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x1234567890123456789012345678901234567890"),
+				DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1000000000)),
+				Decimals:          18,
+			},
+		},
+		{
+			name: "minimal TokenInfo",
+			info: ccipocr3.TokenInfo{
+				AggregatorAddress: ccipocr3.UnknownEncodedAddress("0xabc"),
+				DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1)),
+				Decimals:          6,
+			},
+			expected: ccipocr3.TokenInfo{
+				AggregatorAddress: ccipocr3.UnknownEncodedAddress("0xabc"),
+				DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1)),
+				Decimals:          6,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert to protobuf and back
+			pbInfo := tokenInfoToPb(tc.info)
+			convertedInfo := pbToTokenInfo(pbInfo)
+
+			assert.Equal(t, tc.expected.AggregatorAddress, convertedInfo.AggregatorAddress)
+			assert.Equal(t, tc.expected.DeviationPPB.String(), convertedInfo.DeviationPPB.String())
+			assert.Equal(t, tc.expected.Decimals, convertedInfo.Decimals)
+		})
+	}
+}
+
+// TestTokenInfoMapConversion tests the TokenInfo map conversion functions
+func TestTokenInfoMapConversion(t *testing.T) {
+	testMap := map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo{
+		"token1": {
+			AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x1111111111111111111111111111111111111111"),
+			DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(2000000000)), // 2%
+			Decimals:          18,
+		},
+		"token2": {
+			AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x2222222222222222222222222222222222222222"),
+			DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(5000000000)), // 5%
+			Decimals:          6,
+		},
+	}
+
+	// Convert to protobuf and back
+	pbMap := tokenInfoMapToPb(testMap)
+	convertedMap := pbToTokenInfoMap(pbMap)
+
+	assert.Len(t, convertedMap, 2)
+
+	for token, expectedInfo := range testMap {
+		convertedInfo, exists := convertedMap[token]
+		assert.True(t, exists, "Token %s should exist in converted map", token)
+		assert.Equal(t, expectedInfo.AggregatorAddress, convertedInfo.AggregatorAddress)
+		assert.Equal(t, expectedInfo.DeviationPPB.String(), convertedInfo.DeviationPPB.String())
+		assert.Equal(t, expectedInfo.Decimals, convertedInfo.Decimals)
+	}
+}
+
+// TestTokenInfoMapNilHandling tests nil handling for TokenInfo map conversion
+func TestTokenInfoMapNilHandling(t *testing.T) {
+	t.Run("nil map to protobuf", func(t *testing.T) {
+		result := tokenInfoMapToPb(nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("nil protobuf map to Go", func(t *testing.T) {
+		result := pbToTokenInfoMap(nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("empty map round-trip", func(t *testing.T) {
+		emptyMap := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo)
+		pbMap := tokenInfoMapToPb(emptyMap)
+		convertedMap := pbToTokenInfoMap(pbMap)
+		assert.NotNil(t, convertedMap)
+		assert.Len(t, convertedMap, 0)
+	})
 }

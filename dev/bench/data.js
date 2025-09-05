@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757021317853,
+  "lastUpdate": 1757078418558,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24780,6 +24780,48 @@ window.BENCHMARK_DATA = {
             "value": 26568,
             "unit": "ns/op",
             "extra": "45049 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "168561091+engnke@users.noreply.github.com",
+            "name": "engnke",
+            "username": "engnke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7713941a68481f1527a868e22941fbc90c5ae696",
+          "message": "Update chip-ingress proto and client with RegisterSchema rpc (#1524)\n\n* chip-ingress add register schema rpc and chip-common proto\n\n* update client with registerschema\n\n* Regenerate mocks: update client.go for chipingress\n\n* pathtype enum refactor\n\n---------\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-09-05T13:18:50Z",
+          "tree_id": "8ea1565eefa66da27514021c615bcc876a3dc6ec",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7713941a68481f1527a868e22941fbc90c5ae696"
+        },
+        "date": 1757078417472,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.7,
+            "unit": "ns/op",
+            "extra": "3255204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.9,
+            "unit": "ns/op",
+            "extra": "2847088 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26635,
+            "unit": "ns/op",
+            "extra": "45056 times\n4 procs"
           }
         ]
       }

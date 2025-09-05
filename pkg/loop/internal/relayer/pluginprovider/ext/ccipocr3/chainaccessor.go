@@ -317,7 +317,7 @@ func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []cci
 	return pbToTokenPriceMap(resp.Prices), nil
 }
 
-func (c *chainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig, error) {
+func (c *chainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
 	var tokenStrs []string
 	for _, token := range tokens {
 		tokenStrs = append(tokenStrs, string(token))
@@ -330,7 +330,7 @@ func (c *chainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, toke
 	if err != nil {
 		return nil, err
 	}
-	return pbToTokenUpdates(resp.TokenUpdates), nil
+	return pbToTokenUpdatesUnix(resp.TokenUpdates), nil
 }
 
 // Server implementation
@@ -657,6 +657,6 @@ func (s *chainAccessorServer) GetFeeQuoterTokenUpdates(ctx context.Context, req 
 	}
 
 	return &ccipocr3pb.GetFeeQuoterTokenUpdatesResponse{
-		TokenUpdates: tokenUpdatesToPb(updates),
+		TokenUpdates: tokenUpdatesUnixToPb(updates),
 	}, nil
 }

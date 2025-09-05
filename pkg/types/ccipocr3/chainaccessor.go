@@ -218,5 +218,5 @@ type PriceReader interface {
 		ctx context.Context,
 		tokens []UnknownEncodedAddress,
 		chain ChainSelector,
-	) (map[UnknownEncodedAddress]TimestampedBig, error)
+	) (map[UnknownEncodedAddress]TimestampedUnixBig, error)
 }

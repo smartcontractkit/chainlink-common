@@ -3,9 +3,6 @@ package ccipocr3
 import (
 	"fmt"
 	"math/big"
-	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
@@ -790,9 +787,9 @@ func pbToMessageTokenIDMap(pbTokens map[string]*ccipocr3pb.RampTokenAmount) (map
 
 		tokenID := ccipocr3.NewMessageTokenID(ccipocr3.SeqNum(seqNr), index)
 		result[tokenID] = ccipocr3.RampTokenAmount{
-			SourcePoolAddress: ccipocr3.UnknownAddress(pbAmount.SourcePoolAddress),
-			DestTokenAddress:  ccipocr3.UnknownAddress(pbAmount.DestTokenAddress),
-			ExtraData:         ccipocr3.Bytes(pbAmount.ExtraData),
+			SourcePoolAddress: pbAmount.SourcePoolAddress,
+			DestTokenAddress:  pbAmount.DestTokenAddress,
+			ExtraData:         pbAmount.ExtraData,
 			Amount:            pbToBigIntPreservingZero(pbAmount.Amount),
 		}
 	}
@@ -845,33 +842,35 @@ func messagesByTokenIDToPb(messages map[ccipocr3.MessageTokenID]ccipocr3.Bytes) 
 	return result
 }
 
-func pbToTokenUpdates(pbUpdates map[string]*ccipocr3pb.TimestampedBig) map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig {
+func pbToTokenUpdatesUnix(pbUpdates map[string]*ccipocr3pb.TimestampedUnixBig) map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig {
 	if pbUpdates == nil {
 		return nil
 	}
-	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig)
+	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig)
 	for token, pbUpdate := range pbUpdates {
-		var timestamp time.Time
-		if pbUpdate.Timestamp != nil {
-			timestamp = pbUpdate.Timestamp.AsTime()
+		var value *big.Int
+		if pbUpdate.Value != nil && len(pbUpdate.Value.Value) > 0 {
+			value = new(big.Int).SetBytes(pbUpdate.Value.Value)
+		} else {
+			value = big.NewInt(0)
 		}
-		result[ccipocr3.UnknownEncodedAddress(token)] = ccipocr3.TimestampedBig{
-			Timestamp: timestamp,
-			Value:     pbToBigIntPreservingZero(pbUpdate.Value),
+		result[ccipocr3.UnknownEncodedAddress(token)] = ccipocr3.TimestampedUnixBig{
+			Timestamp: pbUpdate.Timestamp,
+			Value:     value,
 		}
 	}
 	return result
 }
 
-func tokenUpdatesToPb(updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig) map[string]*ccipocr3pb.TimestampedBig {
+func tokenUpdatesUnixToPb(updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig) map[string]*ccipocr3pb.TimestampedUnixBig {
 	if updates == nil {
 		return nil
 	}
-	result := make(map[string]*ccipocr3pb.TimestampedBig)
+	result := make(map[string]*ccipocr3pb.TimestampedUnixBig)
 	for token, update := range updates {
-		result[string(token)] = &ccipocr3pb.TimestampedBig{
-			Timestamp: timestamppb.New(update.Timestamp),
-			Value:     intToPbBigInt(update.Value.Int),
+		result[string(token)] = &ccipocr3pb.TimestampedUnixBig{
+			Timestamp: update.Timestamp,
+			Value:     intToPbBigInt(update.Value),
 		}
 	}
 	return result

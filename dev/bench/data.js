@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757078418558,
+  "lastUpdate": 1757105064988,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24822,6 +24822,48 @@ window.BENCHMARK_DATA = {
             "value": 26635,
             "unit": "ns/op",
             "extra": "45056 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ee42d6fd40464a8fbb7dd85617cc7b3a8f452dd5",
+          "message": "pkg/config/configdoc: move DefaultsOnly (#1526)",
+          "timestamp": "2025-09-05T14:41:58-06:00",
+          "tree_id": "c32cfb5dda39ce9edc5728db7a342ea8c474c87b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ee42d6fd40464a8fbb7dd85617cc7b3a8f452dd5"
+        },
+        "date": 1757105063743,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.6,
+            "unit": "ns/op",
+            "extra": "3403596 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.2,
+            "unit": "ns/op",
+            "extra": "3013724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26609,
+            "unit": "ns/op",
+            "extra": "45076 times\n4 procs"
           }
         ]
       }

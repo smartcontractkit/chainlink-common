@@ -11,9 +11,17 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
-// Helper function to convert protobuf BigInt to big.Int
+// Helper function to convert protobuf BigInt to big.Int, preserves nil
 func pbBigIntToInt(b *ccipocr3pb.BigInt) *big.Int {
-	if b == nil || len(b.Value) == 0 {
+	if b == nil {
+		return nil
+	}
+
+	if b.Value == nil {
+		return nil
+	}
+
+	if len(b.Value) == 0 {
 		return big.NewInt(0)
 	}
 	return new(big.Int).SetBytes(b.Value)
@@ -21,8 +29,16 @@ func pbBigIntToInt(b *ccipocr3pb.BigInt) *big.Int {
 
 // Helper function to convert protobuf BigInt to ccipocr3.BigInt, preserving nil
 func pbToBigInt(b *ccipocr3pb.BigInt) ccipocr3.BigInt {
-	if b == nil || len(b.Value) == 0 {
+	if b == nil {
 		return ccipocr3.BigInt{Int: nil}
+	}
+
+	if b.Value == nil {
+		return ccipocr3.BigInt{Int: nil}
+	}
+
+	if len(b.Value) == 0 {
+		return ccipocr3.BigInt{Int: big.NewInt(0)}
 	}
 	return ccipocr3.NewBigInt(new(big.Int).SetBytes(b.Value))
 }
@@ -30,7 +46,7 @@ func pbToBigInt(b *ccipocr3pb.BigInt) ccipocr3.BigInt {
 // Helper function to convert big.Int to protobuf BigInt
 func intToPbBigInt(i *big.Int) *ccipocr3pb.BigInt {
 	if i == nil {
-		return &ccipocr3pb.BigInt{Value: []byte{}}
+		return nil
 	}
 	return &ccipocr3pb.BigInt{Value: i.Bytes()}
 }
@@ -743,20 +759,13 @@ func pbToCurseInfo(pb *ccipocr3pb.CurseInfo) ccipocr3.CurseInfo {
 	return result
 }
 
-func pbToBigIntPreservingZero(b *ccipocr3pb.BigInt) ccipocr3.BigInt {
-	if b == nil {
-		return ccipocr3.BigInt{Int: nil}
-	}
-	return ccipocr3.NewBigInt(new(big.Int).SetBytes(b.Value))
-}
-
 func pbToTokenPriceMap(pbMap map[string]*ccipocr3pb.BigInt) ccipocr3.TokenPriceMap {
 	if pbMap == nil {
 		return nil
 	}
 	result := make(ccipocr3.TokenPriceMap)
 	for token, pbPrice := range pbMap {
-		result[ccipocr3.UnknownEncodedAddress(token)] = pbToBigIntPreservingZero(pbPrice)
+		result[ccipocr3.UnknownEncodedAddress(token)] = pbToBigInt(pbPrice)
 	}
 	return result
 }
@@ -790,7 +799,7 @@ func pbToMessageTokenIDMap(pbTokens map[string]*ccipocr3pb.RampTokenAmount) (map
 			SourcePoolAddress: pbAmount.SourcePoolAddress,
 			DestTokenAddress:  pbAmount.DestTokenAddress,
 			ExtraData:         pbAmount.ExtraData,
-			Amount:            pbToBigIntPreservingZero(pbAmount.Amount),
+			Amount:            pbToBigInt(pbAmount.Amount),
 		}
 	}
 	return result, nil

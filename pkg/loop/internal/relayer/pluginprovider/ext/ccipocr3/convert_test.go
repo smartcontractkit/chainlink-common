@@ -1,6 +1,7 @@
 package ccipocr3
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"testing"
@@ -94,7 +95,17 @@ func TestMessageProtobufFlattening(t *testing.T) {
 			assert.Equal(t, []byte(tc.message.Receiver), pbMessage.Receiver)
 			assert.Equal(t, []byte(tc.message.ExtraArgs), pbMessage.ExtraArgs)
 			assert.Equal(t, []byte(tc.message.FeeToken), pbMessage.FeeToken)
-			assert.NotNil(t, pbMessage.FeeValueJuels)
+			// With nil BigInt values, protobuf fields should be nil
+			if tc.message.FeeTokenAmount.Int == nil {
+				assert.Nil(t, pbMessage.FeeTokenAmount)
+			} else {
+				assert.NotNil(t, pbMessage.FeeTokenAmount)
+			}
+			if tc.message.FeeValueJuels.Int == nil {
+				assert.Nil(t, pbMessage.FeeValueJuels)
+			} else {
+				assert.NotNil(t, pbMessage.FeeValueJuels)
+			}
 
 			// Convert back to Go struct
 			convertedMessage := pbToMessage(pbMessage)
@@ -1079,4 +1090,409 @@ func TestTokenUpdatesUnixNilHandling(t *testing.T) {
 		assert.Equal(t, uint32(1705320000), update.Timestamp)
 		assert.Equal(t, big.NewInt(0), update.Value)
 	})
+}
+
+// TestPbBigIntToInt tests the pbBigIntToInt function with various inputs
+func TestPbBigIntToInt(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    *ccipocr3pb.BigInt
+		expected *big.Int
+	}{
+		{
+			name:     "nil input",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name:     "empty value bytes", // empty bytes are treated as zero
+			input:    &ccipocr3pb.BigInt{Value: []byte{}},
+			expected: big.NewInt(0),
+		},
+		{
+			name:     "nil value bytes",
+			input:    &ccipocr3pb.BigInt{Value: nil},
+			expected: nil,
+		},
+		{
+			name:     "zero value",
+			input:    &ccipocr3pb.BigInt{Value: big.NewInt(0).Bytes()},
+			expected: big.NewInt(0),
+		},
+		{
+			name:     "positive small integer",
+			input:    &ccipocr3pb.BigInt{Value: big.NewInt(42).Bytes()},
+			expected: big.NewInt(42),
+		},
+		{
+			name:     "positive large integer",
+			input:    &ccipocr3pb.BigInt{Value: big.NewInt(1234567890).Bytes()},
+			expected: big.NewInt(1234567890),
+		},
+		{
+			name: "very large positive integer",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				val := new(big.Int)
+				val.SetString("999999999999999999999999999999", 10)
+				return val.Bytes()
+			}()},
+			expected: func() *big.Int {
+				val := new(big.Int)
+				val.SetString("999999999999999999999999999999", 10)
+				return val
+			}(),
+		},
+		{
+			name: "maximum uint64 value",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				val := new(big.Int)
+				val.SetUint64(^uint64(0)) // max uint64
+				return val.Bytes()
+			}()},
+			expected: func() *big.Int {
+				val := new(big.Int)
+				val.SetUint64(^uint64(0))
+				return val
+			}(),
+		},
+		{
+			name: "256-bit integer (32 bytes)",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				// Create a 256-bit integer (all bits set)
+				bytes := make([]byte, 32)
+				for i := range bytes {
+					bytes[i] = 0xFF
+				}
+				return bytes
+			}()},
+			expected: func() *big.Int {
+				bytes := make([]byte, 32)
+				for i := range bytes {
+					bytes[i] = 0xFF
+				}
+				return new(big.Int).SetBytes(bytes)
+			}(),
+		},
+		{
+			name:     "single byte value",
+			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF}},
+			expected: big.NewInt(255),
+		},
+		{
+			name:     "two byte value",
+			input:    &ccipocr3pb.BigInt{Value: []byte{0x01, 0x00}},
+			expected: big.NewInt(256),
+		},
+		{
+			name:     "leading zero bytes (should be handled correctly)",
+			input:    &ccipocr3pb.BigInt{Value: []byte{0x00, 0x00, 0x01, 0x00}},
+			expected: big.NewInt(256),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := pbBigIntToInt(tc.input)
+
+			// Handle nil comparisons specially
+			if tc.expected == nil {
+				assert.Nil(t, result, "result should be nil when expected is nil")
+			} else {
+				assert.NotNil(t, result, "result should not be nil when expected is not nil")
+				assert.Equal(t, tc.expected.String(), result.String(), "converted big.Int should match expected value")
+				assert.Equal(t, tc.expected.Cmp(result), 0, "big.Int comparison should be equal")
+			}
+		})
+	}
+}
+
+// TestPbToBigInt tests the pbToBigInt function with various inputs
+func TestPbToBigInt(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    *ccipocr3pb.BigInt
+		expected ccipocr3.BigInt
+	}{
+		{
+			name:     "nil input should preserve nil",
+			input:    nil,
+			expected: ccipocr3.BigInt{Int: nil},
+		},
+		{
+			name:     "empty value bytes should return zero BigInt",
+			input:    &ccipocr3pb.BigInt{Value: []byte{}},
+			expected: ccipocr3.BigInt{Int: big.NewInt(0)},
+		},
+		{
+			name:     "nil value bytes should preserve nil",
+			input:    &ccipocr3pb.BigInt{Value: nil},
+			expected: ccipocr3.BigInt{Int: nil},
+		},
+		{
+			name:     "zero value",
+			input:    &ccipocr3pb.BigInt{Value: big.NewInt(0).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(0)),
+		},
+		{
+			name:     "positive small integer",
+			input:    &ccipocr3pb.BigInt{Value: big.NewInt(123).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(123)),
+		},
+		{
+			name:     "positive large integer",
+			input:    &ccipocr3pb.BigInt{Value: big.NewInt(9876543210).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(9876543210)),
+		},
+		{
+			name: "very large positive integer",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				val := new(big.Int)
+				val.SetString("123456789012345678901234567890", 10)
+				return val.Bytes()
+			}()},
+			expected: func() ccipocr3.BigInt {
+				val := new(big.Int)
+				val.SetString("123456789012345678901234567890", 10)
+				return ccipocr3.NewBigInt(val)
+			}(),
+		},
+		{
+			name: "maximum uint64 value",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				val := new(big.Int)
+				val.SetUint64(^uint64(0)) // max uint64
+				return val.Bytes()
+			}()},
+			expected: func() ccipocr3.BigInt {
+				val := new(big.Int)
+				val.SetUint64(^uint64(0))
+				return ccipocr3.NewBigInt(val)
+			}(),
+		},
+		{
+			name: "256-bit integer (32 bytes)",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				// Create a 256-bit integer
+				bytes := make([]byte, 32)
+				for i := range bytes {
+					bytes[i] = 0xAA // alternating bit pattern
+				}
+				return bytes
+			}()},
+			expected: func() ccipocr3.BigInt {
+				bytes := make([]byte, 32)
+				for i := range bytes {
+					bytes[i] = 0xAA
+				}
+				return ccipocr3.NewBigInt(new(big.Int).SetBytes(bytes))
+			}(),
+		},
+		{
+			name:     "single byte maximum value",
+			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF}},
+			expected: ccipocr3.NewBigInt(big.NewInt(255)),
+		},
+		{
+			name:     "two byte value",
+			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF, 0xFF}},
+			expected: ccipocr3.NewBigInt(big.NewInt(65535)),
+		},
+		{
+			name: "ethereum wei amount (18 decimals)",
+			input: &ccipocr3pb.BigInt{Value: func() []byte {
+				// 1 ETH in wei = 10^18
+				val := new(big.Int)
+				val.SetString("1000000000000000000", 10)
+				return val.Bytes()
+			}()},
+			expected: func() ccipocr3.BigInt {
+				val := new(big.Int)
+				val.SetString("1000000000000000000", 10)
+				return ccipocr3.NewBigInt(val)
+			}(),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := pbToBigInt(tc.input)
+
+			// Handle nil comparisons specially
+			if tc.expected.Int == nil {
+				assert.Nil(t, result.Int, "result.Int should be nil when expected is nil")
+			} else {
+				assert.NotNil(t, result.Int, "result.Int should not be nil when expected is not nil")
+				assert.Equal(t, tc.expected.Int.String(), result.Int.String(), "converted BigInt should match expected value")
+				assert.Equal(t, tc.expected.Int.Cmp(result.Int), 0, "BigInt comparison should be equal")
+			}
+		})
+	}
+}
+
+// TestPbBigIntRoundTrip tests round-trip conversion between protobuf BigInt and Go big.Int
+func TestPbBigIntRoundTrip(t *testing.T) {
+	testValues := []*big.Int{
+		nil, // Test nil value
+		big.NewInt(0),
+		big.NewInt(1),
+		big.NewInt(42),
+		big.NewInt(255),
+		big.NewInt(256),
+		big.NewInt(65535),
+		big.NewInt(65536),
+		big.NewInt(1234567890),
+		func() *big.Int {
+			val := new(big.Int)
+			val.SetString("999999999999999999999999999999", 10)
+			return val
+		}(),
+		func() *big.Int {
+			val := new(big.Int)
+			val.SetUint64(^uint64(0)) // max uint64
+			return val
+		}(),
+	}
+
+	for i, originalValue := range testValues {
+		t.Run(fmt.Sprintf("round_trip_%d", i), func(t *testing.T) {
+			// Go big.Int -> protobuf BigInt -> Go big.Int
+			pbBigInt := intToPbBigInt(originalValue)
+			convertedValue := pbBigIntToInt(pbBigInt)
+
+			// Handle nil case specially
+			if originalValue == nil {
+				assert.Nil(t, convertedValue, "nil should round-trip to nil")
+			} else {
+				assert.NotNil(t, convertedValue, "non-nil should round-trip to non-nil")
+				assert.Equal(t, originalValue.String(), convertedValue.String(), "round-trip conversion should preserve value")
+				assert.Equal(t, originalValue.Cmp(convertedValue), 0, "round-trip big.Int comparison should be equal")
+			}
+		})
+	}
+}
+
+// TestPbToBigIntRoundTrip tests round-trip conversion between protobuf BigInt and ccipocr3.BigInt
+func TestPbToBigIntRoundTrip(t *testing.T) {
+	testValues := []ccipocr3.BigInt{
+		ccipocr3.NewBigInt(big.NewInt(0)),
+		ccipocr3.NewBigInt(big.NewInt(1)),
+		ccipocr3.NewBigInt(big.NewInt(42)),
+		ccipocr3.NewBigInt(big.NewInt(255)),
+		ccipocr3.NewBigInt(big.NewInt(256)),
+		ccipocr3.NewBigInt(big.NewInt(65535)),
+		ccipocr3.NewBigInt(big.NewInt(65536)),
+		ccipocr3.NewBigInt(big.NewInt(1234567890)),
+		func() ccipocr3.BigInt {
+			val := new(big.Int)
+			val.SetString("999999999999999999999999999999", 10)
+			return ccipocr3.NewBigInt(val)
+		}(),
+		func() ccipocr3.BigInt {
+			val := new(big.Int)
+			val.SetUint64(^uint64(0)) // max uint64
+			return ccipocr3.NewBigInt(val)
+		}(),
+		// Test nil value specially
+		ccipocr3.BigInt{Int: nil},
+	}
+
+	for i, originalValue := range testValues {
+		t.Run(fmt.Sprintf("round_trip_%d", i), func(t *testing.T) {
+			// ccipocr3.BigInt -> protobuf BigInt -> ccipocr3.BigInt
+			pbBigInt := intToPbBigInt(originalValue.Int)
+			convertedValue := pbToBigInt(pbBigInt)
+
+			// Handle nil case specially
+			if originalValue.Int == nil {
+				// When original is nil, intToPbBigInt now returns nil protobuf which pbToBigInt preserves as nil
+				assert.Nil(t, convertedValue.Int, "nil should round-trip to nil")
+			} else {
+				assert.NotNil(t, convertedValue.Int, "converted value should not be nil for non-nil input")
+				assert.Equal(t, originalValue.Int.String(), convertedValue.Int.String(), "round-trip conversion should preserve value")
+				assert.Equal(t, originalValue.Int.Cmp(convertedValue.Int), 0, "round-trip BigInt comparison should be equal")
+			}
+		})
+	}
+}
+
+// TestPbBigIntEdgeCases tests edge cases and error conditions
+func TestPbBigIntEdgeCases(t *testing.T) {
+	t.Run("empty bytes should not panic", func(t *testing.T) {
+		input := &ccipocr3pb.BigInt{Value: []byte{}}
+
+		// Should not panic
+		result1 := pbBigIntToInt(input)
+		result2 := pbToBigInt(input)
+
+		assert.Equal(t, big.NewInt(0).String(), result1.String())
+		assert.Equal(t, big.NewInt(0).String(), result2.Int.String())
+	})
+
+	t.Run("single zero byte should equal zero", func(t *testing.T) {
+		input := &ccipocr3pb.BigInt{Value: []byte{0x00}}
+
+		result1 := pbBigIntToInt(input)
+		result2 := pbToBigInt(input)
+
+		assert.Equal(t, big.NewInt(0).String(), result1.String())
+		assert.Equal(t, big.NewInt(0).String(), result2.Int.String())
+	})
+
+	t.Run("multiple zero bytes should equal zero", func(t *testing.T) {
+		input := &ccipocr3pb.BigInt{Value: []byte{0x00, 0x00, 0x00, 0x00}}
+
+		result1 := pbBigIntToInt(input)
+		result2 := pbToBigInt(input)
+
+		assert.Equal(t, big.NewInt(0).String(), result1.String())
+		assert.Equal(t, big.NewInt(0).String(), result2.Int.String())
+	})
+
+	t.Run("large byte array should work correctly", func(t *testing.T) {
+		// Create a 64-byte array (512 bits)
+		bytes := make([]byte, 64)
+		bytes[0] = 0x01 // Set the most significant bit to 1
+
+		input := &ccipocr3pb.BigInt{Value: bytes}
+
+		result1 := pbBigIntToInt(input)
+		result2 := pbToBigInt(input)
+
+		expected := new(big.Int).SetBytes(bytes)
+
+		assert.Equal(t, expected.String(), result1.String())
+		assert.Equal(t, expected.String(), result2.Int.String())
+	})
+}
+
+// TestPbBigIntConsistency tests that both functions handle the same inputs consistently
+func TestPbBigIntConsistency(t *testing.T) {
+	testInputs := []*ccipocr3pb.BigInt{
+		nil,
+		{Value: nil},
+		{Value: []byte{}},
+		{Value: []byte{0x00}},
+		{Value: []byte{0x01}},
+		{Value: []byte{0xFF}},
+		{Value: []byte{0x01, 0x00}},
+		{Value: []byte{0xFF, 0xFF}},
+		{Value: big.NewInt(42).Bytes()},
+		{Value: big.NewInt(1234567890).Bytes()},
+	}
+
+	for i, input := range testInputs {
+		t.Run(fmt.Sprintf("consistency_test_%d", i), func(t *testing.T) {
+			result1 := pbBigIntToInt(input)
+			result2 := pbToBigInt(input)
+
+			// For non-nil inputs, both functions should produce equivalent numeric results
+			// (except pbToBigInt may preserve nil differently)
+			if input != nil {
+				if result2.Int != nil {
+					assert.Equal(t, result1.String(), result2.Int.String(),
+						"pbBigIntToInt and pbToBigInt should produce equivalent numeric results")
+				}
+			}
+		})
+	}
 }

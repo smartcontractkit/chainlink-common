@@ -360,6 +360,7 @@ message MessagesByTokenIDResponse {
 // PriceReader request/response messages
 message GetFeedPricesUSDRequest {
   repeated string tokens = 1; // UnknownEncodedAddress
+  map<string, TokenInfo> token_info = 2; // key is UnknownEncodedAddress
 }
 
 message GetFeedPricesUSDResponse {
@@ -379,4 +380,10 @@ message GetFeeQuoterTokenUpdatesResponse {
 message MessageTokenID {
   uint64 seq_nr = 1;
   int32 index = 2;
+}
+
+message TokenInfo {
+  string aggregator_address = 1; // UnknownEncodedAddress
+  BigInt deviation_ppb = 2;
+  uint32 decimals = 3;
 }

@@ -1,12 +1,15 @@
 package ccipocr3
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,6 +39,43 @@ func NewTokenPrice(tokenID UnknownEncodedAddress, price *big.Int) TokenPrice {
 		TokenID: tokenID,
 		Price:   BigInt{price},
 	}
+}
+
+type TokenInfo struct {
+	// AggregatorAddress is the address of the price feed TOKEN/USD aggregator on the feed chain.
+	AggregatorAddress UnknownEncodedAddress `json:"aggregatorAddress"`
+
+	// DeviationPPB is the deviation in parts per billion that the price feed is allowed to deviate
+	// from the last written price on-chain before we write a new price.
+	DeviationPPB BigInt `json:"deviationPPB"`
+
+	// Decimals is the number of decimals for the token (NOT the feed).
+	Decimals uint8 `json:"decimals"`
+}
+
+func (a TokenInfo) Validate() error {
+	if a.AggregatorAddress == "" {
+		return errors.New("aggregatorAddress not set")
+	}
+
+	// aggregator must be an ethereum address
+	decoded, err := hex.DecodeString(strings.ToLower(strings.TrimPrefix(string(a.AggregatorAddress), "0x")))
+	if err != nil {
+		return fmt.Errorf("aggregatorAddress must be a valid ethereum address (i.e hex encoded 20 bytes): %w", err)
+	}
+	if len(decoded) != 20 {
+		return fmt.Errorf("aggregatorAddress must be a valid ethereum address, got %d bytes expected 20", len(decoded))
+	}
+
+	if a.DeviationPPB.Int.Cmp(big.NewInt(0)) <= 0 {
+		return errors.New("deviationPPB not set or negative, must be positive")
+	}
+
+	if a.Decimals == 0 {
+		return fmt.Errorf("tokenDecimals can't be zero")
+	}
+
+	return nil
 }
 
 type GasPriceChain struct {

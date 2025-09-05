@@ -372,7 +372,7 @@ message GetFeeQuoterTokenUpdatesRequest {
 }
 
 message GetFeeQuoterTokenUpdatesResponse {
-  map<string, TimestampedBig> token_updates = 1; // key is UnknownEncodedAddress
+  map<string, TimestampedUnixBig> token_updates = 1; // key is UnknownEncodedAddress
 }
 
 // Helper message types

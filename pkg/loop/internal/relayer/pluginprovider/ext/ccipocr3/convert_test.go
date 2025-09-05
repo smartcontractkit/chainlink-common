@@ -951,52 +951,52 @@ func TestMessagesByTokenIDErrorHandling(t *testing.T) {
 	})
 }
 
-// TestTokenUpdatesConversion tests the token updates conversion functions
-func TestTokenUpdatesConversion(t *testing.T) {
+// TestTokenUpdatesUnixConversion tests the TimestampedUnixBig token updates conversion functions
+func TestTokenUpdatesUnixConversion(t *testing.T) {
 	testTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 
 	testCases := []struct {
 		name    string
-		updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig
+		updates map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig
 	}{
 		{
-			name: "Token updates with multiple tokens",
-			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{
+			name: "Unix token updates with multiple tokens",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig{
 				ccipocr3.UnknownEncodedAddress("token1"): {
-					Timestamp: testTime,
-					Value:     ccipocr3.NewBigInt(big.NewInt(1500000)),
+					Timestamp: uint32(testTime.Unix()),
+					Value:     big.NewInt(1500000),
 				},
 				ccipocr3.UnknownEncodedAddress("token2"): {
-					Timestamp: testTime.Add(time.Hour),
-					Value:     ccipocr3.NewBigInt(big.NewInt(2500000)),
+					Timestamp: uint32(testTime.Add(time.Hour).Unix()),
+					Value:     big.NewInt(2500000),
 				},
 				ccipocr3.UnknownEncodedAddress("token3"): {
-					Timestamp: testTime.Add(2 * time.Hour),
-					Value:     ccipocr3.NewBigInt(big.NewInt(750000)),
+					Timestamp: uint32(testTime.Add(2 * time.Hour).Unix()),
+					Value:     big.NewInt(750000),
 				},
 			},
 		},
 		{
-			name:    "Empty token updates",
-			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{},
+			name:    "Empty unix token updates",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig{},
 		},
 		{
-			name: "Token update with zero value",
-			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{
+			name: "Unix token update with zero value",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig{
 				ccipocr3.UnknownEncodedAddress("zero-token"): {
-					Timestamp: testTime,
-					Value:     ccipocr3.NewBigInt(big.NewInt(0)),
+					Timestamp: uint32(testTime.Unix()),
+					Value:     big.NewInt(0),
 				},
 			},
 		},
 		{
-			name: "Token update with large value",
-			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig{
+			name: "Unix token update with large value",
+			updates: map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig{
 				ccipocr3.UnknownEncodedAddress("large-token"): {
-					Timestamp: testTime,
-					Value: func() ccipocr3.BigInt {
+					Timestamp: uint32(testTime.Unix()),
+					Value: func() *big.Int {
 						val, _ := new(big.Int).SetString("999999999999999999999999999999", 10)
-						return ccipocr3.NewBigInt(val)
+						return val
 					}(),
 				},
 			},
@@ -1006,7 +1006,7 @@ func TestTokenUpdatesConversion(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Convert Go -> Protobuf
-			pbMap := tokenUpdatesToPb(tc.updates)
+			pbMap := tokenUpdatesUnixToPb(tc.updates)
 
 			if tc.updates == nil {
 				assert.Nil(t, pbMap)
@@ -1021,15 +1021,14 @@ func TestTokenUpdatesConversion(t *testing.T) {
 				pbUpdate, exists := pbMap[string(token)]
 				require.True(t, exists, "token %s should exist in protobuf map", string(token))
 				require.NotNil(t, pbUpdate)
-				require.NotNil(t, pbUpdate.Timestamp)
 				require.NotNil(t, pbUpdate.Value)
 
-				assert.Equal(t, update.Timestamp.Unix(), pbUpdate.Timestamp.AsTime().Unix())
-				assert.Equal(t, update.Value.Int.Bytes(), pbUpdate.Value.Value)
+				assert.Equal(t, update.Timestamp, pbUpdate.Timestamp)
+				assert.Equal(t, update.Value.Bytes(), pbUpdate.Value.Value)
 			}
 
 			// Convert Protobuf -> Go (round-trip)
-			convertedMap := pbToTokenUpdates(pbMap)
+			convertedMap := pbToTokenUpdatesUnix(pbMap)
 
 			// Verify round-trip conversion
 			assert.Equal(t, len(tc.updates), len(convertedMap))
@@ -1037,47 +1036,47 @@ func TestTokenUpdatesConversion(t *testing.T) {
 				convertedUpdate, exists := convertedMap[token]
 				require.True(t, exists, "token %s should exist in converted map", string(token))
 
-				// Compare timestamps (allowing for some precision loss in conversion)
-				assert.Equal(t, originalUpdate.Timestamp.Unix(), convertedUpdate.Timestamp.Unix())
-				assert.Equal(t, originalUpdate.Value.Int.String(), convertedUpdate.Value.Int.String())
+				assert.Equal(t, originalUpdate.Timestamp, convertedUpdate.Timestamp)
+				assert.Equal(t, originalUpdate.Value.String(), convertedUpdate.Value.String())
 			}
 		})
 	}
 }
 
-func TestTokenUpdatesNilHandling(t *testing.T) {
-	t.Run("nil token updates to protobuf", func(t *testing.T) {
-		pbMap := tokenUpdatesToPb(nil)
+func TestTokenUpdatesUnixNilHandling(t *testing.T) {
+	t.Run("nil unix token updates to protobuf", func(t *testing.T) {
+		pbMap := tokenUpdatesUnixToPb(nil)
 		assert.Nil(t, pbMap)
 	})
 
-	t.Run("nil protobuf map to token updates", func(t *testing.T) {
-		updates := pbToTokenUpdates(nil)
+	t.Run("nil protobuf map to unix token updates", func(t *testing.T) {
+		updates := pbToTokenUpdatesUnix(nil)
 		assert.Nil(t, updates)
 	})
 
-	t.Run("empty protobuf map to token updates", func(t *testing.T) {
-		emptyPbMap := make(map[string]*ccipocr3pb.TimestampedBig)
-		updates := pbToTokenUpdates(emptyPbMap)
+	t.Run("empty protobuf map to unix token updates", func(t *testing.T) {
+		emptyPbMap := make(map[string]*ccipocr3pb.TimestampedUnixBig)
+		updates := pbToTokenUpdatesUnix(emptyPbMap)
 		require.NotNil(t, updates)
 		assert.Equal(t, 0, len(updates))
 	})
 
-	t.Run("protobuf map with nil timestamp", func(t *testing.T) {
-		pbMap := map[string]*ccipocr3pb.TimestampedBig{
+	t.Run("protobuf map with nil value", func(t *testing.T) {
+		pbMap := map[string]*ccipocr3pb.TimestampedUnixBig{
 			"test-token": {
-				Timestamp: nil,
-				Value:     &ccipocr3pb.BigInt{Value: []byte{0x01}},
+				Timestamp: 1705320000, // Some valid unix timestamp
+				Value:     nil,
 			},
 		}
 
 		// Should not panic and handle gracefully
-		updates := pbToTokenUpdates(pbMap)
+		updates := pbToTokenUpdatesUnix(pbMap)
 		require.NotNil(t, updates)
 		require.Contains(t, updates, ccipocr3.UnknownEncodedAddress("test-token"))
 
-		// When timestamp is nil, should default to zero time
-		update := updates[ccipocr3.UnknownEncodedAddress("test-token")]
-		assert.True(t, update.Timestamp.IsZero())
+		// When value is nil, should default to zero big.Int
+		update := updates[("test-token")]
+		assert.Equal(t, uint32(1705320000), update.Timestamp)
+		assert.Equal(t, big.NewInt(0), update.Value)
 	})
 }

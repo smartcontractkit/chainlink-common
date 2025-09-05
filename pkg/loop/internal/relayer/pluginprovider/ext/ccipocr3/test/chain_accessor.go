@@ -404,17 +404,17 @@ func (s staticChainAccessor) GetFeedPricesUSD(ctx context.Context, tokens []ccip
 	return result, nil
 }
 
-func (s staticChainAccessor) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig, error) {
+func (s staticChainAccessor) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
 	// Return static test token updates
-	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedBig)
+	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig)
 	testTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 
 	for i, token := range tokens {
 		// Generate different prices for different tokens
 		price := big.NewInt(2000000 + int64(i)*50000) // Different prices from GetFeedPricesUSD
-		result[token] = ccipocr3.TimestampedBig{
-			Timestamp: testTime.Add(time.Duration(i) * time.Minute), // Different timestamps
-			Value:     ccipocr3.NewBigInt(price),
+		result[token] = ccipocr3.TimestampedUnixBig{
+			Timestamp: uint32(testTime.Add(time.Duration(i) * time.Minute).Unix()), // Different timestamps
+			Value:     price,
 		}
 	}
 	return result, nil
@@ -1037,11 +1037,11 @@ func (s staticChainAccessor) evaluateGetFeeQuoterTokenUpdates(ctx context.Contex
 		if !exists {
 			return fmt.Errorf("GetFeeQuoterTokenUpdates missing token %s in other updates", string(token))
 		}
-		if otherUpdate.Value.Cmp(myUpdate.Value.Int) != 0 {
+		if otherUpdate.Value.Cmp(myUpdate.Value) != 0 {
 			return fmt.Errorf("GetFeeQuoterTokenUpdates token %s value mismatch: got %s, expected %s", string(token), otherUpdate.Value.String(), myUpdate.Value.String())
 		}
-		if !otherUpdate.Timestamp.Equal(myUpdate.Timestamp) {
-			return fmt.Errorf("GetFeeQuoterTokenUpdates token %s timestamp mismatch: got %s, expected %s", string(token), otherUpdate.Timestamp.Format(time.RFC3339), myUpdate.Timestamp.Format(time.RFC3339))
+		if otherUpdate.Timestamp != myUpdate.Timestamp {
+			return fmt.Errorf("GetFeeQuoterTokenUpdates token %s timestamp mismatch: got %d, expected %d", string(token), otherUpdate.Timestamp, myUpdate.Timestamp)
 		}
 	}
 	return nil

@@ -32,8 +32,13 @@ message AddHandlerRequest {
   uint32 handler_id = 2;
 }
 
+message RemoveHandlerRequest {
+  repeated string methods = 1;
+}
+
 service GatewayConnector {
   rpc AddHandler(AddHandlerRequest) returns (google.protobuf.Empty);
+  rpc RemoveHandler(RemoveHandlerRequest) returns (google.protobuf.Empty);
   rpc SendToGateway(SendMessageRequest) returns (google.protobuf.Empty);
   rpc SignMessage(SignMessageRequest) returns (SignMessageReply);
   rpc GatewayIDs(google.protobuf.Empty) returns (GatewayIDsReply);

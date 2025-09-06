@@ -294,6 +294,50 @@ func (x *AddHandlerRequest) GetHandlerId() uint32 {
 	return 0
 }
 
+type RemoveHandlerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Methods       []string               `protobuf:"bytes,1,rep,name=methods,proto3" json:"methods,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveHandlerRequest) Reset() {
+	*x = RemoveHandlerRequest{}
+	mi := &file_gateway_connector_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveHandlerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveHandlerRequest) ProtoMessage() {}
+
+func (x *RemoveHandlerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_connector_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveHandlerRequest.ProtoReflect.Descriptor instead.
+func (*RemoveHandlerRequest) Descriptor() ([]byte, []int) {
+	return file_gateway_connector_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RemoveHandlerRequest) GetMethods() []string {
+	if x != nil {
+		return x.Methods
+	}
+	return nil
+}
+
 var File_gateway_connector_proto protoreflect.FileDescriptor
 
 const file_gateway_connector_proto_rawDesc = "" +
@@ -315,10 +359,13 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\x11AddHandlerRequest\x12\x18\n" +
 	"\amethods\x18\x01 \x03(\tR\amethods\x12\x1d\n" +
 	"\n" +
-	"handler_id\x18\x02 \x01(\rR\thandlerId2\x88\x03\n" +
+	"handler_id\x18\x02 \x01(\rR\thandlerId\"0\n" +
+	"\x14RemoveHandlerRequest\x12\x18\n" +
+	"\amethods\x18\x01 \x03(\tR\amethods2\xcd\x03\n" +
 	"\x10GatewayConnector\x12=\n" +
 	"\n" +
-	"AddHandler\x12\x17.loop.AddHandlerRequest\x1a\x16.google.protobuf.Empty\x12A\n" +
+	"AddHandler\x12\x17.loop.AddHandlerRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
+	"\rRemoveHandler\x12\x1a.loop.RemoveHandlerRequest\x1a\x16.google.protobuf.Empty\x12A\n" +
 	"\rSendToGateway\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
 	"\vSignMessage\x12\x18.loop.SignMessageRequest\x1a\x16.loop.SignMessageReply\x12;\n" +
 	"\n" +
@@ -338,32 +385,35 @@ func file_gateway_connector_proto_rawDescGZIP() []byte {
 	return file_gateway_connector_proto_rawDescData
 }
 
-var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_gateway_connector_proto_goTypes = []any{
-	(*GatewayIDRequest)(nil),   // 0: loop.GatewayIDRequest
-	(*SignMessageRequest)(nil), // 1: loop.SignMessageRequest
-	(*SignMessageReply)(nil),   // 2: loop.SignMessageReply
-	(*GatewayIDsReply)(nil),    // 3: loop.GatewayIDsReply
-	(*DonIDReply)(nil),         // 4: loop.DonIDReply
-	(*AddHandlerRequest)(nil),  // 5: loop.AddHandlerRequest
-	(*SendMessageRequest)(nil), // 6: loop.SendMessageRequest
-	(*emptypb.Empty)(nil),      // 7: google.protobuf.Empty
+	(*GatewayIDRequest)(nil),     // 0: loop.GatewayIDRequest
+	(*SignMessageRequest)(nil),   // 1: loop.SignMessageRequest
+	(*SignMessageReply)(nil),     // 2: loop.SignMessageReply
+	(*GatewayIDsReply)(nil),      // 3: loop.GatewayIDsReply
+	(*DonIDReply)(nil),           // 4: loop.DonIDReply
+	(*AddHandlerRequest)(nil),    // 5: loop.AddHandlerRequest
+	(*RemoveHandlerRequest)(nil), // 6: loop.RemoveHandlerRequest
+	(*SendMessageRequest)(nil),   // 7: loop.SendMessageRequest
+	(*emptypb.Empty)(nil),        // 8: google.protobuf.Empty
 }
 var file_gateway_connector_proto_depIdxs = []int32{
 	5, // 0: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
-	6, // 1: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
-	1, // 2: loop.GatewayConnector.SignMessage:input_type -> loop.SignMessageRequest
-	7, // 3: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
-	7, // 4: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
-	0, // 5: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
-	7, // 6: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
-	7, // 7: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
-	2, // 8: loop.GatewayConnector.SignMessage:output_type -> loop.SignMessageReply
-	3, // 9: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
-	4, // 10: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
-	7, // 11: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
-	6, // [6:12] is the sub-list for method output_type
-	0, // [0:6] is the sub-list for method input_type
+	6, // 1: loop.GatewayConnector.RemoveHandler:input_type -> loop.RemoveHandlerRequest
+	7, // 2: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
+	1, // 3: loop.GatewayConnector.SignMessage:input_type -> loop.SignMessageRequest
+	8, // 4: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
+	8, // 5: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
+	0, // 6: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
+	8, // 7: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
+	8, // 8: loop.GatewayConnector.RemoveHandler:output_type -> google.protobuf.Empty
+	8, // 9: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
+	2, // 10: loop.GatewayConnector.SignMessage:output_type -> loop.SignMessageReply
+	3, // 11: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
+	4, // 12: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
+	8, // 13: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
+	7, // [7:14] is the sub-list for method output_type
+	0, // [0:7] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -381,7 +431,7 @@ func file_gateway_connector_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gateway_connector_proto_rawDesc), len(file_gateway_connector_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

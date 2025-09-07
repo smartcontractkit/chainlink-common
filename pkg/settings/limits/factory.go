@@ -68,7 +68,7 @@ func NewResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (Res
 //  - resource.*.limit - gauge
 //  - resource.*.usage - gauge
 //  - resource.*.amount - histogram
-//  - queue.*.denied - histogram
+//  - resource.*.denied - histogram
 func MakeResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (ResourcePoolLimiter[N], error) {
 	if limit.Scope == settings.ScopeGlobal {
 		return newGlobalResourcePoolLimiter(f, limit)

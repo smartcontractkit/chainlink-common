@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -36,11 +37,20 @@ func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo 
 
 // SubmitTransaction implements types.EVMService.
 func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
-	reply, err := e.grpcClient.SubmitTransaction(ctx, &evmpb.SubmitTransactionRequest{
-		To:        txRequest.To[:],
-		Data:      txRequest.Data,
-		GasConfig: evmpb.ConvertGasConfigToProto(txRequest.GasConfig),
-	})
+	pbTxRequest := &evmpb.SubmitTransactionRequest{
+		To:   txRequest.To[:],
+		Data: txRequest.Data,
+	}
+
+	if txRequest.GasConfig != nil {
+		gasCfg, err := evmpb.ConvertGasConfigToProto(*txRequest.GasConfig)
+		if err != nil {
+			return nil, err
+		}
+		pbTxRequest.GasConfig = gasCfg
+	}
+
+	reply, err := e.grpcClient.SubmitTransaction(ctx, pbTxRequest)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -99,8 +109,13 @@ func (e *EVMClient) FilterLogs(ctx context.Context, request evmtypes.FilterLogsR
 		return nil, net.WrapRPCErr(err)
 	}
 
+	filter, err := evmpb.ConvertFilterToProto(request.FilterQuery)
+	if err != nil {
+		return nil, net.WrapRPCErr(fmt.Errorf("failed to convert filter request err: %w", err))
+	}
+
 	reply, err := e.grpcClient.FilterLogs(ctx, &evmpb.FilterLogsRequest{
-		FilterQuery:     evmpb.ConvertFilterToProto(request.FilterQuery),
+		FilterQuery:     filter,
 		ConfidenceLevel: protoConfidenceLevel,
 		IsExternal:      request.IsExternal,
 	})
@@ -108,7 +123,12 @@ func (e *EVMClient) FilterLogs(ctx context.Context, request evmtypes.FilterLogsR
 		return nil, net.WrapRPCErr(err)
 	}
 
-	return &evmtypes.FilterLogsReply{Logs: evmpb.ConvertLogsFromProto(reply.GetLogs())}, nil
+	logs, err := evmpb.ConvertLogsFromProto(reply.GetLogs())
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmtypes.FilterLogsReply{Logs: logs}, nil
 }
 
 func (e *EVMClient) BalanceAt(ctx context.Context, request evmtypes.BalanceAtRequest) (*evmtypes.BalanceAtReply, error) {
@@ -185,7 +205,8 @@ func (e *EVMClient) HeaderByNumber(ctx context.Context, request evmtypes.HeaderB
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return &evmtypes.HeaderByNumberReply{Header: header}, nil
+
+	return &evmtypes.HeaderByNumberReply{Header: &header}, nil
 
 }
 func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
@@ -214,7 +235,12 @@ func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 		return nil, net.WrapRPCErr(err)
 	}
 
-	return evmpb.ConvertLogsFromProto(reply.GetLogs()), nil
+	logs, err := evmpb.ConvertLogsFromProto(reply.GetLogs())
+	if err != nil {
+		return nil, err
+	}
+
+	return logs, nil
 }
 
 func (e *EVMClient) GetFiltersNames(ctx context.Context) ([]string, error) {
@@ -323,11 +349,12 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 		return nil, err
 	}
 
-	if reply == nil {
-		return nil, errors.New("reply is nil")
+	logs, err := evmpb.ConvertLogsToProto(reply.Logs)
+	if err != nil {
+		return nil, err
 	}
 
-	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply.Logs)}, nil
+	return &evmpb.FilterLogsReply{Logs: logs}, nil
 }
 func (e *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
 	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
@@ -416,12 +443,13 @@ func (e *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByN
 		return nil, err
 	}
 
-	if reply == nil {
-		return nil, errors.New("reply is nil")
+	header, err := evmpb.ConvertHeaderToProto(reply.Header)
+	if err != nil {
+		return nil, err
 	}
 
 	return &evmpb.HeaderByNumberReply{
-		Header: evmpb.ConvertHeaderToProto(reply.Header),
+		Header: header,
 	}, nil
 }
 
@@ -446,7 +474,12 @@ func (e *evmServer) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTr
 		return nil, err
 	}
 
-	return &evmpb.QueryTrackedLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
+	logsReply, err := evmpb.ConvertLogsToProto(logs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.QueryTrackedLogsReply{Logs: logsReply}, nil
 }
 
 func (e *evmServer) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -472,7 +505,12 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 }
 
 func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
-	txResult, err := e.impl.SubmitTransaction(ctx, evmpb.ConvertSubmitTransactionRequestFromProto(request))
+	req, err := evmpb.ConvertSubmitTransactionRequestFromProto(request)
+	if err != nil {
+		return nil, err
+	}
+
+	txResult, err := e.impl.SubmitTransaction(ctx, req)
 	if err != nil {
 		return nil, err
 	}

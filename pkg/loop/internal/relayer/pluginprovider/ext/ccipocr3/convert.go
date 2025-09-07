@@ -47,6 +47,18 @@ func confidenceLevelToPb(confidence primitives.ConfidenceLevel) uint32 {
 	}
 }
 
+// Convert protobuf uint32 to ConfidenceLevel
+func pbToConfidenceLevel(pb uint32) primitives.ConfidenceLevel {
+	switch pb {
+	case 0:
+		return primitives.Unconfirmed
+	case 1:
+		return primitives.Finalized
+	default:
+		return primitives.Unconfirmed
+	}
+}
+
 // Convert protobuf SourceChainConfig to ccipocr3.SourceChainConfig
 func pbToSourceChainConfig(pb *ccipocr3pb.SourceChainConfig) ccipocr3.SourceChainConfig {
 	if pb == nil {

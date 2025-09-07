@@ -166,7 +166,11 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 		return nil, fmt.Errorf("reply is nil")
 	}
 
-	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply.Logs)}, nil
+	logs, err := evmpb.ConvertLogsToProto(reply.Logs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert reply to proto: %w", err)
+	}
+	return &evmpb.FilterLogsReply{Logs: logs}, nil
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
@@ -286,8 +290,13 @@ func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumb
 		return nil, fmt.Errorf("reply is nil")
 	}
 
+	header, err := evmpb.ConvertHeaderToProto(reply.Header)
+	if err != nil {
+		return nil, err
+	}
+
 	return &evmpb.HeaderByNumberReply{
-		Header: evmpb.ConvertHeaderToProto(reply.Header),
+		Header: header,
 	}, nil
 }
 
@@ -317,7 +326,12 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrack
 		return nil, err
 	}
 
-	return &evmpb.QueryTrackedLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
+	l, err := evmpb.ConvertLogsToProto(logs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.QueryTrackedLogsReply{Logs: l}, nil
 }
 
 func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
 )
@@ -29,4 +30,32 @@ type GatewayConnectorHandler interface {
 	ID(ctx context.Context) (string, error)
 	// HandleGatewayMessage is called when a message is received from a gateway
 	HandleGatewayMessage(ctx context.Context, gatewayID string, req *jsonrpc.Request[json.RawMessage]) error
+}
+
+var _ GatewayConnector = (*UnimplementedGatewayConnector)(nil)
+
+type UnimplementedGatewayConnector struct{}
+
+func (u *UnimplementedGatewayConnector) AddHandler(ctx context.Context, methods []string, handler GatewayConnectorHandler) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (u *UnimplementedGatewayConnector) SendToGateway(ctx context.Context, gatewayID string, resp *jsonrpc.Response[json.RawMessage]) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (u *UnimplementedGatewayConnector) SignMessage(ctx context.Context, msg []byte) ([]byte, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (u *UnimplementedGatewayConnector) GatewayIDs(ctx context.Context) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (u *UnimplementedGatewayConnector) DonID(ctx context.Context) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
+func (u *UnimplementedGatewayConnector) AwaitConnection(ctx context.Context, gatewayID string) error {
+	return fmt.Errorf("not implemented")
 }

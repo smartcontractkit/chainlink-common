@@ -46,8 +46,9 @@ func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.Su
 	}
 
 	return &evmtypes.TransactionResult{
-		TxStatus: evmpb.ConvertTxStatusFromProto(reply.TxStatus),
-		TxHash:   evmtypes.Hash(reply.TxHash),
+		TxStatus:         evmpb.ConvertTxStatusFromProto(reply.TxStatus),
+		TxHash:           evmtypes.Hash(reply.TxHash),
+		TxIdempotencyKey: reply.TxIdempotencyKey,
 	}, nil
 }
 
@@ -476,8 +477,9 @@ func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.Submit
 		return nil, err
 	}
 	return &evmpb.SubmitTransactionReply{
-		TxHash:   txResult.TxHash[:],
-		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+		TxHash:           txResult.TxHash[:],
+		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+		TxIdempotencyKey: txResult.TxIdempotencyKey,
 	}, nil
 }
 

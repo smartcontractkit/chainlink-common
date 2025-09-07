@@ -322,6 +322,7 @@ message SubmitTransactionRequest {
 message SubmitTransactionReply {
   bytes txHash = 1;
   TxStatus txStatus = 2;
+  string tx_idempotency_key = 3; // idempotency key generated for this transaction
 }
 
 // TransactionStatus is an enum for the status of a transaction.

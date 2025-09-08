@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	sm "github.com/smartcontractkit/chainlink-common/pkg/types/core/securemint"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
@@ -105,7 +105,7 @@ func TestReportingPluginBytesToChainSelectorAdapter_Reports(t *testing.T) {
 				// Verify conversion for each report
 				for i, report := range reports {
 					assert.Equal(t, tt.mockReports[i].ReportWithInfo.Report, report.ReportWithInfo.Report)
-					expectedChainSelector := core.ChainSelector(binary.LittleEndian.Uint64(tt.mockReports[i].ReportWithInfo.Info[:8]))
+					expectedChainSelector := sm.ChainSelector(binary.LittleEndian.Uint64(tt.mockReports[i].ReportWithInfo.Info[:8]))
 					assert.Equal(t, expectedChainSelector, report.ReportWithInfo.Info)
 				}
 			}
@@ -119,8 +119,8 @@ func TestReportingPluginBytesToChainSelectorAdapter_ShouldAcceptAttestedReport(t
 	mockPlugin := new(MockReportingPluginBytes)
 	adapter := &reportingPluginBytesToChainSelectorAdapter{plugin: mockPlugin}
 
-	chainSelector := core.ChainSelector(123)
-	report := ocr3types.ReportWithInfo[core.ChainSelector]{
+	chainSelector := sm.ChainSelector(123)
+	report := ocr3types.ReportWithInfo[sm.ChainSelector]{
 		Report: []byte("test report"),
 		Info:   chainSelector,
 	}
@@ -146,8 +146,8 @@ func TestReportingPluginBytesToChainSelectorAdapter_ShouldTransmitAcceptedReport
 	mockPlugin := new(MockReportingPluginBytes)
 	adapter := &reportingPluginBytesToChainSelectorAdapter{plugin: mockPlugin}
 
-	chainSelector := core.ChainSelector(456)
-	report := ocr3types.ReportWithInfo[core.ChainSelector]{
+	chainSelector := sm.ChainSelector(456)
+	report := ocr3types.ReportWithInfo[sm.ChainSelector]{
 		Report: []byte("test report"),
 		Info:   chainSelector,
 	}
@@ -172,18 +172,18 @@ func TestReportingPluginBytesToChainSelectorAdapter_ShouldTransmitAcceptedReport
 func TestReportingPluginChainSelectorToBytesAdapter_Reports(t *testing.T) {
 	tests := []struct {
 		name          string
-		mockReports   []ocr3types.ReportPlus[core.ChainSelector]
+		mockReports   []ocr3types.ReportPlus[sm.ChainSelector]
 		mockError     error
 		expectedError bool
 		expectedCount int
 	}{
 		{
 			name: "successful conversion with single report",
-			mockReports: []ocr3types.ReportPlus[core.ChainSelector]{
+			mockReports: []ocr3types.ReportPlus[sm.ChainSelector]{
 				{
-					ReportWithInfo: ocr3types.ReportWithInfo[core.ChainSelector]{
+					ReportWithInfo: ocr3types.ReportWithInfo[sm.ChainSelector]{
 						Report: []byte("test report"),
-						Info:   core.ChainSelector(1),
+						Info:   sm.ChainSelector(1),
 					},
 				},
 			},
@@ -193,17 +193,17 @@ func TestReportingPluginChainSelectorToBytesAdapter_Reports(t *testing.T) {
 		},
 		{
 			name: "successful conversion with multiple reports",
-			mockReports: []ocr3types.ReportPlus[core.ChainSelector]{
+			mockReports: []ocr3types.ReportPlus[sm.ChainSelector]{
 				{
-					ReportWithInfo: ocr3types.ReportWithInfo[core.ChainSelector]{
+					ReportWithInfo: ocr3types.ReportWithInfo[sm.ChainSelector]{
 						Report: []byte("test report 1"),
-						Info:   core.ChainSelector(1),
+						Info:   sm.ChainSelector(1),
 					},
 				},
 				{
-					ReportWithInfo: ocr3types.ReportWithInfo[core.ChainSelector]{
+					ReportWithInfo: ocr3types.ReportWithInfo[sm.ChainSelector]{
 						Report: []byte("test report 2"),
-						Info:   core.ChainSelector(2),
+						Info:   sm.ChainSelector(2),
 					},
 				},
 			},
@@ -213,7 +213,7 @@ func TestReportingPluginChainSelectorToBytesAdapter_Reports(t *testing.T) {
 		},
 		{
 			name:          "empty reports",
-			mockReports:   []ocr3types.ReportPlus[core.ChainSelector]{},
+			mockReports:   []ocr3types.ReportPlus[sm.ChainSelector]{},
 			mockError:     nil,
 			expectedError: false,
 			expectedCount: 0,
@@ -270,8 +270,8 @@ func TestReportingPluginChainSelectorToBytesAdapter_ShouldAcceptAttestedReport(t
 	}
 
 	// Convert bytes to chain selector for mock expectation
-	expectedChainSelector := core.ChainSelector(binary.LittleEndian.Uint64(chainSelectorBytes))
-	expectedReport := ocr3types.ReportWithInfo[core.ChainSelector]{
+	expectedChainSelector := sm.ChainSelector(binary.LittleEndian.Uint64(chainSelectorBytes))
+	expectedReport := ocr3types.ReportWithInfo[sm.ChainSelector]{
 		Report: []byte("test report"),
 		Info:   expectedChainSelector,
 	}
@@ -296,8 +296,8 @@ func TestReportingPluginChainSelectorToBytesAdapter_ShouldTransmitAcceptedReport
 	}
 
 	// Convert bytes to chain selector for mock expectation
-	expectedChainSelector := core.ChainSelector(binary.LittleEndian.Uint64(chainSelectorBytes))
-	expectedReport := ocr3types.ReportWithInfo[core.ChainSelector]{
+	expectedChainSelector := sm.ChainSelector(binary.LittleEndian.Uint64(chainSelectorBytes))
+	expectedReport := ocr3types.ReportWithInfo[sm.ChainSelector]{
 		Report: []byte("test report"),
 		Info:   expectedChainSelector,
 	}
@@ -361,7 +361,7 @@ func (m *MockReportingPluginBytes) Close() error {
 	return args.Error(0)
 }
 
-// MockReportingPluginChainSelector is a mock implementation of ocr3types.ReportingPlugin[core.ChainSelector]
+// MockReportingPluginChainSelector is a mock implementation of ocr3types.ReportingPlugin[securemint.ChainSelector]
 type MockReportingPluginChainSelector struct {
 	mock.Mock
 }
@@ -391,17 +391,17 @@ func (m *MockReportingPluginChainSelector) Outcome(ctx context.Context, outctx o
 	return args.Get(0).(ocr3types.Outcome), args.Error(1)
 }
 
-func (m *MockReportingPluginChainSelector) Reports(ctx context.Context, seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[core.ChainSelector], error) {
+func (m *MockReportingPluginChainSelector) Reports(ctx context.Context, seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[sm.ChainSelector], error) {
 	args := m.Called(ctx, seqNr, outcome)
-	return args.Get(0).([]ocr3types.ReportPlus[core.ChainSelector]), args.Error(1)
+	return args.Get(0).([]ocr3types.ReportPlus[sm.ChainSelector]), args.Error(1)
 }
 
-func (m *MockReportingPluginChainSelector) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[core.ChainSelector]) (bool, error) {
+func (m *MockReportingPluginChainSelector) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[sm.ChainSelector]) (bool, error) {
 	args := m.Called(ctx, seqNr, report)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockReportingPluginChainSelector) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[core.ChainSelector]) (bool, error) {
+func (m *MockReportingPluginChainSelector) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[sm.ChainSelector]) (bool, error) {
 	args := m.Called(ctx, seqNr, report)
 	return args.Bool(0), args.Error(1)
 }

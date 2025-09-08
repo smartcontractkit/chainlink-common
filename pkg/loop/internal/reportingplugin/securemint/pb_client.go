@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	securemintpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/securemint"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	sm "github.com/smartcontractkit/chainlink-common/pkg/types/core/securemint"
 )
 
 // PluginSecureMintClient is a client that runs on the core node to connect to the SecureMint LOOP server.
@@ -40,8 +41,8 @@ func NewPluginSecureMintClient(brokerCfg net.BrokerConfig) *PluginSecureMintClie
 func (c *PluginSecureMintClient) NewSecureMintFactory(
 	ctx context.Context,
 	lggr logger.Logger,
-	externalAdapter core.ExternalAdapter,
-) (core.ReportingPluginFactory[core.ChainSelector], error) {
+	externalAdapter sm.ExternalAdapter,
+) (core.ReportingPluginFactory[sm.ChainSelector], error) {
 	lggr.Infow("NewSecureMintFactory Client called", "externalAdapter", externalAdapter)
 
 	cc := c.NewClientConn("SecureMintFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {

@@ -10,23 +10,23 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/securemint"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	sm "github.com/smartcontractkit/chainlink-common/pkg/types/core/securemint"
 )
 
-// externalAdapterClient is a protobuf client that implements the core.ExternalAdapter interface.
-// It's basically a wrapper around the protobuf external adapter client so that it can be used as a core.ExternalAdapter.
+// externalAdapterClient is a protobuf client that implements the securemint.ExternalAdapter interface.
+// It's basically a wrapper around the protobuf external adapter client so that it can be used as a securemint.ExternalAdapter.
 type externalAdapterClient struct {
 	lggr logger.Logger
 	grpc pb.ExternalAdapterClient
 }
 
-var _ core.ExternalAdapter = (*externalAdapterClient)(nil)
+var _ sm.ExternalAdapter = (*externalAdapterClient)(nil)
 
 func newExternalAdapterClient(lggr logger.Logger, cc grpc.ClientConnInterface) *externalAdapterClient {
 	return &externalAdapterClient{lggr: logger.Named(lggr, "ExternalAdapterClient"), grpc: pb.NewExternalAdapterClient(cc)}
 }
 
-func (d *externalAdapterClient) GetPayload(ctx context.Context, blocks core.Blocks) (core.ExternalAdapterPayload, error) {
+func (d *externalAdapterClient) GetPayload(ctx context.Context, blocks sm.Blocks) (sm.ExternalAdapterPayload, error) {
 	d.lggr.Infof("GetPayload request pb client: %+v", blocks)
 
 	request := &pb.Blocks{
@@ -38,36 +38,36 @@ func (d *externalAdapterClient) GetPayload(ctx context.Context, blocks core.Bloc
 
 	reply, err := d.grpc.GetPayload(ctx, request)
 	if err != nil {
-		return core.ExternalAdapterPayload{}, err
+		return sm.ExternalAdapterPayload{}, err
 	}
 
-	mintables := make(map[core.ChainSelector]core.BlockMintablePair, len(reply.Mintables))
+	mintables := make(map[sm.ChainSelector]sm.BlockMintablePair, len(reply.Mintables))
 	for chainSelector, blockMintablePair := range reply.Mintables {
 		mintable, err := stringToBigInt(blockMintablePair.Mintable)
 		if err != nil {
-			return core.ExternalAdapterPayload{}, err
+			return sm.ExternalAdapterPayload{}, err
 		}
-		mintables[core.ChainSelector(chainSelector)] = core.BlockMintablePair{
-			Block:    core.BlockNumber(blockMintablePair.BlockNumber),
+		mintables[sm.ChainSelector(chainSelector)] = sm.BlockMintablePair{
+			Block:    sm.BlockNumber(blockMintablePair.BlockNumber),
 			Mintable: mintable,
 		}
 	}
 
 	reserveAmount, err := stringToBigInt(reply.ReserveInfo.ReserveAmount)
 	if err != nil {
-		return core.ExternalAdapterPayload{}, err
+		return sm.ExternalAdapterPayload{}, err
 	}
-	reserveInfo := core.ReserveInfo{
+	reserveInfo := sm.ReserveInfo{
 		ReserveAmount: reserveAmount,
 		Timestamp:     reply.ReserveInfo.Timestamp.AsTime(),
 	}
 
-	latestBlocks := make(core.Blocks, len(reply.LatestBlocks.Value))
+	latestBlocks := make(sm.Blocks, len(reply.LatestBlocks.Value))
 	for chainSelector, blockNumber := range reply.LatestBlocks.Value {
-		latestBlocks[core.ChainSelector(chainSelector)] = core.BlockNumber(blockNumber)
+		latestBlocks[sm.ChainSelector(chainSelector)] = sm.BlockNumber(blockNumber)
 	}
 
-	result := core.ExternalAdapterPayload{
+	result := sm.ExternalAdapterPayload{
 		Mintables:    mintables,
 		ReserveInfo:  reserveInfo,
 		LatestBlocks: latestBlocks,
@@ -80,24 +80,24 @@ func (d *externalAdapterClient) GetPayload(ctx context.Context, blocks core.Bloc
 var _ pb.ExternalAdapterServer = (*externalAdapterServer)(nil)
 
 // externalAdapterServer is a protobuf server that implements the pb.ExternalAdapterServer interface.
-// It's basically a protobuf wrapper around the core.ExternalAdapter implementation.
+// It's basically a protobuf wrapper around the securemint.ExternalAdapter implementation.
 type externalAdapterServer struct {
 	pb.UnimplementedExternalAdapterServer
 
 	lggr logger.Logger
-	impl core.ExternalAdapter
+	impl sm.ExternalAdapter
 }
 
-func newExternalAdapterServer(lggr logger.Logger, impl core.ExternalAdapter) *externalAdapterServer {
+func newExternalAdapterServer(lggr logger.Logger, impl sm.ExternalAdapter) *externalAdapterServer {
 	return &externalAdapterServer{lggr: logger.Named(lggr, "ExternalAdapterServer"), impl: impl}
 }
 
 func (d *externalAdapterServer) GetPayload(ctx context.Context, request *pb.Blocks) (*pb.ExternalAdapterPayload, error) {
 	d.lggr.Infof("GetPayload request pb server: %+v", request)
 
-	blocks := make(core.Blocks, len(request.Value))
+	blocks := make(sm.Blocks, len(request.Value))
 	for chainSelector, blockNumber := range request.Value {
-		blocks[core.ChainSelector(chainSelector)] = core.BlockNumber(blockNumber)
+		blocks[sm.ChainSelector(chainSelector)] = sm.BlockNumber(blockNumber)
 	}
 
 	val, err := d.impl.GetPayload(ctx, blocks)

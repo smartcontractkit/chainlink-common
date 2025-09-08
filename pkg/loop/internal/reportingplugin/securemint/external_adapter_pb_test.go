@@ -12,7 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/securemint"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	sm "github.com/smartcontractkit/chainlink-common/pkg/types/core/securemint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,29 +27,29 @@ func (m *mockExternalAdapterClient) GetPayload(ctx context.Context, in *pb.Block
 	return args.Get(0).(*pb.ExternalAdapterPayload), args.Error(1)
 }
 
-// mockExternalAdapter is a mock implementation of core.ExternalAdapter
+// mockExternalAdapter is a mock implementation of securemint.ExternalAdapter
 type mockExternalAdapter struct {
 	mock.Mock
 }
 
-func (m *mockExternalAdapter) GetPayload(ctx context.Context, blocks core.Blocks) (core.ExternalAdapterPayload, error) {
+func (m *mockExternalAdapter) GetPayload(ctx context.Context, blocks sm.Blocks) (sm.ExternalAdapterPayload, error) {
 	args := m.Called(ctx, blocks)
-	return args.Get(0).(core.ExternalAdapterPayload), args.Error(1)
+	return args.Get(0).(sm.ExternalAdapterPayload), args.Error(1)
 }
 
 func TestExternalAdapterClient_GetPayload(t *testing.T) {
 	tests := []struct {
 		name           string
-		inputBlocks    core.Blocks
+		inputBlocks    sm.Blocks
 		mockResponse   *pb.ExternalAdapterPayload
 		mockError      error
-		expectedResult core.ExternalAdapterPayload
+		expectedResult sm.ExternalAdapterPayload
 		expectedError  bool
 	}{
 		{
 			name: "successful request with single chain",
-			inputBlocks: core.Blocks{
-				core.ChainSelector(1): core.BlockNumber(100),
+			inputBlocks: sm.Blocks{
+				sm.ChainSelector(1): sm.BlockNumber(100),
 			},
 			mockResponse: &pb.ExternalAdapterPayload{
 				Mintables: map[uint64]*pb.BlockMintablePair{
@@ -68,28 +68,28 @@ func TestExternalAdapterClient_GetPayload(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: core.ExternalAdapterPayload{
-				Mintables: map[core.ChainSelector]core.BlockMintablePair{
-					core.ChainSelector(1): {
-						Block:    core.BlockNumber(100),
+			expectedResult: sm.ExternalAdapterPayload{
+				Mintables: map[sm.ChainSelector]sm.BlockMintablePair{
+					sm.ChainSelector(1): {
+						Block:    sm.BlockNumber(100),
 						Mintable: big.NewInt(1000),
 					},
 				},
-				ReserveInfo: core.ReserveInfo{
+				ReserveInfo: sm.ReserveInfo{
 					ReserveAmount: big.NewInt(5000),
 					Timestamp:     time.Unix(1640995200, 0).UTC(),
 				},
-				LatestBlocks: core.Blocks{
-					core.ChainSelector(1): core.BlockNumber(100),
+				LatestBlocks: sm.Blocks{
+					sm.ChainSelector(1): sm.BlockNumber(100),
 				},
 			},
 			expectedError: false,
 		},
 		{
 			name: "successful request with multiple chains",
-			inputBlocks: core.Blocks{
-				core.ChainSelector(1): core.BlockNumber(100),
-				core.ChainSelector(2): core.BlockNumber(200),
+			inputBlocks: sm.Blocks{
+				sm.ChainSelector(1): sm.BlockNumber(100),
+				sm.ChainSelector(2): sm.BlockNumber(200),
 			},
 			mockResponse: &pb.ExternalAdapterPayload{
 				Mintables: map[uint64]*pb.BlockMintablePair{
@@ -113,31 +113,31 @@ func TestExternalAdapterClient_GetPayload(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: core.ExternalAdapterPayload{
-				Mintables: map[core.ChainSelector]core.BlockMintablePair{
-					core.ChainSelector(1): {
-						Block:    core.BlockNumber(100),
+			expectedResult: sm.ExternalAdapterPayload{
+				Mintables: map[sm.ChainSelector]sm.BlockMintablePair{
+					sm.ChainSelector(1): {
+						Block:    sm.BlockNumber(100),
 						Mintable: big.NewInt(1000),
 					},
-					core.ChainSelector(2): {
-						Block:    core.BlockNumber(200),
+					sm.ChainSelector(2): {
+						Block:    sm.BlockNumber(200),
 						Mintable: big.NewInt(2000),
 					},
 				},
-				ReserveInfo: core.ReserveInfo{
+				ReserveInfo: sm.ReserveInfo{
 					ReserveAmount: big.NewInt(5000),
 					Timestamp:     time.Unix(1640995200, 0).UTC(),
 				},
-				LatestBlocks: core.Blocks{
-					core.ChainSelector(1): core.BlockNumber(100),
-					core.ChainSelector(2): core.BlockNumber(200),
+				LatestBlocks: sm.Blocks{
+					sm.ChainSelector(1): sm.BlockNumber(100),
+					sm.ChainSelector(2): sm.BlockNumber(200),
 				},
 			},
 			expectedError: false,
 		},
 		{
 			name:        "empty input blocks",
-			inputBlocks: core.Blocks{},
+			inputBlocks: sm.Blocks{},
 			mockResponse: &pb.ExternalAdapterPayload{
 				Mintables: map[uint64]*pb.BlockMintablePair{},
 				ReserveInfo: &pb.ReserveInfo{
@@ -148,20 +148,20 @@ func TestExternalAdapterClient_GetPayload(t *testing.T) {
 					Value: map[uint64]uint64{},
 				},
 			},
-			expectedResult: core.ExternalAdapterPayload{
-				Mintables: map[core.ChainSelector]core.BlockMintablePair{},
-				ReserveInfo: core.ReserveInfo{
+			expectedResult: sm.ExternalAdapterPayload{
+				Mintables: map[sm.ChainSelector]sm.BlockMintablePair{},
+				ReserveInfo: sm.ReserveInfo{
 					ReserveAmount: big.NewInt(0),
 					Timestamp:     time.Unix(1640995200, 0).UTC(),
 				},
-				LatestBlocks: core.Blocks{},
+				LatestBlocks: sm.Blocks{},
 			},
 			expectedError: false,
 		},
 		{
 			name: "grpc error",
-			inputBlocks: core.Blocks{
-				core.ChainSelector(1): core.BlockNumber(100),
+			inputBlocks: sm.Blocks{
+				sm.ChainSelector(1): sm.BlockNumber(100),
 			},
 			mockResponse:  nil,
 			mockError:     errors.New("grpc error"),
@@ -169,8 +169,8 @@ func TestExternalAdapterClient_GetPayload(t *testing.T) {
 		},
 		{
 			name: "invalid mintable string",
-			inputBlocks: core.Blocks{
-				core.ChainSelector(1): core.BlockNumber(100),
+			inputBlocks: sm.Blocks{
+				sm.ChainSelector(1): sm.BlockNumber(100),
 			},
 			mockResponse: &pb.ExternalAdapterPayload{
 				Mintables: map[uint64]*pb.BlockMintablePair{
@@ -193,8 +193,8 @@ func TestExternalAdapterClient_GetPayload(t *testing.T) {
 		},
 		{
 			name: "invalid reserve amount string",
-			inputBlocks: core.Blocks{
-				core.ChainSelector(1): core.BlockNumber(100),
+			inputBlocks: sm.Blocks{
+				sm.ChainSelector(1): sm.BlockNumber(100),
 			},
 			mockResponse: &pb.ExternalAdapterPayload{
 				Mintables: map[uint64]*pb.BlockMintablePair{
@@ -239,7 +239,7 @@ func TestExternalAdapterClient_GetPayload(t *testing.T) {
 			// Assertions
 			if tt.expectedError {
 				assert.Error(t, err)
-				assert.Equal(t, core.ExternalAdapterPayload{}, result)
+				assert.Equal(t, sm.ExternalAdapterPayload{}, result)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expectedResult, result)
@@ -255,7 +255,7 @@ func TestExternalAdapterServer_GetPayload(t *testing.T) {
 	tests := []struct {
 		name           string
 		inputRequest   *pb.Blocks
-		mockResponse   core.ExternalAdapterPayload
+		mockResponse   sm.ExternalAdapterPayload
 		mockError      error
 		expectedResult *pb.ExternalAdapterPayload
 		expectedError  bool
@@ -267,19 +267,19 @@ func TestExternalAdapterServer_GetPayload(t *testing.T) {
 					1: 100,
 				},
 			},
-			mockResponse: core.ExternalAdapterPayload{
-				Mintables: map[core.ChainSelector]core.BlockMintablePair{
-					core.ChainSelector(1): {
-						Block:    core.BlockNumber(100),
+			mockResponse: sm.ExternalAdapterPayload{
+				Mintables: map[sm.ChainSelector]sm.BlockMintablePair{
+					sm.ChainSelector(1): {
+						Block:    sm.BlockNumber(100),
 						Mintable: big.NewInt(1000),
 					},
 				},
-				ReserveInfo: core.ReserveInfo{
+				ReserveInfo: sm.ReserveInfo{
 					ReserveAmount: big.NewInt(5000),
 					Timestamp:     time.Unix(1640995200, 0).UTC(),
 				},
-				LatestBlocks: core.Blocks{
-					core.ChainSelector(1): core.BlockNumber(100),
+				LatestBlocks: sm.Blocks{
+					sm.ChainSelector(1): sm.BlockNumber(100),
 				},
 			},
 			expectedResult: &pb.ExternalAdapterPayload{
@@ -309,24 +309,24 @@ func TestExternalAdapterServer_GetPayload(t *testing.T) {
 					2: 200,
 				},
 			},
-			mockResponse: core.ExternalAdapterPayload{
-				Mintables: map[core.ChainSelector]core.BlockMintablePair{
-					core.ChainSelector(1): {
-						Block:    core.BlockNumber(100),
+			mockResponse: sm.ExternalAdapterPayload{
+				Mintables: map[sm.ChainSelector]sm.BlockMintablePair{
+					sm.ChainSelector(1): {
+						Block:    sm.BlockNumber(100),
 						Mintable: big.NewInt(1000),
 					},
-					core.ChainSelector(2): {
-						Block:    core.BlockNumber(200),
+					sm.ChainSelector(2): {
+						Block:    sm.BlockNumber(200),
 						Mintable: big.NewInt(2000),
 					},
 				},
-				ReserveInfo: core.ReserveInfo{
+				ReserveInfo: sm.ReserveInfo{
 					ReserveAmount: big.NewInt(5000),
 					Timestamp:     time.Unix(1640995200, 0).UTC(),
 				},
-				LatestBlocks: core.Blocks{
-					core.ChainSelector(1): core.BlockNumber(100),
-					core.ChainSelector(2): core.BlockNumber(200),
+				LatestBlocks: sm.Blocks{
+					sm.ChainSelector(1): sm.BlockNumber(100),
+					sm.ChainSelector(2): sm.BlockNumber(200),
 				},
 			},
 			expectedResult: &pb.ExternalAdapterPayload{
@@ -358,13 +358,13 @@ func TestExternalAdapterServer_GetPayload(t *testing.T) {
 			inputRequest: &pb.Blocks{
 				Value: map[uint64]uint64{},
 			},
-			mockResponse: core.ExternalAdapterPayload{
-				Mintables: map[core.ChainSelector]core.BlockMintablePair{},
-				ReserveInfo: core.ReserveInfo{
+			mockResponse: sm.ExternalAdapterPayload{
+				Mintables: map[sm.ChainSelector]sm.BlockMintablePair{},
+				ReserveInfo: sm.ReserveInfo{
 					ReserveAmount: big.NewInt(0),
 					Timestamp:     time.Unix(1640995200, 0).UTC(),
 				},
-				LatestBlocks: core.Blocks{},
+				LatestBlocks: sm.Blocks{},
 			},
 			expectedResult: &pb.ExternalAdapterPayload{
 				Mintables: map[uint64]*pb.BlockMintablePair{},
@@ -385,7 +385,7 @@ func TestExternalAdapterServer_GetPayload(t *testing.T) {
 					1: 100,
 				},
 			},
-			mockResponse:  core.ExternalAdapterPayload{},
+			mockResponse:  sm.ExternalAdapterPayload{},
 			mockError:     errors.New("external adapter error"),
 			expectedError: true,
 		},
@@ -396,7 +396,7 @@ func TestExternalAdapterServer_GetPayload(t *testing.T) {
 			// Create mock external adapter
 			mockAdapter := new(mockExternalAdapter)
 			if tt.mockError != nil {
-				mockAdapter.On("GetPayload", mock.Anything, mock.Anything).Return(core.ExternalAdapterPayload{}, tt.mockError)
+				mockAdapter.On("GetPayload", mock.Anything, mock.Anything).Return(sm.ExternalAdapterPayload{}, tt.mockError)
 			} else {
 				mockAdapter.On("GetPayload", mock.Anything, mock.Anything).Return(tt.mockResponse, nil)
 			}

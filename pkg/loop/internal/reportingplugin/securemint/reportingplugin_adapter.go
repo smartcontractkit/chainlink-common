@@ -65,8 +65,6 @@ func (r *reportingPluginBytesToChainSelectorAdapter) Reports(ctx context.Context
 	// Convert []ocr3types.ReportPlus[[]byte] to []ocr3types.ReportPlus[core.ChainSelector]
 	reportsWithInfo := make([]ocr3types.ReportPlus[core.ChainSelector], len(reports))
 	for i, report := range reports {
-		// Convert []byte to core.ChainSelector - assuming ChainSelector is a uint64
-		// We need to extract the ChainSelector from the []byte Info field
 		var chainSelector core.ChainSelector
 		if len(report.ReportWithInfo.Info) < 8 {
 			return nil, fmt.Errorf("info is less than 8 bytes: %+v", report.ReportWithInfo.Info)
@@ -88,7 +86,6 @@ func (r *reportingPluginBytesToChainSelectorAdapter) Reports(ctx context.Context
 }
 
 func (r *reportingPluginBytesToChainSelectorAdapter) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[core.ChainSelector]) (bool, error) {
-	// Convert core.ChainSelector to []byte - assuming ChainSelector is a uint64
 	chainSelectorBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(chainSelectorBytes, uint64(report.Info))
 
@@ -100,7 +97,6 @@ func (r *reportingPluginBytesToChainSelectorAdapter) ShouldAcceptAttestedReport(
 }
 
 func (r *reportingPluginBytesToChainSelectorAdapter) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[core.ChainSelector]) (bool, error) {
-	// Convert core.ChainSelector to []byte - assuming ChainSelector is a uint64
 	chainSelectorBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(chainSelectorBytes, uint64(report.Info))
 
@@ -127,7 +123,9 @@ func (r *reportingPluginFactoryChainSelectorToBytesAdapter) NewReportingPlugin(c
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
-	return &reportingPluginChainSelectorToBytesAdapter{plugin: plugin}, info, nil
+
+	wrappedPlugin := &reportingPluginChainSelectorToBytesAdapter{plugin: plugin}
+	return wrappedPlugin, info, nil
 }
 
 // reportingPluginChainSelectorToBytesAdapter wraps a ReportingPlugin[core.ChainSelector] to implement ReportingPlugin[[]byte]
@@ -181,7 +179,6 @@ func (r *reportingPluginChainSelectorToBytesAdapter) Reports(ctx context.Context
 }
 
 func (r *reportingPluginChainSelectorToBytesAdapter) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[[]byte]) (bool, error) {
-	// Convert []byte to core.ChainSelector - assuming ChainSelector is a uint64
 	chainSelector := core.ChainSelector(binary.LittleEndian.Uint64(report.Info[:8]))
 
 	reportBytes := ocr3types.ReportWithInfo[core.ChainSelector]{
@@ -192,7 +189,6 @@ func (r *reportingPluginChainSelectorToBytesAdapter) ShouldAcceptAttestedReport(
 }
 
 func (r *reportingPluginChainSelectorToBytesAdapter) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, report ocr3types.ReportWithInfo[[]byte]) (bool, error) {
-	// Convert []byte to core.ChainSelector - assuming ChainSelector is a uint64
 	chainSelector := core.ChainSelector(binary.LittleEndian.Uint64(report.Info[:8]))
 
 	reportBytes := ocr3types.ReportWithInfo[core.ChainSelector]{

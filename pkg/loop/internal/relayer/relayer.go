@@ -289,23 +289,37 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 }
 
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
-	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
-			CcipProviderArgs: &pb.CCIPProviderArgs{
-				ExternalJobID:        cargs.ExternalJobID[:],
-				ContractReaderConfig: cargs.ContractReaderConfig,
-				ChainWriterConfig:    cargs.ChainWriterConfig,
-				OffRampAddress:       cargs.OffRampAddress,
-				PluginType:           cargs.PluginType,
-			},
-		})
-		if err != nil {
-			return 0, nil, err
-		}
-		return reply.CcipProviderID, nil, nil
-	})
+	var provider types.CCIPProvider
 
-	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
+	// Create client connection with refresh callback
+	clientConn := r.NewClientConnWithCallback("CCIPProvider",
+		func(ctx context.Context) (uint32, net.Resources, error) {
+			reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
+				CcipProviderArgs: &pb.CCIPProviderArgs{
+					ExternalJobID:        cargs.ExternalJobID[:],
+					ContractReaderConfig: cargs.ContractReaderConfig,
+					ChainWriterConfig:    cargs.ChainWriterConfig,
+					OffRampAddress:       cargs.OffRampAddress,
+					PluginType:           cargs.PluginType,
+				},
+			})
+			if err != nil {
+				return 0, nil, err
+			}
+			return reply.CcipProviderID, nil, nil
+		},
+		func(ctx context.Context) error {
+			r.Logger.Info("CCIP Provider connection refreshed - refreshing chain accessor contracts")
+			if ccipProvider, ok := provider.(*ccipocr3.CCIPProviderClient); ok {
+				return ccipProvider.RefreshChainAccessor(ctx)
+			}
+			return nil
+		},
+	)
+
+	provider = ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), clientConn)
+
+	return provider, nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {

@@ -2,6 +2,7 @@ package ccipocr3
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -19,12 +20,17 @@ var _ ccipocr3.ChainAccessor = (*chainAccessorClient)(nil)
 type chainAccessorClient struct {
 	*net.BrokerExt
 	grpc ccipocr3pb.ChainAccessorClient
+
+	// Local persistence for refresh functionality
+	mu              sync.RWMutex
+	syncedContracts map[string]ccipocr3.UnknownAddress // contractName -> contractAddress
 }
 
 func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ChainAccessor {
 	return &chainAccessorClient{
-		BrokerExt: broker,
-		grpc:      ccipocr3pb.NewChainAccessorClient(cc),
+		BrokerExt:       broker,
+		grpc:            ccipocr3pb.NewChainAccessorClient(cc),
+		syncedContracts: make(map[string]ccipocr3.UnknownAddress),
 	}
 }
 
@@ -82,7 +88,49 @@ func (c *chainAccessorClient) Sync(ctx context.Context, contractName string, con
 		ContractName:    contractName,
 		ContractAddress: contractAddress,
 	})
+
+	if err == nil {
+		// Persist the synced contract locally for client refresh
+		c.mu.Lock()
+		c.syncedContracts[contractName] = contractAddress
+		c.mu.Unlock()
+		c.Logger.Debugw("Persisted synced contract", "contractName", contractName, "contractAddress", contractAddress)
+	}
+
 	return err
+}
+
+// Refresh re-syncs all previously synced contracts after a connection refresh.
+func (c *chainAccessorClient) Refresh(ctx context.Context) error {
+	c.mu.RLock()
+	contracts := make(map[string]ccipocr3.UnknownAddress)
+	for name, addr := range c.syncedContracts {
+		contracts[name] = addr
+	}
+	c.mu.RUnlock()
+
+	if len(contracts) == 0 {
+		c.Logger.Debug("No previously synced contracts to refresh")
+		return nil
+	}
+
+	c.Logger.Infow("Refreshing synced contracts", "count", len(contracts))
+
+	for contractName, contractAddress := range contracts {
+		if err := c.Sync(ctx, contractName, contractAddress); err != nil {
+			// If sync fails, log, but continue with the rest of the syncing
+			c.Logger.Errorw("Failed to refresh contract sync",
+				"contractName", contractName,
+				"contractAddress", contractAddress,
+				"err", err)
+		} else {
+			c.Logger.Debugw("Successfully refreshed contract sync",
+				"contractName", contractName,
+				"contractAddress", contractAddress)
+		}
+	}
+
+	return nil
 }
 
 // DestinationAccessor methods

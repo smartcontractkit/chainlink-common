@@ -1,6 +1,8 @@
 package ccipocr3
 
 import (
+	"context"
+
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
@@ -68,6 +70,13 @@ func (p *CCIPProviderClient) Codec() ccipocr3.Codec {
 		TokenDataEncoder:          p.tokenDataEncoder,
 		SourceChainExtraDataCodec: p.sourceChainExtraDataCodec,
 	}
+}
+
+func (p *CCIPProviderClient) RefreshChainAccessor(ctx context.Context) error {
+	if refresher, ok := p.chainAccessor.(*chainAccessorClient); ok {
+		return refresher.Refresh(ctx)
+	}
+	return nil
 }
 
 // Server implementation

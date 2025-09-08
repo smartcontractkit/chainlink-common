@@ -35,6 +35,10 @@ var _ grpc.ClientConnInterface = (*clientConn)(nil)
 // newClientFn returns a new client connection id to dial, and a set of Resource dependencies to close.
 type newClientFn func(context.Context) (id uint32, deps Resources, err error)
 
+// RefreshCallback is called after a successful refresh, but before the connection is made available.
+// This allows clients to perform state management operations before the refreshed client is used again.
+type RefreshCallback func(ctx context.Context) error
+
 // clientConn is a [grpc.ClientConnInterface] backed by a [*grpc.ClientConn] which can be recreated and swapped out
 // via the provided [newClientFn].
 // New instances should be created via BrokerExt.NewClientConn.
@@ -43,9 +47,10 @@ type clientConn struct {
 	newClient newClientFn
 	name      string
 
-	mu   sync.RWMutex
-	deps Resources
-	cc   *grpc.ClientConn
+	mu              sync.RWMutex
+	deps            Resources
+	cc              *grpc.ClientConn
+	refreshCallback RefreshCallback
 }
 
 func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
@@ -147,6 +152,13 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 		case <-ctx.Done():
 			return nil
 		case <-time.After(wait):
+		}
+	}
+
+	if c.refreshCallback != nil {
+		if err := c.refreshCallback(ctx); err != nil {
+			// Log error but make the refreshed connection available anyway.
+			c.Logger.Errorw("Refresh callback failed", "err", err)
 		}
 	}
 

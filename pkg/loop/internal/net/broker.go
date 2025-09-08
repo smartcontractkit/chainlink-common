@@ -83,6 +83,16 @@ func (b *BrokerExt) NewClientConn(name string, newClient newClientFn) *clientCon
 	}
 }
 
+// NewClientConnWithCallback return a new *clientConn backed by this *BrokerExt with a refresh callback.
+func (b *BrokerExt) NewClientConnWithCallback(name string, newClient newClientFn, refreshCallback RefreshCallback) *clientConn {
+	return &clientConn{
+		BrokerExt:       b.WithName(name),
+		newClient:       newClient,
+		name:            name,
+		refreshCallback: refreshCallback,
+	}
+}
+
 func (b *BrokerExt) StopCtx() (context.Context, context.CancelFunc) {
 	return utils.ContextFromChan(b.StopCh)
 }

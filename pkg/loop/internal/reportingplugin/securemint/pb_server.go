@@ -11,11 +11,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
-var _ pb.ReportingPluginServiceServer = (*pluginSecureMintServer)(nil)
-
+// pluginSecureMintServer is the protobuf server that runs on the loopp plugin side to handle requests from the core node.
 type pluginSecureMintServer struct {
 	pb.UnimplementedReportingPluginServiceServer
 
@@ -23,11 +21,16 @@ type pluginSecureMintServer struct {
 	impl core.PluginSecureMint
 }
 
+var _ pb.ReportingPluginServiceServer = (*pluginSecureMintServer)(nil)
+
+// NewValidationService is not implemented for the secure mint plugin.
 func (m *pluginSecureMintServer) NewValidationService(ctx context.Context, request *pb.ValidationServiceRequest) (*pb.ValidationServiceResponse, error) {
 	m.Logger.Infof("NewValidationService called, not implemented")
 	return &pb.ValidationServiceResponse{}, nil
 }
 
+// NewReportingPluginFactory is called by the core node to create a new reporting plugin factory.
+// It delegates to the NewSecureMintFactory function in the plugin implementation.
 func (m *pluginSecureMintServer) NewReportingPluginFactory(ctx context.Context, request *pb.NewReportingPluginFactoryRequest) (*pb.NewReportingPluginFactoryReply, error) {
 	m.Logger.Infof("NewReportingPluginFactory called, delegating to impl.NewSecureMintFactory")
 
@@ -55,6 +58,7 @@ func (m *pluginSecureMintServer) NewReportingPluginFactory(ctx context.Context, 
 	return &pb.NewReportingPluginFactoryReply{ID: id}, nil
 }
 
+// RegisterPluginSecureMintServer registers the plugin server with the given broker and broker config so that it can be called by the protobuf client.
 func RegisterPluginSecureMintServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.PluginSecureMint) error {
 	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newPluginSecureMintServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
@@ -63,19 +67,4 @@ func RegisterPluginSecureMintServer(server *grpc.Server, broker net.Broker, brok
 
 func newPluginSecureMintServer(b *net.BrokerExt, gp core.PluginSecureMint) *pluginSecureMintServer {
 	return &pluginSecureMintServer{BrokerExt: b.WithName("PluginSecureMintServer"), impl: gp}
-}
-
-var _ ocr3types.ReportingPluginFactory[[]byte] = (*reportingPluginFactoryChainSelectorToBytesAdapter)(nil)
-
-// reportingPluginFactoryChainSelectorToBytesAdapter is a wrapper around the ReportingPluginFactory to implement ocr3types.ReportingPluginFactory[[]byte]
-type reportingPluginFactoryChainSelectorToBytesAdapter struct {
-	ocr3types.ReportingPluginFactory[core.ChainSelector]
-}
-
-func (r *reportingPluginFactoryChainSelectorToBytesAdapter) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
-	plugin, info, err := r.ReportingPluginFactory.NewReportingPlugin(ctx, config)
-	if err != nil {
-		return nil, ocr3types.ReportingPluginInfo{}, err
-	}
-	return &reportingPluginChainSelectorToBytesAdapter{plugin: plugin}, info, nil
 }

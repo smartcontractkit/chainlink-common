@@ -14,8 +14,6 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-// TODO(gg): add other unit tests where possible
-
 func TestReportingPluginBytesToChainSelectorAdapter_Reports(t *testing.T) {
 	tests := []struct {
 		name          string

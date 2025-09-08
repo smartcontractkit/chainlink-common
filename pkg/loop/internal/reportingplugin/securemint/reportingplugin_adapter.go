@@ -10,14 +10,14 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-// ocr3ReportingPluginFactoryAdapter wraps a core.OCR3ReportingPluginFactory to implement ReportingPluginFactory[core.ChainSelector]
-type ocr3ReportingPluginFactoryAdapter struct {
+// ocr3ReportingPluginFactoryBytesToChainSelectorAdapter wraps a core.OCR3ReportingPluginFactory to implement ReportingPluginFactory[core.ChainSelector]
+type ocr3ReportingPluginFactoryBytesToChainSelectorAdapter struct {
 	core.OCR3ReportingPluginFactory
 }
 
-func (a *ocr3ReportingPluginFactoryAdapter) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[core.ChainSelector], ocr3types.ReportingPluginInfo, error) {
-	// The core.OCR3ReportingPluginFactory works with []byte, but we need to return core.ChainSelector
-	// We'll need to convert between the types here
+var _ ocr3types.ReportingPluginFactory[core.ChainSelector] = (*ocr3ReportingPluginFactoryBytesToChainSelectorAdapter)(nil)
+
+func (a *ocr3ReportingPluginFactoryBytesToChainSelectorAdapter) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[core.ChainSelector], ocr3types.ReportingPluginInfo, error) {
 	plugin, info, err := a.OCR3ReportingPluginFactory.NewReportingPlugin(ctx, config)
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
@@ -32,6 +32,8 @@ func (a *ocr3ReportingPluginFactoryAdapter) NewReportingPlugin(ctx context.Conte
 type reportingPluginBytesToChainSelectorAdapter struct {
 	plugin ocr3types.ReportingPlugin[[]byte]
 }
+
+var _ ocr3types.ReportingPlugin[core.ChainSelector] = (*reportingPluginBytesToChainSelectorAdapter)(nil)
 
 func (r *reportingPluginBytesToChainSelectorAdapter) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
 	return r.plugin.Query(ctx, outctx)
@@ -113,10 +115,27 @@ func (r *reportingPluginBytesToChainSelectorAdapter) Close() error {
 	return r.plugin.Close()
 }
 
+// reportingPluginFactoryChainSelectorToBytesAdapter wraps a ReportingPluginFactory[core.ChainSelector] to implement ocr3types.ReportingPluginFactory[[]byte]
+type reportingPluginFactoryChainSelectorToBytesAdapter struct {
+	ocr3types.ReportingPluginFactory[core.ChainSelector]
+}
+
+var _ ocr3types.ReportingPluginFactory[[]byte] = (*reportingPluginFactoryChainSelectorToBytesAdapter)(nil)
+
+func (r *reportingPluginFactoryChainSelectorToBytesAdapter) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+	plugin, info, err := r.ReportingPluginFactory.NewReportingPlugin(ctx, config)
+	if err != nil {
+		return nil, ocr3types.ReportingPluginInfo{}, err
+	}
+	return &reportingPluginChainSelectorToBytesAdapter{plugin: plugin}, info, nil
+}
+
 // reportingPluginChainSelectorToBytesAdapter wraps a ReportingPlugin[core.ChainSelector] to implement ReportingPlugin[[]byte]
 type reportingPluginChainSelectorToBytesAdapter struct {
 	plugin ocr3types.ReportingPlugin[core.ChainSelector]
 }
+
+var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPluginChainSelectorToBytesAdapter)(nil)
 
 func (r *reportingPluginChainSelectorToBytesAdapter) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
 	return r.plugin.Query(ctx, outctx)

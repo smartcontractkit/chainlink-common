@@ -14,8 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-var _ core.PluginSecureMint = (*PluginSecureMintClient)(nil)
-
 // PluginSecureMintClient is a client that runs on the core node to connect to the SecureMint LOOP server.
 type PluginSecureMintClient struct {
 	// hashicorp plugin client
@@ -25,6 +23,8 @@ type PluginSecureMintClient struct {
 
 	reportingPluginService pb.ReportingPluginServiceClient
 }
+
+var _ core.PluginSecureMint = (*PluginSecureMintClient)(nil)
 
 func NewPluginSecureMintClient(brokerCfg net.BrokerConfig) *PluginSecureMintClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginSecureMintClient")
@@ -72,7 +72,7 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(
 		return reply.ID, deps, nil
 	})
 
-	return &ocr3ReportingPluginFactoryAdapter{
+	return &ocr3ReportingPluginFactoryBytesToChainSelectorAdapter{
 		ocr3.NewReportingPluginFactoryClient(c.BrokerExt, cc), // protobuf client
 	}, nil
 }

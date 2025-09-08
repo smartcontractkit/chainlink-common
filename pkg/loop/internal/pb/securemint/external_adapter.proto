@@ -1,5 +1,7 @@
 // protobuf representation of https://github.com/smartcontractkit/por_mock_ocr3plugin/blob/main/por/external_adapter_interface.go
 
+// TODO(gg): add more doc comments
+
 syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/securemint;securemintpb";

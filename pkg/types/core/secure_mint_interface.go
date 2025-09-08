@@ -12,11 +12,11 @@ import (
 
 const PluginSecureMintName = "securemint"
 
+// PluginSecureMint is the interface for the secure mint plugin.
 type PluginSecureMint interface {
 	services.Service
 	// NewSecureMintFactory returns a ReportingPluginFactory for the secure mint plugin.
 	NewSecureMintFactory(ctx context.Context, lggr logger.Logger, externalAdapter ExternalAdapter) (ReportingPluginFactory[ChainSelector], error)
-	// TODO(gg): is it correct that NewSecureMintFactory gets a param with a type specified in the por repo? --> maybe we have to alias it in cl-common?
 }
 
 // ExternalAdapter is an alias for por.ExternalAdapter

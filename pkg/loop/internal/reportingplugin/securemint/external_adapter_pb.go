@@ -13,14 +13,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-var _ core.ExternalAdapter = (*externalAdapterClient)(nil)
-
 // externalAdapterClient is a protobuf client that implements the core.ExternalAdapter interface.
 // It's basically a wrapper around the protobuf external adapter client so that it can be used as a core.ExternalAdapter.
 type externalAdapterClient struct {
 	lggr logger.Logger
 	grpc pb.ExternalAdapterClient
 }
+
+var _ core.ExternalAdapter = (*externalAdapterClient)(nil)
 
 func newExternalAdapterClient(lggr logger.Logger, cc grpc.ClientConnInterface) *externalAdapterClient {
 	return &externalAdapterClient{lggr: logger.Named(lggr, "ExternalAdapterClient"), grpc: pb.NewExternalAdapterClient(cc)}
@@ -92,7 +92,6 @@ func newExternalAdapterServer(lggr logger.Logger, impl core.ExternalAdapter) *ex
 	return &externalAdapterServer{lggr: logger.Named(lggr, "ExternalAdapterServer"), impl: impl}
 }
 
-// TODO(gg): add unit tests for this
 func (d *externalAdapterServer) GetPayload(ctx context.Context, request *pb.Blocks) (*pb.ExternalAdapterPayload, error) {
 	d.lggr.Infof("GetPayload request pb server: %+v", request)
 

@@ -1,0 +1,35 @@
+// protobuf representation of https://github.com/smartcontractkit/por_mock_ocr3plugin/blob/main/por/external_adapter_interface.go
+
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/securemint;securemintpb";
+
+package loop.internal.pb.securemint;
+
+import "google/protobuf/timestamp.proto";
+
+message Blocks {
+  map<uint64,uint64> value = 1; // map from ChainSelector to BlockNumber
+}
+
+message BlockMintablePair {
+	uint64 blockNumber      = 1;
+	string mintable         = 2; // big.Int in reality
+}
+
+message ReserveInfo {
+	string reserveAmount                = 1; // big.Int in reality
+	google.protobuf.Timestamp timestamp = 2;
+}
+
+message ExternalAdapterPayload {
+  map<uint64,BlockMintablePair> mintables = 1;  // The mintable amounts for each chain and its block.
+	ReserveInfo reserveInfo = 2; // The latest reserve amount and timestamp used to calculate the minting allowance above.
+
+	Blocks latestBlocks = 3; // The latest blocks for each chain.
+}
+
+service ExternalAdapter {
+  rpc GetPayload(Blocks) returns (ExternalAdapterPayload) {}
+}
+

@@ -10,7 +10,6 @@ import (
 	_ "github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -116,8 +115,8 @@ func (x *Config) GetAuthorizedKeys() []*AuthorizedKey {
 
 type Payload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// JSON input in the HTTP trigger request
-	Input *structpb.Struct `protobuf:"bytes,1,opt,name=input,proto3" json:"input,omitempty"`
+	// JSON input in the HTTP trigger request (as bytes)
+	Input []byte `protobuf:"bytes,1,opt,name=input,proto3" json:"input,omitempty"`
 	// Key used to sign the HTTP trigger request
 	Key           *AuthorizedKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -154,7 +153,7 @@ func (*Payload) Descriptor() ([]byte, []int) {
 	return file_capabilities_networking_http_v1alpha_trigger_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Payload) GetInput() *structpb.Struct {
+func (x *Payload) GetInput() []byte {
 	if x != nil {
 		return x.Input
 	}
@@ -225,11 +224,11 @@ var File_capabilities_networking_http_v1alpha_trigger_proto protoreflect.FileDes
 
 const file_capabilities_networking_http_v1alpha_trigger_proto_rawDesc = "" +
 	"\n" +
-	"2capabilities/networking/http/v1alpha/trigger.proto\x12$capabilities.networking.http.v1alpha\x1a\x1cgoogle/protobuf/struct.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"f\n" +
+	"2capabilities/networking/http/v1alpha/trigger.proto\x12$capabilities.networking.http.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"f\n" +
 	"\x06Config\x12\\\n" +
-	"\x0fauthorized_keys\x18\x01 \x03(\v23.capabilities.networking.http.v1alpha.AuthorizedKeyR\x0eauthorizedKeys\"\x7f\n" +
-	"\aPayload\x12-\n" +
-	"\x05input\x18\x01 \x01(\v2\x17.google.protobuf.StructR\x05input\x12E\n" +
+	"\x0fauthorized_keys\x18\x01 \x03(\v23.capabilities.networking.http.v1alpha.AuthorizedKeyR\x0eauthorizedKeys\"f\n" +
+	"\aPayload\x12\x14\n" +
+	"\x05input\x18\x01 \x01(\fR\x05input\x12E\n" +
 	"\x03key\x18\x02 \x01(\v23.capabilities.networking.http.v1alpha.AuthorizedKeyR\x03key\"q\n" +
 	"\rAuthorizedKey\x12A\n" +
 	"\x04type\x18\x01 \x01(\x0e2-.capabilities.networking.http.v1alpha.KeyTypeR\x04type\x12\x1d\n" +
@@ -256,24 +255,22 @@ func file_capabilities_networking_http_v1alpha_trigger_proto_rawDescGZIP() []byt
 var file_capabilities_networking_http_v1alpha_trigger_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capabilities_networking_http_v1alpha_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_capabilities_networking_http_v1alpha_trigger_proto_goTypes = []any{
-	(KeyType)(0),            // 0: capabilities.networking.http.v1alpha.KeyType
-	(*Config)(nil),          // 1: capabilities.networking.http.v1alpha.Config
-	(*Payload)(nil),         // 2: capabilities.networking.http.v1alpha.Payload
-	(*AuthorizedKey)(nil),   // 3: capabilities.networking.http.v1alpha.AuthorizedKey
-	(*structpb.Struct)(nil), // 4: google.protobuf.Struct
+	(KeyType)(0),          // 0: capabilities.networking.http.v1alpha.KeyType
+	(*Config)(nil),        // 1: capabilities.networking.http.v1alpha.Config
+	(*Payload)(nil),       // 2: capabilities.networking.http.v1alpha.Payload
+	(*AuthorizedKey)(nil), // 3: capabilities.networking.http.v1alpha.AuthorizedKey
 }
 var file_capabilities_networking_http_v1alpha_trigger_proto_depIdxs = []int32{
 	3, // 0: capabilities.networking.http.v1alpha.Config.authorized_keys:type_name -> capabilities.networking.http.v1alpha.AuthorizedKey
-	4, // 1: capabilities.networking.http.v1alpha.Payload.input:type_name -> google.protobuf.Struct
-	3, // 2: capabilities.networking.http.v1alpha.Payload.key:type_name -> capabilities.networking.http.v1alpha.AuthorizedKey
-	0, // 3: capabilities.networking.http.v1alpha.AuthorizedKey.type:type_name -> capabilities.networking.http.v1alpha.KeyType
-	1, // 4: capabilities.networking.http.v1alpha.HTTP.Trigger:input_type -> capabilities.networking.http.v1alpha.Config
-	2, // 5: capabilities.networking.http.v1alpha.HTTP.Trigger:output_type -> capabilities.networking.http.v1alpha.Payload
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 1: capabilities.networking.http.v1alpha.Payload.key:type_name -> capabilities.networking.http.v1alpha.AuthorizedKey
+	0, // 2: capabilities.networking.http.v1alpha.AuthorizedKey.type:type_name -> capabilities.networking.http.v1alpha.KeyType
+	1, // 3: capabilities.networking.http.v1alpha.HTTP.Trigger:input_type -> capabilities.networking.http.v1alpha.Config
+	2, // 4: capabilities.networking.http.v1alpha.HTTP.Trigger:output_type -> capabilities.networking.http.v1alpha.Payload
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_networking_http_v1alpha_trigger_proto_init() }

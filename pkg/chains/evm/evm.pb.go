@@ -2579,11 +2579,12 @@ func (x *SubmitTransactionRequest) GetGasConfig() *GasConfig {
 }
 
 type SubmitTransactionReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TxHash        []byte                 `protobuf:"bytes,1,opt,name=txHash,proto3" json:"txHash,omitempty"`
-	TxStatus      TxStatus               `protobuf:"varint,2,opt,name=txStatus,proto3,enum=loop.evm.TxStatus" json:"txStatus,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	TxHash           []byte                 `protobuf:"bytes,1,opt,name=txHash,proto3" json:"txHash,omitempty"`
+	TxStatus         TxStatus               `protobuf:"varint,2,opt,name=txStatus,proto3,enum=loop.evm.TxStatus" json:"txStatus,omitempty"`
+	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"` // idempotency key generated for this transaction
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SubmitTransactionReply) Reset() {
@@ -2628,6 +2629,13 @@ func (x *SubmitTransactionReply) GetTxStatus() TxStatus {
 		return x.TxStatus
 	}
 	return TxStatus_TX_FATAL
+}
+
+func (x *SubmitTransactionReply) GetTxIdempotencyKey() string {
+	if x != nil {
+		return x.TxIdempotencyKey
+	}
+	return ""
 }
 
 type GetTransactionStatusRequest struct {
@@ -3038,10 +3046,11 @@ const file_evm_proto_rawDesc = "" +
 	"\x04data\x18\x02 \x01(\fR\x04data\x127\n" +
 	"\n" +
 	"gas_config\x18\x03 \x01(\v2\x13.loop.evm.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
-	"\v_gas_config\"`\n" +
+	"\v_gas_config\"\x8e\x01\n" +
 	"\x16SubmitTransactionReply\x12\x16\n" +
 	"\x06txHash\x18\x01 \x01(\fR\x06txHash\x12.\n" +
-	"\btxStatus\x18\x02 \x01(\x0e2\x12.loop.evm.TxStatusR\btxStatus\"D\n" +
+	"\btxStatus\x18\x02 \x01(\x0e2\x12.loop.evm.TxStatusR\btxStatus\x12,\n" +
+	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\"D\n" +
 	"\x1bGetTransactionStatusRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"g\n" +
 	"\x19GetTransactionStatusReply\x12J\n" +

@@ -474,11 +474,13 @@ func MustNewRemoteCapabilityInfo(
 }
 
 const (
-	DefaultRegistrationRefresh   = 30 * time.Second
-	DefaultRegistrationExpiry    = 2 * time.Minute
-	DefaultMessageExpiry         = 2 * time.Minute
-	DefaultBatchSize             = 100
-	DefaultBatchCollectionPeriod = 100 * time.Millisecond
+	DefaultRegistrationRefresh       = 30 * time.Second
+	DefaultRegistrationExpiry        = 2 * time.Minute
+	DefaultMessageExpiry             = 2 * time.Minute
+	DefaultBatchSize                 = 100
+	DefaultBatchCollectionPeriod     = 100 * time.Millisecond
+	DefaultExecutableRequestTimeout  = 8 * time.Minute
+	DefaultServerMaxParallelRequests = uint32(1000)
 )
 
 type RemoteTriggerConfig struct {
@@ -490,14 +492,19 @@ type RemoteTriggerConfig struct {
 	BatchCollectionPeriod   time.Duration
 }
 
-type RemoteTargetConfig struct {
+type RemoteTargetConfig struct { // deprecated - v1 only
 	RequestHashExcludedAttributes []string
 }
 
 type RemoteExecutableConfig struct {
-	RequestHashExcludedAttributes []string
-	RegistrationRefresh           time.Duration
-	RegistrationExpiry            time.Duration
+	RequestHashExcludedAttributes []string // deprecated - v1 only
+
+	// Fields below are used only by v2 capabilities
+	TransmissionSchedule      TransmissionSchedule
+	DeltaStage                time.Duration
+	RequestTimeout            time.Duration
+	ServerMaxParallelRequests uint32
+	RequestHasherType         RequestHasherType
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
@@ -527,12 +534,39 @@ func (c *RemoteExecutableConfig) ApplyDefaults() {
 	if c == nil {
 		return
 	}
-	if c.RegistrationRefresh == 0 {
-		c.RegistrationRefresh = DefaultRegistrationRefresh
+	// Default schedule is 0 ("all at once"), default delta stage is 0.
+	if c.RequestTimeout == 0 {
+		c.RequestTimeout = DefaultExecutableRequestTimeout
 	}
-	if c.RegistrationExpiry == 0 {
-		c.RegistrationExpiry = DefaultRegistrationExpiry
+	if c.ServerMaxParallelRequests == 0 {
+		c.ServerMaxParallelRequests = DefaultServerMaxParallelRequests
 	}
+	// Hasher type 0 is the default type.
+}
+
+type AggregatorType int
+type TransmissionSchedule int
+type RequestHasherType int
+
+const (
+	AggregatorType_Mode         AggregatorType = 0
+	AggregatorType_SignedReport AggregatorType = 1
+
+	Schedule_AllAtOnce  TransmissionSchedule = 0
+	Schedule_OneAtATime TransmissionSchedule = 1
+
+	RequestHasherType_Simple                       RequestHasherType = 0
+	RequestHasherType_WriteReportExcludeSignatures RequestHasherType = 1
+)
+
+type AggregatorConfig struct {
+	AggregatorType AggregatorType
+}
+
+type CapabilityMethodConfig struct {
+	RemoteTriggerConfig    *RemoteTriggerConfig
+	RemoteExecutableConfig *RemoteExecutableConfig
+	AggregatorConfig       *AggregatorConfig
 }
 
 type CapabilityConfiguration struct {
@@ -546,4 +580,7 @@ type CapabilityConfiguration struct {
 	RemoteTriggerConfig    *RemoteTriggerConfig
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig
+
+	// v2 / "NoDAG" capabilities
+	CapabilityMethodConfig map[string]CapabilityMethodConfig
 }

@@ -288,16 +288,15 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
-func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.RelayArgs) (types.CCIPProvider, error) {
+func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
-			RelayArgs: &pb.RelayArgs{
-				ExternalJobID: rargs.ExternalJobID[:],
-				JobID:         rargs.JobID,
-				ContractID:    rargs.ContractID,
-				New:           rargs.New,
-				RelayConfig:   rargs.RelayConfig,
-				ProviderType:  rargs.ProviderType,
+			CcipProviderArgs: &pb.CCIPProviderArgs{
+				ExternalJobID:        cargs.ExternalJobID[:],
+				ContractReaderConfig: cargs.ContractReaderConfig,
+				ChainWriterConfig:    cargs.ChainWriterConfig,
+				OffRampAddress:       cargs.OffRampAddress,
+				PluginType:           cargs.PluginType,
 			},
 		})
 		if err != nil {
@@ -306,7 +305,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.RelayAr
 		return reply.CcipProviderID, nil, nil
 	})
 
-	return ccipocr3.NewCCIPProviderClient(r.WithName(rargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
+	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
@@ -717,22 +716,21 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 }
 
 func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIPProviderRequest) (*pb.NewCCIPProviderReply, error) {
-	rargs := request.RelayArgs
+	rargs := request.CcipProviderArgs
 
 	exJobID, err := uuid.FromBytes(rargs.ExternalJobID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
 	}
-	relayArgs := types.RelayArgs{
-		ExternalJobID: exJobID,
-		JobID:         rargs.JobID,
-		ContractID:    rargs.ContractID,
-		New:           rargs.New,
-		RelayConfig:   rargs.RelayConfig,
-		ProviderType:  rargs.ProviderType,
+	ccipProviderArgs := types.CCIPProviderArgs{
+		ExternalJobID:        exJobID,
+		ContractReaderConfig: rargs.ContractReaderConfig,
+		ChainWriterConfig:    rargs.ChainWriterConfig,
+		OffRampAddress:       rargs.OffRampAddress,
+		PluginType:           rargs.PluginType,
 	}
 
-	provider, err := r.impl.NewCCIPProvider(ctx, relayArgs)
+	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
 		return nil, err
 	}

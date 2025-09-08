@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757105064988,
+  "lastUpdate": 1757320106802,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24864,6 +24864,48 @@ window.BENCHMARK_DATA = {
             "value": 26609,
             "unit": "ns/op",
             "extra": "45076 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aa3f5927af8c32437212eb2b69569004bb957f3e",
+          "message": "Add tx idempotency key to EVM Service SubmitTransaction reply (#1527)",
+          "timestamp": "2025-09-08T10:27:00+02:00",
+          "tree_id": "116f7309bf7a43757e0d390051ab2661f2ec89ef",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aa3f5927af8c32437212eb2b69569004bb957f3e"
+        },
+        "date": 1757320104947,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 374.4,
+            "unit": "ns/op",
+            "extra": "3402020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.6,
+            "unit": "ns/op",
+            "extra": "2904681 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26627,
+            "unit": "ns/op",
+            "extra": "45084 times\n4 procs"
           }
         ]
       }

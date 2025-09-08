@@ -62,6 +62,12 @@ message CCIPProviderArgs {
   bytes chainWriterConfig = 3;
   string OffRampAddress = 4;
   uint32 pluginType = 5;
+  repeated SyncContract syncedContracts = 6; // Previously synced contracts to restore
+}
+
+message SyncContract {
+  string contractName = 1;
+  bytes contractAddress = 2;
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].

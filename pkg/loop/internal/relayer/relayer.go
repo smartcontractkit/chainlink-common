@@ -31,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	ccipocr3types "github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -291,9 +292,21 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	var provider types.CCIPProvider
 
-	// Create client connection with refresh callback
-	clientConn := r.NewClientConnWithCallback("CCIPProvider",
+	// Create client connection
+	clientConn := r.NewClientConn("CCIPProvider",
 		func(ctx context.Context) (uint32, net.Resources, error) {
+			// Convert synced contracts from existing provider to pb.SyncContract format
+			var pbSyncContracts []*pb.SyncContract
+			if ccipProvider, ok := provider.(*ccipocr3.CCIPProviderClient); ok {
+				syncedContracts := ccipProvider.GetSyncedContracts()
+				for contractName, contractAddress := range syncedContracts {
+					pbSyncContracts = append(pbSyncContracts, &pb.SyncContract{
+						ContractName:    contractName,
+						ContractAddress: contractAddress,
+					})
+				}
+				r.Logger.Infow("Restoring synced contracts during refresh", "count", len(pbSyncContracts))
+			}
 			reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 				CcipProviderArgs: &pb.CCIPProviderArgs{
 					ExternalJobID:        cargs.ExternalJobID[:],
@@ -301,19 +314,13 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 					ChainWriterConfig:    cargs.ChainWriterConfig,
 					OffRampAddress:       cargs.OffRampAddress,
 					PluginType:           cargs.PluginType,
+					SyncedContracts:      pbSyncContracts, // TODO: call Sync() with these when constructing the accessor to resync
 				},
 			})
 			if err != nil {
 				return 0, nil, err
 			}
 			return reply.CcipProviderID, nil, nil
-		},
-		func(ctx context.Context) error {
-			r.Logger.Info("CCIP Provider connection refreshed - refreshing chain accessor contracts")
-			if ccipProvider, ok := provider.(*ccipocr3.CCIPProviderClient); ok {
-				return ccipProvider.RefreshChainAccessor(ctx)
-			}
-			return nil
 		},
 	)
 
@@ -747,6 +754,21 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	// If synced contracts were provided, restore them in the chain accessor
+	if len(rargs.SyncedContracts) > 0 {
+		r.Logger.Infow("Restoring synced contracts in new provider", "count", len(rargs.SyncedContracts))
+		chainAccessor := provider.ChainAccessor()
+		for _, syncContract := range rargs.SyncedContracts {
+			if err := chainAccessor.Sync(ctx, syncContract.ContractName, ccipocr3types.UnknownAddress(syncContract.ContractAddress)); err != nil {
+				r.Logger.Errorw("Failed to restore synced contract",
+					"contractName", syncContract.ContractName,
+					"contractAddress", syncContract.ContractAddress,
+					"err", err)
+				// Continue with other contracts even if one fails
+			}
+		}
 	}
 
 	const name = "CCIPProvider"

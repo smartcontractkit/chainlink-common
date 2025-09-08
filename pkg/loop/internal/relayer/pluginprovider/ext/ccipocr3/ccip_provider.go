@@ -1,8 +1,6 @@
 package ccipocr3
 
 import (
-	"context"
-
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
@@ -72,11 +70,13 @@ func (p *CCIPProviderClient) Codec() ccipocr3.Codec {
 	}
 }
 
-func (p *CCIPProviderClient) RefreshChainAccessor(ctx context.Context) error {
-	if refresher, ok := p.chainAccessor.(*chainAccessorClient); ok {
-		return refresher.Refresh(ctx)
+// GetSyncedContracts returns the synced contracts from the chain accessor.
+// This is used to fetch previously synced contracts during connection refresh.
+func (p *CCIPProviderClient) GetSyncedContracts() map[string]ccipocr3.UnknownAddress {
+	if accessor, ok := p.chainAccessor.(*chainAccessorClient); ok {
+		return accessor.GetSyncedContracts()
 	}
-	return nil
+	return make(map[string]ccipocr3.UnknownAddress)
 }
 
 // Server implementation

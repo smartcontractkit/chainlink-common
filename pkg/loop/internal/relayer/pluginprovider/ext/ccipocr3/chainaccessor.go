@@ -100,37 +100,18 @@ func (c *chainAccessorClient) Sync(ctx context.Context, contractName string, con
 	return err
 }
 
-// Refresh re-syncs all previously synced contracts after a connection refresh.
-func (c *chainAccessorClient) Refresh(ctx context.Context) error {
+// GetSyncedContracts returns a copy of all previously synced contracts.
+// This is used to restore contract sync state during connection refresh.
+func (c *chainAccessorClient) GetSyncedContracts() map[string]ccipocr3.UnknownAddress {
 	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Return a copy
 	contracts := make(map[string]ccipocr3.UnknownAddress)
 	for name, addr := range c.syncedContracts {
 		contracts[name] = addr
 	}
-	c.mu.RUnlock()
-
-	if len(contracts) == 0 {
-		c.Logger.Debug("No previously synced contracts to refresh")
-		return nil
-	}
-
-	c.Logger.Infow("Refreshing synced contracts", "count", len(contracts))
-
-	for contractName, contractAddress := range contracts {
-		if err := c.Sync(ctx, contractName, contractAddress); err != nil {
-			// If sync fails, log, but continue with the rest of the syncing
-			c.Logger.Errorw("Failed to refresh contract sync",
-				"contractName", contractName,
-				"contractAddress", contractAddress,
-				"err", err)
-		} else {
-			c.Logger.Debugw("Successfully refreshed contract sync",
-				"contractName", contractName,
-				"contractAddress", contractAddress)
-		}
-	}
-
-	return nil
+	return contracts
 }
 
 // DestinationAccessor methods

@@ -2,7 +2,13 @@
 package vault
 
 const (
-	CapabilityID     = "vault@1.0.0"
+	CapabilityID = "vault@1.0.0"
 	// Deprecated - use the types in core instead.
 	MethodGetSecrets = "vault.secrets.get"
 )
+
+type GetPublicKeyRequest struct{}
+
+type GetPublicKeyResponse struct {
+	PublicKey string `json:"publicKey"`
+}

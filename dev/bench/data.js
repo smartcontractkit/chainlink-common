@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757338548076,
+  "lastUpdate": 1757350279339,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24948,6 +24948,48 @@ window.BENCHMARK_DATA = {
             "value": 26574,
             "unit": "ns/op",
             "extra": "45164 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "nadahalli@gmail.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "46699238dbea3e537c70f9dcd99e91d39fd7cb27",
+          "message": "Confidential HTTP Capability V2\n\n* Bump chainlink-protos (cre); make generate\n\n* Added confidentialhttp capability using code-gen",
+          "timestamp": "2025-09-08T17:48:54+01:00",
+          "tree_id": "56290be825b5e9184664a8259c98e61919af4527",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/46699238dbea3e537c70f9dcd99e91d39fd7cb27"
+        },
+        "date": 1757350278152,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.5,
+            "unit": "ns/op",
+            "extra": "3287025 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.5,
+            "unit": "ns/op",
+            "extra": "2823574 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26577,
+            "unit": "ns/op",
+            "extra": "45128 times\n4 procs"
           }
         ]
       }

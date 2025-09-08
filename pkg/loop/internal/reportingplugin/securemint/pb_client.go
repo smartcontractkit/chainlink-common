@@ -7,7 +7,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	net "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -36,8 +35,6 @@ func NewPluginSecureMintClient(brokerCfg net.BrokerConfig) *PluginSecureMintClie
 		reportingPluginService: pb.NewReportingPluginServiceClient(pc),
 	}
 }
-
-// TODO(gg): add more godoc comments here and elsewhere
 
 // NewSecureMintFactory is called by the go-plugin client side to create a client-side ReportingPluginFactory.
 func (c *PluginSecureMintClient) NewSecureMintFactory(
@@ -81,14 +78,3 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(
 }
 
 // TODO(gg): add unit tests where possible
-
-func (o *PluginSecureMintClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
-	cc := o.NewClientConn("ValidationService", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
-		reply, err := o.reportingPluginService.NewValidationService(ctx, &pb.ValidationServiceRequest{})
-		if err != nil {
-			return 0, nil, err
-		}
-		return reply.ID, nil, nil
-	})
-	return validation.NewValidationServiceClient(o.BrokerExt, cc), nil
-}

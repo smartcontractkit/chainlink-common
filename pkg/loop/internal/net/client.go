@@ -128,6 +128,13 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 			c.CloseAll(c.deps...)
 			return false
 		}
+
+		// Execute refresh completion hook after successful connection
+		if err := c.BrokerExt.executeOnRefreshComplete(ctx); err != nil {
+			// Don't fail the refresh, but log the error
+			c.Logger.Errorw("Refresh completion hook failed", "err", err, "conn", c.name)
+		}
+
 		return true
 	}
 

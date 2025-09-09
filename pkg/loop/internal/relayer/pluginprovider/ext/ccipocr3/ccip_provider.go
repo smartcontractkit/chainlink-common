@@ -70,15 +70,6 @@ func (p *CCIPProviderClient) Codec() ccipocr3.Codec {
 	}
 }
 
-// GetSyncedContracts returns the synced contracts from the chain accessor.
-// This is used to fetch previously synced contracts during connection refresh.
-func (p *CCIPProviderClient) GetSyncedContracts() map[string]ccipocr3.UnknownAddress {
-	if accessor, ok := p.chainAccessor.(*chainAccessorClient); ok {
-		return accessor.GetSyncedContracts()
-	}
-	return make(map[string]ccipocr3.UnknownAddress)
-}
-
 // Server implementation
 type CCIPProviderServer struct{}
 

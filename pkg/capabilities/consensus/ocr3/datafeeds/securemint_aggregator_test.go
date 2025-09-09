@@ -14,6 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/securemint"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
@@ -23,9 +24,9 @@ import (
 
 var (
 	// Test chain selectors
-	ethSepoliaChainSelector = chainSelector(16015286601757825753) // Ethereum Sepolia testnet
-	bnbTestnetChainSelector = chainSelector(13264668187771770619) // Binance Smart Chain testnet
-	solDevnetChainSelector  = chainSelector(16423721717087811551) // Solana devnet
+	ethSepoliaChainSelector = securemint.ChainSelector(16015286601757825753) // Ethereum Sepolia testnet
+	bnbTestnetChainSelector = securemint.ChainSelector(13264668187771770619) // Binance Smart Chain testnet
+	solDevnetChainSelector  = securemint.ChainSelector(16423721717087811551) // Solana devnet
 )
 
 func TestSecureMintAggregator_Aggregate(t *testing.T) {
@@ -268,7 +269,7 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 		chainSelector         string
 		dataID                string
 		solanaAccounts        solana.AccountMetaSlice
-		expectedChainSelector chainSelector
+		expectedChainSelector securemint.ChainSelector
 		expectedDataID        [16]byte
 		expectError           bool
 		errorMsg              string
@@ -374,7 +375,7 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 // Helper types and functions
 
 type ocrTriggerEventData struct {
-	chainSelector chainSelector
+	chainSelector securemint.ChainSelector
 	seqNr         uint64
 	report        *secureMintReport
 	accCtx        solana.AccountMetaSlice
@@ -389,7 +390,7 @@ func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) ma
 		var oracleObservations []values.Value
 		for _, event := range events {
 			// Create the ReportWithInfo
-			ocr3Report := &ocr3types.ReportWithInfo[chainSelector]{
+			ocr3Report := &ocr3types.ReportWithInfo[securemint.ChainSelector]{
 				Report: createReportBytes(t, event.report),
 				Info:   event.chainSelector,
 			}

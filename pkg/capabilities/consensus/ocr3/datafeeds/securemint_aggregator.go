@@ -19,6 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core/securemint"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -74,15 +75,12 @@ type wrappedMintReport struct {
 	SolanaAccountContext solana.AccountMetaSlice `json:"solanaAccountContext,omitempty"`
 }
 
-// chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
-type chainSelector uint64
-
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
 // This aggregator is designed to pick out reports for a specific chain selector.
 type SecureMintAggregatorConfig struct {
 	// TargetChainSelector is the chain selector to look for
-	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
-	DataID              [16]byte      `mapstructure:"dataID"`
+	TargetChainSelector securemint.ChainSelector `mapstructure:"targetChainSelector"`
+	DataID              [16]byte                 `mapstructure:"dataID"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -108,7 +106,7 @@ type chainReportFormatter interface {
 }
 
 type evmReportFormatter struct {
-	targetChainSelector chainSelector
+	targetChainSelector securemint.ChainSelector
 	dataID              [16]byte
 }
 
@@ -141,12 +139,12 @@ func (f *evmReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMint
 	return wrappedReport, nil
 }
 
-func newEVMReportFormatter(chainSelector chainSelector, config SecureMintAggregatorConfig) chainReportFormatter {
+func newEVMReportFormatter(chainSelector securemint.ChainSelector, config SecureMintAggregatorConfig) chainReportFormatter {
 	return &evmReportFormatter{targetChainSelector: chainSelector, dataID: config.DataID}
 }
 
 type solanaReportFormatter struct {
-	targetChainSelector chainSelector
+	targetChainSelector securemint.ChainSelector
 	dataID              [16]byte
 }
 
@@ -192,24 +190,24 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedM
 	return wrappedReport, nil
 }
 
-func newSolanaReportFormatter(chainSelector chainSelector, config SecureMintAggregatorConfig) chainReportFormatter {
+func newSolanaReportFormatter(chainSelector securemint.ChainSelector, config SecureMintAggregatorConfig) chainReportFormatter {
 	return &solanaReportFormatter{targetChainSelector: chainSelector, dataID: config.DataID}
 }
 
 // chainReportFormatterBuilder is a function that returns a chainReportFormatter for a given chain selector and config
-type chainReportFormatterBuilder func(chainSelector chainSelector, config SecureMintAggregatorConfig) chainReportFormatter
+type chainReportFormatterBuilder func(chainSelector securemint.ChainSelector, config SecureMintAggregatorConfig) chainReportFormatter
 
 type formatterFactory struct {
-	builders map[chainSelector]chainReportFormatterBuilder
+	builders map[securemint.ChainSelector]chainReportFormatterBuilder
 }
 
 // register registers a new chain report formatter builder for a given chain selector
-func (r *formatterFactory) register(chSel chainSelector, builder chainReportFormatterBuilder) {
+func (r *formatterFactory) register(chSel securemint.ChainSelector, builder chainReportFormatterBuilder) {
 	r.builders[chSel] = builder
 }
 
 // get uses a chain report formatter builder to create a chain report formatter
-func (r *formatterFactory) get(chSel chainSelector, config SecureMintAggregatorConfig) (chainReportFormatter, error) {
+func (r *formatterFactory) get(chSel securemint.ChainSelector, config SecureMintAggregatorConfig) (chainReportFormatter, error) {
 	b, ok := r.builders[chSel]
 	if !ok {
 		return nil, fmt.Errorf("no formatter registered for chain selector: %d", chSel)
@@ -221,17 +219,17 @@ func (r *formatterFactory) get(chSel chainSelector, config SecureMintAggregatorC
 // newFormatterFactory collects all chain report formatters per chain family so that they can be used to pack reports for different chains
 func newFormatterFactory() *formatterFactory {
 	r := formatterFactory{
-		builders: map[chainSelector]chainReportFormatterBuilder{},
+		builders: map[securemint.ChainSelector]chainReportFormatterBuilder{},
 	}
 
 	// EVM
 	for _, selector := range chainselectors.EvmChainIdToChainSelector() {
-		r.register(chainSelector(selector), newEVMReportFormatter)
+		r.register(securemint.ChainSelector(selector), newEVMReportFormatter)
 	}
 
 	// Solana
 	for _, selector := range chainselectors.SolanaChainIdToChainSelector() {
-		r.register(chainSelector(selector), newSolanaReportFormatter)
+		r.register(securemint.ChainSelector(selector), newSolanaReportFormatter)
 	}
 
 	return &r
@@ -321,7 +319,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			lggr.Debugw("Obs with context", "obs with ctx", obsWithContext)
 
 			// Deserialize the ReportWithInfo
-			var reportWithInfo ocr3types.ReportWithInfo[chainSelector]
+			var reportWithInfo ocr3types.ReportWithInfo[securemint.ChainSelector]
 			if err := json.Unmarshal(obsWithContext.Event.Report, &reportWithInfo); err != nil {
 				lggr.Errorw("failed to unmarshal ReportWithInfo", "err", err)
 				continue
@@ -433,7 +431,7 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 	}
 
 	parsedConfig := SecureMintAggregatorConfig{
-		TargetChainSelector: chainSelector(sel),
+		TargetChainSelector: securemint.ChainSelector(sel),
 		DataID:              [16]byte(decodedDataID),
 	}
 

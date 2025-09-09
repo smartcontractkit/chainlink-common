@@ -61,6 +61,7 @@ const (
 )
 
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
+// TODO(gg): move this from chainlink-secure-mint to cl-common?
 type secureMintReport struct {
 	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
 	SeqNr        uint64                 `json:"seqNr"`

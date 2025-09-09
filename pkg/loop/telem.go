@@ -149,6 +149,7 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 	traceExporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithGRPCConn(conn),
 		otlptracegrpc.WithHeaders(config.AuthHeaders),
+		otlptracegrpc.WithCompressor("gzip"),
 	)
 	if err != nil {
 		return nil, err

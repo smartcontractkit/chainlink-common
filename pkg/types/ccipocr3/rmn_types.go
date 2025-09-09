@@ -1,6 +1,8 @@
 package ccipocr3
 
-import "sort"
+import (
+	"slices"
+)
 
 // RMNReport is the payload that is signed by the RMN nodes, transmitted and verified onchain.
 type RMNReport struct {
@@ -72,7 +74,7 @@ func (ci CurseInfo) NonCursedSourceChains(inputChains []ChainSelector) []ChainSe
 			sourceChains = append(sourceChains, ch)
 		}
 	}
-	sort.Slice(sourceChains, func(i, j int) bool { return sourceChains[i] < sourceChains[j] })
+	slices.Sort(sourceChains)
 
 	return sourceChains
 }
@@ -82,10 +84,7 @@ func (ci CurseInfo) NonCursedSourceChains(inputChains []ChainSelector) []ChainSe
 // An active curse on this subject will cause isCursed() and isCursed(bytes16) to return true. Use this subject
 // for issues affecting all of CCIP chains, or pertaining to the chain that this contract is deployed on, instead of
 // using the local chain selector as a subject.
-var GlobalCurseSubject = [16]byte{
-	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-}
+var GlobalCurseSubject = [16]byte{0: 0x01, 15: 0x01}
 
 // RemoteConfig contains the configuration fetched from the RMNRemote contract.
 type RemoteConfig struct {

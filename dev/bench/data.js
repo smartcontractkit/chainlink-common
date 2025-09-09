@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757350279339,
+  "lastUpdate": 1757424007349,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -24990,6 +24990,48 @@ window.BENCHMARK_DATA = {
             "value": 26577,
             "unit": "ns/op",
             "extra": "45128 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a21f8fe7215c49307e3887e7e36b10a9eda5bc2",
+          "message": "[PRIV-158] Add RemoveHandler (#1514)",
+          "timestamp": "2025-09-09T14:18:52+01:00",
+          "tree_id": "6d62ed0c11b6ea155f00766bd6008a51b640f14d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9a21f8fe7215c49307e3887e7e36b10a9eda5bc2"
+        },
+        "date": 1757424005996,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.6,
+            "unit": "ns/op",
+            "extra": "3388934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.9,
+            "unit": "ns/op",
+            "extra": "2936368 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26601,
+            "unit": "ns/op",
+            "extra": "45088 times\n4 procs"
           }
         ]
       }

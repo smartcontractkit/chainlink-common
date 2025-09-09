@@ -34,9 +34,9 @@ func (m *pluginSecureMintServer) NewValidationService(ctx context.Context, reque
 func (m *pluginSecureMintServer) NewReportingPluginFactory(ctx context.Context, request *pb.NewReportingPluginFactoryRequest) (*pb.NewReportingPluginFactoryReply, error) {
 	m.Logger.Infof("NewReportingPluginFactory called, delegating to impl.NewSecureMintFactory")
 
-	externalAdapterConn, err := m.Dial(request.PipelineRunnerID) // TODO(gg): misusing pipeline runner id here, should be ExternalAdapterID
+	externalAdapterConn, err := m.Dial(request.SecureMintExternalAdapterID)
 	if err != nil {
-		return nil, net.ErrConnDial{Name: "ExternalAdapter", ID: request.PipelineRunnerID, Err: err}
+		return nil, net.ErrConnDial{Name: "ExternalAdapter", ID: request.SecureMintExternalAdapterID, Err: err}
 	}
 	externalAdapterRes := net.Resource{Closer: externalAdapterConn, Name: "ExternalAdapter"}
 	externalAdapter := newExternalAdapterClient(m.Logger, externalAdapterConn)

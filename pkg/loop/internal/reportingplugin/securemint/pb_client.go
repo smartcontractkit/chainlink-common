@@ -58,14 +58,7 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(
 
 		// this calls into plugin_securemint_server_pb.go#pluginSecureMintServer.NewReportingPluginFactory
 		reply, err := c.reportingPluginService.NewReportingPluginFactory(ctx, &pb.NewReportingPluginFactoryRequest{
-			ReportingPluginServiceConfig: &pb.ReportingPluginServiceConfig{
-				ProviderType:  "",
-				Command:       "",
-				PluginName:    core.PluginSecureMintName,
-				TelemetryType: "",
-				PluginConfig:  "",
-			},
-			PipelineRunnerID: externalAdapterID, // TODO(gg): should probably be `ExternalAdapterID: externalAdapterID`, we're misusing the PipelineRunnerID for now
+			SecureMintExternalAdapterID: externalAdapterID,
 		})
 		if err != nil {
 			return 0, nil, err

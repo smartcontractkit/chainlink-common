@@ -27,6 +27,8 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
+const DefaultCompressionType = "gzip"
+
 type GRPCOpts = loopnet.GRPCOpts
 
 type OtelAttributes = beholder.OtelAttributes
@@ -149,7 +151,7 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 	traceExporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithGRPCConn(conn),
 		otlptracegrpc.WithHeaders(config.AuthHeaders),
-		otlptracegrpc.WithCompressor("gzip"),
+		otlptracegrpc.WithCompressor(DefaultCompressionType),
 	)
 	if err != nil {
 		return nil, err

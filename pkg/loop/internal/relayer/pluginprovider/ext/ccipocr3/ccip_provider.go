@@ -52,7 +52,7 @@ func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPP
 	return c
 }
 
-func (p *CCIPProviderClient) GetSyncRequests() []*ccipocr3pb.SyncRequest {
+func (p *CCIPProviderClient) GetSyncRequests() map[string]ccipocr3.UnknownAddress {
 	return p.chainAccessor.GetSyncRequests()
 }
 

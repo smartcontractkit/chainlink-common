@@ -292,12 +292,9 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		persistedSyncs := ccipProvider.GetSyncRequests()
-		var pbSyncs []*pb.SyncRequest
-		for _, s := range persistedSyncs {
-			pbSyncs = append(pbSyncs, &pb.SyncRequest{
-				ContractName:    s.ContractName,
-				ContractAddress: s.ContractAddress,
-			})
+		convertedSyncs := make(map[string][]byte, len(persistedSyncs))
+		for contractName, unknownAddr := range persistedSyncs {
+			convertedSyncs[contractName] = unknownAddr[:]
 		}
 
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
@@ -307,7 +304,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ChainWriterConfig:    cargs.ChainWriterConfig,
 				OffRampAddress:       cargs.OffRampAddress,
 				PluginType:           cargs.PluginType,
-				SyncRequests:         pbSyncs,
+				SyncedAddresses:      convertedSyncs,
 			},
 		})
 		if err != nil {
@@ -748,8 +745,8 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 	}
 
 	// Sync persisted sync requests after provider has initted accessor
-	for _, s := range rargs.SyncRequests {
-		err = provider.ChainAccessor().Sync(ctx, s.ContractName, s.ContractAddress)
+	for contractName, addressBytes := range rargs.SyncedAddresses {
+		err = provider.ChainAccessor().Sync(ctx, contractName, addressBytes)
 		if err != nil {
 			return nil, err
 		}

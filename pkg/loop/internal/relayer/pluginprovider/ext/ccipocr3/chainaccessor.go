@@ -2,7 +2,6 @@ package ccipocr3
 
 import (
 	"context"
-	"slices"
 	"sync"
 	"time"
 
@@ -22,8 +21,10 @@ type ChainAccessorClient struct {
 	*net.BrokerExt
 	grpc ccipocr3pb.ChainAccessorClient
 
+	// NOTE: when the feed chain accessor is LOOPified, this will need to support multi-bind addresses (unless we have
+	// built a more generalized state management solution by then).
 	mu    sync.RWMutex
-	syncs []*ccipocr3pb.SyncRequest
+	syncs map[string]ccipocr3.UnknownAddress // contractName -> contractAddress
 }
 
 func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *ChainAccessorClient {
@@ -33,10 +34,15 @@ func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) 
 	}
 }
 
-func (c *ChainAccessorClient) GetSyncRequests() []*ccipocr3pb.SyncRequest {
+func (c *ChainAccessorClient) GetSyncRequests() map[string]ccipocr3.UnknownAddress {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return slices.Clone(c.syncs)
+
+	syncsClone := make(map[string]ccipocr3.UnknownAddress, len(c.syncs))
+	for contractName, contractAddress := range c.syncs {
+		syncsClone[contractName] = contractAddress
+	}
+	return syncsClone
 }
 
 // AllAccessors methods
@@ -92,10 +98,10 @@ func (c *ChainAccessorClient) Sync(ctx context.Context, contractName string, con
 	req := &ccipocr3pb.SyncRequest{ContractName: contractName, ContractAddress: contractAddress}
 	_, err := c.grpc.Sync(ctx, req)
 
-	// If grpc call succeeded, store the sync request contents so we can re-populate them if the relayer restarts.
+	// If grpc call succeeded, store the most recent address for this given contract address.
 	if err != nil {
 		c.mu.Lock()
-		c.syncs = append(c.syncs, req) // TODO: maybe dedupe these if needed
+		c.syncs[contractName] = contractAddress
 		c.mu.Unlock()
 	}
 	return err

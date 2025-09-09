@@ -2,6 +2,8 @@ package ccipocr3
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -19,13 +21,22 @@ var _ ccipocr3.ChainAccessor = (*chainAccessorClient)(nil)
 type chainAccessorClient struct {
 	*net.BrokerExt
 	grpc ccipocr3pb.ChainAccessorClient
+
+	// Local persistence for refresh functionality
+	mu              sync.RWMutex
+	syncedContracts map[string]ccipocr3.UnknownAddress // contractName -> contractAddress
 }
 
 func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ChainAccessor {
-	return &chainAccessorClient{
-		BrokerExt: broker,
-		grpc:      ccipocr3pb.NewChainAccessorClient(cc),
+	client := &chainAccessorClient{
+		BrokerExt:       broker,
+		grpc:            ccipocr3pb.NewChainAccessorClient(cc),
+		syncedContracts: make(map[string]ccipocr3.UnknownAddress),
 	}
+
+	broker.SetOnRefreshComplete(client.restoreStateOnRefresh)
+
+	return client
 }
 
 // AllAccessors methods
@@ -82,7 +93,59 @@ func (c *chainAccessorClient) Sync(ctx context.Context, contractName string, con
 		ContractName:    contractName,
 		ContractAddress: contractAddress,
 	})
+
+	if err == nil {
+		// Persist the synced contract locally for client refresh
+		c.mu.Lock()
+		c.syncedContracts[contractName] = contractAddress
+		c.mu.Unlock()
+		c.Logger.Debugw("Persisted synced contract", "contractName", contractName, "contractAddress", contractAddress)
+	}
+
 	return err
+}
+
+// restoreStateOnRefresh is called after successful relayer refresh to restore synced contracts.
+//
+// TODO: right now this only supports re-syncing previously synced contracts. In the future this should support
+// re-establishing any arbitrary serializable state.
+func (c *chainAccessorClient) restoreStateOnRefresh(ctx context.Context) error {
+	c.mu.RLock()
+	contractsToRestore := make(map[string]ccipocr3.UnknownAddress)
+	for name, addr := range c.syncedContracts {
+		contractsToRestore[name] = addr
+	}
+	c.mu.RUnlock()
+
+	if len(contractsToRestore) == 0 {
+		c.Logger.Debug("No synced contracts to restore")
+		return nil
+	}
+
+	c.Logger.Infow("Restoring synced contracts after refresh", "count", len(contractsToRestore))
+
+	// Re-sync all previously synced contracts
+	var restoreErrors []error
+	for contractName, contractAddress := range contractsToRestore {
+		if err := c.Sync(ctx, contractName, contractAddress); err != nil {
+			c.Logger.Errorw("Failed to restore synced contract",
+				"contractName", contractName,
+				"contractAddress", contractAddress,
+				"err", err)
+			restoreErrors = append(restoreErrors, fmt.Errorf("failed to restore contract %s: %w", contractName, err))
+		} else {
+			c.Logger.Debugw("Successfully restored synced contract",
+				"contractName", contractName,
+				"contractAddress", contractAddress)
+		}
+	}
+
+	if len(restoreErrors) > 0 {
+		return fmt.Errorf("failed to restore %d/%d contracts: %v", len(restoreErrors), len(contractsToRestore), restoreErrors)
+	}
+
+	c.Logger.Infow("Successfully restored all synced contracts", "count", len(contractsToRestore))
+	return nil
 }
 
 // DestinationAccessor methods

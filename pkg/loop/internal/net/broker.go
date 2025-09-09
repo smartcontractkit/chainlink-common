@@ -65,12 +65,19 @@ type BrokerConfig struct {
 type BrokerExt struct {
 	Broker Broker
 	BrokerConfig
+
+	onRefreshComplete func(ctx context.Context) error
+	hooksMu           sync.RWMutex
 }
 
 // WithName returns a new [*BrokerExt] with Name added to the logger.
 func (b *BrokerExt) WithName(name string) *BrokerExt {
 	bn := *b
 	bn.Logger = logger.Named(b.Logger, name)
+
+	// Don't share hooks mutex or onRefreshComplete between copies
+	bn.onRefreshComplete = nil
+	bn.hooksMu = sync.RWMutex{}
 	return &bn
 }
 
@@ -145,6 +152,25 @@ func (b *BrokerExt) CloseAll(deps ...Resource) {
 			b.Logger.Error(fmt.Sprintf("Error closing %s", d.Name), "err", err)
 		}
 	}
+}
+
+// SetOnRefreshComplete sets a hook to be called after successful connection refresh.
+func (b *BrokerExt) SetOnRefreshComplete(hook func(ctx context.Context) error) {
+	b.hooksMu.Lock()
+	defer b.hooksMu.Unlock()
+	b.onRefreshComplete = hook
+}
+
+// executeOnRefreshComplete executes the refresh completion hook if it exists.
+func (b *BrokerExt) executeOnRefreshComplete(ctx context.Context) error {
+	b.hooksMu.RLock()
+	hook := b.onRefreshComplete
+	b.hooksMu.RUnlock()
+
+	if hook != nil {
+		return hook(ctx)
+	}
+	return nil
 }
 
 type Resource struct {

@@ -2,6 +2,8 @@ package ccipocr3
 
 import (
 	"context"
+	"slices"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -14,22 +16,31 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
-var _ ccipocr3.ChainAccessor = (*chainAccessorClient)(nil)
+var _ ccipocr3.ChainAccessor = (*ChainAccessorClient)(nil)
 
-type chainAccessorClient struct {
+type ChainAccessorClient struct {
 	*net.BrokerExt
 	grpc ccipocr3pb.ChainAccessorClient
+
+	mu    sync.RWMutex
+	syncs []*ccipocr3pb.SyncRequest
 }
 
-func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ChainAccessor {
-	return &chainAccessorClient{
+func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *ChainAccessorClient {
+	return &ChainAccessorClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewChainAccessorClient(cc),
 	}
 }
 
+func (c *ChainAccessorClient) GetSyncRequests() []*ccipocr3pb.SyncRequest {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return slices.Clone(c.syncs)
+}
+
 // AllAccessors methods
-func (c *chainAccessorClient) GetContractAddress(contractName string) ([]byte, error) {
+func (c *ChainAccessorClient) GetContractAddress(contractName string) ([]byte, error) {
 	resp, err := c.grpc.GetContractAddress(context.Background(), &ccipocr3pb.GetContractAddressRequest{
 		ContractName: contractName,
 	})
@@ -39,7 +50,7 @@ func (c *chainAccessorClient) GetContractAddress(contractName string) ([]byte, e
 	return resp.Address, nil
 }
 
-func (c *chainAccessorClient) GetAllConfigsLegacy(
+func (c *ChainAccessorClient) GetAllConfigsLegacy(
 	ctx context.Context,
 	destChainSelector ccipocr3.ChainSelector,
 	sourceChainSelectors []ccipocr3.ChainSelector,
@@ -66,7 +77,7 @@ func (c *chainAccessorClient) GetAllConfigsLegacy(
 	return pbToChainConfigSnapshotDetailed(resp.Snapshot), sourceConfigs, nil
 }
 
-func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context) (ccipocr3.ChainFeeComponents, error) {
+func (c *ChainAccessorClient) GetChainFeeComponents(ctx context.Context) (ccipocr3.ChainFeeComponents, error) {
 	resp, err := c.grpc.GetChainFeeComponents(ctx, &emptypb.Empty{})
 	if err != nil {
 		return ccipocr3.ChainFeeComponents{}, err
@@ -77,16 +88,21 @@ func (c *chainAccessorClient) GetChainFeeComponents(ctx context.Context) (ccipoc
 	}, nil
 }
 
-func (c *chainAccessorClient) Sync(ctx context.Context, contractName string, contractAddress ccipocr3.UnknownAddress) error {
-	_, err := c.grpc.Sync(ctx, &ccipocr3pb.SyncRequest{
-		ContractName:    contractName,
-		ContractAddress: contractAddress,
-	})
+func (c *ChainAccessorClient) Sync(ctx context.Context, contractName string, contractAddress ccipocr3.UnknownAddress) error {
+	req := &ccipocr3pb.SyncRequest{ContractName: contractName, ContractAddress: contractAddress}
+	_, err := c.grpc.Sync(ctx, req)
+
+	// If grpc call succeeded, store the sync request contents so we can re-populate them if the relayer restarts.
+	if err != nil {
+		c.mu.Lock()
+		c.syncs = append(c.syncs, req) // TODO: maybe dedupe these if needed
+		c.mu.Unlock()
+	}
 	return err
 }
 
 // DestinationAccessor methods
-func (c *chainAccessorClient) CommitReportsGTETimestamp(
+func (c *ChainAccessorClient) CommitReportsGTETimestamp(
 	ctx context.Context,
 	ts time.Time,
 	confidence primitives.ConfidenceLevel,
@@ -112,7 +128,7 @@ func (c *chainAccessorClient) CommitReportsGTETimestamp(
 	return reports, nil
 }
 
-func (c *chainAccessorClient) ExecutedMessages(
+func (c *ChainAccessorClient) ExecutedMessages(
 	ctx context.Context,
 	ranges map[ccipocr3.ChainSelector][]ccipocr3.SeqNumRange,
 	confidence primitives.ConfidenceLevel,
@@ -149,7 +165,7 @@ func (c *chainAccessorClient) ExecutedMessages(
 	return result, nil
 }
 
-func (c *chainAccessorClient) NextSeqNum(ctx context.Context, sources []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.SeqNum, error) {
+func (c *ChainAccessorClient) NextSeqNum(ctx context.Context, sources []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.SeqNum, error) {
 	var chainSelectors []uint64
 	for _, source := range sources {
 		chainSelectors = append(chainSelectors, uint64(source))
@@ -169,7 +185,7 @@ func (c *chainAccessorClient) NextSeqNum(ctx context.Context, sources []ccipocr3
 	return result, nil
 }
 
-func (c *chainAccessorClient) Nonces(ctx context.Context, addresses map[ccipocr3.ChainSelector][]ccipocr3.UnknownEncodedAddress) (map[ccipocr3.ChainSelector]map[string]uint64, error) {
+func (c *ChainAccessorClient) Nonces(ctx context.Context, addresses map[ccipocr3.ChainSelector][]ccipocr3.UnknownEncodedAddress) (map[ccipocr3.ChainSelector]map[string]uint64, error) {
 	req := &ccipocr3pb.NoncesRequest{
 		Addresses: make(map[uint64]*ccipocr3pb.UnknownEncodedAddressList),
 	}
@@ -194,7 +210,7 @@ func (c *chainAccessorClient) Nonces(ctx context.Context, addresses map[ccipocr3
 	return result, nil
 }
 
-func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, selectors []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig, error) {
+func (c *ChainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, selectors []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig, error) {
 	var chainSelectors []uint64
 	for _, sel := range selectors {
 		chainSelectors = append(chainSelectors, uint64(sel))
@@ -217,7 +233,7 @@ func (c *chainAccessorClient) GetChainFeePriceUpdate(ctx context.Context, select
 	return result, nil
 }
 
-func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context) (ccipocr3.SeqNum, error) {
+func (c *ChainAccessorClient) GetLatestPriceSeqNr(ctx context.Context) (ccipocr3.SeqNum, error) {
 	resp, err := c.grpc.GetLatestPriceSeqNr(ctx, &emptypb.Empty{})
 	if err != nil {
 		return 0, err
@@ -226,7 +242,7 @@ func (c *chainAccessorClient) GetLatestPriceSeqNr(ctx context.Context) (ccipocr3
 }
 
 // SourceAccessor methods
-func (c *chainAccessorClient) MsgsBetweenSeqNums(ctx context.Context, dest ccipocr3.ChainSelector, seqNumRange ccipocr3.SeqNumRange) ([]ccipocr3.Message, error) {
+func (c *ChainAccessorClient) MsgsBetweenSeqNums(ctx context.Context, dest ccipocr3.ChainSelector, seqNumRange ccipocr3.SeqNumRange) ([]ccipocr3.Message, error) {
 	resp, err := c.grpc.MsgsBetweenSeqNums(ctx, &ccipocr3pb.MsgsBetweenSeqNumsRequest{
 		DestChainSelector: uint64(dest),
 		SeqNumRange: &ccipocr3pb.SeqNumRange{
@@ -245,7 +261,7 @@ func (c *chainAccessorClient) MsgsBetweenSeqNums(ctx context.Context, dest ccipo
 	return messages, nil
 }
 
-func (c *chainAccessorClient) LatestMessageTo(ctx context.Context, dest ccipocr3.ChainSelector) (ccipocr3.SeqNum, error) {
+func (c *ChainAccessorClient) LatestMessageTo(ctx context.Context, dest ccipocr3.ChainSelector) (ccipocr3.SeqNum, error) {
 	resp, err := c.grpc.LatestMessageTo(ctx, &ccipocr3pb.LatestMessageToRequest{
 		DestChainSelector: uint64(dest),
 	})
@@ -255,7 +271,7 @@ func (c *chainAccessorClient) LatestMessageTo(ctx context.Context, dest ccipocr3
 	return ccipocr3.SeqNum(resp.SeqNum), nil
 }
 
-func (c *chainAccessorClient) GetExpectedNextSequenceNumber(ctx context.Context, dest ccipocr3.ChainSelector) (ccipocr3.SeqNum, error) {
+func (c *ChainAccessorClient) GetExpectedNextSequenceNumber(ctx context.Context, dest ccipocr3.ChainSelector) (ccipocr3.SeqNum, error) {
 	resp, err := c.grpc.GetExpectedNextSequenceNumber(ctx, &ccipocr3pb.GetExpectedNextSequenceNumberRequest{
 		DestChainSelector: uint64(dest),
 	})
@@ -265,7 +281,7 @@ func (c *chainAccessorClient) GetExpectedNextSequenceNumber(ctx context.Context,
 	return ccipocr3.SeqNum(resp.SeqNum), nil
 }
 
-func (c *chainAccessorClient) GetTokenPriceUSD(ctx context.Context, address ccipocr3.UnknownAddress) (ccipocr3.TimestampedUnixBig, error) {
+func (c *ChainAccessorClient) GetTokenPriceUSD(ctx context.Context, address ccipocr3.UnknownAddress) (ccipocr3.TimestampedUnixBig, error) {
 	resp, err := c.grpc.GetTokenPriceUSD(ctx, &ccipocr3pb.GetTokenPriceUSDRequest{
 		Address: address,
 	})
@@ -278,7 +294,7 @@ func (c *chainAccessorClient) GetTokenPriceUSD(ctx context.Context, address ccip
 	}, nil
 }
 
-func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, dest ccipocr3.ChainSelector) (ccipocr3.FeeQuoterDestChainConfig, error) {
+func (c *ChainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, dest ccipocr3.ChainSelector) (ccipocr3.FeeQuoterDestChainConfig, error) {
 	resp, err := c.grpc.GetFeeQuoterDestChainConfig(ctx, &ccipocr3pb.GetFeeQuoterDestChainConfigRequest{
 		DestChainSelector: uint64(dest),
 	})
@@ -289,7 +305,7 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, d
 }
 
 // USDCMessageReader methods
-func (c *chainAccessorClient) MessagesByTokenID(ctx context.Context, source, dest ccipocr3.ChainSelector, tokens map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount) (map[ccipocr3.MessageTokenID]ccipocr3.Bytes, error) {
+func (c *ChainAccessorClient) MessagesByTokenID(ctx context.Context, source, dest ccipocr3.ChainSelector, tokens map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount) (map[ccipocr3.MessageTokenID]ccipocr3.Bytes, error) {
 	resp, err := c.grpc.MessagesByTokenID(ctx, &ccipocr3pb.MessagesByTokenIDRequest{
 		SourceChainSelector: uint64(source),
 		DestChainSelector:   uint64(dest),
@@ -302,7 +318,7 @@ func (c *chainAccessorClient) MessagesByTokenID(ctx context.Context, source, des
 }
 
 // PriceReader methods
-func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, tokenInfo map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo) (ccipocr3.TokenPriceMap, error) {
+func (c *ChainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, tokenInfo map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo) (ccipocr3.TokenPriceMap, error) {
 	var tokenStrs []string
 	for _, token := range tokens {
 		tokenStrs = append(tokenStrs, string(token))
@@ -318,7 +334,7 @@ func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []cci
 	return pbToTokenPriceMap(resp.Prices), nil
 }
 
-func (c *chainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
+func (c *ChainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
 	var tokenStrs []string
 	for _, token := range tokens {
 		tokenStrs = append(tokenStrs, string(token))
@@ -397,7 +413,7 @@ func (s *chainAccessorServer) GetChainFeeComponents(ctx context.Context, req *em
 }
 
 func (s *chainAccessorServer) Sync(ctx context.Context, req *ccipocr3pb.SyncRequest) (*emptypb.Empty, error) {
-	err := s.impl.Sync(ctx, req.ContractName, ccipocr3.UnknownAddress(req.ContractAddress))
+	err := s.impl.Sync(ctx, req.ContractName, req.ContractAddress)
 	return &emptypb.Empty{}, err
 }
 

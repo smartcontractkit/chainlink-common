@@ -22,7 +22,7 @@ var (
 
 type CCIPProviderClient struct {
 	*goplugin.ServiceClient
-	chainAccessor             ccipocr3.ChainAccessor
+	chainAccessor             *ChainAccessorClient
 	contractTransmitter       ocr3types.ContractTransmitter[[]byte]
 	chainSpecificAddressCodec ccipocr3.ChainSpecificAddressCodec
 	commitPluginCodec         ccipocr3.CommitPluginCodec
@@ -31,7 +31,7 @@ type CCIPProviderClient struct {
 	sourceChainExtraDataCodec ccipocr3.SourceChainExtraDataCodec
 }
 
-func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) types.CCIPProvider {
+func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPProviderClient {
 	c := &CCIPProviderClient{
 		ServiceClient: goplugin.NewServiceClient(b.WithName("CCIPProviderClient"), cc),
 	}
@@ -50,6 +50,10 @@ func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) types.
 	c.sourceChainExtraDataCodec = NewSourceChainExtraDataCodecClient(b.WithName("SourceChainExtraDataCodec"), cc)
 
 	return c
+}
+
+func (p *CCIPProviderClient) GetSyncRequests() []*ccipocr3pb.SyncRequest {
+	return p.chainAccessor.GetSyncRequests()
 }
 
 func (p *CCIPProviderClient) ChainAccessor() ccipocr3.ChainAccessor {

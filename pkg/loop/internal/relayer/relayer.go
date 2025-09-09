@@ -289,7 +289,17 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 }
 
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		persistedSyncs := ccipProvider.GetSyncRequests()
+		var pbSyncs []*pb.SyncRequest
+		for _, s := range persistedSyncs {
+			pbSyncs = append(pbSyncs, &pb.SyncRequest{
+				ContractName:    s.ContractName,
+				ContractAddress: s.ContractAddress,
+			})
+		}
+
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
 				ExternalJobID:        cargs.ExternalJobID[:],
@@ -297,6 +307,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ChainWriterConfig:    cargs.ChainWriterConfig,
 				OffRampAddress:       cargs.OffRampAddress,
 				PluginType:           cargs.PluginType,
+				SyncRequests:         pbSyncs,
 			},
 		})
 		if err != nil {
@@ -305,7 +316,8 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 		return reply.CcipProviderID, nil, nil
 	})
 
-	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
+	ccipProvider = ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc)
+	return ccipProvider, nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
@@ -733,6 +745,14 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	// Sync persisted sync requests after provider has initted accessor
+	for _, s := range rargs.SyncRequests {
+		err = provider.ChainAccessor().Sync(ctx, s.ContractName, s.ContractAddress)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	const name = "CCIPProvider"

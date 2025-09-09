@@ -56,12 +56,18 @@ message PluginArgs {
   bytes pluginConfig = 2;
 }
 
+message SyncRequest {
+  string contract_name = 1;
+  bytes contract_address = 2;
+}
+
 message CCIPProviderArgs {
   bytes externalJobID = 1; // [32]byte
   bytes contractReaderConfig = 2;
   bytes chainWriterConfig = 3;
   string OffRampAddress = 4;
   uint32 pluginType = 5;
+  repeated SyncRequest sync_requests = 6;
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].

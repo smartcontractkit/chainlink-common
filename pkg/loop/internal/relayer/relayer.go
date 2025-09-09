@@ -738,6 +738,13 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		return nil, err
 	}
 
+	for _, s := range rargs.Syncs {
+		err = provider.ChainAccessor().Sync(ctx, ...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	const name = "CCIPProvider"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ccipocr3.RegisterProviderServices(s, provider)

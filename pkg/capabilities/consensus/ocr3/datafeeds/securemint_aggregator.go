@@ -12,7 +12,6 @@ import (
 
 	chainselectors "github.com/smartcontractkit/chain-selectors"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
-	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -61,17 +60,8 @@ const (
 	SolDataIDOutputFieldName        = SolanaEncoderKey("dataId")
 )
 
-// secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
-// TODO(gg): move this from chainlink-secure-mint to cl-common?
-type secureMintReport struct {
-	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
-	SeqNr        uint64                 `json:"seqNr"`
-	Block        uint64                 `json:"block"`
-	Mintable     *big.Int               `json:"mintable"`
-}
-
 type wrappedMintReport struct {
-	Report               secureMintReport        `json:"report"`
+	Report               securemint.Report       `json:"report"`
 	SolanaAccountContext solana.AccountMetaSlice `json:"solanaAccountContext,omitempty"`
 }
 
@@ -112,7 +102,7 @@ type evmReportFormatter struct {
 
 func (f *evmReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
 	report := wreport.Report
-	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
+	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, uint64(report.Block))
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
 	}
@@ -151,7 +141,7 @@ type solanaReportFormatter struct {
 func (f *solanaReportFormatter) packReport(lggr logger.Logger, wreport *wrappedMintReport) (*values.Map, error) {
 	report := wreport.Report
 	// pack answer
-	smReportAsAnswer, err := packSecureMintReportIntoU128ForSolana(report.Mintable, report.Block)
+	smReportAsAnswer, err := packSecureMintReportIntoU128ForSolana(report.Mintable, uint64(report.Block))
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack secure mint report for solana into u128: %w", err)
 	}
@@ -335,9 +325,9 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			foundMatchingChainSelector = true
 
 			// Deserialize the inner secureMintReport
-			var innerReport secureMintReport
+			var innerReport securemint.Report
 			if err := json.Unmarshal(reportWithInfo.Report, &innerReport); err != nil {
-				lggr.Errorw("failed to unmarshal secureMintReport", "err", err)
+				lggr.Errorw("failed to unmarshal securemint.Report", "err", err)
 				continue
 			}
 			report := &wrappedMintReport{

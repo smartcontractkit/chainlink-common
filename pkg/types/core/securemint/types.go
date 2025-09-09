@@ -4,7 +4,22 @@ import (
 	"context"
 	"math/big"
 	"time"
+
+	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 )
+
+// Report is the report that's created by the secure mint plugin.
+// It contains a mintable token amount at a certain block number for a specific chain.
+type Report struct {
+	ConfigDigest types.ConfigDigest
+	SeqNr        uint64
+	Block        BlockNumber
+	Mintable     *big.Int
+
+	// The following fields might be useful in the future, but are not currently used
+	// ReserveAmount *big.Int
+	// ReserveTimestamp time.Time
+}
 
 // ExternalAdapter is the component used by the secure mint plugin to request various secure mint related data points.
 type ExternalAdapter interface {

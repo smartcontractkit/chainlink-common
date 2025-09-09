@@ -115,7 +115,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				{
 					chainSelector: ethSepoliaChainSelector,
 					seqNr:         10,
-					report: &secureMintReport{
+					report: &securemint.Report{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
 						SeqNr:        10,
 						Block:        1000,
@@ -125,7 +125,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				{
 					chainSelector: bnbTestnetChainSelector,
 					seqNr:         10,
-					report: &secureMintReport{
+					report: &securemint.Report{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
 						SeqNr:        10,
 						Block:        1100,
@@ -147,7 +147,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				{
 					chainSelector: bnbTestnetChainSelector,
 					seqNr:         10,
-					report: &secureMintReport{
+					report: &securemint.Report{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
 						SeqNr:        10,
 						Block:        1000,
@@ -180,7 +180,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				{
 					chainSelector: solDevnetChainSelector,
 					seqNr:         10,
-					report: &secureMintReport{
+					report: &securemint.Report{
 						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
 						SeqNr:        10,
 						Block:        1000,
@@ -191,7 +191,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				{
 					chainSelector: bnbTestnetChainSelector,
 					seqNr:         10,
-					report: &secureMintReport{
+					report: &securemint.Report{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
 						SeqNr:        10,
 						Block:        1100,
@@ -377,7 +377,7 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 type ocrTriggerEventData struct {
 	chainSelector securemint.ChainSelector
 	seqNr         uint64
-	report        *secureMintReport
+	report        *securemint.Report
 	accCtx        solana.AccountMetaSlice
 }
 
@@ -431,7 +431,7 @@ func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) ma
 	return observations
 }
 
-func createReportBytes(t *testing.T, report *secureMintReport) []byte {
+func createReportBytes(t *testing.T, report *securemint.Report) []byte {
 	reportBytes, err := json.Marshal(report)
 	require.NoError(t, err)
 	return reportBytes

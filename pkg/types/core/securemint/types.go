@@ -6,30 +6,30 @@ import (
 	"time"
 )
 
-// ExternalAdapter is an alias for por.ExternalAdapter
-// TODO(gg): maybe move all por types that are used by the client (core node) to cl-common?
-
 // ExternalAdapter is the component used by the secure mint plugin to request various secure mint related data points.
 type ExternalAdapter interface {
 	GetPayload(ctx context.Context, blocks Blocks) (ExternalAdapterPayload, error)
 }
 
+// BlockNumber is a block number.
 type BlockNumber uint64
 
+// ChainSelector is a way of uniquely identifying a chain, see https://github.com/smartcontractkit/chain-selectors.
 type ChainSelector uint64
 
-// Blocks contains the latest blocks per chain selector.
+// Blocks contains the latest blocks per chain.
 type Blocks map[ChainSelector]BlockNumber
 
-// BlockMintablePair is a mintable amount at a certain block number.
+// BlockMintablePair is a mintable amount of a specific token at a certain block number.
 type BlockMintablePair struct {
 	Block    BlockNumber
 	Mintable *big.Int
 }
 
+// Mintables contains the mintable amounts of a specific token per chain.
 type Mintables map[ChainSelector]BlockMintablePair
 
-// ReserveInfo is a reserve amount at a certain timestamp.
+// ReserveInfo is a reserve amount of a specific token at a certain timestamp.
 type ReserveInfo struct {
 	ReserveAmount *big.Int
 	Timestamp     time.Time

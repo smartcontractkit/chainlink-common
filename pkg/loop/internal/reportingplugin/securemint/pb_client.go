@@ -77,5 +77,3 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(
 		ocr3.NewReportingPluginFactoryClient(c.BrokerExt, cc), // protobuf client
 	}, nil
 }
-
-// TODO(gg): add unit tests where possible

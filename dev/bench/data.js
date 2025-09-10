@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757424007349,
+  "lastUpdate": 1757509936653,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25032,6 +25032,48 @@ window.BENCHMARK_DATA = {
             "value": 26601,
             "unit": "ns/op",
             "extra": "45088 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yashvardhan.nevatia@smartcontract.com",
+            "name": "Yashvardhan Nevatia",
+            "username": "yashnevatia"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "afe0f95037e7f72ba4033152e2aa5e32f7f41017",
+          "message": "adding otlptracegrpc.WithCompressor(gzip), (#1534)\n\n* adding otlptracegrpc.WithCompressor(gzip),\n\n* adding otlptracegrpc.WithCompressor(gzip),\n\n* call gzip.Name\n\n* call gzip.Name",
+          "timestamp": "2025-09-10T15:10:57+02:00",
+          "tree_id": "dd62faf6e000405a33f3056ec3934bb14f62f342",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/afe0f95037e7f72ba4033152e2aa5e32f7f41017"
+        },
+        "date": 1757509934774,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 399.6,
+            "unit": "ns/op",
+            "extra": "3143128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.5,
+            "unit": "ns/op",
+            "extra": "2725749 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26660,
+            "unit": "ns/op",
+            "extra": "44818 times\n4 procs"
           }
         ]
       }

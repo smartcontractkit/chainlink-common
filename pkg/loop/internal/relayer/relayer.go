@@ -289,7 +289,9 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 }
 
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		persistedSyncs := ccipProvider.GetSyncRequests()
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
 				ExternalJobID:        cargs.ExternalJobID[:],
@@ -297,6 +299,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ChainWriterConfig:    cargs.ChainWriterConfig,
 				OffRampAddress:       cargs.OffRampAddress,
 				PluginType:           cargs.PluginType,
+				SyncedAddresses:      persistedSyncs,
 			},
 		})
 		if err != nil {
@@ -305,7 +308,8 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 		return reply.CcipProviderID, nil, nil
 	})
 
-	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
+	ccipProvider = ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc)
+	return ccipProvider, nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
@@ -733,6 +737,14 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	// Sync persisted sync requests after provider has initted accessor
+	for contractName, addressBytes := range rargs.SyncedAddresses {
+		err = provider.ChainAccessor().Sync(ctx, contractName, addressBytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	const name = "CCIPProvider"

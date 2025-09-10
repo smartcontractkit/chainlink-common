@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
@@ -124,6 +124,7 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 		Msg:             callMsg,
 		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
 		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, err
@@ -156,6 +157,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 	reply, err := evmService.FilterLogs(ctx, evm.FilterLogsRequest{
 		FilterQuery:     expression,
 		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, err
@@ -164,7 +166,11 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 		return nil, fmt.Errorf("reply is nil")
 	}
 
-	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply.Logs)}, nil
+	logs, err := evmpb.ConvertLogsToProto(reply.Logs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert reply to proto: %w", err)
+	}
+	return &evmpb.FilterLogsReply{Logs: logs}, nil
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
@@ -219,7 +225,10 @@ func (s *Server) GetTransactionByHash(ctx context.Context, request *evmpb.GetTra
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionByHash(ctx, evm.Hash(request.GetHash()))
+	reply, err := evmService.GetTransactionByHash(ctx, evm.GetTransactionByHashRequest{
+		Hash:       evm.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +249,10 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTr
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionReceipt(ctx, evm.Hash(request.GetHash()))
+	reply, err := evmService.GetTransactionReceipt(ctx, evm.GeTransactionReceiptRequest{
+		Hash:       evm.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -278,8 +290,13 @@ func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumb
 		return nil, fmt.Errorf("reply is nil")
 	}
 
+	header, err := evmpb.ConvertHeaderToProto(reply.Header)
+	if err != nil {
+		return nil, err
+	}
+
 	return &evmpb.HeaderByNumberReply{
-		Header: evmpb.ConvertHeaderToProto(reply.Header),
+		Header: header,
 	}, nil
 }
 
@@ -309,7 +326,12 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrack
 		return nil, err
 	}
 
-	return &evmpb.QueryTrackedLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
+	l, err := evmpb.ConvertLogsToProto(logs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.QueryTrackedLogsReply{Logs: l}, nil
 }
 
 func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
@@ -323,7 +345,7 @@ func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &evmpb.GetFiltersNamesReply{Items: names}, nil
 }
 
@@ -389,8 +411,9 @@ func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTra
 	}
 
 	return &evmpb.SubmitTransactionReply{
-		TxHash:   txResult.TxHash[:],
-		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+		TxHash:           txResult.TxHash[:],
+		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+		TxIdempotencyKey: txResult.TxIdempotencyKey,
 	}, nil
 }
 

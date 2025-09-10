@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ import (
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
+	ccipocr3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccipocr3/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
 	ocr3capabilitytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/test"
@@ -71,6 +73,9 @@ type staticRelayerConfig struct {
 	relayArgs              types.RelayArgs
 	pluginArgs             types.PluginArgs
 	contractReaderConfig   []byte
+	chainWriterConfig      []byte
+	offRampAddress         string
+	pluginType             uint32
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
@@ -95,6 +100,9 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		relayArgs:              RelayArgs,
 		pluginArgs:             PluginArgs,
 		contractReaderConfig:   []byte("test"),
+		chainWriterConfig:      []byte("chainwriterconfig"),
+		offRampAddress:         "fakeAddress",
+		pluginType:             0,
 		medianProvider:         mediantest.MedianProvider(lggr),
 		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
@@ -305,8 +313,18 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 	return nil, errors.New("not implemented")
 }
 
-func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.RelayArgs) (types.CCIPProvider, error) {
-	return nil, errors.New("not implemented")
+func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	ccipProviderArgs := types.CCIPProviderArgs{
+		ExternalJobID:        s.relayArgs.ExternalJobID,
+		ContractReaderConfig: s.contractReaderConfig,
+		ChainWriterConfig:    s.chainWriterConfig,
+		OffRampAddress:       s.offRampAddress,
+		PluginType:           s.pluginType,
+	}
+	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
+		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
+	}
+	return ccipocr3test.CCIPProvider(logger.Nop()), nil
 }
 
 func (s staticRelayer) LatestHead(ctx context.Context) (types.Head, error) {
@@ -453,6 +471,14 @@ func equalRelayArgs(a, b types.RelayArgs) bool {
 		a.ContractID == b.ContractID &&
 		a.New == b.New &&
 		bytes.Equal(a.RelayConfig, b.RelayConfig)
+}
+
+func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
+	return a.ExternalJobID == b.ExternalJobID &&
+		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
+		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
+		a.OffRampAddress == b.OffRampAddress &&
+		a.PluginType == b.PluginType
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
@@ -631,6 +657,8 @@ type fuzzerKeystore struct {
 	acctErr       bool
 	signed        []byte
 	signErr       bool
+	decrypted     []byte
+	decryptErr    bool
 	valuesWithErr bool
 	errStr        string
 }
@@ -663,4 +691,22 @@ func (k fuzzerKeystore) Sign(ctx context.Context, account string, data []byte) (
 	}
 
 	return k.signed, nil
+}
+
+func (k fuzzerKeystore) Decrypt(ctx context.Context, account string, encrypted []byte) ([]byte, error) {
+	if k.decryptErr {
+		err := errors.New(k.errStr)
+
+		if k.valuesWithErr {
+			return k.decrypted, err
+		}
+
+		return nil, err
+	}
+
+	if len(k.decrypted) == 0 {
+		return nil, fmt.Errorf("no decrypted data for account %s", account)
+	}
+
+	return k.decrypted, nil
 }

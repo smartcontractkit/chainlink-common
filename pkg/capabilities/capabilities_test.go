@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func Test_CapabilityInfo(t *testing.T) {
@@ -154,8 +154,8 @@ func Test_RemoteExecutableConfig_ApplyDefaults(t *testing.T) {
 	rec := &RemoteExecutableConfig{}
 	rec.ApplyDefaults()
 
-	assert.Equal(t, DefaultRegistrationRefresh, rec.RegistrationRefresh)
-	assert.Equal(t, DefaultRegistrationExpiry, rec.RegistrationExpiry)
+	assert.Equal(t, DefaultExecutableRequestTimeout, rec.RequestTimeout)
+	assert.Equal(t, DefaultServerMaxParallelRequests, rec.ServerMaxParallelRequests)
 }
 
 func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {

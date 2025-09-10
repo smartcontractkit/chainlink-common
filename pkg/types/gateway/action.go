@@ -5,17 +5,18 @@ import (
 	"encoding/hex"
 	"sort"
 	"strconv"
+	"time"
 )
 
 const (
+	// Note: any addition to this list must be reflected in the handler's Methods() function.
 	MethodHTTPAction = "http_action"
 )
 
 // CacheSettings defines cache control options for outbound HTTP requests.
 type CacheSettings struct {
 	ReadFromCache bool  `json:"readFromCache,omitempty"` // If true, attempt to read a cached response for the request
-	StoreInCache  bool  `json:"storeInCache,omitempty"`  // If true, store the response in cache for the given TTL
-	TTLMs         int32 `json:"ttlMs,omitempty"`         // Time-to-live for the cache entry in milliseconds. Only applicable if StoreInCache is true.
+	MaxAgeMs      int32 `json:"maxAgeMs,omitempty"`      // Maximum age of a cached response in milliseconds.
 }
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.
@@ -65,8 +66,10 @@ func (req OutboundHTTPRequest) Hash() string {
 
 // OutboundHTTPResponse represents the response from gateway to workflow node.
 type OutboundHTTPResponse struct {
-	ErrorMessage string            `json:"errorMessage,omitempty"` // error message in case of execution errors. i.e. errors before or after attempting HTTP call to external client
-	StatusCode   int               `json:"statusCode,omitempty"`   // HTTP status code
-	Headers      map[string]string `json:"headers,omitempty"`      // HTTP headers
-	Body         []byte            `json:"body,omitempty"`         // HTTP response body
+	ErrorMessage            string            `json:"errorMessage,omitempty"`            // error message for all errors except HTTP errors returned by external endpoints
+	IsExternalEndpointError bool              `json:"isExternalEndpointError,omitempty"` // indicates whether the error is from a faulty external endpoint (e.g. timeout, response size) vs error introduced internally by gateway execution
+	StatusCode              int               `json:"statusCode,omitempty"`              // HTTP status code
+	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers
+	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body
+	ExternalEndpointLatency time.Duration     `json:"externalEndpointLatency,omitempty"` // Latency of the external endpoint
 }

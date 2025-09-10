@@ -23,18 +23,18 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const v2ImportPrefix = "version_v2"
 
 var (
 	defaultTickInterval              = 100 * time.Millisecond
-	defaultTimeout                   = 10 * time.Second
+	defaultTimeout                   = 10 * time.Minute
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
@@ -100,7 +100,7 @@ type ExecutionHelper interface {
 
 	GetNodeTime() time.Time
 
-	GetDONTime(ctx context.Context) (time.Time, error)
+	GetDONTime() (time.Time, error)
 
 	EmitUserLog(log string) error
 }
@@ -328,6 +328,13 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		"random_seed",
 		exec.getSeed); err != nil {
 		return nil, fmt.Errorf("error wrapping getSeed func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"now",
+		exec.now); err != nil {
+		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
 	return linker.Instantiate(store, m.module)

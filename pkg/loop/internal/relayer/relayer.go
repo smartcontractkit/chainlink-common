@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability"
@@ -287,8 +288,24 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
-func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.RelayArgs) (types.CCIPProvider, error) {
-	return nil, fmt.Errorf("ccip provider not supported: %w", errors.ErrUnsupported)
+func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
+			CcipProviderArgs: &pb.CCIPProviderArgs{
+				ExternalJobID:        cargs.ExternalJobID[:],
+				ContractReaderConfig: cargs.ContractReaderConfig,
+				ChainWriterConfig:    cargs.ChainWriterConfig,
+				OffRampAddress:       cargs.OffRampAddress,
+				PluginType:           cargs.PluginType,
+			},
+		})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.CcipProviderID, nil, nil
+	})
+
+	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
@@ -696,6 +713,37 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	}
 
 	return id, err
+}
+
+func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIPProviderRequest) (*pb.NewCCIPProviderReply, error) {
+	rargs := request.CcipProviderArgs
+
+	exJobID, err := uuid.FromBytes(rargs.ExternalJobID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
+	}
+	ccipProviderArgs := types.CCIPProviderArgs{
+		ExternalJobID:        exJobID,
+		ContractReaderConfig: rargs.ContractReaderConfig,
+		ChainWriterConfig:    rargs.ChainWriterConfig,
+		OffRampAddress:       rargs.OffRampAddress,
+		PluginType:           rargs.PluginType,
+	}
+
+	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	const name = "CCIPProvider"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		ccipocr3.RegisterProviderServices(s, provider)
+	}, net.Resource{Closer: provider, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewCCIPProviderReply{CcipProviderID: id}, nil
 }
 
 func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest) (*pb.LatestHeadReply, error) {

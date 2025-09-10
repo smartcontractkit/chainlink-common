@@ -8,9 +8,10 @@ import (
 	"time"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // CapabilityType is an enum for the type of capability.
@@ -80,6 +81,12 @@ type MeteringNodeDetail struct {
 	SpendValue  string
 }
 
+// ResponseAndMetadata is the action's output structure that includes both the response and its metadata (billing).
+type ResponseAndMetadata[T proto.Message] struct {
+	Response         T
+	ResponseMetadata ResponseMetadata
+}
+
 type SpendLimit struct {
 	SpendType CapabilitySpendType
 	Limit     string
@@ -98,6 +105,7 @@ type RequestMetadata struct {
 	DecodedWorkflowName string
 	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
 	SpendLimits []SpendLimit
+	WorkflowTag string
 }
 
 type RegistrationMetadata struct {
@@ -284,6 +292,11 @@ type ExecutableAndTriggerCapability interface {
 	ExecutableCapability
 }
 
+type DONWithNodes struct {
+	DON   DON
+	Nodes []Node
+}
+
 // DON represents a network of connected nodes.
 //
 // For an example of an empty DON check, see the following link:
@@ -461,11 +474,13 @@ func MustNewRemoteCapabilityInfo(
 }
 
 const (
-	DefaultRegistrationRefresh   = 30 * time.Second
-	DefaultRegistrationExpiry    = 2 * time.Minute
-	DefaultMessageExpiry         = 2 * time.Minute
-	DefaultBatchSize             = 100
-	DefaultBatchCollectionPeriod = 100 * time.Millisecond
+	DefaultRegistrationRefresh       = 30 * time.Second
+	DefaultRegistrationExpiry        = 2 * time.Minute
+	DefaultMessageExpiry             = 2 * time.Minute
+	DefaultBatchSize                 = 100
+	DefaultBatchCollectionPeriod     = 100 * time.Millisecond
+	DefaultExecutableRequestTimeout  = 8 * time.Minute
+	DefaultServerMaxParallelRequests = uint32(1000)
 )
 
 type RemoteTriggerConfig struct {
@@ -477,14 +492,19 @@ type RemoteTriggerConfig struct {
 	BatchCollectionPeriod   time.Duration
 }
 
-type RemoteTargetConfig struct {
+type RemoteTargetConfig struct { // deprecated - v1 only
 	RequestHashExcludedAttributes []string
 }
 
 type RemoteExecutableConfig struct {
-	RequestHashExcludedAttributes []string
-	RegistrationRefresh           time.Duration
-	RegistrationExpiry            time.Duration
+	RequestHashExcludedAttributes []string // deprecated - v1 only
+
+	// Fields below are used only by v2 capabilities
+	TransmissionSchedule      TransmissionSchedule
+	DeltaStage                time.Duration
+	RequestTimeout            time.Duration
+	ServerMaxParallelRequests uint32
+	RequestHasherType         RequestHasherType
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
@@ -514,12 +534,39 @@ func (c *RemoteExecutableConfig) ApplyDefaults() {
 	if c == nil {
 		return
 	}
-	if c.RegistrationRefresh == 0 {
-		c.RegistrationRefresh = DefaultRegistrationRefresh
+	// Default schedule is 0 ("all at once"), default delta stage is 0.
+	if c.RequestTimeout == 0 {
+		c.RequestTimeout = DefaultExecutableRequestTimeout
 	}
-	if c.RegistrationExpiry == 0 {
-		c.RegistrationExpiry = DefaultRegistrationExpiry
+	if c.ServerMaxParallelRequests == 0 {
+		c.ServerMaxParallelRequests = DefaultServerMaxParallelRequests
 	}
+	// Hasher type 0 is the default type.
+}
+
+type AggregatorType int
+type TransmissionSchedule int
+type RequestHasherType int
+
+const (
+	AggregatorType_Mode         AggregatorType = 0
+	AggregatorType_SignedReport AggregatorType = 1
+
+	Schedule_AllAtOnce  TransmissionSchedule = 0
+	Schedule_OneAtATime TransmissionSchedule = 1
+
+	RequestHasherType_Simple                       RequestHasherType = 0
+	RequestHasherType_WriteReportExcludeSignatures RequestHasherType = 1
+)
+
+type AggregatorConfig struct {
+	AggregatorType AggregatorType
+}
+
+type CapabilityMethodConfig struct {
+	RemoteTriggerConfig    *RemoteTriggerConfig
+	RemoteExecutableConfig *RemoteExecutableConfig
+	AggregatorConfig       *AggregatorConfig
 }
 
 type CapabilityConfiguration struct {
@@ -533,4 +580,7 @@ type CapabilityConfiguration struct {
 	RemoteTriggerConfig    *RemoteTriggerConfig
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig
+
+	// v2 / "NoDAG" capabilities
+	CapabilityMethodConfig map[string]CapabilityMethodConfig
 }

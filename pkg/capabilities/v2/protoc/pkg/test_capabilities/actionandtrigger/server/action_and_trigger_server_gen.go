@@ -18,7 +18,7 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicCapability interface {
-	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*actionandtrigger.Output, error)
+	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], error)
 
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
@@ -139,8 +139,15 @@ func (c *basicCapability) Execute(ctx context.Context, request capabilities.Capa
 	case "Action":
 		input := &actionandtrigger.Input{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*actionandtrigger.Output, error) {
-			return c.BasicCapability.Action(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input, _ *emptypb.Empty) (*actionandtrigger.Output, capabilities.ResponseMetadata, error) {
+			output, err := c.BasicCapability.Action(ctx, metadata, input)
+			if err != nil {
+				return nil, capabilities.ResponseMetadata{}, err
+			}
+			if output == nil {
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Action(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

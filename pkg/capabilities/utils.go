@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 var ErrNeitherValueNorAny = errors.New("neither value nor any provided")
@@ -90,7 +90,7 @@ func Execute[I, C, O proto.Message](
 	request CapabilityRequest,
 	input I,
 	config C,
-	exec func(context.Context, RequestMetadata, I, C) (O, error)) (CapabilityResponse, error) {
+	exec func(context.Context, RequestMetadata, I, C) (O, ResponseMetadata, error)) (CapabilityResponse, error) {
 
 	response := CapabilityResponse{}
 	migrated, err := UnwrapRequest(request, config, input)
@@ -98,7 +98,8 @@ func Execute[I, C, O proto.Message](
 		return response, fmt.Errorf("error when unwrapping request: %w", err)
 	}
 
-	output, err := exec(ctx, request.Metadata, input, config)
+	output, metadata, err := exec(ctx, request.Metadata, input, config)
+	response.Metadata = metadata
 	if err != nil {
 		return response, err
 	}

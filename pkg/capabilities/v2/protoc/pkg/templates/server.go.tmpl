@@ -39,7 +39,7 @@ type {{.GoName}}Capability interface {
     Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error
         {{- else }}
             {{ $hasActions = true }}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error)
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*capabilities.ResponseAndMetadata[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error)
         {{- end }}
     {{- end }}
 
@@ -186,8 +186,15 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
             input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
             config := &{{ConfigType $service}}{}
             {{- if eq "emptypb.Empty" (ConfigType $service) }}
-            wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error) {
-                return c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
+            wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, error) {
+                output, err := c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
+                if err != nil {
+                    return nil, capabilities.ResponseMetadata{}, err
+                }
+                if output == nil {
+                    return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
+                }
+                return output.Response, output.ResponseMetadata, err
             }
             return capabilities.Execute(ctx, request, input, config, wrapped)
             {{- else }}
@@ -198,8 +205,15 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
              input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
              config := &{{ConfigType $service}}{}
              {{- if eq "emptypb.Empty" (ConfigType $service) }}
-             wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error) {
-                 return c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
+             wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, error) {
+                 output, err := c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
+                 if err != nil {
+                    return nil, capabilities.ResponseMetadata{}, err
+                 }
+                 if output == nil {
+                     return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
+                 }
+                 return output.Response, output.ResponseMetadata, err
              }
              return capabilities.Execute(ctx, request, input, config, wrapped)
              {{- else }}

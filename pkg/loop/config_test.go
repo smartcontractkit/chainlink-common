@@ -36,6 +36,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envDatabaseLogSQL:                       "true",
 				envDatabaseMaxOpenConns:                 "9999",
 				envDatabaseMaxIdleConns:                 "8080",
+				envDatabaseTracingEnabled:               "true",
 
 				envFeatureLogPoller: "true",
 
@@ -73,8 +74,10 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
+				envTelemetryLogStreamingEnabled:       "false",
 
-				envChipIngressEndpoint: "http://chip-ingress.example.com",
+				envChipIngressEndpoint:           "chip-ingress.example.com:50051",
+				envChipIngressInsecureConnection: "true",
 			},
 			expectError:  false,
 			expectConfig: envCfgFull,
@@ -133,6 +136,7 @@ var envCfgFull = EnvConfig{
 	DatabaseLogSQL:                       true,
 	DatabaseMaxOpenConns:                 9999,
 	DatabaseMaxIdleConns:                 8080,
+	DatabaseTracingEnabled:               true,
 
 	FeatureLogPoller: true,
 
@@ -169,8 +173,10 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterExportInterval:     2 * time.Second,
 	TelemetryEmitterExportMaxBatchSize: 100,
 	TelemetryEmitterMaxQueueSize:       1000,
+	TelemetryLogStreamingEnabled:       false,
 
-	ChipIngressEndpoint: "http://chip-ingress.example.com",
+	ChipIngressEndpoint:           "chip-ingress.example.com:50051",
+	ChipIngressInsecureConnection: true,
 }
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
@@ -182,6 +188,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	}
 
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
+	assert.Equal(t, "true", got["CL_DATABASE_TRACING_ENABLED"])
 
 	assert.Equal(t, "1ms", got[envMercuryCacheLatestReportDeadline])
 	assert.Equal(t, "1µs", got[envMercuryCacheLatestReportTTL])
@@ -216,9 +223,11 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
+	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 
 	// Assert ChipIngress environment variables
-	assert.Equal(t, "http://chip-ingress.example.com", got[envChipIngressEndpoint])
+	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
+	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
 }
 
 func TestGetMap(t *testing.T) {

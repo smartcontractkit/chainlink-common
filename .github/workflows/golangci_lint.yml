@@ -10,9 +10,21 @@ jobs:
       contents: read
       actions: read
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Get golangci-lint version from asdf
+        id: get-version
+        run: |
+          version=$(grep '^golangci-lint ' .tool-versions | awk '{print $2}')
+          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
+
       - name: golangci-lint
         if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
-        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/v2
+        # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
+        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
         with:
-          golangci-lint-version: v2.2.2
-          
+          checkout-repo: false
+          golangci-lint-version: v${{ steps.get-version.outputs.version }}

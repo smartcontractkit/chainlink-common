@@ -3,8 +3,10 @@ package keyvalue
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -33,6 +35,17 @@ func (k Client) Get(ctx context.Context, key string) ([]byte, error) {
 	}
 
 	return resp.Value, nil
+}
+
+func (k Client) PruneExpiredEntries(ctx context.Context, maxAge time.Duration) (int64, error) {
+	resp, err := k.grpc.PruneExpiredEntries(ctx, &pb.PruneExpiredEntriesRequest{
+		MaxAge: durationpb.New(maxAge),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to prune expired entries: %w", err)
+	}
+
+	return resp.NumPruned, nil
 }
 
 func NewClient(cc grpc.ClientConnInterface) *Client {
@@ -64,4 +77,13 @@ func (s Server) GetValueForKey(ctx context.Context, req *pb.GetValueForKeyReques
 	}
 
 	return &pb.GetValueForKeyResponse{Value: bytes}, nil
+}
+
+func (s Server) PruneExpiredEntries(ctx context.Context, req *pb.PruneExpiredEntriesRequest) (*pb.PruneExpiredEntriesResponse, error) {
+	numPruned, err := s.impl.PruneExpiredEntries(ctx, req.MaxAge.AsDuration())
+	if err != nil {
+		return nil, fmt.Errorf("failed to prune expired entries: %w", err)
+	}
+
+	return &pb.PruneExpiredEntriesResponse{NumPruned: numPruned}, nil
 }

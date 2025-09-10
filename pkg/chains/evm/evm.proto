@@ -187,6 +187,7 @@ message CallContractRequest {
   //   - "Finalized": returns error if call is executed at block that is not safe
   //   - "Safe": returns error if call is executed at block that is not safe
   loop.chain.common.Confidence confidence_level = 3;
+  bool is_external = 4; // if true, limits like response size limit may be applied
 }
 
 message CallContractReply {
@@ -210,6 +211,7 @@ message FilterLogsRequest {
   //   - "Finalized": returns error if specified filter_query.toBlock is not finalized
   //   - "Safe": returns error if specified filter_query.toBlock is not safe
   loop.chain.common.Confidence confidence_level = 2;
+  bool is_external = 3; // if true, limits like response size limit may be applied
 }
 
 message FilterLogsReply {
@@ -252,6 +254,7 @@ message EstimateGasReply {
 
 message GetTransactionByHashRequest {
   bytes hash = 1; // in [32]byte fix-sized array format
+  bool is_external = 2; // if true, limits like response size limit may be applied
 }
 
 message GetTransactionByHashReply {
@@ -260,6 +263,7 @@ message GetTransactionByHashReply {
 
 message GetTransactionReceiptRequest {
   bytes hash = 1; // in [32]byte fix-sized array format
+  bool is_external = 2; // if true, limits like response size limit may be applied
 } 
 
 message GetTransactionReceiptReply {
@@ -318,6 +322,7 @@ message SubmitTransactionRequest {
 message SubmitTransactionReply {
   bytes txHash = 1;
   TxStatus txStatus = 2;
+  string tx_idempotency_key = 3; // idempotency key generated for this transaction
 }
 
 // TransactionStatus is an enum for the status of a transaction.

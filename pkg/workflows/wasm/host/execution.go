@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 type execution[T any] struct {
@@ -166,8 +167,10 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 	e.mode = sdkpb.Mode(mode)
 }
 
+// clockTimeGet is the default time.Now() which is also called by Go many times.
+// This implementation uses Node Mode to not have to wait for OCR rounds.
 func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
-	donTime, err := e.timeFetcher.GetTime(e.mode)
+	donTime, err := e.timeFetcher.GetTime(sdkpb.Mode_MODE_NODE)
 	if err != nil {
 		return ErrnoInval
 	}
@@ -188,6 +191,21 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 		return ErrnoInval
 	}
 
+	uint64Size := int32(8)
+	trg := make([]byte, uint64Size)
+	binary.LittleEndian.PutUint64(trg, uint64(val))
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	return ErrnoSuccess
+}
+
+// now is used by rawsdk for Workflows and should be called instead of Go's time.Now().
+func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+	donTime, err := e.timeFetcher.GetTime(e.mode)
+	if err != nil {
+		return ErrnoInval
+	}
+
+	val := donTime.UnixNano()
 	uint64Size := int32(8)
 	trg := make([]byte, uint64Size)
 	binary.LittleEndian.PutUint64(trg, uint64(val))

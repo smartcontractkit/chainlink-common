@@ -3,7 +3,7 @@ package sdk
 import (
 	"errors"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 //go:generate go run ./gen

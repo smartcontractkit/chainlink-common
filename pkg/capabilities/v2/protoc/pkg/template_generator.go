@@ -13,7 +13,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 )
 
 type TemplateGenerator struct {
@@ -21,8 +22,8 @@ type TemplateGenerator struct {
 	Template           string
 	FileNameTemplate   string
 	Partials           map[string]string
-	StringLblValue     func(name string, label *pb.Label) (string, error)
-	PbLabelTLangLabels func(labels map[string]*pb.Label) ([]Label, error)
+	StringLblValue     func(name string, label *generator.Label) (string, error)
+	PbLabelTLangLabels func(labels map[string]*generator.Label) ([]Label, error)
 	ExtraFns           template.FuncMap
 	importToPkg        map[protogen.GoImportPath]protogen.GoPackageName
 }
@@ -227,9 +228,9 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			}
 
 			switch md.Mode {
-			case pb.Mode_MODE_NODE:
+			case sdk.Mode_MODE_NODE:
 				return "Node", nil
-			case pb.Mode_MODE_DON:
+			case sdk.Mode_MODE_DON:
 				return "", nil
 			default:
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)
@@ -286,11 +287,11 @@ func isDirNamePackageName(importPath protogen.GoImportPath, importToPkg map[prot
 	return dirName == string(packageName)
 }
 
-func getCapabilityMetadata(service *protogen.Service) (*pb.CapabilityMetadata, error) {
+func getCapabilityMetadata(service *protogen.Service) (*generator.CapabilityMetadata, error) {
 	opts := service.Desc.Options().(*descriptorpb.ServiceOptions)
-	if proto.HasExtension(opts, pb.E_Capability) {
-		ext := proto.GetExtension(opts, pb.E_Capability)
-		if meta, ok := ext.(*pb.CapabilityMetadata); ok {
+	if proto.HasExtension(opts, generator.E_Capability) {
+		ext := proto.GetExtension(opts, generator.E_Capability)
+		if meta, ok := ext.(*generator.CapabilityMetadata); ok {
 			return meta, nil
 		}
 		return nil, fmt.Errorf("invalid type for CapabilityMetadata")
@@ -298,11 +299,11 @@ func getCapabilityMetadata(service *protogen.Service) (*pb.CapabilityMetadata, e
 	return nil, nil
 }
 
-func getCapabilityMethodMetadata(m *protogen.Method) (*pb.CapabilityMethodMetadata, error) {
+func getCapabilityMethodMetadata(m *protogen.Method) (*generator.CapabilityMethodMetadata, error) {
 	opts := m.Desc.Options().(*descriptorpb.MethodOptions)
-	if proto.HasExtension(opts, pb.E_Method) {
-		ext := proto.GetExtension(opts, pb.E_Method)
-		if meta, ok := ext.(*pb.CapabilityMethodMetadata); ok {
+	if proto.HasExtension(opts, generator.E_Method) {
+		ext := proto.GetExtension(opts, generator.E_Method)
+		if meta, ok := ext.(*generator.CapabilityMethodMetadata); ok {
 			return meta, nil
 		}
 		return nil, fmt.Errorf("invalid type for CapabilityMethodMetadata")
@@ -312,7 +313,7 @@ func getCapabilityMethodMetadata(m *protogen.Method) (*pb.CapabilityMethodMetada
 
 type namedLabel struct {
 	name  string
-	label *pb.Label
+	label *generator.Label
 }
 
 func (t *TemplateGenerator) TypeName(ident protogen.GoIdent, ignore string) string {

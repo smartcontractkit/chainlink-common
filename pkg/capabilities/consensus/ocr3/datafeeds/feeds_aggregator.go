@@ -18,7 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 type EVMEncoderKey = string
@@ -38,6 +38,8 @@ const (
 	TimestampOutputFieldName    = EVMEncoderKey("Timestamp")
 	RemappedIDOutputFieldName   = EVMEncoderKey("RemappedID")
 	StreamIDOutputFieldName     = EVMEncoderKey("StreamID")
+	DataIDOutputFieldName       = EVMEncoderKey("DataID")
+	AnswerOutputFieldName       = EVMEncoderKey("Answer")
 
 	addrLen = 20
 )

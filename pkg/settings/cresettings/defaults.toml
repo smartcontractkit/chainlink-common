@@ -1,30 +1,34 @@
 WorkflowLimit = '200'
 WorkflowRegistrationQueueLimit = '20'
-
-[HTTPTrigger]
-AuthRateLimit = '100rps:-1'
+WorkflowExecutionConcurrencyLimit = '50'
+GatewayUnauthenticatedRequestRateLimit = '100rps:-1'
+GatewayUnauthenticatedRequestRateLimitPerIP = '1rps:-1'
+GatewayIncomingPayloadSizeLimit = '10kb'
 
 [PerOrg]
 WorkflowDeploymentRateLimit = 'every1m0s:1'
-TriggerEventQueueLimit = '1000'
-TriggerEventQueueTimeout = '10m0s'
 ZeroBalancePruningTimeout = '24h0m0s'
 
 [PerOwner]
-ExecutionConcurrencyLimit = '50'
+WorkflowExecutionConcurrencyLimit = '50'
 
 [PerWorkflow]
 TriggerLimit = '10'
 TriggerRateLimit = 'every30s:3'
-TriggerRegistrationTimeout = '10s'
+TriggerRegistrationsTimeout = '10s'
 TriggerSubscriptionTimeout = '5s'
+TriggerSubscriptionLimit = '10'
+TriggerEventQueueLimit = '1000'
+TriggerEventQueueTimeout = '10m0s'
 CapabilityConcurrencyLimit = '3'
+CapabilityCallTimeout = '8m0s'
+SecretsConcurrencyLimit = '3'
 ExecutionConcurrencyLimit = '10'
-ExecutionTimeout = '5m0s'
+ExecutionTimeout = '10m0s'
 ExecutionResponseLimit = '100kb'
 WASMExecutionTimeout = '1m0s'
 WASMMemoryLimit = '100mb'
-BinarySizeLimit = '30mb'
+WASMBinarySizeLimit = '30mb'
 ConsensusObservationSizeLimit = '10kb'
 ConsensusCallsLimit = '2'
 LogLineLimit = '1kb'
@@ -35,9 +39,6 @@ RateLimit = 'every30s:1'
 
 [PerWorkflow.HTTPTrigger]
 RateLimit = 'every30s:3'
-AuthRateLimit = '1rps:-1'
-IncomingPayloadSizeLimit = '10kb'
-OutgoingPayloadSizeLimit = '-1b'
 
 [PerWorkflow.LogTrigger]
 RateLimit = 'every10s:-1'
@@ -51,6 +52,7 @@ RateLimit = 'every30s:3'
 ResponseSizeLimit = '10kb'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '100kb'
+CacheAgeLimit = '10m0s'
 
 [PerWorkflow.ChainWrite]
 RateLimit = 'every30s:3'

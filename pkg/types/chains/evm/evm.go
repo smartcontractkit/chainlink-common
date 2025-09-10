@@ -147,8 +147,9 @@ func (e *TxError) Error() string {
 
 // PLEX-1524 - Refactor this to return the Tx Hash in a Transaction type and a second return value for the TxStatus. We may even be able to return the whole transaction object instead of just the hash.
 type TransactionResult struct {
-	TxStatus TransactionStatus
-	TxHash   Hash
+	TxStatus         TransactionStatus
+	TxHash           Hash
+	TxIdempotencyKey string // Idempotency key used for tracking purposes of transactions.
 }
 
 type GasConfig struct {
@@ -179,6 +180,7 @@ type CallContractRequest struct {
 	Msg             *CallMsg
 	BlockNumber     *big.Int
 	ConfidenceLevel primitives.ConfidenceLevel
+	IsExternal      bool // if true, limits like response size limit may be applied
 }
 
 type CallContractReply struct {
@@ -188,6 +190,7 @@ type CallContractReply struct {
 type FilterLogsRequest struct {
 	FilterQuery     FilterQuery
 	ConfidenceLevel primitives.ConfidenceLevel
+	IsExternal      bool // if true, limits like response size limit may be applied
 }
 
 type FilterLogsReply struct {
@@ -197,6 +200,17 @@ type FilterLogsReply struct {
 type HeaderByNumberRequest struct {
 	Number          *big.Int
 	ConfidenceLevel primitives.ConfidenceLevel
+	IsExternal      bool // if true, limits like response size limit may be applied
+}
+
+type GetTransactionByHashRequest struct {
+	Hash       Hash
+	IsExternal bool // if true, limits like response size limit may be applied
+}
+
+type GeTransactionReceiptRequest struct {
+	Hash       Hash
+	IsExternal bool // if true, limits like response size limit may be applied
 }
 
 type HeaderByNumberReply struct {

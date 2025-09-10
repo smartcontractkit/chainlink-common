@@ -8,12 +8,15 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
+	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
-	"google.golang.org/protobuf/proto"
 )
 
 type Plugin struct {
@@ -28,7 +31,7 @@ type Plugin struct {
 	minTimeIncrease int64
 }
 
-var _ ocr3types.ReportingPlugin[struct{}] = (*Plugin)(nil)
+var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
 func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*Plugin, error) {
 	offchainCfg := &pb.Config{}
@@ -50,9 +53,9 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		store:           store,
 		config:          config,
 		offChainConfig:  offchainCfg,
-		lggr:            logger.Named(lggr, "WorkflowLibraryPlugin"),
+		lggr:            logger.Named(lggr, "DONTimePlugin"),
 		batchSize:       int(offchainCfg.MaxBatchSize),
-		minTimeIncrease: offchainCfg.MinTimeIncrease,
+		minTimeIncrease: offchainCfg.MinTimeIncrease / int64(time.Millisecond),
 	}, nil
 }
 
@@ -66,52 +69,38 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		p.lggr.Errorf("failed to unmarshal previous outcome in Observation phase")
 	}
 
-	// Collect up to batchSize unexpired requests
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	for batchOffset := 0; batchOffset < p.store.requests.Len() && len(requests) < p.batchSize; {
-		batch, err := p.store.requests.RangeN(batchOffset, p.batchSize)
-		if err != nil {
-			p.lggr.Errorf("failed to get request batch at offset %d: %v", batchOffset, err)
-			batchOffset += p.batchSize
+	timeoutCheck := time.Now()
+	for _, req := range p.store.GetRequests() {
+		if req.ExpiryTime().Before(timeoutCheck) {
+			// Request has been sitting in queue too long
+			p.store.RemoveRequest(req.WorkflowExecutionID)
+			req.SendTimeout(nil)
 			continue
 		}
-		if len(batch) == 0 {
-			break
+
+		// Validate request sequence number
+		numObservedDonTimes := 0
+		times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
+		if ok {
+			// We have seen this workflow before so check against the sequence
+			numObservedDonTimes = len(times.Timestamps)
 		}
 
-		timeoutCheck := time.Now()
-		for _, req := range batch {
-			if req.ExpiryTime().Before(timeoutCheck) {
-				// Request has been sitting in queue too long
-				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendTimeout(nil)
-				continue
-			}
-
-			// Validate request sequence number
-			numObservedDonTimes := 0
-			times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
-			if ok {
-				// We have seen this workflow before so check against the sequence
-				numObservedDonTimes = len(times.Timestamps)
-			}
-
-			if req.SeqNum > numObservedDonTimes {
-				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendResponse(nil,
-					Response{
-						WorkflowExecutionID: req.WorkflowExecutionID,
-						SeqNum:              req.SeqNum,
-						Timestamp:           0,
-						Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
-							req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
-					})
-				continue
-			}
-
-			requests[req.WorkflowExecutionID] = int64(req.SeqNum)
-			batchOffset++
+		if req.SeqNum > numObservedDonTimes {
+			p.store.RemoveRequest(req.WorkflowExecutionID)
+			req.SendResponse(nil,
+				Response{
+					WorkflowExecutionID: req.WorkflowExecutionID,
+					SeqNum:              req.SeqNum,
+					Timestamp:           0,
+					Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
+						req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
+				})
+			continue
 		}
+
+		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 	}
 
 	observation := &pb.Observation{
@@ -206,23 +195,43 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	return proto.Marshal(outcome)
 }
 
-func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[struct{}], error) {
-	return []ocr3types.ReportPlus[struct{}]{
+func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
+	allOraclesTransmitNow := &ocr3types.TransmissionSchedule{
+		Transmitters:       make([]commontypes.OracleID, p.config.N),
+		TransmissionDelays: make([]time.Duration, p.config.N),
+	}
+
+	for i := 0; i < p.config.N; i++ {
+		allOraclesTransmitNow.Transmitters[i] = commontypes.OracleID(i)
+	}
+
+	info, err := structpb.NewStruct(map[string]any{
+		"keyBundleName": "evm",
+	})
+	if err != nil {
+		return nil, err
+	}
+	infoBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(info)
+	if err != nil {
+		return nil, err
+	}
+
+	return []ocr3types.ReportPlus[[]byte]{
 		{
-			ReportWithInfo: ocr3types.ReportWithInfo[struct{}]{
+			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
 				Report: types.Report(outcome),
-				Info:   struct{}{},
+				Info:   infoBytes,
 			},
-			TransmissionScheduleOverride: nil,
+			TransmissionScheduleOverride: allOraclesTransmitNow,
 		},
 	}, nil
 }
 
-func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
+func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 
-func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
+func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 

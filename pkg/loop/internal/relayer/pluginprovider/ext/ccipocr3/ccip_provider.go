@@ -52,8 +52,13 @@ func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPP
 	return c
 }
 
-func (p *CCIPProviderClient) GetSyncRequests() map[string]ccipocr3.UnknownAddress {
-	return p.chainAccessor.GetSyncRequests()
+func (p *CCIPProviderClient) GetSyncRequests() map[string][]byte {
+	reqs := p.chainAccessor.GetSyncRequests()
+	convertedSyncs := make(map[string][]byte, len(reqs))
+	for contractName, unknownAddr := range reqs {
+		convertedSyncs[contractName] = unknownAddr[:]
+	}
+	return convertedSyncs
 }
 
 func (p *CCIPProviderClient) ChainAccessor() ccipocr3.ChainAccessor {

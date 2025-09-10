@@ -292,11 +292,6 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		persistedSyncs := ccipProvider.GetSyncRequests()
-		convertedSyncs := make(map[string][]byte, len(persistedSyncs))
-		for contractName, unknownAddr := range persistedSyncs {
-			convertedSyncs[contractName] = unknownAddr[:]
-		}
-
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
 				ExternalJobID:        cargs.ExternalJobID[:],
@@ -304,7 +299,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ChainWriterConfig:    cargs.ChainWriterConfig,
 				OffRampAddress:       cargs.OffRampAddress,
 				PluginType:           cargs.PluginType,
-				SyncedAddresses:      convertedSyncs,
+				SyncedAddresses:      persistedSyncs,
 			},
 		})
 		if err != nil {

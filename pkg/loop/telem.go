@@ -28,8 +28,6 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
-const DefaultCompressionType = "gzip"
-
 type GRPCOpts = loopnet.GRPCOpts
 
 type OtelAttributes = beholder.OtelAttributes

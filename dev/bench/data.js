@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757509936653,
+  "lastUpdate": 1757530875952,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25074,6 +25074,48 @@ window.BENCHMARK_DATA = {
             "value": 26660,
             "unit": "ns/op",
             "extra": "44818 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21a3c87e6df69296641e740d138af0c18c0cdcf1",
+          "message": "Public type name (#1535)",
+          "timestamp": "2025-09-10T15:00:04-04:00",
+          "tree_id": "143fcad0275c600650b20da65a83c35e7e1518dd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/21a3c87e6df69296641e740d138af0c18c0cdcf1"
+        },
+        "date": 1757530874822,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353,
+            "unit": "ns/op",
+            "extra": "3372286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.3,
+            "unit": "ns/op",
+            "extra": "2886518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26631,
+            "unit": "ns/op",
+            "extra": "45088 times\n4 procs"
           }
         ]
       }

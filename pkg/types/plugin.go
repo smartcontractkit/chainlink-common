@@ -16,6 +16,7 @@ const (
 	GenericPlugin  OCR2PluginType = "plugin"
 	OCR3Capability OCR2PluginType = "ocr3-capability"
 	VaultPlugin    OCR2PluginType = "vault-plugin"
+	DKGPlugin      OCR2PluginType = "dkg-plugin"
 	DonTimePlugin  OCR2PluginType = "dontime"
 	SecureMint     OCR2PluginType = "securemint"
 

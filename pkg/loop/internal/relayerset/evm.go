@@ -411,8 +411,9 @@ func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTra
 	}
 
 	return &evmpb.SubmitTransactionReply{
-		TxHash:   txResult.TxHash[:],
-		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+		TxHash:           txResult.TxHash[:],
+		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+		TxIdempotencyKey: txResult.TxIdempotencyKey,
 	}, nil
 }
 

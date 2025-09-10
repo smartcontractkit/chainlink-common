@@ -47,6 +47,13 @@ func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string
 	return nil
 }
 
+func (c GatewayConnectorClient) RemoveHandler(ctx context.Context, methods []string) error {
+	_, err := c.grpc.RemoveHandler(ctx, &pb.RemoveHandlerRequest{
+		Methods: methods,
+	})
+	return err
+}
+
 func (c GatewayConnectorClient) GatewayIDs(ctx context.Context) ([]string, error) {
 	resp, err := c.grpc.GatewayIDs(ctx, &emptypb.Empty{})
 	if err != nil {

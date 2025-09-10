@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: chip_ingress.proto
+// source: pb/chip_ingress.proto
 
 package pb
 
@@ -32,7 +32,7 @@ type CloudEventBatch struct {
 
 func (x *CloudEventBatch) Reset() {
 	*x = CloudEventBatch{}
-	mi := &file_chip_ingress_proto_msgTypes[0]
+	mi := &file_pb_chip_ingress_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *CloudEventBatch) String() string {
 func (*CloudEventBatch) ProtoMessage() {}
 
 func (x *CloudEventBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[0]
+	mi := &file_pb_chip_ingress_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *CloudEventBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CloudEventBatch.ProtoReflect.Descriptor instead.
 func (*CloudEventBatch) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{0}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CloudEventBatch) GetEvents() []*pb.CloudEvent {
@@ -76,7 +76,7 @@ type PublishResponse struct {
 
 func (x *PublishResponse) Reset() {
 	*x = PublishResponse{}
-	mi := &file_chip_ingress_proto_msgTypes[1]
+	mi := &file_pb_chip_ingress_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +88,7 @@ func (x *PublishResponse) String() string {
 func (*PublishResponse) ProtoMessage() {}
 
 func (x *PublishResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[1]
+	mi := &file_pb_chip_ingress_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +101,7 @@ func (x *PublishResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishResponse.ProtoReflect.Descriptor instead.
 func (*PublishResponse) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{1}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PublishResponse) GetResults() []*PublishResult {
@@ -120,7 +120,7 @@ type PublishResult struct {
 
 func (x *PublishResult) Reset() {
 	*x = PublishResult{}
-	mi := &file_chip_ingress_proto_msgTypes[2]
+	mi := &file_pb_chip_ingress_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +132,7 @@ func (x *PublishResult) String() string {
 func (*PublishResult) ProtoMessage() {}
 
 func (x *PublishResult) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[2]
+	mi := &file_pb_chip_ingress_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +145,7 @@ func (x *PublishResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishResult.ProtoReflect.Descriptor instead.
 func (*PublishResult) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{2}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PublishResult) GetEventId() string {
@@ -164,7 +164,7 @@ type EmptyRequest struct {
 
 func (x *EmptyRequest) Reset() {
 	*x = EmptyRequest{}
-	mi := &file_chip_ingress_proto_msgTypes[3]
+	mi := &file_pb_chip_ingress_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -176,7 +176,7 @@ func (x *EmptyRequest) String() string {
 func (*EmptyRequest) ProtoMessage() {}
 
 func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[3]
+	mi := &file_pb_chip_ingress_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -189,7 +189,7 @@ func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyRequest.ProtoReflect.Descriptor instead.
 func (*EmptyRequest) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{3}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{3}
 }
 
 // PingResponse responds to pings
@@ -202,7 +202,7 @@ type PingResponse struct {
 
 func (x *PingResponse) Reset() {
 	*x = PingResponse{}
-	mi := &file_chip_ingress_proto_msgTypes[4]
+	mi := &file_pb_chip_ingress_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +214,7 @@ func (x *PingResponse) String() string {
 func (*PingResponse) ProtoMessage() {}
 
 func (x *PingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[4]
+	mi := &file_pb_chip_ingress_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +227,7 @@ func (x *PingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
 func (*PingResponse) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{4}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PingResponse) GetMessage() string {
@@ -247,7 +247,7 @@ type StreamEventsRequest struct {
 
 func (x *StreamEventsRequest) Reset() {
 	*x = StreamEventsRequest{}
-	mi := &file_chip_ingress_proto_msgTypes[5]
+	mi := &file_pb_chip_ingress_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -259,7 +259,7 @@ func (x *StreamEventsRequest) String() string {
 func (*StreamEventsRequest) ProtoMessage() {}
 
 func (x *StreamEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[5]
+	mi := &file_pb_chip_ingress_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -272,7 +272,7 @@ func (x *StreamEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEventsRequest.ProtoReflect.Descriptor instead.
 func (*StreamEventsRequest) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{5}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StreamEventsRequest) GetEvent() *pb.CloudEvent {
@@ -292,7 +292,7 @@ type StreamEventsResponse struct {
 
 func (x *StreamEventsResponse) Reset() {
 	*x = StreamEventsResponse{}
-	mi := &file_chip_ingress_proto_msgTypes[6]
+	mi := &file_pb_chip_ingress_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -304,7 +304,7 @@ func (x *StreamEventsResponse) String() string {
 func (*StreamEventsResponse) ProtoMessage() {}
 
 func (x *StreamEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chip_ingress_proto_msgTypes[6]
+	mi := &file_pb_chip_ingress_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -317,7 +317,7 @@ func (x *StreamEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEventsResponse.ProtoReflect.Descriptor instead.
 func (*StreamEventsResponse) Descriptor() ([]byte, []int) {
-	return file_chip_ingress_proto_rawDescGZIP(), []int{6}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *StreamEventsResponse) GetEventId() string {
@@ -334,11 +334,101 @@ func (x *StreamEventsResponse) GetStatus() string {
 	return ""
 }
 
-var File_chip_ingress_proto protoreflect.FileDescriptor
+// RegisterSchema request message
+type RegisterSchemaRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Schemas       []*Schema              `protobuf:"bytes,1,rep,name=schemas,proto3" json:"schemas,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_chip_ingress_proto_rawDesc = "" +
+func (x *RegisterSchemaRequest) Reset() {
+	*x = RegisterSchemaRequest{}
+	mi := &file_pb_chip_ingress_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterSchemaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterSchemaRequest) ProtoMessage() {}
+
+func (x *RegisterSchemaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_chip_ingress_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterSchemaRequest.ProtoReflect.Descriptor instead.
+func (*RegisterSchemaRequest) Descriptor() ([]byte, []int) {
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RegisterSchemaRequest) GetSchemas() []*Schema {
+	if x != nil {
+		return x.Schemas
+	}
+	return nil
+}
+
+// RegisterSchema response message
+type RegisterSchemaResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Registered    []*RegisteredSchema    `protobuf:"bytes,1,rep,name=registered,proto3" json:"registered,omitempty"` // List of registered schema subjects
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterSchemaResponse) Reset() {
+	*x = RegisterSchemaResponse{}
+	mi := &file_pb_chip_ingress_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterSchemaResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterSchemaResponse) ProtoMessage() {}
+
+func (x *RegisterSchemaResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_chip_ingress_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterSchemaResponse.ProtoReflect.Descriptor instead.
+func (*RegisterSchemaResponse) Descriptor() ([]byte, []int) {
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *RegisterSchemaResponse) GetRegistered() []*RegisteredSchema {
+	if x != nil {
+		return x.Registered
+	}
+	return nil
+}
+
+var File_pb_chip_ingress_proto protoreflect.FileDescriptor
+
+const file_pb_chip_ingress_proto_rawDesc = "" +
 	"\n" +
-	"\x12chip_ingress.proto\x12\x0echipingress.pb\x1aLgithub.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto\"H\n" +
+	"\x15pb/chip_ingress.proto\x12\x0echipingress.pb\x1aLgithub.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto\x1a\x14pb/chip_common.proto\"H\n" +
 	"\x0fCloudEventBatch\x125\n" +
 	"\x06events\x18\x01 \x03(\v2\x1d.io.cloudevents.v1.CloudEventR\x06events\"J\n" +
 	"\x0fPublishResponse\x127\n" +
@@ -352,75 +442,91 @@ const file_chip_ingress_proto_rawDesc = "" +
 	"\x05event\x18\x01 \x01(\v2\x1d.io.cloudevents.v1.CloudEventR\x05event\"H\n" +
 	"\x14StreamEventsResponse\x12\x18\n" +
 	"\aeventId\x18\x01 \x01(\tR\aeventId\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status2\xd3\x02\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"F\n" +
+	"\x15RegisterSchemaRequest\x12-\n" +
+	"\aschemas\x18\x01 \x03(\v2\x13.chip_common.SchemaR\aschemas\"W\n" +
+	"\x16RegisterSchemaResponse\x12=\n" +
+	"\n" +
+	"registered\x18\x01 \x03(\v2\x1d.chip_common.RegisteredSchemaR\n" +
+	"registered2\xb6\x03\n" +
 	"\vChipIngress\x12K\n" +
 	"\aPublish\x12\x1d.io.cloudevents.v1.CloudEvent\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12R\n" +
 	"\fPublishBatch\x12\x1f.chipingress.pb.CloudEventBatch\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12B\n" +
 	"\x04Ping\x12\x1c.chipingress.pb.EmptyRequest\x1a\x1c.chipingress.pb.PingResponse\x12_\n" +
-	"\fStreamEvents\x12#.chipingress.pb.StreamEventsRequest\x1a$.chipingress.pb.StreamEventsResponse\"\x00(\x010\x01B\x06Z\x04./pbb\x06proto3"
+	"\fStreamEvents\x12#.chipingress.pb.StreamEventsRequest\x1a$.chipingress.pb.StreamEventsResponse\"\x00(\x010\x01\x12a\n" +
+	"\x0eRegisterSchema\x12%.chipingress.pb.RegisterSchemaRequest\x1a&.chipingress.pb.RegisterSchemaResponse\"\x00B\x06Z\x04./pbb\x06proto3"
 
 var (
-	file_chip_ingress_proto_rawDescOnce sync.Once
-	file_chip_ingress_proto_rawDescData []byte
+	file_pb_chip_ingress_proto_rawDescOnce sync.Once
+	file_pb_chip_ingress_proto_rawDescData []byte
 )
 
-func file_chip_ingress_proto_rawDescGZIP() []byte {
-	file_chip_ingress_proto_rawDescOnce.Do(func() {
-		file_chip_ingress_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_chip_ingress_proto_rawDesc), len(file_chip_ingress_proto_rawDesc)))
+func file_pb_chip_ingress_proto_rawDescGZIP() []byte {
+	file_pb_chip_ingress_proto_rawDescOnce.Do(func() {
+		file_pb_chip_ingress_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pb_chip_ingress_proto_rawDesc), len(file_pb_chip_ingress_proto_rawDesc)))
 	})
-	return file_chip_ingress_proto_rawDescData
+	return file_pb_chip_ingress_proto_rawDescData
 }
 
-var file_chip_ingress_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_chip_ingress_proto_goTypes = []any{
-	(*CloudEventBatch)(nil),      // 0: chipingress.pb.CloudEventBatch
-	(*PublishResponse)(nil),      // 1: chipingress.pb.PublishResponse
-	(*PublishResult)(nil),        // 2: chipingress.pb.PublishResult
-	(*EmptyRequest)(nil),         // 3: chipingress.pb.EmptyRequest
-	(*PingResponse)(nil),         // 4: chipingress.pb.PingResponse
-	(*StreamEventsRequest)(nil),  // 5: chipingress.pb.StreamEventsRequest
-	(*StreamEventsResponse)(nil), // 6: chipingress.pb.StreamEventsResponse
-	(*pb.CloudEvent)(nil),        // 7: io.cloudevents.v1.CloudEvent
+var file_pb_chip_ingress_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_pb_chip_ingress_proto_goTypes = []any{
+	(*CloudEventBatch)(nil),        // 0: chipingress.pb.CloudEventBatch
+	(*PublishResponse)(nil),        // 1: chipingress.pb.PublishResponse
+	(*PublishResult)(nil),          // 2: chipingress.pb.PublishResult
+	(*EmptyRequest)(nil),           // 3: chipingress.pb.EmptyRequest
+	(*PingResponse)(nil),           // 4: chipingress.pb.PingResponse
+	(*StreamEventsRequest)(nil),    // 5: chipingress.pb.StreamEventsRequest
+	(*StreamEventsResponse)(nil),   // 6: chipingress.pb.StreamEventsResponse
+	(*RegisterSchemaRequest)(nil),  // 7: chipingress.pb.RegisterSchemaRequest
+	(*RegisterSchemaResponse)(nil), // 8: chipingress.pb.RegisterSchemaResponse
+	(*pb.CloudEvent)(nil),          // 9: io.cloudevents.v1.CloudEvent
+	(*Schema)(nil),                 // 10: chip_common.Schema
+	(*RegisteredSchema)(nil),       // 11: chip_common.RegisteredSchema
 }
-var file_chip_ingress_proto_depIdxs = []int32{
-	7, // 0: chipingress.pb.CloudEventBatch.events:type_name -> io.cloudevents.v1.CloudEvent
-	2, // 1: chipingress.pb.PublishResponse.results:type_name -> chipingress.pb.PublishResult
-	7, // 2: chipingress.pb.StreamEventsRequest.event:type_name -> io.cloudevents.v1.CloudEvent
-	7, // 3: chipingress.pb.ChipIngress.Publish:input_type -> io.cloudevents.v1.CloudEvent
-	0, // 4: chipingress.pb.ChipIngress.PublishBatch:input_type -> chipingress.pb.CloudEventBatch
-	3, // 5: chipingress.pb.ChipIngress.Ping:input_type -> chipingress.pb.EmptyRequest
-	5, // 6: chipingress.pb.ChipIngress.StreamEvents:input_type -> chipingress.pb.StreamEventsRequest
-	1, // 7: chipingress.pb.ChipIngress.Publish:output_type -> chipingress.pb.PublishResponse
-	1, // 8: chipingress.pb.ChipIngress.PublishBatch:output_type -> chipingress.pb.PublishResponse
-	4, // 9: chipingress.pb.ChipIngress.Ping:output_type -> chipingress.pb.PingResponse
-	6, // 10: chipingress.pb.ChipIngress.StreamEvents:output_type -> chipingress.pb.StreamEventsResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+var file_pb_chip_ingress_proto_depIdxs = []int32{
+	9,  // 0: chipingress.pb.CloudEventBatch.events:type_name -> io.cloudevents.v1.CloudEvent
+	2,  // 1: chipingress.pb.PublishResponse.results:type_name -> chipingress.pb.PublishResult
+	9,  // 2: chipingress.pb.StreamEventsRequest.event:type_name -> io.cloudevents.v1.CloudEvent
+	10, // 3: chipingress.pb.RegisterSchemaRequest.schemas:type_name -> chip_common.Schema
+	11, // 4: chipingress.pb.RegisterSchemaResponse.registered:type_name -> chip_common.RegisteredSchema
+	9,  // 5: chipingress.pb.ChipIngress.Publish:input_type -> io.cloudevents.v1.CloudEvent
+	0,  // 6: chipingress.pb.ChipIngress.PublishBatch:input_type -> chipingress.pb.CloudEventBatch
+	3,  // 7: chipingress.pb.ChipIngress.Ping:input_type -> chipingress.pb.EmptyRequest
+	5,  // 8: chipingress.pb.ChipIngress.StreamEvents:input_type -> chipingress.pb.StreamEventsRequest
+	7,  // 9: chipingress.pb.ChipIngress.RegisterSchema:input_type -> chipingress.pb.RegisterSchemaRequest
+	1,  // 10: chipingress.pb.ChipIngress.Publish:output_type -> chipingress.pb.PublishResponse
+	1,  // 11: chipingress.pb.ChipIngress.PublishBatch:output_type -> chipingress.pb.PublishResponse
+	4,  // 12: chipingress.pb.ChipIngress.Ping:output_type -> chipingress.pb.PingResponse
+	6,  // 13: chipingress.pb.ChipIngress.StreamEvents:output_type -> chipingress.pb.StreamEventsResponse
+	8,  // 14: chipingress.pb.ChipIngress.RegisterSchema:output_type -> chipingress.pb.RegisterSchemaResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_chip_ingress_proto_init() }
-func file_chip_ingress_proto_init() {
-	if File_chip_ingress_proto != nil {
+func init() { file_pb_chip_ingress_proto_init() }
+func file_pb_chip_ingress_proto_init() {
+	if File_pb_chip_ingress_proto != nil {
 		return
 	}
+	file_pb_chip_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chip_ingress_proto_rawDesc), len(file_chip_ingress_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pb_chip_ingress_proto_rawDesc), len(file_pb_chip_ingress_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_chip_ingress_proto_goTypes,
-		DependencyIndexes: file_chip_ingress_proto_depIdxs,
-		MessageInfos:      file_chip_ingress_proto_msgTypes,
+		GoTypes:           file_pb_chip_ingress_proto_goTypes,
+		DependencyIndexes: file_pb_chip_ingress_proto_depIdxs,
+		MessageInfos:      file_pb_chip_ingress_proto_msgTypes,
 	}.Build()
-	File_chip_ingress_proto = out.File
-	file_chip_ingress_proto_goTypes = nil
-	file_chip_ingress_proto_depIdxs = nil
+	File_pb_chip_ingress_proto = out.File
+	file_pb_chip_ingress_proto_goTypes = nil
+	file_pb_chip_ingress_proto_depIdxs = nil
 }

@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package chip_common;
+
+option go_package = "./pb";
+
+// Schema definition
+message Schema {
+  string subject = 1;
+  Path path = 2;              // S3 location or other storage path
+  SchemaType format = 4;        // Format of the schema, e.g. PROTOBUF, AVRO, JSON
+  string schema = 5;            // Raw proto/avro schema with annotations
+  repeated SchemaReference references = 6; // References to other schemas
+  MetaData metadata = 7;  // optional metadata information
+}
+
+// Enum for different schema types
+enum SchemaType {
+  PROTOBUF = 0;
+  AVRO = 1;
+  JSON = 2;
+}
+
+// Message to reference other schemas
+message SchemaReference {
+  string name = 1;
+  string subject = 2;
+  int32 version = 3;
+}
+
+// Metadata for the schema, currently includes storage information
+message MetaData {
+  map<string, Store> stores = 1; // List of datastores the schema should be stored in. Map of store (hot, cold or warm) to Store objects.
+}
+
+// Each store contains index and partition information
+message Store {
+  repeated string index = 1;
+  repeated string partition = 2;
+}
+
+// Path definition
+message Path {
+  string path = 1;              // S3 location or other storage path
+  PathType type = 2;         // Type of PATH storage (S3, LOCAL, OTHER)
+}
+
+// Enum for different path types
+enum PathType {
+  S3 = 0;                      // S3 storage
+  LOCAL = 1;                   // Local file system
+  GITHUB = 2;                // GitHub storage
+  OTHER = 3;                   // Other storage types
+}
+
+// Response message for schema registration
+message RegisteredSchema {
+  string subject = 1;
+  int32  version = 2;
+}

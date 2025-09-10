@@ -33,8 +33,8 @@ func ParseRate(s string) (Rate, error) {
 		}
 		rateLimit.Limit = rate.Every(d)
 	} else {
-		s = strings.TrimSuffix(s, "rps") // allowed but not required
-		f, err := strconv.ParseFloat(s, 64)
+		parts[0] = strings.TrimSuffix(parts[0], "rps") // allowed but not required
+		f, err := strconv.ParseFloat(parts[0], 64)
 		if err != nil {
 			return Rate{}, err
 		}

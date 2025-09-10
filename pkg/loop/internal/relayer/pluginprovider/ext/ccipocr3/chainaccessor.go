@@ -2,6 +2,7 @@ package ccipocr3
 
 import (
 	"context"
+	"maps"
 	"sync"
 	"time"
 
@@ -37,12 +38,7 @@ func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) 
 func (c *ChainAccessorClient) GetSyncRequests() map[string]ccipocr3.UnknownAddress {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-
-	syncsClone := make(map[string]ccipocr3.UnknownAddress, len(c.syncs))
-	for contractName, contractAddress := range c.syncs {
-		syncsClone[contractName] = contractAddress
-	}
-	return syncsClone
+	return maps.Clone(c.syncs)
 }
 
 // AllAccessors methods

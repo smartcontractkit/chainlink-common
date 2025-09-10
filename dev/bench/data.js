@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757530875952,
+  "lastUpdate": 1757535143775,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25116,6 +25116,48 @@ window.BENCHMARK_DATA = {
             "value": 26631,
             "unit": "ns/op",
             "extra": "45088 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb4c31b624d34c16e9996be2c12d8c60572b22e5",
+          "message": "CCIP - add price reader interfaces to ChainAccessor and move some generic types, clean others up (#1487)\n\n* CCIP - add price reader interfaces to ChainAccessor and move some generic types\n\n* update a few more functions\n\n* use TimestampedUnixBig instead of TimestampedBig\n\n* preserve zeros when converting between PB types\n\n* move TokenInfo to cl-common and add to GetFeedPricesUSD args\n\n* resync accessor sync calls on relayer restart\n\n* nits\n\n* change persisted sync storage to a map[] instead of SyncRequest\n\n* use maps.Clone\n\n* move persisted syncs conversion to ccipprovider",
+          "timestamp": "2025-09-10T17:11:07-03:00",
+          "tree_id": "2dddbf8a21b215817e744be1e90a0758a085ff64",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cb4c31b624d34c16e9996be2c12d8c60572b22e5"
+        },
+        "date": 1757535142685,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.2,
+            "unit": "ns/op",
+            "extra": "3342630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.8,
+            "unit": "ns/op",
+            "extra": "2935134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26801,
+            "unit": "ns/op",
+            "extra": "45076 times\n4 procs"
           }
         ]
       }

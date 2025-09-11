@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757535143775,
+  "lastUpdate": 1757596278446,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25158,6 +25158,48 @@ window.BENCHMARK_DATA = {
             "value": 26801,
             "unit": "ns/op",
             "extra": "45076 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "88895489a3a7d46b5797d00f7eb22b61e1db280f",
+          "message": "PLEX-1727: remove EVM RegisterLogTracking and UnregisterLogTracking (#1539)\n\n* PLEX-1727: remove EVM RegisterLogTracking and UnregisterLogTracking\n\n* missing methods\n\n* make generate\n\n* remove comments\n\n* bump common",
+          "timestamp": "2025-09-11T15:08:49+02:00",
+          "tree_id": "f070d5cc974b3bddd09ffcec39f574dbf2a1bbdd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/88895489a3a7d46b5797d00f7eb22b61e1db280f"
+        },
+        "date": 1757596277136,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361,
+            "unit": "ns/op",
+            "extra": "3330434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.7,
+            "unit": "ns/op",
+            "extra": "2864224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26973,
+            "unit": "ns/op",
+            "extra": "44992 times\n4 procs"
           }
         ]
       }

@@ -188,6 +188,7 @@ type NewReportingPluginFactoryRequest struct {
 	CapRegistryID                uint32                        `protobuf:"varint,6,opt,name=capRegistryID,proto3" json:"capRegistryID,omitempty"`
 	KeyValueStoreID              uint32                        `protobuf:"varint,7,opt,name=keyValueStoreID,proto3" json:"keyValueStoreID,omitempty"`
 	RelayerSetID                 uint32                        `protobuf:"varint,8,opt,name=relayerSetID,proto3" json:"relayerSetID,omitempty"`
+	SecureMintExternalAdapterID  uint32                        `protobuf:"varint,9,opt,name=secureMintExternalAdapterID,proto3" json:"secureMintExternalAdapterID,omitempty"`
 	unknownFields                protoimpl.UnknownFields
 	sizeCache                    protoimpl.SizeCache
 }
@@ -278,6 +279,13 @@ func (x *NewReportingPluginFactoryRequest) GetRelayerSetID() uint32 {
 	return 0
 }
 
+func (x *NewReportingPluginFactoryRequest) GetSecureMintExternalAdapterID() uint32 {
+	if x != nil {
+		return x.SecureMintExternalAdapterID
+	}
+	return 0
+}
+
 // NewReportingPluginFactoryReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop/reporting_plugins/LOOPPService.NewReportingPluginFactory].
 type NewReportingPluginFactoryReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -338,7 +346,7 @@ const file_reporting_plugin_service_proto_rawDesc = "" +
 	"pluginName\x18\x03 \x01(\tR\n" +
 	"pluginName\x12\"\n" +
 	"\fpluginConfig\x18\x04 \x01(\tR\fpluginConfig\x12$\n" +
-	"\rtelemetryType\x18\x05 \x01(\tR\rtelemetryType\"\x8c\x03\n" +
+	"\rtelemetryType\x18\x05 \x01(\tR\rtelemetryType\"\xce\x03\n" +
 	" NewReportingPluginFactoryRequest\x12\x1e\n" +
 	"\n" +
 	"providerID\x18\x01 \x01(\rR\n" +
@@ -351,7 +359,8 @@ const file_reporting_plugin_service_proto_rawDesc = "" +
 	"\x1cReportingPluginServiceConfig\x18\x05 \x01(\v2\".loop.ReportingPluginServiceConfigR\x1cReportingPluginServiceConfig\x12$\n" +
 	"\rcapRegistryID\x18\x06 \x01(\rR\rcapRegistryID\x12(\n" +
 	"\x0fkeyValueStoreID\x18\a \x01(\rR\x0fkeyValueStoreID\x12\"\n" +
-	"\frelayerSetID\x18\b \x01(\rR\frelayerSetID\"0\n" +
+	"\frelayerSetID\x18\b \x01(\rR\frelayerSetID\x12@\n" +
+	"\x1bsecureMintExternalAdapterID\x18\t \x01(\rR\x1bsecureMintExternalAdapterID\"0\n" +
 	"\x1eNewReportingPluginFactoryReply\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\rR\x02ID2\xe0\x01\n" +
 	"\x16ReportingPluginService\x12k\n" +

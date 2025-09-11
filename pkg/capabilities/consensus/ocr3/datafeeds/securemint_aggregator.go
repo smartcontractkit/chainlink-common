@@ -20,6 +20,7 @@ import (
 
 var (
 	ErrNoMatchingChainSelector = errors.New("no matching chain selector found")
+	ErrSequenceNumberTooLow    = errors.New("sequence number too low")
 )
 
 // secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
@@ -113,7 +114,12 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 // extractAndValidateReports extracts OCRTriggerEvent from observations and validates them
 func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*secureMintReport, error) {
 	var validReports []*secureMintReport
+	var sequenceNumberTooLow bool
 	var foundMatchingChainSelector bool
+	previousSeqNr := uint64(0)
+	if previousOutcome != nil {
+		previousSeqNr = previousOutcome.LastSeenAt
+	}
 
 	for nodeID, nodeObservations := range observations {
 		lggr = logger.With(lggr, "nodeID", nodeID)
@@ -147,6 +153,13 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 			// We found a matching chain selector
 			foundMatchingChainSelector = true
 
+			// Validate sequence number
+			if triggerEvent.SeqNr <= previousSeqNr {
+				lggr.Warnw("sequence number too low", "seqNr", triggerEvent.SeqNr, "previousSeqNr", previousSeqNr)
+				sequenceNumberTooLow = true
+				continue
+			}
+
 			// Deserialize the inner secureMintReport
 			var innerReport secureMintReport
 			if err := json.Unmarshal(reportWithInfo.Report, &innerReport); err != nil {
@@ -162,6 +175,10 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 	if !foundMatchingChainSelector {
 		lggr.Infow("no reports found for target chain selector, ignoring", "targetChainSelector", a.config.TargetChainSelector)
 		return nil, nil
+	}
+
+	if sequenceNumberTooLow {
+		return nil, fmt.Errorf("%w: all reports had sequence numbers <= %d", ErrSequenceNumberTooLow, previousSeqNr)
 	}
 
 	return validReports, nil
@@ -206,15 +223,12 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	// Store the sequence number in metadata for next round
 	metadata := []byte{byte(report.SeqNr)} // Simple metadata for now
 
-	aggOutcome := &types.AggregationOutcome{
+	return &types.AggregationOutcome{
 		EncodableOutcome: reportsProto.GetMapValue(),
 		Metadata:         metadata,
 		LastSeenAt:       report.SeqNr,
 		ShouldReport:     true, // Always report since we found and verified the target report
-	}
-
-	lggr.Debugw("SecureMint AggregationOutcome created", "aggOutcome", aggOutcome)
-	return aggOutcome, nil
+	}, nil
 }
 
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.

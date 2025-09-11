@@ -35,6 +35,9 @@ const (
 	ChainAccessor_GetExpectedNextSequenceNumber_FullMethodName = "/loop.internal.pb.ccipocr3.ChainAccessor/GetExpectedNextSequenceNumber"
 	ChainAccessor_GetTokenPriceUSD_FullMethodName              = "/loop.internal.pb.ccipocr3.ChainAccessor/GetTokenPriceUSD"
 	ChainAccessor_GetFeeQuoterDestChainConfig_FullMethodName   = "/loop.internal.pb.ccipocr3.ChainAccessor/GetFeeQuoterDestChainConfig"
+	ChainAccessor_MessagesByTokenID_FullMethodName             = "/loop.internal.pb.ccipocr3.ChainAccessor/MessagesByTokenID"
+	ChainAccessor_GetFeedPricesUSD_FullMethodName              = "/loop.internal.pb.ccipocr3.ChainAccessor/GetFeedPricesUSD"
+	ChainAccessor_GetFeeQuoterTokenUpdates_FullMethodName      = "/loop.internal.pb.ccipocr3.ChainAccessor/GetFeeQuoterTokenUpdates"
 )
 
 // ChainAccessorClient is the client API for ChainAccessor service.
@@ -61,6 +64,11 @@ type ChainAccessorClient interface {
 	GetExpectedNextSequenceNumber(ctx context.Context, in *GetExpectedNextSequenceNumberRequest, opts ...grpc.CallOption) (*GetExpectedNextSequenceNumberResponse, error)
 	GetTokenPriceUSD(ctx context.Context, in *GetTokenPriceUSDRequest, opts ...grpc.CallOption) (*GetTokenPriceUSDResponse, error)
 	GetFeeQuoterDestChainConfig(ctx context.Context, in *GetFeeQuoterDestChainConfigRequest, opts ...grpc.CallOption) (*GetFeeQuoterDestChainConfigResponse, error)
+	// USDCMessageReader methods
+	MessagesByTokenID(ctx context.Context, in *MessagesByTokenIDRequest, opts ...grpc.CallOption) (*MessagesByTokenIDResponse, error)
+	// PriceReader methods
+	GetFeedPricesUSD(ctx context.Context, in *GetFeedPricesUSDRequest, opts ...grpc.CallOption) (*GetFeedPricesUSDResponse, error)
+	GetFeeQuoterTokenUpdates(ctx context.Context, in *GetFeeQuoterTokenUpdatesRequest, opts ...grpc.CallOption) (*GetFeeQuoterTokenUpdatesResponse, error)
 }
 
 type chainAccessorClient struct {
@@ -221,6 +229,36 @@ func (c *chainAccessorClient) GetFeeQuoterDestChainConfig(ctx context.Context, i
 	return out, nil
 }
 
+func (c *chainAccessorClient) MessagesByTokenID(ctx context.Context, in *MessagesByTokenIDRequest, opts ...grpc.CallOption) (*MessagesByTokenIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MessagesByTokenIDResponse)
+	err := c.cc.Invoke(ctx, ChainAccessor_MessagesByTokenID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chainAccessorClient) GetFeedPricesUSD(ctx context.Context, in *GetFeedPricesUSDRequest, opts ...grpc.CallOption) (*GetFeedPricesUSDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFeedPricesUSDResponse)
+	err := c.cc.Invoke(ctx, ChainAccessor_GetFeedPricesUSD_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, in *GetFeeQuoterTokenUpdatesRequest, opts ...grpc.CallOption) (*GetFeeQuoterTokenUpdatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFeeQuoterTokenUpdatesResponse)
+	err := c.cc.Invoke(ctx, ChainAccessor_GetFeeQuoterTokenUpdates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChainAccessorServer is the server API for ChainAccessor service.
 // All implementations must embed UnimplementedChainAccessorServer
 // for forward compatibility.
@@ -245,6 +283,11 @@ type ChainAccessorServer interface {
 	GetExpectedNextSequenceNumber(context.Context, *GetExpectedNextSequenceNumberRequest) (*GetExpectedNextSequenceNumberResponse, error)
 	GetTokenPriceUSD(context.Context, *GetTokenPriceUSDRequest) (*GetTokenPriceUSDResponse, error)
 	GetFeeQuoterDestChainConfig(context.Context, *GetFeeQuoterDestChainConfigRequest) (*GetFeeQuoterDestChainConfigResponse, error)
+	// USDCMessageReader methods
+	MessagesByTokenID(context.Context, *MessagesByTokenIDRequest) (*MessagesByTokenIDResponse, error)
+	// PriceReader methods
+	GetFeedPricesUSD(context.Context, *GetFeedPricesUSDRequest) (*GetFeedPricesUSDResponse, error)
+	GetFeeQuoterTokenUpdates(context.Context, *GetFeeQuoterTokenUpdatesRequest) (*GetFeeQuoterTokenUpdatesResponse, error)
 	mustEmbedUnimplementedChainAccessorServer()
 }
 
@@ -299,6 +342,15 @@ func (UnimplementedChainAccessorServer) GetTokenPriceUSD(context.Context, *GetTo
 }
 func (UnimplementedChainAccessorServer) GetFeeQuoterDestChainConfig(context.Context, *GetFeeQuoterDestChainConfigRequest) (*GetFeeQuoterDestChainConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeQuoterDestChainConfig not implemented")
+}
+func (UnimplementedChainAccessorServer) MessagesByTokenID(context.Context, *MessagesByTokenIDRequest) (*MessagesByTokenIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MessagesByTokenID not implemented")
+}
+func (UnimplementedChainAccessorServer) GetFeedPricesUSD(context.Context, *GetFeedPricesUSDRequest) (*GetFeedPricesUSDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeedPricesUSD not implemented")
+}
+func (UnimplementedChainAccessorServer) GetFeeQuoterTokenUpdates(context.Context, *GetFeeQuoterTokenUpdatesRequest) (*GetFeeQuoterTokenUpdatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeeQuoterTokenUpdates not implemented")
 }
 func (UnimplementedChainAccessorServer) mustEmbedUnimplementedChainAccessorServer() {}
 func (UnimplementedChainAccessorServer) testEmbeddedByValue()                       {}
@@ -591,6 +643,60 @@ func _ChainAccessor_GetFeeQuoterDestChainConfig_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChainAccessor_MessagesByTokenID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MessagesByTokenIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainAccessorServer).MessagesByTokenID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainAccessor_MessagesByTokenID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainAccessorServer).MessagesByTokenID(ctx, req.(*MessagesByTokenIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChainAccessor_GetFeedPricesUSD_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeedPricesUSDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainAccessorServer).GetFeedPricesUSD(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainAccessor_GetFeedPricesUSD_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainAccessorServer).GetFeedPricesUSD(ctx, req.(*GetFeedPricesUSDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChainAccessor_GetFeeQuoterTokenUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeeQuoterTokenUpdatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChainAccessorServer).GetFeeQuoterTokenUpdates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChainAccessor_GetFeeQuoterTokenUpdates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChainAccessorServer).GetFeeQuoterTokenUpdates(ctx, req.(*GetFeeQuoterTokenUpdatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChainAccessor_ServiceDesc is the grpc.ServiceDesc for ChainAccessor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -657,6 +763,18 @@ var ChainAccessor_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFeeQuoterDestChainConfig",
 			Handler:    _ChainAccessor_GetFeeQuoterDestChainConfig_Handler,
+		},
+		{
+			MethodName: "MessagesByTokenID",
+			Handler:    _ChainAccessor_MessagesByTokenID_Handler,
+		},
+		{
+			MethodName: "GetFeedPricesUSD",
+			Handler:    _ChainAccessor_GetFeedPricesUSD_Handler,
+		},
+		{
+			MethodName: "GetFeeQuoterTokenUpdates",
+			Handler:    _ChainAccessor_GetFeeQuoterTokenUpdates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -37,7 +37,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		dataID               string
 		solAccounts          [][32]byte
 		previousOutcome      *types.AggregationOutcome
-		seqNr                uint64
 		observations         map[ocrcommon.OracleID][]values.Value
 		f                    int
 		expectedShouldReport bool
@@ -70,7 +69,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		assert.NotNil(t, answer)
 
 		timestamp := report[TimestampOutputFieldName].(int64)
-		assert.Equal(t, int64(tc.seqNr), timestamp)
+		assert.Equal(t, int64(1000), timestamp)
 	}
 
 	solReportAssertFn := func(t *testing.T, tc tcase, topLevelMap map[string]any) {
@@ -101,7 +100,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		assert.NotNil(t, answer)
 
 		timestamp := report[SolTimestampOutputFieldName].(int64)
-		assert.Equal(t, int64(tc.seqNr), timestamp)
+		assert.Equal(t, int64(1000), timestamp)
 	}
 
 	tests := []tcase{
@@ -109,7 +108,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "successful eth report extraction",
 			chainSelector: "16015286601757825753",
 			dataID:        "0x01c508f42b0201320000000000000000",
-			seqNr:         10,
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: ethSepoliaChainSelector,
@@ -123,10 +121,10 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				},
 				{
 					chainSelector: bnbTestnetChainSelector,
-					seqNr:         10,
+					seqNr:         11,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
-						SeqNr:        10,
+						SeqNr:        11,
 						Block:        1100,
 						Mintable:     big.NewInt(200),
 					},
@@ -141,7 +139,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "no matching chain selector found",
 			chainSelector: "16015286601757825753",
 			dataID:        "0x01c508f42b0201320000000000000000",
-			seqNr:         10,
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: bnbTestnetChainSelector,
@@ -163,7 +160,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "no observations",
 			chainSelector: "16015286601757825753",
 			dataID:        "0x01c508f42b0201320000000000000000",
-			seqNr:         10,
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
@@ -173,7 +169,6 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "successful sol report extraction",
 			chainSelector: "16423721717087811551", // solana devnet
 			dataID:        "0x01c508f42b0201320000000000000000",
-			seqNr:         10,
 			solAccounts:   [][32]byte{acc1, acc2},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
@@ -188,10 +183,10 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				},
 				{
 					chainSelector: bnbTestnetChainSelector,
-					seqNr:         10,
+					seqNr:         11,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
-						SeqNr:        10,
+						SeqNr:        11,
 						Block:        1100,
 						Mintable:     big.NewInt(200),
 					},

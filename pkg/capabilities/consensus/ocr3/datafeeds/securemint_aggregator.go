@@ -126,7 +126,7 @@ func (f *evmReportFormatter) packReport(lggr logger.Logger, report *secureMintRe
 		map[EVMEncoderKey]any{
 			DataIDOutputFieldName:    f.dataID,
 			AnswerOutputFieldName:    smReportAsAnswer,
-			TimestampOutputFieldName: uint32(report.SeqNr),
+			TimestampOutputFieldName: uint32(report.Block),
 		},
 	}
 
@@ -166,13 +166,13 @@ func (f *solanaReportFormatter) packReport(lggr logger.Logger, report *secureMin
 	accountContextHash := sha256.Sum256(accounts)
 	lggr.Debugw("calculated account context hash", "accountContextHash", accountContextHash)
 
-	if report.SeqNr > (1<<32 - 1) { // timestamp must fit in u32 in solana
-		return nil, fmt.Errorf("timestamp exceeds u32 bounds: %v", report.SeqNr)
+	if report.Block > (1<<32 - 1) { // timestamp must fit in u32 in solana
+		return nil, fmt.Errorf("timestamp exceeds u32 bounds: %v", report.Block)
 	}
 
 	toWrap := []any{
 		map[SolanaEncoderKey]any{
-			SolTimestampOutputFieldName: uint32(report.SeqNr),
+			SolTimestampOutputFieldName: uint32(report.Block), // TODO: Verify with Michael/Geert timestamp should be block number?
 			SolAnswerOutputFieldName:    smReportAsAnswer,
 			SolDataIDOutputFieldName:    f.dataID,
 		},

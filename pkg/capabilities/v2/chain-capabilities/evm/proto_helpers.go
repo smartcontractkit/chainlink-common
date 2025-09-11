@@ -186,7 +186,6 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 	return callMsg, nil
 }
 
-// TODO lautaro check what's the purpose as nobody is using it
 func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {
 	topics, err := convertTopicsToProto(filter.Topics)
 	if err != nil {
@@ -243,7 +242,6 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 	}, nil
 }
 
-// TODO nobody is using it, check if we can remove it
 func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
 	logs := make([]*evmtypes.Log, 0, len(protoLogs))
 	for i, protoLog := range protoLogs {
@@ -260,7 +258,6 @@ func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
 	return logs, nil
 }
 
-// TODO lautaro check if we can remove it
 func ConvertTopicsFromProto(protoTopics []*Topics) ([][]evmtypes.Hash, error) {
 	topics := make([][]evmtypes.Hash, 0, len(protoTopics))
 	for i, protoTopic := range protoTopics {
@@ -294,7 +291,6 @@ func ConvertLogToProto(log evmtypes.Log) *Log {
 	}
 }
 
-// TODO lautaro check if we can remove it (cascade remove)
 func convertTopicsToProto(topics [][]evmtypes.Hash) ([]*Topics, error) {
 	protoTopics := make([]*Topics, 0, len(topics))
 	for i, topic := range topics {
@@ -307,7 +303,6 @@ func convertTopicsToProto(topics [][]evmtypes.Hash) ([]*Topics, error) {
 	return protoTopics, nil
 }
 
-// todo lautaro check if we can remove it (cascade remove)
 func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 	if protoLog == nil {
 		return nil, fmt.Errorf("log can't be nil")

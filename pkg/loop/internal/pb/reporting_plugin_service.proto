@@ -35,6 +35,7 @@ message NewReportingPluginFactoryRequest {
   uint32 capRegistryID = 6;
   uint32 keyValueStoreID = 7;
   uint32 relayerSetID = 8;
+  uint32 secureMintExternalAdapterID = 9;
 }
 
 // NewReportingPluginFactoryReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop/reporting_plugins/LOOPPService.NewReportingPluginFactory].

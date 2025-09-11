@@ -191,22 +191,22 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 
 	// Convert chain selector to bytes for data ID
 	// Secure Mint dataID: 0x04 + chain selector as bytes + right padded with 0s
-	var chainSelectorAsDataID [16]byte
+	var chainSelectorAsDataID [32]byte
 	chainSelectorAsDataID[0] = 0x04
 	binary.BigEndian.PutUint64(chainSelectorAsDataID[1:], uint64(a.config.TargetChainSelector))
 
-	smReportAsAnswer, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
+	smReportAsPrice, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
 	if err != nil {
-		return nil, fmt.Errorf("failed to pack secure mint report for evm into uint224: %w", err)
+		return nil, fmt.Errorf("failed to pack secure mint report for into uint224: %w", err)
 	}
-	lggr.Debugw("packed report into answer", "smReportAsAnswer", smReportAsAnswer)
+	lggr.Debugw("packed report into price", "smReportAsPrice", smReportAsPrice)
 
 	// This is what the DF Cache contract expects:
-	// abi: "(bytes16 dataId, uint32 timestamp, uint224 answer)[] Reports"
+	// abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
-			DataIDOutputFieldName:    chainSelectorAsDataID,
-			AnswerOutputFieldName:    smReportAsAnswer,
+			FeedIDOutputFieldName:    chainSelectorAsDataID,
+			PriceOutputFieldName:     smReportAsPrice,
 			TimestampOutputFieldName: int64(report.Block),
 		},
 	}

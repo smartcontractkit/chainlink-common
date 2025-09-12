@@ -2,7 +2,6 @@ package evm
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
@@ -185,67 +184,6 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 	}
 
 	return callMsg, nil
-}
-
-func ConvertLPFilterToProto(filter evmtypes.LPFilterQuery) *LPFilter {
-	return &LPFilter{
-		Name:          filter.Name,
-		RetentionTime: int64(filter.Retention),
-		Addresses:     evm.ConvertAddressesToProto(filter.Addresses),
-		EventSigs:     evm.ConvertHashesToProto(filter.EventSigs),
-		Topic2:        evm.ConvertHashesToProto(filter.Topic2),
-		Topic3:        evm.ConvertHashesToProto(filter.Topic3),
-		Topic4:        evm.ConvertHashesToProto(filter.Topic4),
-		MaxLogsKept:   filter.MaxLogsKept,
-		LogsPerBlock:  filter.LogsPerBlock,
-	}
-}
-
-func ConvertLPFilterFromProto(protoFilter *LPFilter) (evmtypes.LPFilterQuery, error) {
-	if protoFilter == nil {
-		return evmtypes.LPFilterQuery{}, evm.ErrEmptyFilter
-	}
-
-	var addresses []evmtypes.Address
-	for i, protoAddress := range protoFilter.GetAddresses() {
-		address, err := evm.ConvertOptionalAddressFromProto(protoAddress)
-		if err != nil {
-			return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert address[%d]: %w", i, err)
-		}
-		addresses = append(addresses, address)
-	}
-
-	sigs, err := evm.ConvertHashesFromProto(protoFilter.GetEventSigs())
-	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert event sigs: %w", err)
-	}
-
-	t2, err := evm.ConvertHashesFromProto(protoFilter.GetTopic2())
-	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic2: %w", err)
-	}
-
-	t3, err := evm.ConvertHashesFromProto(protoFilter.GetTopic3())
-	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic3: %w", err)
-	}
-
-	t4, err := evm.ConvertHashesFromProto(protoFilter.GetTopic4())
-	if err != nil {
-		return evmtypes.LPFilterQuery{}, fmt.Errorf("failed to convert topic4: %w", err)
-	}
-
-	return evmtypes.LPFilterQuery{
-		Name:         protoFilter.GetName(),
-		Retention:    time.Duration(protoFilter.GetRetentionTime()),
-		Addresses:    addresses,
-		EventSigs:    sigs,
-		Topic2:       t2,
-		Topic3:       t3,
-		Topic4:       t4,
-		MaxLogsKept:  protoFilter.GetMaxLogsKept(),
-		LogsPerBlock: protoFilter.GetLogsPerBlock(),
-	}, nil
 }
 
 func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {

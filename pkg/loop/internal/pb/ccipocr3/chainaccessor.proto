@@ -30,6 +30,13 @@ service ChainAccessor {
   rpc GetExpectedNextSequenceNumber(GetExpectedNextSequenceNumberRequest) returns (GetExpectedNextSequenceNumberResponse);
   rpc GetTokenPriceUSD(GetTokenPriceUSDRequest) returns (GetTokenPriceUSDResponse);
   rpc GetFeeQuoterDestChainConfig(GetFeeQuoterDestChainConfigRequest) returns (GetFeeQuoterDestChainConfigResponse);
+  
+  // USDCMessageReader methods
+  rpc MessagesByTokenID(MessagesByTokenIDRequest) returns (MessagesByTokenIDResponse);
+  
+  // PriceReader methods
+  rpc GetFeedPricesUSD(GetFeedPricesUSDRequest) returns (GetFeedPricesUSDResponse);
+  rpc GetFeeQuoterTokenUpdates(GetFeeQuoterTokenUpdatesRequest) returns (GetFeeQuoterTokenUpdatesResponse);
 }
 
 // AllAccessors request/response messages
@@ -101,7 +108,7 @@ message GetChainFeePriceUpdateRequest {
 }
 
 message GetChainFeePriceUpdateResponse {
-  map<uint64, TimestampedBig> fee_price_updates = 1; // key is chain selector
+  map<uint64, TimestampedUnixBig> fee_price_updates = 1; // key is chain selector
 }
 
 message GetLatestPriceSeqNrResponse {
@@ -337,4 +344,46 @@ message FeeQuoterDestChainConfig {
   uint32 gas_price_staleness_threshold = 19;      
   bool enforce_out_of_order = 15;
   bytes chain_family_selector = 16; // [4]byte in Go
+}
+
+// USDCMessageReader request/response messages
+message MessagesByTokenIDRequest {
+  uint64 source_chain_selector = 1;
+  uint64 dest_chain_selector = 2;
+  map<string, RampTokenAmount> tokens = 3; // key is MessageTokenID string representation
+}
+
+message MessagesByTokenIDResponse {
+  map<string, bytes> messages = 1; // key is MessageTokenID string representation, value is message bytes
+}
+
+// PriceReader request/response messages
+message GetFeedPricesUSDRequest {
+  repeated string tokens = 1; // UnknownEncodedAddress
+  map<string, TokenInfo> token_info = 2; // key is UnknownEncodedAddress
+}
+
+message GetFeedPricesUSDResponse {
+  map<string, BigInt> prices = 1; // key is UnknownEncodedAddress, value is price
+}
+
+message GetFeeQuoterTokenUpdatesRequest {
+  repeated string tokens = 1; // UnknownEncodedAddress
+  uint64 chain_selector = 2;
+}
+
+message GetFeeQuoterTokenUpdatesResponse {
+  map<string, TimestampedUnixBig> token_updates = 1; // key is UnknownEncodedAddress
+}
+
+// Helper message types
+message MessageTokenID {
+  uint64 seq_nr = 1;
+  int32 index = 2;
+}
+
+message TokenInfo {
+  string aggregator_address = 1; // UnknownEncodedAddress
+  BigInt deviation_ppb = 2;
+  uint32 decimals = 3;
 }

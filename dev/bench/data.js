@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757596278446,
+  "lastUpdate": 1757689354700,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25200,6 +25200,48 @@ window.BENCHMARK_DATA = {
             "value": 26973,
             "unit": "ns/op",
             "extra": "44992 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e42c90b532e756b9888e053bba1153aa6848f14",
+          "message": "fix engine not timing out as ctx incorrectly commented out (#1546)",
+          "timestamp": "2025-09-12T15:01:29Z",
+          "tree_id": "214c3c9098391e3a2420be80a4f0f21c64511df4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4e42c90b532e756b9888e053bba1153aa6848f14"
+        },
+        "date": 1757689353593,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.1,
+            "unit": "ns/op",
+            "extra": "3355740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.8,
+            "unit": "ns/op",
+            "extra": "2964126 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26652,
+            "unit": "ns/op",
+            "extra": "44995 times\n4 procs"
           }
         ]
       }

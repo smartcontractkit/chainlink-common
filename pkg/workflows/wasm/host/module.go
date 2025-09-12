@@ -523,10 +523,8 @@ func runWasm[I, O proto.Message](
 
 	donSeed := int64(h.Sum64())
 
-	_ = ctxWithTimeout
 	exec := &execution[O]{
-		//ctx:                 ctxWithTimeout,
-		ctx:                 ctx,
+		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
 		module:              m,

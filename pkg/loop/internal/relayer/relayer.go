@@ -294,12 +294,13 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 		persistedSyncs := ccipProvider.GetSyncRequests()
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
-				ExternalJobID:        cargs.ExternalJobID[:],
-				ContractReaderConfig: cargs.ContractReaderConfig,
-				ChainWriterConfig:    cargs.ChainWriterConfig,
-				OffRampAddress:       cargs.OffRampAddress,
-				PluginType:           cargs.PluginType,
-				SyncedAddresses:      persistedSyncs,
+				ExternalJobID:            cargs.ExternalJobID[:],
+				ContractReaderConfig:     cargs.ContractReaderConfig,
+				ChainWriterConfig:        cargs.ChainWriterConfig,
+				OffRampAddress:           cargs.OffRampAddress,
+				PluginType:               cargs.PluginType,
+				SyncedAddresses:          persistedSyncs,
+				ExtraDataCodecRegistryID: cargs.ExtraDataCodecRegistryID,
 			},
 		})
 		if err != nil {
@@ -727,11 +728,12 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
 	}
 	ccipProviderArgs := types.CCIPProviderArgs{
-		ExternalJobID:        exJobID,
-		ContractReaderConfig: rargs.ContractReaderConfig,
-		ChainWriterConfig:    rargs.ChainWriterConfig,
-		OffRampAddress:       rargs.OffRampAddress,
-		PluginType:           rargs.PluginType,
+		ExternalJobID:            exJobID,
+		ContractReaderConfig:     rargs.ContractReaderConfig,
+		ChainWriterConfig:        rargs.ChainWriterConfig,
+		OffRampAddress:           rargs.OffRampAddress,
+		PluginType:               rargs.PluginType,
+		ExtraDataCodecRegistryID: rargs.ExtraDataCodecRegistryID,
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)

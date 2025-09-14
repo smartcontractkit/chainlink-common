@@ -32,6 +32,13 @@ service SourceChainExtraDataCodec {
   rpc DecodeDestExecDataToMap(DecodeDestExecDataToMapRequest) returns (DecodeDestExecDataToMapResponse);
 }
 
+// ExtraDataCodecRegistryService maintains a registry of SourceChainExtraDataCodec instances by chain family
+service ExtraDataCodecRegistryService {
+  rpc RegisterChainFamily(RegisterChainFamilyRequest) returns (RegisterChainFamilyResponse);
+  rpc SetSourceChainCodec(SetSourceChainCodecRequest) returns (SetSourceChainCodecResponse);
+  rpc GetExtraDataCodec(GetExtraDataCodecRequest) returns (GetExtraDataCodecResponse);
+}
+
 // ChainSpecificAddressCodec messages
 message AddressBytesToStringRequest {
   bytes address = 1;
@@ -125,5 +132,31 @@ message ChainReport {
 // MessageOffchainTokenData maintains the per-message token data mapping
 message MessageOffchainTokenData {
   repeated bytes token_data = 1;  // All tokens for this specific message
+}
+
+// ExtraDataCodecRegistryService messages
+message RegisterChainFamilyRequest {
+  string chain_family = 1;
+}
+
+message RegisterChainFamilyResponse {
+  // Empty response
+}
+
+message SetSourceChainCodecRequest {
+  string chain_family = 1;
+  uint32 codec_id = 2; // ID of the SourceChainExtraDataCodec service
+}
+
+message SetSourceChainCodecResponse {
+  // Empty response
+}
+
+message GetExtraDataCodecRequest {
+  // Empty request
+}
+
+message GetExtraDataCodecResponse {
+  map<string, uint32> codec_map = 1; // map[chain_family]codec_id
 }
 

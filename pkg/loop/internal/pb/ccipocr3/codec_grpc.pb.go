@@ -633,3 +633,186 @@ var SourceChainExtraDataCodec_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "codec.proto",
 }
+
+const (
+	ExtraDataCodecRegistryService_RegisterChainFamily_FullMethodName = "/loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService/RegisterChainFamily"
+	ExtraDataCodecRegistryService_SetSourceChainCodec_FullMethodName = "/loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService/SetSourceChainCodec"
+	ExtraDataCodecRegistryService_GetExtraDataCodec_FullMethodName   = "/loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService/GetExtraDataCodec"
+)
+
+// ExtraDataCodecRegistryServiceClient is the client API for ExtraDataCodecRegistryService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ExtraDataCodecRegistryService maintains a registry of SourceChainExtraDataCodec instances by chain family
+type ExtraDataCodecRegistryServiceClient interface {
+	RegisterChainFamily(ctx context.Context, in *RegisterChainFamilyRequest, opts ...grpc.CallOption) (*RegisterChainFamilyResponse, error)
+	SetSourceChainCodec(ctx context.Context, in *SetSourceChainCodecRequest, opts ...grpc.CallOption) (*SetSourceChainCodecResponse, error)
+	GetExtraDataCodec(ctx context.Context, in *GetExtraDataCodecRequest, opts ...grpc.CallOption) (*GetExtraDataCodecResponse, error)
+}
+
+type extraDataCodecRegistryServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewExtraDataCodecRegistryServiceClient(cc grpc.ClientConnInterface) ExtraDataCodecRegistryServiceClient {
+	return &extraDataCodecRegistryServiceClient{cc}
+}
+
+func (c *extraDataCodecRegistryServiceClient) RegisterChainFamily(ctx context.Context, in *RegisterChainFamilyRequest, opts ...grpc.CallOption) (*RegisterChainFamilyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterChainFamilyResponse)
+	err := c.cc.Invoke(ctx, ExtraDataCodecRegistryService_RegisterChainFamily_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *extraDataCodecRegistryServiceClient) SetSourceChainCodec(ctx context.Context, in *SetSourceChainCodecRequest, opts ...grpc.CallOption) (*SetSourceChainCodecResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetSourceChainCodecResponse)
+	err := c.cc.Invoke(ctx, ExtraDataCodecRegistryService_SetSourceChainCodec_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *extraDataCodecRegistryServiceClient) GetExtraDataCodec(ctx context.Context, in *GetExtraDataCodecRequest, opts ...grpc.CallOption) (*GetExtraDataCodecResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetExtraDataCodecResponse)
+	err := c.cc.Invoke(ctx, ExtraDataCodecRegistryService_GetExtraDataCodec_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ExtraDataCodecRegistryServiceServer is the server API for ExtraDataCodecRegistryService service.
+// All implementations must embed UnimplementedExtraDataCodecRegistryServiceServer
+// for forward compatibility.
+//
+// ExtraDataCodecRegistryService maintains a registry of SourceChainExtraDataCodec instances by chain family
+type ExtraDataCodecRegistryServiceServer interface {
+	RegisterChainFamily(context.Context, *RegisterChainFamilyRequest) (*RegisterChainFamilyResponse, error)
+	SetSourceChainCodec(context.Context, *SetSourceChainCodecRequest) (*SetSourceChainCodecResponse, error)
+	GetExtraDataCodec(context.Context, *GetExtraDataCodecRequest) (*GetExtraDataCodecResponse, error)
+	mustEmbedUnimplementedExtraDataCodecRegistryServiceServer()
+}
+
+// UnimplementedExtraDataCodecRegistryServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedExtraDataCodecRegistryServiceServer struct{}
+
+func (UnimplementedExtraDataCodecRegistryServiceServer) RegisterChainFamily(context.Context, *RegisterChainFamilyRequest) (*RegisterChainFamilyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterChainFamily not implemented")
+}
+func (UnimplementedExtraDataCodecRegistryServiceServer) SetSourceChainCodec(context.Context, *SetSourceChainCodecRequest) (*SetSourceChainCodecResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSourceChainCodec not implemented")
+}
+func (UnimplementedExtraDataCodecRegistryServiceServer) GetExtraDataCodec(context.Context, *GetExtraDataCodecRequest) (*GetExtraDataCodecResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExtraDataCodec not implemented")
+}
+func (UnimplementedExtraDataCodecRegistryServiceServer) mustEmbedUnimplementedExtraDataCodecRegistryServiceServer() {
+}
+func (UnimplementedExtraDataCodecRegistryServiceServer) testEmbeddedByValue() {}
+
+// UnsafeExtraDataCodecRegistryServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ExtraDataCodecRegistryServiceServer will
+// result in compilation errors.
+type UnsafeExtraDataCodecRegistryServiceServer interface {
+	mustEmbedUnimplementedExtraDataCodecRegistryServiceServer()
+}
+
+func RegisterExtraDataCodecRegistryServiceServer(s grpc.ServiceRegistrar, srv ExtraDataCodecRegistryServiceServer) {
+	// If the following call pancis, it indicates UnimplementedExtraDataCodecRegistryServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ExtraDataCodecRegistryService_ServiceDesc, srv)
+}
+
+func _ExtraDataCodecRegistryService_RegisterChainFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterChainFamilyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExtraDataCodecRegistryServiceServer).RegisterChainFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExtraDataCodecRegistryService_RegisterChainFamily_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExtraDataCodecRegistryServiceServer).RegisterChainFamily(ctx, req.(*RegisterChainFamilyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExtraDataCodecRegistryService_SetSourceChainCodec_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSourceChainCodecRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExtraDataCodecRegistryServiceServer).SetSourceChainCodec(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExtraDataCodecRegistryService_SetSourceChainCodec_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExtraDataCodecRegistryServiceServer).SetSourceChainCodec(ctx, req.(*SetSourceChainCodecRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExtraDataCodecRegistryService_GetExtraDataCodec_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExtraDataCodecRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExtraDataCodecRegistryServiceServer).GetExtraDataCodec(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExtraDataCodecRegistryService_GetExtraDataCodec_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExtraDataCodecRegistryServiceServer).GetExtraDataCodec(ctx, req.(*GetExtraDataCodecRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ExtraDataCodecRegistryService_ServiceDesc is the grpc.ServiceDesc for ExtraDataCodecRegistryService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ExtraDataCodecRegistryService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService",
+	HandlerType: (*ExtraDataCodecRegistryServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RegisterChainFamily",
+			Handler:    _ExtraDataCodecRegistryService_RegisterChainFamily_Handler,
+		},
+		{
+			MethodName: "SetSourceChainCodec",
+			Handler:    _ExtraDataCodecRegistryService_SetSourceChainCodec_Handler,
+		},
+		{
+			MethodName: "GetExtraDataCodec",
+			Handler:    _ExtraDataCodecRegistryService_GetExtraDataCodec_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "codec.proto",
+}

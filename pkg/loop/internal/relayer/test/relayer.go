@@ -315,11 +315,12 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 
 func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	ccipProviderArgs := types.CCIPProviderArgs{
-		ExternalJobID:        s.relayArgs.ExternalJobID,
-		ContractReaderConfig: s.contractReaderConfig,
-		ChainWriterConfig:    s.chainWriterConfig,
-		OffRampAddress:       s.offRampAddress,
-		PluginType:           s.pluginType,
+		ExternalJobID:            s.relayArgs.ExternalJobID,
+		ContractReaderConfig:     s.contractReaderConfig,
+		ChainWriterConfig:        s.chainWriterConfig,
+		OffRampAddress:           s.offRampAddress,
+		PluginType:               s.pluginType,
+		ExtraDataCodecRegistryID: 0, // Default value for tests
 	}
 	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
@@ -478,7 +479,8 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
 		a.OffRampAddress == b.OffRampAddress &&
-		a.PluginType == b.PluginType
+		a.PluginType == b.PluginType &&
+		a.ExtraDataCodecRegistryID == b.ExtraDataCodecRegistryID
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

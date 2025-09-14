@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 )
 
@@ -588,4 +589,161 @@ func pbToExecutePluginReport(pb *ccipocr3pb.ExecutePluginReport) ccipocr3.Execut
 	return ccipocr3.ExecutePluginReport{
 		ChainReports: chainReports,
 	}
+}
+
+// ExtraDataCodecRegistryService client
+var _ types.ExtraDataCodecRegistryService = (*extraDataCodecRegistryServiceClient)(nil)
+
+type extraDataCodecRegistryServiceClient struct {
+	*net.BrokerExt
+	grpc ccipocr3pb.ExtraDataCodecRegistryServiceClient
+}
+
+func NewExtraDataCodecRegistryServiceClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) types.ExtraDataCodecRegistryService {
+	return &extraDataCodecRegistryServiceClient{
+		BrokerExt: broker,
+		grpc:      ccipocr3pb.NewExtraDataCodecRegistryServiceClient(cc),
+	}
+}
+
+func (c *extraDataCodecRegistryServiceClient) Start(ctx context.Context) error {
+	// The client doesn't need to start anything specific, the gRPC connection is managed by the broker
+	return nil
+}
+
+func (c *extraDataCodecRegistryServiceClient) Close() error {
+	// The gRPC connection is managed by the broker, we don't need to close anything specific
+	return nil
+}
+
+func (c *extraDataCodecRegistryServiceClient) Ready() error {
+	// Check if the gRPC client is ready by making a simple call
+	_, err := c.grpc.GetExtraDataCodec(context.Background(), &ccipocr3pb.GetExtraDataCodecRequest{})
+	if err != nil {
+		return fmt.Errorf("extraDataCodecRegistryServiceClient not ready: %w", err)
+	}
+	return nil
+}
+
+func (c *extraDataCodecRegistryServiceClient) HealthReport() map[string]error {
+	hr := make(map[string]error)
+	hr[c.Name()] = c.Ready()
+	return hr
+}
+
+func (c *extraDataCodecRegistryServiceClient) Name() string {
+	return "ExtraDataCodecRegistryServiceClient"
+}
+
+func (c *extraDataCodecRegistryServiceClient) RegisterChainFamily(chainFamily string) {
+	_, _ = c.grpc.RegisterChainFamily(context.Background(), &ccipocr3pb.RegisterChainFamilyRequest{
+		ChainFamily: chainFamily,
+	})
+}
+
+func (c *extraDataCodecRegistryServiceClient) SetSourceChainCodec(chainFamily string, codec ccipocr3.SourceChainExtraDataCodec) {
+	codecID, _, err := c.ServeNew("SourceChainExtraDataCodec", func(s *grpc.Server) {
+		ccipocr3pb.RegisterSourceChainExtraDataCodecServer(s, NewSourceChainExtraDataCodecServer(codec))
+	})
+	if err != nil {
+		c.Logger.Errorw("Failed to serve SourceChainExtraDataCodec", "error", err)
+		return
+	}
+
+	_, _ = c.grpc.SetSourceChainCodec(context.Background(), &ccipocr3pb.SetSourceChainCodecRequest{
+		ChainFamily: chainFamily,
+		CodecId:     codecID,
+	})
+}
+
+func (c *extraDataCodecRegistryServiceClient) GetExtraDataCodec() (ccipocr3.ExtraDataCodec, error) {
+	resp, err := c.grpc.GetExtraDataCodec(context.Background(), &ccipocr3pb.GetExtraDataCodecRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the map of codec IDs to actual codec instances
+	extraDataCodec := make(ccipocr3.ExtraDataCodec)
+	for chainFamily, codecID := range resp.CodecMap {
+		// Connect to the codec service
+		conn, err := c.Dial(codecID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial codec %d for chain family %s: %w", codecID, chainFamily, err)
+		}
+
+		codec := NewSourceChainExtraDataCodecClient(c.WithName("SourceChainExtraDataCodec"), conn)
+		extraDataCodec[chainFamily] = codec
+	}
+
+	return extraDataCodec, nil
+}
+
+// ExtraDataCodecRegistryService server
+var _ ccipocr3pb.ExtraDataCodecRegistryServiceServer = (*extraDataCodecRegistryServiceServer)(nil)
+
+type extraDataCodecRegistryServiceServer struct {
+	ccipocr3pb.UnimplementedExtraDataCodecRegistryServiceServer
+	impl       types.ExtraDataCodecRegistryService
+	broker     *net.BrokerExt
+	codecIDMap map[string]uint32 // chainFamily -> codecID
+}
+
+func NewExtraDataCodecRegistryServiceServer(impl types.ExtraDataCodecRegistryService, broker *net.BrokerExt) ccipocr3pb.ExtraDataCodecRegistryServiceServer {
+	return &extraDataCodecRegistryServiceServer{
+		impl:       impl,
+		broker:     broker,
+		codecIDMap: make(map[string]uint32),
+	}
+}
+
+func (s *extraDataCodecRegistryServiceServer) RegisterChainFamily(ctx context.Context, req *ccipocr3pb.RegisterChainFamilyRequest) (*ccipocr3pb.RegisterChainFamilyResponse, error) {
+	s.impl.RegisterChainFamily(req.ChainFamily)
+	return &ccipocr3pb.RegisterChainFamilyResponse{}, nil
+}
+
+func (s *extraDataCodecRegistryServiceServer) SetSourceChainCodec(ctx context.Context, req *ccipocr3pb.SetSourceChainCodecRequest) (*ccipocr3pb.SetSourceChainCodecResponse, error) {
+	// Get the codec instance from the broker using the provided ID
+	conn, err := s.broker.Dial(req.CodecId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial codec %d: %w", req.CodecId, err)
+	}
+
+	// Create a client for the codec
+	codecClient := NewSourceChainExtraDataCodecClient(s.broker.WithName("SourceChainExtraDataCodec"), conn)
+
+	// Store the mapping and call the underlying implementation
+	s.codecIDMap[req.ChainFamily] = req.CodecId
+	s.impl.SetSourceChainCodec(req.ChainFamily, codecClient)
+
+	return &ccipocr3pb.SetSourceChainCodecResponse{}, nil
+}
+
+func (s *extraDataCodecRegistryServiceServer) GetExtraDataCodec(ctx context.Context, req *ccipocr3pb.GetExtraDataCodecRequest) (*ccipocr3pb.GetExtraDataCodecResponse, error) {
+	extraDataCodec, err := s.impl.GetExtraDataCodec()
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the codec map to a map of codec IDs
+	codecMap := make(map[string]uint32)
+	for chainFamily, codec := range extraDataCodec {
+		// Check if we already have an ID for this chain family
+		if codecID, exists := s.codecIDMap[chainFamily]; exists {
+			codecMap[chainFamily] = codecID
+		} else {
+			// Serve the codec and store its ID
+			codecID, _, err := s.broker.ServeNew("SourceChainExtraDataCodec", func(grpcServer *grpc.Server) {
+				ccipocr3pb.RegisterSourceChainExtraDataCodecServer(grpcServer, NewSourceChainExtraDataCodecServer(codec))
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to serve codec for chain family %s: %w", chainFamily, err)
+			}
+			s.codecIDMap[chainFamily] = codecID
+			codecMap[chainFamily] = codecID
+		}
+	}
+
+	return &ccipocr3pb.GetExtraDataCodecResponse{
+		CodecMap: codecMap,
+	}, nil
 }

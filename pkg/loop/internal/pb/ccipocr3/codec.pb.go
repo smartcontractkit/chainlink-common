@@ -992,6 +992,255 @@ func (x *MessageOffchainTokenData) GetTokenData() [][]byte {
 	return nil
 }
 
+// ExtraDataCodecRegistryService messages
+type RegisterChainFamilyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChainFamily   string                 `protobuf:"bytes,1,opt,name=chain_family,json=chainFamily,proto3" json:"chain_family,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterChainFamilyRequest) Reset() {
+	*x = RegisterChainFamilyRequest{}
+	mi := &file_codec_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterChainFamilyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterChainFamilyRequest) ProtoMessage() {}
+
+func (x *RegisterChainFamilyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codec_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterChainFamilyRequest.ProtoReflect.Descriptor instead.
+func (*RegisterChainFamilyRequest) Descriptor() ([]byte, []int) {
+	return file_codec_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *RegisterChainFamilyRequest) GetChainFamily() string {
+	if x != nil {
+		return x.ChainFamily
+	}
+	return ""
+}
+
+type RegisterChainFamilyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterChainFamilyResponse) Reset() {
+	*x = RegisterChainFamilyResponse{}
+	mi := &file_codec_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterChainFamilyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterChainFamilyResponse) ProtoMessage() {}
+
+func (x *RegisterChainFamilyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codec_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterChainFamilyResponse.ProtoReflect.Descriptor instead.
+func (*RegisterChainFamilyResponse) Descriptor() ([]byte, []int) {
+	return file_codec_proto_rawDescGZIP(), []int{22}
+}
+
+type SetSourceChainCodecRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChainFamily   string                 `protobuf:"bytes,1,opt,name=chain_family,json=chainFamily,proto3" json:"chain_family,omitempty"`
+	CodecId       uint32                 `protobuf:"varint,2,opt,name=codec_id,json=codecId,proto3" json:"codec_id,omitempty"` // ID of the SourceChainExtraDataCodec service
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSourceChainCodecRequest) Reset() {
+	*x = SetSourceChainCodecRequest{}
+	mi := &file_codec_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSourceChainCodecRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSourceChainCodecRequest) ProtoMessage() {}
+
+func (x *SetSourceChainCodecRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codec_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSourceChainCodecRequest.ProtoReflect.Descriptor instead.
+func (*SetSourceChainCodecRequest) Descriptor() ([]byte, []int) {
+	return file_codec_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *SetSourceChainCodecRequest) GetChainFamily() string {
+	if x != nil {
+		return x.ChainFamily
+	}
+	return ""
+}
+
+func (x *SetSourceChainCodecRequest) GetCodecId() uint32 {
+	if x != nil {
+		return x.CodecId
+	}
+	return 0
+}
+
+type SetSourceChainCodecResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSourceChainCodecResponse) Reset() {
+	*x = SetSourceChainCodecResponse{}
+	mi := &file_codec_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSourceChainCodecResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSourceChainCodecResponse) ProtoMessage() {}
+
+func (x *SetSourceChainCodecResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codec_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSourceChainCodecResponse.ProtoReflect.Descriptor instead.
+func (*SetSourceChainCodecResponse) Descriptor() ([]byte, []int) {
+	return file_codec_proto_rawDescGZIP(), []int{24}
+}
+
+type GetExtraDataCodecRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetExtraDataCodecRequest) Reset() {
+	*x = GetExtraDataCodecRequest{}
+	mi := &file_codec_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetExtraDataCodecRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetExtraDataCodecRequest) ProtoMessage() {}
+
+func (x *GetExtraDataCodecRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codec_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetExtraDataCodecRequest.ProtoReflect.Descriptor instead.
+func (*GetExtraDataCodecRequest) Descriptor() ([]byte, []int) {
+	return file_codec_proto_rawDescGZIP(), []int{25}
+}
+
+type GetExtraDataCodecResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CodecMap      map[string]uint32      `protobuf:"bytes,1,rep,name=codec_map,json=codecMap,proto3" json:"codec_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // map[chain_family]codec_id
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetExtraDataCodecResponse) Reset() {
+	*x = GetExtraDataCodecResponse{}
+	mi := &file_codec_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetExtraDataCodecResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetExtraDataCodecResponse) ProtoMessage() {}
+
+func (x *GetExtraDataCodecResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codec_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetExtraDataCodecResponse.ProtoReflect.Descriptor instead.
+func (*GetExtraDataCodecResponse) Descriptor() ([]byte, []int) {
+	return file_codec_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *GetExtraDataCodecResponse) GetCodecMap() map[string]uint32 {
+	if x != nil {
+		return x.CodecMap
+	}
+	return nil
+}
+
 var File_codec_proto protoreflect.FileDescriptor
 
 const file_codec_proto_rawDesc = "" +
@@ -1047,7 +1296,20 @@ const file_codec_proto_rawDesc = "" +
 	"\x0fproof_flag_bits\x18\x05 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\rproofFlagBits\"9\n" +
 	"\x18MessageOffchainTokenData\x12\x1d\n" +
 	"\n" +
-	"token_data\x18\x01 \x03(\fR\ttokenData2\xd5\x04\n" +
+	"token_data\x18\x01 \x03(\fR\ttokenData\"?\n" +
+	"\x1aRegisterChainFamilyRequest\x12!\n" +
+	"\fchain_family\x18\x01 \x01(\tR\vchainFamily\"\x1d\n" +
+	"\x1bRegisterChainFamilyResponse\"Z\n" +
+	"\x1aSetSourceChainCodecRequest\x12!\n" +
+	"\fchain_family\x18\x01 \x01(\tR\vchainFamily\x12\x19\n" +
+	"\bcodec_id\x18\x02 \x01(\rR\acodecId\"\x1d\n" +
+	"\x1bSetSourceChainCodecResponse\"\x1a\n" +
+	"\x18GetExtraDataCodecRequest\"\xb9\x01\n" +
+	"\x19GetExtraDataCodecResponse\x12_\n" +
+	"\tcodec_map\x18\x01 \x03(\v2B.loop.internal.pb.ccipocr3.GetExtraDataCodecResponse.CodecMapEntryR\bcodecMap\x1a;\n" +
+	"\rCodecMapEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x012\xd5\x04\n" +
 	"\x19ChainSpecificAddressCodec\x12\x87\x01\n" +
 	"\x14AddressBytesToString\x126.loop.internal.pb.ccipocr3.AddressBytesToStringRequest\x1a7.loop.internal.pb.ccipocr3.AddressBytesToStringResponse\x12\x87\x01\n" +
 	"\x14AddressStringToBytes\x126.loop.internal.pb.ccipocr3.AddressStringToBytesRequest\x1a7.loop.internal.pb.ccipocr3.AddressStringToBytesResponse\x12\x8d\x01\n" +
@@ -1061,7 +1323,11 @@ const file_codec_proto_rawDesc = "" +
 	"EncodeUSDC\x12,.loop.internal.pb.ccipocr3.EncodeUSDCRequest\x1a-.loop.internal.pb.ccipocr3.EncodeUSDCResponse2\xb8\x02\n" +
 	"\x19SourceChainExtraDataCodec\x12\x87\x01\n" +
 	"\x14DecodeExtraArgsToMap\x126.loop.internal.pb.ccipocr3.DecodeExtraArgsToMapRequest\x1a7.loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse\x12\x90\x01\n" +
-	"\x17DecodeDestExecDataToMap\x129.loop.internal.pb.ccipocr3.DecodeDestExecDataToMapRequest\x1a:.loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponseBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pbb\x06proto3"
+	"\x17DecodeDestExecDataToMap\x129.loop.internal.pb.ccipocr3.DecodeDestExecDataToMapRequest\x1a:.loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse2\xad\x03\n" +
+	"\x1dExtraDataCodecRegistryService\x12\x84\x01\n" +
+	"\x13RegisterChainFamily\x125.loop.internal.pb.ccipocr3.RegisterChainFamilyRequest\x1a6.loop.internal.pb.ccipocr3.RegisterChainFamilyResponse\x12\x84\x01\n" +
+	"\x13SetSourceChainCodec\x125.loop.internal.pb.ccipocr3.SetSourceChainCodecRequest\x1a6.loop.internal.pb.ccipocr3.SetSourceChainCodecResponse\x12~\n" +
+	"\x11GetExtraDataCodec\x123.loop.internal.pb.ccipocr3.GetExtraDataCodecRequest\x1a4.loop.internal.pb.ccipocr3.GetExtraDataCodecResponseBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3;ccipocr3pbb\x06proto3"
 
 var (
 	file_codec_proto_rawDescOnce sync.Once
@@ -1075,7 +1341,7 @@ func file_codec_proto_rawDescGZIP() []byte {
 	return file_codec_proto_rawDescData
 }
 
-var file_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_codec_proto_goTypes = []any{
 	(*AddressBytesToStringRequest)(nil),       // 0: loop.internal.pb.ccipocr3.AddressBytesToStringRequest
 	(*AddressBytesToStringResponse)(nil),      // 1: loop.internal.pb.ccipocr3.AddressBytesToStringResponse
@@ -1098,42 +1364,56 @@ var file_codec_proto_goTypes = []any{
 	(*ExecutePluginReport)(nil),               // 18: loop.internal.pb.ccipocr3.ExecutePluginReport
 	(*ChainReport)(nil),                       // 19: loop.internal.pb.ccipocr3.ChainReport
 	(*MessageOffchainTokenData)(nil),          // 20: loop.internal.pb.ccipocr3.MessageOffchainTokenData
-	(*pb.Map)(nil),                            // 21: values.v1.Map
-	(*Message)(nil),                           // 22: loop.internal.pb.ccipocr3.Message
-	(*BigInt)(nil),                            // 23: loop.internal.pb.ccipocr3.BigInt
+	(*RegisterChainFamilyRequest)(nil),        // 21: loop.internal.pb.ccipocr3.RegisterChainFamilyRequest
+	(*RegisterChainFamilyResponse)(nil),       // 22: loop.internal.pb.ccipocr3.RegisterChainFamilyResponse
+	(*SetSourceChainCodecRequest)(nil),        // 23: loop.internal.pb.ccipocr3.SetSourceChainCodecRequest
+	(*SetSourceChainCodecResponse)(nil),       // 24: loop.internal.pb.ccipocr3.SetSourceChainCodecResponse
+	(*GetExtraDataCodecRequest)(nil),          // 25: loop.internal.pb.ccipocr3.GetExtraDataCodecRequest
+	(*GetExtraDataCodecResponse)(nil),         // 26: loop.internal.pb.ccipocr3.GetExtraDataCodecResponse
+	nil,                                       // 27: loop.internal.pb.ccipocr3.GetExtraDataCodecResponse.CodecMapEntry
+	(*pb.Map)(nil),                            // 28: values.v1.Map
+	(*Message)(nil),                           // 29: loop.internal.pb.ccipocr3.Message
+	(*BigInt)(nil),                            // 30: loop.internal.pb.ccipocr3.BigInt
 }
 var file_codec_proto_depIdxs = []int32{
 	18, // 0: loop.internal.pb.ccipocr3.EncodeExecutePluginReportRequest.report:type_name -> loop.internal.pb.ccipocr3.ExecutePluginReport
 	18, // 1: loop.internal.pb.ccipocr3.DecodeExecutePluginReportResponse.report:type_name -> loop.internal.pb.ccipocr3.ExecutePluginReport
-	21, // 2: loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse.decoded_map:type_name -> values.v1.Map
-	21, // 3: loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse.decoded_map:type_name -> values.v1.Map
+	28, // 2: loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse.decoded_map:type_name -> values.v1.Map
+	28, // 3: loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse.decoded_map:type_name -> values.v1.Map
 	19, // 4: loop.internal.pb.ccipocr3.ExecutePluginReport.chain_reports:type_name -> loop.internal.pb.ccipocr3.ChainReport
-	22, // 5: loop.internal.pb.ccipocr3.ChainReport.messages:type_name -> loop.internal.pb.ccipocr3.Message
+	29, // 5: loop.internal.pb.ccipocr3.ChainReport.messages:type_name -> loop.internal.pb.ccipocr3.Message
 	20, // 6: loop.internal.pb.ccipocr3.ChainReport.offchain_token_data:type_name -> loop.internal.pb.ccipocr3.MessageOffchainTokenData
-	23, // 7: loop.internal.pb.ccipocr3.ChainReport.proof_flag_bits:type_name -> loop.internal.pb.ccipocr3.BigInt
-	0,  // 8: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:input_type -> loop.internal.pb.ccipocr3.AddressBytesToStringRequest
-	2,  // 9: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:input_type -> loop.internal.pb.ccipocr3.AddressStringToBytesRequest
-	4,  // 10: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:input_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesRequest
-	6,  // 11: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:input_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringRequest
-	8,  // 12: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:input_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportRequest
-	10, // 13: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:input_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportRequest
-	12, // 14: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:input_type -> loop.internal.pb.ccipocr3.EncodeUSDCRequest
-	14, // 15: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:input_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapRequest
-	16, // 16: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:input_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapRequest
-	1,  // 17: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:output_type -> loop.internal.pb.ccipocr3.AddressBytesToStringResponse
-	3,  // 18: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:output_type -> loop.internal.pb.ccipocr3.AddressStringToBytesResponse
-	5,  // 19: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:output_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesResponse
-	7,  // 20: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:output_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringResponse
-	9,  // 21: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:output_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportResponse
-	11, // 22: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:output_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportResponse
-	13, // 23: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:output_type -> loop.internal.pb.ccipocr3.EncodeUSDCResponse
-	15, // 24: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:output_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse
-	17, // 25: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:output_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse
-	17, // [17:26] is the sub-list for method output_type
-	8,  // [8:17] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	30, // 7: loop.internal.pb.ccipocr3.ChainReport.proof_flag_bits:type_name -> loop.internal.pb.ccipocr3.BigInt
+	27, // 8: loop.internal.pb.ccipocr3.GetExtraDataCodecResponse.codec_map:type_name -> loop.internal.pb.ccipocr3.GetExtraDataCodecResponse.CodecMapEntry
+	0,  // 9: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:input_type -> loop.internal.pb.ccipocr3.AddressBytesToStringRequest
+	2,  // 10: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:input_type -> loop.internal.pb.ccipocr3.AddressStringToBytesRequest
+	4,  // 11: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:input_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesRequest
+	6,  // 12: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:input_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringRequest
+	8,  // 13: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:input_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportRequest
+	10, // 14: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:input_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportRequest
+	12, // 15: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:input_type -> loop.internal.pb.ccipocr3.EncodeUSDCRequest
+	14, // 16: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:input_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapRequest
+	16, // 17: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:input_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapRequest
+	21, // 18: loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService.RegisterChainFamily:input_type -> loop.internal.pb.ccipocr3.RegisterChainFamilyRequest
+	23, // 19: loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService.SetSourceChainCodec:input_type -> loop.internal.pb.ccipocr3.SetSourceChainCodecRequest
+	25, // 20: loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService.GetExtraDataCodec:input_type -> loop.internal.pb.ccipocr3.GetExtraDataCodecRequest
+	1,  // 21: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressBytesToString:output_type -> loop.internal.pb.ccipocr3.AddressBytesToStringResponse
+	3,  // 22: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.AddressStringToBytes:output_type -> loop.internal.pb.ccipocr3.AddressStringToBytesResponse
+	5,  // 23: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.OracleIDAsAddressBytes:output_type -> loop.internal.pb.ccipocr3.OracleIDAsAddressBytesResponse
+	7,  // 24: loop.internal.pb.ccipocr3.ChainSpecificAddressCodec.TransmitterBytesToString:output_type -> loop.internal.pb.ccipocr3.TransmitterBytesToStringResponse
+	9,  // 25: loop.internal.pb.ccipocr3.ExecutePluginCodec.Encode:output_type -> loop.internal.pb.ccipocr3.EncodeExecutePluginReportResponse
+	11, // 26: loop.internal.pb.ccipocr3.ExecutePluginCodec.Decode:output_type -> loop.internal.pb.ccipocr3.DecodeExecutePluginReportResponse
+	13, // 27: loop.internal.pb.ccipocr3.TokenDataEncoder.EncodeUSDC:output_type -> loop.internal.pb.ccipocr3.EncodeUSDCResponse
+	15, // 28: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeExtraArgsToMap:output_type -> loop.internal.pb.ccipocr3.DecodeExtraArgsToMapResponse
+	17, // 29: loop.internal.pb.ccipocr3.SourceChainExtraDataCodec.DecodeDestExecDataToMap:output_type -> loop.internal.pb.ccipocr3.DecodeDestExecDataToMapResponse
+	22, // 30: loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService.RegisterChainFamily:output_type -> loop.internal.pb.ccipocr3.RegisterChainFamilyResponse
+	24, // 31: loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService.SetSourceChainCodec:output_type -> loop.internal.pb.ccipocr3.SetSourceChainCodecResponse
+	26, // 32: loop.internal.pb.ccipocr3.ExtraDataCodecRegistryService.GetExtraDataCodec:output_type -> loop.internal.pb.ccipocr3.GetExtraDataCodecResponse
+	21, // [21:33] is the sub-list for method output_type
+	9,  // [9:21] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_codec_proto_init() }
@@ -1148,9 +1428,9 @@ func file_codec_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codec_proto_rawDesc), len(file_codec_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   28,
 			NumExtensions: 0,
-			NumServices:   4,
+			NumServices:   5,
 		},
 		GoTypes:           file_codec_proto_goTypes,
 		DependencyIndexes: file_codec_proto_depIdxs,

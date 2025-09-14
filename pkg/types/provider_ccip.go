@@ -59,9 +59,24 @@ type CCIPProvider interface {
 // CCIPProviderArgs are the args required to create a CCIP Provider through a Relayer.
 // The are common to all relayer implementations.
 type CCIPProviderArgs struct {
-	ExternalJobID        uuid.UUID
-	ContractReaderConfig []byte
-	ChainWriterConfig    []byte
-	OffRampAddress       string
-	PluginType           uint32
+	ExternalJobID            uuid.UUID
+	ContractReaderConfig     []byte
+	ChainWriterConfig        []byte
+	OffRampAddress           string
+	PluginType               uint32
+	ExtraDataCodecRegistryID uint32
+}
+
+// ExtraDataCodecRegistryService maintains a registry of SourceChainExtraDataCodec instances by chain family.
+// It implements the Service interface and manages the lifecycle of codec registrations.
+type ExtraDataCodecRegistryService interface {
+	services.Service
+	// RegisterChainFamily pre-registers a chain family that will be initialized later.
+	RegisterChainFamily(chainFamily string)
+	// SetSourceChainCodec registers a SourceChainExtraDataCodec for the given chain family
+	// and marks it as initialized.
+	SetSourceChainCodec(chainFamily string, codec ccipocr3.SourceChainExtraDataCodec)
+	// GetExtraDataCodec returns the complete ExtraDataCodec map.
+	// This includes all registered chain families, with no-op codecs for uninitialized ones.
+	GetExtraDataCodec() (ccipocr3.ExtraDataCodec, error)
 }

@@ -49,6 +49,8 @@ type CCIPFactoryGenerator interface {
 	CCIPExecutionFactoryGenerator
 }
 
+// CCIPProvider is a product-specific interface that exposes the necessary components
+// for running CCIP on a specific chain/chain family. It includes access to the ChainAccessor,
 type CCIPProvider interface {
 	services.Service
 	ChainAccessor() ccipocr3.ChainAccessor
@@ -64,4 +66,18 @@ type CCIPProviderArgs struct {
 	ChainWriterConfig    []byte
 	OffRampAddress       string
 	PluginType           uint32
+}
+
+// ExtraDataCodecRegistryService maintains a registry of SourceChainExtraDataCodec instances by chain family.
+// It implements the Service interface and manages the lifecycle of codec registrations.
+type ExtraDataCodecRegistryService interface {
+	services.Service
+	// RegisterChainFamily pre-registers a chain family that will be initialized later.
+	RegisterChainFamily(chainFamily string)
+	// SetSourceChainCodec registers a SourceChainExtraDataCodec for the given chain family
+	// and marks it as initialized.
+	SetSourceChainCodec(chainFamily string, codec ccipocr3.SourceChainExtraDataCodec)
+	// GetExtraDataCodec returns the complete ExtraDataCodec map.
+	// This includes all registered chain families, with no-op codecs for uninitialized ones.
+	GetExtraDataCodec() (ccipocr3.ExtraDataCodec, error)
 }

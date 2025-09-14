@@ -313,7 +313,7 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 	return nil, errors.New("not implemented")
 }
 
-func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs) (types.CCIPProvider, error) {
+func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs, edcs types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
 	ccipProviderArgs := types.CCIPProviderArgs{
 		ExternalJobID:        s.relayArgs.ExternalJobID,
 		ContractReaderConfig: s.contractReaderConfig,

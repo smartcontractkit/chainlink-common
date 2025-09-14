@@ -85,11 +85,11 @@ func (r *RelayerService) NewLLOProvider(ctx context.Context, rargs types.RelayAr
 	return r.Service.NewLLOProvider(ctx, rargs, pargs)
 }
 
-func (r *RelayerService) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+func (r *RelayerService) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs, edcs types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewCCIPProvider(ctx, cargs)
+	return r.Service.NewCCIPProvider(ctx, cargs, edcs)
 }
 
 func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {

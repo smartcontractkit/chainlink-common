@@ -288,7 +288,7 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
-func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs, edcs types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
 	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		persistedSyncs := ccipProvider.GetSyncRequests()
@@ -734,7 +734,7 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		PluginType:           rargs.PluginType,
 	}
 
-	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
+	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs, nil)
 	if err != nil {
 		return nil, err
 	}

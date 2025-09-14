@@ -11,7 +11,7 @@ import (
 
 type PluginRelayer interface {
 	services.Service
-	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
+	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry, edcrs types.ExtraDataCodecRegistryService) (Relayer, error)
 }
 
 type MedianProvider interface {
@@ -58,7 +58,7 @@ type Relayer interface {
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewPluginProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.PluginProvider, error)
 	NewLLOProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.LLOProvider, error)
-	NewCCIPProvider(context.Context, types.CCIPProviderArgs, types.ExtraDataCodecRegistryService) (types.CCIPProvider, error)
+	NewCCIPProvider(context.Context, types.CCIPProviderArgs) (types.CCIPProvider, error)
 }
 
 // Keystore This interface contains all the keystore GRPC functionality, keystore.Keystore is meant to be exposed to consumers and the keystore.Management interface in exposed only to the core node

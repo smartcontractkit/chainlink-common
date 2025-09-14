@@ -22,13 +22,13 @@ type RelayerService struct {
 
 // NewRelayerService returns a new [*RelayerService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
+func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry, edcrs types.ExtraDataCodecRegistryService) *RelayerService {
 	newService := func(ctx context.Context, instance any) (Relayer, services.HealthReporter, error) {
 		plug, ok := instance.(PluginRelayer)
 		if !ok {
 			return nil, nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
 		}
-		r, err := plug.NewRelayer(ctx, config, keystore, csaKeystore, capabilityRegistry)
+		r, err := plug.NewRelayer(ctx, config, keystore, csaKeystore, capabilityRegistry, edcrs)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
 		}
@@ -85,11 +85,11 @@ func (r *RelayerService) NewLLOProvider(ctx context.Context, rargs types.RelayAr
 	return r.Service.NewLLOProvider(ctx, rargs, pargs)
 }
 
-func (r *RelayerService) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs, edcs types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
+func (r *RelayerService) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewCCIPProvider(ctx, cargs, edcs)
+	return r.Service.NewCCIPProvider(ctx, cargs)
 }
 
 func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {

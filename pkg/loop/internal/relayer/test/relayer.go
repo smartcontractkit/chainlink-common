@@ -158,7 +158,7 @@ func (s staticPluginRelayer) HealthReport() map[string]error {
 	return hp
 }
 
-func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
+func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry, edcrs types.ExtraDataCodecRegistryService) (looptypes.Relayer, error) {
 	if s.relayer.StaticChecks && config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -313,7 +313,7 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 	return nil, errors.New("not implemented")
 }
 
-func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs, edcs types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
+func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	ccipProviderArgs := types.CCIPProviderArgs{
 		ExternalJobID:        s.relayArgs.ExternalJobID,
 		ContractReaderConfig: s.contractReaderConfig,
@@ -495,7 +495,7 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 	t.Run("Relayer", func(t *testing.T) {
 		ctx := t.Context()
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil, nil)
 		require.NoError(t, err)
 		servicetest.Run(t, relayer)
 		Run(t, relayer)
@@ -542,7 +542,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.P
 		}
 
 		ctx := t.Context()
-		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, keystore, nil)
+		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, keystore, nil, nil)
 
 		grpcUnavailableErr(t, err)
 	})

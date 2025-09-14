@@ -17,6 +17,7 @@ import (
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/codec"
 	ks "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -49,7 +50,7 @@ func NewPluginRelayerClient(brokerCfg net.BrokerConfig) *PluginRelayerClient {
 	return &PluginRelayerClient{PluginClient: pc, pluginRelayer: pb.NewPluginRelayerClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
+func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry, edcrs types.ExtraDataCodecRegistryService) (looptypes.Relayer, error) {
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (relayerID uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		ksID, ksRes, err := p.ServeNew("Keystore", func(s *grpc.Server) {
@@ -77,11 +78,24 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		deps.Add(capabilityRegistryResource)
 
+		var edcrsID uint32
+		if edcrs != nil {
+			var edcrsRes net.Resource
+			edcrsID, edcrsRes, err = p.ServeNew("ExtraDataCodecRegistryService", func(s *grpc.Server) {
+				pb.RegisterExtraDataCodecRegistryServiceServer(s, codec.NewExtraDataCodecRegistryServer(p.BrokerExt, edcrs))
+			})
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed to serve new extra data codec registry service: %w", err)
+			}
+			deps.Add(edcrsRes)
+		}
+
 		reply, err := p.pluginRelayer.NewRelayer(ctx, &pb.NewRelayerRequest{
-			Config:               config,
-			KeystoreID:           ksID,
-			KeystoreCSAID:        ksCSAID,
-			CapabilityRegistryID: capabilityRegistryID,
+			Config:                          config,
+			KeystoreID:                      ksID,
+			KeystoreCSAID:                   ksCSAID,
+			CapabilityRegistryID:            capabilityRegistryID,
+			ExtraDataCodecRegistryServiceID: edcrsID,
 		})
 		if err != nil {
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
@@ -132,19 +146,44 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	crRes := net.Resource{Closer: capRegistryConn, Name: "CapabilityRegistry"}
 	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
 
-	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), ks.NewClient(ksCSAConn), capRegistry)
+	var edcrs types.ExtraDataCodecRegistryService
+	var edcrsRes net.Resource
+	if request.ExtraDataCodecRegistryServiceID != 0 {
+		edcrsConn, err := p.Dial(request.ExtraDataCodecRegistryServiceID)
+		if err != nil {
+			p.CloseAll(ksRes, ksCSARes, crRes)
+			return nil, net.ErrConnDial{Name: "ExtraDataCodecRegistryService", ID: request.ExtraDataCodecRegistryServiceID, Err: err}
+		}
+		edcrsRes = net.Resource{Closer: edcrsConn, Name: "ExtraDataCodecRegistryService"}
+		edcrs = codec.NewExtraDataCodecRegistryClient(edcrsConn, p.BrokerExt)
+	}
+
+	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), ks.NewClient(ksCSAConn), capRegistry, edcrs)
 	if err != nil {
-		p.CloseAll(ksRes, ksCSARes, crRes)
+		if edcrsRes.Name != "" {
+			p.CloseAll(ksRes, ksCSARes, crRes, edcrsRes)
+		} else {
+			p.CloseAll(ksRes, ksCSARes, crRes)
+		}
 		return nil, err
 	}
 	err = r.Start(ctx)
 	if err != nil {
-		p.CloseAll(ksRes, ksCSARes, crRes)
+		if edcrsRes.Name != "" {
+			p.CloseAll(ksRes, ksCSARes, crRes, edcrsRes)
+		} else {
+			p.CloseAll(ksRes, ksCSARes, crRes)
+		}
 		return nil, err
 	}
 
 	const name = "Relayer"
 	rRes := net.Resource{Closer: r, Name: name}
+	var resources []net.Resource
+	resources = append(resources, rRes, ksRes, ksCSARes, crRes)
+	if edcrsRes.Name != "" {
+		resources = append(resources, edcrsRes)
+	}
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
@@ -154,7 +193,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		if tonService, ok := r.(types.TONService); ok {
 			tonpb.RegisterTONServer(s, newTONServer(tonService, p.BrokerExt))
 		}
-	}, rRes, ksRes, ksCSARes, crRes)
+	}, resources...)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +327,7 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
-func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs, edcs types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
+func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
 		persistedSyncs := ccipProvider.GetSyncRequests()
@@ -734,7 +773,7 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		PluginType:           rargs.PluginType,
 	}
 
-	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs, nil)
+	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
 		return nil, err
 	}

@@ -460,9 +460,9 @@ func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call 
 	return _c
 }
 
-// NewCCIPProvider provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.CCIPProviderArgs, _a2 types.ExtraDataCodecRegistryService) (types.CCIPProvider, error) {
-	ret := _m.Called(_a0, _a1, _a2)
+// NewCCIPProvider provides a mock function with given fields: _a0, _a1
+func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewCCIPProvider")
@@ -470,19 +470,19 @@ func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.CCIPProviderAr
 
 	var r0 types.CCIPProvider
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.CCIPProviderArgs, types.ExtraDataCodecRegistryService) (types.CCIPProvider, error)); ok {
-		return rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, types.CCIPProviderArgs) (types.CCIPProvider, error)); ok {
+		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.CCIPProviderArgs, types.ExtraDataCodecRegistryService) types.CCIPProvider); ok {
-		r0 = rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, types.CCIPProviderArgs) types.CCIPProvider); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(types.CCIPProvider)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.CCIPProviderArgs, types.ExtraDataCodecRegistryService) error); ok {
-		r1 = rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(1).(func(context.Context, types.CCIPProviderArgs) error); ok {
+		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -498,14 +498,13 @@ type Relayer_NewCCIPProvider_Call struct {
 // NewCCIPProvider is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 types.CCIPProviderArgs
-//   - _a2 types.ExtraDataCodecRegistryService
-func (_e *Relayer_Expecter) NewCCIPProvider(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Relayer_NewCCIPProvider_Call {
-	return &Relayer_NewCCIPProvider_Call{Call: _e.mock.On("NewCCIPProvider", _a0, _a1, _a2)}
+func (_e *Relayer_Expecter) NewCCIPProvider(_a0 interface{}, _a1 interface{}) *Relayer_NewCCIPProvider_Call {
+	return &Relayer_NewCCIPProvider_Call{Call: _e.mock.On("NewCCIPProvider", _a0, _a1)}
 }
 
-func (_c *Relayer_NewCCIPProvider_Call) Run(run func(_a0 context.Context, _a1 types.CCIPProviderArgs, _a2 types.ExtraDataCodecRegistryService)) *Relayer_NewCCIPProvider_Call {
+func (_c *Relayer_NewCCIPProvider_Call) Run(run func(_a0 context.Context, _a1 types.CCIPProviderArgs)) *Relayer_NewCCIPProvider_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(types.CCIPProviderArgs), args[2].(types.ExtraDataCodecRegistryService))
+		run(args[0].(context.Context), args[1].(types.CCIPProviderArgs))
 	})
 	return _c
 }
@@ -515,7 +514,7 @@ func (_c *Relayer_NewCCIPProvider_Call) Return(_a0 types.CCIPProvider, _a1 error
 	return _c
 }
 
-func (_c *Relayer_NewCCIPProvider_Call) RunAndReturn(run func(context.Context, types.CCIPProviderArgs, types.ExtraDataCodecRegistryService) (types.CCIPProvider, error)) *Relayer_NewCCIPProvider_Call {
+func (_c *Relayer_NewCCIPProvider_Call) RunAndReturn(run func(context.Context, types.CCIPProviderArgs) (types.CCIPProvider, error)) *Relayer_NewCCIPProvider_Call {
 	_c.Call.Return(run)
 	return _c
 }

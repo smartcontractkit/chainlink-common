@@ -17,6 +17,7 @@ message NewRelayerRequest {
   uint32 keystoreID = 2;
   uint32 capabilityRegistryID = 3;
   uint32 keystoreCSAID = 4;
+  uint32 extraDataCodecRegistryServiceID = 5;
 }
 
 message NewRelayerReply {

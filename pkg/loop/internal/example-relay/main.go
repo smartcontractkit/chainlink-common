@@ -60,7 +60,7 @@ func (p *pluginRelayer) HealthReport() map[string]error { return map[string]erro
 
 func (p *pluginRelayer) Name() string { return p.lggr.Name() }
 
-func (p *pluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, cr core.CapabilitiesRegistry) (loop.Relayer, error) {
+func (p *pluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, cr core.CapabilitiesRegistry, edcrs types.ExtraDataCodecRegistryService) (loop.Relayer, error) {
 	return &relayer{lggr: logger.Named(p.lggr, "Relayer"), ds: p.ds}, nil
 }
 
@@ -140,5 +140,9 @@ func (r *relayer) NewPluginProvider(ctx context.Context, args types.RelayArgs, a
 }
 
 func (r *relayer) NewLLOProvider(ctx context.Context, args types.RelayArgs, args2 types.PluginArgs) (types.LLOProvider, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (r *relayer) NewCCIPProvider(ctx context.Context, args types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	return nil, errors.New("unimplemented")
 }

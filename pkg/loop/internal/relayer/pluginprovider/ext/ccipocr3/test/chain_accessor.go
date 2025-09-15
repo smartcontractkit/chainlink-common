@@ -404,15 +404,15 @@ func (s staticChainAccessor) GetFeedPricesUSD(ctx context.Context, tokens []ccip
 	return result, nil
 }
 
-func (s staticChainAccessor) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
+func (s staticChainAccessor) GetFeeQuoterTokenUpdates(ctx context.Context, tokensBytes []ccipocr3.UnknownAddress) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
 	// Return static test token updates
 	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig)
 	testTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 
-	for i, token := range tokens {
+	for i, token := range tokensBytes {
 		// Generate different prices for different tokens
 		price := big.NewInt(2000000 + int64(i)*50000) // Different prices from GetFeedPricesUSD
-		result[token] = ccipocr3.TimestampedUnixBig{
+		result[ccipocr3.UnknownEncodedAddress(token)] = ccipocr3.TimestampedUnixBig{
 			Timestamp: uint32(testTime.Add(time.Duration(i) * time.Minute).Unix()), // Different timestamps
 			Value:     price,
 		}
@@ -1023,14 +1023,13 @@ func (s staticChainAccessor) evaluateGetFeedPricesUSD(ctx context.Context, other
 }
 
 func (s staticChainAccessor) evaluateGetFeeQuoterTokenUpdates(ctx context.Context, other ccipocr3.ChainAccessor) error {
-	tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2"}
-	chain := ccipocr3.ChainSelector(1)
+	tokensBytes := []ccipocr3.UnknownAddress{ccipocr3.UnknownAddress("token1"), ccipocr3.UnknownAddress("token2")}
 
-	otherUpdates, err := other.GetFeeQuoterTokenUpdates(ctx, tokens, chain)
+	otherUpdates, err := other.GetFeeQuoterTokenUpdates(ctx, tokensBytes)
 	if err != nil {
 		return fmt.Errorf("GetFeeQuoterTokenUpdates failed: %w", err)
 	}
-	myUpdates, err := s.GetFeeQuoterTokenUpdates(ctx, tokens, chain)
+	myUpdates, err := s.GetFeeQuoterTokenUpdates(ctx, tokensBytes)
 	if err != nil {
 		return fmt.Errorf("GetFeeQuoterTokenUpdates failed: %w", err)
 	}

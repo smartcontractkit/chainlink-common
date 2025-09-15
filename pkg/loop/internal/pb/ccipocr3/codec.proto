@@ -32,6 +32,12 @@ service SourceChainExtraDataCodec {
   rpc DecodeDestExecDataToMap(DecodeDestExecDataToMapRequest) returns (DecodeDestExecDataToMapResponse);
 }
 
+// ExtraDataCodecBundle service for decoding extra args and dest exec data with chain selector
+service ExtraDataCodecBundle {
+  rpc DecodeExtraArgs(DecodeExtraArgsWithChainSelectorRequest) returns (DecodeExtraArgsWithChainSelectorResponse);
+  rpc DecodeTokenAmountDestExecData(DecodeTokenAmountDestExecDataRequest) returns (DecodeTokenAmountDestExecDataResponse);
+}
+
 // ChainSpecificAddressCodec messages
 message AddressBytesToStringRequest {
   bytes address = 1;
@@ -106,6 +112,25 @@ message DecodeDestExecDataToMapRequest {
 }
 
 message DecodeDestExecDataToMapResponse {
+  values.v1.Map decoded_map = 1;
+}
+
+// ExtraDataCodecBundle messages
+message DecodeExtraArgsWithChainSelectorRequest {
+  bytes extra_args = 1;
+  uint64 source_chain_selector = 2;
+}
+
+message DecodeExtraArgsWithChainSelectorResponse {
+  values.v1.Map decoded_map = 1;
+}
+
+message DecodeTokenAmountDestExecDataRequest {
+  bytes dest_exec_data = 1;
+  uint64 source_chain_selector = 2;
+}
+
+message DecodeTokenAmountDestExecDataResponse {
   values.v1.Map decoded_map = 1;
 }
 

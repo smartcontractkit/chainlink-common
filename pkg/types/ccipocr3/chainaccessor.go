@@ -219,7 +219,6 @@ type PriceReader interface {
 	// GetFeeQuoterTokenUpdates returns the latest token prices from the FeeQuoter on the specified chain
 	GetFeeQuoterTokenUpdates(
 		ctx context.Context,
-		tokens []UnknownEncodedAddress,
-		chain ChainSelector,
+		tokensBytes []UnknownAddress,
 	) (map[UnknownEncodedAddress]TimestampedUnixBig, error)
 }

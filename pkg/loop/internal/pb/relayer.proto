@@ -63,6 +63,7 @@ message CCIPProviderArgs {
   string OffRampAddress = 4;
   uint32 pluginType = 5;
   map<string, bytes> synced_addresses = 6; // map[contract_name]contract_address
+  uint32 extraDataCodecBundleID = 7; // LOOP service ID for ExtraDataCodecBundle served by core node
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].

@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	_ "embed"
 	"errors"
 	"testing"
@@ -47,7 +48,7 @@ func Test_Sleep_Timeout(t *testing.T) {
 	start := time.Now()
 	_, err = m.Execute(t.Context(), req, mockExecutionHelper)
 	duration := time.Since(start)
-	require.ErrorContains(t, err, "wasm trap: interrupt")
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 	require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
 }
 

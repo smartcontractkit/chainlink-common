@@ -543,13 +543,16 @@ func runWasm[I, O proto.Message](
 		return o, errors.New("could not get start function")
 	}
 
+	startTime := time.Now()
 	_, err = start.Call(store)
+	executionDuration := time.Since(startTime)
+
+	// The error codes below are only returned by the v1 legacy DAG workflow.
 	switch {
 	case containsCode(err, wasm.CodeSuccess):
 		if any(exec.response) == nil {
 			return o, errors.New("could not find response for execution")
 		}
-
 		return exec.response, nil
 	case containsCode(err, wasm.CodeInvalidResponse):
 		return o, fmt.Errorf("invariant violation: error marshaling response")
@@ -564,9 +567,18 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error executing runner")
 	case containsCode(err, wasm.CodeHostErr):
 		return o, fmt.Errorf("invariant violation: host errored during sendResponse")
-	default:
-		return o, err
 	}
+
+	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
+	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
+	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
+	// context.DeadlineExceeded.
+	if err != nil && executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
+		return o, context.DeadlineExceeded
+	}
+
+	return o, err
 }
 
 func containsCode(err error, code int) bool {

@@ -571,7 +571,8 @@ func runWasm[I, O proto.Message](
 
 	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
-	// being reached, so if an error is returned after the deadline has been reached, it is assumed to be due to an epoch deadline being reached.
+	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
+	// context.DeadlineExceeded.
 	if err != nil && executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded

@@ -555,6 +555,7 @@ func runWasm[I, O proto.Message](
 		return o, context.DeadlineExceeded
 	}
 
+	// The errors codes below are only return by the v1 legacy DAG workflow.
 	switch {
 	case containsCode(err, wasm.CodeSuccess):
 		if any(exec.response) == nil {

@@ -480,6 +480,44 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 	})
 }
 
+func TestNewClient_ChipSchemaRegistry(t *testing.T) {
+	t.Run("chip schema registry enabled", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+			ChipSchemaRegistryEnabled:      true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.SRClient)
+	})
+
+	t.Run("chip schema registry is not enabled when chip ingress is not enabled ", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      false,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+			ChipSchemaRegistryEnabled:      true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.Nil(t, client.SRClient)
+		assert.NotNil(t, client.Emitter)
+	})
+
+	t.Run("chip schema registry is not enabled when if chip ingress config is missing", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:  "grpc-endpoint",
+			ChipIngressEmitterEnabled: true,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+	})
+}
+
 // mockLogExporter is a no-op exporter for testing purposes.
 type mockLogExporter struct{}
 

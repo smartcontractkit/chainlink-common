@@ -59,6 +59,95 @@ func TestRegistry(t *testing.T) {
 	assert.Equal(t, c, cs[0])
 }
 
+func TestRegistryCompatibleVersions(t *testing.T) {
+	ctx := t.Context()
+
+	t.Run("Compatible minor version", func(t *testing.T) {
+		r := registry.NewBaseRegistry(logger.Test(t))
+		id := "capability-1@1.5.0"
+		ci, err := capabilities.NewCapabilityInfo(
+			id,
+			capabilities.CapabilityTypeAction,
+			"capability-1-description",
+		)
+		require.NoError(t, err)
+
+		c := &mockCapability{CapabilityInfo: ci}
+		err = r.Add(ctx, c)
+		require.NoError(t, err)
+		_, err = r.Get(ctx, "capability-1@1.0.0")
+		require.NoError(t, err)
+	})
+
+	t.Run("Incompatible minor version", func(t *testing.T) {
+		r := registry.NewBaseRegistry(logger.Test(t))
+		id := "capability-1@1.1.0"
+		ci, err := capabilities.NewCapabilityInfo(
+			id,
+			capabilities.CapabilityTypeAction,
+			"capability-1-description",
+		)
+		require.NoError(t, err)
+
+		c := &mockCapability{CapabilityInfo: ci}
+		err = r.Add(ctx, c)
+		require.NoError(t, err)
+		_, err = r.Get(ctx, "capability-1@1.2.0")
+		require.Error(t, err)
+	})
+
+	t.Run("Incompatible major version", func(t *testing.T) {
+		r := registry.NewBaseRegistry(logger.Test(t))
+		id := "capability-1@2.0.0"
+		ci, err := capabilities.NewCapabilityInfo(
+			id,
+			capabilities.CapabilityTypeAction,
+			"capability-1-description",
+		)
+		require.NoError(t, err)
+
+		c := &mockCapability{CapabilityInfo: ci}
+		err = r.Add(ctx, c)
+		require.NoError(t, err)
+		_, err = r.Get(ctx, "capability-1@1.0.0")
+		require.Error(t, err)
+	})
+
+	t.Run("Don't match pre-release tags if requested version if not pre-release", func(t *testing.T) {
+		r := registry.NewBaseRegistry(logger.Test(t))
+		id := "capability-1@1.5.0-alpha"
+		ci, err := capabilities.NewCapabilityInfo(
+			id,
+			capabilities.CapabilityTypeAction,
+			"capability-1-description",
+		)
+		require.NoError(t, err)
+
+		c := &mockCapability{CapabilityInfo: ci}
+		err = r.Add(ctx, c)
+		require.NoError(t, err)
+		_, err = r.Get(ctx, "capability-1@1.0.0")
+		require.Error(t, err)
+	})
+
+	t.Run("Match pre-release tags if requested version is pre-release", func(t *testing.T) {
+		r := registry.NewBaseRegistry(logger.Test(t))
+		id := "capability-1@1.5.0-alpha"
+		ci, err := capabilities.NewCapabilityInfo(
+			id,
+			capabilities.CapabilityTypeAction,
+			"capability-1-description",
+		)
+		require.NoError(t, err)
+
+		c := &mockCapability{CapabilityInfo: ci}
+		err = r.Add(ctx, c)
+		require.NoError(t, err)
+		_, err = r.Get(ctx, "capability-1@1.0.0-alpha")
+		require.NoError(t, err)
+	})
+}
+
 func TestRegistry_NoDuplicateIDs(t *testing.T) {
 	r := registry.NewBaseRegistry(logger.Test(t))
 	ctx := t.Context()

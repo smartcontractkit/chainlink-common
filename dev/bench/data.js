@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758032165697,
+  "lastUpdate": 1758037284883,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25284,6 +25284,48 @@ window.BENCHMARK_DATA = {
             "value": 26904,
             "unit": "ns/op",
             "extra": "44902 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "04a897dcb3618fbfaa9d7309eee606597af5cd76",
+          "message": "Implement Capability Version Matching (#1550)\n\n* Implement compatability matching\n\n* tidy",
+          "timestamp": "2025-09-16T10:40:16-05:00",
+          "tree_id": "6662ec06942bab184ffe5a998c72f8f1f5bcaec1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/04a897dcb3618fbfaa9d7309eee606597af5cd76"
+        },
+        "date": 1758037283433,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359,
+            "unit": "ns/op",
+            "extra": "3308564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.5,
+            "unit": "ns/op",
+            "extra": "2958930 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26655,
+            "unit": "ns/op",
+            "extra": "45092 times\n4 procs"
           }
         ]
       }

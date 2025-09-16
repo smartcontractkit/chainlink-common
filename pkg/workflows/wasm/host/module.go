@@ -569,7 +569,7 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("invariant violation: host errored during sendResponse")
 	}
 
-	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.  As an
+	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline has been reached, it is assumed to be due to an epoch deadline being reached.
 	if err != nil && executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this

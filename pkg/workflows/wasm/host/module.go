@@ -547,19 +547,11 @@ func runWasm[I, O proto.Message](
 	_, err = start.Call(store)
 	executionDuration := time.Since(startTime)
 
-	// Is this an intentional controlled exit? (such as the epoch deadline trap firing, not an error in the wasi runtime)
-	intentionalControlledExit := false
-	var wtErr *wasmtime.Error
-	if errors.As(err, &wtErr) {
-		_, intentionalControlledExit = wtErr.ExitStatus()
-	}
-
-	// If it's a controlled exit and the timeout has been reached or exceeded, return a timeout error
-	// Note - there is no other reliable signal on the error that can be used to infer it is due to a timeout (epoch deadline
-	// being reached) and if it is a controlled exit then the chances of it being anything other than a timeout are very
-	// low if the timeout has been exceeded
-	timeout := *m.cfg.Timeout - m.cfg.TickInterval // As start could be called just before epoch update 1 tick interval is deducted to account for this
-	if intentionalControlledExit && executionDuration >= timeout {
+	// If the deadline has been reached or exceeded, return a deadline exceeded error.
+	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
+	// being reached, so if an error is returned after the deadline has been reached, it is assumed to be due to an epoch deadline being reached.
+	if executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+		m.cfg.Logger.Errorw("start function returned error after timeout deadline reached, returning timeout error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}
 

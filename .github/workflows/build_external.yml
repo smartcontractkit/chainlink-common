@@ -97,11 +97,6 @@ jobs:
           repository: smartcontractkit/chainlink-solana
           ref: ${{ needs.init.outputs.solana-ref }}
 
-      - name: Add replace directive for chainlink-common/pkg/chipingress
-        run: |
-          echo 'replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ../chainlink-common/pkg/chipingress' >> go.mod
-          go mod tidy
-
       - name: Setup Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:

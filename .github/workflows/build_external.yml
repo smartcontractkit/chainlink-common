@@ -59,8 +59,10 @@ jobs:
           path: chainlink
 
       - name: Add replace directive for chipingress
+        working-directory: chainlink
         run: |
-          echo 'replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress' >> go.mod
+          grep '^module ' go.mod # should output a module line
+          echo 'replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ../chainlink-common/pkg/chipingress' >> go.mod
           go mod tidy
 
       - name: Setup Go

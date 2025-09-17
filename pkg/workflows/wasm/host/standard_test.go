@@ -98,12 +98,10 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 		require.NoError(t, err)
 
 		// Don't return until the second call has been executed
-		defer func() {
-			if !input.InputThing {
-				mt.Lock()
-			}
-			defer mt.Unlock()
-		}()
+		if input.InputThing {
+			mt.Lock()
+		}
+		defer mt.Unlock()
 		return &sdk.CapabilityResponse{
 			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
 		}, nil

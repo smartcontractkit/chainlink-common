@@ -8,7 +8,7 @@ import (
 )
 
 type Registrar interface {
-	Register(ctx context.Context, schemas ...*pb.Schema) error
+	RegisterSchema(ctx context.Context, schemas ...*pb.Schema) error
 }
 
 type schemaRegistry struct {
@@ -26,7 +26,7 @@ func NewRegistrar(client chipingress.Client) (Registrar, error) {
 }
 
 // Register registers one or more schemas with the Chip Ingress service
-func (sr *schemaRegistry) Register(ctx context.Context, schemas ...*pb.Schema) error {
+func (sr *schemaRegistry) RegisterSchema(ctx context.Context, schemas ...*pb.Schema) error {
 	request := &pb.RegisterSchemaRequest{
 		Schemas: schemas,
 	}

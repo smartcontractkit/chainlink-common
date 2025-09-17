@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestNewSchemaRegistry(t *testing.T) {
+func TestNewRegistrar(t *testing.T) {
 	t.Run("returns error when client is nil", func(t *testing.T) {
 		registry, err := beholder.NewRegistrar(nil)
 		assert.Nil(t, registry)
@@ -27,7 +27,7 @@ func TestNewSchemaRegistry(t *testing.T) {
 	})
 }
 
-func TestSchemaRegistry_Register(t *testing.T) {
+func TestRegistrar_Register(t *testing.T) {
 	t.Run("successfully registers schemas", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.
@@ -40,7 +40,7 @@ func TestSchemaRegistry_Register(t *testing.T) {
 			{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"jeff"}]}`, Format: 1},
 			{Subject: "schema1", Schema: `{"name":"jeff"}`, Format: 2},
 		}
-		err = registry.Register(t.Context(), schemas...)
+		err = registry.RegisterSchema(t.Context(), schemas...)
 		assert.NoError(t, err)
 	})
 
@@ -55,7 +55,7 @@ func TestSchemaRegistry_Register(t *testing.T) {
 		schemas := []*pb.Schema{
 			{Subject: "schema1", Schema: `{"name":"jeff"}`, Format: 2},
 		}
-		err = registry.Register(t.Context(), schemas...)
+		err = registry.RegisterSchema(t.Context(), schemas...)
 		assert.EqualError(t, err, "failed to register schema: registration failed")
 	})
 }

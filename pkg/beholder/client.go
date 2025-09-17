@@ -36,8 +36,8 @@ type Client struct {
 	Meter otelmetric.Meter
 	// Message Emitter
 	Emitter Emitter
-	// Schema Registry client
-	SRClient Registrar
+	// Schema Registrar
+	Registrar Registrar
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider

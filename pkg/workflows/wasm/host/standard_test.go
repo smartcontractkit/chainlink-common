@@ -73,6 +73,9 @@ func TestStandardErrors(t *testing.T) {
 }
 
 func TestStandardCapabilityCallsAreAsync(t *testing.T) {
+	// This test expects basic action's PerformAction to be called twice asynchronously and the results concatenated.
+	// To ensure the calls are actually async, the mock will block the first call until the second call is made.
+	// The first call sets InputThing to true, the second to false.
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")

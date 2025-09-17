@@ -61,6 +61,7 @@ message CCIPProviderArgs {
   bytes contractReaderConfig = 2;
   bytes chainWriterConfig = 3;
   string OffRampAddress = 4;
+  // pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
   uint32 pluginType = 5;
   map<string, bytes> synced_addresses = 6; // map[contract_name]contract_address
 }

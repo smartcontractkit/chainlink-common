@@ -59,9 +59,12 @@ type CCIPProvider interface {
 // CCIPProviderArgs are the args required to create a CCIP Provider through a Relayer.
 // The are common to all relayer implementations.
 type CCIPProviderArgs struct {
-	ExternalJobID        uuid.UUID
+	ExternalJobID  uuid.UUID
+	OffRampAddress string
+
+	// These CR/CW configs are only used by accessors that still rely on ChainReader
+	// and ChainWriter, like SolanaAccessor.
 	ContractReaderConfig []byte
 	ChainWriterConfig    []byte
-	OffRampAddress       string
-	PluginType           uint32
+	PluginType           ccipocr3.PluginType
 }

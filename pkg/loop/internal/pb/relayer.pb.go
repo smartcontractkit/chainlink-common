@@ -279,10 +279,11 @@ type CCIPProviderArgs struct {
 	ContractReaderConfig []byte                 `protobuf:"bytes,2,opt,name=contractReaderConfig,proto3" json:"contractReaderConfig,omitempty"`
 	ChainWriterConfig    []byte                 `protobuf:"bytes,3,opt,name=chainWriterConfig,proto3" json:"chainWriterConfig,omitempty"`
 	OffRampAddress       string                 `protobuf:"bytes,4,opt,name=OffRampAddress,proto3" json:"OffRampAddress,omitempty"`
-	PluginType           uint32                 `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
-	SyncedAddresses      map[string][]byte      `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
+	PluginType      uint32            `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
+	SyncedAddresses map[string][]byte `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CCIPProviderArgs) Reset() {

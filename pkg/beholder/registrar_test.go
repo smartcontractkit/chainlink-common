@@ -14,14 +14,14 @@ import (
 
 func TestNewSchemaRegistry(t *testing.T) {
 	t.Run("returns error when client is nil", func(t *testing.T) {
-		registry, err := beholder.NewSchemaRegistry(nil)
+		registry, err := beholder.NewRegistrar(nil)
 		assert.Nil(t, registry)
 		assert.EqualError(t, err, "chip ingress client is nil")
 	})
 
 	t.Run("returns schema registry when client is valid", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
-		registry, err := beholder.NewSchemaRegistry(mockClient)
+		registry, err := beholder.NewRegistrar(mockClient)
 		require.NoError(t, err)
 		assert.NotNil(t, registry)
 	})
@@ -33,7 +33,7 @@ func TestSchemaRegistry_Register(t *testing.T) {
 		mockClient.
 			On("RegisterSchema", mock.Anything, mock.Anything).
 			Return(&pb.RegisterSchemaResponse{}, nil)
-		registry, err := beholder.NewSchemaRegistry(mockClient)
+		registry, err := beholder.NewRegistrar(mockClient)
 		require.NoError(t, err)
 
 		schemas := []*pb.Schema{
@@ -49,7 +49,7 @@ func TestSchemaRegistry_Register(t *testing.T) {
 		mockClient.
 			On("RegisterSchema", mock.Anything, mock.Anything).
 			Return(nil, fmt.Errorf("registration failed"))
-		registry, err := beholder.NewSchemaRegistry(mockClient)
+		registry, err := beholder.NewRegistrar(mockClient)
 		require.NoError(t, err)
 
 		schemas := []*pb.Schema{

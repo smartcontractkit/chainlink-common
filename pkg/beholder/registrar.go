@@ -7,7 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
-type SchemaRegistry interface {
+type Registrar interface {
 	Register(ctx context.Context, schemas ...*pb.Schema) error
 }
 
@@ -15,7 +15,7 @@ type schemaRegistry struct {
 	client chipingress.Client
 }
 
-func NewSchemaRegistry(client chipingress.Client) (SchemaRegistry, error) {
+func NewRegistrar(client chipingress.Client) (Registrar, error) {
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
 	}

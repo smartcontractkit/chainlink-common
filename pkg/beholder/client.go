@@ -37,7 +37,7 @@ type Client struct {
 	// Message Emitter
 	Emitter Emitter
 	// Schema Registry client
-	SRClient SchemaRegistry
+	SRClient Registrar
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
@@ -217,7 +217,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	emitter := NewMessageEmitter(messageLogger)
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
-	var srClient SchemaRegistry
+	var srClient Registrar
 	if cfg.ChipIngressEmitterEnabled {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
 
@@ -254,7 +254,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		// Create schema registry client if enabled
 		if cfg.ChipSchemaRegistryEnabled {
-			srClient, err = NewSchemaRegistry(chipIngressClient)
+			srClient, err = NewRegistrar(chipIngressClient)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create schema registry client: %w", err)
 			}

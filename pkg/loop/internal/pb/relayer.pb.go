@@ -283,6 +283,7 @@ type CCIPProviderArgs struct {
 	PluginType             uint32            `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
 	SyncedAddresses        map[string][]byte `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
 	ExtraDataCodecBundleID uint32            `protobuf:"varint,7,opt,name=extraDataCodecBundleID,proto3" json:"extraDataCodecBundleID,omitempty"`                                                                                   // LOOP service ID for ExtraDataCodecBundle served by core node
+	Transmitter            string            `protobuf:"bytes,8,opt,name=transmitter,proto3" json:"transmitter,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -364,6 +365,13 @@ func (x *CCIPProviderArgs) GetExtraDataCodecBundleID() uint32 {
 		return x.ExtraDataCodecBundleID
 	}
 	return 0
+}
+
+func (x *CCIPProviderArgs) GetTransmitter() string {
+	if x != nil {
+		return x.Transmitter
+	}
+	return ""
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
@@ -2732,7 +2740,7 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\n" +
 	"PluginArgs\x12$\n" +
 	"\rtransmitterID\x18\x01 \x01(\tR\rtransmitterID\x12\"\n" +
-	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xb6\x03\n" +
+	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xd8\x03\n" +
 	"\x10CCIPProviderArgs\x12$\n" +
 	"\rexternalJobID\x18\x01 \x01(\fR\rexternalJobID\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\x12,\n" +
@@ -2742,7 +2750,8 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"pluginType\x18\x05 \x01(\rR\n" +
 	"pluginType\x12V\n" +
 	"\x10synced_addresses\x18\x06 \x03(\v2+.loop.CCIPProviderArgs.SyncedAddressesEntryR\x0fsyncedAddresses\x126\n" +
-	"\x16extraDataCodecBundleID\x18\a \x01(\rR\x16extraDataCodecBundleID\x1aB\n" +
+	"\x16extraDataCodecBundleID\x18\a \x01(\rR\x16extraDataCodecBundleID\x12 \n" +
+	"\vtransmitter\x18\b \x01(\tR\vtransmitter\x1aB\n" +
 	"\x14SyncedAddressesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01\"N\n" +

@@ -318,6 +318,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				PluginType:             uint32(cargs.PluginType),
 				SyncedAddresses:        persistedSyncs,
 				ExtraDataCodecBundleID: extraDataCodecBundleID,
+				Transmitter:            cargs.Transmitter,
 			},
 		})
 		if err != nil {
@@ -765,6 +766,7 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		OffRampAddress:       rargs.OffRampAddress,
 		PluginType:           cctypes.PluginType(rargs.PluginType),
 		ExtraDataCodecBundle: extraDataCodecBundle,
+		Transmitter:          rargs.Transmitter,
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)

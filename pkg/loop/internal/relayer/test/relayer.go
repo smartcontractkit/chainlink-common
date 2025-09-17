@@ -77,6 +77,7 @@ type staticRelayerConfig struct {
 	chainWriterConfig      []byte
 	offRampAddress         string
 	pluginType             ccipocr3.PluginType
+	transmitter            string
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
@@ -104,6 +105,7 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		chainWriterConfig:      []byte("chainwriterconfig"),
 		offRampAddress:         "fakeAddress",
 		pluginType:             0,
+		transmitter:            "fakeAddress",
 		medianProvider:         mediantest.MedianProvider(lggr),
 		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
@@ -321,6 +323,7 @@ func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProvider
 		ChainWriterConfig:    s.chainWriterConfig,
 		OffRampAddress:       s.offRampAddress,
 		PluginType:           s.pluginType,
+		Transmitter:          s.transmitter,
 	}
 	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
@@ -479,7 +482,8 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
 		a.OffRampAddress == b.OffRampAddress &&
-		a.PluginType == b.PluginType
+		a.PluginType == b.PluginType &&
+		a.Transmitter == b.Transmitter
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

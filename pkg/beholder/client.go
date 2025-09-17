@@ -217,7 +217,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	emitter := NewMessageEmitter(messageLogger)
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
-	var srClient Registrar
+	var registrar Registrar
 	if cfg.ChipIngressEmitterEnabled {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
 
@@ -254,7 +254,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		// Create schema registry client if enabled
 		if cfg.ChipSchemaRegistryEnabled {
-			srClient, err = NewRegistrar(chipIngressClient)
+			registrar, err = NewRegistrar(chipIngressClient)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create schema registry client: %w", err)
 			}
@@ -267,7 +267,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, srClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, registrar, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes

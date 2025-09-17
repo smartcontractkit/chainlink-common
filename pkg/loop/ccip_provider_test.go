@@ -58,6 +58,7 @@ func TestCCIPChainAccessorSyncPersistence(t *testing.T) {
 		ChainWriterConfig:    []byte("asdf"),
 		OffRampAddress:       "0x1234123412341234123412341234123412341234",
 		PluginType:           0,
+		Transmitter:          "0x4321432143214321432143214321432143214321",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, ccipProvider)

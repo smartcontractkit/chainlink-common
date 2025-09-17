@@ -67,4 +67,5 @@ type CCIPProviderArgs struct {
 	ContractReaderConfig []byte
 	ChainWriterConfig    []byte
 	PluginType           ccipocr3.PluginType
+	Transmitter          string
 }

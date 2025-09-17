@@ -301,6 +301,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				OffRampAddress:       cargs.OffRampAddress,
 				PluginType:           uint32(cargs.PluginType),
 				SyncedAddresses:      persistedSyncs,
+				Transmitter:            cargs.Transmitter,
 			},
 		})
 		if err != nil {
@@ -733,6 +734,7 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		ChainWriterConfig:    rargs.ChainWriterConfig,
 		OffRampAddress:       rargs.OffRampAddress,
 		PluginType:           ccipocr3types.PluginType(rargs.PluginType),
+		Transmitter:          rargs.Transmitter,
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)

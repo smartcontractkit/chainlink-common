@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758037284883,
+  "lastUpdate": 1758135800690,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25326,6 +25326,48 @@ window.BENCHMARK_DATA = {
             "value": 26655,
             "unit": "ns/op",
             "extra": "45092 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8817bb81d88036a0b0bda91c87737654c00e3540",
+          "message": "CCIP - ChainAccessor add test for Sync call state persistence across restarts (#1552)",
+          "timestamp": "2025-09-17T21:02:04+02:00",
+          "tree_id": "395bc0ebf49d678e11a4ab0fef29e6a64f3fc6ba",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8817bb81d88036a0b0bda91c87737654c00e3540"
+        },
+        "date": 1758135798520,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.4,
+            "unit": "ns/op",
+            "extra": "3347198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.6,
+            "unit": "ns/op",
+            "extra": "2771714 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26618,
+            "unit": "ns/op",
+            "extra": "45022 times\n4 procs"
           }
         ]
       }

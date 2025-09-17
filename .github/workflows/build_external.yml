@@ -58,14 +58,16 @@ jobs:
           persist-credentials: false
           path: chainlink
 
+      - name: Add replace directive for chipingress
+        run: |
+          echo 'replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress' >> go.mod
+          go mod tidy
+
       - name: Setup Go
         uses: ./chainlink-common/.github/actions/setup-go
         with:
           go-version-file: "chainlink/go.mod"
           only-modules: "true"
-
-      - name: Clean go mod cache
-        run: go clean -modcache
 
       - name: Build /chainlink
         shell: bash

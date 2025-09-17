@@ -71,4 +71,5 @@ type CCIPProviderArgs struct {
 	// The actual bundle instance to serve over LOOP. pb.CCIPProviderArgs equivalent
 	// is ExtraDataCodecBundleID.
 	ExtraDataCodecBundle ccipocr3.ExtraDataCodecBundle
+	Transmitter          string
 }

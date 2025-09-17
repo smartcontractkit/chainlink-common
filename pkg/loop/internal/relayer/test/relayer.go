@@ -31,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -75,7 +76,7 @@ type staticRelayerConfig struct {
 	contractReaderConfig   []byte
 	chainWriterConfig      []byte
 	offRampAddress         string
-	pluginType             uint32
+	pluginType             ccipocr3.PluginType
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester

@@ -61,7 +61,7 @@ type CCIPProvider interface {
 type CCIPProviderArgs struct {
 	ExternalJobID  uuid.UUID
 	OffRampAddress string
-	PluginType     uint32
+	PluginType     ccipocr3.PluginType
 
 	// These CR/CW configs are only used by accessors that still rely on ChainReader
 	// and ChainWriter, like SolanaAccessor.

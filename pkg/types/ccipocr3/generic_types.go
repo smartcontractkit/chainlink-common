@@ -374,3 +374,23 @@ func (ca ContractAddresses) Append(contract string, chain ChainSelector, address
 	resp[contract][chain] = address
 	return resp
 }
+
+// PluginType represents the type of CCIP plugin.
+// It mirrors the OCRPluginType in Internal.sol.
+type PluginType uint8
+
+const (
+	PluginTypeCCIPCommit PluginType = 0
+	PluginTypeCCIPExec   PluginType = 1
+)
+
+func (pt PluginType) String() string {
+	switch pt {
+	case PluginTypeCCIPCommit:
+		return "CCIPCommit"
+	case PluginTypeCCIPExec:
+		return "CCIPExec"
+	default:
+		return "Unknown"
+	}
+}

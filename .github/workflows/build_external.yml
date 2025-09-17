@@ -64,6 +64,9 @@ jobs:
           go-version-file: "chainlink/go.mod"
           only-modules: "true"
 
+      - name: Clean go mod cache
+        run: go clean -modcache
+
       - name: Build /chainlink
         shell: bash
         env:

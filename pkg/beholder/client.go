@@ -37,7 +37,7 @@ type Client struct {
 	// Message Emitter
 	Emitter Emitter
 	// Schema Registrar
-	Registrar Registrar
+	Registrar ChipSchemaRegistrar
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
@@ -217,7 +217,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	emitter := NewMessageEmitter(messageLogger)
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
-	var registrar Registrar
+	var registrar ChipSchemaRegistrar
 	if cfg.ChipIngressEmitterEnabled {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
 

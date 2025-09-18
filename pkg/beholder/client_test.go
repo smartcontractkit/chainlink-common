@@ -494,7 +494,7 @@ func TestNewClient_ChipSchemaRegistry(t *testing.T) {
 		assert.NotNil(t, client.Chip)
 	})
 
-	t.Run("chip schema registry is not enabled when chip ingress is not enabled ", func(t *testing.T) {
+	t.Run("chip schema registry can be enabled when chip ingress is not enabled ", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "grpc-endpoint",
 			ChipIngressEmitterEnabled:      false,
@@ -504,7 +504,7 @@ func TestNewClient_ChipSchemaRegistry(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)
-		assert.Nil(t, client.Chip)
+		assert.NotNil(t, client.Chip)
 		assert.NotNil(t, client.Emitter)
 	})
 

@@ -219,7 +219,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	var chipIngressClient chipingress.Client
 
 	// Create chip ingress client if endpoint is provided
-	if cfg.ChipIngressEmitterGRPCEndpoint != "" {
+	if cfg.ChipIngressEmitterEnabled || cfg.ChipSchemaRegistryEnabled {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
 
 		if cfg.ChipIngressInsecureConnection {

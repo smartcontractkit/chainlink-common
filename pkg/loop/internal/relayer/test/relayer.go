@@ -75,7 +75,7 @@ type staticRelayerConfig struct {
 	pluginArgs             types.PluginArgs
 	contractReaderConfig   []byte
 	chainWriterConfig      []byte
-	offRampAddress         string
+	offRampAddress         ccipocr3.UnknownAddress
 	pluginType             ccipocr3.PluginType
 	transmitter            string
 	medianProvider         testtypes.MedianProviderTester
@@ -103,7 +103,7 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		pluginArgs:             PluginArgs,
 		contractReaderConfig:   []byte("test"),
 		chainWriterConfig:      []byte("chainwriterconfig"),
-		offRampAddress:         "fakeAddress",
+		offRampAddress:         []byte("fakeAddress"),
 		pluginType:             0,
 		transmitter:            "fakeAddress",
 		medianProvider:         mediantest.MedianProvider(lggr),
@@ -481,7 +481,7 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 	return a.ExternalJobID == b.ExternalJobID &&
 		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
-		a.OffRampAddress == b.OffRampAddress &&
+		slices.Equal(a.OffRampAddress, b.OffRampAddress) &&
 		a.PluginType == b.PluginType &&
 		a.Transmitter == b.Transmitter
 }

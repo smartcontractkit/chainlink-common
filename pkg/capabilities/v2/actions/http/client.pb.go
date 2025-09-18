@@ -10,6 +10,7 @@ import (
 	_ "github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,8 +26,8 @@ const (
 // CacheSettings defines cache control options for outbound HTTP requests.
 type CacheSettings struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReadFromCache bool                   `protobuf:"varint,1,opt,name=read_from_cache,json=readFromCache,proto3" json:"read_from_cache,omitempty"` // If true, attempt to read a cached response for the request.
-	MaxAgeMs      int32                  `protobuf:"varint,2,opt,name=max_age_ms,json=maxAgeMs,proto3" json:"max_age_ms,omitempty"`                // Maximum age of a cached response in milliseconds.
+	Store         bool                   `protobuf:"varint,1,opt,name=store,proto3" json:"store,omitempty"`                // If true, cache the response.
+	MaxAge        *durationpb.Duration   `protobuf:"bytes,2,opt,name=max_age,json=maxAge,proto3" json:"max_age,omitempty"` // Maximum age of a cached response. If zero, do not attempt to read from cache
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,18 +62,18 @@ func (*CacheSettings) Descriptor() ([]byte, []int) {
 	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CacheSettings) GetReadFromCache() bool {
+func (x *CacheSettings) GetStore() bool {
 	if x != nil {
-		return x.ReadFromCache
+		return x.Store
 	}
 	return false
 }
 
-func (x *CacheSettings) GetMaxAgeMs() int32 {
+func (x *CacheSettings) GetMaxAge() *durationpb.Duration {
 	if x != nil {
-		return x.MaxAgeMs
+		return x.MaxAge
 	}
-	return 0
+	return nil
 }
 
 type Request struct {
@@ -81,7 +82,7 @@ type Request struct {
 	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
 	Headers       map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	TimeoutMs     int32                  `protobuf:"varint,5,opt,name=timeout_ms,json=timeoutMs,proto3" json:"timeout_ms,omitempty"`
+	Timeout       *durationpb.Duration   `protobuf:"bytes,5,opt,name=timeout,proto3" json:"timeout,omitempty"` // Request timeout duration
 	CacheSettings *CacheSettings         `protobuf:"bytes,6,opt,name=cache_settings,json=cacheSettings,proto3" json:"cache_settings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -145,11 +146,11 @@ func (x *Request) GetBody() []byte {
 	return nil
 }
 
-func (x *Request) GetTimeoutMs() int32 {
+func (x *Request) GetTimeout() *durationpb.Duration {
 	if x != nil {
-		return x.TimeoutMs
+		return x.Timeout
 	}
-	return 0
+	return nil
 }
 
 func (x *Request) GetCacheSettings() *CacheSettings {
@@ -223,18 +224,16 @@ var File_capabilities_networking_http_v1alpha_client_proto protoreflect.FileDesc
 
 const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"1capabilities/networking/http/v1alpha/client.proto\x12$capabilities.networking.http.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"U\n" +
-	"\rCacheSettings\x12&\n" +
-	"\x0fread_from_cache\x18\x01 \x01(\bR\rreadFromCache\x12\x1c\n" +
-	"\n" +
-	"max_age_ms\x18\x02 \x01(\x05R\bmaxAgeMs\"\xd4\x02\n" +
+	"1capabilities/networking/http/v1alpha/client.proto\x12$capabilities.networking.http.v1alpha\x1a\x1egoogle/protobuf/duration.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"Y\n" +
+	"\rCacheSettings\x12\x14\n" +
+	"\x05store\x18\x01 \x01(\bR\x05store\x122\n" +
+	"\amax_age\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x06maxAge\"\xea\x02\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12T\n" +
 	"\aheaders\x18\x03 \x03(\v2:.capabilities.networking.http.v1alpha.Request.HeadersEntryR\aheaders\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1d\n" +
-	"\n" +
-	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x12Z\n" +
+	"\x04body\x18\x04 \x01(\fR\x04body\x123\n" +
+	"\atimeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12Z\n" +
 	"\x0ecache_settings\x18\x06 \x01(\v23.capabilities.networking.http.v1alpha.CacheSettingsR\rcacheSettings\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -264,23 +263,26 @@ func file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP() []byte
 
 var file_capabilities_networking_http_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_capabilities_networking_http_v1alpha_client_proto_goTypes = []any{
-	(*CacheSettings)(nil), // 0: capabilities.networking.http.v1alpha.CacheSettings
-	(*Request)(nil),       // 1: capabilities.networking.http.v1alpha.Request
-	(*Response)(nil),      // 2: capabilities.networking.http.v1alpha.Response
-	nil,                   // 3: capabilities.networking.http.v1alpha.Request.HeadersEntry
-	nil,                   // 4: capabilities.networking.http.v1alpha.Response.HeadersEntry
+	(*CacheSettings)(nil),       // 0: capabilities.networking.http.v1alpha.CacheSettings
+	(*Request)(nil),             // 1: capabilities.networking.http.v1alpha.Request
+	(*Response)(nil),            // 2: capabilities.networking.http.v1alpha.Response
+	nil,                         // 3: capabilities.networking.http.v1alpha.Request.HeadersEntry
+	nil,                         // 4: capabilities.networking.http.v1alpha.Response.HeadersEntry
+	(*durationpb.Duration)(nil), // 5: google.protobuf.Duration
 }
 var file_capabilities_networking_http_v1alpha_client_proto_depIdxs = []int32{
-	3, // 0: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
-	0, // 1: capabilities.networking.http.v1alpha.Request.cache_settings:type_name -> capabilities.networking.http.v1alpha.CacheSettings
-	4, // 2: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
-	1, // 3: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
-	2, // 4: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 0: capabilities.networking.http.v1alpha.CacheSettings.max_age:type_name -> google.protobuf.Duration
+	3, // 1: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
+	5, // 2: capabilities.networking.http.v1alpha.Request.timeout:type_name -> google.protobuf.Duration
+	0, // 3: capabilities.networking.http.v1alpha.Request.cache_settings:type_name -> capabilities.networking.http.v1alpha.CacheSettings
+	4, // 4: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
+	1, // 5: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
+	2, // 6: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_networking_http_v1alpha_client_proto_init() }

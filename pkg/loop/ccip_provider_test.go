@@ -56,7 +56,7 @@ func TestCCIPChainAccessorSyncPersistence(t *testing.T) {
 		ExternalJobID:        uuid.New(),
 		ContractReaderConfig: []byte("asdf"),
 		ChainWriterConfig:    []byte("asdf"),
-		OffRampAddress:       "0x1234123412341234123412341234123412341234",
+		OffRampAddress:       []byte("0x1234123412341234123412341234123412341234"),
 		PluginType:           0,
 		Transmitter:          "0x4321432143214321432143214321432143214321",
 	})

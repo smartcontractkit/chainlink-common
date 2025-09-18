@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758135800690,
+  "lastUpdate": 1758204878178,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25368,6 +25368,48 @@ window.BENCHMARK_DATA = {
             "value": 26618,
             "unit": "ns/op",
             "extra": "45022 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b41d6a9e3c7172145195c6c436c57f3b086bdcf0",
+          "message": "Fix a bug in the CRE SDK standard test verifying calls are async, it allowed the first request to respond before the second was made (#1554)\n\n* Fix a bug in the CRE SDK standard test verifying calls are async, it allowed the first request to respond before the second was made\n\n* Add comment",
+          "timestamp": "2025-09-18T10:13:32-04:00",
+          "tree_id": "4cc2ba0e48710e36ce0caa174067f68aef50aa7f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b41d6a9e3c7172145195c6c436c57f3b086bdcf0"
+        },
+        "date": 1758204877030,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.6,
+            "unit": "ns/op",
+            "extra": "3325572 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.7,
+            "unit": "ns/op",
+            "extra": "2923876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26645,
+            "unit": "ns/op",
+            "extra": "44950 times\n4 procs"
           }
         ]
       }

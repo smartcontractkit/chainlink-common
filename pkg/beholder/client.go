@@ -36,8 +36,8 @@ type Client struct {
 	Meter otelmetric.Meter
 	// Message Emitter
 	Emitter Emitter
-	// Schema Registrar
-	Registrar ChipSchemaRegistrar
+	// Chip
+	Chip ChipIngressClient
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
@@ -217,8 +217,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	emitter := NewMessageEmitter(messageLogger)
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
-	var registrar ChipSchemaRegistrar
-	if cfg.ChipIngressEmitterEnabled {
+	var chipClient ChipIngressClient
+	var chipIngressClient chipingress.Client
+
+	// Create chip ingress client if endpoint is provided
+	if cfg.ChipIngressEmitterGRPCEndpoint != "" {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
 
 		if cfg.ChipIngressInsecureConnection {
@@ -233,7 +236,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			chipIngressOpts = append(chipIngressOpts, chipingress.WithTokenAuth(headerProvider))
 		}
 
-		chipIngressClient, err := chipingress.NewClient(
+		chipIngressClient, err = chipingress.NewClient(
 			cfg.ChipIngressEmitterGRPCEndpoint,
 			chipIngressOpts...,
 		)
@@ -241,7 +244,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		if err != nil {
 			return nil, err
 		}
+	}
 
+	// Wrap emitter with chip ingress emitter if enabled
+	if cfg.ChipIngressEmitterEnabled {
 		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
@@ -251,13 +257,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
+	}
 
-		// Create schema registry client if enabled
-		if cfg.ChipSchemaRegistryEnabled {
-			registrar, err = NewRegistrar(chipIngressClient)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create schema registry client: %w", err)
-			}
+	// Create interface to chip ingress schema registry if enabled
+	if cfg.ChipSchemaRegistryEnabled {
+		chipClient, err = NewChipIngressClient(chipIngressClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create interface to chip ingress: %w", err)
 		}
 	}
 
@@ -267,7 +273,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, registrar, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, chipClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes

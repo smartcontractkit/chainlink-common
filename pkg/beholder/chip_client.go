@@ -7,26 +7,26 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
-type ChipSchemaRegistrar interface {
+type ChipIngressClient interface {
 	RegisterSchema(ctx context.Context, schemas ...*pb.Schema) error
 }
 
-type schemaRegistry struct {
+type chipIngressClient struct {
 	client chipingress.Client
 }
 
-func NewRegistrar(client chipingress.Client) (ChipSchemaRegistrar, error) {
+func NewChipIngressClient(client chipingress.Client) (ChipIngressClient, error) {
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
 	}
 
-	return &schemaRegistry{
+	return &chipIngressClient{
 		client: client,
 	}, nil
 }
 
-// Register registers one or more schemas with the Chip Ingress service
-func (sr *schemaRegistry) RegisterSchema(ctx context.Context, schemas ...*pb.Schema) error {
+// RegisterSchema registers one or more schemas with the Chip Ingress service
+func (sr *chipIngressClient) RegisterSchema(ctx context.Context, schemas ...*pb.Schema) error {
 	request := &pb.RegisterSchemaRequest{
 		Schemas: schemas,
 	}

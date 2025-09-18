@@ -12,28 +12,28 @@ import (
 	"testing"
 )
 
-func TestNewRegistrar(t *testing.T) {
+func TestNewChipClient(t *testing.T) {
 	t.Run("returns error when client is nil", func(t *testing.T) {
-		registry, err := beholder.NewRegistrar(nil)
+		registry, err := beholder.NewChipIngressClient(nil)
 		assert.Nil(t, registry)
 		assert.EqualError(t, err, "chip ingress client is nil")
 	})
 
 	t.Run("returns schema registry when client is valid", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
-		registry, err := beholder.NewRegistrar(mockClient)
+		registry, err := beholder.NewChipIngressClient(mockClient)
 		require.NoError(t, err)
 		assert.NotNil(t, registry)
 	})
 }
 
-func TestRegistrar_Register(t *testing.T) {
+func TestRegisterSchema(t *testing.T) {
 	t.Run("successfully registers schemas", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.
 			On("RegisterSchema", mock.Anything, mock.Anything).
 			Return(&pb.RegisterSchemaResponse{}, nil)
-		registry, err := beholder.NewRegistrar(mockClient)
+		registry, err := beholder.NewChipIngressClient(mockClient)
 		require.NoError(t, err)
 
 		schemas := []*pb.Schema{
@@ -49,7 +49,7 @@ func TestRegistrar_Register(t *testing.T) {
 		mockClient.
 			On("RegisterSchema", mock.Anything, mock.Anything).
 			Return(nil, fmt.Errorf("registration failed"))
-		registry, err := beholder.NewRegistrar(mockClient)
+		registry, err := beholder.NewChipIngressClient(mockClient)
 		require.NoError(t, err)
 
 		schemas := []*pb.Schema{

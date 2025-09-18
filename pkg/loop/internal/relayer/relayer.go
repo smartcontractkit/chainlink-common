@@ -33,7 +33,6 @@ import (
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	ccipocr3types "github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
-	cctypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -764,7 +763,7 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		ContractReaderConfig: rargs.ContractReaderConfig,
 		ChainWriterConfig:    rargs.ChainWriterConfig,
 		OffRampAddress:       rargs.OffRampAddress,
-		PluginType:           cctypes.PluginType(rargs.PluginType),
+		PluginType:           ccipocr3types.PluginType(rargs.PluginType),
 		ExtraDataCodecBundle: extraDataCodecBundle,
 		Transmitter:          rargs.Transmitter,
 	}

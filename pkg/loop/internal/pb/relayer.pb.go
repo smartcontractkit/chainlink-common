@@ -278,7 +278,7 @@ type CCIPProviderArgs struct {
 	ExternalJobID        []byte                 `protobuf:"bytes,1,opt,name=externalJobID,proto3" json:"externalJobID,omitempty"` // [32]byte
 	ContractReaderConfig []byte                 `protobuf:"bytes,2,opt,name=contractReaderConfig,proto3" json:"contractReaderConfig,omitempty"`
 	ChainWriterConfig    []byte                 `protobuf:"bytes,3,opt,name=chainWriterConfig,proto3" json:"chainWriterConfig,omitempty"`
-	OffRampAddress       string                 `protobuf:"bytes,4,opt,name=OffRampAddress,proto3" json:"OffRampAddress,omitempty"`
+	OffRampAddress       []byte                 `protobuf:"bytes,4,opt,name=offRampAddress,proto3" json:"offRampAddress,omitempty"`
 	// pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
 	PluginType      uint32            `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
 	SyncedAddresses map[string][]byte `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
@@ -338,11 +338,11 @@ func (x *CCIPProviderArgs) GetChainWriterConfig() []byte {
 	return nil
 }
 
-func (x *CCIPProviderArgs) GetOffRampAddress() string {
+func (x *CCIPProviderArgs) GetOffRampAddress() []byte {
 	if x != nil {
 		return x.OffRampAddress
 	}
-	return ""
+	return nil
 }
 
 func (x *CCIPProviderArgs) GetPluginType() uint32 {
@@ -2737,7 +2737,7 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\rexternalJobID\x18\x01 \x01(\fR\rexternalJobID\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\x12,\n" +
 	"\x11chainWriterConfig\x18\x03 \x01(\fR\x11chainWriterConfig\x12&\n" +
-	"\x0eOffRampAddress\x18\x04 \x01(\tR\x0eOffRampAddress\x12\x1e\n" +
+	"\x0eoffRampAddress\x18\x04 \x01(\fR\x0eoffRampAddress\x12\x1e\n" +
 	"\n" +
 	"pluginType\x18\x05 \x01(\rR\n" +
 	"pluginType\x12V\n" +

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758204878178,
+  "lastUpdate": 1758238019744,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25410,6 +25410,48 @@ window.BENCHMARK_DATA = {
             "value": 26645,
             "unit": "ns/op",
             "extra": "44950 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "51930100429dccc188c8dae120136d2158250426",
+          "message": "[bugfix] Filter out nil values in reduce aggregator (#1556)",
+          "timestamp": "2025-09-18T16:24:31-07:00",
+          "tree_id": "167ff18cefa50d51a44db4b9449cdb55277f8ec5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/51930100429dccc188c8dae120136d2158250426"
+        },
+        "date": 1758238018314,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.5,
+            "unit": "ns/op",
+            "extra": "3152323 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.1,
+            "unit": "ns/op",
+            "extra": "2954512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26781,
+            "unit": "ns/op",
+            "extra": "44001 times\n4 procs"
           }
         ]
       }

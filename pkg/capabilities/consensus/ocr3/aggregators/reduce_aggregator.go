@@ -306,9 +306,13 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 		// values are then re-wrapped here to handle aggregating against Value types
 		// which is used for mode aggregation
 		switch val := val.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			_, ok := val[aggregationKey]
 			if !ok {
+				continue
+			}
+			if val[aggregationKey] == nil {
+				lggr.Warnf("node %d contributed with a nil value under key %s", nodeID, aggregationKey)
 				continue
 			}
 
@@ -318,12 +322,17 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 				continue
 			}
 			vals = append(vals, rewrapped)
-		case []interface{}:
+		case []any:
 			i, err := strconv.Atoi(aggregationKey)
 			if err != nil {
 				lggr.Warnf("aggregation key %s could not be used to index a list type", aggregationKey)
 				continue
 			}
+			if i >= len(val) {
+				lggr.Warnf("node %d contributed with an array shorter than index %s", nodeID, aggregationKey)
+				continue
+			}
+
 			rewrapped, err := values.Wrap(val[i])
 			if err != nil {
 				lggr.Warnf("unable to wrap value %s", val[i])

@@ -50,10 +50,19 @@ message RelayArgs {
   string providerType = 6;
 }
 
-// RelayArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.PluginArgs].
+// PluginArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.PluginArgs].
 message PluginArgs {
   string transmitterID = 1;
   bytes pluginConfig = 2;
+}
+
+message CCIPProviderArgs {
+  bytes externalJobID = 1; // [32]byte
+  bytes contractReaderConfig = 2;
+  bytes chainWriterConfig = 3;
+  string OffRampAddress = 4;
+  uint32 pluginType = 5;
+  map<string, bytes> synced_addresses = 6; // map[contract_name]contract_address
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
@@ -99,7 +108,7 @@ message NewConfigProviderReply {
 
 // NewCCIPProviderRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewCCIPProvider].
 message NewCCIPProviderRequest {
-  RelayArgs relayArgs = 1;
+  CCIPProviderArgs ccipProviderArgs = 1;
 }
 
 // NewCCIPProviderReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewCCIPProvider].

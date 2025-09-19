@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding/gzip"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
@@ -149,6 +150,7 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 	traceExporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithGRPCConn(conn),
 		otlptracegrpc.WithHeaders(config.AuthHeaders),
+		otlptracegrpc.WithCompressor(gzip.Name),
 	)
 	if err != nil {
 		return nil, err

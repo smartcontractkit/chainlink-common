@@ -3,10 +3,12 @@ package types
 import (
 	"context"
 
+	"github.com/google/uuid"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 type CCIPCommitProvider interface {
@@ -52,4 +54,14 @@ type CCIPProvider interface {
 	ChainAccessor() ccipocr3.ChainAccessor
 	ContractTransmitter() ocr3types.ContractTransmitter[[]byte]
 	Codec() ccipocr3.Codec
+}
+
+// CCIPProviderArgs are the args required to create a CCIP Provider through a Relayer.
+// The are common to all relayer implementations.
+type CCIPProviderArgs struct {
+	ExternalJobID        uuid.UUID
+	ContractReaderConfig []byte
+	ChainWriterConfig    []byte
+	OffRampAddress       string
+	PluginType           uint32
 }

@@ -73,6 +73,9 @@ func TestStandardErrors(t *testing.T) {
 }
 
 func TestStandardCapabilityCallsAreAsync(t *testing.T) {
+	// This test expects basic action's PerformAction to be called twice asynchronously and the results concatenated.
+	// To ensure the calls are actually async, the mock will block the first call until the second call is made.
+	// The first call sets InputThing to true, the second to false.
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -98,12 +101,10 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 		require.NoError(t, err)
 
 		// Don't return until the second call has been executed
-		defer func() {
-			if !input.InputThing {
-				mt.Lock()
-			}
-			defer mt.Unlock()
-		}()
+		if input.InputThing {
+			mt.Lock()
+		}
+		defer mt.Unlock()
 		return &sdk.CapabilityResponse{
 			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
 		}, nil
@@ -432,6 +433,39 @@ func TestStandardSecrets(t *testing.T) {
 		})
 		assert.ErrorContains(t, errors.New(resp.GetError()), "could not find secret")
 	})
+}
+
+func TestStandardSecretsFailInNodeMode(t *testing.T) {
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+		assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
+		input := &sdk.SimpleConsensusInputs{}
+		require.NoError(t, request.Payload.UnmarshalTo(input))
+
+		var errMsg string
+		switch msg := input.Observation.(type) {
+		case *sdk.SimpleConsensusInputs_Error:
+			errMsg = msg.Error
+		default:
+			require.Fail(t, "observation must be an error")
+		}
+		return &sdk.CapabilityResponse{
+			Response: &sdk.CapabilityResponse_Error{Error: errMsg},
+		}, nil
+	}).Once()
+	m := makeTestModule(t)
+	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+
+	errStr := executeWithError(t, m, request, mockExecutionHelper)
+
+	require.Contains(t, errStr, "cannot use Runtime inside RunInNodeMode")
 }
 
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {

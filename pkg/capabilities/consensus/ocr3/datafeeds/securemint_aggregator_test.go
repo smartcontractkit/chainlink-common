@@ -37,6 +37,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		dataID               string
 		solAccounts          [][32]byte
 		previousOutcome      *types.AggregationOutcome
+		seqNr                uint64
 		observations         map[ocrcommon.OracleID][]values.Value
 		f                    int
 		expectedShouldReport bool
@@ -69,7 +70,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		assert.NotNil(t, answer)
 
 		timestamp := report[TimestampOutputFieldName].(int64)
-		assert.Equal(t, int64(1000), timestamp)
+		assert.Equal(t, int64(tc.seqNr), timestamp)
 	}
 
 	solReportAssertFn := func(t *testing.T, tc tcase, topLevelMap map[string]any) {
@@ -100,7 +101,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 		assert.NotNil(t, answer)
 
 		timestamp := report[SolTimestampOutputFieldName].(int64)
-		assert.Equal(t, int64(1000), timestamp)
+		assert.Equal(t, int64(tc.seqNr), timestamp)
 	}
 
 	tests := []tcase{
@@ -108,6 +109,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "successful eth report extraction",
 			chainSelector: "16015286601757825753",
 			dataID:        "0x01c508f42b0201320000000000000000",
+			seqNr:         10,
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: ethSepoliaChainSelector,
@@ -121,10 +123,10 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				},
 				{
 					chainSelector: bnbTestnetChainSelector,
-					seqNr:         11,
+					seqNr:         10,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
-						SeqNr:        11,
+						SeqNr:        10,
 						Block:        1100,
 						Mintable:     big.NewInt(200),
 					},
@@ -139,6 +141,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "no matching chain selector found",
 			chainSelector: "16015286601757825753",
 			dataID:        "0x01c508f42b0201320000000000000000",
+			seqNr:         10,
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
 					chainSelector: bnbTestnetChainSelector,
@@ -160,6 +163,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "no observations",
 			chainSelector: "16015286601757825753",
 			dataID:        "0x01c508f42b0201320000000000000000",
+			seqNr:         10,
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
@@ -169,6 +173,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			name:          "successful sol report extraction",
 			chainSelector: "16423721717087811551", // solana devnet
 			dataID:        "0x01c508f42b0201320000000000000000",
+			seqNr:         10,
 			solAccounts:   [][32]byte{acc1, acc2},
 			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
@@ -180,16 +185,18 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 						Block:        1000,
 						Mintable:     big.NewInt(99),
 					},
+					accCtx: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}},
 				},
 				{
 					chainSelector: bnbTestnetChainSelector,
-					seqNr:         11,
+					seqNr:         10,
 					report: &secureMintReport{
 						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
-						SeqNr:        11,
+						SeqNr:        10,
 						Block:        1100,
 						Mintable:     big.NewInt(200),
 					},
+					accCtx: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: acc1}, &solana.AccountMeta{PublicKey: acc2}},
 				},
 			}),
 			f:                    1,
@@ -331,14 +338,6 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			expectError:   true,
 			errorMsg:      "dataID must be 16 bytes",
 		},
-		{
-			name:           "solana account context with invalid public key",
-			chainSelector:  "1",
-			dataID:         "0x01c508f42b0201320000000000000000",
-			solanaAccounts: solana.AccountMetaSlice{&solana.AccountMeta{PublicKey: [32]byte{}}},
-			expectError:    true,
-			errorMsg:       "solana account context public key must not be all zeros",
-		},
 	}
 
 	for _, tt := range tests {
@@ -368,7 +367,6 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedChainSelector, aggregator.(*SecureMintAggregator).config.TargetChainSelector)
 			assert.Equal(t, tt.expectedDataID, aggregator.(*SecureMintAggregator).config.DataID)
-			assert.Equal(t, tt.solanaAccounts, aggregator.(*SecureMintAggregator).config.Solana.AccountContext)
 		})
 	}
 }
@@ -379,6 +377,7 @@ type ocrTriggerEventData struct {
 	chainSelector chainSelector
 	seqNr         uint64
 	report        *secureMintReport
+	accCtx        solana.AccountMetaSlice
 }
 
 func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) map[ocrcommon.OracleID][]values.Value {
@@ -416,10 +415,12 @@ func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) ma
 				},
 			}
 
-			// Wrap in values.Value
-			val, err := values.Wrap(triggerEvent)
+			// wrap with account context if present
+			val, err := values.Wrap(map[string]any{
+				"event":  triggerEvent,
+				"solana": event.accCtx,
+			})
 			require.NoError(t, err)
-
 			oracleObservations = append(oracleObservations, val)
 		}
 

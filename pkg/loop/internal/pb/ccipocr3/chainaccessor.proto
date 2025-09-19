@@ -368,8 +368,7 @@ message GetFeedPricesUSDResponse {
 }
 
 message GetFeeQuoterTokenUpdatesRequest {
-  repeated string tokens = 1; // UnknownEncodedAddress
-  uint64 chain_selector = 2;
+  repeated bytes tokens_bytes = 1; // UnknownAddress
 }
 
 message GetFeeQuoterTokenUpdatesResponse {

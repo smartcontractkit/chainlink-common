@@ -9,7 +9,7 @@ import (
 )
 
 func TestExtraDataCodec_DecodeExtraArgs(t *testing.T) {
-	extraDataCodec := ExtraDataCodec{
+	extraDataCodec := ExtraDataCodecMap{
 		chainsel.FamilySolana: nil,
 	}
 
@@ -41,7 +41,7 @@ func TestExtraDataCodec_DecodeExtraArgs(t *testing.T) {
 }
 
 func TestExtraDataCodec_DecodeTokenAmountDestExecData(t *testing.T) {
-	extraDataCodec := ExtraDataCodec{
+	extraDataCodec := ExtraDataCodecMap{
 		chainsel.FamilySolana: nil,
 	}
 

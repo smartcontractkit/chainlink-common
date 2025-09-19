@@ -633,3 +633,147 @@ var SourceChainExtraDataCodec_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "codec.proto",
 }
+
+const (
+	ExtraDataCodecBundle_DecodeExtraArgs_FullMethodName               = "/loop.internal.pb.ccipocr3.ExtraDataCodecBundle/DecodeExtraArgs"
+	ExtraDataCodecBundle_DecodeTokenAmountDestExecData_FullMethodName = "/loop.internal.pb.ccipocr3.ExtraDataCodecBundle/DecodeTokenAmountDestExecData"
+)
+
+// ExtraDataCodecBundleClient is the client API for ExtraDataCodecBundle service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ExtraDataCodecBundle service for decoding extra args and dest exec data with chain selector
+type ExtraDataCodecBundleClient interface {
+	DecodeExtraArgs(ctx context.Context, in *DecodeExtraArgsWithChainSelectorRequest, opts ...grpc.CallOption) (*DecodeExtraArgsWithChainSelectorResponse, error)
+	DecodeTokenAmountDestExecData(ctx context.Context, in *DecodeTokenAmountDestExecDataRequest, opts ...grpc.CallOption) (*DecodeTokenAmountDestExecDataResponse, error)
+}
+
+type extraDataCodecBundleClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewExtraDataCodecBundleClient(cc grpc.ClientConnInterface) ExtraDataCodecBundleClient {
+	return &extraDataCodecBundleClient{cc}
+}
+
+func (c *extraDataCodecBundleClient) DecodeExtraArgs(ctx context.Context, in *DecodeExtraArgsWithChainSelectorRequest, opts ...grpc.CallOption) (*DecodeExtraArgsWithChainSelectorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DecodeExtraArgsWithChainSelectorResponse)
+	err := c.cc.Invoke(ctx, ExtraDataCodecBundle_DecodeExtraArgs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *extraDataCodecBundleClient) DecodeTokenAmountDestExecData(ctx context.Context, in *DecodeTokenAmountDestExecDataRequest, opts ...grpc.CallOption) (*DecodeTokenAmountDestExecDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DecodeTokenAmountDestExecDataResponse)
+	err := c.cc.Invoke(ctx, ExtraDataCodecBundle_DecodeTokenAmountDestExecData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ExtraDataCodecBundleServer is the server API for ExtraDataCodecBundle service.
+// All implementations must embed UnimplementedExtraDataCodecBundleServer
+// for forward compatibility.
+//
+// ExtraDataCodecBundle service for decoding extra args and dest exec data with chain selector
+type ExtraDataCodecBundleServer interface {
+	DecodeExtraArgs(context.Context, *DecodeExtraArgsWithChainSelectorRequest) (*DecodeExtraArgsWithChainSelectorResponse, error)
+	DecodeTokenAmountDestExecData(context.Context, *DecodeTokenAmountDestExecDataRequest) (*DecodeTokenAmountDestExecDataResponse, error)
+	mustEmbedUnimplementedExtraDataCodecBundleServer()
+}
+
+// UnimplementedExtraDataCodecBundleServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedExtraDataCodecBundleServer struct{}
+
+func (UnimplementedExtraDataCodecBundleServer) DecodeExtraArgs(context.Context, *DecodeExtraArgsWithChainSelectorRequest) (*DecodeExtraArgsWithChainSelectorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecodeExtraArgs not implemented")
+}
+func (UnimplementedExtraDataCodecBundleServer) DecodeTokenAmountDestExecData(context.Context, *DecodeTokenAmountDestExecDataRequest) (*DecodeTokenAmountDestExecDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecodeTokenAmountDestExecData not implemented")
+}
+func (UnimplementedExtraDataCodecBundleServer) mustEmbedUnimplementedExtraDataCodecBundleServer() {}
+func (UnimplementedExtraDataCodecBundleServer) testEmbeddedByValue()                              {}
+
+// UnsafeExtraDataCodecBundleServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ExtraDataCodecBundleServer will
+// result in compilation errors.
+type UnsafeExtraDataCodecBundleServer interface {
+	mustEmbedUnimplementedExtraDataCodecBundleServer()
+}
+
+func RegisterExtraDataCodecBundleServer(s grpc.ServiceRegistrar, srv ExtraDataCodecBundleServer) {
+	// If the following call pancis, it indicates UnimplementedExtraDataCodecBundleServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ExtraDataCodecBundle_ServiceDesc, srv)
+}
+
+func _ExtraDataCodecBundle_DecodeExtraArgs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecodeExtraArgsWithChainSelectorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExtraDataCodecBundleServer).DecodeExtraArgs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExtraDataCodecBundle_DecodeExtraArgs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExtraDataCodecBundleServer).DecodeExtraArgs(ctx, req.(*DecodeExtraArgsWithChainSelectorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExtraDataCodecBundle_DecodeTokenAmountDestExecData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecodeTokenAmountDestExecDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExtraDataCodecBundleServer).DecodeTokenAmountDestExecData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExtraDataCodecBundle_DecodeTokenAmountDestExecData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExtraDataCodecBundleServer).DecodeTokenAmountDestExecData(ctx, req.(*DecodeTokenAmountDestExecDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ExtraDataCodecBundle_ServiceDesc is the grpc.ServiceDesc for ExtraDataCodecBundle service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ExtraDataCodecBundle_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.internal.pb.ccipocr3.ExtraDataCodecBundle",
+	HandlerType: (*ExtraDataCodecBundleServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DecodeExtraArgs",
+			Handler:    _ExtraDataCodecBundle_DecodeExtraArgs_Handler,
+		},
+		{
+			MethodName: "DecodeTokenAmountDestExecData",
+			Handler:    _ExtraDataCodecBundle_DecodeTokenAmountDestExecData_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "codec.proto",
+}

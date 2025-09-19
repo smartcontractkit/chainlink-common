@@ -567,6 +567,61 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				},
 				expectedState: map[string]any{"Price": int64(1)},
 			},
+			{
+				name: "handle nils gracefully",
+				fields: []aggregators.AggregationField{
+					{
+						InputKey:  "FeedID",
+						OutputKey: "FeedID",
+						Method:    "mode",
+					},
+					{
+						InputKey:        "BenchmarkPrice",
+						OutputKey:       "Price",
+						Method:          "median",
+						DeviationString: "10",
+						DeviationType:   "percent",
+					},
+					{
+						InputKey:        "Timestamp",
+						OutputKey:       "Timestamp",
+						Method:          "median",
+						DeviationString: "100",
+						DeviationType:   "absolute",
+					},
+				},
+				extraConfig: map[string]any{},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.WrapMap(map[string]any{
+						"FeedID":         idABytes[:],
+						"BenchmarkPrice": uint64(100),
+						"Timestamp":      12341414929,
+					})
+					require.NoError(t, err)
+					mockValueWithNil, err := values.WrapMap(map[string]any{
+						"FeedID":         idABytes[:],
+						"BenchmarkPrice": uint64(100),
+						"Timestamp":      12341414929,
+					})
+					mockValueWithNil.Underlying["BenchmarkPrice"] = nil // simulate failed wraping of uint64
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}, 4: {mockValueWithNil}}
+				},
+				shouldReport: true,
+				expectedOutcome: map[string]any{
+					"Reports": []any{
+						map[string]any{
+							"FeedID":    idABytes[:],
+							"Timestamp": int64(12341414929),
+							"Price":     uint64(100),
+						},
+					},
+				},
+				expectedState: map[string]any{
+					"FeedID":    idABytes[:],
+					"Timestamp": int64(12341414929),
+					"Price":     uint64(100),
+				},
+			},
 		}
 		for _, tt := range cases {
 			t.Run(tt.name, func(t *testing.T) {

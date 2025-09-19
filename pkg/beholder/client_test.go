@@ -480,6 +480,42 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 	})
 }
 
+func TestNewClient_Chip(t *testing.T) {
+	t.Run("chip interface available with chip-ingress endpoint provided", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.Chip)
+	})
+
+	t.Run("chip interface can be enabled when chip ingress dual emitter is not enabled ", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      false,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.Chip)
+		assert.NotNil(t, client.Emitter)
+	})
+
+	t.Run("chip interface is nil when chip ingress config is missing", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:  "grpc-endpoint",
+			ChipIngressEmitterEnabled: true,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+	})
+}
+
 // mockLogExporter is a no-op exporter for testing purposes.
 type mockLogExporter struct{}
 

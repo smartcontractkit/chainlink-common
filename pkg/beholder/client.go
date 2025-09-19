@@ -254,10 +254,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 	}
 
-	// Create interface to chip-ingress for schema registry
-	chip, err := NewChipIngressClient(chipIngressClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create interface to chip ingress: %w", err)
+	// Create interface/wrapper to chip-ingress for schema registry
+	var chip ChipIngressClient
+	if chipIngressClient != nil {
+		chip, err = NewChipIngressClient(chipIngressClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create interface to chip ingress: %w", err)
+		}
 	}
 
 	onClose := func() (err error) {

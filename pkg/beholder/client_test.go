@@ -506,7 +506,7 @@ func TestNewClient_Chip(t *testing.T) {
 		assert.NotNil(t, client.Emitter)
 	})
 
-	t.Run("chip interfact is nil when chip ingress config is missing", func(t *testing.T) {
+	t.Run("chip interface is nil when chip ingress config is missing", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:  "grpc-endpoint",
 			ChipIngressEmitterEnabled: true,

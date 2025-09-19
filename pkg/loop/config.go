@@ -121,7 +121,6 @@ type EnvConfig struct {
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
-	ChipSchemaRegistryEnabled     bool
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.

@@ -215,11 +215,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// This will eventually be removed in favor of chip-ingress emitter
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
-	var chipClient ChipIngressClient
 	var chipIngressClient chipingress.Client
 
-	// Create chip ingress client if endpoint is provided
-	if cfg.ChipIngressEmitterEnabled || cfg.ChipSchemaRegistryEnabled {
+	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
+	// eventually we will remove the dual source emitter and just use chip ingress
+	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
 
 		if cfg.ChipIngressInsecureConnection {
@@ -242,11 +242,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
-	// eventually we will remove the dual source emitter and just use chip ingress
-	if cfg.ChipIngressEmitterEnabled {
 		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
@@ -258,12 +254,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 	}
 
-	// Create interface to chip ingress schema registry if enabled
-	if cfg.ChipSchemaRegistryEnabled {
-		chipClient, err = NewChipIngressClient(chipIngressClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create interface to chip ingress: %w", err)
-		}
+	// Create interface to chip-ingress for schema registry
+	chip, err := NewChipIngressClient(chipIngressClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create interface to chip ingress: %w", err)
 	}
 
 	onClose := func() (err error) {
@@ -272,7 +266,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chipClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes

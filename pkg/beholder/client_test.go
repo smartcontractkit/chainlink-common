@@ -480,27 +480,25 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 	})
 }
 
-func TestNewClient_ChipSchemaRegistry(t *testing.T) {
-	t.Run("chip schema registry enabled", func(t *testing.T) {
+func TestNewClient_Chip(t *testing.T) {
+	t.Run("chip interface available with chip-ingress endpoint provided", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "grpc-endpoint",
 			ChipIngressEmitterEnabled:      true,
 			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
 			ChipIngressInsecureConnection:  false,
-			ChipSchemaRegistryEnabled:      true,
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
 	})
 
-	t.Run("chip schema registry can be enabled when chip ingress is not enabled ", func(t *testing.T) {
+	t.Run("chip interface can be enabled when chip ingress dual emitter is not enabled ", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "grpc-endpoint",
 			ChipIngressEmitterEnabled:      false,
 			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
 			ChipIngressInsecureConnection:  false,
-			ChipSchemaRegistryEnabled:      true,
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)
@@ -508,7 +506,7 @@ func TestNewClient_ChipSchemaRegistry(t *testing.T) {
 		assert.NotNil(t, client.Emitter)
 	})
 
-	t.Run("chip schema registry is not enabled when if chip ingress config is missing", func(t *testing.T) {
+	t.Run("chip interfact is nil when chip ingress config is missing", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:  "grpc-endpoint",
 			ChipIngressEmitterEnabled: true,

@@ -314,9 +314,10 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ContractReaderConfig:   cargs.ContractReaderConfig,
 				ChainWriterConfig:      cargs.ChainWriterConfig,
 				OffRampAddress:         cargs.OffRampAddress,
-				PluginType:             cargs.PluginType,
+				PluginType:             uint32(cargs.PluginType),
 				SyncedAddresses:        persistedSyncs,
 				ExtraDataCodecBundleID: extraDataCodecBundleID,
+				Transmitter:            cargs.Transmitter,
 			},
 		})
 		if err != nil {
@@ -762,8 +763,9 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		ContractReaderConfig: rargs.ContractReaderConfig,
 		ChainWriterConfig:    rargs.ChainWriterConfig,
 		OffRampAddress:       rargs.OffRampAddress,
-		PluginType:           rargs.PluginType,
+		PluginType:           ccipocr3types.PluginType(rargs.PluginType),
 		ExtraDataCodecBundle: extraDataCodecBundle,
+		Transmitter:          rargs.Transmitter,
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)

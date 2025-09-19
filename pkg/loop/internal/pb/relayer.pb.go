@@ -274,14 +274,16 @@ func (x *PluginArgs) GetPluginConfig() []byte {
 }
 
 type CCIPProviderArgs struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	ExternalJobID          []byte                 `protobuf:"bytes,1,opt,name=externalJobID,proto3" json:"externalJobID,omitempty"` // [32]byte
-	ContractReaderConfig   []byte                 `protobuf:"bytes,2,opt,name=contractReaderConfig,proto3" json:"contractReaderConfig,omitempty"`
-	ChainWriterConfig      []byte                 `protobuf:"bytes,3,opt,name=chainWriterConfig,proto3" json:"chainWriterConfig,omitempty"`
-	OffRampAddress         string                 `protobuf:"bytes,4,opt,name=OffRampAddress,proto3" json:"OffRampAddress,omitempty"`
-	PluginType             uint32                 `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
-	SyncedAddresses        map[string][]byte      `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
-	ExtraDataCodecBundleID uint32                 `protobuf:"varint,7,opt,name=extraDataCodecBundleID,proto3" json:"extraDataCodecBundleID,omitempty"`                                                                                   // LOOP service ID for ExtraDataCodecBundle served by core node
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	ExternalJobID        []byte                 `protobuf:"bytes,1,opt,name=externalJobID,proto3" json:"externalJobID,omitempty"` // [32]byte
+	ContractReaderConfig []byte                 `protobuf:"bytes,2,opt,name=contractReaderConfig,proto3" json:"contractReaderConfig,omitempty"`
+	ChainWriterConfig    []byte                 `protobuf:"bytes,3,opt,name=chainWriterConfig,proto3" json:"chainWriterConfig,omitempty"`
+	OffRampAddress       []byte                 `protobuf:"bytes,4,opt,name=offRampAddress,proto3" json:"offRampAddress,omitempty"`
+	// pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
+	PluginType             uint32            `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
+	SyncedAddresses        map[string][]byte `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
+	ExtraDataCodecBundleID uint32            `protobuf:"varint,7,opt,name=extraDataCodecBundleID,proto3" json:"extraDataCodecBundleID,omitempty"`                                                                                   // LOOP service ID for ExtraDataCodecBundle served by core node
+	Transmitter            string            `protobuf:"bytes,8,opt,name=transmitter,proto3" json:"transmitter,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -337,11 +339,11 @@ func (x *CCIPProviderArgs) GetChainWriterConfig() []byte {
 	return nil
 }
 
-func (x *CCIPProviderArgs) GetOffRampAddress() string {
+func (x *CCIPProviderArgs) GetOffRampAddress() []byte {
 	if x != nil {
 		return x.OffRampAddress
 	}
-	return ""
+	return nil
 }
 
 func (x *CCIPProviderArgs) GetPluginType() uint32 {
@@ -363,6 +365,13 @@ func (x *CCIPProviderArgs) GetExtraDataCodecBundleID() uint32 {
 		return x.ExtraDataCodecBundleID
 	}
 	return 0
+}
+
+func (x *CCIPProviderArgs) GetTransmitter() string {
+	if x != nil {
+		return x.Transmitter
+	}
+	return ""
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
@@ -2731,17 +2740,18 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\n" +
 	"PluginArgs\x12$\n" +
 	"\rtransmitterID\x18\x01 \x01(\tR\rtransmitterID\x12\"\n" +
-	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xb6\x03\n" +
+	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xd8\x03\n" +
 	"\x10CCIPProviderArgs\x12$\n" +
 	"\rexternalJobID\x18\x01 \x01(\fR\rexternalJobID\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\x12,\n" +
 	"\x11chainWriterConfig\x18\x03 \x01(\fR\x11chainWriterConfig\x12&\n" +
-	"\x0eOffRampAddress\x18\x04 \x01(\tR\x0eOffRampAddress\x12\x1e\n" +
+	"\x0eoffRampAddress\x18\x04 \x01(\fR\x0eoffRampAddress\x12\x1e\n" +
 	"\n" +
 	"pluginType\x18\x05 \x01(\rR\n" +
 	"pluginType\x12V\n" +
 	"\x10synced_addresses\x18\x06 \x03(\v2+.loop.CCIPProviderArgs.SyncedAddressesEntryR\x0fsyncedAddresses\x126\n" +
-	"\x16extraDataCodecBundleID\x18\a \x01(\rR\x16extraDataCodecBundleID\x1aB\n" +
+	"\x16extraDataCodecBundleID\x18\a \x01(\rR\x16extraDataCodecBundleID\x12 \n" +
+	"\vtransmitter\x18\b \x01(\tR\vtransmitter\x1aB\n" +
 	"\x14SyncedAddressesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01\"N\n" +

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758238019744,
+  "lastUpdate": 1758300875814,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25452,6 +25452,48 @@ window.BENCHMARK_DATA = {
             "value": 26781,
             "unit": "ns/op",
             "extra": "44001 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "168561091+engnke@users.noreply.github.com",
+            "name": "engnke",
+            "username": "engnke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2a72cea2db7b50c01f84b6315074842fc6becb33",
+          "message": "Add schema registry to beholder client (#1551)\n\n* add schema registry to beholder client\n\n* fix test output\n\n* tidy\n\n* build issues\n\n* build issues\n\n* rename to registrar\n\n* refactoring\n\n* trying to fix build issues\n\n* trying to fix build issues\n\n* trying to fix build issues\n\n* trying to fix build issues\n\n* fixes\n\n* undo\n\n* undo\n\n* refactor\n\n* tidy\n\n* bump chip-ingress to v0.0.4\n\n* addressing pr comments\n\n* comments\n\n* refactor\n\n* remove feature flag for chip schema registry\n\n* undo\n\n* refactorring",
+          "timestamp": "2025-09-19T16:52:10Z",
+          "tree_id": "b88f7c7cd702673b6a37b69aaa37ce1686f1f9a5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2a72cea2db7b50c01f84b6315074842fc6becb33"
+        },
+        "date": 1758300874690,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356,
+            "unit": "ns/op",
+            "extra": "3356739 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.1,
+            "unit": "ns/op",
+            "extra": "2864154 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26603,
+            "unit": "ns/op",
+            "extra": "45016 times\n4 procs"
           }
         ]
       }

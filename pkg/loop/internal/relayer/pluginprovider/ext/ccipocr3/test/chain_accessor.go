@@ -205,14 +205,14 @@ func ChainAccessor(lggr logger.Logger) staticChainAccessor {
 				"sender3": 5,
 			},
 		},
-		chainFeePriceUpdates: map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig{
+		chainFeePriceUpdates: map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig{
 			ccipocr3.ChainSelector(1): {
-				Timestamp: testTime,
-				Value:     ccipocr3.NewBigInt(big.NewInt(2000000000)),
+				Timestamp: uint32(testTime.Unix()),
+				Value:     big.NewInt(2000000000),
 			},
 			ccipocr3.ChainSelector(2): {
-				Timestamp: testTime.Add(time.Hour),
-				Value:     ccipocr3.NewBigInt(big.NewInt(1800000000)),
+				Timestamp: uint32(testTime.Add(time.Hour).Unix()),
+				Value:     big.NewInt(1800000000),
 			},
 		},
 		latestPriceSeqNr: 42,
@@ -294,7 +294,7 @@ type staticChainAccessorConfig struct {
 	executedMessages         map[ccipocr3.ChainSelector][]ccipocr3.SeqNum
 	nextSeqNums              map[ccipocr3.ChainSelector]ccipocr3.SeqNum
 	nonces                   map[ccipocr3.ChainSelector]map[string]uint64
-	chainFeePriceUpdates     map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig
+	chainFeePriceUpdates     map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig
 	latestPriceSeqNr         uint64
 	messages                 []ccipocr3.Message
 	latestMessageSeqNr       ccipocr3.SeqNum
@@ -351,12 +351,12 @@ func (s staticChainAccessor) Nonces(ctx context.Context, addresses map[ccipocr3.
 	return s.nonces, nil
 }
 
-func (s staticChainAccessor) GetChainFeePriceUpdate(ctx context.Context, chains []ccipocr3.ChainSelector) map[ccipocr3.ChainSelector]ccipocr3.TimestampedBig {
-	return s.chainFeePriceUpdates
+func (s staticChainAccessor) GetChainFeePriceUpdate(ctx context.Context, chains []ccipocr3.ChainSelector) (map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig, error) {
+	return s.chainFeePriceUpdates, nil
 }
 
-func (s staticChainAccessor) GetLatestPriceSeqNr(ctx context.Context) (uint64, error) {
-	return s.latestPriceSeqNr, nil
+func (s staticChainAccessor) GetLatestPriceSeqNr(ctx context.Context) (ccipocr3.SeqNum, error) {
+	return ccipocr3.SeqNum(s.latestPriceSeqNr), nil
 }
 
 // SourceAccessor implementation
@@ -381,6 +381,45 @@ func (s staticChainAccessor) GetFeeQuoterDestChainConfig(ctx context.Context, de
 	return s.feeQuoterDestChainConfig, nil
 }
 
+// USDCMessageReader implementation
+func (s staticChainAccessor) MessagesByTokenID(ctx context.Context, source, dest ccipocr3.ChainSelector, tokens map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount) (map[ccipocr3.MessageTokenID]ccipocr3.Bytes, error) {
+	// Return static test data for USDC messages
+	result := make(map[ccipocr3.MessageTokenID]ccipocr3.Bytes)
+	for tokenID := range tokens {
+		// Return some test message bytes
+		result[tokenID] = ccipocr3.Bytes(fmt.Sprintf("usdc-message-data-for-%s", tokenID.String()))
+	}
+	return result, nil
+}
+
+// PriceReader implementation
+func (s staticChainAccessor) GetFeedPricesUSD(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, tokenInfo map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo) (ccipocr3.TokenPriceMap, error) {
+	// Return static test prices
+	result := make(ccipocr3.TokenPriceMap)
+	for i, token := range tokens {
+		// Generate different prices for different tokens
+		price := big.NewInt(1000000 + int64(i)*100000) // $1.00, $1.10, $1.20, etc. in wei units
+		result[token] = ccipocr3.NewBigInt(price)
+	}
+	return result, nil
+}
+
+func (s staticChainAccessor) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
+	// Return static test token updates
+	result := make(map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig)
+	testTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+
+	for i, token := range tokens {
+		// Generate different prices for different tokens
+		price := big.NewInt(2000000 + int64(i)*50000) // Different prices from GetFeedPricesUSD
+		result[token] = ccipocr3.TimestampedUnixBig{
+			Timestamp: uint32(testTime.Add(time.Duration(i) * time.Minute).Unix()), // Different timestamps
+			Value:     price,
+		}
+	}
+	return result, nil
+}
+
 // Evaluate implements ChainAccessorEvaluator.
 func (s staticChainAccessor) Evaluate(ctx context.Context, other ccipocr3.ChainAccessor) error {
 	// Delegate to individual evaluation functions for better readability
@@ -400,6 +439,9 @@ func (s staticChainAccessor) Evaluate(ctx context.Context, other ccipocr3.ChainA
 		s.evaluateGetExpectedNextSequenceNumber,
 		s.evaluateGetTokenPriceUSD,
 		s.evaluateGetFeeQuoterDestChainConfig,
+		s.evaluateMessagesByTokenID,
+		s.evaluateGetFeedPricesUSD,
+		s.evaluateGetFeeQuoterTokenUpdates,
 	}
 
 	for _, evaluate := range evaluators {
@@ -732,8 +774,14 @@ func (s staticChainAccessor) evaluateNonces(ctx context.Context, other ccipocr3.
 
 func (s staticChainAccessor) evaluateGetChainFeePriceUpdate(ctx context.Context, other ccipocr3.ChainAccessor) error {
 	chains := []ccipocr3.ChainSelector{1, 2}
-	otherUpdates := other.GetChainFeePriceUpdate(ctx, chains)
-	myUpdates := s.GetChainFeePriceUpdate(ctx, chains)
+	otherUpdates, err := other.GetChainFeePriceUpdate(ctx, chains)
+	if err != nil {
+		return fmt.Errorf("GetChainFeePriceUpdate failed: %w", err)
+	}
+	myUpdates, err := s.GetChainFeePriceUpdate(ctx, chains)
+	if err != nil {
+		return fmt.Errorf("GetChainFeePriceUpdate failed: %w", err)
+	}
 	if len(otherUpdates) != len(myUpdates) {
 		return fmt.Errorf("GetChainFeePriceUpdate length mismatch: got %d, expected %d", len(otherUpdates), len(myUpdates))
 	}
@@ -742,13 +790,13 @@ func (s staticChainAccessor) evaluateGetChainFeePriceUpdate(ctx context.Context,
 		if !exists {
 			return fmt.Errorf("GetChainFeePriceUpdate missing chain %d in other updates", chainSel)
 		}
-		if otherUpdate.Value.Cmp(myUpdate.Value.Int) != 0 {
+		if otherUpdate.Value.Cmp(myUpdate.Value) != 0 {
 			return fmt.Errorf("GetChainFeePriceUpdate chain %d Value mismatch: got %s, expected %s",
 				chainSel, otherUpdate.Value.String(), myUpdate.Value.String())
 		}
-		if !otherUpdate.Timestamp.Equal(myUpdate.Timestamp) {
-			return fmt.Errorf("GetChainFeePriceUpdate chain %d Timestamp mismatch: got %s, expected %s",
-				chainSel, otherUpdate.Timestamp.Format(time.RFC3339), myUpdate.Timestamp.Format(time.RFC3339))
+		if otherUpdate.Timestamp != myUpdate.Timestamp {
+			return fmt.Errorf("GetChainFeePriceUpdate chain %d Timestamp mismatch: got %d, expected %d",
+				chainSel, otherUpdate.Timestamp, myUpdate.Timestamp)
 		}
 	}
 	return nil
@@ -900,6 +948,108 @@ func (s staticChainAccessor) evaluateGetFeeQuoterDestChainConfig(ctx context.Con
 	}
 	if otherConfig.ChainFamilySelector != myConfig.ChainFamilySelector {
 		return fmt.Errorf("GetFeeQuoterDestChainConfig ChainFamilySelector mismatch: got %x, expected %x", otherConfig.ChainFamilySelector, myConfig.ChainFamilySelector)
+	}
+	return nil
+}
+
+func (s staticChainAccessor) evaluateMessagesByTokenID(ctx context.Context, other ccipocr3.ChainAccessor) error {
+	tokens := map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{
+		ccipocr3.NewMessageTokenID(1, 0): {
+			SourcePoolAddress: ccipocr3.UnknownAddress("test-source-pool"),
+			DestTokenAddress:  ccipocr3.UnknownAddress("test-dest-token"),
+			ExtraData:         ccipocr3.Bytes("test-extra-data"),
+			Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+		},
+	}
+
+	otherMessages, err := other.MessagesByTokenID(ctx, ccipocr3.ChainSelector(1), ccipocr3.ChainSelector(2), tokens)
+	if err != nil {
+		return fmt.Errorf("MessagesByTokenID failed: %w", err)
+	}
+	myMessages, err := s.MessagesByTokenID(ctx, ccipocr3.ChainSelector(1), ccipocr3.ChainSelector(2), tokens)
+	if err != nil {
+		return fmt.Errorf("MessagesByTokenID failed: %w", err)
+	}
+
+	if len(otherMessages) != len(myMessages) {
+		return fmt.Errorf("MessagesByTokenID length mismatch: got %d, expected %d", len(otherMessages), len(myMessages))
+	}
+
+	for tokenID, myMessage := range myMessages {
+		otherMessage, exists := otherMessages[tokenID]
+		if !exists {
+			return fmt.Errorf("MessagesByTokenID missing tokenID %s in other messages", tokenID.String())
+		}
+		if string(otherMessage) != string(myMessage) {
+			return fmt.Errorf("MessagesByTokenID tokenID %s mismatch: got %s, expected %s", tokenID.String(), string(otherMessage), string(myMessage))
+		}
+	}
+	return nil
+}
+
+func (s staticChainAccessor) evaluateGetFeedPricesUSD(ctx context.Context, other ccipocr3.ChainAccessor) error {
+	tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2", "token3"}
+	tokenInfo := map[ccipocr3.UnknownEncodedAddress]ccipocr3.TokenInfo{
+		"token1": {
+			AggregatorAddress: ccipocr3.UnknownEncodedAddress("0x1234567890123456789012345678901234567890"),
+			DeviationPPB:      ccipocr3.NewBigInt(big.NewInt(1000000000)), // 1%
+			Decimals:          18,
+		},
+	}
+
+	otherPrices, err := other.GetFeedPricesUSD(ctx, tokens, tokenInfo)
+	if err != nil {
+		return fmt.Errorf("GetFeedPricesUSD failed: %w", err)
+	}
+	myPrices, err := s.GetFeedPricesUSD(ctx, tokens, tokenInfo)
+	if err != nil {
+		return fmt.Errorf("GetFeedPricesUSD failed: %w", err)
+	}
+
+	if len(otherPrices) != len(myPrices) {
+		return fmt.Errorf("GetFeedPricesUSD length mismatch: got %d, expected %d", len(otherPrices), len(myPrices))
+	}
+
+	for token, myPrice := range myPrices {
+		otherPrice, exists := otherPrices[token]
+		if !exists {
+			return fmt.Errorf("GetFeedPricesUSD missing token %s in other prices", string(token))
+		}
+		if otherPrice.Cmp(myPrice.Int) != 0 {
+			return fmt.Errorf("GetFeedPricesUSD token %s mismatch: got %s, expected %s", string(token), otherPrice.String(), myPrice.String())
+		}
+	}
+	return nil
+}
+
+func (s staticChainAccessor) evaluateGetFeeQuoterTokenUpdates(ctx context.Context, other ccipocr3.ChainAccessor) error {
+	tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2"}
+	chain := ccipocr3.ChainSelector(1)
+
+	otherUpdates, err := other.GetFeeQuoterTokenUpdates(ctx, tokens, chain)
+	if err != nil {
+		return fmt.Errorf("GetFeeQuoterTokenUpdates failed: %w", err)
+	}
+	myUpdates, err := s.GetFeeQuoterTokenUpdates(ctx, tokens, chain)
+	if err != nil {
+		return fmt.Errorf("GetFeeQuoterTokenUpdates failed: %w", err)
+	}
+
+	if len(otherUpdates) != len(myUpdates) {
+		return fmt.Errorf("GetFeeQuoterTokenUpdates length mismatch: got %d, expected %d", len(otherUpdates), len(myUpdates))
+	}
+
+	for token, myUpdate := range myUpdates {
+		otherUpdate, exists := otherUpdates[token]
+		if !exists {
+			return fmt.Errorf("GetFeeQuoterTokenUpdates missing token %s in other updates", string(token))
+		}
+		if otherUpdate.Value.Cmp(myUpdate.Value) != 0 {
+			return fmt.Errorf("GetFeeQuoterTokenUpdates token %s value mismatch: got %s, expected %s", string(token), otherUpdate.Value.String(), myUpdate.Value.String())
+		}
+		if otherUpdate.Timestamp != myUpdate.Timestamp {
+			return fmt.Errorf("GetFeeQuoterTokenUpdates token %s timestamp mismatch: got %d, expected %d", string(token), otherUpdate.Timestamp, myUpdate.Timestamp)
+		}
 	}
 	return nil
 }

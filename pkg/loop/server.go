@@ -16,8 +16,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
-	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 )
@@ -87,6 +87,8 @@ func (s *Server) start() error {
 	if err := s.EnvConfig.parse(); err != nil {
 		return fmt.Errorf("error getting environment configuration: %w", err)
 	}
+
+	s.Logger.Info("Seeing loop config line")
 
 	tracingAttrs := s.EnvConfig.TracingAttributes
 	if tracingAttrs == nil {

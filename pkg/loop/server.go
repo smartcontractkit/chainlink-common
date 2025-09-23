@@ -88,7 +88,7 @@ func (s *Server) start() error {
 		return fmt.Errorf("error getting environment configuration: %w", err)
 	}
 
-	s.Logger.Info("Seeing loop config line")
+	s.Logger.Infof("Seeing loop config line, envConfig: %v", s.EnvConfig)
 
 	tracingAttrs := s.EnvConfig.TracingAttributes
 	if tracingAttrs == nil {
@@ -105,6 +105,9 @@ func (s *Server) start() error {
 	}
 
 	if s.EnvConfig.TelemetryEndpoint == "" {
+
+		s.Logger.Info("Seeing no telemetry endpoint, skipping telemetry setup")
+
 		err := SetupTracing(tracingConfig)
 		if err != nil {
 			return fmt.Errorf("failed to setup tracing: %w", err)
@@ -132,6 +135,8 @@ func (s *Server) start() error {
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
+
+		s.Logger.Info("Seeing beholder config %v", beholderCfg)
 
 		if tracingConfig.Enabled {
 			if beholderCfg.AuthHeaders != nil {

@@ -24,7 +24,7 @@ type ResourceLimiter[N Number] interface {
 	Use(ctx context.Context, amount N) error
 	// Free is the counterpart to Use and releases amount of resources from use.
 	Free(ctx context.Context, amount N) error
-	// Available returns
+	// Available returns the available remaining capacity.
 	Available(ctx context.Context) (N, error)
 }
 

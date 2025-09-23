@@ -43,7 +43,7 @@ RateLimit = 'every30s:3'
 [PerWorkflow.LogTrigger]
 RateLimit = 'every10s:-1'
 Limit = '5'
-EventRateLimit = 'every-1s:-1'
+EventRateLimit = 'every6s:10'
 FilterAddressLimit = '5'
 FilterTopicsPerSlotLimit = '10'
 
@@ -60,7 +60,7 @@ TargetsLimit = '3'
 ReportSizeLimit = '1kb'
 
 [PerWorkflow.ChainWrite.EVM]
-TransactionGasLimit = '-1'
+TransactionGasLimit = '500000'
 
 [PerWorkflow.ChainRead]
 CallLimit = '3'

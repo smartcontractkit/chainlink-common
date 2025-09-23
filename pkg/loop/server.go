@@ -88,6 +88,8 @@ func (s *Server) start() error {
 		return fmt.Errorf("error getting environment configuration: %w", err)
 	}
 
+	fmt.Println("Seeing the loop code setup")
+
 	tracingAttrs := s.EnvConfig.TracingAttributes
 	if tracingAttrs == nil {
 		tracingAttrs = make(map[string]string, 1)

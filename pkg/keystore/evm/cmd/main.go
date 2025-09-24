@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore"
 	evmks "github.com/smartcontractkit/chainlink-common/pkg/keystore/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
@@ -29,7 +30,8 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(keyInfo)
-	blah, err := evm.Sign(context.Background(), evmks.EVMSignRequest{Name: name, Data: []byte("hello world")})
+	blah, err := evm.SignTx(context.Background(), evmks.EVMSignTxRequest{
+		Name: name, Tx: &gethtypes.Transaction{}})
 	if err != nil {
 		log.Fatal(err)
 	}

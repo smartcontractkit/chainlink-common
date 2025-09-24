@@ -2,13 +2,17 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
+	"maps"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/serialization"
-	"google.golang.org/protobuf/proto"
+	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
 )
 
 type CreateKeyRequest struct {
@@ -41,7 +45,8 @@ type ExportKeyRequest struct {
 }
 
 type ExportKeyResponse struct {
-	Data []byte
+	KeyInfo KeyInfo
+	Data    []byte
 }
 
 type Admin interface {
@@ -51,12 +56,12 @@ type Admin interface {
 	ExportKey(ctx context.Context, req ExportKeyRequest) (ExportKeyResponse, error)
 }
 
-func (k *keystore) CreateKey(ctx context.Context, req CreateKeyRequest) (CreateKeyResponse, error) {
-	k.mu.Lock()
-	defer k.mu.Unlock()
+func (ks *keystore) CreateKey(ctx context.Context, req CreateKeyRequest) (CreateKeyResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
 
 	// Clone the keystore.
-	ks := proto.Clone(k.keystore).(*serialization.Keystore)
+	ksCopy := maps.Clone(ks.keystore)
 
 	// Mutate it with the new key.
 	switch req.KeyType {
@@ -65,20 +70,29 @@ func (k *keystore) CreateKey(ctx context.Context, req CreateKeyRequest) (CreateK
 		if err != nil {
 			return CreateKeyResponse{}, fmt.Errorf("failed to generate Ed25519 key: %w", err)
 		}
-		ks.Ed25519Keys = append(ks.Ed25519Keys, &serialization.Key{
-			Name:       req.Name,
-			PrivateKey: privateKey,
-			CreatedAt:  time.Now().Unix(),
-		})
+		ksCopy[req.Name] = key{
+			keyType:    req.KeyType,
+			privateKey: internal.NewRaw(privateKey),
+			createdAt:  time.Now(),
+		}
 	case Secp256k1:
+		privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
+		if err != nil {
+			return CreateKeyResponse{}, fmt.Errorf("failed to generate Secp256k1 key: %w", err)
+		}
+		ksCopy[req.Name] = key{
+			keyType:    req.KeyType,
+			privateKey: internal.NewRaw(privateKeyECDSA.D.Bytes()),
+			createdAt:  time.Now(),
+		}
 		return CreateKeyResponse{}, fmt.Errorf("Secp256k1 is not supported yet")
 	}
 	// Persist it to storage.
-	if err := save(k.storage, k.password, k.keystore); err != nil {
+	if err := save(ks.storage, ks.password, ksCopy); err != nil {
 		return CreateKeyResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	// If we succeed to save, update the in memory keystore.
-	k.keystore = ks
+	ks.keystore = ksCopy
 	return CreateKeyResponse{}, nil
 }
 
@@ -91,5 +105,24 @@ func (k *keystore) ImportKey(ctx context.Context, req ImportKeyRequest) (ImportK
 }
 
 func (k *keystore) ExportKey(ctx context.Context, req ExportKeyRequest) (ExportKeyResponse, error) {
-	return ExportKeyResponse{}, nil
+	key, ok := k.keystore[req.Name]
+	if !ok {
+		return ExportKeyResponse{}, fmt.Errorf("key not found: %s", req.Name)
+	}
+	exportedKey, err := gethkeystore.EncryptDataV3(internal.Bytes(key.privateKey), []byte(k.password), gethkeystore.StandardScryptN, gethkeystore.StandardScryptP)
+	if err != nil {
+		return ExportKeyResponse{}, fmt.Errorf("failed to export key: %w", err)
+	}
+	exportedKeyData, err := json.Marshal(exportedKey)
+	if err != nil {
+		return ExportKeyResponse{}, fmt.Errorf("failed to marshal exported key: %w", err)
+	}
+	return ExportKeyResponse{
+		KeyInfo: KeyInfo{
+			Name:      req.Name,
+			KeyType:   key.keyType,
+			PublicKey: []byte{}, // TODO
+		},
+		Data: exportedKeyData,
+	}, nil
 }

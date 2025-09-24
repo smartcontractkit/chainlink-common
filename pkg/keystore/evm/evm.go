@@ -3,9 +3,10 @@ package evm
 import (
 	"context"
 	"fmt"
-
+	"math/big"
 	"strings"
 
+	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore"
 )
 
@@ -36,11 +37,20 @@ type EVMDeleteKeyResponse struct{}
 type EVMImportKeyRequest struct {
 	Name    string
 	Data    []byte
-	Address string // Sanity check
+	Address string // sanity check
 }
 
 type EVMImportKeyResponse struct {
 	PublicKey []byte
+}
+
+type EVMExportKeyRequest struct {
+	Name string
+}
+type EVMExportKeyResponse struct {
+	Name    string
+	Address string
+	Data    []byte
 }
 
 type EVMListKeysRequest struct{}
@@ -57,21 +67,14 @@ type EVMGetKeyRequest struct {
 type EVMGetKeyResponse struct {
 	KeyInfo keystore.KeyInfo
 }
-type EVMSignRequest struct {
-	Name string
-	Data []byte
+type EVMSignTxRequest struct {
+	Name        string
+	FromAddress string
+	ChainID     *big.Int
+	Tx          *gethtypes.Transaction
 }
-type EVMSignResponse struct {
-	Signature []byte
-}
-
-type EVMVerifyRequest struct {
-	Name      string
-	Data      []byte
-	Signature []byte
-}
-type EVMVerifyResponse struct {
-	Valid bool
+type EVMSignTxResponse struct {
+	Tx *gethtypes.Transaction
 }
 
 type EVM struct {
@@ -90,32 +93,24 @@ func (e EVM) isEVMKey(name string) bool {
 	return strings.HasPrefix(name, evmKeyTag)
 }
 
-func (e EVM) Sign(ctx context.Context, req EVMSignRequest) (EVMSignResponse, error) {
+// Sign an EVM transaction.
+func (e EVM) SignTx(ctx context.Context, req EVMSignTxRequest) (EVMSignTxResponse, error) {
+	signer := gethtypes.LatestSignerForChainID(req.ChainID)
+	h := signer.Hash(req.Tx)
 	signReq := keystore.SignRequest{
 		Name: e.buildKeyName(req.Name),
-		Data: req.Data,
+		Data: h[:],
 	}
 	signResp, err := e.ks.Sign(ctx, signReq)
 	if err != nil {
-		return EVMSignResponse{}, err
+		return EVMSignTxResponse{}, err
 	}
-	return EVMSignResponse{
-		Signature: signResp.Signature,
-	}, nil
-}
-
-func (e EVM) Verify(ctx context.Context, req EVMVerifyRequest) (EVMVerifyResponse, error) {
-	verifyReq := keystore.VerifyRequest{
-		Name:      e.buildKeyName(req.Name),
-		Data:      req.Data,
-		Signature: req.Signature,
-	}
-	verifyResp, err := e.ks.Verify(ctx, verifyReq)
+	req.Tx, err = req.Tx.WithSignature(signer, signResp.Signature)
 	if err != nil {
-		return EVMVerifyResponse{}, err
+		return EVMSignTxResponse{}, err
 	}
-	return EVMVerifyResponse{
-		Valid: verifyResp.Valid,
+	return EVMSignTxResponse{
+		Tx: req.Tx,
 	}, nil
 }
 
@@ -159,13 +154,12 @@ func (e EVM) GetKey(ctx context.Context, req EVMGetKeyRequest) (EVMGetKeyRespons
 }
 
 func PubkeyToAddress(pubkey []byte) (string, error) {
-	// TODO: return the evm address
+	// TODO:
 	return "", nil
 }
 
-// Below are more restricted methods which ensure the right key type is used.
-// EVM key is always secp256k1
 func (e EVM) CreateKey(ctx context.Context, req EVMCreateKeyRequest) (EVMCreateKeyResponse, error) {
+	// Only EVM key types created.
 	createReq := keystore.CreateKeyRequest{
 		Name:    e.buildKeyName(req.Name),
 		KeyType: evmKeyType,
@@ -209,5 +203,24 @@ func (e EVM) ImportKey(ctx context.Context, req EVMImportKeyRequest) (EVMImportK
 	}
 	return EVMImportKeyResponse{
 		PublicKey: importResp.PublicKey,
+	}, nil
+}
+
+func (e EVM) ExportKey(ctx context.Context, req EVMExportKeyRequest) (EVMExportKeyResponse, error) {
+	exportReq := keystore.ExportKeyRequest{
+		Name: e.buildKeyName(req.Name),
+	}
+	exportResp, err := e.ks.ExportKey(ctx, exportReq)
+	if err != nil {
+		return EVMExportKeyResponse{}, err
+	}
+	address, err := PubkeyToAddress(exportResp.KeyInfo.PublicKey)
+	if err != nil {
+		return EVMExportKeyResponse{}, err
+	}
+	return EVMExportKeyResponse{
+		Name:    exportResp.KeyInfo.Name,
+		Address: address,
+		Data:    exportResp.Data,
 	}, nil
 }

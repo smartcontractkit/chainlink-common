@@ -2,17 +2,16 @@ package keystore
 
 import (
 	"context"
-	"crypto/rand"
 
-	"crypto/aes"
-	"crypto/cipher"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
+	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/serialization"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
-	"golang.org/x/crypto/scrypt"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -32,9 +31,17 @@ type Keystore interface {
 	KeyExchanger
 }
 
+type key struct {
+	keyType    KeyType
+	privateKey internal.Raw
+	createdAt  time.Time
+}
 type keystore struct {
+	mu sync.RWMutex
 	// Keystore is the in memory keys.
-	keystore *serialization.Keystore
+	// Probably makes sense to have maps per key type and have actual
+	// typed keys
+	keystore map[string]key
 	// Storage is used to persisting encrypted key material.
 	storage  storage.Storage
 	password string
@@ -48,40 +55,61 @@ func NewKeystore(storage storage.Storage, password string) (Keystore, error) {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)
 	}
 	return &keystore{
+		mu:       sync.RWMutex{},
 		keystore: ks,
 		storage:  storage,
 		password: password,
 	}, nil
 }
 
-func load(storage storage.Storage, password string) (*serialization.Keystore, error) {
+func load(storage storage.Storage, password string) (map[string]key, error) {
 	encryptedKeystore, err := storage.GetEncryptedKeystore(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get encrypted keystore: %w", err)
 	}
-	encryptedSecrets := &EncryptedSecrets{}
-	err = json.Unmarshal(encryptedKeystore, encryptedSecrets)
+	encryptedSecrets := gethkeystore.CryptoJSON{}
+	err = json.Unmarshal(encryptedKeystore, &encryptedSecrets)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal encrypted keystore: %w", err)
 	}
-	decryptedKeystore, err := decrypt(password, encryptedSecrets)
+	decryptedKeystore, err := gethkeystore.DecryptDataV3(encryptedSecrets, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt keystore: %w", err)
 	}
-	keystore := &serialization.Keystore{}
-	err = proto.Unmarshal(decryptedKeystore, keystore)
+	keystorepb := &serialization.Keystore{}
+	err = proto.Unmarshal(decryptedKeystore, keystorepb)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal keystore: %w", err)
+	}
+	keystore := make(map[string]key)
+	for _, k := range keystorepb.Keys {
+		keystore[k.Name] = key{
+			createdAt:  time.Unix(k.CreatedAt, 0),
+			keyType:    KeyType(k.KeyType),
+			privateKey: internal.NewRaw(k.PrivateKey),
+		}
 	}
 	return keystore, nil
 }
 
-func save(storage storage.Storage, password string, keystore *serialization.Keystore) error {
-	rawKeystore, err := proto.Marshal(keystore)
+func save(storage storage.Storage, password string, keystore map[string]key) error {
+	keystorepb := serialization.Keystore{
+		Keys: make([]*serialization.Key, 0),
+	}
+	for name, k := range keystore {
+		keystorepb.Keys = append(keystorepb.Keys, &serialization.Key{
+			Name:       name,
+			KeyType:    string(k.keyType),
+			PrivateKey: internal.Bytes(k.privateKey),
+			CreatedAt:  k.createdAt.Unix(),
+		})
+	}
+	rawKeystore, err := proto.Marshal(&keystorepb)
 	if err != nil {
 		return fmt.Errorf("failed to marshal keystore: %w", err)
 	}
-	encryptedSecrets, err := encrypt(password, rawKeystore)
+	// TODO: Could parameterize these.
+	encryptedSecrets, err := gethkeystore.EncryptDataV3(rawKeystore, []byte(password), gethkeystore.StandardScryptN, gethkeystore.StandardScryptP)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt keystore: %w", err)
 	}
@@ -94,98 +122,4 @@ func save(storage storage.Storage, password string, keystore *serialization.Keys
 		return fmt.Errorf("failed to put encrypted keystore: %w", err)
 	}
 	return nil
-}
-
-const (
-	scryptN = 32768
-	scryptR = 8
-	scryptP = 1
-	keyLen  = 32
-	version = 1
-)
-
-type EncryptedSecrets struct {
-	IV             string `json:"iv"`              // Base64 encoded IV
-	Ciphertext     string `json:"ciphertext"`      // Base64 encoded encrypted data
-	Tag            string `json:"tag"`             // Base64 encoded authentication tag
-	AssociatedData string `json:"associated_data"` // Associated data
-	ScryptSalt     string `json:"scrypt_salt"`     // Base64 encoded scrypt salt
-	Version        uint64 `json:"version"`         // Version number
-}
-
-func encrypt(password string, data []byte) (*EncryptedSecrets, error) {
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return nil, fmt.Errorf("failed to generate salt: %w", err)
-	}
-
-	key, err := scrypt.Key([]byte(password), salt, scryptN, scryptR, scryptP, keyLen)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive key: %w", err)
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCM: %w", err)
-	}
-
-	iv := make([]byte, gcm.NonceSize())
-	if _, err := rand.Read(iv); err != nil {
-		return nil, fmt.Errorf("failed to generate IV: %w", err)
-	}
-
-	ciphertext := gcm.Seal(nil, iv, data, []byte("keystore"))
-
-	return &EncryptedSecrets{
-		IV:             base64.StdEncoding.EncodeToString(iv),
-		Ciphertext:     base64.StdEncoding.EncodeToString(ciphertext),
-		Tag:            "", // GCM includes tag in ciphertext
-		AssociatedData: "keystore",
-		ScryptSalt:     base64.StdEncoding.EncodeToString(salt),
-		Version:        version,
-	}, nil
-}
-
-func decrypt(password string, encryptedSecrets *EncryptedSecrets) ([]byte, error) {
-	salt, err := base64.StdEncoding.DecodeString(encryptedSecrets.ScryptSalt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode salt: %w", err)
-	}
-
-	iv, err := base64.StdEncoding.DecodeString(encryptedSecrets.IV)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode IV: %w", err)
-	}
-
-	ciphertext, err := base64.StdEncoding.DecodeString(encryptedSecrets.Ciphertext)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode ciphertext: %w", err)
-	}
-
-	key, err := scrypt.Key([]byte(password), salt, scryptN, scryptR, scryptP, keyLen)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive key: %w", err)
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCM: %w", err)
-	}
-
-	plaintext, err := gcm.Open(nil, iv, ciphertext, []byte(encryptedSecrets.AssociatedData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt: %w", err)
-	}
-
-	return plaintext, nil
 }

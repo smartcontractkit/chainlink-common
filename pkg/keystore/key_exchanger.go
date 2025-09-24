@@ -14,3 +14,7 @@ type DeriveSharedSecretResponse struct {
 type KeyExchanger interface {
 	DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error)
 }
+
+func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
+	return DeriveSharedSecretResponse{}, nil
+}

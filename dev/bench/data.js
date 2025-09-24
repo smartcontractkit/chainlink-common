@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758726700156,
+  "lastUpdate": 1758749918734,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25578,6 +25578,48 @@ window.BENCHMARK_DATA = {
             "value": 26637,
             "unit": "ns/op",
             "extra": "45114 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "108959691+amit-momin@users.noreply.github.com",
+            "name": "amit-momin",
+            "username": "amit-momin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "853372a2fb0739337777a16fd2e6c505935dfd45",
+          "message": "Updated CCIP provider args and types (#1561)",
+          "timestamp": "2025-09-24T17:37:21-04:00",
+          "tree_id": "4a4b7a6951cbe485eb6f3627755e7676325374c4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/853372a2fb0739337777a16fd2e6c505935dfd45"
+        },
+        "date": 1758749917661,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.6,
+            "unit": "ns/op",
+            "extra": "3350973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.5,
+            "unit": "ns/op",
+            "extra": "2992153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26694,
+            "unit": "ns/op",
+            "extra": "44877 times\n4 procs"
           }
         ]
       }

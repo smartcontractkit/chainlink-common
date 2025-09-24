@@ -323,7 +323,7 @@ func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProvider
 		ChainWriterConfig:    s.chainWriterConfig,
 		OffRampAddress:       s.offRampAddress,
 		PluginType:           s.pluginType,
-		Transmitter:          s.transmitter,
+		TransmitterAddress:   s.transmitter,
 	}
 	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
@@ -483,7 +483,7 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
 		slices.Equal(a.OffRampAddress, b.OffRampAddress) &&
 		a.PluginType == b.PluginType &&
-		a.Transmitter == b.Transmitter
+		a.TransmitterAddress == b.TransmitterAddress
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

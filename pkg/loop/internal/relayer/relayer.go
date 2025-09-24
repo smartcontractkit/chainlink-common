@@ -301,7 +301,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				OffRampAddress:       cargs.OffRampAddress,
 				PluginType:           uint32(cargs.PluginType),
 				SyncedAddresses:      persistedSyncs,
-				Transmitter:            cargs.Transmitter,
+				TransmitterAddress:   cargs.TransmitterAddress,
 			},
 		})
 		if err != nil {

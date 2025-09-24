@@ -6,3 +6,6 @@ contexts. For peristed keystores, do write-through caching, that is writes updat
 the context in which they wish to use it. 
 - Protobuf serialization (compact, versioned) for key material and then key material encrypted before persistence with a passphase.
 Same serialization + encryption method can be used for any persistence approach.
+
+Note EVM directory just a demo of how to build atop the base layer. Would be moved to 
+chainlink-evm.

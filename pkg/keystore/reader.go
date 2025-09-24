@@ -2,7 +2,6 @@ package keystore
 
 import "context"
 
-// Request/Response types for Reader interface
 type ListKeysRequest struct{}
 
 type ListKeysResponse struct {
@@ -20,4 +19,12 @@ type GetKeyResponse struct {
 type Reader interface {
 	ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error)
 	GetKey(ctx context.Context, req GetKeyRequest) (GetKeyResponse, error)
+}
+
+func (k *keystore) ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error) {
+	return ListKeysResponse{}, nil
+}
+
+func (k *keystore) GetKey(ctx context.Context, req GetKeyRequest) (GetKeyResponse, error) {
+	return GetKeyResponse{}, nil
 }

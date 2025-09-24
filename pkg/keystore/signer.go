@@ -2,7 +2,12 @@ package keystore
 
 import "context"
 
-// Request/Response types for Signer interface
+const (
+	// Digital signature key types.
+	Ed25519   KeyType = "ed25519"
+	Secp256k1 KeyType = "secp256k1"
+)
+
 type SignRequest struct {
 	Name string
 	Data []byte
@@ -25,4 +30,12 @@ type VerifyResponse struct {
 type Signer interface {
 	Sign(ctx context.Context, req SignRequest) (SignResponse, error)
 	Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error)
+}
+
+func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, error) {
+	return SignResponse{}, nil
+}
+
+func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
+	return VerifyResponse{}, nil
 }

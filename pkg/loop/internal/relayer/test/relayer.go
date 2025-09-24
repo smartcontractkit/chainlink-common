@@ -77,7 +77,7 @@ type staticRelayerConfig struct {
 	chainWriterConfig      []byte
 	offRampAddress         ccipocr3.UnknownAddress
 	pluginType             ccipocr3.PluginType
-	transmitterAddress     string
+	transmitterAddress     ccipocr3.UnknownEncodedAddress
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester

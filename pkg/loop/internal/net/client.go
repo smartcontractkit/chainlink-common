@@ -64,7 +64,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}
 				c.Logger.Warnw("clientConn: Invoke: terminal error", "method", method, "err", err)
 				return err
 			}
-			c.Logger.Warnw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
+			c.Logger.Errorw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}
@@ -84,7 +84,7 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	for cc != nil {
 		s, err := cc.NewStream(ctx, desc, method, opts...)
 		if isErrTerminal(err) {
-			c.Logger.Warnw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
+			c.Logger.Errorw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}

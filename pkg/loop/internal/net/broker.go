@@ -108,7 +108,7 @@ func (b *BrokerExt) Serve(name string, server *grpc.Server, deps ...Resource) (u
 	lis, err := b.Broker.Accept(id)
 	if err != nil {
 		b.CloseAll(deps...)
-		return 0, Resource{}, ErrConnAccept{Name: name, ID: id, Err: err}
+		return 0, Resource{}, ErrConnAccept{Broker: fmt.Sprintf("%p", b.Broker), Name: name, ID: id, Err: err}
 	}
 
 	var wg sync.WaitGroup

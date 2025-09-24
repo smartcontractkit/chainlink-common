@@ -31,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	ccipocr3types "github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -298,8 +299,9 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ContractReaderConfig: cargs.ContractReaderConfig,
 				ChainWriterConfig:    cargs.ChainWriterConfig,
 				OffRampAddress:       cargs.OffRampAddress,
-				PluginType:           cargs.PluginType,
+				PluginType:           uint32(cargs.PluginType),
 				SyncedAddresses:      persistedSyncs,
+				TransmitterAddress:   string(cargs.TransmitterAddress),
 			},
 		})
 		if err != nil {
@@ -731,7 +733,8 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		ContractReaderConfig: rargs.ContractReaderConfig,
 		ChainWriterConfig:    rargs.ChainWriterConfig,
 		OffRampAddress:       rargs.OffRampAddress,
-		PluginType:           rargs.PluginType,
+		PluginType:           ccipocr3types.PluginType(rargs.PluginType),
+		TransmitterAddress:   ccipocr3types.UnknownEncodedAddress(rargs.TransmitterAddress),
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)

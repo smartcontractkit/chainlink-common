@@ -32,6 +32,7 @@ func NewChainAccessorClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) 
 	return &ChainAccessorClient{
 		BrokerExt: broker,
 		grpc:      ccipocr3pb.NewChainAccessorClient(cc),
+		syncs:     make(map[string]ccipocr3.UnknownAddress),
 	}
 }
 
@@ -95,7 +96,7 @@ func (c *ChainAccessorClient) Sync(ctx context.Context, contractName string, con
 	_, err := c.grpc.Sync(ctx, req)
 
 	// If grpc call succeeded, store the most recent address for this given contract address.
-	if err != nil {
+	if err == nil {
 		c.mu.Lock()
 		c.syncs[contractName] = contractAddress
 		c.mu.Unlock()

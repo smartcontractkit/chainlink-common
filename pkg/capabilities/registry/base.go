@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
+
+	"github.com/Masterminds/semver/v3"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -36,11 +39,58 @@ func (r *baseRegistry) Get(_ context.Context, id string) (capabilities.BaseCapab
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	c, ok := r.m[id]
-	if !ok {
-		return nil, fmt.Errorf("capability not found with id %s", id)
+	if ok {
+		return c, nil
 	}
 
-	return c, nil
+	// Find compatible version (>= requested version with same major)
+	parts := strings.Split(id, "@")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid capability id format: %s", id)
+	}
+	name, verStr := parts[0], parts[1]
+
+	reqVer, err := semver.NewVersion(verStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid version in capability id %q: %w", id, err)
+	}
+	reqIsPrerelease := reqVer.Prerelease() != ""
+
+	var bestCap capabilities.BaseCapability
+	var bestVer *semver.Version
+	for key, cap := range r.m {
+		p := strings.Split(key, "@")
+		if len(p) != 2 {
+			continue
+		}
+		if p[0] != name {
+			continue
+		}
+		v, err := semver.NewVersion(p[1])
+		if err != nil {
+			continue
+		}
+		if v.Major() != reqVer.Major() {
+			continue
+		}
+		// If the request is stable, skip pre-release candidates
+		if !reqIsPrerelease && v.Prerelease() != "" {
+			continue
+		}
+
+		if v.GreaterThan(reqVer) {
+			if bestVer == nil || v.LessThan(bestVer) {
+				bestCap = cap
+				bestVer = v
+			}
+		}
+	}
+
+	if bestCap != nil {
+		r.lggr.Debugw("found compatible capability", "id", name+"@"+bestVer.String())
+		return bestCap, nil
+	}
+	return nil, fmt.Errorf("no compatible capability found for id %s", id)
 }
 
 // GetTrigger gets a capability from the registry and tries to coerce it to the TriggerCapability interface.

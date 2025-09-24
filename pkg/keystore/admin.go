@@ -65,7 +65,7 @@ func (k *keystore) CreateKey(ctx context.Context, req CreateKeyRequest) (CreateK
 		if err != nil {
 			return CreateKeyResponse{}, fmt.Errorf("failed to generate Ed25519 key: %w", err)
 		}
-		ks.Ed25519Keys = append(ks.Ed25519Keys, &serialization.Ed25519Key{
+		ks.Ed25519Keys = append(ks.Ed25519Keys, &serialization.Key{
 			Name:       req.Name,
 			PrivateKey: privateKey,
 			CreatedAt:  time.Now().Unix(),

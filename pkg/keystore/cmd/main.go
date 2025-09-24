@@ -6,7 +6,8 @@ import (
 	"log"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore"
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/file"
+	evmks "github.com/smartcontractkit/chainlink-common/pkg/keystore/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
 )
 
 const (
@@ -14,17 +15,21 @@ const (
 )
 
 func main() {
-	fileKeystore, err := file.NewFileKeystore("test_password", "test_keystore.json")
+	storage, err := storage.NewFileStorage("test_keystore.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	evm := keystore.NewEVM(fileKeystore)
-	keyInfo, err := evm.CreateKey(context.Background(), name)
+	keystore, err := keystore.NewKeystore(storage, "test_password")
+	if err != nil {
+		log.Fatal(err)
+	}
+	evm := evmks.NewEVM(keystore)
+	keyInfo, err := evm.CreateKey(context.Background(), evmks.EVMCreateKeyRequest{Name: name})
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(keyInfo)
-	blah, err := evm.Sign(context.Background(), name, []byte("hello world"))
+	blah, err := evm.Sign(context.Background(), evmks.EVMSignRequest{Name: name, Data: []byte("hello world")})
 	if err != nil {
 		log.Fatal(err)
 	}

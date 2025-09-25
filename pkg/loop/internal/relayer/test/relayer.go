@@ -31,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -74,8 +75,9 @@ type staticRelayerConfig struct {
 	pluginArgs             types.PluginArgs
 	contractReaderConfig   []byte
 	chainWriterConfig      []byte
-	offRampAddress         string
-	pluginType             uint32
+	offRampAddress         ccipocr3.UnknownAddress
+	pluginType             ccipocr3.PluginType
+	transmitterAddress     ccipocr3.UnknownEncodedAddress
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
@@ -101,8 +103,9 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		pluginArgs:             PluginArgs,
 		contractReaderConfig:   []byte("test"),
 		chainWriterConfig:      []byte("chainwriterconfig"),
-		offRampAddress:         "fakeAddress",
+		offRampAddress:         []byte("fakeAddress"),
 		pluginType:             0,
+		transmitterAddress:     "fakeAddress",
 		medianProvider:         mediantest.MedianProvider(lggr),
 		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
@@ -320,6 +323,7 @@ func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProvider
 		ChainWriterConfig:    s.chainWriterConfig,
 		OffRampAddress:       s.offRampAddress,
 		PluginType:           s.pluginType,
+		TransmitterAddress:   s.transmitterAddress,
 	}
 	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
@@ -477,8 +481,9 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 	return a.ExternalJobID == b.ExternalJobID &&
 		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
-		a.OffRampAddress == b.OffRampAddress &&
-		a.PluginType == b.PluginType
+		slices.Equal(a.OffRampAddress, b.OffRampAddress) &&
+		a.PluginType == b.PluginType &&
+		a.TransmitterAddress == b.TransmitterAddress
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

@@ -2,7 +2,6 @@ package evm_test
 
 import (
 	"testing"
-	"time"
 
 	protoevm "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	chainevm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
@@ -355,62 +354,6 @@ func TestFilterQuery_Conversions(t *testing.T) {
 		for i := range p.Topics {
 			assert.Equal(t, p.Topics[i].Topic, p2.Topics[i].Topic)
 		}
-	})
-}
-
-func TestLPFilter_Conversions(t *testing.T) {
-	t.Run("roundtrip to proto", func(t *testing.T) {
-		in := evmtypes.LPFilterQuery{
-			Name:         "my-filter",
-			Retention:    5 * time.Minute,
-			Addresses:    []evmtypes.Address{a20(0x01)},
-			EventSigs:    []evmtypes.Hash{h32(0x02)},
-			Topic2:       []evmtypes.Hash{h32(0x03)},
-			Topic3:       []evmtypes.Hash{h32(0x04)},
-			Topic4:       []evmtypes.Hash{h32(0x05)},
-			MaxLogsKept:  123,
-			LogsPerBlock: 7,
-		}
-		p := protoevm.ConvertLPFilterToProto(in)
-		out, err := protoevm.ConvertLPFilterFromProto(p)
-		require.NoError(t, err)
-
-		assert.Equal(t, in.Name, out.Name)
-		assert.Equal(t, in.Retention, out.Retention)
-		assert.Equal(t, in.MaxLogsKept, out.MaxLogsKept)
-		assert.Equal(t, in.LogsPerBlock, out.LogsPerBlock)
-		assert.Equal(t, in.Addresses, out.Addresses)
-		assert.Equal(t, in.EventSigs, out.EventSigs)
-		assert.Equal(t, in.Topic2, out.Topic2)
-		assert.Equal(t, in.Topic3, out.Topic3)
-		assert.Equal(t, in.Topic4, out.Topic4)
-	})
-
-	t.Run("roundtrip from proto", func(t *testing.T) {
-		p := &protoevm.LPFilter{
-			Name:          "other-filter",
-			RetentionTime: int64(2 * time.Hour),
-			Addresses:     [][]byte{b20(0x11), b20(0x12)},
-			EventSigs:     [][]byte{b32(0x21)},
-			Topic2:        [][]byte{b32(0x22)},
-			Topic3:        [][]byte{b32(0x23)},
-			Topic4:        [][]byte{b32(0x24)},
-			MaxLogsKept:   456,
-			LogsPerBlock:  3,
-		}
-		d, err := protoevm.ConvertLPFilterFromProto(p)
-		require.NoError(t, err)
-		p2 := protoevm.ConvertLPFilterToProto(d)
-
-		assert.Equal(t, p.Name, p2.Name)
-		assert.Equal(t, p.RetentionTime, p2.RetentionTime)
-		assert.Equal(t, p.Addresses, p2.Addresses)
-		assert.Equal(t, p.EventSigs, p2.EventSigs)
-		assert.Equal(t, p.Topic2, p2.Topic2)
-		assert.Equal(t, p.Topic3, p2.Topic3)
-		assert.Equal(t, p.Topic4, p2.Topic4)
-		assert.Equal(t, p.MaxLogsKept, p2.MaxLogsKept)
-		assert.Equal(t, p.LogsPerBlock, p2.LogsPerBlock)
 	})
 }
 

@@ -278,10 +278,13 @@ type CCIPProviderArgs struct {
 	ExternalJobID        []byte                 `protobuf:"bytes,1,opt,name=externalJobID,proto3" json:"externalJobID,omitempty"` // [32]byte
 	ContractReaderConfig []byte                 `protobuf:"bytes,2,opt,name=contractReaderConfig,proto3" json:"contractReaderConfig,omitempty"`
 	ChainWriterConfig    []byte                 `protobuf:"bytes,3,opt,name=chainWriterConfig,proto3" json:"chainWriterConfig,omitempty"`
-	OffRampAddress       string                 `protobuf:"bytes,4,opt,name=OffRampAddress,proto3" json:"OffRampAddress,omitempty"`
-	PluginType           uint32                 `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	OffRampAddress       []byte                 `protobuf:"bytes,4,opt,name=offRampAddress,proto3" json:"offRampAddress,omitempty"`
+	// pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
+	PluginType         uint32            `protobuf:"varint,5,opt,name=pluginType,proto3" json:"pluginType,omitempty"`
+	SyncedAddresses    map[string][]byte `protobuf:"bytes,6,rep,name=synced_addresses,json=syncedAddresses,proto3" json:"synced_addresses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // map[contract_name]contract_address
+	TransmitterAddress string            `protobuf:"bytes,7,opt,name=transmitterAddress,proto3" json:"transmitterAddress,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CCIPProviderArgs) Reset() {
@@ -335,11 +338,11 @@ func (x *CCIPProviderArgs) GetChainWriterConfig() []byte {
 	return nil
 }
 
-func (x *CCIPProviderArgs) GetOffRampAddress() string {
+func (x *CCIPProviderArgs) GetOffRampAddress() []byte {
 	if x != nil {
 		return x.OffRampAddress
 	}
-	return ""
+	return nil
 }
 
 func (x *CCIPProviderArgs) GetPluginType() uint32 {
@@ -347,6 +350,20 @@ func (x *CCIPProviderArgs) GetPluginType() uint32 {
 		return x.PluginType
 	}
 	return 0
+}
+
+func (x *CCIPProviderArgs) GetSyncedAddresses() map[string][]byte {
+	if x != nil {
+		return x.SyncedAddresses
+	}
+	return nil
+}
+
+func (x *CCIPProviderArgs) GetTransmitterAddress() string {
+	if x != nil {
+		return x.TransmitterAddress
+	}
+	return ""
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
@@ -2715,15 +2732,20 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\n" +
 	"PluginArgs\x12$\n" +
 	"\rtransmitterID\x18\x01 \x01(\tR\rtransmitterID\x12\"\n" +
-	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xe2\x01\n" +
+	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"\xae\x03\n" +
 	"\x10CCIPProviderArgs\x12$\n" +
 	"\rexternalJobID\x18\x01 \x01(\fR\rexternalJobID\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\x12,\n" +
 	"\x11chainWriterConfig\x18\x03 \x01(\fR\x11chainWriterConfig\x12&\n" +
-	"\x0eOffRampAddress\x18\x04 \x01(\tR\x0eOffRampAddress\x12\x1e\n" +
+	"\x0eoffRampAddress\x18\x04 \x01(\fR\x0eoffRampAddress\x12\x1e\n" +
 	"\n" +
 	"pluginType\x18\x05 \x01(\rR\n" +
-	"pluginType\"N\n" +
+	"pluginType\x12V\n" +
+	"\x10synced_addresses\x18\x06 \x03(\v2+.loop.CCIPProviderArgs.SyncedAddressesEntryR\x0fsyncedAddresses\x12.\n" +
+	"\x12transmitterAddress\x18\a \x01(\tR\x12transmitterAddress\x1aB\n" +
+	"\x14SyncedAddressesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01\"N\n" +
 	"\x18NewContractWriterRequest\x122\n" +
 	"\x14contractWriterConfig\x18\x01 \x01(\fR\x14contractWriterConfig\"D\n" +
 	"\x16NewContractWriterReply\x12*\n" +
@@ -2899,7 +2921,7 @@ func file_loop_internal_pb_relayer_proto_rawDescGZIP() []byte {
 	return file_loop_internal_pb_relayer_proto_rawDescData
 }
 
-var file_loop_internal_pb_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
+var file_loop_internal_pb_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
 var file_loop_internal_pb_relayer_proto_goTypes = []any{
 	(*NewRelayerRequest)(nil),                 // 0: loop.NewRelayerRequest
 	(*NewRelayerReply)(nil),                   // 1: loop.NewRelayerReply
@@ -2954,84 +2976,86 @@ var file_loop_internal_pb_relayer_proto_goTypes = []any{
 	(*BigInt)(nil),                            // 50: loop.BigInt
 	(*StarknetSignature)(nil),                 // 51: loop.StarknetSignature
 	(*StarknetMessageHash)(nil),               // 52: loop.StarknetMessageHash
-	nil,                                       // 53: loop.HealthReportReply.HealthReportEntry
-	(*Head)(nil),                              // 54: loop.Head
-	(*structpb.Struct)(nil),                   // 55: google.protobuf.Struct
-	(*emptypb.Empty)(nil),                     // 56: google.protobuf.Empty
+	nil,                                       // 53: loop.CCIPProviderArgs.SyncedAddressesEntry
+	nil,                                       // 54: loop.HealthReportReply.HealthReportEntry
+	(*Head)(nil),                              // 55: loop.Head
+	(*structpb.Struct)(nil),                   // 56: google.protobuf.Struct
+	(*emptypb.Empty)(nil),                     // 57: google.protobuf.Empty
 }
 var file_loop_internal_pb_relayer_proto_depIdxs = []int32{
-	2,  // 0: loop.NewPluginProviderRequest.relayArgs:type_name -> loop.RelayArgs
-	3,  // 1: loop.NewPluginProviderRequest.pluginArgs:type_name -> loop.PluginArgs
-	2,  // 2: loop.NewConfigProviderRequest.relayArgs:type_name -> loop.RelayArgs
-	4,  // 3: loop.NewCCIPProviderRequest.ccipProviderArgs:type_name -> loop.CCIPProviderArgs
-	54, // 4: loop.LatestHeadReply.head:type_name -> loop.Head
-	21, // 5: loop.GetChainStatusReply.chain:type_name -> loop.ChainStatus
-	22, // 6: loop.GetChainInfoReply.chain_info:type_name -> loop.ChainInfo
-	25, // 7: loop.ListNodeStatusesReply.nodes:type_name -> loop.NodeStatus
-	55, // 8: loop.ReplayRequest.args:type_name -> google.protobuf.Struct
-	50, // 9: loop.TransactionRequest.amount:type_name -> loop.BigInt
-	28, // 10: loop.ConfigDigestRequest.contractConfig:type_name -> loop.ContractConfig
-	28, // 11: loop.LatestConfigReply.contractConfig:type_name -> loop.ContractConfig
-	39, // 12: loop.ReportContext.reportTimestamp:type_name -> loop.ReportTimestamp
-	40, // 13: loop.TransmitRequest.reportContext:type_name -> loop.ReportContext
-	41, // 14: loop.TransmitRequest.attributedOnchainSignatures:type_name -> loop.AttributedOnchainSignature
-	53, // 15: loop.HealthReportReply.healthReport:type_name -> loop.HealthReportReply.HealthReportEntry
-	50, // 16: loop.StarknetSignature.x:type_name -> loop.BigInt
-	50, // 17: loop.StarknetSignature.y:type_name -> loop.BigInt
-	50, // 18: loop.StarknetMessageHash.hash:type_name -> loop.BigInt
-	0,  // 19: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
-	5,  // 20: loop.Relayer.NewContractWriter:input_type -> loop.NewContractWriterRequest
-	7,  // 21: loop.Relayer.NewContractReader:input_type -> loop.NewContractReaderRequest
-	11, // 22: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
-	9,  // 23: loop.Relayer.NewPluginProvider:input_type -> loop.NewPluginProviderRequest
-	13, // 24: loop.Relayer.NewCCIPProvider:input_type -> loop.NewCCIPProviderRequest
-	15, // 25: loop.Relayer.LatestHead:input_type -> loop.LatestHeadRequest
-	17, // 26: loop.Relayer.GetChainStatus:input_type -> loop.GetChainStatusRequest
-	19, // 27: loop.Relayer.GetChainInfo:input_type -> loop.GetChainInfoRequest
-	23, // 28: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
-	27, // 29: loop.Relayer.Transact:input_type -> loop.TransactionRequest
-	26, // 30: loop.Relayer.Replay:input_type -> loop.ReplayRequest
-	29, // 31: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
-	31, // 32: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
-	33, // 33: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
-	35, // 34: loop.ContractConfigTracker.LatestConfig:input_type -> loop.LatestConfigRequest
-	37, // 35: loop.ContractConfigTracker.LatestBlockHeight:input_type -> loop.LatestBlockHeightRequest
-	42, // 36: loop.ContractTransmitter.Transmit:input_type -> loop.TransmitRequest
-	44, // 37: loop.ContractTransmitter.LatestConfigDigestAndEpoch:input_type -> loop.LatestConfigDigestAndEpochRequest
-	46, // 38: loop.ContractTransmitter.FromAccount:input_type -> loop.FromAccountRequest
-	56, // 39: loop.Service.Name:input_type -> google.protobuf.Empty
-	56, // 40: loop.Service.Close:input_type -> google.protobuf.Empty
-	56, // 41: loop.Service.Ready:input_type -> google.protobuf.Empty
-	56, // 42: loop.Service.HealthReport:input_type -> google.protobuf.Empty
-	1,  // 43: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
-	6,  // 44: loop.Relayer.NewContractWriter:output_type -> loop.NewContractWriterReply
-	8,  // 45: loop.Relayer.NewContractReader:output_type -> loop.NewContractReaderReply
-	12, // 46: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply
-	10, // 47: loop.Relayer.NewPluginProvider:output_type -> loop.NewPluginProviderReply
-	14, // 48: loop.Relayer.NewCCIPProvider:output_type -> loop.NewCCIPProviderReply
-	16, // 49: loop.Relayer.LatestHead:output_type -> loop.LatestHeadReply
-	18, // 50: loop.Relayer.GetChainStatus:output_type -> loop.GetChainStatusReply
-	20, // 51: loop.Relayer.GetChainInfo:output_type -> loop.GetChainInfoReply
-	24, // 52: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
-	56, // 53: loop.Relayer.Transact:output_type -> google.protobuf.Empty
-	56, // 54: loop.Relayer.Replay:output_type -> google.protobuf.Empty
-	30, // 55: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
-	32, // 56: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
-	34, // 57: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply
-	36, // 58: loop.ContractConfigTracker.LatestConfig:output_type -> loop.LatestConfigReply
-	38, // 59: loop.ContractConfigTracker.LatestBlockHeight:output_type -> loop.LatestBlockHeightReply
-	43, // 60: loop.ContractTransmitter.Transmit:output_type -> loop.TransmitReply
-	45, // 61: loop.ContractTransmitter.LatestConfigDigestAndEpoch:output_type -> loop.LatestConfigDigestAndEpochReply
-	47, // 62: loop.ContractTransmitter.FromAccount:output_type -> loop.FromAccountReply
-	48, // 63: loop.Service.Name:output_type -> loop.NameReply
-	56, // 64: loop.Service.Close:output_type -> google.protobuf.Empty
-	56, // 65: loop.Service.Ready:output_type -> google.protobuf.Empty
-	49, // 66: loop.Service.HealthReport:output_type -> loop.HealthReportReply
-	43, // [43:67] is the sub-list for method output_type
-	19, // [19:43] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	53, // 0: loop.CCIPProviderArgs.synced_addresses:type_name -> loop.CCIPProviderArgs.SyncedAddressesEntry
+	2,  // 1: loop.NewPluginProviderRequest.relayArgs:type_name -> loop.RelayArgs
+	3,  // 2: loop.NewPluginProviderRequest.pluginArgs:type_name -> loop.PluginArgs
+	2,  // 3: loop.NewConfigProviderRequest.relayArgs:type_name -> loop.RelayArgs
+	4,  // 4: loop.NewCCIPProviderRequest.ccipProviderArgs:type_name -> loop.CCIPProviderArgs
+	55, // 5: loop.LatestHeadReply.head:type_name -> loop.Head
+	21, // 6: loop.GetChainStatusReply.chain:type_name -> loop.ChainStatus
+	22, // 7: loop.GetChainInfoReply.chain_info:type_name -> loop.ChainInfo
+	25, // 8: loop.ListNodeStatusesReply.nodes:type_name -> loop.NodeStatus
+	56, // 9: loop.ReplayRequest.args:type_name -> google.protobuf.Struct
+	50, // 10: loop.TransactionRequest.amount:type_name -> loop.BigInt
+	28, // 11: loop.ConfigDigestRequest.contractConfig:type_name -> loop.ContractConfig
+	28, // 12: loop.LatestConfigReply.contractConfig:type_name -> loop.ContractConfig
+	39, // 13: loop.ReportContext.reportTimestamp:type_name -> loop.ReportTimestamp
+	40, // 14: loop.TransmitRequest.reportContext:type_name -> loop.ReportContext
+	41, // 15: loop.TransmitRequest.attributedOnchainSignatures:type_name -> loop.AttributedOnchainSignature
+	54, // 16: loop.HealthReportReply.healthReport:type_name -> loop.HealthReportReply.HealthReportEntry
+	50, // 17: loop.StarknetSignature.x:type_name -> loop.BigInt
+	50, // 18: loop.StarknetSignature.y:type_name -> loop.BigInt
+	50, // 19: loop.StarknetMessageHash.hash:type_name -> loop.BigInt
+	0,  // 20: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
+	5,  // 21: loop.Relayer.NewContractWriter:input_type -> loop.NewContractWriterRequest
+	7,  // 22: loop.Relayer.NewContractReader:input_type -> loop.NewContractReaderRequest
+	11, // 23: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
+	9,  // 24: loop.Relayer.NewPluginProvider:input_type -> loop.NewPluginProviderRequest
+	13, // 25: loop.Relayer.NewCCIPProvider:input_type -> loop.NewCCIPProviderRequest
+	15, // 26: loop.Relayer.LatestHead:input_type -> loop.LatestHeadRequest
+	17, // 27: loop.Relayer.GetChainStatus:input_type -> loop.GetChainStatusRequest
+	19, // 28: loop.Relayer.GetChainInfo:input_type -> loop.GetChainInfoRequest
+	23, // 29: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
+	27, // 30: loop.Relayer.Transact:input_type -> loop.TransactionRequest
+	26, // 31: loop.Relayer.Replay:input_type -> loop.ReplayRequest
+	29, // 32: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
+	31, // 33: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
+	33, // 34: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
+	35, // 35: loop.ContractConfigTracker.LatestConfig:input_type -> loop.LatestConfigRequest
+	37, // 36: loop.ContractConfigTracker.LatestBlockHeight:input_type -> loop.LatestBlockHeightRequest
+	42, // 37: loop.ContractTransmitter.Transmit:input_type -> loop.TransmitRequest
+	44, // 38: loop.ContractTransmitter.LatestConfigDigestAndEpoch:input_type -> loop.LatestConfigDigestAndEpochRequest
+	46, // 39: loop.ContractTransmitter.FromAccount:input_type -> loop.FromAccountRequest
+	57, // 40: loop.Service.Name:input_type -> google.protobuf.Empty
+	57, // 41: loop.Service.Close:input_type -> google.protobuf.Empty
+	57, // 42: loop.Service.Ready:input_type -> google.protobuf.Empty
+	57, // 43: loop.Service.HealthReport:input_type -> google.protobuf.Empty
+	1,  // 44: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
+	6,  // 45: loop.Relayer.NewContractWriter:output_type -> loop.NewContractWriterReply
+	8,  // 46: loop.Relayer.NewContractReader:output_type -> loop.NewContractReaderReply
+	12, // 47: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply
+	10, // 48: loop.Relayer.NewPluginProvider:output_type -> loop.NewPluginProviderReply
+	14, // 49: loop.Relayer.NewCCIPProvider:output_type -> loop.NewCCIPProviderReply
+	16, // 50: loop.Relayer.LatestHead:output_type -> loop.LatestHeadReply
+	18, // 51: loop.Relayer.GetChainStatus:output_type -> loop.GetChainStatusReply
+	20, // 52: loop.Relayer.GetChainInfo:output_type -> loop.GetChainInfoReply
+	24, // 53: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
+	57, // 54: loop.Relayer.Transact:output_type -> google.protobuf.Empty
+	57, // 55: loop.Relayer.Replay:output_type -> google.protobuf.Empty
+	30, // 56: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
+	32, // 57: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
+	34, // 58: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply
+	36, // 59: loop.ContractConfigTracker.LatestConfig:output_type -> loop.LatestConfigReply
+	38, // 60: loop.ContractConfigTracker.LatestBlockHeight:output_type -> loop.LatestBlockHeightReply
+	43, // 61: loop.ContractTransmitter.Transmit:output_type -> loop.TransmitReply
+	45, // 62: loop.ContractTransmitter.LatestConfigDigestAndEpoch:output_type -> loop.LatestConfigDigestAndEpochReply
+	47, // 63: loop.ContractTransmitter.FromAccount:output_type -> loop.FromAccountReply
+	48, // 64: loop.Service.Name:output_type -> loop.NameReply
+	57, // 65: loop.Service.Close:output_type -> google.protobuf.Empty
+	57, // 66: loop.Service.Ready:output_type -> google.protobuf.Empty
+	49, // 67: loop.Service.HealthReport:output_type -> loop.HealthReportReply
+	44, // [44:68] is the sub-list for method output_type
+	20, // [20:44] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_loop_internal_pb_relayer_proto_init() }
@@ -3046,7 +3070,7 @@ func file_loop_internal_pb_relayer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayer_proto_rawDesc), len(file_loop_internal_pb_relayer_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   54,
+			NumMessages:   55,
 			NumExtensions: 0,
 			NumServices:   6,
 		},

@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
-	"go.opentelemetry.io/otel/log"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
@@ -341,7 +340,7 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
 			}
 		}()
-		client.Logger.Emit(t.Context(), log.Record{})
+		client.Logger.Emit(t.Context(), otellog.Record{})
 	})
 
 	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {

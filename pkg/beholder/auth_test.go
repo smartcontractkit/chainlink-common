@@ -40,6 +40,6 @@ func TestStaticAuthHeaderProvider(t *testing.T) {
 	provider := beholder.NewStaticAuthHeaderProvider(testHeaders)
 
 	// Get headers and verify they match
-	headers := provider.GetHeaders()
+	headers := provider.Headers(t.Context())
 	assert.Equal(t, testHeaders, headers)
 }

@@ -11,7 +11,7 @@ var _ credentials.PerRPCCredentials = basicAuthCredentials{}
 var _ credentials.PerRPCCredentials = tokenAuthCredentials{}
 
 type HeaderProvider interface {
-	Headers(ctx context.Context) map[string]string
+	Headers(ctx context.Context) (map[string]string, error)
 }
 
 // Basic-Auth authentication for Chip Ingress
@@ -50,7 +50,7 @@ func (c tokenAuthCredentials) GetRequestMetadata(ctx context.Context, _ ...strin
 	if c.authTokenProvider == nil {
 		return nil, nil
 	}
-	return c.authTokenProvider.Headers(ctx), nil
+	return c.authTokenProvider.Headers(ctx)
 }
 
 func (c tokenAuthCredentials) RequireTransportSecurity() bool {

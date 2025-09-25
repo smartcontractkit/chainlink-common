@@ -49,13 +49,11 @@ func TestBasicAuth(t *testing.T) {
 	})
 }
 
-var authHeaderKey = "X-Auth-Token"
-
 type testHeaderProvider struct {
 	headers map[string]string
 }
 
-func (p *testHeaderProvider) GetHeaders() map[string]string {
+func (p *testHeaderProvider) Headers(ctx context.Context) map[string]string {
 	return p.headers
 }
 

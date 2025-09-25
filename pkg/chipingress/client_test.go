@@ -584,7 +584,7 @@ type mockHeaderProvider struct {
 	headers map[string]string
 }
 
-func (m *mockHeaderProvider) GetHeaders() map[string]string {
+func (m *mockHeaderProvider) Headers(ctx context.Context) map[string]string {
 	return m.headers
 }
 

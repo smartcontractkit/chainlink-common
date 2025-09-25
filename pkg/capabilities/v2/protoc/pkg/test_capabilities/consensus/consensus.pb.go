@@ -27,22 +27,22 @@ var File_capabilities_internal_consensus_v1alpha_consensus_proto protoreflect.Fi
 
 const file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/internal/consensus/v1alpha/consensus.proto\x12'capabilities.internal.consensus.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x16values/v1/values.proto2\xad\x01\n" +
-	"\tConsensus\x12>\n" +
-	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x10.values.v1.Value\x12A\n" +
-	"\x06Report\x12\x1a.sdk.v1alpha.ReportRequest\x1a\x1b.sdk.v1alpha.ReportResponse\x1a\x1d\x82\xb5\x18\x19\b\x01\x12\x15consensus@1.0.0-alphab\x06proto3"
+	"7capabilities/internal/consensus/v1alpha/consensus.proto\x12'capabilities.internal.consensus.v1alpha\x1a\x14sdk/v1beta/sdk.proto\x1a)tools/generator/v1beta/cre_metadata.proto\x1a\x16values/v1/values.proto2\x9e\x01\n" +
+	"\tConsensus\x129\n" +
+	"\x06Simple\x12\x1d.sdk.v1.SimpleConsensusInputs\x1a\x10.values.v1.Value\x127\n" +
+	"\x06Report\x12\x15.sdk.v1.ReportRequest\x1a\x16.sdk.v1.ReportResponse\x1a\x1d\x92\xb5\x18\x19\b\x01\x12\x15consensus@1.0.0-alphab\x06proto3"
 
 var file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes = []any{
-	(*sdk.SimpleConsensusInputs)(nil), // 0: sdk.v1alpha.SimpleConsensusInputs
-	(*sdk.ReportRequest)(nil),         // 1: sdk.v1alpha.ReportRequest
+	(*sdk.SimpleConsensusInputs)(nil), // 0: sdk.v1.SimpleConsensusInputs
+	(*sdk.ReportRequest)(nil),         // 1: sdk.v1.ReportRequest
 	(*pb.Value)(nil),                  // 2: values.v1.Value
-	(*sdk.ReportResponse)(nil),        // 3: sdk.v1alpha.ReportResponse
+	(*sdk.ReportResponse)(nil),        // 3: sdk.v1.ReportResponse
 }
 var file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = []int32{
-	0, // 0: capabilities.internal.consensus.v1alpha.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
-	1, // 1: capabilities.internal.consensus.v1alpha.Consensus.Report:input_type -> sdk.v1alpha.ReportRequest
+	0, // 0: capabilities.internal.consensus.v1alpha.Consensus.Simple:input_type -> sdk.v1.SimpleConsensusInputs
+	1, // 1: capabilities.internal.consensus.v1alpha.Consensus.Report:input_type -> sdk.v1.ReportRequest
 	2, // 2: capabilities.internal.consensus.v1alpha.Consensus.Simple:output_type -> values.v1.Value
-	3, // 3: capabilities.internal.consensus.v1alpha.Consensus.Report:output_type -> sdk.v1alpha.ReportResponse
+	3, // 3: capabilities.internal.consensus.v1alpha.Consensus.Report:output_type -> sdk.v1.ReportResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

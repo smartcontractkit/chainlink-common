@@ -64,6 +64,8 @@ func (q *queue[T]) Limit(context.Context) (int, error) {
 }
 
 func (q *queue[T]) Len(context.Context) (int, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	return q.list.Len(), nil
 }
 
@@ -74,7 +76,7 @@ func (q *queue[T]) setCap(ctx context.Context, c int) {
 	q.recordLimit(ctx, c)
 }
 
-func (q *queue[T]) refresh(ctx context.Context) {
+func (q *queue[T]) record(ctx context.Context) {
 	q.recordUsage(ctx, q.list.Len())
 	q.recordLimit(ctx, q.cap)
 }
@@ -89,7 +91,7 @@ func (q *queue[T]) Put(ctx context.Context, t T) error {
 	}
 	q.list.PushBack(t)
 	q.cond.Signal()
-	q.refresh(ctx)
+	q.record(ctx)
 	return nil
 }
 
@@ -103,7 +105,7 @@ func (q *queue[T]) Get(ctx context.Context) (T, error) {
 	}
 	t := q.list.Front()
 	q.list.Remove(t)
-	q.refresh(ctx)
+	q.record(ctx)
 	return t.Value.(T), nil
 }
 
@@ -129,7 +131,7 @@ func (q *queue[T]) Wait(ctx context.Context) (T, error) {
 	}
 	t := q.list.Front()
 	q.list.Remove(t)
-	q.refresh(ctx)
+	q.record(ctx)
 	return t.Value.(T), nil
 }
 

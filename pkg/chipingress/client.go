@@ -20,9 +20,6 @@ import (
 )
 
 // HeaderProvider defines an interface for providing headers
-type HeaderProvider interface {
-	GetHeaders() map[string]string
-}
 
 type Client interface {
 	pb.ChipIngressClient
@@ -51,8 +48,10 @@ func newClientConfig(host string) *clientConfig {
 		headerProvider:    nil,
 		perRPCCredentials: nil,
 		host:              host,
+		// Default to insecure connection
+		insecureConnection:   true,
+		transportCredentials: insecure.NewCredentials(),
 	}
-	WithInsecureConnection()(cfg) // Default to insecure connection
 	return cfg
 }
 
@@ -168,7 +167,7 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		// Add dynamic headers from provider if available
 		if provider != nil {
-			for k, v := range provider.GetHeaders() {
+			for k, v := range provider.Headers(ctx) {
 				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 			}
 		}

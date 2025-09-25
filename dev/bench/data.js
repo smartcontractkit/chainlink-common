@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758796112738,
+  "lastUpdate": 1758818648929,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25662,6 +25662,48 @@ window.BENCHMARK_DATA = {
             "value": 26740,
             "unit": "ns/op",
             "extra": "44955 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ae45911b332e39f45175cf2a60c63b1081a6f72a",
+          "message": "Adds `context` to `HeaderProvider.Headers(ctx)` (#1562)",
+          "timestamp": "2025-09-25T18:42:43+02:00",
+          "tree_id": "67d91cd05b35d0f0dc802922adcad4eaa4641909",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ae45911b332e39f45175cf2a60c63b1081a6f72a"
+        },
+        "date": 1758818647031,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.3,
+            "unit": "ns/op",
+            "extra": "3350559 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.6,
+            "unit": "ns/op",
+            "extra": "3005773 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26657,
+            "unit": "ns/op",
+            "extra": "45116 times\n4 procs"
           }
         ]
       }

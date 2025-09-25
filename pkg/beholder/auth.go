@@ -5,7 +5,9 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/binary"
 	"fmt"
+	"time"
 )
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
@@ -13,21 +15,64 @@ var authHeaderKey = "X-Beholder-Node-Auth-Token"
 
 // authHeaderVersion is the version of the auth header format
 var authHeaderVersion = "1"
+var authHeaderV2 = "2"
 
 type HeaderProvider interface {
-	Headers(ctx context.Context) map[string]string
+	Headers(ctx context.Context) (map[string]string, error)
+}
+
+type Signer interface {
+	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
 }
 
 type staticAuthHeaderProvider struct {
 	headers map[string]string
 }
 
-func (p *staticAuthHeaderProvider) Headers(_ context.Context) map[string]string {
-	return p.headers
+func (p *staticAuthHeaderProvider) Headers(_ context.Context) (map[string]string, error) {
+	return p.headers, nil
 }
 
 func NewStaticAuthHeaderProvider(headers map[string]string) HeaderProvider {
 	return &staticAuthHeaderProvider{headers: headers}
+}
+
+type rotatingAuthHeaderProvider struct {
+	csaPubKey   ed25519.PublicKey
+	signer      Signer
+	headers     map[string]string
+	ttl         time.Duration
+	lastUpdated time.Time
+}
+
+func NewRotatingAuthHeaderProvider(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration) HeaderProvider {
+	return &rotatingAuthHeaderProvider{
+		csaPubKey:   csaPubKey,
+		signer:      signer,
+		ttl:         ttl,
+		log:         log,
+		headers:     make(map[string]string),
+		lastUpdated: time.Unix(0, 0),
+	}
+}
+
+func (r *rotatingAuthHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
+	if time.Since(r.lastUpdated) > r.ttl {
+		// Append timestamp bytes to the public key bytes
+		timestamp := time.Now().UnixMilli()
+		timestampBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(timestampBytes, uint64(timestamp))
+		messageBytes := append(r.csaPubKey, timestampBytes...)
+		// Sign(public key bytes + timestamp bytes)
+		signature, err := r.signer.Sign(ctx, r.csaPubKey, messageBytes)
+		if err != nil {
+			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
+		}
+
+		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, timestamp, signature)
+		r.lastUpdated = time.Now()
+	}
+	return r.headers, nil
 }
 
 // BuildAuthHeaders creates the auth header value to be included on requests.

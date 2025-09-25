@@ -1,12 +1,16 @@
 package ccipocr3
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"sort"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type TokenPrice struct {
@@ -35,6 +39,43 @@ func NewTokenPrice(tokenID UnknownEncodedAddress, price *big.Int) TokenPrice {
 		TokenID: tokenID,
 		Price:   BigInt{price},
 	}
+}
+
+type TokenInfo struct {
+	// AggregatorAddress is the address of the price feed TOKEN/USD aggregator on the feed chain.
+	AggregatorAddress UnknownEncodedAddress `json:"aggregatorAddress"`
+
+	// DeviationPPB is the deviation in parts per billion that the price feed is allowed to deviate
+	// from the last written price on-chain before we write a new price.
+	DeviationPPB BigInt `json:"deviationPPB"`
+
+	// Decimals is the number of decimals for the token (NOT the feed).
+	Decimals uint8 `json:"decimals"`
+}
+
+func (a TokenInfo) Validate() error {
+	if a.AggregatorAddress == "" {
+		return errors.New("aggregatorAddress not set")
+	}
+
+	// aggregator must be an ethereum address
+	decoded, err := hex.DecodeString(strings.ToLower(strings.TrimPrefix(string(a.AggregatorAddress), "0x")))
+	if err != nil {
+		return fmt.Errorf("aggregatorAddress must be a valid ethereum address (i.e hex encoded 20 bytes): %w", err)
+	}
+	if len(decoded) != 20 {
+		return fmt.Errorf("aggregatorAddress must be a valid ethereum address, got %d bytes expected 20", len(decoded))
+	}
+
+	if a.DeviationPPB.Int.Cmp(big.NewInt(0)) <= 0 {
+		return errors.New("deviationPPB not set or negative, must be positive")
+	}
+
+	if a.Decimals == 0 {
+		return fmt.Errorf("tokenDecimals can't be zero")
+	}
+
+	return nil
 }
 
 type GasPriceChain struct {
@@ -269,4 +310,96 @@ type RampTokenAmount struct {
 	// NOTE: this must be decoded before providing it as an execution input to the destination chain
 	// or hashing it. See Internal._hash(Any2EVMRampMessage) for more details as an example.
 	DestExecData Bytes `json:"destExecData"`
+}
+
+// MessageTokenID is a unique identifier for a message token data (per chain selector). It's a composite key of
+// the message sequence number and the token index within the message. It's used to easier identify token data for
+// messages without having to deal with nested maps.
+type MessageTokenID struct {
+	SeqNr SeqNum
+	Index int
+}
+
+func NewMessageTokenID(seqNr SeqNum, index int) MessageTokenID {
+	return MessageTokenID{SeqNr: seqNr, Index: index}
+}
+
+func (mti MessageTokenID) String() string {
+	return fmt.Sprintf("%d_%d", mti.SeqNr, mti.Index)
+}
+
+type TimestampedBig struct {
+	Timestamp time.Time `json:"timestamp"`
+	Value     BigInt    `json:"value"`
+}
+
+// TimestampedUnixBig Maps to on-chain struct
+// https://github.com/smartcontractkit/chainlink/blob/37f3132362ec90b0b1c12fb1b69b9c16c46b399d/contracts/src/v0.8/ccip/libraries/Internal.sol#L43-L47
+//
+//nolint:lll //url
+type TimestampedUnixBig struct {
+	// Value in uint224, can contain several packed fields
+	Value *big.Int `json:"value"`
+	// Timestamp in seconds since epoch of most recent update
+	Timestamp uint32 `json:"timestamp"`
+}
+
+func NewTimestampedBig(value int64, timestamp time.Time) TimestampedBig {
+	return TimestampedBig{
+		Value:     BigInt{Int: big.NewInt(value)},
+		Timestamp: timestamp,
+	}
+}
+
+func TimeStampedBigFromUnix(input TimestampedUnixBig) TimestampedBig {
+	return TimestampedBig{
+		Value:     NewBigInt(input.Value),
+		Timestamp: time.Unix(int64(input.Timestamp), 0),
+	}
+}
+
+// ContractAddresses is a map of contract names across all chain selectors and their address.
+// Currently only one contract per chain per name is supported.
+type ContractAddresses map[string]map[ChainSelector]UnknownAddress
+
+func (ca ContractAddresses) Append(contract string, chain ChainSelector, address []byte) ContractAddresses {
+	resp := ca
+	if resp == nil {
+		resp = make(ContractAddresses)
+	}
+	if resp[contract] == nil {
+		resp[contract] = make(map[ChainSelector]UnknownAddress)
+	}
+	resp[contract][chain] = address
+	return resp
+}
+
+// PluginType represents the type of CCIP plugin.
+// It mirrors the OCRPluginType in Internal.sol.
+type PluginType uint8
+
+const (
+	PluginTypeCCIPCommit PluginType = 0
+	PluginTypeCCIPExec   PluginType = 1
+)
+
+func (pt PluginType) String() string {
+	switch pt {
+	case PluginTypeCCIPCommit:
+		return "CCIPCommit"
+	case PluginTypeCCIPExec:
+		return "CCIPExec"
+	default:
+		return "Unknown"
+	}
+}
+
+// ExtraDataDecoded contains a generic representation of chain specific message parameters. A
+// map from string to any is used to account for different parameters required for sending messages
+// to different destinations.
+type ExtraDataDecoded struct {
+	// ExtraArgsDecoded contain message specific extra args.
+	ExtraArgsDecoded map[string]any
+	// DestExecDataDecoded contain token transfer specific extra args.
+	DestExecDataDecoded []map[string]any
 }

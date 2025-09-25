@@ -31,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	ccipocr3types "github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -289,14 +290,18 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 }
 
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	var ccipProvider *ccipocr3.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		persistedSyncs := ccipProvider.GetSyncRequests()
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
 				ExternalJobID:        cargs.ExternalJobID[:],
 				ContractReaderConfig: cargs.ContractReaderConfig,
 				ChainWriterConfig:    cargs.ChainWriterConfig,
 				OffRampAddress:       cargs.OffRampAddress,
-				PluginType:           cargs.PluginType,
+				PluginType:           uint32(cargs.PluginType),
+				SyncedAddresses:      persistedSyncs,
+				TransmitterAddress:   string(cargs.TransmitterAddress),
 			},
 		})
 		if err != nil {
@@ -305,7 +310,8 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 		return reply.CcipProviderID, nil, nil
 	})
 
-	return ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc), nil
+	ccipProvider = ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc)
+	return ccipProvider, nil
 }
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
@@ -727,12 +733,21 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		ContractReaderConfig: rargs.ContractReaderConfig,
 		ChainWriterConfig:    rargs.ChainWriterConfig,
 		OffRampAddress:       rargs.OffRampAddress,
-		PluginType:           rargs.PluginType,
+		PluginType:           ccipocr3types.PluginType(rargs.PluginType),
+		TransmitterAddress:   ccipocr3types.UnknownEncodedAddress(rargs.TransmitterAddress),
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	// Sync persisted sync requests after provider has initted accessor
+	for contractName, addressBytes := range rargs.SyncedAddresses {
+		err = provider.ChainAccessor().Sync(ctx, contractName, addressBytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	const name = "CCIPProvider"

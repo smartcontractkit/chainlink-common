@@ -152,7 +152,7 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 		[]byte(""),
 	)
 	// panic
-	assert.ErrorContains(t, err, "wasm trap: interrupt")
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func Test_GetWorkflowSpec_BuildError(t *testing.T) {
@@ -1029,7 +1029,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 
 	_, err = m.Run(ctx, req)
 
-	assert.ErrorContains(t, err, "interrupt")
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {

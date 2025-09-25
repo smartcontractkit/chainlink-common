@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 type CCIPCommitProvider interface {
@@ -58,9 +59,13 @@ type CCIPProvider interface {
 // CCIPProviderArgs are the args required to create a CCIP Provider through a Relayer.
 // The are common to all relayer implementations.
 type CCIPProviderArgs struct {
-	ExternalJobID        uuid.UUID
+	ExternalJobID         uuid.UUID
+	OffRampAddress        ccipocr3.UnknownAddress
+	PluginType            ccipocr3.PluginType
+	TransmitterAddress    ccipocr3.UnknownEncodedAddress
+
+	// These CR/CW configs are only used by accessors that still rely on ChainReader
+	// and ChainWriter, like SolanaAccessor.
 	ContractReaderConfig []byte
 	ChainWriterConfig    []byte
-	OffRampAddress       string
-	PluginType           uint32
 }

@@ -8,6 +8,14 @@ type ListKeysResponse struct {
 	Keys []KeyInfo
 }
 
+type GetKeysRequest struct {
+	Names []string
+}
+
+type GetKeysResponse struct {
+	Keys []GetKeyResponse
+}
+
 type GetKeyRequest struct {
 	Name string
 }
@@ -18,13 +26,13 @@ type GetKeyResponse struct {
 
 type Reader interface {
 	ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error)
-	GetKey(ctx context.Context, req GetKeyRequest) (GetKeyResponse, error)
+	GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error)
 }
 
 func (k *keystore) ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error) {
 	return ListKeysResponse{}, nil
 }
 
-func (k *keystore) GetKey(ctx context.Context, req GetKeyRequest) (GetKeyResponse, error) {
-	return GetKeyResponse{}, nil
+func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error) {
+	return GetKeysResponse{}, nil
 }

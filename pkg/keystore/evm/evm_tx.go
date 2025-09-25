@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore"
 )
 
@@ -77,6 +78,16 @@ type EVMSignTxResponse struct {
 	Tx *gethtypes.Transaction
 }
 
+type EVMTxKeystore interface {
+	SignTx(ctx context.Context, req EVMSignTxRequest) (EVMSignTxResponse, error)
+	ListKeys(ctx context.Context, req EVMListKeysRequest) (EVMListKeysResponse, error)
+	GetKey(ctx context.Context, req EVMGetKeyRequest) (EVMGetKeyResponse, error)
+	CreateKey(ctx context.Context, req EVMCreateKeyRequest) (EVMCreateKeyResponse, error)
+	DeleteKey(ctx context.Context, req EVMDeleteKeyRequest) (EVMDeleteKeyResponse, error)
+	ImportKey(ctx context.Context, req EVMImportKeyRequest) (EVMImportKeyResponse, error)
+	ExportKey(ctx context.Context, req EVMExportKeyRequest) (EVMExportKeyResponse, error)
+}
+
 type EVM struct {
 	ks keystore.Keystore
 }
@@ -141,50 +152,65 @@ func (e EVM) ListKeys(ctx context.Context, req EVMListKeysRequest) (EVMListKeysR
 }
 
 func (e EVM) GetKey(ctx context.Context, req EVMGetKeyRequest) (EVMGetKeyResponse, error) {
-	getReq := keystore.GetKeyRequest{
-		Name: e.buildKeyName(req.Name),
+	getReq := keystore.GetKeysRequest{
+		Names: []string{e.buildKeyName(req.Name)},
 	}
-	getResp, err := e.ks.GetKey(ctx, getReq)
+	getResp, err := e.ks.GetKeys(ctx, getReq)
 	if err != nil {
 		return EVMGetKeyResponse{}, err
 	}
+	if len(getResp.Keys) == 0 {
+		return EVMGetKeyResponse{}, fmt.Errorf("key not found: %s", req.Name)
+	}
 	return EVMGetKeyResponse{
-		KeyInfo: getResp.KeyInfo,
+		KeyInfo: getResp.Keys[0].KeyInfo,
 	}, nil
 }
 
 func PubkeyToAddress(pubkey []byte) (string, error) {
-	// TODO:
-	return "", nil
+	// Convert public key to Ethereum address
+	ecdsaPubkey, err := crypto.UnmarshalPubkey(pubkey)
+	if err != nil {
+		return "", err
+	}
+	address := crypto.PubkeyToAddress(*ecdsaPubkey)
+	return address.Hex(), nil
 }
 
 func (e EVM) CreateKey(ctx context.Context, req EVMCreateKeyRequest) (EVMCreateKeyResponse, error) {
 	// Only EVM key types created.
-	createReq := keystore.CreateKeyRequest{
-		Name:    e.buildKeyName(req.Name),
-		KeyType: evmKeyType,
+	createReq := keystore.CreateKeysRequest{
+		Keys: []keystore.CreateKeyRequest{
+			{
+				Name:    e.buildKeyName(req.Name),
+				KeyType: evmKeyType,
+			},
+		},
 	}
-	createResp, err := e.ks.CreateKey(ctx, createReq)
+	createResp, err := e.ks.CreateKeys(ctx, createReq)
 	if err != nil {
 		return EVMCreateKeyResponse{}, err
 	}
-	address, err := PubkeyToAddress(createResp.KeyInfo.PublicKey)
+	if len(createResp.Keys) == 0 {
+		return EVMCreateKeyResponse{}, fmt.Errorf("no keys created")
+	}
+	address, err := PubkeyToAddress(createResp.Keys[0].KeyInfo.PublicKey)
 	if err != nil {
 		return EVMCreateKeyResponse{}, err
 	}
 	return EVMCreateKeyResponse{
 		EVMKeyInfo: EVMKeyInfo{
-			KeyInfo: createResp.KeyInfo,
+			KeyInfo: createResp.Keys[0].KeyInfo,
 			Address: address,
 		},
 	}, nil
 }
 
 func (e EVM) DeleteKey(ctx context.Context, req EVMDeleteKeyRequest) (EVMDeleteKeyResponse, error) {
-	deleteReq := keystore.DeleteKeyRequest{
-		Name: e.buildKeyName(req.Name),
+	deleteReq := keystore.DeleteKeysRequest{
+		Names: []string{e.buildKeyName(req.Name)},
 	}
-	_, err := e.ks.DeleteKey(ctx, deleteReq)
+	_, err := e.ks.DeleteKeys(ctx, deleteReq)
 	if err != nil {
 		return EVMDeleteKeyResponse{}, err
 	}
@@ -192,35 +218,45 @@ func (e EVM) DeleteKey(ctx context.Context, req EVMDeleteKeyRequest) (EVMDeleteK
 }
 
 func (e EVM) ImportKey(ctx context.Context, req EVMImportKeyRequest) (EVMImportKeyResponse, error) {
-	importReq := keystore.ImportKeyRequest{
-		Name:    e.buildKeyName(req.Name),
-		KeyType: evmKeyType,
-		Data:    req.Data,
+	importReq := keystore.ImportKeysRequest{
+		Keys: []keystore.ImportKeyRequest{
+			{
+				Name:    e.buildKeyName(req.Name),
+				KeyType: evmKeyType,
+				Data:    req.Data,
+			},
+		},
 	}
-	importResp, err := e.ks.ImportKey(ctx, importReq)
+	importResp, err := e.ks.ImportKeys(ctx, importReq)
 	if err != nil {
 		return EVMImportKeyResponse{}, err
 	}
+	if len(importResp.Keys) == 0 {
+		return EVMImportKeyResponse{}, fmt.Errorf("no keys imported")
+	}
 	return EVMImportKeyResponse{
-		PublicKey: importResp.PublicKey,
+		PublicKey: importResp.Keys[0].PublicKey,
 	}, nil
 }
 
 func (e EVM) ExportKey(ctx context.Context, req EVMExportKeyRequest) (EVMExportKeyResponse, error) {
-	exportReq := keystore.ExportKeyRequest{
-		Name: e.buildKeyName(req.Name),
+	exportReq := keystore.ExportKeysRequest{
+		Names: []string{e.buildKeyName(req.Name)},
 	}
-	exportResp, err := e.ks.ExportKey(ctx, exportReq)
+	exportResp, err := e.ks.ExportKeys(ctx, exportReq)
 	if err != nil {
 		return EVMExportKeyResponse{}, err
 	}
-	address, err := PubkeyToAddress(exportResp.KeyInfo.PublicKey)
+	if len(exportResp.Keys) == 0 {
+		return EVMExportKeyResponse{}, fmt.Errorf("key not found: %s", req.Name)
+	}
+	address, err := PubkeyToAddress(exportResp.Keys[0].KeyInfo.PublicKey)
 	if err != nil {
 		return EVMExportKeyResponse{}, err
 	}
 	return EVMExportKeyResponse{
-		Name:    exportResp.KeyInfo.Name,
+		Name:    exportResp.Keys[0].KeyInfo.Name,
 		Address: address,
-		Data:    exportResp.Data,
+		Data:    exportResp.Keys[0].Data,
 	}, nil
 }

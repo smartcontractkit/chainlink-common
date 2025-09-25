@@ -2,11 +2,13 @@ package keystore
 
 import (
 	"context"
-
+	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
+
+	"golang.org/x/crypto/curve25519"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
@@ -28,7 +30,6 @@ type Keystore interface {
 	Reader
 	Signer
 	Encryptor
-	KeyExchanger
 }
 
 type key struct {
@@ -36,6 +37,30 @@ type key struct {
 	privateKey internal.Raw
 	createdAt  time.Time
 }
+
+func (k key) publicKey() []byte {
+	switch k.keyType {
+	case Ed25519:
+		return ed25519.PublicKey(internal.Bytes(k.privateKey))
+	case Secp256k1:
+		return nil // TODO: derive public key
+	case X25519:
+		rv, err := curve25519.X25519(internal.Bytes(k.privateKey)[:], curve25519.Basepoint)
+		// Shouldn't ever happen?
+		if err != nil {
+			panic(err)
+		}
+		var rvFixed [curve25519.PointSize]byte
+		copy(rvFixed[:], rv)
+		return rvFixed[:]
+	default:
+		// Could have a whole separate admin interface for
+		// purely symmetric keys, but maybe not needed if we only ever use
+		// asymmetric key exchange protocols like X25519 for encryption?
+		return nil
+	}
+}
+
 type keystore struct {
 	mu sync.RWMutex
 	// Keystore is the in memory keys.

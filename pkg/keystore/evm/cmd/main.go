@@ -9,10 +9,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore"
 	evmks "github.com/smartcontractkit/chainlink-common/pkg/keystore/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus"
 )
 
 const (
-	name = "myscript"
+	name     = "evm-tx-key"
+	ocr2Name = "ocr2-key-bundle"
 )
 
 func main() {
@@ -24,14 +26,36 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	evm := evmks.NewEVM(keystore)
-	keyInfo, err := evm.CreateKey(context.Background(), evmks.EVMCreateKeyRequest{Name: name})
+	evmTxStore := evmks.NewEVM(keystore)
+	keyInfo, err := evmTxStore.CreateKey(context.Background(), evmks.EVMCreateKeyRequest{Name: name})
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(keyInfo)
-	blah, err := evm.SignTx(context.Background(), evmks.EVMSignTxRequest{
+	blah, err := evmTxStore.SignTx(context.Background(), evmks.EVMSignTxRequest{
 		Name: name, Tx: &gethtypes.Transaction{}})
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = evmTxStore.DeleteKey(context.Background(), evmks.EVMDeleteKeyRequest{Name: name})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	evmOCROnchainStore := evmks.NewOCR2OnchainKeyringStore(keystore)
+	onchainKeyringResp, err := evmOCROnchainStore.CreateKeyring(context.Background(), evmks.OCR2OnchainKeyringCreateRequest{Name: ocr2Name})
+	if err != nil {
+		log.Fatal(err)
+	}
+	evmOCROffchainStore := evmks.NewOCR2OffchainKeyringStore(keystore)
+	offchainKeyringResp, err := evmOCROffchainStore.CreateKeyring(context.Background(), evmks.OCR2OffchainKeyringCreateRequest{Name: ocr2Name})
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = offchainreporting2plus.NewOracle(offchainreporting2plus.OCR2OracleArgs{
+		OnchainKeyring:  onchainKeyringResp.Keyring,
+		OffchainKeyring: offchainKeyringResp.Keyring,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -148,8 +148,8 @@ func TestChainAccessor(t *testing.T) {
 	})
 
 	t.Run("GetFeeQuoterTokenUpdates", func(t *testing.T) {
-		tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2"}
-		updates, err := chainAccessor.GetFeeQuoterTokenUpdates(ctx, tokens, ccipocr3.ChainSelector(1))
+		tokensBytes := []ccipocr3.UnknownAddress{ccipocr3.UnknownAddress("token1"), ccipocr3.UnknownAddress("token2")}
+		updates, err := chainAccessor.GetFeeQuoterTokenUpdates(ctx, tokensBytes)
 		assert.NoError(t, err)
 		assert.NotNil(t, updates)
 		assert.Len(t, updates, 2)

@@ -1594,3 +1594,132 @@ func TestTokenInfoMapNilHandling(t *testing.T) {
 		assert.Len(t, convertedMap, 0)
 	})
 }
+
+// TestExtraDataCodecBundleConversion tests the map conversion logic used by ExtraDataCodecBundle methods
+// This test verifies that round-trip conversion preserves structure and semantic meaning
+func TestExtraDataCodecBundleConversion(t *testing.T) {
+	t.Run("Nil map round-trip", func(t *testing.T) {
+		// Test that nil maps remain nil after round-trip
+		pbMap, err := goMapToPbMap(nil)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+		assert.Nil(t, result, "nil input should result in nil output")
+	})
+
+	t.Run("Empty map round-trip", func(t *testing.T) {
+		// Test that empty maps remain empty after round-trip
+		emptyMap := map[string]any{}
+		pbMap, err := goMapToPbMap(emptyMap)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+		assert.NotNil(t, result, "empty map should not become nil")
+		assert.Equal(t, 0, len(result), "empty map should remain empty")
+	})
+
+	t.Run("ExtraArgs-like data structure preservation", func(t *testing.T) {
+		// Test typical ExtraArgs structure with basic types
+		input := map[string]any{
+			"gasLimit": uint64(100000),
+			"gasPrice": uint64(20000000000),
+			"enabled":  true,
+			"data":     []byte{0x01, 0x02, 0x03},
+		}
+
+		pbMap, err := goMapToPbMap(input)
+		require.NoError(t, err, "conversion to protobuf should succeed")
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err, "conversion from protobuf should succeed")
+
+		// Verify structure is preserved
+		assert.Equal(t, len(input), len(result), "map size should be preserved")
+
+		// Verify all keys exist
+		for key := range input {
+			assert.Contains(t, result, key, "key %s should exist after round-trip", key)
+		}
+
+		// Verify specific values that should be exactly preserved
+		assert.Equal(t, input["enabled"], result["enabled"], "bool values should be preserved")
+		assert.Equal(t, input["data"], result["data"], "byte slice values should be preserved")
+
+		// For numeric values, verify semantic equivalence (protobuf may normalize types)
+		assert.Equal(t, fmt.Sprintf("%v", input["gasLimit"]), fmt.Sprintf("%v", result["gasLimit"]), "gasLimit should be semantically equal")
+		assert.Equal(t, fmt.Sprintf("%v", input["gasPrice"]), fmt.Sprintf("%v", result["gasPrice"]), "gasPrice should be semantically equal")
+	})
+
+	t.Run("BigInt preservation", func(t *testing.T) {
+		// Test various BigInt values that are commonly used in ExtraArgs/DestExecData
+		input := map[string]any{
+			"zero":     big.NewInt(0),
+			"small":    big.NewInt(42),
+			"large":    big.NewInt(1000000000000000000), // 1 ETH in wei
+			"negative": big.NewInt(-123456789),
+		}
+
+		pbMap, err := goMapToPbMap(input)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+
+		// Verify all BigInt values are preserved exactly
+		for key, originalVal := range input {
+			resultVal, exists := result[key]
+			require.True(t, exists, "key %s should exist", key)
+
+			originalBigInt := originalVal.(*big.Int)
+			resultBigInt, ok := resultVal.(*big.Int)
+			require.True(t, ok, "result[%s] should be *big.Int", key)
+			assert.Equal(t, originalBigInt.String(), resultBigInt.String(), "BigInt value should be preserved for key %s", key)
+		}
+	})
+
+	t.Run("Nested structure preservation", func(t *testing.T) {
+		// Test nested maps and arrays as might appear in DestExecData
+		input := map[string]any{
+			"version": uint32(1),
+			"config": map[string]any{
+				"maxGas":     uint64(500000),
+				"multiplier": float64(1.5),
+			},
+			"amounts": []any{
+				big.NewInt(1000),
+				big.NewInt(2000),
+			},
+		}
+
+		pbMap, err := goMapToPbMap(input)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+
+		// Verify top-level structure
+		assert.Equal(t, len(input), len(result), "top-level map size should be preserved")
+
+		// Verify nested map structure
+		configResult, ok := result["config"].(map[string]any)
+		require.True(t, ok, "config should remain a map")
+		configInput := input["config"].(map[string]any)
+		assert.Equal(t, len(configInput), len(configResult), "nested map size should be preserved")
+
+		// Verify array structure
+		amountsResult, ok := result["amounts"].([]any)
+		require.True(t, ok, "amounts should remain an array")
+		amountsInput := input["amounts"].([]any)
+		assert.Equal(t, len(amountsInput), len(amountsResult), "array size should be preserved")
+
+		// Verify BigInt values in array are preserved
+		for i, originalAmount := range amountsInput {
+			originalBigInt := originalAmount.(*big.Int)
+			resultBigInt, ok := amountsResult[i].(*big.Int)
+			require.True(t, ok, "array element should remain *big.Int")
+			assert.Equal(t, originalBigInt.String(), resultBigInt.String(), "BigInt value should be preserved")
+		}
+	})
+}

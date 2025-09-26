@@ -38,6 +38,7 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 	lggr = logger.Named(lggr, "RelayerService")
 	var rs RelayerService
 	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
+	lggr.Info("LGGR SERVICE RELAYER SERVICE ABOUT TO BE INITIALIZED")
 	rs.Init(PluginRelayerName, &GRPCPluginRelayer{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &rs
 }

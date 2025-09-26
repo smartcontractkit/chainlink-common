@@ -50,6 +50,8 @@ func NewPluginRelayerClient(brokerCfg net.BrokerConfig) *PluginRelayerClient {
 }
 
 func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
+	p.BrokerExt.Logger.Infow("PluginRelayerClient.NewRelayer called", "config", config)
+
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (relayerID uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		ksID, ksRes, err := p.ServeNew("Keystore", func(s *grpc.Server) {
@@ -76,7 +78,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			return 0, nil, fmt.Errorf("failed to serve new capability registry: %w", err)
 		}
 		deps.Add(capabilityRegistryResource)
-
+		p.BrokerExt.Logger.Infow("PluginRelayerClient.NewRelayer sending gRPC request")
 		reply, err := p.pluginRelayer.NewRelayer(ctx, &pb.NewRelayerRequest{
 			Config:               config,
 			KeystoreID:           ksID,
@@ -86,6 +88,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		if err != nil {
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
 		}
+		p.BrokerExt.Logger.Infow("PluginRelayerClient.NewRelayer got reply", "relayerID", reply.RelayerID)
 		return reply.RelayerID, nil, nil
 	})
 	return newRelayerClient(p.BrokerExt, cc), nil
@@ -111,7 +114,12 @@ func newPluginRelayerServer(broker net.Broker, brokerCfg net.BrokerConfig, impl 
 }
 
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {
-	p.Logger.Info("CALLING NEWRELAYER AGAIN")
+	p.Logger.Infow("pluginRelayerServer.NewRelayer called",
+		"config", request.Config,
+		"keystoreID", request.KeystoreID,
+		"csaKeystoreID", request.KeystoreCSAID,
+		"capRegistryID", request.CapabilityRegistryID,
+	)
 	ksConn, err := p.Dial(request.KeystoreID)
 	if err != nil {
 		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
@@ -138,7 +146,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err
 	}
-	p.Logger.Info("STARTING RELAYER AGAIN:", r.Name())
+	p.Logger.Infow("pluginRelayerServer.NewRelayer starting relayer", "name", r.Name())
 	err = r.Start(ctx)
 	if err != nil {
 		p.CloseAll(ksRes, ksCSARes, crRes)

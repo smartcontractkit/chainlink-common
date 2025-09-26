@@ -14,6 +14,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
+	otellog "go.opentelemetry.io/otel/log"
 )
 
 // HCLogLogger returns an [hclog.Logger] backed by the given [logger.Logger].
@@ -169,6 +171,17 @@ func NewLogger() (logger.Logger, error) {
 		cfg.EncoderConfig.TimeKey = "@timestamp"
 		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000Z07:00")
 	})
+}
+
+func NewOtelLogger(otelLogger otellog.Logger) (logger.Logger, error) {
+	cfgFn := func(cfg *zap.Config) {
+		cfg.Level.SetLevel(zap.DebugLevel)
+		cfg.EncoderConfig.LevelKey = "@level"
+		cfg.EncoderConfig.MessageKey = "@message"
+		cfg.EncoderConfig.TimeKey = "@timestamp"
+		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000Z07:00")
+	}
+	return logger.NewWithCore(cfgFn, otelzap.NewCore(otelLogger))
 }
 
 // onceValue returns a function that invokes f only once and returns the value

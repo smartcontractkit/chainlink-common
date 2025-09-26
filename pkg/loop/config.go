@@ -62,6 +62,7 @@ const (
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
+	envTelemetryMetricCompressorEnabled   = "CL_TELEMETRY_METRIC_COMPRESSOR_ENABLED"
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -118,6 +119,7 @@ type EnvConfig struct {
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
 	TelemetryLogStreamingEnabled       bool
+	TelemetryMetricCompressorEnabled   bool
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
@@ -187,6 +189,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
 	add(envTelemetryLogStreamingEnabled, strconv.FormatBool(e.TelemetryLogStreamingEnabled))
+	add(envTelemetryMetricCompressorEnabled, strconv.FormatBool(e.TelemetryMetricCompressorEnabled))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -350,6 +353,10 @@ func (e *EnvConfig) parse() error {
 		e.TelemetryLogStreamingEnabled, err = getBool(envTelemetryLogStreamingEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogStreamingEnabled, err)
+		}
+		e.TelemetryMetricCompressorEnabled, err = getBool(envTelemetryMetricCompressorEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCompressorEnabled, err)
 		}
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)

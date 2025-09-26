@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -19,7 +19,11 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
+
+const grpcCompressorGzip = "gzip"
 
 type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
@@ -402,6 +406,9 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 		otlpmetricgrpc.WithHeaders(config.AuthHeaders),
+	}
+	if config.MetricCompressorEnabled {
+		opts = append(opts, otlpmetricgrpc.WithCompressor(grpcCompressorGzip))
 	}
 	if config.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK

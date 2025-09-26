@@ -129,6 +129,7 @@ func (s *Server) start() error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			MetricCompressorEnabled:        s.EnvConfig.TelemetryMetricCompressorEnabled,
 		}
 
 		if tracingConfig.Enabled {

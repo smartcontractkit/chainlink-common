@@ -111,6 +111,7 @@ func newPluginRelayerServer(broker net.Broker, brokerCfg net.BrokerConfig, impl 
 }
 
 func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRelayerRequest) (*pb.NewRelayerReply, error) {
+	p.Logger.Info("CALLING NEWRELAYER AGAIN")
 	ksConn, err := p.Dial(request.KeystoreID)
 	if err != nil {
 		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
@@ -137,6 +138,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err
 	}
+	p.Logger.Info("STARTING RELAYER AGAIN:", r.Name())
 	err = r.Start(ctx)
 	if err != nil {
 		p.CloseAll(ksRes, ksCSARes, crRes)

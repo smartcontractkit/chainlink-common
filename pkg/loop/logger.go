@@ -173,6 +173,16 @@ func NewLogger() (logger.Logger, error) {
 	})
 }
 
+// NewOtelLogger returns a logger with two cores:
+//  1. The primary JSON core configured via cfgFn (encoder keys changed to @level, @message, @timestamp).
+//  2. The otel core (otelzap.NewCore) which receives the raw zap.Entry and fields.
+//
+// Important:
+// The cfgFn only mutates the encoder config used to build the first core inside logger.NewWithCore.
+// otelzap.NewCore implements zapcore.Core and does NOT use that encoder; it derives attributes from the zap.Entry
+// (Message, Level, Time, etc.) and zap.Fields directly. Therefore changing encoder keys here does NOT affect how
+// the otel core extracts data, and only the first core's JSON output format is altered.
+// This preserves backward compatibility for OTEL export while allowing hclog-compatible key names in the primary output.
 func NewOtelLogger(otelLogger otellog.Logger) (logger.Logger, error) {
 	cfgFn := func(cfg *zap.Config) {
 		cfg.Level.SetLevel(zap.DebugLevel)

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -108,11 +109,25 @@ type RequestMetadata struct {
 	WorkflowTag string
 }
 
+func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
+	return contexts.WithCRE(ctx, contexts.CRE{
+		Owner:    m.WorkflowOwner,
+		Workflow: m.WorkflowID,
+	})
+}
+
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
 	// The step reference ID of the workflow
 	ReferenceID string
+}
+
+func (m *RegistrationMetadata) ContextWithCRE(ctx context.Context) context.Context {
+	return contexts.WithCRE(ctx, contexts.CRE{
+		Owner:    m.WorkflowOwner,
+		Workflow: m.WorkflowID,
+	})
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.

@@ -35,7 +35,7 @@ func NewNoopClient() *Client {
 	// MessageEmitter
 	messageEmitter := noopMessageEmitter{}
 
-	return &Client{cfg, logger, tracer, meter, messageEmitter, loggerProvider, tracerProvider, meterProvider, loggerProvider, noopOnClose}
+	return &Client{cfg, logger, tracer, meter, messageEmitter, nil, loggerProvider, tracerProvider, meterProvider, loggerProvider, noopOnClose}
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output

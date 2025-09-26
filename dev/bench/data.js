@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758836098068,
+  "lastUpdate": 1758901865269,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25746,6 +25746,48 @@ window.BENCHMARK_DATA = {
             "value": 26631,
             "unit": "ns/op",
             "extra": "45097 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "13ff16fb484e5d5c938c6ba7cbadcf7f63e45408",
+          "message": "Updates `HeaderProvider` interface to also return error (#1564)\n\nneeded for additional implementations",
+          "timestamp": "2025-09-26T10:48:28-05:00",
+          "tree_id": "b78752e12ea06be9175b7fff09605bbb38d84fca",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/13ff16fb484e5d5c938c6ba7cbadcf7f63e45408"
+        },
+        "date": 1758901863924,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.8,
+            "unit": "ns/op",
+            "extra": "3312465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.9,
+            "unit": "ns/op",
+            "extra": "3023271 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26643,
+            "unit": "ns/op",
+            "extra": "45088 times\n4 procs"
           }
         ]
       }

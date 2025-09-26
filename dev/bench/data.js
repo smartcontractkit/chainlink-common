@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758901865269,
+  "lastUpdate": 1758906632558,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25788,6 +25788,48 @@ window.BENCHMARK_DATA = {
             "value": 26643,
             "unit": "ns/op",
             "extra": "45088 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b8d634630fcbe18de5208a05d4cb39e63df3e08",
+          "message": "PLEX-1569 custom ocr3 ocr3 for chain capability (#1559)\n\n* ReportingPluginConfig\n\n* rename ocr3_config_types to ocr3_chain_capaiblities_config_types to avoid conflict",
+          "timestamp": "2025-09-26T17:09:32Z",
+          "tree_id": "9676d05661a8df35f871d6abf0eeb90df0f3d071",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2b8d634630fcbe18de5208a05d4cb39e63df3e08"
+        },
+        "date": 1758906631195,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359,
+            "unit": "ns/op",
+            "extra": "3072175 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.3,
+            "unit": "ns/op",
+            "extra": "2972446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24588,
+            "unit": "ns/op",
+            "extra": "48804 times\n4 procs"
           }
         ]
       }

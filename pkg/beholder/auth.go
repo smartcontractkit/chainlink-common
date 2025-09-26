@@ -50,7 +50,6 @@ func NewRotatingAuthHeaderProvider(csaPubKey ed25519.PublicKey, signer Signer, t
 		csaPubKey:   csaPubKey,
 		signer:      signer,
 		ttl:         ttl,
-		log:         log,
 		headers:     make(map[string]string),
 		lastUpdated: time.Unix(0, 0),
 	}

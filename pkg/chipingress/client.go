@@ -167,7 +167,13 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		// Add dynamic headers from provider if available
 		if provider != nil {
-			for k, v := range provider.Headers(ctx) {
+
+			headers, err := provider.Headers(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get headers: %w", err)
+			}
+
+			for k, v := range headers {
 				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 			}
 		}

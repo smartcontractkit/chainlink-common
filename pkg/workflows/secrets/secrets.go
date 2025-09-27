@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"golang.org/x/crypto/nacl/box"
@@ -45,12 +46,7 @@ type EncryptedSecretsResult struct {
 }
 
 func ContainsP2pId(p2pId [32]byte, p2pIds [][32]byte) bool {
-	for _, id := range p2pIds {
-		if id == p2pId {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(p2pIds, p2pId)
 }
 
 func EncryptSecretsForNodes(

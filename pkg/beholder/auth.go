@@ -8,6 +8,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
@@ -21,41 +24,65 @@ type HeaderProvider interface {
 	Headers(ctx context.Context) (map[string]string, error)
 }
 
+type PerRPCCredentialsProvider interface {
+	Credentials() credentials.PerRPCCredentials
+}
+
+type Auth interface {
+	PerRPCCredentialsProvider
+	HeaderProvider
+}
+
 type Signer interface {
 	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
 }
 
-type staticAuthHeaderProvider struct {
-	headers map[string]string
+type staticAuth struct {
+	headers                  map[string]string
+	requireTransportSecurity bool
 }
 
-func (p *staticAuthHeaderProvider) Headers(_ context.Context) (map[string]string, error) {
+func (p *staticAuth) Headers(_ context.Context) (map[string]string, error) {
 	return p.headers, nil
 }
 
-func NewStaticAuthHeaderProvider(headers map[string]string) HeaderProvider {
-	return &staticAuthHeaderProvider{headers: headers}
+func (p *staticAuth) Credentials() credentials.PerRPCCredentials {
+	return p
 }
 
-type rotatingAuthHeaderProvider struct {
-	csaPubKey   ed25519.PublicKey
-	signer      Signer
-	headers     map[string]string
-	ttl         time.Duration
-	lastUpdated time.Time
+func (p *staticAuth) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	return p.Headers(ctx)
 }
 
-func NewRotatingAuthHeaderProvider(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration) HeaderProvider {
-	return &rotatingAuthHeaderProvider{
-		csaPubKey:   csaPubKey,
-		signer:      signer,
-		ttl:         ttl,
-		headers:     make(map[string]string),
-		lastUpdated: time.Unix(0, 0),
+func (p *staticAuth) RequireTransportSecurity() bool {
+	return p.requireTransportSecurity
+}
+
+func NewStaticAuth(headers map[string]string, requireTransportSecurity bool) HeaderProvider {
+	return &staticAuth{headers, requireTransportSecurity}
+}
+
+type rotatingAuth struct {
+	csaPubKey                ed25519.PublicKey
+	signer                   Signer
+	headers                  map[string]string
+	ttl                      time.Duration
+	lastUpdated              time.Time
+	requireTransportSecurity bool
+}
+
+func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool) Auth {
+	return &rotatingAuth{
+		csaPubKey:                csaPubKey,
+		signer:                   signer,
+		ttl:                      ttl,
+		headers:                  make(map[string]string),
+		lastUpdated:              time.Unix(0, 0),
+		requireTransportSecurity: requireTransportSecurity,
 	}
 }
 
-func (r *rotatingAuthHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
+func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 	if time.Since(r.lastUpdated) > r.ttl {
 		// Append timestamp bytes to the public key bytes
 		timestamp := time.Now().UnixMilli()
@@ -72,6 +99,18 @@ func (r *rotatingAuthHeaderProvider) Headers(ctx context.Context) (map[string]st
 		r.lastUpdated = time.Now()
 	}
 	return r.headers, nil
+}
+
+func (a *rotatingAuth) Credentials() credentials.PerRPCCredentials {
+	return a
+}
+
+func (a *rotatingAuth) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	return a.Headers(ctx)
+}
+
+func (a *rotatingAuth) RequireTransportSecurity() bool {
+	return a.requireTransportSecurity
 }
 
 // BuildAuthHeaders creates the auth header value to be included on requests.
@@ -104,4 +143,8 @@ func NewAuthHeaders(ed25519Signer crypto.Signer) (map[string]string, error) {
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 
 	return map[string]string{authHeaderKey: headerValue}, nil
+}
+
+func authDialOpt(auth PerRPCCredentialsProvider) grpc.DialOption {
+	return grpc.WithPerRPCCredentials(auth.Credentials())
 }

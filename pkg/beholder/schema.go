@@ -15,7 +15,7 @@ import (
 // Notice: we use the Unicode property 'Lu' (uppercase letter) to match
 // the first letter of the word, and 'P{Lu}' (not uppercase letter) to match
 // the rest of the word.
-var patternSnake = regexp.MustCompile(`(\\p{Lu}+\\P{Lu}*)`)
+var patternSnake = regexp.MustCompile("(\\p{Lu}+\\P{Lu}*)")
 
 // toSnakeCase converts a CamelCase to snake_case (used for type -> file name mapping)
 func toSnakeCase(s string) string {

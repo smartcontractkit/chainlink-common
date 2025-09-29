@@ -1,11 +1,15 @@
 package beholder_test
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
@@ -37,10 +41,157 @@ func TestStaticAuthHeaderProvider(t *testing.T) {
 	}
 
 	// Create new header provider
-	provider := beholder.NewStaticAuthHeaderProvider(testHeaders)
+	provider := beholder.NewStaticAuth(testHeaders, false)
 
 	// Get headers and verify they match
 	headers, err := provider.Headers(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, testHeaders, headers)
+}
+
+// MockSigner implements the beholder.Signer interface for testing rotating auth
+type MockSigner struct {
+	mock.Mock
+}
+
+func (m *MockSigner) Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error) {
+	args := m.Called(ctx, keyID, data)
+	return args.Get(0).([]byte), args.Error(1)
+}
+
+func TestRotatingAuth(t *testing.T) {
+	// Generate test key pair
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	t.Run("creates valid rotating auth headers", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.MatchedBy(func(keyID []byte) bool {
+				return string(keyID) == string(pubKey) // Verify correct public key is passed
+			}), mock.Anything).
+			Return(dummySignature, nil)
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		headers, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+		require.NotEmpty(t, headers)
+
+		authHeader := headers["X-Beholder-Node-Auth-Token"]
+		require.NotEmpty(t, authHeader)
+
+		parts := strings.Split(authHeader, ":")
+		require.Len(t, parts, 4, "Auth header should have format version:pubkey_hex:timestamp:signature_hex")
+
+		assert.Equal(t, "2", parts[0], "Version should be 2")
+		assert.Equal(t, hex.EncodeToString(pubKey), parts[1], "Public key should match")
+		assert.NotEmpty(t, parts[2], "Timestamp should not be empty")
+
+		// Verify signature is hex encoded
+		_, err = hex.DecodeString(parts[3])
+		assert.NoError(t, err, "Signature should be valid hex")
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("reuses headers within TTL", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(dummySignature, nil).
+			Maybe()
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		headers1, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+
+		headers2, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+
+		assert.Equal(t, headers1, headers2, "Headers should be reused within TTL")
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("handles signer errors", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+		expectedErr := assert.AnError
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return([]byte{}, expectedErr)
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		ctx := context.Background()
+		headers, err := auth.Headers(ctx)
+		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Contains(t, err.Error(), "beholder: failed to sign auth header")
+		assert.Contains(t, err.Error(), expectedErr.Error())
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("implements PerRPCCredentialsProvider interface", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(dummySignature, nil).
+			Maybe()
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		creds := auth.Credentials()
+		require.NotNil(t, creds)
+
+		assert.False(t, creds.RequireTransportSecurity())
+
+		metadata, err := creds.GetRequestMetadata(t.Context())
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata)
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("respects transport security requirement", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(dummySignature, nil).
+			Maybe()
+
+		ttl := 5 * time.Minute
+		// transport security required
+		authSecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, true)
+		credsSecure := authSecure.Credentials()
+		assert.True(t, credsSecure.RequireTransportSecurity())
+		// transport security not required
+		authInsecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		credsInsecure := authInsecure.Credentials()
+		assert.False(t, credsInsecure.RequireTransportSecurity())
+
+		mockSigner.AssertExpectations(t)
+	})
 }

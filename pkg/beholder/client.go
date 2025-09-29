@@ -2,8 +2,11 @@ package beholder
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -91,11 +94,42 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 	}
+
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-		otlploggrpc.WithHeaders(cfg.AuthHeaders),
 	}
+	// Initialize auth here for reuse with log, trace, and metric exporters
+	var auth Auth
+	if cfg.AuthKeySigner != nil {
+
+		if cfg.AuthPublicKeyHex == "" {
+			return nil, fmt.Errorf("auth: public key hex required when signer is set")
+		}
+		// Set the min TTL to 1 minute, avoid signing headers too often if config is misconfigured
+		if cfg.AuthHeadersTTL < 1*time.Minute {
+			return nil, fmt.Errorf("auth: headers TTL must be at least 1 minute")
+		}
+
+		key, err := hex.DecodeString(cfg.AuthPublicKeyHex)
+		if err != nil {
+			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
+		}
+
+		auth = NewRotatingAuth(key, cfg.AuthKeySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection)
+	}
+	// Log exporter auth
+	switch {
+	// Rotating auth
+	case auth != nil:
+		opts = append(opts, otlploggrpc.WithDialOption(authDialOpt(auth)))
+	// Static auth
+	case len(cfg.AuthHeaders) > 0:
+		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
+	// No auth
+	default:
+	}
+
 	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
@@ -157,14 +191,14 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
-	tracerProvider, err := newTracerProvider(cfg, baseResource, creds)
+	tracerProvider, err := newTracerProvider(cfg, baseResource, auth, creds)
 	if err != nil {
 		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newMeterProvider(cfg, baseResource, creds)
+	meterProvider, err := newMeterProvider(cfg, baseResource, auth, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -220,25 +254,29 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
-		chipIngressOpts := make([]chipingress.Opt, 0, 2)
+
+		var opts []chipingress.Opt
 
 		if cfg.ChipIngressInsecureConnection {
-			// Use insecure credentials when TLS is not required
-			chipIngressOpts = append(chipIngressOpts, chipingress.WithInsecureConnection())
+			opts = append(opts, chipingress.WithInsecureConnection())
 		} else {
-			chipIngressOpts = append(chipIngressOpts, chipingress.WithTLS())
+			opts = append(opts, chipingress.WithTLS())
 		}
-		// Only add headers if they exist
-		if len(cfg.AuthHeaders) > 0 {
-			headerProvider := NewStaticAuthHeaderProvider(cfg.AuthHeaders)
-			chipIngressOpts = append(chipIngressOpts, chipingress.WithTokenAuth(headerProvider))
+		// Chip ingress auth
+		switch {
+		// Rotating auth
+		case auth != nil:
+			opts = append(opts, chipingress.WithTokenAuth(auth))
+		// Static auth
+		case len(cfg.AuthHeaders) > 0:
+			opts = append(opts, chipingress.WithTokenAuth(
+				NewStaticAuth(cfg.AuthHeaders, !cfg.ChipIngressInsecureConnection),
+			))
+		// No auth
+		default:
 		}
 
-		chipIngressClient, err = chipingress.NewClient(
-			cfg.ChipIngressEmitterGRPCEndpoint,
-			chipIngressOpts...,
-		)
-
+		chipIngressClient, err = chipingress.NewClient(cfg.ChipIngressEmitterGRPCEndpoint, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -355,13 +393,22 @@ type shutdowner interface {
 	Shutdown(ctx context.Context) error
 }
 
-func newTracerProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
+func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		otlptracegrpc.WithHeaders(config.AuthHeaders),
+	}
+	switch {
+	// Rotating auth
+	case auth != nil:
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithDialOption(authDialOpt(auth)))
+	// Static auth
+	case len(config.AuthHeaders) > 0:
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithHeaders(config.AuthHeaders))
+	// No auth
+	default:
 	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -396,20 +443,31 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	return sdktrace.NewTracerProvider(opts...), nil
 }
 
-func newMeterProvider(config Config, resource *sdkresource.Resource, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
+func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
-		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		otlpmetricgrpc.WithHeaders(config.AuthHeaders),
+		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
-	if config.MetricRetryConfig != nil {
+
+	switch {
+	// Rotating auth
+	case auth != nil:
+		opts = append(opts, otlpmetricgrpc.WithDialOption(authDialOpt(auth)))
+	// Static auth
+	case len(cfg.AuthHeaders) > 0:
+		opts = append(opts, otlpmetricgrpc.WithHeaders(cfg.AuthHeaders))
+	// No auth
+	default:
+	}
+
+	if cfg.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		opts = append(opts, otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
-			Enabled:         config.MetricRetryConfig.Enabled(),
-			InitialInterval: config.MetricRetryConfig.GetInitialInterval(),
-			MaxInterval:     config.MetricRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  config.MetricRetryConfig.GetMaxElapsedTime(),
+			Enabled:         cfg.MetricRetryConfig.Enabled(),
+			InitialInterval: cfg.MetricRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.MetricRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.MetricRetryConfig.GetMaxElapsedTime(),
 		}))
 	}
 	// note: context is unused internally
@@ -421,10 +479,10 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				exporter,
-				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
+				sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithView(config.MetricViews...),
+		sdkmetric.WithView(cfg.MetricViews...),
 	)
 	return mp, nil
 }

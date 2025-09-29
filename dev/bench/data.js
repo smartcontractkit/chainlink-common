@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758906632558,
+  "lastUpdate": 1759160799839,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25830,6 +25830,48 @@ window.BENCHMARK_DATA = {
             "value": 24588,
             "unit": "ns/op",
             "extra": "48804 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1f5fbda7ae76d5494b9864db90a8bfe7183db5fb",
+          "message": "CCIP - add ExtraDataCodecBundle protobuf and client/server support (#1548)\n\nCo-authored-by: amit-momin <108959691+amit-momin@users.noreply.github.com>",
+          "timestamp": "2025-09-29T11:45:11-04:00",
+          "tree_id": "834ef29374a8d197aef0a06efa874354728f1b5b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1f5fbda7ae76d5494b9864db90a8bfe7183db5fb"
+        },
+        "date": 1759160798129,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.7,
+            "unit": "ns/op",
+            "extra": "3293881 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.4,
+            "unit": "ns/op",
+            "extra": "2907769 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26652,
+            "unit": "ns/op",
+            "extra": "44997 times\n4 procs"
           }
         ]
       }

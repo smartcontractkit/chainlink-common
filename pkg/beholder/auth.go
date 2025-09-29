@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -58,8 +59,13 @@ func (p *staticAuth) RequireTransportSecurity() bool {
 	return p.requireTransportSecurity
 }
 
-func NewStaticAuth(headers map[string]string, requireTransportSecurity bool) HeaderProvider {
+func NewStaticAuth(headers map[string]string, requireTransportSecurity bool) Auth {
 	return &staticAuth{headers, requireTransportSecurity}
+}
+
+// Deprecated: use NewStaticAuth instead
+func NewStaticAuthHeaderProvider(headers map[string]string) chipingress.HeaderProvider {
+	return &staticAuth{headers: headers}
 }
 
 type rotatingAuth struct {
@@ -85,18 +91,18 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 	if time.Since(r.lastUpdated) > r.ttl {
 		// Append timestamp bytes to the public key bytes
-		timestamp := time.Now().UnixMilli()
-		timestampBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(timestampBytes, uint64(timestamp))
-		messageBytes := append(r.csaPubKey, timestampBytes...)
+		ts := time.Now()
+		tsBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixMilli()))
+		messageBytes := append(r.csaPubKey, tsBytes...)
 		// Sign(public key bytes + timestamp bytes)
 		signature, err := r.signer.Sign(ctx, r.csaPubKey, messageBytes)
 		if err != nil {
 			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
 		}
 
-		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, timestamp, signature)
-		r.lastUpdated = time.Now()
+		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixMilli(), signature)
+		r.lastUpdated = ts
 	}
 	return r.headers, nil
 }

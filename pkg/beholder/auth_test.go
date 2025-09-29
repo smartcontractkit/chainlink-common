@@ -137,8 +137,7 @@ func TestRotatingAuth(t *testing.T) {
 		ttl := 5 * time.Minute
 		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
 
-		ctx := context.Background()
-		headers, err := auth.Headers(ctx)
+		headers, err := auth.Headers(t.Context())
 		require.Error(t, err)
 		assert.Nil(t, headers)
 		assert.Contains(t, err.Error(), "beholder: failed to sign auth header")

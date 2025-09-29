@@ -78,6 +78,9 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 	return s.signFn(ctx, s.account, digest)
 }
 
+// Notice: when developing a capability that uses the StandardCapabilityAccount signer,
+// prefix your signing data with a unique string using the `MakePeerIDSignatureDomainSeparatedPayload` helper function.
+// Link: https://github.com/smartcontractkit/libocr/blob/88bb5d99bf3f9f215a8926e8af972de0cdd3802e/ragep2p/peeridhelper/domain_separation.go#L25
 var P2PAccountKey = "P2P_SIGNER"
 var StandardCapabilityAccount = "STANDARD_CAPABILITY_ACCOUNT"
 

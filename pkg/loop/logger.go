@@ -13,7 +13,10 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/exp/slices"
 
+	otellog "go.opentelemetry.io/otel/log"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
 )
 
 // HCLogLogger returns an [hclog.Logger] backed by the given [logger.Logger].
@@ -162,13 +165,37 @@ func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ..
 
 // NewLogger returns a new [logger.Logger] configured to encode [hclog] compatible JSON.
 func NewLogger() (logger.Logger, error) {
-	return logger.NewWith(func(cfg *zap.Config) {
-		cfg.Level.SetLevel(zap.DebugLevel)
-		cfg.EncoderConfig.LevelKey = "@level"
-		cfg.EncoderConfig.MessageKey = "@message"
-		cfg.EncoderConfig.TimeKey = "@timestamp"
-		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000Z07:00")
-	})
+	return logger.NewWith(configureHCLogEncoder)
+}
+
+// configureHCLogEncoder mutates cfg to use hclog-compatible field names and timestamp format.
+// NOTE: It also sets the log level to Debug to preserve prior behavior where each caller
+// manually set Debug before applying identical encoder tweaks. Centralizing avoids drift.
+// If a different level is desired, callers should override cfg.Level AFTER calling this helper.
+func configureHCLogEncoder(cfg *zap.Config) {
+	cfg.Level.SetLevel(zap.DebugLevel)
+	cfg.EncoderConfig.LevelKey = "@level"
+	cfg.EncoderConfig.MessageKey = "@message"
+	cfg.EncoderConfig.TimeKey = "@timestamp"
+	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000Z07:00")
+}
+
+// NewOtelLogger returns a logger with two cores:
+//  1. The primary JSON core configured via cfgFn (encoder keys changed to @level, @message, @timestamp).
+//  2. The otel core (otelzap.NewCore) which receives the raw zap.Entry and fields.
+//
+// Important:
+// The cfgFn only mutates the encoder config used to build the first core.
+// otelzap.NewCore implements zapcore.Core and does NOT use that encoder; it derives attributes from the zap.Entry
+// (Message, Level, Time, etc.) and zap.Fields directly. Therefore changing encoder keys here does NOT affect how
+// the otel core extracts data, and only the first core's JSON output format is altered.
+// This preserves backward compatibility for OTEL export while allowing hclog-compatible key names in the primary output.
+func NewOtelLogger(otelLogger otellog.Logger) (logger.Logger, error) {
+	primaryCore, err := logger.NewCore(configureHCLogEncoder)
+	if err != nil {
+		return nil, err
+	}
+	return logger.NewWithCores(primaryCore, otelzap.NewCore(otelLogger)), nil
 }
 
 // onceValue returns a function that invokes f only once and returns the value

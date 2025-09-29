@@ -148,6 +148,14 @@ func (s *Server) start() error {
 		}
 		beholder.SetClient(beholderClient)
 		beholder.SetGlobalOtelProviders()
+
+		if beholderCfg.LogStreamingEnabled {
+			otelLogger, err := NewOtelLogger(beholderClient.Logger)
+			if err != nil {
+				return fmt.Errorf("failed to enable log streaming: %w", err)
+			}
+			s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+		}
 	}
 
 	s.promServer = NewPromServer(s.EnvConfig.PrometheusPort, s.Logger)

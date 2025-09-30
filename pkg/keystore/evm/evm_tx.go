@@ -68,12 +68,14 @@ type EVMGetKeyRequest struct {
 type EVMGetKeyResponse struct {
 	KeyInfo keystore.KeyInfo
 }
+
 type EVMSignTxRequest struct {
 	Name        string
 	FromAddress string
 	ChainID     *big.Int
 	Tx          *gethtypes.Transaction
 }
+
 type EVMSignTxResponse struct {
 	Tx *gethtypes.Transaction
 }

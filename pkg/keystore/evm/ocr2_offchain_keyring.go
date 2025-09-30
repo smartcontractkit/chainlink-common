@@ -104,6 +104,8 @@ func (s *ocr2OffchainKeyringStore) CreateKeyring(ctx context.Context, req OCR2Of
 		return OCR2OffchainKeyringCreateResponse{}, fmt.Errorf("expected 2 keys, got %d", len(resp.Keys))
 	}
 
+	// Note today loops have a similar thing of returning
+	// a connection to another service. Add complexity but manageable.
 	return OCR2OffchainKeyringCreateResponse{
 		Keyring: &evmOffchainKeyring{
 			ks:                    s.ks,

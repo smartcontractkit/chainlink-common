@@ -2,15 +2,18 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
 	"golang.org/x/crypto/curve25519"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/serialization"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
@@ -23,6 +26,7 @@ type KeyInfo struct {
 	Name      string
 	KeyType   KeyType
 	PublicKey []byte
+	Metadata  []byte
 }
 
 type Keystore interface {
@@ -36,6 +40,7 @@ type key struct {
 	keyType    KeyType
 	privateKey internal.Raw
 	createdAt  time.Time
+	metadata   []byte
 }
 
 func (k key) publicKey() []byte {
@@ -43,7 +48,16 @@ func (k key) publicKey() []byte {
 	case Ed25519:
 		return ed25519.PublicKey(internal.Bytes(k.privateKey))
 	case Secp256k1:
-		return nil // TODO: derive public key
+		privateKey, err := ecdsaPrivateKeyFromBytes(k.privateKey)
+		if err != nil {
+			panic(err)
+		}
+		// Return uncompressed public key (65 bytes: 0x04 + 32 bytes X + 32 bytes Y)
+		pubKey := make([]byte, 65)
+		pubKey[0] = 0x04
+		copy(pubKey[1:33], privateKey.PublicKey.X.Bytes())
+		copy(pubKey[33:65], privateKey.PublicKey.Y.Bytes())
+		return pubKey
 	case X25519:
 		rv, err := curve25519.X25519(internal.Bytes(k.privateKey)[:], curve25519.Basepoint)
 		// Shouldn't ever happen?
@@ -59,6 +73,15 @@ func (k key) publicKey() []byte {
 		// asymmetric key exchange protocols like X25519 for encryption?
 		return nil
 	}
+}
+
+func ecdsaPrivateKeyFromBytes(privateKeyBytes internal.Raw) (*ecdsa.PrivateKey, error) {
+	privateKey := &ecdsa.PrivateKey{}
+	d := big.NewInt(0).SetBytes(internal.Bytes(privateKeyBytes))
+	privateKey.D = d
+	privateKey.PublicKey.Curve = crypto.S256()
+	privateKey.PublicKey.X, privateKey.PublicKey.Y = crypto.S256().ScalarBaseMult(d.Bytes())
+	return privateKey, nil
 }
 
 type keystore struct {
@@ -92,6 +115,12 @@ func load(storage storage.Storage, password string) (map[string]key, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get encrypted keystore: %w", err)
 	}
+
+	// If no data exists, return empty keystore
+	if encryptedKeystore == nil || len(encryptedKeystore) == 0 {
+		return make(map[string]key), nil
+	}
+
 	encryptedSecrets := gethkeystore.CryptoJSON{}
 	err = json.Unmarshal(encryptedKeystore, &encryptedSecrets)
 	if err != nil {
@@ -112,6 +141,7 @@ func load(storage storage.Storage, password string) (map[string]key, error) {
 			createdAt:  time.Unix(k.CreatedAt, 0),
 			keyType:    KeyType(k.KeyType),
 			privateKey: internal.NewRaw(k.PrivateKey),
+			metadata:   k.Metadata,
 		}
 	}
 	return keystore, nil
@@ -127,6 +157,7 @@ func save(storage storage.Storage, password string, keystore map[string]key) err
 			KeyType:    string(k.keyType),
 			PrivateKey: internal.Bytes(k.privateKey),
 			CreatedAt:  k.createdAt.Unix(),
+			Metadata:   k.metadata,
 		})
 	}
 	rawKeystore, err := proto.Marshal(&keystorepb)

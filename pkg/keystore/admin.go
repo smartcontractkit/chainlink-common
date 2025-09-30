@@ -75,11 +75,23 @@ type ExportKeyResponse struct {
 	Data    []byte
 }
 
+type SetMetadataRequest struct {
+	Updates []SetMetadataUpdate
+}
+
+type SetMetadataUpdate struct {
+	KeyName  string
+	Metadata []byte
+}
+
+type SetMetadataResponse struct{}
+
 type Admin interface {
 	CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error)
 	DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error)
 	ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error)
 	ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error)
+	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
 }
 
 func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error) {
@@ -102,6 +114,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				keyType:    keyReq.KeyType,
 				privateKey: internal.NewRaw(privateKey),
 				createdAt:  time.Now(),
+				metadata:   []byte{},
 			}
 		case Secp256k1:
 			privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
@@ -112,6 +125,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				keyType:    keyReq.KeyType,
 				privateKey: internal.NewRaw(privateKeyECDSA.D.Bytes()),
 				createdAt:  time.Now(),
+				metadata:   []byte{},
 			}
 		case X25519:
 			encryptionKey := [curve25519.ScalarSize]byte{}
@@ -123,6 +137,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				keyType:    keyReq.KeyType,
 				privateKey: internal.NewRaw(encryptionKey[:]),
 				createdAt:  time.Now(),
+				metadata:   []byte{},
 			}
 		default:
 			return CreateKeysResponse{}, fmt.Errorf("unsupported key type: %s", keyReq.KeyType)
@@ -133,6 +148,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				Name:      keyReq.Name,
 				KeyType:   keyReq.KeyType,
 				PublicKey: ksCopy[keyReq.Name].publicKey(),
+				Metadata:  ksCopy[keyReq.Name].metadata,
 			},
 		})
 	}
@@ -147,6 +163,17 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 }
 
 func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+
+	ksCopy := maps.Clone(k.keystore)
+	for _, name := range req.Names {
+		delete(ksCopy, name)
+	}
+	if err := save(k.storage, k.password, ksCopy); err != nil {
+		return DeleteKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+	k.keystore = ksCopy
 	return DeleteKeysResponse{}, nil
 }
 
@@ -175,10 +202,35 @@ func (k *keystore) ExportKeys(ctx context.Context, req ExportKeysRequest) (Expor
 				Name:      name,
 				KeyType:   key.keyType,
 				PublicKey: key.publicKey(),
+				Metadata:  key.metadata,
 			},
 			Data: exportedKeyData,
 		})
 	}
 
 	return ExportKeysResponse{Keys: responses}, nil
+}
+
+func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	ksCopy := maps.Clone(ks.keystore)
+
+	for _, update := range req.Updates {
+		key, ok := ksCopy[update.KeyName]
+		if !ok {
+			return SetMetadataResponse{}, fmt.Errorf("key not found: %s", update.KeyName)
+		}
+
+		key.metadata = update.Metadata
+		ksCopy[update.KeyName] = key
+	}
+
+	if err := save(ks.storage, ks.password, ksCopy); err != nil {
+		return SetMetadataResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+
+	ks.keystore = ksCopy
+	return SetMetadataResponse{}, nil
 }

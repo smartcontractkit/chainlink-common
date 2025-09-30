@@ -1,38 +1,55 @@
 package keystore
 
-import "context"
-
-type ListKeysRequest struct{}
-
-type ListKeysResponse struct {
-	Keys []KeyInfo
-}
+import (
+	"context"
+	"fmt"
+)
 
 type GetKeysRequest struct {
-	Names []string
+	Names []string // Empty slice means get all keys
 }
 
 type GetKeysResponse struct {
-	Keys []GetKeyResponse
-}
-
-type GetKeyRequest struct {
-	Name string
-}
-
-type GetKeyResponse struct {
-	KeyInfo KeyInfo
+	Keys []KeyInfo
 }
 
 type Reader interface {
-	ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error)
 	GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error)
 }
 
-func (k *keystore) ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error) {
-	return ListKeysResponse{}, nil
-}
-
 func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error) {
-	return GetKeysResponse{}, nil
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	// If no names specified, return all keys
+	if len(req.Names) == 0 {
+		keys := make([]KeyInfo, 0, len(k.keystore))
+		for name, key := range k.keystore {
+			keys = append(keys, KeyInfo{
+				Name:      name,
+				KeyType:   key.keyType,
+				PublicKey: key.publicKey(),
+				Metadata:  key.metadata,
+			})
+		}
+		return GetKeysResponse{Keys: keys}, nil
+	}
+
+	// Return specific keys
+	keys := make([]KeyInfo, 0, len(req.Names))
+	for _, name := range req.Names {
+		key, ok := k.keystore[name]
+		if !ok {
+			return GetKeysResponse{}, fmt.Errorf("key not found: %s", name)
+		}
+
+		keys = append(keys, KeyInfo{
+			Name:      name,
+			KeyType:   key.keyType,
+			PublicKey: key.publicKey(),
+			Metadata:  key.metadata,
+		})
+	}
+
+	return GetKeysResponse{Keys: keys}, nil
 }

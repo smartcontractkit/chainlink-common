@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"crypto/ecdsa"
-	"math/big"
+	"crypto/ed25519"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
@@ -52,12 +51,17 @@ func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, err
 		return SignResponse{}, fmt.Errorf("key not found: %s", req.Name)
 	}
 	switch key.keyType {
+	case Ed25519:
+		privateKey := ed25519.PrivateKey(internal.Bytes(key.privateKey))
+		signature := ed25519.Sign(privateKey, req.Data)
+		return SignResponse{
+			Signature: signature,
+		}, nil
 	case Secp256k1:
-		var privateKey *ecdsa.PrivateKey
-		d := big.NewInt(0).SetBytes(internal.Bytes(key.privateKey))
-		privateKey.D = d
-		privateKey.PublicKey.Curve = crypto.S256()
-		privateKey.PublicKey.X, privateKey.PublicKey.Y = crypto.S256().ScalarBaseMult(d.Bytes())
+		privateKey, err := ecdsaPrivateKeyFromBytes(key.privateKey)
+		if err != nil {
+			return SignResponse{}, err
+		}
 		signature, err := crypto.Sign(req.Data, privateKey)
 		if err != nil {
 			return SignResponse{}, err

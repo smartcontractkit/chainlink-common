@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759227021461,
+  "lastUpdate": 1759267383951,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25914,6 +25914,48 @@ window.BENCHMARK_DATA = {
             "value": 26706,
             "unit": "ns/op",
             "extra": "44968 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0b782340a7f52d95f56c0eec134273cbdcd98ccc",
+          "message": "CCIP accessor - add missing destexecdata field from message (#1570)",
+          "timestamp": "2025-09-30T16:21:38-05:00",
+          "tree_id": "38a8a3e11a098565024c3a36667e4d533e72fdc6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0b782340a7f52d95f56c0eec134273cbdcd98ccc"
+        },
+        "date": 1759267382025,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.9,
+            "unit": "ns/op",
+            "extra": "3352903 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.8,
+            "unit": "ns/op",
+            "extra": "2781313 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26642,
+            "unit": "ns/op",
+            "extra": "45052 times\n4 procs"
           }
         ]
       }

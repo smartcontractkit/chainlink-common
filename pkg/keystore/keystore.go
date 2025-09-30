@@ -30,11 +30,6 @@ type KeyInfo struct {
 	Metadata  []byte
 }
 
-type Key interface {
-	// Name is the full name of the key.
-	Name() string
-}
-
 type Keystore interface {
 	Admin
 	Reader

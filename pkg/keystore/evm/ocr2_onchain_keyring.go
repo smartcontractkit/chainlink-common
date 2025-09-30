@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore"
@@ -10,115 +11,79 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
+const (
+	OCR2OnchainPrefix = "ocr2_onchain"
+)
+
+// GetOCR2OnchainKeystoreName builds EVM/OCR2_ONCHAIN local name into a fully-qualified keystore name.
+func GetOCR2OnchainKeystoreName(localName string) string {
+	return keystore.JoinKeySegments(EVM_PREFIX, OCR2OnchainPrefix, localName)
+}
+
+// IsOCR2OnchainKey checks if a keystore name belongs to the OCR2 onchain namespace.
+func IsOCR2OnchainKey(name string) bool {
+	return strings.HasPrefix(name, keystore.JoinKeySegments(EVM_PREFIX, OCR2OnchainPrefix, ""))
+}
+
 type OCR2OnchainKeyringCreateRequest struct {
-	Name string
+	LocalName string
 }
 
 type OCR2OnchainKeyringCreateResponse struct {
 	Keyring ocrtypes.OnchainKeyring
 }
 
-type OCR2OnchainKeyringGetRequest struct {
-	Name string
+type OCR2OnchainKeyringGetKeyringsRequest struct {
+	Names []string // Empty slice means get all OCR2 onchain keyrings
 }
 
-type OCR2OnchainKeyringGetResponse struct {
-	Keyring ocrtypes.OnchainKeyring
-}
-
-type OCR2OnchainKeyringDeleteRequest struct {
-	Name string
-}
-
-type OCR2OnchainKeyringDeleteResponse struct{}
-
-type OCR2OnchainKeyringListRequest struct{}
-
-type OCR2OnchainKeyringListResponse struct {
+type OCR2OnchainKeyringGetKeyringsResponse struct {
 	Keyrings []ocrtypes.OnchainKeyring
 }
 
-type OCR2OnchainKeyringImportRequest struct {
-	Name string
-	Data []byte
-}
-
-type OCR2OnchainKeyringImportResponse struct {
-	Keyring ocrtypes.OnchainKeyring
-}
-
-type OCR2OnchainKeyringExportRequest struct {
-	Name string
-}
-
-type OCR2OnchainKeyringExportResponse struct {
-	Data []byte
-}
-
-type OCR2OnchainKeyringStore interface {
-	CreateKeyring(ctx context.Context, req OCR2OnchainKeyringCreateRequest) (OCR2OnchainKeyringCreateResponse, error)
-	GetKeyring(ctx context.Context, req OCR2OnchainKeyringGetRequest) (OCR2OnchainKeyringGetResponse, error)
-	DeleteKeyring(ctx context.Context, req OCR2OnchainKeyringDeleteRequest) (OCR2OnchainKeyringDeleteResponse, error)
-	ListKeyrings(ctx context.Context, req OCR2OnchainKeyringListRequest) (OCR2OnchainKeyringListResponse, error)
-	ImportKeyring(ctx context.Context, req OCR2OnchainKeyringImportRequest) (OCR2OnchainKeyringImportResponse, error)
-	ExportKeyring(ctx context.Context, req OCR2OnchainKeyringExportRequest) (OCR2OnchainKeyringExportResponse, error)
-}
-
-type ocr2OnchainKeyringStore struct {
-	ks keystore.Keystore
-}
-
-func NewOCR2OnchainKeyringStore(ks keystore.Keystore) OCR2OnchainKeyringStore {
-	return &ocr2OnchainKeyringStore{ks: ks}
-}
-
-func (s *ocr2OnchainKeyringStore) buildKeyName(name string) string {
-	return fmt.Sprintf("%s_%s", "evm_ocr2_onchain", name)
-}
-
-func (s *ocr2OnchainKeyringStore) CreateKeyring(ctx context.Context, req OCR2OnchainKeyringCreateRequest) (OCR2OnchainKeyringCreateResponse, error) {
+// CreateOCR2OnchainKeyring creates an OCR2 onchain keyring using the base keystore and returns the handle.
+func CreateOCR2OnchainKeyring(ctx context.Context, ks keystore.Keystore, localName string) (ocrtypes.OnchainKeyring, error) {
 	createReq := keystore.CreateKeysRequest{
 		Keys: []keystore.CreateKeyRequest{
 			{
-				Name:    s.buildKeyName(req.Name),
+				Name:    GetOCR2OnchainKeystoreName(localName),
 				KeyType: keystore.Secp256k1,
 			},
 		},
 	}
-	resp, err := s.ks.CreateKeys(ctx, createReq)
+	resp, err := ks.CreateKeys(ctx, createReq)
 	if err != nil {
-		return OCR2OnchainKeyringCreateResponse{}, err
+		return nil, err
 	}
 	if len(resp.Keys) != 1 {
-		return OCR2OnchainKeyringCreateResponse{}, fmt.Errorf("expected 1 key, got %d", len(resp.Keys))
+		return nil, fmt.Errorf("expected 1 key, got %d", len(resp.Keys))
+	}
+	return &evmOnchainKeyring{ks: ks, OnchainKey: resp.Keys[0].KeyInfo}, nil
+}
+
+// ListOCR2OnchainKeyrings lists OCR2 onchain keyrings. If no local names provided, returns all OCR2 onchain keyrings.
+func ListOCR2OnchainKeyrings(ctx context.Context, ks keystore.Keystore, localNames ...string) ([]ocrtypes.OnchainKeyring, error) {
+	// Build names if explicitly provided
+	var names []string
+	if len(localNames) > 0 {
+		for _, ln := range localNames {
+			names = append(names, GetOCR2OnchainKeystoreName(ln))
+		}
 	}
 
-	return OCR2OnchainKeyringCreateResponse{
-		Keyring: &evmOnchainKeyring{
-			ks:         s.ks,
-			OnchainKey: resp.Keys[0].KeyInfo,
-		},
-	}, nil
-}
+	getReq := keystore.GetKeysRequest{Names: names}
+	resp, err := ks.GetKeys(ctx, getReq)
+	if err != nil {
+		return nil, err
+	}
 
-func (s *ocr2OnchainKeyringStore) GetKeyring(ctx context.Context, req OCR2OnchainKeyringGetRequest) (OCR2OnchainKeyringGetResponse, error) {
-	return OCR2OnchainKeyringGetResponse{}, nil
-}
-
-func (s *ocr2OnchainKeyringStore) DeleteKeyring(ctx context.Context, req OCR2OnchainKeyringDeleteRequest) (OCR2OnchainKeyringDeleteResponse, error) {
-	return OCR2OnchainKeyringDeleteResponse{}, nil
-}
-
-func (s *ocr2OnchainKeyringStore) ListKeyrings(ctx context.Context, req OCR2OnchainKeyringListRequest) (OCR2OnchainKeyringListResponse, error) {
-	return OCR2OnchainKeyringListResponse{}, nil
-}
-
-func (s *ocr2OnchainKeyringStore) ImportKeyring(ctx context.Context, req OCR2OnchainKeyringImportRequest) (OCR2OnchainKeyringImportResponse, error) {
-	return OCR2OnchainKeyringImportResponse{}, nil
-}
-
-func (s *ocr2OnchainKeyringStore) ExportKeyring(ctx context.Context, req OCR2OnchainKeyringExportRequest) (OCR2OnchainKeyringExportResponse, error) {
-	return OCR2OnchainKeyringExportResponse{}, nil
+	var keyrings []ocrtypes.OnchainKeyring
+	for _, key := range resp.Keys {
+		if IsOCR2OnchainKey(key.Name) {
+			keyrings = append(keyrings, &evmOnchainKeyring{ks: ks, OnchainKey: key})
+		}
+	}
+	return keyrings, nil
 }
 
 var _ ocrtypes.OnchainKeyring = &evmOnchainKeyring{}

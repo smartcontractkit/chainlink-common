@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -27,6 +28,11 @@ type KeyInfo struct {
 	KeyType   KeyType
 	PublicKey []byte
 	Metadata  []byte
+}
+
+type Key interface {
+	// Name is the full name of the key.
+	Name() string
 }
 
 type Keystore interface {
@@ -87,8 +93,8 @@ func ecdsaPrivateKeyFromBytes(privateKeyBytes internal.Raw) (*ecdsa.PrivateKey, 
 type keystore struct {
 	mu sync.RWMutex
 	// Keystore is the in memory keys.
-	// Probably makes sense to have maps per key type and have actual
-	// typed keys
+	// May want to use a map per key type eventually to have
+	// separate typed keys.
 	keystore map[string]key
 	// Storage is used to persisting encrypted key material.
 	storage  storage.Storage
@@ -96,8 +102,6 @@ type keystore struct {
 }
 
 func NewKeystore(storage storage.Storage, password string) (Keystore, error) {
-	// Load the keystore from the storage.
-	// TODO: create new empty keystore if storage empty (idempotent)
 	ks, err := load(storage, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)
@@ -178,4 +182,18 @@ func save(storage storage.Storage, password string, keystore map[string]key) err
 		return fmt.Errorf("failed to put encrypted keystore: %w", err)
 	}
 	return nil
+}
+
+// JoinKeySegments joins path-like key name segments using "/" and avoids double slashes.
+// Empty segments are skipped so JoinKeySegments("EVM", "TX", "my-key") => "EVM/TX/my-key".
+func JoinKeySegments(segments ...string) string {
+	cleaned := make([]string, 0, len(segments))
+	for _, s := range segments {
+		s = strings.Trim(s, "/")
+		if s == "" {
+			continue
+		}
+		cleaned = append(cleaned, s)
+	}
+	return strings.Join(cleaned, "/")
 }

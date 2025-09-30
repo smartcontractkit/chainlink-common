@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	
+
 	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 )
@@ -679,6 +679,7 @@ func createTestMessage(id string) ccipocr3.Message {
 				DestTokenAddress:  []byte("dest-token-address"),
 				ExtraData:         []byte("token-extra-data"),
 				Amount:            ccipocr3.NewBigInt(big.NewInt(500)),
+				DestExecData:      []byte("dest-exec-data"),
 			},
 		},
 	}

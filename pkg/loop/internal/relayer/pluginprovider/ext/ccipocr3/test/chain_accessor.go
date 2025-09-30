@@ -959,6 +959,7 @@ func (s staticChainAccessor) evaluateMessagesByTokenID(ctx context.Context, othe
 			DestTokenAddress:  ccipocr3.UnknownAddress("test-dest-token"),
 			ExtraData:         ccipocr3.Bytes("test-extra-data"),
 			Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+			DestExecData:      ccipocr3.Bytes("test-dest-exec-data"),
 		},
 	}
 

@@ -123,6 +123,7 @@ func TestChainAccessor(t *testing.T) {
 				DestTokenAddress:  ccipocr3.UnknownAddress("test-dest-token"),
 				ExtraData:         ccipocr3.Bytes("test-extra-data"),
 				Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+				DestExecData:      ccipocr3.Bytes("test-dest-exec-data"),
 			},
 		}
 		messages, err := chainAccessor.MessagesByTokenID(ctx, ccipocr3.ChainSelector(1), ccipocr3.ChainSelector(2), tokens)

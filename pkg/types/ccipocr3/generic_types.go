@@ -340,7 +340,8 @@ type TimestampedBig struct {
 type TimestampedUnixBig struct {
 	// Value in uint224, can contain several packed fields
 	Value *big.Int `json:"value"`
-	// Timestamp in seconds since epoch of most recent update
+	// Timestamp is a typical Unix timestamp (seconds since the 1970 epoch). This specific timestamp is when Value was
+	// written.
 	Timestamp uint32 `json:"timestamp"`
 }
 

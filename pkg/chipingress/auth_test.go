@@ -53,8 +53,8 @@ type testHeaderProvider struct {
 	headers map[string]string
 }
 
-func (p *testHeaderProvider) Headers(ctx context.Context) map[string]string {
-	return p.headers
+func (p *testHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
+	return p.headers, nil
 }
 
 func TestTokenAuth(t *testing.T) {

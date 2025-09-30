@@ -47,6 +47,27 @@ var chainInfo = types.ChainInfo{
 	NetworkNameFull: "someNetwork-test",
 }
 
+// testExtraDataCodecBundle is a dummy implementation of ExtraDataCodecBundle for testing
+type testExtraDataCodecBundle struct{}
+
+func newTestExtraDataCodecBundle() ccipocr3.ExtraDataCodecBundle {
+	return testExtraDataCodecBundle{}
+}
+
+func (t testExtraDataCodecBundle) DecodeExtraArgs(extraArgs ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	return map[string]any{
+		"gasLimit": uint64(100000),
+		"test":     "extraArgs",
+	}, nil
+}
+
+func (t testExtraDataCodecBundle) DecodeTokenAmountDestExecData(destExecData ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	return map[string]any{
+		"data": "test-dest-exec-data",
+		"test": "destExecData",
+	}, nil
+}
+
 type transactionRequest struct {
 	from         string
 	to           string
@@ -78,6 +99,7 @@ type staticRelayerConfig struct {
 	offRampAddress         ccipocr3.UnknownAddress
 	pluginType             ccipocr3.PluginType
 	transmitterAddress     ccipocr3.UnknownEncodedAddress
+	extraDataCodecBundle   ccipocr3.ExtraDataCodecBundle
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
@@ -106,6 +128,7 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		offRampAddress:         []byte("fakeAddress"),
 		pluginType:             0,
 		transmitterAddress:     "fakeAddress",
+		extraDataCodecBundle:   newTestExtraDataCodecBundle(),
 		medianProvider:         mediantest.MedianProvider(lggr),
 		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
@@ -324,6 +347,7 @@ func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProvider
 		OffRampAddress:       s.offRampAddress,
 		PluginType:           s.pluginType,
 		TransmitterAddress:   s.transmitterAddress,
+		ExtraDataCodecBundle: s.extraDataCodecBundle,
 	}
 	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
@@ -483,7 +507,8 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
 		slices.Equal(a.OffRampAddress, b.OffRampAddress) &&
 		a.PluginType == b.PluginType &&
-		a.TransmitterAddress == b.TransmitterAddress
+		a.TransmitterAddress == b.TransmitterAddress &&
+		a.ExtraDataCodecBundle == b.ExtraDataCodecBundle
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

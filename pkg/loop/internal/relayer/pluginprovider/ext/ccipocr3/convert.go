@@ -699,6 +699,7 @@ func messageToPb(msg ccipocr3.Message) *ccipocr3pb.Message {
 			DestTokenAddress:  ta.DestTokenAddress,
 			ExtraData:         ta.ExtraData,
 			Amount:            intToPbBigInt(ta.Amount.Int),
+			DestExecData:      ta.DestExecData,
 		})
 	}
 
@@ -742,6 +743,7 @@ func pbToTokenAmounts(pbAmounts []*ccipocr3pb.RampTokenAmount) []ccipocr3.RampTo
 			DestTokenAddress:  pb.DestTokenAddress,
 			ExtraData:         pb.ExtraData,
 			Amount:            pbToBigInt(pb.Amount),
+			DestExecData:      pb.DestExecData,
 		})
 	}
 	return amounts
@@ -800,6 +802,7 @@ func pbToMessageTokenIDMap(pbTokens map[string]*ccipocr3pb.RampTokenAmount) (map
 			DestTokenAddress:  pbAmount.DestTokenAddress,
 			ExtraData:         pbAmount.ExtraData,
 			Amount:            pbToBigInt(pbAmount.Amount),
+			DestExecData:      pbAmount.DestExecData,
 		}
 	}
 	return result, nil
@@ -816,6 +819,7 @@ func messageTokenIDMapToPb(tokens map[ccipocr3.MessageTokenID]ccipocr3.RampToken
 			DestTokenAddress:  []byte(amount.DestTokenAddress),
 			ExtraData:         []byte(amount.ExtraData),
 			Amount:            intToPbBigInt(amount.Amount.Int),
+			DestExecData:      []byte(amount.DestExecData),
 		}
 	}
 	return result

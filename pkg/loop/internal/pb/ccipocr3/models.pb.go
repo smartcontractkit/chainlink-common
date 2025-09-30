@@ -149,7 +149,9 @@ type RampTokenAmount struct {
 	// has to be set for the specific token.
 	ExtraData []byte `protobuf:"bytes,3,opt,name=extra_data,json=extraData,proto3" json:"extra_data,omitempty"`
 	// Amount is the amount of tokens to be transferred.
-	Amount        *BigInt `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	Amount *BigInt `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	// DestExecData is destination chain specific execution data encoded in bytes.
+	DestExecData  []byte `protobuf:"bytes,5,opt,name=dest_exec_data,json=destExecData,proto3" json:"dest_exec_data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -208,6 +210,13 @@ func (x *RampTokenAmount) GetExtraData() []byte {
 func (x *RampTokenAmount) GetAmount() *BigInt {
 	if x != nil {
 		return x.Amount
+	}
+	return nil
+}
+
+func (x *RampTokenAmount) GetDestExecData() []byte {
+	if x != nil {
+		return x.DestExecData
 	}
 	return nil
 }
@@ -966,13 +975,14 @@ const file_models_proto_rawDesc = "" +
 	"\x05nonce\x18\x05 \x01(\x04R\x05nonce\x12!\n" +
 	"\fmessage_hash\x18\x06 \x01(\fR\vmessageHash\x12\x17\n" +
 	"\aon_ramp\x18\a \x01(\fR\x06onRamp\x12\x17\n" +
-	"\atx_hash\x18\b \x01(\tR\x06txHash\"\xc9\x01\n" +
+	"\atx_hash\x18\b \x01(\tR\x06txHash\"\xef\x01\n" +
 	"\x0fRampTokenAmount\x12.\n" +
 	"\x13source_pool_address\x18\x01 \x01(\fR\x11sourcePoolAddress\x12,\n" +
 	"\x12dest_token_address\x18\x02 \x01(\fR\x10destTokenAddress\x12\x1d\n" +
 	"\n" +
 	"extra_data\x18\x03 \x01(\fR\textraData\x129\n" +
-	"\x06amount\x18\x04 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\"\xbc\x03\n" +
+	"\x06amount\x18\x04 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\x12$\n" +
+	"\x0edest_exec_data\x18\x05 \x01(\fR\fdestExecData\"\xbc\x03\n" +
 	"\aMessage\x12D\n" +
 	"\x06header\x18\x01 \x01(\v2,.loop.internal.pb.ccipocr3.RampMessageHeaderR\x06header\x12\x16\n" +
 	"\x06sender\x18\x02 \x01(\fR\x06sender\x12\x12\n" +

@@ -47,6 +47,7 @@ func TestMessageProtobufFlattening(t *testing.T) {
 						DestTokenAddress:  []byte("dest-token"),
 						ExtraData:         []byte("token-extra"),
 						Amount:            ccipocr3.NewBigInt(big.NewInt(500)),
+						DestExecData:      []byte("dest-exec-data"),
 					},
 				},
 			},
@@ -765,18 +766,21 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-1"),
 					ExtraData:         ccipocr3.Bytes("extra-data-1"),
 					Amount:            ccipocr3.NewBigInt(big.NewInt(1000)),
+					DestExecData:      ccipocr3.Bytes("dest-exec-data-1"),
 				},
 				ccipocr3.NewMessageTokenID(2, 1): {
 					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-2"),
 					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-2"),
 					ExtraData:         ccipocr3.Bytes("extra-data-2"),
 					Amount:            ccipocr3.NewBigInt(big.NewInt(2000)),
+					DestExecData:      ccipocr3.Bytes("dest-exec-data-2"),
 				},
 				ccipocr3.NewMessageTokenID(10, 5): {
 					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-10"),
 					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-10"),
 					ExtraData:         ccipocr3.Bytes(""),
 					Amount:            ccipocr3.NewBigInt(big.NewInt(0)),
+					DestExecData:      ccipocr3.Bytes(""),
 				},
 			},
 		},
@@ -795,6 +799,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 						val, _ := new(big.Int).SetString("123456789012345678901234567890", 10)
 						return ccipocr3.NewBigInt(val)
 					}(),
+					DestExecData: ccipocr3.Bytes("very long dest exec data with many characters that tests the handling of large execution data asdlfk(&HEDHSKJ#OIUOIJDL)(@#UE)(#U(R&FH(E&HF0x"),
 				},
 			},
 		},
@@ -823,6 +828,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 				assert.Equal(t, []byte(amount.DestTokenAddress), pbAmount.DestTokenAddress)
 				assert.Equal(t, []byte(amount.ExtraData), pbAmount.ExtraData)
 				assert.Equal(t, amount.Amount.Int.Bytes(), pbAmount.Amount.Value)
+				assert.Equal(t, []byte(amount.DestExecData), pbAmount.DestExecData)
 			}
 
 			// Convert Protobuf -> Go (round-trip)
@@ -838,6 +844,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 				assert.Equal(t, []byte(originalAmount.DestTokenAddress), []byte(convertedAmount.DestTokenAddress))
 				assert.Equal(t, []byte(originalAmount.ExtraData), []byte(convertedAmount.ExtraData))
 				assert.Equal(t, originalAmount.Amount.Int.String(), convertedAmount.Amount.Int.String())
+				assert.Equal(t, []byte(originalAmount.DestExecData), []byte(convertedAmount.DestExecData))
 			}
 		})
 	}
@@ -960,6 +967,122 @@ func TestMessagesByTokenIDErrorHandling(t *testing.T) {
 		result := messagesByTokenIDToPb(nil)
 		assert.Nil(t, result)
 	})
+}
+
+// TestRampTokenAmountDestExecDataRoundTrip tests that DestExecData is properly preserved in round-trip conversions
+func TestRampTokenAmountDestExecDataRoundTrip(t *testing.T) {
+	testCases := []struct {
+		name        string
+		tokenAmount ccipocr3.RampTokenAmount
+	}{
+		{
+			name: "RampTokenAmount with DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+				DestExecData:      ccipocr3.Bytes("dest-exec-data-content"),
+			},
+		},
+		{
+			name: "RampTokenAmount with empty DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(54321)),
+				DestExecData:      ccipocr3.Bytes(""),
+			},
+		},
+		{
+			name: "RampTokenAmount with nil DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(98765)),
+				DestExecData:      nil,
+			},
+		},
+		{
+			name: "RampTokenAmount with large DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(11111)),
+				DestExecData:      ccipocr3.Bytes("very long dest exec data with many characters that tests the handling of large execution data asdlfk(&HEDHSKJ#OIUOIJDL)(@#UE)(#U(R&FH(E&HF0x"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test via pbToTokenAmounts and messageToPb functions
+			message := ccipocr3.Message{
+				Header: ccipocr3.RampMessageHeader{
+					MessageID:           [32]byte{0x01, 0x02, 0x03, 0x04},
+					SourceChainSelector: ccipocr3.ChainSelector(1),
+					DestChainSelector:   ccipocr3.ChainSelector(2),
+					SequenceNumber:      ccipocr3.SeqNum(1),
+					Nonce:               1,
+					MsgHash:             [32]byte{0xAA, 0xBB, 0xCC, 0xDD},
+					OnRamp:              []byte("onramp"),
+					TxHash:              "0x123",
+				},
+				Sender:         []byte("sender"),
+				Data:           []byte("data"),
+				Receiver:       []byte("receiver"),
+				ExtraArgs:      []byte("extra-args"),
+				FeeToken:       []byte("fee-token"),
+				FeeTokenAmount: ccipocr3.NewBigInt(big.NewInt(1000)),
+				FeeValueJuels:  ccipocr3.NewBigInt(big.NewInt(2000)),
+				TokenAmounts:   []ccipocr3.RampTokenAmount{tc.tokenAmount},
+			}
+
+			// Convert to protobuf
+			pbMessage := messageToPb(message)
+			require.NotNil(t, pbMessage)
+			require.Len(t, pbMessage.TokenAmounts, 1)
+
+			// Verify DestExecData is preserved in protobuf
+			pbTokenAmount := pbMessage.TokenAmounts[0]
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), pbTokenAmount.DestExecData)
+
+			// Convert back to Go struct
+			convertedMessage := pbToMessage(pbMessage)
+			require.Len(t, convertedMessage.TokenAmounts, 1)
+
+			// Verify DestExecData is preserved in round-trip
+			convertedTokenAmount := convertedMessage.TokenAmounts[0]
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), []byte(convertedTokenAmount.DestExecData))
+
+			// Test via messageTokenIDMapToPb and pbToMessageTokenIDMap functions
+			tokenMap := map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{
+				ccipocr3.NewMessageTokenID(1, 0): tc.tokenAmount,
+			}
+
+			// Convert to protobuf map
+			pbMap := messageTokenIDMapToPb(tokenMap)
+			require.NotNil(t, pbMap)
+			require.Len(t, pbMap, 1)
+
+			// Verify DestExecData is preserved in protobuf map
+			pbAmount := pbMap["1_0"]
+			require.NotNil(t, pbAmount)
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), pbAmount.DestExecData)
+
+			// Convert back to Go map
+			convertedMap, err := pbToMessageTokenIDMap(pbMap)
+			require.NoError(t, err)
+			require.Len(t, convertedMap, 1)
+
+			// Verify DestExecData is preserved in round-trip map
+			convertedAmount := convertedMap[ccipocr3.NewMessageTokenID(1, 0)]
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), []byte(convertedAmount.DestExecData))
+		})
+	}
 }
 
 // TestTokenUpdatesUnixConversion tests the TimestampedUnixBig token updates conversion functions

@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -71,16 +72,19 @@ func NewStaticAuthHeaderProvider(headers map[string]string) chipingress.HeaderPr
 type rotatingAuth struct {
 	csaPubKey                ed25519.PublicKey
 	signer                   Signer
+	signerTimeout            time.Duration
 	headers                  map[string]string
 	ttl                      time.Duration
 	lastUpdated              time.Time
 	requireTransportSecurity bool
+	mu                       sync.Mutex
 }
 
 func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool) Auth {
 	return &rotatingAuth{
 		csaPubKey:                csaPubKey,
 		signer:                   signer,
+		signerTimeout:            time.Second * 5,
 		ttl:                      ttl,
 		headers:                  make(map[string]string),
 		lastUpdated:              time.Unix(0, 0),
@@ -89,14 +93,31 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 }
 
 func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
+
+	// Check if we need to get the lock
 	if time.Since(r.lastUpdated) > r.ttl {
-		// Append timestamp bytes to the public key bytes
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		// Multiple concurrent calls (after the first) will block waiting for the lock.
+		// First will get the lock and update headers + lastUpdated, double check since potentially another goroutine has already
+		// updated the headers and lastUpdated while waiting for the lock.
+		if time.Since(r.lastUpdated) < r.ttl {
+			return r.headers, nil
+		}
+
+		// Append the bytes of the public key with bytes of the timestamp to create the message to sign
 		ts := time.Now()
 		tsBytes := make([]byte, 8)
 		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixMilli()))
-		messageBytes := append(r.csaPubKey, tsBytes...)
+		msgBytes := append(r.csaPubKey, tsBytes...)
+
+		ctxWithTimeout, cancel := context.WithTimeout(ctx, r.signerTimeout)
+		defer cancel()
+
 		// Sign(public key bytes + timestamp bytes)
-		signature, err := r.signer.Sign(ctx, r.csaPubKey, messageBytes)
+		signature, err := r.signer.Sign(ctxWithTimeout, r.csaPubKey, msgBytes)
 		if err != nil {
 			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
 		}
@@ -104,6 +125,7 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixMilli(), signature)
 		r.lastUpdated = ts
 	}
+
 	return r.headers, nil
 }
 

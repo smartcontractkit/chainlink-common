@@ -194,13 +194,14 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 		attributes = make(map[string]any)
 	}
 
-	if val, ok := attributes["recordedtime"].(time.Time); ok {
-		event.SetExtension("recordedtime", val.UTC())
-	} else {
-		event.SetExtension("recordedtime", ce.Timestamp{Time: time.Now().UTC()})
+	recordedTime := time.Now()
+	if val, ok := attributes["recordedtime"].(time.Time); ok && !val.IsZero() {
+		recordedTime = val
 	}
+	recordedTime = recordedTime.UTC().Truncate(time.Millisecond)
+	event.SetExtension("recordedtime", ce.Timestamp{Time: recordedTime})
 
-	if val, ok := attributes["time"].(time.Time); ok {
+	if val, ok := attributes["time"].(time.Time); ok && !val.IsZero() {
 		event.SetTime(val.UTC())
 	}
 	if val, ok := attributes["datacontenttype"].(string); ok {

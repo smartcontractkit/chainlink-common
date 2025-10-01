@@ -5,10 +5,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
 	"github.com/stretchr/testify/assert"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
 )
 
 func Test_removeArg(t *testing.T) {
@@ -79,6 +80,11 @@ func TestNewOtelLogger(t *testing.T) {
 			}
 
 			tt.logFn(lggr)
+
+			// Force flush the logger provider to ensure records are exported
+			if err := lp.ForceFlush(context.Background()); err != nil {
+				t.Fatalf("ForceFlush error: %v", err)
+			}
 
 			if len(exp.records) != 1 {
 				t.Fatalf("expected 1 exported record, got %d", len(exp.records))

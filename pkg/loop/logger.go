@@ -195,7 +195,8 @@ func NewOtelLogger(otelLogger otellog.Logger) (logger.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return logger.NewWithCores(primaryCore, otelzap.NewCore(otelLogger)), nil
+	// set debug level from primaryCore to match otelzap.NewCore
+	return logger.NewWithCores(primaryCore, otelzap.NewCore(otelLogger, otelzap.WithLevel(zapcore.DebugLevel))), nil
 }
 
 // onceValue returns a function that invokes f only once and returns the value

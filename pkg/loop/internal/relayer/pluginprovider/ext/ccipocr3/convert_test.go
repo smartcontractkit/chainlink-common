@@ -1511,7 +1511,6 @@ func TestGetChainFeePriceUpdateFakeRoundTrip(t *testing.T) {
 			Timestamp: update.Timestamp,
 		}
 	}
-	fmt.Println(pbUpdates)
 
 	// (c *ChainAccessorClient) GetChainFeePriceUpdate() ...
 	gRPCResponse := &ccipocr3pb.GetChainFeePriceUpdateResponse{
@@ -1524,7 +1523,6 @@ func TestGetChainFeePriceUpdateFakeRoundTrip(t *testing.T) {
 			Timestamp: timestampedUnixBig.Timestamp,
 		}
 	}
-	fmt.Println(result)
 
 	assert.Equal(t, result, mapWithZeroValues)
 }

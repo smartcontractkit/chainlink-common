@@ -64,7 +64,8 @@ message CCIPProviderArgs {
   // pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
   uint32 pluginType = 5;
   map<string, bytes> synced_addresses = 6; // map[contract_name]contract_address
-  string transmitterAddress = 7;
+  string transmitterAddress = 7; // UnknownEncodedAddress
+  uint32 extraDataCodecBundleID = 8; // LOOP service ID for ExtraDataCodecBundle served by core node
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].

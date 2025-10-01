@@ -168,7 +168,7 @@ func TestDecodeCommitReportInfo(t *testing.T) {
 	{
 		data := append([]byte{2}, []byte("{}")...)
 		_, err := DecodeCommitReportInfo(data)
-		require.ErrorContains(t, err, "unknown execute report info version (2)")
+		require.ErrorContains(t, err, "unknown commit report info version (2)")
 	}
 
 	// Invalid field

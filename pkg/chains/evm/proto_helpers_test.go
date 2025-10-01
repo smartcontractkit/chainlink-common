@@ -6,8 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	chain_common "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 )
 
 func mkBytes(n int, fill byte) []byte {
@@ -264,4 +268,303 @@ func TestHashConverters(t *testing.T) {
 			t.Fatalf("joined error should include failing indices, got: %v", err)
 		}
 	})
+}
+
+func TestConvertExpressionsFromProto(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		In             []*evm.Expression
+		ExpectedResult []query.Expression
+		ExpectedError  string
+	}{
+		{
+			Name:           "empty",
+			ExpectedResult: []query.Expression{},
+		},
+		{
+			Name: "Empty evaluator",
+			In: []*evm.Expression{
+				{},
+			},
+			ExpectedError: "rpc error: code = InvalidArgument desc = err to convert expr idx 0 err: unknown expression type: <nil>",
+		},
+		{
+			Name: "Empty Expression_Primitive",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{},
+				},
+			},
+			ExpectedError: "rpc error: code = InvalidArgument desc = err to convert expr idx 0 err: unknown primitive type: <nil>",
+		},
+		{
+			Name: "Empty Expression_BooleanExpression",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_BooleanExpression{},
+				},
+			},
+			ExpectedResult: []query.Expression{
+				{
+					BoolExpression: query.BoolExpression{},
+				},
+			},
+		},
+		{
+			Name: "Nested empty Expression",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_BooleanExpression{
+						BooleanExpression: &evm.BooleanExpression{
+							Expression: []*evm.Expression{
+								{},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "err to convert expr idx 0 err: failed to convert sub-expression 0: unknown expression type: <nil>",
+		},
+		{
+			Name: "Empty Evaluator.Primitive",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: nil,
+					},
+				},
+			},
+			ExpectedError: "rpc error: code = InvalidArgument desc = err to convert expr idx 0 err: unknown primitive type: <nil>",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{},
+					},
+				},
+			},
+			ExpectedError: "rpc error: code = InvalidArgument desc = err to convert expr idx 0 err: unknown primitive type: <nil>",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: nil,
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "rpc error: code = InvalidArgument desc = err to convert expr idx 0 err: rpc error: code = InvalidArgument desc = primitive can not be nil",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive.Primitive",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: &chain_common.Primitive{},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "rpc error: code = InvalidArgument desc = err to convert expr idx 0 err: rpc error: code = InvalidArgument desc = unknown primitive type: <nil>",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive.Primitive.Comparator",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: &chain_common.Primitive{
+									Primitive: &chain_common.Primitive_Comparator{},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "comparator can not be nil",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive.Primitive.Comparator.ValueComparator",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: &chain_common.Primitive{
+									Primitive: &chain_common.Primitive_Comparator{
+										Comparator: &chain_common.Comparator{
+											ValueComparators: []*chain_common.ValueComparator{nil},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "unsupported primitive type: *evm.Primitive_GeneralPrimitive",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive.Primitive.Block",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: &chain_common.Primitive{
+									Primitive: &chain_common.Primitive_Block{},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "Block can not be nil",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive.Primitive.TxHash",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: &chain_common.Primitive{
+									Primitive: &chain_common.Primitive_TxHash{},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "TxHash can not be nil",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.GeneralPrimitive.Primitive.Timestamp",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_GeneralPrimitive{
+								GeneralPrimitive: &chain_common.Primitive{
+									Primitive: &chain_common.Primitive_Timestamp{},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "Timestamp can not be nil",
+		},
+		{
+			Name: "Invalid Evaluator.Primitive.Primitive.ContractAddress",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_ContractAddress{},
+						},
+					},
+				},
+			},
+			ExpectedError: "address can't be nil",
+		},
+		{
+			Name: "Invalid Evaluator.Primitive.Primitive.ContractAddress",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_EventSig{},
+						},
+					},
+				},
+			},
+			ExpectedError: "failed to convert event sig",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.EventByTopic",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_EventByTopic{},
+						},
+					},
+				},
+			},
+			ExpectedError: "EventByTopic can not be nil",
+		},
+		{
+			Name: "Invalid Evaluator.Primitive.Primitive.EventByTopic.HashedValueComparers",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_EventByTopic{
+								EventByTopic: &evm.EventByTopic{
+									HashedValueComparers: []*evm.HashValueComparator{nil},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "failed to convert EventByTopic hashed value comparators: hashed value comparator can't be nil",
+		},
+		{
+			Name: "Empty Evaluator.Primitive.Primitive.EventByWord",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_EventByWord{
+								EventByWord: nil,
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "EventByWord can not be nil",
+		},
+		{
+			Name: "Invalid Empty Evaluator.Primitive.Primitive.EventByWord.HashedValueComparers",
+			In: []*evm.Expression{
+				{
+					Evaluator: &evm.Expression_Primitive{
+						Primitive: &evm.Primitive{
+							Primitive: &evm.Primitive_EventByWord{
+								EventByWord: &evm.EventByWord{
+									HashedValueComparers: []*evm.HashValueComparator{nil},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedError: "failed to convert EventByWord hashed value comparators: hashed value comparator can't be nil",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			got, err := evm.ConvertExpressionsFromProto(tc.In)
+			if tc.ExpectedError != "" {
+				require.ErrorContains(t, err, tc.ExpectedError)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tc.ExpectedResult, got)
+		})
+	}
 }

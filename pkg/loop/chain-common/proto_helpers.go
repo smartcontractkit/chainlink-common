@@ -75,14 +75,24 @@ func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEnco
 }
 
 func ConvertPrimitiveFromProto(protoPrimitive *Primitive, encodedTypeGetter func(comparatorName string, forEncoding bool) (any, error)) (query.Expression, error) {
+	if protoPrimitive == nil {
+		return query.Expression{}, status.Error(codes.InvalidArgument, "primitive can not be nil")
+	}
 	switch primitive := protoPrimitive.Primitive.(type) {
 	case *Primitive_Comparator:
+		if primitive.Comparator == nil {
+			return query.Expression{}, status.Error(codes.InvalidArgument, "comparator can not be nil")
+		}
+		comparator := primitive.Comparator
 		var valueComparators []primitives.ValueComparator
-
-		for _, pbValueComparator := range primitive.Comparator.ValueComparators {
-			val, err := encodedTypeGetter(primitive.Comparator.Name, true)
+		for _, pbValueComparator := range comparator.ValueComparators {
+			val, err := encodedTypeGetter(comparator.Name, true)
 			if err != nil {
 				return query.Expression{}, err
+			}
+
+			if pbValueComparator == nil {
+				return query.Expression{}, status.Error(codes.InvalidArgument, "value comparator can not be nil")
 			}
 
 			if err = codec.DecodeVersionedBytes(val, pbValueComparator.Value); err != nil {
@@ -95,20 +105,30 @@ func ConvertPrimitiveFromProto(protoPrimitive *Primitive, encodedTypeGetter func
 					Operator: primitives.ComparisonOperator(pbValueComparator.Operator),
 				})
 		}
-		return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
+		return query.Comparator(comparator.Name, valueComparators...), nil
 
 	case *Primitive_Confidence:
 		confidence, err := ConfidenceFromProto(primitive.Confidence)
 		return query.Confidence(confidence), err
 
 	case *Primitive_Block:
-		return query.Block(primitive.Block.BlockNumber,
-			primitives.ComparisonOperator(primitive.Block.Operator)), nil
+		if primitive.Block == nil {
+			return query.Expression{}, status.Error(codes.InvalidArgument, "Block can not be nil")
+		}
+		block := primitive.Block
+		return query.Block(block.BlockNumber, primitives.ComparisonOperator(block.Operator)), nil
 
 	case *Primitive_TxHash:
-		return query.TxHash(primitive.TxHash.TxHash), nil
+		if primitive.TxHash == nil {
+			return query.Expression{}, status.Error(codes.InvalidArgument, "TxHash can not be nil")
+		}
+		txHash := primitive.TxHash
+		return query.TxHash(txHash.TxHash), nil
 
 	case *Primitive_Timestamp:
+		if primitive.Timestamp == nil {
+			return query.Expression{}, status.Error(codes.InvalidArgument, "Timestamp can not be nil")
+		}
 		return query.Timestamp(primitive.Timestamp.Timestamp,
 			primitives.ComparisonOperator(primitive.Timestamp.Operator)), nil
 

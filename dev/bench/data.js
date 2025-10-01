@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759330893559,
+  "lastUpdate": 1759344460420,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25998,6 +25998,48 @@ window.BENCHMARK_DATA = {
             "value": 27635,
             "unit": "ns/op",
             "extra": "45001 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "168561091+engnke@users.noreply.github.com",
+            "name": "engnke",
+            "username": "engnke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "efac15b05f91a746c3e236599fb25c2da680fbd6",
+          "message": "chip-ingress: newevent - refactor timestamp to millisecond and add 0 check (#1576)\n\n* refactor timestamp to millisecond and add 0 check\n\n* undo",
+          "timestamp": "2025-10-01T14:46:13-04:00",
+          "tree_id": "1e5ec5465270aa3e6c8e6abbc7df69bd2570a188",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/efac15b05f91a746c3e236599fb25c2da680fbd6"
+        },
+        "date": 1759344458675,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.6,
+            "unit": "ns/op",
+            "extra": "3353439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.9,
+            "unit": "ns/op",
+            "extra": "2904879 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27045,
+            "unit": "ns/op",
+            "extra": "44804 times\n4 procs"
           }
         ]
       }

@@ -67,7 +67,7 @@ func TestNewEvent(t *testing.T) {
 		"datacontenttype": "application/protobuf",
 		"dataschema":      "https://example.com/schema",
 		"subject":         "example-subject",
-		"time":            time.Now().Add(-5 * time.Second).UTC(),
+		"time":            time.Now().Add(-5 * time.Second),
 	}
 	assert.NoError(t, err)
 

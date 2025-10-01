@@ -340,7 +340,8 @@ type TimestampedBig struct {
 type TimestampedUnixBig struct {
 	// Value in uint224, can contain several packed fields
 	Value *big.Int `json:"value"`
-	// Timestamp in seconds since epoch of most recent update
+	// Timestamp is a typical Unix timestamp (seconds since the 1970 epoch). This specific timestamp is when Value was
+	// written.
 	Timestamp uint32 `json:"timestamp"`
 }
 
@@ -372,4 +373,34 @@ func (ca ContractAddresses) Append(contract string, chain ChainSelector, address
 	}
 	resp[contract][chain] = address
 	return resp
+}
+
+// PluginType represents the type of CCIP plugin.
+// It mirrors the OCRPluginType in Internal.sol.
+type PluginType uint8
+
+const (
+	PluginTypeCCIPCommit PluginType = 0
+	PluginTypeCCIPExec   PluginType = 1
+)
+
+func (pt PluginType) String() string {
+	switch pt {
+	case PluginTypeCCIPCommit:
+		return "CCIPCommit"
+	case PluginTypeCCIPExec:
+		return "CCIPExec"
+	default:
+		return "Unknown"
+	}
+}
+
+// ExtraDataDecoded contains a generic representation of chain specific message parameters. A
+// map from string to any is used to account for different parameters required for sending messages
+// to different destinations.
+type ExtraDataDecoded struct {
+	// ExtraArgsDecoded contain message specific extra args.
+	ExtraArgsDecoded map[string]any
+	// DestExecDataDecoded contain token transfer specific extra args.
+	DestExecDataDecoded []map[string]any
 }

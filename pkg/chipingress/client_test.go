@@ -584,8 +584,8 @@ type mockHeaderProvider struct {
 	headers map[string]string
 }
 
-func (m *mockHeaderProvider) GetHeaders() map[string]string {
-	return m.headers
+func (m *mockHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
+	return m.headers, nil
 }
 
 func TestWithTLS(t *testing.T) {

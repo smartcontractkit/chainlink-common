@@ -32,6 +32,14 @@ var (
 	}
 )
 
+// SizeOf returns the cumulative len of the byte slice arguments as a Size.
+func SizeOf[B ~[]byte](bs ...B) (s Size) {
+	for _, b := range bs {
+		s += Size(len(b))
+	}
+	return
+}
+
 func (b Size) MarshalText() ([]byte, error) {
 	if b >= TByte {
 		d := decimal.NewFromInt(int64(b)).Div(decimal.NewFromInt(int64(TByte)))

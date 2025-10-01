@@ -3351,8 +3351,7 @@ func (x *GetFeedPricesUSDResponse) GetPrices() map[string]*BigInt {
 
 type GetFeeQuoterTokenUpdatesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tokens        []string               `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"` // UnknownEncodedAddress
-	ChainSelector uint64                 `protobuf:"varint,2,opt,name=chain_selector,json=chainSelector,proto3" json:"chain_selector,omitempty"`
+	TokensBytes   [][]byte               `protobuf:"bytes,1,rep,name=tokens_bytes,json=tokensBytes,proto3" json:"tokens_bytes,omitempty"` // UnknownAddress
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3387,18 +3386,11 @@ func (*GetFeeQuoterTokenUpdatesRequest) Descriptor() ([]byte, []int) {
 	return file_chainaccessor_proto_rawDescGZIP(), []int{62}
 }
 
-func (x *GetFeeQuoterTokenUpdatesRequest) GetTokens() []string {
+func (x *GetFeeQuoterTokenUpdatesRequest) GetTokensBytes() [][]byte {
 	if x != nil {
-		return x.Tokens
+		return x.TokensBytes
 	}
 	return nil
-}
-
-func (x *GetFeeQuoterTokenUpdatesRequest) GetChainSelector() uint64 {
-	if x != nil {
-		return x.ChainSelector
-	}
-	return 0
 }
 
 type GetFeeQuoterTokenUpdatesResponse struct {
@@ -3816,10 +3808,9 @@ const file_chainaccessor_proto_rawDesc = "" +
 	"\x06prices\x18\x01 \x03(\v2?.loop.internal.pb.ccipocr3.GetFeedPricesUSDResponse.PricesEntryR\x06prices\x1a\\\n" +
 	"\vPricesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x127\n" +
-	"\x05value\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x05value:\x028\x01\"`\n" +
-	"\x1fGetFeeQuoterTokenUpdatesRequest\x12\x16\n" +
-	"\x06tokens\x18\x01 \x03(\tR\x06tokens\x12%\n" +
-	"\x0echain_selector\x18\x02 \x01(\x04R\rchainSelector\"\x86\x02\n" +
+	"\x05value\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x05value:\x028\x01\"D\n" +
+	"\x1fGetFeeQuoterTokenUpdatesRequest\x12!\n" +
+	"\ftokens_bytes\x18\x01 \x03(\fR\vtokensBytes\"\x86\x02\n" +
 	" GetFeeQuoterTokenUpdatesResponse\x12r\n" +
 	"\rtoken_updates\x18\x01 \x03(\v2M.loop.internal.pb.ccipocr3.GetFeeQuoterTokenUpdatesResponse.TokenUpdatesEntryR\ftokenUpdates\x1an\n" +
 	"\x11TokenUpdatesEntry\x12\x10\n" +

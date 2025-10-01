@@ -109,6 +109,6 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(3 * time.Second), Burst: 5}, cfg.PerWorkflow.HTTPAction.RateLimit.DefaultValue)
 	assert.Equal(t, 5*time.Minute, cfg.PerWorkflow.HTTPAction.CacheAgeLimit.DefaultValue)
-	assert.Equal(t, 500000, cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
+	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 }

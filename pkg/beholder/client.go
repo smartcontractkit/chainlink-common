@@ -106,9 +106,9 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		if cfg.AuthPublicKeyHex == "" {
 			return nil, fmt.Errorf("auth: public key hex required when signer is set")
 		}
-		// Set the min TTL to 1 minute, avoid signing headers too often if config is misconfigured
-		if cfg.AuthHeadersTTL < 1*time.Minute {
-			return nil, fmt.Errorf("auth: headers TTL must be at least 1 minute")
+		// Clamp lowest possible value to 10mins
+		if cfg.AuthHeadersTTL < 10*time.Minute {
+			return nil, fmt.Errorf("auth: headers TTL must be at least 10 minutes")
 		}
 
 		key, err := hex.DecodeString(cfg.AuthPublicKeyHex)

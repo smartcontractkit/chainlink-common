@@ -547,7 +547,7 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthPublicKeyHex:         pubKeyHex,
 			AuthKeySigner:            mockSigner,
-			AuthHeadersTTL:           5 * time.Minute,
+			AuthHeadersTTL:           10 * time.Minute,
 			InsecureConnection:       true,
 		}
 
@@ -559,7 +559,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 	})
 
 	t.Run("error when public key hex is empty but signer is set", func(t *testing.T) {
@@ -570,7 +569,7 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthPublicKeyHex:         "", // Empty public key hex
 			AuthKeySigner:            mockSigner,
-			AuthHeadersTTL:           5 * time.Minute,
+			AuthHeadersTTL:           10 * time.Minute,
 			InsecureConnection:       true,
 		}
 
@@ -592,7 +591,7 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthPublicKeyHex:         pubKeyHex,
 			AuthKeySigner:            mockSigner,
-			AuthHeadersTTL:           30 * time.Second, // Too short
+			AuthHeadersTTL:           5 * time.Minute,
 			InsecureConnection:       true,
 		}
 
@@ -603,7 +602,7 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "auth: headers TTL must be at least 1 minute")
+		assert.Contains(t, err.Error(), "auth: headers TTL must be at least 10 minutes")
 	})
 
 	t.Run("error when public key hex is invalid", func(t *testing.T) {
@@ -614,7 +613,7 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthPublicKeyHex:         "invalid-hex", // Invalid hex
 			AuthKeySigner:            mockSigner,
-			AuthHeadersTTL:           5 * time.Minute,
+			AuthHeadersTTL:           10 * time.Minute,
 			InsecureConnection:       true,
 		}
 
@@ -685,7 +684,7 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 			ChipIngressInsecureConnection:  true,
 			AuthPublicKeyHex:               pubKeyHex,
 			AuthKeySigner:                  mockSigner,
-			AuthHeadersTTL:                 5 * time.Minute,
+			AuthHeadersTTL:                 10 * time.Minute,
 			InsecureConnection:             true,
 		}
 

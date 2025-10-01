@@ -16,8 +16,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
-	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 )
@@ -64,6 +64,7 @@ type Server struct {
 	promServer      *PromServer
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
+	heartbeat       *beholder.Heartbeat // optional
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -129,6 +130,7 @@ func (s *Server) start() error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			HeartbeatEnabled:               s.EnvConfig.TelemetryHeartbeatEnabled,
 		}
 
 		if tracingConfig.Enabled {
@@ -155,6 +157,23 @@ func (s *Server) start() error {
 				return fmt.Errorf("failed to enable log streaming: %w", err)
 			}
 			s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+		}
+
+		if s.EnvConfig.TelemetryHeartbeatEnabled {
+			s.heartbeat = beholder.NewHeartbeat(
+				30*time.Second, // heartbeat interval
+				s.Logger,
+				beholder.WithAppID(s.EnvConfig.AppID),
+				beholder.WithMeter(beholderClient.Meter),
+				beholder.WithEmitter(beholderClient.Emitter),
+			)
+
+			// Start the heartbeat service
+			if err := s.heartbeat.Start(ctx); err != nil {
+				s.Logger.Errorw("Failed to start heartbeat service", "error", err)
+			} else {
+				s.Logger.Infow("Heartbeat service started", "interval", "30s")
+			}
 		}
 	}
 
@@ -219,6 +238,9 @@ func (s *Server) Register(c services.HealthReporter) error { return s.checker.Re
 
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
+	if s.heartbeat != nil {
+		s.Logger.ErrorIfFn(s.heartbeat.Close, "Failed to close heartbeat service")
+	}
 	if s.dbStatsReporter != nil {
 		s.dbStatsReporter.Stop()
 	}

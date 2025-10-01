@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759267383951,
+  "lastUpdate": 1759330893559,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -25956,6 +25956,48 @@ window.BENCHMARK_DATA = {
             "value": 26642,
             "unit": "ns/op",
             "extra": "45052 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "98903c79c1244979902a711a12ea031d40797cb0",
+          "message": "[CRE-491] Move Interval type to common types. (#1573)",
+          "timestamp": "2025-10-01T17:00:07+02:00",
+          "tree_id": "35f021e3026936e2351cd9785bfd6c1bc2cce008",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/98903c79c1244979902a711a12ea031d40797cb0"
+        },
+        "date": 1759330892094,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.7,
+            "unit": "ns/op",
+            "extra": "3236449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.5,
+            "unit": "ns/op",
+            "extra": "2879287 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27635,
+            "unit": "ns/op",
+            "extra": "45001 times\n4 procs"
           }
         ]
       }

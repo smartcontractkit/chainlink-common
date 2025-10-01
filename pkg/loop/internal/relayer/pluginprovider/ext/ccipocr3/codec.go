@@ -589,3 +589,80 @@ func pbToExecutePluginReport(pb *ccipocr3pb.ExecutePluginReport) ccipocr3.Execut
 		ChainReports: chainReports,
 	}
 }
+
+// ExtraDataCodecBundle client
+var _ ccipocr3.ExtraDataCodecBundle = (*extraDataCodecBundleClient)(nil)
+
+type extraDataCodecBundleClient struct {
+	*net.BrokerExt
+	grpc ccipocr3pb.ExtraDataCodecBundleClient
+}
+
+func NewExtraDataCodecBundleClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ExtraDataCodecBundle {
+	return &extraDataCodecBundleClient{
+		BrokerExt: broker,
+		grpc:      ccipocr3pb.NewExtraDataCodecBundleClient(cc),
+	}
+}
+
+func (c *extraDataCodecBundleClient) DecodeExtraArgs(extraArgs ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	resp, err := c.grpc.DecodeExtraArgs(context.Background(), &ccipocr3pb.DecodeExtraArgsWithChainSelectorRequest{
+		ExtraArgs:           extraArgs,
+		SourceChainSelector: uint64(sourceChainSelector),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbMapToGoMap(resp.DecodedMap)
+}
+
+func (c *extraDataCodecBundleClient) DecodeTokenAmountDestExecData(destExecData ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	resp, err := c.grpc.DecodeTokenAmountDestExecData(context.Background(), &ccipocr3pb.DecodeTokenAmountDestExecDataRequest{
+		DestExecData:        destExecData,
+		SourceChainSelector: uint64(sourceChainSelector),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbMapToGoMap(resp.DecodedMap)
+}
+
+// ExtraDataCodecBundle server
+var _ ccipocr3pb.ExtraDataCodecBundleServer = (*extraDataCodecBundleServer)(nil)
+
+type extraDataCodecBundleServer struct {
+	ccipocr3pb.UnimplementedExtraDataCodecBundleServer
+	impl ccipocr3.ExtraDataCodecBundle
+}
+
+func NewExtraDataCodecBundleServer(impl ccipocr3.ExtraDataCodecBundle) ccipocr3pb.ExtraDataCodecBundleServer {
+	return &extraDataCodecBundleServer{impl: impl}
+}
+
+func (s *extraDataCodecBundleServer) DecodeExtraArgs(ctx context.Context, req *ccipocr3pb.DecodeExtraArgsWithChainSelectorRequest) (*ccipocr3pb.DecodeExtraArgsWithChainSelectorResponse, error) {
+	decodedMap, err := s.impl.DecodeExtraArgs(req.ExtraArgs, ccipocr3.ChainSelector(req.SourceChainSelector))
+	if err != nil {
+		return nil, err
+	}
+	pbMap, err := goMapToPbMap(decodedMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert decoded map to protobuf: %w", err)
+	}
+	return &ccipocr3pb.DecodeExtraArgsWithChainSelectorResponse{
+		DecodedMap: pbMap,
+	}, nil
+}
+
+func (s *extraDataCodecBundleServer) DecodeTokenAmountDestExecData(ctx context.Context, req *ccipocr3pb.DecodeTokenAmountDestExecDataRequest) (*ccipocr3pb.DecodeTokenAmountDestExecDataResponse, error) {
+	decodedMap, err := s.impl.DecodeTokenAmountDestExecData(req.DestExecData, ccipocr3.ChainSelector(req.SourceChainSelector))
+	if err != nil {
+		return nil, err
+	}
+	pbMap, err := goMapToPbMap(decodedMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert decoded map to protobuf: %w", err)
+	}
+	return &ccipocr3pb.DecodeTokenAmountDestExecDataResponse{
+		DecodedMap: pbMap,
+	}, nil
+}

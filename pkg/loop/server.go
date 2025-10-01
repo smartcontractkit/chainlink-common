@@ -9,6 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
@@ -16,8 +17,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
-	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 )
@@ -25,7 +26,19 @@ import (
 // NewStartedServer returns a started Server.
 // The caller is responsible for calling Server.Stop().
 func NewStartedServer(loggerName string) (*Server, error) {
-	s, err := newServer(loggerName)
+	return NewStartedServerWithOtelViews(loggerName, nil)
+}
+
+// MustNewStartedServer returns a new started Server like NewStartedServer, but logs and exits in the event of error.
+// The caller is responsible for calling Server.Stop().
+func MustNewStartedServer(loggerName string) *Server {
+	return MustNewStartedServerWithOtelViews(loggerName, nil)
+}
+
+// NewStartedServerWithOtelViews returns a started Server with otel views registered on the beholder client.
+// The caller is responsible for calling Server.Stop().
+func NewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
+	s, err := newServer(loggerName, otelViews)
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +50,10 @@ func NewStartedServer(loggerName string) (*Server, error) {
 	return s, nil
 }
 
-// MustNewStartedServer returns a new started Server like NewStartedServer, but logs and exits in the event of error.
+// MustNewStartedServerWithOtelViews returns a new started Server like NewStartedServerWithOtelViews, but logs and exits in the event of error.
 // The caller is responsible for calling Server.Stop().
-func MustNewStartedServer(loggerName string) *Server {
-	s, err := newServer(loggerName)
+func MustNewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) *Server {
+	s, err := newServer(loggerName, otelViews)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start server: %s\n", err)
 		os.Exit(1)
@@ -64,17 +77,19 @@ type Server struct {
 	promServer      *PromServer
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
+	otelViews       []sdkmetric.View
 }
 
-func newServer(loggerName string) (*Server, error) {
+func newServer(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
 	lggr, err := NewLogger()
 	if err != nil {
 		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
 	lggr = logger.Named(lggr, loggerName)
 	return &Server{
-		GRPCOpts: NewGRPCOpts(nil), // default prometheus.Registerer
-		Logger:   logger.Sugared(lggr),
+		GRPCOpts:  NewGRPCOpts(nil), // default prometheus.Registerer
+		Logger:    logger.Sugared(lggr),
+		otelViews: otelViews,
 	}, nil
 }
 
@@ -130,6 +145,10 @@ func (s *Server) start() error {
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
+
+		// note: due to the OTEL specification, all histogram buckets
+		// must be defined when the beholder client is created
+		beholderCfg.MetricViews = append(beholderCfg.MetricViews, s.otelViews...)
 
 		if tracingConfig.Enabled {
 			if beholderCfg.AuthHeaders != nil {

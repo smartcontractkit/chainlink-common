@@ -75,7 +75,7 @@ var Default = Schema{
 		LogTrigger: logTrigger{
 			RateLimit:                Rate(rate.Every(10*time.Second), -1), //TODO
 			Limit:                    Int(5),
-			EventRateLimit:           Rate(-1, -1), //TODO
+			EventRateLimit:           Rate(rate.Every(time.Minute/10), 10), // TODO
 			FilterAddressLimit:       Int(5),
 			FilterTopicsPerSlotLimit: Int(10),
 		},
@@ -91,12 +91,12 @@ var Default = Schema{
 			TargetsLimit:    Int(3),
 			ReportSizeLimit: Size(config.KByte),
 			EVM: evmChainWrite{
-				TransactionGasLimit: Int(-1), //TODO
+				TransactionGasLimit: Uint64(500_000), //TODO
 			},
 		},
 		ChainRead: chainRead{
 			CallLimit:          Int(3),
-			LogQueryBlockLimit: Int(100),
+			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
 		},
 	},
@@ -187,11 +187,11 @@ type chainWrite struct {
 	EVM evmChainWrite
 }
 type evmChainWrite struct {
-	TransactionGasLimit Setting[int] `unit:"{gas}"`
+	TransactionGasLimit Setting[uint64] `unit:"{gas}"`
 }
 
 type chainRead struct {
-	CallLimit          Setting[int] `unit:"{call}"`
-	LogQueryBlockLimit Setting[int] `unit:"{block}"`
+	CallLimit          Setting[int]    `unit:"{call}"`
+	LogQueryBlockLimit Setting[uint64] `unit:"{block}"`
 	PayloadSizeLimit   Setting[config.Size]
 }

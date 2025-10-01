@@ -42,7 +42,7 @@
 		"LogTrigger": {
 			"RateLimit": "every10s:-1",
 			"Limit": "5",
-			"EventRateLimit": "every-1s:-1",
+			"EventRateLimit": "every6s:10",
 			"FilterAddressLimit": "5",
 			"FilterTopicsPerSlotLimit": "10"
 		},
@@ -58,7 +58,7 @@
 			"TargetsLimit": "3",
 			"ReportSizeLimit": "1kb",
 			"EVM": {
-				"TransactionGasLimit": "-1"
+				"TransactionGasLimit": "500000"
 			}
 		},
 		"ChainRead": {

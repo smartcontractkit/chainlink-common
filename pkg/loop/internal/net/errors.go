@@ -9,13 +9,14 @@ import (
 )
 
 type ErrConnAccept struct {
-	ID   uint32
-	Name string
-	Err  error
+	Broker string
+	ID     uint32
+	Name   string
+	Err    error
 }
 
 func (e ErrConnAccept) Error() string {
-	return fmt.Sprintf("failed to accept %s server connection %d: %s", e.Name, e.ID, e.Err)
+	return fmt.Sprintf("broker %s failed to accept %s server connection %d: %s", e.Broker, e.Name, e.ID, e.Err)
 }
 
 func (e ErrConnAccept) Unwrap() error {

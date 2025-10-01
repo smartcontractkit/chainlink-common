@@ -31,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -44,6 +45,27 @@ var chainInfo = types.ChainInfo{
 	ChainID:         "123",
 	NetworkName:     "someNetwork",
 	NetworkNameFull: "someNetwork-test",
+}
+
+// testExtraDataCodecBundle is a dummy implementation of ExtraDataCodecBundle for testing
+type testExtraDataCodecBundle struct{}
+
+func newTestExtraDataCodecBundle() ccipocr3.ExtraDataCodecBundle {
+	return testExtraDataCodecBundle{}
+}
+
+func (t testExtraDataCodecBundle) DecodeExtraArgs(extraArgs ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	return map[string]any{
+		"gasLimit": uint64(100000),
+		"test":     "extraArgs",
+	}, nil
+}
+
+func (t testExtraDataCodecBundle) DecodeTokenAmountDestExecData(destExecData ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	return map[string]any{
+		"data": "test-dest-exec-data",
+		"test": "destExecData",
+	}, nil
 }
 
 type transactionRequest struct {
@@ -74,8 +96,10 @@ type staticRelayerConfig struct {
 	pluginArgs             types.PluginArgs
 	contractReaderConfig   []byte
 	chainWriterConfig      []byte
-	offRampAddress         string
-	pluginType             uint32
+	offRampAddress         ccipocr3.UnknownAddress
+	pluginType             ccipocr3.PluginType
+	transmitterAddress     ccipocr3.UnknownEncodedAddress
+	extraDataCodecBundle   ccipocr3.ExtraDataCodecBundle
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
 	mercuryProvider        mercurytest.MercuryProviderTester
@@ -101,8 +125,10 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		pluginArgs:             PluginArgs,
 		contractReaderConfig:   []byte("test"),
 		chainWriterConfig:      []byte("chainwriterconfig"),
-		offRampAddress:         "fakeAddress",
+		offRampAddress:         []byte("fakeAddress"),
 		pluginType:             0,
+		transmitterAddress:     "fakeAddress",
+		extraDataCodecBundle:   newTestExtraDataCodecBundle(),
 		medianProvider:         mediantest.MedianProvider(lggr),
 		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
@@ -320,6 +346,8 @@ func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.CCIPProvider
 		ChainWriterConfig:    s.chainWriterConfig,
 		OffRampAddress:       s.offRampAddress,
 		PluginType:           s.pluginType,
+		TransmitterAddress:   s.transmitterAddress,
+		ExtraDataCodecBundle: s.extraDataCodecBundle,
 	}
 	if s.StaticChecks && !equalCCIPProviderArgs(r, ccipProviderArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
@@ -477,8 +505,10 @@ func equalCCIPProviderArgs(a, b types.CCIPProviderArgs) bool {
 	return a.ExternalJobID == b.ExternalJobID &&
 		slices.Equal(a.ContractReaderConfig, b.ContractReaderConfig) &&
 		slices.Equal(a.ChainWriterConfig, b.ChainWriterConfig) &&
-		a.OffRampAddress == b.OffRampAddress &&
-		a.PluginType == b.PluginType
+		slices.Equal(a.OffRampAddress, b.OffRampAddress) &&
+		a.PluginType == b.PluginType &&
+		a.TransmitterAddress == b.TransmitterAddress &&
+		a.ExtraDataCodecBundle == b.ExtraDataCodecBundle
 }
 
 func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {

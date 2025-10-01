@@ -49,6 +49,9 @@ type Config struct {
 	LogRetryConfig      *RetryConfig
 	LogStreamingEnabled bool // Enable logs streaming to the OTel log exporter
 
+	// Heartbeat
+	HeartbeatEnabled bool // Enable periodic heartbeat emission
+
 	// Auth
 	AuthPublicKeyHex string
 	AuthHeaders      map[string]string
@@ -115,6 +118,7 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
+		HeartbeatEnabled:      true, // Enable heartbeat by default
 	}
 }
 

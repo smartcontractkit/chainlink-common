@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759344460420,
+  "lastUpdate": 1759354244878,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26040,6 +26040,48 @@ window.BENCHMARK_DATA = {
             "value": 27045,
             "unit": "ns/op",
             "extra": "44804 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0a7ba2417e2cb43920a2da70f193868a96eed294",
+          "message": "Fix ConvertExpressionsFromProto (#1575)",
+          "timestamp": "2025-10-01T21:28:03Z",
+          "tree_id": "044507cb133a499fa247269b11fc67d82fccfa50",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0a7ba2417e2cb43920a2da70f193868a96eed294"
+        },
+        "date": 1759354243578,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.8,
+            "unit": "ns/op",
+            "extra": "3342279 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 423.1,
+            "unit": "ns/op",
+            "extra": "2914276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26691,
+            "unit": "ns/op",
+            "extra": "44956 times\n4 procs"
           }
         ]
       }

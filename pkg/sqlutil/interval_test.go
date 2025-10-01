@@ -1,4 +1,4 @@
-package types
+package sqlutil
 
 import (
 	"testing"

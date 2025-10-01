@@ -1,10 +1,9 @@
-package types
+package sqlutil
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // Interval represents a time.Duration stored as a Postgres interval type
@@ -43,7 +42,7 @@ func (i *Interval) Scan(v interface{}) error {
 	}
 	asInt64, is := v.(int64)
 	if !is {
-		return errors.Errorf("models.Interval#Scan() wanted int64, got %T", v)
+		return fmt.Errorf("models.Interval#Scan() wanted int64, got %T", v)
 	}
 	*i = Interval(time.Duration(asInt64) * time.Nanosecond)
 	return nil

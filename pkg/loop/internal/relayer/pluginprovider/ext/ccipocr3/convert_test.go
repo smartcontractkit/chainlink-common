@@ -43,11 +43,11 @@ func TestMessageProtobufFlattening(t *testing.T) {
 				FeeValueJuels:  ccipocr3.NewBigInt(big.NewInt(2000)),
 				TokenAmounts: []ccipocr3.RampTokenAmount{
 					{
-						SourcePoolAddress: []byte("source-pool"),
-						DestTokenAddress:  []byte("dest-token"),
-						ExtraData:         []byte("token-extra"),
-						Amount:            ccipocr3.NewBigInt(big.NewInt(500)),
-						DestExecData:      []byte("dest-exec-data"),
+						SourcePoolAddress: ccipocr3.UnknownAddress("0x1111111111111111111111111111111111111111"),
+						DestTokenAddress:  ccipocr3.UnknownAddress("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+						ExtraData:         ccipocr3.Bytes("extra-token-data-1"),
+						Amount:            ccipocr3.NewBigInt(big.NewInt(1)),
+						DestExecData:      ccipocr3.Bytes("dest-exec-data-1"),
 					},
 				},
 			},
@@ -1492,6 +1492,41 @@ func TestPbBigIntRoundTrip(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetChainFeePriceUpdateFakeRoundTrip(t *testing.T) {
+	mapWithZeroValues := map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig{
+		1: {Value: big.NewInt(0), Timestamp: 2},
+		2: {Value: big.NewInt(0), Timestamp: 3},
+		3: {Value: nil, Timestamp: 4},
+	}
+
+	// (s *chainAccessorServer) GetChainFeePriceUpdate() ...
+	pbUpdates := make(map[uint64]*ccipocr3pb.TimestampedUnixBig)
+	for chainSel, update := range mapWithZeroValues {
+		fmt.Println("value:", update.Value, "timestamp:", update.Timestamp)
+		fmt.Println("intToPbBigInt", intToPbBigInt(update.Value))
+		pbUpdates[uint64(chainSel)] = &ccipocr3pb.TimestampedUnixBig{
+			Value:     intToPbBigInt(update.Value),
+			Timestamp: update.Timestamp,
+		}
+	}
+	fmt.Println(pbUpdates)
+
+	// (c *ChainAccessorClient) GetChainFeePriceUpdate() ...
+	gRPCResponse := &ccipocr3pb.GetChainFeePriceUpdateResponse{
+		FeePriceUpdates: pbUpdates,
+	}
+	result := make(map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig)
+	for chainSel, timestampedUnixBig := range gRPCResponse.FeePriceUpdates {
+		result[ccipocr3.ChainSelector(chainSel)] = ccipocr3.TimestampedUnixBig{
+			Value:     pbToBigInt(timestampedUnixBig.Value).Int,
+			Timestamp: timestampedUnixBig.Timestamp,
+		}
+	}
+	fmt.Println(result)
+
+	assert.Equal(t, result, mapWithZeroValues)
 }
 
 // TestPbToBigIntRoundTrip tests round-trip conversion between protobuf BigInt and ccipocr3.BigInt

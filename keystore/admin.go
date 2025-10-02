@@ -18,24 +18,30 @@ import (
 type CreateKeysRequest struct {
 	Keys []CreateKeyRequest
 }
+
 type CreateKeyRequest struct {
 	KeyName string
 	KeyType KeyType
 }
+
 type CreateKeysResponse struct {
 	Keys []CreateKeyResponse
 }
+
 type CreateKeyResponse struct {
 	KeyInfo KeyInfo
 }
+
 type DeleteKeysRequest struct {
 	KeyNames []string
 }
 
 type DeleteKeysResponse struct{}
+
 type ImportKeysRequest struct {
 	Keys []ImportKeyRequest
 }
+
 type ImportKeyRequest struct {
 	KeyName string
 	KeyType KeyType
@@ -43,6 +49,7 @@ type ImportKeyRequest struct {
 }
 
 type ImportKeysResponse struct{}
+
 type ExportKeyParam struct {
 	KeyName string
 	Enc     EncryptionParams
@@ -51,9 +58,11 @@ type ExportKeyParam struct {
 type ExportKeysRequest struct {
 	Keys []ExportKeyParam
 }
+
 type ExportKeysResponse struct {
 	Keys []ExportKeyResponse
 }
+
 type ExportKeyResponse struct {
 	KeyName string
 	Data    []byte
@@ -62,6 +71,7 @@ type ExportKeyResponse struct {
 type SetMetadataRequest struct {
 	Updates []SetMetadataUpdate
 }
+
 type SetMetadataUpdate struct {
 	KeyName  string
 	Metadata []byte

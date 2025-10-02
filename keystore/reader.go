@@ -12,7 +12,7 @@ type ListKeysResponse struct {
 }
 
 type GetKeysRequest struct {
-	Names []string
+	KeyNames []string
 }
 
 type GetKeysResponse struct {
@@ -20,7 +20,7 @@ type GetKeysResponse struct {
 }
 
 type GetKeyRequest struct {
-	Name string
+	KeyName string
 }
 
 type GetKeyResponse struct {
@@ -28,43 +28,39 @@ type GetKeyResponse struct {
 }
 
 type Reader interface {
-	ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error)
 	GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error)
-}
-
-func (k *keystore) ListKeys(ctx context.Context, req ListKeysRequest) (ListKeysResponse, error) {
-	k.mu.RLock()
-	defer k.mu.RUnlock()
-
-	keys := make([]KeyInfo, 0, len(k.keystore))
-	for name, key := range k.keystore {
-		keys = append(keys, KeyInfo{
-			Name:      name,
-			KeyType:   key.keyType,
-			PublicKey: key.publicKey(),
-			Metadata:  key.metadata,
-		})
-	}
-
-	return ListKeysResponse{Keys: keys}, nil
 }
 
 func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
+	// If no names provided, return all keys
+	if len(req.KeyNames) == 0 {
+		responses := make([]GetKeyResponse, 0, len(k.keystore))
+		for name, key := range k.keystore {
+			responses = append(responses, GetKeyResponse{
+				KeyInfo: KeyInfo{
+					Name:      name,
+					KeyType:   key.keyType,
+					PublicKey: key.publicKey,
+					Metadata:  key.metadata,
+				},
+			})
+		}
+		return GetKeysResponse{Keys: responses}, nil
+	}
 
-	responses := make([]GetKeyResponse, 0, len(req.Names))
-	for _, name := range req.Names {
+	responses := make([]GetKeyResponse, 0, len(req.KeyNames))
+	for _, name := range req.KeyNames {
 		key, ok := k.keystore[name]
 		if !ok {
 			return GetKeysResponse{}, fmt.Errorf("key not found: %s", name)
 		}
-
 		responses = append(responses, GetKeyResponse{
 			KeyInfo: KeyInfo{
 				Name:      name,
 				KeyType:   key.keyType,
-				PublicKey: key.publicKey(),
+				PublicKey: key.publicKey,
 				Metadata:  key.metadata,
 			},
 		})

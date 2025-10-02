@@ -20,56 +20,37 @@ import (
 type CreateKeysRequest struct {
 	Keys []CreateKeyRequest
 }
-
 type CreateKeyRequest struct {
-	Name    string
+	KeyName string
 	KeyType KeyType
 }
-
 type CreateKeysResponse struct {
 	Keys []CreateKeyResponse
 }
-
 type CreateKeyResponse struct {
 	KeyInfo KeyInfo
 }
-
 type DeleteKeysRequest struct {
-	Names []string
+	KeyNames []string
 }
 
 type DeleteKeysResponse struct{}
-
 type ImportKeysRequest struct {
 	Keys []ImportKeyRequest
 }
-
 type ImportKeyRequest struct {
-	Name    string
+	KeyName string
 	KeyType KeyType
 	Data    []byte
 }
 
-type ImportKeysResponse struct {
-	Keys []ImportKeyResponse
-}
-
-type ImportKeyResponse struct {
-	PublicKey []byte
-}
-
+type ImportKeysResponse struct{}
 type ExportKeysRequest struct {
-	Names []string
+	KeyNames []string
 }
-
 type ExportKeysResponse struct {
 	Keys []ExportKeyResponse
 }
-
-type ExportKeyRequest struct {
-	Name string
-}
-
 type ExportKeyResponse struct {
 	KeyInfo KeyInfo
 	Data    []byte
@@ -78,14 +59,12 @@ type ExportKeyResponse struct {
 type SetMetadataRequest struct {
 	Updates []SetMetadataUpdate
 }
-
 type SetMetadataUpdate struct {
 	KeyName  string
 	Metadata []byte
 }
 
 type SetMetadataResponse struct{}
-
 type Admin interface {
 	CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error)
 	DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error)
@@ -110,32 +89,47 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to generate Ed25519 key: %w", err)
 			}
-			ksCopy[keyReq.Name] = key{
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey), keyReq.KeyType)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
+			}
+			ksCopy[keyReq.KeyName] = key{
 				keyType:    keyReq.KeyType,
 				privateKey: internal.NewRaw(privateKey),
+				publicKey:  publicKey,
 				createdAt:  time.Now(),
 				metadata:   []byte{},
 			}
 		case EcdsaSecp256k1:
-			privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
+			privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdsaSecp256k1 key: %w", err)
 			}
-			ksCopy[keyReq.Name] = key{
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.D.Bytes()), keyReq.KeyType)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
+			}
+			ksCopy[keyReq.KeyName] = key{
 				keyType:    keyReq.KeyType,
-				privateKey: internal.NewRaw(privateKeyECDSA.D.Bytes()),
+				privateKey: internal.NewRaw(privateKey.D.Bytes()),
+				publicKey:  publicKey,
 				createdAt:  time.Now(),
 				metadata:   []byte{},
 			}
 		case X25519:
-			encryptionKey := [curve25519.ScalarSize]byte{}
-			_, err := rand.Read(encryptionKey[:])
+			privateKey := [curve25519.ScalarSize]byte{}
+			_, err := rand.Read(privateKey[:])
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to generate Curve25519 key: %w", err)
 			}
-			ksCopy[keyReq.Name] = key{
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey[:]), keyReq.KeyType)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
+			}
+			ksCopy[keyReq.KeyName] = key{
 				keyType:    keyReq.KeyType,
-				privateKey: internal.NewRaw(encryptionKey[:]),
+				privateKey: internal.NewRaw(privateKey[:]),
+				publicKey:  publicKey,
 				createdAt:  time.Now(),
 				metadata:   []byte{},
 			}
@@ -145,10 +139,10 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 
 		responses = append(responses, CreateKeyResponse{
 			KeyInfo: KeyInfo{
-				Name:      keyReq.Name,
+				Name:      keyReq.KeyName,
 				KeyType:   keyReq.KeyType,
-				PublicKey: ksCopy[keyReq.Name].publicKey(),
-				Metadata:  ksCopy[keyReq.Name].metadata,
+				PublicKey: ksCopy[keyReq.KeyName].publicKey,
+				Metadata:  ksCopy[keyReq.KeyName].metadata,
 			},
 		})
 	}
@@ -167,7 +161,7 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 	defer k.mu.Unlock()
 
 	ksCopy := maps.Clone(k.keystore)
-	for _, name := range req.Names {
+	for _, name := range req.KeyNames {
 		delete(ksCopy, name)
 	}
 	if err := save(k.storage, k.password, ksCopy); err != nil {
@@ -184,7 +178,7 @@ func (k *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impor
 func (k *keystore) ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
 	var responses []ExportKeyResponse
 
-	for _, name := range req.Names {
+	for _, name := range req.KeyNames {
 		key, ok := k.keystore[name]
 		if !ok {
 			return ExportKeysResponse{}, fmt.Errorf("key not found: %s", name)
@@ -201,7 +195,7 @@ func (k *keystore) ExportKeys(ctx context.Context, req ExportKeysRequest) (Expor
 			KeyInfo: KeyInfo{
 				Name:      name,
 				KeyType:   key.keyType,
-				PublicKey: key.publicKey(),
+				PublicKey: key.publicKey,
 				Metadata:  key.metadata,
 			},
 			Data: exportedKeyData,

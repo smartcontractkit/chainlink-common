@@ -14,12 +14,17 @@ func TestKeystore_AdminReader(t *testing.T) {
 	ks, err := keystore.NewKeystore(storage, "test-password")
 	require.NoError(t, err)
 	ctx := context.Background()
+	var (
+		testKeyEd25519        = "test-ed25519"
+		testKeyEcdsaSecp256k1 = "test-ecdsa-secp256k1"
+		testKeyX25519         = "test-x25519"
+	)
 
 	req := keystore.CreateKeysRequest{
 		Keys: []keystore.CreateKeyRequest{
-			{Name: "test-ed25519", KeyType: keystore.Ed25519},
-			{Name: "test-secp256k1", KeyType: keystore.EcdsaSecp256k1},
-			{Name: "test-x25519", KeyType: keystore.X25519},
+			{KeyName: testKeyEd25519, KeyType: keystore.Ed25519},
+			{KeyName: testKeyEcdsaSecp256k1, KeyType: keystore.EcdsaSecp256k1},
+			{KeyName: testKeyX25519, KeyType: keystore.X25519},
 		},
 	}
 
@@ -30,12 +35,12 @@ func TestKeystore_AdminReader(t *testing.T) {
 	expectedTypes := []keystore.KeyType{keystore.Ed25519, keystore.EcdsaSecp256k1, keystore.X25519}
 	for i, key := range resp.Keys {
 		require.Equal(t, expectedTypes[i], key.KeyInfo.KeyType)
-		require.Equal(t, req.Keys[i].Name, key.KeyInfo.Name)
+		require.Equal(t, req.Keys[i].KeyName, key.KeyInfo.Name)
 		require.NotEmpty(t, key.KeyInfo.PublicKey, "Expected non-empty public key for %s", key.KeyInfo.Name)
 	}
 
 	getReq := keystore.GetKeysRequest{
-		Names: []string{"test-ed25519", "test-secp256k1"},
+		KeyNames: []string{testKeyEd25519, testKeyEcdsaSecp256k1},
 	}
 
 	getResp, err := ks.GetKeys(ctx, getReq)
@@ -48,13 +53,13 @@ func TestKeystore_AdminReader(t *testing.T) {
 	require.Len(t, allKeysResp.Keys, 3)
 
 	deleteReq := keystore.DeleteKeysRequest{
-		Names: []string{"test-x25519"},
+		KeyNames: []string{testKeyX25519},
 	}
 
 	_, err = ks.DeleteKeys(ctx, deleteReq)
 	require.NoError(t, err)
 
-	deleteVerifyReq := keystore.GetKeysRequest{Names: []string{"test-x25519"}}
+	deleteVerifyReq := keystore.GetKeysRequest{KeyNames: []string{testKeyX25519}}
 	_, err = ks.GetKeys(ctx, deleteVerifyReq)
 	require.Error(t, err)
 

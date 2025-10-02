@@ -2,19 +2,16 @@ package keystore
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
-	"math/big"
-	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/crypto/curve25519"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/crypto"
+	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/serialization"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
@@ -23,6 +20,8 @@ import (
 
 type KeyType string
 
+// KeyInfo is the information about a key in the keystore.
+// Public key may be empty for non-asymmetric key types.
 type KeyInfo struct {
 	Name      string
 	KeyType   KeyType
@@ -42,56 +41,42 @@ type key struct {
 	privateKey internal.Raw
 	createdAt  time.Time
 	metadata   []byte
+
+	// Derived from private key on loading from storage.
+	// Cached here for convenience.
+	publicKey []byte
 }
 
-func (k key) publicKey() []byte {
-	switch k.keyType {
+func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
+	switch keyType {
 	case Ed25519:
-		return ed25519.PublicKey(internal.Bytes(k.privateKey))
+		return ed25519.PublicKey(internal.Bytes(privateKeyBytes)), nil
 	case EcdsaSecp256k1:
-		privateKey, err := ecdsaPrivateKeyFromBytes(k.privateKey)
+		// Here we use SEC1 (uncompressed) format for ECDSA public keys.
+		// EVM addresses are derived from this format.
+		// We use the geth crypto library for secp256k1 support
+		// because stdlib doesn't support it.
+		privateKey, err := gethcrypto.ToECDSA(internal.Bytes(privateKeyBytes))
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to convert private key to ECDSA private key: %w", err)
 		}
-		// Return uncompressed public key (65 bytes: 0x04 + 32 bytes X + 32 bytes Y)
-		pubKey := make([]byte, 65)
-		pubKey[0] = 0x04
-		copy(pubKey[1:33], privateKey.PublicKey.X.Bytes())
-		copy(pubKey[33:65], privateKey.PublicKey.Y.Bytes())
-		return pubKey
+		pubKey := gethcrypto.FromECDSAPub(&privateKey.PublicKey)
+		return pubKey, nil
 	case X25519:
-		rv, err := curve25519.X25519(internal.Bytes(k.privateKey)[:], curve25519.Basepoint)
-		// Shouldn't ever happen?
+		rv, err := curve25519.X25519(internal.Bytes(privateKeyBytes)[:], curve25519.Basepoint)
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to derive shared secret: %w", err)
 		}
-		var rvFixed [curve25519.PointSize]byte
-		copy(rvFixed[:], rv)
-		return rvFixed[:]
+		return rv, nil
 	default:
-		// Could have a whole separate admin interface for
-		// purely symmetric keys, but maybe not needed if we only ever use
-		// asymmetric key exchange protocols like X25519 for encryption?
-		return nil
+		// Some types may not have a public key.
+		return []byte{}, nil
 	}
 }
 
-func ecdsaPrivateKeyFromBytes(privateKeyBytes internal.Raw) (*ecdsa.PrivateKey, error) {
-	privateKey := &ecdsa.PrivateKey{}
-	d := big.NewInt(0).SetBytes(internal.Bytes(privateKeyBytes))
-	privateKey.D = d
-	privateKey.PublicKey.Curve = crypto.S256()
-	privateKey.PublicKey.X, privateKey.PublicKey.Y = crypto.S256().ScalarBaseMult(d.Bytes())
-	return privateKey, nil
-}
-
 type keystore struct {
-	mu sync.RWMutex
-	// Keystore is the in memory keys.
-	// May want to use a map per key type eventually to have
-	// separate typed keys.
+	mu       sync.RWMutex
 	keystore map[string]key
-	// Storage is used to persisting encrypted key material.
 	storage  storage.Storage
 	password string
 }
@@ -136,10 +121,15 @@ func load(storage storage.Storage, password string) (map[string]key, error) {
 	}
 	keystore := make(map[string]key)
 	for _, k := range keystorepb.Keys {
+		publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(k.PrivateKey), KeyType(k.KeyType))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get public key from private key: %w", err)
+		}
 		keystore[k.Name] = key{
 			createdAt:  time.Unix(k.CreatedAt, 0),
 			keyType:    KeyType(k.KeyType),
 			privateKey: internal.NewRaw(k.PrivateKey),
+			publicKey:  publicKey,
 			metadata:   k.Metadata,
 		}
 	}
@@ -164,6 +154,8 @@ func save(storage storage.Storage, password string, keystore map[string]key) err
 		return fmt.Errorf("failed to marshal keystore: %w", err)
 	}
 	// TODO: Could parameterize these.
+	// Scrypt supposedly impacts performance
+	// significantly, let's benchmark that.
 	encryptedSecrets, err := gethkeystore.EncryptDataV3(rawKeystore, []byte(password), gethkeystore.StandardScryptN, gethkeystore.StandardScryptP)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt keystore: %w", err)
@@ -177,18 +169,4 @@ func save(storage storage.Storage, password string, keystore map[string]key) err
 		return fmt.Errorf("failed to put encrypted keystore: %w", err)
 	}
 	return nil
-}
-
-// JoinKeySegments joins path-like key name segments using "/" and avoids double slashes.
-// Empty segments are skipped so JoinKeySegments("EVM", "TX", "my-key") => "EVM/TX/my-key".
-func JoinKeySegments(segments ...string) string {
-	cleaned := make([]string, 0, len(segments))
-	for _, s := range segments {
-		s = strings.Trim(s, "/")
-		if s == "" {
-			continue
-		}
-		cleaned = append(cleaned, s)
-	}
-	return strings.Join(cleaned, "/")
 }

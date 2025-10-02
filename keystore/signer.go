@@ -11,8 +11,8 @@ const (
 )
 
 type SignRequest struct {
-	Name string
-	Data []byte
+	KeyName string
+	Data    []byte
 }
 
 type SignResponse struct {
@@ -20,7 +20,7 @@ type SignResponse struct {
 }
 
 type VerifyRequest struct {
-	Name      string
+	KeyName   string
 	Data      []byte
 	Signature []byte
 }
@@ -35,3 +35,10 @@ type Signer interface {
 }
 
 // TODO: Signer implementation.
+func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, error) {
+	return SignResponse{}, nil
+}
+
+func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
+	return VerifyResponse{}, nil
+}

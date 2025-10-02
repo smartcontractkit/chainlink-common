@@ -43,3 +43,14 @@ type Encryptor interface {
 }
 
 // TODO: Encryptor implementation.
+func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
+	return EncryptResponse{}, nil
+}
+
+func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
+	return DecryptResponse{}, nil
+}
+
+func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
+	return DeriveSharedSecretResponse{}, nil
+}

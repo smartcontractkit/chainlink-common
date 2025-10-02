@@ -2,6 +2,7 @@ package relayerset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -99,6 +100,9 @@ func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransa
 	reply, err := evmService.GetTransactionFee(ctx, request.TransactionId)
 	if err != nil {
 		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("reply is nil")
 	}
 
 	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
@@ -401,7 +405,7 @@ func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTra
 		return nil, err
 	}
 
-	txResult, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
+	reply, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
 		To:        evm.Address(request.To),
 		Data:      evm.ABIPayload(request.Data),
 		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetGasConfig()),
@@ -409,11 +413,14 @@ func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTra
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, fmt.Errorf("txResult is nil")
+	}
 
 	return &evmpb.SubmitTransactionReply{
-		TxHash:           txResult.TxHash[:],
-		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
-		TxIdempotencyKey: txResult.TxIdempotencyKey,
+		TxHash:           reply.TxHash[:],
+		TxStatus:         evmpb.ConvertTxStatusToProto(reply.TxStatus),
+		TxIdempotencyKey: reply.TxIdempotencyKey,
 	}, nil
 }
 
@@ -423,16 +430,19 @@ func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.Cal
 		return nil, err
 	}
 
-	fee, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
+	reply, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
 		GasUsed:           request.GasInfo.GasUsed,
 		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
 	})
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
 
 	return &evmpb.CalculateTransactionFeeReply{
-		TransactionFee: valuespb.NewBigIntFromInt(fee.TransactionFee),
+		TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee),
 	}, nil
 }
 

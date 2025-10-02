@@ -1,4 +1,4 @@
-module github.com/smartcontractkit/chainlink-common/pkg/keystore
+module github.com/smartcontractkit/chainlink-common/keystore
 
 go 1.24.5
 

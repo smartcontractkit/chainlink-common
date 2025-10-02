@@ -56,11 +56,16 @@ func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResp
 	}
 
 	responses := make([]GetKeyResponse, 0, len(req.KeyNames))
+	seen := make(map[string]bool)
 	for _, name := range req.KeyNames {
 		key, ok := k.keystore[name]
 		if !ok {
 			return GetKeysResponse{}, fmt.Errorf("key not found: %s", name)
 		}
+		if seen[name] {
+			return GetKeysResponse{}, fmt.Errorf("key %s provided multiple times", name)
+		}
+		seen[name] = true
 		responses = append(responses, GetKeyResponse{
 			KeyInfo: KeyInfo{
 				Name:      name,

@@ -12,7 +12,13 @@ import (
 	"golang.org/x/crypto/curve25519"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+)
+
+var (
+	ErrKeyAlreadyExists   = fmt.Errorf("key already exists")
+	ErrKeyNotFound        = fmt.Errorf("key not found")
+	ErrUnsupportedKeyType = fmt.Errorf("unsupported key type")
 )
 
 type CreateKeysRequest struct {
@@ -78,6 +84,7 @@ type SetMetadataUpdate struct {
 }
 
 type SetMetadataResponse struct{}
+
 type Admin interface {
 	CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error)
 	DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error)
@@ -94,7 +101,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 	var responses []CreateKeyResponse
 	for _, keyReq := range req.Keys {
 		if _, ok := ksCopy[keyReq.KeyName]; ok {
-			return CreateKeysResponse{}, fmt.Errorf("key already exists: %s", keyReq.KeyName)
+			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, keyReq.KeyName)
 		}
 		switch keyReq.KeyType {
 		case Ed25519:
@@ -147,7 +154,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				metadata:   []byte{},
 			}
 		default:
-			return CreateKeysResponse{}, fmt.Errorf("unsupported key type: %s", keyReq.KeyType)
+			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrUnsupportedKeyType, keyReq.KeyType)
 		}
 
 		responses = append(responses, CreateKeyResponse{
@@ -176,7 +183,7 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 	ksCopy := maps.Clone(k.keystore)
 	for _, name := range req.KeyNames {
 		if _, ok := ksCopy[name]; !ok {
-			return DeleteKeysResponse{}, fmt.Errorf("key not found: %s", name)
+			return DeleteKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, name)
 		}
 		delete(ksCopy, name)
 	}

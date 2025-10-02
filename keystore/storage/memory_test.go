@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
+	"github.com/smartcontractkit/chainlink-common/keystore/storage"
 	"github.com/stretchr/testify/require"
 )
 

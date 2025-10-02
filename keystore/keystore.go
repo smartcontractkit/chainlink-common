@@ -12,9 +12,9 @@ import (
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/serialization"
-	"github.com/smartcontractkit/chainlink-common/pkg/keystore/storage"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
+	"github.com/smartcontractkit/chainlink-common/keystore/storage"
 	"google.golang.org/protobuf/proto"
 )
 

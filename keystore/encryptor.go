@@ -4,11 +4,6 @@ import (
 	"context"
 )
 
-const (
-	X25519 KeyType = "X25519"
-	// TODO: Support P256 for DKG.
-)
-
 type EncryptRequest struct {
 	KeyName string
 	Data    []byte

@@ -5,14 +5,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"maps"
 	"time"
 
 	"golang.org/x/crypto/curve25519"
 
-	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/pkg/keystore/internal"
 )
@@ -45,14 +43,19 @@ type ImportKeyRequest struct {
 }
 
 type ImportKeysResponse struct{}
+type ExportKeyParam struct {
+	KeyName string
+	Enc     EncryptionParams
+}
+
 type ExportKeysRequest struct {
-	KeyNames []string
+	Keys []ExportKeyParam
 }
 type ExportKeysResponse struct {
 	Keys []ExportKeyResponse
 }
 type ExportKeyResponse struct {
-	KeyInfo KeyInfo
+	KeyName string
 	Data    []byte
 }
 
@@ -77,12 +80,12 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 	ks.mu.Lock()
 	defer ks.mu.Unlock()
 
-	// Clone the keystore.
 	ksCopy := maps.Clone(ks.keystore)
 	var responses []CreateKeyResponse
-
-	// Create all keys
 	for _, keyReq := range req.Keys {
+		if _, ok := ksCopy[keyReq.KeyName]; ok {
+			return CreateKeysResponse{}, fmt.Errorf("key already exists: %s", keyReq.KeyName)
+		}
 		switch keyReq.KeyType {
 		case Ed25519:
 			_, privateKey, err := ed25519.GenerateKey(rand.Reader)
@@ -148,7 +151,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 	}
 
 	// Persist it to storage.
-	if err := save(ks.storage, ks.password, ksCopy); err != nil {
+	if err := save(ks.storage, ks.enc, ksCopy); err != nil {
 		return CreateKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	// If we succeed to save, update the in memory keystore.
@@ -162,9 +165,12 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 
 	ksCopy := maps.Clone(k.keystore)
 	for _, name := range req.KeyNames {
+		if _, ok := ksCopy[name]; !ok {
+			return DeleteKeysResponse{}, fmt.Errorf("key not found: %s", name)
+		}
 		delete(ksCopy, name)
 	}
-	if err := save(k.storage, k.password, ksCopy); err != nil {
+	if err := save(k.storage, k.enc, ksCopy); err != nil {
 		return DeleteKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	k.keystore = ksCopy
@@ -176,55 +182,9 @@ func (k *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impor
 }
 
 func (k *keystore) ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
-	var responses []ExportKeyResponse
-
-	for _, name := range req.KeyNames {
-		key, ok := k.keystore[name]
-		if !ok {
-			return ExportKeysResponse{}, fmt.Errorf("key not found: %s", name)
-		}
-		exportedKey, err := gethkeystore.EncryptDataV3(internal.Bytes(key.privateKey), []byte(k.password), gethkeystore.StandardScryptN, gethkeystore.StandardScryptP)
-		if err != nil {
-			return ExportKeysResponse{}, fmt.Errorf("failed to export key %s: %w", name, err)
-		}
-		exportedKeyData, err := json.Marshal(exportedKey)
-		if err != nil {
-			return ExportKeysResponse{}, fmt.Errorf("failed to marshal exported key %s: %w", name, err)
-		}
-		responses = append(responses, ExportKeyResponse{
-			KeyInfo: KeyInfo{
-				Name:      name,
-				KeyType:   key.keyType,
-				PublicKey: key.publicKey,
-				Metadata:  key.metadata,
-			},
-			Data: exportedKeyData,
-		})
-	}
-
-	return ExportKeysResponse{Keys: responses}, nil
+	return ExportKeysResponse{}, nil
 }
 
 func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {
-	ks.mu.Lock()
-	defer ks.mu.Unlock()
-
-	ksCopy := maps.Clone(ks.keystore)
-
-	for _, update := range req.Updates {
-		key, ok := ksCopy[update.KeyName]
-		if !ok {
-			return SetMetadataResponse{}, fmt.Errorf("key not found: %s", update.KeyName)
-		}
-
-		key.metadata = update.Metadata
-		ksCopy[update.KeyName] = key
-	}
-
-	if err := save(ks.storage, ks.password, ksCopy); err != nil {
-		return SetMetadataResponse{}, fmt.Errorf("failed to save keystore: %w", err)
-	}
-
-	ks.keystore = ksCopy
 	return SetMetadataResponse{}, nil
 }

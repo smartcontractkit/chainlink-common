@@ -3,6 +3,7 @@ package keystore
 import (
 	"context"
 	"fmt"
+	"sort"
 )
 
 type ListKeysRequest struct{}
@@ -27,6 +28,9 @@ type GetKeyResponse struct {
 	KeyInfo KeyInfo
 }
 
+// Reader is the interface for reading keys from the keystore.
+// GetKeys returns all keys in the keystore if no names are provided, or the keys with the given names.
+// Keys are sorted by name in lexicographic order.
 type Reader interface {
 	GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error)
 }
@@ -47,6 +51,7 @@ func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResp
 				},
 			})
 		}
+		sort.Slice(responses, func(i, j int) bool { return responses[i].KeyInfo.Name < responses[j].KeyInfo.Name })
 		return GetKeysResponse{Keys: responses}, nil
 	}
 
@@ -65,6 +70,6 @@ func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResp
 			},
 		})
 	}
-
+	sort.Slice(responses, func(i, j int) bool { return responses[i].KeyInfo.Name < responses[j].KeyInfo.Name })
 	return GetKeysResponse{Keys: responses}, nil
 }

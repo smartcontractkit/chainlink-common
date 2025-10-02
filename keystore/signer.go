@@ -4,12 +4,6 @@ import (
 	"context"
 )
 
-const (
-	// Digital signature key types.
-	Ed25519        KeyType = "ed25519"
-	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
-)
-
 type SignRequest struct {
 	KeyName string
 	Data    []byte

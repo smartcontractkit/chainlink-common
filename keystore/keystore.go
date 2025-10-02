@@ -20,6 +20,32 @@ import (
 
 type KeyType string
 
+const (
+	X25519 KeyType = "X25519"
+	// TODO: Support P256 for DKG.
+	// Digital signature key types.
+	Ed25519        KeyType = "ed25519"
+	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
+)
+
+var AllKeyTypes = []KeyType{X25519, Ed25519, EcdsaSecp256k1}
+
+type ScryptParams struct {
+	N int
+	P int
+}
+
+var (
+	DefaultScryptParams = ScryptParams{
+		N: gethkeystore.StandardScryptN,
+		P: gethkeystore.StandardScryptP,
+	}
+	FastScryptParams ScryptParams = ScryptParams{
+		N: 1 << 14,
+		P: 1,
+	}
+)
+
 // KeyInfo is the information about a key in the keystore.
 // Public key may be empty for non-asymmetric key types.
 type KeyInfo struct {
@@ -47,13 +73,21 @@ type key struct {
 	publicKey []byte
 }
 
+// EncryptionParams controls password-based encryption cost.
+// N and P are scrypt parameters; higher values increase CPU/memory cost.
+// Password is the secret used to derive the encryption key.
+type EncryptionParams struct {
+	Password     string
+	ScryptParams ScryptParams
+}
+
 func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
 	switch keyType {
 	case Ed25519:
 		return ed25519.PublicKey(internal.Bytes(privateKeyBytes)), nil
 	case EcdsaSecp256k1:
 		// Here we use SEC1 (uncompressed) format for ECDSA public keys.
-		// EVM addresses are derived from this format.
+		// Its commonly used and EVM addresses are derived from this format.
 		// We use the geth crypto library for secp256k1 support
 		// because stdlib doesn't support it.
 		privateKey, err := gethcrypto.ToECDSA(internal.Bytes(privateKeyBytes))
@@ -78,11 +112,11 @@ type keystore struct {
 	mu       sync.RWMutex
 	keystore map[string]key
 	storage  storage.Storage
-	password string
+	enc      EncryptionParams
 }
 
-func NewKeystore(storage storage.Storage, password string) (Keystore, error) {
-	ks, err := load(storage, password)
+func NewKeystore(storage storage.Storage, enc EncryptionParams) (Keystore, error) {
+	ks, err := load(storage, enc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)
 	}
@@ -90,11 +124,11 @@ func NewKeystore(storage storage.Storage, password string) (Keystore, error) {
 		mu:       sync.RWMutex{},
 		keystore: ks,
 		storage:  storage,
-		password: password,
+		enc:      enc,
 	}, nil
 }
 
-func load(storage storage.Storage, password string) (map[string]key, error) {
+func load(storage storage.Storage, enc EncryptionParams) (map[string]key, error) {
 	encryptedKeystore, err := storage.GetEncryptedKeystore(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get encrypted keystore: %w", err)
@@ -110,7 +144,7 @@ func load(storage storage.Storage, password string) (map[string]key, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal encrypted keystore: %w", err)
 	}
-	decryptedKeystore, err := gethkeystore.DecryptDataV3(encryptedSecrets, password)
+	decryptedKeystore, err := gethkeystore.DecryptDataV3(encryptedSecrets, enc.Password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt keystore: %w", err)
 	}
@@ -136,7 +170,7 @@ func load(storage storage.Storage, password string) (map[string]key, error) {
 	return keystore, nil
 }
 
-func save(storage storage.Storage, password string, keystore map[string]key) error {
+func save(storage storage.Storage, enc EncryptionParams, keystore map[string]key) error {
 	keystorepb := serialization.Keystore{
 		Keys: make([]*serialization.Key, 0),
 	}
@@ -153,10 +187,7 @@ func save(storage storage.Storage, password string, keystore map[string]key) err
 	if err != nil {
 		return fmt.Errorf("failed to marshal keystore: %w", err)
 	}
-	// TODO: Could parameterize these.
-	// Scrypt supposedly impacts performance
-	// significantly, let's benchmark that.
-	encryptedSecrets, err := gethkeystore.EncryptDataV3(rawKeystore, []byte(password), gethkeystore.StandardScryptN, gethkeystore.StandardScryptP)
+	encryptedSecrets, err := gethkeystore.EncryptDataV3(rawKeystore, []byte(enc.Password), enc.ScryptParams.N, enc.ScryptParams.P)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt keystore: %w", err)
 	}

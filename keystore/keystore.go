@@ -51,8 +51,20 @@ var (
 type KeyInfo struct {
 	Name      string
 	KeyType   KeyType
+	CreatedAt time.Time
 	PublicKey []byte
 	Metadata  []byte
+}
+
+// newKeyInfo is a private constructor that ensures all fields are set explicitly.
+func newKeyInfo(name string, keyType KeyType, createdAt time.Time, publicKey []byte, metadata []byte) KeyInfo {
+	return KeyInfo{
+		Name:      name,
+		KeyType:   keyType,
+		CreatedAt: createdAt,
+		PublicKey: publicKey,
+		Metadata:  metadata,
+	}
 }
 
 type Keystore interface {
@@ -71,6 +83,17 @@ type key struct {
 	// Derived from private key on loading from storage.
 	// Cached here for convenience.
 	publicKey []byte
+}
+
+// newKey is a private constructor ensuring the internal key struct is fully and correctly populated.
+func newKey(keyType KeyType, privateKey internal.Raw, publicKey []byte, createdAt time.Time, metadata []byte) key {
+	return key{
+		keyType:    keyType,
+		privateKey: privateKey,
+		publicKey:  publicKey,
+		createdAt:  createdAt,
+		metadata:   metadata,
+	}
 }
 
 // EncryptionParams controls password-based encryption cost.
@@ -115,8 +138,8 @@ type keystore struct {
 	enc      EncryptionParams
 }
 
-func NewKeystore(storage storage.Storage, enc EncryptionParams) (Keystore, error) {
-	ks, err := load(storage, enc)
+func NewKeystore(ctx context.Context, storage storage.Storage, enc EncryptionParams) (Keystore, error) {
+	ks, err := load(ctx, storage, enc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)
 	}
@@ -128,8 +151,8 @@ func NewKeystore(storage storage.Storage, enc EncryptionParams) (Keystore, error
 	}, nil
 }
 
-func load(storage storage.Storage, enc EncryptionParams) (map[string]key, error) {
-	encryptedKeystore, err := storage.GetEncryptedKeystore(context.Background())
+func load(ctx context.Context, storage storage.Storage, enc EncryptionParams) (map[string]key, error) {
+	encryptedKeystore, err := storage.GetEncryptedKeystore(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get encrypted keystore: %w", err)
 	}
@@ -155,22 +178,18 @@ func load(storage storage.Storage, enc EncryptionParams) (map[string]key, error)
 	}
 	keystore := make(map[string]key)
 	for _, k := range keystorepb.Keys {
-		publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(k.PrivateKey), KeyType(k.KeyType))
+		pkRaw := internal.NewRaw(k.PrivateKey)
+		keyType := KeyType(k.KeyType)
+		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get public key from private key: %w", err)
 		}
-		keystore[k.Name] = key{
-			createdAt:  time.Unix(k.CreatedAt, 0),
-			keyType:    KeyType(k.KeyType),
-			privateKey: internal.NewRaw(k.PrivateKey),
-			publicKey:  publicKey,
-			metadata:   k.Metadata,
-		}
+		keystore[k.Name] = newKey(keyType, pkRaw, publicKey, time.Unix(k.CreatedAt, 0), k.Metadata)
 	}
 	return keystore, nil
 }
 
-func save(storage storage.Storage, enc EncryptionParams, keystore map[string]key) error {
+func save(ctx context.Context, storage storage.Storage, enc EncryptionParams, keystore map[string]key) error {
 	keystorepb := serialization.Keystore{
 		Keys: make([]*serialization.Key, 0),
 	}
@@ -195,7 +214,7 @@ func save(storage storage.Storage, enc EncryptionParams, keystore map[string]key
 	if err != nil {
 		return fmt.Errorf("failed to marshal encrypted keystore: %w", err)
 	}
-	err = storage.PutEncryptedKeystore(context.Background(), encryptedSecretsBytes)
+	err = storage.PutEncryptedKeystore(ctx, encryptedSecretsBytes)
 	if err != nil {
 		return fmt.Errorf("failed to put encrypted keystore: %w", err)
 	}

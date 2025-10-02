@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
@@ -57,6 +58,13 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 			expectedKeys: []key{testKeysEd25519[0]},
 		},
 		{
+			name: "Invalid key name",
+			keyOps: []keyOp{
+				{key: key{name: "", keyType: keystore.X25519, metadata: []byte{}}, op: "create", expectedError: keystore.ErrInvalidKeyName},
+			},
+			expectedKeys: []key{},
+		},
+		{
 			name: "Delete non-existent key",
 			keyOps: []keyOp{
 				{key: testKeysEd25519[0], op: "delete", expectedError: keystore.ErrKeyNotFound},
@@ -103,7 +111,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := storage.NewMemoryStorage()
-			ks, err := keystore.NewKeystore(storage, keystore.EncryptionParams{
+			ks, err := keystore.NewKeystore(ctx, storage, keystore.EncryptionParams{
 				Password:     "test-password",
 				ScryptParams: keystore.FastScryptParams,
 			})
@@ -136,6 +144,9 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 			require.NoError(t, err)
 			var haveKeys []key
 			for _, respKey := range resp.Keys {
+				// No crypto without a public key yet so lets assert that its present.
+				assert.NotEmpty(t, respKey.KeyInfo.PublicKey)
+				assert.NotEmpty(t, respKey.KeyInfo.CreatedAt)
 				haveKeys = append(haveKeys, key{name: respKey.KeyInfo.Name, keyType: respKey.KeyInfo.KeyType, metadata: respKey.KeyInfo.Metadata})
 			}
 			for i, expectedKey := range tt.expectedKeys {
@@ -143,4 +154,59 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestKeystore_ConcurrentCreateAndRead tests that the keystore can be used concurrently to create and read keys.
+// go test -race -run TestKeystore_ConcurrentCreateAndRead to check for race conditions.
+func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	st := storage.NewMemoryStorage()
+	ks, err := keystore.NewKeystore(ctx, st, keystore.EncryptionParams{
+		Password:     "test",
+		ScryptParams: keystore.FastScryptParams,
+	})
+	require.NoError(t, err)
+
+	const (
+		numWriters     = 8
+		keysPerWriter  = 25
+		numReaders     = 6
+		readsPerReader = 40
+	)
+
+	var wg sync.WaitGroup
+	wg.Add(numWriters + numReaders)
+
+	for w := 0; w < numWriters; w++ {
+		w := w
+		go func() {
+			defer wg.Done()
+			for i := 0; i < keysPerWriter; i++ {
+				name := fmt.Sprintf("k-%d-%d", w, i)
+				_, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
+					Keys: []keystore.CreateKeyRequest{
+						{KeyName: name, KeyType: keystore.Ed25519},
+					},
+				})
+				require.NoError(t, err)
+			}
+		}()
+	}
+
+	for r := 0; r < numReaders; r++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < readsPerReader; i++ {
+				_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
+				require.NoError(t, err)
+			}
+		}()
+	}
+
+	wg.Wait()
+	resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
+	require.NoError(t, err)
+	require.Equal(t, numWriters*keysPerWriter, len(resp.Keys))
 }

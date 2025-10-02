@@ -17,6 +17,7 @@ import (
 
 var (
 	ErrKeyAlreadyExists   = fmt.Errorf("key already exists")
+	ErrInvalidKeyName     = fmt.Errorf("invalid key name")
 	ErrKeyNotFound        = fmt.Errorf("key not found")
 	ErrUnsupportedKeyType = fmt.Errorf("unsupported key type")
 )
@@ -93,6 +94,17 @@ type Admin interface {
 	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
 }
 
+func ValidKeyName(name string) error {
+	if name == "" {
+		return fmt.Errorf("key name cannot be empty")
+	}
+	// Just a sanity bound.
+	if len(name) > 1_000 {
+		return fmt.Errorf("key name cannot be longer than 1000 characters")
+	}
+	return nil
+}
+
 func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error) {
 	ks.mu.Lock()
 	defer ks.mu.Unlock()
@@ -102,6 +114,9 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 	for _, keyReq := range req.Keys {
 		if _, ok := ksCopy[keyReq.KeyName]; ok {
 			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, keyReq.KeyName)
+		}
+		if err := ValidKeyName(keyReq.KeyName); err != nil {
+			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
 		}
 		switch keyReq.KeyType {
 		case Ed25519:
@@ -113,13 +128,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
-			ksCopy[keyReq.KeyName] = key{
-				keyType:    keyReq.KeyType,
-				privateKey: internal.NewRaw(privateKey),
-				publicKey:  publicKey,
-				createdAt:  time.Now(),
-				metadata:   []byte{},
-			}
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey), publicKey, time.Now(), []byte{})
 		case EcdsaSecp256k1:
 			privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 			if err != nil {
@@ -129,13 +138,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
-			ksCopy[keyReq.KeyName] = key{
-				keyType:    keyReq.KeyType,
-				privateKey: internal.NewRaw(privateKey.D.Bytes()),
-				publicKey:  publicKey,
-				createdAt:  time.Now(),
-				metadata:   []byte{},
-			}
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.D.Bytes()), publicKey, time.Now(), []byte{})
 		case X25519:
 			privateKey := [curve25519.ScalarSize]byte{}
 			_, err := rand.Read(privateKey[:])
@@ -146,29 +149,20 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
-			ksCopy[keyReq.KeyName] = key{
-				keyType:    keyReq.KeyType,
-				privateKey: internal.NewRaw(privateKey[:]),
-				publicKey:  publicKey,
-				createdAt:  time.Now(),
-				metadata:   []byte{},
-			}
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey[:]), publicKey, time.Now(), []byte{})
 		default:
 			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrUnsupportedKeyType, keyReq.KeyType)
 		}
 
+		created := ksCopy[keyReq.KeyName].createdAt
+		k := ksCopy[keyReq.KeyName]
 		responses = append(responses, CreateKeyResponse{
-			KeyInfo: KeyInfo{
-				Name:      keyReq.KeyName,
-				KeyType:   keyReq.KeyType,
-				PublicKey: ksCopy[keyReq.KeyName].publicKey,
-				Metadata:  ksCopy[keyReq.KeyName].metadata,
-			},
+			KeyInfo: newKeyInfo(keyReq.KeyName, keyReq.KeyType, created, k.publicKey, k.metadata),
 		})
 	}
 
 	// Persist it to storage.
-	if err := save(ks.storage, ks.enc, ksCopy); err != nil {
+	if err := save(ctx, ks.storage, ks.enc, ksCopy); err != nil {
 		return CreateKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	// If we succeed to save, update the in memory keystore.
@@ -187,7 +181,7 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 		}
 		delete(ksCopy, name)
 	}
-	if err := save(k.storage, k.enc, ksCopy); err != nil {
+	if err := save(ctx, k.storage, k.enc, ksCopy); err != nil {
 		return DeleteKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	k.keystore = ksCopy

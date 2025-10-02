@@ -48,7 +48,7 @@ func (k key) publicKey() []byte {
 	switch k.keyType {
 	case Ed25519:
 		return ed25519.PublicKey(internal.Bytes(k.privateKey))
-	case Secp256k1:
+	case EcdsaSecp256k1:
 		privateKey, err := ecdsaPrivateKeyFromBytes(k.privateKey)
 		if err != nil {
 			panic(err)

@@ -116,10 +116,10 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				createdAt:  time.Now(),
 				metadata:   []byte{},
 			}
-		case Secp256k1:
+		case EcdsaSecp256k1:
 			privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 			if err != nil {
-				return CreateKeysResponse{}, fmt.Errorf("failed to generate Secp256k1 key: %w", err)
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdsaSecp256k1 key: %w", err)
 			}
 			ksCopy[keyReq.Name] = key{
 				keyType:    keyReq.KeyType,

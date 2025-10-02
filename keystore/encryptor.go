@@ -6,7 +6,7 @@ import (
 
 const (
 	X25519 KeyType = "X25519"
-	// TODO: Support P256
+	// TODO: Support P256 for DKG.
 )
 
 type EncryptRequest struct {
@@ -41,3 +41,5 @@ type Encryptor interface {
 	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)
 	DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error)
 }
+
+// TODO: Encryptor implementation.

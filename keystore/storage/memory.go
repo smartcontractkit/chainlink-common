@@ -11,14 +11,12 @@ type MemoryStorage struct {
 	data []byte
 }
 
-// NewMemoryStorage creates a new in-memory storage instance
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		data: []byte{}, // Initialize with empty byte slice instead of nil
 	}
 }
 
-// GetEncryptedKeystore returns the stored encrypted keystore data
 func (m *MemoryStorage) GetEncryptedKeystore(ctx context.Context) ([]byte, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -29,7 +27,6 @@ func (m *MemoryStorage) GetEncryptedKeystore(ctx context.Context) ([]byte, error
 	return data, nil
 }
 
-// PutEncryptedKeystore stores the encrypted keystore data
 func (m *MemoryStorage) PutEncryptedKeystore(ctx context.Context, data []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
 // mockSigner implements crypto.Signer for testing
@@ -207,12 +208,13 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 
 		ctx := context.Background()
 		testData := []byte("integration test data")
+		prefixedTestData := peeridhelper.MakePeerIDSignatureDomainSeparatedPayload("test", testData)
 
-		signature1, err := singleSigner.Sign(ctx, account, testData)
+		signature1, err := singleSigner.Sign(ctx, account, prefixedTestData)
 		require.NoError(t, err)
 		assert.NotEmpty(t, signature1)
 
-		valid := ed25519.Verify(privKey.Public().(ed25519.PublicKey), testData, signature1)
+		valid := ed25519.Verify(privKey.Public().(ed25519.PublicKey), prefixedTestData, signature1)
 		assert.True(t, valid, "signature should be valid")
 	})
 

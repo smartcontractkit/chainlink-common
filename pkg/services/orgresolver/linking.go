@@ -67,7 +67,7 @@ func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceCli
 
 		conn, err := grpc.NewClient(cfg.URL, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to connect to linking service at %s: %w", cfg.URL, err)
+			return nil, fmt.Errorf("failed to create linking service client at %s: %w", cfg.URL, err)
 		}
 
 		resolver.conn = conn

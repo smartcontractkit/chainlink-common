@@ -123,6 +123,7 @@ func TestChainAccessor(t *testing.T) {
 				DestTokenAddress:  ccipocr3.UnknownAddress("test-dest-token"),
 				ExtraData:         ccipocr3.Bytes("test-extra-data"),
 				Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+				DestExecData:      ccipocr3.Bytes("test-dest-exec-data"),
 			},
 		}
 		messages, err := chainAccessor.MessagesByTokenID(ctx, ccipocr3.ChainSelector(1), ccipocr3.ChainSelector(2), tokens)
@@ -148,8 +149,8 @@ func TestChainAccessor(t *testing.T) {
 	})
 
 	t.Run("GetFeeQuoterTokenUpdates", func(t *testing.T) {
-		tokens := []ccipocr3.UnknownEncodedAddress{"token1", "token2"}
-		updates, err := chainAccessor.GetFeeQuoterTokenUpdates(ctx, tokens, ccipocr3.ChainSelector(1))
+		tokensBytes := []ccipocr3.UnknownAddress{ccipocr3.UnknownAddress("token1"), ccipocr3.UnknownAddress("token2")}
+		updates, err := chainAccessor.GetFeeQuoterTokenUpdates(ctx, tokensBytes)
 		assert.NoError(t, err)
 		assert.NotNil(t, updates)
 		assert.Len(t, updates, 2)

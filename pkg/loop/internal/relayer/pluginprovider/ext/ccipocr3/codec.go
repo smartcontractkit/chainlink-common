@@ -589,3 +589,130 @@ func pbToExecutePluginReport(pb *ccipocr3pb.ExecutePluginReport) ccipocr3.Execut
 		ChainReports: chainReports,
 	}
 }
+
+// ExtraDataCodecBundle client
+var _ ccipocr3.ExtraDataCodecBundle = (*extraDataCodecBundleClient)(nil)
+
+type extraDataCodecBundleClient struct {
+	*net.BrokerExt
+	grpc ccipocr3pb.ExtraDataCodecBundleClient
+}
+
+func NewExtraDataCodecBundleClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.ExtraDataCodecBundle {
+	return &extraDataCodecBundleClient{
+		BrokerExt: broker,
+		grpc:      ccipocr3pb.NewExtraDataCodecBundleClient(cc),
+	}
+}
+
+func (c *extraDataCodecBundleClient) DecodeExtraArgs(extraArgs ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	resp, err := c.grpc.DecodeExtraArgs(context.Background(), &ccipocr3pb.DecodeExtraArgsWithChainSelectorRequest{
+		ExtraArgs:           extraArgs,
+		SourceChainSelector: uint64(sourceChainSelector),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbMapToGoMap(resp.DecodedMap)
+}
+
+func (c *extraDataCodecBundleClient) DecodeTokenAmountDestExecData(destExecData ccipocr3.Bytes, sourceChainSelector ccipocr3.ChainSelector) (map[string]any, error) {
+	resp, err := c.grpc.DecodeTokenAmountDestExecData(context.Background(), &ccipocr3pb.DecodeTokenAmountDestExecDataRequest{
+		DestExecData:        destExecData,
+		SourceChainSelector: uint64(sourceChainSelector),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pbMapToGoMap(resp.DecodedMap)
+}
+
+// ExtraDataCodecBundle server
+var _ ccipocr3pb.ExtraDataCodecBundleServer = (*extraDataCodecBundleServer)(nil)
+
+type extraDataCodecBundleServer struct {
+	ccipocr3pb.UnimplementedExtraDataCodecBundleServer
+	impl ccipocr3.ExtraDataCodecBundle
+}
+
+func NewExtraDataCodecBundleServer(impl ccipocr3.ExtraDataCodecBundle) ccipocr3pb.ExtraDataCodecBundleServer {
+	return &extraDataCodecBundleServer{impl: impl}
+}
+
+func (s *extraDataCodecBundleServer) DecodeExtraArgs(ctx context.Context, req *ccipocr3pb.DecodeExtraArgsWithChainSelectorRequest) (*ccipocr3pb.DecodeExtraArgsWithChainSelectorResponse, error) {
+	decodedMap, err := s.impl.DecodeExtraArgs(req.ExtraArgs, ccipocr3.ChainSelector(req.SourceChainSelector))
+	if err != nil {
+		return nil, err
+	}
+	pbMap, err := goMapToPbMap(decodedMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert decoded map to protobuf: %w", err)
+	}
+	return &ccipocr3pb.DecodeExtraArgsWithChainSelectorResponse{
+		DecodedMap: pbMap,
+	}, nil
+}
+
+func (s *extraDataCodecBundleServer) DecodeTokenAmountDestExecData(ctx context.Context, req *ccipocr3pb.DecodeTokenAmountDestExecDataRequest) (*ccipocr3pb.DecodeTokenAmountDestExecDataResponse, error) {
+	decodedMap, err := s.impl.DecodeTokenAmountDestExecData(req.DestExecData, ccipocr3.ChainSelector(req.SourceChainSelector))
+	if err != nil {
+		return nil, err
+	}
+	pbMap, err := goMapToPbMap(decodedMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert decoded map to protobuf: %w", err)
+	}
+	return &ccipocr3pb.DecodeTokenAmountDestExecDataResponse{
+		DecodedMap: pbMap,
+	}, nil
+}
+
+// MessageHasher client
+var _ ccipocr3.MessageHasher = (*messageHasherClient)(nil)
+
+type messageHasherClient struct {
+	*net.BrokerExt
+	grpc ccipocr3pb.MsgHasherClient
+}
+
+func NewMessageHasherClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.MessageHasher {
+	return &messageHasherClient{
+		BrokerExt: broker,
+		grpc:      ccipocr3pb.NewMsgHasherClient(cc),
+	}
+}
+
+func (c *messageHasherClient) Hash(ctx context.Context, message ccipocr3.Message) (ccipocr3.Bytes32, error) {
+	resp, err := c.grpc.HashMsg(ctx, &ccipocr3pb.HashMsgInput{
+		Msg: messageToPb(message),
+	})
+	if err != nil {
+		return ccipocr3.Bytes32{}, err
+	}
+	var hash ccipocr3.Bytes32
+	copy(hash[:], resp.Hash)
+	return hash, nil
+}
+
+// MessageHasher server
+var _ ccipocr3pb.MsgHasherServer = (*messageHasherServer)(nil)
+
+type messageHasherServer struct {
+	ccipocr3pb.UnimplementedMsgHasherServer
+	impl ccipocr3.MessageHasher
+}
+
+func NewMessageHasherServer(impl ccipocr3.MessageHasher) ccipocr3pb.MsgHasherServer {
+	return &messageHasherServer{impl: impl}
+}
+
+func (s *messageHasherServer) HashMsg(ctx context.Context, req *ccipocr3pb.HashMsgInput) (*ccipocr3pb.HashMsgOutput, error) {
+	message := pbToMessage(req.Msg)
+	hash, err := s.impl.Hash(ctx, message)
+	if err != nil {
+		return nil, err
+	}
+	return &ccipocr3pb.HashMsgOutput{
+		Hash: hash[:],
+	}, nil
+}

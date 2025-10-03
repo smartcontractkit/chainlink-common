@@ -13,6 +13,7 @@ type Codec struct {
 	ExecutePluginCodec
 	TokenDataEncoder
 	SourceChainExtraDataCodec
+	MessageHasher
 }
 
 // ChainSpecificAddressCodec is an interface that defines the methods for encoding and decoding addresses for a specific chain
@@ -36,11 +37,19 @@ type SourceChainExtraDataCodec interface {
 	DecodeDestExecDataToMap(destExecData Bytes) (map[string]any, error)
 }
 
-// ExtraDataCodec is a map of chain family to SourceChainExtraDataCodec
-type ExtraDataCodec map[string]SourceChainExtraDataCodec
+// ExtraDataCodecBundle is an interface that defines methods for decoding extra args and dest exec data.
+type ExtraDataCodecBundle interface {
+	DecodeExtraArgs(extraArgs Bytes, sourceChainSelector ChainSelector) (map[string]any, error)
+	DecodeTokenAmountDestExecData(destExecData Bytes, sourceChainSelector ChainSelector) (map[string]any, error)
+}
+
+// ExtraDataCodecMap is a map of chain family to SourceChainExtraDataCodec
+type ExtraDataCodecMap map[string]SourceChainExtraDataCodec
+
+var _ ExtraDataCodecBundle = ExtraDataCodecMap{}
 
 // DecodeExtraArgs reformats bytes into a chain agnostic map[string]any representation for extra args
-func (c ExtraDataCodec) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector ChainSelector) (map[string]any, error) {
+func (c ExtraDataCodecMap) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector ChainSelector) (map[string]any, error) {
 	if len(extraArgs) == 0 {
 		// return empty map if extraArgs is empty
 		return nil, nil
@@ -60,7 +69,7 @@ func (c ExtraDataCodec) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector Cha
 }
 
 // DecodeTokenAmountDestExecData reformats bytes to chain-agnostic map[string]any for tokenAmount DestExecData field
-func (c ExtraDataCodec) DecodeTokenAmountDestExecData(destExecData Bytes, sourceChainSelector ChainSelector) (map[string]any, error) {
+func (c ExtraDataCodecMap) DecodeTokenAmountDestExecData(destExecData Bytes, sourceChainSelector ChainSelector) (map[string]any, error) {
 	if len(destExecData) == 0 {
 		// return empty map if destExecData is empty
 		return nil, nil

@@ -27,6 +27,7 @@ func Codec(lggr logger.Logger) ccipocr3.Codec {
 		ExecutePluginCodec:        ExecutePluginCodec(lggr),
 		TokenDataEncoder:          TokenDataEncoder(lggr),
 		SourceChainExtraDataCodec: SourceChainExtraDataCodec(lggr),
+		MessageHasher:             MessageHasher(lggr),
 	}
 }
 
@@ -38,6 +39,7 @@ func CodecEvaluator(lggr logger.Logger) codecEvaluator {
 		executePluginCodec:        ExecutePluginCodec(lggr),
 		tokenDataEncoder:          TokenDataEncoder(lggr),
 		sourceChainExtraDataCodec: SourceChainExtraDataCodec(lggr),
+		messageHasher:             MessageHasher(lggr),
 	}
 }
 
@@ -47,6 +49,7 @@ type codecEvaluator struct {
 	executePluginCodec        ExecutePluginCodecTester
 	tokenDataEncoder          TokenDataEncoderTester
 	sourceChainExtraDataCodec SourceChainExtraDataCodecTester
+	messageHasher             MessageHasherTester
 }
 
 // Evaluate implements CodecEvaluator.
@@ -79,6 +82,12 @@ func (s codecEvaluator) Evaluate(ctx context.Context, other ccipocr3.Codec) erro
 	err = s.sourceChainExtraDataCodec.Evaluate(ctx, other.SourceChainExtraDataCodec)
 	if err != nil {
 		return fmt.Errorf("SourceChainExtraDataCodec evaluation failed: %w", err)
+	}
+
+	// Test MessageHasher
+	err = s.messageHasher.Evaluate(ctx, other.MessageHasher)
+	if err != nil {
+		return fmt.Errorf("MessageHasher evaluation failed: %w", err)
 	}
 
 	return nil

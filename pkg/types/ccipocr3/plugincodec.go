@@ -13,6 +13,7 @@ type Codec struct {
 	ExecutePluginCodec
 	TokenDataEncoder
 	SourceChainExtraDataCodec
+	MessageHasher
 }
 
 // ChainSpecificAddressCodec is an interface that defines the methods for encoding and decoding addresses for a specific chain

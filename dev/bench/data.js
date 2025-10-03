@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759421737986,
+  "lastUpdate": 1759512017681,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26124,6 +26124,48 @@ window.BENCHMARK_DATA = {
             "value": 26585,
             "unit": "ns/op",
             "extra": "45115 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "99a82a53b1427f86c906b4d7ac9da0cac6c2fcd0",
+          "message": "CCIP - add MessageHasher to CCIPProvider Codec() interface (#1571)\n\n* ogt/add-message-hasher-to-codec\n\n* Remove prints\n\n* handle negatives for big.Int and don't nil check b.Value",
+          "timestamp": "2025-10-03T12:19:04-05:00",
+          "tree_id": "88aacebbd2642093a3ed897f37836e0595aeeaa9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/99a82a53b1427f86c906b4d7ac9da0cac6c2fcd0"
+        },
+        "date": 1759512016594,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 345.3,
+            "unit": "ns/op",
+            "extra": "3477805 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 383.7,
+            "unit": "ns/op",
+            "extra": "3051172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26042,
+            "unit": "ns/op",
+            "extra": "46278 times\n4 procs"
           }
         ]
       }

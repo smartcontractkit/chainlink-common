@@ -114,7 +114,7 @@ var File_capabilities_internal_nodeaction_v1_node_action_proto protoreflect.File
 
 const file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc = "" +
 	"\n" +
-	"5capabilities/internal/nodeaction/v1/node_action.proto\x12#capabilities.internal.nodeaction.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"-\n" +
+	"5capabilities/internal/nodeaction/v1/node_action.proto\x12#capabilities.internal.nodeaction.v1\x1a)tools/generator/v1beta/cre_metadata.proto\"-\n" +
 	"\n" +
 	"NodeInputs\x12\x1f\n" +
 	"\vinput_thing\x18\x01 \x01(\bR\n" +
@@ -122,7 +122,7 @@ const file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc = "" +
 	"\vNodeOutputs\x12!\n" +
 	"\foutput_thing\x18\x01 \x01(\x05R\voutputThing2\xa7\x01\n" +
 	"\vBasicAction\x12r\n" +
-	"\rPerformAction\x12/.capabilities.internal.nodeaction.v1.NodeInputs\x1a0.capabilities.internal.nodeaction.v1.NodeOutputs\x1a$\x82\xb5\x18 \b\x02\x12\x1cbasic-test-node-action@1.0.0b\x06proto3"
+	"\rPerformAction\x12/.capabilities.internal.nodeaction.v1.NodeInputs\x1a0.capabilities.internal.nodeaction.v1.NodeOutputs\x1a$\x92\xb5\x18 \b\x02\x12\x1cbasic-test-node-action@1.0.0b\x06proto3"
 
 var (
 	file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescOnce sync.Once

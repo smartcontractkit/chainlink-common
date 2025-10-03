@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.7
 // 	protoc        v5.29.3
-// source: capabilities/internal/consensus/v1alpha/consensus.proto
+// source: capabilities/internal/consensus/v1beta/consensus.proto
 
 package consensus
 
@@ -23,26 +23,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_capabilities_internal_consensus_v1alpha_consensus_proto protoreflect.FileDescriptor
+var File_capabilities_internal_consensus_v1beta_consensus_proto protoreflect.FileDescriptor
 
-const file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc = "" +
+const file_capabilities_internal_consensus_v1beta_consensus_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/internal/consensus/v1alpha/consensus.proto\x12'capabilities.internal.consensus.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x16values/v1/values.proto2\xad\x01\n" +
-	"\tConsensus\x12>\n" +
-	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x10.values.v1.Value\x12A\n" +
-	"\x06Report\x12\x1a.sdk.v1alpha.ReportRequest\x1a\x1b.sdk.v1alpha.ReportResponse\x1a\x1d\x82\xb5\x18\x19\b\x01\x12\x15consensus@1.0.0-alphab\x06proto3"
+	"6capabilities/internal/consensus/v1beta/consensus.proto\x12\"capabilities.internal.consensus.v1\x1a\x14sdk/v1beta/sdk.proto\x1a)tools/generator/v1beta/cre_metadata.proto\x1a\x16values/v1/values.proto2\x98\x01\n" +
+	"\tConsensus\x129\n" +
+	"\x06Simple\x12\x1d.sdk.v1.SimpleConsensusInputs\x1a\x10.values.v1.Value\x127\n" +
+	"\x06Report\x12\x15.sdk.v1.ReportRequest\x1a\x16.sdk.v1.ReportResponse\x1a\x17\x92\xb5\x18\x13\b\x01\x12\x0fconsensus@1.0.0b\x06proto3"
 
-var file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes = []any{
-	(*sdk.SimpleConsensusInputs)(nil), // 0: sdk.v1alpha.SimpleConsensusInputs
-	(*sdk.ReportRequest)(nil),         // 1: sdk.v1alpha.ReportRequest
+var file_capabilities_internal_consensus_v1beta_consensus_proto_goTypes = []any{
+	(*sdk.SimpleConsensusInputs)(nil), // 0: sdk.v1.SimpleConsensusInputs
+	(*sdk.ReportRequest)(nil),         // 1: sdk.v1.ReportRequest
 	(*pb.Value)(nil),                  // 2: values.v1.Value
-	(*sdk.ReportResponse)(nil),        // 3: sdk.v1alpha.ReportResponse
+	(*sdk.ReportResponse)(nil),        // 3: sdk.v1.ReportResponse
 }
-var file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = []int32{
-	0, // 0: capabilities.internal.consensus.v1alpha.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
-	1, // 1: capabilities.internal.consensus.v1alpha.Consensus.Report:input_type -> sdk.v1alpha.ReportRequest
-	2, // 2: capabilities.internal.consensus.v1alpha.Consensus.Simple:output_type -> values.v1.Value
-	3, // 3: capabilities.internal.consensus.v1alpha.Consensus.Report:output_type -> sdk.v1alpha.ReportResponse
+var file_capabilities_internal_consensus_v1beta_consensus_proto_depIdxs = []int32{
+	0, // 0: capabilities.internal.consensus.v1.Consensus.Simple:input_type -> sdk.v1.SimpleConsensusInputs
+	1, // 1: capabilities.internal.consensus.v1.Consensus.Report:input_type -> sdk.v1.ReportRequest
+	2, // 2: capabilities.internal.consensus.v1.Consensus.Simple:output_type -> values.v1.Value
+	3, // 3: capabilities.internal.consensus.v1.Consensus.Report:output_type -> sdk.v1.ReportResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -50,25 +50,25 @@ var file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = []int
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_internal_consensus_v1alpha_consensus_proto_init() }
-func file_capabilities_internal_consensus_v1alpha_consensus_proto_init() {
-	if File_capabilities_internal_consensus_v1alpha_consensus_proto != nil {
+func init() { file_capabilities_internal_consensus_v1beta_consensus_proto_init() }
+func file_capabilities_internal_consensus_v1beta_consensus_proto_init() {
+	if File_capabilities_internal_consensus_v1beta_consensus_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc), len(file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_consensus_v1beta_consensus_proto_rawDesc), len(file_capabilities_internal_consensus_v1beta_consensus_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes,
-		DependencyIndexes: file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs,
+		GoTypes:           file_capabilities_internal_consensus_v1beta_consensus_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_consensus_v1beta_consensus_proto_depIdxs,
 	}.Build()
-	File_capabilities_internal_consensus_v1alpha_consensus_proto = out.File
-	file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes = nil
-	file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = nil
+	File_capabilities_internal_consensus_v1beta_consensus_proto = out.File
+	file_capabilities_internal_consensus_v1beta_consensus_proto_goTypes = nil
+	file_capabilities_internal_consensus_v1beta_consensus_proto_depIdxs = nil
 }

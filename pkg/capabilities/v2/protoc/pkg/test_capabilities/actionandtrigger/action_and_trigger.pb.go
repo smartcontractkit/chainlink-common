@@ -210,7 +210,7 @@ var File_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto prot
 
 const file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDesc = "" +
 	"\n" +
-	"Bcapabilities/internal/actionandtrigger/v1/action_and_trigger.proto\x12)capabilities.internal.actionandtrigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"4\n" +
+	"Bcapabilities/internal/actionandtrigger/v1/action_and_trigger.proto\x12)capabilities.internal.actionandtrigger.v1\x1a)tools/generator/v1beta/cre_metadata.proto\"4\n" +
 	"\x06Config\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\x05R\x06number\"/\n" +
@@ -223,7 +223,7 @@ const file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_ra
 	"\awelcome\x18\x01 \x01(\tR\awelcome2\x98\x02\n" +
 	"\x05Basic\x12m\n" +
 	"\x06Action\x120.capabilities.internal.actionandtrigger.v1.Input\x1a1.capabilities.internal.actionandtrigger.v1.Output\x12w\n" +
-	"\aTrigger\x121.capabilities.internal.actionandtrigger.v1.Config\x1a7.capabilities.internal.actionandtrigger.v1.TriggerEvent0\x01\x1a'\x82\xb5\x18#\b\x01\x12\x1fbasic-test-action-trigger@1.0.0b\x06proto3"
+	"\aTrigger\x121.capabilities.internal.actionandtrigger.v1.Config\x1a7.capabilities.internal.actionandtrigger.v1.TriggerEvent0\x01\x1a'\x92\xb5\x18#\b\x01\x12\x1fbasic-test-action-trigger@1.0.0b\x06proto3"
 
 var (
 	file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescOnce sync.Once

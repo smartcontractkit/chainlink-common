@@ -111,7 +111,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := storage.NewMemoryStorage()
-			ks, err := keystore.NewKeystore(ctx, storage, keystore.EncryptionParams{
+			ks, err := keystore.LoadKeystore(ctx, storage, keystore.EncryptionParams{
 				Password:     "test-password",
 				ScryptParams: keystore.FastScryptParams,
 			})
@@ -163,7 +163,7 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 
 	ctx := context.Background()
 	st := storage.NewMemoryStorage()
-	ks, err := keystore.NewKeystore(ctx, st, keystore.EncryptionParams{
+	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
 		Password:     "test",
 		ScryptParams: keystore.FastScryptParams,
 	})

@@ -142,7 +142,7 @@ type keystore struct {
 	enc      EncryptionParams
 }
 
-func NewKeystore(ctx context.Context, storage storage.Storage, enc EncryptionParams) (Keystore, error) {
+func LoadKeystore(ctx context.Context, storage storage.Storage, enc EncryptionParams) (Keystore, error) {
 	ks := &keystore{
 		storage: storage,
 		enc:     enc,

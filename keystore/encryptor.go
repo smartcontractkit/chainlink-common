@@ -31,6 +31,10 @@ type DeriveSharedSecretResponse struct {
 	SharedSecret []byte
 }
 
+// Encryptor is an interfaces for hybrid encryption (key exchange + encryption) operations.
+// WARNING: Using the shared secret should only be used directly in
+// cases where very custom encryption schemes are needed and you know
+// exactly what you are doing.
 type Encryptor interface {
 	Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error)
 	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)

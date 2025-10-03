@@ -21,10 +21,25 @@ import (
 type KeyType string
 
 const (
+	// Hybrid encryption (key exchange + encryption) key types.
+	// Naming schema is generally <key exchange algorithm><encryption algorithm>.
+	// Except for widely used/commonly paired encryption algorithms, we
+	// omit the encryption algorithm. So for example X25519 with ChaCha20Poly1305
+	// (via box) is specified just as X25519.
+	// X25519:
+	// - X25519 for ECDH key exchange.
+	// - Box for encryption (ChaCha20Poly1305)
 	X25519 KeyType = "X25519"
-	// TODO: Support P256 for DKG.
+	// TODO: EcdhP256:
+	// - ECDH on P-256
+	// - Encryption with AES-GCM.
+
 	// Digital signature key types.
-	Ed25519        KeyType = "ed25519"
+	// Ed25519:
+	// - Ed25519 for digital signatures.
+	Ed25519 KeyType = "ed25519"
+	// EcdsaSecp256k1:
+	// - ECDSA on secp256k1 for digital signatures.
 	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
 )
 
@@ -124,11 +139,11 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 		pubKey := gethcrypto.FromECDSAPub(&privateKey.PublicKey)
 		return pubKey, nil
 	case X25519:
-		rv, err := curve25519.X25519(internal.Bytes(privateKeyBytes)[:], curve25519.Basepoint)
+		pubKey, err := curve25519.X25519(internal.Bytes(privateKeyBytes)[:], curve25519.Basepoint)
 		if err != nil {
 			return nil, fmt.Errorf("failed to derive shared secret: %w", err)
 		}
-		return rv, nil
+		return pubKey, nil
 	default:
 		// Some types may not have a public key.
 		return []byte{}, nil

@@ -35,6 +35,8 @@ type Encryptor interface {
 	Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error)
 	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)
 	DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error)
+
+	mustEmbedUnimplemented()
 }
 
 // TODO: Encryptor implementation.

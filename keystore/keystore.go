@@ -74,6 +74,10 @@ type Keystore interface {
 	Encryptor
 }
 
+type Unimplemented struct{}
+
+func (Unimplemented) mustEmbedUnimplementedKey() {}
+
 type key struct {
 	keyType    KeyType
 	privateKey internal.Raw
@@ -139,42 +143,44 @@ type keystore struct {
 }
 
 func NewKeystore(ctx context.Context, storage storage.Storage, enc EncryptionParams) (Keystore, error) {
-	ks, err := load(ctx, storage, enc)
+	ks := &keystore{
+		storage: storage,
+		enc:     enc,
+	}
+	err := ks.load(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)
 	}
-	return &keystore{
-		mu:       sync.RWMutex{},
-		keystore: ks,
-		storage:  storage,
-		enc:      enc,
-	}, nil
+	return ks, nil
 }
 
-func load(ctx context.Context, storage storage.Storage, enc EncryptionParams) (map[string]key, error) {
-	encryptedKeystore, err := storage.GetEncryptedKeystore(ctx)
+func (k *keystore) mustEmbedUnimplemented() {}
+
+func (k *keystore) load(ctx context.Context) error {
+	encryptedKeystore, err := k.storage.GetEncryptedKeystore(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get encrypted keystore: %w", err)
+		return fmt.Errorf("failed to get encrypted keystore: %w", err)
 	}
 
 	// If no data exists, return empty keystore
 	if encryptedKeystore == nil || len(encryptedKeystore) == 0 {
-		return make(map[string]key), nil
+		k.keystore = make(map[string]key)
+		return nil
 	}
 
 	encryptedSecrets := gethkeystore.CryptoJSON{}
 	err = json.Unmarshal(encryptedKeystore, &encryptedSecrets)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal encrypted keystore: %w", err)
+		return fmt.Errorf("failed to unmarshal encrypted keystore: %w", err)
 	}
-	decryptedKeystore, err := gethkeystore.DecryptDataV3(encryptedSecrets, enc.Password)
+	decryptedKeystore, err := gethkeystore.DecryptDataV3(encryptedSecrets, k.enc.Password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt keystore: %w", err)
+		return fmt.Errorf("failed to decrypt keystore: %w", err)
 	}
 	keystorepb := &serialization.Keystore{}
 	err = proto.Unmarshal(decryptedKeystore, keystorepb)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal keystore: %w", err)
+		return fmt.Errorf("failed to unmarshal keystore: %w", err)
 	}
 	keystore := make(map[string]key)
 	for _, k := range keystorepb.Keys {
@@ -182,14 +188,15 @@ func load(ctx context.Context, storage storage.Storage, enc EncryptionParams) (m
 		keyType := KeyType(k.KeyType)
 		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get public key from private key: %w", err)
+			return fmt.Errorf("failed to get public key from private key: %w", err)
 		}
 		keystore[k.Name] = newKey(keyType, pkRaw, publicKey, time.Unix(k.CreatedAt, 0), k.Metadata)
 	}
-	return keystore, nil
+	k.keystore = keystore
+	return nil
 }
 
-func save(ctx context.Context, storage storage.Storage, enc EncryptionParams, keystore map[string]key) error {
+func (k *keystore) save(ctx context.Context, keystore map[string]key) error {
 	keystorepb := serialization.Keystore{
 		Keys: make([]*serialization.Key, 0),
 	}
@@ -206,7 +213,7 @@ func save(ctx context.Context, storage storage.Storage, enc EncryptionParams, ke
 	if err != nil {
 		return fmt.Errorf("failed to marshal keystore: %w", err)
 	}
-	encryptedSecrets, err := gethkeystore.EncryptDataV3(rawKeystore, []byte(enc.Password), enc.ScryptParams.N, enc.ScryptParams.P)
+	encryptedSecrets, err := gethkeystore.EncryptDataV3(rawKeystore, []byte(k.enc.Password), k.enc.ScryptParams.N, k.enc.ScryptParams.P)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt keystore: %w", err)
 	}
@@ -214,7 +221,7 @@ func save(ctx context.Context, storage storage.Storage, enc EncryptionParams, ke
 	if err != nil {
 		return fmt.Errorf("failed to marshal encrypted keystore: %w", err)
 	}
-	err = storage.PutEncryptedKeystore(ctx, encryptedSecretsBytes)
+	err = k.storage.PutEncryptedKeystore(ctx, encryptedSecretsBytes)
 	if err != nil {
 		return fmt.Errorf("failed to put encrypted keystore: %w", err)
 	}

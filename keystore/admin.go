@@ -92,6 +92,8 @@ type Admin interface {
 	ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error)
 	ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error)
 	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
+
+	mustEmbedUnimplemented()
 }
 
 func ValidKeyName(name string) error {
@@ -162,7 +164,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 	}
 
 	// Persist it to storage.
-	if err := save(ctx, ks.storage, ks.enc, ksCopy); err != nil {
+	if err := ks.save(ctx, ksCopy); err != nil {
 		return CreateKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	// If we succeed to save, update the in memory keystore.
@@ -181,7 +183,7 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 		}
 		delete(ksCopy, name)
 	}
-	if err := save(ctx, k.storage, k.enc, ksCopy); err != nil {
+	if err := k.save(ctx, ksCopy); err != nil {
 		return DeleteKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
 	}
 	k.keystore = ksCopy

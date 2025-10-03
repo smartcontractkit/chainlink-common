@@ -666,3 +666,53 @@ func (s *extraDataCodecBundleServer) DecodeTokenAmountDestExecData(ctx context.C
 		DecodedMap: pbMap,
 	}, nil
 }
+
+// MessageHasher client
+var _ ccipocr3.MessageHasher = (*messageHasherClient)(nil)
+
+type messageHasherClient struct {
+	*net.BrokerExt
+	grpc ccipocr3pb.MsgHasherClient
+}
+
+func NewMessageHasherClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ccipocr3.MessageHasher {
+	return &messageHasherClient{
+		BrokerExt: broker,
+		grpc:      ccipocr3pb.NewMsgHasherClient(cc),
+	}
+}
+
+func (c *messageHasherClient) Hash(ctx context.Context, message ccipocr3.Message) (ccipocr3.Bytes32, error) {
+	resp, err := c.grpc.HashMsg(ctx, &ccipocr3pb.HashMsgInput{
+		Msg: messageToPb(message),
+	})
+	if err != nil {
+		return ccipocr3.Bytes32{}, err
+	}
+	var hash ccipocr3.Bytes32
+	copy(hash[:], resp.Hash)
+	return hash, nil
+}
+
+// MessageHasher server
+var _ ccipocr3pb.MsgHasherServer = (*messageHasherServer)(nil)
+
+type messageHasherServer struct {
+	ccipocr3pb.UnimplementedMsgHasherServer
+	impl ccipocr3.MessageHasher
+}
+
+func NewMessageHasherServer(impl ccipocr3.MessageHasher) ccipocr3pb.MsgHasherServer {
+	return &messageHasherServer{impl: impl}
+}
+
+func (s *messageHasherServer) HashMsg(ctx context.Context, req *ccipocr3pb.HashMsgInput) (*ccipocr3pb.HashMsgOutput, error) {
+	message := pbToMessage(req.Msg)
+	hash, err := s.impl.Hash(ctx, message)
+	if err != nil {
+		return nil, err
+	}
+	return &ccipocr3pb.HashMsgOutput{
+		Hash: hash[:],
+	}, nil
+}

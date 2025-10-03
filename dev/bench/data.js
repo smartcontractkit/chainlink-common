@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759512017681,
+  "lastUpdate": 1759528617952,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26166,6 +26166,48 @@ window.BENCHMARK_DATA = {
             "value": 26042,
             "unit": "ns/op",
             "extra": "46278 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a8795d634f4235bba33b3b8e025dcaf79e7de1fa",
+          "message": "adding shared trigger and org resolver logic to chainlink-common (#1581)\n\n* adding shared trigger and org resolver logic to chainlink-common\n\n* logger changes\n\n* updating log line",
+          "timestamp": "2025-10-03T17:54:32-04:00",
+          "tree_id": "5deb6789a7cf912242ee814a2b2ef2957d46f2c3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a8795d634f4235bba33b3b8e025dcaf79e7de1fa"
+        },
+        "date": 1759528616810,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.4,
+            "unit": "ns/op",
+            "extra": "3336042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 420.3,
+            "unit": "ns/op",
+            "extra": "2975169 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26604,
+            "unit": "ns/op",
+            "extra": "45036 times\n4 procs"
           }
         ]
       }

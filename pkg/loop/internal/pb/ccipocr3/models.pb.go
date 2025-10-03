@@ -346,7 +346,8 @@ func (x *Message) GetTokenAmounts() []*RampTokenAmount {
 // BigInt represents a [big.Int].
 type BigInt struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         []byte                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Negative      bool                   `protobuf:"varint,1,opt,name=negative,proto3" json:"negative,omitempty"`
+	Value         []byte                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -379,6 +380,13 @@ func (x *BigInt) ProtoReflect() protoreflect.Message {
 // Deprecated: Use BigInt.ProtoReflect.Descriptor instead.
 func (*BigInt) Descriptor() ([]byte, []int) {
 	return file_models_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *BigInt) GetNegative() bool {
+	if x != nil {
+		return x.Negative
+	}
+	return false
 }
 
 func (x *BigInt) GetValue() []byte {
@@ -993,9 +1001,10 @@ const file_models_proto_rawDesc = "" +
 	"\tfee_token\x18\x06 \x01(\fR\bfeeToken\x12K\n" +
 	"\x10fee_token_amount\x18\a \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x0efeeTokenAmount\x12I\n" +
 	"\x0ffee_value_juels\x18\b \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\rfeeValueJuels\x12O\n" +
-	"\rtoken_amounts\x18\t \x03(\v2*.loop.internal.pb.ccipocr3.RampTokenAmountR\ftokenAmounts\"\x1e\n" +
-	"\x06BigInt\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\fR\x05value\"^\n" +
+	"\rtoken_amounts\x18\t \x03(\v2*.loop.internal.pb.ccipocr3.RampTokenAmountR\ftokenAmounts\":\n" +
+	"\x06BigInt\x12\x1a\n" +
+	"\bnegative\x18\x01 \x01(\bR\bnegative\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\fR\x05value\"^\n" +
 	"\vTokenAmount\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
 	"\x06amount\x18\x02 \x01(\v2!.loop.internal.pb.ccipocr3.BigIntR\x06amount\"\xf7\x02\n" +

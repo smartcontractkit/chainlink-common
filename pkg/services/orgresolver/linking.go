@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	log "github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	linkingclient "github.com/smartcontractkit/chainlink-protos/linking-service/go/v1"
 )
@@ -35,20 +35,20 @@ type orgResolver struct {
 
 	client linkingclient.LinkingServiceClient
 	conn   *grpc.ClientConn // nil if client was injected
-	logger logger.Logger
+	logger log.SugaredLogger
 }
 
 // NewOrgResolver creates a new org resolver with the specified configuration
-func NewOrgResolver(cfg Config, logger logger.Logger) (*orgResolver, error) {
+func NewOrgResolver(cfg Config, logger log.Logger) (*orgResolver, error) {
 	return NewOrgResolverWithClient(cfg, nil, logger)
 }
 
 // NewOrgResolverWithClient creates a new org resolver with an optional injected client (for testing)
-func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceClient, logger logger.Logger) (*orgResolver, error) {
+func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceClient, logger log.Logger) (*orgResolver, error) {
 	resolver := &orgResolver{
 		workflowRegistryAddress:       cfg.WorkflowRegistryAddress,
 		workflowRegistryChainSelector: cfg.WorkflowRegistryChainSelector,
-		logger:                        logger,
+		logger:                        log.Sugared(logger).Named("OrgResolver"),
 	}
 
 	if client != nil {
@@ -108,7 +108,7 @@ func (o *orgResolver) Close() error {
 }
 
 func (o *orgResolver) Name() string {
-	return "OrgResolver"
+	return o.logger.Name()
 }
 
 func (o *orgResolver) Ready() error {

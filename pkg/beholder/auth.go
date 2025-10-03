@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -75,7 +76,7 @@ type rotatingAuth struct {
 	signerTimeout            time.Duration
 	headers                  map[string]string
 	ttl                      time.Duration
-	lastUpdated              time.Time
+	lastUpdatedNanos         atomic.Int64
 	requireTransportSecurity bool
 	mu                       sync.Mutex
 }
@@ -87,15 +88,16 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 		signerTimeout:            time.Second * 5,
 		ttl:                      ttl,
 		headers:                  make(map[string]string),
-		lastUpdated:              time.Unix(0, 0),
+		lastUpdatedNanos:         atomic.Int64{},
 		requireTransportSecurity: requireTransportSecurity,
 	}
 }
 
 func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 
+	lastUpdated := time.Unix(0, r.lastUpdatedNanos.Load())
 	// Check if we need to get the lock
-	if time.Since(r.lastUpdated) > r.ttl {
+	if time.Since(lastUpdated) > r.ttl {
 
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -103,14 +105,15 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 		// Multiple concurrent calls (after the first) will block waiting for the lock.
 		// First will get the lock and update headers + lastUpdated, double check since potentially another goroutine has already
 		// updated the headers and lastUpdated while waiting for the lock.
-		if time.Since(r.lastUpdated) < r.ttl {
+		lastUpdated = time.Unix(0, r.lastUpdatedNanos.Load())
+		if time.Since(lastUpdated) < r.ttl {
 			return r.headers, nil
 		}
 
 		// Append the bytes of the public key with bytes of the timestamp to create the message to sign
 		ts := time.Now()
 		tsBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixMilli()))
+		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))
 		msgBytes := append(r.csaPubKey, tsBytes...)
 
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, r.signerTimeout)
@@ -123,7 +126,7 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 		}
 
 		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixMilli(), signature)
-		r.lastUpdated = ts
+		r.lastUpdatedNanos.Store(ts.UnixNano())
 	}
 
 	return r.headers, nil

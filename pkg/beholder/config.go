@@ -52,6 +52,8 @@ type Config struct {
 	// Auth
 	AuthPublicKeyHex string
 	AuthHeaders      map[string]string
+	AuthKeySigner    Signer
+	AuthHeadersTTL   time.Duration
 }
 
 type RetryConfig struct {
@@ -115,6 +117,8 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
+		// Auth
+		AuthHeadersTTL: 10 * time.Minute,
 	}
 }
 

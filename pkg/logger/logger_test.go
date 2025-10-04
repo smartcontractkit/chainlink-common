@@ -324,3 +324,25 @@ type differentLogger interface {
 
 	Sync() error
 }
+
+func TestNewCore(t *testing.T) {
+	// First core at Info (would drop Debug), second core at Debug
+	obsCore, obsLogs := observer.New(zap.DebugLevel)
+
+	primaryCore, err := NewCore(func(cfg *zap.Config) {
+		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	})
+	if err != nil {
+		t.Fatalf("NewCore error: %v", err)
+	}
+
+	lggr := NewWithCores(primaryCore, obsCore)
+
+	lggr.Debug("debug message should reach observer core")
+	if got := obsLogs.Len(); got != 1 {
+		t.Fatalf("expected 1 log in observer core, got %d", got)
+	}
+	if msg := obsLogs.All()[0].Message; msg != "debug message should reach observer core" {
+		t.Fatalf("unexpected message: %s", msg)
+	}
+}

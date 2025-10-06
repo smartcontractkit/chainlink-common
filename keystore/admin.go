@@ -23,6 +23,9 @@ var (
 	ErrUnsupportedKeyType = fmt.Errorf("unsupported key type")
 )
 
+// CreateKeysRequest represents a request to create multiple keys.
+// The Keys slice will be processed in order, and the response will preserve this order.
+// It's atomic in that all keys are created or none are created.
 type CreateKeysRequest struct {
 	Keys []CreateKeyRequest
 }
@@ -32,6 +35,9 @@ type CreateKeyRequest struct {
 	KeyType KeyType
 }
 
+// CreateKeysResponse contains the created keys in the same order as they were
+// requested in CreateKeysRequest.Keys. This ordering guarantee allows clients
+// to rely on consistent indexing when processing the response.
 type CreateKeysResponse struct {
 	Keys []CreateKeyResponse
 }
@@ -129,6 +135,10 @@ func ValidKeyName(name string) error {
 	return nil
 }
 
+// CreateKeys creates multiple keys in a single operation. The keys are processed
+// in the order they appear in req.Keys, and the response preserves this exact order.
+// This ordering guarantee allows clients to rely on consistent indexing when
+// processing the response (e.g., keys[0] corresponds to req.Keys[0]).
 func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error) {
 	ks.mu.Lock()
 	defer ks.mu.Unlock()

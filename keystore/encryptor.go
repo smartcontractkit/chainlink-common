@@ -7,15 +7,16 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/nacl/box"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
 )
 
 // Opaque error messages to prevent information leakage
@@ -55,27 +56,19 @@ type DeriveSharedSecretResponse struct {
 const (
 	// 16 byte is the standard NIST recommended salt size for HKDF.
 	hkdfSaltSize = 16
-	// 1 byte is the version for the encryption envelope.
-	encVersionV1 byte = 1
+	// Version for the encryption envelope.
+	encVersionV1 uint32 = 1
+	// Maximum payload size for encrypt/decrypt operations (100kb)
+	// Note just an initial limit, we may want to increase this in the future.
+	MaxEncryptionPayloadSize = 100 * 1024
+	// Overhead size for the encryption envelope.
+	overHeadSize = 1024
 )
 
 var (
 	// Domain separation for HKDF-SHA256 based AES-GCM keys.
 	infoAESGCM = []byte("keystore:ecdh-p256:aes-gcm:hkdf-sha256:v1")
 )
-
-type encHeader struct {
-	Version            byte   `json:"version"`
-	Alg                string `json:"alg"`
-	EphemeralPublicKey []byte `json:"ephemeral_public_key"`
-	Salt               []byte `json:"salt"`
-	Nonce              []byte `json:"nonce"`
-}
-
-type encEnvelope struct {
-	encHeader
-	CipherText []byte `json:"ciphertext"`
-}
 
 // Encryptor is an interfaces for hybrid encryption (key exchange + encryption) operations.
 // WARNING: Using the shared secret should only be used directly in
@@ -107,14 +100,11 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	// Validate request parameters without leaking information
-	if req.KeyName == "" || len(req.Data) == 0 {
+	if len(req.Data) == 0 || len(req.Data) > MaxEncryptionPayloadSize {
 		return EncryptResponse{}, ErrEncryptionFailed
 	}
-
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		// Don't leak key existence - return same error as other failures
 		return EncryptResponse{}, ErrEncryptionFailed
 	}
 
@@ -179,25 +169,31 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		ephPub := ephPriv.PublicKey().Bytes()
-		head := encHeader{
+
+		// Create the protobuf envelope
+		envelope := &serialization.EcdhEnvelope{
 			Version:            encVersionV1,
-			Alg:                EcdhP256.String(),
+			Algorithm:          EcdhP256.String(),
 			EphemeralPublicKey: ephPub,
 			Salt:               salt,
 			Nonce:              nonce,
 		}
-		aadBytes, err := json.Marshal(head)
+
+		// Marshal the envelope for AAD (without ciphertext)
+		aadBytes, err := proto.Marshal(envelope)
 		if err != nil {
 			return EncryptResponse{}, ErrEncryptionFailed
 		}
+
 		// Critical to include the header parameters as additional authenticated data.
 		// Prevents a MITM from changing the header.
 		ciphertext := gcm.Seal(nil, nonce, req.Data, aadBytes)
-		env := encEnvelope{
-			encHeader:  head,
-			CipherText: ciphertext,
-		}
-		out, err := json.Marshal(env)
+
+		// Add ciphertext to envelope
+		envelope.Ciphertext = ciphertext
+
+		// Marshal the complete envelope
+		out, err := proto.Marshal(envelope)
 		if err != nil {
 			return EncryptResponse{}, ErrEncryptionFailed
 		}
@@ -211,15 +207,12 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	// Validate request parameters without leaking information
-
-	if req.KeyName == "" || len(req.EncryptedData) == 0 {
+	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > (MaxEncryptionPayloadSize+overHeadSize) {
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		// Don't leak key existence - return same error as other failures
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
@@ -233,11 +226,11 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 			Data: decrypted,
 		}, nil
 	case EcdhP256:
-		var env encEnvelope
-		if err := json.Unmarshal(req.EncryptedData, &env); err != nil {
+		var envelope serialization.EcdhEnvelope
+		if err := proto.Unmarshal(req.EncryptedData, &envelope); err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		if env.Version != encVersionV1 || env.Alg != string(EcdhP256) {
+		if envelope.Version != encVersionV1 || envelope.Algorithm != string(EcdhP256) {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		curve := ecdh.P256()
@@ -245,7 +238,7 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		ephPub, err := curve.NewPublicKey(env.EphemeralPublicKey)
+		ephPub, err := curve.NewPublicKey(envelope.EphemeralPublicKey)
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
@@ -253,7 +246,7 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		derivedKey, err := deriveAESKeyFromSharedSecret(shared, env.Salt, infoAESGCM)
+		derivedKey, err := deriveAESKeyFromSharedSecret(shared, envelope.Salt, infoAESGCM)
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
@@ -265,12 +258,22 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		aad := encHeader{Version: env.Version, Alg: env.Alg, EphemeralPublicKey: env.EphemeralPublicKey, Salt: env.Salt, Nonce: env.Nonce}
-		aadBytes, err := json.Marshal(aad)
+
+		// Recreate the envelope for AAD (without ciphertext)
+		aadEnvelope := &serialization.EcdhEnvelope{
+			Version:            envelope.Version,
+			Algorithm:          envelope.Algorithm,
+			EphemeralPublicKey: envelope.EphemeralPublicKey,
+			Salt:               envelope.Salt,
+			Nonce:              envelope.Nonce,
+			// Ciphertext is intentionally omitted for AAD
+		}
+		aadBytes, err := proto.Marshal(aadEnvelope)
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		pt, err := gcm.Open(nil, env.Nonce, env.CipherText, aadBytes)
+
+		pt, err := gcm.Open(nil, envelope.Nonce, envelope.Ciphertext, aadBytes)
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
@@ -284,14 +287,12 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	// Validate request parameters without leaking information
 	if req.LocalKeyName == "" || len(req.RemotePubKey) == 0 {
 		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 	}
 
 	key, ok := k.keystore[req.LocalKeyName]
 	if !ok {
-		// Don't leak key existence - return same error as other failures
 		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 	}
 

@@ -80,3 +80,125 @@ func TestEncryptDecrypt(t *testing.T) {
 		})
 	}
 }
+
+func TestEncryptDecrypt_PayloadSizeLimit(t *testing.T) {
+	ctx := context.Background()
+	ks, err := keystore.LoadKeystore(ctx, storage.NewMemoryStorage(), keystore.EncryptionParams{
+		Password:     "test-password",
+		ScryptParams: keystore.FastScryptParams,
+	})
+	require.NoError(t, err)
+
+	for _, keyType := range []keystore.KeyType{keystore.EcdhP256} {
+		t.Run(fmt.Sprintf("keyType_%s", keyType), func(t *testing.T) {
+			keyName := fmt.Sprintf("test-key-%s", keyType)
+			keys, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
+				Keys: []keystore.CreateKeyRequest{
+					{KeyName: keyName, KeyType: keyType},
+				},
+			})
+			require.NoError(t, err)
+			// Test encrypting at the limit
+			maxPayload := make([]byte, keystore.MaxEncryptionPayloadSize)
+			maxEncryptResp, err := ks.Encrypt(ctx, keystore.EncryptRequest{
+				KeyName:      keyName,
+				RemotePubKey: keys.Keys[0].KeyInfo.PublicKey,
+				Data:         maxPayload,
+			})
+			require.NoError(t, err)
+
+			// Test decrypting at max (confirm overhead sufficient)
+			maxDecryptResp, err := ks.Decrypt(ctx, keystore.DecryptRequest{
+				KeyName:       keyName,
+				EncryptedData: maxEncryptResp.EncryptedData,
+			})
+			require.NoError(t, err)
+			require.Equal(t, len(maxDecryptResp.Data), len(maxPayload))
+
+			// Test encrypting above the limit
+			_, err = ks.Encrypt(ctx, keystore.EncryptRequest{
+				KeyName:      keyName,
+				RemotePubKey: keys.Keys[0].KeyInfo.PublicKey,
+				Data:         make([]byte, keystore.MaxEncryptionPayloadSize+1),
+			})
+			require.Error(t, err)
+
+			// Test decrypting above the limit
+			_, err = ks.Decrypt(ctx, keystore.DecryptRequest{
+				KeyName:       keyName,
+				EncryptedData: make([]byte, keystore.MaxEncryptionPayloadSize+1025),
+			})
+			require.Error(t, err)
+		})
+	}
+}
+
+func FuzzEncryptDecryptRoundtrip(f *testing.F) {
+	// Add seed corpus with various input sizes and patterns
+	seedCorpus := [][]byte{
+		{0x00},                // Single null byte
+		{0xFF},                // Single 0xFF byte
+		{0x00, 0xFF},          // Two bytes
+		[]byte("hello"),       // Short string
+		[]byte("hello world"), // Medium string
+		[]byte("The quick brown fox jumps over the lazy dog"), // Longer string
+		make([]byte, 100),       // 100 null bytes
+		make([]byte, 1000),      // 1000 null bytes
+		make([]byte, 10000),     // 10KB of null bytes
+		make([]byte, 100000),    // 100KB of null bytes
+		make([]byte, 1024*1024), // Exactly 1MB (at limit)
+	}
+
+	for _, seed := range seedCorpus {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		if len(data) > keystore.MaxEncryptionPayloadSize || len(data) == 0 {
+			t.Skip("Invalid data size for fuzz test")
+		}
+
+		ctx := context.Background()
+		ks, err := keystore.LoadKeystore(ctx, storage.NewMemoryStorage(), keystore.EncryptionParams{
+			Password:     "test-password",
+			ScryptParams: keystore.FastScryptParams,
+		})
+		require.NoError(t, err)
+
+		// Test each encryption key type
+		for i, keyType := range keystore.AllEncryptionKeyTypes {
+			t.Run(fmt.Sprintf("keyType_%s", keyType), func(t *testing.T) {
+				// Create two keys of the same type for encryption/decryption
+				senderName := fmt.Sprintf("sender-%d", i)
+				receiverName := fmt.Sprintf("receiver-%d", i)
+				keys, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
+					Keys: []keystore.CreateKeyRequest{
+						{KeyName: senderName, KeyType: keyType},
+						{KeyName: receiverName, KeyType: keyType},
+					},
+				})
+				require.NoError(t, err)
+
+				// Encrypt data using sender key to receiver's public key
+				encryptResp, err := ks.Encrypt(ctx, keystore.EncryptRequest{
+					KeyName:      senderName,
+					RemotePubKey: keys.Keys[1].KeyInfo.PublicKey, // receiver's public key
+					Data:         data,
+				})
+				require.NoError(t, err, "Encryption should succeed for keyType %s with data length %d", keyType, len(data))
+
+				// Decrypt using receiver key
+				decryptResp, err := ks.Decrypt(ctx, keystore.DecryptRequest{
+					KeyName:       receiverName,
+					EncryptedData: encryptResp.EncryptedData,
+				})
+				require.NoError(t, err, "Decryption should succeed for keyType %s with data length %d", keyType, len(data))
+
+				// Verify roundtrip integrity
+				require.Equal(t, data, decryptResp.Data,
+					"Roundtrip failed for keyType %s: original data length %d, decrypted data length %d",
+					keyType, len(data), len(decryptResp.Data))
+			})
+		}
+	})
+}

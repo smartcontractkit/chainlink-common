@@ -15,8 +15,10 @@ const (
 
 // CacheSettings defines cache control options for outbound HTTP requests.
 type CacheSettings struct {
-	ReadFromCache bool  `json:"readFromCache,omitempty"` // If true, attempt to read a cached response for the request
-	MaxAgeMs      int32 `json:"maxAgeMs,omitempty"`      // Maximum age of a cached response in milliseconds.
+	MaxAgeMs int32 `json:"maxAgeMs,omitempty"` // Maximum age of a cached response in milliseconds.
+	Store    bool  `json:"store,omitempty"`    // If true, cache the response.
+	// Deprecated: positive MaxAgeMs implies ReadFromCache is true
+	ReadFromCache bool `json:"readFromCache,omitempty"` // If true, attempt to read a cached response for the request
 }
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.

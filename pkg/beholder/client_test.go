@@ -453,7 +453,6 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 
 		assert.NotNil(t, client.Emitter)
 		// Check that the emitter is a dualSourceEmitter
@@ -477,7 +476,6 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 		assert.NotNil(t, client.Emitter)
 	})
 }
@@ -646,7 +644,6 @@ func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 	})
 
 	t.Run("no auth when neither rotating nor static auth is configured", func(t *testing.T) {
@@ -663,7 +660,6 @@ func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 	})
 }
 
@@ -695,7 +691,6 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 
 		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
 		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
@@ -720,7 +715,6 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 
 		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
 		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
@@ -743,7 +737,6 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 
 		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
 		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")

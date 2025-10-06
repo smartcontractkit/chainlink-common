@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759763487876,
+  "lastUpdate": 1759770351722,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26250,6 +26250,48 @@ window.BENCHMARK_DATA = {
             "value": 26646,
             "unit": "ns/op",
             "extra": "44962 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "415d51d8f72b2f2c5eecaea39dc821fd55431968",
+          "message": "add field to capability response metadata to convey the total number … (#1574)\n\n* add field to capability response metadata to convey the total number of don participants\n\n* update property for better clarity and add to helpers",
+          "timestamp": "2025-10-06T17:04:33Z",
+          "tree_id": "79dcb7be7e4bed049e96b0e7c10edf5746e09119",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/415d51d8f72b2f2c5eecaea39dc821fd55431968"
+        },
+        "date": 1759770350383,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.3,
+            "unit": "ns/op",
+            "extra": "3409207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404,
+            "unit": "ns/op",
+            "extra": "2544932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24684,
+            "unit": "ns/op",
+            "extra": "48616 times\n4 procs"
           }
         ]
       }

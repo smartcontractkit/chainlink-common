@@ -74,7 +74,7 @@ type rotatingAuth struct {
 	csaPubKey                ed25519.PublicKey
 	signer                   Signer
 	signerTimeout            time.Duration
-	headers                  map[string]string
+	headers                  atomic.Value // stores map[string]string
 	ttl                      time.Duration
 	lastUpdatedNanos         atomic.Int64
 	requireTransportSecurity bool
@@ -82,15 +82,16 @@ type rotatingAuth struct {
 }
 
 func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool) Auth {
-	return &rotatingAuth{
+	r := &rotatingAuth{
 		csaPubKey:                csaPubKey,
 		signer:                   signer,
 		signerTimeout:            time.Second * 5,
 		ttl:                      ttl,
-		headers:                  make(map[string]string),
 		lastUpdatedNanos:         atomic.Int64{},
 		requireTransportSecurity: requireTransportSecurity,
 	}
+	r.headers.Store(make(map[string]string))
+	return r
 }
 
 func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
@@ -107,7 +108,7 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 		// updated the headers and lastUpdated while waiting for the lock.
 		lastUpdated = time.Unix(0, r.lastUpdatedNanos.Load())
 		if time.Since(lastUpdated) < r.ttl {
-			return r.headers, nil
+			return r.headers.Load().(map[string]string), nil
 		}
 
 		// Append the bytes of the public key with bytes of the timestamp to create the message to sign
@@ -125,11 +126,14 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
 		}
 
-		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
+		headers := r.headers.Load().(map[string]string)
+		headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
+
+		r.headers.Store(headers)
 		r.lastUpdatedNanos.Store(ts.UnixNano())
 	}
 
-	return r.headers, nil
+	return r.headers.Load().(map[string]string), nil
 }
 
 func (a *rotatingAuth) Credentials() credentials.PerRPCCredentials {

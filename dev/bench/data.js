@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759528617952,
+  "lastUpdate": 1759763487876,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26208,6 +26208,48 @@ window.BENCHMARK_DATA = {
             "value": 26604,
             "unit": "ns/op",
             "extra": "45036 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b85344b506b7a3a42d58d4fe79ff169b223b1cdf",
+          "message": "Keystore library interfaces and admin create/delete (#1580)\n\n* Interfaces and part of admin impl\n\n* Port test for raw\n\n* Restructure a bit\n\n* Basic test working\n\n* Basic tests\n\n* Fix spacing\n\n* Simpler test\n\n* Concurrecy test and some smaller fixes\n\n* Small test for secp pubkey\n\n* PR comments\n\n* Rename to LoadKeystore\n\n* Encryptor documentation\n\n* Allow external impls",
+          "timestamp": "2025-10-06T11:10:24-04:00",
+          "tree_id": "6c94f815284f75ff045ced6ad814f00370427302",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b85344b506b7a3a42d58d4fe79ff169b223b1cdf"
+        },
+        "date": 1759763486714,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3305271 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.2,
+            "unit": "ns/op",
+            "extra": "2954300 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26646,
+            "unit": "ns/op",
+            "extra": "44962 times\n4 procs"
           }
         ]
       }

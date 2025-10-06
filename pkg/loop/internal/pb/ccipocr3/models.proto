@@ -75,7 +75,8 @@ message Message {
 
 // BigInt represents a [big.Int].
 message BigInt {
-  bytes value = 1;
+  bool negative = 1;
+  bytes value = 2;
 }
 
 // TokenAmount is a helper type that defines a token and an amount.

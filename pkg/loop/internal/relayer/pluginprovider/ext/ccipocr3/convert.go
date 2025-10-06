@@ -17,14 +17,15 @@ func pbBigIntToInt(b *ccipocr3pb.BigInt) *big.Int {
 		return nil
 	}
 
-	if b.Value == nil {
-		return nil
-	}
-
 	if len(b.Value) == 0 {
 		return big.NewInt(0)
 	}
-	return new(big.Int).SetBytes(b.Value)
+
+	i := new(big.Int).SetBytes(b.Value)
+	if b.Negative {
+		i = i.Neg(i)
+	}
+	return i
 }
 
 // Helper function to convert protobuf BigInt to ccipocr3.BigInt, preserving nil
@@ -33,14 +34,15 @@ func pbToBigInt(b *ccipocr3pb.BigInt) ccipocr3.BigInt {
 		return ccipocr3.BigInt{Int: nil}
 	}
 
-	if b.Value == nil {
-		return ccipocr3.BigInt{Int: nil}
-	}
-
 	if len(b.Value) == 0 {
 		return ccipocr3.BigInt{Int: big.NewInt(0)}
 	}
-	return ccipocr3.NewBigInt(new(big.Int).SetBytes(b.Value))
+
+	i := new(big.Int).SetBytes(b.Value)
+	if b.Negative {
+		i = i.Neg(i)
+	}
+	return ccipocr3.NewBigInt(i)
 }
 
 // Helper function to convert big.Int to protobuf BigInt
@@ -48,7 +50,10 @@ func intToPbBigInt(i *big.Int) *ccipocr3pb.BigInt {
 	if i == nil {
 		return nil
 	}
-	return &ccipocr3pb.BigInt{Value: i.Bytes()}
+	return &ccipocr3pb.BigInt{
+		Negative: i.Sign() < 0,
+		Value:    i.Bytes(),
+	}
 }
 
 // Helper function to convert ConfidenceLevel to protobuf uint32
@@ -864,6 +869,9 @@ func pbToTokenUpdatesUnix(pbUpdates map[string]*ccipocr3pb.TimestampedUnixBig) m
 		var value *big.Int
 		if pbUpdate.Value != nil && len(pbUpdate.Value.Value) > 0 {
 			value = new(big.Int).SetBytes(pbUpdate.Value.Value)
+			if pbUpdate.Value.Negative {
+				value = value.Neg(value)
+			}
 		} else {
 			value = big.NewInt(0)
 		}

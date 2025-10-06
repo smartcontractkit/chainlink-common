@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"encoding/json"
 	"errors"
@@ -31,9 +32,10 @@ const (
 	// - X25519 for ECDH key exchange.
 	// - Box for encryption (ChaCha20Poly1305)
 	X25519 KeyType = "X25519"
-	// TODO: EcdhP256:
+	// EcdhP256:
 	// - ECDH on P-256
 	// - Encryption with AES-GCM.
+	EcdhP256 KeyType = "ecdh-p256"
 
 	// Digital signature key types.
 	// Ed25519:
@@ -44,7 +46,7 @@ const (
 	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
 )
 
-var AllKeyTypes = []KeyType{X25519, Ed25519, EcdsaSecp256k1}
+var AllKeyTypes = []KeyType{X25519, EcdhP256, Ed25519, EcdsaSecp256k1}
 
 type ScryptParams struct {
 	N int
@@ -153,6 +155,13 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 			return nil, fmt.Errorf("failed to derive shared secret: %w", err)
 		}
 		return pubKey, nil
+	case EcdhP256:
+		curve := ecdh.P256()
+		priv, err := curve.NewPrivateKey(internal.Bytes(privateKeyBytes))
+		if err != nil {
+			return nil, fmt.Errorf("invalid P-256 private key: %w", err)
+		}
+		return priv.PublicKey().Bytes(), nil
 	default:
 		// Some types may not have a public key.
 		return []byte{}, nil

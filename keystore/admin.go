@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -173,6 +174,16 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey[:]), publicKey, time.Now(), []byte{})
+		case EcdhP256:
+			privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdhP256 key: %w", err)
+			}
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.Bytes()), keyReq.KeyType)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
+			}
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.Bytes()), publicKey, time.Now(), []byte{})
 		default:
 			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrUnsupportedKeyType, keyReq.KeyType)
 		}

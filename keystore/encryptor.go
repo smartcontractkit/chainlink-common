@@ -18,6 +18,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
+// Opaque error messages to prevent information leakage
+var (
+	ErrEncryptionFailed = fmt.Errorf("encryption operation failed")
+	ErrDecryptionFailed = fmt.Errorf("decryption operation failed")
+)
+
 type EncryptRequest struct {
 	KeyName      string
 	RemotePubKey []byte
@@ -47,40 +53,28 @@ type DeriveSharedSecretResponse struct {
 }
 
 const (
-	aesGCMNonceSize = 12
-	hkdfSaltSize    = 16
-
-	// ciphertext framing for EcdhP256 + HKDF-SHA256 + AES-GCM
-	// [1B version=1][2B ephLen][ephPub][1B saltLen][salt][1B nonceLen][nonce][ciphertext]
+	// 16 byte is the standard NIST recommended salt size for HKDF.
+	hkdfSaltSize = 16
+	// 1 byte is the version for the encryption envelope.
 	encVersionV1 byte = 1
-
-	algP256HKDFAESGCM = "ecdh-p256+hkdf-sha256+aes-256-gcm"
 )
 
-func hkdfAESGCMKey(sharedSecret, salt, info []byte, keyLen int) ([]byte, error) {
-	r := hkdf.New(sha256.New, sharedSecret, salt, info)
-	key := make([]byte, keyLen)
-	if _, err := io.ReadFull(r, key); err != nil {
-		return nil, fmt.Errorf("hkdf: %w", err)
-	}
-	return key, nil
-}
+var (
+	// Domain separation for HKDF-SHA256 based AES-GCM keys.
+	infoAESGCM = []byte("keystore:ecdh-p256:aes-gcm:hkdf-sha256:v1")
+)
 
-type encAAD struct {
-	V     byte   `json:"v"`
-	Alg   string `json:"alg"`
-	EPK   []byte `json:"epk"`
-	Salt  []byte `json:"salt"`
-	Nonce []byte `json:"nonce"`
+type encHeader struct {
+	Version            byte   `json:"version"`
+	Alg                string `json:"alg"`
+	EphemeralPublicKey []byte `json:"ephemeral_public_key"`
+	Salt               []byte `json:"salt"`
+	Nonce              []byte `json:"nonce"`
 }
 
 type encEnvelope struct {
-	V     byte   `json:"v"`
-	Alg   string `json:"alg"`
-	EPK   []byte `json:"epk"`
-	Salt  []byte `json:"salt"`
-	Nonce []byte `json:"nonce"`
-	CT    []byte `json:"ct"`
+	encHeader
+	CipherText []byte `json:"ciphertext"`
 }
 
 // Encryptor is an interfaces for hybrid encryption (key exchange + encryption) operations.
@@ -94,6 +88,7 @@ type Encryptor interface {
 }
 
 // UnimplementedEncryptor returns ErrUnimplemented for all Encryptor methods.
+// Clients should embed this struct to ensure forward compatibility with changes to the Encryptor interface.
 type UnimplementedEncryptor struct{}
 
 func (UnimplementedEncryptor) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
@@ -112,18 +107,25 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
+	// Validate request parameters without leaking information
+	if req.KeyName == "" || len(req.Data) == 0 {
+		return EncryptResponse{}, ErrEncryptionFailed
+	}
+
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		return EncryptResponse{}, fmt.Errorf("key not found: %s", req.KeyName)
+		// Don't leak key existence - return same error as other failures
+		return EncryptResponse{}, ErrEncryptionFailed
 	}
+
 	switch key.keyType {
 	case X25519:
 		if len(req.RemotePubKey) != 32 {
-			return EncryptResponse{}, fmt.Errorf("remote public key must be 32 bytes for X25519")
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		encrypted, err := box.SealAnonymous(nil, req.Data, (*[32]byte)(req.RemotePubKey), rand.Reader)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("failed to encrypt data: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		return EncryptResponse{
 			EncryptedData: encrypted,
@@ -131,71 +133,77 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 	case EcdhP256:
 		curve := ecdh.P256()
 		if len(req.RemotePubKey) == 0 {
-			return EncryptResponse{}, fmt.Errorf("remote public key required for EcdhP256")
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
+		// Remote public key must be on the P256 curve for the shared secret to work.
 		recipientPub, err := curve.NewPublicKey(req.RemotePubKey)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("invalid P-256 public key: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
-		// Ephemeral key pair
+		// Create an ephemeral keypair on the P256 curve used for encryption.
 		ephPriv, err := curve.GenerateKey(rand.Reader)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("failed to generate ephemeral key: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
+		// The magic here is the the receipient can compute the same
+		// shared secret because ephPriv*G*recipientPriv = ephPub*G.
+		// This lets them derive the same ephemeral key used for encryption
+		// so they can decrypt the ciphertext.
 		shared, err := ephPriv.ECDH(recipientPub)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("ecdh failed: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		// Derive AES-256-GCM key
+		// The reason we do this is so that we can use symmetric encryption (more efficient)
+		// This is part of any standard hybrid encryption scheme.
+		// We include random salt to prevent rainbow table attacks (i.e. preventing
+		// attackers from tracking a mapping of encryption data to plaintext)
 		salt := make([]byte, hkdfSaltSize)
 		if _, err := rand.Read(salt); err != nil {
-			return EncryptResponse{}, fmt.Errorf("salt generation failed: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
-		info := []byte("keystore:ecdh-p256:aes-gcm:hkdf-sha256:v1")
-		aeadKey, err := hkdfAESGCMKey(shared, salt, info, 32)
+		derivedKey, err := deriveAESKeyFromSharedSecret(shared, salt, infoAESGCM)
 		if err != nil {
-			return EncryptResponse{}, err
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
-		block, err := aes.NewCipher(aeadKey)
+		block, err := aes.NewCipher(derivedKey)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("aes: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		gcm, err := cipher.NewGCM(block)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("gcm: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
-		nonce := make([]byte, aesGCMNonceSize)
+		nonce := make([]byte, gcm.NonceSize())
 		if _, err := rand.Read(nonce); err != nil {
-			return EncryptResponse{}, fmt.Errorf("nonce generation failed: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		ephPub := ephPriv.PublicKey().Bytes()
-		head := encAAD{
-			V:     encVersionV1,
-			Alg:   algP256HKDFAESGCM,
-			EPK:   ephPub,
-			Salt:  salt,
-			Nonce: nonce,
+		head := encHeader{
+			Version:            encVersionV1,
+			Alg:                EcdhP256.String(),
+			EphemeralPublicKey: ephPub,
+			Salt:               salt,
+			Nonce:              nonce,
 		}
 		aadBytes, err := json.Marshal(head)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("aad marshal: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
+		// Critical to include the header parameters as additional authenticated data.
+		// Prevents a MITM from changing the header.
 		ciphertext := gcm.Seal(nil, nonce, req.Data, aadBytes)
 		env := encEnvelope{
-			V:     encVersionV1,
-			Alg:   algP256HKDFAESGCM,
-			EPK:   ephPub,
-			Salt:  salt,
-			Nonce: nonce,
-			CT:    ciphertext,
+			encHeader:  head,
+			CipherText: ciphertext,
 		}
 		out, err := json.Marshal(env)
 		if err != nil {
-			return EncryptResponse{}, fmt.Errorf("envelope marshal: %w", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		return EncryptResponse{EncryptedData: out}, nil
 	default:
-		return EncryptResponse{}, fmt.Errorf("unsupported key type: %s", key.keyType)
+		return EncryptResponse{}, ErrEncryptionFailed
 	}
 }
 
@@ -203,15 +211,23 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
+	// Validate request parameters without leaking information
+
+	if req.KeyName == "" || len(req.EncryptedData) == 0 {
+		return DecryptResponse{}, ErrDecryptionFailed
+	}
+
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		return DecryptResponse{}, fmt.Errorf("key not found: %s", req.KeyName)
+		// Don't leak key existence - return same error as other failures
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
+
 	switch key.keyType {
 	case X25519:
 		decrypted, ok := box.OpenAnonymous(nil, req.EncryptedData, (*[32]byte)(key.publicKey), (*[32]byte)(internal.Bytes(key.privateKey)))
 		if !ok {
-			return DecryptResponse{}, fmt.Errorf("failed to decrypt data")
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		return DecryptResponse{
 			Data: decrypted,
@@ -219,49 +235,48 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 	case EcdhP256:
 		var env encEnvelope
 		if err := json.Unmarshal(req.EncryptedData, &env); err != nil {
-			return DecryptResponse{}, fmt.Errorf("envelope unmarshal: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		if env.V != encVersionV1 || env.Alg != algP256HKDFAESGCM {
-			return DecryptResponse{}, fmt.Errorf("unsupported envelope version/alg")
+		if env.Version != encVersionV1 || env.Alg != string(EcdhP256) {
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("invalid P-256 private key: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		ephPub, err := curve.NewPublicKey(env.EPK)
+		ephPub, err := curve.NewPublicKey(env.EphemeralPublicKey)
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("invalid P-256 ephemeral public key: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		shared, err := priv.ECDH(ephPub)
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("ecdh failed: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		info := []byte("keystore:ecdh-p256:aes-gcm:hkdf-sha256:v1")
-		aeadKey, err := hkdfAESGCMKey(shared, env.Salt, info, 32)
+		derivedKey, err := deriveAESKeyFromSharedSecret(shared, env.Salt, infoAESGCM)
 		if err != nil {
-			return DecryptResponse{}, err
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		block, err := aes.NewCipher(aeadKey)
+		block, err := aes.NewCipher(derivedKey)
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("aes: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		gcm, err := cipher.NewGCM(block)
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("gcm: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		aad := encAAD{V: env.V, Alg: env.Alg, EPK: env.EPK, Salt: env.Salt, Nonce: env.Nonce}
+		aad := encHeader{Version: env.Version, Alg: env.Alg, EphemeralPublicKey: env.EphemeralPublicKey, Salt: env.Salt, Nonce: env.Nonce}
 		aadBytes, err := json.Marshal(aad)
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("aad marshal: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		pt, err := gcm.Open(nil, env.Nonce, env.CT, aadBytes)
+		pt, err := gcm.Open(nil, env.Nonce, env.CipherText, aadBytes)
 		if err != nil {
-			return DecryptResponse{}, fmt.Errorf("gcm open: %w", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		return DecryptResponse{Data: pt}, nil
 	default:
-		return DecryptResponse{}, fmt.Errorf("unsupported key type: %s", key.keyType)
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 }
 
@@ -269,18 +284,25 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
+	// Validate request parameters without leaking information
+	if req.LocalKeyName == "" || len(req.RemotePubKey) == 0 {
+		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+	}
+
 	key, ok := k.keystore[req.LocalKeyName]
 	if !ok {
-		return DeriveSharedSecretResponse{}, fmt.Errorf("key not found: %s", req.LocalKeyName)
+		// Don't leak key existence - return same error as other failures
+		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 	}
+
 	switch key.keyType {
 	case X25519:
 		if len(req.RemotePubKey) != 32 {
-			return DeriveSharedSecretResponse{}, fmt.Errorf("remote public key must be 32 bytes")
+			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 		}
 		sharedSecret, err := curve25519.X25519(internal.Bytes(key.privateKey), req.RemotePubKey)
 		if err != nil {
-			return DeriveSharedSecretResponse{}, fmt.Errorf("failed to derive shared secret: %w", err)
+			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 		}
 		return DeriveSharedSecretResponse{
 			SharedSecret: sharedSecret,
@@ -289,18 +311,27 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {
-			return DeriveSharedSecretResponse{}, fmt.Errorf("invalid P-256 private key: %w", err)
+			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 		}
 		remotePub, err := curve.NewPublicKey(req.RemotePubKey)
 		if err != nil {
-			return DeriveSharedSecretResponse{}, fmt.Errorf("invalid P-256 public key: %w", err)
+			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 		}
 		shared, err := priv.ECDH(remotePub)
 		if err != nil {
-			return DeriveSharedSecretResponse{}, fmt.Errorf("ecdh failed: %w", err)
+			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 		}
 		return DeriveSharedSecretResponse{SharedSecret: shared}, nil
 	default:
-		return DeriveSharedSecretResponse{}, fmt.Errorf("unsupported key type: %s", key.keyType)
+		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 	}
+}
+
+func deriveAESKeyFromSharedSecret(sharedSecret []byte, salt []byte, info []byte) ([]byte, error) {
+	r := hkdf.New(sha256.New, sharedSecret, salt, info)
+	key := make([]byte, 32)
+	if _, err := io.ReadFull(r, key); err != nil {
+		return nil, fmt.Errorf("hkdf: %w", err)
+	}
+	return key, nil
 }

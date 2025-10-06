@@ -22,6 +22,10 @@ import (
 
 type KeyType string
 
+func (k KeyType) String() string {
+	return string(k)
+}
+
 const (
 	// Hybrid encryption (key exchange + encryption) key types.
 	// Naming schema is generally <key exchange algorithm><encryption algorithm>.
@@ -34,7 +38,7 @@ const (
 	X25519 KeyType = "X25519"
 	// EcdhP256:
 	// - ECDH on P-256
-	// - Encryption with AES-GCM.
+	// - Encryption with AES-GCM and HKDF-SHA256
 	EcdhP256 KeyType = "ecdh-p256"
 
 	// Digital signature key types.
@@ -47,6 +51,8 @@ const (
 )
 
 var AllKeyTypes = []KeyType{X25519, EcdhP256, Ed25519, EcdsaSecp256k1}
+var AllEncryptionKeyTypes = []KeyType{X25519, EcdhP256}
+var AllDigitalSignatureKeyTypes = []KeyType{Ed25519, EcdsaSecp256k1}
 
 type ScryptParams struct {
 	N int

@@ -42,7 +42,7 @@ func (p *CommitLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) 
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.CCIPCommitFactoryGenerator], updated with the new broker and conn.
-func (p *CommitLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *CommitLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = ccip.NewCommitLOOPClient(p.BrokerConfig)
 	}

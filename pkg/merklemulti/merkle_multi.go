@@ -168,7 +168,7 @@ func VerifyComputeRoot[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []
 		return hasher.ZeroHash(), fmt.Errorf("proof source flags %d != proof hashes %d", sourceProofCount, proofsLength)
 	}
 	hashes := make([]H, totalHashes)
-	for i := 0; i < totalHashes; i++ {
+	for range totalHashes {
 		hashes = append(hashes, leafHashes[0])
 	}
 	var (
@@ -176,7 +176,7 @@ func VerifyComputeRoot[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []
 		hashPos  int
 		proofPos int
 	)
-	for i := 0; i < totalHashes; i++ {
+	for i := range totalHashes {
 		var a, b H
 		//nolint:gosimple
 		if proof.SourceFlags[i] == SourceFromHashes {

@@ -98,7 +98,7 @@ var linkFmtThreshold = (*Link)(new(big.Int).Exp(big.NewInt(10), big.NewInt(12), 
 // MarshalText implements the encoding.TextMarshaler interface.
 func (l *Link) MarshalText() ([]byte, error) {
 	if l.Cmp(linkFmtThreshold) >= 0 {
-		return []byte(fmt.Sprintf("%s link", decimal.NewFromBigInt(l.ToInt(), -18))), nil
+		return fmt.Appendf(nil, "%s link", decimal.NewFromBigInt(l.ToInt(), -18)), nil
 	}
 	return (*big.Int)(l).MarshalText()
 }
@@ -109,7 +109,7 @@ func (l Link) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []byte(fmt.Sprintf(`"%s"`, value)), nil
+	return fmt.Appendf(nil, `"%s"`, value), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -166,7 +166,7 @@ func (l Link) Value() (driver.Value, error) {
 }
 
 // Scan reads the database value and returns an instance.
-func (l *Link) Scan(value interface{}) error {
+func (l *Link) Scan(value any) error {
 	switch v := value.(type) {
 	case string:
 		decoded, ok := l.SetString(v, 10)

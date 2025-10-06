@@ -113,7 +113,7 @@ func TestMailbox_NoEmptyReceivesWhenCapacityIsTwo(t *testing.T) {
 		}
 	}()
 
-	for i := 0; i < 100000; i++ {
+	for i := range 100000 {
 		m.Deliver(i)
 	}
 	close(m.chNotify)

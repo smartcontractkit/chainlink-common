@@ -43,18 +43,18 @@ func SizeOf[B ~[]byte](bs ...B) (s Size) {
 func (b Size) MarshalText() ([]byte, error) {
 	if b >= TByte {
 		d := decimal.NewFromInt(int64(b)).Div(decimal.NewFromInt(int64(TByte)))
-		return []byte(fmt.Sprintf("%stb", d)), nil
+		return fmt.Appendf(nil, "%stb", d), nil
 	} else if b >= GByte {
 		d := decimal.NewFromInt(int64(b)).Div(decimal.NewFromInt(int64(GByte)))
-		return []byte(fmt.Sprintf("%sgb", d)), nil
+		return fmt.Appendf(nil, "%sgb", d), nil
 	} else if b >= MByte {
 		d := decimal.NewFromInt(int64(b)).Div(decimal.NewFromInt(int64(MByte)))
-		return []byte(fmt.Sprintf("%smb", d)), nil
+		return fmt.Appendf(nil, "%smb", d), nil
 	} else if b >= KByte {
 		d := decimal.NewFromInt(int64(b)).Div(decimal.NewFromInt(int64(KByte)))
-		return []byte(fmt.Sprintf("%skb", d)), nil
+		return fmt.Appendf(nil, "%skb", d), nil
 	}
-	return []byte(fmt.Sprintf("%db", b)), nil
+	return fmt.Appendf(nil, "%db", b), nil
 }
 
 func ParseByte(s string) (b Size, err error) {

@@ -668,7 +668,7 @@ func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, r
 			return nil, fmt.Errorf("request and results length for contract %s are mismatched %d vs %d", binding, len(requestContractBatch), len(resultsContractBatch))
 		}
 
-		for i := 0; i < len(resultsContractBatch); i++ {
+		for i := range resultsContractBatch {
 			// type lives in the request, so we can use it for result
 			res, req := resultsContractBatch[i], requestContractBatch[i]
 			if err := codecpb.DecodeVersionedBytes(req.ReturnVal, res.ReturnVal); err != nil {

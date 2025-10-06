@@ -232,7 +232,7 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 	events := make([]byte, nsubscriptions*eventsLen)
 	timeout := time.Duration(0)
 
-	for i := int32(0); i < nsubscriptions; i++ {
+	for i := range nsubscriptions {
 		inOffset := i * subscriptionLen
 		userData := subs[inOffset : inOffset+8]
 		eventType := subs[inOffset+8]

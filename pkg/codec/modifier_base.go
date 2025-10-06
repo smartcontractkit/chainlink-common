@@ -301,7 +301,7 @@ func transformWithMapsHelper[T any](
 
 func doMany[T any](rInput, rOutput reflect.Value, fields map[string]T, fn mapAction[T], hooks []mapstructure.DecodeHookFunc) error {
 	length := rInput.Len()
-	for i := 0; i < length; i++ {
+	for i := range length {
 		// Make sure the items are addressable
 		inTmp := rInput.Index(i)
 		outTmp := rOutput.Index(i)

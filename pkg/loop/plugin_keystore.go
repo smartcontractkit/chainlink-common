@@ -34,7 +34,7 @@ func (p *GRPCPluginKeystore) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return keystorepb.RegisterKeystoreServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
-func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = keystorepb.NewKeystoreClient(p.BrokerConfig)
 	}

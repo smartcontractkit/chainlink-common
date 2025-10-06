@@ -42,7 +42,7 @@ func IsZero[C comparable](val C) bool {
 }
 
 // JustError takes a tuple and returns the last entry, the error.
-func JustError(_ interface{}, err error) error {
+func JustError(_ any, err error) error {
 	return err
 }
 

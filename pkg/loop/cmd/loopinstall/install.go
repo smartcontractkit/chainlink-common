@@ -134,10 +134,10 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		if installPath == moduleURI {
 			// Case 1: installPath is the moduleURI itself. Install the module root.
 			installArg = "."
-		} else if strings.HasPrefix(installPath, moduleURI+"/") {
+		} else if after, ok := strings.CutPrefix(installPath, moduleURI+"/"); ok {
 			// Case 2: installPath is a sub-package of moduleURI (e.g., "moduleURI/cmd/plugin").
 			// Extract the relative path and prefix with "./".
-			relativePath := strings.TrimPrefix(installPath, moduleURI+"/")
+			relativePath := after
 			cleanedRelativePath := strings.TrimLeft(relativePath, "/")   // Handles "moduleURI///subpath"
 			if cleanedRelativePath == "" || cleanedRelativePath == "." { // Handles "moduleURI/" or "moduleURI/."
 				installArg = "."
@@ -278,7 +278,7 @@ func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, ou
 	resultCh := make(chan PluginInstallResult, len(tasks))
 
 	var wg sync.WaitGroup
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()

@@ -22,7 +22,7 @@ type AtomicClient struct {
 
 func (a *AtomicClient) Store(cc *grpc.ClientConn) { a.cc.Store(cc) }
 
-func (a *AtomicClient) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (a *AtomicClient) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	return a.cc.Load().Invoke(ctx, method, args, reply, opts...)
 }
 
@@ -48,7 +48,7 @@ type clientConn struct {
 	cc   *grpc.ClientConn
 }
 
-func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	c.mu.RLock()
 	cc := c.cc
 	c.mu.RUnlock()

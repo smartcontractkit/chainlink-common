@@ -124,7 +124,7 @@ func (l *timeLimiter) Close() (err error) {
 	if l.scope == settings.ScopeGlobal {
 		return l.updater.Close()
 	} else {
-		l.updaters.Range(func(key, value interface{}) bool {
+		l.updaters.Range(func(key, value any) bool {
 			// opt: parallelize
 			err = errors.Join(err, value.(*updater[time.Duration]).Close())
 			return true

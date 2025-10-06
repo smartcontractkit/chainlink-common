@@ -349,7 +349,7 @@ type extractOrExpandHelperFunc func(reflect.Value, reflect.Type, string) (reflec
 func extractOrExpandMany(rInput, rOutput reflect.Value, field string, fn extractOrExpandHelperFunc) error {
 	length := rInput.Len()
 
-	for i := 0; i < length; i++ {
+	for i := range length {
 		inTmp := rInput.Index(i)
 		outTmp := rOutput.Index(i)
 

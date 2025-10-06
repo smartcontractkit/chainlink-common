@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
@@ -83,9 +84,7 @@ func ExtractAttributes(attrKVs ...any) map[string]any {
 	attributes := newAttributes(attrKVs...)
 
 	attributesMap := make(map[string]any)
-	for key, value := range attributes {
-		attributesMap[key] = value
-	}
+	maps.Copy(attributesMap, attributes)
 
 	return attributesMap
 }

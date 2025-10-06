@@ -97,9 +97,9 @@ func (v *Validator[Config, Inputs, Outputs]) Schema() (string, error) {
 	}
 	ci := combinedWithInputs{}
 
-	var config interface{} = c.Config
-	var inputs interface{} = c.Inputs
-	var outputs interface{} = c.Outputs
+	var config any = c.Config
+	var inputs any = c.Inputs
+	var outputs any = c.Outputs
 	if config == nil {
 		return "", errors.New("config is nil, please provide a config type")
 	}

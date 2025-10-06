@@ -34,7 +34,7 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 	fields := make([]reflect.StructField, length)
 	Indices := map[string]int{}
 
-	for i := 0; i < length; i++ {
+	for i := range length {
 		field := inputType.Field(i)
 		Indices[field.Name] = i
 		fields[i] = field

@@ -3,7 +3,7 @@ package ocr3
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -202,8 +202,8 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	assert.Equal(t, o, lvp)
 	expected := []string{workflowTestID, workflowTestID2}
 	actual := obspb.RegisteredWorkflowIds
-	sort.Slice(actual, func(i, j int) bool { return actual[i] < actual[j] })
-	sort.Slice(expected, func(i, j int) bool { return expected[i] < expected[j] })
+	slices.Sort(actual)
+	slices.Sort(expected)
 	assert.Equal(t, expected, actual)
 }
 

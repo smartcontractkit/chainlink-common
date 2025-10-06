@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"fmt"
 )
 
 type EncryptRequest struct {
@@ -39,8 +40,21 @@ type Encryptor interface {
 	Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error)
 	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)
 	DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error)
+}
 
-	mustEmbedUnimplemented()
+// UnimplementedEncryptor returns ErrUnimplemented for all Encryptor methods.
+type UnimplementedEncryptor struct{}
+
+func (UnimplementedEncryptor) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
+	return EncryptResponse{}, fmt.Errorf("Encryptor.Encrypt: %w", ErrUnimplemented)
+}
+
+func (UnimplementedEncryptor) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
+	return DecryptResponse{}, fmt.Errorf("Encryptor.Decrypt: %w", ErrUnimplemented)
+}
+
+func (UnimplementedEncryptor) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
+	return DeriveSharedSecretResponse{}, fmt.Errorf("Encryptor.DeriveSharedSecret: %w", ErrUnimplemented)
 }
 
 // TODO: Encryptor implementation.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -89,9 +90,17 @@ type Keystore interface {
 	Encryptor
 }
 
-type Unimplemented struct{}
+var ErrUnimplemented = errors.New("unimplemented")
 
-func (Unimplemented) mustEmbedUnimplementedKey() {}
+// UnimplementedKeystore provides a no-op implementation of Keystore.
+// It composes the specific unimplemented stubs for each interface.
+// Clients should embed this struct to ensure forward compatibility with changes to the Keystore interface.
+type UnimplementedKeystore struct {
+	UnimplementedAdmin
+	UnimplementedReader
+	UnimplementedSigner
+	UnimplementedEncryptor
+}
 
 type key struct {
 	keyType    KeyType
@@ -168,8 +177,6 @@ func LoadKeystore(ctx context.Context, storage storage.Storage, enc EncryptionPa
 	}
 	return ks, nil
 }
-
-func (k *keystore) mustEmbedUnimplemented() {}
 
 func (k *keystore) load(ctx context.Context) error {
 	encryptedKeystore, err := k.storage.GetEncryptedKeystore(ctx)

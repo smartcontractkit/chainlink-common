@@ -35,6 +35,13 @@ type Reader interface {
 	GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error)
 }
 
+// UnimplementedReader returns ErrUnimplemented for all Reader methods.
+type UnimplementedReader struct{}
+
+func (UnimplementedReader) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error) {
+	return GetKeysResponse{}, fmt.Errorf("Reader.GetKeys: %w", ErrUnimplemented)
+}
+
 func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()

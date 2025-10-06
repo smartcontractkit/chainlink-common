@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"fmt"
 )
 
 type SignRequest struct {
@@ -26,8 +27,17 @@ type VerifyResponse struct {
 type Signer interface {
 	Sign(ctx context.Context, req SignRequest) (SignResponse, error)
 	Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error)
+}
 
-	mustEmbedUnimplemented()
+// UnimplementedSigner returns ErrUnimplemented for all Signer methods.
+type UnimplementedSigner struct{}
+
+func (UnimplementedSigner) Sign(ctx context.Context, req SignRequest) (SignResponse, error) {
+	return SignResponse{}, fmt.Errorf("Signer.Sign: %w", ErrUnimplemented)
+}
+
+func (UnimplementedSigner) Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
+	return VerifyResponse{}, fmt.Errorf("Signer.Verify: %w", ErrUnimplemented)
 }
 
 // TODO: Signer implementation.

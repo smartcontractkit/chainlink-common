@@ -92,8 +92,29 @@ type Admin interface {
 	ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error)
 	ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error)
 	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
+}
 
-	mustEmbedUnimplemented()
+// UnimplementedAdmin returns ErrUnimplemented for all Admin methods.
+type UnimplementedAdmin struct{}
+
+func (UnimplementedAdmin) CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error) {
+	return CreateKeysResponse{}, fmt.Errorf("Admin.CreateKeys: %w", ErrUnimplemented)
+}
+
+func (UnimplementedAdmin) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error) {
+	return DeleteKeysResponse{}, fmt.Errorf("Admin.DeleteKeys: %w", ErrUnimplemented)
+}
+
+func (UnimplementedAdmin) ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error) {
+	return ImportKeysResponse{}, fmt.Errorf("Admin.ImportKeys: %w", ErrUnimplemented)
+}
+
+func (UnimplementedAdmin) ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
+	return ExportKeysResponse{}, fmt.Errorf("Admin.ExportKeys: %w", ErrUnimplemented)
+}
+
+func (UnimplementedAdmin) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {
+	return SetMetadataResponse{}, fmt.Errorf("Admin.SetMetadata: %w", ErrUnimplemented)
 }
 
 func ValidKeyName(name string) error {

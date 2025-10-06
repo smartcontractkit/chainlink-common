@@ -287,10 +287,6 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	if req.LocalKeyName == "" || len(req.RemotePubKey) == 0 {
-		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
-	}
-
 	key, ok := k.keystore[req.LocalKeyName]
 	if !ok {
 		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
@@ -312,6 +308,9 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {
+			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+		}
+		if len(req.RemotePubKey) == 32 {
 			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
 		}
 		remotePub, err := curve.NewPublicKey(req.RemotePubKey)

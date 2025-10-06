@@ -81,6 +81,32 @@ func TestEncryptDecrypt(t *testing.T) {
 	}
 }
 
+func TestEncryptDecrypt_SharedSecret(t *testing.T) {
+	ctx := context.Background()
+	ks, err := keystore.LoadKeystore(ctx, storage.NewMemoryStorage(), keystore.EncryptionParams{
+		Password:     "test-password",
+		ScryptParams: keystore.FastScryptParams,
+	})
+	require.NoError(t, err)
+
+	for _, keyType := range keystore.AllEncryptionKeyTypes {
+		t.Run(fmt.Sprintf("keyType_%s", keyType), func(t *testing.T) {
+			keyName := fmt.Sprintf("test-key-%s", keyType)
+			keys, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
+				Keys: []keystore.CreateKeyRequest{
+					{KeyName: keyName, KeyType: keyType},
+				},
+			})
+			require.NoError(t, err)
+			_, err = ks.DeriveSharedSecret(ctx, keystore.DeriveSharedSecretRequest{
+				LocalKeyName: keyName,
+				RemotePubKey: keys.Keys[0].KeyInfo.PublicKey,
+			})
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestEncryptDecrypt_PayloadSizeLimit(t *testing.T) {
 	ctx := context.Background()
 	ks, err := keystore.LoadKeystore(ctx, storage.NewMemoryStorage(), keystore.EncryptionParams{
@@ -89,7 +115,7 @@ func TestEncryptDecrypt_PayloadSizeLimit(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	for _, keyType := range []keystore.KeyType{keystore.EcdhP256} {
+	for _, keyType := range keystore.AllEncryptionKeyTypes {
 		t.Run(fmt.Sprintf("keyType_%s", keyType), func(t *testing.T) {
 			keyName := fmt.Sprintf("test-key-%s", keyType)
 			keys, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{

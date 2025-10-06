@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/log"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
@@ -529,4 +530,149 @@ func (m *mockLogExporter) Shutdown(ctx context.Context) error {
 
 func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
 	return nil
+}
+
+func TestClient_IDGenerator(t *testing.T) {
+	t.Run("custom IDGenerator is used when provided", func(t *testing.T) {
+		// Create a custom ID generator that generates predictable IDs
+		customIDGen := &mockIDGenerator{
+			traceID: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			spanID:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		cfg := beholder.TestDefaultConfig()
+		cfg.IDGenerator = customIDGen
+
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+
+		// Create a span and verify it uses the custom ID generator
+		ctx := context.Background()
+		_, span := client.Tracer.Start(ctx, "test-span")
+		defer span.End()
+
+		spanContext := span.SpanContext()
+		require.True(t, spanContext.IsValid())
+
+		// Verify the trace ID matches our custom generator
+		expectedTraceID := customIDGen.traceID
+		actualTraceID := spanContext.TraceID()
+		assert.Equal(t, expectedTraceID[:], actualTraceID[:], "TraceID should match custom generator")
+
+		// Verify the span ID matches our custom generator
+		expectedSpanID := customIDGen.spanID
+		actualSpanID := spanContext.SpanID()
+		assert.Equal(t, expectedSpanID[:], actualSpanID[:], "SpanID should match custom generator")
+
+		// Verify the generator was called
+		assert.True(t, customIDGen.newIDsCalled, "NewIDs should have been called")
+	})
+
+	t.Run("default IDGenerator is used when nil", func(t *testing.T) {
+		cfg := beholder.TestDefaultConfig()
+		cfg.IDGenerator = nil
+
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+
+		// Create a span and verify it has valid IDs
+		ctx := context.Background()
+		_, span := client.Tracer.Start(ctx, "test-span")
+		defer span.End()
+
+		spanContext := span.SpanContext()
+		require.True(t, spanContext.IsValid())
+
+		// Verify the IDs are not zero (default generator creates random IDs)
+		traceID := spanContext.TraceID()
+		spanID := spanContext.SpanID()
+
+		var zeroTraceID [16]byte
+		var zeroSpanID [8]byte
+
+		assert.NotEqual(t, zeroTraceID[:], traceID[:], "TraceID should not be zero")
+		assert.NotEqual(t, zeroSpanID[:], spanID[:], "SpanID should not be zero")
+	})
+
+	t.Run("custom IDGenerator generates unique IDs for multiple spans", func(t *testing.T) {
+		// Create a generator that increments IDs
+		customIDGen := &incrementingIDGenerator{
+			baseTraceID: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			baseSpanID:  [8]byte{0, 0, 0, 0, 0, 0, 0, 0},
+		}
+
+		cfg := beholder.TestDefaultConfig()
+		cfg.IDGenerator = customIDGen
+
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+
+		ctx := context.Background()
+
+		// Create multiple spans
+		_, span1 := client.Tracer.Start(ctx, "span-1")
+		traceID1 := span1.SpanContext().TraceID()
+		spanID1 := span1.SpanContext().SpanID()
+		span1.End()
+
+		_, span2 := client.Tracer.Start(ctx, "span-2")
+		traceID2 := span2.SpanContext().TraceID()
+		spanID2 := span2.SpanContext().SpanID()
+		span2.End()
+
+		// Verify that different spans get different IDs
+		assert.NotEqual(t, traceID1[:], traceID2[:], "Different spans should have different trace IDs")
+		assert.NotEqual(t, spanID1[:], spanID2[:], "Different spans should have different span IDs")
+	})
+}
+
+// mockIDGenerator is a test implementation of oteltrace.IDGenerator that returns fixed IDs
+type mockIDGenerator struct {
+	traceID         [16]byte
+	spanID          [8]byte
+	newIDsCalled    bool
+	newSpanIDCalled bool
+}
+
+func (m *mockIDGenerator) NewIDs(ctx context.Context) (oteltrace.TraceID, oteltrace.SpanID) {
+	m.newIDsCalled = true
+	return m.traceID, m.spanID
+}
+
+func (m *mockIDGenerator) NewSpanID(ctx context.Context, traceID oteltrace.TraceID) oteltrace.SpanID {
+	m.newSpanIDCalled = true
+	return m.spanID
+}
+
+// incrementingIDGenerator generates IDs that increment with each call
+type incrementingIDGenerator struct {
+	baseTraceID [16]byte
+	baseSpanID  [8]byte
+	counter     uint64
+}
+
+func (g *incrementingIDGenerator) NewIDs(ctx context.Context) (oteltrace.TraceID, oteltrace.SpanID) {
+	g.counter++
+
+	traceID := g.baseTraceID
+	spanID := g.baseSpanID
+
+	// Increment the last byte of each ID
+	traceID[15] = byte(g.counter)
+	spanID[7] = byte(g.counter)
+
+	return traceID, spanID
+}
+
+func (g *incrementingIDGenerator) NewSpanID(ctx context.Context, traceID oteltrace.TraceID) oteltrace.SpanID {
+	g.counter++
+	spanID := g.baseSpanID
+	spanID[7] = byte(g.counter)
+	return spanID
 }

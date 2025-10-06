@@ -125,7 +125,7 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
 		}
 
-		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixMilli(), signature)
+		r.headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
 		r.lastUpdatedNanos.Store(ts.UnixNano())
 	}
 

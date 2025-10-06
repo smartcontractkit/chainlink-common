@@ -74,7 +74,7 @@ type CapabilityResponse struct {
 
 type ResponseMetadata struct {
 	Metering []MeteringNodeDetail
-	N        uint32
+	CapDON_N uint32
 }
 
 type MeteringNodeDetail struct {

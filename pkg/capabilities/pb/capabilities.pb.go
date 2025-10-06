@@ -797,8 +797,8 @@ type ResponseMetadata struct {
 	// If you are working with this in a capability, you should not emit
 	// more than one metering report per node.
 	Metering []*pb1.MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
-	// n represents the total number of nodes in a capability don.
-	N             uint32 `protobuf:"varint,2,opt,name=n,proto3" json:"n,omitempty"`
+	// capdon_n represents the total number of nodes in a capability don.
+	CapdonN       uint32 `protobuf:"varint,2,opt,name=capdon_n,json=capdonN,proto3" json:"capdon_n,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -840,9 +840,9 @@ func (x *ResponseMetadata) GetMetering() []*pb1.MeteringReportNodeDetail {
 	return nil
 }
 
-func (x *ResponseMetadata) GetN() uint32 {
+func (x *ResponseMetadata) GetCapdonN() uint32 {
 	if x != nil {
-		return x.N
+		return x.CapdonN
 	}
 	return 0
 }
@@ -1232,10 +1232,10 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\v2\x0e.values.v1.MapR\x05value\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12:\n" +
 	"\bmetadata\x18\x03 \x01(\v2\x1e.capabilities.ResponseMetadataR\bmetadata\x12.\n" +
-	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\"`\n" +
+	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\"m\n" +
 	"\x10ResponseMetadata\x12>\n" +
-	"\bmetering\x18\x01 \x03(\v2\".metering.MeteringReportNodeDetailR\bmetering\x12\f\n" +
-	"\x01n\x18\x02 \x01(\rR\x01n\"\x81\x01\n" +
+	"\bmetering\x18\x01 \x03(\v2\".metering.MeteringReportNodeDetailR\bmetering\x12\x19\n" +
+	"\bcapdon_n\x18\x02 \x01(\rR\acapdonN\"\x81\x01\n" +
 	"\x14RegistrationMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12!\n" +

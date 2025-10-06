@@ -127,8 +127,8 @@ message ResponseMetadata {
   // If you are working with this in a capability, you should not emit
   // more than one metering report per node.
   repeated metering.MeteringReportNodeDetail metering = 1;
-  // n represents the total number of nodes in a capability don.
-  uint32 n = 2;
+  // capdon_n represents the total number of nodes in a capability don.
+  uint32 capdon_n = 2;
 }
 
 message RegistrationMetadata {

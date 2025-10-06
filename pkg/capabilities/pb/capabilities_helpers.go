@@ -90,6 +90,7 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		Value: values.ProtoMap(resp.Value),
 		Metadata: &ResponseMetadata{
 			Metering: metering,
+			CapdonN:  resp.Metadata.CapDON_N,
 		},
 		Payload: resp.Payload,
 	}
@@ -166,6 +167,7 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		Value: val,
 		Metadata: capabilities.ResponseMetadata{
 			Metering: metering,
+			CapDON_N: pr.Metadata.GetCapdonN(),
 		},
 		Payload: pr.Payload,
 	}

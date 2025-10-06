@@ -33,13 +33,16 @@ type OutboundHTTPRequest struct {
 	// Maximum number of bytes to read from the response body.  If the gateway max response size is smaller than this value, the gateway max response size will be used.
 	MaxResponseBytes uint32 `json:"maxBytes,omitempty"`
 	WorkflowID       string `json:"workflowId"`
+	WorkflowOwner    string `json:"workflowOwner"`
 }
 
+// Hash generates a hash of the request for caching purposes.
+// WorkflowID is not included in the hash because cached responses can be used across workflows
 func (req OutboundHTTPRequest) Hash() string {
 	s := sha256.New()
 	sep := []byte("/")
 
-	s.Write([]byte(req.WorkflowID))
+	s.Write([]byte(req.WorkflowOwner))
 	s.Write(sep)
 	s.Write([]byte(req.URL))
 	s.Write(sep)
@@ -62,6 +65,10 @@ func (req OutboundHTTPRequest) Hash() string {
 	}
 
 	s.Write([]byte(strconv.FormatUint(uint64(req.MaxResponseBytes), 10)))
+	s.Write(sep)
+	s.Write([]byte(strconv.FormatInt(int64(req.CacheSettings.MaxAgeMs), 10)))
+	s.Write(sep)
+	s.Write([]byte(strconv.FormatBool(req.CacheSettings.Store)))
 
 	return hex.EncodeToString(s.Sum(nil))
 }

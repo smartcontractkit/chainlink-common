@@ -65,10 +65,6 @@ func (req OutboundHTTPRequest) Hash() string {
 	}
 
 	s.Write([]byte(strconv.FormatUint(uint64(req.MaxResponseBytes), 10)))
-	s.Write(sep)
-	s.Write([]byte(strconv.FormatInt(int64(req.CacheSettings.MaxAgeMs), 10)))
-	s.Write(sep)
-	s.Write([]byte(strconv.FormatBool(req.CacheSettings.Store)))
 
 	return hex.EncodeToString(s.Sum(nil))
 }

@@ -17,14 +17,14 @@ import (
 )
 
 // AssertFieldsNotNil recursively checks s for nil fields. s must be a struct.
-func AssertFieldsNotNil(t *testing.T, s interface{}) {
+func AssertFieldsNotNil(t *testing.T, s any) {
 	_, err := CheckFieldsNotNil(t, s)
 	assert.NoError(t, err)
 }
 
 // CheckFieldsNotNil recursively checks s for nil fields. s must be a struct.
 // Returns the number of nil fields found and an error describing them.
-func CheckFieldsNotNil(t *testing.T, s interface{}) (int, error) {
+func CheckFieldsNotNil(t *testing.T, s any) (int, error) {
 	t.Helper()
 	err := assertValNotNil(t, "", reflect.ValueOf(s))
 	return config.MultiErrorList(err)

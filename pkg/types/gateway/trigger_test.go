@@ -375,7 +375,7 @@ func TestHTTPTriggerRequest_MarshalJSON_Consistency(t *testing.T) {
 
 	// Marshal multiple times
 	results := make([]string, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		data, err := json.Marshal(request)
 		require.NoError(t, err)
 		results[i] = string(data)

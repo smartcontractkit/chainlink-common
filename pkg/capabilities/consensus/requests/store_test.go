@@ -55,7 +55,7 @@ func TestOCR3Store(t *testing.T) {
 	})
 
 	t.Run("firstN, batchSize larger than queue", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}
@@ -77,7 +77,7 @@ func TestOCR3Store(t *testing.T) {
 	})
 
 	t.Run("rangeN, batchSize larger than queue with start offset", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}

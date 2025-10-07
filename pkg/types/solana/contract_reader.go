@@ -57,7 +57,7 @@ type ReadDefinition struct {
 	ErrOnMissingAccountData bool                  `json:"errOnMissingAccountData,omitempty"`
 	InputModifications      codec.ModifiersConfig `json:"inputModifications,omitempty"`
 	OutputModifications     codec.ModifiersConfig `json:"outputModifications,omitempty"`
-	PDADefinition           PDATypeDef            `json:"pdaDefinition,omitempty"` // Only used for PDA account reads
+	PDADefinition           PDATypeDef            `json:"pdaDefinition"` // Only used for PDA account reads
 	MultiReader             *MultiReader          `json:"multiReader,omitempty"`
 	EventDefinitions        *EventDefinitions     `json:"eventDefinitions,omitempty"`
 	// ResponseAddressHardCoder hardcodes the address of the contract into the defined field in the response.

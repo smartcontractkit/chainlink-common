@@ -99,7 +99,7 @@ func (v *NodeJWTAuthenticator) parseJWTClaims(tokenString string) (*types.NodeJW
 // verifyJWTSignature prove the JWT signature is signed by the node's private key.
 func (v *NodeJWTAuthenticator) verifyJWTSignature(tokenString string, publicKey ed25519.PublicKey) error {
 
-	token, err := v.parser.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := v.parser.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// Ensure the signing method is jwt.SigningMethodEd25519
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"maps"
 	"os"
 	"path"
 	"strings"
@@ -43,9 +44,7 @@ func GenerateUserTypes(info UserGenerationInfo) error {
 		if i == 0 {
 			generatedInfo = fileGeneratedInfo
 		} else {
-			for name, strct := range fileGeneratedInfo.Types {
-				generatedInfo.Types[name] = strct
-			}
+			maps.Copy(generatedInfo.Types, fileGeneratedInfo.Types)
 		}
 	}
 

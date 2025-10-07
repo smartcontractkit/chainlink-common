@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -132,7 +132,7 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 
 	lggr.Debugw("determined feeds to check", "nFeedIds", len(allIDs))
 	// ensure deterministic order of reportsNeedingUpdate
-	sort.Slice(allIDs, func(i, j int) bool { return allIDs[i] < allIDs[j] })
+	slices.Sort(allIDs)
 	candidateIDs := []string{}
 	for _, feedIDStr := range allIDs {
 		previousReportInfo := currentState.FeedInfo[feedIDStr]

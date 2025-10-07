@@ -45,14 +45,14 @@ func TestGetMapsFromPath(t *testing.T) {
 
 	actual, err = getMapsFromPath(testMap, []string{"A", "B"})
 	require.NoError(t, err)
-	assert.Equal(t, []map[string]interface{}{
+	assert.Equal(t, []map[string]any{
 		{
-			"A": map[string]interface{}{"IntSlice": []int(nil)},
-			"B": map[string]interface{}{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}},
-			"C": map[string]interface{}{"TestAPtrSlice": ptrSlice}, "D": 10, "F": 100},
+			"A": map[string]any{"IntSlice": []int(nil)},
+			"B": map[string]any{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}},
+			"C": map[string]any{"TestAPtrSlice": ptrSlice}, "D": 10, "F": 100},
 		{
-			"A": map[string]interface{}{"IntSlice": []int(nil)},
-			"B": map[string]interface{}{"TestASlice": []testA(nil)}, "C": map[string]interface{}{"TestAPtrSlice": (*[]testA)(nil)}, "D": 20, "F": 200,
+			"A": map[string]any{"IntSlice": []int(nil)},
+			"B": map[string]any{"TestASlice": []testA(nil)}, "C": map[string]any{"TestAPtrSlice": (*[]testA)(nil)}, "D": 20, "F": 200,
 		},
 	}, actual)
 

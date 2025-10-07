@@ -60,7 +60,7 @@ func Test_OnchainConfig(t *testing.T) {
 
 	// lint doesn't like that a proto is copied because it has a mutex
 	for _, tt := range tests { // nolint
-		tt := tt // nolint
+		// nolint
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -131,7 +131,7 @@ func Test_OffchainConfig(t *testing.T) {
 
 	// lint doesn't like that a proto is copied because it has a mutex
 	for _, tt := range tests { // nolint
-		tt := tt // nolint
+		// nolint
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -195,7 +195,6 @@ func Test_byte32Slice(t *testing.T) {
 		{name: "too short", args: args{pbVal: [][]byte{tooShort}}, ifaceVal: nil, wantErr: true},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(fmt.Sprintf("pb-to-iface %s", tt.name), func(t *testing.T) {
 			t.Parallel()
 

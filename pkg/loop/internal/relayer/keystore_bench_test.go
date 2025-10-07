@@ -50,7 +50,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 				ctx := tests.Context(b)
 				acct := "0x1234"
 				data := []byte("asdf")
-				for i := 0; i < b.N; i++ {
+				for b.Loop() {
 					got, err := ks.Sign(ctx, acct, data)
 					require.NoError(b, err)
 					require.NotEmpty(b, got)
@@ -69,7 +69,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 					ctx := tests.Context(b)
 					acct := "0x1234"
 					data := []byte("asdf")
-					for i := 0; i < b.N; i++ {
+					for b.Loop() {
 						got, err := ks.Sign(ctx, acct, data)
 						require.NoError(b, err)
 						require.NotEmpty(b, got)

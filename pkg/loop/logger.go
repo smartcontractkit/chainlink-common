@@ -44,7 +44,7 @@ func (h *hclSinkAdapter) named(name string) logger.SugaredLogger {
 	return v.(func() logger.SugaredLogger)()
 }
 
-func removeArg(args []interface{}, key string) ([]interface{}, string) {
+func removeArg(args []any, key string) ([]any, string) {
 	if len(args) < 2 {
 		return args, ""
 	}
@@ -69,13 +69,13 @@ type logMessage struct {
 
 // LogMessageExtraArgs is a key value pair within the Output payload
 type LogMessageExtraArgs struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value"`
+	Key   string `json:"key"`
+	Value any    `json:"value"`
 }
 
 // flattenExtraArgs is used to flatten arguments of the log message
-func flattenExtraArgs(le *logMessage) []interface{} {
-	var result []interface{}
+func flattenExtraArgs(le *logMessage) []any {
+	var result []any
 	result = append(result, "level")
 	result = append(result, le.Level)
 	result = append(result, "timestamp")
@@ -89,7 +89,7 @@ func flattenExtraArgs(le *logMessage) []interface{} {
 }
 
 func parseJSON(input string) (*logMessage, error) {
-	var raw map[string]interface{}
+	var raw map[string]any
 	entry := &logMessage{}
 
 	err := json.Unmarshal([]byte(input), &raw)
@@ -119,7 +119,7 @@ func parseJSON(input string) (*logMessage, error) {
 
 // logDebug will parse msg and figure out if it's a panic, fatal or critical log message, this is done here because the hashicorp plugin will push any
 // unrecognizable message from stderr as a debug statement
-func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
+func logDebug(msg string, l logger.SugaredLogger, args ...any) {
 	if strings.HasPrefix(msg, "panic:") {
 		l.Criticalw(fmt.Sprintf("[PANIC] %s", msg), args...)
 	} else if log, err := parseJSON(msg); err == nil {
@@ -136,7 +136,7 @@ func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
 	}
 }
 
-func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...interface{}) {
+func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...any) {
 	if level == hclog.Off {
 		return
 	}

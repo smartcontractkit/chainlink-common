@@ -229,11 +229,11 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 	keyFromMetadata := [32]byte{1, 2, 3}
 
 	// Valid JSON input with matching workflow owner
-	validInput := map[string]interface{}{
+	validInput := map[string]any{
 		"encryptedSecrets": map[string]string{
 			"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": validBase64("secret1"),
 		},
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"workflowOwner": "correctOwner",
 			"nodePublicEncryptionKeys": map[string]string{
 				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": hex.EncodeToString(keyFromMetadata[:]),

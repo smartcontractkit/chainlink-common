@@ -23,12 +23,12 @@ type CacheSettings struct {
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.
 type OutboundHTTPRequest struct {
-	URL           string            `json:"url"`                     // URL to query, only http and https protocols are supported.
-	Method        string            `json:"method,omitempty"`        // HTTP verb, defaults to GET.
-	Headers       map[string]string `json:"headers,omitempty"`       // HTTP headers, defaults to empty.
-	Body          []byte            `json:"body,omitempty"`          // HTTP request body
-	TimeoutMs     uint32            `json:"timeoutMs,omitempty"`     // Timeout in milliseconds
-	CacheSettings CacheSettings     `json:"cacheSettings,omitempty"` // Best-effort cache control for the request
+	URL           string            `json:"url"`                 // URL to query, only http and https protocols are supported.
+	Method        string            `json:"method,omitempty"`    // HTTP verb, defaults to GET.
+	Headers       map[string]string `json:"headers,omitempty"`   // HTTP headers, defaults to empty.
+	Body          []byte            `json:"body,omitempty"`      // HTTP request body
+	TimeoutMs     uint32            `json:"timeoutMs,omitempty"` // Timeout in milliseconds
+	CacheSettings CacheSettings     `json:"cacheSettings"`       // Best-effort cache control for the request
 
 	// Maximum number of bytes to read from the response body.  If the gateway max response size is smaller than this value, the gateway max response size will be used.
 	MaxResponseBytes uint32 `json:"maxBytes,omitempty"`

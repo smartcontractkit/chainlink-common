@@ -167,7 +167,7 @@ func parseTOMLDocs(s string, extendedDescriptions map[string]string) (items []fm
 	currentTable := &globalTable
 	items = append(items, currentTable)
 	var desc lines
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		if strings.HasPrefix(line, "#") {
 			// comment
 			desc = append(desc, strings.TrimSpace(line[1:]))

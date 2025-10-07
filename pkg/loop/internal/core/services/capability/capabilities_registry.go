@@ -45,7 +45,6 @@ func toDON(don *pb.DON) capabilities.DON {
 func toPbDON(don capabilities.DON) *pb.DON {
 	membersBytes := make([][]byte, len(don.Members))
 	for j, m := range don.Members {
-		m := m
 		membersBytes[j] = m[:]
 	}
 

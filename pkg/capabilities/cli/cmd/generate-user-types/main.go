@@ -76,7 +76,7 @@ func genForStruct() func(string) bool {
 
 func buildSkipGen() map[string]bool {
 	skipGen := map[string]bool{}
-	for _, skip := range strings.Split(*skipCap, ",") {
+	for skip := range strings.SplitSeq(*skipCap, ",") {
 		skipGen[skip] = true
 	}
 	return skipGen
@@ -86,7 +86,7 @@ func buildGenPkgType() func(string) bool {
 	genPkgType := func(_ string) bool { return true }
 	if *types != "" {
 		genPkg := map[string]bool{}
-		for _, t := range strings.Split(*types, ",") {
+		for t := range strings.SplitSeq(*types, ",") {
 			genPkg[t] = true
 		}
 		genPkgType = func(s string) bool {

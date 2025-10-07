@@ -24,14 +24,14 @@ func ExampleLLOAggregator_Aggregate() {
 		panic(err)
 	}
 	// 1. Create aggregator with 2 stream configs
-	configMap, _ := values.NewMap(map[string]interface{}{
-		"streams": map[string]interface{}{
-			"1": map[string]interface{}{
+	configMap, _ := values.NewMap(map[string]any{
+		"streams": map[string]any{
+			"1": map[string]any{
 				"deviation":  "0.01", // 1% deviation threshold
 				"heartbeat":  3600,   // 1 hour heartbeat
 				"remappedID": "0x680084f7347baFfb5C323c2982dfC90e04F9F918",
 			},
-			"2": map[string]interface{}{
+			"2": map[string]any{
 				"deviation":  "0.02", // 2% deviation threshold
 				"heartbeat":  1800,   // 30 min heartbeat
 				"remappedID": "0x00001237347baFfb5C323c1112dfC90e0789FFFF",

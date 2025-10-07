@@ -501,7 +501,7 @@ func (h *modifierMarshaller[T]) MarshalJSON() ([]byte, error) {
 	v := reflect.Indirect(reflect.ValueOf(h.T))
 	t := v.Type()
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		"Type": h.Type,
 	}
 

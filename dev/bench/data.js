@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759865354579,
+  "lastUpdate": 1759867623107,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26502,6 +26502,48 @@ window.BENCHMARK_DATA = {
             "value": 26653,
             "unit": "ns/op",
             "extra": "45135 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "32ee550b9b373cc38d630e5b23b91bee9f770384",
+          "message": "update standard cap initialise to take a struct (#1590)\n\n* update standard cap initialise to take a struct\n\n* updating name to dependencies\n\n* fixing test\n\n* make generate",
+          "timestamp": "2025-10-07T16:05:33-04:00",
+          "tree_id": "e8b341a47916f49568761f67c1db12a4345fccb6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/32ee550b9b373cc38d630e5b23b91bee9f770384"
+        },
+        "date": 1759867621769,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 370.8,
+            "unit": "ns/op",
+            "extra": "3012010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.1,
+            "unit": "ns/op",
+            "extra": "2735966 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26607,
+            "unit": "ns/op",
+            "extra": "45117 times\n4 procs"
           }
         ]
       }

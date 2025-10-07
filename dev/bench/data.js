@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759849914588,
+  "lastUpdate": 1759856076476,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26376,6 +26376,48 @@ window.BENCHMARK_DATA = {
             "value": 26665,
             "unit": "ns/op",
             "extra": "45120 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "erikburt@users.noreply.github.com",
+            "name": "Erik Burton",
+            "username": "erikburt"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "10ad0ea81baa11f049b79f3abed339b040fe7def",
+          "message": "chore(ci): bump apidiff-go to v0.2.0 (#1582)",
+          "timestamp": "2025-10-07T11:53:25-05:00",
+          "tree_id": "1fcd0a2e4f0aa73fd7c25e461287cf333ae31b4c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/10ad0ea81baa11f049b79f3abed339b040fe7def"
+        },
+        "date": 1759856075196,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367,
+            "unit": "ns/op",
+            "extra": "3269892 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.8,
+            "unit": "ns/op",
+            "extra": "2928045 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26559,
+            "unit": "ns/op",
+            "extra": "45097 times\n4 procs"
           }
         ]
       }

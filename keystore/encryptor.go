@@ -21,8 +21,9 @@ import (
 
 // Opaque error messages to prevent information leakage
 var (
-	ErrEncryptionFailed = fmt.Errorf("encryption operation failed")
-	ErrDecryptionFailed = fmt.Errorf("decryption operation failed")
+	ErrSharedSecretFailed = fmt.Errorf("shared secret derivation failed")
+	ErrEncryptionFailed   = fmt.Errorf("encryption operation failed")
+	ErrDecryptionFailed   = fmt.Errorf("decryption operation failed")
 )
 
 type EncryptRequest struct {
@@ -100,9 +101,10 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	if len(req.Data) == 0 || len(req.Data) > MaxEncryptionPayloadSize {
+	if len(req.Data) > MaxEncryptionPayloadSize {
 		return EncryptResponse{}, ErrEncryptionFailed
 	}
+
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
 		return EncryptResponse{}, ErrEncryptionFailed
@@ -122,7 +124,7 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 		}, nil
 	case ECDH_P256:
 		curve := ecdh.P256()
-		if len(req.RemotePubKey) == 0 {
+		if len(req.RemotePubKey) != 65 {
 			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		// Remote public key must be on the P256 curve for the shared secret to work.
@@ -135,7 +137,7 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 		if err != nil {
 			return EncryptResponse{}, ErrEncryptionFailed
 		}
-		// The magic here is the the receipient can compute the same
+		// The magic here is that the receipient can compute the same
 		// shared secret because ephPriv*G*recipientPriv = ephPub*G.
 		// This lets them derive the same ephemeral key used for encryption
 		// so they can decrypt the ciphertext.
@@ -222,6 +224,10 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		if !ok {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
+		if len(decrypted) == 0 {
+			// box.OpenAnonymous will return a nil slice if the ciphertext is empty
+			return DecryptResponse{Data: []byte{}}, nil
+		}
 		return DecryptResponse{
 			Data: decrypted,
 		}, nil
@@ -277,6 +283,10 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		if err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
+		if len(pt) == 0 {
+			// gcm.Open will return a nil slice if the ciphertext is empty
+			return DecryptResponse{Data: []byte{}}, nil
+		}
 		return DecryptResponse{Data: pt}, nil
 	default:
 		return DecryptResponse{}, ErrDecryptionFailed
@@ -289,17 +299,17 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 
 	key, ok := k.keystore[req.LocalKeyName]
 	if !ok {
-		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
 
 	switch key.keyType {
 	case X25519:
 		if len(req.RemotePubKey) != 32 {
-			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		sharedSecret, err := curve25519.X25519(internal.Bytes(key.privateKey), req.RemotePubKey)
 		if err != nil {
-			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		return DeriveSharedSecretResponse{
 			SharedSecret: sharedSecret,
@@ -308,22 +318,23 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {
-			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
-		if len(req.RemotePubKey) == 32 {
-			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+		// P-256 uncompressed public keys are 65 bytes (0x04 || x || y)
+		if len(req.RemotePubKey) != 65 {
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		remotePub, err := curve.NewPublicKey(req.RemotePubKey)
 		if err != nil {
-			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		shared, err := priv.ECDH(remotePub)
 		if err != nil {
-			return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		return DeriveSharedSecretResponse{SharedSecret: shared}, nil
 	default:
-		return DeriveSharedSecretResponse{}, ErrEncryptionFailed
+		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
 }
 

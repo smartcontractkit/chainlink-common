@@ -160,11 +160,14 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDSA_S256 key: %w", err)
 			}
-			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.D.Bytes()), keyReq.KeyType)
+			// Must copy the private key into 32 byte slice because leading zeros are stripped.
+			privateKeyBytes := make([]byte, 32)
+			copy(privateKeyBytes, privateKey.D.Bytes())
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKeyBytes), keyReq.KeyType)
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
-			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.D.Bytes()), publicKey, time.Now(), []byte{})
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKeyBytes), publicKey, time.Now(), []byte{})
 		case X25519:
 			privateKey := [curve25519.ScalarSize]byte{}
 			_, err := rand.Read(privateKey[:])

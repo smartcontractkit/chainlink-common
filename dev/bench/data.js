@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759867623107,
+  "lastUpdate": 1759869328716,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26544,6 +26544,48 @@ window.BENCHMARK_DATA = {
             "value": 26607,
             "unit": "ns/op",
             "extra": "45117 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2560b72ffc7b029e68c53b1a1d283c17482cf788",
+          "message": "INFOPLAT 2962 rotating beholder headers (#1567)\n\n* INFOPLAT-2962 Updates `pkg/chipingress` version\n\n* INFOPLAT-2962 Adds rotating header impl\n\n* INFOPLAT-2962 Removes log from `rotatingHeaderProvider`\n\n- fixes unhandled error\n\n* INFOPLAT-2962 Bumps `chipingress` to `0.0.6`\n\nFixes quotes\n\n* INFOPLAT-2962 Adds rotating auth header setup\n\nFixes tests\n\n* INFOPLAT-2962 Add deprecation warning for NewStaticAuthHeaderProvider\n\nAdjust return type\n\nSmall refactor\n\nAdjust test\n\n* INFOPLAT-2962 Clamp lowest possible TTL to 10mins\n\n* INFOPLAT-2962 Makes signing headers thread safe\n\nHandle thundering heard with double checked locking\n\n* INFOPLAT-2962 Use atomic value for lastupdated\n\n* Removes `defer client.Close`\n\nmakes test run long as it waits for 10s ctx timeout\n\n* Fixes header value using `UnixNano`\n\n* Uses `atomic` for header map\n\n* Ensure thread safety\n\n* Adds benchmarking",
+          "timestamp": "2025-10-07T20:33:03Z",
+          "tree_id": "90c97e06b2af7985b78112008001cd3b9559bff0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2560b72ffc7b029e68c53b1a1d283c17482cf788"
+        },
+        "date": 1759869326280,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.2,
+            "unit": "ns/op",
+            "extra": "3284036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.4,
+            "unit": "ns/op",
+            "extra": "2960479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24543,
+            "unit": "ns/op",
+            "extra": "48841 times\n4 procs"
           }
         ]
       }

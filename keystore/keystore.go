@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"slices"
+
 	"golang.org/x/crypto/curve25519"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
@@ -24,6 +26,14 @@ type KeyType string
 
 func (k KeyType) String() string {
 	return string(k)
+}
+
+func (k KeyType) IsEncryptionKeyType() bool {
+	return slices.Contains(AllEncryptionKeyTypes, k)
+}
+
+func (k KeyType) IsDigitalSignatureKeyType() bool {
+	return slices.Contains(AllDigitalSignatureKeyTypes, k)
 }
 
 const (

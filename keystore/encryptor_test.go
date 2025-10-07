@@ -27,7 +27,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	keyName := func(keyType keystore.KeyType, index int) string {
 		return fmt.Sprintf("key-%s-%d", keyType, index)
 	}
-	for _, keyType := range keystore.AllEncryptionKeyTypes {
+	for _, keyType := range keystore.AllKeyTypes {
 		keys, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
 			Keys: []keystore.CreateKeyRequest{
 				{KeyName: keyName(keyType, 0), KeyType: keyType},
@@ -45,18 +45,43 @@ func TestEncryptDecrypt(t *testing.T) {
 		}{keyType: keys.Keys[1].KeyInfo.KeyType, publicKey: keys.Keys[1].KeyInfo.PublicKey}
 	}
 
-	var tt = []struct {
+	var tt []struct {
 		name          string
 		fromKey       string
 		toKey         string
 		expectedError error
-	}{
-		{name: "Encrypt to self x25519", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.X25519, 0), expectedError: nil},
-		{name: "Encrypt to other x25519", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.X25519, 1), expectedError: nil},
-		{name: "Encrypt to self ecdh-p256", fromKey: keyName(keystore.ECDH_P256, 0), toKey: keyName(keystore.ECDH_P256, 0), expectedError: nil},
-		{name: "Encrypt to other ecdh-p256", fromKey: keyName(keystore.ECDH_P256, 0), toKey: keyName(keystore.ECDH_P256, 1), expectedError: nil},
-		{name: "Encrypt x25519 to ecdh-p256 should fail", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.ECDH_P256, 0), expectedError: keystore.ErrEncryptionFailed},
-		{name: "Encrypt ecdh-p256 to x25519 should fail", fromKey: keyName(keystore.ECDH_P256, 0), toKey: keyName(keystore.X25519, 0), expectedError: keystore.ErrEncryptionFailed},
+	}
+
+	for _, fromType := range keystore.AllKeyTypes {
+		for _, toType := range keystore.AllKeyTypes {
+			// Test both same key (index 0) and different key (index 1) scenarios
+			for keyIndex := 0; keyIndex < 2; keyIndex++ {
+				testName := fmt.Sprintf("Encrypt %s to %s (key %d)", fromType, toType, keyIndex)
+				fromKey := keyName(fromType, 0) // Always use key 0 as source
+				toKey := keyName(toType, keyIndex)
+
+				var expectedError error
+				if fromType == toType && fromType.IsEncryptionKeyType() {
+					// Same key types should succeed
+					expectedError = nil
+				} else {
+					// Different key types or non-encryption key types should fail
+					expectedError = keystore.ErrEncryptionFailed
+				}
+
+				tt = append(tt, struct {
+					name          string
+					fromKey       string
+					toKey         string
+					expectedError error
+				}{
+					name:          testName,
+					fromKey:       fromKey,
+					toKey:         toKey,
+					expectedError: expectedError,
+				})
+			}
+		}
 	}
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {

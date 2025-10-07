@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"maps"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -96,8 +97,10 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 
 func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 
+	// Return a copy of the headers to avoid concurrent read/write to the map by callers
+	returnHeader := make(map[string]string)
 	lastUpdated := time.Unix(0, r.lastUpdatedNanos.Load())
-	// Check if we need to get the lock
+
 	if time.Since(lastUpdated) > r.ttl {
 
 		r.mu.Lock()
@@ -108,7 +111,8 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 		// updated the headers and lastUpdated while waiting for the lock.
 		lastUpdated = time.Unix(0, r.lastUpdatedNanos.Load())
 		if time.Since(lastUpdated) < r.ttl {
-			return r.headers.Load().(map[string]string), nil
+			maps.Copy(returnHeader, r.headers.Load().(map[string]string))
+			return returnHeader, nil
 		}
 
 		// Append the bytes of the public key with bytes of the timestamp to create the message to sign
@@ -126,14 +130,16 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
 		}
 
-		headers := r.headers.Load().(map[string]string)
-		headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
+		newHeaders := make(map[string]string)
+		newHeaders[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
 
-		r.headers.Store(headers)
+		r.headers.Store(newHeaders)
 		r.lastUpdatedNanos.Store(ts.UnixNano())
 	}
 
-	return r.headers.Load().(map[string]string), nil
+	maps.Copy(returnHeader, r.headers.Load().(map[string]string))
+
+	return returnHeader, nil
 }
 
 func (a *rotatingAuth) Credentials() credentials.PerRPCCredentials {

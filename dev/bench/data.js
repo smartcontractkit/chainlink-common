@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759770351722,
+  "lastUpdate": 1759846129355,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26292,6 +26292,48 @@ window.BENCHMARK_DATA = {
             "value": 24684,
             "unit": "ns/op",
             "extra": "48616 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a242e4bbd3dc20195e99c9605a645023ebfa4905",
+          "message": "pkg/settings/cresettings: add global and per-owner WorkflowTriggerRateLimit (#1589)",
+          "timestamp": "2025-10-07T08:06:24-06:00",
+          "tree_id": "f98eb91912bc446a131a2f05504655011ec9c4e8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a242e4bbd3dc20195e99c9605a645023ebfa4905"
+        },
+        "date": 1759846128136,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.2,
+            "unit": "ns/op",
+            "extra": "3304400 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.6,
+            "unit": "ns/op",
+            "extra": "2925286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26177,
+            "unit": "ns/op",
+            "extra": "46204 times\n4 procs"
           }
         ]
       }

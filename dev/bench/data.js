@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759856076476,
+  "lastUpdate": 1759857711790,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26418,6 +26418,48 @@ window.BENCHMARK_DATA = {
             "value": 26559,
             "unit": "ns/op",
             "extra": "45097 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "598ab181ba8b0b12a6c860c5a10d423809593529",
+          "message": "Beholder OTel logs streaming for LOOPP's (#1566)\n\n* loop/server: use otelzap logger\n\n* fix test",
+          "timestamp": "2025-10-07T17:20:28Z",
+          "tree_id": "efa92e1935c2fc398dcfe76b7beaaca9cf63cad7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/598ab181ba8b0b12a6c860c5a10d423809593529"
+        },
+        "date": 1759857710644,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372,
+            "unit": "ns/op",
+            "extra": "3229620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400,
+            "unit": "ns/op",
+            "extra": "2964294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26593,
+            "unit": "ns/op",
+            "extra": "44593 times\n4 procs"
           }
         ]
       }

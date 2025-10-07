@@ -1,12 +1,20 @@
 package beholder
 
 import (
+	"context"
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/binary"
 	"fmt"
+	"maps"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
@@ -14,17 +22,136 @@ var authHeaderKey = "X-Beholder-Node-Auth-Token"
 
 // authHeaderVersion is the version of the auth header format
 var authHeaderVersion = "1"
+var authHeaderV2 = "2"
 
-type staticAuthHeaderProvider struct {
-	headers map[string]string
+type HeaderProvider interface {
+	Headers(ctx context.Context) (map[string]string, error)
 }
 
-func (p *staticAuthHeaderProvider) GetHeaders() map[string]string {
-	return p.headers
+type PerRPCCredentialsProvider interface {
+	Credentials() credentials.PerRPCCredentials
 }
 
+type Auth interface {
+	PerRPCCredentialsProvider
+	HeaderProvider
+}
+
+type Signer interface {
+	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
+}
+
+type staticAuth struct {
+	headers                  map[string]string
+	requireTransportSecurity bool
+}
+
+func (p *staticAuth) Headers(_ context.Context) (map[string]string, error) {
+	return p.headers, nil
+}
+
+func (p *staticAuth) Credentials() credentials.PerRPCCredentials {
+	return p
+}
+
+func (p *staticAuth) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	return p.Headers(ctx)
+}
+
+func (p *staticAuth) RequireTransportSecurity() bool {
+	return p.requireTransportSecurity
+}
+
+func NewStaticAuth(headers map[string]string, requireTransportSecurity bool) Auth {
+	return &staticAuth{headers, requireTransportSecurity}
+}
+
+// Deprecated: use NewStaticAuth instead
 func NewStaticAuthHeaderProvider(headers map[string]string) chipingress.HeaderProvider {
-	return &staticAuthHeaderProvider{headers: headers}
+	return &staticAuth{headers: headers}
+}
+
+type rotatingAuth struct {
+	csaPubKey                ed25519.PublicKey
+	signer                   Signer
+	signerTimeout            time.Duration
+	headers                  atomic.Value // stores map[string]string
+	ttl                      time.Duration
+	lastUpdatedNanos         atomic.Int64
+	requireTransportSecurity bool
+	mu                       sync.Mutex
+}
+
+func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool) Auth {
+	r := &rotatingAuth{
+		csaPubKey:                csaPubKey,
+		signer:                   signer,
+		signerTimeout:            time.Second * 5,
+		ttl:                      ttl,
+		lastUpdatedNanos:         atomic.Int64{},
+		requireTransportSecurity: requireTransportSecurity,
+	}
+	r.headers.Store(make(map[string]string))
+	return r
+}
+
+func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
+
+	// Return a copy of the headers to avoid concurrent read/write to the map by callers
+	returnHeader := make(map[string]string)
+	lastUpdated := time.Unix(0, r.lastUpdatedNanos.Load())
+
+	if time.Since(lastUpdated) > r.ttl {
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		// Multiple concurrent calls (after the first) will block waiting for the lock.
+		// First will get the lock and update headers + lastUpdated, double check since potentially another goroutine has already
+		// updated the headers and lastUpdated while waiting for the lock.
+		lastUpdated = time.Unix(0, r.lastUpdatedNanos.Load())
+		if time.Since(lastUpdated) < r.ttl {
+			maps.Copy(returnHeader, r.headers.Load().(map[string]string))
+			return returnHeader, nil
+		}
+
+		// Append the bytes of the public key with bytes of the timestamp to create the message to sign
+		ts := time.Now()
+		tsBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))
+		msgBytes := append(r.csaPubKey, tsBytes...)
+
+		ctxWithTimeout, cancel := context.WithTimeout(ctx, r.signerTimeout)
+		defer cancel()
+
+		// Sign(public key bytes + timestamp bytes)
+		signature, err := r.signer.Sign(ctxWithTimeout, r.csaPubKey, msgBytes)
+		if err != nil {
+			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
+		}
+
+		newHeaders := make(map[string]string)
+		newHeaders[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
+
+		r.headers.Store(newHeaders)
+		r.lastUpdatedNanos.Store(ts.UnixNano())
+	}
+
+	maps.Copy(returnHeader, r.headers.Load().(map[string]string))
+
+	return returnHeader, nil
+}
+
+func (a *rotatingAuth) Credentials() credentials.PerRPCCredentials {
+	return a
+}
+
+func (a *rotatingAuth) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	return a.Headers(ctx)
+}
+
+func (a *rotatingAuth) RequireTransportSecurity() bool {
+	return a.requireTransportSecurity
 }
 
 // BuildAuthHeaders creates the auth header value to be included on requests.
@@ -57,4 +184,8 @@ func NewAuthHeaders(ed25519Signer crypto.Signer) (map[string]string, error) {
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 
 	return map[string]string{authHeaderKey: headerValue}, nil
+}
+
+func authDialOpt(auth PerRPCCredentialsProvider) grpc.DialOption {
+	return grpc.WithPerRPCCredentials(auth.Credentials())
 }

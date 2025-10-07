@@ -393,6 +393,9 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	if config.TraceSpanExporter != nil {
 		opts = append(opts, sdktrace.WithBatcher(config.TraceSpanExporter))
 	}
+	if config.IDGenerator != nil {
+		opts = append(opts, sdktrace.WithIDGenerator(config.IDGenerator))
+	}
 	return sdktrace.NewTracerProvider(opts...), nil
 }
 

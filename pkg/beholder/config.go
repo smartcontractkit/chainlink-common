@@ -28,6 +28,7 @@ type Config struct {
 	TraceBatchTimeout time.Duration
 	TraceSpanExporter trace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
+	IDGenerator       trace.IDGenerator
 
 	// OTel Metric
 	MetricReaderInterval time.Duration

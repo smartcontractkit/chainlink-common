@@ -315,13 +315,13 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 			SharedSecret: sharedSecret,
 		}, nil
 	case ECDH_P256:
+		// P-256 uncompressed public keys are 65 bytes (0x04 || x || y)
+		if len(req.RemotePubKey) != 65 {
+			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
+		}
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {
-			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
-		}
-		// P-256 uncompressed public keys are 65 bytes (0x04 || x || y)
-		if len(req.RemotePubKey) != 65 {
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		remotePub, err := curve.NewPublicKey(req.RemotePubKey)

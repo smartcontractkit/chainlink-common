@@ -29,7 +29,7 @@ type ConsensusCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, services core.InitialiseServices) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 }
 
 func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
@@ -46,14 +46,14 @@ type ConsensusServer struct {
 	stopCh             chan struct{}
 }
 
-func (c *ConsensusServer) Initialise(ctx context.Context, services core.InitialiseServices) error {
-	if err := c.ConsensusCapability.Initialise(ctx, services); err != nil {
+func (c *ConsensusServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
+	if err := c.ConsensusCapability.Initialise(ctx, dependencies); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	c.capabilityRegistry = services.CapabilityRegistry
+	c.capabilityRegistry = dependencies.CapabilityRegistry
 
-	if err := services.CapabilityRegistry.Add(ctx, &consensusCapability{
+	if err := dependencies.CapabilityRegistry.Add(ctx, &consensusCapability{
 		ConsensusCapability: c.ConsensusCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)

@@ -59,7 +59,7 @@ func (p *StandardCapabilitiesLoop) ClientConfig() *plugin.ClientConfig {
 
 type StandardCapabilities interface {
 	services.Service
-	Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 

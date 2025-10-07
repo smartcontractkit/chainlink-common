@@ -26,7 +26,7 @@ type ClientCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 }
 
 func NewClientServer(capability ClientCapability) *ClientServer {
@@ -43,14 +43,14 @@ type ClientServer struct {
 	stopCh             chan struct{}
 }
 
-func (c *ClientServer) Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error {
-	if err := c.ClientCapability.Initialise(ctx, services); err != nil {
+func (c *ClientServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
+	if err := c.ClientCapability.Initialise(ctx, dependencies); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	c.capabilityRegistry = services.CapabilityRegistry
+	c.capabilityRegistry = dependencies.CapabilityRegistry
 
-	if err := services.CapabilityRegistry.Add(ctx, &clientCapability{
+	if err := dependencies.CapabilityRegistry.Add(ctx, &clientCapability{
 		ClientCapability: c.ClientCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)

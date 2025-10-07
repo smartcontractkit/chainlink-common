@@ -1,8 +1,8 @@
 package core
 
-// StandardCapabilitiesServices contains all the services required for capability initialization.
+// StandardCapabilitiesDependencies contains all the dependencies injected for capability initialization.
 // We use a struct to evolve the interface without requiring updates to all implementors.
-type StandardCapabilitiesServices struct {
+type StandardCapabilitiesDependencies struct {
 	Config             string
 	TelemetryService   TelemetryService
 	Store              KeyValueStore

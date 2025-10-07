@@ -27,7 +27,7 @@ type HTTPCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 }
 
 func NewHTTPServer(capability HTTPCapability) *HTTPServer {
@@ -44,14 +44,14 @@ type HTTPServer struct {
 	stopCh             chan struct{}
 }
 
-func (c *HTTPServer) Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error {
-	if err := c.HTTPCapability.Initialise(ctx, services); err != nil {
+func (c *HTTPServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
+	if err := c.HTTPCapability.Initialise(ctx, dependencies); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	c.capabilityRegistry = services.CapabilityRegistry
+	c.capabilityRegistry = dependencies.CapabilityRegistry
 
-	if err := services.CapabilityRegistry.Add(ctx, &hTTPCapability{
+	if err := dependencies.CapabilityRegistry.Add(ctx, &hTTPCapability{
 		HTTPCapability: c.HTTPCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)

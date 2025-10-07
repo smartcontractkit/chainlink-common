@@ -46,6 +46,6 @@ func (t StandardCapabilitiesService) HealthReport() map[string]error {
 
 func (t StandardCapabilitiesService) Name() string { return "StandardCapabilities" }
 
-func (t StandardCapabilitiesService) Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error {
+func (t StandardCapabilitiesService) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
 	return nil
 }

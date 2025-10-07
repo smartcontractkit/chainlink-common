@@ -41,6 +41,9 @@ var (
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
 	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
+	defaultMaxLogLenBytes            = 1024 * 1024       // 1 MB
+	defaultMaxLogCountDONMode        = 10_000
+	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 )
 
@@ -61,6 +64,10 @@ type ModuleConfig struct {
 	MaxCompressedBinarySize   uint64
 	MaxDecompressedBinarySize uint64
 	MaxResponseSizeBytes      uint64
+
+	MaxLogLenBytes      uint32
+	MaxLogCountDONMode  uint32
+	MaxLogCountNodeMode uint32
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -182,6 +189,15 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 	if modCfg.MaxResponseSizeBytes == 0 {
 		modCfg.MaxResponseSizeBytes = uint64(defaultMaxResponseSizeBytes)
+	}
+	if modCfg.MaxLogLenBytes == 0 {
+		modCfg.MaxLogLenBytes = uint32(defaultMaxLogLenBytes)
+	}
+	if modCfg.MaxLogCountDONMode == 0 {
+		modCfg.MaxLogCountDONMode = uint32(defaultMaxLogCountDONMode)
+	}
+	if modCfg.MaxLogCountNodeMode == 0 {
+		modCfg.MaxLogCountNodeMode = uint32(defaultMaxLogCountNodeMode)
 	}
 
 	// Take the max of the min and the configured max memory mbs.

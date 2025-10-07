@@ -1,5 +1,4 @@
 name: Analyze API Changes
-description: Runs apidiff-go action to check for breaking changes to modules' public APIs
 
 on:
   pull_request:
@@ -23,7 +22,7 @@ jobs:
           go-version-file: "go.mod"
           cache: false
 
-      - uses: smartcontractkit/.github/actions/apidiff-go@apidiff-go/0.1.0
+      - uses: smartcontractkit/.github/actions/apidiff-go@apidiff-go/0.2.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

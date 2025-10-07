@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759846129355,
+  "lastUpdate": 1759849914588,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26334,6 +26334,48 @@ window.BENCHMARK_DATA = {
             "value": 26177,
             "unit": "ns/op",
             "extra": "46204 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c2abdff1ad7ad8ba2581540104b53e9c6b49edd",
+          "message": "[CRE-954] Extra logging limits in WASM Module (#1588)",
+          "timestamp": "2025-10-07T09:10:42-06:00",
+          "tree_id": "fc863fc8bbf9612f1217bca47562064a796b4d2f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2c2abdff1ad7ad8ba2581540104b53e9c6b49edd"
+        },
+        "date": 1759849912772,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359,
+            "unit": "ns/op",
+            "extra": "3344184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.4,
+            "unit": "ns/op",
+            "extra": "2924134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26665,
+            "unit": "ns/op",
+            "extra": "45120 times\n4 procs"
           }
         ]
       }

@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -666,6 +667,96 @@ func (s staticSourceChainExtraDataCodec) Evaluate(ctx context.Context, other cci
 
 func (s staticSourceChainExtraDataCodec) AssertEqual(ctx context.Context, t *testing.T, other ccipocr3.SourceChainExtraDataCodec) {
 	t.Run("SourceChainExtraDataCodec", func(t *testing.T) {
+		assert.NoError(t, s.Evaluate(ctx, other))
+	})
+}
+
+// MessageHasher implementation
+
+type MessageHasherEvaluator interface {
+	ccipocr3.MessageHasher
+	testtypes.Evaluator[ccipocr3.MessageHasher]
+}
+
+type MessageHasherTester interface {
+	ccipocr3.MessageHasher
+	testtypes.Evaluator[ccipocr3.MessageHasher]
+	testtypes.AssertEqualer[ccipocr3.MessageHasher]
+}
+
+func MessageHasher(lggr logger.Logger) staticMessageHasher {
+	return newStaticMessageHasher(lggr, staticMessageHasherConfig{
+		hash: ccipocr3.Bytes32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+	})
+}
+
+var _ MessageHasherTester = staticMessageHasher{}
+
+type staticMessageHasherConfig struct {
+	hash ccipocr3.Bytes32
+}
+
+type staticMessageHasher struct {
+	staticMessageHasherConfig
+}
+
+func newStaticMessageHasher(lggr logger.Logger, cfg staticMessageHasherConfig) staticMessageHasher {
+	lggr = logger.Named(lggr, "staticMessageHasher")
+	return staticMessageHasher{
+		staticMessageHasherConfig: cfg,
+	}
+}
+
+func (s staticMessageHasher) Hash(ctx context.Context, message ccipocr3.Message) (ccipocr3.Bytes32, error) {
+	return s.hash, nil
+}
+
+func (s staticMessageHasher) Evaluate(ctx context.Context, other ccipocr3.MessageHasher) error {
+	testMessage := ccipocr3.Message{
+		Header: ccipocr3.RampMessageHeader{
+			MessageID:           ccipocr3.Bytes32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+			SourceChainSelector: ccipocr3.ChainSelector(1),
+			DestChainSelector:   ccipocr3.ChainSelector(2),
+			SequenceNumber:      ccipocr3.SeqNum(100),
+			Nonce:               42,
+			TxHash:              "0x1234567890abcdef",
+			OnRamp:              ccipocr3.UnknownAddress("0xabcdef1234567890"),
+		},
+		Sender:         ccipocr3.UnknownAddress("0xsender"),
+		Data:           ccipocr3.Bytes("test-data"),
+		Receiver:       ccipocr3.UnknownAddress("0xreceiver"),
+		ExtraArgs:      ccipocr3.Bytes("extra-args"),
+		FeeToken:       ccipocr3.UnknownAddress("0xfeetoken"),
+		FeeTokenAmount: ccipocr3.NewBigInt(big.NewInt(1000)),
+		FeeValueJuels:  ccipocr3.NewBigInt(big.NewInt(2000)),
+		TokenAmounts: []ccipocr3.RampTokenAmount{
+			{
+				SourcePoolAddress: ccipocr3.UnknownAddress("0x1111111111111111111111111111111111111111"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+				ExtraData:         ccipocr3.Bytes("extra-token-data-1"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(1)),
+				DestExecData:      ccipocr3.Bytes("dest-exec-data-1"),
+			},
+		},
+	}
+
+	otherHash, err := other.Hash(ctx, testMessage)
+	if err != nil {
+		return fmt.Errorf("MessageHasher other Hash failed: %w", err)
+	}
+	myHash, err := s.Hash(ctx, testMessage)
+	if err != nil {
+		return fmt.Errorf("MessageHasher Hash failed: %w", err)
+	}
+	if otherHash != myHash {
+		return fmt.Errorf("MessageHasher Hash mismatch: got %x, expected %x", otherHash, myHash)
+	}
+
+	return nil
+}
+
+func (s staticMessageHasher) AssertEqual(ctx context.Context, t *testing.T, other ccipocr3.MessageHasher) {
+	t.Run("MessageHasher", func(t *testing.T) {
 		assert.NoError(t, s.Evaluate(ctx, other))
 	})
 }

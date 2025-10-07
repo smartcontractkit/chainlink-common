@@ -36,23 +36,23 @@ const (
 	// - X25519 for ECDH key exchange.
 	// - Box for encryption (ChaCha20Poly1305)
 	X25519 KeyType = "X25519"
-	// EcdhP256:
+	// ECDH_P256:
 	// - ECDH on P-256
 	// - Encryption with AES-GCM and HKDF-SHA256
-	EcdhP256 KeyType = "ecdh-p256"
+	ECDH_P256 KeyType = "ecdh-p256"
 
 	// Digital signature key types.
 	// Ed25519:
 	// - Ed25519 for digital signatures.
 	Ed25519 KeyType = "ed25519"
-	// EcdsaSecp256k1:
+	// ECDSA_S256:
 	// - ECDSA on secp256k1 for digital signatures.
-	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
+	ECDSA_S256 KeyType = "ecdsa-secp256k1"
 )
 
-var AllKeyTypes = []KeyType{X25519, EcdhP256, Ed25519, EcdsaSecp256k1}
-var AllEncryptionKeyTypes = []KeyType{X25519, EcdhP256}
-var AllDigitalSignatureKeyTypes = []KeyType{Ed25519, EcdsaSecp256k1}
+var AllKeyTypes = []KeyType{X25519, ECDH_P256, Ed25519, ECDSA_S256}
+var AllEncryptionKeyTypes = []KeyType{X25519, ECDH_P256}
+var AllDigitalSignatureKeyTypes = []KeyType{Ed25519, ECDSA_S256}
 
 type ScryptParams struct {
 	N int
@@ -144,7 +144,7 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 	switch keyType {
 	case Ed25519:
 		return ed25519.PublicKey(internal.Bytes(privateKeyBytes)), nil
-	case EcdsaSecp256k1:
+	case ECDSA_S256:
 		// Here we use SEC1 (uncompressed) format for ECDSA public keys.
 		// Its commonly used and EVM addresses are derived from this format.
 		// We use the geth crypto library for secp256k1 support
@@ -161,7 +161,7 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 			return nil, fmt.Errorf("failed to derive shared secret: %w", err)
 		}
 		return pubKey, nil
-	case EcdhP256:
+	case ECDH_P256:
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(privateKeyBytes))
 		if err != nil {

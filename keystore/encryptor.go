@@ -62,7 +62,7 @@ const (
 	// Note just an initial limit, we may want to increase this in the future.
 	MaxEncryptionPayloadSize = 100 * 1024
 	// Overhead size for the encryption envelope.
-	overHeadSize = 1024
+	overheadSize = 1024
 )
 
 var (
@@ -120,7 +120,7 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 		return EncryptResponse{
 			EncryptedData: encrypted,
 		}, nil
-	case EcdhP256:
+	case ECDH_P256:
 		curve := ecdh.P256()
 		if len(req.RemotePubKey) == 0 {
 			return EncryptResponse{}, ErrEncryptionFailed
@@ -171,9 +171,9 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 		ephPub := ephPriv.PublicKey().Bytes()
 
 		// Create the protobuf envelope
-		envelope := &serialization.EcdhEnvelope{
+		envelope := &serialization.ECDHEnvelope{
 			Version:            encVersionV1,
-			Algorithm:          EcdhP256.String(),
+			Algorithm:          ECDH_P256.String(),
 			EphemeralPublicKey: ephPub,
 			Salt:               salt,
 			Nonce:              nonce,
@@ -207,7 +207,7 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > (MaxEncryptionPayloadSize+overHeadSize) {
+	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > (MaxEncryptionPayloadSize+overheadSize) {
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
@@ -225,12 +225,12 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		return DecryptResponse{
 			Data: decrypted,
 		}, nil
-	case EcdhP256:
-		var envelope serialization.EcdhEnvelope
+	case ECDH_P256:
+		var envelope serialization.ECDHEnvelope
 		if err := proto.Unmarshal(req.EncryptedData, &envelope); err != nil {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
-		if envelope.Version != encVersionV1 || envelope.Algorithm != string(EcdhP256) {
+		if envelope.Version != encVersionV1 || envelope.Algorithm != string(ECDH_P256) {
 			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		curve := ecdh.P256()
@@ -260,7 +260,7 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		}
 
 		// Recreate the envelope for AAD (without ciphertext)
-		aadEnvelope := &serialization.EcdhEnvelope{
+		aadEnvelope := &serialization.ECDHEnvelope{
 			Version:            envelope.Version,
 			Algorithm:          envelope.Algorithm,
 			EphemeralPublicKey: envelope.EphemeralPublicKey,
@@ -304,7 +304,7 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 		return DeriveSharedSecretResponse{
 			SharedSecret: sharedSecret,
 		}, nil
-	case EcdhP256:
+	case ECDH_P256:
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {

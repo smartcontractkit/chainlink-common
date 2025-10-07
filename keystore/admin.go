@@ -155,10 +155,10 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey), publicKey, time.Now(), []byte{})
-		case EcdsaSecp256k1:
+		case ECDSA_S256:
 			privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 			if err != nil {
-				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdsaSecp256k1 key: %w", err)
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDSA_S256 key: %w", err)
 			}
 			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.D.Bytes()), keyReq.KeyType)
 			if err != nil {
@@ -176,10 +176,10 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey[:]), publicKey, time.Now(), []byte{})
-		case EcdhP256:
+		case ECDH_P256:
 			privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
 			if err != nil {
-				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdhP256 key: %w", err)
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDH_P256 key: %w", err)
 			}
 			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.Bytes()), keyReq.KeyType)
 			if err != nil {

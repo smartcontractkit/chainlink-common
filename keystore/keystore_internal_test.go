@@ -13,7 +13,7 @@ func TestPublicKeyFromPrivateKey(t *testing.T) {
 	// (in particular for secp2561k1 since the stdlib doesn't support it)
 	pk, err := gethcrypto.GenerateKey()
 	require.NoError(t, err)
-	pubKey, err := publicKeyFromPrivateKey(internal.NewRaw(pk.D.Bytes()), EcdsaSecp256k1)
+	pubKey, err := publicKeyFromPrivateKey(internal.NewRaw(pk.D.Bytes()), ECDSA_S256)
 	require.NoError(t, err)
 	pubKeyGeth := gethcrypto.FromECDSAPub(&pk.PublicKey)
 	require.Equal(t, pubKeyGeth, pubKey)

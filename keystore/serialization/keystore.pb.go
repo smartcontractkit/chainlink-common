@@ -149,7 +149,7 @@ func (x *Key) GetMetadata() []byte {
 }
 
 // ECDH encryption envelope for hybrid encryption
-type EcdhEnvelope struct {
+type ECDHEnvelope struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -162,8 +162,8 @@ type EcdhEnvelope struct {
 	Ciphertext         []byte `protobuf:"bytes,6,opt,name=ciphertext,proto3" json:"ciphertext,omitempty"`
 }
 
-func (x *EcdhEnvelope) Reset() {
-	*x = EcdhEnvelope{}
+func (x *ECDHEnvelope) Reset() {
+	*x = ECDHEnvelope{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_keystore_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -171,13 +171,13 @@ func (x *EcdhEnvelope) Reset() {
 	}
 }
 
-func (x *EcdhEnvelope) String() string {
+func (x *ECDHEnvelope) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EcdhEnvelope) ProtoMessage() {}
+func (*ECDHEnvelope) ProtoMessage() {}
 
-func (x *EcdhEnvelope) ProtoReflect() protoreflect.Message {
+func (x *ECDHEnvelope) ProtoReflect() protoreflect.Message {
 	mi := &file_keystore_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -189,47 +189,47 @@ func (x *EcdhEnvelope) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EcdhEnvelope.ProtoReflect.Descriptor instead.
-func (*EcdhEnvelope) Descriptor() ([]byte, []int) {
+// Deprecated: Use ECDHEnvelope.ProtoReflect.Descriptor instead.
+func (*ECDHEnvelope) Descriptor() ([]byte, []int) {
 	return file_keystore_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *EcdhEnvelope) GetVersion() uint32 {
+func (x *ECDHEnvelope) GetVersion() uint32 {
 	if x != nil {
 		return x.Version
 	}
 	return 0
 }
 
-func (x *EcdhEnvelope) GetAlgorithm() string {
+func (x *ECDHEnvelope) GetAlgorithm() string {
 	if x != nil {
 		return x.Algorithm
 	}
 	return ""
 }
 
-func (x *EcdhEnvelope) GetEphemeralPublicKey() []byte {
+func (x *ECDHEnvelope) GetEphemeralPublicKey() []byte {
 	if x != nil {
 		return x.EphemeralPublicKey
 	}
 	return nil
 }
 
-func (x *EcdhEnvelope) GetSalt() []byte {
+func (x *ECDHEnvelope) GetSalt() []byte {
 	if x != nil {
 		return x.Salt
 	}
 	return nil
 }
 
-func (x *EcdhEnvelope) GetNonce() []byte {
+func (x *ECDHEnvelope) GetNonce() []byte {
 	if x != nil {
 		return x.Nonce
 	}
 	return nil
 }
 
-func (x *EcdhEnvelope) GetCiphertext() []byte {
+func (x *ECDHEnvelope) GetCiphertext() []byte {
 	if x != nil {
 		return x.Ciphertext
 	}
@@ -253,7 +253,7 @@ var file_keystore_proto_rawDesc = []byte{
 	0x19, 0x0a, 0x08, 0x6b, 0x65, 0x79, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x07, 0x6b, 0x65, 0x79, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x6d, 0x65,
 	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x6d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0xc2, 0x01, 0x0a, 0x0c, 0x45, 0x63, 0x64, 0x68, 0x45,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0xc2, 0x01, 0x0a, 0x0c, 0x45, 0x43, 0x44, 0x48, 0x45,
 	0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
 	0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
 	0x6e, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x6c, 0x67, 0x6f, 0x72, 0x69, 0x74, 0x68, 0x6d, 0x18, 0x02,
@@ -286,7 +286,7 @@ var file_keystore_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_keystore_proto_goTypes = []interface{}{
 	(*Keystore)(nil),     // 0: serialization.Keystore
 	(*Key)(nil),          // 1: serialization.Key
-	(*EcdhEnvelope)(nil), // 2: serialization.EcdhEnvelope
+	(*ECDHEnvelope)(nil), // 2: serialization.ECDHEnvelope
 }
 var file_keystore_proto_depIdxs = []int32{
 	1, // 0: serialization.Keystore.keys:type_name -> serialization.Key
@@ -328,7 +328,7 @@ func file_keystore_proto_init() {
 			}
 		}
 		file_keystore_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EcdhEnvelope); i {
+			switch v := v.(*ECDHEnvelope); i {
 			case 0:
 				return &v.state
 			case 1:

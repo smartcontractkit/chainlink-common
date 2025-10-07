@@ -53,10 +53,10 @@ func TestEncryptDecrypt(t *testing.T) {
 	}{
 		{name: "Encrypt to self x25519", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.X25519, 0), expectedError: nil},
 		{name: "Encrypt to other x25519", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.X25519, 1), expectedError: nil},
-		{name: "Encrypt to self ecdh-p256", fromKey: keyName(keystore.EcdhP256, 0), toKey: keyName(keystore.EcdhP256, 0), expectedError: nil},
-		{name: "Encrypt to other ecdh-p256", fromKey: keyName(keystore.EcdhP256, 0), toKey: keyName(keystore.EcdhP256, 1), expectedError: nil},
-		{name: "Encrypt x25519 to ecdh-p256 should fail", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.EcdhP256, 0), expectedError: keystore.ErrEncryptionFailed},
-		{name: "Encrypt ecdh-p256 to x25519 should fail", fromKey: keyName(keystore.EcdhP256, 0), toKey: keyName(keystore.X25519, 0), expectedError: keystore.ErrEncryptionFailed},
+		{name: "Encrypt to self ecdh-p256", fromKey: keyName(keystore.ECDH_P256, 0), toKey: keyName(keystore.ECDH_P256, 0), expectedError: nil},
+		{name: "Encrypt to other ecdh-p256", fromKey: keyName(keystore.ECDH_P256, 0), toKey: keyName(keystore.ECDH_P256, 1), expectedError: nil},
+		{name: "Encrypt x25519 to ecdh-p256 should fail", fromKey: keyName(keystore.X25519, 0), toKey: keyName(keystore.ECDH_P256, 0), expectedError: keystore.ErrEncryptionFailed},
+		{name: "Encrypt ecdh-p256 to x25519 should fail", fromKey: keyName(keystore.ECDH_P256, 0), toKey: keyName(keystore.X25519, 0), expectedError: keystore.ErrEncryptionFailed},
 	}
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {

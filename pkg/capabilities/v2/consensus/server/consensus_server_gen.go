@@ -29,7 +29,7 @@ type ConsensusCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
+	Initialise(ctx context.Context, services core.InitialiseServices) error
 }
 
 func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
@@ -46,14 +46,14 @@ type ConsensusServer struct {
 	stopCh             chan struct{}
 }
 
-func (c *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := c.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *ConsensusServer) Initialise(ctx context.Context, services core.InitialiseServices) error {
+	if err := c.ConsensusCapability.Initialise(ctx, services); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	c.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = services.CapabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &consensusCapability{
+	if err := services.CapabilityRegistry.Add(ctx, &consensusCapability{
 		ConsensusCapability: c.ConsensusCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)

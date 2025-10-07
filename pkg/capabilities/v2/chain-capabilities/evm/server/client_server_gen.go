@@ -46,7 +46,7 @@ type ClientCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
+	Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error
 }
 
 func NewClientServer(capability ClientCapability) *ClientServer {
@@ -63,14 +63,14 @@ type ClientServer struct {
 	stopCh             chan struct{}
 }
 
-func (c *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := c.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *ClientServer) Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error {
+	if err := c.ClientCapability.Initialise(ctx, services); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	c.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = services.CapabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &clientCapability{
+	if err := services.CapabilityRegistry.Add(ctx, &clientCapability{
 		ClientCapability: c.ClientCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)

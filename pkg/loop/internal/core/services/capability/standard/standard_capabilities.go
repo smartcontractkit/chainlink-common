@@ -31,10 +31,7 @@ import (
 
 type StandardCapabilities interface {
 	services.Service
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
-		capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory,
-		gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error
+	Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 
@@ -60,10 +57,17 @@ func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabili
 	}
 }
 
-func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService,
-	keyValueStore core.KeyValueStore, capabilitiesRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory,
-	gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, services core.StandardCapabilitiesServices) error {
+	config := services.Config
+	telemetryService := services.TelemetryService
+	keyValueStore := services.Store
+	capabilitiesRegistry := services.CapabilityRegistry
+	errorLog := services.ErrorLog
+	pipelineRunner := services.PipelineRunner
+	relayerSet := services.RelayerSet
+	oracleFactory := services.OracleFactory
+	gatewayConnector := services.GatewayConnector
+	p2pKeystore := services.P2PKeystore
 	telemetryID, telemetryRes, err := c.ServeNew("Telemetry", func(s *grpc.Server) {
 		pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 	})
@@ -306,7 +310,20 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: gatewayConnectorConn, Name: "GatewayConnector"})
 	gatewayConnector := gateway.NewGatewayConnectorClient(gatewayConnectorConn, s.BrokerExt)
 
-	if err = s.impl.Initialise(ctx, request.Config, telemetry, keyValueStore, capabilitiesRegistry, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, keyStore); err != nil {
+	services := core.StandardCapabilitiesServices{
+		Config:             request.Config,
+		TelemetryService:   telemetry,
+		Store:              keyValueStore,
+		CapabilityRegistry: capabilitiesRegistry,
+		ErrorLog:           errorLog,
+		PipelineRunner:     pipelineRunner,
+		RelayerSet:         relayerSet,
+		OracleFactory:      oracleFactory,
+		GatewayConnector:   gatewayConnector,
+		P2PKeystore:        keyStore,
+	}
+
+	if err = s.impl.Initialise(ctx, services); err != nil {
 		s.CloseAll(resources...)
 		return nil, fmt.Errorf("failed to initialise standard capability: %w", err)
 	}

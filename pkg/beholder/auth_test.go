@@ -194,3 +194,151 @@ func TestRotatingAuth(t *testing.T) {
 		mockSigner.AssertExpectations(t)
 	})
 }
+
+// BenchmarkRotatingAuth_Headers_CachedPath benchmarks the fast path where headers are cached and within TTL.
+// This is the most common case in production.
+func BenchmarkRotatingAuth_Headers_CachedPath(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a long TTL so headers don't expire during the benchmark
+	ttl := 1 * time.Hour
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	// Prime the cache by calling Headers once
+	ctx := b.Context()
+	_, err = auth.Headers(ctx)
+	require.NoError(b, err)
+
+	b.ReportAllocs()
+
+	for b.Loop() {
+		headers, err := auth.Headers(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(headers) == 0 {
+			b.Fatal("expected non-empty headers")
+		}
+	}
+}
+
+// BenchmarkRotatingAuth_Headers_ExpiredPath benchmarks the slow path where headers need to be regenerated.
+// This happens when TTL expires.
+func BenchmarkRotatingAuth_Headers_ExpiredPath(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a TTL of 0 to force regeneration on every call
+	ttl := 0 * time.Second
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	ctx := b.Context()
+
+	b.ReportAllocs()
+
+	for b.Loop() {
+		headers, err := auth.Headers(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(headers) == 0 {
+			b.Fatal("expected non-empty headers")
+		}
+	}
+}
+
+// BenchmarkRotatingAuth_Headers_ParallelCached benchmarks concurrent access when headers are cached.
+// This simulates multiple goroutines making concurrent requests with valid cached headers.
+func BenchmarkRotatingAuth_Headers_ParallelCached(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a long TTL so headers don't expire during the benchmark
+	ttl := 1 * time.Hour
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	// Prime the cache
+	ctx := b.Context()
+	_, err = auth.Headers(ctx)
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			headers, err := auth.Headers(ctx)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if len(headers) == 0 {
+				b.Fatal("expected non-empty headers")
+			}
+		}
+	})
+}
+
+// BenchmarkRotatingAuth_Headers_ParallelExpired benchmarks concurrent access when headers expire.
+// This tests contention on the mutex when multiple goroutines race to regenerate headers.
+func BenchmarkRotatingAuth_Headers_ParallelExpired(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a short TTL to cause periodic regeneration
+	ttl := 10 * time.Millisecond
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	ctx := b.Context()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			headers, err := auth.Headers(ctx)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if len(headers) == 0 {
+				b.Fatal("expected non-empty headers")
+			}
+		}
+	})
+}

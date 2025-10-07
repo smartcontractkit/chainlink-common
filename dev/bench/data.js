@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759857711790,
+  "lastUpdate": 1759865354579,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26460,6 +26460,48 @@ window.BENCHMARK_DATA = {
             "value": 26593,
             "unit": "ns/op",
             "extra": "44593 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4c360bdba0585aa95f456e22e1f5840674193ca3",
+          "message": "add store flag to cache settings struct (#1586)\n\n* add store flag to cache settings struct\n\n* use cache settings and workflow owner for response cache key\n\n* remove cache settings from hash()",
+          "timestamp": "2025-10-07T19:27:52Z",
+          "tree_id": "fefe0cf54e8b7259027caf2e8230ad187b98c367",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4c360bdba0585aa95f456e22e1f5840674193ca3"
+        },
+        "date": 1759865353467,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.7,
+            "unit": "ns/op",
+            "extra": "3209346 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.3,
+            "unit": "ns/op",
+            "extra": "2944686 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26653,
+            "unit": "ns/op",
+            "extra": "45135 times\n4 procs"
           }
         ]
       }

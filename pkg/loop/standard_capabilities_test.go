@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 func TestPluginStandardCapabilities(t *testing.T) {
@@ -35,7 +36,7 @@ func TestPluginStandardCapabilities(t *testing.T) {
 			assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 			assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
-			err = s.Initialise(ctx, "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			err = s.Initialise(ctx, core.StandardCapabilitiesDependencies{})
 			assert.NoError(t, err)
 		})
 }
@@ -53,7 +54,7 @@ func TestRunningStandardCapabilitiesPluginOutOfProcess(t *testing.T) {
 	assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 	assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
-	err = scs.Initialise(ctx, "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	err = scs.Initialise(ctx, core.StandardCapabilitiesDependencies{})
 	assert.NoError(t, err)
 }
 

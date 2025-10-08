@@ -130,10 +130,10 @@ func (h *Handler[T, R]) worker(ctx context.Context) {
 				h.eng.Errorw("failed to add request to store", "err", err)
 			}
 
-		case syncResp := <-h.responseCh:
-			resp := syncResp.response
+		case respWithChannel := <-h.responseCh:
+			resp := respWithChannel.response
 			req, wasPresent := h.store.Evict(resp.RequestID())
-			syncResp.requestRemovedFromStore <- struct{}{}
+			respWithChannel.requestRemovedFromStore <- struct{}{}
 			if !wasPresent {
 				h.responseCache[resp.RequestID()] = &responseCacheEntry[R]{
 					response:  resp,

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759946292316,
+  "lastUpdate": 1759955401722,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26886,6 +26886,66 @@ window.BENCHMARK_DATA = {
             "value": 143974,
             "unit": "ns/op",
             "extra": "8175 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7ec0a00bdacfca09a76088409cec43eddc9b8606",
+          "message": "Org Resolver in Initialise Depenencies loop wiring (#1599)\n\n* adding org resolver to initialis\ne request\n\n* adding org resolver grpc wiring\n\n* using protoc v5.29.3\n\n* use services helper in loop implementor\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* fixing build issue\n\n* other build issues\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-10-08T16:28:47-04:00",
+          "tree_id": "505a17a42c7b31edb1701a7e0257f8b4282de20a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7ec0a00bdacfca09a76088409cec43eddc9b8606"
+        },
+        "date": 1759955400264,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 582.5,
+            "unit": "ns/op",
+            "extra": "1885911 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 73644,
+            "unit": "ns/op",
+            "extra": "16294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 392.6,
+            "unit": "ns/op",
+            "extra": "3074199 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 76549,
+            "unit": "ns/op",
+            "extra": "15694 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24535,
+            "unit": "ns/op",
+            "extra": "48904 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 118653,
+            "unit": "ns/op",
+            "extra": "9794 times\n4 procs"
           }
         ]
       }

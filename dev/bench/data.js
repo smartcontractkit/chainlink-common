@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759944442869,
+  "lastUpdate": 1759946292316,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26826,6 +26826,66 @@ window.BENCHMARK_DATA = {
             "value": 144706,
             "unit": "ns/op",
             "extra": "8034 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "392db6d97fdb83630e919690b17557ff66f423ed",
+          "message": "adding org resolver service to standard cap dependencies in Initialise (#1597)\n\nIn #1590, we updated the Initialise iface to accept a struct that can be evolved without making backwards incompatible changes.\n\nNow, in order to source orgID for workflows in triggers, we are adding the org resolver service. The org resolver service is currently used in the engine and in the registry syncer to pull org ID at that instant for a given workflow owner.",
+          "timestamp": "2025-10-08T13:56:59-04:00",
+          "tree_id": "5f83f29de123d62f5a1ad748c61a4114d75d9dc2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/392db6d97fdb83630e919690b17557ff66f423ed"
+        },
+        "date": 1759946290985,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.7,
+            "unit": "ns/op",
+            "extra": "2508948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97697,
+            "unit": "ns/op",
+            "extra": "12217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.4,
+            "unit": "ns/op",
+            "extra": "3028420 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 96348,
+            "unit": "ns/op",
+            "extra": "12434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26885,
+            "unit": "ns/op",
+            "extra": "44743 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 143974,
+            "unit": "ns/op",
+            "extra": "8175 times\n4 procs"
           }
         ]
       }

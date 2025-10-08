@@ -81,6 +81,9 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 }
 
 var P2PAccountKey = "P2P_SIGNER"
+
+// Notice: when using the `StandardCapabilityAccount`, signing payloads must be prefixed using the
+// `peeridhelper.MakePeerIDSignatureDomainSeparatedPayload` function.
 var StandardCapabilityAccount = "STANDARD_CAPABILITY_ACCOUNT"
 
 // singleAccountSigner implements Keystore for a single account.
@@ -147,11 +150,13 @@ func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte)
 		return nil, fmt.Errorf("signer is nil")
 	}
 
-	// Assert that the user is passing in correctly domain separated data.
+	// For the `StandardCapabilityAccount`, assert that the user is passing in correctly domain separated data.
 	// The first 97 bytes of any domain separated payload will match the generic prefix.
 	// Implicitly, this also requires the message length to be <= 1024 bytes.
-	if len(data) < 97 || !bytes.Equal(data[:97], genericPrefix[:97]) {
-		return nil, fmt.Errorf("data does not have expected prefix")
+	if account == StandardCapabilityAccount {
+		if len(data) < 97 || !bytes.Equal(data[:97], genericPrefix[:97]) {
+			return nil, fmt.Errorf("data does not have expected prefix")
+		}
 	}
 
 	return c.signer.Sign(rand.Reader, data, crypto.Hash(0))

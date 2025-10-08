@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759878876185,
+  "lastUpdate": 1759925155919,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26646,6 +26646,66 @@ window.BENCHMARK_DATA = {
             "value": 146622,
             "unit": "ns/op",
             "extra": "7584 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8fd3a49fa4169eedfa0e6431190796fc75d8de6f",
+          "message": "Improve address conversion handling in evm relayerset (#1592)\n\n* Improve address conversion handling in evm relayerset\n\n* lint",
+          "timestamp": "2025-10-08T15:03:26+03:00",
+          "tree_id": "a208efea9462560de4314dc7bb4be59a297d0dd5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8fd3a49fa4169eedfa0e6431190796fc75d8de6f"
+        },
+        "date": 1759925154708,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.5,
+            "unit": "ns/op",
+            "extra": "3280512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 101460,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.2,
+            "unit": "ns/op",
+            "extra": "2982220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 105033,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26850,
+            "unit": "ns/op",
+            "extra": "43992 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144859,
+            "unit": "ns/op",
+            "extra": "7905 times\n4 procs"
           }
         ]
       }

@@ -54,9 +54,11 @@ const (
 	// Digital signature key types.
 	// Ed25519:
 	// - Ed25519 for digital signatures.
+	// - Supports arbitrary messages sizes, no hashing required.
 	Ed25519 KeyType = "ed25519"
 	// ECDSA_S256:
 	// - ECDSA on secp256k1 for digital signatures.
+	// - Only signs 32 byte digests. Caller must hash the data before signing.
 	ECDSA_S256 KeyType = "ecdsa-secp256k1"
 )
 

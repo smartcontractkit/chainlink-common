@@ -16,6 +16,7 @@ import (
 	keystoreservice "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oraclefactory"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/orgresolver"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -156,6 +157,15 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	}
 	resources = append(resources, gatewayConnectorRes)
 
+	orgResolverID, orgResolverRes, err := c.ServeNew("OrgResolver", func(s *grpc.Server) {
+		pb.RegisterOrgResolverServer(s, orgresolver.NewServer(dependencies.OrgResolver))
+	})
+	if err != nil {
+		c.CloseAll(resources...)
+		return fmt.Errorf("failed to serve org resolver: %w", err)
+	}
+	resources = append(resources, orgResolverRes)
+
 	_, err = c.StandardCapabilitiesClient.Initialise(ctx, &capabilitiespb.InitialiseRequest{
 		Config:             config,
 		ErrorLogId:         errorLogID,
@@ -167,6 +177,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 		OracleFactoryId:    oracleFactoryID,
 		GatewayConnectorId: gatewayConnectorID,
 		KeystoreId:         keyStoreID,
+		OrgResolverId:      orgResolverID,
 	})
 
 	if err != nil {
@@ -310,6 +321,14 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: gatewayConnectorConn, Name: "GatewayConnector"})
 	gatewayConnector := gateway.NewGatewayConnectorClient(gatewayConnectorConn, s.BrokerExt)
 
+	orgResolverConn, err := s.Dial(request.OrgResolverId)
+	if err != nil {
+		s.CloseAll(resources...)
+		return nil, net.ErrConnDial{Name: "OrgResolver", ID: request.OrgResolverId, Err: err}
+	}
+	resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "OrgResolver"})
+	orgResolver := orgresolver.NewClient(orgResolverConn)
+
 	dependencies := core.StandardCapabilitiesDependencies{
 		Config:             request.Config,
 		TelemetryService:   telemetry,
@@ -321,6 +340,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		OracleFactory:      oracleFactory,
 		GatewayConnector:   gatewayConnector,
 		P2PKeystore:        keyStore,
+		OrgResolver:        orgResolver,
 	}
 
 	if err = s.impl.Initialise(ctx, dependencies); err != nil {

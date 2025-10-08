@@ -1,7 +1,10 @@
 package core
 
+import "github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
+
 // StandardCapabilitiesDependencies contains all the dependencies injected for capability initialization.
 // We use a struct to evolve the interface without requiring updates to all implementors.
+// i.e. Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 type StandardCapabilitiesDependencies struct {
 	Config             string
 	TelemetryService   TelemetryService
@@ -13,4 +16,5 @@ type StandardCapabilitiesDependencies struct {
 	OracleFactory      OracleFactory
 	GatewayConnector   GatewayConnector
 	P2PKeystore        Keystore
+	OrgResolver        orgresolver.OrgResolver
 }

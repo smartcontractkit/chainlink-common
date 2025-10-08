@@ -45,7 +45,8 @@
 			"Limit": "5",
 			"EventRateLimit": "every6s:10",
 			"FilterAddressLimit": "5",
-			"FilterTopicsPerSlotLimit": "10"
+			"FilterTopicsPerSlotLimit": "10",
+			"EventSizeLimit": "5kb"
 		},
 		"HTTPAction": {
 			"RateLimit": "every30s:3",

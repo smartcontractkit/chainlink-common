@@ -79,6 +79,7 @@ var Default = Schema{
 			EventRateLimit:           Rate(rate.Every(time.Minute/10), 10),
 			FilterAddressLimit:       Int(5),
 			FilterTopicsPerSlotLimit: Int(10),
+			EventSizeLimit:           Size(5 * config.KByte),
 		},
 		HTTPAction: httpAction{
 			RateLimit:         Rate(rate.Every(30*time.Second), 3),
@@ -173,6 +174,7 @@ type logTrigger struct {
 	EventRateLimit           Setting[config.Rate]
 	FilterAddressLimit       Setting[int] `unit:"{address}"`
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
+	EventSizeLimit           Setting[config.Size]
 }
 type httpAction struct {
 	RateLimit         Setting[config.Rate]

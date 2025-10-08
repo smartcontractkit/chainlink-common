@@ -140,8 +140,6 @@ func (c *signerDecrypter) Accounts(ctx context.Context) ([]string, error) {
 
 var genericPrefix = peeridhelper.MakePeerIDSignatureDomainSeparatedPayload("", []byte{})
 
-// Notice: users must ensure that the data passed to the `Sign` function is correctly domain separated
-// using the `peeridhelper.MakePeerIDSignatureDomainSeparatedPayload` function.
 func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
 	if c.account != account {
 		return nil, fmt.Errorf("account not found: %s", account)

@@ -18,7 +18,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	SendRequests(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.Input) (*capabilities.ResponseAndMetadata[*confidentialhttp.Output], error)
+	SendRequests(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.EnclaveActionInput) (*capabilities.ResponseAndMetadata[*confidentialhttp.HTTPEnclaveResponseData], error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -64,7 +64,7 @@ func (c *ClientServer) Close() error {
 	defer cancel()
 
 	if c.capabilityRegistry != nil {
-		if err := c.capabilityRegistry.Remove(ctx, "confidential-http-actions@1.0.0-alpha"); err != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "confidential-http@1.0.0-alpha"); err != nil {
 			return err
 		}
 	}
@@ -91,12 +91,12 @@ type clientCapability struct {
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("confidential-http-actions@1.0.0-alpha", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
+	return capabilities.NewCapabilityInfo("confidential-http@1.0.0-alpha", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 
-const ClientID = "confidential-http-actions@1.0.0-alpha"
+const ClientID = "confidential-http@1.0.0-alpha"
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
@@ -118,9 +118,9 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "SendRequests":
-		input := &confidentialhttp.Input{}
+		input := &confidentialhttp.EnclaveActionInput{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.Input, _ *emptypb.Empty) (*confidentialhttp.Output, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.EnclaveActionInput, _ *emptypb.Empty) (*confidentialhttp.HTTPEnclaveResponseData, capabilities.ResponseMetadata, error) {
 			output, err := c.ClientCapability.SendRequests(ctx, metadata, input)
 			if err != nil {
 				return nil, capabilities.ResponseMetadata{}, err

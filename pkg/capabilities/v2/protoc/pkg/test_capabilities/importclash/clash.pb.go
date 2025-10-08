@@ -27,9 +27,9 @@ var File_capabilities_internal_importclash_v1_clash_proto protoreflect.FileDescr
 
 const file_capabilities_internal_importclash_v1_clash_proto_rawDesc = "" +
 	"\n" +
-	"0capabilities/internal/importclash/v1/clash.proto\x12$capabilities.internal.importclash.v1\x1a4capabilities/internal/importclash/p1/v1/import.proto\x1a4capabilities/internal/importclash/p2/v1/import.proto\x1a*tools/generator/v1alpha/cre_metadata.proto2\x98\x01\n" +
+	"0capabilities/internal/importclash/v1/clash.proto\x12$capabilities.internal.importclash.v1\x1a4capabilities/internal/importclash/p1/v1/import.proto\x1a4capabilities/internal/importclash/p2/v1/import.proto\x1a)tools/generator/v1beta/cre_metadata.proto2\x98\x01\n" +
 	"\vBasicAction\x12m\n" +
-	"\rPerformAction\x12-.capabilities.internal.importclash.p1.v1.Item\x1a-.capabilities.internal.importclash.p2.v1.Item\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12import-clash@1.0.0b\x06proto3"
+	"\rPerformAction\x12-.capabilities.internal.importclash.p1.v1.Item\x1a-.capabilities.internal.importclash.p2.v1.Item\x1a\x1a\x92\xb5\x18\x16\b\x01\x12\x12import-clash@1.0.0b\x06proto3"
 
 var file_capabilities_internal_importclash_v1_clash_proto_goTypes = []any{
 	(*p1.Item)(nil), // 0: capabilities.internal.importclash.p1.v1.Item

@@ -270,6 +270,7 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 	retrievedRelayer, err := rc.Get(ctx, types.RelayID{Network: "N1", ChainID: "C1"})
 	require.NoError(t, err)
 
+	zero := evmtypes.Address{}
 	tests := []struct {
 		name string
 		run  func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService)
@@ -336,6 +337,25 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				})
 				require.NoError(t, err)
 				require.Equal(t, big.NewInt(999), reply.Balance)
+			},
+		},
+		{
+			name: "BalanceAt_ZeroAddress_NoError",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				conf := primitives.Finalized
+				mockEVM.EXPECT().BalanceAt(mock.Anything, evmtypes.BalanceAtRequest{
+					Address:         zero,
+					BlockNumber:     big.NewInt(0),
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.BalanceAtReply{Balance: big.NewInt(0)}, nil)
+
+				reply, err := evm.BalanceAt(ctx, evmtypes.BalanceAtRequest{
+					Address:         zero,
+					BlockNumber:     big.NewInt(0),
+					ConfidenceLevel: conf,
+				})
+				require.NoError(t, err)
+				require.Equal(t, big.NewInt(0), reply.Balance)
 			},
 		},
 		{
@@ -489,6 +509,24 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			},
 		},
 		{
+			name: "SubmitTransaction_ZeroTo_NoError",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				txRequest := evmtypes.SubmitTransactionRequest{
+					To:   zero,
+					Data: []byte("data"),
+				}
+				expectedTxResult := evmtypes.TransactionResult{
+					TxStatus: evmtypes.TxSuccess,
+					TxHash:   evmtypes.Hash{9, 9, 9},
+				}
+				// Should not error even when To is zero address.
+				mockEVM.EXPECT().SubmitTransaction(mock.Anything, txRequest).Return(&expectedTxResult, nil)
+				txResult, err := evm.SubmitTransaction(ctx, txRequest)
+				require.NoError(t, err)
+				require.Equal(t, &expectedTxResult, txResult)
+			},
+		},
+		{
 			name: "CalculateTransactionFee",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				gasInfo := evmtypes.ReceiptGasInfo{
@@ -502,6 +540,42 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				fee, err := evm.CalculateTransactionFee(ctx, gasInfo)
 				require.NoError(t, err)
 				require.Equal(t, expectedFee, fee)
+			},
+		},
+		{
+			name: "SubmitTransaction_ZeroTo_NoError",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				txRequest := evmtypes.SubmitTransactionRequest{
+					To:   zero,           // 0x00..00
+					Data: []byte("data"), // arbitrary payload
+				}
+				expectedTxResult := evmtypes.TransactionResult{
+					TxStatus: evmtypes.TxSuccess,
+					TxHash:   evmtypes.Hash{9, 9, 9},
+				}
+				// Should not error even when To is zero address.
+				mockEVM.EXPECT().SubmitTransaction(mock.Anything, txRequest).Return(&expectedTxResult, nil)
+				txResult, err := evm.SubmitTransaction(ctx, txRequest)
+				require.NoError(t, err)
+				require.Equal(t, &expectedTxResult, txResult)
+			},
+		},
+		{
+			name: "GetForwarderForEOA_ErrorsOnZeroEoa",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				mockEVM.EXPECT().GetForwarderForEOA(mock.Anything, zero, address, "str").Return(address1, nil)
+				res, err := evm.GetForwarderForEOA(ctx, zero, address, "str")
+				require.NoError(t, err)
+				require.Equal(t, address1, res)
+			},
+		},
+		{
+			name: "GetForwarderForEOA_ErrorsOnZeroOCRID",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				mockEVM.EXPECT().GetForwarderForEOA(mock.Anything, address, zero, "str").Return(address1, nil)
+				res, err := evm.GetForwarderForEOA(ctx, address, zero, "str")
+				require.NoError(t, err)
+				require.Equal(t, address1, res)
 			},
 		},
 	}

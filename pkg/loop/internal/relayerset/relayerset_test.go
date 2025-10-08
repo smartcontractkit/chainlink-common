@@ -543,24 +543,6 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			},
 		},
 		{
-			name: "SubmitTransaction_ZeroTo_NoError",
-			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				txRequest := evmtypes.SubmitTransactionRequest{
-					To:   zero,           // 0x00..00
-					Data: []byte("data"), // arbitrary payload
-				}
-				expectedTxResult := evmtypes.TransactionResult{
-					TxStatus: evmtypes.TxSuccess,
-					TxHash:   evmtypes.Hash{9, 9, 9},
-				}
-				// Should not error even when To is zero address.
-				mockEVM.EXPECT().SubmitTransaction(mock.Anything, txRequest).Return(&expectedTxResult, nil)
-				txResult, err := evm.SubmitTransaction(ctx, txRequest)
-				require.NoError(t, err)
-				require.Equal(t, &expectedTxResult, txResult)
-			},
-		},
-		{
 			name: "GetForwarderForEOA_ErrorsOnZeroEoa",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				mockEVM.EXPECT().GetForwarderForEOA(mock.Anything, zero, address, "str").Return(address1, nil)

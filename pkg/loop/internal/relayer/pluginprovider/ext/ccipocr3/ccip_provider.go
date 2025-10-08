@@ -29,6 +29,7 @@ type CCIPProviderClient struct {
 	executePluginCodec        ccipocr3.ExecutePluginCodec
 	tokenDataEncoder          ccipocr3.TokenDataEncoder
 	sourceChainExtraDataCodec ccipocr3.SourceChainExtraDataCodec
+	messageHasher             ccipocr3.MessageHasher
 }
 
 func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPProviderClient {
@@ -48,6 +49,7 @@ func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPP
 	c.executePluginCodec = NewExecutePluginCodecClient(b.WithName("ExecutePluginCodec"), cc)
 	c.tokenDataEncoder = NewTokenDataEncoderClient(b.WithName("TokenDataEncoder"), cc)
 	c.sourceChainExtraDataCodec = NewSourceChainExtraDataCodecClient(b.WithName("SourceChainExtraDataCodec"), cc)
+	c.messageHasher = NewMessageHasherClient(b.WithName("MessageHasher"), cc)
 
 	return c
 }
@@ -76,6 +78,7 @@ func (p *CCIPProviderClient) Codec() ccipocr3.Codec {
 		ExecutePluginCodec:        p.executePluginCodec,
 		TokenDataEncoder:          p.tokenDataEncoder,
 		SourceChainExtraDataCodec: p.sourceChainExtraDataCodec,
+		MessageHasher:             p.messageHasher,
 	}
 }
 
@@ -104,4 +107,5 @@ func RegisterProviderServices(s *grpc.Server, provider types.CCIPProvider) {
 	ccipocr3pb.RegisterExecutePluginCodecServer(s, NewExecutePluginCodecServer(codec.ExecutePluginCodec))
 	ccipocr3pb.RegisterTokenDataEncoderServer(s, NewTokenDataEncoderServer(codec.TokenDataEncoder))
 	ccipocr3pb.RegisterSourceChainExtraDataCodecServer(s, NewSourceChainExtraDataCodecServer(codec.SourceChainExtraDataCodec))
+	ccipocr3pb.RegisterMsgHasherServer(s, NewMessageHasherServer(codec.MessageHasher))
 }

@@ -41,7 +41,7 @@ type Setting[T any] struct {
 }
 
 func (s Setting[T]) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%v", s.DefaultValue)), nil
+	return fmt.Appendf(nil, "%v", s.DefaultValue), nil
 }
 
 func (s *Setting[T]) UnmarshalText(b []byte) (err error) {

@@ -118,7 +118,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 	}
 
 	// Create LLO aggregators for each workflow and populate the store
-	for i := 0; i < numWorkflows; i++ {
+	for i := range numWorkflows {
 		workflowID := fmt.Sprintf("workflow-%d", i)
 		executionID := fmt.Sprintf("execution-%d", i)
 
@@ -133,7 +133,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 		require.NoError(b, err)
 
 		// Create list with the LLO event
-		listVal, err := values.NewList([]interface{}{wrappedEvent})
+		listVal, err := values.NewList([]any{wrappedEvent})
 		require.NoError(b, err)
 
 		// Create and add request to store
@@ -179,7 +179,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 	}
 
 	// Reset timer and enable memory allocation reporting
-	b.ResetTimer()
+
 	b.ReportAllocs()
 
 	// Preallocate memory stats variables
@@ -190,7 +190,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 	var totalObservationSize int
 
 	// Run the benchmark
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		runtime.GC() // Run garbage collection before measurement to reduce noise
 		runtime.ReadMemStats(&memStatsBefore)
 
@@ -241,7 +241,7 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 	}
 
 	// Create LLO aggregators for each workflow
-	for i := 0; i < numWorkflows; i++ {
+	for i := range numWorkflows {
 		workflowID := fmt.Sprintf("workflow-%d", i)
 		agg, err := createLLOAggregator(b, numStreamsPerWorkflow)
 		require.NoError(b, err)
@@ -282,11 +282,11 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 	}
 
 	// Reset timer and enable memory allocation reporting
-	b.ResetTimer()
+
 	b.ReportAllocs()
 
 	// Run the benchmark
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var memStatsBefore, memStatsAfter runtime.MemStats
 		runtime.ReadMemStats(&memStatsBefore)
 
@@ -318,7 +318,7 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 // createTestQuery generates a query with the specified number of workflow IDs
 func createTestQuery(numWorkflows int) ([]byte, error) {
 	ids := make([]*pbtypes.Id, numWorkflows)
-	for i := 0; i < numWorkflows; i++ {
+	for i := range numWorkflows {
 		ids[i] = &pbtypes.Id{
 			WorkflowExecutionId:      fmt.Sprintf("execution-%d", i),
 			WorkflowId:               fmt.Sprintf("workflow-%d", i),
@@ -354,7 +354,7 @@ func createTestPreviousOutcome(numWorkflows, numStreamsPerWorkflow int) ([]byte,
 	baseTime := time.Now().Add(-10 * time.Minute).UnixNano()
 	zeroPrice, _ := decimal.Zero.MarshalBinary()
 
-	for i := 0; i < numStreamsPerWorkflow; i++ {
+	for i := range numStreamsPerWorkflow {
 		streamID := uint32(i)
 		baseMetadata.StreamInfo[streamID] = &datafeeds.LLOStreamInfo{
 			Timestamp: baseTime,
@@ -369,7 +369,7 @@ func createTestPreviousOutcome(numWorkflows, numStreamsPerWorkflow int) ([]byte,
 	}
 
 	// Create outcome entries for each workflow, using the same metadata
-	for i := 0; i < numWorkflows; i++ {
+	for i := range numWorkflows {
 		workflowID := fmt.Sprintf("workflow-%d", i)
 		outcome.Outcomes[workflowID] = &pbtypes.AggregationOutcome{
 			Metadata:         metadataBytes,
@@ -387,7 +387,7 @@ func createTestPreviousOutcome(numWorkflows, numStreamsPerWorkflow int) ([]byte,
 func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, numStreamsPerWorkflow int) []types.AttributedObservation {
 	aos := make([]types.AttributedObservation, numOracles)
 	ts := timestamppb.Now() // Use a consistent timestamp for all observations to ensure consensus
-	for oracle := 0; oracle < numOracles; oracle++ {
+	for oracle := range numOracles {
 		observationsProto := &pbtypes.Observations{
 			Observations:          make([]*pbtypes.Observation, numWorkflows),
 			RegisteredWorkflowIds: make([]string, numWorkflows),
@@ -395,7 +395,7 @@ func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, nu
 		}
 
 		// Create an observation for each workflow
-		for i := 0; i < numWorkflows; i++ {
+		for i := range numWorkflows {
 			workflowID := fmt.Sprintf("workflow-%d", i)
 			executionID := fmt.Sprintf("execution-%d", i)
 			observationsProto.RegisteredWorkflowIds[i] = workflowID
@@ -406,7 +406,7 @@ func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, nu
 			require.NoError(b, err)
 
 			// Create list value with the LLO event
-			listVal, err := values.NewList([]interface{}{wrappedEvent})
+			listVal, err := values.NewList([]any{wrappedEvent})
 			require.NoError(b, err)
 
 			listProto := values.Proto(listVal).GetListValue()
@@ -451,7 +451,7 @@ func createLLOEvent(b *testing.B, numStreams int, ts time.Time) *datastreams.LLO
 	}
 
 	// Create stream values with consistent prices
-	for i := 0; i < numStreams; i++ {
+	for i := range numStreams {
 		price := decimal.NewFromInt(int64(100 + i%10)) // Use a few different price values
 		binary, err := price.MarshalBinary()
 		require.NoError(b, err)
@@ -469,7 +469,7 @@ func createLLOEvent(b *testing.B, numStreams int, ts time.Time) *datastreams.LLO
 func createLLOAggregator(b *testing.B, numStreams int) (pbtypes.Aggregator, error) {
 	// Create feed configs for all streams
 	streamConfigs := make(map[string]datafeeds.FeedConfig, numStreams)
-	for i := 0; i < numStreams; i++ {
+	for i := range numStreams {
 		streamConfigs[fmt.Sprintf("%d", i)] = datafeeds.FeedConfig{
 			//	Deviation:     decimal.NewFromFloat(0.01),     // 1% deviation threshold
 			Heartbeat:     3600,                           // 1 hour heartbeat

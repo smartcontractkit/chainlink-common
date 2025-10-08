@@ -67,7 +67,7 @@ func TestPipelineRunnerService(t *testing.T) {
 	trs, err := client.ExecuteRun(
 		ctx,
 		"my-spec",
-		core.Vars{Vars: map[string]interface{}{"my-vars": true}},
+		core.Vars{Vars: map[string]any{"my-vars": true}},
 		core.Options{MaxTaskDuration: 10 * time.Second},
 	)
 	require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestPipelineRunnerService_CallArgs(t *testing.T) {
 
 	spec := "my-spec"
 	vars := core.Vars{
-		Vars: map[string]interface{}{"my-vars": true},
+		Vars: map[string]any{"my-vars": true},
 	}
 	options := core.Options{
 		MaxTaskDuration: 10 * time.Second,

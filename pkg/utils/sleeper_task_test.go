@@ -104,7 +104,7 @@ func TestSleeperTask_WakeupEnqueuesMaxTwice(t *testing.T) {
 	worker.ignoreSignals = true
 	worker.allowResumeWork <- struct{}{}
 
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		select {
 		case <-worker.ch:
 		case <-ctx.Done():

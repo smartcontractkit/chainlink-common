@@ -37,7 +37,7 @@ func (p *StandardCapabilitiesLoop) GRPCServer(broker *plugin.GRPCBroker, server 
 	return standardcapability.RegisterStandardCapabilitiesServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
-func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(p.BrokerConfig)
 	}
@@ -59,19 +59,7 @@ func (p *StandardCapabilitiesLoop) ClientConfig() *plugin.ClientConfig {
 
 type StandardCapabilities interface {
 	services.Service
-	Initialise(
-		ctx context.Context,
-		config string,
-		telemetryService core.TelemetryService,
-		store core.KeyValueStore,
-		capabilityRegistry core.CapabilitiesRegistry,
-		errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService,
-		relayerSet core.RelayerSet,
-		oracleFactory core.OracleFactory,
-		gatewayConnector core.GatewayConnector,
-		p2pKeystore core.Keystore,
-	) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 

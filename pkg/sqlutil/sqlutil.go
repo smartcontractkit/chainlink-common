@@ -18,17 +18,17 @@ var _ DataSource = (*sqlx.Tx)(nil)
 type DataSource interface {
 	sqlx.ExtContext
 	sqlx.PreparerContext
-	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	GetContext(ctx context.Context, dest any, query string, args ...any) error
+	SelectContext(ctx context.Context, dest any, query string, args ...any) error
 	PrepareNamedContext(ctx context.Context, query string) (*sqlx.NamedStmt, error)
-	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+	NamedExecContext(ctx context.Context, query string, arg any) (sql.Result, error)
 }
 
 type RowScanner interface {
 	Scan(dest ...any) error
-	SliceScan() ([]interface{}, error)
-	MapScan(dest map[string]interface{}) error
-	StructScan(dest interface{}) error
+	SliceScan() ([]any, error)
+	MapScan(dest map[string]any) error
+	StructScan(dest any) error
 }
 
 // NamedQueryContext is like sqlx.NamedQueryContext, but it works with any DataSource.

@@ -29,7 +29,7 @@ func TestNewRoundRobinSelector_NotAlwaysZero(t *testing.T) {
 	numInstances := 100 // Check a reasonable number of instances
 	alwaysZero := true
 
-	for i := 0; i < numInstances; i++ {
+	for range numInstances {
 		selector := NewRoundRobinSelector(items)
 		if selector.index != 0 {
 			alwaysZero = false
@@ -45,7 +45,7 @@ func TestNewRoundRobinSelector_AlwaysZero(t *testing.T) {
 	numInstances := 100 // Check a reasonable number of instances
 	alwaysZero := true
 
-	for i := 0; i < numInstances; i++ {
+	for range numInstances {
 		selector := NewRoundRobinSelector(items, WithFixedStart())
 		if selector.index != 0 {
 			alwaysZero = false
@@ -71,7 +71,7 @@ func TestRoundRobinSelector_Concurrency(t *testing.T) {
 	numRequests := 100
 	results := make(chan string, numRequests)
 
-	for i := 0; i < numRequests; i++ {
+	for range numRequests {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

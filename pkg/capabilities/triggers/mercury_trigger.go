@@ -174,10 +174,7 @@ func (o *MercuryTriggerService) loop() {
 
 func getNextWaitIntervalMs(lastTs, tickerResolutionMs, currentTs int64) int64 {
 	desiredNext := lastTs + tickerResolutionMs
-	nextWait := desiredNext - currentTs
-	if nextWait <= 0 {
-		nextWait = 0
-	}
+	nextWait := max(desiredNext-currentTs, 0)
 	return nextWait
 }
 

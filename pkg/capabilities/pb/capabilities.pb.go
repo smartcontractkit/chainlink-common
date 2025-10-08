@@ -796,7 +796,9 @@ type ResponseMetadata struct {
 	//
 	// If you are working with this in a capability, you should not emit
 	// more than one metering report per node.
-	Metering      []*pb1.MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
+	Metering []*pb1.MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
+	// capdon_n represents the total number of nodes in a capability don.
+	CapdonN       uint32 `protobuf:"varint,2,opt,name=capdon_n,json=capdonN,proto3" json:"capdon_n,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -836,6 +838,13 @@ func (x *ResponseMetadata) GetMetering() []*pb1.MeteringReportNodeDetail {
 		return x.Metering
 	}
 	return nil
+}
+
+func (x *ResponseMetadata) GetCapdonN() uint32 {
+	if x != nil {
+		return x.CapdonN
+	}
+	return 0
 }
 
 type RegistrationMetadata struct {
@@ -1014,6 +1023,7 @@ type InitialiseRequest struct {
 	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
 	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
 	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
+	OrgResolverId      uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1114,6 +1124,13 @@ func (x *InitialiseRequest) GetGatewayConnectorId() uint32 {
 func (x *InitialiseRequest) GetKeystoreId() uint32 {
 	if x != nil {
 		return x.KeystoreId
+	}
+	return 0
+}
+
+func (x *InitialiseRequest) GetOrgResolverId() uint32 {
+	if x != nil {
+		return x.OrgResolverId
 	}
 	return 0
 }
@@ -1223,9 +1240,10 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\v2\x0e.values.v1.MapR\x05value\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12:\n" +
 	"\bmetadata\x18\x03 \x01(\v2\x1e.capabilities.ResponseMetadataR\bmetadata\x12.\n" +
-	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\"R\n" +
+	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\"m\n" +
 	"\x10ResponseMetadata\x12>\n" +
-	"\bmetering\x18\x01 \x03(\v2\".metering.MeteringReportNodeDetailR\bmetering\"\x81\x01\n" +
+	"\bmetering\x18\x01 \x03(\v2\".metering.MeteringReportNodeDetailR\bmetering\x12\x19\n" +
+	"\bcapdon_n\x18\x02 \x01(\rR\acapdonN\"\x81\x01\n" +
 	"\x14RegistrationMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12!\n" +
@@ -1236,7 +1254,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x95\x03\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xbd\x03\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1250,7 +1268,8 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\x12\x1f\n" +
 	"\vkeystore_id\x18\n" +
 	" \x01(\rR\n" +
-	"keystoreId\"O\n" +
+	"keystoreId\x12&\n" +
+	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +

@@ -22,7 +22,7 @@ func (h hexable) Hex() string {
 func TestMarshalJSONSerializable_replaceBytesWithHex(t *testing.T) {
 	t.Parallel()
 
-	type jsm = map[string]interface{}
+	type jsm = map[string]any
 
 	toJSONSerializable := func(val jsm) *jsonserializable.JSONSerializable {
 		return &jsonserializable.JSONSerializable{
@@ -58,7 +58,7 @@ func TestMarshalJSONSerializable_replaceBytesWithHex(t *testing.T) {
 			`{"addresses":["0x2ab9a2dc53736B361b72d900CdF9F78F9406f111","0x2ab9a2dc53736B361b72d900CdF9F78F9406f222"]}`, nil},
 		{"slice of hashes", toJSONSerializable(jsm{"hashes": []hexable{testHash1, testHash2}}),
 			`{"hashes":["0x317cfd032b5d6657995f17fe768f7cc4ea0ada27ad421c4caa685a9071eaf111","0x317cfd032b5d6657995f17fe768f7cc4ea0ada27ad421c4caa685a9071eaf222"]}`, nil},
-		{"slice of interfaces", toJSONSerializable(jsm{"ifaces": []interface{}{[]byte{0x10, 0x11, 0x12}, []byte{0x20, 0x21, 0x22}}}),
+		{"slice of interfaces", toJSONSerializable(jsm{"ifaces": []any{[]byte{0x10, 0x11, 0x12}, []byte{0x20, 0x21, 0x22}}}),
 			`{"ifaces":["0x101112","0x202122"]}`, nil},
 		{"map", toJSONSerializable(jsm{"map": jsm{"slice": []byte{0x10, 0x11, 0x12}, "addr": testAddr1}}),
 			`{"map":{"addr":"0x2ab9a2dc53736B361b72d900CdF9F78F9406f111","slice":"0x101112"}}`, nil},
@@ -85,16 +85,16 @@ func TestUnmarshalJSONSerializable(t *testing.T) {
 
 	tests := []struct {
 		name, input string
-		expected    interface{}
+		expected    any
 	}{
 		{"null json", `null`, nil},
 		{"bool", `true`, true},
 		{"string", `"foo"`, "foo"},
-		{"object with int", `{"foo": 42}`, map[string]interface{}{"foo": int64(42)}},
-		{"object with float", `{"foo": 3.14}`, map[string]interface{}{"foo": float64(3.14)}},
-		{"object with big int", `{"foo": 18446744073709551616}`, map[string]interface{}{"foo": big}},
-		{"slice", `[42, 3.14]`, []interface{}{int64(42), float64(3.14)}},
-		{"nested map", `{"m": {"foo": 42}}`, map[string]interface{}{"m": map[string]interface{}{"foo": int64(42)}}},
+		{"object with int", `{"foo": 42}`, map[string]any{"foo": int64(42)}},
+		{"object with float", `{"foo": 3.14}`, map[string]any{"foo": float64(3.14)}},
+		{"object with big int", `{"foo": 18446744073709551616}`, map[string]any{"foo": big}},
+		{"slice", `[42, 3.14]`, []any{int64(42), float64(3.14)}},
+		{"nested map", `{"m": {"foo": 42}}`, map[string]any{"m": map[string]any{"foo": int64(42)}}},
 	}
 
 	for _, test := range tests {

@@ -57,7 +57,7 @@ func TestValidator_Schema(t *testing.T) {
 
 func TestValidator_ValidateSchema(t *testing.T) {
 	v, err := values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"feedIds": []string{"0x1111111111111111111100000000000000000000000000000000000000000000"},
 		},
 	)
@@ -91,7 +91,7 @@ func TestValidator_ValidateSchema(t *testing.T) {
 	assert.NotNil(t, result)
 
 	v, err = values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"feedIds": []string{"0x111111111111111111110F000000000000000000000000000000000000000000"},
 		},
 	)
@@ -103,17 +103,17 @@ func TestValidator_ValidateSchema(t *testing.T) {
 }
 
 func TestValidator_ValidateConfig(t *testing.T) {
-	m, err := values.NewMap(map[string]interface{}{
+	m, err := values.NewMap(map[string]any{
 		"baz": "world",
 	})
 	assert.NoError(t, err)
 
-	l, err := values.NewList([]interface{}{"hello", "world"})
+	l, err := values.NewList([]any{"hello", "world"})
 	assert.NoError(t, err)
 
 	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
 	config, err := values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"foo":  l,
 			"bar":  123,
 			"bonk": m,
@@ -139,7 +139,7 @@ func TestValidator_ValidateConfig(t *testing.T) {
 func TestValidator_ValidateInputs(t *testing.T) {
 	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
 	inputs, err := values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"baz": "world",
 			"qux": 456,
 		},
@@ -150,7 +150,7 @@ func TestValidator_ValidateInputs(t *testing.T) {
 	assert.NotNil(t, result)
 
 	inputs, err = values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"baz": "world",
 			"qux": -1,
 		},
@@ -161,7 +161,7 @@ func TestValidator_ValidateInputs(t *testing.T) {
 	assert.NotNil(t, result)
 
 	inputs, err = values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"baz": "worl",
 			"qux": -1,
 		},
@@ -176,7 +176,7 @@ func TestValidator_ValidateOutputs(t *testing.T) {
 	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
 
 	outputs, err := values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"quux":  "world",
 			"corge": 456,
 		},
@@ -187,7 +187,7 @@ func TestValidator_ValidateOutputs(t *testing.T) {
 	assert.NotNil(t, result)
 
 	outputs, err = values.NewMap(
-		map[string]interface{}{
+		map[string]any{
 			"quux":  "world",
 			"corge": 0,
 		},
@@ -256,7 +256,7 @@ func TestValidator_GenerateSchema(t *testing.T) {
 
 var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
 	return json.Valid(x) && json.Valid(y)
-}, cmp.Transformer("ParseJSON", func(in []byte) (out interface{}) {
+}, cmp.Transformer("ParseJSON", func(in []byte) (out any) {
 	if err := json.Unmarshal(in, &out); err != nil {
 		panic(err) // should never occur given previous filter to ensure valid JSON
 	}

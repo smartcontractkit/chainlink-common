@@ -34,6 +34,7 @@ var Default = Schema{
 	WorkflowLimit:                               Int(200),
 	WorkflowRegistrationQueueLimit:              Int(20),
 	WorkflowExecutionConcurrencyLimit:           Int(50),
+	WorkflowTriggerRateLimit:                    Rate(200, 200),
 	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
 	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
 	GatewayIncomingPayloadSizeLimit:             Size(10 * config.KByte),
@@ -44,6 +45,7 @@ var Default = Schema{
 	},
 	PerOwner: Owners{
 		WorkflowExecutionConcurrencyLimit: Int(50),
+		WorkflowTriggerRateLimit:          Rate(200, 200),
 	},
 	PerWorkflow: Workflows{
 		TriggerLimit:                  Int(10),
@@ -73,11 +75,11 @@ var Default = Schema{
 			RateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
 		LogTrigger: logTrigger{
-			RateLimit:                Rate(rate.Every(10*time.Second), -1), //TODO
 			Limit:                    Int(5),
-			EventRateLimit:           Rate(rate.Every(time.Minute/10), 10), // TODO
+			EventRateLimit:           Rate(rate.Every(time.Minute/10), 10),
 			FilterAddressLimit:       Int(5),
 			FilterTopicsPerSlotLimit: Int(10),
+			EventSizeLimit:           Size(5 * config.KByte),
 		},
 		HTTPAction: httpAction{
 			RateLimit:         Rate(rate.Every(30*time.Second), 3),
@@ -91,7 +93,7 @@ var Default = Schema{
 			TargetsLimit:    Int(3),
 			ReportSizeLimit: Size(config.KByte),
 			EVM: evmChainWrite{
-				TransactionGasLimit: Uint64(500_000), //TODO
+				TransactionGasLimit: Uint64(500_000),
 			},
 		},
 		ChainRead: chainRead{
@@ -106,6 +108,7 @@ type Schema struct {
 	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
 	WorkflowRegistrationQueueLimit              Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	WorkflowTriggerRateLimit                    Setting[config.Rate]
 	GatewayUnauthenticatedRequestRateLimit      Setting[config.Rate]
 	GatewayUnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
 	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
@@ -121,6 +124,7 @@ type Orgs struct {
 
 type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	WorkflowTriggerRateLimit          Setting[config.Rate]
 }
 
 type Workflows struct {
@@ -166,9 +170,9 @@ type httpTrigger struct {
 	RateLimit Setting[config.Rate]
 }
 type logTrigger struct {
-	RateLimit                Setting[config.Rate]
 	Limit                    Setting[int] `unit:"{trigger}"`
 	EventRateLimit           Setting[config.Rate]
+	EventSizeLimit           Setting[config.Size]
 	FilterAddressLimit       Setting[int] `unit:"{address}"`
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }

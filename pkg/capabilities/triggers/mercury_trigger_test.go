@@ -30,7 +30,7 @@ func registerTrigger(
 	<-chan capabilities.TriggerResponse,
 	capabilities.TriggerRegistrationRequest,
 ) {
-	config, err := values.NewMap(map[string]interface{}{
+	config, err := values.NewMap(map[string]any{
 		"feedIds":        feedIDs,
 		"maxFrequencyMs": 100,
 	})
@@ -221,7 +221,7 @@ func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
 	ctx := t.Context()
 	require.NoError(t, ts.Start(ctx))
 
-	cm := map[string]interface{}{
+	cm := map[string]any{
 		"feedIds":        []string{feedOne},
 		"maxFrequencyMs": 90,
 	}
@@ -238,7 +238,7 @@ func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
 	_, err = ts.RegisterTrigger(ctx, cr)
 	require.Error(t, err)
 
-	cm = map[string]interface{}{
+	cm = map[string]any{
 		"feedIds":        []string{feedOne},
 		"maxFrequencyMs": 0,
 	}
@@ -248,7 +248,7 @@ func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
 	_, err = ts.RegisterTrigger(ctx, cr)
 	require.Error(t, err)
 
-	cm = map[string]interface{}{
+	cm = map[string]any{
 		"feedIds":        []string{},
 		"maxFrequencyMs": 1000,
 	}
@@ -282,7 +282,7 @@ func upwrapTriggerEvent(t *testing.T, req capabilities.TriggerResponse) (capabil
 
 func TestMercuryTrigger_ConfigValidation(t *testing.T) {
 	var newConfig = func(t *testing.T, feedIDs []string, maxFrequencyMs int) *values.Map {
-		cm := map[string]interface{}{
+		cm := map[string]any{
 			"feedIds":        feedIDs,
 			"maxFrequencyMs": maxFrequencyMs,
 		}
@@ -341,13 +341,13 @@ func TestMercuryTrigger_WrapReports(t *testing.T) {
 	P := 50   // feeds
 	B := 1000 // report size in bytes
 	meta := datastreams.Metadata{}
-	for i := 0; i < S; i++ {
+	for range S {
 		meta.Signers = append(meta.Signers, randomByteArray(t, 20))
 	}
 	reportList := []datastreams.FeedReport{}
-	for i := 0; i < P; i++ {
+	for range P {
 		signatures := [][]byte{}
-		for j := 0; j < S; j++ {
+		for range S {
 			signatures = append(signatures, randomByteArray(t, 65))
 		}
 		reportList = append(reportList, datastreams.FeedReport{

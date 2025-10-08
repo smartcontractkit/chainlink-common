@@ -127,6 +127,8 @@ message ResponseMetadata {
   // If you are working with this in a capability, you should not emit
   // more than one metering report per node.
   repeated metering.MeteringReportNodeDetail metering = 1;
+  // capdon_n represents the total number of nodes in a capability don.
+  uint32 capdon_n = 2;
 }
 
 message RegistrationMetadata {
@@ -167,6 +169,7 @@ message InitialiseRequest {
   uint32 oracle_factory_id = 8;
   uint32 gateway_connector_id = 9;
   uint32 keystore_id = 10;
+  uint32 org_resolver_id = 11;
 }
 
 message CapabilityInfosReply {

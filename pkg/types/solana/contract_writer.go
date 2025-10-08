@@ -16,7 +16,7 @@ type MethodConfig struct {
 	FromAddress        string                `json:"fromAddress"`
 	InputModifications codec.ModifiersConfig `json:"inputModifications,omitempty"`
 	ChainSpecificName  string                `json:"chainSpecificName"`
-	LookupTables       LookupTables          `json:"lookupTables,omitempty"`
+	LookupTables       LookupTables          `json:"lookupTables"`
 	Accounts           []Lookup              `json:"accounts"`
 	ATAs               []ATALookup           `json:"atas,omitempty"`
 	// Location in the args where the debug ID is stored

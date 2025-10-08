@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"sort"
 	"strconv"
 	"time"
@@ -229,7 +230,7 @@ func (a *reduceAggregator) shouldReport(lggr logger.Logger, field AggregationFie
 			if !bytes.Equal(v, unwrappedSingleValue.([]byte)) {
 				return true, nil
 			}
-		case map[string]interface{}, []any:
+		case map[string]any, []any:
 			marshalledOldValue, err := proto.MarshalOptions{Deterministic: true}.Marshal(values.Proto(oldValue))
 			if err != nil {
 				return false, err
@@ -545,12 +546,7 @@ func formatReport(report map[string]any, format string) (any, error) {
 }
 
 func isOneOf(toCheck string, options []string) bool {
-	for _, option := range options {
-		if toCheck == option {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(options, toCheck)
 }
 
 func NewReduceAggregator(config values.Map) (types.Aggregator, error) {

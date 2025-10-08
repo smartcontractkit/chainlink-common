@@ -43,11 +43,11 @@ func TestMessageProtobufFlattening(t *testing.T) {
 				FeeValueJuels:  ccipocr3.NewBigInt(big.NewInt(2000)),
 				TokenAmounts: []ccipocr3.RampTokenAmount{
 					{
-						SourcePoolAddress: []byte("source-pool"),
-						DestTokenAddress:  []byte("dest-token"),
-						ExtraData:         []byte("token-extra"),
-						Amount:            ccipocr3.NewBigInt(big.NewInt(500)),
-						DestExecData:      []byte("dest-exec-data"),
+						SourcePoolAddress: ccipocr3.UnknownAddress("0x1111111111111111111111111111111111111111"),
+						DestTokenAddress:  ccipocr3.UnknownAddress("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+						ExtraData:         ccipocr3.Bytes("extra-token-data-1"),
+						Amount:            ccipocr3.NewBigInt(big.NewInt(1)),
+						DestExecData:      ccipocr3.Bytes("dest-exec-data-1"),
 					},
 				},
 			},
@@ -857,7 +857,7 @@ func TestMessageTokenIDMapErrorHandling(t *testing.T) {
 				SourcePoolAddress: []byte("test"),
 				DestTokenAddress:  []byte("test"),
 				ExtraData:         []byte("test"),
-				Amount:            &ccipocr3pb.BigInt{Value: []byte{0x01}},
+				Amount:            &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x01}},
 			},
 		}
 
@@ -1229,32 +1229,27 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name:     "empty value bytes", // empty bytes are treated as zero
-			input:    &ccipocr3pb.BigInt{Value: []byte{}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{}},
 			expected: big.NewInt(0),
 		},
 		{
-			name:     "nil value bytes",
-			input:    &ccipocr3pb.BigInt{Value: nil},
-			expected: nil,
-		},
-		{
 			name:     "zero value",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(0).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(0).Bytes()},
 			expected: big.NewInt(0),
 		},
 		{
 			name:     "positive small integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(42).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(42).Bytes()},
 			expected: big.NewInt(42),
 		},
 		{
 			name:     "positive large integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(1234567890).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(1234567890).Bytes()},
 			expected: big.NewInt(1234567890),
 		},
 		{
 			name: "very large positive integer",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetString("999999999999999999999999999999", 10)
 				return val.Bytes()
@@ -1267,7 +1262,7 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name: "maximum uint64 value",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetUint64(^uint64(0)) // max uint64
 				return val.Bytes()
@@ -1280,7 +1275,7 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name: "256-bit integer (32 bytes)",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				// Create a 256-bit integer (all bits set)
 				bytes := make([]byte, 32)
 				for i := range bytes {
@@ -1298,18 +1293,47 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name:     "single byte value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0xFF}},
 			expected: big.NewInt(255),
 		},
 		{
 			name:     "two byte value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0x01, 0x00}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x01, 0x00}},
 			expected: big.NewInt(256),
 		},
 		{
 			name:     "leading zero bytes (should be handled correctly)",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0x00, 0x00, 0x01, 0x00}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x00, 0x00, 0x01, 0x00}},
 			expected: big.NewInt(256),
+		},
+		// Negative number test cases
+		{
+			name:     "negative small integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(42).Bytes()},
+			expected: big.NewInt(-42),
+		},
+		{
+			name:     "negative large integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(1234567890).Bytes()},
+			expected: big.NewInt(-1234567890),
+		},
+		{
+			name: "negative very large integer",
+			input: &ccipocr3pb.BigInt{Negative: true, Value: func() []byte {
+				val := new(big.Int)
+				val.SetString("999999999999999999999999999999", 10)
+				return val.Bytes()
+			}()},
+			expected: func() *big.Int {
+				val := new(big.Int)
+				val.SetString("-999999999999999999999999999999", 10)
+				return val
+			}(),
+		},
+		{
+			name:     "negative single byte value",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: []byte{0xFF}},
+			expected: big.NewInt(-255),
 		},
 	}
 
@@ -1343,32 +1367,27 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name:     "empty value bytes should return zero BigInt",
-			input:    &ccipocr3pb.BigInt{Value: []byte{}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{}},
 			expected: ccipocr3.BigInt{Int: big.NewInt(0)},
 		},
 		{
-			name:     "nil value bytes should preserve nil",
-			input:    &ccipocr3pb.BigInt{Value: nil},
-			expected: ccipocr3.BigInt{Int: nil},
-		},
-		{
 			name:     "zero value",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(0).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(0).Bytes()},
 			expected: ccipocr3.NewBigInt(big.NewInt(0)),
 		},
 		{
 			name:     "positive small integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(123).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(123).Bytes()},
 			expected: ccipocr3.NewBigInt(big.NewInt(123)),
 		},
 		{
 			name:     "positive large integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(9876543210).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(9876543210).Bytes()},
 			expected: ccipocr3.NewBigInt(big.NewInt(9876543210)),
 		},
 		{
 			name: "very large positive integer",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetString("123456789012345678901234567890", 10)
 				return val.Bytes()
@@ -1381,7 +1400,7 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name: "maximum uint64 value",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetUint64(^uint64(0)) // max uint64
 				return val.Bytes()
@@ -1394,7 +1413,7 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name: "256-bit integer (32 bytes)",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				// Create a 256-bit integer
 				bytes := make([]byte, 32)
 				for i := range bytes {
@@ -1412,17 +1431,17 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name:     "single byte maximum value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0xFF}},
 			expected: ccipocr3.NewBigInt(big.NewInt(255)),
 		},
 		{
 			name:     "two byte value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF, 0xFF}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0xFF, 0xFF}},
 			expected: ccipocr3.NewBigInt(big.NewInt(65535)),
 		},
 		{
 			name: "ethereum wei amount (18 decimals)",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				// 1 ETH in wei = 10^18
 				val := new(big.Int)
 				val.SetString("1000000000000000000", 10)
@@ -1433,6 +1452,35 @@ func TestPbToBigInt(t *testing.T) {
 				val.SetString("1000000000000000000", 10)
 				return ccipocr3.NewBigInt(val)
 			}(),
+		},
+		// Negative number test cases
+		{
+			name:     "negative small integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(123).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(-123)),
+		},
+		{
+			name:     "negative large integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(9876543210).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(-9876543210)),
+		},
+		{
+			name: "negative very large integer",
+			input: &ccipocr3pb.BigInt{Negative: true, Value: func() []byte {
+				val := new(big.Int)
+				val.SetString("123456789012345678901234567890", 10)
+				return val.Bytes()
+			}()},
+			expected: func() ccipocr3.BigInt {
+				val := new(big.Int)
+				val.SetString("-123456789012345678901234567890", 10)
+				return ccipocr3.NewBigInt(val)
+			}(),
+		},
+		{
+			name:     "negative single byte value",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: []byte{0xFF}},
+			expected: ccipocr3.NewBigInt(big.NewInt(-255)),
 		},
 	}
 
@@ -1494,6 +1542,39 @@ func TestPbBigIntRoundTrip(t *testing.T) {
 	}
 }
 
+func TestGetChainFeePriceUpdateFakeRoundTrip(t *testing.T) {
+	mapWithZeroValues := map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig{
+		1: {Value: big.NewInt(0), Timestamp: 2},
+		2: {Value: big.NewInt(0), Timestamp: 3},
+		3: {Value: nil, Timestamp: 4},
+	}
+
+	// (s *chainAccessorServer) GetChainFeePriceUpdate() ...
+	pbUpdates := make(map[uint64]*ccipocr3pb.TimestampedUnixBig)
+	for chainSel, update := range mapWithZeroValues {
+		fmt.Println("value:", update.Value, "timestamp:", update.Timestamp)
+		fmt.Println("intToPbBigInt", intToPbBigInt(update.Value))
+		pbUpdates[uint64(chainSel)] = &ccipocr3pb.TimestampedUnixBig{
+			Value:     intToPbBigInt(update.Value),
+			Timestamp: update.Timestamp,
+		}
+	}
+
+	// (c *ChainAccessorClient) GetChainFeePriceUpdate() ...
+	gRPCResponse := &ccipocr3pb.GetChainFeePriceUpdateResponse{
+		FeePriceUpdates: pbUpdates,
+	}
+	result := make(map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig)
+	for chainSel, timestampedUnixBig := range gRPCResponse.FeePriceUpdates {
+		result[ccipocr3.ChainSelector(chainSel)] = ccipocr3.TimestampedUnixBig{
+			Value:     pbToBigInt(timestampedUnixBig.Value).Int,
+			Timestamp: timestampedUnixBig.Timestamp,
+		}
+	}
+
+	assert.Equal(t, result, mapWithZeroValues)
+}
+
 // TestPbToBigIntRoundTrip tests round-trip conversion between protobuf BigInt and ccipocr3.BigInt
 func TestPbToBigIntRoundTrip(t *testing.T) {
 	testValues := []ccipocr3.BigInt{
@@ -1513,6 +1594,15 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 		func() ccipocr3.BigInt {
 			val := new(big.Int)
 			val.SetUint64(^uint64(0)) // max uint64
+			return ccipocr3.NewBigInt(val)
+		}(),
+		// Test negative values
+		ccipocr3.NewBigInt(big.NewInt(-1)),
+		ccipocr3.NewBigInt(big.NewInt(-42)),
+		ccipocr3.NewBigInt(big.NewInt(-255)),
+		func() ccipocr3.BigInt {
+			val := new(big.Int)
+			val.SetString("-123456789012345678901234567890", 10)
 			return ccipocr3.NewBigInt(val)
 		}(),
 		// Test nil value specially
@@ -1540,7 +1630,7 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 // TestPbBigIntEdgeCases tests edge cases and error conditions
 func TestPbBigIntEdgeCases(t *testing.T) {
 	t.Run("empty bytes should not panic", func(t *testing.T) {
-		input := &ccipocr3pb.BigInt{Value: []byte{}}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: []byte{}}
 
 		// Should not panic
 		result1 := pbBigIntToInt(input)
@@ -1551,7 +1641,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 	})
 
 	t.Run("single zero byte should equal zero", func(t *testing.T) {
-		input := &ccipocr3pb.BigInt{Value: []byte{0x00}}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x00}}
 
 		result1 := pbBigIntToInt(input)
 		result2 := pbToBigInt(input)
@@ -1561,7 +1651,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 	})
 
 	t.Run("multiple zero bytes should equal zero", func(t *testing.T) {
-		input := &ccipocr3pb.BigInt{Value: []byte{0x00, 0x00, 0x00, 0x00}}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x00, 0x00, 0x00, 0x00}}
 
 		result1 := pbBigIntToInt(input)
 		result2 := pbToBigInt(input)
@@ -1575,7 +1665,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 		bytes := make([]byte, 64)
 		bytes[0] = 0x01 // Set the most significant bit to 1
 
-		input := &ccipocr3pb.BigInt{Value: bytes}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: bytes}
 
 		result1 := pbBigIntToInt(input)
 		result2 := pbToBigInt(input)
@@ -1591,15 +1681,15 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 func TestPbBigIntConsistency(t *testing.T) {
 	testInputs := []*ccipocr3pb.BigInt{
 		nil,
-		{Value: nil},
-		{Value: []byte{}},
-		{Value: []byte{0x00}},
-		{Value: []byte{0x01}},
-		{Value: []byte{0xFF}},
-		{Value: []byte{0x01, 0x00}},
-		{Value: []byte{0xFF, 0xFF}},
-		{Value: big.NewInt(42).Bytes()},
-		{Value: big.NewInt(1234567890).Bytes()},
+		{Negative: false, Value: nil},
+		{Negative: false, Value: []byte{}},
+		{Negative: false, Value: []byte{0x00}},
+		{Negative: false, Value: []byte{0x01}},
+		{Negative: false, Value: []byte{0xFF}},
+		{Negative: false, Value: []byte{0x01, 0x00}},
+		{Negative: false, Value: []byte{0xFF, 0xFF}},
+		{Negative: false, Value: big.NewInt(42).Bytes()},
+		{Negative: false, Value: big.NewInt(1234567890).Bytes()},
 	}
 
 	for i, input := range testInputs {

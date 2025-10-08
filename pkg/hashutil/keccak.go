@@ -47,7 +47,7 @@ func (k keccak) HashInternal(a, b [32]byte) [32]byte {
 // This value is chosen since it is unlikely to be the result of a hash, and cannot match any internal node preimage.
 func (k keccak) ZeroHash() [32]byte {
 	var zeroes [32]byte
-	for i := 0; i < 32; i++ {
+	for i := range 32 {
 		zeroes[i] = 0xFF
 	}
 	return zeroes

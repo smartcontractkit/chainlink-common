@@ -2,6 +2,7 @@
 	"WorkflowLimit": "200",
 	"WorkflowRegistrationQueueLimit": "20",
 	"WorkflowExecutionConcurrencyLimit": "50",
+	"WorkflowTriggerRateLimit": "200rps:200",
 	"GatewayUnauthenticatedRequestRateLimit": "100rps:-1",
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:-1",
 	"GatewayIncomingPayloadSizeLimit": "10kb",
@@ -10,7 +11,8 @@
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
 	"PerOwner": {
-		"WorkflowExecutionConcurrencyLimit": "50"
+		"WorkflowExecutionConcurrencyLimit": "50",
+		"WorkflowTriggerRateLimit": "200rps:200"
 	},
 	"PerWorkflow": {
 		"TriggerLimit": "10",
@@ -40,9 +42,9 @@
 			"RateLimit": "every30s:3"
 		},
 		"LogTrigger": {
-			"RateLimit": "every10s:-1",
 			"Limit": "5",
 			"EventRateLimit": "every6s:10",
+			"EventSizeLimit": "5kb",
 			"FilterAddressLimit": "5",
 			"FilterTopicsPerSlotLimit": "10"
 		},

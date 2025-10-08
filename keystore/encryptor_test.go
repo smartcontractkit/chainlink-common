@@ -28,7 +28,7 @@ func TestEncryptDecrypt(t *testing.T) {
 		{
 			name:                 "Non-existent encrypt key",
 			remoteKeyType:        "blah",
-			remotePubKey:         th.KeysByType()[keystore.X25519][0].publicKey,
+			remotePubKey:         th.KeysByType()[keystore.X25519][0].PublicKey,
 			decryptKey:           th.KeyName(keystore.X25519, 0),
 			payload:              []byte("hello world"),
 			expectedEncryptError: keystore.ErrEncryptionFailed,
@@ -36,21 +36,21 @@ func TestEncryptDecrypt(t *testing.T) {
 		{
 			name:          "Empty payload x25519",
 			remoteKeyType: keystore.X25519,
-			remotePubKey:  th.KeysByType()[keystore.X25519][0].publicKey,
+			remotePubKey:  th.KeysByType()[keystore.X25519][0].PublicKey,
 			decryptKey:    th.KeyName(keystore.X25519, 0),
 			payload:       []byte{},
 		},
 		{
 			name:          "Empty payload ecdh p256",
 			remoteKeyType: keystore.ECDH_P256,
-			remotePubKey:  th.KeysByType()[keystore.ECDH_P256][0].publicKey,
+			remotePubKey:  th.KeysByType()[keystore.ECDH_P256][0].PublicKey,
 			decryptKey:    th.KeyName(keystore.ECDH_P256, 0),
 			payload:       []byte{},
 		},
 		{
 			name:                 "Non-existent decrypt key",
 			remoteKeyType:        keystore.X25519,
-			remotePubKey:         th.KeysByType()[keystore.X25519][0].publicKey,
+			remotePubKey:         th.KeysByType()[keystore.X25519][0].PublicKey,
 			decryptKey:           "blah",
 			payload:              []byte("hello world"),
 			expectedDecryptError: keystore.ErrDecryptionFailed,
@@ -58,14 +58,14 @@ func TestEncryptDecrypt(t *testing.T) {
 		{
 			name:          "Max payload",
 			remoteKeyType: keystore.X25519,
-			remotePubKey:  th.KeysByType()[keystore.X25519][0].publicKey,
+			remotePubKey:  th.KeysByType()[keystore.X25519][0].PublicKey,
 			decryptKey:    th.KeyName(keystore.X25519, 0),
 			payload:       make([]byte, keystore.MaxEncryptionPayloadSize),
 		},
 		{
 			name:                 "Payload too large",
 			remoteKeyType:        keystore.X25519,
-			remotePubKey:         th.KeysByType()[keystore.X25519][0].publicKey,
+			remotePubKey:         th.KeysByType()[keystore.X25519][0].PublicKey,
 			decryptKey:           th.KeyName(keystore.X25519, 0),
 			payload:              make([]byte, keystore.MaxEncryptionPayloadSize+1),
 			expectedEncryptError: keystore.ErrEncryptionFailed,
@@ -75,7 +75,7 @@ func TestEncryptDecrypt(t *testing.T) {
 		for toKeyName, toKey := range th.KeysByName() {
 			testName := fmt.Sprintf("Encrypt %s to %s", fromKeyName, toKeyName)
 			var expectedEncryptError error
-			if fromKey.keyType == toKey.keyType && fromKey.keyType.IsEncryptionKeyType() {
+			if fromKey.KeyType == toKey.KeyType && fromKey.KeyType.IsEncryptionKeyType() {
 				// Same key types should succeed
 				expectedEncryptError = nil
 			} else {
@@ -85,8 +85,8 @@ func TestEncryptDecrypt(t *testing.T) {
 
 			tt = append(tt, testCase{
 				name:                 testName,
-				remoteKeyType:        fromKey.keyType,
-				remotePubKey:         toKey.publicKey,
+				remoteKeyType:        fromKey.KeyType,
+				remotePubKey:         toKey.PublicKey,
 				decryptKey:           toKeyName,
 				expectedEncryptError: expectedEncryptError,
 				payload:              []byte("hello world"),
@@ -159,7 +159,7 @@ func TestEncryptDecrypt_SharedSecret(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := th.Keystore.DeriveSharedSecret(ctx, keystore.DeriveSharedSecretRequest{
 				KeyName:      tt.keyName,
-				RemotePubKey: th.KeysByType()[tt.keyType][0].publicKey,
+				RemotePubKey: th.KeysByType()[tt.keyType][0].PublicKey,
 			})
 			if tt.expectedError != nil {
 				require.Error(t, err)
@@ -205,7 +205,7 @@ func FuzzEncryptDecryptRoundtrip(f *testing.F) {
 				// Encrypt data using sender key to receiver's public key
 				encryptResp, err := th.Keystore.EncryptAnonymous(ctx, keystore.EncryptAnonymousRequest{
 					RemoteKeyType: keyType,
-					RemotePubKey:  th.KeysByType()[keyType][1].publicKey, // receiver's public key
+					RemotePubKey:  th.KeysByType()[keyType][1].PublicKey, // receiver's public key
 					Data:          data,
 				})
 				require.NoError(t, err, "Encryption should succeed for keyType %s with data length %d", keyType, len(data))

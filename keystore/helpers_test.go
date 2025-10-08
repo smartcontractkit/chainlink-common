@@ -11,8 +11,8 @@ import (
 )
 
 type Key struct {
-	keyType   keystore.KeyType
-	publicKey []byte
+	KeyType   keystore.KeyType
+	PublicKey []byte
 }
 
 type KeystoreTH struct {
@@ -66,10 +66,10 @@ func (th *KeystoreTH) CreateTestKeys(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		th.keysByName[keys.Keys[0].KeyInfo.Name] = Key{keyType: keys.Keys[0].KeyInfo.KeyType, publicKey: keys.Keys[0].KeyInfo.PublicKey}
-		th.keysByType[keyType] = append(th.keysByType[keyType], Key{keyType: keys.Keys[0].KeyInfo.KeyType, publicKey: keys.Keys[0].KeyInfo.PublicKey})
+		th.keysByName[keys.Keys[0].KeyInfo.Name] = Key{KeyType: keys.Keys[0].KeyInfo.KeyType, PublicKey: keys.Keys[0].KeyInfo.PublicKey}
+		th.keysByType[keyType] = append(th.keysByType[keyType], Key{KeyType: keys.Keys[0].KeyInfo.KeyType, PublicKey: keys.Keys[0].KeyInfo.PublicKey})
 
-		th.keysByName[keys.Keys[1].KeyInfo.Name] = Key{keyType: keys.Keys[1].KeyInfo.KeyType, publicKey: keys.Keys[1].KeyInfo.PublicKey}
-		th.keysByType[keyType] = append(th.keysByType[keyType], Key{keyType: keys.Keys[1].KeyInfo.KeyType, publicKey: keys.Keys[1].KeyInfo.PublicKey})
+		th.keysByName[keys.Keys[1].KeyInfo.Name] = Key{KeyType: keys.Keys[1].KeyInfo.KeyType, PublicKey: keys.Keys[1].KeyInfo.PublicKey}
+		th.keysByType[keyType] = append(th.keysByType[keyType], Key{KeyType: keys.Keys[1].KeyInfo.KeyType, PublicKey: keys.Keys[1].KeyInfo.PublicKey})
 	}
 }

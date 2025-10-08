@@ -155,7 +155,9 @@ type EncryptionParams struct {
 func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
 	switch keyType {
 	case Ed25519:
-		return ed25519.PublicKey(internal.Bytes(privateKeyBytes)), nil
+		privateKey := ed25519.PrivateKey(internal.Bytes(privateKeyBytes))
+		publicKey := privateKey.Public().(ed25519.PublicKey)
+		return publicKey, nil
 	case ECDSA_S256:
 		// Here we use SEC1 (uncompressed) format for ECDSA public keys.
 		// Its commonly used and EVM addresses are derived from this format.
@@ -212,7 +214,7 @@ func (k *keystore) load(ctx context.Context) error {
 	}
 
 	// If no data exists, return empty keystore
-	if encryptedKeystore == nil || len(encryptedKeystore) == 0 {
+	if len(encryptedKeystore) == 0 {
 		k.keystore = make(map[string]key)
 		return nil
 	}

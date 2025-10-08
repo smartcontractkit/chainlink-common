@@ -67,7 +67,7 @@ func NewHandler[T ConsensusRequest[T, R], R ConsensusResponse](lggr logger.Logge
 }
 
 func (h *Handler[T, R]) SendResponse(ctx context.Context, resp R) {
-	syncResponse := responseWithRequestStoreRemovalChan[R]{
+	respWithRemovalChan := responseWithRequestStoreRemovalChan[R]{
 		response:                resp,
 		requestRemovedFromStore: make(chan struct{}, 1),
 	}
@@ -75,13 +75,13 @@ func (h *Handler[T, R]) SendResponse(ctx context.Context, resp R) {
 	select {
 	case <-ctx.Done():
 		return
-	case h.responseCh <- syncResponse:
+	case h.responseCh <- respWithRemovalChan:
 	}
 
 	select {
 	case <-ctx.Done():
 		return
-	case <-syncResponse.requestRemovedFromStore:
+	case <-respWithRemovalChan.requestRemovedFromStore:
 	}
 
 }

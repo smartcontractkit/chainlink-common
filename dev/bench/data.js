@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759939569851,
+  "lastUpdate": 1759944442869,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -26766,6 +26766,66 @@ window.BENCHMARK_DATA = {
             "value": 142915,
             "unit": "ns/op",
             "extra": "8078 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3cbebb2412d5a70949797533b2f37cda9330b7a7",
+          "message": "CRE-550: adding logtrigger size cap limit (#1594)",
+          "timestamp": "2025-10-08T19:26:11+02:00",
+          "tree_id": "6a007bc33ea484991483696808ce89ba0721aede",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3cbebb2412d5a70949797533b2f37cda9330b7a7"
+        },
+        "date": 1759944441541,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 626.3,
+            "unit": "ns/op",
+            "extra": "1758016 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98103,
+            "unit": "ns/op",
+            "extra": "12210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.3,
+            "unit": "ns/op",
+            "extra": "2998546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97406,
+            "unit": "ns/op",
+            "extra": "12310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26657,
+            "unit": "ns/op",
+            "extra": "45048 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144706,
+            "unit": "ns/op",
+            "extra": "8034 times\n4 procs"
           }
         ]
       }

@@ -12,6 +12,7 @@ import (
 var _ orgresolver.OrgResolver = (*Client)(nil)
 
 type Client struct {
+	services.Service
 	grpc pb.OrgResolverClient
 }
 
@@ -23,26 +24,6 @@ func (c *Client) Get(ctx context.Context, owner string) (string, error) {
 	return resp.OrganizationId, nil
 }
 
-func (c *Client) Start(_ context.Context) error {
-	return nil
-}
-
-func (c *Client) HealthReport() map[string]error {
-	return map[string]error{c.Name(): nil}
-}
-
-func (c *Client) Close() error {
-	return nil
-}
-
-func (c *Client) Name() string {
-	return "OrgResolverClient"
-}
-
-func (c *Client) Ready() error {
-	return nil
-}
-
-func NewClient(cc grpc.ClientConnInterface) *Client {
-	return &Client{grpc: pb.NewOrgResolverClient(cc)}
+func NewClient(lggr logger.Logger, cc grpc.ClientConnInterface) *Client {
+	return &Client{Service:services.Config{Name:}.NewService(lggr), grpc: pb.NewOrgResolverClient(cc)}
 }

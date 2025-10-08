@@ -172,9 +172,9 @@ type httpTrigger struct {
 type logTrigger struct {
 	Limit                    Setting[int] `unit:"{trigger}"`
 	EventRateLimit           Setting[config.Rate]
+	EventSizeLimit           Setting[config.Size]
 	FilterAddressLimit       Setting[int] `unit:"{address}"`
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
-	EventSizeLimit           Setting[config.Size]
 }
 type httpAction struct {
 	RateLimit         Setting[config.Rate]

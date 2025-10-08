@@ -5,7 +5,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
 )
 
@@ -25,5 +27,5 @@ func (c *Client) Get(ctx context.Context, owner string) (string, error) {
 }
 
 func NewClient(lggr logger.Logger, cc grpc.ClientConnInterface) *Client {
-	return &Client{Service:services.Config{Name:}.NewService(lggr), grpc: pb.NewOrgResolverClient(cc)}
+	return &Client{Service: services.Config{Name: "OrgResolverClient"}.NewService(lggr), grpc: pb.NewOrgResolverClient(cc)}
 }

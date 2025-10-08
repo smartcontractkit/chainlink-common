@@ -1,7 +1,6 @@
 package keystore_test
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -11,13 +10,13 @@ import (
 )
 
 func TestEncryptDecrypt(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	th := NewKeystoreTH(t)
 	th.CreateTestKeys(t)
 
 	type testCase struct {
 		name                 string
-		encryptKey           string
+		remoteKeyType        keystore.KeyType
 		remotePubKey         []byte
 		decryptKey           string
 		payload              []byte
@@ -28,44 +27,44 @@ func TestEncryptDecrypt(t *testing.T) {
 	var tt = []testCase{
 		{
 			name:                 "Non-existent encrypt key",
-			encryptKey:           "blah",
+			remoteKeyType:        "blah",
 			remotePubKey:         th.KeysByType()[keystore.X25519][0].publicKey,
 			decryptKey:           th.KeyName(keystore.X25519, 0),
 			payload:              []byte("hello world"),
 			expectedEncryptError: keystore.ErrEncryptionFailed,
 		},
 		{
-			name:         "Empty payload x25519",
-			encryptKey:   th.KeyName(keystore.X25519, 0),
-			remotePubKey: th.KeysByType()[keystore.X25519][0].publicKey,
-			decryptKey:   th.KeyName(keystore.X25519, 0),
-			payload:      []byte{},
+			name:          "Empty payload x25519",
+			remoteKeyType: keystore.X25519,
+			remotePubKey:  th.KeysByType()[keystore.X25519][0].publicKey,
+			decryptKey:    th.KeyName(keystore.X25519, 0),
+			payload:       []byte{},
 		},
 		{
-			name:         "Empty payload ecdh p256",
-			encryptKey:   th.KeyName(keystore.ECDH_P256, 0),
-			remotePubKey: th.KeysByType()[keystore.ECDH_P256][0].publicKey,
-			decryptKey:   th.KeyName(keystore.ECDH_P256, 0),
-			payload:      []byte{},
+			name:          "Empty payload ecdh p256",
+			remoteKeyType: keystore.ECDH_P256,
+			remotePubKey:  th.KeysByType()[keystore.ECDH_P256][0].publicKey,
+			decryptKey:    th.KeyName(keystore.ECDH_P256, 0),
+			payload:       []byte{},
 		},
 		{
 			name:                 "Non-existent decrypt key",
-			encryptKey:           th.KeyName(keystore.X25519, 0),
+			remoteKeyType:        keystore.X25519,
 			remotePubKey:         th.KeysByType()[keystore.X25519][0].publicKey,
 			decryptKey:           "blah",
 			payload:              []byte("hello world"),
 			expectedDecryptError: keystore.ErrDecryptionFailed,
 		},
 		{
-			name:         "Max payload",
-			encryptKey:   th.KeyName(keystore.X25519, 0),
-			remotePubKey: th.KeysByType()[keystore.X25519][0].publicKey,
-			decryptKey:   th.KeyName(keystore.X25519, 0),
-			payload:      make([]byte, keystore.MaxEncryptionPayloadSize),
+			name:          "Max payload",
+			remoteKeyType: keystore.X25519,
+			remotePubKey:  th.KeysByType()[keystore.X25519][0].publicKey,
+			decryptKey:    th.KeyName(keystore.X25519, 0),
+			payload:       make([]byte, keystore.MaxEncryptionPayloadSize),
 		},
 		{
 			name:                 "Payload too large",
-			encryptKey:           th.KeyName(keystore.X25519, 0),
+			remoteKeyType:        keystore.X25519,
 			remotePubKey:         th.KeysByType()[keystore.X25519][0].publicKey,
 			decryptKey:           th.KeyName(keystore.X25519, 0),
 			payload:              make([]byte, keystore.MaxEncryptionPayloadSize+1),
@@ -86,7 +85,7 @@ func TestEncryptDecrypt(t *testing.T) {
 
 			tt = append(tt, testCase{
 				name:                 testName,
-				encryptKey:           fromKeyName,
+				remoteKeyType:        fromKey.keyType,
 				remotePubKey:         toKey.publicKey,
 				decryptKey:           toKeyName,
 				expectedEncryptError: expectedEncryptError,
@@ -97,10 +96,10 @@ func TestEncryptDecrypt(t *testing.T) {
 
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
-			encryptResp, err := th.Keystore.Encrypt(ctx, keystore.EncryptRequest{
-				KeyName:      tt.encryptKey,
-				RemotePubKey: tt.remotePubKey,
-				Data:         tt.payload,
+			encryptResp, err := th.Keystore.EncryptAnonymous(ctx, keystore.EncryptAnonymousRequest{
+				RemoteKeyType: tt.remoteKeyType,
+				RemotePubKey:  tt.remotePubKey,
+				Data:          tt.payload,
 			})
 			if tt.expectedEncryptError != nil {
 				require.Error(t, err)
@@ -108,7 +107,7 @@ func TestEncryptDecrypt(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			decryptResp, err := th.Keystore.Decrypt(ctx, keystore.DecryptRequest{
+			decryptResp, err := th.Keystore.DecryptAnonymous(ctx, keystore.DecryptAnonymousRequest{
 				KeyName:       tt.decryptKey,
 				EncryptedData: encryptResp.EncryptedData,
 			})
@@ -124,7 +123,7 @@ func TestEncryptDecrypt(t *testing.T) {
 }
 
 func TestEncryptDecrypt_SharedSecret(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	th := NewKeystoreTH(t)
 	th.CreateTestKeys(t)
 
@@ -159,7 +158,7 @@ func TestEncryptDecrypt_SharedSecret(t *testing.T) {
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := th.Keystore.DeriveSharedSecret(ctx, keystore.DeriveSharedSecretRequest{
-				LocalKeyName: tt.keyName,
+				KeyName:      tt.keyName,
 				RemotePubKey: th.KeysByType()[tt.keyType][0].publicKey,
 			})
 			if tt.expectedError != nil {
@@ -197,22 +196,22 @@ func FuzzEncryptDecryptRoundtrip(f *testing.F) {
 			t.Skip("Invalid data size for fuzz test")
 		}
 
-		ctx := context.Background()
+		ctx := t.Context()
 		th := NewKeystoreTH(t)
 		th.CreateTestKeys(t)
 		// Test each encryption key type
 		for _, keyType := range keystore.AllEncryptionKeyTypes {
 			t.Run(fmt.Sprintf("keyType_%s", keyType), func(t *testing.T) {
 				// Encrypt data using sender key to receiver's public key
-				encryptResp, err := th.Keystore.Encrypt(ctx, keystore.EncryptRequest{
-					KeyName:      th.KeyName(keyType, 0),
-					RemotePubKey: th.KeysByType()[keyType][1].publicKey, // receiver's public key
-					Data:         data,
+				encryptResp, err := th.Keystore.EncryptAnonymous(ctx, keystore.EncryptAnonymousRequest{
+					RemoteKeyType: keyType,
+					RemotePubKey:  th.KeysByType()[keyType][1].publicKey, // receiver's public key
+					Data:          data,
 				})
 				require.NoError(t, err, "Encryption should succeed for keyType %s with data length %d", keyType, len(data))
 
 				// Decrypt using receiver key
-				decryptResp, err := th.Keystore.Decrypt(ctx, keystore.DecryptRequest{
+				decryptResp, err := th.Keystore.DecryptAnonymous(ctx, keystore.DecryptAnonymousRequest{
 					KeyName:       th.KeyName(keyType, 1),
 					EncryptedData: encryptResp.EncryptedData,
 				})

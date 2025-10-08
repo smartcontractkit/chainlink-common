@@ -13,10 +13,8 @@ import (
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/nacl/box"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
-	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
 )
 
 // Opaque error messages to prevent information leakage
@@ -26,27 +24,27 @@ var (
 	ErrDecryptionFailed   = fmt.Errorf("decryption operation failed")
 )
 
-type EncryptRequest struct {
-	KeyName      string
-	RemotePubKey []byte
-	Data         []byte
+type EncryptAnonymousRequest struct {
+	RemoteKeyType KeyType
+	RemotePubKey  []byte
+	Data          []byte
 }
 
-type EncryptResponse struct {
+type EncryptAnonymousResponse struct {
 	EncryptedData []byte
 }
 
-type DecryptRequest struct {
+type DecryptAnonymousRequest struct {
 	KeyName       string
 	EncryptedData []byte
 }
 
-type DecryptResponse struct {
+type DecryptAnonymousResponse struct {
 	Data []byte
 }
 
 type DeriveSharedSecretRequest struct {
-	LocalKeyName string
+	KeyName      string
 	RemotePubKey []byte
 }
 
@@ -55,15 +53,9 @@ type DeriveSharedSecretResponse struct {
 }
 
 const (
-	// 16 byte is the standard NIST recommended salt size for HKDF.
-	hkdfSaltSize = 16
-	// Version for the encryption envelope.
-	encVersionV1 uint32 = 1
 	// Maximum payload size for encrypt/decrypt operations (100kb)
 	// Note just an initial limit, we may want to increase this in the future.
 	MaxEncryptionPayloadSize = 100 * 1024
-	// Overhead size for the encryption envelope.
-	overheadSize = 1024
 )
 
 var (
@@ -72,12 +64,13 @@ var (
 )
 
 // Encryptor is an interfaces for hybrid encryption (key exchange + encryption) operations.
-// WARNING: Using the shared secret should only be used directly in
-// cases where very custom encryption schemes are needed and you know
-// exactly what you are doing.
 type Encryptor interface {
-	Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error)
-	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)
+	EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error)
+	DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error)
+	// DeriveSharedSecret: Derives a shared secret between the key specified
+	// and the remote public key. WARNING: Using the shared secret should only be used directly in
+	// cases where very custom encryption schemes are needed and you know
+	// exactly what you are doing.
 	DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error)
 }
 
@@ -85,211 +78,71 @@ type Encryptor interface {
 // Clients should embed this struct to ensure forward compatibility with changes to the Encryptor interface.
 type UnimplementedEncryptor struct{}
 
-func (UnimplementedEncryptor) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
-	return EncryptResponse{}, fmt.Errorf("Encryptor.Encrypt: %w", ErrUnimplemented)
+func (UnimplementedEncryptor) EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error) {
+	return EncryptAnonymousResponse{}, fmt.Errorf("Encryptor.EncryptAnonymous: %w", ErrUnimplemented)
 }
 
-func (UnimplementedEncryptor) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
-	return DecryptResponse{}, fmt.Errorf("Encryptor.Decrypt: %w", ErrUnimplemented)
+func (UnimplementedEncryptor) DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error) {
+	return DecryptAnonymousResponse{}, fmt.Errorf("Encryptor.DecryptAnonymous: %w", ErrUnimplemented)
 }
 
 func (UnimplementedEncryptor) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
 	return DeriveSharedSecretResponse{}, fmt.Errorf("Encryptor.DeriveSharedSecret: %w", ErrUnimplemented)
 }
 
-func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
-	k.mu.RLock()
-	defer k.mu.RUnlock()
-
+func (k *keystore) EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error) {
 	if len(req.Data) > MaxEncryptionPayloadSize {
-		return EncryptResponse{}, ErrEncryptionFailed
+		return EncryptAnonymousResponse{}, ErrEncryptionFailed
 	}
 
-	key, ok := k.keystore[req.KeyName]
-	if !ok {
-		return EncryptResponse{}, ErrEncryptionFailed
-	}
-
-	switch key.keyType {
+	switch req.RemoteKeyType {
 	case X25519:
-		if len(req.RemotePubKey) != 32 {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		encrypted, err := box.SealAnonymous(nil, req.Data, (*[32]byte)(req.RemotePubKey), rand.Reader)
+		encrypted, err := k.encryptX25519Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
+			return EncryptAnonymousResponse{}, err
 		}
-		return EncryptResponse{
+		return EncryptAnonymousResponse{
 			EncryptedData: encrypted,
 		}, nil
 	case ECDH_P256:
-		curve := ecdh.P256()
-		if len(req.RemotePubKey) != 65 {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		// Remote public key must be on the P256 curve for the shared secret to work.
-		recipientPub, err := curve.NewPublicKey(req.RemotePubKey)
+		encrypted, err := k.encryptECDHP256Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
+			return EncryptAnonymousResponse{}, err
 		}
-		// Create an ephemeral keypair on the P256 curve used for encryption.
-		ephPriv, err := curve.GenerateKey(rand.Reader)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		// The magic here is that the receipient can compute the same
-		// shared secret because ephPriv*G*recipientPriv = ephPub*G.
-		// This lets them derive the same ephemeral key used for encryption
-		// so they can decrypt the ciphertext.
-		shared, err := ephPriv.ECDH(recipientPub)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		// Derive AES-256-GCM key
-		// The reason we do this is so that we can use symmetric encryption (more efficient)
-		// This is part of any standard hybrid encryption scheme.
-		// We include random salt to prevent rainbow table attacks (i.e. preventing
-		// attackers from tracking a mapping of encryption data to plaintext)
-		salt := make([]byte, hkdfSaltSize)
-		if _, err := rand.Read(salt); err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		derivedKey, err := deriveAESKeyFromSharedSecret(shared, salt, infoAESGCM)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		block, err := aes.NewCipher(derivedKey)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		gcm, err := cipher.NewGCM(block)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		nonce := make([]byte, gcm.NonceSize())
-		if _, err := rand.Read(nonce); err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		ephPub := ephPriv.PublicKey().Bytes()
-
-		// Create the protobuf envelope
-		envelope := &serialization.ECDHEnvelope{
-			Version:            encVersionV1,
-			Algorithm:          ECDH_P256.String(),
-			EphemeralPublicKey: ephPub,
-			Salt:               salt,
-			Nonce:              nonce,
-		}
-
-		// Marshal the envelope for AAD (without ciphertext)
-		aadBytes, err := proto.Marshal(envelope)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-
-		// Critical to include the header parameters as additional authenticated data.
-		// Prevents a MITM from changing the header.
-		ciphertext := gcm.Seal(nil, nonce, req.Data, aadBytes)
-
-		// Add ciphertext to envelope
-		envelope.Ciphertext = ciphertext
-
-		// Marshal the complete envelope
-		out, err := proto.Marshal(envelope)
-		if err != nil {
-			return EncryptResponse{}, ErrEncryptionFailed
-		}
-		return EncryptResponse{EncryptedData: out}, nil
+		return EncryptAnonymousResponse{EncryptedData: encrypted}, nil
 	default:
-		return EncryptResponse{}, ErrEncryptionFailed
+		return EncryptAnonymousResponse{}, ErrEncryptionFailed
 	}
 }
 
-func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
+func (k *keystore) DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > (MaxEncryptionPayloadSize+overheadSize) {
-		return DecryptResponse{}, ErrDecryptionFailed
+	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > MaxEncryptionPayloadSize*2 {
+		return DecryptAnonymousResponse{}, ErrDecryptionFailed
 	}
 
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		return DecryptResponse{}, ErrDecryptionFailed
+		return DecryptAnonymousResponse{}, ErrDecryptionFailed
 	}
 
 	switch key.keyType {
 	case X25519:
-		decrypted, ok := box.OpenAnonymous(nil, req.EncryptedData, (*[32]byte)(key.publicKey), (*[32]byte)(internal.Bytes(key.privateKey)))
-		if !ok {
-			return DecryptResponse{}, ErrDecryptionFailed
+		decrypted, err := k.decryptX25519Anonymous(req.EncryptedData, key.privateKey, key.publicKey)
+		if err != nil {
+			return DecryptAnonymousResponse{}, err
 		}
-		if len(decrypted) == 0 {
-			// box.OpenAnonymous will return a nil slice if the ciphertext is empty
-			return DecryptResponse{Data: []byte{}}, nil
-		}
-		return DecryptResponse{
-			Data: decrypted,
-		}, nil
+		return DecryptAnonymousResponse{Data: decrypted}, nil
 	case ECDH_P256:
-		var envelope serialization.ECDHEnvelope
-		if err := proto.Unmarshal(req.EncryptedData, &envelope); err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		if envelope.Version != encVersionV1 || envelope.Algorithm != string(ECDH_P256) {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		curve := ecdh.P256()
-		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
+		decrypted, err := k.decryptECDHP256Anonymous(req.EncryptedData, key.privateKey)
 		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
+			return DecryptAnonymousResponse{}, err
 		}
-		ephPub, err := curve.NewPublicKey(envelope.EphemeralPublicKey)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		shared, err := priv.ECDH(ephPub)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		derivedKey, err := deriveAESKeyFromSharedSecret(shared, envelope.Salt, infoAESGCM)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		block, err := aes.NewCipher(derivedKey)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		gcm, err := cipher.NewGCM(block)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-
-		// Recreate the envelope for AAD (without ciphertext)
-		aadEnvelope := &serialization.ECDHEnvelope{
-			Version:            envelope.Version,
-			Algorithm:          envelope.Algorithm,
-			EphemeralPublicKey: envelope.EphemeralPublicKey,
-			Salt:               envelope.Salt,
-			Nonce:              envelope.Nonce,
-			// Ciphertext is intentionally omitted for AAD
-		}
-		aadBytes, err := proto.Marshal(aadEnvelope)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-
-		pt, err := gcm.Open(nil, envelope.Nonce, envelope.Ciphertext, aadBytes)
-		if err != nil {
-			return DecryptResponse{}, ErrDecryptionFailed
-		}
-		if len(pt) == 0 {
-			// gcm.Open will return a nil slice if the ciphertext is empty
-			return DecryptResponse{Data: []byte{}}, nil
-		}
-		return DecryptResponse{Data: pt}, nil
+		return DecryptAnonymousResponse{Data: decrypted}, nil
 	default:
-		return DecryptResponse{}, ErrDecryptionFailed
+		return DecryptAnonymousResponse{}, ErrDecryptionFailed
 	}
 }
 
@@ -297,7 +150,7 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	key, ok := k.keystore[req.LocalKeyName]
+	key, ok := k.keystore[req.KeyName]
 	if !ok {
 		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
@@ -336,6 +189,185 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 	default:
 		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
+}
+
+// encryptX25519Anonymous performs X25519 anonymous encryption using NaCl box
+func (k *keystore) encryptX25519Anonymous(data []byte, remotePubKey []byte) ([]byte, error) {
+	if len(remotePubKey) != 32 {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Use SealAnonymous for anonymous encryption
+	encrypted, err := box.SealAnonymous(nil, data, (*[32]byte)(remotePubKey), rand.Reader)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+	return encrypted, nil
+}
+
+// decryptX25519Anonymous performs X25519 anonymous decryption using NaCl box
+func (k *keystore) decryptX25519Anonymous(encryptedData []byte, privateKey internal.Raw, publicKey []byte) ([]byte, error) {
+	if len(publicKey) != 32 {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Use OpenAnonymous for anonymous decryption
+	decrypted, ok := box.OpenAnonymous(nil, encryptedData, (*[32]byte)(publicKey), (*[32]byte)(internal.Bytes(privateKey)))
+	if !ok {
+		return nil, ErrDecryptionFailed
+	}
+	if len(decrypted) == 0 {
+		// box.OpenAnonymous will return a nil slice if the ciphertext is empty
+		return []byte{}, nil
+	}
+	return decrypted, nil
+}
+
+// encryptECDHP256Anonymous performs ECDH-P256 anonymous encryption
+// We follow the same general idea as box:
+// 1. Generate an ephemeral key pair
+// 2. Derive a shared secret using the ephemeral private key + recipient public key
+// 3. Derive a nonce from the ephemeral public key + recipient public key: SHA-256(ephPubKey || recipientPubKey)[:12]
+// 4. Derive an AES-256-GCM key from the shared secret and nonce
+// 5. Encrypt the data with AES-GCM, including both nonce and ephemeral public key in AAD for complete authentication
+// 6. Embed ephemeral public key and nonce in the result
+func (k *keystore) encryptECDHP256Anonymous(data []byte, remotePubKey []byte) ([]byte, error) {
+	curve := ecdh.P256()
+	if len(remotePubKey) != 65 {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Generate ephemeral key pair for this encryption
+	ephPriv, err := curve.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Remote public key must be on the P256 curve for the shared secret to work
+	recipientPub, err := curve.NewPublicKey(remotePubKey)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Derive shared secret using ephemeral private key + recipient public key
+	shared, err := ephPriv.ECDH(recipientPub)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Derive deterministic nonce from ephemeral public key + recipient public key
+	// This is the same approach taken by box.SealAnonymous.
+	nonce := deriveNonce(ephPriv.PublicKey().Bytes(), remotePubKey)
+
+	// Derive AES-256-GCM key from shared secret and nonce
+	derivedKey, err := deriveAESKeyFromSharedSecret(shared, nonce, infoAESGCM)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Encrypt with AES-GCM
+	block, err := aes.NewCipher(derivedKey)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, ErrEncryptionFailed
+	}
+
+	// Include both nonce and ephemeral public key in AAD for complete authentication
+	// AAD is [12 byte nonce] [65 byte ephemeral public key]
+	ciphertext := gcm.Seal(nil, nonce, data, append(nonce[:], ephPriv.PublicKey().Bytes()...))
+
+	// Embed ephemeral public key and nonce in the result
+	// [12 byte nonce] [65 byte ephemeral public key] [AES-GCM ciphertext]
+	result := encodeECDHP256Anonymous(nonce[:], ephPriv.PublicKey().Bytes(), ciphertext)
+	return result, nil
+}
+
+func encodeECDHP256Anonymous(nonce []byte, ephPub []byte, ciphertext []byte) []byte {
+	var result []byte
+	result = append(result, nonce[:]...)   // 12 bytes: nonce
+	result = append(result, ephPub...)     // 65 bytes: ephemeral public key
+	result = append(result, ciphertext...) // AES-GCM ciphertext
+	return result
+}
+
+func decodeECDHP256Anonymous(encryptedData []byte) ([]byte, []byte, []byte, error) {
+	if len(encryptedData) < 65+12 {
+		return nil, nil, nil, ErrDecryptionFailed
+	}
+	nonceBytes := encryptedData[:12]         // 12 bytes: nonce
+	ephPubBytes := encryptedData[12 : 12+65] // 65 bytes: ephemeral public key
+	ciphertext := encryptedData[12+65:]      // AES-GCM ciphertext
+	return nonceBytes, ephPubBytes, ciphertext, nil
+}
+
+// decryptECDHP256Anonymous performs ECDH-P256 anonymous decryption
+func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey internal.Raw) ([]byte, error) {
+	if len(encryptedData) < 65+12 {
+		return nil, ErrDecryptionFailed
+	}
+
+	nonce, ephPubBytes, ciphertext, err := decodeECDHP256Anonymous(encryptedData)
+	if err != nil {
+		return nil, err
+	}
+
+	curve := ecdh.P256()
+	ephPub, err := curve.NewPublicKey(ephPubBytes)
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Get local private key
+	priv, err := curve.NewPrivateKey(internal.Bytes(privateKey))
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Derive shared secret using local private key + ephemeral public key
+	shared, err := priv.ECDH(ephPub)
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Derive the same AES key
+	derivedKey, err := deriveAESKeyFromSharedSecret(shared, nonce[:], infoAESGCM)
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Decrypt with AES-GCM
+	block, err := aes.NewCipher(derivedKey)
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+
+	// Include both nonce and ephemeral public key in AAD for complete authentication
+	aad := append(nonce[:], ephPubBytes...)
+	pt, err := gcm.Open(nil, nonce[:], ciphertext, aad)
+	if err != nil {
+		return nil, ErrDecryptionFailed
+	}
+
+	if len(pt) == 0 {
+		// Return empty slice instead of nil for consistency
+		return []byte{}, nil
+	}
+	return pt, nil
+}
+
+// deriveNonce creates a deterministic nonce from two public keys
+func deriveNonce(pub1, pub2 []byte) []byte {
+	h := sha256.New()
+	h.Write(pub1)
+	h.Write(pub2)
+	return h.Sum(nil)[:12] // 12 bytes for AES-GCM nonce
 }
 
 func deriveAESKeyFromSharedSecret(sharedSecret []byte, salt []byte, info []byte) ([]byte, error) {

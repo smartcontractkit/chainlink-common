@@ -1,7 +1,6 @@
 package keystore_test
 
 import (
-	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -24,7 +23,7 @@ type KeystoreTH struct {
 }
 
 func NewKeystoreTH(t *testing.T) *KeystoreTH {
-	ctx := context.Background()
+	ctx := t.Context()
 	st := storage.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
 		Password:     "test",
@@ -58,7 +57,7 @@ func (th *KeystoreTH) KeyName(keyType keystore.KeyType, index int) string {
 func (th *KeystoreTH) CreateTestKeys(t *testing.T) {
 	th.mu.Lock()
 	defer th.mu.Unlock()
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, keyType := range keystore.AllKeyTypes {
 		keys, err := th.Keystore.CreateKeys(ctx, keystore.CreateKeysRequest{
 			Keys: []keystore.CreateKeyRequest{

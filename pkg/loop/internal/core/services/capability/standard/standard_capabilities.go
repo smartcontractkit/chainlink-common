@@ -327,7 +327,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		return nil, net.ErrConnDial{Name: "OrgResolver", ID: request.OrgResolverId, Err: err}
 	}
 	resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "OrgResolver"})
-	orgResolver := orgresolver.NewClient(orgResolverConn)
+	orgResolver := orgresolver.NewClient(s.Logger, orgResolverConn)
 
 	dependencies := core.StandardCapabilitiesDependencies{
 		Config:             request.Config,

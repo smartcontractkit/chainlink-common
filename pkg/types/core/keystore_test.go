@@ -237,6 +237,9 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 
 		valid := ed25519.Verify(privKey.Public().(ed25519.PublicKey), prefixedTestData, signature1)
 		assert.True(t, valid, "signature should be valid")
+
+		_, err = singleSigner.Sign(ctx, account, []byte("foobar"))
+		require.Equal(t, err.Error(), "data does not have expected prefix")
 	})
 
 	t.Run("real nacl/box keys decrypt integration", func(t *testing.T) {

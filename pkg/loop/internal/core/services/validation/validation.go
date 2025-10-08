@@ -18,7 +18,7 @@ type validationServiceClient struct {
 	grpc pb.ValidationServiceClient
 }
 
-func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map[string]interface{}) error {
+func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map[string]any) error {
 	pbConfig, err := structpb.NewStruct(config)
 	if err != nil {
 		return err

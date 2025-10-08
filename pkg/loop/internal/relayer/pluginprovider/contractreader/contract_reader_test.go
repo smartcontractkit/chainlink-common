@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"maps"
 	"math/big"
 	"reflect"
 	"sort"
@@ -43,7 +44,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
 		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
-		data := map[string]interface{}{
+		data := map[string]any{
 			"key": "value",
 		}
 
@@ -54,7 +55,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 	})
 
 	t.Run("DecodeVersionedBytes", func(t *testing.T) {
-		var decodedData map[string]interface{}
+		var decodedData map[string]any
 		expected := fmt.Errorf("unsupported encoding version %d for versionedData [97 98 99 100 102]", unsupportedVer)
 		versionedBytes := &codecpb.VersionedBytes{
 			Version: unsupportedVer, // Unsupported version
@@ -68,7 +69,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 	})
 
 	t.Run("DecodeVersionedBytes if nil returns error", func(t *testing.T) {
-		var decodedData map[string]interface{}
+		var decodedData map[string]any
 		expected := errors.New("cannot decode nil versioned bytes")
 
 		err := codecpb.DecodeVersionedBytes(&decodedData, nil)
@@ -270,7 +271,7 @@ func TestQueryKey(t *testing.T) {
 				nilTester.Setup(t)
 				nilCr := nilTester.GetContractReader(t)
 
-				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]any{nil})
 				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 			})
 
@@ -278,7 +279,7 @@ func TestQueryKey(t *testing.T) {
 				es.err = errorType
 				t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := t.Context()
-					_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+					_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]any{nil})
 					assert.True(t, errors.Is(err, errorType))
 				})
 			}
@@ -288,7 +289,7 @@ func TestQueryKey(t *testing.T) {
 					impl.expectedQueryFilter = tc
 					filter, err := query.Where(tc.Key, tc.Expressions...)
 					require.NoError(t, err)
-					_, err = cr.QueryKey(t.Context(), types.BoundContract{}, filter, query.LimitAndSort{}, &[]interface{}{nil})
+					_, err = cr.QueryKey(t.Context(), types.BoundContract{}, filter, query.LimitAndSort{}, &[]any{nil})
 					require.NoError(t, err)
 				}
 			})
@@ -533,9 +534,7 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.batchStored = make(BatchCallEntry)
-	for contractName, contractBatchEntry := range batchCallEntry {
-		f.batchStored[contractName] = contractBatchEntry
-	}
+	maps.Copy(f.batchStored, batchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
@@ -671,7 +670,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 		storedContractBatch := f.batchStored[requestContract]
 
 		contractBatchResults := types.ContractBatchResults{}
-		for i := 0; i < len(requestContractBatch); i++ {
+		for i := range requestContractBatch {
 			var err error
 			var returnVal any
 

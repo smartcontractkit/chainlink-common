@@ -189,7 +189,7 @@ func hardCodeManyHook(from reflect.Value, to reflect.Value) (any, error) {
 
 	length := to.Len()
 	array := reflect.MakeSlice(reflect.SliceOf(from.Type()), length, length)
-	for i := 0; i < length; i++ {
+	for i := range length {
 		array.Index(i).Set(from)
 	}
 	return array.Interface(), nil

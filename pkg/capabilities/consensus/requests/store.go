@@ -107,10 +107,7 @@ func (s *Store[T]) RangeN(start, batchSize int) ([]T, error) {
 		return nil, fmt.Errorf("start index out of bounds: start=%d, len=%d", start, len(s.requestIDs))
 	}
 
-	end := start + batchSize
-	if end > len(s.requestIDs) {
-		end = len(s.requestIDs)
-	}
+	end := min(start+batchSize, len(s.requestIDs))
 
 	got := make([]T, 0, end-start)
 	for _, r := range s.requestIDs[start:end] {

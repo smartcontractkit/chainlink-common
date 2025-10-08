@@ -15,10 +15,10 @@ import (
 func Test_removeArg(t *testing.T) {
 	for _, tt := range []struct {
 		name string
-		args []interface{}
+		args []any
 		key  string
 
-		wantArgs []interface{}
+		wantArgs []any
 		wantVal  string
 	}{
 		{"empty", nil, "logger",

@@ -7,7 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-func SafeDecode[T interface{}](raw []byte, size int, call func([]byte) T) (T, []byte, error) {
+func SafeDecode[T any](raw []byte, size int, call func([]byte) T) (T, []byte, error) {
 	if len(raw) < size {
 		var t T
 		return t, nil, fmt.Errorf("%w: not enough bytes to decode type", types.ErrInvalidEncoding)
@@ -23,7 +23,7 @@ func EncodeEach(value reflect.Value, into []byte, tc TypeCodec) ([]byte, error) 
 	}
 
 	numElements := value.Len()
-	for i := 0; i < numElements; i++ {
+	for i := range numElements {
 		var err error
 		into, err = tc.Encode(value.Index(i).Interface(), into)
 		if err != nil {
@@ -45,7 +45,7 @@ func DecodeEach(encoded []byte, into reflect.Value, numElements int, tc TypeCode
 	}
 
 	remaining := encoded
-	for i := 0; i < numElements; i++ {
+	for i := range numElements {
 		element, bytes, err := tc.Decode(remaining)
 		if err != nil {
 			return nil, nil, err

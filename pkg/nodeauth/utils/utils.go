@@ -21,12 +21,12 @@ func CalculateRequestDigest(req any) string {
 			data = serialized
 		} else {
 			// fallback to string representation if marshal fails
-			data = []byte(fmt.Sprintf("%v", req))
+			data = fmt.Appendf(nil, "%v", req)
 		}
 	} else if s, ok := req.(fmt.Stringer); ok {
 		data = []byte(s.String())
 	} else {
-		data = []byte(fmt.Sprintf("%v", req))
+		data = fmt.Appendf(nil, "%v", req)
 	}
 
 	hash := sha256.Sum256(data)

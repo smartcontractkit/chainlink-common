@@ -14,28 +14,28 @@ import (
 
 func h32(b byte) evmtypes.Hash {
 	var h [32]byte
-	for i := 0; i < 32; i++ {
+	for i := range 32 {
 		h[i] = b + byte(i)
 	}
 	return h
 }
 func a20(b byte) evmtypes.Address {
 	var a [20]byte
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		a[i] = b + byte(i)
 	}
 	return a
 }
 func b32(b byte) []byte {
 	out := make([]byte, 32)
-	for i := 0; i < 32; i++ {
+	for i := range 32 {
 		out[i] = b + byte(i)
 	}
 	return out
 }
 func b20(b byte) []byte {
 	out := make([]byte, 20)
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		out[i] = b + byte(i)
 	}
 	return out

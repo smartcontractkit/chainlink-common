@@ -3,6 +3,7 @@ package beholder
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"strings"
 
@@ -80,9 +81,7 @@ func newAttributes(attrKVs ...any) Attributes {
 	for i := 0; i < l; {
 		switch t := attrKVs[i].(type) {
 		case Attributes:
-			for k, v := range t {
-				a[k] = v
-			}
+			maps.Copy(a, t)
 			i++
 		case string:
 			if i+1 >= l {
@@ -111,9 +110,7 @@ func (e *Message) AddAttributes(attrKVs ...any) {
 	if e.Attrs == nil {
 		e.Attrs = make(map[string]any, len(attrs)/2)
 	}
-	for k, v := range attrs {
-		e.Attrs[k] = v
-	}
+	maps.Copy(e.Attrs, attrs)
 }
 
 func (e *Message) OtelRecord() otellog.Record {
@@ -122,9 +119,7 @@ func (e *Message) OtelRecord() otellog.Record {
 
 func (e *Message) Copy() Message {
 	attrs := make(Attributes, len(e.Attrs))
-	for k, v := range e.Attrs {
-		attrs[k] = v
-	}
+	maps.Copy(attrs, e.Attrs)
 	c := Message{
 		Attrs: attrs,
 	}

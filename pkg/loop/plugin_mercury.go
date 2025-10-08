@@ -35,7 +35,7 @@ func (p *GRPCPluginMercury) GRPCServer(broker *plugin.GRPCBroker, server *grpc.S
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginMercury], updated with the new broker and conn.
-func (p *GRPCPluginMercury) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *GRPCPluginMercury) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = mercury.NewMercuryAdapterClient(p.BrokerConfig)
 	}

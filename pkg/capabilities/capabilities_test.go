@@ -250,7 +250,7 @@ func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {
 	// Test error handling
 
 	t.Run("invalid map missing key", func(t *testing.T) {
-		invalidMap, err := values.NewMap(map[string]interface{}{
+		invalidMap, err := values.NewMap(map[string]any{
 			"WrongKey": "value",
 		})
 		require.NoError(t, err)

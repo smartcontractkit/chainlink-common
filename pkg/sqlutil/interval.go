@@ -35,7 +35,7 @@ func (i *Interval) UnmarshalText(input []byte) error {
 	return nil
 }
 
-func (i *Interval) Scan(v interface{}) error {
+func (i *Interval) Scan(v any) error {
 	if v == nil {
 		*i = Interval(time.Duration(0))
 		return nil

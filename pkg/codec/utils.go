@@ -205,7 +205,7 @@ var (
 	timeType    = reflect.TypeOf(time.Time{})
 	timePtrType = reflect.PointerTo(timeType)
 	biType      = reflect.TypeOf(&big.Int{})
-	mapType     = reflect.TypeOf(map[string]interface{}{})
+	mapType     = reflect.TypeOf(map[string]any{})
 	ptrMapType  = reflect.PointerTo(mapType)
 	interMapKey = "IntermediateEpochMapKey"
 )
@@ -224,7 +224,7 @@ func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) 
 		return data, nil
 	case mapType, ptrMapType:
 		// map to int64
-		timeMap, ok := reflect.Indirect(reflect.ValueOf(data)).Interface().(map[string]interface{})
+		timeMap, ok := reflect.Indirect(reflect.ValueOf(data)).Interface().(map[string]any)
 		if !ok {
 			return data, nil
 		}
@@ -329,7 +329,7 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 			case reflect.Array, reflect.Slice:
 				length := iItem.Len()
 				maps := make([]map[string]any, length)
-				for i := 0; i < length; i++ {
+				for i := range length {
 					if err := mapstructure.Decode(iItem.Index(i).Interface(), &maps[i]); err != nil {
 						return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 					}

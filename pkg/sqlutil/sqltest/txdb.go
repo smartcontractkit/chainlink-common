@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 
@@ -38,11 +39,9 @@ func RegisterTxDB(dbURL string) error {
 	defer registerMutex.Unlock()
 	drivers := sql.Drivers()
 
-	for _, driver := range drivers {
-		if driver == pg.DriverTxWrappedPostgres {
-			// TxDB driver already registered
-			return nil
-		}
+	if slices.Contains(drivers, pg.DriverTxWrappedPostgres) {
+		// TxDB driver already registered
+		return nil
 	}
 
 	if dbURL != pg.DriverInMemoryPostgres {
@@ -365,8 +364,8 @@ func (s *stmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.
 	return s.st.ExecContext(ctx, mapNamedArgs(args)...)
 }
 
-func mapArgs(args []driver.Value) (res []interface{}) {
-	res = make([]interface{}, len(args))
+func mapArgs(args []driver.Value) (res []any) {
+	res = make([]any, len(args))
 	for i := range args {
 		res[i] = args[i]
 	}
@@ -471,7 +470,7 @@ func (r *rows) Next(dest []driver.Value) error {
 	}
 
 	for i, val := range r.rows[r.pos-1] {
-		dest[i] = *(val.(*interface{}))
+		dest[i] = *(val.(*any))
 	}
 
 	return nil
@@ -494,9 +493,9 @@ func (r *rows) read(rs *sql.Rows) error {
 	}
 
 	for rs.Next() {
-		values := make([]interface{}, len(r.cols))
+		values := make([]any, len(r.cols))
 		for i := range values {
-			values[i] = new(interface{})
+			values[i] = new(any)
 		}
 		if err := rs.Scan(values...); err != nil {
 			return err
@@ -532,8 +531,8 @@ func (rs *rowSets) Next(dest []driver.Value) error {
 	return rs.sets[rs.pos].Next(dest)
 }
 
-func mapNamedArgs(args []driver.NamedValue) (res []interface{}) {
-	res = make([]interface{}, len(args))
+func mapNamedArgs(args []driver.NamedValue) (res []any) {
+	res = make([]any, len(args))
 	for i := range args {
 		name := args[i].Name
 		if name != "" {

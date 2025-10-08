@@ -393,7 +393,7 @@ func (s *scopedRateLimiter) Close() (err error) {
 	s.wg.Wait()
 
 	// cleanup
-	s.limiters.Range(func(tenant, value interface{}) bool {
+	s.limiters.Range(func(tenant, value any) bool {
 		// opt: parallelize
 		err = errors.Join(err, value.(*rateLimiter).Close())
 		return true

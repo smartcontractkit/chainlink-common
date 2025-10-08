@@ -136,7 +136,7 @@ func (b *boundLimiter[N]) Close() (err error) {
 	if b.scope == settings.ScopeGlobal {
 		return b.updater.Close()
 	} else {
-		b.updaters.Range(func(key, value interface{}) bool {
+		b.updaters.Range(func(key, value any) bool {
 			// opt: parallelize
 			err = errors.Join(err, value.(*updater[N]).Close())
 			return true

@@ -203,7 +203,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - list",
-			expectedOutput: []interface{}([]interface{}{int64(1), int64(2), int64(3), int64(4)}),
+			expectedOutput: []any([]any{int64(1), int64(2), int64(3), int64(4)}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -218,7 +218,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - map",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"test": int64(1)}),
+			expectedOutput: map[string]any(map[string]any{"test": int64(1)}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -234,7 +234,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - deep map",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"test1": map[string]interface{}{"test2": int64(1)}}),
+			expectedOutput: map[string]any(map[string]any{"test1": map[string]any{"test2": int64(1)}}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -265,7 +265,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - struct",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"SomeInt": int64(3), "SomeString": "hiya", "SomeTime": now}),
+			expectedOutput: map[string]any(map[string]any{"SomeInt": int64(3), "SomeString": "hiya", "SomeTime": now}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -286,8 +286,8 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 					workflow,
 					"compute",
 					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
-					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (interface{}, error) {
-						var empty interface{}
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (any, error) {
+						var empty any
 						return empty, nil
 					},
 				)
@@ -341,7 +341,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - private struct",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"SomeInt": int64(3), "SomeString": "hiya"}),
+			expectedOutput: map[string]any(map[string]any{"SomeInt": int64(3), "SomeString": "hiya"}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,

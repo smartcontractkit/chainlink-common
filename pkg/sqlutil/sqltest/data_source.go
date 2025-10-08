@@ -27,7 +27,7 @@ func NewNoOpDataSource() sqlutil.DataSource {
 
 type noOpDataSource struct{}
 
-func (ds *noOpDataSource) BindNamed(s string, _ interface{}) (string, []interface{}, error) {
+func (ds *noOpDataSource) BindNamed(s string, _ any) (string, []any, error) {
 	return "", nil, nil
 }
 
@@ -35,15 +35,15 @@ func (ds *noOpDataSource) DriverName() string {
 	return ""
 }
 
-func (ds *noOpDataSource) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (ds *noOpDataSource) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return nil, nil
 }
 
-func (ds *noOpDataSource) GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (ds *noOpDataSource) GetContext(ctx context.Context, dest any, query string, args ...any) error {
 	return nil
 }
 
-func (ds *noOpDataSource) NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error) {
+func (ds *noOpDataSource) NamedExecContext(ctx context.Context, query string, arg any) (sql.Result, error) {
 	return nil, nil
 }
 
@@ -55,15 +55,15 @@ func (_m *noOpDataSource) PrepareNamedContext(ctx context.Context, query string)
 	return nil, nil
 }
 
-func (ds *noOpDataSource) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (ds *noOpDataSource) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return nil, nil
 }
 
-func (ds *noOpDataSource) QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row {
+func (ds *noOpDataSource) QueryRowxContext(ctx context.Context, query string, args ...any) *sqlx.Row {
 	return nil
 }
 
-func (ds *noOpDataSource) QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error) {
+func (ds *noOpDataSource) QueryxContext(ctx context.Context, query string, args ...any) (*sqlx.Rows, error) {
 	return nil, nil
 }
 
@@ -71,6 +71,6 @@ func (ds *noOpDataSource) Rebind(s string) string {
 	return ""
 }
 
-func (ds *noOpDataSource) SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (ds *noOpDataSource) SelectContext(ctx context.Context, dest any, query string, args ...any) error {
 	return nil
 }

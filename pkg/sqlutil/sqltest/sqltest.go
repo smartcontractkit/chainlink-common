@@ -91,7 +91,7 @@ func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) ur
 	t.Cleanup(func() {
 		var err error
 		attempts := 10
-		for i := 0; i < attempts; i++ {
+		for range attempts {
 			err = drop(u)
 			if err == nil {
 				return

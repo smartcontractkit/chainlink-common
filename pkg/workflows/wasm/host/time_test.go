@@ -12,8 +12,7 @@ import (
 )
 
 func TestTimeFetcher_GetTime_NODE(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	mockExec := NewMockExecutionHelper(t)
 	expected := time.Now()
@@ -28,8 +27,7 @@ func TestTimeFetcher_GetTime_NODE(t *testing.T) {
 }
 
 func TestTimeFetcher_GetTime_DON(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	mockExec := NewMockExecutionHelper(t)
 	expected := time.Now()
@@ -44,8 +42,7 @@ func TestTimeFetcher_GetTime_DON(t *testing.T) {
 }
 
 func TestTimeFetcher_GetTime_DON_Error(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	mockExec := NewMockExecutionHelper(t)
 	mockExec.EXPECT().GetDONTime().Return(time.Time{}, errors.New("don error"))

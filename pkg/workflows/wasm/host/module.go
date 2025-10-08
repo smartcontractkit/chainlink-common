@@ -858,7 +858,7 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			return
 		}
 
-		var raw map[string]interface{}
+		var raw map[string]any
 		innerErr = json.Unmarshal(b, &raw)
 		if innerErr != nil {
 			return
@@ -871,7 +871,7 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 		delete(raw, "msg")
 		delete(raw, "ts")
 
-		var args []interface{}
+		var args []any
 		for k, v := range raw {
 			args = append(args, k, v)
 		}

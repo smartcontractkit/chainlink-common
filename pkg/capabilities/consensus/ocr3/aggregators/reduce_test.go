@@ -1,6 +1,7 @@
 package aggregators_test
 
 import (
+	"maps"
 	"math/big"
 	"testing"
 	"time"
@@ -1344,13 +1345,13 @@ func TestAggregateShouldReport(t *testing.T) {
 		fields                  []aggregators.AggregationField
 		mockValueFirstRound     *values.Map
 		shouldReportFirstRound  bool
-		stateFirstRound         map[string]interface{}
+		stateFirstRound         map[string]any
 		mockValueSecondRound    *values.Map
 		shouldReportSecondRound bool
-		stateSecondRound        map[string]interface{}
+		stateSecondRound        map[string]any
 		mockValueThirdRound     *values.Map
 		shouldReportThirdRound  bool
-		stateThirdRound         map[string]interface{}
+		stateThirdRound         map[string]any
 	}{
 		{
 			name: "OK-report_only_when_deviation_exceeded",
@@ -1371,7 +1372,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound:        map[string]interface{}{"Time": decimal.NewFromInt(10)},
+			stateFirstRound:        map[string]any{"Time": decimal.NewFromInt(10)},
 
 			mockValueSecondRound: func() *values.Map {
 				mockValue, err := values.WrapMap(map[string]any{
@@ -1382,7 +1383,7 @@ func TestAggregateShouldReport(t *testing.T) {
 			}(),
 			shouldReportSecondRound: false,
 			// the delta between 10 and 30 is 20, which is less than the deviation of 30, so the state should remain the same
-			stateSecondRound: map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(10)}),
+			stateSecondRound: map[string]any(map[string]any{"Time": decimal.NewFromInt(10)}),
 
 			mockValueThirdRound: func() *values.Map {
 				mockValue, err := values.WrapMap(map[string]any{
@@ -1393,7 +1394,7 @@ func TestAggregateShouldReport(t *testing.T) {
 			}(),
 			shouldReportThirdRound: true,
 			// the delta between 10 and 45 is 35, which is more than the deviation of 30, thats why the state is updated
-			stateThirdRound: map[string]interface{}{"Time": decimal.NewFromInt(45)},
+			stateThirdRound: map[string]any{"Time": decimal.NewFromInt(45)},
 		},
 		{
 			name: "NOK-do_not_report_if_deviation_type_any_byte_field_does_not_change",
@@ -1422,7 +1423,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}(map[string]interface{}{
+			stateFirstRound: map[string]any(map[string]any{
 				"FeedID": idABytes[:],
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1436,7 +1437,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: false,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": idABytes[:],
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1468,7 +1469,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"BoolField": true,
 				"Time":      decimal.NewFromInt(10),
 			},
@@ -1482,7 +1483,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: false,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"BoolField": true,
 				"Time":      decimal.NewFromInt(10),
 			}),
@@ -1514,7 +1515,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": idABytes[:],
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1528,7 +1529,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: true,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": idBBytes[:],
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1560,7 +1561,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"BoolField": true,
 				"Time":      decimal.NewFromInt(10),
 			},
@@ -1574,7 +1575,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: true,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"BoolField": false,
 				"Time":      decimal.NewFromInt(10),
 			}),
@@ -1606,7 +1607,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": "A",
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1620,7 +1621,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: true,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": "B",
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1652,7 +1653,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": "A",
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1666,7 +1667,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: false,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": "A",
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1698,7 +1699,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": map[string]any{"A": "A"},
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1712,7 +1713,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: true,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": map[string]any{"A": "B"},
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1744,7 +1745,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": map[string]any{"A": "A"},
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1758,7 +1759,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: false,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": map[string]any{"A": "A"},
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1790,7 +1791,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": []any{"A"},
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1804,7 +1805,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: true,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": []any{"B"},
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1836,7 +1837,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": []any{"A"},
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1850,7 +1851,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: false,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": []any{"A"},
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1882,7 +1883,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": int64(1),
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1896,7 +1897,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: true,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": int64(2),
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1928,7 +1929,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportFirstRound: true,
-			stateFirstRound: map[string]interface{}{
+			stateFirstRound: map[string]any{
 				"FeedID": int64(1),
 				"Time":   decimal.NewFromInt(10),
 			},
@@ -1942,7 +1943,7 @@ func TestAggregateShouldReport(t *testing.T) {
 				return mockValue
 			}(),
 			shouldReportSecondRound: false,
-			stateSecondRound: map[string]interface{}(map[string]interface{}{
+			stateSecondRound: map[string]any(map[string]any{
 				"FeedID": int64(1),
 				"Time":   decimal.NewFromInt(10),
 			}),
@@ -1967,7 +1968,7 @@ func TestAggregateShouldReport(t *testing.T) {
 		require.NoError(t, err)
 		state, err := vmap.Unwrap()
 		require.NoError(t, err)
-		require.Equal(t, map[string]interface{}(tc.stateFirstRound), state)
+		require.Equal(t, map[string]any(tc.stateFirstRound), state)
 
 		// 2nd round
 		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {tc.mockValueSecondRound}, 2: {tc.mockValueSecondRound}, 3: {tc.mockValueSecondRound}}, 1)
@@ -2008,9 +2009,7 @@ func getConfigReduceAggregator(t *testing.T, fields []aggregators.AggregationFie
 		"outputFieldName": "Reports",
 		"reportFormat":    "array",
 	}
-	for key, val := range override {
-		unwrappedConfig[key] = val
-	}
+	maps.Copy(unwrappedConfig, override)
 	config, err := values.NewMap(unwrappedConfig)
 	require.NoError(t, err)
 	return config

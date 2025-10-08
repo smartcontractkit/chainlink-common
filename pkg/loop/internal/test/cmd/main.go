@@ -235,7 +235,7 @@ func main() {
 func limitInterceptors(limit int) (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
 	count := make(chan struct{})
 	go func() {
-		for i := 0; i < limit; i++ {
+		for range limit {
 			<-count
 		}
 		os.Exit(3)
@@ -243,15 +243,15 @@ func limitInterceptors(limit int) (grpc.UnaryServerInterceptor, grpc.StreamServe
 	return limitUnaryInterceptor(count), limitStreamInterceptor(count)
 }
 
-func limitUnaryInterceptor(count chan<- struct{}) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func limitUnaryInterceptor(count chan<- struct{}) func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		count <- struct{}{}
 		return handler(ctx, req)
 	}
 }
 
-func limitStreamInterceptor(count chan<- struct{}) func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func limitStreamInterceptor(count chan<- struct{}) func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		count <- struct{}{}
 		return handler(srv, ss)
 	}

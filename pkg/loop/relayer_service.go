@@ -43,10 +43,16 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 }
 
 func (r *RelayerService) EVM() (types.EVMService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
 	return r.Service.EVM()
 }
 
 func (r *RelayerService) TON() (types.TONService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
 	return r.Service.TON()
 }
 
@@ -107,6 +113,9 @@ func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus,
 }
 
 func (r *RelayerService) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return types.ChainInfo{}, err
+	}
 	return r.Service.GetChainInfo(ctx)
 }
 

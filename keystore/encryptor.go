@@ -7,6 +7,7 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,9 +20,9 @@ import (
 
 // Opaque error messages to prevent information leakage
 var (
-	ErrSharedSecretFailed = fmt.Errorf("shared secret derivation failed")
-	ErrEncryptionFailed   = fmt.Errorf("encryption operation failed")
-	ErrDecryptionFailed   = fmt.Errorf("decryption operation failed")
+	ErrSharedSecretFailed = errors.New("shared secret derivation failed")
+	ErrEncryptionFailed   = errors.New("encryption operation failed")
+	ErrDecryptionFailed   = errors.New("decryption operation failed")
 )
 
 type EncryptRequest struct {

@@ -87,10 +87,7 @@ func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, err
 }
 
 func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
-	k.mu.RLock()
-	defer k.mu.RUnlock()
-
-	// Verification doesn't need access to private keys, so no keystore lookup or lock needed
+	// Note don't need the lock since this is a pure function.
 	switch req.KeyType {
 	case Ed25519:
 		if len(req.Signature) != 64 {

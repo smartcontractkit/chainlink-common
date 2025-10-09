@@ -32,7 +32,11 @@ Godoc generated documentation is available [here](https://pkg.go.dev/github.com/
 ```go
 package main
 
-import "github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+import (
+	"fmt"
+	"github.com/grafana/grafana-foundation-sdk/go/common"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+)
 
 func main() {
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
@@ -57,11 +61,11 @@ func main() {
 	builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  "Prometheus",
-			Title:       "Uptime",
+			Title:       grafana.Pointer("Uptime"),
 			Description: "instance uptime",
 			Span:        12,
 			Height:      4,
-			Decimals:    2,
+			Decimals:    grafana.Pointer(2.),
 			Unit:        "s",
 			Query: []grafana.Query{
 				{
@@ -77,11 +81,11 @@ func main() {
 
 	db, err := builder.Build()
 	if err != nil {
-		return nil, err
+		return
 	}
 	json, err := db.GenerateJSON()
 	if err != nil {
-		return nil, err
+		return
 	}
 	fmt.Println(string(json))
 }

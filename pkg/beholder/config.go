@@ -119,6 +119,7 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
+		LogLevel:              zapcore.InfoLevel,
 		// Auth
 		AuthHeadersTTL: 10 * time.Minute,
 	}

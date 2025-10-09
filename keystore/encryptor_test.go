@@ -74,7 +74,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	for encName, encKey := range th.KeysByName() {
 		testName := fmt.Sprintf("Encrypt to %s", encName)
 		var expectedEncryptError error
-		if encKey.keyType.IsEncryptionKeyType() {
+		if encKey.KeyType.IsEncryptionKeyType() {
 			// Same key types should succeed
 			expectedEncryptError = nil
 		} else {
@@ -84,8 +84,8 @@ func TestEncryptDecrypt(t *testing.T) {
 
 		tt = append(tt, testCase{
 			name:                 testName,
-			remoteKeyType:        encKey.keyType,
-			remotePubKey:         encKey.publicKey,
+			remoteKeyType:        encKey.KeyType,
+			remotePubKey:         encKey.PublicKey,
 			decryptKey:           encName,
 			expectedEncryptError: expectedEncryptError,
 			payload:              []byte("hello world"),

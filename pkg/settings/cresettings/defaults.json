@@ -44,6 +44,7 @@
 		"LogTrigger": {
 			"Limit": "5",
 			"EventRateLimit": "every6s:10",
+			"EventSizeLimit": "5kb",
 			"FilterAddressLimit": "5",
 			"FilterTopicsPerSlotLimit": "10"
 		},

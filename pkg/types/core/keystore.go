@@ -152,7 +152,7 @@ func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte)
 	// The first 97 bytes of any domain separated payload will match the generic prefix.
 	// Implicitly, this also requires the message length to be <= 1024 bytes.
 	if account == StandardCapabilityAccount {
-		if len(data) < 97 || !bytes.Equal(data[:97], genericPrefix[:97]) {
+		if !bytes.HasPrefix(data, genericPrefix[:97]) {
 			return nil, fmt.Errorf("data does not have expected prefix")
 		}
 	}

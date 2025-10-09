@@ -220,19 +220,22 @@ func (x *SpendLimit) GetLimit() string {
 }
 
 type RequestMetadata struct {
-	state                    protoimpl.MessageState `protogen:"open.v1"`
-	WorkflowId               string                 `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
-	WorkflowExecutionId      string                 `protobuf:"bytes,2,opt,name=workflow_execution_id,json=workflowExecutionId,proto3" json:"workflow_execution_id,omitempty"`
-	WorkflowOwner            string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
-	WorkflowName             string                 `protobuf:"bytes,4,opt,name=workflow_name,json=workflowName,proto3" json:"workflow_name,omitempty"`
-	WorkflowDonId            uint32                 `protobuf:"varint,6,opt,name=workflow_don_id,json=workflowDonId,proto3" json:"workflow_don_id,omitempty"`
-	WorkflowDonConfigVersion uint32                 `protobuf:"varint,7,opt,name=workflow_don_config_version,json=workflowDonConfigVersion,proto3" json:"workflow_don_config_version,omitempty"`
-	ReferenceId              string                 `protobuf:"bytes,8,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
-	DecodedWorkflowName      string                 `protobuf:"bytes,9,opt,name=decoded_workflow_name,json=decodedWorkflowName,proto3" json:"decoded_workflow_name,omitempty"`
-	SpendLimits              []*SpendLimit          `protobuf:"bytes,10,rep,name=spend_limits,json=spendLimits,proto3" json:"spend_limits,omitempty"`
-	WorkflowTag              string                 `protobuf:"bytes,11,opt,name=workflow_tag,json=workflowTag,proto3" json:"workflow_tag,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"open.v1"`
+	WorkflowId                    string                 `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
+	WorkflowExecutionId           string                 `protobuf:"bytes,2,opt,name=workflow_execution_id,json=workflowExecutionId,proto3" json:"workflow_execution_id,omitempty"`
+	WorkflowOwner                 string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	WorkflowName                  string                 `protobuf:"bytes,4,opt,name=workflow_name,json=workflowName,proto3" json:"workflow_name,omitempty"`
+	WorkflowDonId                 uint32                 `protobuf:"varint,6,opt,name=workflow_don_id,json=workflowDonId,proto3" json:"workflow_don_id,omitempty"`
+	WorkflowDonConfigVersion      uint32                 `protobuf:"varint,7,opt,name=workflow_don_config_version,json=workflowDonConfigVersion,proto3" json:"workflow_don_config_version,omitempty"`
+	ReferenceId                   string                 `protobuf:"bytes,8,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
+	DecodedWorkflowName           string                 `protobuf:"bytes,9,opt,name=decoded_workflow_name,json=decodedWorkflowName,proto3" json:"decoded_workflow_name,omitempty"`
+	SpendLimits                   []*SpendLimit          `protobuf:"bytes,10,rep,name=spend_limits,json=spendLimits,proto3" json:"spend_limits,omitempty"`
+	WorkflowTag                   string                 `protobuf:"bytes,11,opt,name=workflow_tag,json=workflowTag,proto3" json:"workflow_tag,omitempty"`
+	WorkflowRegistryChainSelector string                 `protobuf:"bytes,12,opt,name=workflow_registry_chain_selector,json=workflowRegistryChainSelector,proto3" json:"workflow_registry_chain_selector,omitempty"`
+	WorkflowRegistryAddress       string                 `protobuf:"bytes,13,opt,name=workflow_registry_address,json=workflowRegistryAddress,proto3" json:"workflow_registry_address,omitempty"`
+	EngineVersion                 string                 `protobuf:"bytes,14,opt,name=engine_version,json=engineVersion,proto3" json:"engine_version,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *RequestMetadata) Reset() {
@@ -331,6 +334,27 @@ func (x *RequestMetadata) GetSpendLimits() []*SpendLimit {
 func (x *RequestMetadata) GetWorkflowTag() string {
 	if x != nil {
 		return x.WorkflowTag
+	}
+	return ""
+}
+
+func (x *RequestMetadata) GetWorkflowRegistryChainSelector() string {
+	if x != nil {
+		return x.WorkflowRegistryChainSelector
+	}
+	return ""
+}
+
+func (x *RequestMetadata) GetWorkflowRegistryAddress() string {
+	if x != nil {
+		return x.WorkflowRegistryAddress
+	}
+	return ""
+}
+
+func (x *RequestMetadata) GetEngineVersion() string {
+	if x != nil {
+		return x.EngineVersion
 	}
 	return ""
 }
@@ -1023,6 +1047,7 @@ type InitialiseRequest struct {
 	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
 	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
 	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
+	OrgResolverId      uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1127,6 +1152,13 @@ func (x *InitialiseRequest) GetKeystoreId() uint32 {
 	return 0
 }
 
+func (x *InitialiseRequest) GetOrgResolverId() uint32 {
+	if x != nil {
+		return x.OrgResolverId
+	}
+	return 0
+}
+
 type CapabilityInfosReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Infos         []*CapabilityInfoReply `protobuf:"bytes,1,rep,name=infos,proto3" json:"infos,omitempty"`
@@ -1188,7 +1220,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"SpendLimit\x12\x1d\n" +
 	"\n" +
 	"spend_type\x18\x01 \x01(\tR\tspendType\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xd6\x03\n" +
+	"\x05limit\x18\x02 \x01(\tR\x05limit\"\x82\x05\n" +
 	"\x0fRequestMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x122\n" +
@@ -1201,7 +1233,10 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x15decoded_workflow_name\x18\t \x01(\tR\x13decodedWorkflowName\x12;\n" +
 	"\fspend_limits\x18\n" +
 	" \x03(\v2\x18.capabilities.SpendLimitR\vspendLimits\x12!\n" +
-	"\fworkflow_tag\x18\v \x01(\tR\vworkflowTagJ\x04\b\x05\x10\x06\"\xc6\x02\n" +
+	"\fworkflow_tag\x18\v \x01(\tR\vworkflowTag\x12G\n" +
+	" workflow_registry_chain_selector\x18\f \x01(\tR\x1dworkflowRegistryChainSelector\x12:\n" +
+	"\x19workflow_registry_address\x18\r \x01(\tR\x17workflowRegistryAddress\x12%\n" +
+	"\x0eengine_version\x18\x0e \x01(\tR\rengineVersionJ\x04\b\x05\x10\x06\"\xc6\x02\n" +
 	"\x11CapabilityRequest\x129\n" +
 	"\bmetadata\x18\x01 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12&\n" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\x12&\n" +
@@ -1246,7 +1281,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x95\x03\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xbd\x03\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1260,7 +1295,8 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\x12\x1f\n" +
 	"\vkeystore_id\x18\n" +
 	" \x01(\rR\n" +
-	"keystoreId\"O\n" +
+	"keystoreId\x12&\n" +
+	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +

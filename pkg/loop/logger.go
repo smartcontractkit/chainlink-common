@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-hclog"
+	otellog "go.opentelemetry.io/otel/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/exp/slices"
-
-	otellog "go.opentelemetry.io/otel/log"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
@@ -181,22 +180,17 @@ func configureHCLogEncoder(cfg *zap.Config) {
 }
 
 // NewOtelLogger returns a logger with two cores:
-//  1. The primary JSON core configured via cfgFn (encoder keys changed to @level, @message, @timestamp).
-//  2. The otel core (otelzap.NewCore) which receives the raw zap.Entry and fields.
+// 1. Primary JSON core with hclog-compatible encoder keys (@level, @message, @timestamp)
+// 2. OTEL core (otelzap.NewCore) that exports logs to OpenTelemetry at the specified level
 //
-// Important:
-// The cfgFn only mutates the encoder config used to build the first core.
-// otelzap.NewCore implements zapcore.Core and does NOT use that encoder; it derives attributes from the zap.Entry
-// (Message, Level, Time, etc.) and zap.Fields directly. Therefore changing encoder keys here does NOT affect how
-// the otel core extracts data, and only the first core's JSON output format is altered.
-// This preserves backward compatibility for OTEL export while allowing hclog-compatible key names in the primary output.
-func NewOtelLogger(otelLogger otellog.Logger) (logger.Logger, error) {
+// The encoder config only affects the primary core's JSON output.
+// The OTEL core extracts data directly from zap.Entry and fields, independent of encoder settings.
+func NewOtelLogger(otelLogger otellog.Logger, level zapcore.Level) (logger.Logger, error) {
 	primaryCore, err := logger.NewCore(configureHCLogEncoder)
 	if err != nil {
 		return nil, err
 	}
-	// set debug level from primaryCore to match otelzap.NewCore
-	return logger.NewWithCores(primaryCore, otelzap.NewCore(otelLogger, otelzap.WithLevel(zapcore.DebugLevel))), nil
+	return logger.NewWithCores(primaryCore, otelzap.NewCore(otelLogger, otelzap.WithLevel(level))), nil
 }
 
 // onceValue returns a function that invokes f only once and returns the value

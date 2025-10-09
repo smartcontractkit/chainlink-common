@@ -15,14 +15,17 @@ import (
 
 // Label keys for trigger events
 const (
-	KeyTriggerID           = "trigger_id"
-	KeyWorkflowID          = "workflow_id"
-	KeyWorkflowOwner       = "workflow_owner"
-	KeyWorkflowName        = "workflow_name"
-	KeyWorkflowExecutionID = "workflow_execution_id"
-	KeyDonID               = "don_id"
-	KeyDonVersion          = "don_version"
-	KeyOrganizationID      = "organization_id"
+	KeyTriggerID                     = "trigger_id"
+	KeyWorkflowID                    = "workflow_id"
+	KeyWorkflowOwner                 = "workflow_owner"
+	KeyWorkflowName                  = "workflow_name"
+	KeyWorkflowExecutionID           = "workflow_execution_id"
+	KeyDonID                         = "don_id"
+	KeyDonVersion                    = "don_version"
+	KeyOrganizationID                = "organization_id"
+	KeyWorkflowRegistryChainSelector = "workflow_registry_chain_selector"
+	KeyWorkflowRegistryAddress       = "workflow_registry_address"
+	KeyEngineVersion                 = "engine_version"
 )
 
 // EmitTriggerExecutionStarted emits a TriggerExecutionStarted event using the provided labeler
@@ -66,6 +69,18 @@ func EmitTriggerExecutionStarted(ctx context.Context, labeler custmsg.MessageEmi
 				DonVersion: labels[KeyDonVersion],
 			}
 		}
+	}
+
+	if workflowRegistryChainSelector, exists := labels[KeyWorkflowRegistryChainSelector]; exists {
+		event.CreInfo.WorkflowRegistryChain = workflowRegistryChainSelector
+	}
+
+	if workflowRegistryAddress, exists := labels[KeyWorkflowRegistryAddress]; exists {
+		event.CreInfo.WorkflowRegistryAddress = workflowRegistryAddress
+	}
+
+	if engineVersion, exists := labels[KeyEngineVersion]; exists {
+		event.CreInfo.EngineVersion = engineVersion
 	}
 
 	b, err := proto.Marshal(event)

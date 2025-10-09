@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760025287754,
+  "lastUpdate": 1760027010500,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -27126,6 +27126,66 @@ window.BENCHMARK_DATA = {
             "value": 142229,
             "unit": "ns/op",
             "extra": "8193 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1bb9638793d38c96878d7374c1e46c5579a81d85",
+          "message": "beholder: add telemetry LogLevel config option for log streaming (#1591)\n\n* beholder: add Telemetry.LogLevel config option for log streaming\n\n* Actually use Telemetry config LogLevel option",
+          "timestamp": "2025-10-09T16:22:15Z",
+          "tree_id": "0fd927f4d141f5502e09800e1c596beedd68a6dd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1bb9638793d38c96878d7374c1e46c5579a81d85"
+        },
+        "date": 1760027009107,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 734.9,
+            "unit": "ns/op",
+            "extra": "1437073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100168,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.6,
+            "unit": "ns/op",
+            "extra": "2935351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 101112,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26611,
+            "unit": "ns/op",
+            "extra": "45058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 152340,
+            "unit": "ns/op",
+            "extra": "7506 times\n4 procs"
           }
         ]
       }

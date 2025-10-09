@@ -58,6 +58,11 @@ const (
 	MaxEncryptionPayloadSize = 100 * 1024
 )
 
+const (
+	nonceSizeECDHP256  = 12
+	ephPubSizeECDHP256 = 65
+)
+
 var (
 	// Domain separation for HKDF-SHA256 based AES-GCM keys.
 	infoAESGCM = []byte("keystore:ecdh-p256:aes-gcm:hkdf-sha256:v1")
@@ -287,25 +292,25 @@ func (k *keystore) encryptECDHP256Anonymous(data []byte, remotePubKey []byte) ([
 
 func encodeECDHP256Anonymous(nonce []byte, ephPub []byte, ciphertext []byte) []byte {
 	var result []byte
-	result = append(result, nonce[:]...)   // 12 bytes: nonce
-	result = append(result, ephPub...)     // 65 bytes: ephemeral public key
-	result = append(result, ciphertext...) // AES-GCM ciphertext
+	result = append(result, nonce[:]...)
+	result = append(result, ephPub...)
+	result = append(result, ciphertext...)
 	return result
 }
 
 func decodeECDHP256Anonymous(encryptedData []byte) ([]byte, []byte, []byte, error) {
-	if len(encryptedData) < 65+12 {
+	if len(encryptedData) < ephPubSizeECDHP256+nonceSizeECDHP256 {
 		return nil, nil, nil, ErrDecryptionFailed
 	}
-	nonceBytes := encryptedData[:12]         // 12 bytes: nonce
-	ephPubBytes := encryptedData[12 : 12+65] // 65 bytes: ephemeral public key
-	ciphertext := encryptedData[12+65:]      // AES-GCM ciphertext
+	nonceBytes := encryptedData[:nonceSizeECDHP256]
+	ephPubBytes := encryptedData[nonceSizeECDHP256 : nonceSizeECDHP256+ephPubSizeECDHP256]
+	ciphertext := encryptedData[nonceSizeECDHP256+ephPubSizeECDHP256:]
 	return nonceBytes, ephPubBytes, ciphertext, nil
 }
 
 // decryptECDHP256Anonymous performs ECDH-P256 anonymous decryption
 func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey internal.Raw) ([]byte, error) {
-	if len(encryptedData) < 65+12 {
+	if len(encryptedData) < ephPubSizeECDHP256+nonceSizeECDHP256 {
 		return nil, ErrDecryptionFailed
 	}
 
@@ -363,7 +368,7 @@ func deriveNonce(pub1, pub2 []byte) []byte {
 	h := sha256.New()
 	h.Write(pub1)
 	h.Write(pub2)
-	return h.Sum(nil)[:12] // 12 bytes for AES-GCM nonce
+	return h.Sum(nil)[:nonceSizeECDHP256]
 }
 
 func deriveAESKeyFromSharedSecret(sharedSecret []byte, salt []byte, info []byte) ([]byte, error) {

@@ -7,6 +7,7 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,27 +20,27 @@ import (
 
 // Opaque error messages to prevent information leakage
 var (
-	ErrSharedSecretFailed = fmt.Errorf("shared secret derivation failed")
-	ErrEncryptionFailed   = fmt.Errorf("encryption operation failed")
-	ErrDecryptionFailed   = fmt.Errorf("decryption operation failed")
+	ErrSharedSecretFailed = errors.New("shared secret derivation failed")
+	ErrEncryptionFailed   = errors.New("encryption operation failed")
+	ErrDecryptionFailed   = errors.New("decryption operation failed")
 )
 
-type EncryptAnonymousRequest struct {
+type EncryptRequest struct {
 	RemoteKeyType KeyType
 	RemotePubKey  []byte
 	Data          []byte
 }
 
-type EncryptAnonymousResponse struct {
+type EncryptResponse struct {
 	EncryptedData []byte
 }
 
-type DecryptAnonymousRequest struct {
+type DecryptRequest struct {
 	KeyName       string
 	EncryptedData []byte
 }
 
-type DecryptAnonymousResponse struct {
+type DecryptResponse struct {
 	Data []byte
 }
 
@@ -58,6 +59,11 @@ const (
 	MaxEncryptionPayloadSize = 100 * 1024
 )
 
+const (
+	nonceSizeECDHP256  = 12
+	ephPubSizeECDHP256 = 65
+)
+
 var (
 	// Domain separation for HKDF-SHA256 based AES-GCM keys.
 	infoAESGCM = []byte("keystore:ecdh-p256:aes-gcm:hkdf-sha256:v1")
@@ -65,8 +71,8 @@ var (
 
 // Encryptor is an interfaces for hybrid encryption (key exchange + encryption) operations.
 type Encryptor interface {
-	EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error)
-	DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error)
+	Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error)
+	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)
 	// DeriveSharedSecret: Derives a shared secret between the key specified
 	// and the remote public key. WARNING: Using the shared secret should only be used directly in
 	// cases where very custom encryption schemes are needed and you know
@@ -78,71 +84,71 @@ type Encryptor interface {
 // Clients should embed this struct to ensure forward compatibility with changes to the Encryptor interface.
 type UnimplementedEncryptor struct{}
 
-func (UnimplementedEncryptor) EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error) {
-	return EncryptAnonymousResponse{}, fmt.Errorf("Encryptor.EncryptAnonymous: %w", ErrUnimplemented)
+func (UnimplementedEncryptor) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
+	return EncryptResponse{}, fmt.Errorf("Encryptor.Encrypt: %w", ErrUnimplemented)
 }
 
-func (UnimplementedEncryptor) DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error) {
-	return DecryptAnonymousResponse{}, fmt.Errorf("Encryptor.DecryptAnonymous: %w", ErrUnimplemented)
+func (UnimplementedEncryptor) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
+	return DecryptResponse{}, fmt.Errorf("Encryptor.Decrypt: %w", ErrUnimplemented)
 }
 
 func (UnimplementedEncryptor) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
 	return DeriveSharedSecretResponse{}, fmt.Errorf("Encryptor.DeriveSharedSecret: %w", ErrUnimplemented)
 }
 
-func (k *keystore) EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error) {
+func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
 	if len(req.Data) > MaxEncryptionPayloadSize {
-		return EncryptAnonymousResponse{}, ErrEncryptionFailed
+		return EncryptResponse{}, ErrEncryptionFailed
 	}
 
 	switch req.RemoteKeyType {
 	case X25519:
 		encrypted, err := k.encryptX25519Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptAnonymousResponse{}, err
+			return EncryptResponse{}, err
 		}
-		return EncryptAnonymousResponse{
+		return EncryptResponse{
 			EncryptedData: encrypted,
 		}, nil
 	case ECDH_P256:
 		encrypted, err := k.encryptECDHP256Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptAnonymousResponse{}, err
+			return EncryptResponse{}, err
 		}
-		return EncryptAnonymousResponse{EncryptedData: encrypted}, nil
+		return EncryptResponse{EncryptedData: encrypted}, nil
 	default:
-		return EncryptAnonymousResponse{}, ErrEncryptionFailed
+		return EncryptResponse{}, ErrEncryptionFailed
 	}
 }
 
-func (k *keystore) DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error) {
+func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
 	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > MaxEncryptionPayloadSize*2 {
-		return DecryptAnonymousResponse{}, ErrDecryptionFailed
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		return DecryptAnonymousResponse{}, ErrDecryptionFailed
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
 	switch key.keyType {
 	case X25519:
 		decrypted, err := k.decryptX25519Anonymous(req.EncryptedData, key.privateKey, key.publicKey)
 		if err != nil {
-			return DecryptAnonymousResponse{}, err
+			return DecryptResponse{}, err
 		}
-		return DecryptAnonymousResponse{Data: decrypted}, nil
+		return DecryptResponse{Data: decrypted}, nil
 	case ECDH_P256:
 		decrypted, err := k.decryptECDHP256Anonymous(req.EncryptedData, key.privateKey)
 		if err != nil {
-			return DecryptAnonymousResponse{}, err
+			return DecryptResponse{}, err
 		}
-		return DecryptAnonymousResponse{Data: decrypted}, nil
+		return DecryptResponse{Data: decrypted}, nil
 	default:
-		return DecryptAnonymousResponse{}, ErrDecryptionFailed
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 }
 
@@ -287,25 +293,25 @@ func (k *keystore) encryptECDHP256Anonymous(data []byte, remotePubKey []byte) ([
 
 func encodeECDHP256Anonymous(nonce []byte, ephPub []byte, ciphertext []byte) []byte {
 	var result []byte
-	result = append(result, nonce[:]...)   // 12 bytes: nonce
-	result = append(result, ephPub...)     // 65 bytes: ephemeral public key
-	result = append(result, ciphertext...) // AES-GCM ciphertext
+	result = append(result, nonce[:]...)
+	result = append(result, ephPub...)
+	result = append(result, ciphertext...)
 	return result
 }
 
 func decodeECDHP256Anonymous(encryptedData []byte) ([]byte, []byte, []byte, error) {
-	if len(encryptedData) < 65+12 {
+	if len(encryptedData) < ephPubSizeECDHP256+nonceSizeECDHP256 {
 		return nil, nil, nil, ErrDecryptionFailed
 	}
-	nonceBytes := encryptedData[:12]         // 12 bytes: nonce
-	ephPubBytes := encryptedData[12 : 12+65] // 65 bytes: ephemeral public key
-	ciphertext := encryptedData[12+65:]      // AES-GCM ciphertext
+	nonceBytes := encryptedData[:nonceSizeECDHP256]
+	ephPubBytes := encryptedData[nonceSizeECDHP256 : nonceSizeECDHP256+ephPubSizeECDHP256]
+	ciphertext := encryptedData[nonceSizeECDHP256+ephPubSizeECDHP256:]
 	return nonceBytes, ephPubBytes, ciphertext, nil
 }
 
 // decryptECDHP256Anonymous performs ECDH-P256 anonymous decryption
 func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey internal.Raw) ([]byte, error) {
-	if len(encryptedData) < 65+12 {
+	if len(encryptedData) < ephPubSizeECDHP256+nonceSizeECDHP256 {
 		return nil, ErrDecryptionFailed
 	}
 
@@ -320,25 +326,21 @@ func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey int
 		return nil, ErrDecryptionFailed
 	}
 
-	// Get local private key
 	priv, err := curve.NewPrivateKey(internal.Bytes(privateKey))
 	if err != nil {
 		return nil, ErrDecryptionFailed
 	}
 
-	// Derive shared secret using local private key + ephemeral public key
 	shared, err := priv.ECDH(ephPub)
 	if err != nil {
 		return nil, ErrDecryptionFailed
 	}
 
-	// Derive the same AES key
 	derivedKey, err := deriveAESKeyFromSharedSecret(shared, nonce[:], infoAESGCM)
 	if err != nil {
 		return nil, ErrDecryptionFailed
 	}
 
-	// Decrypt with AES-GCM
 	block, err := aes.NewCipher(derivedKey)
 	if err != nil {
 		return nil, ErrDecryptionFailed
@@ -367,7 +369,7 @@ func deriveNonce(pub1, pub2 []byte) []byte {
 	h := sha256.New()
 	h.Write(pub1)
 	h.Write(pub2)
-	return h.Sum(nil)[:12] // 12 bytes for AES-GCM nonce
+	return h.Sum(nil)[:nonceSizeECDHP256]
 }
 
 func deriveAESKeyFromSharedSecret(sharedSecret []byte, salt []byte, info []byte) ([]byte, error) {

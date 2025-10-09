@@ -71,32 +71,30 @@ func TestEncryptDecrypt(t *testing.T) {
 			expectedEncryptError: keystore.ErrEncryptionFailed,
 		}}
 
-	for fromKeyName, fromKey := range th.KeysByName() {
-		for toKeyName, toKey := range th.KeysByName() {
-			testName := fmt.Sprintf("Encrypt %s to %s", fromKeyName, toKeyName)
-			var expectedEncryptError error
-			if fromKey.KeyType == toKey.KeyType && fromKey.KeyType.IsEncryptionKeyType() {
-				// Same key types should succeed
-				expectedEncryptError = nil
-			} else {
-				// Different key types or non-encryption key types should fail
-				expectedEncryptError = keystore.ErrEncryptionFailed
-			}
-
-			tt = append(tt, testCase{
-				name:                 testName,
-				remoteKeyType:        fromKey.KeyType,
-				remotePubKey:         toKey.PublicKey,
-				decryptKey:           toKeyName,
-				expectedEncryptError: expectedEncryptError,
-				payload:              []byte("hello world"),
-			})
+	for encName, encKey := range th.KeysByName() {
+		testName := fmt.Sprintf("Encrypt to %s", encName)
+		var expectedEncryptError error
+		if encKey.keyType.IsEncryptionKeyType() {
+			// Same key types should succeed
+			expectedEncryptError = nil
+		} else {
+			// Different key types or non-encryption key types should fail
+			expectedEncryptError = keystore.ErrEncryptionFailed
 		}
+
+		tt = append(tt, testCase{
+			name:                 testName,
+			remoteKeyType:        encKey.keyType,
+			remotePubKey:         encKey.publicKey,
+			decryptKey:           encName,
+			expectedEncryptError: expectedEncryptError,
+			payload:              []byte("hello world"),
+		})
 	}
 
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
-			encryptResp, err := th.Keystore.EncryptAnonymous(ctx, keystore.EncryptAnonymousRequest{
+			encryptResp, err := th.Keystore.Encrypt(ctx, keystore.EncryptRequest{
 				RemoteKeyType: tt.remoteKeyType,
 				RemotePubKey:  tt.remotePubKey,
 				Data:          tt.payload,
@@ -107,7 +105,7 @@ func TestEncryptDecrypt(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			decryptResp, err := th.Keystore.DecryptAnonymous(ctx, keystore.DecryptAnonymousRequest{
+			decryptResp, err := th.Keystore.Decrypt(ctx, keystore.DecryptRequest{
 				KeyName:       tt.decryptKey,
 				EncryptedData: encryptResp.EncryptedData,
 			})
@@ -203,7 +201,7 @@ func FuzzEncryptDecryptRoundtrip(f *testing.F) {
 		for _, keyType := range keystore.AllEncryptionKeyTypes {
 			t.Run(fmt.Sprintf("keyType_%s", keyType), func(t *testing.T) {
 				// Encrypt data using sender key to receiver's public key
-				encryptResp, err := th.Keystore.EncryptAnonymous(ctx, keystore.EncryptAnonymousRequest{
+				encryptResp, err := th.Keystore.Encrypt(ctx, keystore.EncryptRequest{
 					RemoteKeyType: keyType,
 					RemotePubKey:  th.KeysByType()[keyType][1].PublicKey, // receiver's public key
 					Data:          data,
@@ -211,7 +209,7 @@ func FuzzEncryptDecryptRoundtrip(f *testing.F) {
 				require.NoError(t, err, "Encryption should succeed for keyType %s with data length %d", keyType, len(data))
 
 				// Decrypt using receiver key
-				decryptResp, err := th.Keystore.DecryptAnonymous(ctx, keystore.DecryptAnonymousRequest{
+				decryptResp, err := th.Keystore.Decrypt(ctx, keystore.DecryptRequest{
 					KeyName:       th.KeyName(keyType, 1),
 					EncryptedData: encryptResp.EncryptedData,
 				})

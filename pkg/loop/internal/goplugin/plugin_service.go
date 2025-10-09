@@ -257,7 +257,17 @@ func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	case <-s.serviceCh:
 		return nil
 	case <-s.stopCh:
-		return fmt.Errorf("service was stoped while waiting: %w", context.Canceled)
+		return fmt.Errorf("service was stopped while waiting: %w", context.Canceled)
+	}
+}
+
+// Wait waits for the service to start up until it receives the stop signal.
+func (s *PluginService[P, S]) Wait() error {
+	select {
+	case <-s.serviceCh:
+		return nil
+	case <-s.stopCh:
+		return fmt.Errorf("service was stopped while waiting: %w", context.Canceled)
 	}
 }
 

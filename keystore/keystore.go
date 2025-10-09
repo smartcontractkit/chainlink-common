@@ -7,10 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
-
-	"slices"
 
 	"golang.org/x/crypto/curve25519"
 

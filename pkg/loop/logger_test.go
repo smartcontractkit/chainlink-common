@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
@@ -21,21 +22,53 @@ func Test_removeArg(t *testing.T) {
 		wantArgs []any
 		wantVal  string
 	}{
-		{"empty", nil, "logger",
-			nil, ""},
-		{"simple", []any{"logger", "foo"}, "logger",
-			[]any{}, "foo"},
-		{"multi", []any{"logger", "foo", "bar", "baz"}, "logger",
-			[]any{"bar", "baz"}, "foo"},
-		{"reorder", []any{"bar", "baz", "logger", "foo"}, "logger",
-			[]any{"bar", "baz"}, "foo"},
+		{
+			"empty", nil, "logger",
+			nil, "",
+		},
+		{
+			"simple",
+			[]any{"logger", "foo"},
+			"logger",
+			[]any{},
+			"foo",
+		},
+		{
+			"multi",
+			[]any{"logger", "foo", "bar", "baz"},
+			"logger",
+			[]any{"bar", "baz"},
+			"foo",
+		},
+		{
+			"reorder",
+			[]any{"bar", "baz", "logger", "foo"},
+			"logger",
+			[]any{"bar", "baz"},
+			"foo",
+		},
 
-		{"invalid", []any{"logger"}, "logger",
-			[]any{"logger"}, ""},
-		{"invalid-multi", []any{"foo", "bar", "logger"}, "logger",
-			[]any{"foo", "bar", "logger"}, ""},
-		{"value", []any{"foo", "logger", "bar", "baz"}, "logger",
-			[]any{"foo", "logger", "bar", "baz"}, ""},
+		{
+			"invalid",
+			[]any{"logger"},
+			"logger",
+			[]any{"logger"},
+			"",
+		},
+		{
+			"invalid-multi",
+			[]any{"foo", "bar", "logger"},
+			"logger",
+			[]any{"foo", "bar", "logger"},
+			"",
+		},
+		{
+			"value",
+			[]any{"foo", "logger", "bar", "baz"},
+			"logger",
+			[]any{"foo", "logger", "bar", "baz"},
+			"",
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			args, val := removeArg(tt.args, tt.key)
@@ -74,7 +107,7 @@ func TestNewOtelLogger(t *testing.T) {
 			)
 			otelLggr := lp.Logger("test-" + tt.name)
 
-			lggr, err := NewOtelLogger(otelLggr)
+			lggr, err := NewOtelLogger(otelLggr, zapcore.DebugLevel)
 			if err != nil {
 				t.Fatalf("NewOtelLogger error: %v", err)
 			}
@@ -113,5 +146,7 @@ func (r *recordingExporter) Shutdown(context.Context) error   { return nil }
 
 // Compile-time assertion that otelzap.NewCore still satisfies zapcore.Core usage pattern.
 // (Guards against accidental API break causing this test file to silently compile with stubs.)
-var _ = otelzap.NewCore
-var _ logger.Logger // silence unused import of logger in case future refactors remove usage
+var (
+	_ = otelzap.NewCore
+	_ logger.Logger // silence unused import of logger in case future refactors remove usage
+)

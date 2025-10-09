@@ -141,6 +141,7 @@ func (s *Server) start() error {
 			EmitterExportMaxBatchSize:      s.EnvConfig.TelemetryEmitterExportMaxBatchSize,
 			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
 			LogStreamingEnabled:            s.EnvConfig.TelemetryLogStreamingEnabled,
+			LogLevel:                       s.EnvConfig.TelemetryLogLevel,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
@@ -169,7 +170,7 @@ func (s *Server) start() error {
 		beholder.SetGlobalOtelProviders()
 
 		if beholderCfg.LogStreamingEnabled {
-			otelLogger, err := NewOtelLogger(beholderClient.Logger)
+			otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
 			if err != nil {
 				return fmt.Errorf("failed to enable log streaming: %w", err)
 			}

@@ -54,7 +54,7 @@ func (UnimplementedEncryptor) Decrypt(ctx context.Context, req DecryptRequest) (
 }
 
 func (UnimplementedEncryptor) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
-	return DeriveSharedSecretResponse{}, fmt.Errorf("Encryptor.DeriveSharedSecret: %w", ErrUnimplemented)
+	return DeriveSharedSecretResponse{}, fmt.Errorf("Encryptor.DeriveSharedSecret : %w", ErrUnimplemented)
 }
 
 // TODO: Encryptor implementation.

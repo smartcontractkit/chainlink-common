@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
@@ -47,7 +48,8 @@ type Config struct {
 	LogBatchProcessor     bool // Enabled by default. Disable only for testing.
 	// Retry config for shared log exporter, used by Emitter and Logger
 	LogRetryConfig      *RetryConfig
-	LogStreamingEnabled bool // Enable logs streaming to the OTel log exporter
+	LogStreamingEnabled bool          // Enable logs streaming to the OTel log exporter
+	LogLevel            zapcore.Level // Log level for telemetry streaming
 
 	// Auth
 	AuthPublicKeyHex string
@@ -117,6 +119,7 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
+		LogLevel:              zapcore.InfoLevel,
 		// Auth
 		AuthHeadersTTL: 10 * time.Minute,
 	}

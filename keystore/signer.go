@@ -3,6 +3,7 @@ package keystore
 import (
 	"context"
 	"crypto/ed25519"
+	"errors"
 	"fmt"
 
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -10,8 +11,8 @@ import (
 )
 
 var (
-	ErrInvalidSignRequest   = fmt.Errorf("invalid sign request")
-	ErrInvalidVerifyRequest = fmt.Errorf("invalid verify request")
+	ErrInvalidSignRequest   = errors.New("invalid sign request")
+	ErrInvalidVerifyRequest = errors.New("invalid verify request")
 )
 
 type SignRequest struct {

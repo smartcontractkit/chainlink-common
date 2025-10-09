@@ -48,6 +48,9 @@ message RequestMetadata {
   string decoded_workflow_name = 9;
   repeated SpendLimit spend_limits = 10;
   string workflow_tag = 11;
+  string workflow_registry_chain_selector = 12;
+  string workflow_registry_address = 13;
+  string engine_version = 14;
 }
 
 message CapabilityRequest {
@@ -169,6 +172,7 @@ message InitialiseRequest {
   uint32 oracle_factory_id = 8;
   uint32 gateway_connector_id = 9;
   uint32 keystore_id = 10;
+  uint32 org_resolver_id = 11;
 }
 
 message CapabilityInfosReply {

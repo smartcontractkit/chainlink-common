@@ -106,8 +106,11 @@ type RequestMetadata struct {
 	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
 	DecodedWorkflowName string
 	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
-	SpendLimits []SpendLimit
-	WorkflowTag string
+	SpendLimits                   []SpendLimit
+	WorkflowTag                   string
+	WorkflowRegistryChainSelector string
+	WorkflowRegistryAddress       string
+	EngineVersion                 string
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {

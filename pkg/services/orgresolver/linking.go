@@ -8,11 +8,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
 	log "github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	linkingclient "github.com/smartcontractkit/chainlink-protos/linking-service/go/v1"
 )
+
+// JWTGenerator interface for JWT token creation
+type JWTGenerator interface {
+	CreateJWTForRequest(req any) (string, error)
+}
 
 // OrgResolver interface defines methods for resolving organization IDs from workflow owners
 type OrgResolver interface {
@@ -25,6 +31,7 @@ type Config struct {
 	TLSEnabled                    bool
 	WorkflowRegistryAddress       string
 	WorkflowRegistryChainSelector uint64
+	JWTGenerator                  JWTGenerator
 }
 
 // orgResolver makes direct calls to the linking service to resolve organization IDs from workflow owners.
@@ -33,9 +40,10 @@ type orgResolver struct {
 	workflowRegistryAddress       string
 	workflowRegistryChainSelector uint64
 
-	client linkingclient.LinkingServiceClient
-	conn   *grpc.ClientConn // nil if client was injected
-	logger log.SugaredLogger
+	client       linkingclient.LinkingServiceClient
+	conn         *grpc.ClientConn // nil if client was injected
+	logger       log.SugaredLogger
+	jwtGenerator JWTGenerator
 }
 
 // NewOrgResolver creates a new org resolver with the specified configuration
@@ -49,6 +57,7 @@ func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceCli
 		workflowRegistryAddress:       cfg.WorkflowRegistryAddress,
 		workflowRegistryChainSelector: cfg.WorkflowRegistryChainSelector,
 		logger:                        log.Sugared(logger).Named("OrgResolver"),
+		jwtGenerator:                  cfg.JWTGenerator,
 	}
 
 	if client != nil {
@@ -77,11 +86,34 @@ func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceCli
 	return resolver, nil
 }
 
+// addJWTAuth creates and signs a JWT token, then adds it to the context
+func (o *orgResolver) addJWTAuth(ctx context.Context, req any) (context.Context, error) {
+	// Skip authentication if no JWT generator provided
+	if o.jwtGenerator == nil {
+		return ctx, nil
+	}
+
+	// Create JWT token using the JWT generator
+	jwtToken, err := o.jwtGenerator.CreateJWTForRequest(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT: %w", err)
+	}
+
+	// Add JWT to Authorization header
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
+}
+
 func (o *orgResolver) Get(ctx context.Context, owner string) (string, error) {
 	req := &linkingclient.GetOrganizationFromWorkflowOwnerRequest{
 		WorkflowOwner:           owner,
 		WorkflowRegistryAddress: o.workflowRegistryAddress,
 		ChainSelector:           o.workflowRegistryChainSelector,
+	}
+
+	ctx, err := o.addJWTAuth(ctx, req)
+	if err != nil {
+		o.logger.Errorw("Failed to add JWT auth to GetOrganizationFromWorkflowOwner request", "error", err)
+		return "", err
 	}
 
 	resp, err := o.client.GetOrganizationFromWorkflowOwner(ctx, req)

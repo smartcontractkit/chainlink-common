@@ -36,52 +36,52 @@ import "github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 
 func main() {
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
-	    Name:       "Dashboard Name",
-	    Tags:       []string{"tags1", "tags2"},
-	    Refresh:    "30s",
-	    TimeFrom:   "now-30m",
-	    TimeTo:     "now",
+		Name:     "Dashboard Name",
+		Tags:     []string{"tags1", "tags2"},
+		Refresh:  "30s",
+		TimeFrom: "now-30m",
+		TimeTo:   "now",
 	})
-	
+
 	builder.AddVars(grafana.NewQueryVariable(&grafana.QueryVariableOptions{
-	    VariableOption: &grafana.VariableOption{
-	        Label: "Environment",
-	        Name:  "env",
-	    },
-	    Datasource: "Prometheus",
-	    Query:      `label_values(up, env)`,
+		VariableOption: &grafana.VariableOption{
+			Label: "Environment",
+			Name:  "env",
+		},
+		Datasource: "Prometheus",
+		Query:      `label_values(up, env)`,
 	}))
-	
+
 	builder.AddRow("Summary")
-	
+
 	builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
-	    PanelOptions: &grafana.PanelOptions{
-	        Datasource:  "Prometheus",
-	        Title:       "Uptime",
-	        Description: "instance uptime",
-	        Span:        12,
-	        Height:      4,
-	        Decimals:    2,
-	        Unit:        "s",
-	        Query: []grafana.Query{
-	            {
-	                Expr:   `uptime_seconds`,
-	                Legend: `{{ pod }}`,
-	            },
-	        },
-	    },
-	    ColorMode:   common.BigValueColorModeNone,
-	    TextMode:    common.BigValueTextModeValueAndName,
-	    Orientation: common.VizOrientationHorizontal,
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  "Prometheus",
+			Title:       "Uptime",
+			Description: "instance uptime",
+			Span:        12,
+			Height:      4,
+			Decimals:    2,
+			Unit:        "s",
+			Query: []grafana.Query{
+				{
+					Expr:   `uptime_seconds`,
+					Legend: `{{ pod }}`,
+				},
+			},
+		},
+		ColorMode:   common.BigValueColorModeNone,
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
 	}))
-	
+
 	db, err := builder.Build()
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	json, err := db.GenerateJSON()
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	fmt.Println(string(json))
 }

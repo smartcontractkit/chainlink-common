@@ -24,22 +24,22 @@ var (
 	ErrDecryptionFailed   = fmt.Errorf("decryption operation failed")
 )
 
-type EncryptAnonymousRequest struct {
+type EncryptRequest struct {
 	RemoteKeyType KeyType
 	RemotePubKey  []byte
 	Data          []byte
 }
 
-type EncryptAnonymousResponse struct {
+type EncryptResponse struct {
 	EncryptedData []byte
 }
 
-type DecryptAnonymousRequest struct {
+type DecryptRequest struct {
 	KeyName       string
 	EncryptedData []byte
 }
 
-type DecryptAnonymousResponse struct {
+type DecryptResponse struct {
 	Data []byte
 }
 
@@ -65,8 +65,8 @@ var (
 
 // Encryptor is an interfaces for hybrid encryption (key exchange + encryption) operations.
 type Encryptor interface {
-	EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error)
-	DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error)
+	Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error)
+	Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error)
 	// DeriveSharedSecret: Derives a shared secret between the key specified
 	// and the remote public key. WARNING: Using the shared secret should only be used directly in
 	// cases where very custom encryption schemes are needed and you know
@@ -78,71 +78,71 @@ type Encryptor interface {
 // Clients should embed this struct to ensure forward compatibility with changes to the Encryptor interface.
 type UnimplementedEncryptor struct{}
 
-func (UnimplementedEncryptor) EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error) {
-	return EncryptAnonymousResponse{}, fmt.Errorf("Encryptor.EncryptAnonymous: %w", ErrUnimplemented)
+func (UnimplementedEncryptor) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
+	return EncryptResponse{}, fmt.Errorf("Encryptor.Encrypt: %w", ErrUnimplemented)
 }
 
-func (UnimplementedEncryptor) DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error) {
-	return DecryptAnonymousResponse{}, fmt.Errorf("Encryptor.DecryptAnonymous: %w", ErrUnimplemented)
+func (UnimplementedEncryptor) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
+	return DecryptResponse{}, fmt.Errorf("Encryptor.Decrypt: %w", ErrUnimplemented)
 }
 
 func (UnimplementedEncryptor) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecretRequest) (DeriveSharedSecretResponse, error) {
 	return DeriveSharedSecretResponse{}, fmt.Errorf("Encryptor.DeriveSharedSecret: %w", ErrUnimplemented)
 }
 
-func (k *keystore) EncryptAnonymous(ctx context.Context, req EncryptAnonymousRequest) (EncryptAnonymousResponse, error) {
+func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
 	if len(req.Data) > MaxEncryptionPayloadSize {
-		return EncryptAnonymousResponse{}, ErrEncryptionFailed
+		return EncryptResponse{}, ErrEncryptionFailed
 	}
 
 	switch req.RemoteKeyType {
 	case X25519:
 		encrypted, err := k.encryptX25519Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptAnonymousResponse{}, err
+			return EncryptResponse{}, err
 		}
-		return EncryptAnonymousResponse{
+		return EncryptResponse{
 			EncryptedData: encrypted,
 		}, nil
 	case ECDH_P256:
 		encrypted, err := k.encryptECDHP256Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptAnonymousResponse{}, err
+			return EncryptResponse{}, err
 		}
-		return EncryptAnonymousResponse{EncryptedData: encrypted}, nil
+		return EncryptResponse{EncryptedData: encrypted}, nil
 	default:
-		return EncryptAnonymousResponse{}, ErrEncryptionFailed
+		return EncryptResponse{}, ErrEncryptionFailed
 	}
 }
 
-func (k *keystore) DecryptAnonymous(ctx context.Context, req DecryptAnonymousRequest) (DecryptAnonymousResponse, error) {
+func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResponse, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
 	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > MaxEncryptionPayloadSize*2 {
-		return DecryptAnonymousResponse{}, ErrDecryptionFailed
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
-		return DecryptAnonymousResponse{}, ErrDecryptionFailed
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
 	switch key.keyType {
 	case X25519:
 		decrypted, err := k.decryptX25519Anonymous(req.EncryptedData, key.privateKey, key.publicKey)
 		if err != nil {
-			return DecryptAnonymousResponse{}, err
+			return DecryptResponse{}, err
 		}
-		return DecryptAnonymousResponse{Data: decrypted}, nil
+		return DecryptResponse{Data: decrypted}, nil
 	case ECDH_P256:
 		decrypted, err := k.decryptECDHP256Anonymous(req.EncryptedData, key.privateKey)
 		if err != nil {
-			return DecryptAnonymousResponse{}, err
+			return DecryptResponse{}, err
 		}
-		return DecryptAnonymousResponse{Data: decrypted}, nil
+		return DecryptResponse{Data: decrypted}, nil
 	default:
-		return DecryptAnonymousResponse{}, ErrDecryptionFailed
+		return DecryptResponse{}, ErrDecryptionFailed
 	}
 }
 
@@ -320,25 +320,21 @@ func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey int
 		return nil, ErrDecryptionFailed
 	}
 
-	// Get local private key
 	priv, err := curve.NewPrivateKey(internal.Bytes(privateKey))
 	if err != nil {
 		return nil, ErrDecryptionFailed
 	}
 
-	// Derive shared secret using local private key + ephemeral public key
 	shared, err := priv.ECDH(ephPub)
 	if err != nil {
 		return nil, ErrDecryptionFailed
 	}
 
-	// Derive the same AES key
 	derivedKey, err := deriveAESKeyFromSharedSecret(shared, nonce[:], infoAESGCM)
 	if err != nil {
 		return nil, ErrDecryptionFailed
 	}
 
-	// Decrypt with AES-GCM
 	block, err := aes.NewCipher(derivedKey)
 	if err != nil {
 		return nil, ErrDecryptionFailed

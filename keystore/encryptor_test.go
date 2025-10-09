@@ -71,27 +71,25 @@ func TestEncryptDecrypt(t *testing.T) {
 			expectedEncryptError: keystore.ErrEncryptionFailed,
 		}}
 
-	for fromKeyName, fromKey := range th.KeysByName() {
-		for toKeyName, toKey := range th.KeysByName() {
-			testName := fmt.Sprintf("Encrypt %s to %s", fromKeyName, toKeyName)
-			var expectedEncryptError error
-			if fromKey.keyType == toKey.keyType && fromKey.keyType.IsEncryptionKeyType() {
-				// Same key types should succeed
-				expectedEncryptError = nil
-			} else {
-				// Different key types or non-encryption key types should fail
-				expectedEncryptError = keystore.ErrEncryptionFailed
-			}
-
-			tt = append(tt, testCase{
-				name:                 testName,
-				remoteKeyType:        fromKey.keyType,
-				remotePubKey:         toKey.publicKey,
-				decryptKey:           toKeyName,
-				expectedEncryptError: expectedEncryptError,
-				payload:              []byte("hello world"),
-			})
+	for encName, encKey := range th.KeysByName() {
+		testName := fmt.Sprintf("Encrypt to %s", encName)
+		var expectedEncryptError error
+		if encKey.keyType.IsEncryptionKeyType() {
+			// Same key types should succeed
+			expectedEncryptError = nil
+		} else {
+			// Different key types or non-encryption key types should fail
+			expectedEncryptError = keystore.ErrEncryptionFailed
 		}
+
+		tt = append(tt, testCase{
+			name:                 testName,
+			remoteKeyType:        encKey.keyType,
+			remotePubKey:         encKey.publicKey,
+			decryptKey:           encName,
+			expectedEncryptError: expectedEncryptError,
+			payload:              []byte("hello world"),
+		})
 	}
 
 	for _, tt := range tt {

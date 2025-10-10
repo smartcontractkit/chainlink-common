@@ -81,6 +81,8 @@ type Server struct {
 	otelViews       []sdkmetric.View
 	// Keystore is an optional keystore that can be used for beholder auth signing
 	Keystore keystore.Keystore
+	// lazySigner allows keystore to be injected after beholder initialization
+	lazySigner *lazyKeystoreSigner
 }
 
 func newServer(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
@@ -148,16 +150,24 @@ func (s *Server) start() error {
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
 
-		// Use keystore as beholder signer if available, otherwise fall back to static auth headers
-		if s.Keystore != nil && s.EnvConfig.TelemetryAuthPubKeyHex != "" && s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
-			s.Logger.Infow("Using keystore for beholder rotating auth",
-				"pubKeyHex", s.EnvConfig.TelemetryAuthPubKeyHex,
-				"ttl", s.EnvConfig.TelemetryAuthHeadersTTL)
-			beholderCfg.AuthKeySigner = s.Keystore
+		// Configure beholder auth with lazy keystore injection support
+		if s.EnvConfig.TelemetryAuthPubKeyHex != "" && s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
+			// Use lazy signer pattern - allows keystore to be injected after startup
+			s.lazySigner = newLazyKeystoreSigner()
+
+			// If keystore is already available, set it immediately
+			if s.Keystore != nil {
+				s.lazySigner.SetKeystore(s.Keystore)
+				s.Logger.Infow("Using keystore for beholder rotating auth", "ttl", s.EnvConfig.TelemetryAuthHeadersTTL)
+			} else {
+				s.Logger.Infow("Beholder rotating auth configured, waiting for keystore injection", "ttl", s.EnvConfig.TelemetryAuthHeadersTTL)
+			}
+
+			beholderCfg.AuthKeySigner = s.lazySigner
 			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
 			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
 		} else {
-			// Fall back to static auth headers if no keystore or config is incomplete
+			// Fall back to static auth headers if rotating auth not configured
 			if len(s.EnvConfig.TelemetryAuthHeaders) > 0 {
 				s.Logger.Info("Using static auth headers for beholder")
 				beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
@@ -259,6 +269,23 @@ func (s *Server) MustRegister(c services.HealthReporter) {
 }
 
 func (s *Server) Register(c services.HealthReporter) error { return s.checker.Register(c) }
+
+// UpdateKeystore injects or updates the keystore used for beholder auth signing.
+// This can be called at any time, even after the server has started and beholder
+// has been initialized. The next time beholder needs to sign (after TTL expires),
+// it will use the new keystore.
+func (s *Server) UpdateKeystore(ks keystore.Keystore) {
+	s.Keystore = ks
+	if s.lazySigner != nil {
+		wasSet := s.lazySigner.HasKeystore()
+		s.lazySigner.SetKeystore(ks)
+		if wasSet {
+			s.Logger.Info("Keystore updated for beholder rotating auth")
+		} else {
+			s.Logger.Info("Keystore injected for beholder rotating auth")
+		}
+	}
+}
 
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {

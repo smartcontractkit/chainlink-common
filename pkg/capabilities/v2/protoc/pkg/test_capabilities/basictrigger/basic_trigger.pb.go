@@ -122,7 +122,7 @@ var File_capabilities_internal_basictrigger_v1_basic_trigger_proto protoreflect.
 
 const file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc = "" +
 	"\n" +
-	"9capabilities/internal/basictrigger/v1/basic_trigger.proto\x12%capabilities.internal.basictrigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"4\n" +
+	"9capabilities/internal/basictrigger/v1/basic_trigger.proto\x12%capabilities.internal.basictrigger.v1\x1a)tools/generator/v1beta/cre_metadata.proto\"4\n" +
 	"\x06Config\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\x05R\x06number\"*\n" +
@@ -130,7 +130,7 @@ const file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc = "
 	"\vcool_output\x18\x01 \x01(\tR\n" +
 	"coolOutput2\x95\x01\n" +
 	"\x05Basic\x12j\n" +
-	"\aTrigger\x12-.capabilities.internal.basictrigger.v1.Config\x1a..capabilities.internal.basictrigger.v1.Outputs0\x01\x1a \x82\xb5\x18\x1c\b\x01\x12\x18basic-test-trigger@1.0.0b\x06proto3"
+	"\aTrigger\x12-.capabilities.internal.basictrigger.v1.Config\x1a..capabilities.internal.basictrigger.v1.Outputs0\x01\x1a \x92\xb5\x18\x1c\b\x01\x12\x18basic-test-trigger@1.0.0b\x06proto3"
 
 var (
 	file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescOnce sync.Once

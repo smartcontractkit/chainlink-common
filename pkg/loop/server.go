@@ -21,6 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/keystore"
 )
 
 // NewStartedServer returns a started Server.
@@ -78,6 +79,8 @@ type Server struct {
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
 	otelViews       []sdkmetric.View
+	// Keystore is an optional keystore that can be used for beholder auth signing
+	Keystore keystore.Keystore
 }
 
 func newServer(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
@@ -133,8 +136,6 @@ func (s *Server) start() error {
 			OtelExporterGRPCEndpoint:       s.EnvConfig.TelemetryEndpoint,
 			ResourceAttributes:             append(attributes, s.EnvConfig.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:               s.EnvConfig.TelemetryTraceSampleRatio,
-			AuthHeaders:                    s.EnvConfig.TelemetryAuthHeaders,
-			AuthPublicKeyHex:               s.EnvConfig.TelemetryAuthPubKeyHex,
 			EmitterBatchProcessor:          s.EnvConfig.TelemetryEmitterBatchProcessor,
 			EmitterExportTimeout:           s.EnvConfig.TelemetryEmitterExportTimeout,
 			EmitterExportInterval:          s.EnvConfig.TelemetryEmitterExportInterval,
@@ -145,6 +146,28 @@ func (s *Server) start() error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+		}
+
+		// Use keystore as beholder signer if available, otherwise fall back to static auth headers
+		if s.Keystore != nil && s.EnvConfig.TelemetryAuthPubKeyHex != "" && s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
+			s.Logger.Infow("Using keystore for beholder rotating auth",
+				"pubKeyHex", s.EnvConfig.TelemetryAuthPubKeyHex,
+				"ttl", s.EnvConfig.TelemetryAuthHeadersTTL)
+			beholderCfg.AuthKeySigner = s.Keystore
+			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
+			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
+		} else {
+			// Fall back to static auth headers if no keystore or config is incomplete
+			if len(s.EnvConfig.TelemetryAuthHeaders) > 0 {
+				s.Logger.Info("Using static auth headers for beholder")
+				beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
+				beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
+			} else if s.EnvConfig.TelemetryAuthPubKeyHex != "" {
+				// Static auth with pub key only
+				s.Logger.Info("Using static auth with public key for beholder")
+				beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
+				beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
+			}
 		}
 
 		// note: due to the OTEL specification, all histogram buckets

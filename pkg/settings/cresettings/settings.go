@@ -82,18 +82,17 @@ var Default = Schema{
 			EventSizeLimit:           Size(5 * config.KByte),
 		},
 		HTTPAction: httpAction{
-			RateLimit:         Rate(rate.Every(30*time.Second), 3),
+			CallLimit:         Int(3),
 			ResponseSizeLimit: Size(10 * config.KByte),
 			ConnectionTimeout: Duration(10 * time.Second),
 			RequestSizeLimit:  Size(100 * config.KByte),
 			CacheAgeLimit:     Duration(10 * time.Minute),
 		},
 		ChainWrite: chainWrite{
-			RateLimit:       Rate(rate.Every(30*time.Second), 3),
 			TargetsLimit:    Int(3),
 			ReportSizeLimit: Size(config.KByte),
 			EVM: evmChainWrite{
-				TransactionGasLimit: Uint64(500_000),
+				TransactionGasLimit: Uint64(5_000_000),
 			},
 		},
 		ChainRead: chainRead{
@@ -177,14 +176,13 @@ type logTrigger struct {
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
 type httpAction struct {
-	RateLimit         Setting[config.Rate]
+	CallLimit         Setting[int] `unit:"{call}"`
 	ResponseSizeLimit Setting[config.Size]
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	CacheAgeLimit     Setting[time.Duration]
 }
 type chainWrite struct {
-	RateLimit       Setting[config.Rate]
 	TargetsLimit    Setting[int] `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size]
 

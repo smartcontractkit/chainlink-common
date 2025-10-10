@@ -1,7 +1,6 @@
 package storage_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/storage"
@@ -10,8 +9,8 @@ import (
 
 func TestMemoryStorage(t *testing.T) {
 	storage := storage.NewMemoryStorage()
-	require.NoError(t, storage.PutEncryptedKeystore(context.Background(), []byte("test")))
-	got, err := storage.GetEncryptedKeystore(context.Background())
+	require.NoError(t, storage.PutEncryptedKeystore(t.Context(), []byte("test")))
+	got, err := storage.GetEncryptedKeystore(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, []byte("test"), got)
 }

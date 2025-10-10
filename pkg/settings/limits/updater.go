@@ -82,7 +82,7 @@ func (u *updater[N]) updateLoop(cre contexts.CRE) {
 	var c <-chan time.Time
 	if u.subFn != nil {
 		updates, cancelSub = u.subFn(contexts.WithCRE(ctx, cre))
-		defer cancelSub()
+		defer func() { cancelSub() }() // extra func wrapper is required to ensure we get the final cancelSub value
 		// opt: poll now to initialize
 	} else {
 		t := services.TickerConfig{}.NewTicker(pollPeriod)

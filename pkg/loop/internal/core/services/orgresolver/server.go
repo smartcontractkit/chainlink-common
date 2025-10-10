@@ -2,6 +2,7 @@ package orgresolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
@@ -19,6 +20,10 @@ func NewServer(impl orgresolver.OrgResolver) *Server {
 }
 
 func (s *Server) Get(ctx context.Context, req *pb.GetOrganizationRequest) (*pb.GetOrganizationResponse, error) {
+	if s.impl == nil {
+		// Return error when orgResolver implementation is nil
+		return nil, fmt.Errorf("orgResolver implementation is nil - service may not be configured")
+	}
 	orgID, err := s.impl.Get(ctx, req.Owner)
 	if err != nil {
 		return nil, err

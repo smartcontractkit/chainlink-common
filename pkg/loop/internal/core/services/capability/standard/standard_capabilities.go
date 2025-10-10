@@ -69,6 +69,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	oracleFactory := dependencies.OracleFactory
 	gatewayConnector := dependencies.GatewayConnector
 	p2pKeystore := dependencies.P2PKeystore
+	orgResolver := dependencies.OrgResolver
 	telemetryID, telemetryRes, err := c.ServeNew("Telemetry", func(s *grpc.Server) {
 		pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 	})
@@ -158,7 +159,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	resources = append(resources, gatewayConnectorRes)
 
 	orgResolverID, orgResolverRes, err := c.ServeNew("OrgResolver", func(s *grpc.Server) {
-		pb.RegisterOrgResolverServer(s, orgresolver.NewServer(dependencies.OrgResolver))
+		pb.RegisterOrgResolverServer(s, orgresolver.NewServer(orgResolver))
 	})
 	if err != nil {
 		c.CloseAll(resources...)

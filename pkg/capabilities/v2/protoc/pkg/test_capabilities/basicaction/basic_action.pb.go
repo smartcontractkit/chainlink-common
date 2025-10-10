@@ -114,14 +114,14 @@ var File_capabilities_internal_basicaction_v1_basic_action_proto protoreflect.Fi
 
 const file_capabilities_internal_basicaction_v1_basic_action_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/internal/basicaction/v1/basic_action.proto\x12$capabilities.internal.basicaction.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\")\n" +
+	"7capabilities/internal/basicaction/v1/basic_action.proto\x12$capabilities.internal.basicaction.v1\x1a)tools/generator/v1beta/cre_metadata.proto\")\n" +
 	"\x06Inputs\x12\x1f\n" +
 	"\vinput_thing\x18\x01 \x01(\bR\n" +
 	"inputThing\".\n" +
 	"\aOutputs\x12#\n" +
 	"\radapted_thing\x18\x01 \x01(\tR\fadaptedThing2\x9c\x01\n" +
 	"\vBasicAction\x12l\n" +
-	"\rPerformAction\x12,.capabilities.internal.basicaction.v1.Inputs\x1a-.capabilities.internal.basicaction.v1.Outputs\x1a\x1f\x82\xb5\x18\x1b\b\x01\x12\x17basic-test-action@1.0.0b\x06proto3"
+	"\rPerformAction\x12,.capabilities.internal.basicaction.v1.Inputs\x1a-.capabilities.internal.basicaction.v1.Outputs\x1a\x1f\x92\xb5\x18\x1b\b\x01\x12\x17basic-test-action@1.0.0b\x06proto3"
 
 var (
 	file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescOnce sync.Once

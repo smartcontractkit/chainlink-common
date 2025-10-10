@@ -48,6 +48,9 @@ message RequestMetadata {
   string decoded_workflow_name = 9;
   repeated SpendLimit spend_limits = 10;
   string workflow_tag = 11;
+  string workflow_registry_chain_selector = 12;
+  string workflow_registry_address = 13;
+  string engine_version = 14;
 }
 
 message CapabilityRequest {

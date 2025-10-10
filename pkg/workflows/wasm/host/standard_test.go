@@ -423,6 +423,20 @@ func TestStandardSecrets(t *testing.T) {
 		require.Equal(t, "Bar", result.GetValue().GetStringValue())
 	})
 
+	t.Run("returns an error when there are invalid UTF-8 bytes", func(t *testing.T) {
+		b := []byte{0xff, 0xfe, 0xfd} // invalid UTF-8 bytes
+		s := string(b)
+
+		result := runSecretTest(t, m, &sdk.SecretResponse{
+			Response: &sdk.SecretResponse_Secret{
+				Secret: &sdk.Secret{
+					Value: s,
+				},
+			},
+		})
+		require.Equal(t, "Bar", result.GetValue().GetStringValue(), result.GetError())
+	})
+
 	t.Run("returns an error if the secret doesn't exist", func(t *testing.T) {
 		resp := runSecretTest(t, m, &sdk.SecretResponse{
 			Response: &sdk.SecretResponse_Error{

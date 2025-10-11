@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/nacl/box"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
 // mockSigner implements crypto.Signer for testing
@@ -214,6 +215,31 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 
 		valid := ed25519.Verify(privKey.Public().(ed25519.PublicKey), testData, signature1)
 		assert.True(t, valid, "signature should be valid")
+	})
+
+	t.Run("real ed25519 keys integration with StandardCapabilityAccount", func(t *testing.T) {
+		privKey := ed25519.NewKeyFromSeed([]byte("test_seed_that_is_32_bytes_long!"))
+		account := core.StandardCapabilityAccount
+		singleSigner, err := core.NewSignerDecrypter(account, privKey, nil)
+		require.NoError(t, err)
+
+		accounts, err := singleSigner.Accounts(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, []string{account}, accounts)
+
+		ctx := context.Background()
+		testData := []byte("integration test data")
+		prefixedTestData := peeridhelper.MakePeerIDSignatureDomainSeparatedPayload("test", testData)
+
+		signature1, err := singleSigner.Sign(ctx, account, prefixedTestData)
+		require.NoError(t, err)
+		assert.NotEmpty(t, signature1)
+
+		valid := ed25519.Verify(privKey.Public().(ed25519.PublicKey), prefixedTestData, signature1)
+		assert.True(t, valid, "signature should be valid")
+
+		_, err = singleSigner.Sign(ctx, account, []byte("foobar"))
+		require.Equal(t, err.Error(), "data does not have expected prefix")
 	})
 
 	t.Run("real nacl/box keys decrypt integration", func(t *testing.T) {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760369361343,
+  "lastUpdate": 1760377654187,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -27546,6 +27546,66 @@ window.BENCHMARK_DATA = {
             "value": 145535,
             "unit": "ns/op",
             "extra": "7578 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "deividas.karzinauskas@gmail.com",
+            "name": "Deividas Karžinauskas",
+            "username": "DeividasK"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1fd7ca40326cc7c783696a3d605c3ba807e7929",
+          "message": "Remove the use of canonicaljson-go (#1611)",
+          "timestamp": "2025-10-13T12:46:13-05:00",
+          "tree_id": "c6935b57af405ebfa04c6b05852f5becffdcfd1d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b1fd7ca40326cc7c783696a3d605c3ba807e7929"
+        },
+        "date": 1760377652848,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 593.2,
+            "unit": "ns/op",
+            "extra": "1862286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100164,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.7,
+            "unit": "ns/op",
+            "extra": "2980274 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97110,
+            "unit": "ns/op",
+            "extra": "12327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26649,
+            "unit": "ns/op",
+            "extra": "45183 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144798,
+            "unit": "ns/op",
+            "extra": "7351 times\n4 procs"
           }
         ]
       }

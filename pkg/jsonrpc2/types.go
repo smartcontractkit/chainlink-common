@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	canonicaljson "github.com/gibson042/canonicaljson-go"
+	jsonv2 "github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 const (
@@ -63,22 +64,27 @@ func (r *Request[Params]) ServiceName() string {
 // Digest returns a digest of the request. This is used for signature verification.
 // The digest is a SHA256 hash of the canonical JSON string of the request excluding the auth field.
 func (r *Request[Params]) Digest() (string, error) {
-	canonicalJSONBytes, err := canonicaljson.Marshal(Request[Params]{
+	JSONBytes, err := jsonv2.Marshal(Request[Params]{
 		Version: r.Version,
 		ID:      r.ID,
 		Method:  r.Method,
 		Params:  r.Params,
 		// Auth is intentionally excluded from the digest
-	})
+	}, jsonv2.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
 	}
 
+	canonicalJSONBytes := jsontext.Value(JSONBytes)
+	err = canonicalJSONBytes.Canonicalize()
+	if err != nil {
+		return "", fmt.Errorf("error canonicalizing JSON: %w", err)
+	}
+
 	hasher := sha256.New()
 	hasher.Write(canonicalJSONBytes)
-	digestBytes := hasher.Sum(nil)
 
-	return hex.EncodeToString(digestBytes), nil
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 type Response[Result any] struct {
@@ -92,18 +98,23 @@ type Response[Result any] struct {
 // Digest returns a digest of the response. This is used for signature verification.
 // The digest is a SHA256 hash of the canonical JSON string of the response.
 func (r *Response[Result]) Digest() (string, error) {
-	canonicalJSONBytes, err := canonicaljson.Marshal(r)
+	JSONBytes, err := jsonv2.Marshal(r, jsonv2.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	canonicalJSONBytes := jsontext.Value(JSONBytes)
+	err = canonicalJSONBytes.Canonicalize()
+	if err != nil {
+		return "", fmt.Errorf("error canonicalizing JSON: %w", err)
 	}
 
 	hasher := sha256.New()
 	if _, err := hasher.Write(canonicalJSONBytes); err != nil {
 		return "", fmt.Errorf("error writing to hasher: %w", err)
 	}
-	digestBytes := hasher.Sum(nil)
 
-	return hex.EncodeToString(digestBytes), nil
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 // WireError represents a structured error in a Response.

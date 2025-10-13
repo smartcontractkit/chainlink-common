@@ -12,7 +12,6 @@ require (
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/gagliardetto/utilz v0.1.3
-	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-json-experiment/json v0.0.0-20250223041408-d3c622f1b874
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/go-viper/mapstructure/v2 v2.4.0

@@ -47,7 +47,7 @@ func TestTypes(t *testing.T) {
 
 		digest, err := req.Digest()
 		require.Error(t, err)
-		require.Equal(t, "error marshaling JSON: canonicaljson: unsupported type: chan string", err.Error())
+		require.Equal(t, "error marshaling JSON: json: cannot marshal from Go chan string within \"/params/channel\"", err.Error())
 		require.Empty(t, digest)
 	})
 

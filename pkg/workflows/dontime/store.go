@@ -2,6 +2,7 @@ package dontime
 
 import (
 	"fmt"
+	"maps"
 	"sync"
 	"time"
 )
@@ -39,9 +40,7 @@ func (s *Store) GetRequests() map[string]*Request {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	copied := make(map[string]*Request)
-	for k, v := range s.requests {
-		copied[k] = v
-	}
+	maps.Copy(copied, s.requests)
 	return copied
 }
 

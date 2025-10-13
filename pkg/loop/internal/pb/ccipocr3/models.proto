@@ -43,6 +43,8 @@ message RampTokenAmount {
   bytes extra_data = 3;
   // Amount is the amount of tokens to be transferred.
   BigInt amount = 4;
+  // DestExecData is destination chain specific execution data encoded in bytes.
+  bytes dest_exec_data = 5;
 }
 
 // Message is a gRPC adapter to [github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3.Message].
@@ -73,7 +75,8 @@ message Message {
 
 // BigInt represents a [big.Int].
 message BigInt {
-  bytes value = 1;
+  bool negative = 1;
+  bytes value = 2;
 }
 
 // TokenAmount is a helper type that defines a token and an amount.

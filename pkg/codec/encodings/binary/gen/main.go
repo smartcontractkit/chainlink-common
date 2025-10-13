@@ -39,13 +39,13 @@ func main() {
 			panic(err)
 		}
 
-		res = []byte(
-			fmt.Sprintf(
+		res =
+			fmt.Appendf(nil,
 				"// DO NOT MODIFY: automatically generated from %s/main.go using the template %s\n\n%s",
 				location,
 				gen.fileName,
 				string(res),
-			))
+			)
 
 		if err = os.WriteFile(gen.fileName, res, 0600); err != nil {
 			panic(err)

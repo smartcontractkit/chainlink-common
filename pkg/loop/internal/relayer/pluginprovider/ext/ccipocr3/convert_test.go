@@ -43,10 +43,11 @@ func TestMessageProtobufFlattening(t *testing.T) {
 				FeeValueJuels:  ccipocr3.NewBigInt(big.NewInt(2000)),
 				TokenAmounts: []ccipocr3.RampTokenAmount{
 					{
-						SourcePoolAddress: []byte("source-pool"),
-						DestTokenAddress:  []byte("dest-token"),
-						ExtraData:         []byte("token-extra"),
-						Amount:            ccipocr3.NewBigInt(big.NewInt(500)),
+						SourcePoolAddress: ccipocr3.UnknownAddress("0x1111111111111111111111111111111111111111"),
+						DestTokenAddress:  ccipocr3.UnknownAddress("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+						ExtraData:         ccipocr3.Bytes("extra-token-data-1"),
+						Amount:            ccipocr3.NewBigInt(big.NewInt(1)),
+						DestExecData:      ccipocr3.Bytes("dest-exec-data-1"),
 					},
 				},
 			},
@@ -765,18 +766,21 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-1"),
 					ExtraData:         ccipocr3.Bytes("extra-data-1"),
 					Amount:            ccipocr3.NewBigInt(big.NewInt(1000)),
+					DestExecData:      ccipocr3.Bytes("dest-exec-data-1"),
 				},
 				ccipocr3.NewMessageTokenID(2, 1): {
 					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-2"),
 					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-2"),
 					ExtraData:         ccipocr3.Bytes("extra-data-2"),
 					Amount:            ccipocr3.NewBigInt(big.NewInt(2000)),
+					DestExecData:      ccipocr3.Bytes("dest-exec-data-2"),
 				},
 				ccipocr3.NewMessageTokenID(10, 5): {
 					SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-10"),
 					DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-10"),
 					ExtraData:         ccipocr3.Bytes(""),
 					Amount:            ccipocr3.NewBigInt(big.NewInt(0)),
+					DestExecData:      ccipocr3.Bytes(""),
 				},
 			},
 		},
@@ -795,6 +799,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 						val, _ := new(big.Int).SetString("123456789012345678901234567890", 10)
 						return ccipocr3.NewBigInt(val)
 					}(),
+					DestExecData: ccipocr3.Bytes("very long dest exec data with many characters that tests the handling of large execution data asdlfk(&HEDHSKJ#OIUOIJDL)(@#UE)(#U(R&FH(E&HF0x"),
 				},
 			},
 		},
@@ -823,6 +828,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 				assert.Equal(t, []byte(amount.DestTokenAddress), pbAmount.DestTokenAddress)
 				assert.Equal(t, []byte(amount.ExtraData), pbAmount.ExtraData)
 				assert.Equal(t, amount.Amount.Int.Bytes(), pbAmount.Amount.Value)
+				assert.Equal(t, []byte(amount.DestExecData), pbAmount.DestExecData)
 			}
 
 			// Convert Protobuf -> Go (round-trip)
@@ -838,6 +844,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 				assert.Equal(t, []byte(originalAmount.DestTokenAddress), []byte(convertedAmount.DestTokenAddress))
 				assert.Equal(t, []byte(originalAmount.ExtraData), []byte(convertedAmount.ExtraData))
 				assert.Equal(t, originalAmount.Amount.Int.String(), convertedAmount.Amount.Int.String())
+				assert.Equal(t, []byte(originalAmount.DestExecData), []byte(convertedAmount.DestExecData))
 			}
 		})
 	}
@@ -850,7 +857,7 @@ func TestMessageTokenIDMapErrorHandling(t *testing.T) {
 				SourcePoolAddress: []byte("test"),
 				DestTokenAddress:  []byte("test"),
 				ExtraData:         []byte("test"),
-				Amount:            &ccipocr3pb.BigInt{Value: []byte{0x01}},
+				Amount:            &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x01}},
 			},
 		}
 
@@ -960,6 +967,122 @@ func TestMessagesByTokenIDErrorHandling(t *testing.T) {
 		result := messagesByTokenIDToPb(nil)
 		assert.Nil(t, result)
 	})
+}
+
+// TestRampTokenAmountDestExecDataRoundTrip tests that DestExecData is properly preserved in round-trip conversions
+func TestRampTokenAmountDestExecDataRoundTrip(t *testing.T) {
+	testCases := []struct {
+		name        string
+		tokenAmount ccipocr3.RampTokenAmount
+	}{
+		{
+			name: "RampTokenAmount with DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(12345)),
+				DestExecData:      ccipocr3.Bytes("dest-exec-data-content"),
+			},
+		},
+		{
+			name: "RampTokenAmount with empty DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(54321)),
+				DestExecData:      ccipocr3.Bytes(""),
+			},
+		},
+		{
+			name: "RampTokenAmount with nil DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(98765)),
+				DestExecData:      nil,
+			},
+		},
+		{
+			name: "RampTokenAmount with large DestExecData",
+			tokenAmount: ccipocr3.RampTokenAmount{
+				SourcePoolAddress: ccipocr3.UnknownAddress("source-pool-address"),
+				DestTokenAddress:  ccipocr3.UnknownAddress("dest-token-address"),
+				ExtraData:         ccipocr3.Bytes("extra-data"),
+				Amount:            ccipocr3.NewBigInt(big.NewInt(11111)),
+				DestExecData:      ccipocr3.Bytes("very long dest exec data with many characters that tests the handling of large execution data asdlfk(&HEDHSKJ#OIUOIJDL)(@#UE)(#U(R&FH(E&HF0x"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test via pbToTokenAmounts and messageToPb functions
+			message := ccipocr3.Message{
+				Header: ccipocr3.RampMessageHeader{
+					MessageID:           [32]byte{0x01, 0x02, 0x03, 0x04},
+					SourceChainSelector: ccipocr3.ChainSelector(1),
+					DestChainSelector:   ccipocr3.ChainSelector(2),
+					SequenceNumber:      ccipocr3.SeqNum(1),
+					Nonce:               1,
+					MsgHash:             [32]byte{0xAA, 0xBB, 0xCC, 0xDD},
+					OnRamp:              []byte("onramp"),
+					TxHash:              "0x123",
+				},
+				Sender:         []byte("sender"),
+				Data:           []byte("data"),
+				Receiver:       []byte("receiver"),
+				ExtraArgs:      []byte("extra-args"),
+				FeeToken:       []byte("fee-token"),
+				FeeTokenAmount: ccipocr3.NewBigInt(big.NewInt(1000)),
+				FeeValueJuels:  ccipocr3.NewBigInt(big.NewInt(2000)),
+				TokenAmounts:   []ccipocr3.RampTokenAmount{tc.tokenAmount},
+			}
+
+			// Convert to protobuf
+			pbMessage := messageToPb(message)
+			require.NotNil(t, pbMessage)
+			require.Len(t, pbMessage.TokenAmounts, 1)
+
+			// Verify DestExecData is preserved in protobuf
+			pbTokenAmount := pbMessage.TokenAmounts[0]
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), pbTokenAmount.DestExecData)
+
+			// Convert back to Go struct
+			convertedMessage := pbToMessage(pbMessage)
+			require.Len(t, convertedMessage.TokenAmounts, 1)
+
+			// Verify DestExecData is preserved in round-trip
+			convertedTokenAmount := convertedMessage.TokenAmounts[0]
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), []byte(convertedTokenAmount.DestExecData))
+
+			// Test via messageTokenIDMapToPb and pbToMessageTokenIDMap functions
+			tokenMap := map[ccipocr3.MessageTokenID]ccipocr3.RampTokenAmount{
+				ccipocr3.NewMessageTokenID(1, 0): tc.tokenAmount,
+			}
+
+			// Convert to protobuf map
+			pbMap := messageTokenIDMapToPb(tokenMap)
+			require.NotNil(t, pbMap)
+			require.Len(t, pbMap, 1)
+
+			// Verify DestExecData is preserved in protobuf map
+			pbAmount := pbMap["1_0"]
+			require.NotNil(t, pbAmount)
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), pbAmount.DestExecData)
+
+			// Convert back to Go map
+			convertedMap, err := pbToMessageTokenIDMap(pbMap)
+			require.NoError(t, err)
+			require.Len(t, convertedMap, 1)
+
+			// Verify DestExecData is preserved in round-trip map
+			convertedAmount := convertedMap[ccipocr3.NewMessageTokenID(1, 0)]
+			assert.Equal(t, []byte(tc.tokenAmount.DestExecData), []byte(convertedAmount.DestExecData))
+		})
+	}
 }
 
 // TestTokenUpdatesUnixConversion tests the TimestampedUnixBig token updates conversion functions
@@ -1106,32 +1229,27 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name:     "empty value bytes", // empty bytes are treated as zero
-			input:    &ccipocr3pb.BigInt{Value: []byte{}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{}},
 			expected: big.NewInt(0),
 		},
 		{
-			name:     "nil value bytes",
-			input:    &ccipocr3pb.BigInt{Value: nil},
-			expected: nil,
-		},
-		{
 			name:     "zero value",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(0).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(0).Bytes()},
 			expected: big.NewInt(0),
 		},
 		{
 			name:     "positive small integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(42).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(42).Bytes()},
 			expected: big.NewInt(42),
 		},
 		{
 			name:     "positive large integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(1234567890).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(1234567890).Bytes()},
 			expected: big.NewInt(1234567890),
 		},
 		{
 			name: "very large positive integer",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetString("999999999999999999999999999999", 10)
 				return val.Bytes()
@@ -1144,7 +1262,7 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name: "maximum uint64 value",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetUint64(^uint64(0)) // max uint64
 				return val.Bytes()
@@ -1157,7 +1275,7 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name: "256-bit integer (32 bytes)",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				// Create a 256-bit integer (all bits set)
 				bytes := make([]byte, 32)
 				for i := range bytes {
@@ -1175,18 +1293,47 @@ func TestPbBigIntToInt(t *testing.T) {
 		},
 		{
 			name:     "single byte value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0xFF}},
 			expected: big.NewInt(255),
 		},
 		{
 			name:     "two byte value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0x01, 0x00}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x01, 0x00}},
 			expected: big.NewInt(256),
 		},
 		{
 			name:     "leading zero bytes (should be handled correctly)",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0x00, 0x00, 0x01, 0x00}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x00, 0x00, 0x01, 0x00}},
 			expected: big.NewInt(256),
+		},
+		// Negative number test cases
+		{
+			name:     "negative small integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(42).Bytes()},
+			expected: big.NewInt(-42),
+		},
+		{
+			name:     "negative large integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(1234567890).Bytes()},
+			expected: big.NewInt(-1234567890),
+		},
+		{
+			name: "negative very large integer",
+			input: &ccipocr3pb.BigInt{Negative: true, Value: func() []byte {
+				val := new(big.Int)
+				val.SetString("999999999999999999999999999999", 10)
+				return val.Bytes()
+			}()},
+			expected: func() *big.Int {
+				val := new(big.Int)
+				val.SetString("-999999999999999999999999999999", 10)
+				return val
+			}(),
+		},
+		{
+			name:     "negative single byte value",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: []byte{0xFF}},
+			expected: big.NewInt(-255),
 		},
 	}
 
@@ -1220,32 +1367,27 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name:     "empty value bytes should return zero BigInt",
-			input:    &ccipocr3pb.BigInt{Value: []byte{}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{}},
 			expected: ccipocr3.BigInt{Int: big.NewInt(0)},
 		},
 		{
-			name:     "nil value bytes should preserve nil",
-			input:    &ccipocr3pb.BigInt{Value: nil},
-			expected: ccipocr3.BigInt{Int: nil},
-		},
-		{
 			name:     "zero value",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(0).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(0).Bytes()},
 			expected: ccipocr3.NewBigInt(big.NewInt(0)),
 		},
 		{
 			name:     "positive small integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(123).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(123).Bytes()},
 			expected: ccipocr3.NewBigInt(big.NewInt(123)),
 		},
 		{
 			name:     "positive large integer",
-			input:    &ccipocr3pb.BigInt{Value: big.NewInt(9876543210).Bytes()},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: big.NewInt(9876543210).Bytes()},
 			expected: ccipocr3.NewBigInt(big.NewInt(9876543210)),
 		},
 		{
 			name: "very large positive integer",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetString("123456789012345678901234567890", 10)
 				return val.Bytes()
@@ -1258,7 +1400,7 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name: "maximum uint64 value",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				val := new(big.Int)
 				val.SetUint64(^uint64(0)) // max uint64
 				return val.Bytes()
@@ -1271,7 +1413,7 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name: "256-bit integer (32 bytes)",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				// Create a 256-bit integer
 				bytes := make([]byte, 32)
 				for i := range bytes {
@@ -1289,17 +1431,17 @@ func TestPbToBigInt(t *testing.T) {
 		},
 		{
 			name:     "single byte maximum value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0xFF}},
 			expected: ccipocr3.NewBigInt(big.NewInt(255)),
 		},
 		{
 			name:     "two byte value",
-			input:    &ccipocr3pb.BigInt{Value: []byte{0xFF, 0xFF}},
+			input:    &ccipocr3pb.BigInt{Negative: false, Value: []byte{0xFF, 0xFF}},
 			expected: ccipocr3.NewBigInt(big.NewInt(65535)),
 		},
 		{
 			name: "ethereum wei amount (18 decimals)",
-			input: &ccipocr3pb.BigInt{Value: func() []byte {
+			input: &ccipocr3pb.BigInt{Negative: false, Value: func() []byte {
 				// 1 ETH in wei = 10^18
 				val := new(big.Int)
 				val.SetString("1000000000000000000", 10)
@@ -1310,6 +1452,35 @@ func TestPbToBigInt(t *testing.T) {
 				val.SetString("1000000000000000000", 10)
 				return ccipocr3.NewBigInt(val)
 			}(),
+		},
+		// Negative number test cases
+		{
+			name:     "negative small integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(123).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(-123)),
+		},
+		{
+			name:     "negative large integer",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: big.NewInt(9876543210).Bytes()},
+			expected: ccipocr3.NewBigInt(big.NewInt(-9876543210)),
+		},
+		{
+			name: "negative very large integer",
+			input: &ccipocr3pb.BigInt{Negative: true, Value: func() []byte {
+				val := new(big.Int)
+				val.SetString("123456789012345678901234567890", 10)
+				return val.Bytes()
+			}()},
+			expected: func() ccipocr3.BigInt {
+				val := new(big.Int)
+				val.SetString("-123456789012345678901234567890", 10)
+				return ccipocr3.NewBigInt(val)
+			}(),
+		},
+		{
+			name:     "negative single byte value",
+			input:    &ccipocr3pb.BigInt{Negative: true, Value: []byte{0xFF}},
+			expected: ccipocr3.NewBigInt(big.NewInt(-255)),
 		},
 	}
 
@@ -1371,6 +1542,39 @@ func TestPbBigIntRoundTrip(t *testing.T) {
 	}
 }
 
+func TestGetChainFeePriceUpdateFakeRoundTrip(t *testing.T) {
+	mapWithZeroValues := map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig{
+		1: {Value: big.NewInt(0), Timestamp: 2},
+		2: {Value: big.NewInt(0), Timestamp: 3},
+		3: {Value: nil, Timestamp: 4},
+	}
+
+	// (s *chainAccessorServer) GetChainFeePriceUpdate() ...
+	pbUpdates := make(map[uint64]*ccipocr3pb.TimestampedUnixBig)
+	for chainSel, update := range mapWithZeroValues {
+		fmt.Println("value:", update.Value, "timestamp:", update.Timestamp)
+		fmt.Println("intToPbBigInt", intToPbBigInt(update.Value))
+		pbUpdates[uint64(chainSel)] = &ccipocr3pb.TimestampedUnixBig{
+			Value:     intToPbBigInt(update.Value),
+			Timestamp: update.Timestamp,
+		}
+	}
+
+	// (c *ChainAccessorClient) GetChainFeePriceUpdate() ...
+	gRPCResponse := &ccipocr3pb.GetChainFeePriceUpdateResponse{
+		FeePriceUpdates: pbUpdates,
+	}
+	result := make(map[ccipocr3.ChainSelector]ccipocr3.TimestampedUnixBig)
+	for chainSel, timestampedUnixBig := range gRPCResponse.FeePriceUpdates {
+		result[ccipocr3.ChainSelector(chainSel)] = ccipocr3.TimestampedUnixBig{
+			Value:     pbToBigInt(timestampedUnixBig.Value).Int,
+			Timestamp: timestampedUnixBig.Timestamp,
+		}
+	}
+
+	assert.Equal(t, result, mapWithZeroValues)
+}
+
 // TestPbToBigIntRoundTrip tests round-trip conversion between protobuf BigInt and ccipocr3.BigInt
 func TestPbToBigIntRoundTrip(t *testing.T) {
 	testValues := []ccipocr3.BigInt{
@@ -1390,6 +1594,15 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 		func() ccipocr3.BigInt {
 			val := new(big.Int)
 			val.SetUint64(^uint64(0)) // max uint64
+			return ccipocr3.NewBigInt(val)
+		}(),
+		// Test negative values
+		ccipocr3.NewBigInt(big.NewInt(-1)),
+		ccipocr3.NewBigInt(big.NewInt(-42)),
+		ccipocr3.NewBigInt(big.NewInt(-255)),
+		func() ccipocr3.BigInt {
+			val := new(big.Int)
+			val.SetString("-123456789012345678901234567890", 10)
 			return ccipocr3.NewBigInt(val)
 		}(),
 		// Test nil value specially
@@ -1417,7 +1630,7 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 // TestPbBigIntEdgeCases tests edge cases and error conditions
 func TestPbBigIntEdgeCases(t *testing.T) {
 	t.Run("empty bytes should not panic", func(t *testing.T) {
-		input := &ccipocr3pb.BigInt{Value: []byte{}}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: []byte{}}
 
 		// Should not panic
 		result1 := pbBigIntToInt(input)
@@ -1428,7 +1641,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 	})
 
 	t.Run("single zero byte should equal zero", func(t *testing.T) {
-		input := &ccipocr3pb.BigInt{Value: []byte{0x00}}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x00}}
 
 		result1 := pbBigIntToInt(input)
 		result2 := pbToBigInt(input)
@@ -1438,7 +1651,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 	})
 
 	t.Run("multiple zero bytes should equal zero", func(t *testing.T) {
-		input := &ccipocr3pb.BigInt{Value: []byte{0x00, 0x00, 0x00, 0x00}}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: []byte{0x00, 0x00, 0x00, 0x00}}
 
 		result1 := pbBigIntToInt(input)
 		result2 := pbToBigInt(input)
@@ -1452,7 +1665,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 		bytes := make([]byte, 64)
 		bytes[0] = 0x01 // Set the most significant bit to 1
 
-		input := &ccipocr3pb.BigInt{Value: bytes}
+		input := &ccipocr3pb.BigInt{Negative: false, Value: bytes}
 
 		result1 := pbBigIntToInt(input)
 		result2 := pbToBigInt(input)
@@ -1468,15 +1681,15 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 func TestPbBigIntConsistency(t *testing.T) {
 	testInputs := []*ccipocr3pb.BigInt{
 		nil,
-		{Value: nil},
-		{Value: []byte{}},
-		{Value: []byte{0x00}},
-		{Value: []byte{0x01}},
-		{Value: []byte{0xFF}},
-		{Value: []byte{0x01, 0x00}},
-		{Value: []byte{0xFF, 0xFF}},
-		{Value: big.NewInt(42).Bytes()},
-		{Value: big.NewInt(1234567890).Bytes()},
+		{Negative: false, Value: nil},
+		{Negative: false, Value: []byte{}},
+		{Negative: false, Value: []byte{0x00}},
+		{Negative: false, Value: []byte{0x01}},
+		{Negative: false, Value: []byte{0xFF}},
+		{Negative: false, Value: []byte{0x01, 0x00}},
+		{Negative: false, Value: []byte{0xFF, 0xFF}},
+		{Negative: false, Value: big.NewInt(42).Bytes()},
+		{Negative: false, Value: big.NewInt(1234567890).Bytes()},
 	}
 
 	for i, input := range testInputs {
@@ -1592,5 +1805,134 @@ func TestTokenInfoMapNilHandling(t *testing.T) {
 		convertedMap := pbToTokenInfoMap(pbMap)
 		assert.NotNil(t, convertedMap)
 		assert.Len(t, convertedMap, 0)
+	})
+}
+
+// TestExtraDataCodecBundleConversion tests the map conversion logic used by ExtraDataCodecBundle methods
+// This test verifies that round-trip conversion preserves structure and semantic meaning
+func TestExtraDataCodecBundleConversion(t *testing.T) {
+	t.Run("Nil map round-trip", func(t *testing.T) {
+		// Test that nil maps remain nil after round-trip
+		pbMap, err := goMapToPbMap(nil)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+		assert.Nil(t, result, "nil input should result in nil output")
+	})
+
+	t.Run("Empty map round-trip", func(t *testing.T) {
+		// Test that empty maps remain empty after round-trip
+		emptyMap := map[string]any{}
+		pbMap, err := goMapToPbMap(emptyMap)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+		assert.NotNil(t, result, "empty map should not become nil")
+		assert.Equal(t, 0, len(result), "empty map should remain empty")
+	})
+
+	t.Run("ExtraArgs-like data structure preservation", func(t *testing.T) {
+		// Test typical ExtraArgs structure with basic types
+		input := map[string]any{
+			"gasLimit": uint64(100000),
+			"gasPrice": uint64(20000000000),
+			"enabled":  true,
+			"data":     []byte{0x01, 0x02, 0x03},
+		}
+
+		pbMap, err := goMapToPbMap(input)
+		require.NoError(t, err, "conversion to protobuf should succeed")
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err, "conversion from protobuf should succeed")
+
+		// Verify structure is preserved
+		assert.Equal(t, len(input), len(result), "map size should be preserved")
+
+		// Verify all keys exist
+		for key := range input {
+			assert.Contains(t, result, key, "key %s should exist after round-trip", key)
+		}
+
+		// Verify specific values that should be exactly preserved
+		assert.Equal(t, input["enabled"], result["enabled"], "bool values should be preserved")
+		assert.Equal(t, input["data"], result["data"], "byte slice values should be preserved")
+
+		// For numeric values, verify semantic equivalence (protobuf may normalize types)
+		assert.Equal(t, fmt.Sprintf("%v", input["gasLimit"]), fmt.Sprintf("%v", result["gasLimit"]), "gasLimit should be semantically equal")
+		assert.Equal(t, fmt.Sprintf("%v", input["gasPrice"]), fmt.Sprintf("%v", result["gasPrice"]), "gasPrice should be semantically equal")
+	})
+
+	t.Run("BigInt preservation", func(t *testing.T) {
+		// Test various BigInt values that are commonly used in ExtraArgs/DestExecData
+		input := map[string]any{
+			"zero":     big.NewInt(0),
+			"small":    big.NewInt(42),
+			"large":    big.NewInt(1000000000000000000), // 1 ETH in wei
+			"negative": big.NewInt(-123456789),
+		}
+
+		pbMap, err := goMapToPbMap(input)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+
+		// Verify all BigInt values are preserved exactly
+		for key, originalVal := range input {
+			resultVal, exists := result[key]
+			require.True(t, exists, "key %s should exist", key)
+
+			originalBigInt := originalVal.(*big.Int)
+			resultBigInt, ok := resultVal.(*big.Int)
+			require.True(t, ok, "result[%s] should be *big.Int", key)
+			assert.Equal(t, originalBigInt.String(), resultBigInt.String(), "BigInt value should be preserved for key %s", key)
+		}
+	})
+
+	t.Run("Nested structure preservation", func(t *testing.T) {
+		// Test nested maps and arrays as might appear in DestExecData
+		input := map[string]any{
+			"version": uint32(1),
+			"config": map[string]any{
+				"maxGas":     uint64(500000),
+				"multiplier": float64(1.5),
+			},
+			"amounts": []any{
+				big.NewInt(1000),
+				big.NewInt(2000),
+			},
+		}
+
+		pbMap, err := goMapToPbMap(input)
+		require.NoError(t, err)
+
+		result, err := pbMapToGoMap(pbMap)
+		require.NoError(t, err)
+
+		// Verify top-level structure
+		assert.Equal(t, len(input), len(result), "top-level map size should be preserved")
+
+		// Verify nested map structure
+		configResult, ok := result["config"].(map[string]any)
+		require.True(t, ok, "config should remain a map")
+		configInput := input["config"].(map[string]any)
+		assert.Equal(t, len(configInput), len(configResult), "nested map size should be preserved")
+
+		// Verify array structure
+		amountsResult, ok := result["amounts"].([]any)
+		require.True(t, ok, "amounts should remain an array")
+		amountsInput := input["amounts"].([]any)
+		assert.Equal(t, len(amountsInput), len(amountsResult), "array size should be preserved")
+
+		// Verify BigInt values in array are preserved
+		for i, originalAmount := range amountsInput {
+			originalBigInt := originalAmount.(*big.Int)
+			resultBigInt, ok := amountsResult[i].(*big.Int)
+			require.True(t, ok, "array element should remain *big.Int")
+			assert.Equal(t, originalBigInt.String(), resultBigInt.String(), "BigInt value should be preserved")
+		}
 	})
 }

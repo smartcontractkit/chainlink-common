@@ -20,9 +20,6 @@ import (
 )
 
 // HeaderProvider defines an interface for providing headers
-type HeaderProvider interface {
-	GetHeaders() map[string]string
-}
 
 type Client interface {
 	pb.ChipIngressClient
@@ -51,8 +48,10 @@ func newClientConfig(host string) *clientConfig {
 		headerProvider:    nil,
 		perRPCCredentials: nil,
 		host:              host,
+		// Default to insecure connection
+		insecureConnection:   true,
+		transportCredentials: insecure.NewCredentials(),
 	}
-	WithInsecureConnection()(cfg) // Default to insecure connection
 	return cfg
 }
 
@@ -168,7 +167,13 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		// Add dynamic headers from provider if available
 		if provider != nil {
-			for k, v := range provider.GetHeaders() {
+
+			headers, err := provider.Headers(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get headers: %w", err)
+			}
+
+			for k, v := range headers {
 				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 			}
 		}
@@ -189,13 +194,14 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 		attributes = make(map[string]any)
 	}
 
-	if val, ok := attributes["recordedtime"].(time.Time); ok {
-		event.SetExtension("recordedtime", val.UTC())
-	} else {
-		event.SetExtension("recordedtime", ce.Timestamp{Time: time.Now().UTC()})
+	recordedTime := time.Now()
+	if val, ok := attributes["recordedtime"].(time.Time); ok && !val.IsZero() {
+		recordedTime = val
 	}
+	recordedTime = recordedTime.UTC().Truncate(time.Millisecond)
+	event.SetExtension("recordedtime", ce.Timestamp{Time: recordedTime})
 
-	if val, ok := attributes["time"].(time.Time); ok {
+	if val, ok := attributes["time"].(time.Time); ok && !val.IsZero() {
 		event.SetTime(val.UTC())
 	}
 	if val, ok := attributes["datacontenttype"].(string); ok {

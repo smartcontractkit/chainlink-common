@@ -21,16 +21,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	ccipocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccipocr3"
+	ccipocr3loop "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	ccipocr3types "github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -289,26 +291,42 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 }
 
 func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
-	var ccipProvider *ccipocr3.CCIPProviderClient
+	var ccipProvider *ccipocr3loop.CCIPProviderClient
 	cc := r.NewClientConn("CCIPProvider", func(ctx context.Context) (uint32, net.Resources, error) {
+		var deps net.Resources
+
+		var extraDataCodecBundleID uint32
+		if cargs.ExtraDataCodecBundle != nil {
+			edcID, edcRes, err := r.ServeNew("ExtraDataCodecBundle", func(s *grpc.Server) {
+				ccipocr3pb.RegisterExtraDataCodecBundleServer(s, ccipocr3loop.NewExtraDataCodecBundleServer(cargs.ExtraDataCodecBundle))
+			})
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed to serve ExtraDataCodecBundle: %w", err)
+			}
+			deps.Add(edcRes)
+			extraDataCodecBundleID = edcID
+		}
+
 		persistedSyncs := ccipProvider.GetSyncRequests()
 		reply, err := r.relayer.NewCCIPProvider(ctx, &pb.NewCCIPProviderRequest{
 			CcipProviderArgs: &pb.CCIPProviderArgs{
-				ExternalJobID:        cargs.ExternalJobID[:],
-				ContractReaderConfig: cargs.ContractReaderConfig,
-				ChainWriterConfig:    cargs.ChainWriterConfig,
-				OffRampAddress:       cargs.OffRampAddress,
-				PluginType:           cargs.PluginType,
-				SyncedAddresses:      persistedSyncs,
+				ExternalJobID:          cargs.ExternalJobID[:],
+				ContractReaderConfig:   cargs.ContractReaderConfig,
+				ChainWriterConfig:      cargs.ChainWriterConfig,
+				OffRampAddress:         cargs.OffRampAddress,
+				TransmitterAddress:     string(cargs.TransmitterAddress),
+				PluginType:             uint32(cargs.PluginType),
+				SyncedAddresses:        persistedSyncs,
+				ExtraDataCodecBundleID: extraDataCodecBundleID,
 			},
 		})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.CcipProviderID, nil, nil
+		return reply.CcipProviderID, deps, nil
 	})
 
-	ccipProvider = ccipocr3.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc)
+	ccipProvider = ccipocr3loop.NewCCIPProviderClient(r.WithName(cargs.ExternalJobID.String()).WithName("CCIPProviderClient"), cc)
 	return ccipProvider, nil
 }
 
@@ -726,16 +744,35 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 	if err != nil {
 		return nil, fmt.Errorf("invalid uuid bytes for ExternalJobID: %w", err)
 	}
+
+	var extraDataCodecBundle ccipocr3types.ExtraDataCodecBundle
+	var extraDataCodecRes net.Resource
+
+	// If ExtraDataCodecBundleID is provided, dial the service
+	if rargs.ExtraDataCodecBundleID != 0 {
+		extraDataCodecConn, err := r.Dial(rargs.ExtraDataCodecBundleID)
+		if err != nil {
+			return nil, net.ErrConnDial{Name: "ExtraDataCodecBundle", ID: rargs.ExtraDataCodecBundleID, Err: err}
+		}
+		extraDataCodecRes = net.Resource{Closer: extraDataCodecConn, Name: "ExtraDataCodecBundle"}
+		extraDataCodecBundle = ccipocr3loop.NewExtraDataCodecBundleClient(r.BrokerExt, extraDataCodecConn)
+	}
+
 	ccipProviderArgs := types.CCIPProviderArgs{
 		ExternalJobID:        exJobID,
 		ContractReaderConfig: rargs.ContractReaderConfig,
 		ChainWriterConfig:    rargs.ChainWriterConfig,
 		OffRampAddress:       rargs.OffRampAddress,
-		PluginType:           rargs.PluginType,
+		PluginType:           ccipocr3types.PluginType(rargs.PluginType),
+		TransmitterAddress:   ccipocr3types.UnknownEncodedAddress(rargs.TransmitterAddress),
+		ExtraDataCodecBundle: extraDataCodecBundle,
 	}
 
 	provider, err := r.impl.NewCCIPProvider(ctx, ccipProviderArgs)
 	if err != nil {
+		if extraDataCodecRes.Closer != nil {
+			extraDataCodecRes.Close()
+		}
 		return nil, err
 	}
 
@@ -743,14 +780,22 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 	for contractName, addressBytes := range rargs.SyncedAddresses {
 		err = provider.ChainAccessor().Sync(ctx, contractName, addressBytes)
 		if err != nil {
+			if extraDataCodecRes.Closer != nil {
+				extraDataCodecRes.Close()
+			}
 			return nil, err
 		}
 	}
 
 	const name = "CCIPProvider"
+	resources := []net.Resource{{Closer: provider, Name: name}}
+	if extraDataCodecRes.Closer != nil {
+		resources = append(resources, extraDataCodecRes)
+	}
+
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ccipocr3.RegisterProviderServices(s, provider)
-	}, net.Resource{Closer: provider, Name: name})
+		ccipocr3loop.RegisterProviderServices(s, provider)
+	}, resources...)
 	if err != nil {
 		return nil, err
 	}

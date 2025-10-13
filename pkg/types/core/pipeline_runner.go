@@ -9,7 +9,7 @@ import (
 )
 
 type Vars struct {
-	Vars map[string]interface{}
+	Vars map[string]any
 }
 
 type Options struct {

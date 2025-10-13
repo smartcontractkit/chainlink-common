@@ -2,6 +2,7 @@ package relayerset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -100,6 +101,9 @@ func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransa
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
 
 	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
 }
@@ -184,8 +188,13 @@ func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest)
 		return nil, err
 	}
 
+	address, err := evmpb.ConvertOptionalAddressFromProto(request.GetAccount())
+	if err != nil {
+		return nil, err
+	}
+
 	reply, err := evmService.BalanceAt(ctx, evm.BalanceAtRequest{
-		Address:         evm.Address(request.GetAccount()),
+		Address:         address,
 		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
 		ConfidenceLevel: conf,
 	})
@@ -401,19 +410,27 @@ func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTra
 		return nil, err
 	}
 
-	txResult, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
-		To:        evm.Address(request.To),
-		Data:      evm.ABIPayload(request.Data),
+	address, err := evmpb.ConvertOptionalAddressFromProto(request.To)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
+		To:        address,
+		Data:      request.Data,
 		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetGasConfig()),
 	})
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, fmt.Errorf("txResult is nil")
+	}
 
 	return &evmpb.SubmitTransactionReply{
-		TxHash:           txResult.TxHash[:],
-		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
-		TxIdempotencyKey: txResult.TxIdempotencyKey,
+		TxHash:           reply.TxHash[:],
+		TxStatus:         evmpb.ConvertTxStatusToProto(reply.TxStatus),
+		TxIdempotencyKey: reply.TxIdempotencyKey,
 	}, nil
 }
 
@@ -423,16 +440,19 @@ func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.Cal
 		return nil, err
 	}
 
-	fee, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
+	reply, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
 		GasUsed:           request.GasInfo.GasUsed,
 		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
 	})
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
 
 	return &evmpb.CalculateTransactionFeeReply{
-		TransactionFee: valuespb.NewBigIntFromInt(fee.TransactionFee),
+		TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee),
 	}, nil
 }
 
@@ -442,7 +462,17 @@ func (s *Server) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwa
 		return nil, err
 	}
 
-	forwarder, err := evmService.GetForwarderForEOA(ctx, evm.Address(request.GetAddr()), evm.Address(request.GetAggr()), request.PluginType)
+	eoa, err := evmpb.ConvertAddressFromProto(request.GetAddr())
+	if err != nil {
+		return nil, fmt.Errorf("invalid EOA address: %w", err)
+	}
+
+	ocr2AggregatorID, err := evmpb.ConvertAddressFromProto(request.GetAggr())
+	if err != nil {
+		return nil, fmt.Errorf("invalid OCR2 Aggregator address: %w", err)
+	}
+
+	forwarder, err := evmService.GetForwarderForEOA(ctx, eoa, ocr2AggregatorID, request.PluginType)
 	if err != nil {
 		return nil, err
 	}

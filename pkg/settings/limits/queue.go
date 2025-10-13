@@ -269,7 +269,7 @@ func (s *scopedQueue[T]) Close() (err error) {
 	s.wg.Wait()
 
 	// cleanup
-	s.queues.Range(func(tenant, value interface{}) bool {
+	s.queues.Range(func(tenant, value any) bool {
 		// opt: parallelize
 		err = errors.Join(err, value.(*queue[T]).Close())
 		return true

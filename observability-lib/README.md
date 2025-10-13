@@ -32,56 +32,60 @@ Godoc generated documentation is available [here](https://pkg.go.dev/github.com/
 ```go
 package main
 
-import "github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+import (
+	"fmt"
+	"github.com/grafana/grafana-foundation-sdk/go/common"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
+)
 
 func main() {
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{
-	    Name:       "Dashboard Name",
-	    Tags:       []string{"tags1", "tags2"},
-	    Refresh:    "30s",
-	    TimeFrom:   "now-30m",
-	    TimeTo:     "now",
+		Name:     "Dashboard Name",
+		Tags:     []string{"tags1", "tags2"},
+		Refresh:  "30s",
+		TimeFrom: "now-30m",
+		TimeTo:   "now",
 	})
-	
+
 	builder.AddVars(grafana.NewQueryVariable(&grafana.QueryVariableOptions{
-	    VariableOption: &grafana.VariableOption{
-	        Label: "Environment",
-	        Name:  "env",
-	    },
-	    Datasource: "Prometheus",
-	    Query:      `label_values(up, env)`,
+		VariableOption: &grafana.VariableOption{
+			Label: "Environment",
+			Name:  "env",
+		},
+		Datasource: "Prometheus",
+		Query:      `label_values(up, env)`,
 	}))
-	
+
 	builder.AddRow("Summary")
-	
+
 	builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
-	    PanelOptions: &grafana.PanelOptions{
-	        Datasource:  "Prometheus",
-	        Title:       "Uptime",
-	        Description: "instance uptime",
-	        Span:        12,
-	        Height:      4,
-	        Decimals:    2,
-	        Unit:        "s",
-	        Query: []grafana.Query{
-	            {
-	                Expr:   `uptime_seconds`,
-	                Legend: `{{ pod }}`,
-	            },
-	        },
-	    },
-	    ColorMode:   common.BigValueColorModeNone,
-	    TextMode:    common.BigValueTextModeValueAndName,
-	    Orientation: common.VizOrientationHorizontal,
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  "Prometheus",
+			Title:       grafana.Pointer("Uptime"),
+			Description: "instance uptime",
+			Span:        12,
+			Height:      4,
+			Decimals:    grafana.Pointer(2.),
+			Unit:        "s",
+			Query: []grafana.Query{
+				{
+					Expr:   `uptime_seconds`,
+					Legend: `{{ pod }}`,
+				},
+			},
+		},
+		ColorMode:   common.BigValueColorModeNone,
+		TextMode:    common.BigValueTextModeValueAndName,
+		Orientation: common.VizOrientationHorizontal,
 	}))
-	
+
 	db, err := builder.Build()
 	if err != nil {
-	    return nil, err
+		return
 	}
 	json, err := db.GenerateJSON()
 	if err != nil {
-	    return nil, err
+		return
 	}
 	fmt.Println(string(json))
 }

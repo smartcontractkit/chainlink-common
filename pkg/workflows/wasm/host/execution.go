@@ -27,6 +27,8 @@ type execution[T any] struct {
 	mode                 sdkpb.Mode
 	donSeed              int64
 	nodeSeed             int64
+	donLogCount          uint32
+	nodeLogCount         uint32
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -139,6 +141,35 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 }
 
 func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+	switch e.mode {
+	case sdkpb.Mode_MODE_DON:
+		e.donLogCount++
+		if e.donLogCount == e.module.cfg.MaxLogCountDONMode {
+			e.module.cfg.Logger.Warnf("max log count for don mode reached: %d - all subsequent logs will be dropped", e.donLogCount)
+		}
+		if e.donLogCount > e.module.cfg.MaxLogCountDONMode {
+			// silently drop to avoid spamming logs
+			return
+		}
+	case sdkpb.Mode_MODE_NODE:
+		e.nodeLogCount++
+		if e.nodeLogCount == e.module.cfg.MaxLogCountNodeMode {
+			e.module.cfg.Logger.Warnf("max log count for node mode reached: %d - all subsequent logs will be dropped", e.nodeLogCount)
+		}
+		if e.nodeLogCount > e.module.cfg.MaxLogCountNodeMode {
+			// silently drop to avoid spamming logs
+			return
+		}
+	default:
+		// unexpected / malicious
+		return
+	}
+
+	if ptrlen > int32(e.module.cfg.MaxLogLenBytes) {
+		e.module.cfg.Logger.Warnf("log message too long: %d - dropping", ptrlen)
+		return
+	}
+
 	b, innerErr := wasmRead(caller, ptr, ptrlen)
 	if innerErr != nil {
 		e.module.cfg.Logger.Errorf("error calling log: %s", innerErr)
@@ -232,7 +263,7 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 	events := make([]byte, nsubscriptions*eventsLen)
 	timeout := time.Duration(0)
 
-	for i := int32(0); i < nsubscriptions; i++ {
+	for i := range nsubscriptions {
 		inOffset := i * subscriptionLen
 		userData := subs[inOffset : inOffset+8]
 		eventType := subs[inOffset+8]

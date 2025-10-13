@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"maps"
 	"strings"
 	"testing"
 
@@ -250,7 +251,7 @@ func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {
 	// Test error handling
 
 	t.Run("invalid map missing key", func(t *testing.T) {
-		invalidMap, err := values.NewMap(map[string]interface{}{
+		invalidMap, err := values.NewMap(map[string]any{
 			"WrongKey": "value",
 		})
 		require.NoError(t, err)
@@ -274,4 +275,30 @@ func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {
 		assert.ErrorContains(t, err, "nil underlying map")
 	})
 
+}
+
+func TestParseID(t *testing.T) {
+	for _, tc := range []struct {
+		id      string
+		name    string
+		labels  map[string]string
+		version string
+	}{
+		{id: "foo", name: "foo"},
+		{id: "foo@1.0.0", name: "foo", version: "1.0.0"},
+		{id: "foo:k_v@1.0.0", name: "foo", labels: map[string]string{"k": "v"}, version: "1.0.0"},
+		{id: "foo:k_v:k2_v2:k3@1.0.0", name: "foo", labels: map[string]string{"k": "v", "k2": "v2", "k3": ""}, version: "1.0.0"},
+		//TODO more
+	} {
+		t.Run(tc.id, func(t *testing.T) {
+			if tc.labels == nil {
+				tc.labels = map[string]string{}
+			}
+
+			name, labels, version := ParseID(tc.id)
+			assert.Equal(t, tc.name, name)
+			assert.Equal(t, tc.labels, maps.Collect(labels))
+			assert.Equal(t, tc.version, version)
+		})
+	}
 }

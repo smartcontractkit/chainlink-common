@@ -80,7 +80,7 @@ func (d *Duration) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (d *Duration) Scan(v interface{}) (err error) {
+func (d *Duration) Scan(v any) (err error) {
 	switch tv := v.(type) {
 	case int64:
 		*d, err = NewDuration(time.Duration(tv))

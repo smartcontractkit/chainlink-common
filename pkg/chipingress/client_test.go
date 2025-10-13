@@ -67,7 +67,7 @@ func TestNewEvent(t *testing.T) {
 		"datacontenttype": "application/protobuf",
 		"dataschema":      "https://example.com/schema",
 		"subject":         "example-subject",
-		"time":            time.Now(),
+		"time":            time.Now().Add(-5 * time.Second),
 	}
 	assert.NoError(t, err)
 
@@ -86,7 +86,6 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, "https://example.com/schema", event.DataSchema())
 	assert.Equal(t, "example-subject", event.Subject())
 	assert.Equal(t, attributes["time"].(time.Time).UTC(), event.Time())
-	assert.NotEmpty(t, event.Extensions()["recordedtime"])
 	assert.NotEmpty(t, event.Extensions()["recordedtime"])
 	assert.True(t, event.Extensions()["recordedtime"].(ce.Timestamp).Time.After(attributes["time"].(time.Time)))
 
@@ -584,8 +583,8 @@ type mockHeaderProvider struct {
 	headers map[string]string
 }
 
-func (m *mockHeaderProvider) GetHeaders() map[string]string {
-	return m.headers
+func (m *mockHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
+	return m.headers, nil
 }
 
 func TestWithTLS(t *testing.T) {

@@ -432,7 +432,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain respect hooks", func(t *testing.T) {
-		var hook mapstructure.DecodeHookFunc = func(from, to reflect.Kind, val interface{}) (any, error) {
+		var hook mapstructure.DecodeHookFunc = func(from, to reflect.Kind, val any) (any, error) {
 			if to == reflect.Int32 {
 				return int32(123), nil
 			}
@@ -452,7 +452,7 @@ func TestHardCoder(t *testing.T) {
 	})
 
 	t.Run("TransformToOffChain respect hooks", func(t *testing.T) {
-		var hook mapstructure.DecodeHookFunc = func(from, to reflect.Kind, val interface{}) (any, error) {
+		var hook mapstructure.DecodeHookFunc = func(from, to reflect.Kind, val any) (any, error) {
 			if to == reflect.Int32 {
 				return int32(123), nil
 			}

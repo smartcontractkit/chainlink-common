@@ -255,7 +255,7 @@ func (t *testCodec) Decode(_ context.Context, raw []byte, into any, itemType str
 	case anySliceItemType:
 		items := make([]modifierCodecChainType, anyValue)
 		reflect.Indirect(reflect.ValueOf(into)).Set(reflect.ValueOf(items))
-		for i := 0; i < anyValue; i++ {
+		for i := range anyValue {
 			items[i].A = anyValue + i
 		}
 	default:

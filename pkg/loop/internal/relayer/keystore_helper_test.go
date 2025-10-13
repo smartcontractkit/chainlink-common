@@ -29,7 +29,7 @@ func (p *GRPCPluginKeystore) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return nil
 }
 
-func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	p.pluginClient = keystore.NewClient(conn)
 	return core.Keystore(p.pluginClient), nil
 }

@@ -45,7 +45,7 @@ func MonitorHook(logAll func() bool) QueryHook {
 }
 
 // sprintQ formats the query with the given args and returns the resulting string.
-func sprintQ(query string, args []interface{}) string {
+func sprintQ(query string, args []any) string {
 	if args == nil {
 		return query
 	}
@@ -88,7 +88,7 @@ type queryLogger struct {
 	lggr logger.SugaredLogger
 
 	query string
-	args  []interface{}
+	args  []any
 
 	str func() string
 }

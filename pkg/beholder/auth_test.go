@@ -1,11 +1,15 @@
 package beholder_test
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
@@ -37,9 +41,304 @@ func TestStaticAuthHeaderProvider(t *testing.T) {
 	}
 
 	// Create new header provider
-	provider := beholder.NewStaticAuthHeaderProvider(testHeaders)
+	provider := beholder.NewStaticAuth(testHeaders, false)
 
 	// Get headers and verify they match
-	headers := provider.GetHeaders()
+	headers, err := provider.Headers(t.Context())
+	require.NoError(t, err)
 	assert.Equal(t, testHeaders, headers)
+}
+
+// MockSigner implements the beholder.Signer interface for testing rotating auth
+type MockSigner struct {
+	mock.Mock
+}
+
+func (m *MockSigner) Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error) {
+	args := m.Called(ctx, keyID, data)
+	return args.Get(0).([]byte), args.Error(1)
+}
+
+func TestRotatingAuth(t *testing.T) {
+	// Generate test key pair
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	t.Run("creates valid rotating auth headers", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.MatchedBy(func(keyID []byte) bool {
+				return string(keyID) == string(pubKey) // Verify correct public key is passed
+			}), mock.Anything).
+			Return(dummySignature, nil)
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		headers, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+		require.NotEmpty(t, headers)
+
+		authHeader := headers["X-Beholder-Node-Auth-Token"]
+		require.NotEmpty(t, authHeader)
+
+		parts := strings.Split(authHeader, ":")
+		require.Len(t, parts, 4, "Auth header should have format version:pubkey_hex:timestamp:signature_hex")
+
+		assert.Equal(t, "2", parts[0], "Version should be 2")
+		assert.Equal(t, hex.EncodeToString(pubKey), parts[1], "Public key should match")
+		assert.NotEmpty(t, parts[2], "Timestamp should not be empty")
+
+		// Verify signature is hex encoded
+		_, err = hex.DecodeString(parts[3])
+		assert.NoError(t, err, "Signature should be valid hex")
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("reuses headers within TTL", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(dummySignature, nil).
+			Maybe()
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		headers1, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+
+		headers2, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+
+		assert.Equal(t, headers1, headers2, "Headers should be reused within TTL")
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("handles signer errors", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+		expectedErr := assert.AnError
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return([]byte{}, expectedErr)
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		headers, err := auth.Headers(t.Context())
+		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Contains(t, err.Error(), "beholder: failed to sign auth header")
+		assert.Contains(t, err.Error(), expectedErr.Error())
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("implements PerRPCCredentialsProvider interface", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(dummySignature, nil).
+			Maybe()
+
+		ttl := 5 * time.Minute
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+		creds := auth.Credentials()
+		require.NotNil(t, creds)
+
+		assert.False(t, creds.RequireTransportSecurity())
+
+		metadata, err := creds.GetRequestMetadata(t.Context())
+		require.NoError(t, err)
+		assert.NotEmpty(t, metadata)
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("respects transport security requirement", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+		dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(dummySignature, nil).
+			Maybe()
+
+		ttl := 5 * time.Minute
+		// transport security required
+		authSecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, true)
+		credsSecure := authSecure.Credentials()
+		assert.True(t, credsSecure.RequireTransportSecurity())
+		// transport security not required
+		authInsecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		credsInsecure := authInsecure.Credentials()
+		assert.False(t, credsInsecure.RequireTransportSecurity())
+
+		mockSigner.AssertExpectations(t)
+	})
+}
+
+// BenchmarkRotatingAuth_Headers_CachedPath benchmarks the fast path where headers are cached and within TTL.
+// This is the most common case in production.
+func BenchmarkRotatingAuth_Headers_CachedPath(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a long TTL so headers don't expire during the benchmark
+	ttl := 1 * time.Hour
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	// Prime the cache by calling Headers once
+	ctx := b.Context()
+	_, err = auth.Headers(ctx)
+	require.NoError(b, err)
+
+	b.ReportAllocs()
+
+	for b.Loop() {
+		headers, err := auth.Headers(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(headers) == 0 {
+			b.Fatal("expected non-empty headers")
+		}
+	}
+}
+
+// BenchmarkRotatingAuth_Headers_ExpiredPath benchmarks the slow path where headers need to be regenerated.
+// This happens when TTL expires.
+func BenchmarkRotatingAuth_Headers_ExpiredPath(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a TTL of 0 to force regeneration on every call
+	ttl := 0 * time.Second
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	ctx := b.Context()
+
+	b.ReportAllocs()
+
+	for b.Loop() {
+		headers, err := auth.Headers(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(headers) == 0 {
+			b.Fatal("expected non-empty headers")
+		}
+	}
+}
+
+// BenchmarkRotatingAuth_Headers_ParallelCached benchmarks concurrent access when headers are cached.
+// This simulates multiple goroutines making concurrent requests with valid cached headers.
+func BenchmarkRotatingAuth_Headers_ParallelCached(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a long TTL so headers don't expire during the benchmark
+	ttl := 1 * time.Hour
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	// Prime the cache
+	ctx := b.Context()
+	_, err = auth.Headers(ctx)
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			headers, err := auth.Headers(ctx)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if len(headers) == 0 {
+				b.Fatal("expected non-empty headers")
+			}
+		}
+	})
+}
+
+// BenchmarkRotatingAuth_Headers_ParallelExpired benchmarks concurrent access when headers expire.
+// This tests contention on the mutex when multiple goroutines race to regenerate headers.
+func BenchmarkRotatingAuth_Headers_ParallelExpired(b *testing.B) {
+
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(b, err)
+
+	mockSigner := &MockSigner{}
+	dummySignature := ed25519.Sign(privKey, []byte("test data"))
+
+	mockSigner.
+		On("Sign", mock.Anything, mock.Anything, mock.Anything).
+		Return(dummySignature, nil).
+		Maybe()
+
+	// Use a short TTL to cause periodic regeneration
+	ttl := 10 * time.Millisecond
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+
+	ctx := b.Context()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			headers, err := auth.Headers(ctx)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if len(headers) == 0 {
+				b.Fatal("expected non-empty headers")
+			}
+		}
+	})
 }

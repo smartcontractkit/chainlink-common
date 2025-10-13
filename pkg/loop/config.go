@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
@@ -62,6 +63,7 @@ const (
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
+	envTelemetryLogLevel                  = "CL_TELEMETRY_LOG_LEVEL"
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -118,6 +120,7 @@ type EnvConfig struct {
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
 	TelemetryLogStreamingEnabled       bool
+	TelemetryLogLevel                  zapcore.Level
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
@@ -187,6 +190,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
 	add(envTelemetryLogStreamingEnabled, strconv.FormatBool(e.TelemetryLogStreamingEnabled))
+	add(envTelemetryLogLevel, e.TelemetryLogLevel.String())
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -351,6 +355,15 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogStreamingEnabled, err)
 		}
+		logLevelStr := os.Getenv(envTelemetryLogLevel)
+		if logLevelStr == "" {
+			logLevelStr = "info" // Default log level
+		}
+		var logLevel zapcore.Level
+		if err := logLevel.Set(logLevelStr); err != nil {
+			logLevel = zapcore.InfoLevel // Fallback to info level on invalid input
+		}
+		e.TelemetryLogLevel = logLevel
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)

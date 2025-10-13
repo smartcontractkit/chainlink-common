@@ -34,6 +34,7 @@ var Default = Schema{
 	WorkflowLimit:                               Int(200),
 	WorkflowRegistrationQueueLimit:              Int(20),
 	WorkflowExecutionConcurrencyLimit:           Int(50),
+	WorkflowTriggerRateLimit:                    Rate(200, 200),
 	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
 	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
 	GatewayIncomingPayloadSizeLimit:             Size(10 * config.KByte),
@@ -44,6 +45,7 @@ var Default = Schema{
 	},
 	PerOwner: Owners{
 		WorkflowExecutionConcurrencyLimit: Int(50),
+		WorkflowTriggerRateLimit:          Rate(200, 200),
 	},
 	PerWorkflow: Workflows{
 		TriggerLimit:                  Int(10),
@@ -73,30 +75,29 @@ var Default = Schema{
 			RateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
 		LogTrigger: logTrigger{
-			RateLimit:                Rate(rate.Every(10*time.Second), -1), //TODO
 			Limit:                    Int(5),
-			EventRateLimit:           Rate(-1, -1), //TODO
+			EventRateLimit:           Rate(rate.Every(time.Minute/10), 10),
 			FilterAddressLimit:       Int(5),
 			FilterTopicsPerSlotLimit: Int(10),
+			EventSizeLimit:           Size(5 * config.KByte),
 		},
 		HTTPAction: httpAction{
-			RateLimit:         Rate(rate.Every(30*time.Second), 3),
+			CallLimit:         Int(3),
 			ResponseSizeLimit: Size(10 * config.KByte),
 			ConnectionTimeout: Duration(10 * time.Second),
 			RequestSizeLimit:  Size(100 * config.KByte),
 			CacheAgeLimit:     Duration(10 * time.Minute),
 		},
 		ChainWrite: chainWrite{
-			RateLimit:       Rate(rate.Every(30*time.Second), 3),
 			TargetsLimit:    Int(3),
 			ReportSizeLimit: Size(config.KByte),
 			EVM: evmChainWrite{
-				TransactionGasLimit: Int(-1), //TODO
+				TransactionGasLimit: Uint64(5_000_000),
 			},
 		},
 		ChainRead: chainRead{
 			CallLimit:          Int(3),
-			LogQueryBlockLimit: Int(100),
+			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
 		},
 	},
@@ -106,6 +107,7 @@ type Schema struct {
 	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
 	WorkflowRegistrationQueueLimit              Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	WorkflowTriggerRateLimit                    Setting[config.Rate]
 	GatewayUnauthenticatedRequestRateLimit      Setting[config.Rate]
 	GatewayUnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
 	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
@@ -121,6 +123,7 @@ type Orgs struct {
 
 type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	WorkflowTriggerRateLimit          Setting[config.Rate]
 }
 
 type Workflows struct {
@@ -166,32 +169,31 @@ type httpTrigger struct {
 	RateLimit Setting[config.Rate]
 }
 type logTrigger struct {
-	RateLimit                Setting[config.Rate]
 	Limit                    Setting[int] `unit:"{trigger}"`
 	EventRateLimit           Setting[config.Rate]
+	EventSizeLimit           Setting[config.Size]
 	FilterAddressLimit       Setting[int] `unit:"{address}"`
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
 type httpAction struct {
-	RateLimit         Setting[config.Rate]
+	CallLimit         Setting[int] `unit:"{call}"`
 	ResponseSizeLimit Setting[config.Size]
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	CacheAgeLimit     Setting[time.Duration]
 }
 type chainWrite struct {
-	RateLimit       Setting[config.Rate]
 	TargetsLimit    Setting[int] `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size]
 
 	EVM evmChainWrite
 }
 type evmChainWrite struct {
-	TransactionGasLimit Setting[int] `unit:"{gas}"`
+	TransactionGasLimit Setting[uint64] `unit:"{gas}"`
 }
 
 type chainRead struct {
-	CallLimit          Setting[int] `unit:"{call}"`
-	LogQueryBlockLimit Setting[int] `unit:"{block}"`
+	CallLimit          Setting[int]    `unit:"{call}"`
+	LogQueryBlockLimit Setting[uint64] `unit:"{block}"`
 	PayloadSizeLimit   Setting[config.Size]
 }

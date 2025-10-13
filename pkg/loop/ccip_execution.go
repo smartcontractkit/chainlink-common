@@ -42,7 +42,7 @@ func (p *ExecutionLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serve
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.CCIPExecutionFactoryGenerator], updated with the new broker and conn.
-func (p *ExecutionLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *ExecutionLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = ccip.NewExecutionLOOPClient(p.BrokerConfig)
 	}

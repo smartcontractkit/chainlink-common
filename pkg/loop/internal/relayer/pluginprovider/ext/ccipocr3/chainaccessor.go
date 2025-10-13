@@ -337,15 +337,14 @@ func (c *ChainAccessorClient) GetFeedPricesUSD(ctx context.Context, tokens []cci
 	return pbToTokenPriceMap(resp.Prices), nil
 }
 
-func (c *ChainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokens []ccipocr3.UnknownEncodedAddress, chain ccipocr3.ChainSelector) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
-	var tokenStrs []string
-	for _, token := range tokens {
-		tokenStrs = append(tokenStrs, string(token))
+func (c *ChainAccessorClient) GetFeeQuoterTokenUpdates(ctx context.Context, tokensBytes []ccipocr3.UnknownAddress) (map[ccipocr3.UnknownEncodedAddress]ccipocr3.TimestampedUnixBig, error) {
+	var tokensBytesSlice [][]byte
+	for _, token := range tokensBytes {
+		tokensBytesSlice = append(tokensBytesSlice, token)
 	}
 
 	resp, err := c.grpc.GetFeeQuoterTokenUpdates(ctx, &ccipocr3pb.GetFeeQuoterTokenUpdatesRequest{
-		Tokens:        tokenStrs,
-		ChainSelector: uint64(chain),
+		TokensBytes: tokensBytesSlice,
 	})
 	if err != nil {
 		return nil, err
@@ -663,15 +662,14 @@ func (s *chainAccessorServer) GetFeedPricesUSD(ctx context.Context, req *ccipocr
 }
 
 func (s *chainAccessorServer) GetFeeQuoterTokenUpdates(ctx context.Context, req *ccipocr3pb.GetFeeQuoterTokenUpdatesRequest) (*ccipocr3pb.GetFeeQuoterTokenUpdatesResponse, error) {
-	var tokens []ccipocr3.UnknownEncodedAddress
-	for _, tokenStr := range req.Tokens {
-		tokens = append(tokens, ccipocr3.UnknownEncodedAddress(tokenStr))
+	var tokensBytes []ccipocr3.UnknownAddress
+	for _, tokenBytes := range req.TokensBytes {
+		tokensBytes = append(tokensBytes, ccipocr3.UnknownAddress(tokenBytes))
 	}
 
 	updates, err := s.impl.GetFeeQuoterTokenUpdates(
 		ctx,
-		tokens,
-		ccipocr3.ChainSelector(req.ChainSelector),
+		tokensBytes,
 	)
 	if err != nil {
 		return nil, err

@@ -27,7 +27,7 @@ type BasicActionCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 }
 
 func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
@@ -44,14 +44,14 @@ type BasicActionServer struct {
 	stopCh             chan struct{}
 }
 
-func (c *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := c.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *BasicActionServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
+	if err := c.BasicActionCapability.Initialise(ctx, dependencies); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	c.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = dependencies.CapabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &basicActionCapability{
+	if err := dependencies.CapabilityRegistry.Add(ctx, &basicActionCapability{
 		BasicActionCapability: c.BasicActionCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)

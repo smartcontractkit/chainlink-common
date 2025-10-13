@@ -590,7 +590,7 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 	diff := cmp.Diff(expected, actual, protocmp.Transform())
 
 	var sb strings.Builder
-	for _, line := range strings.Split(diff, "\n") {
+	for line := range strings.SplitSeq(diff, "\n") {
 		if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") {
 			sb.WriteString(line + "\n")
 		}

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	canonicaljson "github.com/gibson042/canonicaljson-go"
 )
 
 const (
@@ -59,9 +61,9 @@ func (r *Request[Params]) ServiceName() string {
 }
 
 // Digest returns a digest of the request. This is used for signature verification.
-// The digest is a SHA256 hash of the JSON string of the request.
+// The digest is a SHA256 hash of the canonical JSON string of the request excluding the auth field.
 func (r *Request[Params]) Digest() (string, error) {
-	canonicalJSONBytes, err := json.Marshal(Request[Params]{
+	canonicalJSONBytes, err := canonicaljson.Marshal(Request[Params]{
 		Version: r.Version,
 		ID:      r.ID,
 		Method:  r.Method,
@@ -87,8 +89,10 @@ type Response[Result any] struct {
 	Error   *WireError `json:"error,omitempty"`
 }
 
+// Digest returns a digest of the response. This is used for signature verification.
+// The digest is a SHA256 hash of the canonical JSON string of the response.
 func (r *Response[Result]) Digest() (string, error) {
-	canonicalJSONBytes, err := json.Marshal(r)
+	canonicalJSONBytes, err := canonicaljson.Marshal(r)
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
 	}

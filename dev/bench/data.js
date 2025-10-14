@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760377654187,
+  "lastUpdate": 1760448515941,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -27606,6 +27606,66 @@ window.BENCHMARK_DATA = {
             "value": 144798,
             "unit": "ns/op",
             "extra": "7351 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "Chris Cushman",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5662ca108376e433ad3146662c327f3660bf81ff",
+          "message": "Require domain separation for SignerDecrypter signature payloads using the StandardCapabilityAccount (#1578)\n\n* Require domain separation for SignerDecrypter signature payloads\n\n* make more specific\n\n* remove redundant comment\n\n* more coverage\n\n* Update pkg/types/core/keystore.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-10-14T13:26:04Z",
+          "tree_id": "c0124eb89ec35c1eac3bd78ce775bfe6caf6ff01",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5662ca108376e433ad3146662c327f3660bf81ff"
+        },
+        "date": 1760448514581,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.2,
+            "unit": "ns/op",
+            "extra": "3352537 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94037,
+            "unit": "ns/op",
+            "extra": "12708 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401,
+            "unit": "ns/op",
+            "extra": "2988158 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93260,
+            "unit": "ns/op",
+            "extra": "12867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26619,
+            "unit": "ns/op",
+            "extra": "44974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140033,
+            "unit": "ns/op",
+            "extra": "8374 times\n4 procs"
           }
         ]
       }

@@ -8,6 +8,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/keystore"
 )
 
+type LazyKeystoreSigner interface {
+	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
+	SetKeystore(ks keystore.Keystore)
+	HasKeystore() bool
+}
+
 // lazyKeystoreSigner is a thread-safe wrapper that allows the keystore
 // to be set after the signer is created. This enables beholder to start
 // with rotating auth configured, but the actual keystore can be injected later.
@@ -16,8 +22,8 @@ type lazyKeystoreSigner struct {
 	keystore keystore.Keystore
 }
 
-func newLazyKeystoreSigner() *lazyKeystoreSigner {
-	return &lazyKeystoreSigner{}
+func NewLazyKeystoreSigner() LazyKeystoreSigner {
+	return &lazyKeystoreSigner{mu: sync.RWMutex{}}
 }
 
 // Sign implements the beholder.Signer interface

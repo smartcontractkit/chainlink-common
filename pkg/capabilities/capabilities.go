@@ -3,6 +3,7 @@ package capabilities
 import (
 	"context"
 	"fmt"
+	"iter"
 	"regexp"
 	"strings"
 	"time"
@@ -153,6 +154,30 @@ type CapabilityRequest struct {
 	// The method to call for no DAG workflows
 	Method       string
 	CapabilityId string
+}
+
+// ParseID parses a capability ID in form of: `{name}:{label1_key}_{labe1_value}:{label2_key}_{label2_value}@{version}`
+func ParseID(id string) (name string, labels iter.Seq2[string, string], version string) {
+	if i := strings.LastIndex(id, "@"); i != -1 {
+		version = id[i+1:]
+		id = id[:i]
+	}
+	if parts := strings.Split(id, ":"); len(parts) >= 1 {
+		name = parts[0]
+		labels = func(yield func(string, string) bool) {
+			for _, label := range parts[1:] {
+				kv := strings.SplitN(label, "_", 2)
+				var v string
+				if len(kv) == 2 {
+					v = kv[1]
+				}
+				if !yield(kv[0], v) {
+					return
+				}
+			}
+		}
+	}
+	return
 }
 
 type RegisterToWorkflowRequest struct {

@@ -56,7 +56,7 @@ type Config struct {
 	// 1. Static mode: When AuthKeySigner is nil, these headers are used as-is and never change
 	// 2. Rotating mode: When AuthKeySigner is set, these headers are used as initial headers
 	//    until TTL expires, then the lazy signer generates new ones
-	AuthHeaders map[string]string
+	AuthHeaders      map[string]string
 	AuthHeadersTTL   time.Duration
 	AuthKeySigner    Signer
 	AuthPublicKeyHex string

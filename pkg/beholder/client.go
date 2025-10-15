@@ -48,9 +48,8 @@ type Client struct {
 	MeterProvider         otelmetric.MeterProvider
 	MessageLoggerProvider otellog.LoggerProvider
 
-	// LazyKeystoreSigner is the reference to the lazy signer if one was configured
-	// This allows updating the keystore after client initialization
-	lazySigner LazySigner
+	// lazySigner allows updating the keystore after client initialization.
+	lazySigner *lazySigner
 
 	// OnClose
 	OnClose func() error
@@ -105,16 +104,18 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	// Initialize auth here for reuse with log, trace, and metric exporters
 	// Two modes are supported:
-	// 1. Rotating auth: If AuthKeySigner is set, AuthHeaders are used as initial headers
-	//    that will be rotated by the lazy signer after TTL expires
-	// 2. Static auth: If AuthKeySigner is nil, AuthHeaders are used as-is and never change
-	lazySigner := NewLazySigner()
+	// 1. Rotating auth: If AuthPublicKeyHex and AuthHeadersTTL are set, create lazySigner for deferred keystore injection
+	// 2. Static auth: If only AuthHeaders are provided, use them as-is and never change
+	var signer *lazySigner
 	var auth Auth
-	if cfg.AuthKeySigner != nil {
 
-		if cfg.AuthPublicKeyHex == "" {
-			return nil, fmt.Errorf("auth: public key hex required when signer is set")
-		}
+	// Validate auth configuration
+	if cfg.AuthKeySigner != nil && cfg.AuthPublicKeyHex == "" {
+		return nil, fmt.Errorf("auth: public key hex required when signer is set")
+	}
+
+	if cfg.AuthPublicKeyHex != "" && cfg.AuthHeadersTTL > 0 {
+		// Rotating auth mode
 		// Clamp lowest possible value to 10mins
 		if cfg.AuthHeadersTTL < 10*time.Minute {
 			return nil, fmt.Errorf("auth: headers TTL must be at least 10 minutes")
@@ -125,9 +126,12 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
 		}
 
-		// Rotating mode: wrap the signer and use AuthHeaders as initial headers
-		lazySigner.Set(cfg.AuthKeySigner)
-		auth = NewRotatingAuth(key, lazySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
+		// Create lazySigner and optionally pre-populate it if AuthKeySigner was provided
+		signer = &lazySigner{}
+		if cfg.AuthKeySigner != nil {
+			signer.Set(cfg.AuthKeySigner)
+		}
+		auth = NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
 	// Log exporter auth
 	switch {
@@ -318,7 +322,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, lazySigner, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
@@ -357,25 +361,19 @@ func (c Client) ForName(name string) Client {
 	return newClient
 }
 
-// SetSigner updates the signer in the lazy signer if one was configured during client initialization.
+// SetSigner updates the signer in the lazy signer.
 // This method enables setting the signer after the beholder client has been created, which is useful
 // when the signer is not available at client initialization time but the client needs to be configured
 // with rotating auth.
-func (c *Client) SetSigner(signer Signer) error {
-	if c.lazySigner == nil {
-		return fmt.Errorf("no lazy signer configured - client was not initialized with a LazySigner")
+func (c *Client) SetSigner(signer Signer) {
+	if c.lazySigner != nil {
+		c.lazySigner.Set(signer)
 	}
-	c.lazySigner.Set(signer)
-	return nil
 }
 
-// HasSigner returns true if a signer has been set in the lazy signer.
-// Returns false if no lazy signer was configured or if the keystore has not been set yet.
+// IsSignerSet returns true if a signer has been set in the lazy signer.
 func (c *Client) IsSignerSet() bool {
-	if c.lazySigner == nil {
-		return false
-	}
-	return c.lazySigner.IsSet()
+	return c.lazySigner != nil && c.lazySigner.IsSet()
 }
 
 func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {

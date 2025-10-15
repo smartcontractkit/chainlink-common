@@ -3,50 +3,33 @@ package beholder
 import (
 	"context"
 	"fmt"
-	"sync"
+	"sync/atomic"
 )
 
-type LazySigner interface {
-	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
-	Set(signer Signer)
-	IsSet() bool
-}
-
-// lazyKeystoreSigner is a thread-safe wrapper that allows the keystore
+// lazySigner is a thread-safe wrapper that allows the keystore
 // to be set after the signer is created. This enables beholder to start
 // with rotating auth configured, but the actual keystore can be injected later.
+// The zero value is usable.
 type lazySigner struct {
-	mu sync.RWMutex
-	Signer
-}
-
-func NewLazySigner() LazySigner {
-	return &lazySigner{mu: sync.RWMutex{}, Signer: nil}
+	signer atomic.Pointer[Signer]
 }
 
 // Sign implements the beholder.Signer interface
 func (l *lazySigner) Sign(ctx context.Context, keyID string, data []byte) ([]byte, error) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
-	if l.Signer == nil {
+	s := l.signer.Load()
+	if s == nil {
 		return nil, fmt.Errorf("keystore not yet available for signing")
 	}
-
-	return l.Signer.Sign(ctx, keyID, data)
+	return (*s).Sign(ctx, keyID, data)
 }
 
-// SetKeystore updates the underlying keystore. This is thread-safe and can be
+// Set updates the underlying keystore. This is thread-safe and can be
 // called at any time, even after beholder has been initialized.
 func (l *lazySigner) Set(signer Signer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.Signer = signer
+	l.signer.Store(&signer)
 }
 
-// HasKeystore returns true if a keystore has been set
+// IsSet returns true if a keystore has been set
 func (l *lazySigner) IsSet() bool {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-	return l.Signer != nil
+	return l.signer.Load() != nil
 }

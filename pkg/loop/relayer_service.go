@@ -34,9 +34,8 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
 		}
 		if bc := beholder.GetClient(); bc != nil && !bc.IsSignerSet() {
-			if err := bc.SetSigner(csaKeystore); err != nil {
-				lggr.Warnw("Failed to set beholder signer from CSA keystore", "err", err)
-			}
+			bc.SetSigner(csaKeystore)
+			lggr.Debug("Set beholder signer from CSA keystore")
 		}
 		return r, plug, nil
 	}

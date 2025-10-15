@@ -146,11 +146,10 @@ func (s *Server) start() error {
 		}
 
 		// Configure beholder auth - the client will determine rotating vs static mode
-		// Rotating mode: when AuthKeySigner is set, AuthHeaders serve as initial headers
-		// Static mode: when AuthKeySigner is nil, AuthHeaders are used as-is
+		// Rotating mode: when AuthPublicKeyHex and AuthHeadersTTL are set, client creates internal lazySigner
+		// Static mode: when only AuthHeaders are provided
 		if s.EnvConfig.TelemetryAuthPubKeyHex != "" && s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
-			// Rotating auth mode: allows keystore to be injected after startup
-			beholderCfg.AuthKeySigner = beholder.NewLazySigner()
+			// Rotating auth mode: client will create lazySigner internally and allow keystore injection after startup
 			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
 			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
 			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders // initial headers

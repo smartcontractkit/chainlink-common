@@ -124,8 +124,8 @@ func DefaultConfig() Config {
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
 		LogLevel:              zapcore.InfoLevel,
-		// Auth
-		AuthHeadersTTL: 10 * time.Minute,
+		// Auth (defaults to static auth mode with TTL=0)
+		AuthHeadersTTL: 0,
 	}
 }
 
@@ -138,6 +138,8 @@ func TestDefaultConfig() Config {
 	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
 	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
 	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	// Auth disabled for testing (TTL=0 means static auth mode)
+	config.AuthHeadersTTL = 0
 	return config
 }
 
@@ -148,6 +150,8 @@ func TestDefaultConfigHTTPClient() Config {
 	config.LogBatchProcessor = false
 	config.OtelExporterGRPCEndpoint = ""
 	config.OtelExporterHTTPEndpoint = "localhost:4318"
+	// Auth disabled for testing (TTL=0 means static auth mode)
+	config.AuthHeadersTTL = 0
 	return config
 }
 

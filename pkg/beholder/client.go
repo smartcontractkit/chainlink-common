@@ -104,18 +104,17 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	// Initialize auth here for reuse with log, trace, and metric exporters
 	// Two modes are supported:
-	// 1. Rotating auth: If AuthPublicKeyHex and AuthHeadersTTL are set, create lazySigner for deferred keystore injection
-	// 2. Static auth: If only AuthHeaders are provided, use them as-is and never change
+	// 1. Static auth: If AuthHeadersTTL == 0, use AuthHeaders as-is and never change
+	// 2. Rotating auth: If AuthHeadersTTL > 0, create lazySigner for deferred keystore injection
 	var signer *lazySigner
 	var auth Auth
 
-	// Validate auth configuration
-	if cfg.AuthKeySigner != nil && cfg.AuthPublicKeyHex == "" {
-		return nil, fmt.Errorf("auth: public key hex required when signer is set")
-	}
+	if cfg.AuthHeadersTTL > 0 {
 
-	if cfg.AuthPublicKeyHex != "" && cfg.AuthHeadersTTL > 0 {
-		// Rotating auth mode
+		if cfg.AuthPublicKeyHex == "" {
+			return nil, fmt.Errorf("auth: public key hex required for rotating auth (TTL > 0)")
+		}
+
 		// Clamp lowest possible value to 10mins
 		if cfg.AuthHeadersTTL < 10*time.Minute {
 			return nil, fmt.Errorf("auth: headers TTL must be at least 10 minutes")
@@ -126,11 +125,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
 		}
 
-		// Create lazySigner and optionally pre-populate it if AuthKeySigner was provided
+		// Optionally wrap the signer in a lazySigner if AuthKeySigner was provided
+		// This allows the signer to be set both before and after client initialization
 		signer = &lazySigner{}
 		if cfg.AuthKeySigner != nil {
 			signer.Set(cfg.AuthKeySigner)
 		}
+
 		auth = NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
 	// Log exporter auth

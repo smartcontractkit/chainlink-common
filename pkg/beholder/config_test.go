@@ -51,10 +51,10 @@ func ExampleConfig() {
 		LogStreamingEnabled:   false,             // Disable streaming logs by default
 		LogLevel:              zapcore.InfoLevel, // Default log level
 		// Auth
-		AuthPublicKeyHex:   "",
-		AuthHeaders:        map[string]string{},
-		AuthKeySigner:      nil,
-		AuthHeadersTTL:     0,
+		AuthPublicKeyHex: "",
+		AuthHeaders:      map[string]string{},
+		AuthKeySigner:    nil,
+		AuthHeadersTTL:   0,
 	}
 	fmt.Printf("%+v\n", config)
 	config.LogRetryConfig = &beholder.RetryConfig{

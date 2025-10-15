@@ -404,10 +404,7 @@ func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.
 }
 
 func (m *module) Start() {
-	m.wg.Add(1)
-	go func() {
-		defer m.wg.Done()
-
+	m.wg.Go(func() {
 		ticker := time.NewTicker(m.cfg.TickInterval)
 		for {
 			select {
@@ -417,7 +414,7 @@ func (m *module) Start() {
 				m.engine.IncrementEpoch()
 			}
 		}
-	}()
+	})
 }
 
 func (m *module) Close() {

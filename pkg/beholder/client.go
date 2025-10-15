@@ -126,7 +126,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 
 		// Rotating mode: wrap the signer and use AuthHeaders as initial headers
-		lazySigner.SetSigner(cfg.AuthKeySigner)
+		lazySigner.Set(cfg.AuthKeySigner)
 		auth = NewRotatingAuth(key, lazySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
 	// Log exporter auth
@@ -365,17 +365,17 @@ func (c *Client) SetSigner(signer Signer) error {
 	if c.lazySigner == nil {
 		return fmt.Errorf("no lazy signer configured - client was not initialized with a LazySigner")
 	}
-	c.lazySigner.SetSigner(signer)
+	c.lazySigner.Set(signer)
 	return nil
 }
 
 // HasSigner returns true if a signer has been set in the lazy signer.
 // Returns false if no lazy signer was configured or if the keystore has not been set yet.
-func (c *Client) HasSigner() bool {
+func (c *Client) IsSignerSet() bool {
 	if c.lazySigner == nil {
 		return false
 	}
-	return c.lazySigner.HasSigner()
+	return c.lazySigner.IsSet()
 }
 
 func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {

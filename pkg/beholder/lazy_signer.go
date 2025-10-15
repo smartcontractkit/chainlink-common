@@ -8,8 +8,8 @@ import (
 
 type LazySigner interface {
 	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
-	SetSigner(signer Signer)
-	HasSigner() bool
+	Set(signer Signer)
+	IsSet() bool
 }
 
 // lazyKeystoreSigner is a thread-safe wrapper that allows the keystore
@@ -38,14 +38,14 @@ func (l *lazySigner) Sign(ctx context.Context, keyID string, data []byte) ([]byt
 
 // SetKeystore updates the underlying keystore. This is thread-safe and can be
 // called at any time, even after beholder has been initialized.
-func (l *lazySigner) SetSigner(signer Signer) {
+func (l *lazySigner) Set(signer Signer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.Signer = signer
 }
 
 // HasKeystore returns true if a keystore has been set
-func (l *lazySigner) HasSigner() bool {
+func (l *lazySigner) IsSet() bool {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	return l.Signer != nil

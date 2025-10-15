@@ -78,8 +78,6 @@ type Server struct {
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
 	otelViews       []sdkmetric.View
-	// lazySigner allows keystore to be injected after initialization
-	lazySigner LazyKeystoreSigner
 }
 
 func newServer(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
@@ -150,8 +148,7 @@ func (s *Server) start() error {
 		// Configure beholder auth with lazy keystore injection support
 		if s.EnvConfig.TelemetryAuthPubKeyHex != "" && s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
 			// allows keystore to be injected after startup
-			s.lazySigner = NewLazyKeystoreSigner()
-			beholderCfg.AuthKeySigner = s.lazySigner
+			beholderCfg.AuthKeySigner = beholder.NewLazySigner()
 			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
 			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
 		} else {

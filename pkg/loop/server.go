@@ -145,24 +145,19 @@ func (s *Server) start() error {
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
 
-		// Configure beholder auth with lazy keystore injection support
+		// Configure beholder auth - the client will determine rotating vs static mode
+		// Rotating mode: when AuthKeySigner is set, AuthHeaders serve as initial headers
+		// Static mode: when AuthKeySigner is nil, AuthHeaders are used as-is
 		if s.EnvConfig.TelemetryAuthPubKeyHex != "" && s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
-			// allows keystore to be injected after startup
+			// Rotating auth mode: allows keystore to be injected after startup
 			beholderCfg.AuthKeySigner = beholder.NewLazySigner()
 			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
 			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
-		} else {
-			// Fall back to static auth headers if rotating auth not configured
-			if len(s.EnvConfig.TelemetryAuthHeaders) > 0 {
-				s.Logger.Info("Using static auth headers for beholder")
-				beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
-				beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
-			} else if s.EnvConfig.TelemetryAuthPubKeyHex != "" {
-				// Static auth with pub key only
-				s.Logger.Info("Using static auth with public key for beholder")
-				beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
-				beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
-			}
+			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders // initial headers
+		} else if len(s.EnvConfig.TelemetryAuthHeaders) > 0 || s.EnvConfig.TelemetryAuthPubKeyHex != "" {
+			// Static auth mode: headers and/or public key without rotation
+			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
+			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
 		}
 
 		// note: due to the OTEL specification, all histogram buckets

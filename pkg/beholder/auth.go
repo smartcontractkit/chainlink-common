@@ -38,7 +38,7 @@ type Auth interface {
 }
 
 type Signer interface {
-	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
+	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
 }
 
 type staticAuth struct {
@@ -139,7 +139,7 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 		defer cancel()
 
 		// Sign(public key bytes + timestamp bytes)
-		signature, err := r.signer.Sign(ctxWithTimeout, r.csaPubKey, msgBytes)
+		signature, err := r.signer.Sign(ctxWithTimeout, fmt.Sprintf("%x", r.csaPubKey), msgBytes)
 		if err != nil {
 			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
 		}

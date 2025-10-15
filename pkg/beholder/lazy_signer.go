@@ -7,7 +7,7 @@ import (
 )
 
 type LazySigner interface {
-	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
+	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
 	SetSigner(signer Signer)
 	HasSigner() bool
 }
@@ -25,7 +25,7 @@ func NewLazySigner() LazySigner {
 }
 
 // Sign implements the beholder.Signer interface
-func (l *lazySigner) Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error) {
+func (l *lazySigner) Sign(ctx context.Context, keyID string, data []byte) ([]byte, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 

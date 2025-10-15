@@ -55,7 +55,7 @@ type MockSigner struct {
 	mock.Mock
 }
 
-func (m *MockSigner) Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error) {
+func (m *MockSigner) Sign(ctx context.Context, keyID string, data []byte) ([]byte, error) {
 	args := m.Called(ctx, keyID, data)
 	return args.Get(0).([]byte), args.Error(1)
 }
@@ -72,8 +72,8 @@ func TestRotatingAuth(t *testing.T) {
 		dummySignature := ed25519.Sign(privKey, []byte("test data"))
 
 		mockSigner.
-			On("Sign", mock.Anything, mock.MatchedBy(func(keyID []byte) bool {
-				return string(keyID) == string(pubKey) // Verify correct public key is passed
+			On("Sign", mock.Anything, mock.MatchedBy(func(keyID string) bool {
+				return keyID == hex.EncodeToString(pubKey) // Verify correct public key hex is passed
 			}), mock.Anything).
 			Return(dummySignature, nil)
 

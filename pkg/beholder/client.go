@@ -104,6 +104,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
 	// Initialize auth here for reuse with log, trace, and metric exporters
+	// Two modes are supported:
+	// 1. Rotating auth: If AuthKeySigner is set, AuthHeaders are used as initial headers
+	//    that will be rotated by the lazy signer after TTL expires
+	// 2. Static auth: If AuthKeySigner is nil, AuthHeaders are used as-is and never change
 	lazySigner := NewLazySigner()
 	var auth Auth
 	if cfg.AuthKeySigner != nil {
@@ -121,17 +125,16 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
 		}
 
-		// Since we are using a lazy signer, we need to wrap the auth
+		// Rotating mode: wrap the signer and use AuthHeaders as initial headers
 		lazySigner.SetSigner(cfg.AuthKeySigner)
-
 		auth = NewRotatingAuth(key, lazySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
 	// Log exporter auth
 	switch {
-	// Rotating auth
+	// Rotating auth mode
 	case auth != nil:
 		opts = append(opts, otlploggrpc.WithDialOption(authDialOpt(auth)))
-	// Static auth
+	// Static auth mode
 	case len(cfg.AuthHeaders) > 0:
 		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
 	// No auth

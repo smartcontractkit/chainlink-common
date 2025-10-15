@@ -82,6 +82,9 @@ type rotatingAuth struct {
 	mu                       sync.Mutex
 }
 
+// NewRotatingAuth creates a rotating auth mechanism that automatically refreshes headers.
+// If initialHeaders are provided, they will be used immediately until TTL expires.
+// After TTL expiration, the signer is called to generate new headers.
 func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool, initialHeaders map[string]string) Auth {
 	r := &rotatingAuth{
 		csaPubKey:                csaPubKey,
@@ -94,13 +97,14 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 
 	headers := make(map[string]string)
 	// If initial headers are provided, use them and set timestamp to now
+	// Otherwise, leave timestamp at 0 so headers are generated on first call
 	if len(initialHeaders) > 0 {
 		headers = initialHeaders
+		// We assume the time between the initial headers being generated is very small
+		r.lastUpdatedNanos.Store(time.Now().UnixNano())
 	}
 
 	r.headers.Store(headers)
-	// We assume the time between the initial headers being generated is very small
-	r.lastUpdatedNanos.Store(time.Now().UnixNano())
 
 	return r
 }

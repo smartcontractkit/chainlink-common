@@ -52,10 +52,14 @@ type Config struct {
 	LogLevel            zapcore.Level // Log level for telemetry streaming
 
 	// Auth
-	AuthPublicKeyHex   string
-	AuthHeaders        map[string]string
-	AuthKeySigner      Signer
-	AuthHeadersTTL     time.Duration
+	AuthPublicKeyHex string
+	// AuthHeaders serves two purposes:
+	// 1. Static mode: When AuthKeySigner is nil, these headers are used as-is and never change
+	// 2. Rotating mode: When AuthKeySigner is set, these headers are used as initial headers
+	//    until TTL expires, then the lazy signer generates new ones
+	AuthHeaders    map[string]string
+	AuthKeySigner  Signer
+	AuthHeadersTTL time.Duration
 }
 
 type RetryConfig struct {

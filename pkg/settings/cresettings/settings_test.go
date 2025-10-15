@@ -83,7 +83,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 			"EventRateLimit": "every13s:6"
 		},
 		"HTTPAction": {
-			"RateLimit": "every3s:5",
+			"CallLimit": "5",
 			"CacheAgeLimit": "5m"
 		},
 		"ChainWrite": {
@@ -107,7 +107,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, config.Rate{Limit: rate.Every(10 * time.Second), Burst: 5}, cfg.PerWorkflow.CRONTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(30 * time.Second), Burst: 3}, cfg.PerWorkflow.HTTPTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
-	assert.Equal(t, config.Rate{Limit: rate.Every(3 * time.Second), Burst: 5}, cfg.PerWorkflow.HTTPAction.RateLimit.DefaultValue)
+	assert.Equal(t, 5, cfg.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
 	assert.Equal(t, 5*time.Minute, cfg.PerWorkflow.HTTPAction.CacheAgeLimit.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)

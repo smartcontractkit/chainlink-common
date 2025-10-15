@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"os/exec"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -31,6 +32,11 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 		r, err := plug.NewRelayer(ctx, config, keystore, csaKeystore, capabilityRegistry)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
+		}
+		if bc := beholder.GetClient(); bc != nil && !bc.HasSigner() {
+			if err := bc.SetSigner(csaKeystore); err != nil {
+				lggr.Warnw("Failed to set beholder signer from CSA keystore", "err", err)
+			}
 		}
 		return r, plug, nil
 	}

@@ -52,10 +52,10 @@ type Config struct {
 	LogLevel            zapcore.Level // Log level for telemetry streaming
 
 	// Auth
-	AuthPublicKeyHex string
-	AuthHeaders      map[string]string
-	AuthKeySigner    Signer
-	AuthHeadersTTL   time.Duration
+	AuthPublicKeyHex   string
+	AuthHeaders        map[string]string
+	AuthKeySigner      Signer
+	AuthHeadersTTL     time.Duration
 }
 
 type RetryConfig struct {

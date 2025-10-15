@@ -82,7 +82,7 @@ type rotatingAuth struct {
 	mu                       sync.Mutex
 }
 
-func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool) Auth {
+func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool, initialHeaders map[string]string) Auth {
 	r := &rotatingAuth{
 		csaPubKey:                csaPubKey,
 		signer:                   signer,
@@ -91,7 +91,17 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 		lastUpdatedNanos:         atomic.Int64{},
 		requireTransportSecurity: requireTransportSecurity,
 	}
-	r.headers.Store(make(map[string]string))
+
+	headers := make(map[string]string)
+	// If initial headers are provided, use them and set timestamp to now
+	if len(initialHeaders) > 0 {
+		headers = initialHeaders
+	}
+
+	r.headers.Store(headers)
+	// We assume the time between the initial headers being generated is very small
+	r.lastUpdatedNanos.Store(time.Now().UnixNano())
+
 	return r
 }
 

@@ -48,6 +48,10 @@ type Client struct {
 	MeterProvider         otelmetric.MeterProvider
 	MessageLoggerProvider otellog.LoggerProvider
 
+	// LazyKeystoreSigner is the reference to the lazy signer if one was configured
+	// This allows updating the keystore after client initialization
+	lazySigner LazySigner
+
 	// OnClose
 	OnClose func() error
 }
@@ -100,6 +104,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
 	// Initialize auth here for reuse with log, trace, and metric exporters
+	lazySigner := NewLazySigner()
 	var auth Auth
 	if cfg.AuthKeySigner != nil {
 
@@ -116,7 +121,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
 		}
 
-		auth = NewRotatingAuth(key, cfg.AuthKeySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection)
+		// Since we are using a lazy signer, we need to wrap the auth
+		lazySigner.SetSigner(cfg.AuthKeySigner)
+
+		auth = NewRotatingAuth(key, lazySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
 	// Log exporter auth
 	switch {
@@ -307,7 +315,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, lazySigner, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
@@ -344,6 +352,27 @@ func (c Client) ForName(name string) Client {
 	newClient.Meter = meter
 	newClient.Emitter = messageEmitter
 	return newClient
+}
+
+// SetSigner updates the signer in the lazy signer if one was configured during client initialization.
+// This method enables setting the signer after the beholder client has been created, which is useful
+// when the signer is not available at client initialization time but the client needs to be configured
+// with rotating auth.
+func (c *Client) SetSigner(signer Signer) error {
+	if c.lazySigner == nil {
+		return fmt.Errorf("no lazy signer configured - client was not initialized with a LazySigner")
+	}
+	c.lazySigner.SetSigner(signer)
+	return nil
+}
+
+// HasSigner returns true if a signer has been set in the lazy signer.
+// Returns false if no lazy signer was configured or if the keystore has not been set yet.
+func (c *Client) HasSigner() bool {
+	if c.lazySigner == nil {
+		return false
+	}
+	return c.lazySigner.HasSigner()
 }
 
 func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {

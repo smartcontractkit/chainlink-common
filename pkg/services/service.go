@@ -66,25 +66,21 @@ type Engine struct {
 //		defer span.End()
 //	})
 func (e *Engine) Go(fn func(context.Context)) {
-	e.wg.Add(1)
-	go func() {
-		defer e.wg.Done()
+	e.wg.Go(func() {
 		ctx, cancel := e.StopChan.NewCtx()
 		defer cancel()
 		fn(ctx)
-	}()
+	})
 }
 
 // GoCtx is like Go but passes through ctx.
 // Use context.WithoutCancel if the function should continue running.
 func (e *Engine) GoCtx(ctx context.Context, fn func(context.Context)) {
-	e.wg.Add(1)
-	go func() {
-		defer e.wg.Done()
+	e.wg.Go(func() {
 		ctx, cancel := e.StopChan.Ctx(ctx)
 		defer cancel()
 		fn(ctx)
-	}()
+	})
 }
 
 // GoTick is like Go but calls fn for each tick.

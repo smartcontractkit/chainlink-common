@@ -72,16 +72,14 @@ func TestRoundRobinSelector_Concurrency(t *testing.T) {
 	results := make(chan string, numRequests)
 
 	for range numRequests {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			gw, err := rr.NextGateway()
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
 			results <- gw
-		}()
+		})
 	}
 
 	wg.Wait()

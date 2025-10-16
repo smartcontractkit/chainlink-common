@@ -112,25 +112,21 @@ func (b *BrokerExt) Serve(name string, server *grpc.Server, deps ...Resource) (u
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		defer b.CloseAll(deps...)
 		if err := server.Serve(lis); err != nil {
 			b.Logger.Errorw(fmt.Sprintf("Failed to serve %s on connection %d", name, id), "err", err)
 		}
-	}()
+	})
 
 	done := make(chan struct{})
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		select {
 		case <-b.StopCh:
 			server.Stop()
 		case <-done:
 		}
-	}()
+	})
 
 	return id, Resource{fnCloser(sync.OnceFunc(func() {
 		server.Stop()

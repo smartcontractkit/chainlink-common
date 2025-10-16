@@ -365,7 +365,7 @@ func (c Client) ForName(name string) Client {
 // SetSigner updates the signer in the lazy signer.
 // This method enables setting the signer after the beholder client has been created, which is useful
 // when the signer is not available at client initialization time but the client needs to be configured
-// with rotating auth.
+// with rotating auth. The underlying lazy signer is thread-safe.
 func (c *Client) SetSigner(signer Signer) {
 	if c.lazySigner != nil {
 		c.lazySigner.Set(signer)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -20,6 +21,7 @@ import (
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -98,6 +100,8 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		// Uses deferred binding for global providers
+		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	}
 	// Initialize auth here for reuse with log, trace, and metric exporters
 	var auth Auth
@@ -399,6 +403,8 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		// Uses deferred binding for global providers
+		otlptracegrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	}
 	switch {
 	// Rotating auth
@@ -448,6 +454,8 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		// Uses deferred binding for global providers
+		otlpmetricgrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	}
 
 	switch {

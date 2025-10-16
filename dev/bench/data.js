@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760633359587,
+  "lastUpdate": 1760650878113,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -28026,6 +28026,66 @@ window.BENCHMARK_DATA = {
             "value": 141928,
             "unit": "ns/op",
             "extra": "8085 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a6afcd1532ad6fff67403358d2ecd8f043a3b5f",
+          "message": "INFOPLAT-2288: Add grpc metrics to Beholder using StatsHandler (#1617)\n\n* Add WithStatsHandler for in house grpc metrics\n\n* Refactor split logger providers to separate functions for logger and emitter using shared exporter with grpc metrics\n\n* Change newLoggerExporter to newLoggerOpts\n\n* Refactor to functions that return logger options\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-10-16T16:39:56-05:00",
+          "tree_id": "aa5e9de8fdcb807e62c043b0dbe8a81c920c3897",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9a6afcd1532ad6fff67403358d2ecd8f043a3b5f"
+        },
+        "date": 1760650876214,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 584.2,
+            "unit": "ns/op",
+            "extra": "1897995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 99087,
+            "unit": "ns/op",
+            "extra": "12156 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.9,
+            "unit": "ns/op",
+            "extra": "2928794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99307,
+            "unit": "ns/op",
+            "extra": "12090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26596,
+            "unit": "ns/op",
+            "extra": "45103 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147396,
+            "unit": "ns/op",
+            "extra": "8132 times\n4 procs"
           }
         ]
       }

@@ -2,16 +2,22 @@ package billing
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt"
+	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -126,24 +132,96 @@ func (wc *workflowClient) Close() error {
 }
 
 // addJWTAuth creates and signs a JWT token, then adds it to the context
-func (wc *workflowClient) addJWTAuth(ctx context.Context, req any) (context.Context, error) {
+// Returns the updated context and the JWT token string (for logging purposes)
+func (wc *workflowClient) addJWTAuth(ctx context.Context, req any) (context.Context, string, error) {
 	// Skip authentication if no JWT manager provided
 	if wc.jwtGenerator == nil {
-		return ctx, nil
+		return ctx, "", nil
 	}
 
 	// Create JWT token using the JWT manager
 	jwtToken, err := wc.jwtGenerator.CreateJWTForRequest(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create JWT: %w", err)
+		return nil, "", fmt.Errorf("failed to create JWT: %w", err)
 	}
 
 	// Add JWT to Authorization header
-	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), jwtToken, nil
+}
+
+// parseJWTForLogging parses the JWT token without verification to extract claims for logging purposes
+func parseJWTForLogging(tokenString string) *types.NodeJWTClaims {
+	if tokenString == "" {
+		return nil
+	}
+	parser := jwt.NewParser()
+	token, _, err := parser.ParseUnverified(tokenString, &types.NodeJWTClaims{})
+	if err != nil {
+		return nil
+	}
+
+	claims, ok := token.Claims.(*types.NodeJWTClaims)
+	if !ok {
+		return nil
+	}
+
+	return claims
+}
+
+// DigestDebugInfo contains debugging information about digest calculation
+type DigestDebugInfo struct {
+	RequestType      string
+	IsProtoMessage   bool
+	SerializedLength int
+	RequestJSON      string
+	MarshalSuccess   bool
+}
+
+// calculateDigestWithDebugging calculates the request digest with detailed debugging information
+func calculateDigestWithDebugging(req any) (string, DigestDebugInfo) {
+	debugInfo := DigestDebugInfo{
+		RequestType: fmt.Sprintf("%T", req),
+	}
+
+	var data []byte
+	if m, ok := req.(proto.Message); ok {
+		debugInfo.IsProtoMessage = true
+		// Use protobuf canonical serialization
+		serialized, err := proto.Marshal(m)
+		if err == nil {
+			debugInfo.MarshalSuccess = true
+			data = serialized
+		} else {
+			debugInfo.MarshalSuccess = false
+			// fallback to string representation if marshal fails
+			data = fmt.Appendf(nil, "%v", req)
+		}
+	} else if s, ok := req.(fmt.Stringer); ok {
+		debugInfo.IsProtoMessage = false
+		debugInfo.MarshalSuccess = true
+		data = []byte(s.String())
+	} else {
+		debugInfo.IsProtoMessage = false
+		debugInfo.MarshalSuccess = true
+		data = fmt.Appendf(nil, "%v", req)
+	}
+
+	debugInfo.SerializedLength = len(data)
+
+	// Create JSON representation of the request for human-readable debugging
+	if jsonBytes, err := json.Marshal(req); err == nil {
+		debugInfo.RequestJSON = string(jsonBytes)
+	} else {
+		// Fallback to string representation
+		debugInfo.RequestJSON = fmt.Sprintf("%+v", req)
+	}
+
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:]), debugInfo
 }
 
 func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
+	ctx, _, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add custom auth header to GetOrganizationCreditsByWorkflow request", "error", err)
 		return nil, err
@@ -157,7 +235,7 @@ func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, 
 }
 
 func (wc *workflowClient) GetWorkflowExecutionRates(ctx context.Context, req *pb.GetWorkflowExecutionRatesRequest) (*pb.GetWorkflowExecutionRatesResponse, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
+	ctx, _, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add custom auth header to GetWorkflowExecutionRates request", "error", err)
 		return nil, err
@@ -171,7 +249,7 @@ func (wc *workflowClient) GetWorkflowExecutionRates(ctx context.Context, req *pb
 }
 
 func (wc *workflowClient) ReserveCredits(ctx context.Context, req *pb.ReserveCreditsRequest) (*pb.ReserveCreditsResponse, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
+	ctx, _, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add JWT auth to ReserveCredits request", "error", err)
 		return nil, err
@@ -185,14 +263,51 @@ func (wc *workflowClient) ReserveCredits(ctx context.Context, req *pb.ReserveCre
 }
 
 func (wc *workflowClient) SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
+	// Calculate digest and get debug info before adding JWT
+	clientDigest, debugInfo := calculateDigestWithDebugging(req)
+
+	// Add JWT authentication
+	ctx, jwtToken, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add JWT auth to SubmitWorkflowReceipt request", "error", err)
 		return nil, err
 	}
+
+	// Parse JWT claims for logging
+	parsedClaims := parseJWTForLogging(jwtToken)
+
+	// Log detailed request information (matching billing service format)
+	logFields := []any{
+		"method", "SubmitWorkflowReceipt",
+		"jwt_token", jwtToken,
+		"client_calculated_digest", clientDigest,
+		"request_type", debugInfo.RequestType,
+		"is_proto_message", debugInfo.IsProtoMessage,
+		"serialized_length", debugInfo.SerializedLength,
+		"request_json", debugInfo.RequestJSON,
+		"marshal_success", debugInfo.MarshalSuccess,
+	}
+
+	if parsedClaims != nil {
+		logFields = append(logFields,
+			"parsed_public_key", parsedClaims.PublicKey,
+			"parsed_digest_from_jwt", parsedClaims.Digest,
+			"digest_match", parsedClaims.Digest == clientDigest,
+			"parsed_issuer", parsedClaims.Issuer,
+			"parsed_subject", parsedClaims.Subject,
+			"parsed_expires_at", parsedClaims.ExpiresAt,
+			"parsed_issued_at", parsedClaims.IssuedAt,
+			"parsed_audience", parsedClaims.Audience,
+		)
+	}
+
+	wc.logger.Infow("Sending SubmitWorkflowReceipt request", logFields...)
+
+	// Make the actual RPC call
 	resp, err := wc.client.SubmitWorkflowReceipt(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("SubmitWorkflowReceipt failed", "error", err)
+		// Log error with the same detailed information for debugging
+		wc.logger.Errorw("SubmitWorkflowReceipt failed", append(logFields, "error", err)...)
 		return nil, err
 	}
 	return resp, nil

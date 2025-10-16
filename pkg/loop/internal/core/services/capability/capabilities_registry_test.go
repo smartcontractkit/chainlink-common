@@ -448,6 +448,7 @@ func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testin
 				RemoteExecutableConfig: &rec,
 			},
 		},
+		LocalOnly: true,
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 

@@ -49,13 +49,6 @@ EventSizeLimit = '5kb'
 FilterAddressLimit = '5'
 FilterTopicsPerSlotLimit = '10'
 
-[PerWorkflow.HTTPAction]
-CallLimit = '3'
-ResponseSizeLimit = '10kb'
-ConnectionTimeout = '10s'
-RequestSizeLimit = '100kb'
-CacheAgeLimit = '10m0s'
-
 [PerWorkflow.ChainWrite]
 TargetsLimit = '3'
 ReportSizeLimit = '1kb'
@@ -67,3 +60,14 @@ TransactionGasLimit = '5000000'
 CallLimit = '3'
 LogQueryBlockLimit = '100'
 PayloadSizeLimit = '5kb'
+
+[PerWorkflow.Consensus]
+ObservationSizeLimit = '10kb'
+CallLimit = '2'
+
+[PerWorkflow.HTTPAction]
+CallLimit = '3'
+ResponseSizeLimit = '10kb'
+ConnectionTimeout = '10s'
+RequestSizeLimit = '100kb'
+CacheAgeLimit = '10m0s'

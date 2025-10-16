@@ -48,13 +48,6 @@
 			"FilterAddressLimit": "5",
 			"FilterTopicsPerSlotLimit": "10"
 		},
-		"HTTPAction": {
-			"CallLimit": "3",
-			"ResponseSizeLimit": "10kb",
-			"ConnectionTimeout": "10s",
-			"RequestSizeLimit": "100kb",
-			"CacheAgeLimit": "10m0s"
-		},
 		"ChainWrite": {
 			"TargetsLimit": "3",
 			"ReportSizeLimit": "1kb",
@@ -66,6 +59,17 @@
 			"CallLimit": "3",
 			"LogQueryBlockLimit": "100",
 			"PayloadSizeLimit": "5kb"
+		},
+		"Consensus": {
+			"ObservationSizeLimit": "10kb",
+			"CallLimit": "2"
+		},
+		"HTTPAction": {
+			"CallLimit": "3",
+			"ResponseSizeLimit": "10kb",
+			"ConnectionTimeout": "10s",
+			"RequestSizeLimit": "100kb",
+			"CacheAgeLimit": "10m0s"
 		}
 	}
 }

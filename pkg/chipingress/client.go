@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -41,6 +44,8 @@ type clientConfig struct {
 	headerProvider       HeaderProvider
 	insecureConnection   bool
 	host                 string
+	meterProvider        metric.MeterProvider
+	tracerProvider       trace.TracerProvider
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -68,8 +73,18 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	for _, opt := range opts {
 		opt(cfg)
 	}
+	// Build otelgrpc handler options
+	var otelOpts []otelgrpc.Option
+	if cfg.meterProvider != nil {
+		otelOpts = append(otelOpts, otelgrpc.WithMeterProvider(cfg.meterProvider))
+	}
+	if cfg.tracerProvider != nil {
+		otelOpts = append(otelOpts, otelgrpc.WithTracerProvider(cfg.tracerProvider))
+	}
+
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
 	}
 	// Auth
 	if cfg.perRPCCredentials != nil {
@@ -160,6 +175,18 @@ func WithTLS() Opt {
 		}
 		config.transportCredentials = credentials.NewTLS(tlsCfg) // Use TLS
 	}
+}
+
+// WithMeterProvider sets a custom OpenTelemetry MeterProvider for metrics collection.
+// If not set, the global meter provider will be used.
+func WithMeterProvider(provider metric.MeterProvider) Opt {
+	return func(c *clientConfig) { c.meterProvider = provider }
+}
+
+// WithTracerProvider sets a custom OpenTelemetry TracerProvider for distributed tracing.
+// If not set, the global tracer provider will be used.
+func WithTracerProvider(provider trace.TracerProvider) Opt {
+	return func(c *clientConfig) { c.tracerProvider = provider }
 }
 
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider

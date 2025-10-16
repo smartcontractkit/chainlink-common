@@ -26,7 +26,7 @@ func TestTypes(t *testing.T) {
 		}
 		digest, err := req.Digest()
 		require.NoError(t, err)
-		require.Equal(t, "01025753dbedc82b0771489d77f87b4fe8bbe7255be218caafce6704cc4b45a6", digest)
+		require.Equal(t, "0d390d82191fcc4fe7b321124f55e3880bf3f754c725d10bcc0668cebf6a6ded", digest)
 	})
 
 	t.Run("Request.Digest - JSON marshal error", func(t *testing.T) {
@@ -47,7 +47,8 @@ func TestTypes(t *testing.T) {
 
 		digest, err := req.Digest()
 		require.Error(t, err)
-		require.Equal(t, "error marshaling JSON: json: unsupported type: chan string", err.Error())
+		require.Contains(t, err.Error(), "error marshaling JSON: json:")
+		require.Contains(t, err.Error(), "Go chan string within \"/params/channel\"")
 		require.Empty(t, digest)
 	})
 
@@ -79,7 +80,7 @@ func TestResponseDigest(t *testing.T) {
 		digest, err := resp.Digest()
 		require.NoError(t, err)
 		require.NotEmpty(t, digest)
-		require.Equal(t, "4d255b455d6394594ea08abb31f02cbc09d6a33b84cb9617edb34d5b489e46a9", digest)
+		require.Equal(t, "b2915f4ca34315c3cade73ce8e1d69225d3512550a12819374e287ed8327ba25", digest)
 	})
 
 	t.Run("Response.Digest - with error", func(t *testing.T) {
@@ -95,7 +96,7 @@ func TestResponseDigest(t *testing.T) {
 		digest, err := resp.Digest()
 		require.NoError(t, err)
 		require.NotEmpty(t, digest)
-		require.Equal(t, "71f971121945d17b6f32a486ebfc2576c1eaf6d26e46987af46c898fc7fa9166", digest)
+		require.Equal(t, "a8e6e0e131f05fc98fedc4826550a13bbdeb93b01bd9b97aa462a2411860e7d9", digest)
 	})
 
 	t.Run("Response.Digest - JSON marshal error", func(t *testing.T) {

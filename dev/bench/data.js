@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760512959969,
+  "lastUpdate": 1760620907295,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -27846,6 +27846,66 @@ window.BENCHMARK_DATA = {
             "value": 141398,
             "unit": "ns/op",
             "extra": "7342 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9362b18a3d5807eb605aadb5809e8b67507b8656",
+          "message": "Enable otelgrpc metrics, tracing for chipingress client (#1613)\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-10-16T09:19:18-04:00",
+          "tree_id": "e218b8138f6840b06c6a73f6f727013f0be7dd3c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9362b18a3d5807eb605aadb5809e8b67507b8656"
+        },
+        "date": 1760620905307,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.6,
+            "unit": "ns/op",
+            "extra": "3336669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 71134,
+            "unit": "ns/op",
+            "extra": "16870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.8,
+            "unit": "ns/op",
+            "extra": "2921578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 71958,
+            "unit": "ns/op",
+            "extra": "16640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25230,
+            "unit": "ns/op",
+            "extra": "48838 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 115898,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

@@ -13,7 +13,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -71,9 +70,6 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
 		}
 		deps.Add(ksCSARes)
-
-		beholder.GetClient().SetSigner(csaKeystore)
-		p.Logger.Debug("Set beholder signer from CSA keystore")
 
 		capabilityRegistryID, capabilityRegistryResource, err := p.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
 			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
@@ -138,12 +134,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	crRes := net.Resource{Closer: capRegistryConn, Name: "CapabilityRegistry"}
 	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
 
-	csaKeystore := ks.NewClient(ksCSAConn)
-
-	beholder.GetClient().SetSigner(csaKeystore)
-	p.Logger.Debug("Set beholder signer from CSA keystore")
-
-	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), csaKeystore, capRegistry)
+	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), ks.NewClient(ksCSAConn), capRegistry)
 	if err != nil {
 		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err

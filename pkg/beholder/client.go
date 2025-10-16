@@ -131,7 +131,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	meter := meterProvider.Meter(defaultPackageName)
 
 	// Shared log exporter for both logger and message emitter
-	sharedLogExporter, err := newLoggerExporter(cfg, auth, creds, otlploggrpcNew, meterProvider, tracerProvider)
+	logOpts, err := newLoggerOpts(cfg, auth, creds, meterProvider, tracerProvider)
+	if err != nil {
+		return nil, err
+	}
+	sharedLogExporter, err := otlploggrpcNew(logOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -392,8 +396,8 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	return mp, nil
 }
 
-// newLoggerExporter creates a shared log exporter for both logger and message emitter
-func newLoggerExporter(cfg Config, auth Auth, creds credentials.TransportCredentials, otlploggrpcNew otlploggrpcFactory, meter *sdkmetric.MeterProvider, tracer *sdktrace.TracerProvider) (sdklog.Exporter, error) {
+// newLoggerOpts creates options for a logger exporter
+func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials, meter *sdkmetric.MeterProvider, tracer *sdktrace.TracerProvider) ([]otlploggrpc.Option, error) {
 	otelOpts := []otelgrpc.Option{
 		otelgrpc.WithMeterProvider(meter),
 		otelgrpc.WithTracerProvider(tracer),
@@ -425,11 +429,7 @@ func newLoggerExporter(cfg Config, auth Auth, creds credentials.TransportCredent
 			MaxElapsedTime:  cfg.LogRetryConfig.GetMaxElapsedTime(),
 		}))
 	}
-	sharedLogExporter, err := otlploggrpcNew(opts...)
-	if err != nil {
-		return nil, err
-	}
-	return sharedLogExporter, nil
+	return opts, nil
 }
 
 // newLoggerProvider creates a logger provider for application logs

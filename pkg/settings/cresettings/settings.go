@@ -68,6 +68,7 @@ var Default = Schema{
 		ConsensusCallsLimit:           Int(2),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
+
 		CRONTrigger: cronTrigger{
 			RateLimit: Rate(rate.Every(30*time.Second), 1),
 		},
@@ -81,13 +82,7 @@ var Default = Schema{
 			FilterTopicsPerSlotLimit: Int(10),
 			EventSizeLimit:           Size(5 * config.KByte),
 		},
-		HTTPAction: httpAction{
-			CallLimit:         Int(3),
-			ResponseSizeLimit: Size(10 * config.KByte),
-			ConnectionTimeout: Duration(10 * time.Second),
-			RequestSizeLimit:  Size(100 * config.KByte),
-			CacheAgeLimit:     Duration(10 * time.Minute),
-		},
+
 		ChainWrite: chainWrite{
 			TargetsLimit:    Int(3),
 			ReportSizeLimit: Size(config.KByte),
@@ -99,6 +94,17 @@ var Default = Schema{
 			CallLimit:          Int(3),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
+		},
+		Consensus: consensus{
+			ObservationSizeLimit: Size(10 * config.KByte),
+			CallLimit:            Int(2),
+		},
+		HTTPAction: httpAction{
+			CallLimit:         Int(3),
+			ResponseSizeLimit: Size(10 * config.KByte),
+			ConnectionTimeout: Duration(10 * time.Second),
+			RequestSizeLimit:  Size(100 * config.KByte),
+			CacheAgeLimit:     Duration(10 * time.Minute),
 		},
 	},
 }
@@ -148,8 +154,10 @@ type Workflows struct {
 	WASMMemoryLimit      Setting[config.Size]
 	WASMBinarySizeLimit  Setting[config.Size]
 
+	// Deprecated: use Consensus.ObservationSizeLimit
 	ConsensusObservationSizeLimit Setting[config.Size]
-	ConsensusCallsLimit           Setting[int] `unit:"{call}"`
+	// Deprecated: use Consensus.CallLimit
+	ConsensusCallsLimit Setting[int] `unit:"{call}"`
 
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
@@ -157,9 +165,11 @@ type Workflows struct {
 	CRONTrigger cronTrigger
 	HTTPTrigger httpTrigger
 	LogTrigger  logTrigger
-	HTTPAction  httpAction
-	ChainWrite  chainWrite
-	ChainRead   chainRead
+
+	ChainWrite chainWrite
+	ChainRead  chainRead
+	Consensus  consensus
+	HTTPAction httpAction
 }
 
 type cronTrigger struct {
@@ -175,13 +185,6 @@ type logTrigger struct {
 	FilterAddressLimit       Setting[int] `unit:"{address}"`
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
-type httpAction struct {
-	CallLimit         Setting[int] `unit:"{call}"`
-	ResponseSizeLimit Setting[config.Size]
-	ConnectionTimeout Setting[time.Duration]
-	RequestSizeLimit  Setting[config.Size]
-	CacheAgeLimit     Setting[time.Duration]
-}
 type chainWrite struct {
 	TargetsLimit    Setting[int] `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size]
@@ -191,9 +194,19 @@ type chainWrite struct {
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64] `unit:"{gas}"`
 }
-
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`
 	LogQueryBlockLimit Setting[uint64] `unit:"{block}"`
 	PayloadSizeLimit   Setting[config.Size]
+}
+type httpAction struct {
+	CallLimit         Setting[int] `unit:"{call}"`
+	ResponseSizeLimit Setting[config.Size]
+	ConnectionTimeout Setting[time.Duration]
+	RequestSizeLimit  Setting[config.Size]
+	CacheAgeLimit     Setting[time.Duration]
+}
+type consensus struct {
+	ObservationSizeLimit Setting[config.Size]
+	CallLimit            Setting[int] `unit:"{call}"`
 }

@@ -177,6 +177,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		RemoteTargetConfig:     remoteTargetConfig,
 		RemoteExecutableConfig: remoteExecutableConfig,
 		CapabilityMethodConfig: methodConfig,
+		LocalOnly:              res.CapabilityConfig.LocalOnly,
 	}, nil
 }
 
@@ -438,6 +439,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			ccp.MethodConfigs[mName] = pbMethodConfig
 		}
 	}
+
+	ccp.LocalOnly = cc.LocalOnly
 
 	return &pb.ConfigForCapabilityReply{
 		CapabilityConfig: ccp,

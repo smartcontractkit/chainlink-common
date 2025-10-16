@@ -97,12 +97,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 	}
 
-	opts := []otlploggrpc.Option{
-		otlploggrpc.WithTLSCredentials(creds),
-		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-		// Uses deferred binding for global providers
-		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
-	}
 	// Initialize auth here for reuse with log, trace, and metric exporters
 	var auth Auth
 	if cfg.AuthKeySigner != nil {
@@ -122,78 +116,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		auth = NewRotatingAuth(key, cfg.AuthKeySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection)
 	}
-	// Log exporter auth
-	switch {
-	// Rotating auth
-	case auth != nil:
-		opts = append(opts, otlploggrpc.WithDialOption(authDialOpt(auth)))
-	// Static auth
-	case len(cfg.AuthHeaders) > 0:
-		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
-	// No auth
-	default:
-	}
-
-	if cfg.LogRetryConfig != nil {
-		// NOTE: By default, the retry is enabled in the OTel SDK
-		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
-			Enabled:         cfg.LogRetryConfig.Enabled(),
-			InitialInterval: cfg.LogRetryConfig.GetInitialInterval(),
-			MaxInterval:     cfg.LogRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  cfg.LogRetryConfig.GetMaxElapsedTime(),
-		}))
-	}
-	sharedLogExporter, err := otlploggrpcNew(opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Logger
-	var loggerProcessor sdklog.Processor
-	if cfg.LogBatchProcessor {
-		batchProcessorOpts := []sdklog.BatchProcessorOption{}
-		if cfg.LogExportTimeout > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
-		}
-		if cfg.LogExportMaxBatchSize > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
-		}
-		if cfg.LogExportInterval > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.LogExportInterval)) // Default is 1s
-		}
-		if cfg.LogMaxQueueSize > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize)) // Default is 2048
-		}
-		loggerProcessor = sdklog.NewBatchProcessor(
-			sharedLogExporter,
-			batchProcessorOpts...,
-		)
-	} else {
-		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
-	}
-
-	loggerAttributes := []attribute.KeyValue{
-		attribute.String(AttrKeyDataType, "zap_log_message"),
-	}
-	loggerResource, err := sdkresource.Merge(
-		sdkresource.NewSchemaless(loggerAttributes...),
-		baseResource,
-	)
-	if err != nil {
-		return nil, err
-	}
-	loggerProvider := sdklog.NewLoggerProvider(
-		sdklog.WithResource(loggerResource),
-		sdklog.WithProcessor(loggerProcessor),
-	)
-
-	// If log streaming is disabled, use a noop logger provider
-	if !cfg.LogStreamingEnabled {
-		loggerProvider = BeholderNoopLoggerProvider()
-	}
-
-	logger := loggerProvider.Logger(defaultPackageName)
-
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, auth, creds)
 	if err != nil {
@@ -208,45 +130,24 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
-	// Message Emitter
-	var messageLogProcessor sdklog.Processor
-	if cfg.EmitterBatchProcessor {
-		batchProcessorOpts := []sdklog.BatchProcessorOption{}
-		if cfg.EmitterExportTimeout > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.EmitterExportTimeout)) // Default is 30s
-		}
-		if cfg.EmitterExportMaxBatchSize > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.EmitterExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
-		}
-		if cfg.EmitterExportInterval > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.EmitterExportInterval)) // Default is 1s
-		}
-		if cfg.EmitterMaxQueueSize > 0 {
-			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.EmitterMaxQueueSize)) // Default is 2048
-		}
-		messageLogProcessor = sdklog.NewBatchProcessor(
-			sharedLogExporter,
-			batchProcessorOpts...,
-		)
-	} else {
-		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
-	}
-
-	messageAttributes := []attribute.KeyValue{
-		attribute.String(AttrKeyDataType, "custom_message"),
-	}
-	messageLoggerResource, err := sdkresource.Merge(
-		sdkresource.NewSchemaless(messageAttributes...),
-		baseResource,
-	)
+	// Shared log exporter for both logger and message emitter
+	sharedLogExporter, err := newLoggerExporter(cfg, auth, creds, otlploggrpcNew, meterProvider, tracerProvider)
 	if err != nil {
 		return nil, err
 	}
 
-	messageLoggerProvider := sdklog.NewLoggerProvider(
-		sdklog.WithResource(messageLoggerResource),
-		sdklog.WithProcessor(messageLogProcessor),
-	)
+	// Logger
+	loggerProvider, err := newLoggerProvider(cfg, baseResource, sharedLogExporter)
+	if err != nil {
+		return nil, err
+	}
+	logger := loggerProvider.Logger(defaultPackageName)
+
+	// Message emitter
+	messageLoggerProvider, err := newMessageLoggerProvider(cfg, baseResource, sharedLogExporter)
+	if err != nil {
+		return nil, err
+	}
 	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
 	// Use the messageEmitter by default
@@ -403,8 +304,6 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		// Uses deferred binding for global providers
-		otlptracegrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	}
 	switch {
 	// Rotating auth
@@ -454,8 +353,6 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-		// Uses deferred binding for global providers
-		otlpmetricgrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	}
 
 	switch {
@@ -493,4 +390,137 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 		sdkmetric.WithView(cfg.MetricViews...),
 	)
 	return mp, nil
+}
+
+// newLoggerExporter creates a shared log exporter for both logger and message emitter
+func newLoggerExporter(cfg Config, auth Auth, creds credentials.TransportCredentials, otlploggrpcNew otlploggrpcFactory, meter *sdkmetric.MeterProvider, tracer *sdktrace.TracerProvider) (sdklog.Exporter, error) {
+	otelOpts := []otelgrpc.Option{
+		otelgrpc.WithMeterProvider(meter),
+		otelgrpc.WithTracerProvider(tracer),
+	}
+
+	opts := []otlploggrpc.Option{
+		otlploggrpc.WithTLSCredentials(creds),
+		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...))),
+	}
+	// Log exporter auth
+	switch {
+	// Rotating auth
+	case auth != nil:
+		opts = append(opts, otlploggrpc.WithDialOption(authDialOpt(auth)))
+	// Static auth
+	case len(cfg.AuthHeaders) > 0:
+		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
+	// No auth
+	default:
+	}
+
+	if cfg.LogRetryConfig != nil {
+		// NOTE: By default, the retry is enabled in the OTel SDK
+		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
+			Enabled:         cfg.LogRetryConfig.Enabled(),
+			InitialInterval: cfg.LogRetryConfig.GetInitialInterval(),
+			MaxInterval:     cfg.LogRetryConfig.GetMaxInterval(),
+			MaxElapsedTime:  cfg.LogRetryConfig.GetMaxElapsedTime(),
+		}))
+	}
+	sharedLogExporter, err := otlploggrpcNew(opts...)
+	if err != nil {
+		return nil, err
+	}
+	return sharedLogExporter, nil
+}
+
+// newLoggerProvider creates a logger provider for application logs
+func newLoggerProvider(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) (*sdklog.LoggerProvider, error) {
+
+	// If log streaming is disabled, use a noop logger provider
+	if !cfg.LogStreamingEnabled {
+		return BeholderNoopLoggerProvider(), nil
+	}
+
+	var loggerProcessor sdklog.Processor
+	if cfg.LogBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.LogExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
+		}
+		if cfg.LogExportMaxBatchSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
+		}
+		if cfg.LogExportInterval > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.LogExportInterval)) // Default is 1s
+		}
+		if cfg.LogMaxQueueSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize)) // Default is 2048
+		}
+		loggerProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			batchProcessorOpts...,
+		)
+	} else {
+		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
+	}
+
+	loggerAttributes := []attribute.KeyValue{
+		attribute.String(AttrKeyDataType, "zap_log_message"),
+	}
+	loggerResource, err := sdkresource.Merge(
+		sdkresource.NewSchemaless(loggerAttributes...),
+		baseResource,
+	)
+	if err != nil {
+		return nil, err
+	}
+	loggerProvider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(loggerResource),
+		sdklog.WithProcessor(loggerProcessor),
+	)
+
+	return loggerProvider, nil
+}
+
+// newMessageLoggerProvider creates a logger provider for custom message emitter
+func newMessageLoggerProvider(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) (*sdklog.LoggerProvider, error) {
+	var messageLogProcessor sdklog.Processor
+	if cfg.EmitterBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.EmitterExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.EmitterExportTimeout)) // Default is 30s
+		}
+		if cfg.EmitterExportMaxBatchSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.EmitterExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
+		}
+		if cfg.EmitterExportInterval > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.EmitterExportInterval)) // Default is 1s
+		}
+		if cfg.EmitterMaxQueueSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.EmitterMaxQueueSize)) // Default is 2048
+		}
+		messageLogProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			batchProcessorOpts...,
+		)
+	} else {
+		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
+	}
+
+	messageAttributes := []attribute.KeyValue{
+		attribute.String(AttrKeyDataType, "custom_message"),
+	}
+	messageLoggerResource, err := sdkresource.Merge(
+		sdkresource.NewSchemaless(messageAttributes...),
+		baseResource,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	messageLoggerProvider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(messageLoggerResource),
+		sdklog.WithProcessor(messageLogProcessor),
+	)
+
+	return messageLoggerProvider, nil
 }

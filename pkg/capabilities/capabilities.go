@@ -627,4 +627,6 @@ type CapabilityConfiguration struct {
 
 	// v2 / "NoDAG" capabilities
 	CapabilityMethodConfig map[string]CapabilityMethodConfig
+	// if true, the capability won't be callable via don2don
+	LocalOnly bool
 }

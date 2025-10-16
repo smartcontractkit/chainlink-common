@@ -141,17 +141,24 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 
 	// Logger
-	loggerProvider, err := newLoggerProvider(cfg, baseResource, sharedLogExporter)
-	if err != nil {
-		return nil, err
+	var loggerProvider *sdklog.LoggerProvider
+	if !cfg.LogStreamingEnabled {
+		loggerProvider = BeholderNoopLoggerProvider()
+	} else {
+		loggerOpts, err := newLoggerProviderOpts(cfg, baseResource, sharedLogExporter)
+		if err != nil {
+			return nil, err
+		}
+		loggerProvider = sdklog.NewLoggerProvider(loggerOpts...)
 	}
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Message emitter
-	messageLoggerProvider, err := newMessageLoggerProvider(cfg, baseResource, sharedLogExporter)
+	messageLoggerOpts, err := newMessageLoggerProviderOpts(cfg, baseResource, sharedLogExporter)
 	if err != nil {
 		return nil, err
 	}
+	messageLoggerProvider := sdklog.NewLoggerProvider(messageLoggerOpts...)
 	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
 	// Use the messageEmitter by default
@@ -432,14 +439,8 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 	return opts, nil
 }
 
-// newLoggerProvider creates a logger provider for application logs
-func newLoggerProvider(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) (*sdklog.LoggerProvider, error) {
-
-	// If log streaming is disabled, use a noop logger provider
-	if !cfg.LogStreamingEnabled {
-		return BeholderNoopLoggerProvider(), nil
-	}
-
+// newLoggerProviderOpts creates logger provider options for application logs
+func newLoggerProviderOpts(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) ([]sdklog.LoggerProviderOption, error) {
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
@@ -473,16 +474,15 @@ func newLoggerProvider(cfg Config, baseResource *sdkresource.Resource, sharedLog
 	if err != nil {
 		return nil, err
 	}
-	loggerProvider := sdklog.NewLoggerProvider(
+
+	return []sdklog.LoggerProviderOption{
 		sdklog.WithResource(loggerResource),
 		sdklog.WithProcessor(loggerProcessor),
-	)
-
-	return loggerProvider, nil
+	}, nil
 }
 
-// newMessageLoggerProvider creates a logger provider for custom message emitter
-func newMessageLoggerProvider(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) (*sdklog.LoggerProvider, error) {
+// newMessageLoggerProviderOpts creates logger provider options for custom message emitter
+func newMessageLoggerProviderOpts(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) ([]sdklog.LoggerProviderOption, error) {
 	var messageLogProcessor sdklog.Processor
 	if cfg.EmitterBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
@@ -517,10 +517,8 @@ func newMessageLoggerProvider(cfg Config, baseResource *sdkresource.Resource, sh
 		return nil, err
 	}
 
-	messageLoggerProvider := sdklog.NewLoggerProvider(
+	return []sdklog.LoggerProviderOption{
 		sdklog.WithResource(messageLoggerResource),
 		sdklog.WithProcessor(messageLogProcessor),
-	)
-
-	return messageLoggerProvider, nil
+	}, nil
 }

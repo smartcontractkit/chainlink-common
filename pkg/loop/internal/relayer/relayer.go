@@ -72,10 +72,8 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		deps.Add(ksCSARes)
 
-		if bc := beholder.GetClient(); bc != nil && !bc.IsSignerSet() {
-			bc.SetSigner(csaKeystore)
-			p.Logger.Debug("Set beholder signer from CSA keystore")
-		}
+		beholder.GetClient().SetSigner(csaKeystore)
+		p.Logger.Debug("Set beholder signer from CSA keystore")
 
 		capabilityRegistryID, capabilityRegistryResource, err := p.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
 			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
@@ -142,10 +140,8 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 
 	csaKeystore := ks.NewClient(ksCSAConn)
 
-	if bc := beholder.GetClient(); bc != nil && !bc.IsSignerSet() {
-		bc.SetSigner(csaKeystore)
-		p.Logger.Debug("Set beholder signer from CSA keystore")
-	}
+	beholder.GetClient().SetSigner(csaKeystore)
+	p.Logger.Debug("Set beholder signer from CSA keystore")
 
 	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), csaKeystore, capRegistry)
 	if err != nil {

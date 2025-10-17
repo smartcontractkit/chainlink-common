@@ -25,6 +25,12 @@ func TestOCR3Store(t *testing.T) {
 		ExpiresAt:           n.Add(10 * time.Second),
 	}
 
+	t.Run("all with 0 requests", func(t *testing.T) {
+		items, err := s.All()
+		require.NoError(t, err)
+		assert.Len(t, items, 0)
+	})
+
 	t.Run("Add", func(t *testing.T) {
 		err := s.Add(req)
 		require.NoError(t, err)
@@ -60,6 +66,12 @@ func TestOCR3Store(t *testing.T) {
 			require.NoError(t, err)
 		}
 		items, err := s.FirstN(100)
+		require.NoError(t, err)
+		assert.Len(t, items, 10)
+	})
+
+	t.Run("all with 10 requests", func(t *testing.T) {
+		items, err := s.All()
 		require.NoError(t, err)
 		assert.Len(t, items, 10)
 	})

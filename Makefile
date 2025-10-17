@@ -8,9 +8,7 @@ gomodtidy: gomods
 
 .PHONY: docs
 docs:
-	go install golang.org/x/pkgsite/cmd/pkgsite@latest
-	# http://localhost:8080/pkg/github.com/smartcontractkit/chainlink-common/pkg/
-	pkgsite
+	go doc -http
 
 .PHONY: install-protoc
 install-protoc:

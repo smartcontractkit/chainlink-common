@@ -18,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
@@ -223,6 +224,7 @@ func (s *Server) start() error {
 	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
 	if bc := beholder.GetClient(); bc != nil {
 		s.LimitsFactory.Meter = bc.Meter
+		s.LimitsFactory.Settings = cresettings.DefaultGetter
 	}
 
 	return nil

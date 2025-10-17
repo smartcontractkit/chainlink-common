@@ -134,8 +134,6 @@ func (s *Server) start() error {
 			OtelExporterGRPCEndpoint:       s.EnvConfig.TelemetryEndpoint,
 			ResourceAttributes:             append(attributes, s.EnvConfig.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:               s.EnvConfig.TelemetryTraceSampleRatio,
-			AuthHeaders:                    s.EnvConfig.TelemetryAuthHeaders,
-			AuthPublicKeyHex:               s.EnvConfig.TelemetryAuthPubKeyHex,
 			EmitterBatchProcessor:          s.EnvConfig.TelemetryEmitterBatchProcessor,
 			EmitterExportTimeout:           s.EnvConfig.TelemetryEmitterExportTimeout,
 			EmitterExportInterval:          s.EnvConfig.TelemetryEmitterExportInterval,
@@ -146,6 +144,20 @@ func (s *Server) start() error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+		}
+
+		// Configure beholder auth - the client will determine rotating vs static mode
+		// Rotating mode: when AuthHeadersTTL is set, client creates internal lazySigner
+		// Static mode: no TTL is provided it is assumed that the headers are static
+		if s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
+			// Rotating auth mode: client will create lazySigner internally and allow keystore injection after startup
+			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
+			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
+			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders // initial headers
+		} else {
+			// Static auth mode: headers and/or public key without rotation
+			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
+			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
 		}
 
 		// note: due to the OTEL specification, all histogram buckets

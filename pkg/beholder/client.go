@@ -132,28 +132,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		auth = NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
-	// Log exporter auth
-	switch {
-	// Rotating auth mode
-	case auth != nil:
-		opts = append(opts, otlploggrpc.WithDialOption(authDialOpt(auth)))
-	// Static auth mode
-	case len(cfg.AuthHeaders) > 0:
-		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
-	// No auth
-	default:
-	}
 
-	if cfg.LogRetryConfig != nil {
-		// NOTE: By default, the retry is enabled in the OTel SDK
-		opts = append(opts, otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
-			Enabled:         cfg.LogRetryConfig.Enabled(),
-			InitialInterval: cfg.LogRetryConfig.GetInitialInterval(),
-			MaxInterval:     cfg.LogRetryConfig.GetMaxInterval(),
-			MaxElapsedTime:  cfg.LogRetryConfig.GetMaxElapsedTime(),
-		}))
-	}
-	sharedLogExporter, err := otlploggrpcNew(opts...)
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, auth, creds)
 	if err != nil {

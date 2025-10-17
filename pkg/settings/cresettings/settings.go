@@ -1,4 +1,7 @@
 // Package cresettings contains configurable settings definitions for nodes in the CRE.
+// Environment Variables:
+//  - CL_CRE_SETTINGS_DEFAULT: defaults like in ./defaults.json - initializes Default
+// 	- CL_CRE_SETTINGS: scoped settings like in ../settings/testdata/config.json - initializes DefaultGetter
 package cresettings
 
 import (
@@ -14,7 +17,7 @@ import (
 )
 
 func init() {
-	if v, ok := os.LookupEnv("CL_CRE_SETTINGS"); ok {
+	if v, ok := os.LookupEnv("CL_CRE_SETTINGS_DEFAULT"); ok {
 		err := json.Unmarshal([]byte(v), &Default)
 		if err != nil {
 			log.Fatalf("failed to initialize defaults: %v", err)
@@ -25,7 +28,17 @@ func init() {
 		log.Fatalf("failed to initialize keys: %v", err)
 	}
 	Config = Default
+
+	if v, ok := os.LookupEnv("CL_CRE_SETTINGS"); ok {
+		DefaultGetter, err = NewJSONGetter([]byte(v))
+		if err != nil {
+			log.Fatalf("failed to initialize settings: %v", err)
+		}
+	}
 }
+
+// DefaultGetter is a default settings getter populated from the env var CL_CRE_SETTINGS if set, otherwise it is nil.
+var DefaultGetter Getter
 
 // Deprecated: use Default
 var Config Schema

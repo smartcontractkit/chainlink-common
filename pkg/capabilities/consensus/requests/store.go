@@ -68,25 +68,6 @@ func (s *Store[T]) GetByIDs(requestIDs []string) []T {
 func (s *Store[T]) FirstN(batchSize int) ([]T, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if batchSize == 0 {
-		return nil, errors.New("batchsize cannot be 0")
-	}
-	got := []T{}
-	if len(s.requestIDs) == 0 {
-		return got, nil
-	}
-
-	for _, r := range s.requestIDs {
-		gr, ok := s.requests[r]
-		if !ok {
-			continue
-		}
-
-		got = append(got, gr.Copy())
-		if len(got) == batchSize {
-			break
-		}
-	}
 
 	return s.firstN(batchSize)
 }

@@ -239,8 +239,9 @@ func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	newCtx, err := wc.addJWTAuth(ctx, req)
+	newCtx, jwtToken, err := wc.addJWTAuth(ctx, req)
 	require.NoError(t, err)
+	require.Equal(t, expectedToken, jwtToken, "Expected JWT token to be returned")
 
 	// Verify JWT is added to metadata
 	md, ok := metadata.FromOutgoingContext(newCtx)
@@ -260,8 +261,9 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 		logger:       logger.Test(t),
 		jwtGenerator: nil,
 	}
-	newCtx, err := wc.addJWTAuth(ctx, req)
+	newCtx, jwtToken, err := wc.addJWTAuth(ctx, req)
 	require.NoError(t, err)
+	require.Empty(t, jwtToken, "Expected empty JWT token when no JWT generator is provided")
 
 	// Should return the same context
 	assert.Equal(t, ctx, newCtx)
@@ -280,8 +282,9 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	_, err := wc.addJWTAuth(ctx, req)
+	_, jwtToken, err := wc.addJWTAuth(ctx, req)
 	require.Error(t, err)
+	require.Empty(t, jwtToken, "Expected empty JWT token on error")
 	assert.Contains(t, err.Error(), "failed to create JWT")
 }
 
@@ -299,12 +302,14 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 	}
 
 	ctx1 := context.Background()
-	newCtx1, err := wc.addJWTAuth(ctx1, req)
+	newCtx1, jwtToken1, err := wc.addJWTAuth(ctx1, req)
 	require.NoError(t, err)
+	require.Equal(t, expectedToken, jwtToken1, "Expected JWT token to match")
 
 	ctx2 := context.Background()
-	newCtx2, err := wc.addJWTAuth(ctx2, req)
+	newCtx2, jwtToken2, err := wc.addJWTAuth(ctx2, req)
 	require.NoError(t, err)
+	require.Equal(t, expectedToken, jwtToken2, "Expected JWT token to match")
 
 	// Both should have the same token since we're mocking the same response
 	md1, ok := metadata.FromOutgoingContext(newCtx1)
@@ -313,4 +318,58 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, md1["authorization"], md2["authorization"], "Expected same authorization header for same request")
+}
+
+func TestWorkflowClient_SubmitWorkflowReceipt_WithLogging(t *testing.T) {
+	// Start a test gRPC server
+	lis, err := net.Listen("tcp", "localhost:0")
+	require.NoError(t, err)
+	grpcServer := grpc.NewServer()
+	testSrv := &testWorkflowServer{}
+	pb.RegisterCreditReservationServiceServer(grpcServer, testSrv)
+	go func() {
+		_ = grpcServer.Serve(lis)
+	}()
+	defer grpcServer.Stop()
+
+	addr := lis.Addr().String()
+
+	// Create mock JWT manager for testing
+	mockJWT := mocks.NewJWTGenerator(t)
+	expectedToken := "test.jwt.token.for.logging"
+
+	// Create a test request
+	req := &pb.SubmitWorkflowReceiptRequest{
+		WorkflowOwner:                 "test-owner",
+		WorkflowId:                    "test-workflow-id",
+		WorkflowExecutionId:           "test-execution-id",
+		WorkflowRegistryAddress:       "0x123",
+		WorkflowRegistryChainSelector: 1,
+		CreditsConsumed:               "100",
+	}
+
+	// Expect JWT creation
+	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Once()
+
+	lggr := logger.Test(t)
+	wc, err := NewWorkflowClient(lggr, addr,
+		WithWorkflowTransportCredentials(insecure.NewCredentials()),
+		WithJWTGenerator(mockJWT),
+		WithServerName("localhost"),
+	)
+	require.NoError(t, err)
+	defer func(wc WorkflowClient) {
+		_ = wc.Close()
+	}(wc)
+
+	// Call SubmitWorkflowReceipt
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	resp, err := wc.SubmitWorkflowReceipt(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	// Note: In a real test, we would inspect the logs to verify the detailed
+	// logging is happening. For now, we're just ensuring the method works
+	// with the new logging code.
 }

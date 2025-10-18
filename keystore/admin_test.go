@@ -1,7 +1,6 @@
 package keystore_test
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"sync"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	type key struct {
 		name     string
 		metadata []byte
@@ -161,7 +160,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	st := storage.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
 		Password:     "test",

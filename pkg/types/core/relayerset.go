@@ -5,6 +5,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 type RelayerSet interface {
@@ -16,8 +17,9 @@ type RelayerSet interface {
 }
 
 type PluginArgs struct {
-	TransmitterID string
-	PluginConfig  []byte
+	TransmitterID       string
+	PluginConfig        []byte
+	CapRegConfigTracker ocrtypes.ContractConfigTracker
 }
 
 type RelayArgs struct {

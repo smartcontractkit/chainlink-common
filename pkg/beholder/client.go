@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -24,6 +23,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type Emitter interface {
@@ -208,6 +209,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		// No auth
 		default:
 		}
+
+		// Set OpenTelemetry providers
+		opts = append(opts, chipingress.WithMeterProvider(meterProvider))
+		opts = append(opts, chipingress.WithTracerProvider(tracerProvider))
 
 		chipIngressClient, err = chipingress.NewClient(cfg.ChipIngressEmitterGRPCEndpoint, opts...)
 		if err != nil {

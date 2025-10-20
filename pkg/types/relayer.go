@@ -49,9 +49,9 @@ func (i *RelayID) UnmarshalString(s string) error {
 // It's possible that the plugin config might actually be different
 // per relay type, so we pass the config directly through.
 type PluginArgs struct {
-	TransmitterID string
-	PluginConfig  []byte
-	ConfigTracker ocrtypes.ContractConfigTracker // Optional Custom tracker
+	TransmitterID       string
+	PluginConfig        []byte
+	CapRegConfigTracker ocrtypes.ContractConfigTracker
 }
 
 // RelayArgs are the args required to create relayer.

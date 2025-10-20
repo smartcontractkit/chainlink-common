@@ -56,6 +56,10 @@ func (s *testWorkflowServer) SubmitWorkflowReceipt(ctx context.Context, req *pb.
 	return &emptypb.Empty{}, nil
 }
 
+func (s *testWorkflowServer) CheckAggregationStatus(ctx context.Context, req *pb.CheckAggregationStatusRequest) (*pb.CheckAggregationStatusResponse, error) {
+	return &pb.CheckAggregationStatusResponse{}, nil
+}
+
 // ---------- Test GRPC Dial with TLS Credentials ----------
 
 func TestIntegration_GRPCWithCerts(t *testing.T) {

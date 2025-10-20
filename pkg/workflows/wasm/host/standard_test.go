@@ -519,7 +519,7 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 	if cfg == nil {
 		cfg = defaultNoDAGModCfg(t)
 	}
-	mod, err := NewModule(cfg, binary)
+	mod, err := NewModule(t.Context(), cfg, binary)
 	require.NoError(t, err)
 	return mod
 }

@@ -77,6 +77,10 @@ var Default = Schema{
 		WASMExecutionTimeout:          Duration(60 * time.Second),
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMBinarySizeLimit:           Size(30 * config.MByte),
+		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
+		WASMConfigSizeLimit:           Size(30 * config.MByte),
+		WASMSecretsSizeLimit:          Size(30 * config.MByte),
+		WASMResponseSizeLimit:         Size(5 * config.MByte),
 		ConsensusObservationSizeLimit: Size(10 * config.KByte),
 		ConsensusCallsLimit:           Int(2),
 		LogLineLimit:                  Size(config.KByte),
@@ -113,7 +117,7 @@ var Default = Schema{
 			CallLimit:            Int(2),
 		},
 		HTTPAction: httpAction{
-			CallLimit:         Int(3),
+			CallLimit:         Int(5),
 			ResponseSizeLimit: Size(10 * config.KByte),
 			ConnectionTimeout: Duration(10 * time.Second),
 			RequestSizeLimit:  Size(100 * config.KByte),
@@ -163,9 +167,13 @@ type Workflows struct {
 	ExecutionTimeout          Setting[time.Duration]
 	ExecutionResponseLimit    Setting[config.Size]
 
-	WASMExecutionTimeout Setting[time.Duration]
-	WASMMemoryLimit      Setting[config.Size]
-	WASMBinarySizeLimit  Setting[config.Size]
+	WASMExecutionTimeout          Setting[time.Duration]
+	WASMMemoryLimit               Setting[config.Size]
+	WASMBinarySizeLimit           Setting[config.Size]
+	WASMCompressedBinarySizeLimit Setting[config.Size]
+	WASMConfigSizeLimit           Setting[config.Size]
+	WASMSecretsSizeLimit          Setting[config.Size]
+	WASMResponseSizeLimit         Setting[config.Size]
 
 	// Deprecated: use Consensus.ObservationSizeLimit
 	ConsensusObservationSizeLimit Setting[config.Size]

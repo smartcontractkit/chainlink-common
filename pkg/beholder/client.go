@@ -50,6 +50,9 @@ type Client struct {
 	MeterProvider         otelmetric.MeterProvider
 	MessageLoggerProvider otellog.LoggerProvider
 
+	// lazySigner allows updating the keystore after client initialization.
+	lazySigner *lazySigner
+
 	// OnClose
 	OnClose func() error
 }
@@ -98,12 +101,18 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 
 	// Initialize auth here for reuse with log, trace, and metric exporters
+	// Two modes are supported:
+	// 1. Static auth: If AuthHeadersTTL == 0, use AuthHeaders as-is and never change
+	// 2. Rotating auth: If AuthHeadersTTL > 0, create lazySigner for deferred keystore injection
+	var signer *lazySigner
 	var auth Auth
-	if cfg.AuthKeySigner != nil {
+
+	if cfg.AuthHeadersTTL > 0 {
 
 		if cfg.AuthPublicKeyHex == "" {
-			return nil, fmt.Errorf("auth: public key hex required when signer is set")
+			return nil, fmt.Errorf("auth: public key hex required for rotating auth (TTL > 0)")
 		}
+
 		// Clamp lowest possible value to 10mins
 		if cfg.AuthHeadersTTL < 10*time.Minute {
 			return nil, fmt.Errorf("auth: headers TTL must be at least 10 minutes")
@@ -114,8 +123,16 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
 		}
 
-		auth = NewRotatingAuth(key, cfg.AuthKeySigner, cfg.AuthHeadersTTL, !cfg.InsecureConnection)
+		// Optionally wrap the signer in a lazySigner if AuthKeySigner was provided
+		// This allows the signer to be set both before and after client initialization
+		signer = &lazySigner{}
+		if cfg.AuthKeySigner != nil {
+			signer.Set(cfg.AuthKeySigner)
+		}
+
+		auth = NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
 	}
+
 	// Tracer
 	tracerProvider, err := newTracerProvider(cfg, baseResource, auth, creds)
 	if err != nil {
@@ -223,7 +240,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes
@@ -260,6 +277,21 @@ func (c Client) ForName(name string) Client {
 	newClient.Meter = meter
 	newClient.Emitter = messageEmitter
 	return newClient
+}
+
+// SetSigner updates the signer in the lazy signer.
+// This method enables setting the signer after the beholder client has been created, which is useful
+// when the signer is not available at client initialization time but the client needs to be configured
+// with rotating auth. The underlying lazy signer is thread-safe.
+func (c *Client) SetSigner(signer Signer) {
+	if c.lazySigner != nil {
+		c.lazySigner.Set(signer)
+	}
+}
+
+// IsSignerSet returns true if a signer has been set in the lazy signer.
+func (c *Client) IsSignerSet() bool {
+	return c.lazySigner != nil && c.lazySigner.IsSet()
 }
 
 func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {

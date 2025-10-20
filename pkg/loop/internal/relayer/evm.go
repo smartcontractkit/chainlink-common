@@ -55,9 +55,14 @@ func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.Su
 		return nil, net.WrapRPCErr(err)
 	}
 
+	h, err := evmpb.ConvertHashFromProto(reply.TxHash)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
 	return &evmtypes.TransactionResult{
 		TxStatus:         evmpb.ConvertTxStatusFromProto(reply.TxStatus),
-		TxHash:           evmtypes.Hash(reply.TxHash),
+		TxHash:           h,
 		TxIdempotencyKey: reply.TxIdempotencyKey,
 	}, nil
 }
@@ -397,8 +402,12 @@ func (e *evmServer) EstimateGas(ctx context.Context, request *evmpb.EstimateGasR
 }
 
 func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
+	h, err := evmpb.ConvertHashFromProto(request.GetHash())
+	if err != nil {
+		return nil, err
+	}
 	tx, err := e.impl.GetTransactionByHash(ctx, evmtypes.GetTransactionByHashRequest{
-		Hash:       evmtypes.Hash(request.GetHash()),
+		Hash:       h,
 		IsExternal: request.IsExternal,
 	})
 	if err != nil {
@@ -414,8 +423,12 @@ func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.Get
 }
 
 func (e *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
+	h, err := evmpb.ConvertHashFromProto(request.GetHash())
+	if err != nil {
+		return nil, err
+	}
 	receipt, err := e.impl.GetTransactionReceipt(ctx, evmtypes.GeTransactionReceiptRequest{
-		Hash:       evmtypes.Hash(request.GetHash()),
+		Hash:       h,
 		IsExternal: request.IsExternal,
 	})
 	if err != nil {
@@ -518,6 +531,23 @@ func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.Submit
 		TxHash:           txResult.TxHash[:],
 		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
 		TxIdempotencyKey: txResult.TxIdempotencyKey,
+	}, nil
+}
+
+func (e *evmServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetLatestLPBlockReply, error) {
+	b, err := e.impl.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetLatestLPBlockReply{
+		LpBlock: &evmpb.LPBlock{
+			Hash:                 b.BlockHash[:],
+			LatestBlockNumber:    b.LatestBlockNumber,
+			FinalizedBlockNumber: b.FinalizedBlockNumber,
+			SafeBlockNumber:      b.SafeBlockNumber,
+			BlockTimestamp:       b.BlockTimestamp,
+		},
 	}, nil
 }
 

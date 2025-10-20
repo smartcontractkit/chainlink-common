@@ -1,0 +1,7 @@
+interfaces:
+  - go_type: github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives.Primitive
+    strategy: oneof
+    proto_container: Primitive
+    cases:
+      - go_type: github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm.Address
+      - go_type: github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm.EventByTopic

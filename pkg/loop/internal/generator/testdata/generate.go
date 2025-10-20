@@ -1,0 +1,3 @@
+//go:generate bash -c "set -euo pipefail; mkdir -p ./gen/pb ./gen/wrap && go run ../../../cmd/genwiring --pkg . --interface TestFace --config config.yaml --service Test --proto-pkg loop.test --proto-go-package github.com/smartcontractkit/chainlink-common/pkg/loop/internal/generator/testdata/gen/pb --proto-out ./gen/pb/service.proto --go-out ./gen/wrap --go-pkg github.com/smartcontractkit/chainlink-common/pkg/loop/internal/generator/testdata/gen/wrap"
+//go:generate bash -c "set -euo pipefail; protoc -I ./gen/pb --go_out=paths=source_relative:./gen/pb --go-grpc_out=paths=source_relative:./gen/pb ./gen/pb/service.proto"
+package testdata

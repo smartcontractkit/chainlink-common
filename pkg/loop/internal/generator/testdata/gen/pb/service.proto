@@ -1,0 +1,86 @@
+syntax = "proto3";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/generator/testdata/gen/pb";
+package loop.test;
+
+
+message Address {
+bytes address = 1;
+}
+message BoolExpression {
+repeated Expression expressions = 1;
+int64 bool_operator = 2;
+}
+message EventByTopic {
+uint64 topic = 1;
+repeated HashedValueComparator hashed_value_comparers = 2;
+}
+message Expression {
+Primitive primitive = 1;
+BoolExpression bool_expression = 2;
+}
+message HashedValueComparator {
+repeated bytes values = 1;
+int64 operator = 2;
+}
+message MyStruct {
+bytes b = 1;
+string prim = 2;
+Expression expr = 3;
+}
+message NestedStruct {
+MyStruct f1 = 1;
+MyStruct f2 = 2;
+}
+
+
+message Primitive {
+  oneof kind {
+    Address address = 1;
+    EventByTopic eventByTopic = 2;
+  }
+}
+
+
+service Test {
+  rpc GetBytes(GetBytesRequest) returns (GetBytesReply);
+  rpc GetInt(GetIntRequest) returns (GetIntReply);
+  rpc GetIntArr(GetIntArrRequest) returns (GetIntArrReply);
+  rpc GetIntSlice(GetIntSliceRequest) returns (GetIntSliceReply);
+  rpc SendNested(SendNestedRequest) returns (SendNestedReply);
+  rpc SendStruct(SendStructRequest) returns (SendStructReply);
+}
+
+
+message GetBytesRequest {
+  bytes b = 1;
+}
+message GetBytesReply {
+  bytes result = 1;
+}
+message GetIntRequest {
+}
+message GetIntReply {
+  uint64 result = 1;
+}
+message GetIntArrRequest {
+}
+message GetIntArrReply {
+  repeated int64 result = 1;
+}
+message GetIntSliceRequest {
+}
+message GetIntSliceReply {
+  repeated int64 result = 1;
+}
+message SendNestedRequest {
+  NestedStruct ns = 1;
+}
+message SendNestedReply {
+  NestedStruct result = 1;
+}
+message SendStructRequest {
+  MyStruct ms = 1;
+}
+message SendStructReply {
+  MyStruct result = 1;
+}

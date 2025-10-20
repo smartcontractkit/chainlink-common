@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760972966618,
+  "lastUpdate": 1760978511832,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -28446,6 +28446,66 @@ window.BENCHMARK_DATA = {
             "value": 142800,
             "unit": "ns/op",
             "extra": "8245 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ab562b473fe2a96593781862ca5deea12733a24d",
+          "message": "INFOPLAT 2963 beholder rotating auth headers loop impl (#1609)\n\n* INFOPLAT-2963 Adds TTL to loop config\n\n* INFOPLAT-2963 Wires up `Keystore` as `Signer` impl for beholder headers\n\n* Deferred signer\n\n* Makes lazy signer an interface\n\n- removes `Keystore` field\n\n* Removes keystore mentions from loop server\n\n* Uses Initial provided headers to the lazy signer\n\n* Makes configuration more clear\n\n* Simplify server beholder auth config\n\n* Adjust `Signer` interface to use `keyID string`\n\nthis conforms ot the `Keystore` interface in `core`\n\n* Example of setting signer\n\n* `fmt`\n\n* Sort `Auth` fields\n\n* Reduces stuttering in interface\n\n* Address comments\n\n* Sets config mechanism dependent on authheadertll\n\n* Wire up beholder client in relayer\n\n* Simply setting signer\n\nGetClient() will never return nil since its always initialized in `from pkg/beholder/global.go` `init`\n\n* Updates `SetSigner` comment\n\nmentions that it is thread-safe\n\n* Removes deferred beholder signer wire up\n\nRemoves wire up\n\nRemoves code refactor\n\n* Fixes merge conflict",
+          "timestamp": "2025-10-20T16:40:35Z",
+          "tree_id": "5c9f8ce628cc27a6e426a9b5efe1077903b813b3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ab562b473fe2a96593781862ca5deea12733a24d"
+        },
+        "date": 1760978510680,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 683.3,
+            "unit": "ns/op",
+            "extra": "1497848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93744,
+            "unit": "ns/op",
+            "extra": "12694 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 430.7,
+            "unit": "ns/op",
+            "extra": "2673462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95194,
+            "unit": "ns/op",
+            "extra": "12574 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26689,
+            "unit": "ns/op",
+            "extra": "45121 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140758,
+            "unit": "ns/op",
+            "extra": "8241 times\n4 procs"
           }
         ]
       }

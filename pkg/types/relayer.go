@@ -14,6 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 type RelayID struct {
@@ -50,6 +51,7 @@ func (i *RelayID) UnmarshalString(s string) error {
 type PluginArgs struct {
 	TransmitterID string
 	PluginConfig  []byte
+	ConfigTracker ocrtypes.ContractConfigTracker // Optional Custom tracker
 }
 
 // RelayArgs are the args required to create relayer.

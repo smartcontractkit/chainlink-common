@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
 func TestNewDualSourceEmitter(t *testing.T) {
@@ -79,6 +80,8 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 type mockEmitter struct {
 	emitFunc func(ctx context.Context, body []byte, attrKVs ...any) error
 }
+
+func (m *mockEmitter) Close() error { return nil }
 
 func (m *mockEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	if m.emitFunc != nil {

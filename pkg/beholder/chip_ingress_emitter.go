@@ -21,6 +21,10 @@ func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 	return &ChipIngressEmitter{client: client}, nil
 }
 
+func (c *ChipIngressEmitter) Close() error {
+	return c.client.Close()
+}
+
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 
 	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)

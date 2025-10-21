@@ -13,10 +13,10 @@ import (
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
-	"github.com/smartcontractkit/chainlink-common/keystore/storage"
-	"google.golang.org/protobuf/proto"
 )
 
 type KeyType string
@@ -162,11 +162,11 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 type keystore struct {
 	mu       sync.RWMutex
 	keystore map[string]key
-	storage  storage.Storage
+	storage  Storage
 	enc      EncryptionParams
 }
 
-func LoadKeystore(ctx context.Context, storage storage.Storage, enc EncryptionParams) (Keystore, error) {
+func LoadKeystore(ctx context.Context, storage Storage, enc EncryptionParams) (Keystore, error) {
 	ks := &keystore{
 		storage: storage,
 		enc:     enc,

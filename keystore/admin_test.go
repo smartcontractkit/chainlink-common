@@ -7,10 +7,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/keystore"
-	"github.com/smartcontractkit/chainlink-common/keystore/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/keystore"
 )
 
 func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
@@ -110,7 +110,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
-			storage := storage.NewMemoryStorage()
+			storage := keystore.NewMemoryStorage()
 			ks, err := keystore.LoadKeystore(ctx, storage, keystore.EncryptionParams{
 				Password:     "test-password",
 				ScryptParams: keystore.FastScryptParams,
@@ -162,7 +162,7 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	st := storage.NewMemoryStorage()
+	st := keystore.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
 		Password:     "test",
 		ScryptParams: keystore.FastScryptParams,

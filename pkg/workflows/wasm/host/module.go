@@ -251,7 +251,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		// this is to prevent decompression bombs
 		if err := modCfg.MaxCompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
 			if errors.Is(err, limits.ErrorBoundLimited[config.Size]{}) {
-				return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes: %w", modCfg.MaxCompressedBinarySize, err)
+				return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size: %w", err)
 			}
 			return nil, fmt.Errorf("failed to check compressed binary size limit: %w", err)
 		}
@@ -273,7 +273,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
 	if err := modCfg.MaxDecompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
 		if errors.Is(err, limits.ErrorBoundLimited[config.Size]{}) {
-			return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes: %w", modCfg.MaxDecompressedBinarySize, err)
+			return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size: %w", err)
 		}
 		return nil, fmt.Errorf("failed to check decompressed binary size limit: %w", err)
 	}

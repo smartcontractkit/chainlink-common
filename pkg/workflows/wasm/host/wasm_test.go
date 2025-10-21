@@ -21,7 +21,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
@@ -943,8 +945,10 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, bwr.Close())
 
 		_, err = NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
-		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", defaultMaxCompressedBinarySize)
-		require.ErrorContains(t, err, default10mbLimit)
+		require.ErrorContains(t, err, "binary size exceeds the maximum allowed size")
+		var limitErr limits.ErrorBoundLimited[config.Size]
+		require.ErrorAs(t, err, &limitErr)
+		assert.Equal(t, defaultMaxCompressedBinarySize, int(limitErr.Limit))
 	})
 
 	t.Run("compressed binary size is bigger than the custom limit", func(t *testing.T) {
@@ -958,8 +962,10 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, bwr.Close())
 
 		_, err = NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, binary)
-		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", customMaxCompressedBinarySize)
-		require.ErrorContains(t, err, default10mbLimit)
+		require.ErrorContains(t, err, "binary size exceeds the maximum allowed size")
+		var limitErr limits.ErrorBoundLimited[config.Size]
+		require.ErrorAs(t, err, &limitErr)
+		assert.Equal(t, customMaxCompressedBinarySize, uint64(limitErr.Limit))
 	})
 }
 
@@ -979,8 +985,10 @@ func TestModule_DecompressedBinarySize(t *testing.T) {
 	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(len(decompedBinary) - 1)
 		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
-		decompressedSizeExceeded := fmt.Sprintf("decompressed binary size reached the maximum allowed size of %d bytes", customDecompressedBinarySize)
-		require.ErrorContains(t, err, decompressedSizeExceeded)
+		require.ErrorContains(t, err, "decompressed binary size reached the maximum allowed size")
+		var limitErr limits.ErrorBoundLimited[config.Size]
+		require.ErrorAs(t, err, &limitErr)
+		assert.Equal(t, customDecompressedBinarySize, uint64(limitErr.Limit))
 	})
 }
 

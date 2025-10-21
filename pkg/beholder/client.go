@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -30,6 +31,7 @@ import (
 type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
+	io.Closer
 }
 
 type Client struct {
@@ -250,8 +252,14 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 // Closes all providers, flushes all data and stops all background processes
 func (c Client) Close() (err error) {
+	if c.Chip != nil {
+		err = errors.Join(err, c.Chip.Close())
+	}
+	if c.Emitter != nil {
+		err = errors.Join(err, c.Emitter.Close())
+	}
 	if c.OnClose != nil {
-		return c.OnClose()
+		err = errors.Join(err, c.OnClose())
 	}
 	return
 }

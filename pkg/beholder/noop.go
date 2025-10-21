@@ -99,6 +99,8 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 
 type noopMessageEmitter struct{}
 
+func (e noopMessageEmitter) Close() error { return nil }
+
 func (noopMessageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return nil
 }

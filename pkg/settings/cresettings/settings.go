@@ -76,7 +76,7 @@ var Default = Schema{
 		ExecutionResponseLimit:        Size(100 * config.KByte),
 		WASMExecutionTimeout:          Duration(60 * time.Second),
 		WASMMemoryLimit:               Size(100 * config.MByte),
-		WASMBinarySizeLimit:           Size(30 * config.MByte),
+		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
 		WASMConfigSizeLimit:           Size(30 * config.MByte),
 		WASMSecretsSizeLimit:          Size(30 * config.MByte),

@@ -87,6 +87,7 @@ type QueryVariableOptions struct {
 	Sort          dashboard.VariableSort
 	Refresh       *dashboard.VariableRefresh
 	IncludeAll    bool
+	AllValue      string
 	QueryWithType map[string]any
 }
 
@@ -112,7 +113,8 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 		Sort(options.Sort).
 		Refresh(*options.Refresh).
 		Multi(options.Multi).
-		IncludeAll(options.IncludeAll)
+		IncludeAll(options.IncludeAll).
+		AllValue(options.AllValue)
 
 	if options.Query != "" {
 		variable.Query(dashboard.StringOrMap{String: cog.ToPtr[string](options.Query)})

@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+var _ Storage = &MemoryStorage{}
+
 // MemoryStorage implements Storage using in-memory storage
 type MemoryStorage struct {
 	mu   sync.RWMutex

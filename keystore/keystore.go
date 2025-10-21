@@ -2,10 +2,12 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -21,6 +23,18 @@ import (
 
 type KeyType string
 
+func (k KeyType) String() string {
+	return string(k)
+}
+
+func (k KeyType) IsEncryptionKeyType() bool {
+	return slices.Contains(AllEncryptionKeyTypes, k)
+}
+
+func (k KeyType) IsDigitalSignatureKeyType() bool {
+	return slices.Contains(AllDigitalSignatureKeyTypes, k)
+}
+
 const (
 	// Hybrid encryption (key exchange + encryption) key types.
 	// Naming schema is generally <key exchange algorithm><encryption algorithm>.
@@ -31,20 +45,25 @@ const (
 	// - X25519 for ECDH key exchange.
 	// - Box for encryption (ChaCha20Poly1305)
 	X25519 KeyType = "X25519"
-	// TODO: EcdhP256:
+	// ECDH_P256:
 	// - ECDH on P-256
-	// - Encryption with AES-GCM.
+	// - Encryption with AES-GCM and HKDF-SHA256
+	ECDH_P256 KeyType = "ecdh-p256"
 
 	// Digital signature key types.
 	// Ed25519:
 	// - Ed25519 for digital signatures.
+	// - Supports arbitrary messages sizes, no hashing required.
 	Ed25519 KeyType = "ed25519"
-	// EcdsaSecp256k1:
+	// ECDSA_S256:
 	// - ECDSA on secp256k1 for digital signatures.
-	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
+	// - Only signs 32 byte digests. Caller must hash the data before signing.
+	ECDSA_S256 KeyType = "ecdsa-secp256k1"
 )
 
-var AllKeyTypes = []KeyType{X25519, Ed25519, EcdsaSecp256k1}
+var AllKeyTypes = []KeyType{X25519, ECDH_P256, Ed25519, ECDSA_S256}
+var AllEncryptionKeyTypes = []KeyType{X25519, ECDH_P256}
+var AllDigitalSignatureKeyTypes = []KeyType{Ed25519, ECDSA_S256}
 
 type ScryptParams struct {
 	N int
@@ -135,8 +154,10 @@ type EncryptionParams struct {
 func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
 	switch keyType {
 	case Ed25519:
-		return ed25519.PublicKey(internal.Bytes(privateKeyBytes)), nil
-	case EcdsaSecp256k1:
+		privateKey := ed25519.PrivateKey(internal.Bytes(privateKeyBytes))
+		publicKey := privateKey.Public().(ed25519.PublicKey)
+		return publicKey, nil
+	case ECDSA_S256:
 		// Here we use SEC1 (uncompressed) format for ECDSA public keys.
 		// Its commonly used and EVM addresses are derived from this format.
 		// We use the geth crypto library for secp256k1 support
@@ -153,6 +174,13 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 			return nil, fmt.Errorf("failed to derive shared secret: %w", err)
 		}
 		return pubKey, nil
+	case ECDH_P256:
+		curve := ecdh.P256()
+		priv, err := curve.NewPrivateKey(internal.Bytes(privateKeyBytes))
+		if err != nil {
+			return nil, fmt.Errorf("invalid P-256 private key: %w", err)
+		}
+		return priv.PublicKey().Bytes(), nil
 	default:
 		// Some types may not have a public key.
 		return []byte{}, nil
@@ -185,7 +213,7 @@ func (k *keystore) load(ctx context.Context) error {
 	}
 
 	// If no data exists, return empty keystore
-	if encryptedKeystore == nil || len(encryptedKeystore) == 0 {
+	if len(encryptedKeystore) == 0 {
 		k.keystore = make(map[string]key)
 		return nil
 	}

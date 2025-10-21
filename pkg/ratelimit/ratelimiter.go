@@ -67,3 +67,16 @@ func (rl *RateLimiter) AllowVerbose(sender string) (senderAllow bool, globalAllo
 
 	return senderLimiter.Allow(), rl.global.Allow()
 }
+
+func (rl *RateLimiter) SetConfig(config RateLimiterConfig) {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	rl.config = config
+	rl.global.SetLimit(rate.Limit(config.GlobalRPS))
+	rl.global.SetBurst(config.GlobalBurst)
+
+	for _, limiter := range rl.perSender {
+		limiter.SetLimit(rate.Limit(config.PerSenderRPS))
+		limiter.SetBurst(config.PerSenderBurst)
+	}
+}

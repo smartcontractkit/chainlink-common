@@ -17,6 +17,8 @@ type testEmitter struct {
 	attrs   []any
 }
 
+func (t *testEmitter) Close() error { return nil }
+
 func (t *testEmitter) Emit(ctx context.Context, payload []byte, attrKVs ...any) error {
 	t.payload = payload
 	t.attrs = attrKVs

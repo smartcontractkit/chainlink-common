@@ -154,6 +154,37 @@ func TestBuilder_AddVars(t *testing.T) {
 		}
 		require.Len(t, o.Dashboard.Templating.List, 1)
 	})
+
+	t.Run("AddVars adds variables with AllValue to the dashboard", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		variable := grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+			VariableOption: &grafana.VariableOption{
+				Name:  "Variable Name",
+				Label: "Variable Label",
+			},
+			Query:      "query",
+			Datasource: grafana.NewDataSource("Prometheus", "").Name,
+			IncludeAll: true,
+			AllValue:   ".*",
+		})
+
+		builder.AddVars(variable)
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error building dashboard: %v", err)
+		}
+		require.Len(t, o.Dashboard.Templating.List, 1)
+
+		// Verify the AllValue is set correctly
+		varModel := o.Dashboard.Templating.List[0]
+		require.NotNil(t, varModel.AllValue)
+		require.Equal(t, ".*", *varModel.AllValue)
+		require.NotNil(t, varModel.IncludeAll)
+		require.True(t, *varModel.IncludeAll)
+	})
 }
 
 func TestBuilder_AddRow(t *testing.T) {

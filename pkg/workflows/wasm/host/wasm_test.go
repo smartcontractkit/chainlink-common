@@ -206,7 +206,7 @@ func Test_Compute_Emit(t *testing.T) {
 		ctx := t.Context()
 		ctxValue := "test-value"
 		ctx = context.WithValue(ctx, ctxKey, ctxValue)
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -236,7 +236,7 @@ func Test_Compute_Emit(t *testing.T) {
 	t.Run("failure on emit writes to error chain and logs", func(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -282,7 +282,7 @@ func Test_Compute_Emit(t *testing.T) {
 	t.Run("failure on emit due to missing workflow identifying metadata", func(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -336,7 +336,7 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 	binary := createTestBinary(computePanicBinaryCmd, computePanicBinaryLocation, true, t)
 
 	ctx := t.Context()
-	m, err := NewModule(&ModuleConfig{
+	m, err := NewModule(t.Context(), &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
 	}, binary)
@@ -377,7 +377,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -429,7 +429,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -481,7 +481,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -530,7 +530,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		ctx := t.Context()
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger,
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -584,7 +584,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -632,7 +632,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK: context cancelation", func(t *testing.T) {
 		t.Parallel()
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -684,7 +684,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -729,7 +729,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -773,7 +773,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -811,7 +811,6 @@ func Test_Compute_Fetch(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := t.Context()
-		t.Context()
 		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -819,7 +818,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
@@ -864,7 +863,7 @@ func TestModule_Errors(t *testing.T) {
 	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	_, err = m.Run(ctx, nil)
@@ -911,7 +910,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	ctx := t.Context()
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -930,7 +929,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 	t.Run("compressed binary size is smaller than the default 10mb limit", func(t *testing.T) {
 		binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
 		require.NoError(t, err)
 	})
 
@@ -943,7 +942,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, bwr.Close())
 
-		_, err = NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		_, err = NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
 		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", defaultMaxCompressedBinarySize)
 		require.ErrorContains(t, err, default10mbLimit)
 	})
@@ -958,7 +957,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, bwr.Close())
 
-		_, err = NewModule(&ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, binary)
+		_, err = NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, binary)
 		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", customMaxCompressedBinarySize)
 		require.ErrorContains(t, err, default10mbLimit)
 	})
@@ -973,13 +972,13 @@ func TestModule_DecompressedBinarySize(t *testing.T) {
 	require.NoError(t, err)
 	t.Run("decompressed binary size is within the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(len(decompedBinary))
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
 		require.NoError(t, err)
 	})
 
 	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(len(decompedBinary) - 1)
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
 		decompressedSizeExceeded := fmt.Sprintf("decompressed binary size reached the maximum allowed size of %d bytes", customDecompressedBinarySize)
 		require.ErrorContains(t, err, decompressedSizeExceeded)
 	})
@@ -991,7 +990,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	d := 1 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1017,7 +1016,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1037,7 +1036,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	ctx := t.Context()
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1065,7 +1064,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	ctx := t.Context()
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1093,7 +1092,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	ctx := t.Context()
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1121,7 +1120,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	ctx := t.Context()
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1168,7 +1167,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		ctx := t.Context()
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Determinism: &DeterminismConfig{
@@ -1187,7 +1186,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		ctx := t.Context()
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		}, binary)
@@ -1215,7 +1214,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		}
 
 		maxResponseSizeBytes := uint64(10 * 1024)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1249,7 +1248,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 
 		// setting a lower limit than the size of the fetch response
 		maxResponseSizeBytes := uint64(1024)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1285,7 +1284,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		// an emitter response with an error "some error" when marshaled is 14 bytes
 		// setting a maxResponseSizeBytes that should handle that payload
 		maxResponseSizeBytes := uint64(14)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1339,7 +1338,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 
 		// setting a lower limit than the size of the emitted message
 		maxResponseSizeBytes := uint64(1)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()

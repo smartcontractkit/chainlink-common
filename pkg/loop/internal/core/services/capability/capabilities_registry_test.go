@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
@@ -27,6 +28,10 @@ var _ capabilities.BaseCapability = (*mockBaseCapability)(nil)
 
 type mockBaseCapability struct {
 	info capabilities.CapabilityInfo
+}
+
+func (f *mockBaseCapability) GetState() connectivity.State {
+	return connectivity.Idle
 }
 
 func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

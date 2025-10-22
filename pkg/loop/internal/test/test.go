@@ -3,6 +3,8 @@ package test
 import (
 	"context"
 
+	"google.golang.org/grpc/connectivity"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 
@@ -31,6 +33,10 @@ var (
 var _ capabilities.BaseCapability = (*baseCapability)(nil)
 
 type baseCapability struct {
+}
+
+func (e baseCapability) GetState() connectivity.State {
+	return connectivity.Idle
 }
 
 func (e baseCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

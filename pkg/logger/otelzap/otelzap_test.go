@@ -106,6 +106,26 @@ func Test_otelAttrEncoder(t *testing.T) {
 			field:    zapcore.Field{Key: "bs", Type: zapcore.ByteStringType, Interface: []byte{0x3, 0x4}},
 			expected: attribute.String("bs", "\x03\x04"),
 		},
+		{
+			name:     "Complex128Type",
+			field:    zapcore.Field{Key: "complex128", Type: zapcore.Complex128Type, Interface: complex(3.14, 2.71)},
+			expected: attribute.String("complex128", "(3.14+2.71i)"),
+		},
+		{
+			name:     "Complex64Type",
+			field:    zapcore.Field{Key: "complex64", Type: zapcore.Complex64Type, Interface: complex64(1.1 + 2.2i)},
+			expected: attribute.String("complex64", "(1.1+2.2i)"),
+		},
+		{
+			name:     "ReflectType with struct",
+			field:    zapcore.Field{Key: "reflect", Type: zapcore.ReflectType, Interface: struct{ Name string }{Name: "test"}},
+			expected: attribute.String("reflect", "{Name:test}"),
+		},
+		{
+			name:     "ReflectType with map",
+			field:    zapcore.Field{Key: "reflect_map", Type: zapcore.ReflectType, Interface: map[string]int{"key": 42}},
+			expected: attribute.String("reflect_map", "map[key:42]"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -278,4 +298,195 @@ func TestOtelZapCore_Write(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_otelAttrEncoder_AddObject(t *testing.T) {
+	tests := []struct {
+		name     string
+		field    zapcore.Field
+		expected []attribute.KeyValue
+	}{
+		{
+			name: "Object with nested fields",
+			field: zapcore.Field{
+				Key:  "user",
+				Type: zapcore.ObjectMarshalerType,
+				Interface: zapcore.ObjectMarshalerFunc(func(enc zapcore.ObjectEncoder) error {
+					enc.AddString("name", "john")
+					enc.AddInt64("age", 30)
+					enc.AddBool("active", true)
+					return nil
+				}),
+			},
+			expected: []attribute.KeyValue{
+				attribute.String("user.name", "john"),
+				attribute.Int64("user.age", 30),
+				attribute.Bool("user.active", true),
+			},
+		},
+		{
+			name: "Empty object",
+			field: zapcore.Field{
+				Key:  "empty",
+				Type: zapcore.ObjectMarshalerType,
+				Interface: zapcore.ObjectMarshalerFunc(func(enc zapcore.ObjectEncoder) error {
+					return nil
+				}),
+			},
+			expected: []attribute.KeyValue{},
+		},
+		{
+			name: "Object with complex fields",
+			field: zapcore.Field{
+				Key:  "config",
+				Type: zapcore.ObjectMarshalerType,
+				Interface: zapcore.ObjectMarshalerFunc(func(enc zapcore.ObjectEncoder) error {
+					enc.AddString("host", "localhost")
+					enc.AddInt("port", 8080)
+					enc.AddDuration("timeout", time.Second*30)
+					enc.AddFloat64("ratio", 0.75)
+					return nil
+				}),
+			},
+			expected: []attribute.KeyValue{
+				attribute.String("config.host", "localhost"),
+				attribute.Int64("config.port", 8080),
+				attribute.Int64("config.timeout", int64(30*time.Second)),
+				attribute.Float64("config.ratio", 0.75),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			encoder := &otelAttrEncoder{}
+			tt.field.AddTo(encoder)
+
+			require.Len(t, encoder.attributes, len(tt.expected), "Expected %d attributes", len(tt.expected))
+
+			for i, expected := range tt.expected {
+				got := encoder.attributes[i]
+				assert.Equal(t, expected.Key, got.Key, "Key mismatch at index %d", i)
+				assert.Equal(t, expected.Value.Type(), got.Value.Type(), "Value type mismatch at index %d", i)
+				assert.Equal(t, expected.Value.AsInterface(), got.Value.AsInterface(), "Value mismatch at index %d", i)
+			}
+		})
+	}
+}
+
+func Test_otelAttrEncoder_AddArray(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		array    zapcore.ArrayMarshaler
+		expected attribute.KeyValue
+	}{
+		{
+			name:     "string array",
+			key:      "strings",
+			array:    &testStringArray{data: []string{"hello", "world"}},
+			expected: attribute.StringSlice("strings", []string{"hello", "world"}),
+		},
+		{
+			name:     "int array",
+			key:      "ints",
+			array:    &testIntArray{data: []int{1, 2, 3}},
+			expected: attribute.StringSlice("ints", []string{"1", "2", "3"}),
+		},
+		{
+			name:     "mixed array",
+			key:      "mixed",
+			array:    &testMixedArray{data: []interface{}{"hello", 42, true}},
+			expected: attribute.StringSlice("mixed", []string{"hello", "42", "true"}),
+		},
+		{
+			name:     "float array",
+			key:      "floats",
+			array:    &testFloatArray{data: []float64{1.5, 2.7, 3.14}},
+			expected: attribute.StringSlice("floats", []string{"1.5", "2.7", "3.14"}),
+		},
+		{
+			name:     "bool array",
+			key:      "bools",
+			array:    &testBoolArray{data: []bool{true, false, true}},
+			expected: attribute.StringSlice("bools", []string{"true", "false", "true"}),
+		},
+		{
+			name:     "empty array",
+			key:      "empty",
+			array:    &testStringArray{data: []string{}},
+			expected: attribute.StringSlice("empty", []string{}),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			encoder := &otelAttrEncoder{}
+			err := encoder.AddArray(tt.key, tt.array)
+
+			assert.NoError(t, err)
+			assert.Len(t, encoder.attributes, 1)
+
+			got := encoder.attributes[0]
+			assert.Equal(t, tt.expected.Key, got.Key)
+			assert.Equal(t, tt.expected.Value.Type(), got.Value.Type())
+			assert.Equal(t, tt.expected.Value.AsInterface(), got.Value.AsInterface())
+		})
+	}
+}
+
+// Test helper types that implement ArrayMarshaler
+type testStringArray struct {
+	data []string
+}
+
+func (t *testStringArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
+	for _, v := range t.data {
+		enc.AppendString(v)
+	}
+	return nil
+}
+
+type testIntArray struct {
+	data []int
+}
+
+func (t *testIntArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
+	for _, v := range t.data {
+		enc.AppendInt(v)
+	}
+	return nil
+}
+
+type testFloatArray struct {
+	data []float64
+}
+
+func (t *testFloatArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
+	for _, v := range t.data {
+		enc.AppendFloat64(v)
+	}
+	return nil
+}
+
+type testBoolArray struct {
+	data []bool
+}
+
+func (t *testBoolArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
+	for _, v := range t.data {
+		enc.AppendBool(v)
+	}
+	return nil
+}
+
+type testMixedArray struct {
+	data []interface{}
+}
+
+func (t *testMixedArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
+	for _, v := range t.data {
+		enc.AppendReflected(v)
+	}
+	return nil
 }

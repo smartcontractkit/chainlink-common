@@ -271,8 +271,11 @@ type ChannelDefinition struct {
 	// Source is the source of the channel definition.
 	// It is set by the LLO channel definitions cache.
 	// The source is the id of the role that added the channel definition (i.e. the channel adder)
-	// 0 is always the ChannelConfigStore owner, greater values are adders.
+	// 1 is always the ChannelConfigStore owner, greater values are adders.
 	Source uint32 `json:"-"`
+	// Tombstone is a boolean flag that indicates if the channel definition is owner a tombstone.
+	// If true, the adder channel definition will be removed.
+	Tombstone bool `json:"tombstone"`
 }
 
 func (a ChannelDefinition) Equals(b ChannelDefinition) bool {

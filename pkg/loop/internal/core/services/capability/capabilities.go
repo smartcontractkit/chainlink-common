@@ -22,7 +22,7 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -39,7 +39,7 @@ type ExecutableCapability interface {
 	capabilities.BaseCapability
 }
 
-func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) ExecutableCapability {
 	return &ExecutableCapabilityClient{
 		executableClient:     newExecutableClient(brokerExt, conn),
 		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
@@ -52,7 +52,7 @@ type CombinedCapabilityClient struct {
 	*triggerExecutableClient
 }
 
-func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) ExecutableCapability {
 	return &CombinedCapabilityClient{
 		executableClient:        newExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -141,7 +141,7 @@ type baseCapabilityClient struct {
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
-func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
+func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *baseCapabilityClient {
 	return &baseCapabilityClient{grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
 }
 
@@ -348,7 +348,7 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 	return nil
 }
 
-func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
+func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *triggerExecutableClient {
 	return &triggerExecutableClient{
 		grpc:        capabilitiespb.NewTriggerExecutableClient(conn),
 		BrokerExt:   brokerExt,
@@ -439,7 +439,7 @@ type executableClient struct {
 	*net.BrokerExt
 }
 
-func newExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *executableClient {
+func newExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *executableClient {
 	return &executableClient{
 		grpc:      capabilitiespb.NewExecutableClient(conn),
 		BrokerExt: brokerExt,

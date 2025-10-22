@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -208,17 +209,18 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 		Id: ID,
 	}
 
-	res, err := cr.grpc.Get(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := cr.Dial(res.CapabilityID)
-	if err != nil {
-		return nil, net.ErrConnDial{Name: "Capability", ID: res.CapabilityID, Err: err}
-	}
+	conn := cr.NewClientConn("Capability", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+		res, err := cr.grpc.Get(ctx, req)
+		if err != nil {
+			return 0, nil, err
+		}
+		return res.CapabilityID, nil, nil
+	})
 	client := newBaseCapabilityClient(cr.BrokerExt, conn)
-	return client, nil
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
+	return client, err
 }
 
 func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error) {
@@ -226,17 +228,18 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 		Id: ID,
 	}
 
-	res, err := cr.grpc.GetTrigger(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := cr.Dial(res.CapabilityID)
-	if err != nil {
-		return nil, net.ErrConnDial{Name: "GetTrigger", ID: res.CapabilityID, Err: err}
-	}
+	conn := cr.NewClientConn("Trigger", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+		res, err := cr.grpc.GetTrigger(ctx, req)
+		if err != nil {
+			return 0, nil, err
+		}
+		return res.CapabilityID, nil, nil
+	})
 	client := NewTriggerCapabilityClient(cr.BrokerExt, conn)
-	return client, nil
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
+	return client, err
 }
 
 func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
@@ -244,16 +247,18 @@ func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID stri
 		Id: ID,
 	}
 
-	res, err := cr.grpc.GetExecutable(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	conn, err := cr.Dial(res.CapabilityID)
-	if err != nil {
-		return nil, net.ErrConnDial{Name: "GetExecutable", ID: res.CapabilityID, Err: err}
-	}
+	conn := cr.NewClientConn("Executable", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+		res, err := cr.grpc.GetExecutable(ctx, req)
+		if err != nil {
+			return 0, nil, err
+		}
+		return res.CapabilityID, nil, nil
+	})
 	client := NewExecutableCapabilityClient(cr.BrokerExt, conn)
-	return client, nil
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
+	return client, err
 }
 
 func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.BaseCapability, error) {

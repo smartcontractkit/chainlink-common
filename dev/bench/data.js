@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761148957049,
+  "lastUpdate": 1761168774188,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -28986,6 +28986,66 @@ window.BENCHMARK_DATA = {
             "value": 138911,
             "unit": "ns/op",
             "extra": "8439 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7ef48634ebfa2c499f49e55450f72d19f334cb01",
+          "message": "INFOPLAT-2875: OtelZap refactor zap->otel conversion (#1637)\n\n* OtelZap fix issue with nil Stringer mapping\n\n* Revert \"OtelZap fix issue with nil Stringer mapping\"\n\nThis reverts commit c886e573b8e6d5eaddd33588297b9e95cee47c18.\n\n* Implement ObjectEncoder and let the fields write themselves\n\n* Add implementation for the rest otelAttrEncoder methods",
+          "timestamp": "2025-10-22T16:31:50-05:00",
+          "tree_id": "d10fdc6ba26a4cb65f11a2ab31413e246953f8e2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7ef48634ebfa2c499f49e55450f72d19f334cb01"
+        },
+        "date": 1761168772956,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 832.5,
+            "unit": "ns/op",
+            "extra": "1402609 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98222,
+            "unit": "ns/op",
+            "extra": "12238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.2,
+            "unit": "ns/op",
+            "extra": "2885107 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98289,
+            "unit": "ns/op",
+            "extra": "12193 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26617,
+            "unit": "ns/op",
+            "extra": "45116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144888,
+            "unit": "ns/op",
+            "extra": "7729 times\n4 procs"
           }
         ]
       }

@@ -45,11 +45,10 @@ var Config Schema
 
 var Default = Schema{
 	WorkflowLimit:                               Int(200),
-	WorkflowRegistrationQueueLimit:              Int(20),
 	WorkflowExecutionConcurrencyLimit:           Int(50),
 	WorkflowTriggerRateLimit:                    Rate(200, 200),
-	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), -1),
-	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), -1),
+	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), 100),
+	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), 1),
 	GatewayIncomingPayloadSizeLimit:             Size(10 * config.KByte),
 
 	PerOrg: Orgs{
@@ -128,7 +127,6 @@ var Default = Schema{
 
 type Schema struct {
 	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
-	WorkflowRegistrationQueueLimit              Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
 	WorkflowTriggerRateLimit                    Setting[config.Rate]
 	GatewayUnauthenticatedRequestRateLimit      Setting[config.Rate]

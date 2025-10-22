@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 
@@ -62,7 +63,7 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, publicKey)
 	if err != nil {
 		v.logger.Error("Node validation failed",
-			"csaPubKey", publicKey,
+			"csaPubKey", hex.EncodeToString(publicKey),
 			"error", err,
 		)
 		return false, claims, fmt.Errorf("node validation failed: %w", err)
@@ -70,13 +71,13 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 
 	if !isValid {
 		v.logger.Warn("Unauthorized node attempted access",
-			"csaPubKey", publicKey,
+			"csaPubKey", hex.EncodeToString(publicKey),
 		)
-		return false, claims, fmt.Errorf("unauthorized node: %s", publicKey)
+		return false, claims, fmt.Errorf("unauthorized node: %s", hex.EncodeToString(publicKey))
 	}
 
 	v.logger.Debug("JWT validation successful",
-		"csaPubKey", publicKey,
+		"csaPubKey", hex.EncodeToString(publicKey),
 	)
 
 	return true, claims, nil

@@ -1,10 +1,9 @@
 {
 	"WorkflowLimit": "200",
-	"WorkflowRegistrationQueueLimit": "20",
 	"WorkflowExecutionConcurrencyLimit": "50",
 	"WorkflowTriggerRateLimit": "200rps:200",
-	"GatewayUnauthenticatedRequestRateLimit": "100rps:-1",
-	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:-1",
+	"GatewayUnauthenticatedRequestRateLimit": "100rps:100",
+	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:1",
 	"GatewayIncomingPayloadSizeLimit": "10kb",
 	"PerOrg": {
 		"WorkflowDeploymentRateLimit": "every1m0s:1",

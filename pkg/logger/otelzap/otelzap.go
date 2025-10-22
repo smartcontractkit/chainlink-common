@@ -94,13 +94,13 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 				spanCtx = &ctxValue
 			}
 		} else {
-			attributes = append(attributes, mapZapField(f))
+			attributes = append(attributes, safeMap(f))
 		}
 	}
 
 	// Add fields passed during log call
 	for _, f := range fields {
-		attributes = append(attributes, mapZapField(f))
+		attributes = append(attributes, safeMap(f))
 	}
 
 	// Add exception metadata
@@ -239,4 +239,13 @@ func mapAttrValueToLogAttrValue(v attribute.Value) otellog.Value {
 	default:
 		return otellog.StringValue(fmt.Sprintf("%v", v.AsInterface()))
 	}
+}
+
+func safeMap(f zapcore.Field) (kv attribute.KeyValue) {
+	defer func() {
+		if r := recover(); r != nil {
+			kv = attribute.String(f.Key, fmt.Sprintf("<panic mapping zap field: %v>", r))
+		}
+	}()
+	return mapZapField(f)
 }

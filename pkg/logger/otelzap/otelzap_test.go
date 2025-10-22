@@ -132,6 +132,69 @@ func Test_mapZapField(t *testing.T) {
 	}
 }
 
+func Test_safeMap(t *testing.T) {
+	tests := []struct {
+		name       string
+		field      zapcore.Field
+		expected   attribute.KeyValue
+		checkPanic bool
+	}{
+		{
+			name:       "StringerType with nil value - should panic",
+			field:      zapcore.Field{Key: "nil-stringer", Type: zapcore.StringerType, Interface: (*stringerMock)(nil)},
+			expected:   attribute.String("nil-stringer", ""),
+			checkPanic: true,
+		},
+		{
+			name:     "StringerType with valid value",
+			field:    zapcore.Field{Key: "valid-stringer", Type: zapcore.StringerType, Interface: stringerMock{}},
+			expected: attribute.String("valid-stringer", "stringer-value"),
+		},
+		{
+			name:       "ErrorType with nil panic-causing value",
+			field:      zapcore.Field{Key: "nil-panic-error", Type: zapcore.ErrorType, Interface: (*panicError)(nil)},
+			expected:   attribute.String("nil-panic-error", ""),
+			checkPanic: true,
+		},
+		{
+			name:     "ErrorType with nil non-panic value",
+			field:    zapcore.Field{Key: "nil-safe-error", Type: zapcore.ErrorType, Interface: (*customError)(nil)},
+			expected: attribute.String("nil-safe-error", "custom error"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := safeMap(tt.field)
+			assert.Equal(t, tt.expected.Key, got.Key)
+			assert.Equal(t, tt.expected.Value.Type(), got.Value.Type())
+
+			if tt.checkPanic {
+				// For panic cases, just check that it contains the panic prefix
+				assert.Contains(t, got.Value.AsString(), "<panic mapping zap field:")
+			} else {
+				assert.Equal(t, tt.expected.Value.AsInterface(), got.Value.AsInterface())
+			}
+		})
+	}
+}
+
+type customError struct{}
+
+func (e *customError) Error() string {
+	return "custom error"
+}
+
+// panicError will panic if Error() is called on a nil receiver
+type panicError struct {
+	msg string
+}
+
+func (e *panicError) Error() string {
+	// This will panic if e is nil since we're accessing a field
+	return e.msg
+}
+
 func TestOtelZapCore_Write(t *testing.T) {
 	var buf bytes.Buffer
 

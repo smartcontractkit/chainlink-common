@@ -37,13 +37,13 @@ func (p *StandardCapabilitiesLoop) GRPCServer(broker *plugin.GRPCBroker, server 
 	return standardcapability.RegisterStandardCapabilitiesServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
-func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
+func (p *StandardCapabilitiesLoop) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(p.BrokerConfig)
 	}
 	p.pluginClient.Refresh(broker, conn)
 
-	return StandardCapabilities(p.pluginClient), nil
+	return StandardCapabilities(p.pluginClient), p.pluginClient.Reinitialise(ctx)
 }
 
 func (p *StandardCapabilitiesLoop) ClientConfig() *plugin.ClientConfig {
@@ -73,7 +73,7 @@ func NewStandardCapabilitiesService(lggr logger.Logger, grpcOpts GRPCOpts, cmd f
 		if !ok {
 			return nil, nil, fmt.Errorf("expected StandardCapabilities but got %T", instance)
 		}
-		return scs, scs, scs.Reinitialise(ctx)
+		return scs, scs, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "StandardCapabilities")

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761217209073,
+  "lastUpdate": 1761222563558,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -29166,6 +29166,66 @@ window.BENCHMARK_DATA = {
             "value": 120439,
             "unit": "ns/op",
             "extra": "9928 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "20bf9584c7f1f6c3817c518d673cc29c52c8ddf3",
+          "message": "INFOPLAT-3108: Add caller information to Otel (#1642)\n\n* Add beholder_log_source attribute\n\n* Add caller information to Otel log\n\n* Revert \"Add beholder_log_source attribute\"\n\nThis reverts commit b336d976ab536323dbf49c5153570afbd02d2e38.",
+          "timestamp": "2025-10-23T07:28:16-05:00",
+          "tree_id": "5e1f0d79086f76698efe47c3cb9729ade01b7147",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/20bf9584c7f1f6c3817c518d673cc29c52c8ddf3"
+        },
+        "date": 1761222562035,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 774.8,
+            "unit": "ns/op",
+            "extra": "1395367 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94144,
+            "unit": "ns/op",
+            "extra": "12760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.6,
+            "unit": "ns/op",
+            "extra": "2950737 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93815,
+            "unit": "ns/op",
+            "extra": "12751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27006,
+            "unit": "ns/op",
+            "extra": "45099 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144083,
+            "unit": "ns/op",
+            "extra": "7731 times\n4 procs"
           }
         ]
       }

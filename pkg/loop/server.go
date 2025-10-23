@@ -128,9 +128,6 @@ func (s *Server) start() error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
-		if s.EnvConfig.TelemetryLogStreamingEnabled {
-			attributes = append(attributes, attribute.String(beholder.AttrKeyLogSource, "loop"))
-		}
 		beholderCfg := beholder.Config{
 			InsecureConnection:             s.EnvConfig.TelemetryInsecureConnection,
 			CACertFile:                     s.EnvConfig.TelemetryCACertFile,

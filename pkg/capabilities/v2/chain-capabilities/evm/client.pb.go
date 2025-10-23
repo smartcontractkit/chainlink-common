@@ -1670,7 +1670,7 @@ var File_capabilities_blockchain_evm_v1alpha_client_proto protoreflect.FileDescr
 
 const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"0capabilities/blockchain/evm/v1alpha/client.proto\x12#capabilities.blockchain.evm.v1alpha\x1a\x14sdk/v1beta/sdk.proto\x1a)tools/generator/v1beta/cre_metadata.proto\x1a\x16values/v1/values.proto\"%\n" +
+	"0capabilities/blockchain/evm/v1alpha/client.proto\x12#capabilities.blockchain.evm.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x16values/v1/values.proto\"%\n" +
 	"\vTopicValues\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\fR\x06values\"\xd7\x01\n" +
 	"\x17FilterLogTriggerRequest\x12\x1c\n" +
@@ -1761,10 +1761,10 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12\x12\n" +
 	"\x04hash\x18\x03 \x01(\fR\x04hash\x12\x1f\n" +
 	"\vparent_hash\x18\x04 \x01(\fR\n" +
-	"parentHash\"\xc3\x01\n" +
+	"parentHash\"\xc8\x01\n" +
 	"\x12WriteReportRequest\x12\x1a\n" +
-	"\breceiver\x18\x01 \x01(\fR\breceiver\x12.\n" +
-	"\x06report\x18\x02 \x01(\v2\x16.sdk.v1.ReportResponseR\x06report\x12R\n" +
+	"\breceiver\x18\x01 \x01(\fR\breceiver\x123\n" +
+	"\x06report\x18\x02 \x01(\v2\x1b.sdk.v1alpha.ReportResponseR\x06report\x12R\n" +
 	"\n" +
 	"gas_config\x18\x03 \x01(\v2..capabilities.blockchain.evm.v1alpha.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
 	"\v_gas_config\"(\n" +
@@ -1803,7 +1803,7 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x0eHeaderByNumber\x12:.capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest\x1a8.capabilities.blockchain.evm.v1alpha.HeaderByNumberReply\x12v\n" +
 	"\n" +
 	"LogTrigger\x12<.capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest\x1a(.capabilities.blockchain.evm.v1alpha.Log0\x01\x12}\n" +
-	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xb8\x04\x92\xb5\x18\xb3\x04\b\x01\x12\tevm@1.0.0\x1a\xa3\x04\n" +
+	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xb8\x04\x82\xb5\x18\xb3\x04\b\x01\x12\tevm@1.0.0\x1a\xa3\x04\n" +
 	"\rChainSelector\x12\x91\x04\x12\x8e\x04\n" +
 	"\x1d\n" +
 	"\x11avalanche-mainnet\x10\xd5\xe7\x8a\xc0\xe1\u0558\xa4Y\n" +
@@ -1877,7 +1877,7 @@ var file_capabilities_blockchain_evm_v1alpha_client_proto_goTypes = []any{
 	(*GasConfig)(nil),                    // 27: capabilities.blockchain.evm.v1alpha.GasConfig
 	(*WriteReportReply)(nil),             // 28: capabilities.blockchain.evm.v1alpha.WriteReportReply
 	(*pb.BigInt)(nil),                    // 29: values.v1.BigInt
-	(*sdk.ReportResponse)(nil),           // 30: sdk.v1.ReportResponse
+	(*sdk.ReportResponse)(nil),           // 30: sdk.v1alpha.ReportResponse
 }
 var file_capabilities_blockchain_evm_v1alpha_client_proto_depIdxs = []int32{
 	3,  // 0: capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest.topics:type_name -> capabilities.blockchain.evm.v1alpha.TopicValues
@@ -1903,7 +1903,7 @@ var file_capabilities_blockchain_evm_v1alpha_client_proto_depIdxs = []int32{
 	29, // 20: capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest.block_number:type_name -> values.v1.BigInt
 	25, // 21: capabilities.blockchain.evm.v1alpha.HeaderByNumberReply.header:type_name -> capabilities.blockchain.evm.v1alpha.Header
 	29, // 22: capabilities.blockchain.evm.v1alpha.Header.block_number:type_name -> values.v1.BigInt
-	30, // 23: capabilities.blockchain.evm.v1alpha.WriteReportRequest.report:type_name -> sdk.v1.ReportResponse
+	30, // 23: capabilities.blockchain.evm.v1alpha.WriteReportRequest.report:type_name -> sdk.v1alpha.ReportResponse
 	27, // 24: capabilities.blockchain.evm.v1alpha.WriteReportRequest.gas_config:type_name -> capabilities.blockchain.evm.v1alpha.GasConfig
 	2,  // 25: capabilities.blockchain.evm.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.evm.v1alpha.TxStatus
 	1,  // 26: capabilities.blockchain.evm.v1alpha.WriteReportReply.receiver_contract_execution_status:type_name -> capabilities.blockchain.evm.v1alpha.ReceiverContractExecutionStatus

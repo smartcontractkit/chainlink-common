@@ -2,8 +2,10 @@ package otelzap
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -228,7 +230,7 @@ func TestOtelZapCore_Write(t *testing.T) {
 			wantMessage: "fail",
 			wantAttrs: map[string]string{
 				"err":                  "fail",
-				"exception.type":       "file.go:42",
+				"caller":               "file.go:42",
 				"exception.stacktrace": "stacktrace",
 			},
 		},
@@ -489,4 +491,106 @@ func (t *testMixedArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
 		enc.AppendReflected(v)
 	}
 	return nil
+}
+
+func TestCallerInfo(t *testing.T) {
+	// Setup OTEL exporter
+	var buf bytes.Buffer
+	exporter, err := stdoutlog.New(stdoutlog.WithWriter(&buf))
+	require.NoError(t, err)
+
+	// Setup OTEL provider
+	provider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)))
+
+	// Create otel zap core
+	logger := provider.Logger("test")
+	core := NewCore(logger)
+
+	tests := []struct {
+		name       string
+		level      zapcore.Level
+		caller     zapcore.EntryCaller
+		wantCaller bool
+	}{
+		{
+			name:       "info with caller",
+			level:      zapcore.InfoLevel,
+			caller:     zapcore.EntryCaller{Defined: true, File: "test.go", Line: 123, Function: "TestFunc"},
+			wantCaller: true,
+		},
+		{
+			name:       "error with caller",
+			level:      zapcore.ErrorLevel,
+			caller:     zapcore.EntryCaller{Defined: true, File: "error.go", Line: 456, Function: "ErrorFunc"},
+			wantCaller: true,
+		},
+		{
+			name:       "debug without caller",
+			level:      zapcore.DebugLevel,
+			caller:     zapcore.EntryCaller{Defined: false},
+			wantCaller: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf.Reset()
+
+			entry := zapcore.Entry{
+				Message: "test message",
+				Level:   tt.level,
+				Time:    time.Now(),
+				Caller:  tt.caller,
+			}
+
+			err := core.Write(entry, nil)
+			require.NoError(t, err)
+
+			// Force flush
+			require.NoError(t, provider.ForceFlush(context.Background()))
+
+			if !tt.wantCaller {
+				// If no caller expected, we just check that no caller attributes exist
+				var logEntry struct {
+					Attributes []struct {
+						Key   string `json:"key"`
+						Value struct {
+							Value interface{} `json:"value"`
+						} `json:"value"`
+					} `json:"attributes"`
+				}
+				err = json.Unmarshal(buf.Bytes(), &logEntry)
+				require.NoError(t, err)
+
+				for _, attr := range logEntry.Attributes {
+					assert.NotContains(t, []string{"caller", "source.file", "source.line", "source.function"}, attr.Key)
+				}
+				return
+			}
+
+			// Parse JSON output and check for caller attributes
+			var logEntry struct {
+				Attributes []struct {
+					Key   string `json:"key"`
+					Value struct {
+						Value string `json:"value"`
+					} `json:"value"`
+				} `json:"attributes"`
+			}
+			err = json.Unmarshal(buf.Bytes(), &logEntry)
+			require.NoError(t, err, "failed to parse OTEL JSON log output")
+
+			got := map[string]string{}
+			for _, attr := range logEntry.Attributes {
+				got[attr.Key] = attr.Value.Value
+			}
+
+			// Check required caller attributes
+			assert.Contains(t, got, "caller")
+
+			expectedCaller := fmt.Sprintf("%s:%d", tt.caller.File, tt.caller.Line)
+			assert.Equal(t, expectedCaller, fmt.Sprintf("%v", got["caller"]))
+
+		})
+	}
 }

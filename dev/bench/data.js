@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761209668114,
+  "lastUpdate": 1761217209073,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -29106,6 +29106,66 @@ window.BENCHMARK_DATA = {
             "value": 112790,
             "unit": "ns/op",
             "extra": "9996 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yepishevsanya@gmail.com",
+            "name": "chudilka1",
+            "username": "chudilka1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a058654dffac1613e0393bb11ef90045ffd0cd57",
+          "message": "[CRE-1135] Add reduce options to grafana stats panel",
+          "timestamp": "2025-10-23T11:58:48+01:00",
+          "tree_id": "fa02680cf7b44f7bb130a9872decb96334f1b360",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a058654dffac1613e0393bb11ef90045ffd0cd57"
+        },
+        "date": 1761217202812,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 662,
+            "unit": "ns/op",
+            "extra": "1826695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 74675,
+            "unit": "ns/op",
+            "extra": "15942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.7,
+            "unit": "ns/op",
+            "extra": "2925139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 75466,
+            "unit": "ns/op",
+            "extra": "15654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25221,
+            "unit": "ns/op",
+            "extra": "48582 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 120439,
+            "unit": "ns/op",
+            "extra": "9928 times\n4 procs"
           }
         ]
       }

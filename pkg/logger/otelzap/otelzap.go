@@ -105,11 +105,13 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	// Start with encoder attributes
 	attributes := encoder.attributes
 
-	// Add exception metadata
+	// Add caller information if available
+	if entry.Caller.Defined {
+		attributes = append(attributes, attribute.String("caller", entry.Caller.String()))
+	}
+
+	// Add exception metadata for error levels
 	if entry.Level > zapcore.InfoLevel {
-		if entry.Caller.Defined {
-			attributes = append(attributes, semconv.ExceptionType(entry.Caller.String()))
-		}
 		if entry.Stack != "" {
 			attributes = append(attributes, semconv.ExceptionStacktrace(entry.Stack))
 		}

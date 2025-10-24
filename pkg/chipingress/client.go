@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	ce "github.com/cloudevents/sdk-go/v2"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
@@ -27,6 +28,7 @@ import (
 type Client interface {
 	pb.ChipIngressClient
 	Close() error
+	RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
 }
 
 type client struct {
@@ -126,6 +128,23 @@ func (c *client) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaReques
 
 func (c *client) Close() error {
 	return c.conn.Close()
+}
+
+// RegisterSchemas registers one or more schemas with the Chip Ingress service.
+func (c *client) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+	request := &pb.RegisterSchemaRequest{Schemas: schemas}
+
+	resp, err := c.client.RegisterSchema(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register schema: %w", err)
+	}
+
+	registeredMap := make(map[string]int)
+	for _, schema := range resp.Registered {
+		registeredMap[schema.Subject] = int(schema.Version)
+	}
+
+	return registeredMap, nil
 }
 
 // WithBasicAuth sets the basic-auth credentials for the ChipIngress service.
@@ -280,4 +299,50 @@ func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
 		batch.Events = append(batch.Events, eventPb)
 	}
 	return batch, nil
+}
+
+var _ Client = (*noopChipIngressClient)(nil)
+
+// noopChipIngressClient is a no-op implementation of the ChipIngressClient interface.
+type noopChipIngressClient struct{}
+
+// NewNoopClient creates a new no-op client that implements the Client interface.
+// All methods return success with empty/default responses.
+func NewNoopClient() Client {
+	return &noopChipIngressClient{}
+}
+
+// Close is a no-op
+func (noopChipIngressClient) Close() error {
+	return nil
+}
+
+// Ping is a no-op
+func (noopChipIngressClient) Ping(ctx context.Context, in *pb.EmptyRequest, opts ...grpc.CallOption) (*pb.PingResponse, error) {
+	return &pb.PingResponse{Message: "pong"}, nil
+}
+
+// Publish is a no-op
+func (noopChipIngressClient) Publish(ctx context.Context, in *cepb.CloudEvent, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+	return &pb.PublishResponse{}, nil
+}
+
+// PublishBatch is a no-op
+func (noopChipIngressClient) PublishBatch(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+	return &pb.PublishResponse{}, nil
+}
+
+// StreamEvents is a no-op
+func (noopChipIngressClient) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[pb.StreamEventsRequest, pb.StreamEventsResponse], error) {
+	return nil, nil
+}
+
+// RegisterSchema is a no-op
+func (noopChipIngressClient) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaRequest, opts ...grpc.CallOption) (*pb.RegisterSchemaResponse, error) {
+	return &pb.RegisterSchemaResponse{}, nil
+}
+
+// RegisterSchemas is a no-op
+func (noopChipIngressClient) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+	return make(map[string]int), nil
 }

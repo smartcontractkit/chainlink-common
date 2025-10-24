@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
@@ -54,6 +55,33 @@ func TestClient(t *testing.T) {
 		client, err := NewClient("localhost:8080")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
+	})
+
+	t.Run("NewNoopClient", func(t *testing.T) {
+		client := NewNoopClient()
+		assert.NotNil(t, client)
+
+		// Test that it implements the Client interface
+		var _ Client = client
+
+		// Test Close returns no error
+		err := client.Close()
+		assert.NoError(t, err)
+
+		// Test Ping returns success
+		pingResp, err := client.Ping(context.Background(), &pb.EmptyRequest{})
+		assert.NoError(t, err)
+		assert.NotNil(t, pingResp)
+		assert.Equal(t, "pong", pingResp.Message)
+
+		// Test RegisterSchemas returns empty map
+		schemas := []*pb.Schema{
+			{Subject: "test", Schema: `{"test":"value"}`, Format: 1},
+		}
+		result, err := client.RegisterSchemas(context.Background(), schemas...)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Empty(t, result)
 	})
 
 }
@@ -618,4 +646,63 @@ func TestNewClientWithTLS(t *testing.T) {
 	} else {
 		assert.NotNil(t, client)
 	}
+}
+
+func TestClient_RegisterSchemas(t *testing.T) {
+	t.Run("successfully registers schemas", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().RegisterSchema(
+			context.Background(),
+			&pb.RegisterSchemaRequest{
+				Schemas: []*pb.Schema{
+					{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
+					{Subject: "schema2", Schema: `{"type":"record","name":"Test2","fields":[{"name":"field2"}]}`, Format: 2},
+				},
+			},
+		).Return(&pb.RegisterSchemaResponse{
+			Registered: []*pb.RegisteredSchema{
+				{Subject: "schema1", Version: 1},
+				{Subject: "schema2", Version: 2},
+			},
+		}, nil)
+
+		client := &client{
+			client: mockClient,
+			conn:   nil,
+		}
+
+		schemas := []*pb.Schema{
+			{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
+			{Subject: "schema2", Schema: `{"type":"record","name":"Test2","fields":[{"name":"field2"}]}`, Format: 2},
+		}
+
+		result, err := client.RegisterSchemas(context.Background(), schemas...)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int{"schema1": 1, "schema2": 2}, result)
+	})
+
+	t.Run("returns error when registration fails", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().RegisterSchema(
+			context.Background(),
+			&pb.RegisterSchemaRequest{
+				Schemas: []*pb.Schema{
+					{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
+				},
+			},
+		).Return(nil, fmt.Errorf("registration failed"))
+
+		client := &client{
+			client: mockClient,
+			conn:   nil,
+		}
+
+		schemas := []*pb.Schema{
+			{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
+		}
+
+		result, err := client.RegisterSchemas(context.Background(), schemas...)
+		assert.Nil(t, result)
+		assert.EqualError(t, err, "failed to register schema: registration failed")
+	})
 }

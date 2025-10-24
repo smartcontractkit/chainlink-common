@@ -9,10 +9,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
+type SchemaRegistry interface {
+	RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
+}
+
 type ChipIngressClient interface {
 	io.Closer
 	chipingress.Client
-	RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
+	SchemaRegistry
 }
 
 type chipIngressClient struct {

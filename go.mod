@@ -37,7 +37,7 @@ require (
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/chain-selectors v1.0.67
-	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.9-0.20251020164035-ab562b473fe2
+	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.9-0.20251024150037-6054083afc66
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20251020004840-4638e4262066
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20251021010742-3f8d3dba17d8
 	github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b

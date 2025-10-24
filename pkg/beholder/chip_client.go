@@ -10,12 +10,13 @@ import (
 )
 
 type ChipIngressClient interface {
-	RegisterSchema(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
 	io.Closer
+	chipingress.Client
+	RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
 }
 
 type chipIngressClient struct {
-	client chipingress.Client
+	chipingress.Client
 }
 
 func NewChipIngressClient(client chipingress.Client) (ChipIngressClient, error) {
@@ -24,18 +25,18 @@ func NewChipIngressClient(client chipingress.Client) (ChipIngressClient, error) 
 	}
 
 	return &chipIngressClient{
-		client: client,
+		Client: client,
 	}, nil
 }
 func (sr *chipIngressClient) Close() error { return nil }
 
-// RegisterSchema registers one or more schemas with the Chip Ingress service. Returns a map of subject to version for each registered schema.
-func (sr *chipIngressClient) RegisterSchema(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+// RegisterSchemas registers one or more schemas with the Chip Ingress service. Returns a map of subject to version for each registered schema.
+func (sr *chipIngressClient) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
 	request := &pb.RegisterSchemaRequest{
 		Schemas: schemas,
 	}
 
-	resp, err := sr.client.RegisterSchema(ctx, request)
+	resp, err := sr.Client.RegisterSchema(ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register schema: %w", err)
 	}

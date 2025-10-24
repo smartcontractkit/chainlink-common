@@ -13,6 +13,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
 func TestNoopClient(t *testing.T) {
@@ -50,6 +52,38 @@ func TestNoopClient(t *testing.T) {
 		attribute.String("app_name", "beholderdemo"),
 	))
 	rootSpan.End()
+
+	// Chip - verify noop chip client is initialized and functional
+	assert.NotNil(t, noopClient.Chip)
+	var _ chipingress.Client = noopClient.Chip
+
+	// Test Chip methods return no errors
+	pingResp, err := noopClient.Chip.Ping(t.Context(), &pb.EmptyRequest{})
+	assert.NoError(t, err)
+	assert.NotNil(t, pingResp)
+	assert.Equal(t, "pong", pingResp.Message)
+
+	// Test Publish returns no error
+	event, err := chipingress.NewEvent("test-domain", "test.type", []byte("test"), nil)
+	require.NoError(t, err)
+	eventPb, err := chipingress.EventToProto(event)
+	require.NoError(t, err)
+	publishResp, err := noopClient.Chip.Publish(t.Context(), eventPb)
+	assert.NoError(t, err)
+	assert.NotNil(t, publishResp)
+
+	// Test RegisterSchemas returns empty map
+	schemas := []*pb.Schema{
+		{Subject: "test-subject", Schema: `{"type":"record"}`, Format: 1},
+	}
+	schemaResult, err := noopClient.Chip.RegisterSchemas(t.Context(), schemas...)
+	assert.NoError(t, err)
+	assert.NotNil(t, schemaResult)
+	assert.Empty(t, schemaResult)
+
+	// Test Chip Close returns no error
+	err = noopClient.Chip.Close()
+	assert.NoError(t, err)
 
 	err = noopClient.Close()
 	assert.NoError(t, err)

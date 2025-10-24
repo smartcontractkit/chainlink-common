@@ -283,8 +283,15 @@ func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
 	return batch, nil
 }
 
+var _ Client = (*NoopChipIngressClient)(nil)
+
 // NoopChipIngressClient is a no-op implementation of the ChipIngressClient interface.
 type NoopChipIngressClient struct{}
+
+// Close is a no-op
+func (NoopChipIngressClient) Close() error {
+	return nil
+}
 
 // Ping is a no-op
 func (NoopChipIngressClient) Ping(ctx context.Context, in *pb.EmptyRequest, opts ...grpc.CallOption) (*pb.PingResponse, error) {
@@ -311,7 +318,7 @@ func (NoopChipIngressClient) RegisterSchema(ctx context.Context, in *pb.Register
 	return &pb.RegisterSchemaResponse{}, nil
 }
 
-// Close is a no-op
-func (NoopChipIngressClient) Close() error {
-	return nil
+// Implement SchemaRegistry interface
+func (NoopChipIngressClient) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+	return make(map[string]int), nil
 }

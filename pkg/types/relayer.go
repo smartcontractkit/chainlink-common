@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -222,6 +223,29 @@ type TONService interface {
 	HasFilter(ctx context.Context, name string) bool
 	RegisterFilter(ctx context.Context, filter ton.LPFilterQuery) error
 	UnregisterFilter(ctx context.Context, name string) error
+}
+
+type SolanaService interface {
+	solana.Client
+
+	SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error)
+
+	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
+	// based on the provided filter parameters. Once registered, matching logs will be collected
+	// over time and stored in a cache for future querying.
+	// noop guaranteed when filter.Name exists
+	RegisterLogTracking(ctx context.Context, req solana.LPFilterQuery) error
+
+	// UnregisterLogTracking removes a previously registered log filter by its name.
+	// After removal, logs matching this filter will no longer be collected or cached.
+	// noop guaranteed when filterName doesn't exist
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+
+	// QueryTrackedLogs retrieves logs from the  log storage based on the provided
+	// query expression, sorting, and confidence level. It only returns logs that were
+	// collected through previously registered log filters.
+	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
+		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*solana.Log, error)
 }
 
 // Relayer extends ChainService with providers for each product.

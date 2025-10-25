@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -135,6 +136,7 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 }
 
 type baseCapabilityClient struct {
+	c    *grpc.ClientConn
 	grpc capabilitiespb.BaseCapabilityClient
 	*net.BrokerExt
 }
@@ -142,7 +144,12 @@ type baseCapabilityClient struct {
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
 func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
-	return &baseCapabilityClient{grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+	return &baseCapabilityClient{c: conn, grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+}
+
+//TODO only one?
+func (c *baseCapabilityClient) GetState() connectivity.State {
+	return c.c.GetState()
 }
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

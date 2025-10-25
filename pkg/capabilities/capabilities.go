@@ -9,6 +9,7 @@ import (
 	"time"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -395,6 +396,11 @@ type CapabilityInfo struct {
 	IsLocal        bool
 	// SpendTypes denotes the spend types a capability expects to use during an invocation.
 	SpendTypes []CapabilitySpendType
+}
+
+// GetState is included to implement BaseCapability.
+func (c CapabilityInfo) GetState() connectivity.State {
+	return connectivity.Idle
 }
 
 // Parse out the version from the ID.

@@ -3,8 +3,6 @@ package solana
 import (
 	"context"
 	"math/big"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 const (
@@ -49,6 +47,25 @@ const (
 	EncodingJSON EncodingType = "json" // NOTE: you're probably looking for EncodingJSONParsed
 )
 
+// represents solana-go CommitmentType
+type CommitmentType string
+
+const (
+	// The node will query the most recent block confirmed by supermajority
+	// of the cluster as having reached maximum lockout,
+	// meaning the cluster has recognized this block as finalized.
+	CommitmentFinalized CommitmentType = "finalized"
+
+	// The node will query the most recent block that has been voted on by supermajority of the cluster.
+	// - It incorporates votes from gossip and replay.
+	// - It does not count votes on descendants of a block, only direct votes on that block.
+	// - This confirmation level also upholds "optimistic confirmation" guarantees in release 1.3 and onwards.
+	CommitmentConfirmed CommitmentType = "confirmed"
+
+	// The node will query its most recent block. Note that the block may still be skipped by the cluster.
+	CommitmentProcessed CommitmentType = "processed"
+)
+
 // represents solana-go DataSlice
 type DataSlice struct {
 	Offset *uint64
@@ -73,7 +90,7 @@ type GetAccountInfoOpts struct {
 	// Commitment requirement.
 	//
 	// This parameter is optional. Default value is Finalized
-	ConfidenceLevel primitives.ConfidenceLevel
+	Commitment CommitmentType
 
 	// dataSlice parameters for limiting returned account data:
 	// Limits the returned account data using the provided offset and length fields;
@@ -105,7 +122,7 @@ type Account struct {
 	Owner PublicKey
 
 	// Data associated with the account, either as encoded binary data or JSON format {<program>: <state>}, depending on encoding parameter
-	Data []byte // TODO
+	Data *DataBytesOrJSON
 
 	// Boolean indicating if the account contains a program (and is strictly read-only)
 	Executable bool
@@ -134,6 +151,14 @@ const (
 	legacyVersion                               = `"legacy"`
 )
 
+type ConfirmationStatusType string
+
+const (
+	ConfirmationStatusProcessed ConfirmationStatusType = "processed"
+	ConfirmationStatusConfirmed ConfirmationStatusType = "confirmed"
+	ConfirmationStatusFinalized ConfirmationStatusType = "finalized"
+)
+
 type TransactionWithMeta struct {
 	// The slot this transaction was processed in.
 	Slot uint64
@@ -143,11 +168,12 @@ type TransactionWithMeta struct {
 	// Nil if not available.
 	BlockTime *UnixTimeSeconds
 
-	Transaction *DataBytesOrJSON `json:"transaction"`
+	// Encoded Transaction
+	Transaction *DataBytesOrJSON
+	// JSON encoded solana-go TransactionMeta
+	MetaJSON []byte
 
-	// Transaction status metadata object
-	Meta    *TransactionMeta   `json:"meta,omitempty"`
-	Version TransactionVersion `json:"version"`
+	Version TransactionVersion
 }
 
 // represents solana-go GetBlockOpts
@@ -178,7 +204,7 @@ type GetBlockOpts struct {
 	// If parameter not provided, the default is "finalized".
 	//
 	// This parameter is optional.
-	ConfidenceLevel primitives.ConfidenceLevel
+	Commitment CommitmentType
 
 	// Max transaction version to return in responses.
 	// If the requested block contains a transaction with a higher version, an error will be returned.
@@ -194,6 +220,36 @@ var (
 type UnixTimeSeconds int64
 
 type GetMultipleAccountsOpts GetAccountInfoOpts
+
+type SimulateTransactionAccountsOpts struct {
+	// (optional) Encoding for returned Account data,
+	// either "base64" (default), "base64+zstd" or "jsonParsed".
+	// - "jsonParsed" encoding attempts to use program-specific state parsers
+	//   to return more human-readable and explicit account state data.
+	//   If "jsonParsed" is requested but a parser cannot be found,
+	//   the field falls back to binary encoding, detectable when
+	//   the data field is type <string>.
+	Encoding EncodingType
+
+	// An array of accounts to return.
+	Addresses []PublicKey
+}
+
+type SimulateTXOpts struct {
+	// If true the transaction signatures will be verified
+	// (default: false, conflicts with ReplaceRecentBlockhash)
+	SigVerify bool
+
+	// Commitment level to simulate the transaction at.
+	// (default: "finalized").
+	Commitment CommitmentType
+
+	// If true the transaction recent blockhash will be replaced with the most recent blockhash.
+	// (default: false, conflicts with SigVerify)
+	ReplaceRecentBlockhash bool
+
+	Accounts *SimulateTransactionAccountsOpts
+}
 
 type GetAccountInfoRequest struct {
 	Account PublicKey
@@ -215,17 +271,9 @@ type GetMultipleAccountsReply struct {
 	Value []*Account
 }
 
-type GetBlockTimeRequest struct {
-	//TODO
-}
-
-type GetBlockTimeReply struct {
-	//TODO
-}
-
 type GetBalanceRequest struct {
-	Addr            PublicKey
-	ConfidenceLevel primitives.ConfidenceLevel
+	Addr       PublicKey
+	Commitment CommitmentType
 }
 
 type GetBalanceReply struct {
@@ -236,6 +284,15 @@ type GetBalanceReply struct {
 type GetBlockRequest struct {
 	Slot uint64
 	Opts *GetBlockOpts
+}
+
+// Will contain a AsJSON if the requested encoding is `solana.EncodingJSON`
+// (which is also the default when the encoding is not specified),
+// or a `AsDecodedBinary` in case of EncodingBase58, EncodingBase64.
+type DataBytesOrJSON struct {
+	RawDataEncoding EncodingType
+	AsDecodedBinary []byte
+	AsJSON          []byte
 }
 
 type GetBlockReply struct {
@@ -259,72 +316,107 @@ type GetBlockReply struct {
 
 	// Estimated production time, as Unix timestamp (seconds since the Unix epoch).
 	// Nil if not available.
-	BlockTime *int64
+	BlockTime *UnixTimeSeconds
 
 	// The number of blocks beneath this block.
-	BlockHeight *UnixTimeSeconds
+	BlockHeight *uint64
 }
 
-type GetBlockHeightRequest struct {
-	// TODO
+type GetSlotHeightRequest struct {
+	Commitment CommitmentType
 }
 
-type GetBlockHeightReply struct {
-	// TODO
+type GetSlotHeightReply struct {
+	Height uint64
 }
 
 type GetTransactionRequest struct {
-	// TODO
+	Signature Signature
 }
 
 type GetTransactionReply struct {
-	//TODO
+	// Encoded TransactionResultEnvelope
+	Transaction []byte
+
+	// JSON encoded TransactionMeta
+	Meta []byte
 }
 
 type GetFeeForMessageRequest struct {
-	//TODO
+	// base64 encoded message
+	Message    string
+	Commitment CommitmentType
 }
 
 type GetFeeForMessageReply struct {
-	//TODO
+	// The amount in lamports the network will charge for a particular message
+	Fee uint64
 }
 
 type GetLatestBlockhashRequest struct {
-	// TODO
+	Commitment CommitmentType
 }
 
 type GetLatestBlockhashReply struct {
-	// TODO
+	RPCContext
+	Hash                 Signature
+	LastValidBlockHeight uint64
+}
+
+type SimulateTXRequest struct {
+	Receiver           PublicKey
+	EncodedTransaction string
+	Opts               *SimulateTXOpts
+}
+
+type SimulateTXReply struct {
+	// Error if transaction failed, null if transaction succeeded.
+	Err *string
+
+	// Array of log messages the transaction instructions output during execution,
+	// null if simulation failed before the transaction was able to execute
+	// (for example due to an invalid blockhash or signature verification failure)
+	Logs []string
+
+	// Array of accounts with the same length as the accounts.addresses array in the request.
+	Accounts []*Account
+
+	// The number of compute budget units consumed during the processing of this transaction.
+	UnitsConsumed *uint64
+}
+
+type GetSignatureStatusesRequest struct {
+	Sigs []Signature
+}
+
+type GetSignatureStatusesResult struct {
+	// The slot the transaction was processed.
+	Slot uint64 `json:"slot"`
+
+	// Number of blocks since signature confirmation,
+	// null if rooted or finalized by a supermajority of the cluster.
+	Confirmations *uint64 `json:"confirmations"`
+
+	// Error if transaction failed, null if transaction succeeded.
+	Err *string
+
+	// The transaction's cluster confirmation status; either processed, confirmed, or finalized.
+	ConfirmationStatus ConfirmationStatusType `json:"confirmationStatus"`
+}
+
+type GetSignatureStatusesReply struct {
+	Results []GetSignatureStatusesResult
 }
 
 type Client interface {
+	GetBalance(ctx context.Context, req GetBalanceRequest) (*GetBalanceReply, error)
 	GetAccountInfoWithOpts(ctx context.Context, req GetAccountInfoRequest) (*GetAccountInfoReply, error)
 	GetMultipleAccountsWithOpts(ctx context.Context, req GetMultipleAccountsRequest) (*GetMultipleAccountsReply, error)
-	GetBalance(ctx context.Context, req GetBalanceRequest) (*GetBalanceReply, error)
 	GetBlock(ctx context.Context, req GetBlockRequest) (*GetBlockReply, error)
-	GetBlockHeight(ctx context.Context, req GetBlockRequest) (*GetBlockHeightReply, error)
-	GetBlockTime(ctx context.Context, req GetBlockTimeRequest) (*GetBlockTimeReply, error)
+	GetSlotHeight(ctx context.Context, req GetSlotHeightRequest) (*GetSlotHeightReply, error)
 	GetTransaction(ctx context.Context, req GetTransactionRequest) (*GetTransactionReply, error)
 	GetFeeForMessage(ctx context.Context, req GetFeeForMessageRequest) (*GetFeeForMessageReply, error)
-	GetLatestBlockHash(ctx context.Context, req GetLatestBlockhashRequest) (*GetLatestBlockhashReply, error)
-}
-
-type SubmitTransactionRequest struct {
-	Receiver PublicKey
-
-	// base64 encoded transaction
-	Payload string
-}
-
-// TransactionStatus is the result of the transaction sent to the chain
-type TransactionStatus int
-
-const (
-// TODO define TransactionStatus enum
-)
-
-type SubmitTransactionReply struct {
-	Signature      Signature
-	IdempotencyKey string
-	Status         TransactionStatus
+	GetLatestBlockhash(ctx context.Context, req GetLatestBlockhashRequest) (*GetLatestBlockhashReply, error)
+	GetSignatureStatuses(ctx context.Context, req GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
+	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
 }

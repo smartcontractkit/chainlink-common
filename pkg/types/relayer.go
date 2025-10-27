@@ -228,6 +228,7 @@ type TONService interface {
 type SolanaService interface {
 	solana.Client
 
+	// Submits a transaction to the chain. It will return once the transaction is finalized or an error occurs.
 	SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error)
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
@@ -256,6 +257,9 @@ type Relayer interface {
 	EVM() (EVMService, error)
 	// TON returns TONService that provides access to TON specific functionalities
 	TON() (TONService, error)
+
+	Solana() (SolanaService, error)
+
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
@@ -339,6 +343,10 @@ func (u *UnimplementedRelayer) EVM() (EVMService, error) {
 }
 
 func (u *UnimplementedRelayer) TON() (TONService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
+}
+
+func (u *UnimplementedRelayer) Solana() (SolanaService, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
 }
 

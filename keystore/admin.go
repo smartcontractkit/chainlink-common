@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -128,6 +129,8 @@ func ValidKeyName(name string) error {
 	return nil
 }
 
+// CreateKeys creates multiple keys in a single operation. The response preserves the order of the request.
+// It's atomic - either all keys are created or none are created.
 func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error) {
 	ks.mu.Lock()
 	defer ks.mu.Unlock()
@@ -152,16 +155,19 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey), publicKey, time.Now(), []byte{})
-		case EcdsaSecp256k1:
+		case ECDSA_S256:
 			privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 			if err != nil {
-				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdsaSecp256k1 key: %w", err)
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDSA_S256 key: %w", err)
 			}
-			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.D.Bytes()), keyReq.KeyType)
+			// Must copy the private key into 32 byte slice because leading zeros are stripped.
+			privateKeyBytes := make([]byte, 32)
+			copy(privateKeyBytes, privateKey.D.Bytes())
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKeyBytes), keyReq.KeyType)
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
-			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.D.Bytes()), publicKey, time.Now(), []byte{})
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKeyBytes), publicKey, time.Now(), []byte{})
 		case X25519:
 			privateKey := [curve25519.ScalarSize]byte{}
 			_, err := rand.Read(privateKey[:])
@@ -173,6 +179,16 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey[:]), publicKey, time.Now(), []byte{})
+		case ECDH_P256:
+			privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDH_P256 key: %w", err)
+			}
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.Bytes()), keyReq.KeyType)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
+			}
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.Bytes()), publicKey, time.Now(), []byte{})
 		default:
 			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrUnsupportedKeyType, keyReq.KeyType)
 		}

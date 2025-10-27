@@ -559,15 +559,12 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 		require.NotNil(t, client)
 	})
 
-	t.Run("error when public key hex is empty but signer is set", func(t *testing.T) {
-
-		mockSigner := &MockSigner{}
+	t.Run("error when public key hex is empty but TTL is set", func(t *testing.T) {
 
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
-			AuthPublicKeyHex:         "", // Empty public key hex
-			AuthKeySigner:            mockSigner,
-			AuthHeadersTTL:           10 * time.Minute,
+			AuthPublicKeyHex:         "",               // Empty public key hex
+			AuthHeadersTTL:           10 * time.Minute, // TTL > 0 requires public key
 			InsecureConnection:       true,
 		}
 
@@ -578,7 +575,7 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "auth: public key hex required when signer is set")
+		assert.Contains(t, err.Error(), "auth: public key hex required for rotating auth")
 	})
 
 	t.Run("error when TTL is too short", func(t *testing.T) {

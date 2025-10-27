@@ -1,9 +1,11 @@
-package storage
+package keystore
 
 import (
 	"context"
 	"sync"
 )
+
+var _ Storage = &MemoryStorage{}
 
 // MemoryStorage implements Storage using in-memory storage
 type MemoryStorage struct {

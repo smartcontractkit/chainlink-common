@@ -38,7 +38,7 @@ type Auth interface {
 }
 
 type Signer interface {
-	Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error)
+	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
 }
 
 type staticAuth struct {
@@ -82,7 +82,10 @@ type rotatingAuth struct {
 	mu                       sync.Mutex
 }
 
-func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool) Auth {
+// NewRotatingAuth creates a rotating auth mechanism that automatically refreshes headers.
+// If initialHeaders are provided, they will be used immediately until TTL expires.
+// After TTL expiration, the signer is called to generate new headers.
+func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool, initialHeaders map[string]string) Auth {
 	r := &rotatingAuth{
 		csaPubKey:                csaPubKey,
 		signer:                   signer,
@@ -91,7 +94,18 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 		lastUpdatedNanos:         atomic.Int64{},
 		requireTransportSecurity: requireTransportSecurity,
 	}
-	r.headers.Store(make(map[string]string))
+
+	headers := make(map[string]string)
+	// If initial headers are provided, use them and set timestamp to now
+	// Otherwise, leave timestamp at 0 so headers are generated on first call
+	if len(initialHeaders) > 0 {
+		headers = initialHeaders
+		// We assume the time between the initial headers being generated is very small
+		r.lastUpdatedNanos.Store(time.Now().UnixNano())
+	}
+
+	r.headers.Store(headers)
+
 	return r
 }
 
@@ -115,23 +129,15 @@ func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
 			return returnHeader, nil
 		}
 
-		// Append the bytes of the public key with bytes of the timestamp to create the message to sign
-		ts := time.Now()
-		tsBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))
-		msgBytes := append(r.csaPubKey, tsBytes...)
-
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, r.signerTimeout)
 		defer cancel()
 
-		// Sign(public key bytes + timestamp bytes)
-		signature, err := r.signer.Sign(ctxWithTimeout, r.csaPubKey, msgBytes)
-		if err != nil {
-			return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
-		}
+		ts := time.Now()
 
-		newHeaders := make(map[string]string)
-		newHeaders[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, r.csaPubKey, ts.UnixNano(), signature)
+		newHeaders, err := NewAuthHeaderV2(ctxWithTimeout, r.csaPubKey, r.signer, ts)
+		if err != nil {
+			return nil, fmt.Errorf("beholder: failed to create auth header: %w", err)
+		}
 
 		r.headers.Store(newHeaders)
 		r.lastUpdatedNanos.Store(ts.UnixNano())
@@ -184,6 +190,32 @@ func NewAuthHeaders(ed25519Signer crypto.Signer) (map[string]string, error) {
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 
 	return map[string]string{authHeaderKey: headerValue}, nil
+}
+
+// NewAuthHeadersV2 creates the V2 format of the auth header value to be included on requests.
+// This format includes a timestamp as part of the message to sign.
+// The current format for V2 headers is:
+//
+// <version>:<public_key_hex>:<timestamp_bytes>:<signature_hex>
+//
+// where the byte value of <public_key_hex> + <timestamp_bytes> is what's being signed
+func NewAuthHeaderV2(ctx context.Context, pubKey ed25519.PublicKey, signer Signer, ts time.Time) (map[string]string, error) {
+
+	// Append the bytes of the public key with bytes of the timestamp to create the message to sign
+	tsBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))
+	msgBytes := append(pubKey, tsBytes...)
+
+	// Sign(public key bytes + timestamp bytes)
+	signature, err := signer.Sign(ctx, fmt.Sprintf("%x", pubKey), msgBytes)
+	if err != nil {
+		return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
+	}
+
+	headers := make(map[string]string)
+	headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, pubKey, ts.UnixNano(), signature)
+
+	return headers, nil
 }
 
 func authDialOpt(auth PerRPCCredentialsProvider) grpc.DialOption {

@@ -8,9 +8,7 @@ gomodtidy: gomods
 
 .PHONY: docs
 docs:
-	go install golang.org/x/pkgsite/cmd/pkgsite@latest
-	# http://localhost:8080/pkg/github.com/smartcontractkit/chainlink-common/pkg/
-	pkgsite
+	go doc -http
 
 .PHONY: install-protoc
 install-protoc:
@@ -35,7 +33,7 @@ rm-builders:
 
 .PHONY: generate
 generate: mockery install-protoc gomods cre-protoc modgraph
-	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -s proto_vendor -go generate -x ./...
+	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -s proto_vendor -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
 
 .PHONY: cre-protoc

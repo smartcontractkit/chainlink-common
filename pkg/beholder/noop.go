@@ -35,7 +35,7 @@ func NewNoopClient() *Client {
 	// MessageEmitter
 	messageEmitter := noopMessageEmitter{}
 
-	return &Client{cfg, logger, tracer, meter, messageEmitter, nil, loggerProvider, tracerProvider, meterProvider, loggerProvider, noopOnClose}
+	return &Client{cfg, logger, tracer, meter, messageEmitter, nil, loggerProvider, tracerProvider, meterProvider, loggerProvider, nil, noopOnClose}
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output
@@ -94,10 +94,12 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return
 	}
 
-	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, OnClose: onClose}, nil
+	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, Chip: nil, LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, lazySigner: nil, OnClose: onClose}, nil
 }
 
 type noopMessageEmitter struct{}
+
+func (e noopMessageEmitter) Close() error { return nil }
 
 func (noopMessageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return nil

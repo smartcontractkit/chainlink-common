@@ -44,44 +44,40 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                               Int(200),
-	WorkflowExecutionConcurrencyLimit:           Int(50),
-	WorkflowTriggerRateLimit:                    Rate(200, 200),
-	GatewayUnauthenticatedRequestRateLimit:      Rate(rate.Every(time.Second/100), 100),
-	GatewayUnauthenticatedRequestRateLimitPerIP: Rate(rate.Every(time.Second), 1),
-	GatewayIncomingPayloadSizeLimit:             Size(10 * config.KByte),
+	WorkflowLimit:                     Int(200),
+	WorkflowExecutionConcurrencyLimit: Int(200),
+	WorkflowTriggerRateLimit:          Rate(200, 200),
+	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
 
 	PerOrg: Orgs{
 		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
 		ZeroBalancePruningTimeout:   Duration(24 * time.Hour),
 	},
 	PerOwner: Owners{
-		WorkflowExecutionConcurrencyLimit: Int(50),
-		WorkflowTriggerRateLimit:          Rate(200, 200),
+		WorkflowExecutionConcurrencyLimit: Int(5),
+		WorkflowTriggerRateLimit:          Rate(5, 5),
 	},
 	PerWorkflow: Workflows{
-		TriggerLimit:                  Int(10),
 		TriggerRateLimit:              Rate(rate.Every(30*time.Second), 3),
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
 		TriggerEventQueueLimit:        Int(1_000),
 		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
-		TriggerSubscriptionTimeout:    Duration(5 * time.Second),
+		TriggerSubscriptionTimeout:    Duration(15 * time.Second),
 		TriggerSubscriptionLimit:      Int(10),
 		CapabilityConcurrencyLimit:    Int(3),
-		CapabilityCallTimeout:         Duration(8 * time.Minute),
-		SecretsConcurrencyLimit:       Int(3),
-		ExecutionConcurrencyLimit:     Int(10),
-		ExecutionTimeout:              Duration(10 * time.Minute),
+		CapabilityCallTimeout:         Duration(3 * time.Minute),
+		SecretsConcurrencyLimit:       Int(5),
+		ExecutionConcurrencyLimit:     Int(5),
+		ExecutionTimeout:              Duration(5 * time.Minute),
 		ExecutionResponseLimit:        Size(100 * config.KByte),
-		WASMExecutionTimeout:          Duration(60 * time.Second),
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
-		WASMConfigSizeLimit:           Size(30 * config.MByte),
-		WASMSecretsSizeLimit:          Size(30 * config.MByte),
-		WASMResponseSizeLimit:         Size(5 * config.MByte),
-		ConsensusObservationSizeLimit: Size(10 * config.KByte),
-		ConsensusCallsLimit:           Int(2),
+		WASMConfigSizeLimit:           Size(config.MByte),
+		WASMSecretsSizeLimit:          Size(config.MByte),
+		WASMResponseSizeLimit:         Size(100 * config.KByte),
+		ConsensusObservationSizeLimit: Size(100 * config.KByte),
+		ConsensusCallsLimit:           Int(2000),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
 
@@ -100,20 +96,20 @@ var Default = Schema{
 		},
 
 		ChainWrite: chainWrite{
-			TargetsLimit:    Int(3),
+			TargetsLimit:    Int(10),
 			ReportSizeLimit: Size(config.KByte),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
 			},
 		},
 		ChainRead: chainRead{
-			CallLimit:          Int(3),
+			CallLimit:          Int(10),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
 		},
 		Consensus: consensus{
-			ObservationSizeLimit: Size(10 * config.KByte),
-			CallLimit:            Int(2),
+			ObservationSizeLimit: Size(100 * config.KByte),
+			CallLimit:            Int(2000),
 		},
 		HTTPAction: httpAction{
 			CallLimit:         Int(5),
@@ -126,12 +122,10 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
-	WorkflowTriggerRateLimit                    Setting[config.Rate]
-	GatewayUnauthenticatedRequestRateLimit      Setting[config.Rate]
-	GatewayUnauthenticatedRequestRateLimitPerIP Setting[config.Rate]
-	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	WorkflowTriggerRateLimit          Setting[config.Rate]
+	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
@@ -148,7 +142,6 @@ type Owners struct {
 }
 
 type Workflows struct {
-	TriggerLimit                Setting[int] `unit:"{trigger}"`
 	TriggerRateLimit            Setting[config.Rate]
 	TriggerRegistrationsTimeout Setting[time.Duration]
 	TriggerSubscriptionTimeout  Setting[time.Duration]
@@ -165,13 +158,13 @@ type Workflows struct {
 	ExecutionTimeout          Setting[time.Duration]
 	ExecutionResponseLimit    Setting[config.Size]
 
-	WASMExecutionTimeout          Setting[time.Duration]
 	WASMMemoryLimit               Setting[config.Size]
 	WASMBinarySizeLimit           Setting[config.Size]
 	WASMCompressedBinarySizeLimit Setting[config.Size]
 	WASMConfigSizeLimit           Setting[config.Size]
 	WASMSecretsSizeLimit          Setting[config.Size]
-	WASMResponseSizeLimit         Setting[config.Size]
+	// Deprecated: use ExecutionResponseLimit
+	WASMResponseSizeLimit Setting[config.Size]
 
 	// Deprecated: use Consensus.ObservationSizeLimit
 	ConsensusObservationSizeLimit Setting[config.Size]

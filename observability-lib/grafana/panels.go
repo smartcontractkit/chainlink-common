@@ -202,14 +202,15 @@ func setDefaults(options *PanelOptions) {
 
 type StatPanelOptions struct {
 	*PanelOptions
-	TextSize    float64
-	ValueSize   float64
-	JustifyMode common.BigValueJustifyMode
-	ColorMode   common.BigValueColorMode
-	GraphMode   common.BigValueGraphMode
-	TextMode    common.BigValueTextMode
-	Orientation common.VizOrientation
-	Mappings    []dashboard.ValueMapping
+	TextSize      float64
+	ValueSize     float64
+	JustifyMode   common.BigValueJustifyMode
+	ColorMode     common.BigValueColorMode
+	GraphMode     common.BigValueGraphMode
+	TextMode      common.BigValueTextMode
+	Orientation   common.VizOrientation
+	Mappings      []dashboard.ValueMapping
+	ReduceOptions *common.ReduceDataOptionsBuilder
 }
 
 func NewStatPanel(options *StatPanelOptions) *Panel {
@@ -231,6 +232,10 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		options.Orientation = common.VizOrientationAuto
 	}
 
+	if options.ReduceOptions == nil {
+		options.ReduceOptions = common.NewReduceDataOptionsBuilder().Calcs([]string{"last"})
+	}
+
 	newPanel := stat.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
 		Title(*options.Title).
@@ -247,7 +252,7 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		Orientation(options.Orientation).
 		JustifyMode(options.JustifyMode).
 		Mappings(options.Mappings).
-		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
+		ReduceOptions(options.ReduceOptions)
 
 	if options.Interval != "" {
 		newPanel.Interval(options.Interval)

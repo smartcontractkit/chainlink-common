@@ -14,7 +14,7 @@ import (
 )
 
 func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	type key struct {
 		name     string
 		metadata []byte

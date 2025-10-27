@@ -57,8 +57,8 @@ func TestClient(t *testing.T) {
 		assert.NotNil(t, client)
 	})
 
-	t.Run("NewNoopClient", func(t *testing.T) {
-		client := NewNoopClient()
+	t.Run("NoopClient", func(t *testing.T) {
+		client := &NoopClient{}
 		assert.NotNil(t, client)
 
 		// Test that it implements the Client interface

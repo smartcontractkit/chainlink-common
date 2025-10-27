@@ -301,48 +301,43 @@ func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
 	return batch, nil
 }
 
-var _ Client = (*noopChipIngressClient)(nil)
+var _ Client = (*NoopClient)(nil)
 
-// noopChipIngressClient is a no-op implementation of the ChipIngressClient interface.
-type noopChipIngressClient struct{}
-
-// NewNoopClient creates a new no-op client that implements the Client interface.
-// All methods return success with empty/default responses.
-func NewNoopClient() Client {
-	return &noopChipIngressClient{}
-}
+// NoopClient is a no-op implementation of the Client interface.
+// All methods return successfully without performing any actual operations.
+type NoopClient struct{}
 
 // Close is a no-op
-func (noopChipIngressClient) Close() error {
+func (NoopClient) Close() error {
 	return nil
 }
 
 // Ping is a no-op
-func (noopChipIngressClient) Ping(ctx context.Context, in *pb.EmptyRequest, opts ...grpc.CallOption) (*pb.PingResponse, error) {
+func (NoopClient) Ping(ctx context.Context, in *pb.EmptyRequest, opts ...grpc.CallOption) (*pb.PingResponse, error) {
 	return &pb.PingResponse{Message: "pong"}, nil
 }
 
 // Publish is a no-op
-func (noopChipIngressClient) Publish(ctx context.Context, in *cepb.CloudEvent, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+func (NoopClient) Publish(ctx context.Context, in *cepb.CloudEvent, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
 	return &pb.PublishResponse{}, nil
 }
 
 // PublishBatch is a no-op
-func (noopChipIngressClient) PublishBatch(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+func (NoopClient) PublishBatch(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
 	return &pb.PublishResponse{}, nil
 }
 
 // StreamEvents is a no-op
-func (noopChipIngressClient) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[pb.StreamEventsRequest, pb.StreamEventsResponse], error) {
+func (NoopClient) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[pb.StreamEventsRequest, pb.StreamEventsResponse], error) {
 	return nil, nil
 }
 
 // RegisterSchema is a no-op
-func (noopChipIngressClient) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaRequest, opts ...grpc.CallOption) (*pb.RegisterSchemaResponse, error) {
+func (NoopClient) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaRequest, opts ...grpc.CallOption) (*pb.RegisterSchemaResponse, error) {
 	return &pb.RegisterSchemaResponse{}, nil
 }
 
 // RegisterSchemas is a no-op
-func (noopChipIngressClient) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+func (NoopClient) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
 	return make(map[string]int), nil
 }

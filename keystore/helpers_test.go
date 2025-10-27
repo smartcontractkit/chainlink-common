@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
-	"github.com/smartcontractkit/chainlink-common/keystore/storage"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +23,7 @@ type KeystoreTH struct {
 
 func NewKeystoreTH(t *testing.T) *KeystoreTH {
 	ctx := t.Context()
-	st := storage.NewMemoryStorage()
+	st := keystore.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
 		Password:     "test",
 		ScryptParams: keystore.FastScryptParams,

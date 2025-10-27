@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761358488858,
+  "lastUpdate": 1761572810729,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -29406,6 +29406,66 @@ window.BENCHMARK_DATA = {
             "value": 139913,
             "unit": "ns/op",
             "extra": "8540 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1c82519bec52cfcb24f29f01c7e550e2da69742e",
+          "message": "Implement encryptor in keystore library (#1587)\n\n* Wip encryptor\n\n* Add a test and more documentation for encryption\n\n* Switch to protobuf to trim the ciphertext size\n\n* More test coverage\n\n* add field to capability response metadata to convey the total number … (#1574)\n\n* add field to capability response metadata to convey the total number of don participants\n\n* update property for better clarity and add to helpers\n\n* Comply with go naming conventions\n\n* Improve encrypt test coverage\n\n* Add a test harness, fix a few bugs\n\n* Added a readme warning\n\n* Comments and re-orient API around anonymous encryption\n\n* Rename\n\n* PR comments + port a critical fix\n\n* Fix test\n\n* Use errors.New\n\n---------\n\nCo-authored-by: Awbrey Hughlett <athughlett@gmail.com>",
+          "timestamp": "2025-10-27T08:45:32-05:00",
+          "tree_id": "44567b3611389f6bcace2c5ed19ffa604333b03b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1c82519bec52cfcb24f29f01c7e550e2da69742e"
+        },
+        "date": 1761572808867,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 746.4,
+            "unit": "ns/op",
+            "extra": "1497283 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96813,
+            "unit": "ns/op",
+            "extra": "12430 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.3,
+            "unit": "ns/op",
+            "extra": "2984708 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94114,
+            "unit": "ns/op",
+            "extra": "12574 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26663,
+            "unit": "ns/op",
+            "extra": "45070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142769,
+            "unit": "ns/op",
+            "extra": "8048 times\n4 procs"
           }
         ]
       }

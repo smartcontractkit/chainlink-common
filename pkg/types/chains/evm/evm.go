@@ -70,7 +70,7 @@ type LPFilterQuery struct {
 }
 
 // matches LP Block
-// ths block shows the :atest,Finalized,Safe blocks from LogPoller's perspective
+// ths block shows the Latest,Finalized,Safe blocks from LogPoller's perspective
 type LPBlock struct {
 	BlockHash            Hash
 	LatestBlockNumber    int64

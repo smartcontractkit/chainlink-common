@@ -7,27 +7,27 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 )
 
-var _ keystore.Storage = &PgStorage{}
+var _ keystore.Storage = &Storage{}
 
-// PgStorage implements Storage using a Postgres database
-type PgStorage struct {
+// Storage implements Storage using a Postgres database
+type Storage struct {
 	ds   sqlutil.DataSource
 	name string
 }
 
-func NewPgStorage(ds sqlutil.DataSource, name string) *PgStorage {
-	return &PgStorage{
+func NewStorage(ds sqlutil.DataSource, name string) *Storage {
+	return &Storage{
 		ds:   ds,
 		name: name,
 	}
 }
 
-func (p *PgStorage) GetEncryptedKeystore(ctx context.Context) (res []byte, err error) {
+func (p *Storage) GetEncryptedKeystore(ctx context.Context) (res []byte, err error) {
 	err = p.ds.GetContext(ctx, &res, `SELECT encrypted_data FROM encrypted_keystore WHERE name = $1`, p.name)
 	return
 }
 
-func (p *PgStorage) PutEncryptedKeystore(ctx context.Context, encryptedKeystore []byte) (err error) {
+func (p *Storage) PutEncryptedKeystore(ctx context.Context, encryptedKeystore []byte) (err error) {
 	_, err = p.ds.ExecContext(ctx,
 		`INSERT INTO encrypted_keystore (name, encrypted_data, updated_at) VALUES ($1, $2, NOW())
 				ON CONFLICT(name)

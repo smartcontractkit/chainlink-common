@@ -16,7 +16,7 @@ func TestPgStorage(t *testing.T) {
 	db := sqltest.NewDB(t, sqltest.TestURL(t))
 	t.Cleanup(func() { require.NoError(t, db.Close()) })
 
-	storage := pgstore.NewPgStorage(db, "test")
+	storage := pgstore.NewStorage(db, "test")
 	_, err := storage.GetEncryptedKeystore(t.Context())
 	require.ErrorIs(t, err, sql.ErrNoRows)
 	require.NoError(t, storage.PutEncryptedKeystore(t.Context(), []byte("test")))

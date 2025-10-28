@@ -95,15 +95,18 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 		assert.Equal(t, "PerformAction", request.Method)
 		input := &basicaction.Inputs{}
 		assert.NoError(t, request.Payload.UnmarshalTo(input))
+
+		// Don't return until the second call has been executed
+		// Take the lock before accessing callsSeen to avoid a race
+		if input.InputThing {
+			mt.Lock()
+		}
+
 		assert.False(t, callsSeen[input.InputThing])
 		callsSeen[input.InputThing] = true
 		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("%t", input.InputThing)})
 		require.NoError(t, err)
 
-		// Don't return until the second call has been executed
-		if input.InputThing {
-			mt.Lock()
-		}
 		defer mt.Unlock()
 		return &sdk.CapabilityResponse{
 			Response: &sdk.CapabilityResponse_Payload{Payload: payload},

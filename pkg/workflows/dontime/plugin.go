@@ -108,7 +108,7 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		Requests:  requests,
 	}
 
-	return proto.Marshal(observation)
+	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
 }
 
 func (p *Plugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
@@ -192,7 +192,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	return proto.Marshal(outcome)
+	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {

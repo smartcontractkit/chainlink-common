@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761654865157,
+  "lastUpdate": 1761660477932,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -29586,6 +29586,66 @@ window.BENCHMARK_DATA = {
             "value": 147459,
             "unit": "ns/op",
             "extra": "7995 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ab2f6ce18d4472398035ab91636141fae84a5ff9",
+          "message": "Fix a race condition in the CRE sdk standard test (#1652)\n\n* Fix a race condition in the CRE sdk standard test\n\n* Apply suggestion from @jmank88\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-10-28T15:06:46+01:00",
+          "tree_id": "580a59d5e123e4dc92e69c092c3498dbde2b41b0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ab2f6ce18d4472398035ab91636141fae84a5ff9"
+        },
+        "date": 1761660476419,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 768.6,
+            "unit": "ns/op",
+            "extra": "1335222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 77357,
+            "unit": "ns/op",
+            "extra": "15396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 439.1,
+            "unit": "ns/op",
+            "extra": "2912534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 73597,
+            "unit": "ns/op",
+            "extra": "16106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24821,
+            "unit": "ns/op",
+            "extra": "47948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 120659,
+            "unit": "ns/op",
+            "extra": "9369 times\n4 procs"
           }
         ]
       }

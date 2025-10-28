@@ -1,12 +1,13 @@
-package keystore
+package pgstore
 
 import (
 	"context"
 
+	"github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 )
 
-var _ Storage = &PgStorage{}
+var _ keystore.Storage = &PgStorage{}
 
 // PgStorage implements Storage using a Postgres database
 type PgStorage struct {

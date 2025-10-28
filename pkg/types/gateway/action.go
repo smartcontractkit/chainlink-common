@@ -73,6 +73,7 @@ func (req OutboundHTTPRequest) Hash() string {
 type OutboundHTTPResponse struct {
 	ErrorMessage            string            `json:"errorMessage,omitempty"`            // error message for all errors except HTTP errors returned by external endpoints
 	IsExternalEndpointError bool              `json:"isExternalEndpointError,omitempty"` // indicates whether the error is from a faulty external endpoint (e.g. timeout, response size) vs error introduced internally by gateway execution
+	IsValidationError       bool              `json:"isValidationError,omitempty"`       // indicates whether the error is a validation error (e.g. blocked HTTP header, blocked IP addresses)
 	StatusCode              int               `json:"statusCode,omitempty"`              // HTTP status code
 	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers
 	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body

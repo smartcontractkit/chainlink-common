@@ -69,6 +69,16 @@ type LPFilterQuery struct {
 	LogsPerBlock uint64        // rate limit ( maximum # of logs per block, 0 = unlimited )
 }
 
+// matches LP Block
+// ths block shows the :atest,Finalized,Safe blocks from LogPoller's perspective
+type LPBlock struct {
+	BlockHash            Hash
+	LatestBlockNumber    int64
+	BlockTimestamp       uint64
+	FinalizedBlockNumber int64
+	SafeBlockNumber      int64
+}
+
 // matches simplifie evm-style callMsg for reads/EstimateGas
 type CallMsg struct {
 	To   Address

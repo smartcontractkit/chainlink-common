@@ -279,6 +279,21 @@ func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorI
 	return evmtypes.Address(reply.GetAddr()), nil
 }
 
+func (e *EVMClient) GetLatestLPBlock(ctx context.Context) (*evmtypes.LPBlock, error) {
+	reply, err := e.grpcClient.GetLatestLPBlock(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.LPBlock{
+		BlockTimestamp:       reply.GetLpBlock().GetBlockTimestamp(),
+		LatestBlockNumber:    reply.GetLpBlock().GetLatestBlockNumber(),
+		FinalizedBlockNumber: reply.GetLpBlock().GetFinalizedBlockNumber(),
+		SafeBlockNumber:      reply.GetLpBlock().GetSafeBlockNumber(),
+		BlockHash:            evmtypes.Hash(reply.GetLpBlock().GetHash()),
+	}, nil
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 
@@ -518,6 +533,23 @@ func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.Submit
 		TxHash:           txResult.TxHash[:],
 		TxStatus:         evmpb.ConvertTxStatusToProto(txResult.TxStatus),
 		TxIdempotencyKey: txResult.TxIdempotencyKey,
+	}, nil
+}
+
+func (e *evmServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetLatestLPBlockReply, error) {
+	b, err := e.impl.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetLatestLPBlockReply{
+		LpBlock: &evmpb.LPBlock{
+			Hash:                 b.BlockHash[:],
+			LatestBlockNumber:    b.LatestBlockNumber,
+			FinalizedBlockNumber: b.FinalizedBlockNumber,
+			SafeBlockNumber:      b.SafeBlockNumber,
+			BlockTimestamp:       b.BlockTimestamp,
+		},
 	}, nil
 }
 

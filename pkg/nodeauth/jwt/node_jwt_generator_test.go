@@ -126,7 +126,7 @@ func TestNodeJWTGenerator_ValidateSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	// Parse and validate the JWT token with signature verification
-	token, err := jwt.ParseWithClaims(jwtToken, &types.NodeJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(jwtToken, &types.NodeJWTClaims{}, func(token *jwt.Token) (any, error) {
 		// Ensure the signing method is EdDSA
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 			return nil, assert.AnError

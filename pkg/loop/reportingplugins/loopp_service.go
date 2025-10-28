@@ -95,7 +95,7 @@ func NewLOOPPServiceValidation(
 	return &ps
 }
 
-func (g *LOOPPServiceValidation) ValidateConfig(ctx context.Context, config map[string]interface{}) error {
+func (g *LOOPPServiceValidation) ValidateConfig(ctx context.Context, config map[string]any) error {
 	if err := g.WaitCtx(ctx); err != nil {
 		return err
 	}

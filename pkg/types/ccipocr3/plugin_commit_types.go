@@ -103,7 +103,7 @@ func DecodeCommitReportInfo(data []byte) (CommitReportInfo, error) {
 		err := dec.Decode(&result)
 		return result, err
 	default:
-		return CommitReportInfo{}, fmt.Errorf("unknown execute report info version (%d)", data[0])
+		return CommitReportInfo{}, fmt.Errorf("unknown commit report info version (%d)", data[0])
 	}
 }
 

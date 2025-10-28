@@ -679,6 +679,7 @@ func createTestMessage(id string) ccipocr3.Message {
 				DestTokenAddress:  []byte("dest-token-address"),
 				ExtraData:         []byte("token-extra-data"),
 				Amount:            ccipocr3.NewBigInt(big.NewInt(500)),
+				DestExecData:      []byte("dest-exec-data"),
 			},
 		},
 	}

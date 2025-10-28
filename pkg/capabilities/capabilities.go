@@ -3,6 +3,7 @@ package capabilities
 import (
 	"context"
 	"fmt"
+	"iter"
 	"regexp"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -73,6 +75,7 @@ type CapabilityResponse struct {
 
 type ResponseMetadata struct {
 	Metering []MeteringNodeDetail
+	CapDON_N uint32
 }
 
 type MeteringNodeDetail struct {
@@ -104,8 +107,18 @@ type RequestMetadata struct {
 	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
 	DecodedWorkflowName string
 	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
-	SpendLimits []SpendLimit
-	WorkflowTag string
+	SpendLimits                   []SpendLimit
+	WorkflowTag                   string
+	WorkflowRegistryChainSelector string
+	WorkflowRegistryAddress       string
+	EngineVersion                 string
+}
+
+func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
+	return contexts.WithCRE(ctx, contexts.CRE{
+		Owner:    m.WorkflowOwner,
+		Workflow: m.WorkflowID,
+	})
 }
 
 type RegistrationMetadata struct {
@@ -113,6 +126,13 @@ type RegistrationMetadata struct {
 	WorkflowOwner string
 	// The step reference ID of the workflow
 	ReferenceID string
+}
+
+func (m *RegistrationMetadata) ContextWithCRE(ctx context.Context) context.Context {
+	return contexts.WithCRE(ctx, contexts.CRE{
+		Owner:    m.WorkflowOwner,
+		Workflow: m.WorkflowID,
+	})
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -134,6 +154,30 @@ type CapabilityRequest struct {
 	// The method to call for no DAG workflows
 	Method       string
 	CapabilityId string
+}
+
+// ParseID parses a capability ID in form of: `{name}:{label1_key}_{labe1_value}:{label2_key}_{label2_value}@{version}`
+func ParseID(id string) (name string, labels iter.Seq2[string, string], version string) {
+	if i := strings.LastIndex(id, "@"); i != -1 {
+		version = id[i+1:]
+		id = id[:i]
+	}
+	if parts := strings.Split(id, ":"); len(parts) >= 1 {
+		name = parts[0]
+		labels = func(yield func(string, string) bool) {
+			for _, label := range parts[1:] {
+				kv := strings.SplitN(label, "_", 2)
+				var v string
+				if len(kv) == 2 {
+					v = kv[1]
+				}
+				if !yield(kv[0], v) {
+					return
+				}
+			}
+		}
+	}
+	return
 }
 
 type RegisterToWorkflowRequest struct {
@@ -583,4 +627,6 @@ type CapabilityConfiguration struct {
 
 	// v2 / "NoDAG" capabilities
 	CapabilityMethodConfig map[string]CapabilityMethodConfig
+	// if true, the capability won't be callable via don2don
+	LocalOnly bool
 }

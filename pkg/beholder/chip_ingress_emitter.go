@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
@@ -18,6 +19,10 @@ func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 	}
 
 	return &ChipIngressEmitter{client: client}, nil
+}
+
+func (c *ChipIngressEmitter) Close() error {
+	return c.client.Close()
 }
 
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
@@ -83,9 +88,7 @@ func ExtractAttributes(attrKVs ...any) map[string]any {
 	attributes := newAttributes(attrKVs...)
 
 	attributesMap := make(map[string]any)
-	for key, value := range attributes {
-		attributesMap[key] = value
-	}
+	maps.Copy(attributesMap, attributes)
 
 	return attributesMap
 }

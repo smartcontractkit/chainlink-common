@@ -69,7 +69,7 @@ func (f *fakeTest) Cleanup(fn func()) {
 	f.cleanup = append(f.cleanup, fn)
 }
 
-func (f *fakeTest) Errorf(format string, args ...interface{}) {
+func (f *fakeTest) Errorf(format string, args ...any) {
 	f.errors = append(f.errors, fmt.Sprintf(format, args...))
 	f.failed = true
 }

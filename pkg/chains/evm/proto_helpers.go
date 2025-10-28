@@ -519,12 +519,19 @@ func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives
 	return protoHashedValueComparators
 }
 
-func ConvertHashedValueComparatorsFromProto(protoHashedValueComparators []*HashValueComparator) []evmprimitives.HashedValueComparator {
+func ConvertHashedValueComparatorsFromProto(protoHashedValueComparators []*HashValueComparator) ([]evmprimitives.HashedValueComparator, error) {
 	hashedValueComparators := make([]evmprimitives.HashedValueComparator, 0, len(protoHashedValueComparators))
 	for _, protoHvc := range protoHashedValueComparators {
+		if protoHvc == nil {
+			return nil, errors.New("hashed value comparator can't be nil")
+		}
 		values := make([]evmtypes.Hash, 0, len(protoHvc.GetValues()))
 		for _, value := range protoHvc.GetValues() {
-			values = append(values, evmtypes.Hash(value))
+			hashValue, err := ConvertHashFromProto(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert hash value: %w", err)
+			}
+			values = append(values, hashValue)
 		}
 		hashedValueComparators = append(hashedValueComparators,
 			evmprimitives.HashedValueComparator{
@@ -532,7 +539,7 @@ func ConvertHashedValueComparatorsFromProto(protoHashedValueComparators []*HashV
 				Operator: primitives.ComparisonOperator(protoHvc.GetOperator()),
 			})
 	}
-	return hashedValueComparators
+	return hashedValueComparators, nil
 }
 
 func ConvertExpressionsToProto(expressions []query.Expression) ([]*Expression, error) {
@@ -552,7 +559,7 @@ func ConvertExpressionsFromProto(protoExpressions []*Expression) ([]query.Expres
 	for idx, protoExpression := range protoExpressions {
 		expr, err := convertExpressionFromProto(protoExpression)
 		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %w", idx, err)
+			return nil, status.Errorf(codes.InvalidArgument, "err to convert expr idx %d err: %s", idx, err.Error())
 		}
 
 		expressions = append(expressions, expr)
@@ -626,13 +633,17 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 }
 
 func convertExpressionFromProto(protoExpression *Expression) (query.Expression, error) {
+	if protoExpression == nil {
+		return query.Expression{}, errors.New("expression can not be nil")
+	}
+
 	switch protoEvaluatedExpr := protoExpression.GetEvaluator().(type) {
 	case *Expression_BooleanExpression:
 		var expressions []query.Expression
-		for _, expression := range protoEvaluatedExpr.BooleanExpression.GetExpression() {
+		for idx, expression := range protoEvaluatedExpr.BooleanExpression.GetExpression() {
 			convertedExpression, err := convertExpressionFromProto(expression)
 			if err != nil {
-				return query.Expression{}, err
+				return query.Expression{}, fmt.Errorf("failed to convert sub-expression %d: %w", idx, err)
 			}
 			expressions = append(expressions, convertedExpression)
 		}
@@ -651,25 +662,44 @@ func convertExpressionFromProto(protoExpression *Expression) (query.Expression, 
 			return convertEVMExpressionToProto(protoEvaluatedExpr.Primitive)
 		}
 	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", protoExpression)
+		return query.Expression{}, fmt.Errorf("unknown expression type: %T", protoExpression.GetEvaluator())
 	}
 }
 
 func convertEVMExpressionToProto(protoPrimitive *Primitive) (query.Expression, error) {
 	switch primitive := protoPrimitive.GetPrimitive().(type) {
 	case *Primitive_ContractAddress:
-		address := evmtypes.Address(primitive.ContractAddress)
+		address, err := ConvertAddressFromProto(primitive.ContractAddress)
+		if err != nil {
+			return query.Expression{}, fmt.Errorf("failed to convert contract address: %w", err)
+		}
 		return evmprimitives.NewAddressFilter(address), nil
 	case *Primitive_EventSig:
-		return evmprimitives.NewEventSigFilter(evmtypes.Hash(primitive.EventSig)), nil
+		hash, err := ConvertHashFromProto(primitive.EventSig)
+		if err != nil {
+			return query.Expression{}, fmt.Errorf("failed to convert event sig: %w", err)
+		}
+		return evmprimitives.NewEventSigFilter(hash), nil
 	case *Primitive_EventByTopic:
-		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(),
-			ConvertHashedValueComparatorsFromProto(primitive.EventByTopic.GetHashedValueComparers())), nil
+		if primitive.EventByTopic == nil {
+			return query.Expression{}, errors.New("EventByTopic can not be nil")
+		}
+		valueCmp, err := ConvertHashedValueComparatorsFromProto(primitive.EventByTopic.GetHashedValueComparers())
+		if err != nil {
+			return query.Expression{}, fmt.Errorf("failed to convert EventByTopic hashed value comparators: %w", err)
+		}
+		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(), valueCmp), nil
 	case *Primitive_EventByWord:
-		return evmprimitives.NewEventByWordFilter(int(primitive.EventByWord.GetWordIndex()),
-			ConvertHashedValueComparatorsFromProto(primitive.EventByWord.GetHashedValueComparers())), nil
+		if primitive.EventByWord == nil {
+			return query.Expression{}, errors.New("EventByWord can not be nil")
+		}
+		valueCmp, err := ConvertHashedValueComparatorsFromProto(primitive.EventByWord.GetHashedValueComparers())
+		if err != nil {
+			return query.Expression{}, fmt.Errorf("failed to convert EventByWord hashed value comparators: %w", err)
+		}
+		return evmprimitives.NewEventByWordFilter(int(primitive.EventByWord.GetWordIndex()), valueCmp), nil
 	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+		return query.Expression{}, fmt.Errorf("unknown primitive type: %T", primitive)
 	}
 }
 

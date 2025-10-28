@@ -178,10 +178,10 @@ func (r CheckResult) UniqueID() string {
 	resultBytes = append(resultBytes, r.PipelineExecutionState)
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
-	resultBytes = append(resultBytes, []byte(fmt.Sprintf("%+v", r.Retryable))...)
+	resultBytes = append(resultBytes, fmt.Appendf(nil, "%+v", r.Retryable)...)
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
-	resultBytes = append(resultBytes, []byte(fmt.Sprintf("%+v", r.Eligible))...)
+	resultBytes = append(resultBytes, fmt.Appendf(nil, "%+v", r.Eligible)...)
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
 	resultBytes = append(resultBytes, r.IneligibilityReason)
@@ -200,7 +200,7 @@ func (r CheckResult) UniqueID() string {
 		// Note: We encode the whole trigger extension so the behaiour of
 		// LogTriggerExtentsion.BlockNumber and LogTriggerExtentsion.BlockHash should be
 		// consistent across nodes when sending observations
-		resultBytes = append(resultBytes, []byte(fmt.Sprintf("%+v", r.Trigger.LogTriggerExtension))...)
+		resultBytes = append(resultBytes, fmt.Appendf(nil, "%+v", r.Trigger.LogTriggerExtension)...)
 	}
 	resultBytes = append(resultBytes, checkResultDelimiter)
 

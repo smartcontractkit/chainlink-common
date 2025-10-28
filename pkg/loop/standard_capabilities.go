@@ -37,7 +37,7 @@ func (p *StandardCapabilitiesLoop) GRPCServer(broker *plugin.GRPCBroker, server 
 	return standardcapability.RegisterStandardCapabilitiesServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
-func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
 		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(p.BrokerConfig)
 	}
@@ -59,19 +59,7 @@ func (p *StandardCapabilitiesLoop) ClientConfig() *plugin.ClientConfig {
 
 type StandardCapabilities interface {
 	services.Service
-	Initialise(
-		ctx context.Context,
-		config string,
-		telemetryService core.TelemetryService,
-		store core.KeyValueStore,
-		capabilityRegistry core.CapabilitiesRegistry,
-		errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService,
-		relayerSet core.RelayerSet,
-		oracleFactory core.OracleFactory,
-		gatewayConnector core.GatewayConnector,
-		p2pKeystore core.Keystore,
-	) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 
@@ -81,11 +69,11 @@ type StandardCapabilitiesService struct {
 
 func NewStandardCapabilitiesService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd) *StandardCapabilitiesService {
 	newService := func(ctx context.Context, instance any) (StandardCapabilities, services.HealthReporter, error) {
-		scs, ok := instance.(StandardCapabilities)
+		scs, ok := instance.(*standardcapability.StandardCapabilitiesClient)
 		if !ok {
 			return nil, nil, fmt.Errorf("expected StandardCapabilities but got %T", instance)
 		}
-		return scs, scs, nil
+		return scs, scs, scs.Reinitialise(ctx)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "StandardCapabilities")

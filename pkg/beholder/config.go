@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
@@ -47,11 +48,18 @@ type Config struct {
 	LogBatchProcessor     bool // Enabled by default. Disable only for testing.
 	// Retry config for shared log exporter, used by Emitter and Logger
 	LogRetryConfig      *RetryConfig
-	LogStreamingEnabled bool // Enable logs streaming to the OTel log exporter
+	LogStreamingEnabled bool          // Enable logs streaming to the OTel log exporter
+	LogLevel            zapcore.Level // Log level for telemetry streaming
 
 	// Auth
-	AuthPublicKeyHex string
+	// AuthHeaders serves two purposes:
+	// 1. Static mode: When AuthKeySigner is nil, these headers are used as-is and never change
+	// 2. Rotating mode: When AuthKeySigner is set, these headers are used as initial headers
+	//    until TTL expires, then the lazy signer generates new ones
 	AuthHeaders      map[string]string
+	AuthHeadersTTL   time.Duration
+	AuthKeySigner    Signer
+	AuthPublicKeyHex string
 }
 
 type RetryConfig struct {
@@ -115,6 +123,9 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
+		LogLevel:              zapcore.InfoLevel,
+		// Auth (defaults to static auth mode with TTL=0)
+		AuthHeadersTTL: 0,
 	}
 }
 
@@ -127,6 +138,8 @@ func TestDefaultConfig() Config {
 	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
 	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
 	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	// Auth disabled for testing (TTL=0 means static auth mode)
+	config.AuthHeadersTTL = 0
 	return config
 }
 
@@ -137,6 +150,8 @@ func TestDefaultConfigHTTPClient() Config {
 	config.LogBatchProcessor = false
 	config.OtelExporterGRPCEndpoint = ""
 	config.OtelExporterHTTPEndpoint = "localhost:4318"
+	// Auth disabled for testing (TTL=0 means static auth mode)
+	config.AuthHeadersTTL = 0
 	return config
 }
 

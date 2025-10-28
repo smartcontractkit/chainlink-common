@@ -24,7 +24,7 @@ type ResourceLimiter[N Number] interface {
 	Use(ctx context.Context, amount N) error
 	// Free is the counterpart to Use and releases amount of resources from use.
 	Free(ctx context.Context, amount N) error
-	// Available returns
+	// Available returns the available remaining capacity.
 	Available(ctx context.Context) (N, error)
 }
 
@@ -241,7 +241,7 @@ func (u *resourcePoolUsage[N]) available(ctx context.Context) (N, error) {
 	return limit - u.used, nil
 }
 
-//opt: queue instead of racing for the [sync.Mutex] & [sync.Cond]
+// opt: queue instead of racing for the [sync.Mutex] & [sync.Cond]
 func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) error {
 	limit, err := u.get(ctx)
 	if err != nil {
@@ -468,7 +468,7 @@ func (s *scopedResourcePoolLimiter[N]) Close() (err error) {
 	s.wg.Wait()
 
 	// cleanup
-	s.used.Range(func(tenant, value interface{}) bool {
+	s.used.Range(func(tenant, value any) bool {
 		// opt: parallelize
 		err = errors.Join(err, value.(*resourcePoolUsage[N]).Close())
 		return true

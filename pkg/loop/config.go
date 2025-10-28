@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
@@ -56,12 +57,14 @@ const (
 	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
 	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
 	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryAuthHeadersTTL            = "CL_TELEMETRY_AUTH_HEADERS_TTL"
 	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
 	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
 	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
+	envTelemetryLogLevel                  = "CL_TELEMETRY_LOG_LEVEL"
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -112,12 +115,14 @@ type EnvConfig struct {
 	TelemetryTraceSampleRatio          float64
 	TelemetryAuthHeaders               map[string]string
 	TelemetryAuthPubKeyHex             string
+	TelemetryAuthHeadersTTL            time.Duration
 	TelemetryEmitterBatchProcessor     bool
 	TelemetryEmitterExportTimeout      time.Duration
 	TelemetryEmitterExportInterval     time.Duration
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
 	TelemetryLogStreamingEnabled       bool
+	TelemetryLogLevel                  zapcore.Level
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
@@ -181,12 +186,14 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		add(envTelemetryAuthHeader+k, v)
 	}
 	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
+	add(envTelemetryAuthHeadersTTL, e.TelemetryAuthHeadersTTL.String())
 	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.TelemetryEmitterBatchProcessor))
 	add(envTelemetryEmitterExportTimeout, e.TelemetryEmitterExportTimeout.String())
 	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
 	add(envTelemetryLogStreamingEnabled, strconv.FormatBool(e.TelemetryLogStreamingEnabled))
+	add(envTelemetryLogLevel, e.TelemetryLogLevel.String())
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -327,6 +334,10 @@ func (e *EnvConfig) parse() error {
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
 		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
 		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
+		e.TelemetryAuthHeadersTTL, err = getDuration(envTelemetryAuthHeadersTTL)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryAuthHeadersTTL, err)
+		}
 		e.TelemetryEmitterBatchProcessor, err = getBool(envTelemetryEmitterBatchProcessor)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)
@@ -351,6 +362,15 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogStreamingEnabled, err)
 		}
+		logLevelStr := os.Getenv(envTelemetryLogLevel)
+		if logLevelStr == "" {
+			logLevelStr = "info" // Default log level
+		}
+		var logLevel zapcore.Level
+		if err := logLevel.Set(logLevelStr); err != nil {
+			logLevel = zapcore.InfoLevel // Fallback to info level on invalid input
+		}
+		e.TelemetryLogLevel = logLevel
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)

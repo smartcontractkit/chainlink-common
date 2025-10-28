@@ -2,10 +2,13 @@ package beholder_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,7 +16,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
-	"go.opentelemetry.io/otel/log"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
@@ -341,7 +343,7 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
 			}
 		}()
-		client.Logger.Emit(t.Context(), log.Record{})
+		client.Logger.Emit(t.Context(), otellog.Record{})
 	})
 
 	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
@@ -451,7 +453,6 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 
 		assert.NotNil(t, client.Emitter)
 		// Check that the emitter is a dualSourceEmitter
@@ -475,7 +476,6 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
 		require.NoError(t, err)
 		require.NotNil(t, client)
-		defer client.Close()
 		assert.NotNil(t, client.Emitter)
 	})
 }
@@ -529,4 +529,213 @@ func (m *mockLogExporter) Shutdown(ctx context.Context) error {
 
 func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
 	return nil
+}
+
+func TestNewGRPCClientRotatingAuth(t *testing.T) {
+
+	pubKey, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	pubKeyHex := hex.EncodeToString(pubKey)
+
+	t.Run("successful rotating auth setup", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         pubKeyHex,
+			AuthKeySigner:            mockSigner,
+			AuthHeadersTTL:           10 * time.Minute,
+			InsecureConnection:       true,
+		}
+
+		// Mock the otlploggrpc.New function
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+
+	t.Run("error when public key hex is empty but TTL is set", func(t *testing.T) {
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         "",               // Empty public key hex
+			AuthHeadersTTL:           10 * time.Minute, // TTL > 0 requires public key
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "auth: public key hex required for rotating auth")
+	})
+
+	t.Run("error when TTL is too short", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         pubKeyHex,
+			AuthKeySigner:            mockSigner,
+			AuthHeadersTTL:           5 * time.Minute,
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "auth: headers TTL must be at least 10 minutes")
+	})
+
+	t.Run("error when public key hex is invalid", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         "invalid-hex", // Invalid hex
+			AuthKeySigner:            mockSigner,
+			AuthHeadersTTL:           10 * time.Minute,
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "auth: failed to decode public key hex")
+	})
+}
+
+func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
+	t.Run("uses static auth when no rotating auth is configured", func(t *testing.T) {
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer test-token",
+			},
+			InsecureConnection: true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+
+	t.Run("no auth when neither rotating nor static auth is configured", func(t *testing.T) {
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+}
+
+func TestNewGRPCClientChipIngressAuth(t *testing.T) {
+
+	pubKey, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	pubKeyHex := hex.EncodeToString(pubKey)
+
+	t.Run("chip ingress with rotating auth", func(t *testing.T) {
+
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthPublicKeyHex:               pubKeyHex,
+			AuthKeySigner:                  mockSigner,
+			AuthHeadersTTL:                 10 * time.Minute,
+			InsecureConnection:             true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress with static auth", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer test-token",
+			},
+			InsecureConnection: true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress with no auth", func(t *testing.T) {
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			InsecureConnection:             true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
 }

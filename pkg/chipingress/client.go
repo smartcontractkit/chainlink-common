@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -41,6 +44,8 @@ type clientConfig struct {
 	headerProvider       HeaderProvider
 	insecureConnection   bool
 	host                 string
+	meterProvider        metric.MeterProvider
+	tracerProvider       trace.TracerProvider
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -68,8 +73,18 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	for _, opt := range opts {
 		opt(cfg)
 	}
+	// Build otelgrpc handler options
+	var otelOpts []otelgrpc.Option
+	if cfg.meterProvider != nil {
+		otelOpts = append(otelOpts, otelgrpc.WithMeterProvider(cfg.meterProvider))
+	}
+	if cfg.tracerProvider != nil {
+		otelOpts = append(otelOpts, otelgrpc.WithTracerProvider(cfg.tracerProvider))
+	}
+
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
 	}
 	// Auth
 	if cfg.perRPCCredentials != nil {
@@ -162,12 +177,30 @@ func WithTLS() Opt {
 	}
 }
 
+// WithMeterProvider sets a custom OpenTelemetry MeterProvider for metrics collection.
+// If not set, the global meter provider will be used.
+func WithMeterProvider(provider metric.MeterProvider) Opt {
+	return func(c *clientConfig) { c.meterProvider = provider }
+}
+
+// WithTracerProvider sets a custom OpenTelemetry TracerProvider for distributed tracing.
+// If not set, the global tracer provider will be used.
+func WithTracerProvider(provider trace.TracerProvider) Opt {
+	return func(c *clientConfig) { c.tracerProvider = provider }
+}
+
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
 func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		// Add dynamic headers from provider if available
 		if provider != nil {
-			for k, v := range provider.Headers(ctx) {
+
+			headers, err := provider.Headers(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get headers: %w", err)
+			}
+
+			for k, v := range headers {
 				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 			}
 		}
@@ -188,13 +221,14 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 		attributes = make(map[string]any)
 	}
 
-	if val, ok := attributes["recordedtime"].(time.Time); ok {
-		event.SetExtension("recordedtime", val.UTC())
-	} else {
-		event.SetExtension("recordedtime", ce.Timestamp{Time: time.Now().UTC()})
+	recordedTime := time.Now()
+	if val, ok := attributes["recordedtime"].(time.Time); ok && !val.IsZero() {
+		recordedTime = val
 	}
+	recordedTime = recordedTime.UTC().Truncate(time.Millisecond)
+	event.SetExtension("recordedtime", ce.Timestamp{Time: recordedTime})
 
-	if val, ok := attributes["time"].(time.Time); ok {
+	if val, ok := attributes["time"].(time.Time); ok && !val.IsZero() {
 		event.SetTime(val.UTC())
 	}
 	if val, ok := attributes["datacontenttype"].(string); ok {

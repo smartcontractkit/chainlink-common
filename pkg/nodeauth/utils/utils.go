@@ -15,18 +15,18 @@ import (
 func CalculateRequestDigest(req any) string {
 	var data []byte
 	if m, ok := req.(proto.Message); ok {
-		// Use protobuf canonical serialization
-		serialized, err := proto.Marshal(m)
+		// Use deterministic protobuf serialization for consistent hashing
+		serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(m)
 		if err == nil {
 			data = serialized
 		} else {
 			// fallback to string representation if marshal fails
-			data = []byte(fmt.Sprintf("%v", req))
+			data = fmt.Appendf(nil, "%v", req)
 		}
 	} else if s, ok := req.(fmt.Stringer); ok {
 		data = []byte(s.String())
 	} else {
-		data = []byte(fmt.Sprintf("%v", req))
+		data = fmt.Appendf(nil, "%v", req)
 	}
 
 	hash := sha256.Sum256(data)

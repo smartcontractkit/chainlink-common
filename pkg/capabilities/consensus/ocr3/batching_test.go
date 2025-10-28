@@ -401,7 +401,7 @@ func TestQueryBatchHasCapacityCaching(t *testing.T) {
 func TestQueryBatchHasCapacityPerformance(t *testing.T) {
 	// Performance test with many IDs
 	ids := make([]*pbtypes.Id, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		ids[i] = &pbtypes.Id{
 			WorkflowExecutionId: "exec-" + string(rune('A'+i%26)),
 			WorkflowId:          "workflow-1",

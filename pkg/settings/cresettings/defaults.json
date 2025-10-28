@@ -1,36 +1,37 @@
 {
 	"WorkflowLimit": "200",
-	"WorkflowRegistrationQueueLimit": "20",
-	"WorkflowExecutionConcurrencyLimit": "50",
-	"GatewayUnauthenticatedRequestRateLimit": "100rps:-1",
-	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:-1",
-	"GatewayIncomingPayloadSizeLimit": "10kb",
+	"WorkflowExecutionConcurrencyLimit": "200",
+	"WorkflowTriggerRateLimit": "200rps:200",
+	"GatewayIncomingPayloadSizeLimit": "1mb",
 	"PerOrg": {
 		"WorkflowDeploymentRateLimit": "every1m0s:1",
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
 	"PerOwner": {
-		"WorkflowExecutionConcurrencyLimit": "50"
+		"WorkflowExecutionConcurrencyLimit": "5",
+		"WorkflowTriggerRateLimit": "5rps:5"
 	},
 	"PerWorkflow": {
-		"TriggerLimit": "10",
 		"TriggerRateLimit": "every30s:3",
 		"TriggerRegistrationsTimeout": "10s",
-		"TriggerSubscriptionTimeout": "5s",
+		"TriggerSubscriptionTimeout": "15s",
 		"TriggerSubscriptionLimit": "10",
 		"TriggerEventQueueLimit": "1000",
 		"TriggerEventQueueTimeout": "10m0s",
 		"CapabilityConcurrencyLimit": "3",
-		"CapabilityCallTimeout": "8m0s",
-		"SecretsConcurrencyLimit": "3",
-		"ExecutionConcurrencyLimit": "10",
-		"ExecutionTimeout": "10m0s",
+		"CapabilityCallTimeout": "3m0s",
+		"SecretsConcurrencyLimit": "5",
+		"ExecutionConcurrencyLimit": "5",
+		"ExecutionTimeout": "5m0s",
 		"ExecutionResponseLimit": "100kb",
-		"WASMExecutionTimeout": "1m0s",
 		"WASMMemoryLimit": "100mb",
-		"WASMBinarySizeLimit": "30mb",
-		"ConsensusObservationSizeLimit": "10kb",
-		"ConsensusCallsLimit": "2",
+		"WASMBinarySizeLimit": "100mb",
+		"WASMCompressedBinarySizeLimit": "20mb",
+		"WASMConfigSizeLimit": "1mb",
+		"WASMSecretsSizeLimit": "1mb",
+		"WASMResponseSizeLimit": "100kb",
+		"ConsensusObservationSizeLimit": "100kb",
+		"ConsensusCallsLimit": "2000",
 		"LogLineLimit": "1kb",
 		"LogEventLimit": "1000",
 		"CRONTrigger": {
@@ -40,31 +41,34 @@
 			"RateLimit": "every30s:3"
 		},
 		"LogTrigger": {
-			"RateLimit": "every10s:-1",
 			"Limit": "5",
-			"EventRateLimit": "every-1s:-1",
+			"EventRateLimit": "every6s:10",
+			"EventSizeLimit": "5kb",
 			"FilterAddressLimit": "5",
 			"FilterTopicsPerSlotLimit": "10"
 		},
+		"ChainWrite": {
+			"TargetsLimit": "10",
+			"ReportSizeLimit": "1kb",
+			"EVM": {
+				"TransactionGasLimit": "5000000"
+			}
+		},
+		"ChainRead": {
+			"CallLimit": "10",
+			"LogQueryBlockLimit": "100",
+			"PayloadSizeLimit": "5kb"
+		},
+		"Consensus": {
+			"ObservationSizeLimit": "100kb",
+			"CallLimit": "2000"
+		},
 		"HTTPAction": {
-			"RateLimit": "every30s:3",
+			"CallLimit": "5",
 			"ResponseSizeLimit": "10kb",
 			"ConnectionTimeout": "10s",
 			"RequestSizeLimit": "100kb",
 			"CacheAgeLimit": "10m0s"
-		},
-		"ChainWrite": {
-			"RateLimit": "every30s:3",
-			"TargetsLimit": "3",
-			"ReportSizeLimit": "1kb",
-			"EVM": {
-				"TransactionGasLimit": "-1"
-			}
-		},
-		"ChainRead": {
-			"CallLimit": "3",
-			"LogQueryBlockLimit": "100",
-			"PayloadSizeLimit": "5kb"
 		}
 	}
 }

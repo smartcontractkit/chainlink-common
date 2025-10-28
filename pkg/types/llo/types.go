@@ -307,7 +307,7 @@ func (m ChannelOpts) MarshalJSON() ([]byte, error) {
 
 // formatJSON ensures that the JSON string is in a deterministic shape
 func formatJSON(input []byte) ([]byte, error) {
-	var obj map[string]interface{}
+	var obj map[string]any
 
 	// Unmarshal the JSON string into a map
 	if err := json.Unmarshal(input, &obj); err != nil {
@@ -325,7 +325,7 @@ func formatJSON(input []byte) ([]byte, error) {
 
 type ChannelDefinitions map[ChannelID]ChannelDefinition
 
-func (c *ChannelDefinitions) Scan(value interface{}) error {
+func (c *ChannelDefinitions) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return fmt.Errorf("failed to scan Data: value is not []byte")

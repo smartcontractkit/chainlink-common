@@ -21,13 +21,11 @@ func TestTxDBDriver(t *testing.T) {
 
 	t.Run("Make sure sql.Register() can be called concurrently without racing", func(t *testing.T) {
 		wg := sync.WaitGroup{}
-		for i := 0; i < 10; i++ {
-			wg.Add(1)
-			go func() {
+		for range 10 {
+			wg.Go(func() {
 				err := RegisterTxDB(pg.DriverInMemoryPostgres)
 				require.NoError(t, err)
-				wg.Done()
-			}()
+			})
 		}
 		wg.Wait()
 		drivers := sql.Drivers()

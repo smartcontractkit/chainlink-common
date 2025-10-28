@@ -110,27 +110,27 @@ func (q *dataSource) DriverName() string { return "" }
 
 func (q *dataSource) Rebind(s string) string { return "" }
 
-func (q *dataSource) BindNamed(s string, i interface{}) (string, []interface{}, error) {
+func (q *dataSource) BindNamed(s string, i any) (string, []any, error) {
 	return "", nil, nil
 }
 
-func (q *dataSource) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (q *dataSource) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return nil, nil
 }
 
-func (q *dataSource) QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error) {
+func (q *dataSource) QueryxContext(ctx context.Context, query string, args ...any) (*sqlx.Rows, error) {
 	return nil, nil
 }
 
-func (q *dataSource) QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row {
+func (q *dataSource) QueryRowxContext(ctx context.Context, query string, args ...any) *sqlx.Row {
 	return nil
 }
 
-func (q *dataSource) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (q *dataSource) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return nil, nil
 }
 
-func (q *dataSource) NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error) {
+func (q *dataSource) NamedExecContext(ctx context.Context, query string, arg any) (sql.Result, error) {
 	return nil, nil
 }
 
@@ -142,7 +142,7 @@ func (q *dataSource) PrepareNamedContext(ctx context.Context, query string) (*sq
 	return nil, nil
 }
 
-func (q *dataSource) GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (q *dataSource) GetContext(ctx context.Context, dest any, query string, args ...any) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -151,7 +151,7 @@ func (q *dataSource) GetContext(ctx context.Context, dest interface{}, query str
 	return nil
 }
 
-func (q *dataSource) SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (q *dataSource) SelectContext(ctx context.Context, dest any, query string, args ...any) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

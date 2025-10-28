@@ -9,6 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
@@ -17,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
@@ -25,7 +27,19 @@ import (
 // NewStartedServer returns a started Server.
 // The caller is responsible for calling Server.Stop().
 func NewStartedServer(loggerName string) (*Server, error) {
-	s, err := newServer(loggerName)
+	return NewStartedServerWithOtelViews(loggerName, nil)
+}
+
+// MustNewStartedServer returns a new started Server like NewStartedServer, but logs and exits in the event of error.
+// The caller is responsible for calling Server.Stop().
+func MustNewStartedServer(loggerName string) *Server {
+	return MustNewStartedServerWithOtelViews(loggerName, nil)
+}
+
+// NewStartedServerWithOtelViews returns a started Server with otel views registered on the beholder client.
+// The caller is responsible for calling Server.Stop().
+func NewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
+	s, err := newServer(loggerName, otelViews)
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +51,10 @@ func NewStartedServer(loggerName string) (*Server, error) {
 	return s, nil
 }
 
-// MustNewStartedServer returns a new started Server like NewStartedServer, but logs and exits in the event of error.
+// MustNewStartedServerWithOtelViews returns a new started Server like NewStartedServerWithOtelViews, but logs and exits in the event of error.
 // The caller is responsible for calling Server.Stop().
-func MustNewStartedServer(loggerName string) *Server {
-	s, err := newServer(loggerName)
+func MustNewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) *Server {
+	s, err := newServer(loggerName, otelViews)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start server: %s\n", err)
 		os.Exit(1)
@@ -64,17 +78,19 @@ type Server struct {
 	promServer      *PromServer
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
+	otelViews       []sdkmetric.View
 }
 
-func newServer(loggerName string) (*Server, error) {
+func newServer(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
 	lggr, err := NewLogger()
 	if err != nil {
 		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
 	lggr = logger.Named(lggr, loggerName)
 	return &Server{
-		GRPCOpts: NewGRPCOpts(nil), // default prometheus.Registerer
-		Logger:   logger.Sugared(lggr),
+		GRPCOpts:  NewGRPCOpts(nil), // default prometheus.Registerer
+		Logger:    logger.Sugared(lggr),
+		otelViews: otelViews,
 	}, nil
 }
 
@@ -118,18 +134,35 @@ func (s *Server) start() error {
 			OtelExporterGRPCEndpoint:       s.EnvConfig.TelemetryEndpoint,
 			ResourceAttributes:             append(attributes, s.EnvConfig.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:               s.EnvConfig.TelemetryTraceSampleRatio,
-			AuthHeaders:                    s.EnvConfig.TelemetryAuthHeaders,
-			AuthPublicKeyHex:               s.EnvConfig.TelemetryAuthPubKeyHex,
 			EmitterBatchProcessor:          s.EnvConfig.TelemetryEmitterBatchProcessor,
 			EmitterExportTimeout:           s.EnvConfig.TelemetryEmitterExportTimeout,
 			EmitterExportInterval:          s.EnvConfig.TelemetryEmitterExportInterval,
 			EmitterExportMaxBatchSize:      s.EnvConfig.TelemetryEmitterExportMaxBatchSize,
 			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
 			LogStreamingEnabled:            s.EnvConfig.TelemetryLogStreamingEnabled,
+			LogLevel:                       s.EnvConfig.TelemetryLogLevel,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 		}
+
+		// Configure beholder auth - the client will determine rotating vs static mode
+		// Rotating mode: when AuthHeadersTTL is set, client creates internal lazySigner
+		// Static mode: no TTL is provided it is assumed that the headers are static
+		if s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
+			// Rotating auth mode: client will create lazySigner internally and allow keystore injection after startup
+			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
+			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
+			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders // initial headers
+		} else {
+			// Static auth mode: headers and/or public key without rotation
+			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
+			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
+		}
+
+		// note: due to the OTEL specification, all histogram buckets
+		// must be defined when the beholder client is created
+		beholderCfg.MetricViews = append(beholderCfg.MetricViews, s.otelViews...)
 
 		if tracingConfig.Enabled {
 			if beholderCfg.AuthHeaders != nil {
@@ -148,6 +181,14 @@ func (s *Server) start() error {
 		}
 		beholder.SetClient(beholderClient)
 		beholder.SetGlobalOtelProviders()
+
+		if beholderCfg.LogStreamingEnabled {
+			otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
+			if err != nil {
+				return fmt.Errorf("failed to enable log streaming: %w", err)
+			}
+			s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+		}
 	}
 
 	s.promServer = NewPromServer(s.EnvConfig.PrometheusPort, s.Logger)
@@ -195,6 +236,7 @@ func (s *Server) start() error {
 	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
 	if bc := beholder.GetClient(); bc != nil {
 		s.LimitsFactory.Meter = bc.Meter
+		s.LimitsFactory.Settings = cresettings.DefaultGetter
 	}
 
 	return nil

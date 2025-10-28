@@ -169,6 +169,8 @@ type assertMessageEmitter struct {
 	msgs []beholder.Message
 }
 
+func (e *assertMessageEmitter) Close() error { return nil }
+
 func (e *assertMessageEmitter) Emit(_ context.Context, msg []byte, attrKVs ...any) error {
 	e.t.Helper()
 

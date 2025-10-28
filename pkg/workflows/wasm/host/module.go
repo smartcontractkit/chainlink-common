@@ -21,8 +21,11 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -41,6 +44,9 @@ var (
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
 	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
+	defaultMaxLogLenBytes            = 1024 * 1024       // 1 MB
+	defaultMaxLogCountDONMode        = 10_000
+	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 )
 
@@ -49,18 +55,26 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval              time.Duration
-	Timeout                   *time.Duration
-	MaxMemoryMBs              uint64
-	MinMemoryMBs              uint64
-	InitialFuel               uint64
-	Logger                    logger.Logger
-	IsUncompressed            bool
-	Fetch                     func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
-	MaxFetchRequests          int
-	MaxCompressedBinarySize   uint64
-	MaxDecompressedBinarySize uint64
-	MaxResponseSizeBytes      uint64
+	TickInterval                 time.Duration
+	Timeout                      *time.Duration
+	MaxMemoryMBs                 uint64
+	MinMemoryMBs                 uint64
+	MemoryLimiter                limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
+	InitialFuel                  uint64
+	Logger                       logger.Logger
+	IsUncompressed               bool
+	Fetch                        func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
+	MaxFetchRequests             int
+	MaxCompressedBinarySize      uint64
+	MaxCompressedBinaryLimiter   limits.BoundLimiter[config.Size] // supersedes MaxCompressedBinarySize if set
+	MaxDecompressedBinarySize    uint64
+	MaxDecompressedBinaryLimiter limits.BoundLimiter[config.Size] // supersedes MaxDecompressedBinarySize if set
+	MaxResponseSizeBytes         uint64
+	MaxResponseSizeLimiter       limits.BoundLimiter[config.Size] // supersedes MaxResponseSizeBytes if set
+
+	MaxLogLenBytes      uint32
+	MaxLogCountDONMode  uint32
+	MaxLogCountNodeMode uint32
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -136,7 +150,7 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
+func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -183,34 +197,69 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	if modCfg.MaxResponseSizeBytes == 0 {
 		modCfg.MaxResponseSizeBytes = uint64(defaultMaxResponseSizeBytes)
 	}
-
-	// Take the max of the min and the configured max memory mbs.
-	// We do this because Go requires a minimum of 16 megabytes to run,
-	// and local testing has shown that with less than the min, some
-	// binaries may error sporadically.
-	modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
-
-	cfg := wasmtime.NewConfig()
-	cfg.SetEpochInterruption(true)
-	if modCfg.InitialFuel > 0 {
-		cfg.SetConsumeFuel(true)
+	if modCfg.MaxLogLenBytes == 0 {
+		modCfg.MaxLogLenBytes = uint32(defaultMaxLogLenBytes)
+	}
+	if modCfg.MaxLogCountDONMode == 0 {
+		modCfg.MaxLogCountDONMode = uint32(defaultMaxLogCountDONMode)
+	}
+	if modCfg.MaxLogCountNodeMode == 0 {
+		modCfg.MaxLogCountNodeMode = uint32(defaultMaxLogCountNodeMode)
 	}
 
-	cfg.CacheConfigLoadDefault()
-	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	lf := limits.Factory{Logger: modCfg.Logger}
+	if modCfg.MemoryLimiter == nil {
+		// Take the max of the min and the configured max memory mbs.
+		// We do this because Go requires a minimum of 16 megabytes to run,
+		// and local testing has shown that with less than the min, some
+		// binaries may error sporadically.
+		modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
+		limit := settings.Size(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
+		var err error
+		modCfg.MemoryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make memory limiter: %w", err)
+		}
+	}
+	if modCfg.MaxCompressedBinaryLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxCompressedBinarySize))
+		var err error
+		modCfg.MaxCompressedBinaryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make compressed binary size limiter: %w", err)
+		}
+	}
+	if modCfg.MaxDecompressedBinaryLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxDecompressedBinarySize))
+		var err error
+		modCfg.MaxDecompressedBinaryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make  decompressed binary size limiter: %w", err)
+		}
+	}
+	if modCfg.MaxResponseSizeLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxResponseSizeBytes))
+		var err error
+		modCfg.MaxResponseSizeLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
+		}
+	}
 
-	// Handled differenty based on host OS.
-	SetUnwinding(cfg)
-
-	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
 		// this is to prevent decompression bombs
-		if uint64(len(binary)) > modCfg.MaxCompressedBinarySize {
-			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
+		if err := modCfg.MaxCompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
+			if errors.Is(err, limits.ErrorBoundLimited[config.Size]{}) {
+				return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size: %w", err)
+			}
+			return nil, fmt.Errorf("failed to check compressed binary size limit: %w", err)
 		}
-
-		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(modCfg.MaxDecompressedBinarySize+1))
+		maxDecompressedBinarySize, err := modCfg.MaxDecompressedBinaryLimiter.Limit(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get decompressed binary size limit: %w", err)
+		}
+		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(maxDecompressedBinarySize+1))
 		decompedBinary, err := io.ReadAll(rdr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress binary: %w", err)
@@ -222,9 +271,27 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	// Validate the decompressed binary size.
 	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
 	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
-	if uint64(len(binary)) > modCfg.MaxDecompressedBinarySize {
-		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", modCfg.MaxDecompressedBinarySize)
+	if err := modCfg.MaxDecompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
+		if errors.Is(err, limits.ErrorBoundLimited[config.Size]{}) {
+			return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size: %w", err)
+		}
+		return nil, fmt.Errorf("failed to check decompressed binary size limit: %w", err)
 	}
+
+	return newModule(modCfg, binary)
+}
+
+func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+	cfg := wasmtime.NewConfig()
+	cfg.SetEpochInterruption(true)
+	if modCfg.InitialFuel > 0 {
+		cfg.SetConsumeFuel(true)
+	}
+	cfg.CacheConfigLoadDefault()
+	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	SetUnwinding(cfg) // Handled differenty based on host OS.
+
+	engine := wasmtime.NewEngineWithConfig(cfg)
 
 	mod, err := wasmtime.NewModule(engine, binary)
 	if err != nil {
@@ -240,16 +307,14 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		}
 	}
 
-	m := &module{
+	return &module{
 		engine:       engine,
 		module:       mod,
 		wconfig:      cfg,
 		cfg:          modCfg,
 		stopCh:       make(chan struct{}),
 		v2ImportName: v2ImportName,
-	}
-
-	return m, nil
+	}, nil
 }
 
 func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
@@ -388,10 +453,7 @@ func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.
 }
 
 func (m *module) Start() {
-	m.wg.Add(1)
-	go func() {
-		defer m.wg.Done()
-
+	m.wg.Go(func() {
 		ticker := time.NewTicker(m.cfg.TickInterval)
 		for {
 			select {
@@ -401,7 +463,7 @@ func (m *module) Start() {
 				m.engine.IncrementEpoch()
 			}
 		}
-	}()
+	})
 }
 
 func (m *module) Close() {
@@ -455,7 +517,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		computeRequest := r.GetComputeRequest()
 		if computeRequest != nil {
 			computeRequest.RuntimeConfig = &wasmdagpb.RuntimeConfig{
-				MaxResponseSizeBytes: int64(m.cfg.MaxResponseSizeBytes),
+				MaxResponseSizeBytes: int64(maxSize),
 			}
 		}
 	}
@@ -480,7 +542,11 @@ func runWasm[I, O proto.Message](
 
 	defer store.Close()
 
-	setMaxResponseSize(request, m.cfg.MaxResponseSizeBytes)
+	maxResponseSizeBytes, err := m.cfg.MaxResponseSizeLimiter.Limit(ctx)
+	if err != nil {
+		return o, fmt.Errorf("failed to get response size limit: %w", err)
+	}
+	setMaxResponseSize(request, uint64(maxResponseSizeBytes))
 	reqpb, err := proto.Marshal(request)
 	if err != nil {
 		return o, err
@@ -504,8 +570,12 @@ func runWasm[I, O proto.Message](
 	}
 
 	// Limit memory to max memory megabytes per instance.
+	maxMemoryBytes, err := m.cfg.MemoryLimiter.Limit(ctx)
+	if err != nil {
+		return o, fmt.Errorf("failed to get memory limit: %w", err)
+	}
 	store.Limiter(
-		int64(m.cfg.MaxMemoryMBs)*int64(math.Pow(10, 6)),
+		int64(maxMemoryBytes/config.MByte)*int64(math.Pow(10, 6)),
 		-1, // tableElements, -1 == default
 		1,  // instances
 		1,  // tables
@@ -842,7 +912,7 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			return
 		}
 
-		var raw map[string]interface{}
+		var raw map[string]any
 		innerErr = json.Unmarshal(b, &raw)
 		if innerErr != nil {
 			return
@@ -855,7 +925,7 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 		delete(raw, "msg")
 		delete(raw, "ts")
 
-		var args []interface{}
+		var args []any
 		for k, v := range raw {
 			args = append(args, k, v)
 		}

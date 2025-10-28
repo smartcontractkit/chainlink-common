@@ -9,15 +9,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	nodagRandomBinaryCmd      = "standard_tests/multiple_triggers"
-	nodagRandomBinaryLocation = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd        = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation   = nodagRandomBinaryCmd + "/testmodule.wasm"
+	loggingLimitsBinaryCmd      = "test/logging_limits/cmd"
+	loggingLimitsBinaryLocation = loggingLimitsBinaryCmd + "/testmodule.wasm"
 )
 
 func Test_Sleep_Timeout(t *testing.T) {
@@ -28,7 +32,7 @@ func Test_Sleep_Timeout(t *testing.T) {
 	mc := defaultNoDAGModCfg(t)
 	timeout := 1 * time.Second
 	mc.Timeout = &timeout
-	m, err := NewModule(mc, binary)
+	m, err := NewModule(t.Context(), mc, binary)
 	require.NoError(t, err)
 
 	m.v2ImportName = "test"
@@ -59,7 +63,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
-		m, err := NewModule(mc, binary)
+		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -77,7 +81,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 	t.Run("OK can subscribe without setting ExecutionHelper", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
-		m, err := NewModule(mc, binary)
+		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -87,6 +91,48 @@ func Test_NoDag_Run(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, len(triggers.Subscriptions), 3)
 	})
+}
+
+func Test_NoDAG_LoggingWithLimits(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+
+	logs := []string{}
+	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
+		logs = append(logs, s)
+		return nil
+	})
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	executeRequest := triggerExecuteRequest(t, 0, trigger)
+	cfg := &ModuleConfig{
+		Logger:              logger.Test(t),
+		IsUncompressed:      true,
+		MaxLogLenBytes:      20,
+		MaxLogCountDONMode:  3,
+		MaxLogCountNodeMode: 3,
+	}
+
+	binary := createTestBinary(loggingLimitsBinaryCmd, loggingLimitsBinaryLocation, true, t)
+
+	m, err := NewModule(t.Context(), cfg, binary)
+	require.NoError(t, err)
+
+	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
+	require.NoError(t, err)
+
+	// allowed 3 logs max, one of which got rejected because it was too long
+	// so expect 2 logs to be emitted
+	require.Equal(t, 2, len(logs))
+	require.Equal(t, "short log 1", logs[0])
+	require.Equal(t, "short log 3", logs[1])
 }
 
 func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {

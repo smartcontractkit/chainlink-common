@@ -80,5 +80,7 @@ message CapabilityConfig {
 
   // v2 ("NoDAG") capabilities
   map<string, CapabilityMethodConfig> method_configs = 7;
+  // if true, the capability won't be callable via don2don
+  bool local_only = 8;
 }
 

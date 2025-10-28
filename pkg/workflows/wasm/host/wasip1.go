@@ -148,7 +148,7 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 	events := make([]byte, nsubscriptions*eventsLen)
 
 	timeout := time.Duration(0)
-	for i := int32(0); i < nsubscriptions; i++ {
+	for i := range nsubscriptions {
 		// First, let's read the subscription
 		inOffset := i * subscriptionLen
 

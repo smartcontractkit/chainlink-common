@@ -3,12 +3,15 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
 type ChipIngressClient interface {
 	RegisterSchema(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
+	io.Closer
 }
 
 type chipIngressClient struct {
@@ -24,6 +27,7 @@ func NewChipIngressClient(client chipingress.Client) (ChipIngressClient, error) 
 		client: client,
 	}, nil
 }
+func (sr *chipIngressClient) Close() error { return nil }
 
 // RegisterSchema registers one or more schemas with the Chip Ingress service. Returns a map of subject to version for each registered schema.
 func (sr *chipIngressClient) RegisterSchema(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {

@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 
@@ -62,7 +63,7 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, publicKey)
 	if err != nil {
 		v.logger.Error("Node validation failed",
-			"csaPubKey", publicKey,
+			"csaPubKey", hex.EncodeToString(publicKey),
 			"error", err,
 		)
 		return false, claims, fmt.Errorf("node validation failed: %w", err)
@@ -70,13 +71,13 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 
 	if !isValid {
 		v.logger.Warn("Unauthorized node attempted access",
-			"csaPubKey", publicKey,
+			"csaPubKey", hex.EncodeToString(publicKey),
 		)
-		return false, claims, fmt.Errorf("unauthorized node: %s", publicKey)
+		return false, claims, fmt.Errorf("unauthorized node: %s", hex.EncodeToString(publicKey))
 	}
 
 	v.logger.Debug("JWT validation successful",
-		"csaPubKey", publicKey,
+		"csaPubKey", hex.EncodeToString(publicKey),
 	)
 
 	return true, claims, nil
@@ -99,7 +100,7 @@ func (v *NodeJWTAuthenticator) parseJWTClaims(tokenString string) (*types.NodeJW
 // verifyJWTSignature prove the JWT signature is signed by the node's private key.
 func (v *NodeJWTAuthenticator) verifyJWTSignature(tokenString string, publicKey ed25519.PublicKey) error {
 
-	token, err := v.parser.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := v.parser.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// Ensure the signing method is jwt.SigningMethodEd25519
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

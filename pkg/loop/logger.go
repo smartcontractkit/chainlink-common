@@ -9,11 +9,13 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-hclog"
+	otellog "go.opentelemetry.io/otel/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/exp/slices"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger/otelzap"
 )
 
 // HCLogLogger returns an [hclog.Logger] backed by the given [logger.Logger].
@@ -41,7 +43,7 @@ func (h *hclSinkAdapter) named(name string) logger.SugaredLogger {
 	return v.(func() logger.SugaredLogger)()
 }
 
-func removeArg(args []interface{}, key string) ([]interface{}, string) {
+func removeArg(args []any, key string) ([]any, string) {
 	if len(args) < 2 {
 		return args, ""
 	}
@@ -66,13 +68,13 @@ type logMessage struct {
 
 // LogMessageExtraArgs is a key value pair within the Output payload
 type LogMessageExtraArgs struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value"`
+	Key   string `json:"key"`
+	Value any    `json:"value"`
 }
 
 // flattenExtraArgs is used to flatten arguments of the log message
-func flattenExtraArgs(le *logMessage) []interface{} {
-	var result []interface{}
+func flattenExtraArgs(le *logMessage) []any {
+	var result []any
 	result = append(result, "level")
 	result = append(result, le.Level)
 	result = append(result, "timestamp")
@@ -86,7 +88,7 @@ func flattenExtraArgs(le *logMessage) []interface{} {
 }
 
 func parseJSON(input string) (*logMessage, error) {
-	var raw map[string]interface{}
+	var raw map[string]any
 	entry := &logMessage{}
 
 	err := json.Unmarshal([]byte(input), &raw)
@@ -116,7 +118,7 @@ func parseJSON(input string) (*logMessage, error) {
 
 // logDebug will parse msg and figure out if it's a panic, fatal or critical log message, this is done here because the hashicorp plugin will push any
 // unrecognizable message from stderr as a debug statement
-func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
+func logDebug(msg string, l logger.SugaredLogger, args ...any) {
 	if strings.HasPrefix(msg, "panic:") {
 		l.Criticalw(fmt.Sprintf("[PANIC] %s", msg), args...)
 	} else if log, err := parseJSON(msg); err == nil {
@@ -133,7 +135,7 @@ func logDebug(msg string, l logger.SugaredLogger, args ...interface{}) {
 	}
 }
 
-func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...interface{}) {
+func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ...any) {
 	if level == hclog.Off {
 		return
 	}
@@ -162,13 +164,33 @@ func (h *hclSinkAdapter) Accept(_ string, level hclog.Level, msg string, args ..
 
 // NewLogger returns a new [logger.Logger] configured to encode [hclog] compatible JSON.
 func NewLogger() (logger.Logger, error) {
-	return logger.NewWith(func(cfg *zap.Config) {
-		cfg.Level.SetLevel(zap.DebugLevel)
-		cfg.EncoderConfig.LevelKey = "@level"
-		cfg.EncoderConfig.MessageKey = "@message"
-		cfg.EncoderConfig.TimeKey = "@timestamp"
-		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000Z07:00")
-	})
+	return logger.NewWith(configureHCLogEncoder)
+}
+
+// configureHCLogEncoder mutates cfg to use hclog-compatible field names and timestamp format.
+// NOTE: It also sets the log level to Debug to preserve prior behavior where each caller
+// manually set Debug before applying identical encoder tweaks. Centralizing avoids drift.
+// If a different level is desired, callers should override cfg.Level AFTER calling this helper.
+func configureHCLogEncoder(cfg *zap.Config) {
+	cfg.Level.SetLevel(zap.DebugLevel)
+	cfg.EncoderConfig.LevelKey = "@level"
+	cfg.EncoderConfig.MessageKey = "@message"
+	cfg.EncoderConfig.TimeKey = "@timestamp"
+	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000Z07:00")
+}
+
+// NewOtelLogger returns a logger with two cores:
+// 1. Primary JSON core with hclog-compatible encoder keys (@level, @message, @timestamp)
+// 2. OTEL core (otelzap.NewCore) that exports logs to OpenTelemetry at the specified level
+//
+// The encoder config only affects the primary core's JSON output.
+// The OTEL core extracts data directly from zap.Entry and fields, independent of encoder settings.
+func NewOtelLogger(otelLogger otellog.Logger, level zapcore.Level) (logger.Logger, error) {
+	primaryCore, err := logger.NewCore(configureHCLogEncoder)
+	if err != nil {
+		return nil, err
+	}
+	return logger.NewWithCores(primaryCore, otelzap.NewCore(otelLogger, otelzap.WithLevel(level))), nil
 }
 
 // onceValue returns a function that invokes f only once and returns the value

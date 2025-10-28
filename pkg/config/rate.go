@@ -25,8 +25,8 @@ func ParseRate(s string) (Rate, error) {
 		return Rate{}, fmt.Errorf("invalid rate limit: %s: must contain two parts", s)
 	}
 	var rateLimit Rate
-	if strings.HasPrefix(parts[0], "every") { // optional format every<duration>
-		limit := strings.TrimPrefix(parts[0], "every")
+	if after, ok := strings.CutPrefix(parts[0], "every"); ok { // optional format every<duration>
+		limit := after
 		d, err := time.ParseDuration(limit)
 		if err != nil {
 			return Rate{}, err

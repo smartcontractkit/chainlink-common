@@ -101,13 +101,13 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 		if input.InputThing {
 			mt.Lock()
 		}
+		defer mt.Unlock()
 
 		assert.False(t, callsSeen[input.InputThing])
 		callsSeen[input.InputThing] = true
 		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("%t", input.InputThing)})
 		require.NoError(t, err)
 
-		defer mt.Unlock()
 		return &sdk.CapabilityResponse{
 			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
 		}, nil

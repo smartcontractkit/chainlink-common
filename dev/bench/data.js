@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761611955254,
+  "lastUpdate": 1761654865157,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -29526,6 +29526,66 @@ window.BENCHMARK_DATA = {
             "value": 116561,
             "unit": "ns/op",
             "extra": "9948 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5cda5f9583e003aba860a35391257b3d3f61e6f",
+          "message": "pkg/loop: reinitialise standard capabilities (#1638)\n\n* pkg/loop: reinitialise standard capabilities\n\n* pkg/loop/internal/core/services/capability: use NewClientConn in place of Dial for reconnect",
+          "timestamp": "2025-10-28T12:33:03Z",
+          "tree_id": "e03aafe7c1aec1270684df1aa95172379cc1f156",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e5cda5f9583e003aba860a35391257b3d3f61e6f"
+        },
+        "date": 1761654863721,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 571.7,
+            "unit": "ns/op",
+            "extra": "1935067 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98832,
+            "unit": "ns/op",
+            "extra": "12146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.1,
+            "unit": "ns/op",
+            "extra": "2981260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98032,
+            "unit": "ns/op",
+            "extra": "12240 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26611,
+            "unit": "ns/op",
+            "extra": "45074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147459,
+            "unit": "ns/op",
+            "extra": "7995 times\n4 procs"
           }
         ]
       }

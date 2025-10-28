@@ -37,7 +37,7 @@ func NewNoopClient() *Client {
 	messageEmitter := noopMessageEmitter{}
 
 	// ChipIngress
-	chipClient := chipingress.NewNoopClient()
+	chipClient := &chipingress.NoopClient{}
 
 	return &Client{cfg, logger, tracer, meter, messageEmitter, chipClient, loggerProvider, tracerProvider, meterProvider, loggerProvider, nil, noopOnClose}
 }
@@ -98,7 +98,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return
 	}
 
-	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, Chip: chipingress.NewNoopClient(), LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, lazySigner: nil, OnClose: onClose}, nil
+	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, Chip: &chipingress.NoopClient{}, LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, lazySigner: nil, OnClose: onClose}, nil
 }
 
 type noopMessageEmitter struct{}

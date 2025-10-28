@@ -186,7 +186,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
 
-	var chipIngressClient chipingress.Client = chipingress.NewNoopClient()
+	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {

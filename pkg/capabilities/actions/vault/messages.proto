@@ -205,4 +205,7 @@ message ReportingPluginConfig {
   int32 LimitsMaxReportCount = 24;
   int32 LimitsMaxKeyValueModifiedKeysPlusValuesLength = 25;
   int32 LimitsMaxBlobPayloadLength = 26;
+  int32 LimitsMaxKeyValueModifiedKeys = 27;
+  int32 LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes = 28;
+  int32 LimitsMaxPerOracleUnexpiredBlobCount = 29;
 }

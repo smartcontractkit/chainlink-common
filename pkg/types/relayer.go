@@ -190,6 +190,9 @@ type EVMService interface {
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
+	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
+	GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error)
+
 	// GetFiltersNames returns all registered filters' names for later pruning
 	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
 	GetFiltersNames(ctx context.Context) ([]string, error)

@@ -36,6 +36,7 @@ const (
 	EVM_SubmitTransaction_FullMethodName       = "/loop.evm.EVM/SubmitTransaction"
 	EVM_CalculateTransactionFee_FullMethodName = "/loop.evm.EVM/CalculateTransactionFee"
 	EVM_GetForwarderForEOA_FullMethodName      = "/loop.evm.EVM/GetForwarderForEOA"
+	EVM_GetLatestLPBlock_FullMethodName        = "/loop.evm.EVM/GetLatestLPBlock"
 )
 
 // EVMClient is the client API for EVM service.
@@ -58,6 +59,7 @@ type EVMClient interface {
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error)
 	CalculateTransactionFee(ctx context.Context, in *CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*CalculateTransactionFeeReply, error)
 	GetForwarderForEOA(ctx context.Context, in *GetForwarderForEOARequest, opts ...grpc.CallOption) (*GetForwarderForEOAReply, error)
+	GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLPBlockReply, error)
 }
 
 type eVMClient struct {
@@ -228,6 +230,16 @@ func (c *eVMClient) GetForwarderForEOA(ctx context.Context, in *GetForwarderForE
 	return out, nil
 }
 
+func (c *eVMClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLPBlockReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLatestLPBlockReply)
+	err := c.cc.Invoke(ctx, EVM_GetLatestLPBlock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EVMServer is the server API for EVM service.
 // All implementations must embed UnimplementedEVMServer
 // for forward compatibility.
@@ -248,6 +260,7 @@ type EVMServer interface {
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error)
 	CalculateTransactionFee(context.Context, *CalculateTransactionFeeRequest) (*CalculateTransactionFeeReply, error)
 	GetForwarderForEOA(context.Context, *GetForwarderForEOARequest) (*GetForwarderForEOAReply, error)
+	GetLatestLPBlock(context.Context, *emptypb.Empty) (*GetLatestLPBlockReply, error)
 	mustEmbedUnimplementedEVMServer()
 }
 
@@ -305,6 +318,9 @@ func (UnimplementedEVMServer) CalculateTransactionFee(context.Context, *Calculat
 }
 func (UnimplementedEVMServer) GetForwarderForEOA(context.Context, *GetForwarderForEOARequest) (*GetForwarderForEOAReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
+}
+func (UnimplementedEVMServer) GetLatestLPBlock(context.Context, *emptypb.Empty) (*GetLatestLPBlockReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }
 func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
 func (UnimplementedEVMServer) testEmbeddedByValue()             {}
@@ -615,6 +631,24 @@ func _EVM_GetForwarderForEOA_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVM_GetLatestLPBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMServer).GetLatestLPBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVM_GetLatestLPBlock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMServer).GetLatestLPBlock(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EVM_ServiceDesc is the grpc.ServiceDesc for EVM service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -685,6 +719,10 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetForwarderForEOA",
 			Handler:    _EVM_GetForwarderForEOA_Handler,
+		},
+		{
+			MethodName: "GetLatestLPBlock",
+			Handler:    _EVM_GetLatestLPBlock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

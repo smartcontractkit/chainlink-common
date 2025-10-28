@@ -440,6 +440,64 @@ func (_c *EVMService_GetForwarderForEOA_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// GetLatestLPBlock provides a mock function with given fields: ctx
+func (_m *EVMService) GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestLPBlock")
+	}
+
+	var r0 *evm.LPBlock
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*evm.LPBlock, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *evm.LPBlock); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*evm.LPBlock)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_GetLatestLPBlock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestLPBlock'
+type EVMService_GetLatestLPBlock_Call struct {
+	*mock.Call
+}
+
+// GetLatestLPBlock is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *EVMService_Expecter) GetLatestLPBlock(ctx interface{}) *EVMService_GetLatestLPBlock_Call {
+	return &EVMService_GetLatestLPBlock_Call{Call: _e.mock.On("GetLatestLPBlock", ctx)}
+}
+
+func (_c *EVMService_GetLatestLPBlock_Call) Run(run func(ctx context.Context)) *EVMService_GetLatestLPBlock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *EVMService_GetLatestLPBlock_Call) Return(_a0 *evm.LPBlock, _a1 error) *EVMService_GetLatestLPBlock_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_GetLatestLPBlock_Call) RunAndReturn(run func(context.Context) (*evm.LPBlock, error)) *EVMService_GetLatestLPBlock_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTransactionByHash provides a mock function with given fields: ctx, request
 func (_m *EVMService) GetTransactionByHash(ctx context.Context, request evm.GetTransactionByHashRequest) (*evm.Transaction, error) {
 	ret := _m.Called(ctx, request)

@@ -69,11 +69,11 @@ type StandardCapabilitiesService struct {
 
 func NewStandardCapabilitiesService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd) *StandardCapabilitiesService {
 	newService := func(ctx context.Context, instance any) (StandardCapabilities, services.HealthReporter, error) {
-		scs, ok := instance.(StandardCapabilities)
+		scs, ok := instance.(*standardcapability.StandardCapabilitiesClient)
 		if !ok {
 			return nil, nil, fmt.Errorf("expected StandardCapabilities but got %T", instance)
 		}
-		return scs, scs, nil
+		return scs, scs, scs.Reinitialise(ctx)
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "StandardCapabilities")

@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/Masterminds/semver/v3"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -18,8 +21,22 @@ var (
 	ErrCapabilityAlreadyExists = errors.New("capability already exists")
 )
 
+// atomicBaseCapability extends [capabilities.BaseCapability] to support atomic updates and forward client state checks.
+type atomicBaseCapability interface {
+	capabilities.BaseCapability
+	Update(capabilities.BaseCapability) error
+	StateGetter
+}
+
+var _ StateGetter = (*grpc.ClientConn)(nil)
+
+// StateGetter is implemented by GRPC client connections.
+type StateGetter interface {
+	GetState() connectivity.State
+}
+
 type baseRegistry struct {
-	m    map[string]capabilities.BaseCapability
+	m    map[string]atomicBaseCapability
 	lggr logger.Logger
 	mu   sync.RWMutex
 }
@@ -28,7 +45,7 @@ var _ core.CapabilitiesRegistryBase = (*baseRegistry)(nil)
 
 func NewBaseRegistry(lggr logger.Logger) core.CapabilitiesRegistryBase {
 	return &baseRegistry{
-		m:    map[string]capabilities.BaseCapability{},
+		m:    map[string]atomicBaseCapability{},
 		lggr: logger.Named(lggr, "registries.basic"),
 	}
 }
@@ -142,33 +159,35 @@ func (r *baseRegistry) Add(ctx context.Context, c capabilities.BaseCapability) e
 		return err
 	}
 
-	switch info.CapabilityType {
-	case capabilities.CapabilityTypeTrigger:
-		_, ok := c.(capabilities.TriggerCapability)
-		if !ok {
-			return errors.New("trigger capability does not satisfy TriggerCapability interface")
-		}
-	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
-		_, ok := c.(capabilities.ExecutableCapability)
-		if !ok {
-			return errors.New("action does not satisfy ExecutableCapability interface")
-		}
-	case capabilities.CapabilityTypeCombined:
-		_, ok := c.(capabilities.ExecutableAndTriggerCapability)
-		if !ok {
-			return errors.New("target capability does not satisfy ExecutableAndTriggerCapability interface")
-		}
-	default:
-		return fmt.Errorf("unknown capability type: %s", info.CapabilityType)
-	}
-
 	id := info.ID
-	_, ok := r.m[id]
+	bc, ok := r.m[id]
 	if ok {
-		return fmt.Errorf("%w: id %s found in registry", ErrCapabilityAlreadyExists, id)
+		switch state := bc.GetState(); state {
+		case connectivity.Shutdown, connectivity.TransientFailure, connectivity.Idle:
+			// allow replace
+		default:
+			return fmt.Errorf("%w: id %s found in registry: state %s", ErrCapabilityAlreadyExists, id, state)
+		}
+		if err := bc.Update(c); err != nil {
+			return fmt.Errorf("failed to update capability %s: %w", id, err)
+		}
+	} else {
+		var ac atomicBaseCapability
+		switch info.CapabilityType {
+		case capabilities.CapabilityTypeTrigger:
+			ac = &atomicTriggerCapability{}
+		case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
+			ac = &atomicExecuteCapability{}
+		case capabilities.CapabilityTypeCombined:
+			ac = &atomicExecuteAndTriggerCapability{}
+		default:
+			return fmt.Errorf("unknown capability type: %s", info.CapabilityType)
+		}
+		if err := ac.Update(c); err != nil {
+			return err
+		}
+		r.m[id] = ac
 	}
-
-	r.m[id] = c
 	r.lggr.Infow("capability added", "id", id, "type", info.CapabilityType, "description", info.Description, "version", info.Version())
 	return nil
 }
@@ -176,12 +195,207 @@ func (r *baseRegistry) Add(ctx context.Context, c capabilities.BaseCapability) e
 func (r *baseRegistry) Remove(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	_, ok := r.m[id]
+	ac, ok := r.m[id]
 	if !ok {
 		return fmt.Errorf("unable to remove, capability not found: %s", id)
 	}
-
-	delete(r.m, id)
+	if err := ac.Update(nil); err != nil {
+		return fmt.Errorf("failed to remove capability %s: %w", id, err)
+	}
 	r.lggr.Infow("capability removed", "id", id)
 	return nil
+}
+
+var _ capabilities.TriggerCapability = &atomicTriggerCapability{}
+
+type atomicTriggerCapability struct {
+	atomic.Pointer[capabilities.TriggerCapability]
+}
+
+func (a *atomicTriggerCapability) Update(c capabilities.BaseCapability) error {
+	if c == nil {
+		a.Store(nil)
+		return nil
+	}
+	tc, ok := c.(capabilities.TriggerCapability)
+	if !ok {
+		return errors.New("trigger capability does not satisfy TriggerCapability interface")
+	}
+	a.Store(&tc)
+	return nil
+}
+
+func (a *atomicTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	c := a.Load()
+	if c == nil {
+		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
+	}
+	return (*c).Info(ctx)
+}
+
+func (a *atomicTriggerCapability) GetState() connectivity.State {
+	c := a.Load()
+	if c == nil {
+		return connectivity.Shutdown
+	}
+	if sg, ok := (*c).(StateGetter); ok {
+		return sg.GetState()
+	}
+	return connectivity.State(-1) // unknown
+}
+
+func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	c := a.Load()
+	if c == nil {
+		return nil, errors.New("capability unavailable")
+	}
+	return (*c).RegisterTrigger(ctx, request)
+}
+
+func (a *atomicTriggerCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).UnregisterTrigger(ctx, request)
+}
+
+var _ capabilities.ExecutableCapability = &atomicExecuteCapability{}
+
+type atomicExecuteCapability struct {
+	atomic.Pointer[capabilities.ExecutableCapability]
+}
+
+func (a *atomicExecuteCapability) Update(c capabilities.BaseCapability) error {
+	if c == nil {
+		a.Store(nil)
+		return nil
+	}
+	tc, ok := c.(capabilities.ExecutableCapability)
+	if !ok {
+		return errors.New("action does not satisfy ExecutableCapability interface")
+	}
+	a.Store(&tc)
+	return nil
+}
+
+func (a *atomicExecuteCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	c := a.Load()
+	if c == nil {
+		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
+	}
+	return (*c).Info(ctx)
+}
+
+func (a *atomicExecuteCapability) GetState() connectivity.State {
+	c := a.Load()
+	if c == nil {
+		return connectivity.Shutdown
+	}
+	if sg, ok := (*c).(StateGetter); ok {
+		return sg.GetState()
+	}
+	return connectivity.State(-1) // unknown
+}
+
+func (a *atomicExecuteCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).RegisterToWorkflow(ctx, request)
+}
+
+func (a *atomicExecuteCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).UnregisterFromWorkflow(ctx, request)
+}
+
+func (a *atomicExecuteCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	c := a.Load()
+	if c == nil {
+		return capabilities.CapabilityResponse{}, errors.New("capability unavailable")
+	}
+	return (*c).Execute(ctx, request)
+}
+
+var _ capabilities.ExecutableAndTriggerCapability = &atomicExecuteAndTriggerCapability{}
+
+type atomicExecuteAndTriggerCapability struct {
+	atomic.Pointer[capabilities.ExecutableAndTriggerCapability]
+}
+
+func (a *atomicExecuteAndTriggerCapability) Update(c capabilities.BaseCapability) error {
+	if c == nil {
+		a.Store(nil)
+		return nil
+	}
+	tc, ok := c.(capabilities.ExecutableAndTriggerCapability)
+	if !ok {
+		return errors.New("target capability does not satisfy ExecutableAndTriggerCapability interface")
+	}
+	a.Store(&tc)
+	return nil
+}
+
+func (a *atomicExecuteAndTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	c := a.Load()
+	if c == nil {
+		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
+	}
+	return (*c).Info(ctx)
+}
+
+func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
+	c := a.Load()
+	if c == nil {
+		return connectivity.Shutdown
+	}
+	if sg, ok := (*c).(StateGetter); ok {
+		return sg.GetState()
+	}
+	return connectivity.State(-1) // unknown
+}
+
+func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	c := a.Load()
+	if c == nil {
+		return nil, errors.New("capability unavailable")
+	}
+	return (*c).RegisterTrigger(ctx, request)
+}
+
+func (a *atomicExecuteAndTriggerCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).UnregisterTrigger(ctx, request)
+}
+
+func (a *atomicExecuteAndTriggerCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).RegisterToWorkflow(ctx, request)
+}
+
+func (a *atomicExecuteAndTriggerCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).UnregisterFromWorkflow(ctx, request)
+}
+
+func (a *atomicExecuteAndTriggerCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	c := a.Load()
+	if c == nil {
+		return capabilities.CapabilityResponse{}, errors.New("capability unavailable")
+	}
+	return (*c).Execute(ctx, request)
 }

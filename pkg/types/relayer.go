@@ -392,46 +392,60 @@ func (ues *UnimplementedEVMService) CallContract(ctx context.Context, request ev
 func (ues *UnimplementedEVMService) FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method  not implemented")
 }
+
 func (ues *UnimplementedEVMService) HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HeaderByNumber not implemented")
 }
+
 func (ues *UnimplementedEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
 	return 0, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetTransactionByHash(ctx context.Context, request evm.GetTransactionByHashRequest) (*evm.Transaction, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetTransactionReceipt(ctx context.Context, request evm.GeTransactionReceiptRequest) (*evm.Receipt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
+
 func (ues *UnimplementedEVMService) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
 	return status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
 }
+
 func (ues *UnimplementedEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
+
 func (ues *UnimplementedEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
 }
+
 func (ues *UnimplementedEVMService) SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }
+
 func (ues *UnimplementedEVMService) CalculateTransactionFee(ctx context.Context, receiptGasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CalculateTransactionFee not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error) {
 	return 0, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
 }
+
 func (ues *UnimplementedEVMService) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error) {
 	return evm.Address{}, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
 }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761767015239,
+  "lastUpdate": 1761777456717,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -30186,6 +30186,66 @@ window.BENCHMARK_DATA = {
             "value": 140318,
             "unit": "ns/op",
             "extra": "8490 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c2968ea1e662df909598b9fd61f595c600dac640",
+          "message": "feat(observability-lib): add new overrides for lineStyle and color (#1660)",
+          "timestamp": "2025-10-29T22:36:20Z",
+          "tree_id": "073f93dd80f8a676e278a5ead80b3e6f777feea1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c2968ea1e662df909598b9fd61f595c600dac640"
+        },
+        "date": 1761777454337,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.8,
+            "unit": "ns/op",
+            "extra": "2483941 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95128,
+            "unit": "ns/op",
+            "extra": "12571 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.2,
+            "unit": "ns/op",
+            "extra": "2963684 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94151,
+            "unit": "ns/op",
+            "extra": "12723 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26958,
+            "unit": "ns/op",
+            "extra": "44107 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 149894,
+            "unit": "ns/op",
+            "extra": "8277 times\n4 procs"
           }
         ]
       }

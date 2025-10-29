@@ -45,7 +45,7 @@ type Client struct {
 	// Message Emitter
 	Emitter Emitter
 	// Chip
-	Chip ChipIngressClient
+	Chip chipingress.Client
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
@@ -185,8 +185,8 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// This will eventually be removed in favor of chip-ingress emitter
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
-	var chipIngressClient chipingress.Client
 
+	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
@@ -232,22 +232,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 	}
 
-	// Create interface/wrapper to chip-ingress for schema registry
-	var chip ChipIngressClient
-	if chipIngressClient != nil {
-		chip, err = NewChipIngressClient(chipIngressClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create interface to chip ingress: %w", err)
-		}
-	}
-
 	onClose := func() (err error) {
 		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chip, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
+	return &Client{cfg, logger, tracer, meter, emitter, chipIngressClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
 }
 
 // Closes all providers, flushes all data and stops all background processes

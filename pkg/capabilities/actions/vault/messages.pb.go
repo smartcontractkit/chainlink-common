@@ -1893,15 +1893,18 @@ type ReportingPluginConfig struct {
 	MaxIdentifierNamespaceLengthBytes int32   `protobuf:"varint,6,opt,name=MaxIdentifierNamespaceLengthBytes,proto3" json:"MaxIdentifierNamespaceLengthBytes,omitempty"`
 	DKGInstanceID                     *string `protobuf:"bytes,7,opt,name=DKGInstanceID,proto3,oneof" json:"DKGInstanceID,omitempty"`
 	// OCR 3.1 ReportInfo configuration
-	LimitsMaxQueryLength                          int32 `protobuf:"varint,20,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
-	LimitsMaxObservationLength                    int32 `protobuf:"varint,21,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
-	LimitsMaxReportsPlusPrecursorLength           int32 `protobuf:"varint,22,opt,name=LimitsMaxReportsPlusPrecursorLength,proto3" json:"LimitsMaxReportsPlusPrecursorLength,omitempty"`
-	LimitsMaxReportLength                         int32 `protobuf:"varint,23,opt,name=LimitsMaxReportLength,proto3" json:"LimitsMaxReportLength,omitempty"`
-	LimitsMaxReportCount                          int32 `protobuf:"varint,24,opt,name=LimitsMaxReportCount,proto3" json:"LimitsMaxReportCount,omitempty"`
-	LimitsMaxKeyValueModifiedKeysPlusValuesLength int32 `protobuf:"varint,25,opt,name=LimitsMaxKeyValueModifiedKeysPlusValuesLength,proto3" json:"LimitsMaxKeyValueModifiedKeysPlusValuesLength,omitempty"`
-	LimitsMaxBlobPayloadLength                    int32 `protobuf:"varint,26,opt,name=LimitsMaxBlobPayloadLength,proto3" json:"LimitsMaxBlobPayloadLength,omitempty"`
-	unknownFields                                 protoimpl.UnknownFields
-	sizeCache                                     protoimpl.SizeCache
+	LimitsMaxQueryLength                                  int32 `protobuf:"varint,20,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
+	LimitsMaxObservationLength                            int32 `protobuf:"varint,21,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
+	LimitsMaxReportsPlusPrecursorLength                   int32 `protobuf:"varint,22,opt,name=LimitsMaxReportsPlusPrecursorLength,proto3" json:"LimitsMaxReportsPlusPrecursorLength,omitempty"`
+	LimitsMaxReportLength                                 int32 `protobuf:"varint,23,opt,name=LimitsMaxReportLength,proto3" json:"LimitsMaxReportLength,omitempty"`
+	LimitsMaxReportCount                                  int32 `protobuf:"varint,24,opt,name=LimitsMaxReportCount,proto3" json:"LimitsMaxReportCount,omitempty"`
+	LimitsMaxKeyValueModifiedKeysPlusValuesLength         int32 `protobuf:"varint,25,opt,name=LimitsMaxKeyValueModifiedKeysPlusValuesLength,proto3" json:"LimitsMaxKeyValueModifiedKeysPlusValuesLength,omitempty"`
+	LimitsMaxBlobPayloadLength                            int32 `protobuf:"varint,26,opt,name=LimitsMaxBlobPayloadLength,proto3" json:"LimitsMaxBlobPayloadLength,omitempty"`
+	LimitsMaxKeyValueModifiedKeys                         int32 `protobuf:"varint,27,opt,name=LimitsMaxKeyValueModifiedKeys,proto3" json:"LimitsMaxKeyValueModifiedKeys,omitempty"`
+	LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes int32 `protobuf:"varint,28,opt,name=LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes,proto3" json:"LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes,omitempty"`
+	LimitsMaxPerOracleUnexpiredBlobCount                  int32 `protobuf:"varint,29,opt,name=LimitsMaxPerOracleUnexpiredBlobCount,proto3" json:"LimitsMaxPerOracleUnexpiredBlobCount,omitempty"`
+	unknownFields                                         protoimpl.UnknownFields
+	sizeCache                                             protoimpl.SizeCache
 }
 
 func (x *ReportingPluginConfig) Reset() {
@@ -2032,6 +2035,27 @@ func (x *ReportingPluginConfig) GetLimitsMaxBlobPayloadLength() int32 {
 	return 0
 }
 
+func (x *ReportingPluginConfig) GetLimitsMaxKeyValueModifiedKeys() int32 {
+	if x != nil {
+		return x.LimitsMaxKeyValueModifiedKeys
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes() int32 {
+	if x != nil {
+		return x.LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetLimitsMaxPerOracleUnexpiredBlobCount() int32 {
+	if x != nil {
+		return x.LimitsMaxPerOracleUnexpiredBlobCount
+	}
+	return 0
+}
+
 var File_capabilities_actions_vault_messages_proto protoreflect.FileDescriptor
 
 const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
@@ -2148,7 +2172,7 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\fStoredSecret\x12)\n" +
 	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"X\n" +
 	"\x0eStoredMetadata\x12F\n" +
-	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"\x8a\a\n" +
+	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"\x9a\t\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
 	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +
@@ -2163,7 +2187,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x15LimitsMaxReportLength\x18\x17 \x01(\x05R\x15LimitsMaxReportLength\x122\n" +
 	"\x14LimitsMaxReportCount\x18\x18 \x01(\x05R\x14LimitsMaxReportCount\x12d\n" +
 	"-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x18\x19 \x01(\x05R-LimitsMaxKeyValueModifiedKeysPlusValuesLength\x12>\n" +
-	"\x1aLimitsMaxBlobPayloadLength\x18\x1a \x01(\x05R\x1aLimitsMaxBlobPayloadLengthB\x10\n" +
+	"\x1aLimitsMaxBlobPayloadLength\x18\x1a \x01(\x05R\x1aLimitsMaxBlobPayloadLength\x12D\n" +
+	"\x1dLimitsMaxKeyValueModifiedKeys\x18\x1b \x01(\x05R\x1dLimitsMaxKeyValueModifiedKeys\x12t\n" +
+	"5LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes\x18\x1c \x01(\x05R5LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes\x12R\n" +
+	"$LimitsMaxPerOracleUnexpiredBlobCount\x18\x1d \x01(\x05R$LimitsMaxPerOracleUnexpiredBlobCountB\x10\n" +
 	"\x0e_DKGInstanceID*\x84\x01\n" +
 	"\vRequestType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0f\n" +

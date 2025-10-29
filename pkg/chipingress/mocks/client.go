@@ -368,6 +368,79 @@ func (_c *Client_RegisterSchema_Call) RunAndReturn(run func(context.Context, *pb
 	return _c
 }
 
+// RegisterSchemas provides a mock function with given fields: ctx, schemas
+func (_m *Client) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+	_va := make([]interface{}, len(schemas))
+	for _i := range schemas {
+		_va[_i] = schemas[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RegisterSchemas")
+	}
+
+	var r0 map[string]int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...*pb.Schema) (map[string]int, error)); ok {
+		return rf(ctx, schemas...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...*pb.Schema) map[string]int); ok {
+		r0 = rf(ctx, schemas...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]int)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...*pb.Schema) error); ok {
+		r1 = rf(ctx, schemas...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_RegisterSchemas_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterSchemas'
+type Client_RegisterSchemas_Call struct {
+	*mock.Call
+}
+
+// RegisterSchemas is a helper method to define mock.On call
+//   - ctx context.Context
+//   - schemas ...*pb.Schema
+func (_e *Client_Expecter) RegisterSchemas(ctx interface{}, schemas ...interface{}) *Client_RegisterSchemas_Call {
+	return &Client_RegisterSchemas_Call{Call: _e.mock.On("RegisterSchemas",
+		append([]interface{}{ctx}, schemas...)...)}
+}
+
+func (_c *Client_RegisterSchemas_Call) Run(run func(ctx context.Context, schemas ...*pb.Schema)) *Client_RegisterSchemas_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]*pb.Schema, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(*pb.Schema)
+			}
+		}
+		run(args[0].(context.Context), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Client_RegisterSchemas_Call) Return(_a0 map[string]int, _a1 error) *Client_RegisterSchemas_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_RegisterSchemas_Call) RunAndReturn(run func(context.Context, ...*pb.Schema) (map[string]int, error)) *Client_RegisterSchemas_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // StreamEvents provides a mock function with given fields: ctx, opts
 func (_m *Client) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[pb.StreamEventsRequest, pb.StreamEventsResponse], error) {
 	_va := make([]interface{}, len(opts))

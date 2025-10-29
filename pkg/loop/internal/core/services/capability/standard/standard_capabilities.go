@@ -42,7 +42,8 @@ type StandardCapabilitiesClient struct {
 	*goplugin.ServiceClient
 	*net.BrokerExt
 
-	resources []net.Resource
+	resources      []net.Resource
+	initializeDeps *core.StandardCapabilitiesDependencies
 }
 
 var _ StandardCapabilities = (*StandardCapabilitiesClient)(nil)
@@ -56,6 +57,18 @@ func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabili
 		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(pc),
 		BrokerExt:                  pc.BrokerExt,
 	}
+}
+
+// Reinitialise calls Initialise with cached deps from the previous call, if one was already made.
+func (c *StandardCapabilitiesClient) Reinitialise(ctx context.Context) error {
+	if c.initializeDeps == nil {
+		c.Logger.Debug("No dependencies to re-initialise")
+		return nil
+	}
+	c.CloseAll(c.resources...)
+	c.resources = nil
+	c.Logger.Info("Re-initialising dependencies")
+	return c.Initialise(ctx, *c.initializeDeps)
 }
 
 func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
@@ -187,6 +200,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	}
 
 	c.resources = resources
+	c.initializeDeps = &dependencies
 
 	return nil
 }

@@ -81,20 +81,26 @@ type Property struct {
 type ColorMode string
 
 const (
-	ColorModeFixed ColorMode = "fixed"
+	ColorModeFixed          ColorMode = "fixed"
+	ColorModeContinuousYlRd ColorMode = "continuous-YlRd"
 )
 
-type ColorPropertyOptions struct {
-	Mode       ColorMode
-	FixedColor string
-}
-
-func NewColorProperty(options *ColorPropertyOptions) *Property {
+func NewColorModeFixedProperty(fixedColor string) *Property {
 	return &Property{
 		ID: "color",
 		Value: map[string]any{
-			"mode":       options.Mode,
-			"fixedColor": options.FixedColor,
+			"mode":       ColorModeFixed,
+			"fixedColor": fixedColor,
+		},
+	}
+}
+
+func NewColorModeContinuousYlRdProperty(seriesBy string) *Property {
+	return &Property{
+		ID: "color",
+		Value: map[string]any{
+			"mode":     ColorModeContinuousYlRd,
+			"seriesBy": seriesBy,
 		},
 	}
 }
@@ -180,6 +186,43 @@ func NewCellOptions(options *CellOptionsOptions) *Property {
 		Value: map[string]any{
 			"mode": options.Mode,
 			"type": options.Type,
+		},
+	}
+}
+
+type LineStyleMode string
+
+const (
+	LineStyleSolid  LineStyleMode = "solid"
+	LineStyleDashed LineStyleMode = "dashed"
+	LineStyleDotted LineStyleMode = "dotted"
+)
+
+func NewLineStyleSolidProperty() *Property {
+	return &Property{
+		ID: "custom.lineStyle",
+		Value: map[string]any{
+			"fill": LineStyleSolid,
+		},
+	}
+}
+
+func NewLineStyleDashedProperty(gaps ...int) *Property {
+	return &Property{
+		ID: "custom.lineStyle",
+		Value: map[string]any{
+			"fill": LineStyleDashed,
+			"dash": gaps,
+		},
+	}
+}
+
+func NewLineStyleDottedProperty(gaps ...int) *Property {
+	return &Property{
+		ID: "custom.lineStyle",
+		Value: map[string]any{
+			"fill": LineStyleDotted,
+			"dash": gaps,
 		},
 	}
 }

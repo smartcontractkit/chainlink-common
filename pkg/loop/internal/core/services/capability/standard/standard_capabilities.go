@@ -62,8 +62,12 @@ func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabili
 // Reinitialise calls Initialise with cached deps from the previous call, if one was already made.
 func (c *StandardCapabilitiesClient) Reinitialise(ctx context.Context) error {
 	if c.initializeDeps == nil {
+		c.Logger.Debug("No dependencies to re-initialise")
 		return nil
 	}
+	c.CloseAll(c.resources...)
+	c.resources = nil
+	c.Logger.Info("Re-initialising dependencies")
 	return c.Initialise(ctx, *c.initializeDeps)
 }
 

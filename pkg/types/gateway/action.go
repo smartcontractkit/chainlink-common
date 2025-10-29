@@ -71,11 +71,24 @@ func (req OutboundHTTPRequest) Hash() string {
 
 // OutboundHTTPResponse represents the response from gateway to workflow node.
 type OutboundHTTPResponse struct {
-	ErrorMessage            string            `json:"errorMessage,omitempty"`            // error message for all errors except HTTP errors returned by external endpoints
-	IsExternalEndpointError bool              `json:"isExternalEndpointError,omitempty"` // indicates whether the error is from a faulty external endpoint (e.g. timeout, response size) vs error introduced internally by gateway execution
-	IsValidationError       bool              `json:"isValidationError,omitempty"`       // indicates whether the error is a validation error (e.g. blocked HTTP header, blocked IP addresses)
-	StatusCode              int               `json:"statusCode,omitempty"`              // HTTP status code
-	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers
-	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body
-	ExternalEndpointLatency time.Duration     `json:"externalEndpointLatency,omitempty"` // Latency of the external endpoint
+	// ErrorMessage contains error details for gateway-level errors (validation, internal errors, or external endpoint failures like timeouts).
+	// This field is empty when the request successfully reaches the customer's endpoint and returns a response (regardless of HTTP status code).
+	ErrorMessage string `json:"errorMessage,omitempty"`
+
+	// IsExternalEndpointError indicates the request was sent to the customer's endpoint but failed while sending the request or receiving the response.
+	// (e.g., connection timeout, response too large, unreachable host). When true, ErrorMessage contains the failure details.
+	IsExternalEndpointError bool `json:"isExternalEndpointError,omitempty"`
+
+	// IsValidationError indicates the request was blocked by the gateway BEFORE being sent to the customer's endpoint
+	// due to policy violations (e.g., blocked HTTP headers, blocked IP addresses, invalid URL).
+	// This is distinct from StatusCode 4xx, which would indicate the customer's endpoint received and rejected the request.
+	IsValidationError bool `json:"isValidationError,omitempty"`
+
+	// StatusCode is the HTTP status code returned by the customer's endpoint (e.g., 2xx, 4xx, 5xx).
+	// This field is only populated when the request successfully reaches the customer's endpoint and the response is received.
+	StatusCode int `json:"statusCode,omitempty"`
+
+	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers returned by the customer's endpoint
+	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body returned by the customer's endpoint
+	ExternalEndpointLatency time.Duration     `json:"externalEndpointLatency,omitempty"` // Time taken by the customer's endpoint to respond
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -605,6 +606,10 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 
 	return reply, nil
 }
+
+var _ registry.StateGetter = (*TriggerCapabilityClient)(nil)
+var _ registry.StateGetter = (*ExecutableCapabilityClient)(nil)
+var _ registry.StateGetter = (*CombinedCapabilityClient)(nil)
 
 func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddRequest) (*emptypb.Empty, error) {
 	conn, err := c.Dial(request.CapabilityID)

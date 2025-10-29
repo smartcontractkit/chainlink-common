@@ -9,7 +9,10 @@ import (
 
 var _ keystore.Storage = &Storage{}
 
-// Storage implements Storage using a Postgres database
+// Storage implements Storage using a Postgres database.
+// It uses entries initialized in https://github.com/smartcontractkit/chainlink/blob/8ae0dde7f6225a8e212750519d6120a62dd6bfda/core/store/migrate/migrations/0280_create_keystore_table.sql#L1
+// Support for versioning (and other automatic handling) can be conveniently done using triggers on the database level.
+// Please do not implement such logic at the go library level.
 type Storage struct {
 	ds   sqlutil.DataSource
 	name string

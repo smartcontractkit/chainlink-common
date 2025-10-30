@@ -282,8 +282,8 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 }
 
 func (ks *keystore) ExportKeys(_ context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
-	ks.mu.Lock()
-	defer ks.mu.Unlock()
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
 
 	result := ExportKeysResponse{}
 	for _, keyReq := range req.Keys {

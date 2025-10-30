@@ -73,7 +73,7 @@ func (c *ClientServer) Initialise(ctx context.Context, dependencies core.Standar
 	if err := dependencies.CapabilityRegistry.Add(ctx, &clientCapability{
 		ClientCapability: c.ClientCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", err)
 	}
 
 	return nil

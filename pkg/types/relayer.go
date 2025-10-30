@@ -372,3 +372,80 @@ func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, ra
 func (u *UnimplementedRelayer) NewCCIPProvider(ctx context.Context, cargs CCIPProviderArgs) (CCIPProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPProvider not implemented")
 }
+
+var _ EVMService = &UnimplementedEVMService{}
+
+// UnimplementedEVMService implements the EVMService interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real EVMService implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement EVMService (through use of an unexported method).
+type UnimplementedEVMService struct{}
+
+func (ues *UnimplementedEVMService) BalanceAt(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BalanceAt not implemented")
+}
+
+func (ues *UnimplementedEVMService) CallContract(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CallContract not implemented")
+}
+
+func (ues *UnimplementedEVMService) FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method  not implemented")
+}
+
+func (ues *UnimplementedEVMService) HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HeaderByNumber not implemented")
+}
+
+func (ues *UnimplementedEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionByHash(ctx context.Context, request evm.GetTransactionByHashRequest) (*evm.Transaction, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionReceipt(ctx context.Context, request evm.GeTransactionReceiptRequest) (*evm.Receipt, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
+}
+
+func (ues *UnimplementedEVMService) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
+	return status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
+}
+
+func (ues *UnimplementedEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
+	return status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+
+func (ues *UnimplementedEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
+	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
+}
+
+func (ues *UnimplementedEVMService) SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+func (ues *UnimplementedEVMService) CalculateTransactionFee(ctx context.Context, receiptGasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CalculateTransactionFee not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error) {
+	return evm.Address{}, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
+}

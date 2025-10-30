@@ -6,14 +6,19 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"time"
 
+	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	"golang.org/x/crypto/curve25519"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
 )
 
 var (
@@ -52,8 +57,8 @@ type ImportKeysRequest struct {
 
 type ImportKeyRequest struct {
 	KeyName string
-	KeyType KeyType
 	Data    []byte
+	Enc     EncryptionParams
 }
 
 type ImportKeysResponse struct{}
@@ -227,12 +232,90 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 	return DeleteKeysResponse{}, nil
 }
 
-func (k *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error) {
+func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	ksCopy := maps.Clone(ks.keystore)
+	for _, keyReq := range req.Keys {
+		if err := ValidKeyName(keyReq.KeyName); err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
+		}
+		if _, ok := ksCopy[keyReq.KeyName]; ok {
+			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, keyReq.KeyName)
+		}
+		encData := gethkeystore.CryptoJSON{}
+		err := json.Unmarshal(keyReq.Data, &encData)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal encrypted import data: %w", keyReq.KeyName, err)
+		}
+		decData, err := gethkeystore.DecryptDataV3(encData, keyReq.Enc.Password)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to decrypt key: %w", keyReq.KeyName, err)
+		}
+		keypb := &serialization.Key{}
+		err = proto.Unmarshal(decData, keypb)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal key: %w", keyReq.KeyName, err)
+		}
+		pkRaw := internal.NewRaw(keypb.PrivateKey)
+		keyType := KeyType(keypb.KeyType)
+		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to get public key from private key: %w", keyReq.KeyName, err)
+		}
+		metadata := keypb.Metadata
+		// The proto compiler sets empty slices to nil during the serialization (https://github.com/golang/protobuf/issues/1348).
+		// We set metadata back to empty slice to be consistent with the Create method which initializes it as such.
+		if metadata == nil {
+			metadata = []byte{}
+		}
+		ksCopy[keyReq.KeyName] = newKey(keyType, pkRaw, publicKey, time.Unix(keypb.CreatedAt, 0), metadata)
+	}
+	// Persist it to storage.
+	if err := ks.save(ctx, ksCopy); err != nil {
+		return ImportKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+	// If we succeed to save, update the in memory keystore.
+	ks.keystore = ksCopy
 	return ImportKeysResponse{}, nil
 }
 
-func (k *keystore) ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
-	return ExportKeysResponse{}, nil
+func (ks *keystore) ExportKeys(_ context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	result := ExportKeysResponse{}
+	for _, keyReq := range req.Keys {
+		key, ok := ks.keystore[keyReq.KeyName]
+		if !ok {
+			return ExportKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, keyReq.KeyName)
+		}
+		keypb := &serialization.Key{
+			Name:       keyReq.KeyName,
+			KeyType:    string(key.keyType),
+			PrivateKey: internal.Bytes(key.privateKey),
+			CreatedAt:  key.createdAt.Unix(),
+			Metadata:   key.metadata,
+		}
+		serialized, err := proto.Marshal(keypb)
+		if err != nil {
+			return ExportKeysResponse{}, fmt.Errorf("key = %s, failed to marshal key: %w", keyReq.KeyName, err)
+		}
+		encData, err := gethkeystore.EncryptDataV3(serialized, []byte(keyReq.Enc.Password), keyReq.Enc.ScryptParams.N, keyReq.Enc.ScryptParams.P)
+		if err != nil {
+			return ExportKeysResponse{}, fmt.Errorf("key = %s, failed to encrypt key: %w", keyReq.KeyName, err)
+		}
+		encDataBytes, err := json.Marshal(encData)
+		if err != nil {
+			return ExportKeysResponse{}, fmt.Errorf("key = %s, failed to marshal encrypted key: %w", keyReq.KeyName, err)
+		}
+		result.Keys = append(result.Keys, ExportKeyResponse{
+			KeyName: keyReq.KeyName,
+			Data:    encDataBytes,
+		})
+	}
+	return result, nil
 }
 
 func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {

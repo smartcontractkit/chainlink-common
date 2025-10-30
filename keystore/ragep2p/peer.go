@@ -75,7 +75,7 @@ func CreatePeerKeyring(ctx context.Context, ks commonks.Keystore, name string) (
 	return &PeerKeyring{ks: ks, keyPath: keyPath, pubKey: peerPubKey}, nil
 }
 
-func ListPeerKeyrings(ctx context.Context, ks commonks.Keystore, keyRingNames []string) ([]*PeerKeyring, error) {
+func GetPeerKeyrings(ctx context.Context, ks commonks.Keystore, keyRingNames []string) ([]*PeerKeyring, error) {
 	var keyNames []string
 	if len(keyRingNames) > 0 {
 		for _, name := range keyRingNames {

@@ -23,19 +23,19 @@ func TestPeerKeyring(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, signature)
 
-	peerKeyrings, err := ragep2p.ListPeerKeyrings(ctx, ks, []string{"test-peer-keyring"})
+	peerKeyrings, err := ragep2p.GetPeerKeyrings(ctx, ks, []string{"test-peer-keyring"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(peerKeyrings))
 	require.Equal(t, peerKeyring.PublicKey(), peerKeyrings[0].PublicKey())
 	require.Equal(t, peerKeyring.KeyPath(), peerKeyrings[0].KeyPath())
 
 	// List all works
-	peerKeyRings, err := ragep2p.ListPeerKeyrings(ctx, ks, []string{})
+	peerKeyRings, err := ragep2p.GetPeerKeyrings(ctx, ks, []string{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(peerKeyRings))
 
 	// List non-existent errors.
-	peerKeyRings, err = ragep2p.ListPeerKeyrings(ctx, ks, []string{"non-existent-peer-keyring"})
+	peerKeyRings, err = ragep2p.GetPeerKeyrings(ctx, ks, []string{"non-existent-peer-keyring"})
 	require.Error(t, err)
 
 	// Can create multiple.
@@ -47,14 +47,14 @@ func TestPeerKeyring(t *testing.T) {
 	require.NotNil(t, signature2)
 
 	// List by name works.
-	peerKeyRings, err = ragep2p.ListPeerKeyrings(ctx, ks, []string{"test-peer-keyring-2"})
+	peerKeyRings, err = ragep2p.GetPeerKeyrings(ctx, ks, []string{"test-peer-keyring-2"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(peerKeyRings))
 	require.Equal(t, peerKeyring2.PublicKey(), peerKeyRings[0].PublicKey())
 	require.Equal(t, peerKeyring2.KeyPath(), peerKeyRings[0].KeyPath())
 
 	// List all works with multiple.
-	peerKeyRings, err = ragep2p.ListPeerKeyrings(ctx, ks, []string{})
+	peerKeyRings, err = ragep2p.GetPeerKeyrings(ctx, ks, []string{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(peerKeyRings))
 }

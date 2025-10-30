@@ -141,6 +141,8 @@ func (s *Server) start() error {
 			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
 			LogStreamingEnabled:            s.EnvConfig.TelemetryLogStreamingEnabled,
 			LogLevel:                       s.EnvConfig.TelemetryLogLevel,
+			LogBatchProcessor:              s.EnvConfig.TelemetryLogBatchProcessor,
+			LogExportTimeout:               s.EnvConfig.TelemetryLogExportTimeout,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,

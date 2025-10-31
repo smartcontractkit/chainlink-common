@@ -319,5 +319,23 @@ func (ks *keystore) ExportKeys(_ context.Context, req ExportKeysRequest) (Export
 }
 
 func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	ksCopy := maps.Clone(ks.keystore)
+	for _, metReq := range req.Updates {
+		key, ok := ksCopy[metReq.KeyName]
+		if !ok {
+			return SetMetadataResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, metReq.KeyName)
+		}
+		key.metadata = metReq.Metadata
+		ksCopy[metReq.KeyName] = key
+	}
+	// Persist it to storage.
+	if err := ks.save(ctx, ksCopy); err != nil {
+		return SetMetadataResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+	// If we succeed to save, update the in memory keystore.
+	ks.keystore = ksCopy
 	return SetMetadataResponse{}, nil
 }

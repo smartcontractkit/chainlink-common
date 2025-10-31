@@ -7,9 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
+	"testing"
 	"time"
+
+	"log/slog"
 
 	"golang.org/x/crypto/curve25519"
 
@@ -192,12 +196,41 @@ type keystore struct {
 	keystore map[string]key
 	storage  Storage
 	enc      EncryptionParams
+	lggr     *slog.Logger
 }
 
-func LoadKeystore(ctx context.Context, storage Storage, enc EncryptionParams) (Keystore, error) {
+type Option func(*keystore)
+
+func WithLogger(l *slog.Logger) Option {
+	return func(k *keystore) {
+		if l != nil {
+			k.lggr = l
+		}
+	}
+}
+
+func WithScryptParams(sp ScryptParams) Option {
+	return func(k *keystore) {
+		k.enc.ScryptParams = sp
+	}
+}
+
+// LoadKeystore constructs a keystore with required args (ctx, storage, password)
+// and optional settings via functional options.
+// Default logger is a discard logger and default scrypt params are the standard scrypt params.
+func LoadKeystore(ctx context.Context, storage Storage, password string, opts ...Option) (Keystore, error) {
 	ks := &keystore{
 		storage: storage,
-		enc:     enc,
+		enc: EncryptionParams{
+			Password:     password,
+			ScryptParams: DefaultScryptParams,
+		},
+	}
+	for _, opt := range opts {
+		opt(ks)
+	}
+	if ks.lggr == nil || !testing.Testing() { // logging is not allowed in production binaries
+		ks.lggr = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
 	err := ks.load(ctx)
 	if err != nil {

@@ -1,11 +1,12 @@
 package keystore
 
 import (
+	"bytes"
 	"context"
 	"os"
-)
 
-const readWritePerms = os.FileMode(0600)
+	"github.com/natefinch/atomic"
+)
 
 var _ Storage = &FileStorage{}
 
@@ -25,5 +26,5 @@ func (f *FileStorage) GetEncryptedKeystore(ctx context.Context) ([]byte, error) 
 }
 
 func (f *FileStorage) PutEncryptedKeystore(ctx context.Context, encryptedKeystore []byte) error {
-	return os.WriteFile(f.name, encryptedKeystore, readWritePerms)
+	return atomic.WriteFile(f.name, bytes.NewReader(encryptedKeystore))
 }

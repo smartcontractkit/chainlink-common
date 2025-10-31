@@ -326,6 +326,8 @@ type TimeSeriesPanelOptions struct {
 	ThresholdStyle    common.GraphThresholdsStyleMode
 	DrawStyle         common.GraphDrawStyle
 	StackingMode      common.StackingMode
+	AxisSoftMin       *float64
+	AxisSoftMax       *float64
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -390,6 +392,14 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 	if options.Max != nil {
 		newPanel.Max(*options.Max)
+	}
+
+	if options.AxisSoftMin != nil {
+		newPanel.AxisSoftMin(*options.AxisSoftMin)
+	}
+
+	if options.AxisSoftMax != nil {
+		newPanel.AxisSoftMax(*options.AxisSoftMax)
 	}
 
 	for _, q := range options.Query {

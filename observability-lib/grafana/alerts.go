@@ -65,8 +65,9 @@ type ConditionQuery struct {
 }
 
 type ReduceExpression struct {
-	Expression string
-	Reducer    expr.TypeReduceReducer
+	Expression     string
+	Reducer        expr.TypeReduceReducer
+	ReduceSettings *expr.ExprTypeReduceSettings
 }
 
 type MathExpression struct {
@@ -119,6 +120,17 @@ func newThresholdConditionsOptions(options ThresholdConditionsOption) []cog.Buil
 	return conditions
 }
 
+func newReduceSettingsOptions(options expr.ExprTypeReduceSettings) cog.Builder[expr.ExprTypeReduceSettings] {
+	builder := expr.NewExprTypeReduceSettingsBuilder().
+		Mode(options.Mode)
+
+	if options.Mode == expr.TypeReduceModeReplaceNN && options.ReplaceWithValue != nil {
+		builder.ReplaceWithValue(*options.ReplaceWithValue)
+	}
+
+	return builder
+}
+
 func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 	if options.IntervalMs == nil {
 		options.IntervalMs = Pointer[float64](1000)
@@ -133,13 +145,17 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 		DatasourceUid("__expr__")
 
 	if options.ReduceExpression != nil {
-		res.Model(expr.NewTypeReduceBuilder().
+		reduceBuider := expr.NewTypeReduceBuilder().
 			RefId(options.RefID).
 			Expression(options.ReduceExpression.Expression).
 			IntervalMs(*options.IntervalMs).
 			MaxDataPoints(*options.MaxDataPoints).
-			Reducer(options.ReduceExpression.Reducer),
-		)
+			Reducer(options.ReduceExpression.Reducer)
+
+		if options.ReduceExpression.ReduceSettings != nil && options.ReduceExpression.ReduceSettings.Mode != "" {
+			reduceBuider.Settings(newReduceSettingsOptions(*options.ReduceExpression.ReduceSettings))
+		}
+		res.Model(reduceBuider)
 	}
 
 	if options.MathExpression != nil {

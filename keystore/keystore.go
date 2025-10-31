@@ -224,11 +224,13 @@ func LoadKeystore(ctx context.Context, storage Storage, password string, opts ..
 			Password:     password,
 			ScryptParams: DefaultScryptParams,
 		},
-		lggr: slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})),
 	}
 	for _, opt := range opts {
 		opt(ks)
-	}
+}
+if ks.lggr == nil || !testing.Testing() { // logging is not allowed in production binaries
+	ks.lggr = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+}
 	err := ks.load(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761848193385,
+  "lastUpdate": 1761901128014,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -30366,6 +30366,66 @@ window.BENCHMARK_DATA = {
             "value": 138968,
             "unit": "ns/op",
             "extra": "8251 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yikjiun.lee@smartcontract.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d67d995da76b84485f96f88ea17569e224afd7f",
+          "message": "feat(observability-lib): add AxisSoftMin and AxisSoftMax options (#1665)",
+          "timestamp": "2025-10-31T12:57:34+04:00",
+          "tree_id": "356179f3d6425c430dd47ce5cf0c6f14194d7e01",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2d67d995da76b84485f96f88ea17569e224afd7f"
+        },
+        "date": 1761901126429,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 794.2,
+            "unit": "ns/op",
+            "extra": "1409614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97865,
+            "unit": "ns/op",
+            "extra": "12246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.4,
+            "unit": "ns/op",
+            "extra": "2900786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98428,
+            "unit": "ns/op",
+            "extra": "12182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26836,
+            "unit": "ns/op",
+            "extra": "44330 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 152908,
+            "unit": "ns/op",
+            "extra": "8002 times\n4 procs"
           }
         ]
       }

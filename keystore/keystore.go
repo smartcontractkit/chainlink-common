@@ -10,6 +10,7 @@ import (
 	"io"
 	"slices"
 	"sync"
+	"testing"
 	"time"
 
 	"log/slog"
@@ -227,10 +228,10 @@ func LoadKeystore(ctx context.Context, storage Storage, password string, opts ..
 	}
 	for _, opt := range opts {
 		opt(ks)
-}
-if ks.lggr == nil || !testing.Testing() { // logging is not allowed in production binaries
-	ks.lggr = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
-}
+	}
+	if ks.lggr == nil || !testing.Testing() { // logging is not allowed in production binaries
+		ks.lggr = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+	}
 	err := ks.load(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keystore: %w", err)

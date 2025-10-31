@@ -1,7 +1,7 @@
 // Package cresettings contains configurable settings definitions for nodes in the CRE.
 // Environment Variables:
-//  - CL_CRE_SETTINGS_DEFAULT: defaults like in ./defaults.json - initializes Default
-// 	- CL_CRE_SETTINGS: scoped settings like in ../settings/testdata/config.json - initializes DefaultGetter
+//   - CL_CRE_SETTINGS_DEFAULT: defaults like in ./defaults.json - initializes Default
+//   - CL_CRE_SETTINGS: scoped settings like in ../settings/testdata/config.json - initializes DefaultGetter
 package cresettings
 
 import (
@@ -113,10 +113,10 @@ var Default = Schema{
 		},
 		HTTPAction: httpAction{
 			CallLimit:         Int(5),
-			ResponseSizeLimit: Size(10 * config.KByte),
-			ConnectionTimeout: Duration(10 * time.Second),
-			RequestSizeLimit:  Size(100 * config.KByte),
 			CacheAgeLimit:     Duration(10 * time.Minute),
+			ConnectionTimeout: Duration(10 * time.Second),
+			RequestSizeLimit:  Size(10 * config.KByte),
+			ResponseSizeLimit: Size(100 * config.KByte),
 		},
 	},
 }
@@ -124,24 +124,28 @@ var Default = Schema{
 type Schema struct {
 	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	WorkflowTriggerRateLimit          Setting[config.Rate]
-	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
+	// Deprecated
+	WorkflowTriggerRateLimit        Setting[config.Rate]
+	GatewayIncomingPayloadSizeLimit Setting[config.Size]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
+	// Deprecated
 	WorkflowDeploymentRateLimit Setting[config.Rate]
 	ZeroBalancePruningTimeout   Setting[time.Duration]
 }
 
 type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	WorkflowTriggerRateLimit          Setting[config.Rate]
+	// Deprecated
+	WorkflowTriggerRateLimit Setting[config.Rate]
 }
 
 type Workflows struct {
+	// Deprecated
 	TriggerRateLimit            Setting[config.Rate]
 	TriggerRegistrationsTimeout Setting[time.Duration]
 	TriggerSubscriptionTimeout  Setting[time.Duration]
@@ -185,12 +189,14 @@ type Workflows struct {
 }
 
 type cronTrigger struct {
+	// Deprecated: to be removed
 	RateLimit Setting[config.Rate]
 }
 type httpTrigger struct {
 	RateLimit Setting[config.Rate]
 }
 type logTrigger struct {
+	// Deprecated
 	Limit                    Setting[int] `unit:"{trigger}"`
 	EventRateLimit           Setting[config.Rate]
 	EventSizeLimit           Setting[config.Size]
@@ -213,10 +219,10 @@ type chainRead struct {
 }
 type httpAction struct {
 	CallLimit         Setting[int] `unit:"{call}"`
-	ResponseSizeLimit Setting[config.Size]
+	CacheAgeLimit     Setting[time.Duration]
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
-	CacheAgeLimit     Setting[time.Duration]
+	ResponseSizeLimit Setting[config.Size]
 }
 type consensus struct {
 	ObservationSizeLimit Setting[config.Size]

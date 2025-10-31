@@ -237,10 +237,11 @@ func TestKeystore_ExportImport(t *testing.T) {
 				{KeyName: "key1", Enc: exportParams},
 			},
 		})
+		require.NoError(t, err)
 		require.Len(t, exportResponse.Keys, 1)
 		_, err = ks2.ImportKeys(t.Context(), keystore.ImportKeysRequest{
 			Keys: []keystore.ImportKeyRequest{
-				{KeyName: "key1", Enc: exportParams, Data: exportResponse.Keys[0].Data},
+				{KeyName: "key1", Password: exportParams.Password, Data: exportResponse.Keys[0].Data},
 			},
 		})
 		require.NoError(t, err)
@@ -279,7 +280,7 @@ func TestKeystore_ExportImport(t *testing.T) {
 	t.Run("import existing key", func(t *testing.T) {
 		_, err = ks2.ImportKeys(t.Context(), keystore.ImportKeysRequest{
 			Keys: []keystore.ImportKeyRequest{
-				{KeyName: "key1", Enc: keystore.EncryptionParams{}, Data: []byte{}},
+				{KeyName: "key1", Password: "", Data: []byte{}},
 			},
 		})
 		require.ErrorIs(t, err, keystore.ErrKeyAlreadyExists)

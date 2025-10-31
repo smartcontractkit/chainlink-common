@@ -56,9 +56,9 @@ type ImportKeysRequest struct {
 }
 
 type ImportKeyRequest struct {
-	KeyName string
-	Data    []byte
-	Enc     EncryptionParams
+	KeyName  string
+	Data     []byte
+	Password string
 }
 
 type ImportKeysResponse struct{}
@@ -249,7 +249,7 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 		if err != nil {
 			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal encrypted import data: %w", keyReq.KeyName, err)
 		}
-		decData, err := gethkeystore.DecryptDataV3(encData, keyReq.Enc.Password)
+		decData, err := gethkeystore.DecryptDataV3(encData, keyReq.Password)
 		if err != nil {
 			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to decrypt key: %w", keyReq.KeyName, err)
 		}

@@ -147,9 +147,9 @@ func newKey(keyType KeyType, privateKey internal.Raw, publicKey []byte, createdA
 	}
 }
 
-// EncryptionParams controls password-based encryption cost.
-// N and P are scrypt parameters; higher values increase CPU/memory cost.
+// EncryptionParams controls password-based encryption.
 // Password is the secret used to derive the encryption key.
+// ScryptParams control CPU/memory cost.
 type EncryptionParams struct {
 	Password     string
 	ScryptParams ScryptParams

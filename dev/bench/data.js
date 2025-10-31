@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761932129076,
+  "lastUpdate": 1761940864030,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -30666,6 +30666,66 @@ window.BENCHMARK_DATA = {
             "value": 141263,
             "unit": "ns/op",
             "extra": "8230 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "81052963bef9bbbe04f9174c69f0932edea6925b",
+          "message": "[ARCH-341] Keystore logger (#1668)\n\n* Introduce logger\n\n* Update keystore/keystore.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Fix import\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-10-31T15:59:48-04:00",
+          "tree_id": "8a358b939366810408770cb2e049b56403d6531f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/81052963bef9bbbe04f9174c69f0932edea6925b"
+        },
+        "date": 1761940862754,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 576.2,
+            "unit": "ns/op",
+            "extra": "1916751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94758,
+            "unit": "ns/op",
+            "extra": "12546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 430.9,
+            "unit": "ns/op",
+            "extra": "2618924 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98029,
+            "unit": "ns/op",
+            "extra": "12272 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26676,
+            "unit": "ns/op",
+            "extra": "44932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142856,
+            "unit": "ns/op",
+            "extra": "7564 times\n4 procs"
           }
         ]
       }

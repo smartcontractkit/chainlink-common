@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"sort"
 
 	jsonv2 "github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
@@ -30,7 +31,19 @@ type WorkflowMetadata struct {
 // across multiple nodes. The digest is a SHA256 hash of the canonical JSON representation,
 // ensuring deterministic output regardless of the order in which authorized keys are reported.
 func (wm *WorkflowMetadata) Digest() (string, error) {
-	JSONBytes, err := jsonv2.Marshal(wm, jsonv2.Deterministic(true))
+	sortedMetadata := WorkflowMetadata{
+		WorkflowSelector: wm.WorkflowSelector,
+		AuthorizedKeys:   make([]AuthorizedKey, len(wm.AuthorizedKeys)),
+	}
+	copy(sortedMetadata.AuthorizedKeys, wm.AuthorizedKeys)
+	sort.Slice(sortedMetadata.AuthorizedKeys, func(i, j int) bool {
+		if sortedMetadata.AuthorizedKeys[i].KeyType != sortedMetadata.AuthorizedKeys[j].KeyType {
+			return sortedMetadata.AuthorizedKeys[i].KeyType < sortedMetadata.AuthorizedKeys[j].KeyType
+		}
+		return sortedMetadata.AuthorizedKeys[i].PublicKey < sortedMetadata.AuthorizedKeys[j].PublicKey
+	})
+
+	JSONBytes, err := jsonv2.Marshal(sortedMetadata, jsonv2.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
 	}

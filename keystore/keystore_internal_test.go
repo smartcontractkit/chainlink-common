@@ -30,3 +30,23 @@ func TestPublicKeyFromPrivateKey(t *testing.T) {
 	// We use SEC1 (uncompressed) format for ECDH public keys.
 	require.Equal(t, 65, len(pubKey))
 }
+
+func TestJoinKeySegments(t *testing.T) {
+	tests := []struct {
+		segments []string
+		expected string
+	}{
+		{segments: []string{"EVM", "TX", "my-key"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "/TX", "my-key"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX/", "my-key"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX", "/my-key"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX", "my-key", ""}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX", "my-key", "/"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX", "my-key", "//"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX", "my-key", "///"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"EVM", "TX", "my-key", "////"}, expected: "EVM/TX/my-key"},
+	}
+	for _, tt := range tests {
+		require.Equal(t, tt.expected, joinKeySegments(tt.segments...))
+	}
+}

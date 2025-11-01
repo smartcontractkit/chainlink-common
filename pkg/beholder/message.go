@@ -6,6 +6,7 @@ import (
 	"maps"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -231,7 +232,9 @@ func NewMetadata(attrs Attributes) *Metadata {
 // validDomainAndEntityRegex allows for alphanumeric characters and ._-
 var validDomainAndEntityRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
-func NewMetadataValidator() (*validator.Validate, error) {
+func NewMetadataValidator() (*validator.Validate, error) { return metadataValidator() }
+
+var metadataValidator = sync.OnceValues(func() (*validator.Validate, error) {
 	validate := validator.New()
 	err := validate.RegisterValidation("domain_entity", func(fl validator.FieldLevel) bool {
 		str, isStr := fl.Field().Interface().(string)
@@ -250,7 +253,7 @@ func NewMetadataValidator() (*validator.Validate, error) {
 		return nil, err
 	}
 	return validate, nil
-}
+})
 
 func (m *Metadata) Validate() error {
 	validate, err := NewMetadataValidator()

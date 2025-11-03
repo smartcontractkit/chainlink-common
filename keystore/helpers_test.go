@@ -2,6 +2,8 @@ package keystore_test
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"sync"
 	"testing"
 
@@ -24,10 +26,10 @@ type KeystoreTH struct {
 func NewKeystoreTH(t *testing.T) *KeystoreTH {
 	ctx := t.Context()
 	st := keystore.NewMemoryStorage()
-	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
-		Password:     "test",
-		ScryptParams: keystore.FastScryptParams,
-	})
+	ks, err := keystore.LoadKeystore(ctx, st, "test",
+		keystore.WithScryptParams(keystore.FastScryptParams),
+		keystore.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))),
+	)
 	require.NoError(t, err)
 	return &KeystoreTH{
 		Keystore:   ks,

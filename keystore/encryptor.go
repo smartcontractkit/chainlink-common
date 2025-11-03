@@ -98,6 +98,7 @@ func (UnimplementedEncryptor) DeriveSharedSecret(ctx context.Context, req Derive
 
 func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResponse, error) {
 	if len(req.Data) > MaxEncryptionPayloadSize {
+		k.lggr.Error("encrypt failed: payload too large", "size", len(req.Data), "max", MaxEncryptionPayloadSize)
 		return EncryptResponse{}, ErrEncryptionFailed
 	}
 
@@ -105,7 +106,8 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 	case X25519:
 		encrypted, err := k.encryptX25519Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptResponse{}, err
+			k.lggr.Error("encrypt failed: x25519", "err", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		return EncryptResponse{
 			EncryptedData: encrypted,
@@ -113,10 +115,12 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 	case ECDH_P256:
 		encrypted, err := k.encryptECDHP256Anonymous(req.Data, req.RemotePubKey)
 		if err != nil {
-			return EncryptResponse{}, err
+			k.lggr.Error("encrypt failed: ecdh-p256", "err", err)
+			return EncryptResponse{}, ErrEncryptionFailed
 		}
 		return EncryptResponse{EncryptedData: encrypted}, nil
 	default:
+		k.lggr.Error("encrypt failed: unsupported remote key type", "remoteKeyType", req.RemoteKeyType.String())
 		return EncryptResponse{}, ErrEncryptionFailed
 	}
 }
@@ -126,11 +130,13 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 	defer k.mu.RUnlock()
 
 	if len(req.EncryptedData) == 0 || len(req.EncryptedData) > MaxEncryptionPayloadSize*2 {
+		k.lggr.Error("decrypt failed: invalid ciphertext size", "size", len(req.EncryptedData))
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
+		k.lggr.Error("decrypt failed: key not found", "keyName", req.KeyName)
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 
@@ -138,16 +144,19 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 	case X25519:
 		decrypted, err := k.decryptX25519Anonymous(req.EncryptedData, key.privateKey, key.publicKey)
 		if err != nil {
-			return DecryptResponse{}, err
+			k.lggr.Error("decrypt failed: x25519", "err", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		return DecryptResponse{Data: decrypted}, nil
 	case ECDH_P256:
 		decrypted, err := k.decryptECDHP256Anonymous(req.EncryptedData, key.privateKey)
 		if err != nil {
-			return DecryptResponse{}, err
+			k.lggr.Error("decrypt failed: ecdh-p256", "err", err)
+			return DecryptResponse{}, ErrDecryptionFailed
 		}
 		return DecryptResponse{Data: decrypted}, nil
 	default:
+		k.lggr.Error("decrypt failed: unsupported key type", "keyType", key.keyType.String())
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 }
@@ -158,16 +167,19 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 
 	key, ok := k.keystore[req.KeyName]
 	if !ok {
+		k.lggr.Error("derive shared secret failed: key not found", "keyName", req.KeyName)
 		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
 
 	switch key.keyType {
 	case X25519:
 		if len(req.RemotePubKey) != 32 {
+			k.lggr.Error("derive shared secret failed: invalid remote pubkey length", "expected", 32, "got", len(req.RemotePubKey))
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		sharedSecret, err := curve25519.X25519(internal.Bytes(key.privateKey), req.RemotePubKey)
 		if err != nil {
+			k.lggr.Error("derive shared secret failed: x25519", "err", err)
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		return DeriveSharedSecretResponse{
@@ -176,23 +188,28 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 	case ECDH_P256:
 		// P-256 uncompressed public keys are 65 bytes (0x04 || x || y)
 		if len(req.RemotePubKey) != 65 {
+			k.lggr.Error("derive shared secret failed: invalid remote pubkey length", "expected", 65, "got", len(req.RemotePubKey))
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		curve := ecdh.P256()
 		priv, err := curve.NewPrivateKey(internal.Bytes(key.privateKey))
 		if err != nil {
+			k.lggr.Error("derive shared secret failed: invalid P-256 private key", "err", err)
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		remotePub, err := curve.NewPublicKey(req.RemotePubKey)
 		if err != nil {
+			k.lggr.Error("derive shared secret failed: invalid remote public key", "err", err)
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		shared, err := priv.ECDH(remotePub)
 		if err != nil {
+			k.lggr.Error("derive shared secret failed: ecdh", "err", err)
 			return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 		}
 		return DeriveSharedSecretResponse{SharedSecret: shared}, nil
 	default:
+		k.lggr.Error("derive shared secret failed: unsupported key type", "keyType", key.keyType.String())
 		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
 }
@@ -200,13 +217,13 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 // encryptX25519Anonymous performs X25519 anonymous encryption using NaCl box
 func (k *keystore) encryptX25519Anonymous(data []byte, remotePubKey []byte) ([]byte, error) {
 	if len(remotePubKey) != 32 {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("x25519: invalid remote public key length: got %d, want 32", len(remotePubKey))
 	}
 
 	// Use SealAnonymous for anonymous encryption
 	encrypted, err := box.SealAnonymous(nil, data, (*[32]byte)(remotePubKey), rand.Reader)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("x25519: seal anonymous: %w", err)
 	}
 	return encrypted, nil
 }
@@ -214,13 +231,13 @@ func (k *keystore) encryptX25519Anonymous(data []byte, remotePubKey []byte) ([]b
 // decryptX25519Anonymous performs X25519 anonymous decryption using NaCl box
 func (k *keystore) decryptX25519Anonymous(encryptedData []byte, privateKey internal.Raw, publicKey []byte) ([]byte, error) {
 	if len(publicKey) != 32 {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("x25519: invalid public key length: got %d, want 32", len(publicKey))
 	}
 
 	// Use OpenAnonymous for anonymous decryption
 	decrypted, ok := box.OpenAnonymous(nil, encryptedData, (*[32]byte)(publicKey), (*[32]byte)(internal.Bytes(privateKey)))
 	if !ok {
-		return nil, ErrDecryptionFailed
+		return nil, errors.New("x25519: open anonymous failed")
 	}
 	if len(decrypted) == 0 {
 		// box.OpenAnonymous will return a nil slice if the ciphertext is empty
@@ -240,25 +257,25 @@ func (k *keystore) decryptX25519Anonymous(encryptedData []byte, privateKey inter
 func (k *keystore) encryptECDHP256Anonymous(data []byte, remotePubKey []byte) ([]byte, error) {
 	curve := ecdh.P256()
 	if len(remotePubKey) != 65 {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: invalid remote public key length: got %d, want 65", len(remotePubKey))
 	}
 
 	// Generate ephemeral key pair for this encryption
 	ephPriv, err := curve.GenerateKey(rand.Reader)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: generate ephemeral key: %w", err)
 	}
 
 	// Remote public key must be on the P256 curve for the shared secret to work
 	recipientPub, err := curve.NewPublicKey(remotePubKey)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new public key: %w", err)
 	}
 
 	// Derive shared secret using ephemeral private key + recipient public key
 	shared, err := ephPriv.ECDH(recipientPub)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: ecdh: %w", err)
 	}
 
 	// Derive deterministic nonce from ephemeral public key + recipient public key
@@ -268,17 +285,17 @@ func (k *keystore) encryptECDHP256Anonymous(data []byte, remotePubKey []byte) ([
 	// Derive AES-256-GCM key from shared secret and nonce
 	derivedKey, err := deriveAESKeyFromSharedSecret(shared, nonce, infoAESGCM)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: derive aes key: %w", err)
 	}
 
 	// Encrypt with AES-GCM
 	block, err := aes.NewCipher(derivedKey)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new cipher: %w", err)
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, ErrEncryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new gcm: %w", err)
 	}
 
 	// Include both nonce and ephemeral public key in AAD for complete authentication
@@ -301,7 +318,7 @@ func encodeECDHP256Anonymous(nonce []byte, ephPub []byte, ciphertext []byte) []b
 
 func decodeECDHP256Anonymous(encryptedData []byte) ([]byte, []byte, []byte, error) {
 	if len(encryptedData) < ephPubSizeECDHP256+nonceSizeECDHP256 {
-		return nil, nil, nil, ErrDecryptionFailed
+		return nil, nil, nil, errors.New("ecdh-p256: ciphertext too short")
 	}
 	nonceBytes := encryptedData[:nonceSizeECDHP256]
 	ephPubBytes := encryptedData[nonceSizeECDHP256 : nonceSizeECDHP256+ephPubSizeECDHP256]
@@ -312,7 +329,7 @@ func decodeECDHP256Anonymous(encryptedData []byte) ([]byte, []byte, []byte, erro
 // decryptECDHP256Anonymous performs ECDH-P256 anonymous decryption
 func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey internal.Raw) ([]byte, error) {
 	if len(encryptedData) < ephPubSizeECDHP256+nonceSizeECDHP256 {
-		return nil, ErrDecryptionFailed
+		return nil, errors.New("ecdh-p256: ciphertext too short")
 	}
 
 	nonce, ephPubBytes, ciphertext, err := decodeECDHP256Anonymous(encryptedData)
@@ -323,38 +340,38 @@ func (k *keystore) decryptECDHP256Anonymous(encryptedData []byte, privateKey int
 	curve := ecdh.P256()
 	ephPub, err := curve.NewPublicKey(ephPubBytes)
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new public key: %w", err)
 	}
 
 	priv, err := curve.NewPrivateKey(internal.Bytes(privateKey))
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new private key: %w", err)
 	}
 
 	shared, err := priv.ECDH(ephPub)
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: ecdh: %w", err)
 	}
 
 	derivedKey, err := deriveAESKeyFromSharedSecret(shared, nonce[:], infoAESGCM)
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: derive aes key: %w", err)
 	}
 
 	block, err := aes.NewCipher(derivedKey)
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new cipher: %w", err)
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: new gcm: %w", err)
 	}
 
 	// Include both nonce and ephemeral public key in AAD for complete authentication
 	aad := append(nonce[:], ephPubBytes...)
 	pt, err := gcm.Open(nil, nonce[:], ciphertext, aad)
 	if err != nil {
-		return nil, ErrDecryptionFailed
+		return nil, fmt.Errorf("ecdh-p256: open gcm: %w", err)
 	}
 
 	if len(pt) == 0 {

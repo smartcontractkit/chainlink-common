@@ -50,7 +50,7 @@ FilterTopicsPerSlotLimit = '10'
 
 [PerWorkflow.ChainWrite]
 TargetsLimit = '10'
-ReportSizeLimit = '1kb'
+ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM]
 TransactionGasLimit = '5000000'
@@ -66,7 +66,7 @@ CallLimit = '2000'
 
 [PerWorkflow.HTTPAction]
 CallLimit = '5'
-ResponseSizeLimit = '10kb'
-ConnectionTimeout = '10s'
-RequestSizeLimit = '100kb'
 CacheAgeLimit = '10m0s'
+ConnectionTimeout = '10s'
+RequestSizeLimit = '10kb'
+ResponseSizeLimit = '100kb'

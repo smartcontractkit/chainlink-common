@@ -97,7 +97,7 @@ var Default = Schema{
 
 		ChainWrite: chainWrite{
 			TargetsLimit:    Int(10),
-			ReportSizeLimit: Size(config.KByte),
+			ReportSizeLimit: Size(5 * config.KByte),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
 			},

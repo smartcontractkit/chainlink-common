@@ -24,6 +24,7 @@ service EVM{
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
   rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply);
   rpc GetForwarderForEOA(GetForwarderForEOARequest) returns (GetForwarderForEOAReply);
+  rpc GetLatestLPBlock(google.protobuf.Empty) returns (GetLatestLPBlockReply);
 }
 
 // represents simplified evm-style CallMsg
@@ -103,6 +104,15 @@ message Header {
   values.v1.BigInt block_number = 2;
   bytes hash = 3; // in [32]byte fix-sized array format
   bytes parent_hash = 4; // in [32]byte fix-sized array format
+}
+
+// represents LogPoller's latest/finalized/safe blocks view
+message LPBlock {
+  bytes hash = 1;
+  int64 latest_block_number = 2;
+  uint64 block_timestamp = 3; // unix timestamp
+  int64 finalized_block_number = 4;
+  int64 safe_block_number = 5;
 }
 
 message Expression {
@@ -286,6 +296,10 @@ message QueryTrackedLogsRequest {
 
 message QueryTrackedLogsReply {
   repeated Log logs = 1;
+}
+
+message GetLatestLPBlockReply {
+  LPBlock lp_block = 1;
 }
 
 enum TxStatus {

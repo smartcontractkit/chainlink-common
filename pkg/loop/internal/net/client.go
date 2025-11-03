@@ -9,16 +9,28 @@ import (
 
 	"github.com/jpillora/backoff"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
-var _ grpc.ClientConnInterface = (*AtomicClient)(nil)
+var _ ClientConnInterface = (*grpc.ClientConn)(nil)
+
+type ClientConnInterface interface {
+	grpc.ClientConnInterface
+	GetState() connectivity.State
+}
+
+var _ ClientConnInterface = (*AtomicClient)(nil)
 
 // An AtomicClient implements [grpc.ClientConnInterface] and is backed by a swappable [*grpc.ClientConn].
 type AtomicClient struct {
 	cc atomic.Pointer[grpc.ClientConn]
+}
+
+func (a *AtomicClient) GetState() connectivity.State {
+	return a.cc.Load().GetState()
 }
 
 func (a *AtomicClient) Store(cc *grpc.ClientConn) { a.cc.Store(cc) }
@@ -31,7 +43,7 @@ func (a *AtomicClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, met
 	return a.cc.Load().NewStream(ctx, desc, method, opts...)
 }
 
-var _ grpc.ClientConnInterface = (*clientConn)(nil)
+var _ ClientConnInterface = (*clientConn)(nil)
 
 // newClientFn returns a new client connection id to dial, and a set of Resource dependencies to close.
 type newClientFn func(context.Context) (id uint32, deps Resources, err error)
@@ -47,6 +59,17 @@ type clientConn struct {
 	mu   sync.RWMutex
 	deps Resources
 	cc   *grpc.ClientConn
+}
+
+func (c *clientConn) GetState() connectivity.State {
+	c.mu.RLock()
+	cc := c.cc
+	c.mu.RUnlock()
+	if cc != nil {
+		return cc.GetState()
+	}
+	// fall back to Shutdown to reflect underlying state
+	return connectivity.Shutdown
 }
 
 func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {

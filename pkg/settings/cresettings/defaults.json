@@ -49,7 +49,7 @@
 		},
 		"ChainWrite": {
 			"TargetsLimit": "10",
-			"ReportSizeLimit": "1kb",
+			"ReportSizeLimit": "5kb",
 			"EVM": {
 				"TransactionGasLimit": "5000000"
 			}
@@ -65,10 +65,10 @@
 		},
 		"HTTPAction": {
 			"CallLimit": "5",
-			"ResponseSizeLimit": "10kb",
+			"CacheAgeLimit": "10m0s",
 			"ConnectionTimeout": "10s",
-			"RequestSizeLimit": "100kb",
-			"CacheAgeLimit": "10m0s"
+			"RequestSizeLimit": "10kb",
+			"ResponseSizeLimit": "100kb"
 		}
 	}
 }

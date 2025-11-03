@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -33,13 +34,21 @@ Required if --db-url is not set.
 	cmd.PersistentFlags().String("db-url", "", ` 
 Postgres connection URL (e.g. postgres://user:pass@host:5432/db?sslmode=disable).
 Required if --file-path is not set.
-Requires a database with the encrypted_keystore table initialized in 
+Requires a database with the encrypted_keystore table initialized as in 
 https://github.com/smartcontractkit/chainlink/blob/main/core/store/migrate/migrations/0280_create_keystore_table.sql#L1
 	`)
 	cmd.PersistentFlags().String("password", "", "keystore password used to encrypt the key material")
 
 	cmd.AddCommand(NewListCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd())
 	return cmd
+}
+
+type Key struct {
+	Name      string    `json:"name"`
+	KeyType   string    `json:"key_type"`
+	CreatedAt time.Time `json:"created_at"`
+	PublicKey []byte    `json:"public_key"`
+	Metadata  []byte    `json:"metadata"`
 }
 
 func NewListCmd() *cobra.Command {
@@ -56,9 +65,21 @@ func NewListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			keys := []Key{}
 			for _, g := range resp.Keys {
-				fmt.Printf("%s\t%s\t%s\n", g.KeyInfo.Name, g.KeyInfo.KeyType, g.KeyInfo.CreatedAt.Format(time.RFC3339))
+				keys = append(keys, Key{
+					Name:      g.KeyInfo.Name,
+					KeyType:   string(g.KeyInfo.KeyType),
+					CreatedAt: g.KeyInfo.CreatedAt,
+					PublicKey: g.KeyInfo.PublicKey,
+					Metadata:  g.KeyInfo.Metadata,
+				})
 			}
+			jsonBytes, err := json.Marshal(keys)
+			if err != nil {
+				return err
+			}
+			cmd.OutOrStdout().Write(jsonBytes)
 			return nil
 		},
 	}
@@ -95,44 +116,48 @@ func NewCreateCmd() *cobra.Command {
 }
 
 func NewDeleteCmd() *cobra.Command {
-	return &cobra.Command{
-		Use: "delete [names...]", Short: "Delete key(s)", Args: cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+	cmd := &cobra.Command{
+		Use: "delete", Short: "Delete a key",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			n, err := cmd.Flags().GetString("name")
+			if err != nil {
+				return err
+			}
+			if n == "" {
+				return errors.New("--name is required")
+			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
 			k, err := loadKeystoreFromFlags(ctx, cmd)
 			if err != nil {
 				return err
 			}
-			_, err = k.DeleteKeys(ctx, ks.DeleteKeysRequest{KeyNames: args})
+			_, err = k.DeleteKeys(ctx, ks.DeleteKeysRequest{KeyNames: []string{n}})
 			return err
 		},
 	}
+	cmd.Flags().String("name", "", "key name")
+	return cmd
 }
 
 func NewExportCmd() *cobra.Command {
-	var (
-		name     string
-		out      string
-		password string
-	)
 	cmd := &cobra.Command{
 		Use: "export", Short: "Export a key to an encrypted JSON file",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			name, err := cmd.Flags().GetString("name")
+			keyNameToExport, err := cmd.Flags().GetString("name")
 			if err != nil {
 				return err
 			}
-			out, err := cmd.Flags().GetString("out")
+			outputFilePath, err := cmd.Flags().GetString("out")
 			if err != nil {
 				return err
 			}
-			password, err := cmd.Flags().GetString("password")
+			exportPassword, err := cmd.Flags().GetString("password")
 			if err != nil {
 				return err
 			}
-			if name == "" || out == "" {
-				return errors.New("--name and --out are required")
+			if keyNameToExport == "" || outputFilePath == "" || exportPassword == "" {
+				return errors.New("--name and --out and --password are required")
 			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
@@ -142,9 +167,9 @@ func NewExportCmd() *cobra.Command {
 			}
 			resp, err := k.ExportKeys(ctx, ks.ExportKeysRequest{Keys: []ks.ExportKeyParam{
 				{
-					KeyName: name,
+					KeyName: keyNameToExport,
 					Enc: ks.EncryptionParams{
-						Password:     password,
+						Password:     exportPassword,
 						ScryptParams: ks.DefaultScryptParams,
 					},
 				},
@@ -155,12 +180,12 @@ func NewExportCmd() *cobra.Command {
 			if len(resp.Keys) != 1 {
 				return errors.New("unexpected export response")
 			}
-			return os.WriteFile(out, resp.Keys[0].Data, 0o600)
+			return os.WriteFile(outputFilePath, resp.Keys[0].Data, 0o600)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "key name to export")
-	cmd.Flags().StringVar(&out, "out", "", "output file path for encrypted key JSON")
-	cmd.Flags().StringVar(&password, "password", "", "export password")
+	cmd.Flags().String("name", "", "key name to export")
+	cmd.Flags().String("out", "", "output file path for encrypted key JSON")
+	cmd.Flags().String("password", "", "export password")
 	return cmd
 }
 
@@ -172,11 +197,11 @@ func NewImportCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			in, err := cmd.Flags().GetString("in")
+			inputFilePath, err := cmd.Flags().GetString("in")
 			if err != nil {
 				return err
 			}
-			if name == "" || in == "" {
+			if name == "" || inputFilePath == "" {
 				return errors.New("--name and --in are required")
 			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
@@ -185,7 +210,7 @@ func NewImportCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			encBytes, err := os.ReadFile(in)
+			encBytes, err := os.ReadFile(inputFilePath)
 			if err != nil {
 				return err
 			}

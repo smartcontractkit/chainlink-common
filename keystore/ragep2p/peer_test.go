@@ -11,10 +11,7 @@ import (
 func TestPeerKeyring(t *testing.T) {
 	storage := commonks.NewMemoryStorage()
 	ctx := t.Context()
-	ks, err := commonks.LoadKeystore(ctx, storage, commonks.EncryptionParams{
-		Password:     "test-password",
-		ScryptParams: commonks.FastScryptParams,
-	})
+	ks, err := commonks.LoadKeystore(ctx, storage, "test-password")
 	require.NoError(t, err)
 	peerKeyring, err := ragep2p.CreatePeerKeyring(ctx, ks, "test-peer-keyring")
 	require.NoError(t, err)

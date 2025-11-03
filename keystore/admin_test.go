@@ -314,7 +314,7 @@ func TestKeystore_SetMetadata(t *testing.T) {
 	t.Run("update non-existent key", func(t *testing.T) {
 		_, err = ks.SetMetadata(t.Context(), keystore.SetMetadataRequest{
 			[]keystore.SetMetadataUpdate{
-				{KeyName: "key2", Metadata: []byte("")},
+				{KeyName: "key3", Metadata: []byte("")},
 			},
 		})
 		require.ErrorIs(t, err, keystore.ErrKeyNotFound)

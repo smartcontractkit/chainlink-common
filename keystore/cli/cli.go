@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -22,42 +25,44 @@ const (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "./keystore <command>",
+		Use: "./keystore <command>",
+		Long: ` 
+CLI for managing keystore keys. Must specify KEYSTORE_FILE_PATH or KEYSTORE_DB_URL 
+and KEYSTORE_PASSWORD in order to load the keystore. 
+
+KEYSTORE_FILE_PATH: is the path to the keystore file, can be empty for a new keystore.
+File must already exist. Example to create a new keystore file: touch ./keystore.json
+
+KEYSTORE_DB_URL: is the postgres connection URL. Only use this if your keystore is stored in a pg database.
+Requires a pg database with a 'encrypted_keystore' table with the following schema:
+CREATE TABLE IF NOT EXISTS encrypted_keystore (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    encrypted_data BYTEA NOT NULL
+);
+
+KEYSTORE_PASSWORD is the password used to encrypt the key material before storage.
+`,
 		Short:        "CLI for managing keystore keys",
 		SilenceUsage: true,
 	}
-	cmd.PersistentFlags().String("file-path", "", `
-Path to keystore file (e.g. path/to/mykeystore.json).
-File must already exist, can be empty json file for a new keystore.
-Required if --db-url is not set. 
-	`)
-	cmd.PersistentFlags().String("db-url", "", ` 
-Postgres connection URL (e.g. postgres://user:pass@host:5432/db?sslmode=disable).
-Required if --file-path is not set.
-Requires a database with the encrypted_keystore table initialized as in 
-https://github.com/smartcontractkit/chainlink/blob/main/core/store/migrate/migrations/0280_create_keystore_table.sql#L1
-	`)
-	cmd.PersistentFlags().String("password", "", "keystore password used to encrypt the key material")
+	cmd.PersistentFlags().String("keystore-file-path", "", "Overrides KEYSTORE_FILE_PATH environment variable")
+	cmd.PersistentFlags().String("keystore-db-url", "", "Overrides KEYSTORE_DB_URL environment variable")
+	cmd.PersistentFlags().String("keystore-password", "", "Overrides KEYSTORE_PASSWORD environment variable. Not recommended as will leave shell traces.")
 
-	cmd.AddCommand(NewListCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd())
+	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd())
 	return cmd
 }
 
-type Key struct {
-	Name      string    `json:"name"`
-	KeyType   string    `json:"key_type"`
-	CreatedAt time.Time `json:"created_at"`
-	PublicKey []byte    `json:"public_key"`
-	Metadata  []byte    `json:"metadata"`
-}
-
 func NewListCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := cobra.Command{
 		Use: "list", Short: "List keys",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
-			k, err := loadKeystoreFromFlags(ctx, cmd)
+			k, err := loadKeystore(ctx, cmd)
 			if err != nil {
 				return err
 			}
@@ -65,182 +70,230 @@ func NewListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			keys := []Key{}
-			for _, g := range resp.Keys {
-				keys = append(keys, Key{
-					Name:      g.KeyInfo.Name,
-					KeyType:   string(g.KeyInfo.KeyType),
-					CreatedAt: g.KeyInfo.CreatedAt,
-					PublicKey: g.KeyInfo.PublicKey,
-					Metadata:  g.KeyInfo.Metadata,
-				})
-			}
-			jsonBytes, err := json.Marshal(keys)
+			jsonBytes, err := json.Marshal(resp)
 			if err != nil {
 				return err
 			}
-			cmd.OutOrStdout().Write(jsonBytes)
-			return nil
+			_, err = cmd.OutOrStdout().Write(jsonBytes)
+			return err
 		},
 	}
+	return &cmd
+}
+
+func NewGetCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "get", Short: "Get keys",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			jsonBytes, err := readJSONInput(cmd)
+			if err != nil {
+				return err
+			}
+			var req ks.GetKeysRequest
+			if err := json.Unmarshal(jsonBytes, &req); err != nil {
+				return fmt.Errorf("invalid JSON request: %w", err)
+			}
+			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
+			defer cancel()
+			k, err := loadKeystore(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			resp, err := k.GetKeys(ctx, req)
+			if err != nil {
+				return err
+			}
+			jsonBytes, err = json.Marshal(resp)
+			if err != nil {
+				return err
+			}
+			_, err = cmd.OutOrStdout().Write(jsonBytes)
+			return err
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"KeyType\": \"X25519\"}]}'")
+	return &cmd
 }
 
 func NewCreateCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := cobra.Command{
 		Use: "create", Short: "Create a key",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			name, err := cmd.Flags().GetString("name")
+			jsonBytesIn, err := readJSONInput(cmd)
 			if err != nil {
 				return err
 			}
-			typ, err := cmd.Flags().GetString("type")
+			var req ks.CreateKeysRequest
+			err = json.Unmarshal(jsonBytesIn, &req)
 			if err != nil {
 				return err
-			}
-			if name == "" || typ == "" {
-				return errors.New("--name and --type are required")
 			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
-			k, err := loadKeystoreFromFlags(ctx, cmd)
+			k, err := loadKeystore(ctx, cmd)
 			if err != nil {
 				return err
 			}
-			_, err = k.CreateKeys(ctx, ks.CreateKeysRequest{Keys: []ks.CreateKeyRequest{{KeyName: name, KeyType: ks.KeyType(typ)}}})
+			resp, err := k.CreateKeys(ctx, req)
+			if err != nil {
+				return err
+			}
+			jsonBytes, err := json.Marshal(resp)
+			if err != nil {
+				return err
+			}
+			_, err = cmd.OutOrStdout().Write(jsonBytes)
 			return err
 		},
 	}
-	cmd.Flags().String("name", "", "key name")
-	cmd.Flags().String("type", "", "key type (X25519|ecdh-p256|ed25519|ecdsa-secp256k1)")
-	return cmd
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"KeyType\": \"X25519\"}]}'")
+	return &cmd
 }
 
 func NewDeleteCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := cobra.Command{
 		Use: "delete", Short: "Delete a key",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			n, err := cmd.Flags().GetString("name")
+			jsonBytesIn, err := readJSONInput(cmd)
 			if err != nil {
 				return err
 			}
-			if n == "" {
-				return errors.New("--name is required")
+			var req ks.DeleteKeysRequest
+			err = json.Unmarshal(jsonBytesIn, &req)
+			if err != nil {
+				return err
+			}
+			confirmYes, err := cmd.Flags().GetBool("yes")
+			if err != nil {
+				return err
+			}
+			if !confirmYes {
+				// Prompt for confirmation on stdin
+				_, err = cmd.OutOrStderr().Write([]byte(fmt.Sprintf("This will permanently delete keys: %v. Type 'yes' to confirm: ", strings.Join(req.KeyNames, ", "))))
+				if err != nil {
+					return err
+				}
+				reader := bufio.NewReader(cmd.InOrStdin())
+				line, _ := reader.ReadString('\n')
+				if strings.TrimSpace(line) != "yes\n" {
+					return errors.New("delete aborted by user")
+				}
 			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
-			k, err := loadKeystoreFromFlags(ctx, cmd)
+			k, err := loadKeystore(ctx, cmd)
 			if err != nil {
 				return err
 			}
-			_, err = k.DeleteKeys(ctx, ks.DeleteKeysRequest{KeyNames: []string{n}})
+			// Response is empty, so no need to marshal.
+			_, err = k.DeleteKeys(ctx, req)
 			return err
 		},
 	}
-	cmd.Flags().String("name", "", "key name")
-	return cmd
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyNames\": [\"key1\", \"key2\"]}'")
+	cmd.Flags().Bool("yes", false, "skip confirmation prompt")
+	return &cmd
 }
 
 func NewExportCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := cobra.Command{
 		Use: "export", Short: "Export a key to an encrypted JSON file",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			keyNameToExport, err := cmd.Flags().GetString("name")
+			jsonBytesIn, err := readJSONInput(cmd)
 			if err != nil {
 				return err
 			}
-			outputFilePath, err := cmd.Flags().GetString("out")
+			var req ks.ExportKeysRequest
+			err = json.Unmarshal(jsonBytesIn, &req)
 			if err != nil {
 				return err
-			}
-			exportPassword, err := cmd.Flags().GetString("password")
-			if err != nil {
-				return err
-			}
-			if keyNameToExport == "" || outputFilePath == "" || exportPassword == "" {
-				return errors.New("--name and --out and --password are required")
 			}
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
-			k, err := loadKeystoreFromFlags(ctx, cmd)
+			k, err := loadKeystore(ctx, cmd)
 			if err != nil {
 				return err
 			}
-			resp, err := k.ExportKeys(ctx, ks.ExportKeysRequest{Keys: []ks.ExportKeyParam{
-				{
-					KeyName: keyNameToExport,
-					Enc: ks.EncryptionParams{
-						Password:     exportPassword,
-						ScryptParams: ks.DefaultScryptParams,
-					},
-				},
-			}})
+			resp, err := k.ExportKeys(ctx, req)
 			if err != nil {
 				return err
 			}
-			if len(resp.Keys) != 1 {
-				return errors.New("unexpected export response")
-			}
-			return os.WriteFile(outputFilePath, resp.Keys[0].Data, 0o600)
-		},
-	}
-	cmd.Flags().String("name", "", "key name to export")
-	cmd.Flags().String("out", "", "output file path for encrypted key JSON")
-	cmd.Flags().String("password", "", "export password")
-	return cmd
-}
-
-func NewImportCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use: "import", Short: "Import an encrypted key JSON file",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			name, err := cmd.Flags().GetString("name")
+			jsonBytesOut, err := json.Marshal(resp)
 			if err != nil {
 				return err
 			}
-			inputFilePath, err := cmd.Flags().GetString("in")
-			if err != nil {
-				return err
-			}
-			if name == "" || inputFilePath == "" {
-				return errors.New("--name and --in are required")
-			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-			defer cancel()
-			k, err := loadKeystoreFromFlags(ctx, cmd)
-			if err != nil {
-				return err
-			}
-			encBytes, err := os.ReadFile(inputFilePath)
-			if err != nil {
-				return err
-			}
-			impPass, err := resolvePasswordFromFlags(cmd, "password")
-			if err != nil {
-				return err
-			}
-			_, err = k.ImportKeys(ctx, ks.ImportKeysRequest{Keys: []ks.ImportKeyRequest{{KeyName: name, Data: encBytes, Password: impPass}}})
+			_, err = cmd.OutOrStdout().Write(jsonBytesOut)
 			return err
 		},
 	}
-	cmd.Flags().String("name", "", "key name to import as")
-	cmd.Flags().String("in", "", "path to encrypted key JSON to import")
-	cmd.Flags().String("password", "", "password for encrypted input")
-	return cmd
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Enc\": {\"Password\": \"pass\", \"ScryptParams\": {\"N\": 1024, \"P\": 1, \"R\": 8}}}]}'")
+	return &cmd
 }
 
-func loadKeystoreFromFlags(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {
+func NewImportCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "import", Short: "Import an encrypted key JSON file",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			jsonBytes, err := readJSONInput(cmd)
+			if err != nil {
+				return err
+			}
+			var req ks.ImportKeysRequest
+			err = json.Unmarshal(jsonBytes, &req)
+			if err != nil {
+				return err
+			}
+			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
+			defer cancel()
+			k, err := loadKeystore(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			_, err = k.ImportKeys(ctx, req)
+			return err
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Data\": \"encBytes\", \"Password\": \"pass\"}]}'")
+	return &cmd
+}
+
+func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {
 	root := cmd.Root()
-	filePath, err := root.Flags().GetString("file-path")
+	filePath, err := root.Flags().GetString("keystore-file-path")
 	if err != nil {
 		return nil, err
 	}
-	dbURL, err := root.Flags().GetString("db-url")
+	dbURL, err := root.Flags().GetString("keystore-db-url")
 	if err != nil {
 		return nil, err
 	}
-	pass, err := resolvePasswordFromFlags(root, "password")
+	password, err := cmd.Flags().GetString("keystore-password")
 	if err != nil {
 		return nil, err
+	}
+	// Env var fallbacks (flags override)
+	if filePath == "" {
+		if v := os.Getenv("KEYSTORE_FILE_PATH"); v != "" {
+			filePath = v
+		}
+	}
+	if dbURL == "" {
+		if v := os.Getenv("KEYSTORE_DB_URL"); v != "" {
+			dbURL = v
+		}
+	}
+	if password == "" {
+		if v := os.Getenv("KEYSTORE_PASSWORD"); v != "" {
+			password = v
+		}
+	}
+	if password == "" {
+		return nil, errors.New("keystore password is required")
 	}
 	if (filePath == "" && dbURL == "") || (filePath != "" && dbURL != "") {
 		return nil, errors.New("exactly one of --file-path or --db-url must be set")
@@ -258,17 +311,34 @@ func loadKeystoreFromFlags(ctx context.Context, cmd *cobra.Command) (ks.Keystore
 	}
 	// Can revisit whether custom scrypt params are actually needed in a CLI context
 	// (I doubt it, so simpler to leave out).
-	enc := ks.EncryptionParams{Password: pass, ScryptParams: ks.DefaultScryptParams}
-	return ks.LoadKeystore(ctx, storage, enc)
+	return ks.LoadKeystore(ctx, storage, password)
 }
 
-func resolvePasswordFromFlags(cmd *cobra.Command, pFlag string) (string, error) {
-	p, err := cmd.Flags().GetString(pFlag)
+// readJSONInput reads JSON from either -f/--file (file path, "-" for stdin) or -d/--data (inline JSON).
+// Exactly one must be provided.
+func readJSONInput(cmd *cobra.Command) ([]byte, error) {
+	filePath, err := cmd.Flags().GetString("file")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if p != "" {
-		return p, nil
+	data, err := cmd.Flags().GetString("data")
+	if err != nil {
+		return nil, err
 	}
-	return "", fmt.Errorf("password required: set --%s", pFlag)
+
+	// Must provide exactly one
+	if (filePath == "" && data == "") || (filePath != "" && data != "") {
+		return nil, errors.New("exactly one of -f/--file or -d/--data must be provided")
+	}
+
+	if data != "" {
+		// Inline JSON
+		return []byte(data), nil
+	}
+
+	// Read from file (or stdin if "-")
+	if filePath == "-" {
+		return io.ReadAll(cmd.InOrStdin())
+	}
+	return os.ReadFile(filePath)
 }

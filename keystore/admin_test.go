@@ -111,10 +111,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := keystore.NewMemoryStorage()
-			ks, err := keystore.LoadKeystore(ctx, storage, keystore.EncryptionParams{
-				Password:     "test-password",
-				ScryptParams: keystore.FastScryptParams,
-			})
+			ks, err := keystore.LoadKeystore(ctx, storage, "test-password", keystore.WithScryptParams(keystore.FastScryptParams))
 			require.NoError(t, err)
 			for _, op := range tt.keyOps {
 				switch op.op {
@@ -163,10 +160,7 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 
 	ctx := context.Background()
 	st := keystore.NewMemoryStorage()
-	ks, err := keystore.LoadKeystore(ctx, st, keystore.EncryptionParams{
-		Password:     "test",
-		ScryptParams: keystore.FastScryptParams,
-	})
+	ks, err := keystore.LoadKeystore(ctx, st, "test", keystore.WithScryptParams(keystore.FastScryptParams))
 	require.NoError(t, err)
 
 	const (
@@ -216,10 +210,12 @@ func TestKeystore_ExportImport(t *testing.T) {
 		Password:     "ks1",
 		ScryptParams: keystore.FastScryptParams,
 	})
+	require.NoError(t, err)
 	ks2, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), keystore.EncryptionParams{
 		Password:     "ks2",
 		ScryptParams: keystore.FastScryptParams,
 	})
+	require.NoError(t, err)
 
 	t.Run("export and import", func(t *testing.T) {
 		exportParams := keystore.EncryptionParams{
@@ -284,5 +280,43 @@ func TestKeystore_ExportImport(t *testing.T) {
 			},
 		})
 		require.ErrorIs(t, err, keystore.ErrKeyAlreadyExists)
+	})
+}
+
+func TestKeystore_SetMetadata(t *testing.T) {
+	ks, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), keystore.EncryptionParams{
+		Password:     "ks",
+		ScryptParams: keystore.FastScryptParams,
+	})
+	require.NoError(t, err)
+
+	t.Run("update existing key", func(t *testing.T) {
+		_, err = ks.CreateKeys(t.Context(), keystore.CreateKeysRequest{
+			Keys: []keystore.CreateKeyRequest{
+				{KeyName: "key1", KeyType: keystore.Ed25519},
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = ks.SetMetadata(t.Context(), keystore.SetMetadataRequest{
+			[]keystore.SetMetadataUpdate{
+				{KeyName: "key1", Metadata: []byte("my-metadata")},
+			},
+		})
+		require.NoError(t, err)
+
+		keysResp, err := ks.GetKeys(t.Context(), keystore.GetKeysRequest{KeyNames: []string{"key1"}})
+		require.NoError(t, err)
+		require.Len(t, keysResp.Keys, 1)
+		assert.Equal(t, []byte("my-metadata"), keysResp.Keys[0].KeyInfo.Metadata)
+	})
+
+	t.Run("update non-existent key", func(t *testing.T) {
+		_, err = ks.SetMetadata(t.Context(), keystore.SetMetadataRequest{
+			[]keystore.SetMetadataUpdate{
+				{KeyName: "key2", Metadata: []byte("")},
+			},
+		})
+		require.ErrorIs(t, err, keystore.ErrKeyNotFound)
 	})
 }

@@ -206,15 +206,9 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 }
 
 func TestKeystore_ExportImport(t *testing.T) {
-	ks1, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), keystore.EncryptionParams{
-		Password:     "ks1",
-		ScryptParams: keystore.FastScryptParams,
-	})
+	ks1, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), "ks1")
 	require.NoError(t, err)
-	ks2, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), keystore.EncryptionParams{
-		Password:     "ks2",
-		ScryptParams: keystore.FastScryptParams,
-	})
+	ks2, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), "ks2")
 	require.NoError(t, err)
 
 	t.Run("export and import", func(t *testing.T) {
@@ -284,10 +278,7 @@ func TestKeystore_ExportImport(t *testing.T) {
 }
 
 func TestKeystore_SetMetadata(t *testing.T) {
-	ks, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), keystore.EncryptionParams{
-		Password:     "ks",
-		ScryptParams: keystore.FastScryptParams,
-	})
+	ks, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), "ks")
 	require.NoError(t, err)
 
 	t.Run("update existing key", func(t *testing.T) {
@@ -314,7 +305,7 @@ func TestKeystore_SetMetadata(t *testing.T) {
 	t.Run("update non-existent key", func(t *testing.T) {
 		_, err = ks.SetMetadata(t.Context(), keystore.SetMetadataRequest{
 			[]keystore.SetMetadataUpdate{
-				{KeyName: "key3", Metadata: []byte("")},
+				{KeyName: "key2", Metadata: []byte("")},
 			},
 		})
 		require.ErrorIs(t, err, keystore.ErrKeyNotFound)

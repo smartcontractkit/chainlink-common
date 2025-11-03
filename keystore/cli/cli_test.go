@@ -96,4 +96,22 @@ func TestCLI(t *testing.T) {
 	require.Equal(t, ks.X25519, resp.Keys[0].KeyInfo.KeyType)
 	require.Equal(t, "testkey2", resp.Keys[1].KeyInfo.Name)
 	require.Equal(t, ks.ECDSA_S256, resp.Keys[1].KeyInfo.KeyType)
+
+	// Set metadata on testkey.
+	buf.Reset()
+	metadata := base64.StdEncoding.EncodeToString([]byte("my-custom-metadata"))
+	cmd.SetArgs([]string{"set-metadata", "-d", `{"Updates": [{"KeyName": "testkey", "Metadata": "` + metadata + `"}]}`})
+	require.NoError(t, cmd.ExecuteContext(t.Context()))
+
+	// Verify metadata was set.
+	buf.Reset()
+	cmd.SetArgs([]string{"get", "-d", `{"KeyNames": ["testkey"]}`})
+	require.NoError(t, cmd.ExecuteContext(t.Context()))
+	resp = ks.GetKeysResponse{}
+	err = json.Unmarshal(buf.Bytes(), &resp)
+	require.NoError(t, err)
+	require.Len(t, resp.Keys, 1)
+	require.Equal(t, "testkey", resp.Keys[0].KeyInfo.Name)
+	// Metadata is []byte, Go's JSON unmarshaler automatically decodes base64 strings
+	require.Equal(t, "my-custom-metadata", string(resp.Keys[0].KeyInfo.Metadata))
 }

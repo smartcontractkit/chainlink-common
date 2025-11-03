@@ -52,7 +52,7 @@ KEYSTORE_PASSWORD is the password used to encrypt the key material before storag
 	cmd.PersistentFlags().String("keystore-db-url", "", "Overrides KEYSTORE_DB_URL environment variable")
 	cmd.PersistentFlags().String("keystore-password", "", "Overrides KEYSTORE_PASSWORD environment variable. Not recommended as will leave shell traces.")
 
-	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd())
+	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd(), NewSetMetadataCmd())
 	return cmd
 }
 
@@ -259,6 +259,34 @@ func NewImportCmd() *cobra.Command {
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
 	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Data\": \"encBytes\", \"Password\": \"pass\"}]}'")
+	return &cmd
+}
+
+func NewSetMetadataCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "set-metadata", Short: "Set metadata for keys",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			jsonBytes, err := readJSONInput(cmd)
+			if err != nil {
+				return err
+			}
+			var req ks.SetMetadataRequest
+			err = json.Unmarshal(jsonBytes, &req)
+			if err != nil {
+				return err
+			}
+			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
+			defer cancel()
+			k, err := loadKeystore(ctx, cmd)
+			if err != nil {
+				return err
+			}
+			_, err = k.SetMetadata(ctx, req)
+			return err
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Updates\": [{\"KeyName\": \"key1\", \"Metadata\": \"base64-encoded-metadata\"}]}'")
 	return &cmd
 }
 

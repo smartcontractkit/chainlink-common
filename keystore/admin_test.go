@@ -231,17 +231,35 @@ func TestKeystore_ExportImport(t *testing.T) {
 		require.Len(t, exportResponse.Keys, 1)
 		_, err = ks2.ImportKeys(t.Context(), keystore.ImportKeysRequest{
 			Keys: []keystore.ImportKeyRequest{
-				{KeyName: "key1", Password: exportParams.Password, Data: exportResponse.Keys[0].Data},
+				{Password: exportParams.Password, Data: exportResponse.Keys[0].Data},
 			},
 		})
 		require.NoError(t, err)
+
+		// Importing a key with the same name again fails.
+		_, err = ks2.ImportKeys(t.Context(), keystore.ImportKeysRequest{
+			Keys: []keystore.ImportKeyRequest{
+				{Password: exportParams.Password, Data: exportResponse.Keys[0].Data},
+			},
+		})
+		require.ErrorIs(t, err, keystore.ErrKeyAlreadyExists)
+
+		// Importing a key with a new name is allowed.
+		_, err = ks2.ImportKeys(t.Context(), keystore.ImportKeysRequest{
+			Keys: []keystore.ImportKeyRequest{
+				{NewKeyName: "new-name", Password: exportParams.Password, Data: exportResponse.Keys[0].Data},
+			},
+		})
+		require.NoError(t, err)
+
+		// Verify that imported key matches exported key.
+		// We cannot compare private keys directly, so we test that signing with key1 from ks1 and verifying
+		// with key1 from ks2 works as if the two keys are the same.
 		key1ks1, err := ks1.GetKeys(t.Context(), keystore.GetKeysRequest{KeyNames: []string{"key1"}})
 		require.NoError(t, err)
 		key1ks2, err := ks2.GetKeys(t.Context(), keystore.GetKeysRequest{KeyNames: []string{"key1"}})
 		require.Equal(t, key1ks1, key1ks2)
 
-		// We cannot compare private keys directly, so we test that signing with key1 from ks1 and verifying
-		// with key1 from ks2 works as if the two keys are the same.
 		testData := []byte("hello world")
 		signature, err := ks2.Sign(t.Context(), keystore.SignRequest{
 			KeyName: "key1",
@@ -265,15 +283,6 @@ func TestKeystore_ExportImport(t *testing.T) {
 			},
 		})
 		require.ErrorIs(t, err, keystore.ErrKeyNotFound)
-	})
-
-	t.Run("import existing key", func(t *testing.T) {
-		_, err = ks2.ImportKeys(t.Context(), keystore.ImportKeysRequest{
-			Keys: []keystore.ImportKeyRequest{
-				{KeyName: "key1", Password: "", Data: []byte{}},
-			},
-		})
-		require.ErrorIs(t, err, keystore.ErrKeyAlreadyExists)
 	})
 }
 

@@ -282,7 +282,6 @@ func TestKeystore_ExportImport(t *testing.T) {
 				{KeyName: "key2", Enc: keystore.EncryptionParams{}},
 			},
 		})
-		// zzz
 		require.ErrorIs(t, err, keystore.ErrKeyNotFound)
 	})
 }

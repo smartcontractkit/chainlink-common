@@ -56,9 +56,9 @@ type ImportKeysRequest struct {
 }
 
 type ImportKeyRequest struct {
-	KeyName  string
-	Data     []byte
-	Password string
+	NewKeyName string
+	Data       []byte
+	Password   string
 }
 
 type ImportKeysResponse struct{}
@@ -93,10 +93,30 @@ type SetMetadataUpdate struct {
 type SetMetadataResponse struct{}
 
 type Admin interface {
+	// CreateKeys creates multiple keys in a single atomic operation.
+	// The response preserves the order of the keys in the request.
+	// Returns ErrKeyAlreadyExists if any key name already exists,
+	// ErrInvalidKeyName if any key name is invalid,
+	// ErrUnsupportedKeyType if any key type is not supported.
 	CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error)
+
+	// DeleteKeys deletes multiple keys in a single atomic operation.
+	// Returns ErrKeyNotFound if any key does not exist.
 	DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error)
+
+	// ImportKeys imports multiple encrypted keys in a single atomic operation.
+	// Keys can be renamed during import using NewKeyName.
+	// Returns ErrKeyAlreadyExists if a key with the target name exists,
+	// ErrInvalidKeyName if the target name is invalid.
 	ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error)
+
+	// ExportKeys exports multiple keys in encrypted format.
+	// Each key is encrypted using the parameters specified in the request.
+	// Returns ErrKeyNotFound if any key does not exist.
 	ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error)
+
+	// SetMetadata updates metadata for multiple keys in a single atomic operation.
+	// Returns ErrKeyNotFound if any key does not exist.
 	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
 }
 
@@ -238,31 +258,25 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 
 	ksCopy := maps.Clone(ks.keystore)
 	for _, keyReq := range req.Keys {
-		if err := ValidKeyName(keyReq.KeyName); err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
-		}
-		if _, ok := ksCopy[keyReq.KeyName]; ok {
-			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, keyReq.KeyName)
-		}
 		encData := gethkeystore.CryptoJSON{}
 		err := json.Unmarshal(keyReq.Data, &encData)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal encrypted import data: %w", keyReq.KeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal encrypted import data: %w", keyReq.NewKeyName, err)
 		}
 		decData, err := gethkeystore.DecryptDataV3(encData, keyReq.Password)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to decrypt key: %w", keyReq.KeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to decrypt key: %w", keyReq.NewKeyName, err)
 		}
 		keypb := &serialization.Key{}
 		err = proto.Unmarshal(decData, keypb)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal key: %w", keyReq.KeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal key: %w", keyReq.NewKeyName, err)
 		}
 		pkRaw := internal.NewRaw(keypb.PrivateKey)
 		keyType := KeyType(keypb.KeyType)
 		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to get public key from private key: %w", keyReq.KeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to get public key from private key: %w", keyReq.NewKeyName, err)
 		}
 		metadata := keypb.Metadata
 		// The proto compiler sets empty slices to nil during the serialization (https://github.com/golang/protobuf/issues/1348).
@@ -270,7 +284,18 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 		if metadata == nil {
 			metadata = []byte{}
 		}
-		ksCopy[keyReq.KeyName] = newKey(keyType, pkRaw, publicKey, time.Unix(keypb.CreatedAt, 0), metadata)
+
+		keyName := keyReq.NewKeyName
+		if keyName == "" {
+			keyName = keypb.Name
+		}
+		if err := ValidKeyName(keyName); err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
+		}
+		if _, ok := ksCopy[keyName]; ok {
+			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, keyName)
+		}
+		ksCopy[keyName] = newKey(keyType, pkRaw, publicKey, time.Unix(keypb.CreatedAt, 0), metadata)
 	}
 	// Persist it to storage.
 	if err := ks.save(ctx, ksCopy); err != nil {

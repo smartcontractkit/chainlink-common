@@ -257,26 +257,26 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 	defer ks.mu.Unlock()
 
 	ksCopy := maps.Clone(ks.keystore)
-	for _, keyReq := range req.Keys {
+	for i, keyReq := range req.Keys {
 		encData := gethkeystore.CryptoJSON{}
 		err := json.Unmarshal(keyReq.Data, &encData)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal encrypted import data: %w", keyReq.NewKeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to unmarshal encrypted import data: %w", i, err)
 		}
 		decData, err := gethkeystore.DecryptDataV3(encData, keyReq.Password)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to decrypt key: %w", keyReq.NewKeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to decrypt key: %w", i, err)
 		}
 		keypb := &serialization.Key{}
 		err = proto.Unmarshal(decData, keypb)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to unmarshal key: %w", keyReq.NewKeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to unmarshal key: %w", i, err)
 		}
 		pkRaw := internal.NewRaw(keypb.PrivateKey)
 		keyType := KeyType(keypb.KeyType)
 		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
 		if err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("key = %s, failed to get public key from private key: %w", keyReq.NewKeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to get public key from private key: %w", i, err)
 		}
 		metadata := keypb.Metadata
 		// The proto compiler sets empty slices to nil during the serialization (https://github.com/golang/protobuf/issues/1348).
@@ -290,10 +290,10 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 			keyName = keypb.Name
 		}
 		if err := ValidKeyName(keyName); err != nil {
-			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
+			return ImportKeysResponse{}, fmt.Errorf("key name = %s, %w: %s", keyName, ErrInvalidKeyName, err)
 		}
 		if _, ok := ksCopy[keyName]; ok {
-			return ImportKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, keyName)
+			return ImportKeysResponse{}, fmt.Errorf("key name = %s, %w: %s", keyName, ErrKeyAlreadyExists, keyName)
 		}
 		ksCopy[keyName] = newKey(keyType, pkRaw, publicKey, time.Unix(keypb.CreatedAt, 0), metadata)
 	}

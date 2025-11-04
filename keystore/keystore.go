@@ -343,17 +343,3 @@ func (k *keystore) save(ctx context.Context, keystore map[string]key) error {
 	}
 	return nil
 }
-
-// JoinKeySegments joins path-like key name segments using "/" and avoids double slashes.
-// Empty segments are skipped so JoinKeySegments("EVM", "TX", "my-key") => "EVM/TX/my-key".
-func JoinKeySegments(segments ...string) string {
-	cleaned := make([]string, 0, len(segments))
-	for _, s := range segments {
-		s = strings.Trim(s, "/")
-		if s == "" {
-			continue
-		}
-		cleaned = append(cleaned, s)
-	}
-	return strings.Join(cleaned, "/")
-}

@@ -123,7 +123,7 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		}
 	}
 
-	// Build env vars
+	// Build env vars from defaults, environment variable, and plugin-specific settings
 	envVars := defaults.EnvVars
 	if envEnvVars := os.Getenv("CL_PLUGIN_ENVVARS"); envEnvVars != "" {
 		envVars = strings.Fields(envEnvVars)
@@ -173,11 +173,27 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 			}
 		}
 
-		args := []string{"install"}
+		binaryName := filepath.Base(installArg)
+		if binaryName == "." {
+			binaryName = filepath.Base(moduleURI)
+		}
+
+		// Determine output directory
+		outputDir := os.Getenv("GOBIN")
+		if outputDir == "" {
+			gopath := os.Getenv("GOPATH")
+			if gopath == "" {
+				gopath = filepath.Join(os.Getenv("HOME"), "go")
+			}
+			outputDir = filepath.Join(gopath, "bin")
+		}
+
+		outputPath := filepath.Join(outputDir, binaryName)
+
+		args := []string{"build", "-o", outputPath}
 		if goflags != "" {
 			args = append(args, strings.Fields(goflags)...)
 		}
-		// Add the install path, which is now relative to the module root or ".".
 		args = append(args, installArg)
 
 		cmd := exec.Command("go", args...)
@@ -185,16 +201,16 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
-		// Set GOPRIVATE environment variable while preserving other environment variables
-		if goPrivate != "" {
-			// Start with all current environment variables
-			env := os.Environ()
+		// Start with all current environment variables
+		cmd.Env = os.Environ()
 
+		// Set GOPRIVATE environment variable if provided
+		if goPrivate != "" {
 			// Find and replace GOPRIVATE if it exists, or add it if it doesn't
 			goprivateFound := false
-			for i, e := range env {
+			for i, e := range cmd.Env {
 				if strings.HasPrefix(e, "GOPRIVATE=") {
-					env[i] = "GOPRIVATE=" + goPrivate
+					cmd.Env[i] = "GOPRIVATE=" + goPrivate
 					goprivateFound = true
 					break
 				}
@@ -202,14 +218,32 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 			// Add GOPRIVATE if it wasn't already in the environment
 			if !goprivateFound {
-				env = append(env, "GOPRIVATE="+goPrivate)
+				cmd.Env = append(cmd.Env, "GOPRIVATE="+goPrivate)
 			}
-
-			cmd.Env = env
 		}
 
+		// Add/replace custom environment variables (e.g., GOOS, GOARCH, CGO_ENABLED)
+		// Replace existing vars to avoid duplicates that could cause unexpected behavior
 		for _, ev := range envVars {
-			cmd.Env = append(cmd.Env, ev)
+			// Parse the env var to get the key
+			parts := strings.SplitN(ev, "=", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			key := parts[0]
+
+			// Find and replace if it exists, otherwise append
+			found := false
+			for i, e := range cmd.Env {
+				if strings.HasPrefix(e, key+"=") {
+					cmd.Env[i] = ev
+					found = true
+					break
+				}
+			}
+			if !found {
+				cmd.Env = append(cmd.Env, ev)
+			}
 		}
 
 		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)

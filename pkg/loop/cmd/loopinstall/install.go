@@ -123,6 +123,17 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		}
 	}
 
+	// Build env vars
+	envVars := defaults.EnvVars
+	if envEnvVars := os.Getenv("CL_PLUGIN_ENVVARS"); envEnvVars != "" {
+		envVars = strings.Fields(envEnvVars)
+	}
+
+	// Append plugin-specific env vars
+	if len(plugin.EnvVars) != 0 {
+		envVars = append(envVars, plugin.EnvVars...)
+	}
+
 	// Install the plugin
 	{
 		// Determine the actual argument for 'go install' based on installPath and moduleURI.
@@ -195,6 +206,10 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 			}
 
 			cmd.Env = env
+		}
+
+		for _, ev := range envVars {
+			cmd.Env = append(cmd.Env, ev)
 		}
 
 		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)

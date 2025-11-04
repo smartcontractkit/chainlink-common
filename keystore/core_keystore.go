@@ -5,6 +5,8 @@ import (
 )
 
 // CoreKeystore implements the core.Keystore interface for backwards compatibility with the old keystore
+// https://github.com/smartcontractkit/chainlink-common/blob/main/pkg/types/core/keystore.go#L23
+// We don't add a dependency directly to chainlink-common here to avoid circular dependencies.
 type CoreKeystore struct {
 	ks Keystore
 }

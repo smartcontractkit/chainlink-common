@@ -15,10 +15,10 @@ var _ core.SettingsBroadcaster = (*AtomicSettings)(nil)
 
 // AtomicSettings implements settings.Getter, and supports atomic updates with subscriptions.
 type AtomicSettings struct {
-	mu     sync.RWMutex
-	s      string
-	getter settings.Getter
-	subs   []chan core.SettingsUpdate
+	mu      sync.RWMutex
+	current *core.SettingsUpdate
+	getter  settings.Getter
+	subs    []chan core.SettingsUpdate
 }
 
 func NewAtomicSettings(initial settings.Getter) *AtomicSettings {
@@ -48,7 +48,9 @@ func (a *AtomicSettings) Subscribe(ctx context.Context) (<-chan core.SettingsUpd
 			}
 		}
 	}()
-	from <- core.SettingsUpdate{Settings: a.s} // seed current value
+	if a.current != nil {
+		from <- *a.current // seed current value
+	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.subs = append(a.subs, from)
@@ -75,6 +77,7 @@ func (a *AtomicSettings) Store(update core.SettingsUpdate) error {
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	a.current = &update
 	a.getter = getter
 	for _, ch := range a.subs {
 		ch <- update // non-blocking due to Subscribe goroutine

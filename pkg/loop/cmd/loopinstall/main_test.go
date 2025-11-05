@@ -347,7 +347,7 @@ plugins:
 	for _, call := range execCommandCalls {
 		cmdStr := strings.Join(call.Args, " ")
 		// Check for the install command specifically
-		if strings.Contains(cmdStr, "go install") {
+		if strings.Contains(cmdStr, "go build") {
 			if strings.Contains(call.Dir, "github.com/test/module1") && // Check against cmd.Dir
 				strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0") &&
 				strings.Contains(cmdStr, " ./cmd/test") { // Corrected to expect relative path
@@ -592,7 +592,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 		plugin         PluginDef
 		defaults       DefaultsConfig
 		mockDownload   func(*exec.Cmd) error
-		mockInstall    func(*exec.Cmd) error
+		mockBuild      func(*exec.Cmd) error
 		expectError    bool
 		expectedErrMsg string
 	}{
@@ -613,7 +613,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				}
 				return nil
 			},
-			mockInstall: func(cmd *exec.Cmd) error {
+			mockBuild: func(cmd *exec.Cmd) error {
 				return nil
 			},
 			expectError: false,
@@ -629,7 +629,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 			mockDownload: func(cmd *exec.Cmd) error {
 				return fmt.Errorf("failed to download module")
 			},
-			mockInstall: func(cmd *exec.Cmd) error {
+			mockBuild: func(cmd *exec.Cmd) error {
 				return nil
 			},
 			expectError:    true,
@@ -650,7 +650,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				}
 				return nil
 			},
-			mockInstall: func(cmd *exec.Cmd) error {
+			mockBuild: func(cmd *exec.Cmd) error {
 				return fmt.Errorf("failed to install plugin")
 			},
 			expectError:    true,
@@ -684,7 +684,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				}
 				return nil
 			},
-			mockInstall: func(cmd *exec.Cmd) error {
+			mockBuild: func(cmd *exec.Cmd) error {
 				if len(cmd.Args) < 2 {
 					return fmt.Errorf("install command has too few arguments: %v", cmd.Args)
 				}
@@ -713,7 +713,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				}
 				return nil
 			},
-			mockInstall: func(cmd *exec.Cmd) error {
+			mockBuild: func(cmd *exec.Cmd) error {
 				if len(cmd.Args) < 2 {
 					return fmt.Errorf("install command has too few arguments: %v", cmd.Args)
 				}
@@ -731,7 +731,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Mock the command execution
-			var downloadCalled, installCalled bool
+			var downloadCalled, buildCalled bool
 			execCommand = func(cmd *exec.Cmd) error {
 				cmdLine := strings.Join(cmd.Args, " ")
 
@@ -740,10 +740,10 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 					if tc.mockDownload != nil {
 						return tc.mockDownload(cmd)
 					}
-				} else if strings.Contains(cmdLine, "go install") {
-					installCalled = true
-					if tc.mockInstall != nil {
-						return tc.mockInstall(cmd)
+				} else if strings.Contains(cmdLine, "go build") {
+					buildCalled = true
+					if tc.mockBuild != nil {
+						return tc.mockBuild(cmd)
 					}
 				}
 				return nil
@@ -768,7 +768,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				if !downloadCalled && tc.mockDownload != nil {
 					t.Error("Download command was not called")
 				}
-				if !installCalled && tc.mockInstall != nil {
+				if !buildCalled && tc.mockBuild != nil {
 					t.Error("Install command was not called")
 				}
 			}
@@ -839,6 +839,177 @@ func TestFlags(t *testing.T) {
 			GitRef:      "v1.0.0",
 			InstallPath: "github.com/example/rootinstall", // Same as ModuleURI
 			Flags:       "-tags timetzdata",
+		}
+
+		// Call the function
+		err = downloadAndInstallPlugin("test", 0, plugin, defaults)
+
+		// Check results
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+}
+
+func TestEnvVars(t *testing.T) {
+	t.Run("plugin specific env vars are appended to default env vars", func(t *testing.T) {
+		// Save the original execCommand to restore it after the test
+		originalExecCommand := execCommand
+		defer func() { execCommand = originalExecCommand }()
+
+		// Create a temporary directory for test files
+		tempDir, err := os.MkdirTemp("", "plugin-envvars-test")
+		if err != nil {
+			t.Fatalf("Failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		mockDownload := func(cmd *exec.Cmd) error {
+			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+				parts := strings.Split("github.com/example/test", "/")
+				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+			}
+			return nil
+		}
+
+		mockBuild := func(cmd *exec.Cmd) error {
+			// Verify environment variables are set correctly
+			foundGOOS := false
+			foundGOARCH := false
+			foundCGOEnabled := false
+
+			for _, env := range cmd.Env {
+				if env == "GOOS=linux" {
+					foundGOOS = true
+				}
+				if env == "GOARCH=amd64" {
+					foundGOARCH = true
+				}
+				if env == "CGO_ENABLED=0" {
+					foundCGOEnabled = true
+				}
+			}
+
+			if !foundGOOS {
+				return fmt.Errorf("expected GOOS=linux in environment, not found")
+			}
+			if !foundGOARCH {
+				return fmt.Errorf("expected GOARCH=amd64 in environment, not found")
+			}
+			if !foundCGOEnabled {
+				return fmt.Errorf("expected CGO_ENABLED=0 in environment, not found")
+			}
+
+			return nil
+		}
+
+		// Mock the command execution
+		execCommand = func(cmd *exec.Cmd) error {
+			cmdLine := strings.Join(cmd.Args, " ")
+			if strings.Contains(cmdLine, "go mod download") {
+				return mockDownload(cmd)
+			} else if strings.Contains(cmdLine, "go build") {
+				return mockBuild(cmd)
+			}
+			return nil
+		}
+
+		defaults := DefaultsConfig{
+			EnvVars: []string{"GOOS=linux"},
+		}
+
+		plugin := PluginDef{
+			ModuleURI:   "github.com/example/test",
+			GitRef:      "v1.0.0",
+			InstallPath: "./cmd/test",
+			EnvVars:     []string{"GOARCH=amd64", "CGO_ENABLED=0"},
+		}
+
+		// Call the function
+		err = downloadAndInstallPlugin("test", 0, plugin, defaults)
+
+		// Check results
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("env vars replace existing values instead of duplicating", func(t *testing.T) {
+		// Save the original execCommand to restore it after the test
+		originalExecCommand := execCommand
+		defer func() { execCommand = originalExecCommand }()
+
+		// Create a temporary directory for test files
+		tempDir, err := os.MkdirTemp("", "plugin-envvars-replace-test")
+		if err != nil {
+			t.Fatalf("Failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		mockDownload := func(cmd *exec.Cmd) error {
+			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+				parts := strings.Split("github.com/example/test", "/")
+				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+			}
+			return nil
+		}
+
+		mockBuild := func(cmd *exec.Cmd) error {
+			// Count occurrences of GOOS
+			goosCount := 0
+			correctValue := false
+
+			for _, env := range cmd.Env {
+				if strings.HasPrefix(env, "GOOS=") {
+					goosCount++
+					if env == "GOOS=linux" {
+						correctValue = true
+					}
+				}
+			}
+
+			if goosCount != 1 {
+				return fmt.Errorf("expected exactly 1 GOOS env var, found %d", goosCount)
+			}
+			if !correctValue {
+				return fmt.Errorf("expected GOOS=linux, but found different value")
+			}
+
+			return nil
+		}
+
+		// Mock the command execution
+		execCommand = func(cmd *exec.Cmd) error {
+			cmdLine := strings.Join(cmd.Args, " ")
+			if strings.Contains(cmdLine, "go mod download") {
+				return mockDownload(cmd)
+			} else if strings.Contains(cmdLine, "go build") {
+				return mockBuild(cmd)
+			}
+			return nil
+		}
+
+		// Set GOOS in the environment to a different value
+		oldGOOS := os.Getenv("GOOS")
+		os.Setenv("GOOS", "darwin")
+		defer func() {
+			if oldGOOS == "" {
+				os.Unsetenv("GOOS")
+			} else {
+				os.Setenv("GOOS", oldGOOS)
+			}
+		}()
+
+		defaults := DefaultsConfig{
+			EnvVars: []string{"GOOS=linux"}, // Override with linux
+		}
+
+		plugin := PluginDef{
+			ModuleURI:   "github.com/example/test",
+			GitRef:      "v1.0.0",
+			InstallPath: "./cmd/test",
 		}
 
 		// Call the function

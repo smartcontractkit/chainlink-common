@@ -586,3 +586,108 @@ var StandardCapabilities_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "capabilities.proto",
 }
+
+const (
+	Settings_Subscribe_FullMethodName = "/capabilities.Settings/Subscribe"
+)
+
+// SettingsClient is the client API for Settings service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type SettingsClient interface {
+	Subscribe(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SettingsUpdate], error)
+}
+
+type settingsClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSettingsClient(cc grpc.ClientConnInterface) SettingsClient {
+	return &settingsClient{cc}
+}
+
+func (c *settingsClient) Subscribe(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SettingsUpdate], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Settings_ServiceDesc.Streams[0], Settings_Subscribe_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, SettingsUpdate]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Settings_SubscribeClient = grpc.ServerStreamingClient[SettingsUpdate]
+
+// SettingsServer is the server API for Settings service.
+// All implementations must embed UnimplementedSettingsServer
+// for forward compatibility.
+type SettingsServer interface {
+	Subscribe(*emptypb.Empty, grpc.ServerStreamingServer[SettingsUpdate]) error
+	mustEmbedUnimplementedSettingsServer()
+}
+
+// UnimplementedSettingsServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedSettingsServer struct{}
+
+func (UnimplementedSettingsServer) Subscribe(*emptypb.Empty, grpc.ServerStreamingServer[SettingsUpdate]) error {
+	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
+}
+func (UnimplementedSettingsServer) mustEmbedUnimplementedSettingsServer() {}
+func (UnimplementedSettingsServer) testEmbeddedByValue()                  {}
+
+// UnsafeSettingsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SettingsServer will
+// result in compilation errors.
+type UnsafeSettingsServer interface {
+	mustEmbedUnimplementedSettingsServer()
+}
+
+func RegisterSettingsServer(s grpc.ServiceRegistrar, srv SettingsServer) {
+	// If the following call pancis, it indicates UnimplementedSettingsServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Settings_ServiceDesc, srv)
+}
+
+func _Settings_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SettingsServer).Subscribe(m, &grpc.GenericServerStream[emptypb.Empty, SettingsUpdate]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Settings_SubscribeServer = grpc.ServerStreamingServer[SettingsUpdate]
+
+// Settings_ServiceDesc is the grpc.ServiceDesc for Settings service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Settings_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "capabilities.Settings",
+	HandlerType: (*SettingsServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Subscribe",
+			Handler:       _Settings_Subscribe_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "capabilities.proto",
+}

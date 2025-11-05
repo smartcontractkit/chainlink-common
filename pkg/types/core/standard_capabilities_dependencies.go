@@ -17,4 +17,5 @@ type StandardCapabilitiesDependencies struct {
 	GatewayConnector   GatewayConnector
 	P2PKeystore        Keystore
 	OrgResolver        orgresolver.OrgResolver
+	CRESettings        SettingsBroadcaster
 }

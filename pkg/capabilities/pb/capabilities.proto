@@ -173,8 +173,18 @@ message InitialiseRequest {
   uint32 gateway_connector_id = 9;
   uint32 keystore_id = 10;
   uint32 org_resolver_id = 11;
+  uint32 cre_settings_id = 12;
 }
 
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
+}
+
+service Settings {
+  rpc Subscribe (google.protobuf.Empty) returns (stream SettingsUpdate) {}
+}
+
+message SettingsUpdate {
+  string settings = 1; // default format TOML
+  string hash = 2; // default sha256
 }

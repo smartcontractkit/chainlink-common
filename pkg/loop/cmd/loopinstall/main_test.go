@@ -1020,6 +1020,186 @@ func TestEnvVars(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+
+	t.Run("CL_PLUGIN_ENVVARS merges with defaults", func(t *testing.T) {
+		// Save the original execCommand to restore it after the test
+		originalExecCommand := execCommand
+		defer func() { execCommand = originalExecCommand }()
+
+		// Create a temporary directory for test files
+		tempDir, err := os.MkdirTemp("", "plugin-envvars-cl-merge-test")
+		if err != nil {
+			t.Fatalf("Failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		mockDownload := func(cmd *exec.Cmd) error {
+			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+				parts := strings.Split("github.com/example/test", "/")
+				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+			}
+			return nil
+		}
+
+		mockBuild := func(cmd *exec.Cmd) error {
+			// Verify both default and CL_PLUGIN_ENVVARS are present
+			foundGOOS := false
+			foundGOARCH := false
+			foundCGOEnabled := false
+
+			for _, env := range cmd.Env {
+				if env == "GOOS=linux" {
+					foundGOOS = true
+				}
+				if env == "GOARCH=amd64" {
+					foundGOARCH = true
+				}
+				if env == "CGO_ENABLED=0" {
+					foundCGOEnabled = true
+				}
+			}
+
+			if !foundGOOS {
+				return fmt.Errorf("expected GOOS=linux from defaults, not found")
+			}
+			if !foundGOARCH {
+				return fmt.Errorf("expected GOARCH=amd64 from CL_PLUGIN_ENVVARS, not found")
+			}
+			if !foundCGOEnabled {
+				return fmt.Errorf("expected CGO_ENABLED=0 from CL_PLUGIN_ENVVARS, not found")
+			}
+
+			return nil
+		}
+
+		// Mock the command execution
+		execCommand = func(cmd *exec.Cmd) error {
+			cmdLine := strings.Join(cmd.Args, " ")
+			if strings.Contains(cmdLine, "go mod download") {
+				return mockDownload(cmd)
+			} else if strings.Contains(cmdLine, "go build") {
+				return mockBuild(cmd)
+			}
+			return nil
+		}
+
+		// Set CL_PLUGIN_ENVVARS
+		oldEnvVars := os.Getenv("CL_PLUGIN_ENVVARS")
+		os.Setenv("CL_PLUGIN_ENVVARS", "GOARCH=amd64 CGO_ENABLED=0")
+		defer func() {
+			if oldEnvVars == "" {
+				os.Unsetenv("CL_PLUGIN_ENVVARS")
+			} else {
+				os.Setenv("CL_PLUGIN_ENVVARS", oldEnvVars)
+			}
+		}()
+
+		defaults := DefaultsConfig{
+			EnvVars: []string{"GOOS=linux"}, // Should be preserved
+		}
+
+		plugin := PluginDef{
+			ModuleURI:   "github.com/example/test",
+			GitRef:      "v1.0.0",
+			InstallPath: "./cmd/test",
+		}
+
+		// Call the function
+		err = downloadAndInstallPlugin("test", 0, plugin, defaults)
+
+		// Check results
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("plugin env vars override CL_PLUGIN_ENVVARS and defaults", func(t *testing.T) {
+		// Save the original execCommand to restore it after the test
+		originalExecCommand := execCommand
+		defer func() { execCommand = originalExecCommand }()
+
+		// Create a temporary directory for test files
+		tempDir, err := os.MkdirTemp("", "plugin-envvars-override-test")
+		if err != nil {
+			t.Fatalf("Failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		mockDownload := func(cmd *exec.Cmd) error {
+			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+				parts := strings.Split("github.com/example/test", "/")
+				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+			}
+			return nil
+		}
+
+		mockBuild := func(cmd *exec.Cmd) error {
+			// Verify plugin-specific GOOS overrides all others
+			goosCount := 0
+			correctValue := false
+
+			for _, env := range cmd.Env {
+				if strings.HasPrefix(env, "GOOS=") {
+					goosCount++
+					if env == "GOOS=windows" {
+						correctValue = true
+					}
+				}
+			}
+
+			if goosCount != 1 {
+				return fmt.Errorf("expected exactly 1 GOOS env var, found %d", goosCount)
+			}
+			if !correctValue {
+				return fmt.Errorf("expected GOOS=windows from plugin, but found different value")
+			}
+
+			return nil
+		}
+
+		// Mock the command execution
+		execCommand = func(cmd *exec.Cmd) error {
+			cmdLine := strings.Join(cmd.Args, " ")
+			if strings.Contains(cmdLine, "go mod download") {
+				return mockDownload(cmd)
+			} else if strings.Contains(cmdLine, "go build") {
+				return mockBuild(cmd)
+			}
+			return nil
+		}
+
+		// Set CL_PLUGIN_ENVVARS with a different GOOS
+		oldEnvVars := os.Getenv("CL_PLUGIN_ENVVARS")
+		os.Setenv("CL_PLUGIN_ENVVARS", "GOOS=linux")
+		defer func() {
+			if oldEnvVars == "" {
+				os.Unsetenv("CL_PLUGIN_ENVVARS")
+			} else {
+				os.Setenv("CL_PLUGIN_ENVVARS", oldEnvVars)
+			}
+		}()
+
+		defaults := DefaultsConfig{
+			EnvVars: []string{"GOOS=darwin"}, // Should be overridden
+		}
+
+		plugin := PluginDef{
+			ModuleURI:   "github.com/example/test",
+			GitRef:      "v1.0.0",
+			InstallPath: "./cmd/test",
+			EnvVars:     []string{"GOOS=windows"}, // Should win
+		}
+
+		// Call the function
+		err = downloadAndInstallPlugin("test", 0, plugin, defaults)
+
+		// Check results
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
 }
 
 // TestSetupOutputFile tests the setupOutputFile function

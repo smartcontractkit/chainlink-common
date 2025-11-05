@@ -19,6 +19,38 @@ var execCommand = func(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
+// mergeOrReplaceEnvVars merges new environment variables into an existing slice,
+// replacing any existing variables with the same key
+func mergeOrReplaceEnvVars(existing []string, newVars []string) []string {
+	result := make([]string, len(existing))
+	copy(result, existing)
+
+	for _, newVar := range newVars {
+		parts := strings.SplitN(newVar, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := parts[0]
+
+		// Find and replace if it exists
+		found := false
+		for i, existingVar := range result {
+			if strings.HasPrefix(existingVar, key+"=") {
+				result[i] = newVar
+				found = true
+				break
+			}
+		}
+
+		// Append if not found
+		if !found {
+			result = append(result, newVar)
+		}
+	}
+
+	return result
+}
+
 // downloadAndInstallPlugin downloads and installs a single plugin
 func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef, defaults DefaultsConfig) error {
 	if !isPluginEnabled(plugin) {
@@ -126,12 +158,12 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 	// Build env vars from defaults, environment variable, and plugin-specific settings
 	envVars := defaults.EnvVars
 	if envEnvVars := os.Getenv("CL_PLUGIN_ENVVARS"); envEnvVars != "" {
-		envVars = strings.Fields(envEnvVars)
+		envVars = mergeOrReplaceEnvVars(envVars, strings.Fields(envEnvVars))
 	}
 
-	// Append plugin-specific env vars
+	// Merge plugin-specific env vars
 	if len(plugin.EnvVars) != 0 {
-		envVars = append(envVars, plugin.EnvVars...)
+		envVars = mergeOrReplaceEnvVars(envVars, plugin.EnvVars)
 	}
 
 	// Install the plugin
@@ -206,45 +238,11 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 		// Set GOPRIVATE environment variable if provided
 		if goPrivate != "" {
-			// Find and replace GOPRIVATE if it exists, or add it if it doesn't
-			goprivateFound := false
-			for i, e := range cmd.Env {
-				if strings.HasPrefix(e, "GOPRIVATE=") {
-					cmd.Env[i] = "GOPRIVATE=" + goPrivate
-					goprivateFound = true
-					break
-				}
-			}
-
-			// Add GOPRIVATE if it wasn't already in the environment
-			if !goprivateFound {
-				cmd.Env = append(cmd.Env, "GOPRIVATE="+goPrivate)
-			}
+			cmd.Env = mergeOrReplaceEnvVars(cmd.Env, []string{"GOPRIVATE=" + goPrivate})
 		}
 
 		// Add/replace custom environment variables (e.g., GOOS, GOARCH, CGO_ENABLED)
-		// Replace existing vars to avoid duplicates that could cause unexpected behavior
-		for _, ev := range envVars {
-			// Parse the env var to get the key
-			parts := strings.SplitN(ev, "=", 2)
-			if len(parts) != 2 {
-				continue
-			}
-			key := parts[0]
-
-			// Find and replace if it exists, otherwise append
-			found := false
-			for i, e := range cmd.Env {
-				if strings.HasPrefix(e, key+"=") {
-					cmd.Env[i] = ev
-					found = true
-					break
-				}
-			}
-			if !found {
-				cmd.Env = append(cmd.Env, ev)
-			}
-		}
+		cmd.Env = mergeOrReplaceEnvVars(cmd.Env, envVars)
 
 		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)
 

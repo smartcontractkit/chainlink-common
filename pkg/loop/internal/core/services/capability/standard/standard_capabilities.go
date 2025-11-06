@@ -18,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oraclefactory"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/orgresolver"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -83,6 +84,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	gatewayConnector := dependencies.GatewayConnector
 	p2pKeystore := dependencies.P2PKeystore
 	orgResolver := dependencies.OrgResolver
+	creSettings := dependencies.CRESettings
 	telemetryID, telemetryRes, err := c.ServeNew("Telemetry", func(s *grpc.Server) {
 		pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 	})
@@ -180,6 +182,19 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	}
 	resources = append(resources, orgResolverRes)
 
+	var creSettingsID uint32
+	if creSettings != nil {
+		var creSettingsRes net.Resource
+		creSettingsID, creSettingsRes, err = c.ServeNew("CRESettings", func(s *grpc.Server) {
+			capabilitiespb.RegisterSettingsServer(s, settings.NewServer(creSettings))
+		})
+		if err != nil {
+			c.CloseAll(resources...)
+			return fmt.Errorf("failed to serve cre settings: %w", err)
+		}
+		resources = append(resources, creSettingsRes)
+	}
+
 	_, err = c.StandardCapabilitiesClient.Initialise(ctx, &capabilitiespb.InitialiseRequest{
 		Config:             config,
 		ErrorLogId:         errorLogID,
@@ -192,6 +207,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 		GatewayConnectorId: gatewayConnectorID,
 		KeystoreId:         keyStoreID,
 		OrgResolverId:      orgResolverID,
+		CreSettingsId:      creSettingsID,
 	})
 
 	if err != nil {
@@ -344,6 +360,17 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "OrgResolver"})
 	orgResolver := orgresolver.NewClient(s.Logger, orgResolverConn)
 
+	var creSettings core.SettingsBroadcaster
+	if request.CreSettingsId > 0 {
+		creSettingsConn, err := s.Dial(request.CreSettingsId)
+		if err != nil {
+			s.CloseAll(resources...)
+			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.OrgResolverId, Err: err}
+		}
+		resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "CRESettings"})
+		creSettings = settings.NewClient(s.Logger, creSettingsConn)
+	}
+
 	dependencies := core.StandardCapabilitiesDependencies{
 		Config:             request.Config,
 		TelemetryService:   telemetry,
@@ -356,6 +383,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		GatewayConnector:   gatewayConnector,
 		P2PKeystore:        keyStore,
 		OrgResolver:        orgResolver,
+		CRESettings:        creSettings,
 	}
 
 	if err = s.impl.Initialise(ctx, dependencies); err != nil {

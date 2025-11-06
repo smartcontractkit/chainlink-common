@@ -32,7 +32,7 @@ func (k KeyPath) String() string {
 	return joinKeySegments(k...)
 }
 
-func (k KeyPath) Leaf() string {
+func (k KeyPath) Base() string {
 	return k[len(k)-1]
 }
 

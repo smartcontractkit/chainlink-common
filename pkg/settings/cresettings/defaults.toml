@@ -2,6 +2,12 @@ WorkflowLimit = '200'
 WorkflowExecutionConcurrencyLimit = '200'
 WorkflowTriggerRateLimit = '200rps:200'
 GatewayIncomingPayloadSizeLimit = '1mb'
+VaultCiphertextSizeLimit = '2kb'
+VaultIdentifierKeySizeLimit = '64b'
+VaultIdentifierOwnerSizeLimit = '64b'
+VaultIdentifierNamespaceSizeLimit = '64b'
+VaultPluginBatchSizeLimit = '20'
+VaultRequestBatchSizeLimit = '10'
 
 [PerOrg]
 WorkflowDeploymentRateLimit = 'every1m0s:1'
@@ -10,6 +16,7 @@ ZeroBalancePruningTimeout = '24h0m0s'
 [PerOwner]
 WorkflowExecutionConcurrencyLimit = '5'
 WorkflowTriggerRateLimit = '5rps:5'
+VaultSecretsLimit = '100'
 
 [PerWorkflow]
 TriggerRateLimit = 'every30s:3'

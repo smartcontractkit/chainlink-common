@@ -127,7 +127,7 @@ func (s GatewayConnectorServer) AddHandler(ctx context.Context, req *pb.AddHandl
 		return nil, fmt.Errorf("failed to dial handler: %d: %w", req.HandlerId, err)
 	}
 	client := NewGatewayConnectorHandlerClient(conn)
-	err = s.impl.AddHandler(ctx, req.Methods, client)
+	err = s.getImpl().AddHandler(ctx, req.Methods, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add handler: %d: %w", req.HandlerId, err)
 	}
@@ -140,13 +140,14 @@ func (s GatewayConnectorServer) SendToGateway(ctx context.Context, req *pb.SendM
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	if err := s.impl.SendToGateway(ctx, req.GatewayId, &resp); err != nil {
+	if err := s.getImpl().SendToGateway(ctx, req.GatewayId, &resp); err != nil {
 		return nil, fmt.Errorf("failed to send message to gateway: %s: %w", req.GatewayId, err)
 	}
 	return &emptypb.Empty{}, nil
 }
+
 func (s GatewayConnectorServer) SignMessage(ctx context.Context, req *pb.SignMessageRequest) (*pb.SignMessageReply, error) {
-	signature, err := s.impl.SignMessage(ctx, req.Message)
+	signature, err := s.getImpl().SignMessage(ctx, req.Message)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign message: %w", err)
 	}
@@ -154,8 +155,9 @@ func (s GatewayConnectorServer) SignMessage(ctx context.Context, req *pb.SignMes
 		Signature: signature,
 	}, nil
 }
+
 func (s GatewayConnectorServer) GatewayIDs(ctx context.Context, _ *emptypb.Empty) (*pb.GatewayIDsReply, error) {
-	gatewayIDs, err := s.impl.GatewayIDs(ctx)
+	gatewayIDs, err := s.getImpl().GatewayIDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get gateway IDs: %w", err)
 	}
@@ -163,15 +165,23 @@ func (s GatewayConnectorServer) GatewayIDs(ctx context.Context, _ *emptypb.Empty
 }
 
 func (s GatewayConnectorServer) DonID(ctx context.Context, _ *emptypb.Empty) (*pb.DonIDReply, error) {
-	donID, err := s.impl.DonID(ctx)
+	donID, err := s.getImpl().DonID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DON ID: %w", err)
 	}
 	return &pb.DonIDReply{DonId: donID}, nil
 }
+
 func (s GatewayConnectorServer) AwaitConnection(ctx context.Context, req *pb.GatewayIDRequest) (*emptypb.Empty, error) {
-	if err := s.impl.AwaitConnection(ctx, req.GatewayId); err != nil {
+	if err := s.getImpl().AwaitConnection(ctx, req.GatewayId); err != nil {
 		return nil, fmt.Errorf("failed to await connection to gateway: %s: %w", req.GatewayId, err)
 	}
 	return &emptypb.Empty{}, nil
+}
+
+func (s GatewayConnectorServer) getImpl() core.GatewayConnector {
+	if s.impl == nil {
+		return &core.UnimplementedGatewayConnector{}
+	}
+	return s.impl
 }

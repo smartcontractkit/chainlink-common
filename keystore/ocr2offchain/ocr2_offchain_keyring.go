@@ -1,4 +1,4 @@
-package ocr2_offchain
+package ocr2offchain
 
 import (
 	"context"

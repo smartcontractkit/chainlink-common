@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	github.com/ethereum/go-ethereum v1.16.2
 	github.com/natefinch/atomic v1.0.1
-	github.com/smartcontractkit/chainlink-common v0.9.6
+	github.com/smartcontractkit/chainlink-common v0.9.5
 	github.com/smartcontractkit/libocr v0.0.0-20250707144819-babe0ec4e358
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.42.0

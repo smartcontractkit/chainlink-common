@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -24,6 +25,38 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
 )
+
+type KeyPath []string
+
+func (k KeyPath) String() string {
+	return joinKeySegments(k...)
+}
+
+func (k KeyPath) Base() string {
+	return k[len(k)-1]
+}
+
+func NewKeyPath(segments ...string) KeyPath {
+	return segments
+}
+
+func NewKeyPathFromString(fullName string) KeyPath {
+	return strings.Split(fullName, "/")
+}
+
+// joinKeySegments joins path-like key name segments using "/" and avoids double slashes.
+// Empty segments are skipped so joinKeySegments("EVM", "TX", "my-key") => "EVM/TX/my-key".
+func joinKeySegments(segments ...string) string {
+	cleaned := make([]string, 0, len(segments))
+	for _, s := range segments {
+		s = strings.Trim(s, "/")
+		if s == "" {
+			continue
+		}
+		cleaned = append(cleaned, s)
+	}
+	return strings.Join(cleaned, "/")
+}
 
 type KeyType string
 

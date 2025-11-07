@@ -50,7 +50,7 @@ func TestCLI(t *testing.T) {
 
 	// Create a second key we export.
 	buf.Reset()
-	cmd.SetArgs([]string{"create", "-d", `{"Keys": [{"KeyName": "testkey2", "KeyType": "ecdsa-secp256k1"}]}`})
+	cmd.SetArgs([]string{"create", "-d", `{"Keys": [{"KeyName": "testkey2", "KeyType": "ECDSA_S256"}]}`})
 	require.NoError(t, cmd.ExecuteContext(t.Context()))
 
 	// Export the second key.

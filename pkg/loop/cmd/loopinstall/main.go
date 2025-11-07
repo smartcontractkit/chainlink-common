@@ -117,15 +117,20 @@ Examples:
   # Install plugins sequentially
   loopinstall -s plugins.default.yaml
 
-  # Install plugins with environment variable overrides
+  # Install plugins with go flags variable overrides
   CL_PLUGIN_GOFLAGS="-ldflags='-s'" loopinstall plugins.default.yaml
+
+  # Install plugins with custom environment variables
+  CL_PLUGIN_ENVVARS="GOOS=linux GOARCH=amd64 CGO_ENABLED=0" loopinstall plugins.default.yaml
 
 Environment Variables:
   CL_PLUGIN_GOFLAGS  Override the goflags option from the configuration
+  CL_PLUGIN_ENVVARS  Space-separated list of environment variables to set during installation (for example for cross-compilation)
 
 Plugin Configuration Format:
   defaults:
     goflags: ""     # Default Go build flags
+    envvars: []     # Default environment variables
 
   plugins:
     plugin-type:

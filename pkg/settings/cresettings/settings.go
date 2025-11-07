@@ -49,6 +49,17 @@ var Default = Schema{
 	WorkflowTriggerRateLimit:          Rate(200, 200),
 	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
 
+	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
+	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
+	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
+	// must ensure that we are overriding the default in the onchain configuration for the contract.
+	VaultCiphertextSizeLimit:          Size(2 * config.KByte),
+	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
+	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
+	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
+	VaultPluginBatchSizeLimit:         Int(20),
+	VaultRequestBatchSizeLimit:        Int(10),
+
 	PerOrg: Orgs{
 		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
 		ZeroBalancePruningTimeout:   Duration(24 * time.Hour),
@@ -56,6 +67,12 @@ var Default = Schema{
 	PerOwner: Owners{
 		WorkflowExecutionConcurrencyLimit: Int(5),
 		WorkflowTriggerRateLimit:          Rate(5, 5),
+
+		// DANGER(cedric): Be extremely careful changing this vault limit as it acts as a default value
+		// used by the Vault OCR plugin -- changing this value could cause issues with the plugin during an image
+		// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
+		// must ensure that we are overriding the default in the onchain configuration for the contract.
+		VaultSecretsLimit: Int(100),
 	},
 	PerWorkflow: Workflows{
 		TriggerRateLimit:              Rate(rate.Every(30*time.Second), 3),
@@ -128,6 +145,13 @@ type Schema struct {
 	WorkflowTriggerRateLimit        Setting[config.Rate]
 	GatewayIncomingPayloadSizeLimit Setting[config.Size]
 
+	VaultCiphertextSizeLimit          Setting[config.Size]
+	VaultIdentifierKeySizeLimit       Setting[config.Size]
+	VaultIdentifierOwnerSizeLimit     Setting[config.Size]
+	VaultIdentifierNamespaceSizeLimit Setting[config.Size]
+	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
+	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
+
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
@@ -142,6 +166,7 @@ type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	// Deprecated
 	WorkflowTriggerRateLimit Setting[config.Rate]
+	VaultSecretsLimit        Setting[int] `unit:"{secret}"`
 }
 
 type Workflows struct {

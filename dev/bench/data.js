@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762530202208,
+  "lastUpdate": 1762539528324,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -31680,6 +31680,66 @@ window.BENCHMARK_DATA = {
             "value": 141632,
             "unit": "ns/op",
             "extra": "8252 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8b842a2f11926aaa0119af2139c867250bf3a69f",
+          "message": "Upgrade keystore dep to common tip (#1693)\n\n* Downgrade to 0.9.5, 0.9.6 tag on a commit that doesn't exist?\n\n* Actually upgrade",
+          "timestamp": "2025-11-07T11:17:40-07:00",
+          "tree_id": "17c2ffdc76f13bdbc0105f116fe4ac8b9b123c5a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8b842a2f11926aaa0119af2139c867250bf3a69f"
+        },
+        "date": 1762539526375,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 553.9,
+            "unit": "ns/op",
+            "extra": "1994840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94982,
+            "unit": "ns/op",
+            "extra": "12616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.1,
+            "unit": "ns/op",
+            "extra": "2988903 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90866,
+            "unit": "ns/op",
+            "extra": "13238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26653,
+            "unit": "ns/op",
+            "extra": "45070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140681,
+            "unit": "ns/op",
+            "extra": "8335 times\n4 procs"
           }
         ]
       }

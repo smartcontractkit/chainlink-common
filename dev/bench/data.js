@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762520692365,
+  "lastUpdate": 1762530202208,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -31626,6 +31626,60 @@ window.BENCHMARK_DATA = {
             "value": 142046,
             "unit": "ns/op",
             "extra": "8199 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ec6d8370ebbfa3a0b34f7a348ed783c996e525bd",
+          "message": "[ARCH-334] Pre-requisites for EVM support (#1664)\n\n* Wip\n\n* Switch to get for more consistent naming\n\n* mod tidy\n\n* Fix test\n\n* Remove dup fn\n\n* Offchain keyring also family agnostic\n\n* Rename",
+          "timestamp": "2025-11-07T10:42:19-05:00",
+          "tree_id": "5c8455306016560ca7e2f23b74e74c2811ffc24a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ec6d8370ebbfa3a0b34f7a348ed783c996e525bd"
+        },
+        "date": 1762530200939,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 550.7,
+            "unit": "ns/op",
+            "extra": "2006215 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95950,
+            "unit": "ns/op",
+            "extra": "12490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.3,
+            "unit": "ns/op",
+            "extra": "2881064 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26640,
+            "unit": "ns/op",
+            "extra": "45057 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141632,
+            "unit": "ns/op",
+            "extra": "8252 times\n4 procs"
           }
         ]
       }

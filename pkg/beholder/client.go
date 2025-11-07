@@ -364,6 +364,9 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	// No auth
 	default:
 	}
+	if config.TraceCompressorEnabled {
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(grpcCompressorGzip))
+	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{

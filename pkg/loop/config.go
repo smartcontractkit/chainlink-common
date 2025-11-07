@@ -70,6 +70,7 @@ const (
 	envTelemetryLogExportMaxBatchSize     = "CL_TELEMETRY_LOG_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryLogExportInterval         = "CL_TELEMETRY_LOG_EXPORT_INTERVAL"
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
+	envTelemetryMetricCompressorEnabled   = "CL_TELEMETRY_METRIC_COMPRESSOR_ENABLED"
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -133,6 +134,7 @@ type EnvConfig struct {
 	TelemetryLogExportMaxBatchSize     int
 	TelemetryLogExportInterval         time.Duration
 	TelemetryLogMaxQueueSize           int
+	TelemetryMetricCompressorEnabled   bool
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
@@ -209,6 +211,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogExportMaxBatchSize, strconv.Itoa(e.TelemetryLogExportMaxBatchSize))
 	add(envTelemetryLogExportInterval, e.TelemetryLogExportInterval.String())
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
+	add(envTelemetryMetricCompressorEnabled, strconv.FormatBool(e.TelemetryMetricCompressorEnabled))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -406,7 +409,10 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogMaxQueueSize, err)
 		}
-
+		e.TelemetryMetricCompressorEnabled, err = getBool(envTelemetryMetricCompressorEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCompressorEnabled, err)
+		}
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)

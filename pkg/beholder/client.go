@@ -28,6 +28,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+const grpcCompressorGzip = "gzip"
+
 type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
@@ -400,6 +402,9 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+	}
+	if cfg.MetricCompressorEnabled {
+		opts = append(opts, otlpmetricgrpc.WithCompressor(grpcCompressorGzip))
 	}
 
 	switch {

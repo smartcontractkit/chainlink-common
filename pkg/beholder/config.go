@@ -34,6 +34,8 @@ type Config struct {
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View
+	// MetricCompressorEnabled enables gRPC compression for metrics (uses "gzip").
+	MetricCompressorEnabled bool
 
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool

@@ -170,6 +170,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			MetricCompressorEnabled:        s.EnvConfig.TelemetryMetricCompressorEnabled,
 		}
 
 		// Configure beholder auth - the client will determine rotating vs static mode

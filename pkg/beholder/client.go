@@ -351,6 +351,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlptracegrpc.WithCompressor("gzip"),
 	}
 	switch {
 	// Rotating auth
@@ -400,6 +401,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		otlpmetricgrpc.WithCompressor("gzip"),
 	}
 
 	switch {
@@ -450,6 +452,7 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...))),
+		otlploggrpc.WithCompressor("gzip"),
 	}
 	// Log exporter auth
 	switch {

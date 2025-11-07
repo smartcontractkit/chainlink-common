@@ -19,6 +19,38 @@ var execCommand = func(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
+// mergeOrReplaceEnvVars merges new environment variables into an existing slice,
+// replacing any existing variables with the same key
+func mergeOrReplaceEnvVars(existing []string, newVars []string) []string {
+	result := make([]string, len(existing))
+	copy(result, existing)
+
+	for _, newVar := range newVars {
+		parts := strings.SplitN(newVar, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := parts[0]
+
+		// Find and replace if it exists
+		found := false
+		for i, existingVar := range result {
+			if strings.HasPrefix(existingVar, key+"=") {
+				result[i] = newVar
+				found = true
+				break
+			}
+		}
+
+		// Append if not found
+		if !found {
+			result = append(result, newVar)
+		}
+	}
+
+	return result
+}
+
 // downloadAndInstallPlugin downloads and installs a single plugin
 func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef, defaults DefaultsConfig) error {
 	if !isPluginEnabled(plugin) {
@@ -123,6 +155,17 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		}
 	}
 
+	// Build env vars from defaults, environment variable, and plugin-specific settings
+	envVars := defaults.EnvVars
+	if envEnvVars := os.Getenv("CL_PLUGIN_ENVVARS"); envEnvVars != "" {
+		envVars = mergeOrReplaceEnvVars(envVars, strings.Fields(envEnvVars))
+	}
+
+	// Merge plugin-specific env vars
+	if len(plugin.EnvVars) != 0 {
+		envVars = mergeOrReplaceEnvVars(envVars, plugin.EnvVars)
+	}
+
 	// Install the plugin
 	{
 		// Determine the actual argument for 'go install' based on installPath and moduleURI.
@@ -162,11 +205,27 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 			}
 		}
 
-		args := []string{"install"}
+		binaryName := filepath.Base(installArg)
+		if binaryName == "." {
+			binaryName = filepath.Base(moduleURI)
+		}
+
+		// Determine output directory
+		outputDir := os.Getenv("GOBIN")
+		if outputDir == "" {
+			gopath := os.Getenv("GOPATH")
+			if gopath == "" {
+				gopath = filepath.Join(os.Getenv("HOME"), "go")
+			}
+			outputDir = filepath.Join(gopath, "bin")
+		}
+
+		outputPath := filepath.Join(outputDir, binaryName)
+
+		args := []string{"build", "-o", outputPath}
 		if goflags != "" {
 			args = append(args, strings.Fields(goflags)...)
 		}
-		// Add the install path, which is now relative to the module root or ".".
 		args = append(args, installArg)
 
 		cmd := exec.Command("go", args...)
@@ -174,28 +233,16 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
-		// Set GOPRIVATE environment variable while preserving other environment variables
+		// Start with all current environment variables
+		cmd.Env = os.Environ()
+
+		// Set GOPRIVATE environment variable if provided
 		if goPrivate != "" {
-			// Start with all current environment variables
-			env := os.Environ()
-
-			// Find and replace GOPRIVATE if it exists, or add it if it doesn't
-			goprivateFound := false
-			for i, e := range env {
-				if strings.HasPrefix(e, "GOPRIVATE=") {
-					env[i] = "GOPRIVATE=" + goPrivate
-					goprivateFound = true
-					break
-				}
-			}
-
-			// Add GOPRIVATE if it wasn't already in the environment
-			if !goprivateFound {
-				env = append(env, "GOPRIVATE="+goPrivate)
-			}
-
-			cmd.Env = env
+			cmd.Env = mergeOrReplaceEnvVars(cmd.Env, []string{"GOPRIVATE=" + goPrivate})
 		}
+
+		// Add/replace custom environment variables (e.g., GOOS, GOARCH, CGO_ENABLED)
+		cmd.Env = mergeOrReplaceEnvVars(cmd.Env, envVars)
 
 		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)
 

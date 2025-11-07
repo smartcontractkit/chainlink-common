@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762458818825,
+  "lastUpdate": 1762520692365,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -31566,6 +31566,66 @@ window.BENCHMARK_DATA = {
             "value": 148322,
             "unit": "ns/op",
             "extra": "7538 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tofel.b@gmail.com",
+            "name": "Bartek Tofel",
+            "username": "Tofel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a71a2d5571766cb05d986326eb02c17c839efd3d",
+          "message": "[CRE-782] allow passing env vars to loopinstall's install command (#1683)\n\n* allow passing env vars to loopinstall's install command\n\n* switch go install for go build and always pass existing env vars while replacing them with custom ones\n\n* update help\n\n* add tests for custom env vars\n\n* unified handling of replacing vs appending of env vars with correct precedence",
+          "timestamp": "2025-11-07T07:03:45-06:00",
+          "tree_id": "e1aa869a85f42f0af08bff41eb234e99e59e0da4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a71a2d5571766cb05d986326eb02c17c839efd3d"
+        },
+        "date": 1762520691107,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 710.1,
+            "unit": "ns/op",
+            "extra": "1443930 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98018,
+            "unit": "ns/op",
+            "extra": "12190 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.1,
+            "unit": "ns/op",
+            "extra": "2985885 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 96706,
+            "unit": "ns/op",
+            "extra": "12397 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26720,
+            "unit": "ns/op",
+            "extra": "44848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142046,
+            "unit": "ns/op",
+            "extra": "8199 times\n4 procs"
           }
         ]
       }

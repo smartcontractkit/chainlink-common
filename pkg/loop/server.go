@@ -155,6 +155,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			OtelExporterGRPCEndpoint:       s.EnvConfig.TelemetryEndpoint,
 			ResourceAttributes:             append(attributes, s.EnvConfig.TelemetryAttributes.AsStringAttributes()...),
 			TraceSampleRatio:               s.EnvConfig.TelemetryTraceSampleRatio,
+			TraceCompressionEnabled:        s.EnvConfig.TelemetryTraceCompressionEnabled,
 			EmitterBatchProcessor:          s.EnvConfig.TelemetryEmitterBatchProcessor,
 			EmitterExportTimeout:           s.EnvConfig.TelemetryEmitterExportTimeout,
 			EmitterExportInterval:          s.EnvConfig.TelemetryEmitterExportInterval,
@@ -167,10 +168,11 @@ func (s *Server) start(opts ...ServerOpt) error {
 			LogExportMaxBatchSize:          s.EnvConfig.TelemetryLogExportMaxBatchSize,
 			LogExportInterval:              s.EnvConfig.TelemetryLogExportInterval,
 			LogMaxQueueSize:                s.EnvConfig.TelemetryLogMaxQueueSize,
+			LogCompressionEnabled:          s.EnvConfig.TelemetryLogCompressionEnabled,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
-			MetricCompressorEnabled:        s.EnvConfig.TelemetryMetricCompressorEnabled,
+			MetricCompressionEnabled:       s.EnvConfig.TelemetryMetricCompressionEnabled,
 		}
 
 		// Configure beholder auth - the client will determine rotating vs static mode

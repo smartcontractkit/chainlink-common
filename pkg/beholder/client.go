@@ -364,7 +364,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	// No auth
 	default:
 	}
-	if config.TraceCompressorEnabled {
+	if config.TraceCompressionEnabled {
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(grpcCompressorGzip))
 	}
 	if config.TraceRetryConfig != nil {
@@ -406,7 +406,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
-	if cfg.MetricCompressorEnabled {
+	if cfg.MetricCompressionEnabled {
 		opts = append(opts, otlpmetricgrpc.WithCompressor(grpcCompressorGzip))
 	}
 
@@ -458,6 +458,9 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...))),
+	}
+	if cfg.LogCompressionEnabled {
+		opts = append(opts, otlploggrpc.WithCompressor(grpcCompressorGzip))
 	}
 	// Log exporter auth
 	switch {

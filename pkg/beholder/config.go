@@ -29,15 +29,15 @@ type Config struct {
 	TraceBatchTimeout time.Duration
 	TraceSpanExporter trace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
-	// TraceCompressorEnabled enables gRPC compression for traces (uses "gzip").
-	TraceCompressorEnabled bool
+	// TraceCompressionEnabled enables gRPC compression for traces (uses "gzip").
+	TraceCompressionEnabled bool
 
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View
-	// MetricCompressorEnabled enables gRPC compression for metrics (uses "gzip").
-	MetricCompressorEnabled bool
+	// MetricCompressionEnabled enables gRPC compression for metrics (uses "gzip").
+	MetricCompressionEnabled bool
 
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool
@@ -54,8 +54,8 @@ type Config struct {
 	LogRetryConfig      *RetryConfig
 	LogStreamingEnabled bool          // Enable logs streaming to the OTel log exporter
 	LogLevel            zapcore.Level // Log level for telemetry streaming
-	// LogCompressorEnabled enables gRPC compression for logs (uses "gzip").
-	LogCompressorEnabled bool
+	// LogCompressionEnabled enables gRPC compression for logs (uses "gzip").
+	LogCompressionEnabled bool
 
 	// Auth
 	// AuthHeaders serves two purposes:

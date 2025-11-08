@@ -70,9 +70,9 @@ const (
 	envTelemetryLogExportMaxBatchSize     = "CL_TELEMETRY_LOG_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryLogExportInterval         = "CL_TELEMETRY_LOG_EXPORT_INTERVAL"
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
-	envTelemetryTraceCompressionEnabled   = "CL_TELEMETRY_TRACE_COMPRESSION_ENABLED"
-	envTelemetryMetricCompressionEnabled  = "CL_TELEMETRY_METRIC_COMPRESSION_ENABLED"
-	envTelemetryLogCompressionEnabled     = "CL_TELEMETRY_LOG_COMPRESSION_ENABLED"
+	envTelemetryTraceCompressionDisabled  = "CL_TELEMETRY_TRACE_COMPRESSION_DISABLED"
+	envTelemetryMetricCompressionDisabled = "CL_TELEMETRY_METRIC_COMPRESSION_DISABLED"
+	envTelemetryLogCompressionDisabled    = "CL_TELEMETRY_LOG_COMPRESSION_DISABLED"
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -136,9 +136,9 @@ type EnvConfig struct {
 	TelemetryLogExportMaxBatchSize     int
 	TelemetryLogExportInterval         time.Duration
 	TelemetryLogMaxQueueSize           int
-	TelemetryTraceCompressionEnabled   bool
-	TelemetryMetricCompressionEnabled  bool
-	TelemetryLogCompressionEnabled     bool
+	TelemetryTraceCompressionDisabled  bool
+	TelemetryMetricCompressionDisabled bool
+	TelemetryLogCompressionDisabled    bool
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
@@ -215,9 +215,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogExportMaxBatchSize, strconv.Itoa(e.TelemetryLogExportMaxBatchSize))
 	add(envTelemetryLogExportInterval, e.TelemetryLogExportInterval.String())
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
-	add(envTelemetryTraceCompressionEnabled, strconv.FormatBool(e.TelemetryTraceCompressionEnabled))
-	add(envTelemetryMetricCompressionEnabled, strconv.FormatBool(e.TelemetryMetricCompressionEnabled))
-	add(envTelemetryLogCompressionEnabled, strconv.FormatBool(e.TelemetryLogCompressionEnabled))
+	add(envTelemetryTraceCompressionDisabled, strconv.FormatBool(e.TelemetryTraceCompressionDisabled))
+	add(envTelemetryMetricCompressionDisabled, strconv.FormatBool(e.TelemetryMetricCompressionDisabled))
+	add(envTelemetryLogCompressionDisabled, strconv.FormatBool(e.TelemetryLogCompressionDisabled))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -415,17 +415,17 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogMaxQueueSize, err)
 		}
-		e.TelemetryTraceCompressionEnabled, err = getBool(envTelemetryTraceCompressionEnabled)
+		e.TelemetryTraceCompressionDisabled, err = getBool(envTelemetryTraceCompressionDisabled)
 		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryTraceCompressionEnabled, err)
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryTraceCompressionDisabled, err)
 		}
-		e.TelemetryMetricCompressionEnabled, err = getBool(envTelemetryMetricCompressionEnabled)
+		e.TelemetryMetricCompressionDisabled, err = getBool(envTelemetryMetricCompressionDisabled)
 		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCompressionEnabled, err)
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCompressionDisabled, err)
 		}
-		e.TelemetryLogCompressionEnabled, err = getBool(envTelemetryLogCompressionEnabled)
+		e.TelemetryLogCompressionDisabled, err = getBool(envTelemetryLogCompressionDisabled)
 		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogCompressionEnabled, err)
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogCompressionDisabled, err)
 		}
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)

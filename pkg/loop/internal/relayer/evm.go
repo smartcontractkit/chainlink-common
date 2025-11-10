@@ -284,6 +284,25 @@ func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorI
 	return evmtypes.Address(reply.GetAddr()), nil
 }
 
+func (e *EVMClient) GetLatestLPBlock(ctx context.Context) (*evmtypes.LPBlock, error) {
+	reply, err := e.grpcClient.GetLatestLPBlock(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	h, err := evmpb.ConvertHashFromProto(reply.GetLpBlock().GetHash())
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.LPBlock{
+		BlockTimestamp:       reply.GetLpBlock().GetBlockTimestamp(),
+		LatestBlockNumber:    reply.GetLpBlock().GetLatestBlockNumber(),
+		FinalizedBlockNumber: reply.GetLpBlock().GetFinalizedBlockNumber(),
+		SafeBlockNumber:      reply.GetLpBlock().GetSafeBlockNumber(),
+		BlockHash:            h,
+	}, nil
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 

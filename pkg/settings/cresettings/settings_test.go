@@ -98,8 +98,6 @@ func TestSchema_Unmarshal(t *testing.T) {
 }`), &cfg))
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
-	assert.Equal(t, config.Rate{Limit: 200, Burst: 50}, cfg.GatewayUnauthenticatedRequestRateLimit.DefaultValue)
-	assert.Equal(t, config.Rate{Limit: 1, Burst: 100}, cfg.GatewayUnauthenticatedRequestRateLimitPerIP.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)

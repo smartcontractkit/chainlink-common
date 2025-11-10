@@ -7,12 +7,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
@@ -448,6 +447,7 @@ func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testin
 				RemoteExecutableConfig: &rec,
 			},
 		},
+		LocalOnly: true,
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 

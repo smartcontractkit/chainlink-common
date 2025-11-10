@@ -8,7 +8,8 @@ type PluginConfig struct {
 
 // DefaultsConfig holds the default configuration values
 type DefaultsConfig struct {
-	GoFlags string `yaml:"goflags"`
+	GoFlags string   `yaml:"goflags"`
+	EnvVars []string `yaml:"envvars"`
 }
 
 // PluginDef defines a single plugin instance
@@ -19,6 +20,7 @@ type PluginDef struct {
 	InstallPath string   `yaml:"installPath"`
 	Libs        []string `yaml:"libs"`
 	Flags       string   `yaml:"flags,omitempty"`
+	EnvVars     []string `yaml:"envvars,omitempty"`
 }
 
 // ModDownloadResult represents the JSON directory (dir) output from 'go mod download -json'

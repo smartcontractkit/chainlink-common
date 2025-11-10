@@ -18,4 +18,5 @@ message ReportingPluginConfig {
   uint32 maxBatchSize = 6;
   uint64 outcomePruningThreshold = 7;
   google.protobuf.Duration requestTimeout = 8;
+  uint64 historical_outcome_expiry_seq_nr_span = 9;
 }

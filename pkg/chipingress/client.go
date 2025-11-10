@@ -8,12 +8,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	ce "github.com/cloudevents/sdk-go/v2"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
@@ -24,6 +28,7 @@ import (
 type Client interface {
 	pb.ChipIngressClient
 	Close() error
+	RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error)
 }
 
 type client struct {
@@ -41,6 +46,8 @@ type clientConfig struct {
 	headerProvider       HeaderProvider
 	insecureConnection   bool
 	host                 string
+	meterProvider        metric.MeterProvider
+	tracerProvider       trace.TracerProvider
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -68,8 +75,18 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	for _, opt := range opts {
 		opt(cfg)
 	}
+	// Build otelgrpc handler options
+	var otelOpts []otelgrpc.Option
+	if cfg.meterProvider != nil {
+		otelOpts = append(otelOpts, otelgrpc.WithMeterProvider(cfg.meterProvider))
+	}
+	if cfg.tracerProvider != nil {
+		otelOpts = append(otelOpts, otelgrpc.WithTracerProvider(cfg.tracerProvider))
+	}
+
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
 	}
 	// Auth
 	if cfg.perRPCCredentials != nil {
@@ -111,6 +128,23 @@ func (c *client) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaReques
 
 func (c *client) Close() error {
 	return c.conn.Close()
+}
+
+// RegisterSchemas registers one or more schemas with the Chip Ingress service.
+func (c *client) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+	request := &pb.RegisterSchemaRequest{Schemas: schemas}
+
+	resp, err := c.client.RegisterSchema(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register schema: %w", err)
+	}
+
+	registeredMap := make(map[string]int)
+	for _, schema := range resp.Registered {
+		registeredMap[schema.Subject] = int(schema.Version)
+	}
+
+	return registeredMap, nil
 }
 
 // WithBasicAuth sets the basic-auth credentials for the ChipIngress service.
@@ -160,6 +194,18 @@ func WithTLS() Opt {
 		}
 		config.transportCredentials = credentials.NewTLS(tlsCfg) // Use TLS
 	}
+}
+
+// WithMeterProvider sets a custom OpenTelemetry MeterProvider for metrics collection.
+// If not set, the global meter provider will be used.
+func WithMeterProvider(provider metric.MeterProvider) Opt {
+	return func(c *clientConfig) { c.meterProvider = provider }
+}
+
+// WithTracerProvider sets a custom OpenTelemetry TracerProvider for distributed tracing.
+// If not set, the global tracer provider will be used.
+func WithTracerProvider(provider trace.TracerProvider) Opt {
+	return func(c *clientConfig) { c.tracerProvider = provider }
 }
 
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
@@ -253,4 +299,45 @@ func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
 		batch.Events = append(batch.Events, eventPb)
 	}
 	return batch, nil
+}
+
+var _ Client = (*NoopClient)(nil)
+
+// NoopClient is a no-op implementation of the Client interface.
+// All methods return successfully without performing any actual operations.
+type NoopClient struct{}
+
+// Close is a no-op
+func (NoopClient) Close() error {
+	return nil
+}
+
+// Ping is a no-op
+func (NoopClient) Ping(ctx context.Context, in *pb.EmptyRequest, opts ...grpc.CallOption) (*pb.PingResponse, error) {
+	return &pb.PingResponse{Message: "pong"}, nil
+}
+
+// Publish is a no-op
+func (NoopClient) Publish(ctx context.Context, in *cepb.CloudEvent, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+	return &pb.PublishResponse{}, nil
+}
+
+// PublishBatch is a no-op
+func (NoopClient) PublishBatch(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+	return &pb.PublishResponse{}, nil
+}
+
+// StreamEvents is a no-op
+func (NoopClient) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[pb.StreamEventsRequest, pb.StreamEventsResponse], error) {
+	return nil, nil
+}
+
+// RegisterSchema is a no-op
+func (NoopClient) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaRequest, opts ...grpc.CallOption) (*pb.RegisterSchemaResponse, error) {
+	return &pb.RegisterSchemaResponse{}, nil
+}
+
+// RegisterSchemas is a no-op
+func (NoopClient) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
+	return make(map[string]int), nil
 }

@@ -3,7 +3,9 @@ package beholder_test
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +35,165 @@ func TestBuildAuthHeaders(t *testing.T) {
 	assert.Equal(t, expectedHeaders, headers)
 }
 
+func TestNewAuthHeaderV2(t *testing.T) {
+	// Generate test key pair
+	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	t.Run("creates valid V2 auth headers", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		ts := time.Now()
+
+		// Create the expected message bytes (pubkey + timestamp)
+		expectedSignature := []byte("test-signature")
+		mockSigner.
+			On("Sign", t.Context(), hex.EncodeToString(pubKey), mock.Anything).
+			Return(expectedSignature, nil).
+			Once()
+
+		headers, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts)
+		require.NoError(t, err)
+		require.NotNil(t, headers)
+		require.Contains(t, headers, "X-Beholder-Node-Auth-Token")
+
+		authHeader := headers["X-Beholder-Node-Auth-Token"]
+		parts := strings.Split(authHeader, ":")
+		require.Len(t, parts, 4, "Auth header should have format version:pubkey_hex:timestamp:signature_hex")
+
+		assert.Equal(t, "2", parts[0], "Version should be 2")
+		assert.Equal(t, hex.EncodeToString(pubKey), parts[1], "Public key should match")
+		assert.Equal(t, fmt.Sprintf("%d", ts.UnixNano()), parts[2], "Timestamp should match")
+		assert.Equal(t, hex.EncodeToString(expectedSignature), parts[3], "Signature should match")
+
+		mockSigner.AssertExpectations(t)
+	})
+	t.Run("returns error when signer fails", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+		ts := time.Now()
+
+		expectedErr := fmt.Errorf("signing failed")
+		mockSigner.
+			On("Sign", t.Context(), hex.EncodeToString(pubKey), mock.Anything).
+			Return([]byte{}, expectedErr).
+			Once()
+
+		headers, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts)
+		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Contains(t, err.Error(), "beholder: failed to sign auth header")
+		assert.Contains(t, err.Error(), expectedErr.Error())
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("verifies signature with ed25519", func(t *testing.T) {
+		// Use a real signature for verification
+		mockSigner := &MockSigner{}
+		ts := time.Now()
+
+		// Calculate the message that should be signed
+		tsBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))
+		msgBytes := append(pubKey, tsBytes...)
+
+		// Sign with the actual private key
+		realSignature := ed25519.Sign(privKey, msgBytes)
+
+		mockSigner.
+			On("Sign", t.Context(), hex.EncodeToString(pubKey), mock.MatchedBy(func(data []byte) bool {
+				// Match if the data contains pubkey + timestamp
+				return len(data) == len(pubKey)+8 && string(data[:len(pubKey)]) == string(pubKey)
+			})).
+			Return(realSignature, nil).
+			Once()
+
+		headers, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts)
+		require.NoError(t, err)
+		require.NotNil(t, headers)
+
+		authHeader := headers["X-Beholder-Node-Auth-Token"]
+		parts := strings.Split(authHeader, ":")
+		require.Len(t, parts, 4)
+
+		signatureBytes, err := hex.DecodeString(parts[3])
+		require.NoError(t, err)
+
+		// Verify the signature
+		valid := ed25519.Verify(pubKey, msgBytes, signatureBytes)
+		assert.True(t, valid, "Signature should be valid")
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("handles context cancellation", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		ts := time.Now()
+
+		mockSigner.
+			On("Sign", t.Context(), hex.EncodeToString(pubKey), mock.Anything).
+			Return([]byte{}, context.Canceled).
+			Maybe()
+
+		headers, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts)
+
+		// The function should propagate the context error
+		if err != nil {
+			assert.Contains(t, err.Error(), "beholder: failed to sign auth header")
+		}
+
+		// If mockSigner.Sign was called and returned error, headers should be nil
+		if err != nil {
+			assert.Nil(t, headers)
+		}
+	})
+
+	t.Run("uses correct keyID format", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+		ts := time.Now()
+
+		var capturedKeyID string
+		mockSigner.
+			On("Sign", t.Context(), mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				capturedKeyID = args.Get(1).(string)
+			}).
+			Return([]byte("signature"), nil).
+			Once()
+
+		_, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts)
+		require.NoError(t, err)
+
+		// Verify keyID is hex-encoded public key
+		assert.Equal(t, hex.EncodeToString(pubKey), capturedKeyID)
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("different timestamps produce different headers", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		ts1 := time.Unix(1000, 0)
+		ts2 := time.Unix(2000, 0)
+
+		mockSigner.
+			On("Sign", t.Context(), hex.EncodeToString(pubKey), mock.Anything).
+			Return([]byte("signature"), nil)
+
+		headers1, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts1)
+		require.NoError(t, err)
+
+		headers2, err := beholder.NewAuthHeaderV2(t.Context(), pubKey, mockSigner, ts2)
+		require.NoError(t, err)
+
+		// Headers should be different due to different timestamps
+		assert.NotEqual(t, headers1["X-Beholder-Node-Auth-Token"], headers2["X-Beholder-Node-Auth-Token"])
+
+		mockSigner.AssertExpectations(t)
+	})
+}
+
 func TestStaticAuthHeaderProvider(t *testing.T) {
 	// Create test headers
 	testHeaders := map[string]string{
@@ -54,7 +215,7 @@ type MockSigner struct {
 	mock.Mock
 }
 
-func (m *MockSigner) Sign(ctx context.Context, keyID []byte, data []byte) ([]byte, error) {
+func (m *MockSigner) Sign(ctx context.Context, keyID string, data []byte) ([]byte, error) {
 	args := m.Called(ctx, keyID, data)
 	return args.Get(0).([]byte), args.Error(1)
 }
@@ -71,13 +232,13 @@ func TestRotatingAuth(t *testing.T) {
 		dummySignature := ed25519.Sign(privKey, []byte("test data"))
 
 		mockSigner.
-			On("Sign", mock.Anything, mock.MatchedBy(func(keyID []byte) bool {
-				return string(keyID) == string(pubKey) // Verify correct public key is passed
+			On("Sign", mock.Anything, mock.MatchedBy(func(keyID string) bool {
+				return keyID == hex.EncodeToString(pubKey) // Verify correct public key hex is passed
 			}), mock.Anything).
 			Return(dummySignature, nil)
 
 		ttl := 5 * time.Minute
-		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 		headers, err := auth.Headers(t.Context())
 		require.NoError(t, err)
@@ -112,7 +273,7 @@ func TestRotatingAuth(t *testing.T) {
 			Maybe()
 
 		ttl := 5 * time.Minute
-		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 		headers1, err := auth.Headers(t.Context())
 		require.NoError(t, err)
@@ -135,7 +296,7 @@ func TestRotatingAuth(t *testing.T) {
 			Return([]byte{}, expectedErr)
 
 		ttl := 5 * time.Minute
-		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 		headers, err := auth.Headers(t.Context())
 		require.Error(t, err)
@@ -157,7 +318,7 @@ func TestRotatingAuth(t *testing.T) {
 			Maybe()
 
 		ttl := 5 * time.Minute
-		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 		creds := auth.Credentials()
 		require.NotNil(t, creds)
@@ -183,13 +344,49 @@ func TestRotatingAuth(t *testing.T) {
 
 		ttl := 5 * time.Minute
 		// transport security required
-		authSecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, true)
+		authSecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, true, nil)
 		credsSecure := authSecure.Credentials()
 		assert.True(t, credsSecure.RequireTransportSecurity())
 		// transport security not required
-		authInsecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+		authInsecure := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 		credsInsecure := authInsecure.Credentials()
 		assert.False(t, credsInsecure.RequireTransportSecurity())
+
+		mockSigner.AssertExpectations(t)
+	})
+
+	t.Run("uses initial headers until TTL expires", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		// Create initial headers with v2 format
+		ts := time.Now()
+		signature := ed25519.Sign(privKey, []byte("initial"))
+		initialHeaders := map[string]string{
+			"X-Beholder-Node-Auth-Token": "2:" + hex.EncodeToString(pubKey) + ":" + fmt.Sprintf("%d", ts.UnixNano()) + ":" + hex.EncodeToString(signature),
+		}
+
+		// Use a very short TTL so it expires quickly
+		ttl := 1 * time.Millisecond
+		auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, initialHeaders)
+
+		// First call should return the initial headers without calling Sign
+		headers1, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, initialHeaders, headers1)
+
+		// Wait for TTL to expire
+		time.Sleep(5 * time.Millisecond)
+
+		// Now the signer should be called to generate new headers
+		newSignature := ed25519.Sign(privKey, []byte("new"))
+		mockSigner.
+			On("Sign", mock.Anything, mock.Anything, mock.Anything).
+			Return(newSignature, nil).
+			Once()
+
+		headers2, err := auth.Headers(t.Context())
+		require.NoError(t, err)
+		assert.NotEqual(t, initialHeaders, headers2, "Should generate new headers after TTL expires")
 
 		mockSigner.AssertExpectations(t)
 	})
@@ -212,7 +409,7 @@ func BenchmarkRotatingAuth_Headers_CachedPath(b *testing.B) {
 
 	// Use a long TTL so headers don't expire during the benchmark
 	ttl := 1 * time.Hour
-	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 	// Prime the cache by calling Headers once
 	ctx := b.Context()
@@ -249,7 +446,7 @@ func BenchmarkRotatingAuth_Headers_ExpiredPath(b *testing.B) {
 
 	// Use a TTL of 0 to force regeneration on every call
 	ttl := 0 * time.Second
-	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 	ctx := b.Context()
 
@@ -283,7 +480,7 @@ func BenchmarkRotatingAuth_Headers_ParallelCached(b *testing.B) {
 
 	// Use a long TTL so headers don't expire during the benchmark
 	ttl := 1 * time.Hour
-	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 	// Prime the cache
 	ctx := b.Context()
@@ -323,7 +520,7 @@ func BenchmarkRotatingAuth_Headers_ParallelExpired(b *testing.B) {
 
 	// Use a short TTL to cause periodic regeneration
 	ttl := 10 * time.Millisecond
-	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false)
+	auth := beholder.NewRotatingAuth(pubKey, mockSigner, ttl, false, nil)
 
 	ctx := b.Context()
 

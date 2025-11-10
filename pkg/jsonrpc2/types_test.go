@@ -47,7 +47,8 @@ func TestTypes(t *testing.T) {
 
 		digest, err := req.Digest()
 		require.Error(t, err)
-		require.Equal(t, "error marshaling JSON: json: cannot marshal from Go chan string within \"/params/channel\"", err.Error())
+		require.Contains(t, err.Error(), "error marshaling JSON: json:")
+		require.Contains(t, err.Error(), "Go chan string within \"/params/channel\"")
 		require.Empty(t, digest)
 	})
 

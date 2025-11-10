@@ -81,7 +81,7 @@ func (c *{{.GoName}}Server) Initialise(ctx context.Context, dependencies core.St
 	if err := dependencies.CapabilityRegistry.Add(ctx, &{{.GoName|LowerFirst}}Capability{
 	    {{.GoName}}Capability: c.{{.GoName}}Capability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", {{$fullCapabilityId}}, err)
 	}
 
 	return nil

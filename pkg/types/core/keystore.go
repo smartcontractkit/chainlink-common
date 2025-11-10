@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/ed25519"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
 // Implementations of this interface should embed the UnimplementedKeystore struct,
@@ -79,6 +81,9 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 }
 
 var P2PAccountKey = "P2P_SIGNER"
+
+// Notice: when using the `StandardCapabilityAccount`, signing payloads must be prefixed using the
+// `peeridhelper.MakePeerIDSignatureDomainSeparatedPayload` function.
 var StandardCapabilityAccount = "STANDARD_CAPABILITY_ACCOUNT"
 
 // singleAccountSigner implements Keystore for a single account.
@@ -133,6 +138,8 @@ func (c *signerDecrypter) Accounts(ctx context.Context) ([]string, error) {
 	return []string{c.account}, nil
 }
 
+var genericPrefix = peeridhelper.MakePeerIDSignatureDomainSeparatedPayload("", []byte{})
+
 func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
 	if c.account != account {
 		return nil, fmt.Errorf("account not found: %s", account)
@@ -140,6 +147,16 @@ func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte)
 	if c.signer == nil {
 		return nil, fmt.Errorf("signer is nil")
 	}
+
+	// For the `StandardCapabilityAccount`, assert that the user is passing in correctly domain separated data.
+	// The first 97 bytes of any domain separated payload will match the generic prefix.
+	// Implicitly, this also requires the message length to be <= 1024 bytes.
+	if account == StandardCapabilityAccount {
+		if !bytes.HasPrefix(data, genericPrefix[:97]) {
+			return nil, fmt.Errorf("data does not have expected prefix")
+		}
+	}
+
 	return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
 }
 

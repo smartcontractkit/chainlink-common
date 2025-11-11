@@ -8,19 +8,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
-// ChainFeeComponents redeclares the ChainFeeComponents type from the chainlink-common/pkg/types to avoid
-// a cyclic dependency caused by provider_ccip_ocr3.go importing this package.
-type ChainFeeComponents struct {
-	// The cost of executing transaction in the chain's EVM (or the L2 environment).
-	ExecutionFee *big.Int
-
-	// The cost associated with an L2 posting a transaction's data to the L1.
-	DataAvailabilityFee *big.Int
-}
-
-// ChainAccessor for all direct chain access. The accessor is responsible for
-// in addition to direct access to the chain, this interface also translates
-// onchain representations of data to the plugin representation.
+// ChainAccessor is responsible for direct access to the chain. In addition
+// to direct access, this interface also translates onchain representations
+// of data to the plugin representation.
 type ChainAccessor interface {
 	AllAccessors
 	SourceAccessor
@@ -29,12 +19,10 @@ type ChainAccessor interface {
 	PriceReader
 }
 
-// AllAccessors contains functionality that is available to all types of accessors.
+// AllAccessors contains functionality that is available to all types of accessors (source and dest).
 type AllAccessors interface {
-	// GetContractAddress returns the contract address that is registered for the provided contract name and chain.
-	// WARNING: This function will fail if the oracle does not support the requested chain.
-	//
-	// TODO(NONEVM-1865): do we want to mark this as deprecated in favor of Metadata()?
+	// GetContractAddress returns the contract address that is registered for the provided contract name
+	// on the chain associated with the specific accessor implementation.
 	GetContractAddress(contractName string) ([]byte, error)
 
 	// GetAllConfig is the next iteration of GetAllConfigsLegacy(). Instead of returning a large snapshot
@@ -49,19 +37,18 @@ type AllAccessors interface {
 	// GetAllConfigsLegacy returns a snapshot of all chain configurations for this chain using the legacy
 	// config structs.
 	//
-	// destChainSelector is used to determine whether or not destination chain specific configs should be fetched.
-	// sourceChainSelectors is used to determine which source chain configs should be fetched.
+	// When called on a destination chain accessor:
+	//   - destChainSelector should match the accessor's chain
+	//   - sourceChainSelectors determines which source chain configs to fetch from the OffRamp
+	//   - Returns ChainConfigSnapshot with OffRamp, FeeQuoter, RMNProxy, RMNRemote, CurseInfo configs
+	//   - Returns map of SourceChainConfig for each requested source chain
 	//
-	// This includes the following contracts:
-	// - Router
-	// - OffRamp
-	// - OnRamp
-	// - FeeQuoter
-	// - RMNProxy
-	// - RMNRemote
-	// - CurseInfo
+	// When called on a source chain accessor:
+	//   - destChainSelector is used to fetch OnRamp dest chain specific configs
+	//   - sourceChainSelectors will likely be empty and/or ignored by the accessor impl
+	//   - Returns ChainConfigSnapshot with OnRamp, FeeQuoter, Router configs
+	//   - Returns empty map for source chain configs
 	//
-	// Access Type: Method(many, see code)
 	// Contract: Many
 	// Confidence: Unconfirmed
 	GetAllConfigsLegacy(
@@ -70,24 +57,23 @@ type AllAccessors interface {
 		sourceChainSelectors []ChainSelector,
 	) (ChainConfigSnapshot, map[ChainSelector]SourceChainConfig, error)
 
-	// GetChainFeeComponents Returns all fee components for given chains if corresponding
-	// chain writer is available.
+	// GetChainFeeComponents returns all fee components for the chain.
 	//
-	// Access Type: ChainWriter
 	// Contract: N/A
 	// Confidence: N/A
 	GetChainFeeComponents(ctx context.Context) (ChainFeeComponents, error)
 
-	// Sync can be used to perform frequent syncing operations inside the reader implementation.
-	// Returns an error if the sync operation failed.
+	// Sync binds a contract to the reader implementation by contract name and address.
+	// This is used to dynamically discover and bind contracts (e.g., OnRamps, FeeQuoter, RMNRemote).
+	// Returns an error if the bind operation failed.
 	Sync(ctx context.Context, contractName string, contractAddress UnknownAddress) error
 }
 
-// DestinationAccessor contains all functions typically associated by the destination chain.
+// DestinationAccessor contains all functions typically associated with the destination chain.
 type DestinationAccessor interface {
 
 	// CommitReportsGTETimestamp reads CommitReportAccepted events starting from a given timestamp.
-	// The number of results are limited according to limit.
+	// The number of results is limited according to the limit parameter.
 	//
 	// Access Type: Event(CommitReportAccepted)
 	// Contract: OffRamp
@@ -113,15 +99,15 @@ type DestinationAccessor interface {
 		confidence primitives.ConfidenceLevel,
 	) (map[ChainSelector][]SeqNum, error)
 
-	// NextSeqNum reads the source chain config to get the next expected
-	// sequence number for the given source chains.
+	// NextSeqNum reads the source chain config from the OffRamp to get the next expected
+	// sequence number (MinSeqNr) for the given source chains.
 	//
-	// Access Type: Method(NextSeqNum)
+	// Access Type: Method(GetSourceChainConfig)
 	// Contract: OffRamp
 	// Confidence: Unconfirmed
 	NextSeqNum(ctx context.Context, sources []ChainSelector) (map[ChainSelector]SeqNum, error)
 
-	// Nonces for all provided selector/address pairs. Addresses must be encoded
+	// Nonces returns nonces for all provided selector/address pairs. Addresses must be encoded
 	// according to the source chain requirements by using the AddressCodec.
 	//
 	// Access Type: Method(GetInboundNonce)
@@ -129,7 +115,8 @@ type DestinationAccessor interface {
 	// Confidence: Unconfirmed
 	Nonces(ctx context.Context, addresses map[ChainSelector][]UnknownEncodedAddress) (map[ChainSelector]map[string]uint64, error)
 
-	// GetChainFeePriceUpdate Gets latest chain fee price update for the provided chains.
+	// GetChainFeePriceUpdate returns the latest chain fee price update for the provided selectors. This queries
+	// the FeeQuoter contract on the chain accociated with this accessor.
 	//
 	// Access Type: Method(GetChainFeePriceUpdate)
 	// Contract: FeeQuoter
@@ -137,7 +124,7 @@ type DestinationAccessor interface {
 	GetChainFeePriceUpdate(ctx context.Context, selectors []ChainSelector) (map[ChainSelector]TimestampedUnixBig, error)
 
 	// GetLatestPriceSeqNr returns the latest price sequence number for the destination chain.
-	// Not to confuse with the sequence number of the messages. This is the OCR sequence number.
+	// Not to be confused with the sequence number of the messages. This is the OCR sequence number.
 	//
 	// Access Type: Method(GetLatestPriceSequenceNumber)
 	// Contract: OffRamp
@@ -164,23 +151,20 @@ type SourceAccessor interface {
 	LatestMessageTo(ctx context.Context, dest ChainSelector) (SeqNum, error)
 
 	// GetExpectedNextSequenceNumber returns the expected next sequence number
-	// messages being sent to the provided destination.
+	// for messages being sent to the provided destination.
 	//
 	// Access Type: Method(GetExpectedNextSequenceNumber)
 	// Contract: OnRamp
 	// Confidence: Unconfirmed
 	GetExpectedNextSequenceNumber(ctx context.Context, dest ChainSelector) (SeqNum, error)
 
-	// GetTokenPriceUSD looks up a token price in USD. The address value should
-	// be retrieved from a configuration cache (i.e. ConfigPoller).
+	// GetTokenPriceUSD looks up a token price in USD for the provided address.
+	// Serves as a general price interface for fetching both LINK price and wrapped
+	// native token price in USD.
 	//
 	// Access Type: Method(GetTokenPrice)
 	// Contract: FeeQuoter
 	// Confidence: Unconfirmed
-	//
-	// Notes: This function is new and serves as a general price interface for
-	//        both LinkPriceUSD and GetWrappedNativeTokenPriceUSD.
-	//        See Design Doc (Combined Token Price Helper) for notes.
 	GetTokenPriceUSD(ctx context.Context, address UnknownAddress) (TimestampedUnixBig, error)
 
 	// GetFeeQuoterDestChainConfig returns the fee quoter destination chain config.
@@ -221,4 +205,14 @@ type PriceReader interface {
 		ctx context.Context,
 		tokensBytes []UnknownAddress,
 	) (map[UnknownEncodedAddress]TimestampedUnixBig, error)
+}
+
+// ChainFeeComponents redeclares the ChainFeeComponents type from the chainlink-common/pkg/types to avoid
+// a cyclic dependency caused by provider_ccip_ocr3.go importing this package.
+type ChainFeeComponents struct {
+	// The cost of executing transaction in the chain's EVM (or the L2 environment).
+	ExecutionFee *big.Int
+
+	// The cost associated with an L2 posting a transaction's data to the L1.
+	DataAvailabilityFee *big.Int
 }

@@ -63,8 +63,9 @@ type AllAccessors interface {
 	// Confidence: N/A
 	GetChainFeeComponents(ctx context.Context) (ChainFeeComponents, error)
 
-	// Sync binds a contract to the reader implementation by contract name and address.
-	// This is used to dynamically discover and bind contracts (e.g., OnRamps, FeeQuoter, RMNRemote).
+	// Sync binds a contract to the accessor implementation by contract name and address so the accessor
+	// can use the contract addresses for subsequent calls. This is used to dynamically discover and bind
+	// contracts (e.g., OnRamps, FeeQuoter, RMNRemote).
 	// Returns an error if the bind operation failed.
 	Sync(ctx context.Context, contractName string, contractAddress UnknownAddress) error
 }

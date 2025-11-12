@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762934347062,
+  "lastUpdate": 1762960713096,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -31860,6 +31860,66 @@ window.BENCHMARK_DATA = {
             "value": 148449,
             "unit": "ns/op",
             "extra": "7684 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yepishevsanya@gmail.com",
+            "name": "chudilka1",
+            "username": "chudilka1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "af08ec489d2e4c74425251a967e1769e00c9ba69",
+          "message": "Add lineWidth override property for Grafana panels (#1701)",
+          "timestamp": "2025-11-12T15:17:10Z",
+          "tree_id": "5da1e98960bbdf77c49ced9287a9002541488b7c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/af08ec489d2e4c74425251a967e1769e00c9ba69"
+        },
+        "date": 1762960711130,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 577.7,
+            "unit": "ns/op",
+            "extra": "1905297 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94503,
+            "unit": "ns/op",
+            "extra": "12632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.4,
+            "unit": "ns/op",
+            "extra": "2983029 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92122,
+            "unit": "ns/op",
+            "extra": "12890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26698,
+            "unit": "ns/op",
+            "extra": "44762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 138846,
+            "unit": "ns/op",
+            "extra": "8322 times\n4 procs"
           }
         ]
       }

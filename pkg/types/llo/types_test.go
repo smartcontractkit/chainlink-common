@@ -17,7 +17,8 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 	  {"streamId": 1, "aggregator": "median"},
 	  {"streamId": 2, "aggregator": "mode"}
     ],
-    "opts": null
+    "opts": null,
+    "tombstone": false
   },
   "1": {
     "reportFormat": "evm_premium_legacy",
@@ -31,7 +32,8 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
       "multiplier": "1000000000000000000",
       "feedId": "0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "baseUSDFee": "0.1"
-    }
+    },
+    "tombstone": false
   }
 }`
 	var channelDefinitions ChannelDefinitions
@@ -42,8 +44,6 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.JSONEq(t, inputJSON, string(marshaledJSON))
-
-	assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"median"},{"streamId":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
 }
 
 func Test_ChannelDefinition_Equals(t *testing.T) {
@@ -169,6 +169,32 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
 		}
 		v, err := c.Value()
 		require.NoError(t, err)
-		assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"median"},{"streamId":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(v.([]byte)))
+		expectedJSON := `{
+  "0": {
+    "reportFormat": "json",
+    "streams": [
+      {"streamId": 1, "aggregator": "median"},
+      {"streamId": 2, "aggregator": "mode"}
+    ],
+    "opts": null,
+    "tombstone": false
+  },
+  "1": {
+    "reportFormat": "evm_premium_legacy",
+    "streams": [
+      {"streamId": 1, "aggregator": "median"},
+      {"streamId": 2, "aggregator": "median"},
+      {"streamId": 3, "aggregator": "quote"}
+    ],
+    "opts": {
+      "baseUSDFee": "0.1",
+      "expirationWindow": 86400,
+      "feedId": "0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "multiplier": "1000000000000000000"
+    },
+    "tombstone": false
+  }
+}`
+		assert.JSONEq(t, expectedJSON, string(v.([]byte)))
 	})
 }

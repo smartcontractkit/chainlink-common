@@ -364,14 +364,15 @@ type GetLatestBlockhashReply struct {
 }
 
 type SimulateTXRequest struct {
-	Receiver           PublicKey
+	Receiver PublicKey
+	// Encoded
 	EncodedTransaction string
 	Opts               *SimulateTXOpts
 }
 
 type SimulateTXReply struct {
-	// Error if transaction failed, null if transaction succeeded.
-	Err *string
+	// Error if transaction failed, empty if transaction succeeded.
+	Err string
 
 	// Array of log messages the transaction instructions output during execution,
 	// null if simulation failed before the transaction was able to execute

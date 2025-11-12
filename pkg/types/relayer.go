@@ -246,7 +246,7 @@ type SolanaService interface {
 	// query expression, sorting, and confidence level. It only returns logs that were
 	// collected through previously registered log filters.
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
-		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*solana.Log, error)
+		limitAndSort query.LimitAndSort) ([]*solana.Log, error)
 }
 
 // Relayer extends ChainService with providers for each product.

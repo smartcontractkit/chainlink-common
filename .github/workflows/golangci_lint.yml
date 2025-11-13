@@ -25,7 +25,8 @@ jobs:
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
       - name: golangci-lint
-        if: ${{ (github.event_name == 'pull_request' && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues')) || github.event_name == 'merge_group' }}
+        # Run on PR's that are not labeled with 'allow-lint-issues' and in the merge queue.
+        if: ${{ !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') || github.event_name == 'merge_group' }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
         uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
         with:

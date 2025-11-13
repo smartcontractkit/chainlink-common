@@ -26,7 +26,7 @@ jobs:
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
       - name: golangci-lint
-        if: ${{ !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
+        if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
         uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
         with:

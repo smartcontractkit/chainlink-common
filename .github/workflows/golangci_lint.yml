@@ -1,6 +1,6 @@
 name: Golangci-lint
 
-on: pull_request
+on: [pull_request, merge_group]
 
 jobs:
   golangci-lint:
@@ -9,11 +9,14 @@ jobs:
       id-token: write
       contents: read
       actions: read
+      pull-requests: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           persist-credentials: false
+          # Fetch full history for merge_group to ensure base ref exists for comparison.
+          fetch-depth: ${{ github.event_name == 'merge_group' && 0 || 1 }}
 
       - name: Get golangci-lint version from asdf
         id: get-version
@@ -22,7 +25,7 @@ jobs:
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
       - name: golangci-lint
-        if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
+        if: ${{ (github.event_name == 'pull_request' && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues')) || github.event_name == 'merge_group' }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
         uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
         with:

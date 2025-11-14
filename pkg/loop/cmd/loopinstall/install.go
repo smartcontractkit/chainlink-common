@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	shellwords "github.com/mattn/go-shellwords"
 )
 
 // execCommand is a function variable that can be replaced in tests
@@ -51,6 +53,118 @@ func mergeOrReplaceEnvVars(existing []string, newVars []string) []string {
 	return result
 }
 
+func determineModuleDirectory(goPrivate, fullModulePath string) (string, error) {
+	cmd := exec.Command("go", "mod", "download", "-json", fullModulePath)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+
+	if goPrivate != "" {
+		// Inherit the current environment and override GOPRIVATE.
+		// Note: Not really sure why this is needed - tried to simplify existing logic
+		cmd.Env = append(os.Environ(), "GOPRIVATE="+goPrivate)
+	}
+
+	if err := execCommand(cmd); err != nil {
+		return "", fmt.Errorf("failed to download module %s: %w", fullModulePath, err)
+	}
+
+	var result ModDownloadResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		return "", fmt.Errorf("failed to parse go mod download output: %w", err)
+	}
+
+	if result.Dir == "" {
+		return "", fmt.Errorf("empty module directory returned for %s", fullModulePath)
+	}
+
+	return result.Dir, nil
+}
+
+func determineGoFlags(defaultGoFlags, pluginGoFlags string) ([]string, error) {
+	var flags []string
+	parser := shellwords.NewParser()
+
+	// Determine base flags
+	if envGoFlags := os.Getenv("CL_PLUGIN_GOFLAGS"); envGoFlags != "" {
+		log.Printf("Overriding config's default goflags with CL_PLUGIN_GOFLAGS env var: %s", envGoFlags)
+		f, err := parser.Parse(envGoFlags)
+		if err != nil {
+			return nil, err
+		}
+		flags = f
+	} else if defaultGoFlags != "" {
+		f, err := parser.Parse(defaultGoFlags)
+		if err != nil {
+			return nil, err
+		}
+		flags = f
+	}
+
+	// Append plugin-specific flags
+	if pluginGoFlags != "" {
+		f, err := parser.Parse(pluginGoFlags)
+		if err != nil {
+			return nil, err
+		}
+		flags = append(flags, f...)
+	}
+
+	// Validate
+	if len(flags) > 0 {
+		if err := validateGoFlags(strings.Join(flags, " ")); err != nil {
+			return nil, err
+		}
+	}
+
+	return flags, nil
+}
+
+func determineInstallArg(installPath, moduleURI string) string {
+	// Determine the actual argument for 'go install' based on installPath and moduleURI.
+	// - installPath is the user-provided path from YAML (no environment variable expansion).
+	// - moduleURI is the URI of the module being downloaded and installed (no environment variable expansion).
+	// The 'go install' command will be run with cmd.Dir set to the root of the downloaded moduleURI.
+	// Therefore, installArg must be "." or a path starting with "./" relative to the module root.
+
+	// Case 1: installPath is the moduleURI itself. Install the module root.
+	if installPath == moduleURI {
+		return "."
+	}
+
+	// Case 2: installPath is a sub-package of moduleURI (e.g., "moduleURI/cmd/plugin").
+	if after, ok := strings.CutPrefix(installPath, moduleURI+"/"); ok {
+		// Extract the relative path and prefix with "./".
+		relativePath := after
+		cleanedRelativePath := strings.TrimLeft(relativePath, "/")   // Handles "moduleURI///subpath"
+		if cleanedRelativePath == "" || cleanedRelativePath == "." { // Handles "moduleURI/" or "moduleURI/."
+			return "."
+		}
+
+		// cleanedRelativePath is like "cmd/plugin" or "sub/../pkg". Prepend "./".
+		return "./" + cleanedRelativePath
+	}
+
+	// Case 3: installPath is not moduleURI and not a sub-package of moduleURI.
+	// Assumed to be:
+	//  a) A path already relative to the module root (e.g., "cmd/plugin", "./cmd/plugin", ".").
+	//  b) A full path to a different module (e.g., "github.com/other/mod").
+	//     For (b), prefixing with "./" when cmd.Dir is set is problematic but replicates prior behavior if any.
+
+	// Simple case
+	if installPath == "." {
+		return "."
+	}
+
+	// Already correctly formatted (e.g., "./cmd/plugin", "./sub/../pkg")
+	if strings.HasPrefix(installPath, "./") {
+		return installPath
+	}
+
+	// Needs "./" prefix. Handles "cmd/plugin", "/cmd/plugin", "github.com/other/mod".
+	return "./" + strings.TrimLeft(installPath, "/")
+}
+
 // downloadAndInstallPlugin downloads and installs a single plugin
 func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef, defaults DefaultsConfig) error {
 	if !isPluginEnabled(plugin) {
@@ -58,24 +172,14 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		return nil
 	}
 
+	// Validate inputs
+	if err := plugin.Validate(); err != nil {
+		return fmt.Errorf("plugin input validation failed: %w", err)
+	}
+
 	moduleURI := plugin.ModuleURI
 	gitRef := plugin.GitRef
 	installPath := plugin.InstallPath
-
-	// Validate inputs
-	if err := validateModuleURI(moduleURI); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
-
-	if gitRef != "" {
-		if err := validateGitRef(gitRef); err != nil {
-			return fmt.Errorf("validation failed: %w", err)
-		}
-	}
-
-	if err := validateInstallPath(installPath); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
 
 	// Full module path with git reference
 	fullModulePath := moduleURI
@@ -89,70 +193,9 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 	goPrivate := os.Getenv("GOPRIVATE")
 
 	// Download the module and get its directory
-	var moduleDir string
-	{
-		cmd := exec.Command("go", "mod", "download", "-json", fullModulePath)
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		cmd.Stderr = os.Stderr
-
-		// Set GOPRIVATE environment variable while preserving other environment variables
-		if goPrivate != "" {
-			// Start with all current environment variables
-			env := os.Environ()
-
-			// Find and replace GOPRIVATE if it exists, or add it if it doesn't
-			goprivateFound := false
-			for i, e := range env {
-				if strings.HasPrefix(e, "GOPRIVATE=") {
-					env[i] = "GOPRIVATE=" + goPrivate
-					goprivateFound = true
-					break
-				}
-			}
-
-			// Add GOPRIVATE if it wasn't already in the environment
-			if !goprivateFound {
-				env = append(env, "GOPRIVATE="+goPrivate)
-			}
-
-			cmd.Env = env
-		}
-
-		if err := execCommand(cmd); err != nil {
-			return fmt.Errorf("failed to download module %s: %w", fullModulePath, err)
-		}
-
-		var result ModDownloadResult
-		if err := json.Unmarshal(out.Bytes(), &result); err != nil {
-			return fmt.Errorf("failed to parse go mod download output: %w", err)
-		}
-
-		moduleDir = result.Dir
-		if moduleDir == "" {
-			return fmt.Errorf("empty module directory returned for %s", fullModulePath)
-		}
-	}
-
-	// Build goflags
-	goflags := defaults.GoFlags
-	if envGoFlags := os.Getenv("CL_PLUGIN_GOFLAGS"); envGoFlags != "" {
-		goflags = envGoFlags
-	}
-
-	// If goflags from plugindef is set, append it
-	if plugin.Flags != "" {
-		if goflags != "" {
-			goflags += " "
-		}
-		goflags += plugin.Flags
-	}
-
-	// Validate goflags
-	if goflags != "" {
-		if err := validateGoFlags(goflags); err != nil {
-			return fmt.Errorf("validation failed: %w", err)
-		}
+	moduleDir, err := determineModuleDirectory(goPrivate, fullModulePath)
+	if err != nil {
+		return fmt.Errorf("failed to determine module directory: %w", err)
 	}
 
 	// Build env vars from defaults, environment variable, and plugin-specific settings
@@ -168,42 +211,7 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 	// Install the plugin
 	{
-		// Determine the actual argument for 'go install' based on installPath and moduleURI.
-		// installPath is the user-provided path from YAML (no environment variable expansion).
-		// moduleURI is the URI of the module being downloaded and installed (no environment variable expansion).
-		// The 'go install' command will be run with cmd.Dir set to the root of the downloaded moduleURI.
-		// Therefore, installArg must be "." or a path starting with "./" relative to the module root.
-		var installArg string
-		if installPath == moduleURI {
-			// Case 1: installPath is the moduleURI itself. Install the module root.
-			installArg = "."
-		} else if after, ok := strings.CutPrefix(installPath, moduleURI+"/"); ok {
-			// Case 2: installPath is a sub-package of moduleURI (e.g., "moduleURI/cmd/plugin").
-			// Extract the relative path and prefix with "./".
-			relativePath := after
-			cleanedRelativePath := strings.TrimLeft(relativePath, "/")   // Handles "moduleURI///subpath"
-			if cleanedRelativePath == "" || cleanedRelativePath == "." { // Handles "moduleURI/" or "moduleURI/."
-				installArg = "."
-			} else {
-				// cleanedRelativePath is like "cmd/plugin" or "sub/../pkg". Prepend "./".
-				installArg = "./" + cleanedRelativePath
-			}
-		} else {
-			// Case 3: installPath is not moduleURI and not a sub-package of moduleURI.
-			// Assumed to be:
-			//  a) A path already relative to the module root (e.g., "cmd/plugin", "./cmd/plugin", ".").
-			//  b) A full path to a different module (e.g., "github.com/other/mod").
-			//     For (b), prefixing with "./" when cmd.Dir is set is problematic but replicates prior behavior if any.
-			if installPath == "." {
-				installArg = "."
-			} else if strings.HasPrefix(installPath, "./") {
-				// Already correctly formatted (e.g., "./cmd/plugin", "./sub/../pkg")
-				installArg = installPath
-			} else {
-				// Needs "./" prefix. Handles "cmd/plugin", "/cmd/plugin", "github.com/other/mod".
-				installArg = "./" + strings.TrimLeft(installPath, "/")
-			}
-		}
+		installArg := determineInstallArg(installPath, moduleURI)
 
 		binaryName := filepath.Base(installArg)
 		if binaryName == "." {
@@ -222,9 +230,15 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 		outputPath := filepath.Join(outputDir, binaryName)
 
+		// Build goflags
+		goflags, err := determineGoFlags(defaults.GoFlags, plugin.Flags)
+		if err != nil {
+			return fmt.Errorf("validation failed: %w", err)
+		}
+
 		args := []string{"build", "-o", outputPath}
-		if goflags != "" {
-			args = append(args, strings.Fields(goflags)...)
+		if len(goflags) != 0 {
+			args = append(args, goflags...)
 		}
 		args = append(args, installArg)
 

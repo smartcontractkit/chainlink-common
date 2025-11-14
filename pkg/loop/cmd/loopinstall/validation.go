@@ -6,6 +6,22 @@ import (
 	"strings"
 )
 
+func (plugin PluginDef) Validate() error {
+	if err := validateModuleURI(plugin.ModuleURI); err != nil {
+		return err
+	}
+	if plugin.GitRef != "" {
+		if err := validateGitRef(plugin.GitRef); err != nil {
+			return err
+		}
+	}
+	if err := validateInstallPath(plugin.InstallPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // validateModuleURI ensures the module URI follows Go module conventions
 func validateModuleURI(uri string) error {
 	// Check for valid Go module path format
@@ -35,7 +51,7 @@ func validateInstallPath(path string) error {
 
 // validateGoFlags ensures flags are safe and prevents command injection
 func validateGoFlags(flags string) error {
-	// Check for potentially dangerous characters that could enable command injection
+	// Check for potentially dangerous characters or substrings that could enable command injection
 	dangerousPatterns := []string{
 		";", "&&", "||", "`", "$", "|", "<", ">", "#", "//",
 		"shutdown", "reboot", "rm -", "format", "mkfs", "dd",

@@ -19,7 +19,7 @@ import (
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 )
 
-// Default client to fallback when is is not initialized properly
+// Default client to fallback when it is not initialized properly
 func NewNoopClient() *Client {
 	cfg := DefaultConfig()
 	// Logger

@@ -47,9 +47,9 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 		if err := recover(); err != nil {
 			asErr, ok := err.(error)
 			if ok {
-				r.sendResponse(errorResponse(r.req.Id, asErr))
+				r.sendResponse(errorResponse(req.Id, asErr))
 			} else {
-				r.sendResponse(errorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
+				r.sendResponse(errorResponse(req.Id, fmt.Errorf("caught panic: %+v", err)))
 			}
 		}
 	}()

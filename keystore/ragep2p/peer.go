@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"errors"
+	"fmt"
 
 	commonks "github.com/smartcontractkit/chainlink-common/keystore"
 	ragetypes "github.com/smartcontractkit/libocr/ragep2p/types"
@@ -86,7 +87,7 @@ func GetPeerKeyrings(ctx context.Context, ks commonks.Keystore, keyRingNames []s
 		KeyNames: keyNames,
 	})
 	if err != nil {
-		return nil, errors.Join(errors.New("failed to list peer keyrings"), err)
+		return nil, fmt.Errorf("failed to list peer keyrings: %w", err)
 	}
 	var peerKeyrings []*PeerKeyring
 	for _, key := range keys.Keys {

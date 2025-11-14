@@ -28,7 +28,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
-const grpcCompressorGzip = "gzip"
+const defaultGRPCCompressor = "gzip"
 
 type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
@@ -364,8 +364,12 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	// No auth
 	default:
 	}
-	if !config.TraceCompressionDisabled {
-		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(grpcCompressorGzip))
+	switch compressor := config.TraceCompressor; compressor {
+	case "disabled":
+	case "":
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(defaultGRPCCompressor))
+	default:
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(compressor))
 	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -406,8 +410,12 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
-	if !cfg.MetricCompressionDisabled {
-		opts = append(opts, otlpmetricgrpc.WithCompressor(grpcCompressorGzip))
+	switch compressor := cfg.MetricCompressor; compressor {
+	case "disabled":
+	case "":
+		opts = append(opts, otlpmetricgrpc.WithCompressor(defaultGRPCCompressor))
+	default:
+		opts = append(opts, otlpmetricgrpc.WithCompressor(compressor))
 	}
 
 	switch {
@@ -459,8 +467,12 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...))),
 	}
-	if !cfg.LogCompressionDisabled {
-		opts = append(opts, otlploggrpc.WithCompressor(grpcCompressorGzip))
+	switch compressor := cfg.LogCompressor; compressor {
+	case "disabled":
+	case "":
+		opts = append(opts, otlploggrpc.WithCompressor(defaultGRPCCompressor))
+	default:
+		opts = append(opts, otlploggrpc.WithCompressor(compressor))
 	}
 	// Log exporter auth
 	switch {

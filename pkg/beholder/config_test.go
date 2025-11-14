@@ -36,10 +36,12 @@ func ExampleConfig() {
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
+		TraceCompressor:   "gzip",
 		// OTel trace exporter retry config
 		TraceRetryConfig: nil,
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
+		MetricCompressor:     "gzip",
 		// OTel metric exporter retry config
 		MetricRetryConfig: nil,
 		// Log
@@ -50,6 +52,7 @@ func ExampleConfig() {
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   false,             // Disable streaming logs by default
 		LogLevel:              zapcore.InfoLevel, // Default log level
+		LogCompressor:         "gzip",
 		// Auth
 		AuthPublicKeyHex: "",
 		AuthHeaders:      map[string]string{},
@@ -64,6 +67,6 @@ func ExampleConfig() {
 	}
 	fmt.Printf("%+v\n", *config.LogRetryConfig)
 	// Output:
-	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 OtelExporterHTTPEndpoint:localhost:4318 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholderclient slice:<nil>}}] EmitterExportTimeout:1s EmitterExportInterval:1s EmitterExportMaxBatchSize:512 EmitterMaxQueueSize:2048 EmitterBatchProcessor:true TraceSampleRatio:1 TraceBatchTimeout:1s TraceSpanExporter:<nil> TraceRetryConfig:<nil> TraceCompressionDisabled:false MetricReaderInterval:1s MetricRetryConfig:<nil> MetricViews:[] MetricCompressionDisabled:false ChipIngressEmitterEnabled:false ChipIngressEmitterGRPCEndpoint: ChipIngressInsecureConnection:false LogExportTimeout:1s LogExportInterval:1s LogExportMaxBatchSize:512 LogMaxQueueSize:2048 LogBatchProcessor:true LogRetryConfig:<nil> LogStreamingEnabled:false LogLevel:info LogCompressionDisabled:false AuthHeaders:map[] AuthHeadersTTL:0s AuthKeySigner:<nil> AuthPublicKeyHex:}
+	// {InsecureConnection:true CACertFile: OtelExporterGRPCEndpoint:localhost:4317 OtelExporterHTTPEndpoint:localhost:4318 ResourceAttributes:[{Key:package_name Value:{vtype:4 numeric:0 stringly:beholder slice:<nil>}} {Key:sender Value:{vtype:4 numeric:0 stringly:beholderclient slice:<nil>}}] EmitterExportTimeout:1s EmitterExportInterval:1s EmitterExportMaxBatchSize:512 EmitterMaxQueueSize:2048 EmitterBatchProcessor:true TraceSampleRatio:1 TraceBatchTimeout:1s TraceSpanExporter:<nil> TraceRetryConfig:<nil> TraceCompressor:gzip MetricReaderInterval:1s MetricRetryConfig:<nil> MetricViews:[] MetricCompressor:gzip ChipIngressEmitterEnabled:false ChipIngressEmitterGRPCEndpoint: ChipIngressInsecureConnection:false LogExportTimeout:1s LogExportInterval:1s LogExportMaxBatchSize:512 LogMaxQueueSize:2048 LogBatchProcessor:true LogRetryConfig:<nil> LogStreamingEnabled:false LogLevel:info LogCompressor:gzip AuthHeaders:map[] AuthHeadersTTL:0s AuthKeySigner:<nil> AuthPublicKeyHex:}
 	// {InitialInterval:5s MaxInterval:30s MaxElapsedTime:1m0s}
 }

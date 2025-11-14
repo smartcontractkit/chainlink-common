@@ -20,11 +20,6 @@ type TestFace interface {
 	SendNested(ctx context.Context, ns NestedStruct) (NestedStruct, error)
 }
 
-type SolanaService interface {
-	// SendTx(ctx context.Context, tx *solanago.Transaction) (solanago.Signature, error)
-	// SimulateTx(ctx context.Context, tx *solanago.Transaction, opts *rpc.SimulateTransactionOpts) (*rpc.SimulateTransactionResult, error)
-}
-
 type MyStruct struct {
 	B    []byte
 	Prim primitives.ConfidenceLevel

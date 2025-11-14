@@ -1,10 +1,12 @@
 package generator
 
 import (
+	"cmp"
 	"fmt"
 	"go/types"
 	"os"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -173,7 +175,10 @@ func ParseInterface(pkgPath, iface string, cfg *Config) (*Service, error) {
 	for _, um := range reg {
 		svc.UserMessages = append(svc.UserMessages, *um)
 	}
-	sort.Slice(svc.UserMessages, func(i, j int) bool { return svc.UserMessages[i].Name < svc.UserMessages[j].Name })
+
+	slices.SortFunc(svc.UserMessages, func(i, j UserMessage) int {
+		return cmp.Compare(i.Name, j.Name)
+	})
 
 	for _, io := range oneofReg {
 		svc.InterfaceOneofs = append(svc.InterfaceOneofs, *io)

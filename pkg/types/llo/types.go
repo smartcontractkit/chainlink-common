@@ -272,7 +272,7 @@ type ChannelDefinition struct {
 	// It is set by the LLO channel definitions cache.
 	// The source is the id of the role that added the channel definition (i.e. the channel adder)
 	// 1 is always the ChannelConfigStore owner, greater values are adders.
-	Source uint32 `json:"-"`
+	Source uint32 `json:"source"`
 	// Tombstone indicates if the channel definition is an owner tombstone that
 	// should be removed from the current channel definitions cache.
 	Tombstone bool `json:"tombstone"`

@@ -1,6 +1,7 @@
 package solana
 
 type SubmitTransactionRequest struct {
+	Cfg                *ComputeConfig
 	Receiver           PublicKey
 	EncodedTransaction string // base64 encoded transaction
 }

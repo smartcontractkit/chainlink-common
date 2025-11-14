@@ -335,15 +335,20 @@ type GetTransactionRequest struct {
 }
 
 type GetTransactionReply struct {
-	// Encoded TransactionResultEnvelope
-	Transaction []byte
+	Slot uint64
+
+	BlockTime *UnixTimeSeconds
+
+	Version TransactionVersion
+	// JSON Encoded TransactionResultEnvelope
+	TransactionEnvelope []byte
 
 	// JSON encoded TransactionMeta
 	Meta []byte
 }
 
 type GetFeeForMessageRequest struct {
-	// base64 encoded message
+	// base58 encoded message
 	Message    string
 	Commitment CommitmentType
 }
@@ -398,8 +403,8 @@ type GetSignatureStatusesResult struct {
 	// null if rooted or finalized by a supermajority of the cluster.
 	Confirmations *uint64 `json:"confirmations"`
 
-	// Error if transaction failed, null if transaction succeeded.
-	Err *string
+	// Error if transaction failed, empty if transaction succeeded.
+	Err string
 
 	// The transaction's cluster confirmation status; either processed, confirmed, or finalized.
 	ConfirmationStatus ConfirmationStatusType `json:"confirmationStatus"`
@@ -417,7 +422,6 @@ type Client interface {
 	GetSlotHeight(ctx context.Context, req GetSlotHeightRequest) (*GetSlotHeightReply, error)
 	GetTransaction(ctx context.Context, req GetTransactionRequest) (*GetTransactionReply, error)
 	GetFeeForMessage(ctx context.Context, req GetFeeForMessageRequest) (*GetFeeForMessageReply, error)
-	GetLatestBlockhash(ctx context.Context, req GetLatestBlockhashRequest) (*GetLatestBlockhashReply, error)
 	GetSignatureStatuses(ctx context.Context, req GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
 	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
 }

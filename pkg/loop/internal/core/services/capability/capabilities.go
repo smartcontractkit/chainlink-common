@@ -429,7 +429,9 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 		} else if errors.As(err, &reportableError) {
 			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
 		} else {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+			// All other errors are treated as unreportable and are marked as such to prevent accidental or malicious reporting of sensitive information
+			// by injecting the remote reportable error identifiers.
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteUnreportableErrorIdentifier(err.Error())}
 		}
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
@@ -479,7 +481,12 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
 		}
 
-		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
+		// The error message may or make not have been prepended with the unreportable error identifier depending on
+		// if it is running locally or remotely. In either case, we treat it as an unreportable error and remove
+		// the unreportable error identifier if it exists.
+		removedIdentifierErrorMessage := capabilities.RemoveRemoteUnreportableErrorIdentifier(resp.Error)
+
+		return capabilities.CapabilityResponse{}, errors.New(removedIdentifierErrorMessage)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

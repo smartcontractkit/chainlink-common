@@ -509,6 +509,33 @@ func Test_Capabilities(t *testing.T) {
 		assert.ErrorAs(t, err, &reportableError)
 	})
 
+	t.Run("fetching an action capability, and executing it with reportable user error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = capabilities.NewReportableUserError(errors.New("bang"))
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		assert.Equal(t, "bang", err.Error())
+
+		var reportableUserError *capabilities.ReportableUserError
+		assert.ErrorAs(t, err, &reportableUserError)
+	})
+
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)

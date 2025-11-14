@@ -7,7 +7,7 @@ import (
 
 const remoteReportableErrorIdentifier = "RemoteReportableError:"
 
-// RemoteReportableError wraps an error an is used to indicates that the error does contain any node specific
+// RemoteReportableError wraps an error to indicate that the error does contain any node specific
 // information and is safe to report remotely between nodes.
 type RemoteReportableError struct {
 	err error

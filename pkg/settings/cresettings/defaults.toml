@@ -43,6 +43,7 @@ LogLineLimit = '1kb'
 LogEventLimit = '1000'
 
 [PerWorkflow.CRONTrigger]
+FastestScheduleInterval = '30s'
 RateLimit = 'every30s:1'
 
 [PerWorkflow.HTTPTrigger]

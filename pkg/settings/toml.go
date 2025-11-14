@@ -44,6 +44,7 @@ func CombineTOMLFiles(files fs.FS) ([]byte, error) {
 	tree.Set("workflow", workflows)
 	var b bytes.Buffer
 	e := toml.NewEncoder(&b).Indentation("")
+	e.Order(toml.OrderAlphabetical)
 	err = e.Encode(tree)
 	return b.Bytes(), err
 }

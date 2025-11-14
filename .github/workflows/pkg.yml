@@ -1,6 +1,6 @@
 name: PKG Build and Test
 
-on: [push]
+on: [push, merge_group]
 
 jobs:
   build-test:

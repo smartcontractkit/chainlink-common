@@ -42,6 +42,7 @@
 		"LogLineLimit": "1kb",
 		"LogEventLimit": "1000",
 		"CRONTrigger": {
+			"FastestScheduleInterval": "30s",
 			"RateLimit": "every30s:1"
 		},
 		"HTTPTrigger": {

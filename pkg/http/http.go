@@ -10,6 +10,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
+type noOpResponseWriter struct{}
+
+func (w *noOpResponseWriter) Header() http.Header {
+	return http.Header{}
+}
+
+func (w *noOpResponseWriter) Write(b []byte) (int, error) {
+	return len(b), nil
+}
+
+func (w *noOpResponseWriter) WriteHeader(statusCode int) {}
+
 type clientConfig interface {
 	URL() url.URL // DatabaseURL
 }
@@ -72,7 +84,10 @@ func (h *Request) SendRequestReader() (responseBody io.ReadCloser, statusCode in
 	elapsed := time.Since(start)
 	logger.Sugared(h.Logger).Tracew(fmt.Sprintf("http adapter got %v in %s", statusCode, elapsed), "statusCode", statusCode, "timeElapsedSeconds", elapsed)
 
-	source := http.MaxBytesReader(nil, r.Body, h.Config.SizeLimit)
+	var source io.ReadCloser = r.Body
+	if h.Config.SizeLimit > 0 {
+		source = http.MaxBytesReader(&noOpResponseWriter{}, r.Body, h.Config.SizeLimit)
+	}
 
 	return source, statusCode, r.Header, nil
 }

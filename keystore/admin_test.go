@@ -320,3 +320,94 @@ func TestKeystore_SetMetadata(t *testing.T) {
 		require.ErrorIs(t, err, keystore.ErrKeyNotFound)
 	})
 }
+
+func TestKeystore_RenameKey(t *testing.T) {
+	ctx := t.Context()
+	ks, err := keystore.LoadKeystore(ctx, keystore.NewMemoryStorage(), "ks")
+	require.NoError(t, err)
+	_, err = ks.CreateKeys(ctx, keystore.CreateKeysRequest{
+		Keys: []keystore.CreateKeyRequest{
+			{KeyName: "key1", KeyType: keystore.Ed25519},
+		},
+	})
+	require.NoError(t, err)
+	originalKey, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
+		KeyNames: []string{"key1"},
+	})
+	require.NoError(t, err)
+	require.Len(t, originalKey.Keys, 1)
+
+	t.Run("rename non-existent key", func(t *testing.T) {
+		_, err = ks.RenameKey(ctx, keystore.RenameKeyRequest{
+			OldName: "key2",
+			NewName: "new-name",
+		})
+		require.ErrorIs(t, err, keystore.ErrKeyNotFound)
+	})
+
+	t.Run("rename to invalid name", func(t *testing.T) {
+		_, err = ks.RenameKey(ctx, keystore.RenameKeyRequest{
+			OldName: "key1",
+			NewName: "", // Empty name is invalid
+		})
+		require.ErrorIs(t, err, keystore.ErrInvalidKeyName)
+	})
+
+	t.Run("rename to existing name", func(t *testing.T) {
+		// Create another key
+		_, err = ks.CreateKeys(ctx, keystore.CreateKeysRequest{
+			Keys: []keystore.CreateKeyRequest{
+				{KeyName: "another", KeyType: keystore.Ed25519},
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = ks.RenameKey(ctx, keystore.RenameKeyRequest{
+			OldName: "key1",
+			NewName: "another", // Name already exists
+		})
+		require.ErrorIs(t, err, keystore.ErrKeyAlreadyExists)
+	})
+
+	t.Run("rename to same name", func(t *testing.T) {
+		_, err = ks.RenameKey(ctx, keystore.RenameKeyRequest{
+			OldName: "key1",
+			NewName: "key1",
+		})
+		require.NoError(t, err)
+
+		// Verify the key still exists
+		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
+			KeyNames: []string{"key1"},
+		})
+		require.NoError(t, err)
+		require.Equal(t, resp, originalKey)
+	})
+
+	t.Run("successful rename", func(t *testing.T) {
+		// Rename the key
+		_, err = ks.RenameKey(ctx, keystore.RenameKeyRequest{
+			OldName: "key1",
+			NewName: "renamed",
+		})
+		require.NoError(t, err)
+
+		// Verify the key exists under new name
+		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
+			KeyNames: []string{"renamed"},
+		})
+		require.NoError(t, err)
+		require.Len(t, resp.Keys, 1)
+		require.Equal(t, resp.Keys[0].KeyInfo.Name, "renamed")
+
+		// set name to the old one for easier comparison
+		resp.Keys[0].KeyInfo.Name = "key1"
+		assert.Equal(t, resp, originalKey)
+
+		// Verify the old name no longer exists
+		resp, err = ks.GetKeys(ctx, keystore.GetKeysRequest{
+			KeyNames: []string{"key1"},
+		})
+		require.EqualError(t, err, "key not found: key1")
+	})
+}

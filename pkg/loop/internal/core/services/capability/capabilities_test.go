@@ -524,7 +524,7 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ma.responseError = capabilities.NewRemoteReportableUserError(errors.New("bang"))
+		ma.responseError = capabilities.NewReportableUserError(errors.New("bang"))
 
 		_, err = c.(capabilities.ActionCapability).Execute(
 			t.Context(),
@@ -532,7 +532,7 @@ func Test_Capabilities(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "bang", err.Error())
 
-		var reportableUserError *capabilities.RemoteReportableUserError
+		var reportableUserError *capabilities.ReportableUserError
 		assert.ErrorAs(t, err, &reportableUserError)
 	})
 

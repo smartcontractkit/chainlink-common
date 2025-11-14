@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-// TestReportableUserError_As checks if errors.As works with RemoteReportableUserError.
+// TestReportableUserError_As checks if errors.As works with ReportableUserError.
 func TestReportableUserError_As(t *testing.T) {
 	underlyingErr := NewRemoteReportableError(errors.New("underlying error"))
 	userErr := NewRemoteReportableUserError(underlyingErr)
 
-	var target *RemoteReportableUserError
+	var target *ReportableUserError
 	if !errors.As(userErr, &target) {
-		t.Fatalf("expected errors.As to identify RemoteReportableUserError")
+		t.Fatalf("expected errors.As to identify ReportableUserError")
 	}
 }
 
@@ -30,13 +30,13 @@ func TestAsRemoteReportableErrorForRemoteReportableUserError(t *testing.T) {
 	underlyingErr := errors.New("underlying user error message")
 	userErr := NewRemoteReportableUserError(underlyingErr)
 
-	var target *RemoteReportableUserError
+	var target *ReportableUserError
 	if !errors.As(userErr, &target) {
-		t.Fatalf("expected errors.As to identify RemoteReportableUserError")
+		t.Fatalf("expected errors.As to identify ReportableUserError")
 	}
 
 	var targetReportableError *RemoteReportableError
 	if !errors.As(userErr, &targetReportableError) {
-		t.Fatalf("expected errors.As to identify RemoteReportableError from RemoteReportableUserError")
+		t.Fatalf("expected errors.As to identify RemoteReportableError from ReportableUserError")
 	}
 }

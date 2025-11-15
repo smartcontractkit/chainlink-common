@@ -1069,6 +1069,14 @@ func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int3
 	return write(memory, src, ptr, size)
 }
 
+func truncateWasmWriteErr(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
+	code := truncateWasmWrite(caller, src, ptr, size)
+	if code > 0 {
+		return -int64(len(src))
+	}
+	return code
+}
+
 // write copies the given src byte slice into the memory at the given pointer and max size.
 func write(memory, src []byte, ptr, maxSize int32) int64 {
 	if ptr < 0 {
@@ -1199,7 +1207,7 @@ func createAwaitSecretsFn(
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWriteErr(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 
 		req := &sdkpb.AwaitSecretsRequest{}
@@ -1207,28 +1215,28 @@ func createAwaitSecretsFn(
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWriteErr(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 
 		resp, err := exec.awaitSecrets(exec.ctx, req)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWriteErr(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 
 		respBytes, err := proto.Marshal(resp)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWriteErr(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
 			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWriteErr(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 
 		return size

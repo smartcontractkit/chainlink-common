@@ -92,6 +92,13 @@ type SetMetadataUpdate struct {
 
 type SetMetadataResponse struct{}
 
+type RenameKeyRequest struct {
+	OldName string
+	NewName string
+}
+
+type RenameKeyResponse struct{}
+
 type Admin interface {
 	// CreateKeys creates multiple keys in a single atomic operation.
 	// The response preserves the order of the keys in the request.
@@ -118,6 +125,12 @@ type Admin interface {
 	// SetMetadata updates metadata for multiple keys in a single atomic operation.
 	// Returns ErrKeyNotFound if any key does not exist.
 	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
+
+	// RenameKey renames an existing key.
+	// Returns ErrKeyNotFound if the old key name does not exist,
+	// ErrKeyAlreadyExists if the new key name exists,
+	// ErrInvalidKeyName if the new key name is invalid.
+	RenameKey(ctx context.Context, req RenameKeyRequest) (RenameKeyResponse, error)
 }
 
 // UnimplementedAdmin returns ErrUnimplemented for all Admin methods.
@@ -141,6 +154,10 @@ func (UnimplementedAdmin) ExportKeys(ctx context.Context, req ExportKeysRequest)
 
 func (UnimplementedAdmin) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {
 	return SetMetadataResponse{}, fmt.Errorf("Admin.SetMetadata: %w", ErrUnimplemented)
+}
+
+func (UnimplementedAdmin) RenameKey(ctx context.Context, req RenameKeyRequest) (RenameKeyResponse, error) {
+	return RenameKeyResponse{}, fmt.Errorf("Admin.RenameKey: %w", ErrUnimplemented)
 }
 
 func ValidKeyName(name string) error {
@@ -363,4 +380,37 @@ func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (Se
 	// If we succeed to save, update the in memory keystore.
 	ks.keystore = ksCopy
 	return SetMetadataResponse{}, nil
+}
+
+func (ks *keystore) RenameKey(ctx context.Context, req RenameKeyRequest) (RenameKeyResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	if req.NewName == req.OldName {
+		return RenameKeyResponse{}, nil
+	}
+
+	if err := ValidKeyName(req.NewName); err != nil {
+		return RenameKeyResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
+	}
+
+	if _, ok := ks.keystore[req.NewName]; ok {
+		return RenameKeyResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, req.NewName)
+	}
+
+	k, ok := ks.keystore[req.OldName]
+	if !ok {
+		return RenameKeyResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, req.OldName)
+	}
+
+	ksCopy := maps.Clone(ks.keystore)
+	ksCopy[req.NewName] = k
+	delete(ksCopy, req.OldName)
+
+	if err := ks.save(ctx, ksCopy); err != nil {
+		return RenameKeyResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+
+	ks.keystore = ksCopy
+	return RenameKeyResponse{}, nil
 }

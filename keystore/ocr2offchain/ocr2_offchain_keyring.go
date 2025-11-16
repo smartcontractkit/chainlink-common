@@ -13,12 +13,12 @@ import (
 const (
 	OCR2OffchainSigning    = "ocr2_offchain_signing"
 	OCR2OffchainEncryption = "ocr2_offchain_encryption"
-	OCR2OffchainPrefix     = "ocr2_offchain"
+	PrefixOCR2Offchain     = "ocr2_offchain"
 )
 
 func CreateOCR2OffchainKeyring(ctx context.Context, ks keystore.Keystore, keyringName string) (ocrtypes.OffchainKeyring, error) {
-	signingKeyPath := keystore.NewKeyPath(OCR2OffchainPrefix, keyringName, OCR2OffchainSigning)
-	encryptionKeyPath := keystore.NewKeyPath(OCR2OffchainPrefix, keyringName, OCR2OffchainEncryption)
+	signingKeyPath := keystore.NewKeyPath(PrefixOCR2Offchain, keyringName, OCR2OffchainSigning)
+	encryptionKeyPath := keystore.NewKeyPath(PrefixOCR2Offchain, keyringName, OCR2OffchainEncryption)
 	createReq := keystore.CreateKeysRequest{
 		Keys: []keystore.CreateKeyRequest{
 			{
@@ -52,8 +52,8 @@ func GetOCR2OffchainKeyrings(ctx context.Context, ks keystore.Keystore, keyRingN
 	var names []string
 	if len(keyRingNames) > 0 {
 		for _, keyRingName := range keyRingNames {
-			names = append(names, keystore.NewKeyPath(OCR2OffchainPrefix, keyRingName, OCR2OffchainSigning).String())
-			names = append(names, keystore.NewKeyPath(OCR2OffchainPrefix, keyRingName, OCR2OffchainEncryption).String())
+			names = append(names, keystore.NewKeyPath(PrefixOCR2Offchain, keyRingName, OCR2OffchainSigning).String())
+			names = append(names, keystore.NewKeyPath(PrefixOCR2Offchain, keyRingName, OCR2OffchainEncryption).String())
 		}
 	}
 
@@ -66,7 +66,7 @@ func GetOCR2OffchainKeyrings(ctx context.Context, ks keystore.Keystore, keyRingN
 	// Group by keyrings.
 	keyRingMap := make(map[string][]keystore.KeyInfo)
 	for _, key := range resp.Keys {
-		if !strings.HasPrefix(key.KeyInfo.Name, keystore.NewKeyPath(OCR2OffchainPrefix).String()) {
+		if !strings.HasPrefix(key.KeyInfo.Name, keystore.NewKeyPath(PrefixOCR2Offchain).String()) {
 			continue
 		}
 		keyPath := keystore.NewKeyPathFromString(key.KeyInfo.Name)

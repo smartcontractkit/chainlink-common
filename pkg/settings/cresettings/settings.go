@@ -16,8 +16,14 @@ import (
 	. "github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
-func init() {
-	if v, ok := os.LookupEnv("CL_CRE_SETTINGS_DEFAULT"); ok {
+const (
+	envNameSettings        = "CL_CRE_SETTINGS"
+	envNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
+)
+
+func init() { reinit() }
+func reinit() {
+	if v, ok := os.LookupEnv(envNameSettingsDefault); ok {
 		err := json.Unmarshal([]byte(v), &Default)
 		if err != nil {
 			log.Fatalf("failed to initialize defaults: %v", err)
@@ -29,7 +35,7 @@ func init() {
 	}
 	Config = Default
 
-	if v, ok := os.LookupEnv("CL_CRE_SETTINGS"); ok {
+	if v, ok := os.LookupEnv(envNameSettings); ok {
 		DefaultGetter, err = NewJSONGetter([]byte(v))
 		if err != nil {
 			log.Fatalf("failed to initialize settings: %v", err)
@@ -99,7 +105,8 @@ var Default = Schema{
 		LogEventLimit:                 Int(1_000),
 
 		CRONTrigger: cronTrigger{
-			RateLimit: Rate(rate.Every(30*time.Second), 1),
+			FastestScheduleInterval: Duration(30 * time.Second),
+			RateLimit:               Rate(rate.Every(30*time.Second), 1),
 		},
 		HTTPTrigger: httpTrigger{
 			RateLimit: Rate(rate.Every(30*time.Second), 3),
@@ -214,6 +221,7 @@ type Workflows struct {
 }
 
 type cronTrigger struct {
+	FastestScheduleInterval Setting[time.Duration]
 	// Deprecated: to be removed
 	RateLimit Setting[config.Rate]
 }

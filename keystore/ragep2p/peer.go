@@ -12,7 +12,7 @@ import (
 var _ ragetypes.PeerKeyring = (*PeerKeyring)(nil)
 
 const (
-	PeerKeyringPrefix = "ragep2p_peer"
+	PrefixPeerKeyring = "ragep2p_peer"
 )
 
 type PeerKeyring struct {
@@ -57,7 +57,7 @@ func (k *PeerKeyring) Sign(msg []byte) ([]byte, error) {
 }
 
 func CreatePeerKeyring(ctx context.Context, ks commonks.Keystore, name string) (*PeerKeyring, error) {
-	keyPath := commonks.NewKeyPath(PeerKeyringPrefix, name)
+	keyPath := commonks.NewKeyPath(PrefixPeerKeyring, name)
 	createReq := commonks.CreateKeysRequest{
 		Keys: []commonks.CreateKeyRequest{
 			{KeyName: keyPath.String(), KeyType: commonks.Ed25519},
@@ -79,7 +79,7 @@ func GetPeerKeyrings(ctx context.Context, ks commonks.Keystore, keyRingNames []s
 	var keyNames []string
 	if len(keyRingNames) > 0 {
 		for _, name := range keyRingNames {
-			keyNames = append(keyNames, commonks.NewKeyPath(PeerKeyringPrefix, name).String())
+			keyNames = append(keyNames, commonks.NewKeyPath(PrefixPeerKeyring, name).String())
 		}
 	}
 	keys, err := ks.GetKeys(ctx, commonks.GetKeysRequest{

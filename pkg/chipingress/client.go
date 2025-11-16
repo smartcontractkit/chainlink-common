@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
@@ -22,6 +23,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
+
+const maxMessageSize = 16 * 1024 * 1024 // 16MB
 
 // HeaderProvider defines an interface for providing headers
 
@@ -87,7 +90,22 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                10 * time.Second,
+			Timeout:             1 * time.Second,
+			PermitWithoutStream: true,
+		}),
 	}
+	// Retry policy
+	retryPolicy := `{
+		"maxAttempts": 3,
+		"initialBackoff": "100ms",
+		"maxBackoff": "1s",
+		"backoffMultiplier": 2,
+		"retryableStatusCodes": ["UNAVAILABLE", "RESOURCE_EXHAUSTED"]
+	}`
+	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryPolicy))
 	// Auth
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))

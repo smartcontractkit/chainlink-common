@@ -50,13 +50,17 @@ func TestRegistry(t *testing.T) {
 
 	gc, err := r.Get(ctx, id)
 	require.NoError(t, err)
+	info, err := gc.Info(t.Context())
+	require.NoError(t, err)
 
-	assert.Equal(t, c, gc)
+	assert.Equal(t, c.CapabilityInfo, info)
 
 	cs, err := r.List(ctx)
 	require.NoError(t, err)
 	assert.Len(t, cs, 1)
-	assert.Equal(t, c, cs[0])
+	info, err = cs[0].Info(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, c.CapabilityInfo, info)
 }
 
 func TestRegistryCompatibleVersions(t *testing.T) {

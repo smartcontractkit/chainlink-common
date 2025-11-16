@@ -91,6 +91,10 @@ func (e evmClient) GetForwarderForEOA(ctx context.Context, in *evmpb.GetForwarde
 	return e.client.GetForwarderForEOA(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
+func (e evmClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetLatestLPBlockReply, error) {
+	return e.client.GetLatestLPBlock(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
 func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
 	evmService, err := s.getEVMService(ctx)
 	if err != nil {
@@ -453,6 +457,28 @@ func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.Cal
 
 	return &evmpb.CalculateTransactionFeeReply{
 		TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee),
+	}, nil
+}
+
+func (s *Server) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty) (*evmpb.GetLatestLPBlockReply, error) {
+	evmService, err := s.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := evmService.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetLatestLPBlockReply{
+		LpBlock: &evmpb.LPBlock{
+			Hash:                 b.BlockHash[:],
+			LatestBlockNumber:    b.LatestBlockNumber,
+			FinalizedBlockNumber: b.FinalizedBlockNumber,
+			SafeBlockNumber:      b.SafeBlockNumber,
+			BlockTimestamp:       b.BlockTimestamp,
+		},
 	}, nil
 }
 

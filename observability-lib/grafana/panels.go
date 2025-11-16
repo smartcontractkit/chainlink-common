@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
 	"github.com/grafana/grafana-foundation-sdk/go/heatmap"
+	"github.com/grafana/grafana-foundation-sdk/go/histogram"
 	"github.com/grafana/grafana-foundation-sdk/go/logs"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 	"github.com/grafana/grafana-foundation-sdk/go/stat"
@@ -177,6 +178,7 @@ type Panel struct {
 	logPanelBuilder              *logs.PanelBuilder
 	heatmapBuilder               *heatmap.PanelBuilder
 	textPanelBuilder             *text.PanelBuilder
+	histogramPanelBuilder        *histogram.PanelBuilder
 	businessVariablePanelBuilder *businessvariable.PanelBuilder
 	alertBuilders                []*alerting.RuleBuilder
 }
@@ -202,14 +204,15 @@ func setDefaults(options *PanelOptions) {
 
 type StatPanelOptions struct {
 	*PanelOptions
-	TextSize    float64
-	ValueSize   float64
-	JustifyMode common.BigValueJustifyMode
-	ColorMode   common.BigValueColorMode
-	GraphMode   common.BigValueGraphMode
-	TextMode    common.BigValueTextMode
-	Orientation common.VizOrientation
-	Mappings    []dashboard.ValueMapping
+	TextSize      float64
+	ValueSize     float64
+	JustifyMode   common.BigValueJustifyMode
+	ColorMode     common.BigValueColorMode
+	GraphMode     common.BigValueGraphMode
+	TextMode      common.BigValueTextMode
+	Orientation   common.VizOrientation
+	Mappings      []dashboard.ValueMapping
+	ReduceOptions *common.ReduceDataOptionsBuilder
 }
 
 func NewStatPanel(options *StatPanelOptions) *Panel {
@@ -231,6 +234,10 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		options.Orientation = common.VizOrientationAuto
 	}
 
+	if options.ReduceOptions == nil {
+		options.ReduceOptions = common.NewReduceDataOptionsBuilder().Calcs([]string{"last"})
+	}
+
 	newPanel := stat.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
 		Title(*options.Title).
@@ -247,7 +254,7 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		Orientation(options.Orientation).
 		JustifyMode(options.JustifyMode).
 		Mappings(options.Mappings).
-		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
+		ReduceOptions(options.ReduceOptions)
 
 	if options.Interval != "" {
 		newPanel.Interval(options.Interval)
@@ -321,6 +328,8 @@ type TimeSeriesPanelOptions struct {
 	ThresholdStyle    common.GraphThresholdsStyleMode
 	DrawStyle         common.GraphDrawStyle
 	StackingMode      common.StackingMode
+	AxisSoftMin       *float64
+	AxisSoftMax       *float64
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -385,6 +394,14 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 	if options.Max != nil {
 		newPanel.Max(*options.Max)
+	}
+
+	if options.AxisSoftMin != nil {
+		newPanel.AxisSoftMin(*options.AxisSoftMin)
+	}
+
+	if options.AxisSoftMax != nil {
+		newPanel.AxisSoftMax(*options.AxisSoftMax)
 	}
 
 	for _, q := range options.Query {
@@ -877,6 +894,172 @@ func NewTextPanel(options *TextPanelOptions) *Panel {
 
 	return &Panel{
 		textPanelBuilder: newPanel,
+	}
+}
+
+type HistogramPanelOptions struct {
+	*PanelOptions
+	LineWidth         *float64
+	ScaleDistribution common.ScaleDistribution
+	LegendOptions     *LegendOptions
+	ToolTipOptions    *ToolTipOptions
+	ThresholdStyle    common.GraphThresholdsStyleMode
+	DrawStyle         common.GraphDrawStyle
+	StackingMode      common.StackingMode
+	Combine           *bool
+	FillOpacity       *uint32
+	BucketOffset      *float32
+	BucketCount       *int32
+	BucketSize        *int32
+	AxisBorderShow    *bool
+	AxisLabel         string
+	AxisSoftMax       *float64
+	AxisSoftMin       *float64
+	AxisColorMode     common.AxisColorMode
+	AxisCenteredZero  *bool
+	AxisGridShow      *bool
+	AxisPlacement     common.AxisPlacement
+	AxisWidth         *float64
+}
+
+func NewHistogramPanel(options *HistogramPanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	if options.ScaleDistribution == "" {
+		options.ScaleDistribution = common.ScaleDistributionLinear
+	}
+
+	if options.LineWidth == nil {
+		options.LineWidth = Pointer[float64](1)
+	}
+
+	if options.LegendOptions == nil {
+		options.LegendOptions = &LegendOptions{}
+	}
+
+	if options.ToolTipOptions == nil {
+		options.ToolTipOptions = &ToolTipOptions{}
+	}
+
+	if options.StackingMode == "" {
+		options.StackingMode = common.StackingModeNone
+	}
+
+	newPanel := histogram.NewPanelBuilder().
+		Datasource(datasourceRef(options.Datasource)).
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		Unit(options.Unit).
+		NoValue(options.NoValue).
+		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
+			Type(options.ScaleDistribution),
+		).
+		Tooltip(newToolTip(options.ToolTipOptions)).
+		Stacking(common.NewStackingConfigBuilder().
+			Mode(options.StackingMode),
+		)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.Min != nil {
+		newPanel.Min(*options.Min)
+	}
+
+	if options.Max != nil {
+		newPanel.Max(*options.Max)
+	}
+
+	for _, q := range options.Query {
+		newPanel.WithTarget(newQuery(q))
+	}
+
+	if options.Threshold != nil {
+		newPanel.Thresholds(newThresholds(options.Threshold))
+	}
+
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
+	if options.Combine != nil {
+		newPanel.Combine(*options.Combine)
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
+	if options.FillOpacity != nil {
+		newPanel.FillOpacity(*options.FillOpacity)
+	}
+
+	if options.BucketOffset != nil {
+		newPanel.BucketOffset(*options.BucketOffset)
+	}
+
+	if options.BucketCount != nil {
+		newPanel.BucketCount(*options.BucketCount)
+	}
+
+	if options.BucketSize != nil {
+		newPanel.BucketSize(*options.BucketSize)
+	}
+
+	if options.AxisBorderShow != nil {
+		newPanel.AxisBorderShow(*options.AxisBorderShow)
+	}
+
+	if options.AxisLabel != "" {
+		newPanel.AxisLabel(options.AxisLabel)
+	}
+
+	if options.AxisSoftMax != nil {
+		newPanel.AxisSoftMax(*options.AxisSoftMax)
+	}
+
+	if options.AxisSoftMin != nil {
+		newPanel.AxisSoftMin(*options.AxisSoftMin)
+	}
+
+	if options.AxisColorMode != "" {
+		newPanel.AxisColorMode(options.AxisColorMode)
+	}
+
+	if options.AxisCenteredZero != nil {
+		newPanel.AxisCenteredZero(*options.AxisCenteredZero)
+	}
+
+	if options.AxisGridShow != nil {
+		newPanel.AxisGridShow(*options.AxisGridShow)
+	}
+
+	if options.AxisPlacement != "" {
+		newPanel.AxisPlacement(options.AxisPlacement)
+	}
+
+	if options.AxisWidth != nil {
+		newPanel.AxisWidth(*options.AxisWidth)
+	}
+
+	return &Panel{
+		histogramPanelBuilder: newPanel,
 	}
 }
 

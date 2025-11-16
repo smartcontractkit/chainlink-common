@@ -107,6 +107,9 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.textPanelBuilder != nil {
 			item.textPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.textPanelBuilder)
+		} else if item.histogramPanelBuilder != nil {
+			item.histogramPanelBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.histogramPanelBuilder)
 		} else if item.businessVariablePanelBuilder != nil {
 			item.businessVariablePanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.businessVariablePanelBuilder)

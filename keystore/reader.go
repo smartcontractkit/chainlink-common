@@ -6,12 +6,6 @@ import (
 	"sort"
 )
 
-type ListKeysRequest struct{}
-
-type ListKeysResponse struct {
-	Keys []KeyInfo
-}
-
 type GetKeysRequest struct {
 	KeyNames []string
 }

@@ -53,7 +53,7 @@ func (c *BasicActionServer) Initialise(ctx context.Context, dependencies core.St
 	if err := dependencies.CapabilityRegistry.Add(ctx, &basicActionCapability{
 		BasicActionCapability: c.BasicActionCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "basic-test-action@1.0.0", err)
 	}
 
 	return nil

@@ -54,7 +54,7 @@ func (c *HTTPServer) Initialise(ctx context.Context, dependencies core.StandardC
 	if err := dependencies.CapabilityRegistry.Add(ctx, &hTTPCapability{
 		HTTPCapability: c.HTTPCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "http-trigger@1.0.0-alpha", err)
 	}
 
 	return nil

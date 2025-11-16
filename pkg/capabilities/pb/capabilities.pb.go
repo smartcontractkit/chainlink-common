@@ -1048,6 +1048,7 @@ type InitialiseRequest struct {
 	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
 	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
 	OrgResolverId      uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
+	CreSettingsId      uint32                 `protobuf:"varint,12,opt,name=cre_settings_id,json=creSettingsId,proto3" json:"cre_settings_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1159,6 +1160,13 @@ func (x *InitialiseRequest) GetOrgResolverId() uint32 {
 	return 0
 }
 
+func (x *InitialiseRequest) GetCreSettingsId() uint32 {
+	if x != nil {
+		return x.CreSettingsId
+	}
+	return 0
+}
+
 type CapabilityInfosReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Infos         []*CapabilityInfoReply `protobuf:"bytes,1,rep,name=infos,proto3" json:"infos,omitempty"`
@@ -1201,6 +1209,58 @@ func (x *CapabilityInfosReply) GetInfos() []*CapabilityInfoReply {
 		return x.Infos
 	}
 	return nil
+}
+
+type SettingsUpdate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Settings      string                 `protobuf:"bytes,1,opt,name=settings,proto3" json:"settings,omitempty"` // default format TOML
+	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`         // default sha256
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SettingsUpdate) Reset() {
+	*x = SettingsUpdate{}
+	mi := &file_capabilities_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SettingsUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SettingsUpdate) ProtoMessage() {}
+
+func (x *SettingsUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SettingsUpdate.ProtoReflect.Descriptor instead.
+func (*SettingsUpdate) Descriptor() ([]byte, []int) {
+	return file_capabilities_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *SettingsUpdate) GetSettings() string {
+	if x != nil {
+		return x.Settings
+	}
+	return ""
+}
+
+func (x *SettingsUpdate) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
 }
 
 var File_capabilities_proto protoreflect.FileDescriptor
@@ -1281,7 +1341,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xbd\x03\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xe5\x03\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1296,9 +1356,13 @@ const file_capabilities_proto_rawDesc = "" +
 	"\vkeystore_id\x18\n" +
 	" \x01(\rR\n" +
 	"keystoreId\x12&\n" +
-	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\"O\n" +
+	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\x12&\n" +
+	"\x0fcre_settings_id\x18\f \x01(\rR\rcreSettingsId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
-	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
+	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos\"@\n" +
+	"\x0eSettingsUpdate\x12\x1a\n" +
+	"\bsettings\x18\x01 \x01(\tR\bsettings\x12\x12\n" +
+	"\x04hash\x18\x02 \x01(\tR\x04hash*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +
 	"\x17CAPABILITY_TYPE_UNKNOWN\x10\x00\x12\x1b\n" +
 	"\x17CAPABILITY_TYPE_TRIGGER\x10\x01\x12\x1a\n" +
@@ -1319,7 +1383,9 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x14StandardCapabilities\x12G\n" +
 	"\n" +
 	"Initialise\x12\x1f.capabilities.InitialiseRequest\x1a\x16.google.protobuf.Empty\"\x00\x12E\n" +
-	"\x05Infos\x12\x16.google.protobuf.Empty\x1a\".capabilities.CapabilityInfosReply\"\x00BBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
+	"\x05Infos\x12\x16.google.protobuf.Empty\x1a\".capabilities.CapabilityInfosReply\"\x002Q\n" +
+	"\bSettings\x12E\n" +
+	"\tSubscribe\x12\x16.google.protobuf.Empty\x1a\x1c.capabilities.SettingsUpdate\"\x000\x01BBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
 
 var (
 	file_capabilities_proto_rawDescOnce sync.Once
@@ -1334,7 +1400,7 @@ func file_capabilities_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_capabilities_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_capabilities_proto_goTypes = []any{
 	(CapabilityType)(0),                   // 0: capabilities.CapabilityType
 	(*CapabilityInfoReply)(nil),           // 1: capabilities.CapabilityInfoReply
@@ -1352,54 +1418,57 @@ var file_capabilities_proto_goTypes = []any{
 	(*UnregisterFromWorkflowRequest)(nil), // 13: capabilities.UnregisterFromWorkflowRequest
 	(*InitialiseRequest)(nil),             // 14: capabilities.InitialiseRequest
 	(*CapabilityInfosReply)(nil),          // 15: capabilities.CapabilityInfosReply
-	(*pb.Map)(nil),                        // 16: values.v1.Map
-	(*anypb.Any)(nil),                     // 17: google.protobuf.Any
-	(*emptypb.Empty)(nil),                 // 18: google.protobuf.Empty
-	(*pb1.MeteringReportNodeDetail)(nil),  // 19: metering.MeteringReportNodeDetail
+	(*SettingsUpdate)(nil),                // 16: capabilities.SettingsUpdate
+	(*pb.Map)(nil),                        // 17: values.v1.Map
+	(*anypb.Any)(nil),                     // 18: google.protobuf.Any
+	(*emptypb.Empty)(nil),                 // 19: google.protobuf.Empty
+	(*pb1.MeteringReportNodeDetail)(nil),  // 20: metering.MeteringReportNodeDetail
 }
 var file_capabilities_proto_depIdxs = []int32{
 	0,  // 0: capabilities.CapabilityInfoReply.capability_type:type_name -> capabilities.CapabilityType
 	2,  // 1: capabilities.RequestMetadata.spend_limits:type_name -> capabilities.SpendLimit
 	3,  // 2: capabilities.CapabilityRequest.metadata:type_name -> capabilities.RequestMetadata
-	16, // 3: capabilities.CapabilityRequest.config:type_name -> values.v1.Map
-	16, // 4: capabilities.CapabilityRequest.inputs:type_name -> values.v1.Map
-	17, // 5: capabilities.CapabilityRequest.payload:type_name -> google.protobuf.Any
-	17, // 6: capabilities.CapabilityRequest.configPayload:type_name -> google.protobuf.Any
+	17, // 3: capabilities.CapabilityRequest.config:type_name -> values.v1.Map
+	17, // 4: capabilities.CapabilityRequest.inputs:type_name -> values.v1.Map
+	18, // 5: capabilities.CapabilityRequest.payload:type_name -> google.protobuf.Any
+	18, // 6: capabilities.CapabilityRequest.configPayload:type_name -> google.protobuf.Any
 	3,  // 7: capabilities.TriggerRegistrationRequest.metadata:type_name -> capabilities.RequestMetadata
-	16, // 8: capabilities.TriggerRegistrationRequest.config:type_name -> values.v1.Map
-	17, // 9: capabilities.TriggerRegistrationRequest.payload:type_name -> google.protobuf.Any
-	16, // 10: capabilities.TriggerEvent.outputs:type_name -> values.v1.Map
-	17, // 11: capabilities.TriggerEvent.payload:type_name -> google.protobuf.Any
+	17, // 8: capabilities.TriggerRegistrationRequest.config:type_name -> values.v1.Map
+	18, // 9: capabilities.TriggerRegistrationRequest.payload:type_name -> google.protobuf.Any
+	17, // 10: capabilities.TriggerEvent.outputs:type_name -> values.v1.Map
+	18, // 11: capabilities.TriggerEvent.payload:type_name -> google.protobuf.Any
 	6,  // 12: capabilities.TriggerResponse.event:type_name -> capabilities.TriggerEvent
-	18, // 13: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
+	19, // 13: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
 	7,  // 14: capabilities.TriggerResponseMessage.response:type_name -> capabilities.TriggerResponse
-	16, // 15: capabilities.CapabilityResponse.value:type_name -> values.v1.Map
+	17, // 15: capabilities.CapabilityResponse.value:type_name -> values.v1.Map
 	10, // 16: capabilities.CapabilityResponse.metadata:type_name -> capabilities.ResponseMetadata
-	17, // 17: capabilities.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	19, // 18: capabilities.ResponseMetadata.metering:type_name -> metering.MeteringReportNodeDetail
+	18, // 17: capabilities.CapabilityResponse.payload:type_name -> google.protobuf.Any
+	20, // 18: capabilities.ResponseMetadata.metering:type_name -> metering.MeteringReportNodeDetail
 	11, // 19: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
-	16, // 20: capabilities.RegisterToWorkflowRequest.config:type_name -> values.v1.Map
+	17, // 20: capabilities.RegisterToWorkflowRequest.config:type_name -> values.v1.Map
 	11, // 21: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
-	16, // 22: capabilities.UnregisterFromWorkflowRequest.config:type_name -> values.v1.Map
+	17, // 22: capabilities.UnregisterFromWorkflowRequest.config:type_name -> values.v1.Map
 	1,  // 23: capabilities.CapabilityInfosReply.infos:type_name -> capabilities.CapabilityInfoReply
-	18, // 24: capabilities.BaseCapability.Info:input_type -> google.protobuf.Empty
+	19, // 24: capabilities.BaseCapability.Info:input_type -> google.protobuf.Empty
 	5,  // 25: capabilities.TriggerExecutable.RegisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
 	5,  // 26: capabilities.TriggerExecutable.UnregisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
 	12, // 27: capabilities.Executable.RegisterToWorkflow:input_type -> capabilities.RegisterToWorkflowRequest
 	13, // 28: capabilities.Executable.UnregisterFromWorkflow:input_type -> capabilities.UnregisterFromWorkflowRequest
 	4,  // 29: capabilities.Executable.Execute:input_type -> capabilities.CapabilityRequest
 	14, // 30: capabilities.StandardCapabilities.Initialise:input_type -> capabilities.InitialiseRequest
-	18, // 31: capabilities.StandardCapabilities.Infos:input_type -> google.protobuf.Empty
-	1,  // 32: capabilities.BaseCapability.Info:output_type -> capabilities.CapabilityInfoReply
-	8,  // 33: capabilities.TriggerExecutable.RegisterTrigger:output_type -> capabilities.TriggerResponseMessage
-	18, // 34: capabilities.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
-	18, // 35: capabilities.Executable.RegisterToWorkflow:output_type -> google.protobuf.Empty
-	18, // 36: capabilities.Executable.UnregisterFromWorkflow:output_type -> google.protobuf.Empty
-	9,  // 37: capabilities.Executable.Execute:output_type -> capabilities.CapabilityResponse
-	18, // 38: capabilities.StandardCapabilities.Initialise:output_type -> google.protobuf.Empty
-	15, // 39: capabilities.StandardCapabilities.Infos:output_type -> capabilities.CapabilityInfosReply
-	32, // [32:40] is the sub-list for method output_type
-	24, // [24:32] is the sub-list for method input_type
+	19, // 31: capabilities.StandardCapabilities.Infos:input_type -> google.protobuf.Empty
+	19, // 32: capabilities.Settings.Subscribe:input_type -> google.protobuf.Empty
+	1,  // 33: capabilities.BaseCapability.Info:output_type -> capabilities.CapabilityInfoReply
+	8,  // 34: capabilities.TriggerExecutable.RegisterTrigger:output_type -> capabilities.TriggerResponseMessage
+	19, // 35: capabilities.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
+	19, // 36: capabilities.Executable.RegisterToWorkflow:output_type -> google.protobuf.Empty
+	19, // 37: capabilities.Executable.UnregisterFromWorkflow:output_type -> google.protobuf.Empty
+	9,  // 38: capabilities.Executable.Execute:output_type -> capabilities.CapabilityResponse
+	19, // 39: capabilities.StandardCapabilities.Initialise:output_type -> google.protobuf.Empty
+	15, // 40: capabilities.StandardCapabilities.Infos:output_type -> capabilities.CapabilityInfosReply
+	16, // 41: capabilities.Settings.Subscribe:output_type -> capabilities.SettingsUpdate
+	33, // [33:42] is the sub-list for method output_type
+	24, // [24:33] is the sub-list for method input_type
 	24, // [24:24] is the sub-list for extension type_name
 	24, // [24:24] is the sub-list for extension extendee
 	0,  // [0:24] is the sub-list for field type_name
@@ -1420,9 +1489,9 @@ func file_capabilities_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_proto_rawDesc), len(file_capabilities_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
-			NumServices:   4,
+			NumServices:   5,
 		},
 		GoTypes:           file_capabilities_proto_goTypes,
 		DependencyIndexes: file_capabilities_proto_depIdxs,

@@ -3,15 +3,29 @@ name: golangci-lint
 on: [pull_request, merge_group]
 
 jobs:
-  golangci-lint:
+  detect-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: set-modules
+        run: |
+          # Find all go.mod files and extract their directories
+          modules=$(find . -name "go.mod" -not -path "./vendor/*" | xargs dirname | sed 's|^\./||' | awk '{if ($0 == "") print "."; else print $0}' | sort -u | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "modules=${modules}" >> $GITHUB_OUTPUT
+          echo "Found modules: ${modules}"
+
+  lint-module:
     # Avoid running in merge queue since we run in PR's and have an optional
     # label to skip lint issues on a PR which would be ignored in the merge queue.
     if: ${{ github.event_name != 'merge_group' }}
+    needs: detect-modules
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        module: [".", "./keystore", "./observability-lib", "./pkg/chipingress"]
+        module: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
     permissions:
       id-token: write
       contents: read
@@ -37,3 +51,12 @@ jobs:
           checkout-repo: false
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
+
+  golangci-lint:
+    # Required sink job that waits for all lint jobs to complete
+    if: ${{ github.event_name != 'merge_group' }}
+    needs: [detect-modules, lint-module]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lint complete
+        run: echo "All lint jobs completed"

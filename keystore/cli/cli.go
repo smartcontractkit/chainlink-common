@@ -153,7 +153,6 @@ func NewCreateCmd() *cobra.Command {
 }
 
 func NewDeleteCmd() *cobra.Command {
-	dog := "test"
 	cmd := cobra.Command{
 		Use: "delete", Short: "Delete a key",
 		RunE: func(cmd *cobra.Command, _ []string) error {

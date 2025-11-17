@@ -153,6 +153,7 @@ func NewCreateCmd() *cobra.Command {
 }
 
 func NewDeleteCmd() *cobra.Command {
+	dog := "test"
 	cmd := cobra.Command{
 		Use: "delete", Short: "Delete a key",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -165,7 +166,7 @@ func NewDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			confirmYes, _ := cmd.Flags().GetBool("yes")
+			confirmYes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
 				return err
 			}

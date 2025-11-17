@@ -22,7 +22,7 @@ var execCommand = func(cmd *exec.Cmd) error {
 }
 
 // mergeOrReplaceEnvVars merges new environment variables into an existing slice,
-// replacing any existing variables with the same key
+// replacing any existing variables with the same key.
 func mergeOrReplaceEnvVars(existing []string, newVars []string) []string {
 	result := make([]string, len(existing))
 	copy(result, existing)
@@ -53,7 +53,33 @@ func mergeOrReplaceEnvVars(existing []string, newVars []string) []string {
 	return result
 }
 
-func determineModuleDirectory(goPrivate, fullModulePath string) (string, error) {
+// determineModuleDirectory locates the directory to build from.
+// - Local path (absolute or "./relative"): resolve and return the directory (no download).
+func determineModuleDirectoryLocal(pluginKey, moduleURI string) (string, error) {
+	log.Printf("%s - resolving local module path %q", pluginKey, moduleURI)
+	abs, err := filepath.Abs(moduleURI)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve local module path %q: %w", moduleURI, err)
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		return "", fmt.Errorf("local module path %q not accessible: %w", abs, err)
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("local module path %q is not a directory", abs)
+	}
+	return abs, nil
+}
+
+// determineModuleDirectory locates the directory to build from.
+// - Remote module path (e.g., "github.com/org/repo@ref"): use `go mod download -json` to get a module cache dir.
+func determineModuleDirectoryRemote(pluginKey, moduleURI, gitRef, goPrivate string) (string, error) {
+	fullModulePath := moduleURI
+	if gitRef != "" {
+		fullModulePath = fmt.Sprintf("%s@%s", moduleURI, gitRef)
+	}
+	log.Printf("%s - downloading remote module %s", pluginKey, fullModulePath)
+
 	cmd := exec.Command("go", "mod", "download", "-json", fullModulePath)
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -61,7 +87,6 @@ func determineModuleDirectory(goPrivate, fullModulePath string) (string, error) 
 
 	if goPrivate != "" {
 		// Inherit the current environment and override GOPRIVATE.
-		// Note: Not really sure why this is needed - tried to simplify existing logic
 		cmd.Env = append(os.Environ(), "GOPRIVATE="+goPrivate)
 	}
 
@@ -81,13 +106,18 @@ func determineModuleDirectory(goPrivate, fullModulePath string) (string, error) 
 	return result.Dir, nil
 }
 
-func determineGoFlags(defaultGoFlags, pluginGoFlags string) ([]string, error) {
+// determineGoFlags resolves go build flags in priority order:
+// 1) CL_PLUGIN_GOFLAGS env var (overrides config)
+// 2) defaults.GoFlags
+// 3) plugin-specific goflags appended
+// It validates flags if any are present.
+func determineGoFlags(pluginKey, defaultGoFlags, pluginGoFlags string) ([]string, error) {
 	var flags []string
 	parser := shellwords.NewParser()
 
 	// Determine base flags
 	if envGoFlags := os.Getenv("CL_PLUGIN_GOFLAGS"); envGoFlags != "" {
-		log.Printf("Overriding config's default goflags with CL_PLUGIN_GOFLAGS env var: %s", envGoFlags)
+		log.Printf("%s - overriding config's default goflags with CL_PLUGIN_GOFLAGS env var: %s", pluginKey, envGoFlags)
 		f, err := parser.Parse(envGoFlags)
 		if err != nil {
 			return nil, err
@@ -120,155 +150,170 @@ func determineGoFlags(defaultGoFlags, pluginGoFlags string) ([]string, error) {
 	return flags, nil
 }
 
-func determineInstallArg(installPath, moduleURI string) string {
-	// Determine the actual argument for 'go install' based on installPath and moduleURI.
-	// - installPath is the user-provided path from YAML (no environment variable expansion).
-	// - moduleURI is the URI of the module being downloaded and installed (no environment variable expansion).
-	// The 'go install' command will be run with cmd.Dir set to the root of the downloaded moduleURI.
-	// Therefore, installArg must be "." or a path starting with "./" relative to the module root.
+// determineInstallArg computes the argument passed to `go build` given we're changing cmd.Dir.
+// For remote modules, we keep the legacy behavior.
+// For local moduleURIs, we compute a relative path from the module root to the installPath
+// so the resulting arg is "." or "./sub/package".
+func determineInstallArg(installPath, moduleURI string, isLocal bool) string {
+	cleanInstallPath := filepath.Clean(installPath)
+	cleanModuleURI := filepath.Clean(moduleURI)
 
-	// Case 1: installPath is the moduleURI itself. Install the module root.
+	// Local modules
+	if isLocal {
+		// 1 - If building the module root
+		if cleanInstallPath == cleanModuleURI || cleanInstallPath == "." {
+			return "."
+		}
+		// 2 - If installPath is inside the module root, return "./<rel>"
+		if rel, err := filepath.Rel(cleanModuleURI, cleanInstallPath); err == nil && rel != "" && !strings.HasPrefix(rel, "..") {
+			rel = filepath.ToSlash(rel)
+			if rel == "." {
+				return "."
+			}
+			return "./" + rel
+		}
+
+		// 3 - If installPath is already relative to the module root, normalize "./" prefix
+		if !filepath.IsAbs(cleanInstallPath) {
+			cleanInstallPath = filepath.ToSlash(cleanInstallPath)
+			if cleanInstallPath == "." || strings.HasPrefix(cleanInstallPath, "./") {
+				return cleanInstallPath
+			}
+			return "./" + strings.TrimLeft(cleanInstallPath, "/")
+		}
+
+		// Absolute path outside module root: still give a relative-looking arg;
+		// cmd.Dir will be set to module root so Go expects package paths like "./x/y".
+		return "./" + filepath.ToSlash(strings.TrimLeft(cleanInstallPath, string(filepath.Separator)))
+	}
+
+	// Remote modules
+	// 1 - installPath is the module root itself.
 	if installPath == moduleURI {
 		return "."
 	}
 
-	// Case 2: installPath is a sub-package of moduleURI (e.g., "moduleURI/cmd/plugin").
+	// 2 - installPath is a sub-package of moduleURI.
 	if after, ok := strings.CutPrefix(installPath, moduleURI+"/"); ok {
-		// Extract the relative path and prefix with "./".
-		relativePath := after
-		cleanedRelativePath := strings.TrimLeft(relativePath, "/")   // Handles "moduleURI///subpath"
-		if cleanedRelativePath == "" || cleanedRelativePath == "." { // Handles "moduleURI/" or "moduleURI/."
+		cleanedRelativePath := strings.TrimLeft(after, "/")
+		if cleanedRelativePath == "" || cleanedRelativePath == "." {
 			return "."
 		}
-
-		// cleanedRelativePath is like "cmd/plugin" or "sub/../pkg". Prepend "./".
 		return "./" + cleanedRelativePath
 	}
 
-	// Case 3: installPath is not moduleURI and not a sub-package of moduleURI.
-	// Assumed to be:
-	//  a) A path already relative to the module root (e.g., "cmd/plugin", "./cmd/plugin", ".").
-	//  b) A full path to a different module (e.g., "github.com/other/mod").
-	//     For (b), prefixing with "./" when cmd.Dir is set is problematic but replicates prior behavior if any.
-
-	// Simple case
+	// 3 - other inputs; normalize to a "./" path.
 	if installPath == "." {
 		return "."
 	}
-
-	// Already correctly formatted (e.g., "./cmd/plugin", "./sub/../pkg")
 	if strings.HasPrefix(installPath, "./") {
 		return installPath
 	}
-
-	// Needs "./" prefix. Handles "cmd/plugin", "/cmd/plugin", "github.com/other/mod".
 	return "./" + strings.TrimLeft(installPath, "/")
 }
 
-// downloadAndInstallPlugin downloads and installs a single plugin
+// downloadAndInstallPlugin downloads (if remote) and builds the plugin.
+// For local moduleURIs (absolute or "./relative"), we skip network download,
+// ignore gitRef (with a log message), and build directly from the local dir.
 func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef, defaults DefaultsConfig) error {
+	pluginKey := fmt.Sprintf("%s[%d]", pluginType, pluginIdx)
 	if !isPluginEnabled(plugin) {
-		log.Printf("Skipping disabled plugin %s[%d]", pluginType, pluginIdx)
+		log.Printf("%s - skipping disabled plugin", pluginKey)
 		return nil
 	}
 
 	// Validate inputs
 	if err := plugin.Validate(); err != nil {
-		return fmt.Errorf("plugin input validation failed: %w", err)
+		return fmt.Errorf("%s - plugin input validation failed: %w", pluginKey, err)
 	}
 
 	moduleURI := plugin.ModuleURI
 	gitRef := plugin.GitRef
 	installPath := plugin.InstallPath
 
-	// Full module path with git reference
-	fullModulePath := moduleURI
-	if gitRef != "" {
-		fullModulePath = fmt.Sprintf("%s@%s", moduleURI, gitRef)
-	}
-
-	log.Printf("Installing plugin %s[%d] from %s", pluginType, pluginIdx, fullModulePath)
-
-	// Get GOPRIVATE environment variable
 	goPrivate := os.Getenv("GOPRIVATE")
 
-	// Download the module and get its directory
-	moduleDir, err := determineModuleDirectory(goPrivate, fullModulePath)
+	// Determine the directory to run `go build` in.
+	isLocal := filepath.IsAbs(moduleURI) || strings.HasPrefix(moduleURI, "."+string(filepath.Separator))
+	moduleDir, err := func() (string, error) {
+		if isLocal {
+			return determineModuleDirectoryLocal(pluginKey, moduleURI)
+		}
+		return determineModuleDirectoryRemote(pluginKey, moduleURI, gitRef, goPrivate)
+	}()
 	if err != nil {
-		return fmt.Errorf("failed to determine module directory: %w", err)
+		return fmt.Errorf("%s - failed to determine module directory: %w", pluginKey, err)
+	}
+	if moduleDir == "" {
+		return fmt.Errorf("%s - empty module directory resolved", pluginKey)
 	}
 
-	// Build env vars from defaults, environment variable, and plugin-specific settings
+	log.Printf("%s - installing plugin from %s", pluginKey, moduleDir)
+
+	// Build env vars from defaults, environment variable, and plugin-specific settings.
 	envVars := defaults.EnvVars
 	if envEnvVars := os.Getenv("CL_PLUGIN_ENVVARS"); envEnvVars != "" {
 		envVars = mergeOrReplaceEnvVars(envVars, strings.Fields(envEnvVars))
 	}
-
-	// Merge plugin-specific env vars
 	if len(plugin.EnvVars) != 0 {
 		envVars = mergeOrReplaceEnvVars(envVars, plugin.EnvVars)
 	}
 
-	// Install the plugin
-	{
-		installArg := determineInstallArg(installPath, moduleURI)
+	// Compute build target relative to module root ('.' or './subpkg').
+	installArg := determineInstallArg(installPath, moduleURI, isLocal)
 
-		binaryName := filepath.Base(installArg)
-		if binaryName == "." {
-			binaryName = filepath.Base(moduleURI)
+	// Derive output binary name. When arg is ".", use the module/repo (or local dir) name.
+	binaryName := filepath.Base(installArg)
+	if binaryName == "." {
+		binaryName = filepath.Base(filepath.Clean(moduleURI))
+	}
+
+	// Determine output directory (GOBIN, or GOPATH/bin, or $HOME/go/bin).
+	outputDir := os.Getenv("GOBIN")
+	if outputDir == "" {
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = filepath.Join(os.Getenv("HOME"), "go")
 		}
+		outputDir = filepath.Join(gopath, "bin")
+	}
+	outputPath := filepath.Join(outputDir, binaryName)
 
-		// Determine output directory
-		outputDir := os.Getenv("GOBIN")
-		if outputDir == "" {
-			gopath := os.Getenv("GOPATH")
-			if gopath == "" {
-				gopath = filepath.Join(os.Getenv("HOME"), "go")
-			}
-			outputDir = filepath.Join(gopath, "bin")
-		}
+	// Build goflags
+	goflags, err := determineGoFlags(pluginKey, defaults.GoFlags, plugin.Flags)
+	if err != nil {
+		return fmt.Errorf("%s - goflags validation failed: %w", pluginKey, err)
+	}
 
-		outputPath := filepath.Join(outputDir, binaryName)
+	// Assemble `go build` command.
+	args := []string{"build", "-o", outputPath}
+	if len(goflags) != 0 {
+		args = append(args, goflags...)
+	}
+	args = append(args, installArg)
 
-		// Build goflags
-		goflags, err := determineGoFlags(defaults.GoFlags, plugin.Flags)
-		if err != nil {
-			return fmt.Errorf("validation failed: %w", err)
-		}
+	cmd := exec.Command("go", args...)
+	cmd.Dir = moduleDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-		args := []string{"build", "-o", outputPath}
-		if len(goflags) != 0 {
-			args = append(args, goflags...)
-		}
-		args = append(args, installArg)
+	// Start with all current environment variables.
+	cmd.Env = os.Environ()
+	if goPrivate != "" {
+		cmd.Env = mergeOrReplaceEnvVars(cmd.Env, []string{"GOPRIVATE=" + goPrivate})
+	}
+	cmd.Env = mergeOrReplaceEnvVars(cmd.Env, envVars)
 
-		cmd := exec.Command("go", args...)
-		cmd.Dir = moduleDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+	log.Printf("%s - running install command: go %s (in directory: %s)", pluginKey, strings.Join(args, " "), moduleDir)
 
-		// Start with all current environment variables
-		cmd.Env = os.Environ()
-
-		// Set GOPRIVATE environment variable if provided
-		if goPrivate != "" {
-			cmd.Env = mergeOrReplaceEnvVars(cmd.Env, []string{"GOPRIVATE=" + goPrivate})
-		}
-
-		// Add/replace custom environment variables (e.g., GOOS, GOARCH, CGO_ENABLED)
-		cmd.Env = mergeOrReplaceEnvVars(cmd.Env, envVars)
-
-		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)
-
-		if err := execCommand(cmd); err != nil {
-			return fmt.Errorf("failed to install plugin %s[%d]: %w", pluginType, pluginIdx, err)
-		}
+	if err := execCommand(cmd); err != nil {
+		return fmt.Errorf("%s - failed to install plugin: %w", pluginKey, err)
 	}
 
 	return nil
 }
 
-// writeBuildManifest writes installation artifacts to the specified file
+// writeBuildManifest writes installation artifacts to the specified file.
 func writeBuildManifest(tasks []PluginInstallTask, outputFile string) error {
 	manifest := BuildManifest{
 		BuildTime: time.Now().UTC().Format(time.RFC3339),
@@ -279,8 +324,7 @@ func writeBuildManifest(tasks []PluginInstallTask, outputFile string) error {
 	for _, task := range tasks {
 		configPath := task.ConfigFile
 		if !filepath.IsAbs(configPath) {
-			absPath, err := filepath.Abs(configPath)
-			if err == nil {
+			if absPath, err := filepath.Abs(configPath); err == nil {
 				configPath = absPath
 			}
 		}
@@ -320,7 +364,7 @@ func writeBuildManifest(tasks []PluginInstallTask, outputFile string) error {
 	return nil
 }
 
-// installPlugins installs plugins concurrently using worker pool pattern
+// installPlugins installs plugins concurrently using a worker pool.
 func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, outputFile string) error {
 	if len(tasks) == 0 {
 		log.Println("No enabled plugins found to install")
@@ -329,6 +373,7 @@ func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, ou
 
 	log.Printf("Installing %d plugins with concurrency %d", len(tasks), concurrency)
 
+	// Optionally write the manifest first (so artifacts exist even if a build fails).
 	if outputFile != "" {
 		if err := writeBuildManifest(tasks, outputFile); err != nil {
 			return fmt.Errorf("failed to write installation artifacts: %w", err)
@@ -349,6 +394,7 @@ func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, ou
 				}
 
 				start := time.Now()
+
 				err := downloadAndInstallPlugin(task.PluginType, 0, task.Plugin, task.Defaults)
 				duration := time.Since(start)
 
@@ -407,7 +453,7 @@ func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, ou
 	return nil
 }
 
-// setupOutputFile ensures the output directory exists
+// setupOutputFile ensures the output path is absolute (and its directory exists is handled elsewhere).
 func setupOutputFile(outputFile string) (string, error) {
 	if !filepath.IsAbs(outputFile) {
 		wd, err := os.Getwd()

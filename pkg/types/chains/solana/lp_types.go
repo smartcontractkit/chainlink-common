@@ -115,6 +115,9 @@ type IdlTypeArray struct {
 	Num   int
 }
 
+// matches solana lp-types IndexedValue
+type IndexedValue []byte
+
 type IdlTypeDefTyKind string
 
 const (

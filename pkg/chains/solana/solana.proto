@@ -1,0 +1,298 @@
+syntax = "proto3";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/solana";
+package loop.solana;
+
+service SolanaService {
+  rpc GetAccountInfoWithOpts(GetAccountInfoWithOptsRequest) returns (GetAccountInfoWithOptsReply);
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceReply);
+  rpc GetBlock(GetBlockRequest) returns (GetBlockReply);
+  rpc GetFeeForMessage(GetFeeForMessageRequest) returns (GetFeeForMessageReply);
+  rpc GetMultipleAccountsWithOpts(GetMultipleAccountsWithOptsRequest) returns (GetMultipleAccountsWithOptsReply);
+  rpc GetSignatureStatuses(GetSignatureStatusesRequest) returns (GetSignatureStatusesReply);
+  rpc GetSlotHeight(GetSlotHeightRequest) returns (GetSlotHeightReply);
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionReply);
+  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
+  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (RegisterLogTrackingReply);
+  rpc SimulateTX(SimulateTXRequest) returns (SimulateTXReply);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
+  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
+}
+
+message Account {
+  uint64 lamports = 1;
+  bytes owner = 2;
+  DataBytesOrJSON data = 3;
+  bool executable = 4;
+  int64 rent_epoch = 5;
+  uint64 space = 6;
+}
+
+message Address {
+  bytes address = 1;
+}
+
+message BoolExpression {
+  repeated Expression expressions = 1;
+  int64 bool_operator = 2;
+}
+
+message ComputeConfig {
+  uint32 compute_limit = 1;
+  uint64 compute_max_price = 2;
+}
+
+message Context {
+  uint64 slot = 1;
+}
+
+message DataBytesOrJSON {
+  string raw_data_encoding = 1;
+  bytes as_decoded_binary = 2;
+  bytes as_json = 3;
+}
+
+message DataSlice {
+  uint64 offset = 1;
+  uint64 length = 2;
+}
+
+message EventByTopic {
+  uint64 topic = 1;
+  repeated HashedValueComparator hashed_value_comparers = 2;
+}
+
+message Expression {
+  Primitive primitive = 1;
+  BoolExpression bool_expression = 2;
+}
+
+message GetAccountInfoOpts {
+  string encoding = 1;
+  string commitment = 2;
+  DataSlice data_slice = 3;
+  uint64 min_context_slot = 4;
+}
+
+message GetAccountInfoWithOptsReply {
+  RPCContext r_p_c_context = 1;
+  Account value = 2;
+}
+
+message GetAccountInfoWithOptsRequest {
+  bytes account = 1;
+  GetAccountInfoOpts opts = 2;
+}
+
+message GetBalanceReply {
+  uint64 value = 1;
+}
+
+message GetBalanceRequest {
+  bytes addr = 1;
+  string commitment = 2;
+}
+
+message GetBlockOpts {
+  string encoding = 1;
+  string transaction_details = 2;
+  bool rewards = 3;
+  string commitment = 4;
+  uint64 max_supported_transaction_version = 5;
+}
+
+message GetBlockReply {
+  bytes blockhash = 1;
+  bytes previous_blockhash = 2;
+  uint64 parent_slot = 3;
+  repeated TransactionWithMeta transactions = 4;
+  repeated bytes signatures = 5;
+  int64 block_time = 6;
+  uint64 block_height = 7;
+}
+
+message GetBlockRequest {
+  uint64 slot = 1;
+  GetBlockOpts opts = 2;
+}
+
+message GetFeeForMessageReply {
+  uint64 fee = 1;
+}
+
+message GetFeeForMessageRequest {
+  string message = 1;
+  string commitment = 2;
+}
+
+message GetMultipleAccountsOpts {
+  string encoding = 1;
+  string commitment = 2;
+  DataSlice data_slice = 3;
+  uint64 min_context_slot = 4;
+}
+
+message GetMultipleAccountsWithOptsReply {
+  RPCContext r_p_c_context = 1;
+  repeated Account value = 2;
+}
+
+message GetMultipleAccountsWithOptsRequest {
+  repeated bytes accounts = 1;
+  GetMultipleAccountsOpts opts = 2;
+}
+
+message GetSignatureStatusesReply {
+  repeated GetSignatureStatusesResult results = 1;
+}
+
+message GetSignatureStatusesRequest {
+  repeated bytes sigs = 1;
+}
+
+message GetSignatureStatusesResult {
+  uint64 slot = 1;
+  uint64 confirmations = 2;
+  string err = 3;
+  string confirmation_status = 4;
+}
+
+message GetSlotHeightReply {
+  uint64 height = 1;
+}
+
+message GetSlotHeightRequest {
+  string commitment = 1;
+}
+
+message GetTransactionReply {
+  uint64 slot = 1;
+  int64 block_time = 2;
+  int64 version = 3;
+  bytes transaction_envelope = 4;
+  bytes meta = 5;
+}
+
+message GetTransactionRequest {
+  bytes signature = 1;
+}
+
+message HashedValueComparator {
+  repeated bytes values = 1;
+  int64 operator = 2;
+}
+
+message LPFilterQuery {
+  string name = 1;
+  bytes address = 2;
+  string event_name = 3;
+  bytes event_sig = 4;
+  int64 starting_block = 5;
+  bytes event_idl_json = 6;
+  repeated string subkey_paths = 7;
+  int64 retention = 8;
+  int64 max_logs_kept = 9;
+  bool include_reverted = 10;
+}
+
+message Limit {
+  string cursor = 1;
+  int32 cursor_direction = 2;
+  uint64 count = 3;
+}
+
+message LimitAndSort {
+  Limit limit = 1;
+}
+
+message Log {
+  string chain_i_d = 1;
+  int64 log_index = 2;
+  bytes block_hash = 3;
+  int64 block_number = 4;
+  int64 block_timestamp = 5;
+  bytes address = 6;
+  bytes event_sig = 7;
+  bytes tx_hash = 8;
+  bytes data = 9;
+  int64 sequence_num = 10;
+  string error = 11;
+}
+
+message RPCContext {
+  Context context = 1;
+}
+
+message SimulateTXOpts {
+  bool sig_verify = 1;
+  string commitment = 2;
+  bool replace_recent_blockhash = 3;
+  SimulateTransactionAccountsOpts accounts = 4;
+}
+
+message SimulateTXReply {
+  string err = 1;
+  repeated string logs = 2;
+  repeated Account accounts = 3;
+  uint64 units_consumed = 4;
+}
+
+message SimulateTXRequest {
+  bytes receiver = 1;
+  string encoded_transaction = 2;
+  SimulateTXOpts opts = 3;
+}
+
+message SimulateTransactionAccountsOpts {
+  string encoding = 1;
+  repeated bytes addresses = 2;
+}
+
+message SubmitTransactionReply {
+  bytes signature = 1;
+  string idempotency_key = 2;
+  int64 status = 3;
+}
+
+message SubmitTransactionRequest {
+  ComputeConfig cfg = 1;
+  bytes receiver = 2;
+  string encoded_transaction = 3;
+}
+
+message TransactionWithMeta {
+  uint64 slot = 1;
+  int64 block_time = 2;
+  DataBytesOrJSON transaction = 3;
+  bytes meta_json = 4;
+  int64 version = 5;
+}
+
+message Primitive {
+  oneof kind {
+    Address address = 1;
+    EventByTopic eventByTopic = 2;
+  }
+}
+
+message QueryTrackedLogsRequest {
+  repeated Expression filterQuery = 1;
+  LimitAndSort limitAndSort = 2;
+}
+
+message QueryTrackedLogsReply {
+  repeated Log result = 1;
+}
+
+message RegisterLogTrackingRequest {
+  LPFilterQuery filter = 1;
+}
+
+message RegisterLogTrackingReply {
+}
+
+message UnregisterLogTrackingRequest {
+  string filterName = 1;
+}
+
+message UnregisterLogTrackingReply {
+}

@@ -8,6 +8,10 @@ jobs:
     # label to skip lint issues on a PR which would be ignored in the merge queue.
     if: ${{ github.event_name != 'merge_group' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [".", "./keystore", "./observability-lib", "./pkg/chipingress"]
     permissions:
       id-token: write
       contents: read
@@ -25,19 +29,11 @@ jobs:
           version=$(grep '^golangci-lint ' .tool-versions | awk '{print $2}')
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
-      - name: golangci-lint
+      - name: golangci-lint ${{ matrix.module }}
         if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
         uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
         with:
           checkout-repo: false
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
-
-      - name: golangci-lint keystore
-        if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
-        # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
-        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
-        with:
-          checkout-repo: false
-          golangci-lint-version: v${{ steps.get-version.outputs.version }}
-          go-directory: ./keystore
+          go-directory: ${{ matrix.module }}

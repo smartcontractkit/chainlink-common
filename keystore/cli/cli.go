@@ -165,7 +165,7 @@ func NewDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			confirmYes, err := cmd.Flags().GetBool("yes")
+			confirmYes, _ := cmd.Flags().GetBool("yes")
 			if err != nil {
 				return err
 			}

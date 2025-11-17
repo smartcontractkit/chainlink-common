@@ -12,7 +12,7 @@ jobs:
       - id: set-modules
         run: |
           # Find all go.mod files and extract their directories
-          modules=$(find . -name "go.mod" -not -path "./vendor/*" | xargs dirname | sed 's|^\./||' | awk '{if ($0 == "") print "."; else print $0}' | sort -u | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          modules=$(find . -name "go.mod" -not -path "./vendor/*" -exec dirname {} \; | jq -R -s -c 'split("\n") | map(select(. != ""))')
           echo "modules=${modules}" >> $GITHUB_OUTPUT
           echo "Found modules: ${modules}"
 
@@ -23,7 +23,6 @@ jobs:
     needs: detect-modules
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         module: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
     permissions:

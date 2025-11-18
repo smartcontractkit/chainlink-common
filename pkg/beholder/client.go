@@ -462,10 +462,13 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 		otelgrpc.WithTracerProvider(tracer),
 	}
 
+	dialOpts := []grpc.DialOption{
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
+	}
+
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...))),
 	}
 	switch compressor := cfg.LogCompressor; compressor {
 	case "none":
@@ -478,13 +481,15 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 	switch {
 	// Rotating auth
 	case auth != nil:
-		opts = append(opts, otlploggrpc.WithDialOption(authDialOpt(auth)))
+		dialOpts = append(dialOpts, authDialOpt(auth))
 	// Static auth
 	case len(cfg.AuthHeaders) > 0:
 		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
 	// No auth
 	default:
 	}
+
+	opts = append(opts, otlploggrpc.WithDialOption(dialOpts...))
 
 	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK

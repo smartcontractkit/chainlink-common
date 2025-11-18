@@ -163,6 +163,13 @@ func NewMinWidthProperty(value float64) *Property {
 	}
 }
 
+func NewLineWidthProperty(value float64) *Property {
+	return &Property{
+		ID:    "custom.lineWidth",
+		Value: value,
+	}
+}
+
 type CellOptionsMode string
 
 const (

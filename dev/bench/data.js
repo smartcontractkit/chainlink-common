@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1763415522953,
+  "lastUpdate": 1763458058225,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -32580,6 +32580,66 @@ window.BENCHMARK_DATA = {
             "value": 150933,
             "unit": "ns/op",
             "extra": "7792 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3b1ede299eb34036cbdf12d60e9d60f8e52af966",
+          "message": "Merge pull request #1536 from smartcontractkit/beholder-enable-metric-compression\n\nbeholder: enable compression for OTel metrics, traces logs (INFOPLAT-3163)",
+          "timestamp": "2025-11-18T09:20:08Z",
+          "tree_id": "83bf4333b3116539a57ec26ba0ff9f806bee8723",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3b1ede299eb34036cbdf12d60e9d60f8e52af966"
+        },
+        "date": 1763458056972,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366,
+            "unit": "ns/op",
+            "extra": "3203319 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94610,
+            "unit": "ns/op",
+            "extra": "12693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.2,
+            "unit": "ns/op",
+            "extra": "2914629 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94758,
+            "unit": "ns/op",
+            "extra": "12621 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26838,
+            "unit": "ns/op",
+            "extra": "45013 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 145748,
+            "unit": "ns/op",
+            "extra": "7909 times\n4 procs"
           }
         ]
       }

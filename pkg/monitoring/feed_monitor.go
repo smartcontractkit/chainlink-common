@@ -16,17 +16,28 @@ func NewFeedMonitor(
 	pollers []Poller,
 	exporters []Exporter,
 ) FeedMonitor {
+	return NewFeedMonitorWithTimeout(log, pollers, exporters, 1*time.Second)
+}
+
+func NewFeedMonitorWithTimeout(
+	log Logger,
+	pollers []Poller,
+	exporters []Exporter,
+	cleanupTimeout time.Duration,
+) FeedMonitor {
 	return &feedMonitor{
 		log,
 		pollers,
 		exporters,
+		cleanupTimeout,
 	}
 }
 
 type feedMonitor struct {
-	log       Logger
-	pollers   []Poller
-	exporters []Exporter
+	log            Logger
+	pollers        []Poller
+	exporters      []Exporter
+	cleanupTimeout time.Duration
 }
 
 // Run should be executed as a goroutine.
@@ -82,7 +93,7 @@ CONSUME_LOOP:
 	subs.Wait()
 	subs = utils.Subprocesses{}
 	defer subs.Wait()
-	cleanupContext, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	cleanupContext, cancel := context.WithTimeout(context.Background(), f.cleanupTimeout)
 	defer cancel()
 	for index, exp := range f.exporters {
 		index, exp := index, exp

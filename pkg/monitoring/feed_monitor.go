@@ -36,7 +36,7 @@ func (f *feedMonitor) Run(ctx context.Context) {
 	var subs utils.Subprocesses
 
 	// Listen for updates
-	updatesFanIn := make(chan interface{})
+	updatesFanIn := make(chan interface{}, 1)
 	for _, poller := range f.pollers {
 		poller := poller
 		subs.Go(func() {

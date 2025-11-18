@@ -78,6 +78,7 @@ func BenchmarkManager(b *testing.B) {
 			kafkaExporterFactory,
 		},
 		0, // bufferCapacity for source pollers
+		1*time.Second,
 	)
 
 	rddPoller := NewSourcePoller(

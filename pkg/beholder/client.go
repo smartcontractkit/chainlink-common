@@ -28,6 +28,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+const defaultGRPCCompressor = "gzip"
+
 type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
@@ -362,6 +364,13 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	// No auth
 	default:
 	}
+	switch compressor := config.TraceCompressor; compressor {
+	case "none":
+	case "":
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(defaultGRPCCompressor))
+	default:
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(compressor))
+	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
@@ -400,6 +409,13 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+	}
+	switch compressor := cfg.MetricCompressor; compressor {
+	case "none":
+	case "":
+		opts = append(opts, otlpmetricgrpc.WithCompressor(defaultGRPCCompressor))
+	default:
+		opts = append(opts, otlpmetricgrpc.WithCompressor(compressor))
 	}
 
 	switch {
@@ -453,6 +469,13 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+	}
+	switch compressor := cfg.LogCompressor; compressor {
+	case "none":
+	case "":
+		opts = append(opts, otlploggrpc.WithCompressor(defaultGRPCCompressor))
+	default:
+		opts = append(opts, otlploggrpc.WithCompressor(compressor))
 	}
 	// Log exporter auth
 	switch {

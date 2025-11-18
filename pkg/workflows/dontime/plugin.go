@@ -75,9 +75,7 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		if req.ExpiryTime().Before(timeoutCheck) {
 			// Request has been sitting in queue too long
 			p.store.RemoveRequest(req.WorkflowExecutionID)
-			ctx, cancel := context.WithDeadline(context.Background(), req.ExpiryTime())
-			req.SendTimeout(ctx)
-			cancel()
+			req.SendTimeout(context.Background())
 			continue
 		}
 

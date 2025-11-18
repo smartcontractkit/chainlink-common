@@ -28,15 +28,26 @@ var configTOML string
 
 //go:generate go test -run TestCombineTOMLFiles -update
 func TestCombineTOMLFiles(t *testing.T) {
-	sub, err := fs.Sub(tomlFiles, "testdata/toml")
-	require.NoError(t, err)
-	b, err := CombineTOMLFiles(sub)
-	require.NoError(t, err)
-	if *update {
-		require.NoError(t, os.WriteFile("testdata/config.toml", b, os.ModePerm))
-		return
-	}
-	require.Equal(t, configTOML, string(b))
+	t.Run("full", func(t *testing.T) {
+		sub, err := fs.Sub(tomlFiles, "testdata/toml")
+		require.NoError(t, err)
+		b, err := CombineTOMLFiles(sub)
+		require.NoError(t, err)
+		if *update {
+			require.NoError(t, os.WriteFile("testdata/config.toml", b, os.ModePerm))
+			return
+		}
+		require.Equal(t, configTOML, string(b))
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		sub, err := fs.Sub(tomlFiles, "testdata/empty")
+		require.NoError(t, err)
+		b, err := CombineTOMLFiles(sub)
+		require.NoError(t, err)
+
+		require.Equal(t, generatedHeader, string(b))
+	})
 }
 
 func Test_tomlSettings_GetScoped(t *testing.T) {

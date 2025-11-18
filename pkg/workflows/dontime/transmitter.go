@@ -26,7 +26,7 @@ func NewTransmitter(lggr logger.Logger, store *Store, fromAccount types.Account)
 	return &Transmitter{lggr: lggr, store: store, fromAccount: fromAccount}
 }
 
-func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
+func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
 		t.lggr.Errorf("failed to unmarshal report")
@@ -51,7 +51,7 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		if len(donTimes.Timestamps) > request.SeqNum {
 			donTime := donTimes.Timestamps[request.SeqNum]
 			t.store.RemoveRequest(executionID) // Make space for next request before delivering
-			request.SendResponse(nil, Response{
+			request.SendResponse(ctx, Response{
 				WorkflowExecutionID: executionID,
 				SeqNum:              request.SeqNum,
 				Timestamp:           donTime,

@@ -75,7 +75,9 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		if req.ExpiryTime().Before(timeoutCheck) {
 			// Request has been sitting in queue too long
 			p.store.RemoveRequest(req.WorkflowExecutionID)
-			req.SendTimeout(nil)
+			ctx, cancel := context.WithDeadline(context.Background(), req.ExpiryTime())
+			req.SendTimeout(ctx)
+			cancel()
 			continue
 		}
 
@@ -89,7 +91,8 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 
 		if req.SeqNum > numObservedDonTimes {
 			p.store.RemoveRequest(req.WorkflowExecutionID)
-			req.SendResponse(nil,
+			ctx, cancel := context.WithDeadline(context.Background(), req.ExpiryTime())
+			req.SendResponse(ctx,
 				Response{
 					WorkflowExecutionID: req.WorkflowExecutionID,
 					SeqNum:              req.SeqNum,
@@ -97,6 +100,7 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 					Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
 						req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
 				})
+			cancel()
 			continue
 		}
 

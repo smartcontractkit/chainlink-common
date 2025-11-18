@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1763465280050,
+  "lastUpdate": 1763484988951,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -32760,6 +32760,66 @@ window.BENCHMARK_DATA = {
             "value": 139811,
             "unit": "ns/op",
             "extra": "7820 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "731e805e0a2fc5351705f0c24a47c8a8719d39bd",
+          "message": "Merge pull request #1707 from smartcontractkit/CRE-547-settings-deployment\n\npkg/settings: make CombineTOMLFiles more tolerant",
+          "timestamp": "2025-11-18T16:49:38Z",
+          "tree_id": "091cef03b5f8439cf99e0795076fcc0a498d17d4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/731e805e0a2fc5351705f0c24a47c8a8719d39bd"
+        },
+        "date": 1763484987692,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 676.3,
+            "unit": "ns/op",
+            "extra": "1527319 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100228,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.5,
+            "unit": "ns/op",
+            "extra": "2917546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 100201,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26636,
+            "unit": "ns/op",
+            "extra": "45057 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144524,
+            "unit": "ns/op",
+            "extra": "7708 times\n4 procs"
           }
         ]
       }

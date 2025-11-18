@@ -365,7 +365,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	default:
 	}
 	switch compressor := config.TraceCompressor; compressor {
-	case "disabled":
+	case "none":
 	case "":
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithCompressor(defaultGRPCCompressor))
 	default:
@@ -411,7 +411,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
 	switch compressor := cfg.MetricCompressor; compressor {
-	case "disabled":
+	case "none":
 	case "":
 		opts = append(opts, otlpmetricgrpc.WithCompressor(defaultGRPCCompressor))
 	default:
@@ -468,7 +468,7 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 		otlploggrpc.WithDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...))),
 	}
 	switch compressor := cfg.LogCompressor; compressor {
-	case "disabled":
+	case "none":
 	case "":
 		opts = append(opts, otlploggrpc.WithCompressor(defaultGRPCCompressor))
 	default:

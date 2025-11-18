@@ -29,14 +29,14 @@ type Config struct {
 	TraceBatchTimeout time.Duration
 	TraceSpanExporter trace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
-	// TraceCompressor sets the gRPC compressor for traces. Valid values: "gzip" (default), "disabled".
+	// TraceCompressor sets the gRPC compressor for traces. Valid values: "gzip" (default), "none".
 	TraceCompressor string
 
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View
-	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "disabled".
+	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "none".
 	MetricCompressor string
 
 	// Custom Events via Chip Ingress Emitter
@@ -54,7 +54,7 @@ type Config struct {
 	LogRetryConfig      *RetryConfig
 	LogStreamingEnabled bool          // Enable logs streaming to the OTel log exporter
 	LogLevel            zapcore.Level // Log level for telemetry streaming
-	// LogCompressor sets the gRPC compressor for logs. Valid values: "gzip" (default), "disabled".
+	// LogCompressor sets the gRPC compressor for logs. Valid values: "gzip" (default), "none".
 	LogCompressor string
 
 	// Auth

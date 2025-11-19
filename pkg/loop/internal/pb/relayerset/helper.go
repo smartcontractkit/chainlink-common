@@ -11,25 +11,22 @@ import (
 
 type HasChainServers interface {
 	SolanaServer() solana.SolanaServer
+	EVMServer() evm.EVMServer
+	TONServer() ton.TONServer
+	ContractReaderServer() pb.ContractReaderServer
 }
 
 // RegisterRelayerSetServerWithDependants registers all the grpc services hidden injected into and hidden behind RelayerSet.
 func RegisterRelayerSetServerWithDependants(s grpc.ServiceRegistrar, srv RelayerSetServer) {
 	RegisterRelayerSetServer(s, srv)
 	switch eSrv := srv.(type) {
-	case evm.EVMServer:
-		evm.RegisterEVMServer(s, eSrv)
-	}
-	switch eSrv := srv.(type) {
-	case ton.TONServer:
-		ton.RegisterTONServer(s, eSrv)
-	}
-	switch eSrv := srv.(type) {
 	case pb.ContractReaderServer:
 		pb.RegisterContractReaderServer(s, eSrv)
 	}
-
 	if h, ok := srv.(HasChainServers); ok {
 		solana.RegisterSolanaServer(s, h.SolanaServer())
+		evm.RegisterEVMServer(s, h.EVMServer())
+		ton.RegisterTONServer(s, h.TONServer())
+		pb.RegisterContractReaderServer(s, h.ContractReaderServer())
 	}
 }

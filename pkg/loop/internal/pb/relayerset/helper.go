@@ -28,7 +28,8 @@ func RegisterRelayerSetServerWithDependants(s grpc.ServiceRegistrar, srv Relayer
 	case pb.ContractReaderServer:
 		pb.RegisterContractReaderServer(s, eSrv)
 	}
-	if h, ok := any(srv).(HasChainServers); ok {
+
+	if h, ok := srv.(HasChainServers); ok {
 		solana.RegisterSolanaServer(s, h.SolanaServer())
 	}
 }

@@ -7,11 +7,15 @@ import (
 
 const (
 	PublicKeyLength = 32
+	HashLength      = PublicKeyLength
 	SignatureLength = 64
 )
 
 // represents solana-go PublicKey
 type PublicKey [PublicKeyLength]byte
+
+// represents solana-go PublicKeySlice
+type PublicKeySlice []PublicKey
 
 // represents solana-go Signature
 type Signature [SignatureLength]byte
@@ -65,6 +69,18 @@ const (
 	// The node will query its most recent block. Note that the block may still be skipped by the cluster.
 	CommitmentProcessed CommitmentType = "processed"
 )
+
+type Client interface {
+	GetBalance(ctx context.Context, req GetBalanceRequest) (*GetBalanceReply, error)
+	GetAccountInfoWithOpts(ctx context.Context, req GetAccountInfoRequest) (*GetAccountInfoReply, error)
+	GetMultipleAccountsWithOpts(ctx context.Context, req GetMultipleAccountsRequest) (*GetMultipleAccountsReply, error)
+	GetBlock(ctx context.Context, req GetBlockRequest) (*GetBlockReply, error)
+	GetSlotHeight(ctx context.Context, req GetSlotHeightRequest) (*GetSlotHeightReply, error)
+	GetTransaction(ctx context.Context, req GetTransactionRequest) (*GetTransactionReply, error)
+	GetFeeForMessage(ctx context.Context, req GetFeeForMessageRequest) (*GetFeeForMessageReply, error)
+	GetSignatureStatuses(ctx context.Context, req GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
+	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
+}
 
 // represents solana-go DataSlice
 type DataSlice struct {
@@ -159,6 +175,103 @@ const (
 	ConfirmationStatusFinalized ConfirmationStatusType = "finalized"
 )
 
+type UiTokenAmount struct {
+	// Raw amount of tokens as a string, ignoring decimals.
+	Amount string
+
+	// Number of decimals configured for token's mint.
+	Decimals uint8
+
+	// Token amount as a string, accounting for decimals.
+	UiAmountString string
+}
+
+type TokenBalance struct {
+	// Index of the account in which the token balance is provided for.
+	AccountIndex uint16
+
+	// Pubkey of token balance's owner.
+	Owner *PublicKey
+	// Pubkey of token program.
+	ProgramId *PublicKey
+
+	// Pubkey of the token's mint.
+	Mint          PublicKey
+	UiTokenAmount *UiTokenAmount
+}
+
+type LoadedAddresses struct {
+	ReadOnly PublicKeySlice
+	Writable PublicKeySlice
+}
+
+type Data struct {
+	Content  []byte
+	Encoding EncodingType
+}
+
+type ReturnData struct {
+	ProgramId PublicKey
+	Data      Data
+}
+
+type TransactionMeta struct {
+	// Error if transaction failed, empty if transaction succeeded.
+	Err string
+	// Fee this transaction was charged
+	Fee uint64
+
+	// Array of u64 account balances from before the transaction was processed
+	PreBalances []uint64
+
+	// Array of u64 account balances after the transaction was processed
+	PostBalances []uint64
+
+	// List of inner instructions or omitted if inner instruction recording
+	// was not yet enabled during this transaction
+	InnerInstructions []InnerInstruction
+
+	// List of token balances from before the transaction was processed
+	// or omitted if token balance recording was not yet enabled during this transaction
+	PreTokenBalances []TokenBalance
+
+	// List of token balances from after the transaction was processed
+	// or omitted if token balance recording was not yet enabled during this transaction
+	PostTokenBalances []TokenBalance
+
+	// Array of string log messages or omitted if log message
+	// recording was not yet enabled during this transaction
+	LogMessages []string
+
+	LoadedAddresses LoadedAddresses
+
+	// Data returned by transaction (if any
+	ReturnData ReturnData
+
+	// Total compute units consumed by transaction execution
+	ComputeUnitsConsumed *uint64
+}
+
+type InnerInstruction struct {
+	Index uint16
+
+	// Ordered list of inner program instructions that were invoked during a single transaction instruction.
+	Instructions []CompiledInstruction
+}
+
+type CompiledInstruction struct {
+	// Index into the message.accountKeys array indicating the program account that executes this instruction.
+	ProgramIDIndex uint16
+
+	// List of ordered indices into the message.accountKeys array indicating which accounts to pass to the program.
+	Accounts []uint16
+
+	// The program input data encoded in a base-58 string.
+	Data []byte
+
+	StackHeight uint16
+}
+
 type TransactionWithMeta struct {
 	// The slot this transaction was processed in.
 	Slot uint64
@@ -170,8 +283,8 @@ type TransactionWithMeta struct {
 
 	// Encoded Transaction
 	Transaction *DataBytesOrJSON
-	// JSON encoded solana-go TransactionMeta
-	MetaJSON []byte
+
+	Meta *TransactionMeta
 
 	Version TransactionVersion
 }
@@ -330,21 +443,77 @@ type GetSlotHeightReply struct {
 	Height uint64
 }
 
+type MessageHeader struct {
+	// The total number of signatures required to make the transaction valid.
+	// The signatures must match the first `numRequiredSignatures` of `message.account_keys`.
+	NumRequiredSignatures uint8
+
+	// The last numReadonlySignedAccounts of the signed keys are read-only accounts.
+	// Programs may process multiple transactions that load read-only accounts within
+	// a single PoH entry, but are not permitted to credit or debit lamports or modify
+	// account data.
+	// Transactions targeting the same read-write account are evaluated sequentially.
+	NumReadonlySignedAccounts uint8
+
+	// The last `numReadonlyUnsignedAccounts` of the unsigned keys are read-only accounts.
+	NumReadonlyUnsignedAccounts uint8
+}
+
+type MessageAddressTableLookupSlice []MessageAddressTableLookup
+
+type MessageAddressTableLookup struct {
+	AccountKey      PublicKey // The account key of the address table.
+	WritableIndexes []uint8
+	ReadonlyIndexes []uint8
+}
+
+type Message struct {
+	// List of base-58 encoded public keys used by the transaction,
+	// including by the instructions and for signatures.
+	// The first `message.header.numRequiredSignatures` public keys must sign the transaction.
+	AccountKeys PublicKeySlice
+
+	// Details the account types and signatures required by the transaction.
+	Header MessageHeader
+
+	// A base-58 encoded hash of a recent block in the ledger used to
+	// prevent transaction duplication and to give transactions lifetimes.
+	RecentBlockhash Hash
+
+	// List of program instructions that will be executed in sequence
+	// and committed in one atomic transaction if all succeed.
+	Instructions []CompiledInstruction
+
+	// List of address table lookups used to load additional accounts for this transaction.
+	AddressTableLookups MessageAddressTableLookupSlice
+}
+
+type Transaction struct {
+	Signatures []Signature
+	Message    Message
+}
+
+type TransactionResultEnvelope struct {
+	AsParsedTransaction *Transaction
+	AsDecodedBinary     Data
+}
+
+// arguments for solana-rpc GetTransaction call
 type GetTransactionRequest struct {
 	Signature Signature
 }
 
+// result of solana-rpc GetTransaction call
 type GetTransactionReply struct {
 	Slot uint64
 
 	BlockTime *UnixTimeSeconds
 
 	Version TransactionVersion
-	// JSON Encoded TransactionResultEnvelope
-	TransactionEnvelope []byte
 
-	// JSON encoded TransactionMeta
-	Meta []byte
+	Transaction *TransactionResultEnvelope
+
+	Meta *TransactionMeta
 }
 
 type GetFeeForMessageRequest struct {
@@ -364,7 +533,7 @@ type GetLatestBlockhashRequest struct {
 
 type GetLatestBlockhashReply struct {
 	RPCContext
-	Hash                 Signature
+	Hash                 Hash
 	LastValidBlockHeight uint64
 }
 
@@ -397,31 +566,19 @@ type GetSignatureStatusesRequest struct {
 
 type GetSignatureStatusesResult struct {
 	// The slot the transaction was processed.
-	Slot uint64 `json:"slot"`
+	Slot uint64
 
 	// Number of blocks since signature confirmation,
 	// null if rooted or finalized by a supermajority of the cluster.
-	Confirmations *uint64 `json:"confirmations"`
+	Confirmations *uint64
 
 	// Error if transaction failed, empty if transaction succeeded.
 	Err string
 
 	// The transaction's cluster confirmation status; either processed, confirmed, or finalized.
-	ConfirmationStatus ConfirmationStatusType `json:"confirmationStatus"`
+	ConfirmationStatus ConfirmationStatusType
 }
 
 type GetSignatureStatusesReply struct {
 	Results []GetSignatureStatusesResult
-}
-
-type Client interface {
-	GetBalance(ctx context.Context, req GetBalanceRequest) (*GetBalanceReply, error)
-	GetAccountInfoWithOpts(ctx context.Context, req GetAccountInfoRequest) (*GetAccountInfoReply, error)
-	GetMultipleAccountsWithOpts(ctx context.Context, req GetMultipleAccountsRequest) (*GetMultipleAccountsReply, error)
-	GetBlock(ctx context.Context, req GetBlockRequest) (*GetBlockReply, error)
-	GetSlotHeight(ctx context.Context, req GetSlotHeightRequest) (*GetSlotHeightReply, error)
-	GetTransaction(ctx context.Context, req GetTransactionRequest) (*GetTransactionReply, error)
-	GetFeeForMessage(ctx context.Context, req GetFeeForMessageRequest) (*GetFeeForMessageReply, error)
-	GetSignatureStatuses(ctx context.Context, req GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
-	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
 }

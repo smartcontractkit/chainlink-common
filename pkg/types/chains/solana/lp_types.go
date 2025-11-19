@@ -150,7 +150,7 @@ type Log struct {
 	LogIndex       int64
 	BlockHash      Hash
 	BlockNumber    int64
-	BlockTimestamp time.Time
+	BlockTimestamp uint64
 	Address        PublicKey
 	EventSig       EventSignature
 	TxHash         Signature

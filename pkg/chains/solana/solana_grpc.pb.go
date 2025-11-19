@@ -19,25 +19,25 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SolanaService_GetAccountInfoWithOpts_FullMethodName      = "/loop.solana.SolanaService/GetAccountInfoWithOpts"
-	SolanaService_GetBalance_FullMethodName                  = "/loop.solana.SolanaService/GetBalance"
-	SolanaService_GetBlock_FullMethodName                    = "/loop.solana.SolanaService/GetBlock"
-	SolanaService_GetFeeForMessage_FullMethodName            = "/loop.solana.SolanaService/GetFeeForMessage"
-	SolanaService_GetMultipleAccountsWithOpts_FullMethodName = "/loop.solana.SolanaService/GetMultipleAccountsWithOpts"
-	SolanaService_GetSignatureStatuses_FullMethodName        = "/loop.solana.SolanaService/GetSignatureStatuses"
-	SolanaService_GetSlotHeight_FullMethodName               = "/loop.solana.SolanaService/GetSlotHeight"
-	SolanaService_GetTransaction_FullMethodName              = "/loop.solana.SolanaService/GetTransaction"
-	SolanaService_QueryTrackedLogs_FullMethodName            = "/loop.solana.SolanaService/QueryTrackedLogs"
-	SolanaService_RegisterLogTracking_FullMethodName         = "/loop.solana.SolanaService/RegisterLogTracking"
-	SolanaService_SimulateTX_FullMethodName                  = "/loop.solana.SolanaService/SimulateTX"
-	SolanaService_SubmitTransaction_FullMethodName           = "/loop.solana.SolanaService/SubmitTransaction"
-	SolanaService_UnregisterLogTracking_FullMethodName       = "/loop.solana.SolanaService/UnregisterLogTracking"
+	Solana_GetAccountInfoWithOpts_FullMethodName      = "/loop.solana.Solana/GetAccountInfoWithOpts"
+	Solana_GetBalance_FullMethodName                  = "/loop.solana.Solana/GetBalance"
+	Solana_GetBlock_FullMethodName                    = "/loop.solana.Solana/GetBlock"
+	Solana_GetFeeForMessage_FullMethodName            = "/loop.solana.Solana/GetFeeForMessage"
+	Solana_GetMultipleAccountsWithOpts_FullMethodName = "/loop.solana.Solana/GetMultipleAccountsWithOpts"
+	Solana_GetSignatureStatuses_FullMethodName        = "/loop.solana.Solana/GetSignatureStatuses"
+	Solana_GetSlotHeight_FullMethodName               = "/loop.solana.Solana/GetSlotHeight"
+	Solana_GetTransaction_FullMethodName              = "/loop.solana.Solana/GetTransaction"
+	Solana_QueryTrackedLogsSol_FullMethodName         = "/loop.solana.Solana/QueryTrackedLogsSol"
+	Solana_RegisterLogTrackingSol_FullMethodName      = "/loop.solana.Solana/RegisterLogTrackingSol"
+	Solana_SimulateTX_FullMethodName                  = "/loop.solana.Solana/SimulateTX"
+	Solana_SubmitTransactionSol_FullMethodName        = "/loop.solana.Solana/SubmitTransactionSol"
+	Solana_UnregisterLogTrackingSol_FullMethodName    = "/loop.solana.Solana/UnregisterLogTrackingSol"
 )
 
-// SolanaServiceClient is the client API for SolanaService service.
+// SolanaClient is the client API for Solana service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SolanaServiceClient interface {
+type SolanaClient interface {
 	GetAccountInfoWithOpts(ctx context.Context, in *GetAccountInfoWithOptsRequest, opts ...grpc.CallOption) (*GetAccountInfoWithOptsReply, error)
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceReply, error)
 	GetBlock(ctx context.Context, in *GetBlockRequest, opts ...grpc.CallOption) (*GetBlockReply, error)
@@ -46,155 +46,155 @@ type SolanaServiceClient interface {
 	GetSignatureStatuses(ctx context.Context, in *GetSignatureStatusesRequest, opts ...grpc.CallOption) (*GetSignatureStatusesReply, error)
 	GetSlotHeight(ctx context.Context, in *GetSlotHeightRequest, opts ...grpc.CallOption) (*GetSlotHeightReply, error)
 	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionReply, error)
-	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
-	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*RegisterLogTrackingReply, error)
+	QueryTrackedLogsSol(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
+	RegisterLogTrackingSol(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*RegisterLogTrackingReply, error)
 	SimulateTX(ctx context.Context, in *SimulateTXRequest, opts ...grpc.CallOption) (*SimulateTXReply, error)
-	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error)
-	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*UnregisterLogTrackingReply, error)
+	SubmitTransactionSol(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error)
+	UnregisterLogTrackingSol(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*UnregisterLogTrackingReply, error)
 }
 
-type solanaServiceClient struct {
+type solanaClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSolanaServiceClient(cc grpc.ClientConnInterface) SolanaServiceClient {
-	return &solanaServiceClient{cc}
+func NewSolanaClient(cc grpc.ClientConnInterface) SolanaClient {
+	return &solanaClient{cc}
 }
 
-func (c *solanaServiceClient) GetAccountInfoWithOpts(ctx context.Context, in *GetAccountInfoWithOptsRequest, opts ...grpc.CallOption) (*GetAccountInfoWithOptsReply, error) {
+func (c *solanaClient) GetAccountInfoWithOpts(ctx context.Context, in *GetAccountInfoWithOptsRequest, opts ...grpc.CallOption) (*GetAccountInfoWithOptsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetAccountInfoWithOptsReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetAccountInfoWithOpts_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetAccountInfoWithOpts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceReply, error) {
+func (c *solanaClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetBalanceReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetBalance_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetBalance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetBlock(ctx context.Context, in *GetBlockRequest, opts ...grpc.CallOption) (*GetBlockReply, error) {
+func (c *solanaClient) GetBlock(ctx context.Context, in *GetBlockRequest, opts ...grpc.CallOption) (*GetBlockReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetBlockReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetBlock_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetBlock_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetFeeForMessage(ctx context.Context, in *GetFeeForMessageRequest, opts ...grpc.CallOption) (*GetFeeForMessageReply, error) {
+func (c *solanaClient) GetFeeForMessage(ctx context.Context, in *GetFeeForMessageRequest, opts ...grpc.CallOption) (*GetFeeForMessageReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetFeeForMessageReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetFeeForMessage_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetFeeForMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetMultipleAccountsWithOpts(ctx context.Context, in *GetMultipleAccountsWithOptsRequest, opts ...grpc.CallOption) (*GetMultipleAccountsWithOptsReply, error) {
+func (c *solanaClient) GetMultipleAccountsWithOpts(ctx context.Context, in *GetMultipleAccountsWithOptsRequest, opts ...grpc.CallOption) (*GetMultipleAccountsWithOptsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMultipleAccountsWithOptsReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetMultipleAccountsWithOpts_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetMultipleAccountsWithOpts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetSignatureStatuses(ctx context.Context, in *GetSignatureStatusesRequest, opts ...grpc.CallOption) (*GetSignatureStatusesReply, error) {
+func (c *solanaClient) GetSignatureStatuses(ctx context.Context, in *GetSignatureStatusesRequest, opts ...grpc.CallOption) (*GetSignatureStatusesReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSignatureStatusesReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetSignatureStatuses_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetSignatureStatuses_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetSlotHeight(ctx context.Context, in *GetSlotHeightRequest, opts ...grpc.CallOption) (*GetSlotHeightReply, error) {
+func (c *solanaClient) GetSlotHeight(ctx context.Context, in *GetSlotHeightRequest, opts ...grpc.CallOption) (*GetSlotHeightReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSlotHeightReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetSlotHeight_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetSlotHeight_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionReply, error) {
+func (c *solanaClient) GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetTransactionReply)
-	err := c.cc.Invoke(ctx, SolanaService_GetTransaction_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_GetTransaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error) {
+func (c *solanaClient) QueryTrackedLogsSol(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryTrackedLogsReply)
-	err := c.cc.Invoke(ctx, SolanaService_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_QueryTrackedLogsSol_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*RegisterLogTrackingReply, error) {
+func (c *solanaClient) RegisterLogTrackingSol(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*RegisterLogTrackingReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RegisterLogTrackingReply)
-	err := c.cc.Invoke(ctx, SolanaService_RegisterLogTracking_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_RegisterLogTrackingSol_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) SimulateTX(ctx context.Context, in *SimulateTXRequest, opts ...grpc.CallOption) (*SimulateTXReply, error) {
+func (c *solanaClient) SimulateTX(ctx context.Context, in *SimulateTXRequest, opts ...grpc.CallOption) (*SimulateTXReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SimulateTXReply)
-	err := c.cc.Invoke(ctx, SolanaService_SimulateTX_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_SimulateTX_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error) {
+func (c *solanaClient) SubmitTransactionSol(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTransactionReply)
-	err := c.cc.Invoke(ctx, SolanaService_SubmitTransaction_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_SubmitTransactionSol_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *solanaServiceClient) UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*UnregisterLogTrackingReply, error) {
+func (c *solanaClient) UnregisterLogTrackingSol(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*UnregisterLogTrackingReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UnregisterLogTrackingReply)
-	err := c.cc.Invoke(ctx, SolanaService_UnregisterLogTracking_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Solana_UnregisterLogTrackingSol_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// SolanaServiceServer is the server API for SolanaService service.
-// All implementations must embed UnimplementedSolanaServiceServer
+// SolanaServer is the server API for Solana service.
+// All implementations must embed UnimplementedSolanaServer
 // for forward compatibility.
-type SolanaServiceServer interface {
+type SolanaServer interface {
 	GetAccountInfoWithOpts(context.Context, *GetAccountInfoWithOptsRequest) (*GetAccountInfoWithOptsReply, error)
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceReply, error)
 	GetBlock(context.Context, *GetBlockRequest) (*GetBlockReply, error)
@@ -203,373 +203,373 @@ type SolanaServiceServer interface {
 	GetSignatureStatuses(context.Context, *GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
 	GetSlotHeight(context.Context, *GetSlotHeightRequest) (*GetSlotHeightReply, error)
 	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionReply, error)
-	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
-	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*RegisterLogTrackingReply, error)
+	QueryTrackedLogsSol(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
+	RegisterLogTrackingSol(context.Context, *RegisterLogTrackingRequest) (*RegisterLogTrackingReply, error)
 	SimulateTX(context.Context, *SimulateTXRequest) (*SimulateTXReply, error)
-	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error)
-	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*UnregisterLogTrackingReply, error)
-	mustEmbedUnimplementedSolanaServiceServer()
+	SubmitTransactionSol(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error)
+	UnregisterLogTrackingSol(context.Context, *UnregisterLogTrackingRequest) (*UnregisterLogTrackingReply, error)
+	mustEmbedUnimplementedSolanaServer()
 }
 
-// UnimplementedSolanaServiceServer must be embedded to have
+// UnimplementedSolanaServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedSolanaServiceServer struct{}
+type UnimplementedSolanaServer struct{}
 
-func (UnimplementedSolanaServiceServer) GetAccountInfoWithOpts(context.Context, *GetAccountInfoWithOptsRequest) (*GetAccountInfoWithOptsReply, error) {
+func (UnimplementedSolanaServer) GetAccountInfoWithOpts(context.Context, *GetAccountInfoWithOptsRequest) (*GetAccountInfoWithOptsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccountInfoWithOpts not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceReply, error) {
+func (UnimplementedSolanaServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetBlock(context.Context, *GetBlockRequest) (*GetBlockReply, error) {
+func (UnimplementedSolanaServer) GetBlock(context.Context, *GetBlockRequest) (*GetBlockReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlock not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetFeeForMessage(context.Context, *GetFeeForMessageRequest) (*GetFeeForMessageReply, error) {
+func (UnimplementedSolanaServer) GetFeeForMessage(context.Context, *GetFeeForMessageRequest) (*GetFeeForMessageReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeForMessage not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetMultipleAccountsWithOpts(context.Context, *GetMultipleAccountsWithOptsRequest) (*GetMultipleAccountsWithOptsReply, error) {
+func (UnimplementedSolanaServer) GetMultipleAccountsWithOpts(context.Context, *GetMultipleAccountsWithOptsRequest) (*GetMultipleAccountsWithOptsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMultipleAccountsWithOpts not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetSignatureStatuses(context.Context, *GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error) {
+func (UnimplementedSolanaServer) GetSignatureStatuses(context.Context, *GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSignatureStatuses not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetSlotHeight(context.Context, *GetSlotHeightRequest) (*GetSlotHeightReply, error) {
+func (UnimplementedSolanaServer) GetSlotHeight(context.Context, *GetSlotHeightRequest) (*GetSlotHeightReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSlotHeight not implemented")
 }
-func (UnimplementedSolanaServiceServer) GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionReply, error) {
+func (UnimplementedSolanaServer) GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
 }
-func (UnimplementedSolanaServiceServer) QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
+func (UnimplementedSolanaServer) QueryTrackedLogsSol(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogsSol not implemented")
 }
-func (UnimplementedSolanaServiceServer) RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*RegisterLogTrackingReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
+func (UnimplementedSolanaServer) RegisterLogTrackingSol(context.Context, *RegisterLogTrackingRequest) (*RegisterLogTrackingReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTrackingSol not implemented")
 }
-func (UnimplementedSolanaServiceServer) SimulateTX(context.Context, *SimulateTXRequest) (*SimulateTXReply, error) {
+func (UnimplementedSolanaServer) SimulateTX(context.Context, *SimulateTXRequest) (*SimulateTXReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SimulateTX not implemented")
 }
-func (UnimplementedSolanaServiceServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+func (UnimplementedSolanaServer) SubmitTransactionSol(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransactionSol not implemented")
 }
-func (UnimplementedSolanaServiceServer) UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*UnregisterLogTrackingReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+func (UnimplementedSolanaServer) UnregisterLogTrackingSol(context.Context, *UnregisterLogTrackingRequest) (*UnregisterLogTrackingReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTrackingSol not implemented")
 }
-func (UnimplementedSolanaServiceServer) mustEmbedUnimplementedSolanaServiceServer() {}
-func (UnimplementedSolanaServiceServer) testEmbeddedByValue()                       {}
+func (UnimplementedSolanaServer) mustEmbedUnimplementedSolanaServer() {}
+func (UnimplementedSolanaServer) testEmbeddedByValue()                {}
 
-// UnsafeSolanaServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SolanaServiceServer will
+// UnsafeSolanaServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SolanaServer will
 // result in compilation errors.
-type UnsafeSolanaServiceServer interface {
-	mustEmbedUnimplementedSolanaServiceServer()
+type UnsafeSolanaServer interface {
+	mustEmbedUnimplementedSolanaServer()
 }
 
-func RegisterSolanaServiceServer(s grpc.ServiceRegistrar, srv SolanaServiceServer) {
-	// If the following call pancis, it indicates UnimplementedSolanaServiceServer was
+func RegisterSolanaServer(s grpc.ServiceRegistrar, srv SolanaServer) {
+	// If the following call pancis, it indicates UnimplementedSolanaServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&SolanaService_ServiceDesc, srv)
+	s.RegisterService(&Solana_ServiceDesc, srv)
 }
 
-func _SolanaService_GetAccountInfoWithOpts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetAccountInfoWithOpts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAccountInfoWithOptsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetAccountInfoWithOpts(ctx, in)
+		return srv.(SolanaServer).GetAccountInfoWithOpts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetAccountInfoWithOpts_FullMethodName,
+		FullMethod: Solana_GetAccountInfoWithOpts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetAccountInfoWithOpts(ctx, req.(*GetAccountInfoWithOptsRequest))
+		return srv.(SolanaServer).GetAccountInfoWithOpts(ctx, req.(*GetAccountInfoWithOptsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBalanceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetBalance(ctx, in)
+		return srv.(SolanaServer).GetBalance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetBalance_FullMethodName,
+		FullMethod: Solana_GetBalance_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetBalance(ctx, req.(*GetBalanceRequest))
+		return srv.(SolanaServer).GetBalance(ctx, req.(*GetBalanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBlockRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetBlock(ctx, in)
+		return srv.(SolanaServer).GetBlock(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetBlock_FullMethodName,
+		FullMethod: Solana_GetBlock_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetBlock(ctx, req.(*GetBlockRequest))
+		return srv.(SolanaServer).GetBlock(ctx, req.(*GetBlockRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetFeeForMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetFeeForMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetFeeForMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetFeeForMessage(ctx, in)
+		return srv.(SolanaServer).GetFeeForMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetFeeForMessage_FullMethodName,
+		FullMethod: Solana_GetFeeForMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetFeeForMessage(ctx, req.(*GetFeeForMessageRequest))
+		return srv.(SolanaServer).GetFeeForMessage(ctx, req.(*GetFeeForMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetMultipleAccountsWithOpts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetMultipleAccountsWithOpts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMultipleAccountsWithOptsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetMultipleAccountsWithOpts(ctx, in)
+		return srv.(SolanaServer).GetMultipleAccountsWithOpts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetMultipleAccountsWithOpts_FullMethodName,
+		FullMethod: Solana_GetMultipleAccountsWithOpts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetMultipleAccountsWithOpts(ctx, req.(*GetMultipleAccountsWithOptsRequest))
+		return srv.(SolanaServer).GetMultipleAccountsWithOpts(ctx, req.(*GetMultipleAccountsWithOptsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetSignatureStatuses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetSignatureStatuses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSignatureStatusesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetSignatureStatuses(ctx, in)
+		return srv.(SolanaServer).GetSignatureStatuses(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetSignatureStatuses_FullMethodName,
+		FullMethod: Solana_GetSignatureStatuses_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetSignatureStatuses(ctx, req.(*GetSignatureStatusesRequest))
+		return srv.(SolanaServer).GetSignatureStatuses(ctx, req.(*GetSignatureStatusesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetSlotHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetSlotHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSlotHeightRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetSlotHeight(ctx, in)
+		return srv.(SolanaServer).GetSlotHeight(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetSlotHeight_FullMethodName,
+		FullMethod: Solana_GetSlotHeight_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetSlotHeight(ctx, req.(*GetSlotHeightRequest))
+		return srv.(SolanaServer).GetSlotHeight(ctx, req.(*GetSlotHeightRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_GetTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_GetTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).GetTransaction(ctx, in)
+		return srv.(SolanaServer).GetTransaction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_GetTransaction_FullMethodName,
+		FullMethod: Solana_GetTransaction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).GetTransaction(ctx, req.(*GetTransactionRequest))
+		return srv.(SolanaServer).GetTransaction(ctx, req.(*GetTransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_QueryTrackedLogsSol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryTrackedLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).QueryTrackedLogs(ctx, in)
+		return srv.(SolanaServer).QueryTrackedLogsSol(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_QueryTrackedLogs_FullMethodName,
+		FullMethod: Solana_QueryTrackedLogsSol_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).QueryTrackedLogs(ctx, req.(*QueryTrackedLogsRequest))
+		return srv.(SolanaServer).QueryTrackedLogsSol(ctx, req.(*QueryTrackedLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_RegisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_RegisterLogTrackingSol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterLogTrackingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).RegisterLogTracking(ctx, in)
+		return srv.(SolanaServer).RegisterLogTrackingSol(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_RegisterLogTracking_FullMethodName,
+		FullMethod: Solana_RegisterLogTrackingSol_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).RegisterLogTracking(ctx, req.(*RegisterLogTrackingRequest))
+		return srv.(SolanaServer).RegisterLogTrackingSol(ctx, req.(*RegisterLogTrackingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_SimulateTX_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_SimulateTX_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SimulateTXRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).SimulateTX(ctx, in)
+		return srv.(SolanaServer).SimulateTX(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_SimulateTX_FullMethodName,
+		FullMethod: Solana_SimulateTX_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).SimulateTX(ctx, req.(*SimulateTXRequest))
+		return srv.(SolanaServer).SimulateTX(ctx, req.(*SimulateTXRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_SubmitTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_SubmitTransactionSol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SubmitTransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).SubmitTransaction(ctx, in)
+		return srv.(SolanaServer).SubmitTransactionSol(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_SubmitTransaction_FullMethodName,
+		FullMethod: Solana_SubmitTransactionSol_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).SubmitTransaction(ctx, req.(*SubmitTransactionRequest))
+		return srv.(SolanaServer).SubmitTransactionSol(ctx, req.(*SubmitTransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SolanaService_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Solana_UnregisterLogTrackingSol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UnregisterLogTrackingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SolanaServiceServer).UnregisterLogTracking(ctx, in)
+		return srv.(SolanaServer).UnregisterLogTrackingSol(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SolanaService_UnregisterLogTracking_FullMethodName,
+		FullMethod: Solana_UnregisterLogTrackingSol_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SolanaServiceServer).UnregisterLogTracking(ctx, req.(*UnregisterLogTrackingRequest))
+		return srv.(SolanaServer).UnregisterLogTrackingSol(ctx, req.(*UnregisterLogTrackingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// SolanaService_ServiceDesc is the grpc.ServiceDesc for SolanaService service.
+// Solana_ServiceDesc is the grpc.ServiceDesc for Solana service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var SolanaService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.solana.SolanaService",
-	HandlerType: (*SolanaServiceServer)(nil),
+var Solana_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.solana.Solana",
+	HandlerType: (*SolanaServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetAccountInfoWithOpts",
-			Handler:    _SolanaService_GetAccountInfoWithOpts_Handler,
+			Handler:    _Solana_GetAccountInfoWithOpts_Handler,
 		},
 		{
 			MethodName: "GetBalance",
-			Handler:    _SolanaService_GetBalance_Handler,
+			Handler:    _Solana_GetBalance_Handler,
 		},
 		{
 			MethodName: "GetBlock",
-			Handler:    _SolanaService_GetBlock_Handler,
+			Handler:    _Solana_GetBlock_Handler,
 		},
 		{
 			MethodName: "GetFeeForMessage",
-			Handler:    _SolanaService_GetFeeForMessage_Handler,
+			Handler:    _Solana_GetFeeForMessage_Handler,
 		},
 		{
 			MethodName: "GetMultipleAccountsWithOpts",
-			Handler:    _SolanaService_GetMultipleAccountsWithOpts_Handler,
+			Handler:    _Solana_GetMultipleAccountsWithOpts_Handler,
 		},
 		{
 			MethodName: "GetSignatureStatuses",
-			Handler:    _SolanaService_GetSignatureStatuses_Handler,
+			Handler:    _Solana_GetSignatureStatuses_Handler,
 		},
 		{
 			MethodName: "GetSlotHeight",
-			Handler:    _SolanaService_GetSlotHeight_Handler,
+			Handler:    _Solana_GetSlotHeight_Handler,
 		},
 		{
 			MethodName: "GetTransaction",
-			Handler:    _SolanaService_GetTransaction_Handler,
+			Handler:    _Solana_GetTransaction_Handler,
 		},
 		{
-			MethodName: "QueryTrackedLogs",
-			Handler:    _SolanaService_QueryTrackedLogs_Handler,
+			MethodName: "QueryTrackedLogsSol",
+			Handler:    _Solana_QueryTrackedLogsSol_Handler,
 		},
 		{
-			MethodName: "RegisterLogTracking",
-			Handler:    _SolanaService_RegisterLogTracking_Handler,
+			MethodName: "RegisterLogTrackingSol",
+			Handler:    _Solana_RegisterLogTrackingSol_Handler,
 		},
 		{
 			MethodName: "SimulateTX",
-			Handler:    _SolanaService_SimulateTX_Handler,
+			Handler:    _Solana_SimulateTX_Handler,
 		},
 		{
-			MethodName: "SubmitTransaction",
-			Handler:    _SolanaService_SubmitTransaction_Handler,
+			MethodName: "SubmitTransactionSol",
+			Handler:    _Solana_SubmitTransactionSol_Handler,
 		},
 		{
-			MethodName: "UnregisterLogTracking",
-			Handler:    _SolanaService_UnregisterLogTracking_Handler,
+			MethodName: "UnregisterLogTrackingSol",
+			Handler:    _Solana_UnregisterLogTrackingSol_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

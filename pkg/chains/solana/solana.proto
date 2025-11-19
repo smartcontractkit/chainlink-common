@@ -1,8 +1,12 @@
 syntax = "proto3";
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/solana";
+
+import "loop/chain-common/query.proto";
+import "values/v1/values.proto";
+
 package loop.solana;
 
-service SolanaService {
+service Solana {
   rpc GetAccountInfoWithOpts(GetAccountInfoWithOptsRequest) returns (GetAccountInfoWithOptsReply);
   rpc GetBalance(GetBalanceRequest) returns (GetBalanceReply);
   rpc GetBlock(GetBlockRequest) returns (GetBlockReply);
@@ -11,11 +15,53 @@ service SolanaService {
   rpc GetSignatureStatuses(GetSignatureStatusesRequest) returns (GetSignatureStatusesReply);
   rpc GetSlotHeight(GetSlotHeightRequest) returns (GetSlotHeightReply);
   rpc GetTransaction(GetTransactionRequest) returns (GetTransactionReply);
-  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
-  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (RegisterLogTrackingReply);
+  rpc QueryTrackedLogsSol(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
+  rpc RegisterLogTrackingSol(RegisterLogTrackingRequest) returns (RegisterLogTrackingReply);
   rpc SimulateTX(SimulateTXRequest) returns (SimulateTXReply);
-  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
-  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
+  rpc SubmitTransactionSol(SubmitTransactionRequest) returns (SubmitTransactionReply);
+  rpc UnregisterLogTrackingSol(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
+}
+
+enum TransactionStatus {
+	TX_FATAL = 0;
+	TX_ABORTED = 1;
+	TX_SUCCESS = 2;
+}
+
+enum TransactionDetailsType {
+	TRANSACTION_DETAILS_FULL = 0;
+	TRANSCTION_DETAILS_SIGNATURES = 1;
+	TRANSACTION_DETAILS_NONE = 2;
+	TRANSACTION_DETAILS_ACCOUNTS = 3;
+}
+
+enum EncodingType {
+	ENCODING_NONE = 0;
+	ENCODING_BASE58  = 1;   // limited to Account data of less than 129 bytes
+	ENCODING_BASE64 = 2;     // will return base64 encoded data for Account data of any size
+	ENCODING_BASE64_ZST = 3; // compresses the Account data using Zstandard and base64-encodes the result
+	// attempts to use program-specific state parsers to
+	// return more human-readable and explicit account state data.
+	// If "jsonParsed" is requested but a parser cannot be found,
+	// the field falls back to "base64" encoding, detectable when the data field is type <string>.
+	// Cannot be used if specifying dataSlice parameters (offset, length).
+	ENCODING_JSON_PARSED = 4;
+
+	ENCODING_JSON = 5; // NOTE: you're probably looking for EncodingJSONParsed
+}
+
+enum CommitmentType {
+	COMMITMENT_NONE = 0;
+	COMMITMENT_FINALIZED = 1;
+	COMMITMENT_CONFIRMED = 2;
+	COMMITMENT_PROCESSED = 3;
+}
+
+enum ConfirmationStatusType {
+	CONFIRMATION_NONE = 0;
+	CONFIRMATION_PROCESSED = 1;
+	CONFIRMATION_CONFIRMED = 2;
+	CONFIRMATION_FINALIZED = 3;
 }
 
 message Account {
@@ -23,17 +69,12 @@ message Account {
   bytes owner = 2;
   DataBytesOrJSON data = 3;
   bool executable = 4;
-  int64 rent_epoch = 5;
+  values.v1.BigInt  rent_epoch = 5;
   uint64 space = 6;
 }
 
 message Address {
   bytes address = 1;
-}
-
-message BoolExpression {
-  repeated Expression expressions = 1;
-  int64 bool_operator = 2;
 }
 
 message ComputeConfig {
@@ -46,7 +87,7 @@ message Context {
 }
 
 message DataBytesOrJSON {
-  string raw_data_encoding = 1;
+  EncodingType raw_data_encoding = 1;
   bytes as_decoded_binary = 2;
   bytes as_json = 3;
 }
@@ -56,25 +97,42 @@ message DataSlice {
   uint64 length = 2;
 }
 
-message EventByTopic {
+message EventSig {
   uint64 topic = 1;
   repeated HashedValueComparator hashed_value_comparers = 2;
 }
 
+message IndexedValueComparator {
+	repeated bytes value = 1;
+  	loop.chain.common.ComparisonOperator operator = 2;
+}
+
+message EventBySubkey {
+	uint64 subkey_index = 1;
+	repeated IndexedValueComparator value_comparers = 2;
+}
+
 message Expression {
-  Primitive primitive = 1;
-  BoolExpression bool_expression = 2;
+ oneof evaluator {
+    Primitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+message BooleanExpression {
+  loop.chain.common.BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
 }
 
 message GetAccountInfoOpts {
-  string encoding = 1;
-  string commitment = 2;
+  EncodingType encoding = 1;
+  CommitmentType commitment = 2;
   DataSlice data_slice = 3;
   uint64 min_context_slot = 4;
 }
 
 message GetAccountInfoWithOptsReply {
-  RPCContext r_p_c_context = 1;
+  RPCContext rpc_context = 1;
   Account value = 2;
 }
 
@@ -89,14 +147,14 @@ message GetBalanceReply {
 
 message GetBalanceRequest {
   bytes addr = 1;
-  string commitment = 2;
+  CommitmentType commitment = 2;
 }
 
 message GetBlockOpts {
-  string encoding = 1;
-  string transaction_details = 2;
+  EncodingType encoding = 1;
+  TransactionDetailsType transaction_details = 2;
   bool rewards = 3;
-  string commitment = 4;
+  CommitmentType commitment = 4;
   uint64 max_supported_transaction_version = 5;
 }
 
@@ -121,12 +179,12 @@ message GetFeeForMessageReply {
 
 message GetFeeForMessageRequest {
   string message = 1;
-  string commitment = 2;
+  CommitmentType commitment = 2;
 }
 
 message GetMultipleAccountsOpts {
-  string encoding = 1;
-  string commitment = 2;
+  EncodingType encoding = 1;
+  CommitmentType commitment = 2;
   DataSlice data_slice = 3;
   uint64 min_context_slot = 4;
 }
@@ -153,7 +211,7 @@ message GetSignatureStatusesResult {
   uint64 slot = 1;
   uint64 confirmations = 2;
   string err = 3;
-  string confirmation_status = 4;
+  ConfirmationStatusType confirmation_status = 4;
 }
 
 message GetSlotHeightReply {
@@ -161,24 +219,116 @@ message GetSlotHeightReply {
 }
 
 message GetSlotHeightRequest {
-  string commitment = 1;
+  CommitmentType commitment = 1;
+}
+
+message MessageHeader {
+	uint32 num_required_signatures = 1;
+	uint32 num_readonly_signed_accounts = 2;
+	uint32 num_readonly_unsigned_accounts = 3;
+}
+
+message ParsedMessage {
+  bytes recent_blockhash = 1;  // 32 bytes solana Hash
+  repeated bytes account_keys = 2; // list of 32 bytes account keys
+  MessageHeader header = 3;
+  repeated CompiledInstruction instructions = 4;
+}
+
+message ParsedTransaction {
+  repeated bytes signatures = 1; // 64 bytes solana Signature each
+  ParsedMessage message = 2;
+}
+
+message UiTokenAmount {
+  string amount = 1;                 // raw integer as string
+  uint32 decimals = 2;
+  string ui_amount_string = 4;
+}
+
+message TokenBalance {
+  uint32 account_index = 1;
+  bytes  owner = 2;      // 32 bytes solana PublicKey
+  bytes  program_id = 3; // 32 bytes solana PublicKey
+  bytes  mint = 4;       // 32 bytes solana PublicKey
+  UiTokenAmount ui = 5;
+}
+
+message InnerInstruction {
+  uint32 index = 1;
+  repeated CompiledInstruction instructions = 2;
+}
+
+message LoadedAddresses {
+  repeated bytes readonly = 1; // 32 bytes solana PublicKey
+  repeated bytes writable = 2; // 32 bytes solana PublicKey
+}
+
+message CompiledInstruction {
+  uint32 program_id_index = 1;
+  repeated uint32 accounts = 2;
+  bytes  data = 3;
+  uint32 stack_height = 4;
+}
+
+message Data {
+	bytes content = 1;
+	EncodingType encoding = 2;
+}
+
+message ReturnData {
+  bytes program_id = 1; // 32 bytes solana publicKey
+  Data data = 2;       // raw program return bytes
+}
+
+message TransactionMeta {
+  string err_json = 1;
+
+  uint64 fee = 2;
+  repeated uint64 pre_balances  = 3;
+  repeated uint64 post_balances = 4;
+
+  repeated string log_messages = 5;
+
+  repeated TokenBalance pre_token_balances  = 6;
+  repeated TokenBalance post_token_balances = 7;
+
+  repeated InnerInstruction inner_instructions = 8;
+
+  LoadedAddresses loaded_addresses = 9;
+
+  ReturnData return_data = 10;
+
+  uint64 compute_units_consumed = 11;
+}
+
+message TransactionEnvelope {
+// - For RAW encoding, "transaction" contains tx bytes; for PARSED, structured fields.
+	oneof  transaction{
+		bytes raw = 1;
+		ParsedTransaction parsed = 2;
+	}
 }
 
 message GetTransactionReply {
   uint64 slot = 1;
   int64 block_time = 2;
-  int64 version = 3;
-  bytes transaction_envelope = 4;
-  bytes meta = 5;
+ 	
+  TransactionEnvelope transaction = 3;    
+  TransactionMeta meta = 12;    // - "meta" may be omitted by the node/config.
 }
 
 message GetTransactionRequest {
-  bytes signature = 1;
+  bytes signature = 1; // 64 bytes signature
 }
 
 message HashedValueComparator {
   repeated bytes values = 1;
   int64 operator = 2;
+}
+
+message Subkeys {
+	repeated string subkeys = 1;
 }
 
 message LPFilterQuery {
@@ -188,7 +338,7 @@ message LPFilterQuery {
   bytes event_sig = 4;
   int64 starting_block = 5;
   bytes event_idl_json = 6;
-  repeated string subkey_paths = 7;
+  repeated Subkeys subkey_paths = 7;
   int64 retention = 8;
   int64 max_logs_kept = 9;
   bool include_reverted = 10;
@@ -205,11 +355,11 @@ message LimitAndSort {
 }
 
 message Log {
-  string chain_i_d = 1;
+  string chain_id = 1;
   int64 log_index = 2;
   bytes block_hash = 3;
   int64 block_number = 4;
-  int64 block_timestamp = 5;
+  uint64 block_timestamp = 5;
   bytes address = 6;
   bytes event_sig = 7;
   bytes tx_hash = 8;
@@ -224,7 +374,7 @@ message RPCContext {
 
 message SimulateTXOpts {
   bool sig_verify = 1;
-  string commitment = 2;
+  CommitmentType commitment = 2;
   bool replace_recent_blockhash = 3;
   SimulateTransactionAccountsOpts accounts = 4;
 }
@@ -243,14 +393,14 @@ message SimulateTXRequest {
 }
 
 message SimulateTransactionAccountsOpts {
-  string encoding = 1;
+  EncodingType encoding = 1;
   repeated bytes addresses = 2;
 }
 
 message SubmitTransactionReply {
   bytes signature = 1;
   string idempotency_key = 2;
-  int64 status = 3;
+  TransactionStatus status = 3;
 }
 
 message SubmitTransactionRequest {
@@ -263,24 +413,26 @@ message TransactionWithMeta {
   uint64 slot = 1;
   int64 block_time = 2;
   DataBytesOrJSON transaction = 3;
-  bytes meta_json = 4;
+  TransactionMeta  meta = 4;
   int64 version = 5;
 }
 
 message Primitive {
-  oneof kind {
-    Address address = 1;
-    EventByTopic eventByTopic = 2;
+  oneof primitive {
+    loop.chain.common.Primitive general_primitive = 1;
+    bytes address = 2; // filter event by program public key 32 bytes 
+    bytes event_sig = 3; //  filter event by event signature  8 bytes length
+    EventBySubkey event_by_subkey = 4; // filter event by subkey
   }
 }
 
 message QueryTrackedLogsRequest {
   repeated Expression filterQuery = 1;
-  LimitAndSort limitAndSort = 2;
+  loop.chain.common.LimitAndSort limit_and_sort = 2;
 }
 
 message QueryTrackedLogsReply {
-  repeated Log result = 1;
+  repeated Log logs = 1;
 }
 
 message RegisterLogTrackingRequest {

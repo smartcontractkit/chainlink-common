@@ -82,6 +82,10 @@ func (r *relayer) TON() (types.TONService, error) {
 	return nil, nil
 }
 
+func (r *relayer) Solana() (types.SolanaService, error) {
+	return nil, nil
+}
+
 func (r *relayer) Start(ctx context.Context) error {
 	var names []string
 	// Test database connection with dummy query

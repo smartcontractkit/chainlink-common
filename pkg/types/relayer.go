@@ -350,7 +350,7 @@ func (u *UnimplementedRelayer) TON() (TONService, error) {
 }
 
 func (u *UnimplementedRelayer) Solana() (SolanaService, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method Solana not implemented")
 }
 
 func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {

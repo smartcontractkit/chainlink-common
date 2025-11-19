@@ -103,7 +103,7 @@ message EventSig {
 }
 
 message IndexedValueComparator {
-	repeated bytes value = 1;
+	bytes value = 1;
   	loop.chain.common.ComparisonOperator operator = 2;
 }
 

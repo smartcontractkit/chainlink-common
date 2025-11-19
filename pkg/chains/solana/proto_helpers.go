@@ -1524,12 +1524,8 @@ func ConvertValueComparatorsToProto(comparators []solprimitives.IndexedValueComp
 
 	out := make([]*IndexedValueComparator, len(comparators))
 	for _, c := range comparators {
-		value := make([][]byte, 0, len(c.Value))
-		for _, v := range c.Value {
-			value = append(value, v)
-		}
 		out = append(out, &IndexedValueComparator{
-			Value:    value,
+			Value:    c.Value,
 			Operator: chaincommonpb.ComparisonOperator(c.Operator),
 		})
 	}
@@ -1544,12 +1540,8 @@ func ConvertValueCompraratorsFromProto(comparators []*IndexedValueComparator) []
 
 	out := make([]solprimitives.IndexedValueComparator, 0, len(comparators))
 	for _, c := range comparators {
-		value := make([]solana.IndexedValue, 0, len(c.Value))
-		for _, v := range c.Value {
-			value = append(value, v)
-		}
 		out = append(out, solprimitives.IndexedValueComparator{
-			Value:    value,
+			Value:    c.Value,
 			Operator: primitives.ComparisonOperator(c.Operator),
 		})
 	}

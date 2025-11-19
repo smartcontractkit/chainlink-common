@@ -681,7 +681,7 @@ func (x *EventSig) GetHashedValueComparers() []*HashedValueComparator {
 
 type IndexedValueComparator struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
-	Value         [][]byte                        `protobuf:"bytes,1,rep,name=value,proto3" json:"value,omitempty"`
+	Value         []byte                          `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	Operator      chain_common.ComparisonOperator `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -717,7 +717,7 @@ func (*IndexedValueComparator) Descriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *IndexedValueComparator) GetValue() [][]byte {
+func (x *IndexedValueComparator) GetValue() []byte {
 	if x != nil {
 		return x.Value
 	}
@@ -4160,7 +4160,7 @@ const file_solana_proto_rawDesc = "" +
 	"\x05topic\x18\x01 \x01(\x04R\x05topic\x12X\n" +
 	"\x16hashed_value_comparers\x18\x02 \x03(\v2\".loop.solana.HashedValueComparatorR\x14hashedValueComparers\"q\n" +
 	"\x16IndexedValueComparator\x12\x14\n" +
-	"\x05value\x18\x01 \x03(\fR\x05value\x12A\n" +
+	"\x05value\x18\x01 \x01(\fR\x05value\x12A\n" +
 	"\boperator\x18\x02 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"\x80\x01\n" +
 	"\rEventBySubkey\x12!\n" +
 	"\fsubkey_index\x18\x01 \x01(\x04R\vsubkeyIndex\x12L\n" +

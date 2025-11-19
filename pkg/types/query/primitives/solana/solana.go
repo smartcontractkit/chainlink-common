@@ -52,7 +52,7 @@ type EventBySubkey struct {
 }
 
 type IndexedValueComparator struct {
-	Value    []solana.IndexedValue
+	Value    solana.IndexedValue
 	Operator primitives.ComparisonOperator
 }
 

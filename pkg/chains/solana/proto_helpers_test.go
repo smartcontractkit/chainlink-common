@@ -288,7 +288,7 @@ func TestExpressions_Roundtrip_SolanaPrimitives(t *testing.T) {
 	a := solprimitives.NewAddressFilter(addr)
 	e := solprimitives.NewEventSigFilter(ev)
 	evBy := solprimitives.NewEventBySubkeyFilter(1, []solprimitives.IndexedValueComparator{
-		{Value: []typesolana.IndexedValue{[]byte("abc")}, Operator: 0},
+		{Value: typesolana.IndexedValue{1, 2, 3}, Operator: 0},
 	})
 
 	root := query.Or(query.And(a, e), evBy)

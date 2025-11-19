@@ -422,12 +422,17 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
 		var reportableError *capabilities.RemoteReportableError
-		if errors.As(err, &reportableError) {
+		var userError *capabilities.ReportableUserError
+		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError
+		if errors.As(err, &userError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendReportableUserErrorIdentifier(err.Error())}
+		} else if errors.As(err, &reportableError) {
 			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
 		} else {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+			// All other errors are treated as remote unreportable and are marked as such to prevent accidental or malicious
+			// reporting of sensitive information by prefixing the error message with the remote reportable identifier.
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteUnreportableErrorIdentifier(err.Error())}
 		}
-
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
 	}
@@ -465,12 +470,22 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
+		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError
+		if capabilities.IsReportableUserErrorMessage(resp.Error) {
+			return capabilities.CapabilityResponse{}, capabilities.NewReportableUserError(
+				errors.New(capabilities.RemoveReportableUserErrorIdentifier(resp.Error)))
+		}
+
 		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
 			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
 				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
-
 		}
-		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
+
+		// The error message may or make not have been prepended with the unreportable error identifier depending on
+		// if the capability is running locally or remotely. In either case, remove the remote unreportable identifier if it exists.
+		removedIdentifierErrorMessage := capabilities.RemoveRemoteUnreportableErrorIdentifier(resp.Error)
+
+		return capabilities.CapabilityResponse{}, errors.New(removedIdentifierErrorMessage)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

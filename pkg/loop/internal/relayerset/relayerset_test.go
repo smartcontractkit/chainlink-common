@@ -19,6 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	soltypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	tontypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -27,6 +28,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
+	solprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/solana"
 )
 
 func Test_RelayerSet(t *testing.T) {
@@ -571,6 +573,351 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			require.NoError(t, err)
 
 			tc.run(t, fetchedEVM, mockEVM)
+		})
+	}
+}
+
+func Test_RelayerSet_SolanaService(t *testing.T) {
+	ctx := t.Context()
+	stopCh := make(chan struct{})
+	log := logger.Test(t)
+
+	relayer1 := mocks.NewRelayer(t)
+	relayers := map[types.RelayID]core.Relayer{
+		{Network: "N1", ChainID: "C1"}: relayer1,
+	}
+
+	pluginName := "solana-relayerset-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRelaySetPlugin{
+				log:  log,
+				impl: &TestRelayerSet{relayers: relayers},
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: log,
+					},
+				},
+			},
+		},
+	)
+	defer client.Close()
+	defer server.Stop()
+
+	relayerSetClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+	rc, ok := relayerSetClient.(*Client)
+	require.True(t, ok)
+
+	retrievedRelayer, err := rc.Get(ctx, types.RelayID{Network: "N1", ChainID: "C1"})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService)
+	}{
+		{
+			name: "GetBalance",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				address := soltypes.PublicKey{1, 2, 3}
+				bal := uint64(32)
+				mockSol.EXPECT().GetBalance(mock.Anything, soltypes.GetBalanceRequest{
+					Addr:       address,
+					Commitment: soltypes.CommitmentConfirmed,
+				}).Return(&soltypes.GetBalanceReply{Value: bal}, nil)
+				reply, err := sol.GetBalance(ctx, soltypes.GetBalanceRequest{
+					Addr: address, Commitment: soltypes.CommitmentConfirmed,
+				})
+				require.NoError(t, err)
+				require.Equal(t, bal, reply.Value)
+			},
+		},
+		{
+			name: "GetAccountInfoWithOpts",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				req := soltypes.GetAccountInfoRequest{
+					Account: soltypes.PublicKey{9, 9, 9},
+					Opts: &soltypes.GetAccountInfoOpts{
+						Encoding:   soltypes.EncodingJSONParsed,
+						Commitment: soltypes.CommitmentFinalized,
+					},
+				}
+				slot := uint64(22)
+				lamports := uint64(33)
+				mockSol.EXPECT().
+					GetAccountInfoWithOpts(mock.Anything, req).
+					Return(&soltypes.GetAccountInfoReply{
+						RPCContext: soltypes.RPCContext{Context: soltypes.Context{Slot: slot}},
+						Value: &soltypes.Account{
+							Lamports:   lamports,
+							Executable: false,
+						},
+					}, nil)
+
+				out, err := sol.GetAccountInfoWithOpts(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, lamports, out.Value.Lamports)
+				require.Equal(t, slot, out.RPCContext.Context.Slot)
+			},
+		},
+		{
+			name: "GetMultipleAccountsWithOpts",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				req := soltypes.GetMultipleAccountsRequest{
+					Accounts: []soltypes.PublicKey{{1}, {2}},
+					Opts: &soltypes.GetMultipleAccountsOpts{
+						Encoding:   soltypes.EncodingBase64,
+						Commitment: soltypes.CommitmentProcessed,
+					},
+				}
+				slot := uint64(22)
+				lamports := uint64(33)
+				mockSol.EXPECT().
+					GetMultipleAccountsWithOpts(mock.Anything, req).
+					Return(&soltypes.GetMultipleAccountsReply{
+						RPCContext: soltypes.RPCContext{Context: soltypes.Context{Slot: slot}},
+						Value: []*soltypes.Account{
+							{Lamports: lamports}, {Lamports: lamports},
+						},
+					}, nil)
+
+				out, err := sol.GetMultipleAccountsWithOpts(ctx, req)
+				require.NoError(t, err)
+				require.Len(t, out.Value, 2)
+				require.Equal(t, lamports, out.Value[0].Lamports)
+			},
+		},
+		{
+			name: "GetBlock",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				rew := true
+				req := soltypes.GetBlockRequest{
+					Slot: 42,
+					Opts: &soltypes.GetBlockOpts{
+						Encoding:           soltypes.EncodingJSON,
+						TransactionDetails: soltypes.TransactionDetailsNone,
+						Rewards:            &rew,
+						Commitment:         soltypes.CommitmentConfirmed,
+					},
+				}
+				expHash := soltypes.Hash{1, 2, 3}
+				parSlot := uint64(33)
+				expHeight := uint64(66)
+				mockSol.EXPECT().
+					GetBlock(mock.Anything, req).
+					Return(&soltypes.GetBlockReply{
+						Blockhash:   expHash,
+						ParentSlot:  parSlot,
+						BlockTime:   nil,
+						BlockHeight: &expHeight,
+					}, nil)
+
+				out, err := sol.GetBlock(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, parSlot, out.ParentSlot)
+				require.Equal(t, expHeight, *out.BlockHeight)
+			},
+		},
+		{
+			name: "GetSlotHeight",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				req := soltypes.GetSlotHeightRequest{Commitment: soltypes.CommitmentFinalized}
+				mockSol.EXPECT().
+					GetSlotHeight(mock.Anything, req).
+					Return(&soltypes.GetSlotHeightReply{Height: 9090}, nil)
+
+				out, err := sol.GetSlotHeight(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, uint64(9090), out.Height)
+			},
+		},
+		{
+			name: "GetTransaction",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				var sig soltypes.Signature
+				copy(sig[:], []byte{1, 2, 3, 4})
+				req := soltypes.GetTransactionRequest{Signature: sig}
+				expTime := soltypes.UnixTimeSeconds(11)
+				expFee := uint64(33)
+				expSlot := uint64(17)
+				mockSol.EXPECT().
+					GetTransaction(mock.Anything, req).
+					Return(&soltypes.GetTransactionReply{
+						Slot:      expSlot,
+						BlockTime: &expTime,
+						Meta: &soltypes.TransactionMeta{
+							Fee: expFee,
+						},
+					}, nil)
+
+				out, err := sol.GetTransaction(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expSlot, out.Slot)
+				require.Equal(t, expFee, out.Meta.Fee)
+			},
+		},
+		{
+			name: "GetFeeForMessage",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				req := soltypes.GetFeeForMessageRequest{
+					Message:    "AgAAAA==",
+					Commitment: soltypes.CommitmentProcessed,
+				}
+				mockSol.EXPECT().
+					GetFeeForMessage(mock.Anything, req).
+					Return(&soltypes.GetFeeForMessageReply{Fee: 1234}, nil)
+
+				out, err := sol.GetFeeForMessage(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, uint64(1234), out.Fee)
+			},
+		},
+		{
+			name: "GetSignatureStatuses",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				s1, s2 := soltypes.Signature{}, soltypes.Signature{}
+				copy(s1[:], []byte{7})
+				copy(s2[:], []byte{8})
+				req := soltypes.GetSignatureStatusesRequest{Sigs: []soltypes.Signature{s1, s2}}
+				expSlot1 := uint64(1)
+				expConf1 := uint64(11)
+				expSlot2 := uint64(33)
+				expConf2 := uint64(22)
+				mockSol.EXPECT().
+					GetSignatureStatuses(mock.Anything, req).
+					Return(&soltypes.GetSignatureStatusesReply{
+						Results: []soltypes.GetSignatureStatusesResult{
+							{Slot: uint64(expSlot1), Confirmations: &expConf1}, {Slot: expSlot2, Confirmations: &expConf2},
+						},
+					}, nil)
+
+				out, err := sol.GetSignatureStatuses(ctx, req)
+				require.NoError(t, err)
+				require.Len(t, out.Results, 2)
+				require.Equal(t, expSlot1, out.Results[0].Slot)
+			},
+		},
+		{
+			name: "SimulateTX",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				req := soltypes.SimulateTXRequest{
+					Receiver:           soltypes.PublicKey{5, 5, 5},
+					EncodedTransaction: "BASE64TX==",
+					Opts: &soltypes.SimulateTXOpts{
+						SigVerify:              true,
+						Commitment:             soltypes.CommitmentProcessed,
+						ReplaceRecentBlockhash: true,
+					},
+				}
+				mockSol.EXPECT().
+					SimulateTX(mock.Anything, req).
+					Return(&soltypes.SimulateTXReply{
+						Err:  "",
+						Logs: []string{"log1", "log2"},
+					}, nil)
+
+				out, err := sol.SimulateTX(ctx, req)
+				require.NoError(t, err)
+				require.Len(t, out.Logs, 2)
+			},
+		},
+		{
+			name: "SubmitTransaction",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				units := uint32(1_400_999)
+				price := uint64(11)
+				req := soltypes.SubmitTransactionRequest{
+					Cfg: &soltypes.ComputeConfig{
+						ComputeLimit:    &units,
+						ComputeMaxPrice: &price,
+					},
+					Receiver:           soltypes.PublicKey{3, 3, 3},
+					EncodedTransaction: "BASE64TX==",
+				}
+				expected := &soltypes.SubmitTransactionReply{
+					Signature:      soltypes.Signature{0xaa, 0xbb},
+					IdempotencyKey: "idem-123",
+					Status:         soltypes.TxSuccess,
+				}
+				mockSol.EXPECT().
+					SubmitTransaction(mock.Anything, req).
+					Return(expected, nil)
+
+				out, err := sol.SubmitTransaction(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expected.IdempotencyKey, out.IdempotencyKey)
+				require.Equal(t, expected.Signature, out.Signature)
+				require.Equal(t, expected.Status, out.Status)
+			},
+		},
+		{
+			name: "RegisterLogTracking",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				req := soltypes.LPFilterQuery{
+					Name:          "my-filter",
+					Address:       soltypes.PublicKey{0x11},
+					EventName:     "MyEvent",
+					StartingBlock: 1234,
+					Retention:     3600,
+				}
+				mockSol.EXPECT().
+					RegisterLogTracking(mock.Anything, req).
+					Return(nil)
+
+				err := sol.RegisterLogTracking(ctx, req)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "UnregisterLogTracking",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				filterName := "my-filter"
+				mockSol.EXPECT().
+					UnregisterLogTracking(mock.Anything, filterName).
+					Return(nil)
+
+				err := sol.UnregisterLogTracking(ctx, filterName)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "QueryTrackedLogs",
+			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
+				// simple expression & limit
+				filterExpr := []query.Expression{}
+				primitiveExpressions := []query.Expression{query.TxHash("txHash")}
+				primitiveExpressions = append(primitiveExpressions, solprimitives.NewAddressFilter(soltypes.PublicKey{1, 2, 3}))
+				filterExpr = append(filterExpr, primitiveExpressions...)
+				expected := []*soltypes.Log{
+					{BlockNumber: 1, LogIndex: 0},
+					{BlockNumber: 2, LogIndex: 5},
+				}
+
+				expLimitAndSort := query.NewLimitAndSort(query.CountLimit(10), query.SortByTimestamp{})
+				mockSol.EXPECT().
+					QueryTrackedLogs(mock.Anything, filterExpr, expLimitAndSort).
+					Return(expected, nil)
+
+				out, err := sol.QueryTrackedLogs(ctx, filterExpr, expLimitAndSort)
+				require.NoError(t, err)
+				require.Len(t, out, 2)
+				require.Equal(t, int64(2), out[1].BlockNumber)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mockSol := mocks2.NewSolanaService(t)
+			relayer1.On("Solana", mock.Anything, mock.Anything).Return(mockSol, nil).Once()
+
+			fetchedSol, err := retrievedRelayer.Solana()
+			require.NoError(t, err)
+
+			tc.run(t, fetchedSol, mockSol)
 		})
 	}
 }

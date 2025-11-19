@@ -882,10 +882,14 @@ func ConvertGetTransactionReplyToProto(r *typesolana.GetTransactionReply) *GetTr
 	if r.BlockTime != nil {
 		bt = int64(*r.BlockTime)
 	}
+	var tx *TransactionEnvelope
+	if r.Transaction != nil {
+		tx = ConvertTransactionEnvelopeToProto(*r.Transaction)
+	}
 	return &GetTransactionReply{
 		Slot:        r.Slot,
 		BlockTime:   bt,
-		Transaction: ConvertTransactionEnvelopeToProto(*r.Transaction),
+		Transaction: tx,
 		Meta:        ConvertTransactionMetaToProto(r.Meta),
 	}
 }
@@ -1428,6 +1432,10 @@ func ConvertLogToProto(l *typesolana.Log) *Log {
 	if l == nil {
 		return nil
 	}
+	var err string
+	if l.Error != nil {
+		err = *l.Error
+	}
 	return &Log{
 		ChainId:        l.ChainID,
 		LogIndex:       l.LogIndex,
@@ -1439,7 +1447,7 @@ func ConvertLogToProto(l *typesolana.Log) *Log {
 		TxHash:         l.TxHash[:],
 		Data:           l.Data,
 		SequenceNum:    l.SequenceNum,
-		Error:          *l.Error,
+		Error:          err,
 	}
 }
 
@@ -1707,6 +1715,12 @@ func putPrimitive(exp *Expression, p *Primitive) {
 	exp.Evaluator = &Expression_Primitive{Primitive: &Primitive{Primitive: p.Primitive}}
 }
 
-func ptrUint64(v uint64) *uint64                                       { return &v }
+func ptrUint64(v uint64) *uint64 {
+	if v == 0 {
+		return nil
+	}
+	return &v
+
+}
 func ptrBool(v bool) *bool                                             { return &v }
 func ptrUnix(v typesolana.UnixTimeSeconds) *typesolana.UnixTimeSeconds { return &v }

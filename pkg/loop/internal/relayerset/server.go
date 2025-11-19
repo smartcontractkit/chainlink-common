@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -36,6 +37,7 @@ type Server struct {
 	relayerset.UnimplementedRelayerSetServer
 	evmpb.UnimplementedEVMServer
 	tonpb.UnimplementedTONServer
+	solpb.UnimplementedSolanaServer
 	pb.ContractReaderServer
 
 	impl   core.RelayerSet
@@ -53,6 +55,7 @@ type Server struct {
 var _ relayerset.RelayerSetServer = (*Server)(nil)
 var _ evmpb.EVMServer = (*Server)(nil)
 var _ tonpb.TONServer = (*Server)(nil)
+var _ solpb.SolanaServer = (*Server)(nil)
 var _ pb.ContractReaderServer = (*Server)(nil)
 
 func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *net.BrokerExt) (*Server, net.Resource) {

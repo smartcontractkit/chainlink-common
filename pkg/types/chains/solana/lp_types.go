@@ -130,7 +130,7 @@ type SubKeyPaths [][]string
 
 // matches cache-filter
 // this filter defines what logs should be cached
-// cached logs can be retrieved with [types.SolanaService.QueryLogsFromCache]
+// cached logs can be retrieved with [types.SolanaService.QueryTrackedLogs]
 type LPFilterQuery struct {
 	Name            string
 	Address         PublicKey

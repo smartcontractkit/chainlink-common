@@ -23,12 +23,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Transaction execution status returned by submitters/simulations.
 type TransactionStatus int32
 
 const (
-	TransactionStatus_TX_FATAL   TransactionStatus = 0
-	TransactionStatus_TX_ABORTED TransactionStatus = 1
-	TransactionStatus_TX_SUCCESS TransactionStatus = 2
+	TransactionStatus_TX_FATAL   TransactionStatus = 0 // unrecoverable failure
+	TransactionStatus_TX_ABORTED TransactionStatus = 1 // not executed / dropped
+	TransactionStatus_TX_SUCCESS TransactionStatus = 2 // executed successfully
 )
 
 // Enum value maps for TransactionStatus.
@@ -72,13 +73,14 @@ func (TransactionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{0}
 }
 
+// Level of tx details in block response.
 type TransactionDetailsType int32
 
 const (
-	TransactionDetailsType_TRANSACTION_DETAILS_FULL      TransactionDetailsType = 0
-	TransactionDetailsType_TRANSCTION_DETAILS_SIGNATURES TransactionDetailsType = 1
-	TransactionDetailsType_TRANSACTION_DETAILS_NONE      TransactionDetailsType = 2
-	TransactionDetailsType_TRANSACTION_DETAILS_ACCOUNTS  TransactionDetailsType = 3
+	TransactionDetailsType_TRANSACTION_DETAILS_FULL      TransactionDetailsType = 0 // tx + meta
+	TransactionDetailsType_TRANSCTION_DETAILS_SIGNATURES TransactionDetailsType = 1 // signatures only
+	TransactionDetailsType_TRANSACTION_DETAILS_NONE      TransactionDetailsType = 2 // no txs
+	TransactionDetailsType_TRANSACTION_DETAILS_ACCOUNTS  TransactionDetailsType = 3 // account keys only
 )
 
 // Enum value maps for TransactionDetailsType.
@@ -124,20 +126,16 @@ func (TransactionDetailsType) EnumDescriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{1}
 }
 
+// Account/tx data encodings.
 type EncodingType int32
 
 const (
-	EncodingType_ENCODING_NONE       EncodingType = 0
-	EncodingType_ENCODING_BASE58     EncodingType = 1 // limited to Account data of less than 129 bytes
-	EncodingType_ENCODING_BASE64     EncodingType = 2 // will return base64 encoded data for Account data of any size
-	EncodingType_ENCODING_BASE64_ZST EncodingType = 3 // compresses the Account data using Zstandard and base64-encodes the result
-	// attempts to use program-specific state parsers to
-	// return more human-readable and explicit account state data.
-	// If "jsonParsed" is requested but a parser cannot be found,
-	// the field falls back to "base64" encoding, detectable when the data field is type <string>.
-	// Cannot be used if specifying dataSlice parameters (offset, length).
-	EncodingType_ENCODING_JSON_PARSED EncodingType = 4
-	EncodingType_ENCODING_JSON        EncodingType = 5 // NOTE: you're probably looking for EncodingJSONParsed
+	EncodingType_ENCODING_NONE        EncodingType = 0
+	EncodingType_ENCODING_BASE58      EncodingType = 1 // for data <129 bytes
+	EncodingType_ENCODING_BASE64      EncodingType = 2 // any size
+	EncodingType_ENCODING_BASE64_ZST  EncodingType = 3 // zstd-compressed, base64-wrapped
+	EncodingType_ENCODING_JSON_PARSED EncodingType = 4 // program parsers; fallback to base64 if unknown
+	EncodingType_ENCODING_JSON        EncodingType = 5 // raw JSON (rare; prefer JSON_PARSED)
 )
 
 // Enum value maps for EncodingType.
@@ -187,13 +185,14 @@ func (EncodingType) EnumDescriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{2}
 }
 
+// Read consistency of queried state.
 type CommitmentType int32
 
 const (
 	CommitmentType_COMMITMENT_NONE      CommitmentType = 0
-	CommitmentType_COMMITMENT_FINALIZED CommitmentType = 1
-	CommitmentType_COMMITMENT_CONFIRMED CommitmentType = 2
-	CommitmentType_COMMITMENT_PROCESSED CommitmentType = 3
+	CommitmentType_COMMITMENT_FINALIZED CommitmentType = 1 // cluster-finalized
+	CommitmentType_COMMITMENT_CONFIRMED CommitmentType = 2 // voted by supermajority
+	CommitmentType_COMMITMENT_PROCESSED CommitmentType = 3 // node’s latest
 )
 
 // Enum value maps for CommitmentType.
@@ -239,6 +238,7 @@ func (CommitmentType) EnumDescriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{3}
 }
 
+// Cluster confirmation status of a tx/signature.
 type ConfirmationStatusType int32
 
 const (
@@ -291,14 +291,15 @@ func (ConfirmationStatusType) EnumDescriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{4}
 }
 
+// On-chain account state.
 type Account struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Lamports      uint64                 `protobuf:"varint,1,opt,name=lamports,proto3" json:"lamports,omitempty"`
-	Owner         []byte                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	Data          *DataBytesOrJSON       `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	Executable    bool                   `protobuf:"varint,4,opt,name=executable,proto3" json:"executable,omitempty"`
-	RentEpoch     *pb.BigInt             `protobuf:"bytes,5,opt,name=rent_epoch,json=rentEpoch,proto3" json:"rent_epoch,omitempty"`
-	Space         uint64                 `protobuf:"varint,6,opt,name=space,proto3" json:"space,omitempty"`
+	Lamports      uint64                 `protobuf:"varint,1,opt,name=lamports,proto3" json:"lamports,omitempty"`                   // balance in lamports (1e-9 SOL)
+	Owner         []byte                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`                          // 32-byte program id (Pubkey)
+	Data          *DataBytesOrJSON       `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`                            // account data (encoded or JSON)
+	Executable    bool                   `protobuf:"varint,4,opt,name=executable,proto3" json:"executable,omitempty"`               // true if this is a program account
+	RentEpoch     *pb.BigInt             `protobuf:"bytes,5,opt,name=rent_epoch,json=rentEpoch,proto3" json:"rent_epoch,omitempty"` // next rent epoch
+	Space         uint64                 `protobuf:"varint,6,opt,name=space,proto3" json:"space,omitempty"`                         // data length in bytes
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -375,9 +376,10 @@ func (x *Account) GetSpace() uint64 {
 	return 0
 }
 
+// 32-byte address (Pubkey).
 type Address struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Address       []byte                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Address       []byte                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // 32 bytes
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -419,10 +421,11 @@ func (x *Address) GetAddress() []byte {
 	return nil
 }
 
+// Compute budget configuration when submitting txs.
 type ComputeConfig struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ComputeLimit    uint32                 `protobuf:"varint,1,opt,name=compute_limit,json=computeLimit,proto3" json:"compute_limit,omitempty"`
-	ComputeMaxPrice uint64                 `protobuf:"varint,2,opt,name=compute_max_price,json=computeMaxPrice,proto3" json:"compute_max_price,omitempty"`
+	ComputeLimit    uint32                 `protobuf:"varint,1,opt,name=compute_limit,json=computeLimit,proto3" json:"compute_limit,omitempty"`            // max CUs (approx per-tx limit)
+	ComputeMaxPrice uint64                 `protobuf:"varint,2,opt,name=compute_max_price,json=computeMaxPrice,proto3" json:"compute_max_price,omitempty"` // max lamports per CU
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -471,6 +474,7 @@ func (x *ComputeConfig) GetComputeMaxPrice() uint64 {
 	return 0
 }
 
+// RPC context (slot at which state was read).
 type Context struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
@@ -515,11 +519,12 @@ func (x *Context) GetSlot() uint64 {
 	return 0
 }
 
+// Raw bytes vs parsed JSON (as returned by RPC).
 type DataBytesOrJSON struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	RawDataEncoding EncodingType           `protobuf:"varint,1,opt,name=raw_data_encoding,json=rawDataEncoding,proto3,enum=loop.solana.EncodingType" json:"raw_data_encoding,omitempty"`
-	AsDecodedBinary []byte                 `protobuf:"bytes,2,opt,name=as_decoded_binary,json=asDecodedBinary,proto3" json:"as_decoded_binary,omitempty"`
-	AsJson          []byte                 `protobuf:"bytes,3,opt,name=as_json,json=asJson,proto3" json:"as_json,omitempty"`
+	RawDataEncoding EncodingType           `protobuf:"varint,1,opt,name=raw_data_encoding,json=rawDataEncoding,proto3,enum=loop.solana.EncodingType" json:"raw_data_encoding,omitempty"` // encoding of payload
+	AsDecodedBinary []byte                 `protobuf:"bytes,2,opt,name=as_decoded_binary,json=asDecodedBinary,proto3" json:"as_decoded_binary,omitempty"`                                // if binary encoding
+	AsJson          []byte                 `protobuf:"bytes,3,opt,name=as_json,json=asJson,proto3" json:"as_json,omitempty"`                                                             // if JSON/JSON_PARSED
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -575,10 +580,11 @@ func (x *DataBytesOrJSON) GetAsJson() []byte {
 	return nil
 }
 
+// Return a slice of account data.
 type DataSlice struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Offset        uint64                 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
-	Length        uint64                 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
+	Offset        uint64                 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"` // start byte
+	Length        uint64                 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"` // number of bytes
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -627,10 +633,11 @@ func (x *DataSlice) GetLength() uint64 {
 	return 0
 }
 
+// Event/topic filter by hashed value(s).
 type EventSig struct {
 	state                protoimpl.MessageState   `protogen:"open.v1"`
-	Topic                uint64                   `protobuf:"varint,1,opt,name=topic,proto3" json:"topic,omitempty"`
-	HashedValueComparers []*HashedValueComparator `protobuf:"bytes,2,rep,name=hashed_value_comparers,json=hashedValueComparers,proto3" json:"hashed_value_comparers,omitempty"`
+	Topic                uint64                   `protobuf:"varint,1,opt,name=topic,proto3" json:"topic,omitempty"`                                                            // topic index
+	HashedValueComparers []*HashedValueComparator `protobuf:"bytes,2,rep,name=hashed_value_comparers,json=hashedValueComparers,proto3" json:"hashed_value_comparers,omitempty"` // comparisons
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -679,10 +686,11 @@ func (x *EventSig) GetHashedValueComparers() []*HashedValueComparator {
 	return nil
 }
 
+// Comparator for a single indexed value.
 type IndexedValueComparator struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
-	Value         []byte                          `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	Operator      chain_common.ComparisonOperator `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
+	Value         []byte                          `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`                                                  // raw bytes
+	Operator      chain_common.ComparisonOperator `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"` // eq/lt/gt etc.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -731,9 +739,10 @@ func (x *IndexedValueComparator) GetOperator() chain_common.ComparisonOperator {
 	return chain_common.ComparisonOperator(0)
 }
 
+// Filter events by a subkey path.
 type EventBySubkey struct {
 	state          protoimpl.MessageState    `protogen:"open.v1"`
-	SubkeyIndex    uint64                    `protobuf:"varint,1,opt,name=subkey_index,json=subkeyIndex,proto3" json:"subkey_index,omitempty"`
+	SubkeyIndex    uint64                    `protobuf:"varint,1,opt,name=subkey_index,json=subkeyIndex,proto3" json:"subkey_index,omitempty"` // path element index
 	ValueComparers []*IndexedValueComparator `protobuf:"bytes,2,rep,name=value_comparers,json=valueComparers,proto3" json:"value_comparers,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -783,6 +792,7 @@ func (x *EventBySubkey) GetValueComparers() []*IndexedValueComparator {
 	return nil
 }
 
+// Expression tree wrapper.
 type Expression struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Evaluator:
@@ -854,20 +864,21 @@ type isExpression_Evaluator interface {
 }
 
 type Expression_Primitive struct {
-	Primitive *Primitive `protobuf:"bytes,1,opt,name=primitive,proto3,oneof"`
+	Primitive *Primitive `protobuf:"bytes,1,opt,name=primitive,proto3,oneof"` // leaf filter
 }
 
 type Expression_BooleanExpression struct {
-	BooleanExpression *BooleanExpression `protobuf:"bytes,2,opt,name=boolean_expression,json=booleanExpression,proto3,oneof"`
+	BooleanExpression *BooleanExpression `protobuf:"bytes,2,opt,name=boolean_expression,json=booleanExpression,proto3,oneof"` // AND/OR of expressions
 }
 
 func (*Expression_Primitive) isExpression_Evaluator() {}
 
 func (*Expression_BooleanExpression) isExpression_Evaluator() {}
 
+// Boolean composition over expressions.
 type BooleanExpression struct {
 	state           protoimpl.MessageState       `protogen:"open.v1"`
-	BooleanOperator chain_common.BooleanOperator `protobuf:"varint,1,opt,name=boolean_operator,json=booleanOperator,proto3,enum=loop.chain.common.BooleanOperator" json:"boolean_operator,omitempty"`
+	BooleanOperator chain_common.BooleanOperator `protobuf:"varint,1,opt,name=boolean_operator,json=booleanOperator,proto3,enum=loop.chain.common.BooleanOperator" json:"boolean_operator,omitempty"` // AND/OR
 	Expression      []*Expression                `protobuf:"bytes,2,rep,name=expression,proto3" json:"expression,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -917,12 +928,13 @@ func (x *BooleanExpression) GetExpression() []*Expression {
 	return nil
 }
 
+// Options for GetAccountInfo.
 type GetAccountInfoOpts struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Encoding       EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`
-	Commitment     CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
-	DataSlice      *DataSlice             `protobuf:"bytes,3,opt,name=data_slice,json=dataSlice,proto3" json:"data_slice,omitempty"`
-	MinContextSlot uint64                 `protobuf:"varint,4,opt,name=min_context_slot,json=minContextSlot,proto3" json:"min_context_slot,omitempty"`
+	Encoding       EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`       // data encoding
+	Commitment     CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"` // read consistency
+	DataSlice      *DataSlice             `protobuf:"bytes,3,opt,name=data_slice,json=dataSlice,proto3" json:"data_slice,omitempty"`                   // optional slice window
+	MinContextSlot uint64                 `protobuf:"varint,4,opt,name=min_context_slot,json=minContextSlot,proto3" json:"min_context_slot,omitempty"` // lower bound slot
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -985,10 +997,11 @@ func (x *GetAccountInfoOpts) GetMinContextSlot() uint64 {
 	return 0
 }
 
+// Reply for GetAccountInfoWithOpts.
 type GetAccountInfoWithOptsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcContext    *RPCContext            `protobuf:"bytes,1,opt,name=rpc_context,json=rpcContext,proto3" json:"rpc_context,omitempty"`
-	Value         *Account               `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	RpcContext    *RPCContext            `protobuf:"bytes,1,opt,name=rpc_context,json=rpcContext,proto3" json:"rpc_context,omitempty"` // read slot
+	Value         *Account               `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`                             // account (may be empty)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1037,9 +1050,10 @@ func (x *GetAccountInfoWithOptsReply) GetValue() *Account {
 	return nil
 }
 
+// Request for GetAccountInfoWithOpts.
 type GetAccountInfoWithOptsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Account       []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	Account       []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"` // 32-byte Pubkey
 	Opts          *GetAccountInfoOpts    `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1089,9 +1103,10 @@ func (x *GetAccountInfoWithOptsRequest) GetOpts() *GetAccountInfoOpts {
 	return nil
 }
 
+// Reply for GetBalance.
 type GetBalanceReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         uint64                 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	Value         uint64                 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"` // lamports
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1133,10 +1148,11 @@ func (x *GetBalanceReply) GetValue() uint64 {
 	return 0
 }
 
+// Request for GetBalance.
 type GetBalanceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
-	Commitment    CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
+	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`                                              // 32-byte Pubkey
+	Commitment    CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"` // read consistency
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1185,13 +1201,14 @@ func (x *GetBalanceRequest) GetCommitment() CommitmentType {
 	return CommitmentType_COMMITMENT_NONE
 }
 
+// Options for GetBlock.
 type GetBlockOpts struct {
 	state                          protoimpl.MessageState `protogen:"open.v1"`
-	Encoding                       EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`
-	TransactionDetails             TransactionDetailsType `protobuf:"varint,2,opt,name=transaction_details,json=transactionDetails,proto3,enum=loop.solana.TransactionDetailsType" json:"transaction_details,omitempty"`
-	Rewards                        bool                   `protobuf:"varint,3,opt,name=rewards,proto3" json:"rewards,omitempty"`
-	Commitment                     CommitmentType         `protobuf:"varint,4,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
-	MaxSupportedTransactionVersion uint64                 `protobuf:"varint,5,opt,name=max_supported_transaction_version,json=maxSupportedTransactionVersion,proto3" json:"max_supported_transaction_version,omitempty"`
+	Encoding                       EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`                                                         // tx encoding
+	TransactionDetails             TransactionDetailsType `protobuf:"varint,2,opt,name=transaction_details,json=transactionDetails,proto3,enum=loop.solana.TransactionDetailsType" json:"transaction_details,omitempty"` // tx detail level
+	Rewards                        bool                   `protobuf:"varint,3,opt,name=rewards,proto3" json:"rewards,omitempty"`                                                                                         // include rewards
+	Commitment                     CommitmentType         `protobuf:"varint,4,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`                                                   // read consistency
+	MaxSupportedTransactionVersion uint64                 `protobuf:"varint,5,opt,name=max_supported_transaction_version,json=maxSupportedTransactionVersion,proto3" json:"max_supported_transaction_version,omitempty"` // fail if higher present
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -1261,15 +1278,16 @@ func (x *GetBlockOpts) GetMaxSupportedTransactionVersion() uint64 {
 	return 0
 }
 
+// Block response.
 type GetBlockReply struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	Blockhash         []byte                 `protobuf:"bytes,1,opt,name=blockhash,proto3" json:"blockhash,omitempty"`
-	PreviousBlockhash []byte                 `protobuf:"bytes,2,opt,name=previous_blockhash,json=previousBlockhash,proto3" json:"previous_blockhash,omitempty"`
+	Blockhash         []byte                 `protobuf:"bytes,1,opt,name=blockhash,proto3" json:"blockhash,omitempty"`                                          // 32-byte block hash
+	PreviousBlockhash []byte                 `protobuf:"bytes,2,opt,name=previous_blockhash,json=previousBlockhash,proto3" json:"previous_blockhash,omitempty"` // 32-byte parent hash
 	ParentSlot        uint64                 `protobuf:"varint,3,opt,name=parent_slot,json=parentSlot,proto3" json:"parent_slot,omitempty"`
-	Transactions      []*TransactionWithMeta `protobuf:"bytes,4,rep,name=transactions,proto3" json:"transactions,omitempty"`
-	Signatures        [][]byte               `protobuf:"bytes,5,rep,name=signatures,proto3" json:"signatures,omitempty"`
-	BlockTime         int64                  `protobuf:"varint,6,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
-	BlockHeight       uint64                 `protobuf:"varint,7,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+	Transactions      []*TransactionWithMeta `protobuf:"bytes,4,rep,name=transactions,proto3" json:"transactions,omitempty"`                   // present if FULL
+	Signatures        [][]byte               `protobuf:"bytes,5,rep,name=signatures,proto3" json:"signatures,omitempty"`                       // present if SIGNATURES
+	BlockTime         int64                  `protobuf:"varint,6,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`       // unix seconds
+	BlockHeight       uint64                 `protobuf:"varint,7,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"` // chain height
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1353,9 +1371,10 @@ func (x *GetBlockReply) GetBlockHeight() uint64 {
 	return 0
 }
 
+// Request for GetBlock.
 type GetBlockRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
+	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"` // target slot
 	Opts          *GetBlockOpts          `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1405,9 +1424,10 @@ func (x *GetBlockRequest) GetOpts() *GetBlockOpts {
 	return nil
 }
 
+// Fee quote for a base58-encoded Message.
 type GetFeeForMessageReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Fee           uint64                 `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"`
+	Fee           uint64                 `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"` // lamports
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1451,8 +1471,8 @@ func (x *GetFeeForMessageReply) GetFee() uint64 {
 
 type GetFeeForMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Commitment    CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`                                        // base58-encoded Message
+	Commitment    CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"` // read consistency
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1501,6 +1521,7 @@ func (x *GetFeeForMessageRequest) GetCommitment() CommitmentType {
 	return CommitmentType_COMMITMENT_NONE
 }
 
+// Options for GetMultipleAccounts.
 type GetMultipleAccountsOpts struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Encoding       EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`
@@ -1569,10 +1590,11 @@ func (x *GetMultipleAccountsOpts) GetMinContextSlot() uint64 {
 	return 0
 }
 
+// Reply for GetMultipleAccountsWithOpts.
 type GetMultipleAccountsWithOptsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RPCContext    *RPCContext            `protobuf:"bytes,1,opt,name=r_p_c_context,json=rPCContext,proto3" json:"r_p_c_context,omitempty"`
-	Value         []*Account             `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`
+	RPCContext    *RPCContext            `protobuf:"bytes,1,opt,name=r_p_c_context,json=rPCContext,proto3" json:"r_p_c_context,omitempty"` // read slot
+	Value         []*Account             `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`                                 // accounts (nil entries allowed)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1621,9 +1643,10 @@ func (x *GetMultipleAccountsWithOptsReply) GetValue() []*Account {
 	return nil
 }
 
+// Request for GetMultipleAccountsWithOpts.
 type GetMultipleAccountsWithOptsRequest struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Accounts      [][]byte                 `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
+	Accounts      [][]byte                 `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"` // list of 32-byte Pubkeys
 	Opts          *GetMultipleAccountsOpts `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1673,9 +1696,10 @@ func (x *GetMultipleAccountsWithOptsRequest) GetOpts() *GetMultipleAccountsOpts 
 	return nil
 }
 
+// Reply for GetSignatureStatuses.
 type GetSignatureStatusesReply struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Results       []*GetSignatureStatusesResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	Results       []*GetSignatureStatusesResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"` // 1:1 with input
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1717,9 +1741,10 @@ func (x *GetSignatureStatusesReply) GetResults() []*GetSignatureStatusesResult {
 	return nil
 }
 
+// Request for GetSignatureStatuses.
 type GetSignatureStatusesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Sigs          [][]byte               `protobuf:"bytes,1,rep,name=sigs,proto3" json:"sigs,omitempty"`
+	Sigs          [][]byte               `protobuf:"bytes,1,rep,name=sigs,proto3" json:"sigs,omitempty"` // 64-byte signatures
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1761,11 +1786,12 @@ func (x *GetSignatureStatusesRequest) GetSigs() [][]byte {
 	return nil
 }
 
+// Per-signature status.
 type GetSignatureStatusesResult struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Slot               uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
-	Confirmations      uint64                 `protobuf:"varint,2,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
-	Err                string                 `protobuf:"bytes,3,opt,name=err,proto3" json:"err,omitempty"`
+	Slot               uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`                   // processed slot
+	Confirmations      uint64                 `protobuf:"varint,2,opt,name=confirmations,proto3" json:"confirmations,omitempty"` // null->0 here
+	Err                string                 `protobuf:"bytes,3,opt,name=err,proto3" json:"err,omitempty"`                      // error JSON string (empty on success)
 	ConfirmationStatus ConfirmationStatusType `protobuf:"varint,4,opt,name=confirmation_status,json=confirmationStatus,proto3,enum=loop.solana.ConfirmationStatusType" json:"confirmation_status,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -1829,6 +1855,7 @@ func (x *GetSignatureStatusesResult) GetConfirmationStatus() ConfirmationStatusT
 	return ConfirmationStatusType_CONFIRMATION_NONE
 }
 
+// Current “height” (blocks below latest).
 type GetSlotHeightReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Height        uint64                 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
@@ -1875,7 +1902,7 @@ func (x *GetSlotHeightReply) GetHeight() uint64 {
 
 type GetSlotHeightRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Commitment    CommitmentType         `protobuf:"varint,1,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
+	Commitment    CommitmentType         `protobuf:"varint,1,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"` // read consistency
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1917,11 +1944,12 @@ func (x *GetSlotHeightRequest) GetCommitment() CommitmentType {
 	return CommitmentType_COMMITMENT_NONE
 }
 
+// Message header counts.
 type MessageHeader struct {
 	state                       protoimpl.MessageState `protogen:"open.v1"`
-	NumRequiredSignatures       uint32                 `protobuf:"varint,1,opt,name=num_required_signatures,json=numRequiredSignatures,proto3" json:"num_required_signatures,omitempty"`
-	NumReadonlySignedAccounts   uint32                 `protobuf:"varint,2,opt,name=num_readonly_signed_accounts,json=numReadonlySignedAccounts,proto3" json:"num_readonly_signed_accounts,omitempty"`
-	NumReadonlyUnsignedAccounts uint32                 `protobuf:"varint,3,opt,name=num_readonly_unsigned_accounts,json=numReadonlyUnsignedAccounts,proto3" json:"num_readonly_unsigned_accounts,omitempty"`
+	NumRequiredSignatures       uint32                 `protobuf:"varint,1,opt,name=num_required_signatures,json=numRequiredSignatures,proto3" json:"num_required_signatures,omitempty"`                     // signer count
+	NumReadonlySignedAccounts   uint32                 `protobuf:"varint,2,opt,name=num_readonly_signed_accounts,json=numReadonlySignedAccounts,proto3" json:"num_readonly_signed_accounts,omitempty"`       // trailing signed RO
+	NumReadonlyUnsignedAccounts uint32                 `protobuf:"varint,3,opt,name=num_readonly_unsigned_accounts,json=numReadonlyUnsignedAccounts,proto3" json:"num_readonly_unsigned_accounts,omitempty"` // trailing unsigned RO
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -1977,10 +2005,11 @@ func (x *MessageHeader) GetNumReadonlyUnsignedAccounts() uint32 {
 	return 0
 }
 
+// Parsed message (no address tables).
 type ParsedMessage struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	RecentBlockhash []byte                 `protobuf:"bytes,1,opt,name=recent_blockhash,json=recentBlockhash,proto3" json:"recent_blockhash,omitempty"` // 32 bytes solana Hash
-	AccountKeys     [][]byte               `protobuf:"bytes,2,rep,name=account_keys,json=accountKeys,proto3" json:"account_keys,omitempty"`             // list of 32 bytes account keys
+	RecentBlockhash []byte                 `protobuf:"bytes,1,opt,name=recent_blockhash,json=recentBlockhash,proto3" json:"recent_blockhash,omitempty"` // 32-byte Hash
+	AccountKeys     [][]byte               `protobuf:"bytes,2,rep,name=account_keys,json=accountKeys,proto3" json:"account_keys,omitempty"`             // list of 32-byte Pubkeys
 	Header          *MessageHeader         `protobuf:"bytes,3,opt,name=header,proto3" json:"header,omitempty"`
 	Instructions    []*CompiledInstruction `protobuf:"bytes,4,rep,name=instructions,proto3" json:"instructions,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -2045,9 +2074,10 @@ func (x *ParsedMessage) GetInstructions() []*CompiledInstruction {
 	return nil
 }
 
+// Parsed transaction (signatures + message).
 type ParsedTransaction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Signatures    [][]byte               `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"` // 64 bytes solana Signature each
+	Signatures    [][]byte               `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"` // 64-byte signatures
 	Message       *ParsedMessage         `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2097,11 +2127,12 @@ func (x *ParsedTransaction) GetMessage() *ParsedMessage {
 	return nil
 }
 
+// Token amount (UI-friendly).
 type UiTokenAmount struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Amount         string                 `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"` // raw integer as string
-	Decimals       uint32                 `protobuf:"varint,2,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	UiAmountString string                 `protobuf:"bytes,4,opt,name=ui_amount_string,json=uiAmountString,proto3" json:"ui_amount_string,omitempty"`
+	Amount         string                 `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`                                         // raw integer string
+	Decimals       uint32                 `protobuf:"varint,2,opt,name=decimals,proto3" json:"decimals,omitempty"`                                    // mint decimals
+	UiAmountString string                 `protobuf:"bytes,4,opt,name=ui_amount_string,json=uiAmountString,proto3" json:"ui_amount_string,omitempty"` // amount / 10^decimals
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2157,13 +2188,14 @@ func (x *UiTokenAmount) GetUiAmountString() string {
 	return ""
 }
 
+// SPL token balance entry.
 type TokenBalance struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccountIndex  uint32                 `protobuf:"varint,1,opt,name=account_index,json=accountIndex,proto3" json:"account_index,omitempty"`
-	Owner         []byte                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`                          // 32 bytes solana PublicKey
-	ProgramId     []byte                 `protobuf:"bytes,3,opt,name=program_id,json=programId,proto3" json:"program_id,omitempty"` // 32 bytes solana PublicKey
-	Mint          []byte                 `protobuf:"bytes,4,opt,name=mint,proto3" json:"mint,omitempty"`                            // 32 bytes solana PublicKey
-	Ui            *UiTokenAmount         `protobuf:"bytes,5,opt,name=ui,proto3" json:"ui,omitempty"`
+	AccountIndex  uint32                 `protobuf:"varint,1,opt,name=account_index,json=accountIndex,proto3" json:"account_index,omitempty"` // index in account_keys
+	Owner         []byte                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`                                    // 32-byte owner (optional)
+	ProgramId     []byte                 `protobuf:"bytes,3,opt,name=program_id,json=programId,proto3" json:"program_id,omitempty"`           // 32-byte token program (optional)
+	Mint          []byte                 `protobuf:"bytes,4,opt,name=mint,proto3" json:"mint,omitempty"`                                      // 32-byte mint
+	Ui            *UiTokenAmount         `protobuf:"bytes,5,opt,name=ui,proto3" json:"ui,omitempty"`                                          // formatted amounts
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2233,10 +2265,11 @@ func (x *TokenBalance) GetUi() *UiTokenAmount {
 	return nil
 }
 
+// Inner instruction list at a given outer instruction index.
 type InnerInstruction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Index         uint32                 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	Instructions  []*CompiledInstruction `protobuf:"bytes,2,rep,name=instructions,proto3" json:"instructions,omitempty"`
+	Index         uint32                 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`              // outer ix index
+	Instructions  []*CompiledInstruction `protobuf:"bytes,2,rep,name=instructions,proto3" json:"instructions,omitempty"` // invoked ixs
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2285,10 +2318,11 @@ func (x *InnerInstruction) GetInstructions() []*CompiledInstruction {
 	return nil
 }
 
+// Address table lookups expanded by loader.
 type LoadedAddresses struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Readonly      [][]byte               `protobuf:"bytes,1,rep,name=readonly,proto3" json:"readonly,omitempty"` // 32 bytes solana PublicKey
-	Writable      [][]byte               `protobuf:"bytes,2,rep,name=writable,proto3" json:"writable,omitempty"` // 32 bytes solana PublicKey
+	Readonly      [][]byte               `protobuf:"bytes,1,rep,name=readonly,proto3" json:"readonly,omitempty"` // 32-byte Pubkeys
+	Writable      [][]byte               `protobuf:"bytes,2,rep,name=writable,proto3" json:"writable,omitempty"` // 32-byte Pubkeys
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2337,12 +2371,13 @@ func (x *LoadedAddresses) GetWritable() [][]byte {
 	return nil
 }
 
+// Compiled (program) instruction.
 type CompiledInstruction struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	ProgramIdIndex uint32                 `protobuf:"varint,1,opt,name=program_id_index,json=programIdIndex,proto3" json:"program_id_index,omitempty"`
-	Accounts       []uint32               `protobuf:"varint,2,rep,packed,name=accounts,proto3" json:"accounts,omitempty"`
-	Data           []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	StackHeight    uint32                 `protobuf:"varint,4,opt,name=stack_height,json=stackHeight,proto3" json:"stack_height,omitempty"`
+	ProgramIdIndex uint32                 `protobuf:"varint,1,opt,name=program_id_index,json=programIdIndex,proto3" json:"program_id_index,omitempty"` // index into account_keys
+	Accounts       []uint32               `protobuf:"varint,2,rep,packed,name=accounts,proto3" json:"accounts,omitempty"`                              // indices into account_keys
+	Data           []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`                                              // program input bytes
+	StackHeight    uint32                 `protobuf:"varint,4,opt,name=stack_height,json=stackHeight,proto3" json:"stack_height,omitempty"`            // if recorded by node
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2405,10 +2440,11 @@ func (x *CompiledInstruction) GetStackHeight() uint32 {
 	return 0
 }
 
+// Raw bytes with encoding tag.
 type Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Content       []byte                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`
-	Encoding      EncodingType           `protobuf:"varint,2,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`
+	Content       []byte                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`                                  // raw bytes
+	Encoding      EncodingType           `protobuf:"varint,2,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"` // how it was encoded originally
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2457,10 +2493,11 @@ func (x *Data) GetEncoding() EncodingType {
 	return EncodingType_ENCODING_NONE
 }
 
+// Program return data.
 type ReturnData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProgramId     []byte                 `protobuf:"bytes,1,opt,name=program_id,json=programId,proto3" json:"program_id,omitempty"` // 32 bytes solana publicKey
-	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`                            // raw program return bytes
+	ProgramId     []byte                 `protobuf:"bytes,1,opt,name=program_id,json=programId,proto3" json:"program_id,omitempty"` // 32-byte Pubkey
+	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`                            // raw return bytes
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2509,19 +2546,20 @@ func (x *ReturnData) GetData() *Data {
 	return nil
 }
 
+// Transaction execution metadata.
 type TransactionMeta struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	ErrJson              string                 `protobuf:"bytes,1,opt,name=err_json,json=errJson,proto3" json:"err_json,omitempty"`
-	Fee                  uint64                 `protobuf:"varint,2,opt,name=fee,proto3" json:"fee,omitempty"`
-	PreBalances          []uint64               `protobuf:"varint,3,rep,packed,name=pre_balances,json=preBalances,proto3" json:"pre_balances,omitempty"`
-	PostBalances         []uint64               `protobuf:"varint,4,rep,packed,name=post_balances,json=postBalances,proto3" json:"post_balances,omitempty"`
-	LogMessages          []string               `protobuf:"bytes,5,rep,name=log_messages,json=logMessages,proto3" json:"log_messages,omitempty"`
+	ErrJson              string                 `protobuf:"bytes,1,opt,name=err_json,json=errJson,proto3" json:"err_json,omitempty"`                        // error JSON (empty on success)
+	Fee                  uint64                 `protobuf:"varint,2,opt,name=fee,proto3" json:"fee,omitempty"`                                              // lamports
+	PreBalances          []uint64               `protobuf:"varint,3,rep,packed,name=pre_balances,json=preBalances,proto3" json:"pre_balances,omitempty"`    // lamports per account
+	PostBalances         []uint64               `protobuf:"varint,4,rep,packed,name=post_balances,json=postBalances,proto3" json:"post_balances,omitempty"` // lamports per account
+	LogMessages          []string               `protobuf:"bytes,5,rep,name=log_messages,json=logMessages,proto3" json:"log_messages,omitempty"`            // runtime logs
 	PreTokenBalances     []*TokenBalance        `protobuf:"bytes,6,rep,name=pre_token_balances,json=preTokenBalances,proto3" json:"pre_token_balances,omitempty"`
 	PostTokenBalances    []*TokenBalance        `protobuf:"bytes,7,rep,name=post_token_balances,json=postTokenBalances,proto3" json:"post_token_balances,omitempty"`
 	InnerInstructions    []*InnerInstruction    `protobuf:"bytes,8,rep,name=inner_instructions,json=innerInstructions,proto3" json:"inner_instructions,omitempty"`
 	LoadedAddresses      *LoadedAddresses       `protobuf:"bytes,9,opt,name=loaded_addresses,json=loadedAddresses,proto3" json:"loaded_addresses,omitempty"`
 	ReturnData           *ReturnData            `protobuf:"bytes,10,opt,name=return_data,json=returnData,proto3" json:"return_data,omitempty"`
-	ComputeUnitsConsumed uint64                 `protobuf:"varint,11,opt,name=compute_units_consumed,json=computeUnitsConsumed,proto3" json:"compute_units_consumed,omitempty"`
+	ComputeUnitsConsumed uint64                 `protobuf:"varint,11,opt,name=compute_units_consumed,json=computeUnitsConsumed,proto3" json:"compute_units_consumed,omitempty"` // CUs
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -2633,10 +2671,9 @@ func (x *TransactionMeta) GetComputeUnitsConsumed() uint64 {
 	return 0
 }
 
+// Transaction envelope: raw bytes or parsed struct.
 type TransactionEnvelope struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// - For RAW encoding, "transaction" contains tx bytes; for PARSED, structured fields.
-	//
 	// Types that are valid to be assigned to Transaction:
 	//
 	//	*TransactionEnvelope_Raw
@@ -2706,23 +2743,24 @@ type isTransactionEnvelope_Transaction interface {
 }
 
 type TransactionEnvelope_Raw struct {
-	Raw []byte `protobuf:"bytes,1,opt,name=raw,proto3,oneof"`
+	Raw []byte `protobuf:"bytes,1,opt,name=raw,proto3,oneof"` // raw tx bytes (for RAW/base64)
 }
 
 type TransactionEnvelope_Parsed struct {
-	Parsed *ParsedTransaction `protobuf:"bytes,2,opt,name=parsed,proto3,oneof"`
+	Parsed *ParsedTransaction `protobuf:"bytes,2,opt,name=parsed,proto3,oneof"` // parsed tx (for JSON_PARSED)
 }
 
 func (*TransactionEnvelope_Raw) isTransactionEnvelope_Transaction() {}
 
 func (*TransactionEnvelope_Parsed) isTransactionEnvelope_Transaction() {}
 
+// GetTransaction reply.
 type GetTransactionReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
-	BlockTime     int64                  `protobuf:"varint,2,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
-	Transaction   *TransactionEnvelope   `protobuf:"bytes,3,opt,name=transaction,proto3" json:"transaction,omitempty"`
-	Meta          *TransactionMeta       `protobuf:"bytes,12,opt,name=meta,proto3" json:"meta,omitempty"` // - "meta" may be omitted by the node/config.
+	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`                            // processed slot
+	BlockTime     int64                  `protobuf:"varint,2,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"` // unix seconds
+	Transaction   *TransactionEnvelope   `protobuf:"bytes,3,opt,name=transaction,proto3" json:"transaction,omitempty"`               // tx bytes or parsed
+	Meta          *TransactionMeta       `protobuf:"bytes,12,opt,name=meta,proto3" json:"meta,omitempty"`                            // may be omitted by node
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2785,9 +2823,10 @@ func (x *GetTransactionReply) GetMeta() *TransactionMeta {
 	return nil
 }
 
+// GetTransaction request.
 type GetTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"` // 64 bytes signature
+	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"` // 64-byte signature
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2829,10 +2868,11 @@ func (x *GetTransactionRequest) GetSignature() []byte {
 	return nil
 }
 
+// Comparator against hashed values.
 type HashedValueComparator struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        [][]byte               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
-	Operator      int64                  `protobuf:"varint,2,opt,name=operator,proto3" json:"operator,omitempty"`
+	Values        [][]byte               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`      // hashed bytes
+	Operator      int64                  `protobuf:"varint,2,opt,name=operator,proto3" json:"operator,omitempty"` // comparison op
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2881,9 +2921,10 @@ func (x *HashedValueComparator) GetOperator() int64 {
 	return 0
 }
 
+// Subkey path elements.
 type Subkeys struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Subkeys       []string               `protobuf:"bytes,1,rep,name=subkeys,proto3" json:"subkeys,omitempty"`
+	Subkeys       []string               `protobuf:"bytes,1,rep,name=subkeys,proto3" json:"subkeys,omitempty"` // e.g., ["events","0","fields","owner"]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2925,18 +2966,19 @@ func (x *Subkeys) GetSubkeys() []string {
 	return nil
 }
 
+// Log-poller filter config (Solana flavor).
 type LPFilterQuery struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Address         []byte                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
-	EventName       string                 `protobuf:"bytes,3,opt,name=event_name,json=eventName,proto3" json:"event_name,omitempty"`
-	EventSig        []byte                 `protobuf:"bytes,4,opt,name=event_sig,json=eventSig,proto3" json:"event_sig,omitempty"`
-	StartingBlock   int64                  `protobuf:"varint,5,opt,name=starting_block,json=startingBlock,proto3" json:"starting_block,omitempty"`
-	EventIdlJson    []byte                 `protobuf:"bytes,6,opt,name=event_idl_json,json=eventIdlJson,proto3" json:"event_idl_json,omitempty"`
-	SubkeyPaths     []*Subkeys             `protobuf:"bytes,7,rep,name=subkey_paths,json=subkeyPaths,proto3" json:"subkey_paths,omitempty"`
-	Retention       int64                  `protobuf:"varint,8,opt,name=retention,proto3" json:"retention,omitempty"`
-	MaxLogsKept     int64                  `protobuf:"varint,9,opt,name=max_logs_kept,json=maxLogsKept,proto3" json:"max_logs_kept,omitempty"`
-	IncludeReverted bool                   `protobuf:"varint,10,opt,name=include_reverted,json=includeReverted,proto3" json:"include_reverted,omitempty"`
+	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                                                // filter name/id
+	Address         []byte                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`                                          // 32-byte program id
+	EventName       string                 `protobuf:"bytes,3,opt,name=event_name,json=eventName,proto3" json:"event_name,omitempty"`                     // optional label
+	EventSig        []byte                 `protobuf:"bytes,4,opt,name=event_sig,json=eventSig,proto3" json:"event_sig,omitempty"`                        // 8-byte event discriminator
+	StartingBlock   int64                  `protobuf:"varint,5,opt,name=starting_block,json=startingBlock,proto3" json:"starting_block,omitempty"`        // start slot
+	EventIdlJson    []byte                 `protobuf:"bytes,6,opt,name=event_idl_json,json=eventIdlJson,proto3" json:"event_idl_json,omitempty"`          // IDL JSON bytes
+	SubkeyPaths     []*Subkeys             `protobuf:"bytes,7,rep,name=subkey_paths,json=subkeyPaths,proto3" json:"subkey_paths,omitempty"`               // subkey selectors
+	Retention       int64                  `protobuf:"varint,8,opt,name=retention,proto3" json:"retention,omitempty"`                                     // seconds to keep logs
+	MaxLogsKept     int64                  `protobuf:"varint,9,opt,name=max_logs_kept,json=maxLogsKept,proto3" json:"max_logs_kept,omitempty"`            // 0 = unlimited
+	IncludeReverted bool                   `protobuf:"varint,10,opt,name=include_reverted,json=includeReverted,proto3" json:"include_reverted,omitempty"` // include rolled-back
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -3041,130 +3083,27 @@ func (x *LPFilterQuery) GetIncludeReverted() bool {
 	return false
 }
 
-type Limit struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Cursor          string                 `protobuf:"bytes,1,opt,name=cursor,proto3" json:"cursor,omitempty"`
-	CursorDirection int32                  `protobuf:"varint,2,opt,name=cursor_direction,json=cursorDirection,proto3" json:"cursor_direction,omitempty"`
-	Count           uint64                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *Limit) Reset() {
-	*x = Limit{}
-	mi := &file_solana_proto_msgTypes[46]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Limit) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Limit) ProtoMessage() {}
-
-func (x *Limit) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[46]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Limit.ProtoReflect.Descriptor instead.
-func (*Limit) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{46}
-}
-
-func (x *Limit) GetCursor() string {
-	if x != nil {
-		return x.Cursor
-	}
-	return ""
-}
-
-func (x *Limit) GetCursorDirection() int32 {
-	if x != nil {
-		return x.CursorDirection
-	}
-	return 0
-}
-
-func (x *Limit) GetCount() uint64 {
-	if x != nil {
-		return x.Count
-	}
-	return 0
-}
-
-type LimitAndSort struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Limit         *Limit                 `protobuf:"bytes,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LimitAndSort) Reset() {
-	*x = LimitAndSort{}
-	mi := &file_solana_proto_msgTypes[47]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LimitAndSort) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LimitAndSort) ProtoMessage() {}
-
-func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[47]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LimitAndSort.ProtoReflect.Descriptor instead.
-func (*LimitAndSort) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{47}
-}
-
-func (x *LimitAndSort) GetLimit() *Limit {
-	if x != nil {
-		return x.Limit
-	}
-	return nil
-}
-
+// Canonical log shape for tracked events.
 type Log struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	ChainId        string                 `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	LogIndex       int64                  `protobuf:"varint,2,opt,name=log_index,json=logIndex,proto3" json:"log_index,omitempty"`
-	BlockHash      []byte                 `protobuf:"bytes,3,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
-	BlockNumber    int64                  `protobuf:"varint,4,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
-	BlockTimestamp uint64                 `protobuf:"varint,5,opt,name=block_timestamp,json=blockTimestamp,proto3" json:"block_timestamp,omitempty"`
-	Address        []byte                 `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
-	EventSig       []byte                 `protobuf:"bytes,7,opt,name=event_sig,json=eventSig,proto3" json:"event_sig,omitempty"`
-	TxHash         []byte                 `protobuf:"bytes,8,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	Data           []byte                 `protobuf:"bytes,9,opt,name=data,proto3" json:"data,omitempty"`
-	SequenceNum    int64                  `protobuf:"varint,10,opt,name=sequence_num,json=sequenceNum,proto3" json:"sequence_num,omitempty"`
-	Error          string                 `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
+	ChainId        string                 `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`                       // e.g., "solana-mainnet"
+	LogIndex       int64                  `protobuf:"varint,2,opt,name=log_index,json=logIndex,proto3" json:"log_index,omitempty"`                   // per-block index
+	BlockHash      []byte                 `protobuf:"bytes,3,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`                 // 32-byte
+	BlockNumber    int64                  `protobuf:"varint,4,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`          // slot
+	BlockTimestamp uint64                 `protobuf:"varint,5,opt,name=block_timestamp,json=blockTimestamp,proto3" json:"block_timestamp,omitempty"` // unix seconds
+	Address        []byte                 `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`                                      // 32-byte program id
+	EventSig       []byte                 `protobuf:"bytes,7,opt,name=event_sig,json=eventSig,proto3" json:"event_sig,omitempty"`                    // 8-byte discriminator
+	TxHash         []byte                 `protobuf:"bytes,8,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`                          // 64-byte signature
+	Data           []byte                 `protobuf:"bytes,9,opt,name=data,proto3" json:"data,omitempty"`                                            // raw event bytes
+	SequenceNum    int64                  `protobuf:"varint,10,opt,name=sequence_num,json=sequenceNum,proto3" json:"sequence_num,omitempty"`         // monotonic seq
+	Error          string                 `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`                                         // decode/processing error
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Log) Reset() {
 	*x = Log{}
-	mi := &file_solana_proto_msgTypes[48]
+	mi := &file_solana_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3176,7 +3115,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[48]
+	mi := &file_solana_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3189,7 +3128,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{48}
+	return file_solana_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *Log) GetChainId() string {
@@ -3269,6 +3208,7 @@ func (x *Log) GetError() string {
 	return ""
 }
 
+// RPC read context.
 type RPCContext struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Context       *Context               `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
@@ -3278,7 +3218,7 @@ type RPCContext struct {
 
 func (x *RPCContext) Reset() {
 	*x = RPCContext{}
-	mi := &file_solana_proto_msgTypes[49]
+	mi := &file_solana_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3290,7 +3230,7 @@ func (x *RPCContext) String() string {
 func (*RPCContext) ProtoMessage() {}
 
 func (x *RPCContext) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[49]
+	mi := &file_solana_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3303,7 +3243,7 @@ func (x *RPCContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RPCContext.ProtoReflect.Descriptor instead.
 func (*RPCContext) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{49}
+	return file_solana_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *RPCContext) GetContext() *Context {
@@ -3313,19 +3253,20 @@ func (x *RPCContext) GetContext() *Context {
 	return nil
 }
 
+// Simulation options.
 type SimulateTXOpts struct {
 	state                  protoimpl.MessageState           `protogen:"open.v1"`
-	SigVerify              bool                             `protobuf:"varint,1,opt,name=sig_verify,json=sigVerify,proto3" json:"sig_verify,omitempty"`
-	Commitment             CommitmentType                   `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
-	ReplaceRecentBlockhash bool                             `protobuf:"varint,3,opt,name=replace_recent_blockhash,json=replaceRecentBlockhash,proto3" json:"replace_recent_blockhash,omitempty"`
-	Accounts               *SimulateTransactionAccountsOpts `protobuf:"bytes,4,opt,name=accounts,proto3" json:"accounts,omitempty"`
+	SigVerify              bool                             `protobuf:"varint,1,opt,name=sig_verify,json=sigVerify,proto3" json:"sig_verify,omitempty"`                                          // verify sigs
+	Commitment             CommitmentType                   `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`                         // read consistency
+	ReplaceRecentBlockhash bool                             `protobuf:"varint,3,opt,name=replace_recent_blockhash,json=replaceRecentBlockhash,proto3" json:"replace_recent_blockhash,omitempty"` // refresh blockhash
+	Accounts               *SimulateTransactionAccountsOpts `protobuf:"bytes,4,opt,name=accounts,proto3" json:"accounts,omitempty"`                                                              // return accounts
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SimulateTXOpts) Reset() {
 	*x = SimulateTXOpts{}
-	mi := &file_solana_proto_msgTypes[50]
+	mi := &file_solana_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3337,7 +3278,7 @@ func (x *SimulateTXOpts) String() string {
 func (*SimulateTXOpts) ProtoMessage() {}
 
 func (x *SimulateTXOpts) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[50]
+	mi := &file_solana_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3350,7 +3291,7 @@ func (x *SimulateTXOpts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXOpts.ProtoReflect.Descriptor instead.
 func (*SimulateTXOpts) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{50}
+	return file_solana_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *SimulateTXOpts) GetSigVerify() bool {
@@ -3381,19 +3322,20 @@ func (x *SimulateTXOpts) GetAccounts() *SimulateTransactionAccountsOpts {
 	return nil
 }
 
+// Simulation result.
 type SimulateTXReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Err           string                 `protobuf:"bytes,1,opt,name=err,proto3" json:"err,omitempty"`
-	Logs          []string               `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
-	Accounts      []*Account             `protobuf:"bytes,3,rep,name=accounts,proto3" json:"accounts,omitempty"`
-	UnitsConsumed uint64                 `protobuf:"varint,4,opt,name=units_consumed,json=unitsConsumed,proto3" json:"units_consumed,omitempty"`
+	Err           string                 `protobuf:"bytes,1,opt,name=err,proto3" json:"err,omitempty"`                                           // empty on success
+	Logs          []string               `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`                                         // runtime logs
+	Accounts      []*Account             `protobuf:"bytes,3,rep,name=accounts,proto3" json:"accounts,omitempty"`                                 // returned accounts
+	UnitsConsumed uint64                 `protobuf:"varint,4,opt,name=units_consumed,json=unitsConsumed,proto3" json:"units_consumed,omitempty"` // CUs
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SimulateTXReply) Reset() {
 	*x = SimulateTXReply{}
-	mi := &file_solana_proto_msgTypes[51]
+	mi := &file_solana_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3405,7 +3347,7 @@ func (x *SimulateTXReply) String() string {
 func (*SimulateTXReply) ProtoMessage() {}
 
 func (x *SimulateTXReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[51]
+	mi := &file_solana_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3418,7 +3360,7 @@ func (x *SimulateTXReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXReply.ProtoReflect.Descriptor instead.
 func (*SimulateTXReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{51}
+	return file_solana_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *SimulateTXReply) GetErr() string {
@@ -3449,10 +3391,11 @@ func (x *SimulateTXReply) GetUnitsConsumed() uint64 {
 	return 0
 }
 
+// Simulation request.
 type SimulateTXRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Receiver           []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`
-	EncodedTransaction string                 `protobuf:"bytes,2,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"`
+	Receiver           []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`                                               // 32-byte program id (target)
+	EncodedTransaction string                 `protobuf:"bytes,2,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"` // base64/base58 tx
 	Opts               *SimulateTXOpts        `protobuf:"bytes,3,opt,name=opts,proto3" json:"opts,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -3460,7 +3403,7 @@ type SimulateTXRequest struct {
 
 func (x *SimulateTXRequest) Reset() {
 	*x = SimulateTXRequest{}
-	mi := &file_solana_proto_msgTypes[52]
+	mi := &file_solana_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3472,7 +3415,7 @@ func (x *SimulateTXRequest) String() string {
 func (*SimulateTXRequest) ProtoMessage() {}
 
 func (x *SimulateTXRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[52]
+	mi := &file_solana_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3485,7 +3428,7 @@ func (x *SimulateTXRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXRequest.ProtoReflect.Descriptor instead.
 func (*SimulateTXRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{52}
+	return file_solana_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *SimulateTXRequest) GetReceiver() []byte {
@@ -3509,17 +3452,18 @@ func (x *SimulateTXRequest) GetOpts() *SimulateTXOpts {
 	return nil
 }
 
+// Accounts to return during simulation.
 type SimulateTransactionAccountsOpts struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Encoding      EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`
-	Addresses     [][]byte               `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	Encoding      EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"` // account data encoding
+	Addresses     [][]byte               `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`                              // 32-byte Pubkeys
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SimulateTransactionAccountsOpts) Reset() {
 	*x = SimulateTransactionAccountsOpts{}
-	mi := &file_solana_proto_msgTypes[53]
+	mi := &file_solana_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3531,7 +3475,7 @@ func (x *SimulateTransactionAccountsOpts) String() string {
 func (*SimulateTransactionAccountsOpts) ProtoMessage() {}
 
 func (x *SimulateTransactionAccountsOpts) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[53]
+	mi := &file_solana_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3544,7 +3488,7 @@ func (x *SimulateTransactionAccountsOpts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTransactionAccountsOpts.ProtoReflect.Descriptor instead.
 func (*SimulateTransactionAccountsOpts) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{53}
+	return file_solana_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *SimulateTransactionAccountsOpts) GetEncoding() EncodingType {
@@ -3561,10 +3505,11 @@ func (x *SimulateTransactionAccountsOpts) GetAddresses() [][]byte {
 	return nil
 }
 
+// Submit transaction result.
 type SubmitTransactionReply struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Signature      []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
-	IdempotencyKey string                 `protobuf:"bytes,2,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	Signature      []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`                                 // 64-byte signature
+	IdempotencyKey string                 `protobuf:"bytes,2,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"` // echo key
 	Status         TransactionStatus      `protobuf:"varint,3,opt,name=status,proto3,enum=loop.solana.TransactionStatus" json:"status,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -3572,7 +3517,7 @@ type SubmitTransactionReply struct {
 
 func (x *SubmitTransactionReply) Reset() {
 	*x = SubmitTransactionReply{}
-	mi := &file_solana_proto_msgTypes[54]
+	mi := &file_solana_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3584,7 +3529,7 @@ func (x *SubmitTransactionReply) String() string {
 func (*SubmitTransactionReply) ProtoMessage() {}
 
 func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[54]
+	mi := &file_solana_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3597,7 +3542,7 @@ func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionReply.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{54}
+	return file_solana_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *SubmitTransactionReply) GetSignature() []byte {
@@ -3621,18 +3566,19 @@ func (x *SubmitTransactionReply) GetStatus() TransactionStatus {
 	return TransactionStatus_TX_FATAL
 }
 
+// Submit transaction request.
 type SubmitTransactionRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Cfg                *ComputeConfig         `protobuf:"bytes,1,opt,name=cfg,proto3" json:"cfg,omitempty"`
-	Receiver           []byte                 `protobuf:"bytes,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
-	EncodedTransaction string                 `protobuf:"bytes,3,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"`
+	Cfg                *ComputeConfig         `protobuf:"bytes,1,opt,name=cfg,proto3" json:"cfg,omitempty"`                                                         // compute budget
+	Receiver           []byte                 `protobuf:"bytes,2,opt,name=receiver,proto3" json:"receiver,omitempty"`                                               // 32-byte program id (target)
+	EncodedTransaction string                 `protobuf:"bytes,3,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"` // base64/base58 tx
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SubmitTransactionRequest) Reset() {
 	*x = SubmitTransactionRequest{}
-	mi := &file_solana_proto_msgTypes[55]
+	mi := &file_solana_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3644,7 +3590,7 @@ func (x *SubmitTransactionRequest) String() string {
 func (*SubmitTransactionRequest) ProtoMessage() {}
 
 func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[55]
+	mi := &file_solana_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3657,7 +3603,7 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{55}
+	return file_solana_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *SubmitTransactionRequest) GetCfg() *ComputeConfig {
@@ -3681,20 +3627,21 @@ func (x *SubmitTransactionRequest) GetEncodedTransaction() string {
 	return ""
 }
 
+// Block transaction with meta.
 type TransactionWithMeta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
-	BlockTime     int64                  `protobuf:"varint,2,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
-	Transaction   *DataBytesOrJSON       `protobuf:"bytes,3,opt,name=transaction,proto3" json:"transaction,omitempty"`
-	Meta          *TransactionMeta       `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`
-	Version       int64                  `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`                            // processed slot
+	BlockTime     int64                  `protobuf:"varint,2,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"` // unix seconds
+	Transaction   *DataBytesOrJSON       `protobuf:"bytes,3,opt,name=transaction,proto3" json:"transaction,omitempty"`               // tx (encoding per opts)
+	Meta          *TransactionMeta       `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`                             // execution metadata
+	Version       int64                  `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                      // -1 legacy, >=0 v0+
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TransactionWithMeta) Reset() {
 	*x = TransactionWithMeta{}
-	mi := &file_solana_proto_msgTypes[56]
+	mi := &file_solana_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3706,7 +3653,7 @@ func (x *TransactionWithMeta) String() string {
 func (*TransactionWithMeta) ProtoMessage() {}
 
 func (x *TransactionWithMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[56]
+	mi := &file_solana_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3719,7 +3666,7 @@ func (x *TransactionWithMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionWithMeta.ProtoReflect.Descriptor instead.
 func (*TransactionWithMeta) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{56}
+	return file_solana_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *TransactionWithMeta) GetSlot() uint64 {
@@ -3757,6 +3704,7 @@ func (x *TransactionWithMeta) GetVersion() int64 {
 	return 0
 }
 
+// Primitive leaf for expressions/filters.
 type Primitive struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Primitive:
@@ -3772,7 +3720,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_solana_proto_msgTypes[57]
+	mi := &file_solana_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3784,7 +3732,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[57]
+	mi := &file_solana_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3797,7 +3745,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{57}
+	return file_solana_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -3848,19 +3796,19 @@ type isPrimitive_Primitive interface {
 }
 
 type Primitive_GeneralPrimitive struct {
-	GeneralPrimitive *chain_common.Primitive `protobuf:"bytes,1,opt,name=general_primitive,json=generalPrimitive,proto3,oneof"`
+	GeneralPrimitive *chain_common.Primitive `protobuf:"bytes,1,opt,name=general_primitive,json=generalPrimitive,proto3,oneof"` // shared primitives
 }
 
 type Primitive_Address struct {
-	Address []byte `protobuf:"bytes,2,opt,name=address,proto3,oneof"` // filter event by program public key 32 bytes
+	Address []byte `protobuf:"bytes,2,opt,name=address,proto3,oneof"` // 32-byte program id
 }
 
 type Primitive_EventSig struct {
-	EventSig []byte `protobuf:"bytes,3,opt,name=event_sig,json=eventSig,proto3,oneof"` //  filter event by event signature  8 bytes length
+	EventSig []byte `protobuf:"bytes,3,opt,name=event_sig,json=eventSig,proto3,oneof"` // 8-byte discriminator
 }
 
 type Primitive_EventBySubkey struct {
-	EventBySubkey *EventBySubkey `protobuf:"bytes,4,opt,name=event_by_subkey,json=eventBySubkey,proto3,oneof"` // filter event by subkey
+	EventBySubkey *EventBySubkey `protobuf:"bytes,4,opt,name=event_by_subkey,json=eventBySubkey,proto3,oneof"` // subkey filter
 }
 
 func (*Primitive_GeneralPrimitive) isPrimitive_Primitive() {}
@@ -3871,17 +3819,18 @@ func (*Primitive_EventSig) isPrimitive_Primitive() {}
 
 func (*Primitive_EventBySubkey) isPrimitive_Primitive() {}
 
+// Query tracked logs.
 type QueryTrackedLogsRequest struct {
 	state         protoimpl.MessageState     `protogen:"open.v1"`
-	FilterQuery   []*Expression              `protobuf:"bytes,1,rep,name=filterQuery,proto3" json:"filterQuery,omitempty"`
-	LimitAndSort  *chain_common.LimitAndSort `protobuf:"bytes,2,opt,name=limit_and_sort,json=limitAndSort,proto3" json:"limit_and_sort,omitempty"`
+	FilterQuery   []*Expression              `protobuf:"bytes,1,rep,name=filterQuery,proto3" json:"filterQuery,omitempty"`                         // filter tree
+	LimitAndSort  *chain_common.LimitAndSort `protobuf:"bytes,2,opt,name=limit_and_sort,json=limitAndSort,proto3" json:"limit_and_sort,omitempty"` // paging
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QueryTrackedLogsRequest) Reset() {
 	*x = QueryTrackedLogsRequest{}
-	mi := &file_solana_proto_msgTypes[58]
+	mi := &file_solana_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3893,7 +3842,7 @@ func (x *QueryTrackedLogsRequest) String() string {
 func (*QueryTrackedLogsRequest) ProtoMessage() {}
 
 func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[58]
+	mi := &file_solana_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3906,7 +3855,7 @@ func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTrackedLogsRequest.ProtoReflect.Descriptor instead.
 func (*QueryTrackedLogsRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{58}
+	return file_solana_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *QueryTrackedLogsRequest) GetFilterQuery() []*Expression {
@@ -3932,7 +3881,7 @@ type QueryTrackedLogsReply struct {
 
 func (x *QueryTrackedLogsReply) Reset() {
 	*x = QueryTrackedLogsReply{}
-	mi := &file_solana_proto_msgTypes[59]
+	mi := &file_solana_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3944,7 +3893,7 @@ func (x *QueryTrackedLogsReply) String() string {
 func (*QueryTrackedLogsReply) ProtoMessage() {}
 
 func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[59]
+	mi := &file_solana_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3957,7 +3906,7 @@ func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTrackedLogsReply.ProtoReflect.Descriptor instead.
 func (*QueryTrackedLogsReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{59}
+	return file_solana_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *QueryTrackedLogsReply) GetLogs() []*Log {
@@ -3967,6 +3916,7 @@ func (x *QueryTrackedLogsReply) GetLogs() []*Log {
 	return nil
 }
 
+// Register a log tracking filter.
 type RegisterLogTrackingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Filter        *LPFilterQuery         `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
@@ -3976,7 +3926,7 @@ type RegisterLogTrackingRequest struct {
 
 func (x *RegisterLogTrackingRequest) Reset() {
 	*x = RegisterLogTrackingRequest{}
-	mi := &file_solana_proto_msgTypes[60]
+	mi := &file_solana_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3988,7 +3938,7 @@ func (x *RegisterLogTrackingRequest) String() string {
 func (*RegisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[60]
+	mi := &file_solana_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4001,7 +3951,7 @@ func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{60}
+	return file_solana_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *RegisterLogTrackingRequest) GetFilter() *LPFilterQuery {
@@ -4019,7 +3969,7 @@ type RegisterLogTrackingReply struct {
 
 func (x *RegisterLogTrackingReply) Reset() {
 	*x = RegisterLogTrackingReply{}
-	mi := &file_solana_proto_msgTypes[61]
+	mi := &file_solana_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4031,7 +3981,7 @@ func (x *RegisterLogTrackingReply) String() string {
 func (*RegisterLogTrackingReply) ProtoMessage() {}
 
 func (x *RegisterLogTrackingReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[61]
+	mi := &file_solana_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4044,9 +3994,10 @@ func (x *RegisterLogTrackingReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingReply.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{61}
+	return file_solana_proto_rawDescGZIP(), []int{59}
 }
 
+// Unregister a filter by name/id.
 type UnregisterLogTrackingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FilterName    string                 `protobuf:"bytes,1,opt,name=filterName,proto3" json:"filterName,omitempty"`
@@ -4056,7 +4007,7 @@ type UnregisterLogTrackingRequest struct {
 
 func (x *UnregisterLogTrackingRequest) Reset() {
 	*x = UnregisterLogTrackingRequest{}
-	mi := &file_solana_proto_msgTypes[62]
+	mi := &file_solana_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4068,7 +4019,7 @@ func (x *UnregisterLogTrackingRequest) String() string {
 func (*UnregisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[62]
+	mi := &file_solana_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4081,7 +4032,7 @@ func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{62}
+	return file_solana_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *UnregisterLogTrackingRequest) GetFilterName() string {
@@ -4099,7 +4050,7 @@ type UnregisterLogTrackingReply struct {
 
 func (x *UnregisterLogTrackingReply) Reset() {
 	*x = UnregisterLogTrackingReply{}
-	mi := &file_solana_proto_msgTypes[63]
+	mi := &file_solana_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4111,7 +4062,7 @@ func (x *UnregisterLogTrackingReply) String() string {
 func (*UnregisterLogTrackingReply) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[63]
+	mi := &file_solana_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4124,7 +4075,7 @@ func (x *UnregisterLogTrackingReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingReply.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{63}
+	return file_solana_proto_rawDescGZIP(), []int{61}
 }
 
 var File_solana_proto protoreflect.FileDescriptor
@@ -4344,13 +4295,7 @@ const file_solana_proto_rawDesc = "" +
 	"\tretention\x18\b \x01(\x03R\tretention\x12\"\n" +
 	"\rmax_logs_kept\x18\t \x01(\x03R\vmaxLogsKept\x12)\n" +
 	"\x10include_reverted\x18\n" +
-	" \x01(\bR\x0fincludeReverted\"`\n" +
-	"\x05Limit\x12\x16\n" +
-	"\x06cursor\x18\x01 \x01(\tR\x06cursor\x12)\n" +
-	"\x10cursor_direction\x18\x02 \x01(\x05R\x0fcursorDirection\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\x04R\x05count\"8\n" +
-	"\fLimitAndSort\x12(\n" +
-	"\x05limit\x18\x01 \x01(\v2\x12.loop.solana.LimitR\x05limit\"\xc5\x02\n" +
+	" \x01(\bR\x0fincludeReverted\"\xc5\x02\n" +
 	"\x03Log\x12\x19\n" +
 	"\bchain_id\x18\x01 \x01(\tR\achainId\x12\x1b\n" +
 	"\tlog_index\x18\x02 \x01(\x03R\blogIndex\x12\x1d\n" +
@@ -4480,7 +4425,7 @@ func file_solana_proto_rawDescGZIP() []byte {
 }
 
 var file_solana_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
+var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_solana_proto_goTypes = []any{
 	(TransactionStatus)(0),                     // 0: loop.solana.TransactionStatus
 	(TransactionDetailsType)(0),                // 1: loop.solana.TransactionDetailsType
@@ -4533,58 +4478,56 @@ var file_solana_proto_goTypes = []any{
 	(*HashedValueComparator)(nil),              // 48: loop.solana.HashedValueComparator
 	(*Subkeys)(nil),                            // 49: loop.solana.Subkeys
 	(*LPFilterQuery)(nil),                      // 50: loop.solana.LPFilterQuery
-	(*Limit)(nil),                              // 51: loop.solana.Limit
-	(*LimitAndSort)(nil),                       // 52: loop.solana.LimitAndSort
-	(*Log)(nil),                                // 53: loop.solana.Log
-	(*RPCContext)(nil),                         // 54: loop.solana.RPCContext
-	(*SimulateTXOpts)(nil),                     // 55: loop.solana.SimulateTXOpts
-	(*SimulateTXReply)(nil),                    // 56: loop.solana.SimulateTXReply
-	(*SimulateTXRequest)(nil),                  // 57: loop.solana.SimulateTXRequest
-	(*SimulateTransactionAccountsOpts)(nil),    // 58: loop.solana.SimulateTransactionAccountsOpts
-	(*SubmitTransactionReply)(nil),             // 59: loop.solana.SubmitTransactionReply
-	(*SubmitTransactionRequest)(nil),           // 60: loop.solana.SubmitTransactionRequest
-	(*TransactionWithMeta)(nil),                // 61: loop.solana.TransactionWithMeta
-	(*Primitive)(nil),                          // 62: loop.solana.Primitive
-	(*QueryTrackedLogsRequest)(nil),            // 63: loop.solana.QueryTrackedLogsRequest
-	(*QueryTrackedLogsReply)(nil),              // 64: loop.solana.QueryTrackedLogsReply
-	(*RegisterLogTrackingRequest)(nil),         // 65: loop.solana.RegisterLogTrackingRequest
-	(*RegisterLogTrackingReply)(nil),           // 66: loop.solana.RegisterLogTrackingReply
-	(*UnregisterLogTrackingRequest)(nil),       // 67: loop.solana.UnregisterLogTrackingRequest
-	(*UnregisterLogTrackingReply)(nil),         // 68: loop.solana.UnregisterLogTrackingReply
-	(*pb.BigInt)(nil),                          // 69: values.v1.BigInt
-	(chain_common.ComparisonOperator)(0),       // 70: loop.chain.common.ComparisonOperator
-	(chain_common.BooleanOperator)(0),          // 71: loop.chain.common.BooleanOperator
-	(*chain_common.Primitive)(nil),             // 72: loop.chain.common.Primitive
-	(*chain_common.LimitAndSort)(nil),          // 73: loop.chain.common.LimitAndSort
+	(*Log)(nil),                                // 51: loop.solana.Log
+	(*RPCContext)(nil),                         // 52: loop.solana.RPCContext
+	(*SimulateTXOpts)(nil),                     // 53: loop.solana.SimulateTXOpts
+	(*SimulateTXReply)(nil),                    // 54: loop.solana.SimulateTXReply
+	(*SimulateTXRequest)(nil),                  // 55: loop.solana.SimulateTXRequest
+	(*SimulateTransactionAccountsOpts)(nil),    // 56: loop.solana.SimulateTransactionAccountsOpts
+	(*SubmitTransactionReply)(nil),             // 57: loop.solana.SubmitTransactionReply
+	(*SubmitTransactionRequest)(nil),           // 58: loop.solana.SubmitTransactionRequest
+	(*TransactionWithMeta)(nil),                // 59: loop.solana.TransactionWithMeta
+	(*Primitive)(nil),                          // 60: loop.solana.Primitive
+	(*QueryTrackedLogsRequest)(nil),            // 61: loop.solana.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),              // 62: loop.solana.QueryTrackedLogsReply
+	(*RegisterLogTrackingRequest)(nil),         // 63: loop.solana.RegisterLogTrackingRequest
+	(*RegisterLogTrackingReply)(nil),           // 64: loop.solana.RegisterLogTrackingReply
+	(*UnregisterLogTrackingRequest)(nil),       // 65: loop.solana.UnregisterLogTrackingRequest
+	(*UnregisterLogTrackingReply)(nil),         // 66: loop.solana.UnregisterLogTrackingReply
+	(*pb.BigInt)(nil),                          // 67: values.v1.BigInt
+	(chain_common.ComparisonOperator)(0),       // 68: loop.chain.common.ComparisonOperator
+	(chain_common.BooleanOperator)(0),          // 69: loop.chain.common.BooleanOperator
+	(*chain_common.Primitive)(nil),             // 70: loop.chain.common.Primitive
+	(*chain_common.LimitAndSort)(nil),          // 71: loop.chain.common.LimitAndSort
 }
 var file_solana_proto_depIdxs = []int32{
 	9,  // 0: loop.solana.Account.data:type_name -> loop.solana.DataBytesOrJSON
-	69, // 1: loop.solana.Account.rent_epoch:type_name -> values.v1.BigInt
+	67, // 1: loop.solana.Account.rent_epoch:type_name -> values.v1.BigInt
 	2,  // 2: loop.solana.DataBytesOrJSON.raw_data_encoding:type_name -> loop.solana.EncodingType
 	48, // 3: loop.solana.EventSig.hashed_value_comparers:type_name -> loop.solana.HashedValueComparator
-	70, // 4: loop.solana.IndexedValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	68, // 4: loop.solana.IndexedValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
 	12, // 5: loop.solana.EventBySubkey.value_comparers:type_name -> loop.solana.IndexedValueComparator
-	62, // 6: loop.solana.Expression.primitive:type_name -> loop.solana.Primitive
+	60, // 6: loop.solana.Expression.primitive:type_name -> loop.solana.Primitive
 	15, // 7: loop.solana.Expression.boolean_expression:type_name -> loop.solana.BooleanExpression
-	71, // 8: loop.solana.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	69, // 8: loop.solana.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
 	14, // 9: loop.solana.BooleanExpression.expression:type_name -> loop.solana.Expression
 	2,  // 10: loop.solana.GetAccountInfoOpts.encoding:type_name -> loop.solana.EncodingType
 	3,  // 11: loop.solana.GetAccountInfoOpts.commitment:type_name -> loop.solana.CommitmentType
 	10, // 12: loop.solana.GetAccountInfoOpts.data_slice:type_name -> loop.solana.DataSlice
-	54, // 13: loop.solana.GetAccountInfoWithOptsReply.rpc_context:type_name -> loop.solana.RPCContext
+	52, // 13: loop.solana.GetAccountInfoWithOptsReply.rpc_context:type_name -> loop.solana.RPCContext
 	5,  // 14: loop.solana.GetAccountInfoWithOptsReply.value:type_name -> loop.solana.Account
 	16, // 15: loop.solana.GetAccountInfoWithOptsRequest.opts:type_name -> loop.solana.GetAccountInfoOpts
 	3,  // 16: loop.solana.GetBalanceRequest.commitment:type_name -> loop.solana.CommitmentType
 	2,  // 17: loop.solana.GetBlockOpts.encoding:type_name -> loop.solana.EncodingType
 	1,  // 18: loop.solana.GetBlockOpts.transaction_details:type_name -> loop.solana.TransactionDetailsType
 	3,  // 19: loop.solana.GetBlockOpts.commitment:type_name -> loop.solana.CommitmentType
-	61, // 20: loop.solana.GetBlockReply.transactions:type_name -> loop.solana.TransactionWithMeta
+	59, // 20: loop.solana.GetBlockReply.transactions:type_name -> loop.solana.TransactionWithMeta
 	21, // 21: loop.solana.GetBlockRequest.opts:type_name -> loop.solana.GetBlockOpts
 	3,  // 22: loop.solana.GetFeeForMessageRequest.commitment:type_name -> loop.solana.CommitmentType
 	2,  // 23: loop.solana.GetMultipleAccountsOpts.encoding:type_name -> loop.solana.EncodingType
 	3,  // 24: loop.solana.GetMultipleAccountsOpts.commitment:type_name -> loop.solana.CommitmentType
 	10, // 25: loop.solana.GetMultipleAccountsOpts.data_slice:type_name -> loop.solana.DataSlice
-	54, // 26: loop.solana.GetMultipleAccountsWithOptsReply.r_p_c_context:type_name -> loop.solana.RPCContext
+	52, // 26: loop.solana.GetMultipleAccountsWithOptsReply.r_p_c_context:type_name -> loop.solana.RPCContext
 	5,  // 27: loop.solana.GetMultipleAccountsWithOptsReply.value:type_name -> loop.solana.Account
 	26, // 28: loop.solana.GetMultipleAccountsWithOptsRequest.opts:type_name -> loop.solana.GetMultipleAccountsOpts
 	31, // 29: loop.solana.GetSignatureStatusesReply.results:type_name -> loop.solana.GetSignatureStatusesResult
@@ -4606,54 +4549,53 @@ var file_solana_proto_depIdxs = []int32{
 	45, // 45: loop.solana.GetTransactionReply.transaction:type_name -> loop.solana.TransactionEnvelope
 	44, // 46: loop.solana.GetTransactionReply.meta:type_name -> loop.solana.TransactionMeta
 	49, // 47: loop.solana.LPFilterQuery.subkey_paths:type_name -> loop.solana.Subkeys
-	51, // 48: loop.solana.LimitAndSort.limit:type_name -> loop.solana.Limit
-	8,  // 49: loop.solana.RPCContext.context:type_name -> loop.solana.Context
-	3,  // 50: loop.solana.SimulateTXOpts.commitment:type_name -> loop.solana.CommitmentType
-	58, // 51: loop.solana.SimulateTXOpts.accounts:type_name -> loop.solana.SimulateTransactionAccountsOpts
-	5,  // 52: loop.solana.SimulateTXReply.accounts:type_name -> loop.solana.Account
-	55, // 53: loop.solana.SimulateTXRequest.opts:type_name -> loop.solana.SimulateTXOpts
-	2,  // 54: loop.solana.SimulateTransactionAccountsOpts.encoding:type_name -> loop.solana.EncodingType
-	0,  // 55: loop.solana.SubmitTransactionReply.status:type_name -> loop.solana.TransactionStatus
-	7,  // 56: loop.solana.SubmitTransactionRequest.cfg:type_name -> loop.solana.ComputeConfig
-	9,  // 57: loop.solana.TransactionWithMeta.transaction:type_name -> loop.solana.DataBytesOrJSON
-	44, // 58: loop.solana.TransactionWithMeta.meta:type_name -> loop.solana.TransactionMeta
-	72, // 59: loop.solana.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
-	13, // 60: loop.solana.Primitive.event_by_subkey:type_name -> loop.solana.EventBySubkey
-	14, // 61: loop.solana.QueryTrackedLogsRequest.filterQuery:type_name -> loop.solana.Expression
-	73, // 62: loop.solana.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	53, // 63: loop.solana.QueryTrackedLogsReply.logs:type_name -> loop.solana.Log
-	50, // 64: loop.solana.RegisterLogTrackingRequest.filter:type_name -> loop.solana.LPFilterQuery
-	18, // 65: loop.solana.Solana.GetAccountInfoWithOpts:input_type -> loop.solana.GetAccountInfoWithOptsRequest
-	20, // 66: loop.solana.Solana.GetBalance:input_type -> loop.solana.GetBalanceRequest
-	23, // 67: loop.solana.Solana.GetBlock:input_type -> loop.solana.GetBlockRequest
-	25, // 68: loop.solana.Solana.GetFeeForMessage:input_type -> loop.solana.GetFeeForMessageRequest
-	28, // 69: loop.solana.Solana.GetMultipleAccountsWithOpts:input_type -> loop.solana.GetMultipleAccountsWithOptsRequest
-	30, // 70: loop.solana.Solana.GetSignatureStatuses:input_type -> loop.solana.GetSignatureStatusesRequest
-	33, // 71: loop.solana.Solana.GetSlotHeight:input_type -> loop.solana.GetSlotHeightRequest
-	47, // 72: loop.solana.Solana.GetTransaction:input_type -> loop.solana.GetTransactionRequest
-	63, // 73: loop.solana.Solana.QueryTrackedLogsSol:input_type -> loop.solana.QueryTrackedLogsRequest
-	65, // 74: loop.solana.Solana.RegisterLogTrackingSol:input_type -> loop.solana.RegisterLogTrackingRequest
-	57, // 75: loop.solana.Solana.SimulateTX:input_type -> loop.solana.SimulateTXRequest
-	60, // 76: loop.solana.Solana.SubmitTransactionSol:input_type -> loop.solana.SubmitTransactionRequest
-	67, // 77: loop.solana.Solana.UnregisterLogTrackingSol:input_type -> loop.solana.UnregisterLogTrackingRequest
-	17, // 78: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
-	19, // 79: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
-	22, // 80: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
-	24, // 81: loop.solana.Solana.GetFeeForMessage:output_type -> loop.solana.GetFeeForMessageReply
-	27, // 82: loop.solana.Solana.GetMultipleAccountsWithOpts:output_type -> loop.solana.GetMultipleAccountsWithOptsReply
-	29, // 83: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
-	32, // 84: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
-	46, // 85: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
-	64, // 86: loop.solana.Solana.QueryTrackedLogsSol:output_type -> loop.solana.QueryTrackedLogsReply
-	66, // 87: loop.solana.Solana.RegisterLogTrackingSol:output_type -> loop.solana.RegisterLogTrackingReply
-	56, // 88: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
-	59, // 89: loop.solana.Solana.SubmitTransactionSol:output_type -> loop.solana.SubmitTransactionReply
-	68, // 90: loop.solana.Solana.UnregisterLogTrackingSol:output_type -> loop.solana.UnregisterLogTrackingReply
-	78, // [78:91] is the sub-list for method output_type
-	65, // [65:78] is the sub-list for method input_type
-	65, // [65:65] is the sub-list for extension type_name
-	65, // [65:65] is the sub-list for extension extendee
-	0,  // [0:65] is the sub-list for field type_name
+	8,  // 48: loop.solana.RPCContext.context:type_name -> loop.solana.Context
+	3,  // 49: loop.solana.SimulateTXOpts.commitment:type_name -> loop.solana.CommitmentType
+	56, // 50: loop.solana.SimulateTXOpts.accounts:type_name -> loop.solana.SimulateTransactionAccountsOpts
+	5,  // 51: loop.solana.SimulateTXReply.accounts:type_name -> loop.solana.Account
+	53, // 52: loop.solana.SimulateTXRequest.opts:type_name -> loop.solana.SimulateTXOpts
+	2,  // 53: loop.solana.SimulateTransactionAccountsOpts.encoding:type_name -> loop.solana.EncodingType
+	0,  // 54: loop.solana.SubmitTransactionReply.status:type_name -> loop.solana.TransactionStatus
+	7,  // 55: loop.solana.SubmitTransactionRequest.cfg:type_name -> loop.solana.ComputeConfig
+	9,  // 56: loop.solana.TransactionWithMeta.transaction:type_name -> loop.solana.DataBytesOrJSON
+	44, // 57: loop.solana.TransactionWithMeta.meta:type_name -> loop.solana.TransactionMeta
+	70, // 58: loop.solana.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
+	13, // 59: loop.solana.Primitive.event_by_subkey:type_name -> loop.solana.EventBySubkey
+	14, // 60: loop.solana.QueryTrackedLogsRequest.filterQuery:type_name -> loop.solana.Expression
+	71, // 61: loop.solana.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	51, // 62: loop.solana.QueryTrackedLogsReply.logs:type_name -> loop.solana.Log
+	50, // 63: loop.solana.RegisterLogTrackingRequest.filter:type_name -> loop.solana.LPFilterQuery
+	18, // 64: loop.solana.Solana.GetAccountInfoWithOpts:input_type -> loop.solana.GetAccountInfoWithOptsRequest
+	20, // 65: loop.solana.Solana.GetBalance:input_type -> loop.solana.GetBalanceRequest
+	23, // 66: loop.solana.Solana.GetBlock:input_type -> loop.solana.GetBlockRequest
+	25, // 67: loop.solana.Solana.GetFeeForMessage:input_type -> loop.solana.GetFeeForMessageRequest
+	28, // 68: loop.solana.Solana.GetMultipleAccountsWithOpts:input_type -> loop.solana.GetMultipleAccountsWithOptsRequest
+	30, // 69: loop.solana.Solana.GetSignatureStatuses:input_type -> loop.solana.GetSignatureStatusesRequest
+	33, // 70: loop.solana.Solana.GetSlotHeight:input_type -> loop.solana.GetSlotHeightRequest
+	47, // 71: loop.solana.Solana.GetTransaction:input_type -> loop.solana.GetTransactionRequest
+	61, // 72: loop.solana.Solana.QueryTrackedLogsSol:input_type -> loop.solana.QueryTrackedLogsRequest
+	63, // 73: loop.solana.Solana.RegisterLogTrackingSol:input_type -> loop.solana.RegisterLogTrackingRequest
+	55, // 74: loop.solana.Solana.SimulateTX:input_type -> loop.solana.SimulateTXRequest
+	58, // 75: loop.solana.Solana.SubmitTransactionSol:input_type -> loop.solana.SubmitTransactionRequest
+	65, // 76: loop.solana.Solana.UnregisterLogTrackingSol:input_type -> loop.solana.UnregisterLogTrackingRequest
+	17, // 77: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
+	19, // 78: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
+	22, // 79: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
+	24, // 80: loop.solana.Solana.GetFeeForMessage:output_type -> loop.solana.GetFeeForMessageReply
+	27, // 81: loop.solana.Solana.GetMultipleAccountsWithOpts:output_type -> loop.solana.GetMultipleAccountsWithOptsReply
+	29, // 82: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
+	32, // 83: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
+	46, // 84: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
+	62, // 85: loop.solana.Solana.QueryTrackedLogsSol:output_type -> loop.solana.QueryTrackedLogsReply
+	64, // 86: loop.solana.Solana.RegisterLogTrackingSol:output_type -> loop.solana.RegisterLogTrackingReply
+	54, // 87: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
+	57, // 88: loop.solana.Solana.SubmitTransactionSol:output_type -> loop.solana.SubmitTransactionReply
+	66, // 89: loop.solana.Solana.UnregisterLogTrackingSol:output_type -> loop.solana.UnregisterLogTrackingReply
+	77, // [77:90] is the sub-list for method output_type
+	64, // [64:77] is the sub-list for method input_type
+	64, // [64:64] is the sub-list for extension type_name
+	64, // [64:64] is the sub-list for extension extendee
+	0,  // [0:64] is the sub-list for field type_name
 }
 
 func init() { file_solana_proto_init() }
@@ -4669,7 +4611,7 @@ func file_solana_proto_init() {
 		(*TransactionEnvelope_Raw)(nil),
 		(*TransactionEnvelope_Parsed)(nil),
 	}
-	file_solana_proto_msgTypes[57].OneofWrappers = []any{
+	file_solana_proto_msgTypes[55].OneofWrappers = []any{
 		(*Primitive_GeneralPrimitive)(nil),
 		(*Primitive_Address)(nil),
 		(*Primitive_EventSig)(nil),
@@ -4681,7 +4623,7 @@ func file_solana_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_solana_proto_rawDesc), len(file_solana_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   64,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

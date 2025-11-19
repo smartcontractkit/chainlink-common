@@ -70,15 +70,45 @@ const (
 	CommitmentProcessed CommitmentType = "processed"
 )
 
+// Client wraps Solana RPC via type/chains/solana types.
 type Client interface {
+	// GetBalance: lamports for account at commitment.
+	// In: ctx, {Addr, Commitment}. Out: {Value}, error.
 	GetBalance(ctx context.Context, req GetBalanceRequest) (*GetBalanceReply, error)
+
+	// GetAccountInfoWithOpts: account state + metadata.
+	// In: ctx, {Account, Opts(Encoding, Commitment, DataSlice, MinContextSlot)}.
+	// Out: {Context.Slot, Value(*Account|nil)}, error.
 	GetAccountInfoWithOpts(ctx context.Context, req GetAccountInfoRequest) (*GetAccountInfoReply, error)
+
+	// GetMultipleAccountsWithOpts: batch account fetch.
+	// In: ctx, {Accounts, Opts}. Out: {Context.Slot, Value([]*Account)}, error.
 	GetMultipleAccountsWithOpts(ctx context.Context, req GetMultipleAccountsRequest) (*GetMultipleAccountsReply, error)
+
+	// GetBlock: block by slot with optional tx details.
+	// In: ctx, {Slot, Opts(Encoding, TxDetails, Rewards, Commitment, MaxTxVersion)}.
+	// Out: block fields + Transactions/Signatures, error.
 	GetBlock(ctx context.Context, req GetBlockRequest) (*GetBlockReply, error)
+
+	// GetSlotHeight: current height at commitment.
+	// In: ctx, {Commitment}. Out: {Height}, error.
 	GetSlotHeight(ctx context.Context, req GetSlotHeightRequest) (*GetSlotHeightReply, error)
+
+	// GetTransaction: tx by signature with meta.
+	// In: ctx, {Signature}. Out: {Slot, BlockTime, Version, Transaction, Meta}, error.
 	GetTransaction(ctx context.Context, req GetTransactionRequest) (*GetTransactionReply, error)
+
+	// GetFeeForMessage: fee estimate for base58 message.
+	// In: ctx, {Message, Commitment}. Out: {Fee}, error.
 	GetFeeForMessage(ctx context.Context, req GetFeeForMessageRequest) (*GetFeeForMessageReply, error)
+
+	// GetSignatureStatuses: confirmation status for sigs.
+	// In: ctx, {Sigs}. Out: {Results[Slot, Confirmations, Err, Status]}, error.
 	GetSignatureStatuses(ctx context.Context, req GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
+
+	// SimulateTX: dry-run a transaction.
+	// In: ctx, {Receiver, EncodedTransaction, Opts(SigVerify, Commitment, ReplaceRecentBlockhash, Accounts)}.
+	// Out: {Err, Logs, Accounts, UnitsConsumed}, error.
 	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
 }
 

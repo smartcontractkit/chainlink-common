@@ -4394,7 +4394,7 @@ const file_solana_proto_rawDesc = "" +
 	"\x11CONFIRMATION_NONE\x10\x00\x12\x1a\n" +
 	"\x16CONFIRMATION_PROCESSED\x10\x01\x12\x1a\n" +
 	"\x16CONFIRMATION_CONFIRMED\x10\x02\x12\x1a\n" +
-	"\x16CONFIRMATION_FINALIZED\x10\x032\xe9\t\n" +
+	"\x16CONFIRMATION_FINALIZED\x10\x032\xdd\t\n" +
 	"\x06Solana\x12n\n" +
 	"\x16GetAccountInfoWithOpts\x12*.loop.solana.GetAccountInfoWithOptsRequest\x1a(.loop.solana.GetAccountInfoWithOptsReply\x12J\n" +
 	"\n" +
@@ -4404,13 +4404,13 @@ const file_solana_proto_rawDesc = "" +
 	"\x1bGetMultipleAccountsWithOpts\x12/.loop.solana.GetMultipleAccountsWithOptsRequest\x1a-.loop.solana.GetMultipleAccountsWithOptsReply\x12h\n" +
 	"\x14GetSignatureStatuses\x12(.loop.solana.GetSignatureStatusesRequest\x1a&.loop.solana.GetSignatureStatusesReply\x12S\n" +
 	"\rGetSlotHeight\x12!.loop.solana.GetSlotHeightRequest\x1a\x1f.loop.solana.GetSlotHeightReply\x12V\n" +
-	"\x0eGetTransaction\x12\".loop.solana.GetTransactionRequest\x1a .loop.solana.GetTransactionReply\x12_\n" +
-	"\x13QueryTrackedLogsSol\x12$.loop.solana.QueryTrackedLogsRequest\x1a\".loop.solana.QueryTrackedLogsReply\x12h\n" +
-	"\x16RegisterLogTrackingSol\x12'.loop.solana.RegisterLogTrackingRequest\x1a%.loop.solana.RegisterLogTrackingReply\x12J\n" +
+	"\x0eGetTransaction\x12\".loop.solana.GetTransactionRequest\x1a .loop.solana.GetTransactionReply\x12\\\n" +
+	"\x10QueryTrackedLogs\x12$.loop.solana.QueryTrackedLogsRequest\x1a\".loop.solana.QueryTrackedLogsReply\x12e\n" +
+	"\x13RegisterLogTracking\x12'.loop.solana.RegisterLogTrackingRequest\x1a%.loop.solana.RegisterLogTrackingReply\x12J\n" +
 	"\n" +
-	"SimulateTX\x12\x1e.loop.solana.SimulateTXRequest\x1a\x1c.loop.solana.SimulateTXReply\x12b\n" +
-	"\x14SubmitTransactionSol\x12%.loop.solana.SubmitTransactionRequest\x1a#.loop.solana.SubmitTransactionReply\x12n\n" +
-	"\x18UnregisterLogTrackingSol\x12).loop.solana.UnregisterLogTrackingRequest\x1a'.loop.solana.UnregisterLogTrackingReplyB@Z>github.com/smartcontractkit/chainlink-common/pkg/chains/solanab\x06proto3"
+	"SimulateTX\x12\x1e.loop.solana.SimulateTXRequest\x1a\x1c.loop.solana.SimulateTXReply\x12_\n" +
+	"\x11SubmitTransaction\x12%.loop.solana.SubmitTransactionRequest\x1a#.loop.solana.SubmitTransactionReply\x12k\n" +
+	"\x15UnregisterLogTracking\x12).loop.solana.UnregisterLogTrackingRequest\x1a'.loop.solana.UnregisterLogTrackingReplyB@Z>github.com/smartcontractkit/chainlink-common/pkg/chains/solanab\x06proto3"
 
 var (
 	file_solana_proto_rawDescOnce sync.Once
@@ -4573,11 +4573,11 @@ var file_solana_proto_depIdxs = []int32{
 	30, // 69: loop.solana.Solana.GetSignatureStatuses:input_type -> loop.solana.GetSignatureStatusesRequest
 	33, // 70: loop.solana.Solana.GetSlotHeight:input_type -> loop.solana.GetSlotHeightRequest
 	47, // 71: loop.solana.Solana.GetTransaction:input_type -> loop.solana.GetTransactionRequest
-	61, // 72: loop.solana.Solana.QueryTrackedLogsSol:input_type -> loop.solana.QueryTrackedLogsRequest
-	63, // 73: loop.solana.Solana.RegisterLogTrackingSol:input_type -> loop.solana.RegisterLogTrackingRequest
+	61, // 72: loop.solana.Solana.QueryTrackedLogs:input_type -> loop.solana.QueryTrackedLogsRequest
+	63, // 73: loop.solana.Solana.RegisterLogTracking:input_type -> loop.solana.RegisterLogTrackingRequest
 	55, // 74: loop.solana.Solana.SimulateTX:input_type -> loop.solana.SimulateTXRequest
-	58, // 75: loop.solana.Solana.SubmitTransactionSol:input_type -> loop.solana.SubmitTransactionRequest
-	65, // 76: loop.solana.Solana.UnregisterLogTrackingSol:input_type -> loop.solana.UnregisterLogTrackingRequest
+	58, // 75: loop.solana.Solana.SubmitTransaction:input_type -> loop.solana.SubmitTransactionRequest
+	65, // 76: loop.solana.Solana.UnregisterLogTracking:input_type -> loop.solana.UnregisterLogTrackingRequest
 	17, // 77: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
 	19, // 78: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
 	22, // 79: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
@@ -4586,11 +4586,11 @@ var file_solana_proto_depIdxs = []int32{
 	29, // 82: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
 	32, // 83: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
 	46, // 84: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
-	62, // 85: loop.solana.Solana.QueryTrackedLogsSol:output_type -> loop.solana.QueryTrackedLogsReply
-	64, // 86: loop.solana.Solana.RegisterLogTrackingSol:output_type -> loop.solana.RegisterLogTrackingReply
+	62, // 85: loop.solana.Solana.QueryTrackedLogs:output_type -> loop.solana.QueryTrackedLogsReply
+	64, // 86: loop.solana.Solana.RegisterLogTracking:output_type -> loop.solana.RegisterLogTrackingReply
 	54, // 87: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
-	57, // 88: loop.solana.Solana.SubmitTransactionSol:output_type -> loop.solana.SubmitTransactionReply
-	66, // 89: loop.solana.Solana.UnregisterLogTrackingSol:output_type -> loop.solana.UnregisterLogTrackingReply
+	57, // 88: loop.solana.Solana.SubmitTransaction:output_type -> loop.solana.SubmitTransactionReply
+	66, // 89: loop.solana.Solana.UnregisterLogTracking:output_type -> loop.solana.UnregisterLogTrackingReply
 	77, // [77:90] is the sub-list for method output_type
 	64, // [64:77] is the sub-list for method input_type
 	64, // [64:64] is the sub-list for extension type_name

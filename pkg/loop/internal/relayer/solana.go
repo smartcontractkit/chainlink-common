@@ -27,7 +27,7 @@ func NewSolanaClient(client solpb.SolanaClient) *SolClient {
 func (sc *SolClient) SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error) {
 	pReq := solpb.ConvertSubmitTransactionRequestToProto(req)
 
-	pResp, err := sc.grpcClient.SubmitTransactionSol(ctx, pReq)
+	pResp, err := sc.grpcClient.SubmitTransaction(ctx, pReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -41,14 +41,14 @@ func (sc *SolClient) SubmitTransaction(ctx context.Context, req solana.SubmitTra
 
 func (sc *SolClient) RegisterLogTracking(ctx context.Context, req solana.LPFilterQuery) error {
 	filter := solpb.ConvertLPFilterQueryToProto(&req)
-	_, err := sc.grpcClient.RegisterLogTrackingSol(ctx, &solpb.RegisterLogTrackingRequest{
+	_, err := sc.grpcClient.RegisterLogTracking(ctx, &solpb.RegisterLogTrackingRequest{
 		Filter: filter,
 	})
 	return net.WrapRPCErr(err)
 }
 
 func (sc *SolClient) UnregisterLogTracking(ctx context.Context, filterName string) error {
-	_, err := sc.grpcClient.UnregisterLogTrackingSol(ctx, &solpb.UnregisterLogTrackingRequest{FilterName: filterName})
+	_, err := sc.grpcClient.UnregisterLogTracking(ctx, &solpb.UnregisterLogTrackingRequest{FilterName: filterName})
 	return net.WrapRPCErr(err)
 }
 
@@ -68,7 +68,7 @@ func (sc *SolClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.E
 		LimitAndSort: protoLimitAndSort,
 	}
 
-	pResp, err := sc.grpcClient.QueryTrackedLogsSol(ctx, pReq)
+	pResp, err := sc.grpcClient.QueryTrackedLogs(ctx, pReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -217,7 +217,7 @@ func newSolServer(impl types.SolanaService, b *net.BrokerExt) *solServer {
 	return &solServer{impl: impl, BrokerExt: b.WithName("SolanaServer")}
 }
 
-func (s *solServer) SubmitTransactionSol(ctx context.Context, req *solpb.SubmitTransactionRequest) (*solpb.SubmitTransactionReply, error) {
+func (s *solServer) SubmitTransaction(ctx context.Context, req *solpb.SubmitTransactionRequest) (*solpb.SubmitTransactionReply, error) {
 	dReq, err := solpb.ConvertSubmitTransactionRequestFromProto(req)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -232,7 +232,7 @@ func (s *solServer) SubmitTransactionSol(ctx context.Context, req *solpb.SubmitT
 	return pResp, nil
 }
 
-func (s *solServer) RegisterLogTrackingSol(ctx context.Context, req *solpb.RegisterLogTrackingRequest) (*solpb.RegisterLogTrackingReply, error) {
+func (s *solServer) RegisterLogTracking(ctx context.Context, req *solpb.RegisterLogTrackingRequest) (*solpb.RegisterLogTrackingReply, error) {
 	if req.Filter == nil {
 		return nil, net.WrapRPCErr(fmt.Errorf("missing filter"))
 	}
@@ -249,7 +249,7 @@ func (s *solServer) RegisterLogTrackingSol(ctx context.Context, req *solpb.Regis
 	return &solpb.RegisterLogTrackingReply{}, nil
 }
 
-func (s *solServer) UnregisterLogTrackingSol(ctx context.Context, req *solpb.UnregisterLogTrackingRequest) (*solpb.UnregisterLogTrackingReply, error) {
+func (s *solServer) UnregisterLogTracking(ctx context.Context, req *solpb.UnregisterLogTrackingRequest) (*solpb.UnregisterLogTrackingReply, error) {
 	if err := s.impl.UnregisterLogTracking(ctx, req.GetFilterName()); err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -257,7 +257,7 @@ func (s *solServer) UnregisterLogTrackingSol(ctx context.Context, req *solpb.Unr
 	return &solpb.UnregisterLogTrackingReply{}, nil
 }
 
-func (s *solServer) QueryTrackedLogsSol(ctx context.Context, req *solpb.QueryTrackedLogsRequest) (*solpb.QueryTrackedLogsReply, error) {
+func (s *solServer) QueryTrackedLogs(ctx context.Context, req *solpb.QueryTrackedLogsRequest) (*solpb.QueryTrackedLogsReply, error) {
 	dExprs, err := solpb.ConvertExpressionsFromProto(req.GetFilterQuery())
 	if err != nil {
 		return nil, net.WrapRPCErr(err)

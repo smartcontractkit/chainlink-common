@@ -15,11 +15,11 @@ service Solana {
   rpc GetSignatureStatuses(GetSignatureStatusesRequest) returns (GetSignatureStatusesReply);
   rpc GetSlotHeight(GetSlotHeightRequest) returns (GetSlotHeightReply);
   rpc GetTransaction(GetTransactionRequest) returns (GetTransactionReply);
-  rpc QueryTrackedLogsSol(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
-  rpc RegisterLogTrackingSol(RegisterLogTrackingRequest) returns (RegisterLogTrackingReply);
+  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
+  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (RegisterLogTrackingReply);
   rpc SimulateTX(SimulateTXRequest) returns (SimulateTXReply);
-  rpc SubmitTransactionSol(SubmitTransactionRequest) returns (SubmitTransactionReply);
-  rpc UnregisterLogTrackingSol(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
+  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
 }
 
 // Transaction execution status returned by submitters/simulations.

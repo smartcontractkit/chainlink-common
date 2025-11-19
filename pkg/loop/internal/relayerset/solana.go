@@ -54,29 +54,36 @@ func (sc *solClient) GetTransaction(ctx context.Context, in *solpb.GetTransactio
 	return sc.client.GetTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
-func (sc *solClient) QueryTrackedLogsSol(ctx context.Context, in *solpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*solpb.QueryTrackedLogsReply, error) {
-	return sc.client.QueryTrackedLogsSol(appendRelayID(ctx, sc.relayID), in, opts...)
+func (sc *solClient) QueryTrackedLogs(ctx context.Context, in *solpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*solpb.QueryTrackedLogsReply, error) {
+	return sc.client.QueryTrackedLogs(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
-func (sc *solClient) RegisterLogTrackingSol(ctx context.Context, in *solpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*solpb.RegisterLogTrackingReply, error) {
-	return sc.client.RegisterLogTrackingSol(appendRelayID(ctx, sc.relayID), in, opts...)
+func (sc *solClient) RegisterLogTracking(ctx context.Context, in *solpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*solpb.RegisterLogTrackingReply, error) {
+	return sc.client.RegisterLogTracking(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
 func (sc *solClient) SimulateTX(ctx context.Context, in *solpb.SimulateTXRequest, opts ...grpc.CallOption) (*solpb.SimulateTXReply, error) {
 	return sc.client.SimulateTX(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
-func (sc *solClient) SubmitTransactionSol(ctx context.Context, in *solpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*solpb.SubmitTransactionReply, error) {
-	return sc.client.SubmitTransactionSol(appendRelayID(ctx, sc.relayID), in, opts...)
+func (sc *solClient) SubmitTransaction(ctx context.Context, in *solpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*solpb.SubmitTransactionReply, error) {
+	return sc.client.SubmitTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
-func (sc *solClient) UnregisterLogTrackingSol(ctx context.Context, in *solpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*solpb.UnregisterLogTrackingReply, error) {
-	return sc.client.UnregisterLogTrackingSol(appendRelayID(ctx, sc.relayID), in, opts...)
+func (sc *solClient) UnregisterLogTracking(ctx context.Context, in *solpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*solpb.UnregisterLogTrackingReply, error) {
+	return sc.client.UnregisterLogTracking(appendRelayID(ctx, sc.relayID), in, opts...)
 }
+
+type solServer struct {
+	solpb.UnimplementedSolanaServer
+	parent *Server
+}
+
+var _ solpb.SolanaServer = (*solServer)(nil)
 
 // Server handlers
-func (s *Server) SubmitTransactionSol(ctx context.Context, req *solpb.SubmitTransactionRequest) (*solpb.SubmitTransactionReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) SubmitTransaction(ctx context.Context, req *solpb.SubmitTransactionRequest) (*solpb.SubmitTransactionReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +102,8 @@ func (s *Server) SubmitTransactionSol(ctx context.Context, req *solpb.SubmitTran
 	return pResp, nil
 }
 
-func (s *Server) RegisterLogTrackingSol(ctx context.Context, req *solpb.RegisterLogTrackingRequest) (*solpb.RegisterLogTrackingReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) RegisterLogTracking(ctx context.Context, req *solpb.RegisterLogTrackingRequest) (*solpb.RegisterLogTrackingReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +123,8 @@ func (s *Server) RegisterLogTrackingSol(ctx context.Context, req *solpb.Register
 	return &solpb.RegisterLogTrackingReply{}, nil
 }
 
-func (s *Server) UnregisterLogTrackingSol(ctx context.Context, req *solpb.UnregisterLogTrackingRequest) (*solpb.UnregisterLogTrackingReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) UnregisterLogTracking(ctx context.Context, req *solpb.UnregisterLogTrackingRequest) (*solpb.UnregisterLogTrackingReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +135,8 @@ func (s *Server) UnregisterLogTrackingSol(ctx context.Context, req *solpb.Unregi
 	return &solpb.UnregisterLogTrackingReply{}, nil
 }
 
-func (s *Server) QueryTrackedLogsSol(ctx context.Context, req *solpb.QueryTrackedLogsRequest) (*solpb.QueryTrackedLogsReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) QueryTrackedLogs(ctx context.Context, req *solpb.QueryTrackedLogsRequest) (*solpb.QueryTrackedLogsReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +163,8 @@ func (s *Server) QueryTrackedLogsSol(ctx context.Context, req *solpb.QueryTracke
 	return &solpb.QueryTrackedLogsReply{Logs: out}, nil
 }
 
-func (s *Server) GetBalance(ctx context.Context, req *solpb.GetBalanceRequest) (*solpb.GetBalanceReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetBalance(ctx context.Context, req *solpb.GetBalanceRequest) (*solpb.GetBalanceReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +182,8 @@ func (s *Server) GetBalance(ctx context.Context, req *solpb.GetBalanceRequest) (
 	return solpb.ConvertGetBalanceReplyToProto(dResp), nil
 }
 
-func (s *Server) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetAccountInfoWithOptsRequest) (*solpb.GetAccountInfoWithOptsReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetAccountInfoWithOptsRequest) (*solpb.GetAccountInfoWithOptsReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -200,8 +207,8 @@ func (s *Server) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetAccou
 	}, nil
 }
 
-func (s *Server) GetMultipleAccountsWithOpts(ctx context.Context, req *solpb.GetMultipleAccountsWithOptsRequest) (*solpb.GetMultipleAccountsWithOptsReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetMultipleAccountsWithOpts(ctx context.Context, req *solpb.GetMultipleAccountsWithOptsRequest) (*solpb.GetMultipleAccountsWithOptsReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +222,8 @@ func (s *Server) GetMultipleAccountsWithOpts(ctx context.Context, req *solpb.Get
 	return solpb.ConvertGetMultipleAccountsReplyToProto(dResp), nil
 }
 
-func (s *Server) GetBlock(ctx context.Context, req *solpb.GetBlockRequest) (*solpb.GetBlockReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetBlock(ctx context.Context, req *solpb.GetBlockRequest) (*solpb.GetBlockReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +237,8 @@ func (s *Server) GetBlock(ctx context.Context, req *solpb.GetBlockRequest) (*sol
 	return solpb.ConvertGetBlockReplyToProto(dResp), nil
 }
 
-func (s *Server) GetSlotHeight(ctx context.Context, req *solpb.GetSlotHeightRequest) (*solpb.GetSlotHeightReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetSlotHeight(ctx context.Context, req *solpb.GetSlotHeightRequest) (*solpb.GetSlotHeightReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -245,8 +252,8 @@ func (s *Server) GetSlotHeight(ctx context.Context, req *solpb.GetSlotHeightRequ
 	return solpb.ConvertGetSlotHeightReplyToProto(dResp), nil
 }
 
-func (s *Server) GetTransaction(ctx context.Context, req *solpb.GetTransactionRequest) (*solpb.GetTransactionReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetTransaction(ctx context.Context, req *solpb.GetTransactionRequest) (*solpb.GetTransactionReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -263,8 +270,8 @@ func (s *Server) GetTransaction(ctx context.Context, req *solpb.GetTransactionRe
 	return solpb.ConvertGetTransactionReplyToProto(dResp), nil
 }
 
-func (s *Server) GetFeeForMessage(ctx context.Context, req *solpb.GetFeeForMessageRequest) (*solpb.GetFeeForMessageReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetFeeForMessage(ctx context.Context, req *solpb.GetFeeForMessageRequest) (*solpb.GetFeeForMessageReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -278,8 +285,8 @@ func (s *Server) GetFeeForMessage(ctx context.Context, req *solpb.GetFeeForMessa
 	return solpb.ConvertGetFeeForMessageReplyToProto(dResp), nil
 }
 
-func (s *Server) GetSignatureStatuses(ctx context.Context, req *solpb.GetSignatureStatusesRequest) (*solpb.GetSignatureStatusesReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) GetSignatureStatuses(ctx context.Context, req *solpb.GetSignatureStatusesRequest) (*solpb.GetSignatureStatusesReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -297,8 +304,8 @@ func (s *Server) GetSignatureStatuses(ctx context.Context, req *solpb.GetSignatu
 	return solpb.ConvertGetSignatureStatusesReplyToProto(dResp), nil
 }
 
-func (s *Server) SimulateTX(ctx context.Context, req *solpb.SimulateTXRequest) (*solpb.SimulateTXReply, error) {
-	solService, err := s.getSolService(ctx)
+func (ss *solServer) SimulateTX(ctx context.Context, req *solpb.SimulateTXRequest) (*solpb.SimulateTXReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {
 		return nil, err
 	}

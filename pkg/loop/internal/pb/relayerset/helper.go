@@ -9,6 +9,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
+type HasChainServers interface {
+	SolanaServer() solana.SolanaServer
+}
+
 // RegisterRelayerSetServerWithDependants registers all the grpc services hidden injected into and hidden behind RelayerSet.
 func RegisterRelayerSetServerWithDependants(s grpc.ServiceRegistrar, srv RelayerSetServer) {
 	RegisterRelayerSetServer(s, srv)
@@ -21,11 +25,10 @@ func RegisterRelayerSetServerWithDependants(s grpc.ServiceRegistrar, srv Relayer
 		ton.RegisterTONServer(s, eSrv)
 	}
 	switch eSrv := srv.(type) {
-	case solana.SolanaServer:
-		solana.RegisterSolanaServer(s, eSrv)
-	}
-	switch eSrv := srv.(type) {
 	case pb.ContractReaderServer:
 		pb.RegisterContractReaderServer(s, eSrv)
+	}
+	if h, ok := any(srv).(HasChainServers); ok {
+		solana.RegisterSolanaServer(s, h.SolanaServer())
 	}
 }

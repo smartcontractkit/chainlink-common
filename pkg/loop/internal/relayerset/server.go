@@ -37,11 +37,12 @@ type Server struct {
 	relayerset.UnimplementedRelayerSetServer
 	evmpb.UnimplementedEVMServer
 	tonpb.UnimplementedTONServer
-	solpb.UnimplementedSolanaServer
 	pb.ContractReaderServer
 
 	impl   core.RelayerSet
 	broker *net.BrokerExt
+
+	sol *solServer
 
 	serverResources net.Resources
 
@@ -55,19 +56,20 @@ type Server struct {
 var _ relayerset.RelayerSetServer = (*Server)(nil)
 var _ evmpb.EVMServer = (*Server)(nil)
 var _ tonpb.TONServer = (*Server)(nil)
-var _ solpb.SolanaServer = (*Server)(nil)
 var _ pb.ContractReaderServer = (*Server)(nil)
 
 func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *net.BrokerExt) (*Server, net.Resource) {
 	pluginProviderServers := make(net.Resources, 0)
 	server := &Server{log: log, impl: underlying, broker: broker, serverResources: pluginProviderServers,
 		readers: map[string]*readerAndServer{}}
+	server.sol = &solServer{parent: server}
 
 	return server, net.Resource{
 		Name:   "PluginProviderServers",
 		Closer: server,
 	}
 }
+func (s *Server) SolanaServer() solpb.SolanaServer { return s.sol }
 
 func (s *Server) Close() error {
 	for _, pluginProviderServer := range s.serverResources {

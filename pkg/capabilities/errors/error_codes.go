@@ -1,4 +1,4 @@
-package capabilities
+package errors
 
 type ErrorCode uint32
 

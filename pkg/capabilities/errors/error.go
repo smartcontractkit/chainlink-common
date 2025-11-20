@@ -1,4 +1,4 @@
-package capabilities
+package errors
 
 import "fmt"
 

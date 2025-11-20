@@ -1,4 +1,4 @@
-package capabilities_test
+package errors_test
 
 import (
 	"errors"
@@ -6,99 +6,99 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 )
 
 func Test_DeserializeFromString(t *testing.T) {
 	// Remote reportable errors
 	remoteReportableErrorWithoutErrorCode := "RemoteReportableError:" + "some remote reportable error occurred"
-	err := capabilities.DeserializeErrorFromString(remoteReportableErrorWithoutErrorCode)
+	err := caperrors.DeserializeErrorFromString(remoteReportableErrorWithoutErrorCode)
 	require.Equal(t, err.Error(), "[0]Uncategorized: some remote reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeRemote)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeRemote)
 
 	remoteReportableErrorWithErrorCode := "RemoteReportableError:ErrorCode=3:" + "some remote reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(remoteReportableErrorWithErrorCode)
+	err = caperrors.DeserializeErrorFromString(remoteReportableErrorWithErrorCode)
 	require.Equal(t, err.Error(), "[3]DeadlineExceeded: some remote reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.DeadlineExceeded)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeRemote)
+	require.Equal(t, err.Code(), caperrors.DeadlineExceeded)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeRemote)
 
 	remoteReportableErrorWithErrorCodeThatDoesNotExistLocally := "RemoteReportableError:ErrorCode=45:" + "some remote reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(remoteReportableErrorWithErrorCodeThatDoesNotExistLocally)
+	err = caperrors.DeserializeErrorFromString(remoteReportableErrorWithErrorCodeThatDoesNotExistLocally)
 	require.Equal(t, err.Error(), "[0]Uncategorized: some remote reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeRemote)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeRemote)
 
 	// User reportable errors
 	userReportableErrorWithoutErrorCode := "RemoteReportableError:UserError:" + "some user reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(userReportableErrorWithoutErrorCode)
+	err = caperrors.DeserializeErrorFromString(userReportableErrorWithoutErrorCode)
 	require.Equal(t, err.Error(), "[0]Uncategorized: some user reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeUser)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeUser)
 
 	userReportableErrorWithErrorCode := "RemoteReportableError:UserError:ErrorCode=4:" + "some user reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(userReportableErrorWithErrorCode)
+	err = caperrors.DeserializeErrorFromString(userReportableErrorWithErrorCode)
 	require.Equal(t, err.Error(), "[4]NotFound: some user reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.NotFound)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeUser)
+	require.Equal(t, err.Code(), caperrors.NotFound)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeUser)
 
 	userReportableErrorWithErrorCodeThatDoesNotExistLocally := "RemoteReportableError:UserError:ErrorCode=50:" + "some user reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(userReportableErrorWithErrorCodeThatDoesNotExistLocally)
+	err = caperrors.DeserializeErrorFromString(userReportableErrorWithErrorCodeThatDoesNotExistLocally)
 	require.Equal(t, err.Error(), "[0]Uncategorized: some user reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeUser)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeUser)
 
 	// Local reportable errors
 	localReportableErrorWithoutErrorCode := "LocalReportableError:" + "some local reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(localReportableErrorWithoutErrorCode)
+	err = caperrors.DeserializeErrorFromString(localReportableErrorWithoutErrorCode)
 	require.Equal(t, err.Error(), "[0]Uncategorized: some local reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeLocal)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeLocal)
 
 	localReportableErrorWithErrorCode := "LocalReportableError:ErrorCode=5:" + "some local reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(localReportableErrorWithErrorCode)
+	err = caperrors.DeserializeErrorFromString(localReportableErrorWithErrorCode)
 	require.Equal(t, err.Error(), "[5]AlreadyExists: some local reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.AlreadyExists)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeLocal)
+	require.Equal(t, err.Code(), caperrors.AlreadyExists)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeLocal)
 
 	localReportableErrorWithErrorCodeThatDoesNotExistLocally := "LocalReportableError:ErrorCode=-4:" + "some local reportable error occurred"
-	err = capabilities.DeserializeErrorFromString(localReportableErrorWithErrorCodeThatDoesNotExistLocally)
+	err = caperrors.DeserializeErrorFromString(localReportableErrorWithErrorCodeThatDoesNotExistLocally)
 	require.Equal(t, err.Error(), "[0]Uncategorized: some local reportable error occurred")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeLocal)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeLocal)
 
 	// No identifier error - to ensure backwards compatibility with older versions that do not use the reporting type identifiers
 	noIdentifierError := "failed to execute capability"
-	err = capabilities.DeserializeErrorFromString(noIdentifierError)
+	err = caperrors.DeserializeErrorFromString(noIdentifierError)
 	require.Equal(t, err.Error(), "[0]Uncategorized: failed to execute capability")
-	require.Equal(t, err.Code(), capabilities.Uncategorized)
-	require.Equal(t, err.ReportType(), capabilities.ErrorReportTypeLocal)
+	require.Equal(t, err.Code(), caperrors.Uncategorized)
+	require.Equal(t, err.ReportType(), caperrors.ErrorReportTypeLocal)
 
 }
 
 func Test_SerializeToString(t *testing.T) {
 	// Remote reportable error
-	remoteReportableError := capabilities.NewRemoteReportableError(
+	remoteReportableError := caperrors.NewRemoteReportableError(
 		errors.New("some remote reportable error occurred"),
-		capabilities.DeadlineExceeded,
+		caperrors.DeadlineExceeded,
 	)
 	serialized := remoteReportableError.SerializeToString()
 	expectedSerialized := "RemoteReportableError:ErrorCode=3:some remote reportable error occurred"
 	require.Equal(t, expectedSerialized, serialized)
 
 	// User reportable error
-	userReportableError := capabilities.NewReportableUserError(
+	userReportableError := caperrors.NewReportableUserError(
 		errors.New("some user reportable error occurred"),
-		capabilities.NotFound,
+		caperrors.NotFound,
 	)
 	serialized = userReportableError.SerializeToString()
 	expectedSerialized = "RemoteReportableError:UserError:ErrorCode=4:some user reportable error occurred"
 	require.Equal(t, expectedSerialized, serialized)
 
 	// Local reportable error
-	localReportableError := capabilities.NewLocalReportableError(
+	localReportableError := caperrors.NewLocalReportableError(
 		errors.New("some local reportable error occurred"),
-		capabilities.AlreadyExists,
+		caperrors.AlreadyExists,
 	)
 	serialized = localReportableError.SerializeToString()
 	expectedSerialized = "LocalReportableError:ErrorCode=5:some local reportable error occurred"

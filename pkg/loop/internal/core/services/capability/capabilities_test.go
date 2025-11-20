@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
@@ -458,30 +459,6 @@ func Test_Capabilities(t *testing.T) {
 		assert.Equal(t, expectedResp, resp)
 	})
 
-	t.Run("fetching an action capability, and executing it with error", func(t *testing.T) {
-		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
-		c, _, _, err := newCapabilityPlugin(t, ma)
-		require.NoError(t, err)
-
-		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
-		require.NoError(t, err)
-
-		imap, err := values.NewMap(map[string]any{"bar": "baz"})
-		require.NoError(t, err)
-		expectedRequest := capabilities.CapabilityRequest{
-			Config: cmap,
-			Inputs: imap,
-		}
-
-		ma.responseError = errors.New("bang")
-
-		_, err = c.(capabilities.ExecutableCapability).Execute(
-			t.Context(),
-			expectedRequest)
-		require.Error(t, err)
-		assert.Equal(t, "bang", err.Error())
-	})
-
 	t.Run("fetching an action capability, and executing it with reportable error", func(t *testing.T) {
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
@@ -497,16 +474,17 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ma.responseError = capabilities.NewRemoteReportableError(errors.New("bang"))
+		ma.responseError = caperrors.NewPublicSystemError(errors.New("bang"), caperrors.DeadlineExceeded)
 
 		_, err = c.(capabilities.ActionCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		assert.Equal(t, "bang", err.Error())
+		capErr := err.(caperrors.Error)
 
-		var reportableError *capabilities.RemoteReportableError
-		assert.ErrorAs(t, err, &reportableError)
+		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
+		require.Equal(t, caperrors.PublicSystem, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and executing it with reportable user error", func(t *testing.T) {
@@ -524,16 +502,74 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ma.responseError = capabilities.NewReportableUserError(errors.New("bang"))
+		ma.responseError = caperrors.NewPublicUserError(errors.New("bang"), caperrors.NotFound)
 
 		_, err = c.(capabilities.ActionCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		assert.Equal(t, "bang", err.Error())
+		capErr := err.(caperrors.Error)
 
-		var reportableUserError *capabilities.ReportableUserError
-		assert.ErrorAs(t, err, &reportableUserError)
+		require.Equal(t, "[4]NotFound: bang", capErr.Error())
+		require.Equal(t, caperrors.NotFound, capErr.Code())
+		require.Equal(t, caperrors.ReportableUser, capErr.ReportType())
+	})
+
+	t.Run("fetching an action capability, and executing it with local error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = caperrors.NewPrivateSystemError(errors.New("bang"), caperrors.DeadlineExceeded)
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		capErr := err.(caperrors.Error)
+
+		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
+		require.Equal(t, caperrors.LocalOnly, capErr.ReportType())
+	})
+
+	// This will only happen a local capability has not had it's API migrated to always return capability.Error
+	t.Run("fetching an action capability, and executing it without capability error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = errors.New("bang")
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		capErr := err.(caperrors.Error)
+
+		require.Equal(t, "[0]Uncategorized: bang", capErr.Error())
+		require.Equal(t, caperrors.Uncategorized, capErr.Code())
+		require.Equal(t, caperrors.LocalOnly, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {

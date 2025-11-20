@@ -302,56 +302,13 @@ type CompiledInstruction struct {
 	StackHeight uint16
 }
 
-type TransactionWithMeta struct {
-	// The slot this transaction was processed in.
-	Slot uint64
-
-	// Estimated production time, as Unix timestamp (seconds since the Unix epoch)
-	// of when the transaction was processed.
-	// Nil if not available.
-	BlockTime *UnixTimeSeconds
-
-	// Encoded Transaction
-	Transaction *DataBytesOrJSON
-
-	Meta *TransactionMeta
-
-	Version TransactionVersion
-}
-
 // represents solana-go GetBlockOpts
 type GetBlockOpts struct {
-	// Encoding for each returned Transaction, either "json", "jsonParsed", "base58" (slow), "base64".
-	// If parameter not provided, the default encoding is "json".
-	// - "jsonParsed" encoding attempts to use program-specific instruction parsers to return
-	//   more human-readable and explicit data in the transaction.message.instructions list.
-	// - If "jsonParsed" is requested but a parser cannot be found, the instruction falls back
-	//   to regular JSON encoding (accounts, data, and programIdIndex fields).
-	//
-	// This parameter is optional.
-	Encoding EncodingType
-
-	// Level of transaction detail to return.
-	// If parameter not provided, the default detail level is "full".
-	//
-	// This parameter is optional.
-	TransactionDetails TransactionDetailsType
-
-	// Whether to populate the rewards array.
-	// If parameter not provided, the default includes rewards.
-	//
-	// This parameter is optional.
-	Rewards *bool
-
 	// "processed" is not supported.
 	// If parameter not provided, the default is "finalized".
 	//
 	// This parameter is optional.
 	Commitment CommitmentType
-
-	// Max transaction version to return in responses.
-	// If the requested block contains a transaction with a higher version, an error will be returned.
-	MaxSupportedTransactionVersion *uint64
 }
 
 var (
@@ -449,13 +406,6 @@ type GetBlockReply struct {
 
 	// The slot index of this block's parent.
 	ParentSlot uint64
-
-	// Present if "full" transaction details are requested.
-	Transactions []TransactionWithMeta
-
-	// Present if "signatures" are requested for transaction details;
-	// an array of signatures, corresponding to the transaction order in the block.
-	Signatures []Signature
 
 	// Estimated production time, as Unix timestamp (seconds since the Unix epoch).
 	// Nil if not available.

@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var _ types.SolanaService = (*SolClient)(nil)
@@ -22,6 +23,22 @@ func NewSolanaClient(client solpb.SolanaClient) *SolClient {
 	return &SolClient{
 		grpcClient: client,
 	}
+}
+
+func (sc *SolClient) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
+	resp, err := sc.grpcClient.GetLatestLPBlock(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	hash, err := solpb.ConvertHashFromProto(resp.Hash)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &solana.LPBlock{
+		Slot: resp.GetSlot(),
+		Hash: hash,
+	}, nil
 }
 
 func (sc *SolClient) SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error) {
@@ -215,6 +232,18 @@ var _ solpb.SolanaServer = (*solServer)(nil)
 
 func newSolServer(impl types.SolanaService, b *net.BrokerExt) *solServer {
 	return &solServer{impl: impl, BrokerExt: b.WithName("SolanaServer")}
+}
+
+func (s *solServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*solpb.GetLatestLPBlockReply, error) {
+	dResp, err := s.impl.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &solpb.GetLatestLPBlockReply{
+		Hash: dResp.Hash[:],
+		Slot: dResp.Slot,
+	}, nil
 }
 
 func (s *solServer) SubmitTransaction(ctx context.Context, req *solpb.SubmitTransactionRequest) (*solpb.SubmitTransactionReply, error) {

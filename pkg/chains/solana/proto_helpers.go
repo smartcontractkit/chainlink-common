@@ -211,36 +211,6 @@ func ConvertConfirmationStatusFromProto(c ConfirmationStatusType) typesolana.Con
 	}
 }
 
-func ConvertTransactionDetailsFromProto(s TransactionDetailsType) typesolana.TransactionDetailsType {
-	switch s {
-	case TransactionDetailsType_TRANSACTION_DETAILS_FULL:
-		return typesolana.TransactionDetailsFull
-	case TransactionDetailsType_TRANSACTION_DETAILS_ACCOUNTS:
-		return typesolana.TransactionDetailsAccounts
-	case TransactionDetailsType_TRANSACTION_DETAILS_NONE:
-		return typesolana.TransactionDetailsNone
-	case TransactionDetailsType_TRANSCTION_DETAILS_SIGNATURES:
-		return typesolana.TransactionDetailsSignatures
-	default:
-		return typesolana.TransactionDetailsType("")
-	}
-}
-
-func ConvertTransactionDetailsToProto(t typesolana.TransactionDetailsType) TransactionDetailsType {
-	switch t {
-	case typesolana.TransactionDetailsAccounts:
-		return TransactionDetailsType_TRANSACTION_DETAILS_ACCOUNTS
-	case typesolana.TransactionDetailsNone:
-		return TransactionDetailsType_TRANSACTION_DETAILS_NONE
-	case typesolana.TransactionDetailsSignatures:
-		return TransactionDetailsType_TRANSCTION_DETAILS_SIGNATURES
-	case typesolana.TransactionDetailsFull:
-		return TransactionDetailsType_TRANSACTION_DETAILS_FULL
-	default:
-		return TransactionDetailsType_TRANSACTION_DETAILS_FULL
-	}
-}
-
 func ConvertDataSliceFromProto(p *DataSlice) *typesolana.DataSlice {
 	if p == nil {
 		return nil
@@ -409,11 +379,7 @@ func ConvertGetBlockOptsFromProto(p *GetBlockOpts) *typesolana.GetBlockOpts {
 		return nil
 	}
 	return &typesolana.GetBlockOpts{
-		Encoding:                       ConvertEncodingTypeFromProto(p.Encoding),
-		TransactionDetails:             ConvertTransactionDetailsFromProto(p.TransactionDetails),
-		Rewards:                        ptrBool(p.Rewards),
-		Commitment:                     ConvertCommitmentFromProto(p.Commitment),
-		MaxSupportedTransactionVersion: ptrUint64(p.MaxSupportedTransactionVersion),
+		Commitment: ConvertCommitmentFromProto(p.Commitment),
 	}
 }
 
@@ -421,20 +387,8 @@ func ConvertGetBlockOptsToProto(o *typesolana.GetBlockOpts) *GetBlockOpts {
 	if o == nil {
 		return nil
 	}
-	var rewards bool
-	if o.Rewards != nil {
-		rewards = *o.Rewards
-	}
-	var maxv uint64
-	if o.MaxSupportedTransactionVersion != nil {
-		maxv = *o.MaxSupportedTransactionVersion
-	}
 	return &GetBlockOpts{
-		Encoding:                       ConvertEncodingTypeToProto(o.Encoding),
-		TransactionDetails:             ConvertTransactionDetailsToProto(o.TransactionDetails),
-		Rewards:                        rewards,
-		Commitment:                     ConvertCommitmentToProto(o.Commitment),
-		MaxSupportedTransactionVersion: maxv,
+		Commitment: ConvertCommitmentToProto(o.Commitment),
 	}
 }
 
@@ -808,47 +762,6 @@ func ConvertTransactionEnvelopeToProto(e typesolana.TransactionResultEnvelope) *
 	}
 }
 
-func ConvertTransactionWithMetaFromProto(p *TransactionWithMeta) (*typesolana.TransactionWithMeta, error) {
-	if p == nil {
-		return nil, nil
-	}
-	env, err := ConvertDataBytesOrJSONFromProto(p.Transaction)
-	if err != nil {
-		return nil, fmt.Errorf("transaction bytes/json: %w", err)
-	}
-	meta, err := ConvertTransactionMetaFromProto(p.Meta)
-	if err != nil {
-		return nil, fmt.Errorf("meta: %w", err)
-	}
-	t := typesolana.UnixTimeSeconds(p.BlockTime)
-
-	return &typesolana.TransactionWithMeta{
-		Slot:        p.Slot,
-		BlockTime:   &t,
-		Transaction: env,
-		Meta:        meta,
-		Version:     typesolana.TransactionVersion(p.Version),
-	}, nil
-}
-
-func ConvertTransactionWithMetaToProto(t *typesolana.TransactionWithMeta) *TransactionWithMeta {
-	if t == nil {
-		return nil
-	}
-	var bt int64
-	if t.BlockTime != nil {
-		bt = int64(*t.BlockTime)
-	}
-
-	return &TransactionWithMeta{
-		Slot:        t.Slot,
-		BlockTime:   bt,
-		Transaction: ConvertDataBytesOrJSONToProto(t.Transaction),
-		Meta:        ConvertTransactionMetaToProto(t.Meta),
-		Version:     int64(t.Version),
-	}
-}
-
 func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*typesolana.GetTransactionReply, error) {
 	if p == nil {
 		return nil, nil
@@ -972,22 +885,7 @@ func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*typesolana.GetBlockRe
 	if err != nil {
 		return nil, fmt.Errorf("previous blockhash: %w", err)
 	}
-	txs := make([]typesolana.TransactionWithMeta, 0, len(p.Transactions))
-	for _, tx := range p.Transactions {
-		twm, err := ConvertTransactionWithMetaFromProto(tx)
-		if err != nil {
-			return nil, err
-		}
-		txs = append(txs, *twm)
-	}
-	var sigs []typesolana.Signature
-	for _, s := range p.Signatures {
-		ss, err := ConvertSignatureFromProto(s)
-		if err != nil {
-			return nil, err
-		}
-		sigs = append(sigs, ss)
-	}
+
 	var bt *solana.UnixTimeSeconds
 	if p.BlockTime != 0 {
 		bt = ptrUnix(typesolana.UnixTimeSeconds(p.BlockTime))
@@ -996,8 +894,6 @@ func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*typesolana.GetBlockRe
 		Blockhash:         hash,
 		PreviousBlockhash: prev,
 		ParentSlot:        p.ParentSlot,
-		Transactions:      txs,
-		Signatures:        sigs,
 		BlockTime:         bt,
 		BlockHeight:       ptrUint64(p.BlockHeight),
 	}, nil
@@ -1015,17 +911,10 @@ func ConvertGetBlockReplyToProto(r *typesolana.GetBlockReply) *GetBlockReply {
 	if r.BlockHeight != nil {
 		bh = *r.BlockHeight
 	}
-	txs := make([]*TransactionWithMeta, 0, len(r.Transactions))
-	for i := range r.Transactions {
-		txs = append(txs, ConvertTransactionWithMetaToProto(&r.Transactions[i]))
-	}
-	sigs := ConvertSignaturesToProto(r.Signatures)
 	return &GetBlockReply{
 		Blockhash:         r.Blockhash[:],
 		PreviousBlockhash: r.PreviousBlockhash[:],
 		ParentSlot:        r.ParentSlot,
-		Transactions:      txs,
-		Signatures:        sigs,
 		BlockTime:         bt,
 		BlockHeight:       bh,
 	}

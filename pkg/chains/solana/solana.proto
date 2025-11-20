@@ -3,6 +3,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/sol
 
 import "loop/chain-common/query.proto";
 import "values/v1/values.proto";
+import "google/protobuf/empty.proto";
 
 package loop.solana;
 
@@ -20,6 +21,7 @@ service Solana {
   rpc SimulateTX(SimulateTXRequest) returns (SimulateTXReply);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
+  rpc GetLatestLPBlock(google.protobuf.Empty) returns (GetLatestLPBlockReply);
 }
 
 // Transaction execution status returned by submitters/simulations.
@@ -167,11 +169,7 @@ message GetBalanceRequest {
 
 // Options for GetBlock.
 message GetBlockOpts {
-  EncodingType encoding = 1;                       // tx encoding
-  TransactionDetailsType transaction_details = 2;  // tx detail level
-  bool rewards = 3;                                // include rewards
   CommitmentType commitment = 4;                   // read consistency
-  uint64 max_supported_transaction_version = 5;    // fail if higher present
 }
 
 // Block response.
@@ -179,8 +177,6 @@ message GetBlockReply {
   bytes blockhash = 1;            // 32-byte block hash
   bytes previous_blockhash = 2;   // 32-byte parent hash
   uint64 parent_slot = 3;
-  repeated TransactionWithMeta transactions = 4; // present if FULL
-  repeated bytes signatures = 5;  // present if SIGNATURES
   int64 block_time = 6;           // unix seconds
   uint64 block_height = 7;        // chain height
 }
@@ -441,15 +437,6 @@ message SubmitTransactionRequest {
   string encoded_transaction = 3; // base64/base58 tx
 }
 
-// Block transaction with meta.
-message TransactionWithMeta {
-  uint64 slot = 1;                 // processed slot
-  int64 block_time = 2;            // unix seconds
-  DataBytesOrJSON transaction = 3; // tx (encoding per opts)
-  TransactionMeta  meta = 4;       // execution metadata
-  int64 version = 5;               // -1 legacy, >=0 v0+
-}
-
 // Primitive leaf for expressions/filters.
 message Primitive {
   oneof primitive {
@@ -483,3 +470,10 @@ message UnregisterLogTrackingRequest {
 }
 
 message UnregisterLogTrackingReply {}
+
+
+// latest block processed by lp
+message GetLatestLPBlockReply {
+	uint64 slot = 1; // block slot
+	bytes hash = 2; // 32 bytes block hash
+}

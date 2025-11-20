@@ -260,6 +260,64 @@ func (_c *SolanaService_GetFeeForMessage_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// GetLatestLPBlock provides a mock function with given fields: ctx
+func (_m *SolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestLPBlock")
+	}
+
+	var r0 *solana.LPBlock
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*solana.LPBlock, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *solana.LPBlock); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*solana.LPBlock)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SolanaService_GetLatestLPBlock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestLPBlock'
+type SolanaService_GetLatestLPBlock_Call struct {
+	*mock.Call
+}
+
+// GetLatestLPBlock is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *SolanaService_Expecter) GetLatestLPBlock(ctx interface{}) *SolanaService_GetLatestLPBlock_Call {
+	return &SolanaService_GetLatestLPBlock_Call{Call: _e.mock.On("GetLatestLPBlock", ctx)}
+}
+
+func (_c *SolanaService_GetLatestLPBlock_Call) Run(run func(ctx context.Context)) *SolanaService_GetLatestLPBlock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *SolanaService_GetLatestLPBlock_Call) Return(_a0 *solana.LPBlock, _a1 error) *SolanaService_GetLatestLPBlock_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SolanaService_GetLatestLPBlock_Call) RunAndReturn(run func(context.Context) (*solana.LPBlock, error)) *SolanaService_GetLatestLPBlock_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetMultipleAccountsWithOpts provides a mock function with given fields: ctx, req
 func (_m *SolanaService) GetMultipleAccountsWithOpts(ctx context.Context, req solana.GetMultipleAccountsRequest) (*solana.GetMultipleAccountsReply, error) {
 	ret := _m.Called(ctx, req)

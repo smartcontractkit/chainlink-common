@@ -158,3 +158,8 @@ type Log struct {
 	SequenceNum    int64
 	Error          *string
 }
+
+type LPBlock struct {
+	Slot uint64
+	Hash Hash
+}

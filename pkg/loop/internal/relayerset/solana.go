@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // solClient wraps the SolanaRelayerSetClient by attaching a RelayerID to SolClient requests.
@@ -32,6 +33,10 @@ func (sc *solClient) GetBalance(ctx context.Context, in *solpb.GetBalanceRequest
 
 func (sc *solClient) GetBlock(ctx context.Context, in *solpb.GetBlockRequest, opts ...grpc.CallOption) (*solpb.GetBlockReply, error) {
 	return sc.client.GetBlock(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *solClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*solpb.GetLatestLPBlockReply, error) {
+	return sc.client.GetLatestLPBlock(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
 func (sc *solClient) GetFeeForMessage(ctx context.Context, in *solpb.GetFeeForMessageRequest, opts ...grpc.CallOption) (*solpb.GetFeeForMessageReply, error) {
@@ -82,6 +87,23 @@ type solServer struct {
 var _ solpb.SolanaServer = (*solServer)(nil)
 
 // Server handlers
+func (ss *solServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*solpb.GetLatestLPBlockReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dResp, err := solService.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &solpb.GetLatestLPBlockReply{
+		Hash: dResp.Hash[:],
+		Slot: dResp.Slot,
+	}, nil
+}
+
 func (ss *solServer) SubmitTransaction(ctx context.Context, req *solpb.SubmitTransactionRequest) (*solpb.SubmitTransactionReply, error) {
 	solService, err := ss.parent.getSolService(ctx)
 	if err != nil {

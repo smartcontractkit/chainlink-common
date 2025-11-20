@@ -250,6 +250,9 @@ type SolanaService interface {
 	// collected through previously registered log filters.
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort) ([]*solana.Log, error)
+
+	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
+	GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error)
 }
 
 // Relayer extends ChainService with providers for each product.
@@ -530,4 +533,7 @@ func (uss *UnimplementedSolanaService) GetSignatureStatuses(ctx context.Context,
 }
 func (uss *UnimplementedSolanaService) SimulateTX(ctx context.Context, req solana.SimulateTXRequest) (*solana.SimulateTXReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SimulateTX not implemented")
+}
+func (uss *UnimplementedSolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }

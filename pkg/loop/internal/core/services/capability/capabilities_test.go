@@ -458,30 +458,6 @@ func Test_Capabilities(t *testing.T) {
 		assert.Equal(t, expectedResp, resp)
 	})
 
-	t.Run("fetching an action capability, and executing it with error", func(t *testing.T) {
-		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
-		c, _, _, err := newCapabilityPlugin(t, ma)
-		require.NoError(t, err)
-
-		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
-		require.NoError(t, err)
-
-		imap, err := values.NewMap(map[string]any{"bar": "baz"})
-		require.NoError(t, err)
-		expectedRequest := capabilities.CapabilityRequest{
-			Config: cmap,
-			Inputs: imap,
-		}
-
-		ma.responseError = errors.New("bang")
-
-		_, err = c.(capabilities.ExecutableCapability).Execute(
-			t.Context(),
-			expectedRequest)
-		require.Error(t, err)
-		assert.Equal(t, "bang", err.Error())
-	})
-
 	t.Run("fetching an action capability, and executing it with reportable error", func(t *testing.T) {
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
@@ -497,16 +473,17 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ma.responseError = capabilities.NewRemoteReportableError(errors.New("bang"))
+		ma.responseError = capabilities.NewRemoteReportableError(errors.New("bang"), capabilities.DeadlineExceeded)
 
 		_, err = c.(capabilities.ActionCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		assert.Equal(t, "bang", err.Error())
+		capErr := err.(capabilities.Error)
 
-		var reportableError *capabilities.RemoteReportableError
-		assert.ErrorAs(t, err, &reportableError)
+		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, capabilities.DeadlineExceeded, capErr.Code())
+		require.Equal(t, capabilities.ErrorReportTypeRemote, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and executing it with reportable user error", func(t *testing.T) {
@@ -524,16 +501,74 @@ func Test_Capabilities(t *testing.T) {
 			Inputs: imap,
 		}
 
-		ma.responseError = capabilities.NewReportableUserError(errors.New("bang"))
+		ma.responseError = capabilities.NewReportableUserError(errors.New("bang"), capabilities.NotFound)
 
 		_, err = c.(capabilities.ActionCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		assert.Equal(t, "bang", err.Error())
+		capErr := err.(capabilities.Error)
 
-		var reportableUserError *capabilities.ReportableUserError
-		assert.ErrorAs(t, err, &reportableUserError)
+		require.Equal(t, "[4]NotFound: bang", capErr.Error())
+		require.Equal(t, capabilities.NotFound, capErr.Code())
+		require.Equal(t, capabilities.ErrorReportTypeUser, capErr.ReportType())
+	})
+
+	t.Run("fetching an action capability, and executing it with local error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = capabilities.NewLocalReportableError(errors.New("bang"), capabilities.DeadlineExceeded)
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		capErr := err.(capabilities.Error)
+
+		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, capabilities.DeadlineExceeded, capErr.Code())
+		require.Equal(t, capabilities.ErrorReportTypeLocal, capErr.ReportType())
+	})
+
+	// This will only happen a local capability has not had it's API migrated to always return capability.Error
+	t.Run("fetching an action capability, and executing it without capability error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = errors.New("bang")
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		capErr := err.(capabilities.Error)
+
+		require.Equal(t, "[0]Uncategorized: bang", capErr.Error())
+		require.Equal(t, capabilities.Uncategorized, capErr.Code())
+		require.Equal(t, capabilities.ErrorReportTypeLocal, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {

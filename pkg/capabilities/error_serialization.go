@@ -14,45 +14,15 @@ const localReportableErrorIdentifier = "LocalReportableError:"
 
 const errorCodeIdentifier = "ErrorCode="
 
-func PrePendRemoteReportableErrorIdentifier(errorMessage string) string {
-	return remoteReportableErrorIdentifier + errorMessage
-}
-
-func IsRemoteReportableErrorMessage(message string) bool {
-	return strings.HasPrefix(message, remoteReportableErrorIdentifier)
-}
-
-func RemoveRemoteReportableErrorIdentifier(message string) string {
-	if IsRemoteReportableErrorMessage(message) {
-		return strings.TrimPrefix(message, remoteReportableErrorIdentifier)
-	}
-	return message
-}
-
-func PrePendRemoteUnreportableErrorIdentifier(errorMessage string) string {
+func PrePendLocalReportableErrorIdentifier(errorMessage string) string {
 	return localReportableErrorIdentifier + errorMessage
-}
-
-func RemoveRemoteUnreportableErrorIdentifier(message string) string {
-	return strings.TrimPrefix(message, localReportableErrorIdentifier)
-}
-
-func PrePendReportableUserErrorIdentifier(errorMessage string) string {
-	return reportableUserErrorIdentifier + errorMessage
 }
 
 func IsReportableUserErrorMessage(message string) bool {
 	return strings.HasPrefix(message, reportableUserErrorIdentifier)
 }
 
-func RemoveReportableUserErrorIdentifier(message string) string {
-	if IsReportableUserErrorMessage(message) {
-		return strings.TrimPrefix(message, reportableUserErrorIdentifier)
-	}
-	return message
-}
-
-// Returns the error code and removes it from the message if present.
+// GetErrorCode Returns the error code and removes it from the message if present.
 func GetErrorCode(message string) (ErrorCode, string) {
 	if strings.HasPrefix(message, errorCodeIdentifier) {
 		rest := message[len(errorCodeIdentifier):]
@@ -68,27 +38,41 @@ func GetErrorCode(message string) (ErrorCode, string) {
 	return Uncategorized, message
 }
 
-func ToCapabilityError(errorMsg string) Error {
+func DeserializeErrorFromString(errorMsg string) Error {
 	// Order is important here as reportable user errors also have the remote reportable error identifier.
 	if strings.HasPrefix(errorMsg, reportableUserErrorIdentifier) {
-		errorMsg = RemoveReportableUserErrorIdentifier(errorMsg)
+		errorMsg = strings.TrimPrefix(errorMsg, reportableUserErrorIdentifier)
 		errorCode, msg := GetErrorCode(errorMsg)
-		return NewUserError(errors.New(msg), errorCode)
+		return NewReportableUserError(errors.New(msg), errorCode)
 	}
 
-	if IsRemoteReportableErrorMessage(errorMsg) {
-		msg := RemoveRemoteReportableErrorIdentifier(errorMsg)
+	if strings.HasPrefix(errorMsg, remoteReportableErrorIdentifier) {
+		msg := strings.TrimPrefix(errorMsg, remoteReportableErrorIdentifier)
 		errorCode, msg := GetErrorCode(msg)
 		return NewRemoteReportableError(errors.New(msg), errorCode)
 	}
 
 	if strings.HasPrefix(errorMsg, localReportableErrorIdentifier) {
-		msg := RemoveRemoteUnreportableErrorIdentifier(errorMsg)
+		msg := strings.TrimPrefix(errorMsg, localReportableErrorIdentifier)
 		errorCode, msg := GetErrorCode(msg)
 		return NewLocalReportableError(errors.New(msg), errorCode)
 	}
 
-	// Default to remote reportable error if no identifier is found.
+	// Default to local reportable error if no identifier is found.
 	errorCode, errorMsg := GetErrorCode(errorMsg)
 	return NewLocalReportableError(errors.New(errorMsg), errorCode)
+}
+
+func (e *capabilityError) SerializeToString() string {
+	var prefix string
+	switch e.ReportType() {
+	case ErrorReportTypeRemote:
+		prefix = remoteReportableErrorIdentifier
+	case ErrorReportTypeUser:
+		prefix = reportableUserErrorIdentifier
+	case ErrorReportTypeLocal:
+		prefix = localReportableErrorIdentifier
+	}
+
+	return prefix + errorCodeIdentifier + strconv.Itoa(int(e.Code())) + ":" + e.err.Error()
 }

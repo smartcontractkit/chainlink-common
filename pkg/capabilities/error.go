@@ -22,6 +22,7 @@ type Error interface {
 
 	ReportType() ErrorReportType
 	Code() ErrorCode
+	SerializeToString() string
 }
 
 type capabilityError struct {
@@ -42,7 +43,7 @@ func NewRemoteReportableError(err error, errorCode ErrorCode) Error {
 	return newError(err, ErrorReportTypeRemote, errorCode)
 }
 
-func NewUserError(err error, errorCode ErrorCode) Error {
+func NewReportableUserError(err error, errorCode ErrorCode) Error {
 	return newError(err, ErrorReportTypeUser, errorCode)
 }
 

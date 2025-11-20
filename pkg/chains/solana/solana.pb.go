@@ -3958,7 +3958,6 @@ func (*UnregisterLogTrackingReply) Descriptor() ([]byte, []int) {
 type GetLatestLPBlockReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"` // block slot
-	Hash          []byte                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`  // 32 bytes block hash
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3998,13 +3997,6 @@ func (x *GetLatestLPBlockReply) GetSlot() uint64 {
 		return x.Slot
 	}
 	return 0
-}
-
-func (x *GetLatestLPBlockReply) GetHash() []byte {
-	if x != nil {
-		return x.Hash
-	}
-	return nil
 }
 
 var File_solana_proto protoreflect.FileDescriptor
@@ -4280,10 +4272,9 @@ const file_solana_proto_rawDesc = "" +
 	"\n" +
 	"filterName\x18\x01 \x01(\tR\n" +
 	"filterName\"\x1c\n" +
-	"\x1aUnregisterLogTrackingReply\"?\n" +
+	"\x1aUnregisterLogTrackingReply\"+\n" +
 	"\x15GetLatestLPBlockReply\x12\x12\n" +
-	"\x04slot\x18\x01 \x01(\x04R\x04slot\x12\x12\n" +
-	"\x04hash\x18\x02 \x01(\fR\x04hash*A\n" +
+	"\x04slot\x18\x01 \x01(\x04R\x04slot*A\n" +
 	"\x11TransactionStatus\x12\f\n" +
 	"\bTX_FATAL\x10\x00\x12\x0e\n" +
 	"\n" +

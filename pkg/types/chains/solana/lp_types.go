@@ -161,5 +161,4 @@ type Log struct {
 
 type LPBlock struct {
 	Slot uint64
-	Hash Hash
 }

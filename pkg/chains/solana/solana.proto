@@ -475,5 +475,4 @@ message UnregisterLogTrackingReply {}
 // latest block processed by lp
 message GetLatestLPBlockReply {
 	uint64 slot = 1; // block slot
-	bytes hash = 2; // 32 bytes block hash
 }

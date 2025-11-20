@@ -30,14 +30,9 @@ func (sc *SolClient) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, err
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	hash, err := solpb.ConvertHashFromProto(resp.Hash)
-	if err != nil {
-		return nil, net.WrapRPCErr(err)
-	}
 
 	return &solana.LPBlock{
 		Slot: resp.GetSlot(),
-		Hash: hash,
 	}, nil
 }
 
@@ -241,7 +236,6 @@ func (s *solServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*so
 	}
 
 	return &solpb.GetLatestLPBlockReply{
-		Hash: dResp.Hash[:],
 		Slot: dResp.Slot,
 	}, nil
 }

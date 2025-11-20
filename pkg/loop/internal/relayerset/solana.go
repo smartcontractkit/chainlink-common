@@ -99,7 +99,6 @@ func (ss *solServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*s
 	}
 
 	return &solpb.GetLatestLPBlockReply{
-		Hash: dResp.Hash[:],
 		Slot: dResp.Slot,
 	}, nil
 }

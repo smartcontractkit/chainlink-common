@@ -693,14 +693,10 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 		{
 			name: "GetBlock",
 			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
-				rew := true
 				req := soltypes.GetBlockRequest{
 					Slot: 42,
 					Opts: &soltypes.GetBlockOpts{
-						Encoding:           soltypes.EncodingJSON,
-						TransactionDetails: soltypes.TransactionDetailsNone,
-						Rewards:            &rew,
-						Commitment:         soltypes.CommitmentConfirmed,
+						Commitment: soltypes.CommitmentConfirmed,
 					},
 				}
 				expHash := soltypes.Hash{1, 2, 3}

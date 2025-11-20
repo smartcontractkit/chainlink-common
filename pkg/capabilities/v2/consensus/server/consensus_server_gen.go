@@ -19,9 +19,9 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], capabilities.Error)
 
-	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest) (*capabilities.ResponseAndMetadata[*sdk.ReportResponse], error)
+	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest) (*capabilities.ResponseAndMetadata[*sdk.ReportResponse], capabilities.Error)
 
 	Start(ctx context.Context) error
 	Close() error

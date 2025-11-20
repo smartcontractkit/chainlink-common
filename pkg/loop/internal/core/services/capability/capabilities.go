@@ -421,6 +421,8 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
+		// Here cast it to the right reportable subclass
+
 		var reportableError *capabilities.RemoteReportableError
 		var userError *capabilities.ReportableUserError
 		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v5.29.3
-// source: keystore.proto
+// source: pkg/loop/internal/pb/keystore/keystore.proto
 
 package keystorepb
 
@@ -31,7 +31,7 @@ type SignRequest struct {
 
 func (x *SignRequest) Reset() {
 	*x = SignRequest{}
-	mi := &file_keystore_proto_msgTypes[0]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *SignRequest) String() string {
 func (*SignRequest) ProtoMessage() {}
 
 func (x *SignRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[0]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *SignRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignRequest.ProtoReflect.Descriptor instead.
 func (*SignRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{0}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SignRequest) GetKeyID() []byte {
@@ -82,7 +82,7 @@ type SignResponse struct {
 
 func (x *SignResponse) Reset() {
 	*x = SignResponse{}
-	mi := &file_keystore_proto_msgTypes[1]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -94,7 +94,7 @@ func (x *SignResponse) String() string {
 func (*SignResponse) ProtoMessage() {}
 
 func (x *SignResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[1]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -107,7 +107,7 @@ func (x *SignResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignResponse.ProtoReflect.Descriptor instead.
 func (*SignResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{1}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SignResponse) GetData() []byte {
@@ -127,7 +127,7 @@ type SignBatchRequest struct {
 
 func (x *SignBatchRequest) Reset() {
 	*x = SignBatchRequest{}
-	mi := &file_keystore_proto_msgTypes[2]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +139,7 @@ func (x *SignBatchRequest) String() string {
 func (*SignBatchRequest) ProtoMessage() {}
 
 func (x *SignBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[2]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +152,7 @@ func (x *SignBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignBatchRequest.ProtoReflect.Descriptor instead.
 func (*SignBatchRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{2}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SignBatchRequest) GetKeyID() []byte {
@@ -178,7 +178,7 @@ type SignBatchResponse struct {
 
 func (x *SignBatchResponse) Reset() {
 	*x = SignBatchResponse{}
-	mi := &file_keystore_proto_msgTypes[3]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +190,7 @@ func (x *SignBatchResponse) String() string {
 func (*SignBatchResponse) ProtoMessage() {}
 
 func (x *SignBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[3]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +203,7 @@ func (x *SignBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignBatchResponse.ProtoReflect.Descriptor instead.
 func (*SignBatchResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{3}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SignBatchResponse) GetData() [][]byte {
@@ -223,7 +223,7 @@ type VerifyRequest struct {
 
 func (x *VerifyRequest) Reset() {
 	*x = VerifyRequest{}
-	mi := &file_keystore_proto_msgTypes[4]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +235,7 @@ func (x *VerifyRequest) String() string {
 func (*VerifyRequest) ProtoMessage() {}
 
 func (x *VerifyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[4]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +248,7 @@ func (x *VerifyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyRequest.ProtoReflect.Descriptor instead.
 func (*VerifyRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{4}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *VerifyRequest) GetKeyID() []byte {
@@ -274,7 +274,7 @@ type VerifyResponse struct {
 
 func (x *VerifyResponse) Reset() {
 	*x = VerifyResponse{}
-	mi := &file_keystore_proto_msgTypes[5]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +286,7 @@ func (x *VerifyResponse) String() string {
 func (*VerifyResponse) ProtoMessage() {}
 
 func (x *VerifyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[5]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +299,7 @@ func (x *VerifyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyResponse.ProtoReflect.Descriptor instead.
 func (*VerifyResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{5}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *VerifyResponse) GetValid() bool {
@@ -319,7 +319,7 @@ type VerifyBatchRequest struct {
 
 func (x *VerifyBatchRequest) Reset() {
 	*x = VerifyBatchRequest{}
-	mi := &file_keystore_proto_msgTypes[6]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +331,7 @@ func (x *VerifyBatchRequest) String() string {
 func (*VerifyBatchRequest) ProtoMessage() {}
 
 func (x *VerifyBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[6]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +344,7 @@ func (x *VerifyBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyBatchRequest.ProtoReflect.Descriptor instead.
 func (*VerifyBatchRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{6}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *VerifyBatchRequest) GetKeyID() []byte {
@@ -370,7 +370,7 @@ type VerifyBatchResponse struct {
 
 func (x *VerifyBatchResponse) Reset() {
 	*x = VerifyBatchResponse{}
-	mi := &file_keystore_proto_msgTypes[7]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -382,7 +382,7 @@ func (x *VerifyBatchResponse) String() string {
 func (*VerifyBatchResponse) ProtoMessage() {}
 
 func (x *VerifyBatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[7]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -395,7 +395,7 @@ func (x *VerifyBatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyBatchResponse.ProtoReflect.Descriptor instead.
 func (*VerifyBatchResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{7}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *VerifyBatchResponse) GetValid() []bool {
@@ -414,7 +414,7 @@ type ListKeysRequest struct {
 
 func (x *ListKeysRequest) Reset() {
 	*x = ListKeysRequest{}
-	mi := &file_keystore_proto_msgTypes[8]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -426,7 +426,7 @@ func (x *ListKeysRequest) String() string {
 func (*ListKeysRequest) ProtoMessage() {}
 
 func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[8]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -439,7 +439,7 @@ func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListKeysRequest.ProtoReflect.Descriptor instead.
 func (*ListKeysRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{8}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListKeysRequest) GetTags() []string {
@@ -458,7 +458,7 @@ type ListKeysResponse struct {
 
 func (x *ListKeysResponse) Reset() {
 	*x = ListKeysResponse{}
-	mi := &file_keystore_proto_msgTypes[9]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -470,7 +470,7 @@ func (x *ListKeysResponse) String() string {
 func (*ListKeysResponse) ProtoMessage() {}
 
 func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[9]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +483,7 @@ func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListKeysResponse.ProtoReflect.Descriptor instead.
 func (*ListKeysResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{9}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListKeysResponse) GetKeyIDs() [][]byte {
@@ -504,7 +504,7 @@ type RunUDFRequest struct {
 
 func (x *RunUDFRequest) Reset() {
 	*x = RunUDFRequest{}
-	mi := &file_keystore_proto_msgTypes[10]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -516,7 +516,7 @@ func (x *RunUDFRequest) String() string {
 func (*RunUDFRequest) ProtoMessage() {}
 
 func (x *RunUDFRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[10]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -529,7 +529,7 @@ func (x *RunUDFRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunUDFRequest.ProtoReflect.Descriptor instead.
 func (*RunUDFRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{10}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RunUDFRequest) GetName() string {
@@ -562,7 +562,7 @@ type RunUDFResponse struct {
 
 func (x *RunUDFResponse) Reset() {
 	*x = RunUDFResponse{}
-	mi := &file_keystore_proto_msgTypes[11]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -574,7 +574,7 @@ func (x *RunUDFResponse) String() string {
 func (*RunUDFResponse) ProtoMessage() {}
 
 func (x *RunUDFResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[11]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -587,7 +587,7 @@ func (x *RunUDFResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunUDFResponse.ProtoReflect.Descriptor instead.
 func (*RunUDFResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{11}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RunUDFResponse) GetData() []byte {
@@ -608,7 +608,7 @@ type ImportKeyRequest struct {
 
 func (x *ImportKeyRequest) Reset() {
 	*x = ImportKeyRequest{}
-	mi := &file_keystore_proto_msgTypes[12]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -620,7 +620,7 @@ func (x *ImportKeyRequest) String() string {
 func (*ImportKeyRequest) ProtoMessage() {}
 
 func (x *ImportKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[12]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -633,7 +633,7 @@ func (x *ImportKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportKeyRequest.ProtoReflect.Descriptor instead.
 func (*ImportKeyRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{12}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ImportKeyRequest) GetKeyType() string {
@@ -666,7 +666,7 @@ type ImportKeyResponse struct {
 
 func (x *ImportKeyResponse) Reset() {
 	*x = ImportKeyResponse{}
-	mi := &file_keystore_proto_msgTypes[13]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -678,7 +678,7 @@ func (x *ImportKeyResponse) String() string {
 func (*ImportKeyResponse) ProtoMessage() {}
 
 func (x *ImportKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[13]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -691,7 +691,7 @@ func (x *ImportKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportKeyResponse.ProtoReflect.Descriptor instead.
 func (*ImportKeyResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{13}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ImportKeyResponse) GetKeyID() []byte {
@@ -710,7 +710,7 @@ type ExportKeyRequest struct {
 
 func (x *ExportKeyRequest) Reset() {
 	*x = ExportKeyRequest{}
-	mi := &file_keystore_proto_msgTypes[14]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -722,7 +722,7 @@ func (x *ExportKeyRequest) String() string {
 func (*ExportKeyRequest) ProtoMessage() {}
 
 func (x *ExportKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[14]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -735,7 +735,7 @@ func (x *ExportKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportKeyRequest.ProtoReflect.Descriptor instead.
 func (*ExportKeyRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{14}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ExportKeyRequest) GetKeyID() []byte {
@@ -754,7 +754,7 @@ type ExportKeyResponse struct {
 
 func (x *ExportKeyResponse) Reset() {
 	*x = ExportKeyResponse{}
-	mi := &file_keystore_proto_msgTypes[15]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +766,7 @@ func (x *ExportKeyResponse) String() string {
 func (*ExportKeyResponse) ProtoMessage() {}
 
 func (x *ExportKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[15]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +779,7 @@ func (x *ExportKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportKeyResponse.ProtoReflect.Descriptor instead.
 func (*ExportKeyResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{15}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ExportKeyResponse) GetData() []byte {
@@ -799,7 +799,7 @@ type CreateKeyRequest struct {
 
 func (x *CreateKeyRequest) Reset() {
 	*x = CreateKeyRequest{}
-	mi := &file_keystore_proto_msgTypes[16]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -811,7 +811,7 @@ func (x *CreateKeyRequest) String() string {
 func (*CreateKeyRequest) ProtoMessage() {}
 
 func (x *CreateKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[16]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -824,7 +824,7 @@ func (x *CreateKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateKeyRequest.ProtoReflect.Descriptor instead.
 func (*CreateKeyRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{16}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CreateKeyRequest) GetKeyType() string {
@@ -850,7 +850,7 @@ type CreateKeyResponse struct {
 
 func (x *CreateKeyResponse) Reset() {
 	*x = CreateKeyResponse{}
-	mi := &file_keystore_proto_msgTypes[17]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -862,7 +862,7 @@ func (x *CreateKeyResponse) String() string {
 func (*CreateKeyResponse) ProtoMessage() {}
 
 func (x *CreateKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[17]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -875,7 +875,7 @@ func (x *CreateKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateKeyResponse.ProtoReflect.Descriptor instead.
 func (*CreateKeyResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{17}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CreateKeyResponse) GetKeyID() []byte {
@@ -894,7 +894,7 @@ type DeleteKeyRequest struct {
 
 func (x *DeleteKeyRequest) Reset() {
 	*x = DeleteKeyRequest{}
-	mi := &file_keystore_proto_msgTypes[18]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +906,7 @@ func (x *DeleteKeyRequest) String() string {
 func (*DeleteKeyRequest) ProtoMessage() {}
 
 func (x *DeleteKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[18]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -919,7 +919,7 @@ func (x *DeleteKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteKeyRequest.ProtoReflect.Descriptor instead.
 func (*DeleteKeyRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{18}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *DeleteKeyRequest) GetKeyID() []byte {
@@ -937,7 +937,7 @@ type DeleteKeyResponse struct {
 
 func (x *DeleteKeyResponse) Reset() {
 	*x = DeleteKeyResponse{}
-	mi := &file_keystore_proto_msgTypes[19]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -949,7 +949,7 @@ func (x *DeleteKeyResponse) String() string {
 func (*DeleteKeyResponse) ProtoMessage() {}
 
 func (x *DeleteKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[19]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -962,7 +962,7 @@ func (x *DeleteKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteKeyResponse.ProtoReflect.Descriptor instead.
 func (*DeleteKeyResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{19}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{19}
 }
 
 type AddTagRequest struct {
@@ -975,7 +975,7 @@ type AddTagRequest struct {
 
 func (x *AddTagRequest) Reset() {
 	*x = AddTagRequest{}
-	mi := &file_keystore_proto_msgTypes[20]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -987,7 +987,7 @@ func (x *AddTagRequest) String() string {
 func (*AddTagRequest) ProtoMessage() {}
 
 func (x *AddTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[20]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1000,7 @@ func (x *AddTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTagRequest.ProtoReflect.Descriptor instead.
 func (*AddTagRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{20}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *AddTagRequest) GetKeyID() []byte {
@@ -1025,7 +1025,7 @@ type AddTagResponse struct {
 
 func (x *AddTagResponse) Reset() {
 	*x = AddTagResponse{}
-	mi := &file_keystore_proto_msgTypes[21]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1037,7 +1037,7 @@ func (x *AddTagResponse) String() string {
 func (*AddTagResponse) ProtoMessage() {}
 
 func (x *AddTagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[21]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1050,7 +1050,7 @@ func (x *AddTagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTagResponse.ProtoReflect.Descriptor instead.
 func (*AddTagResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{21}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{21}
 }
 
 type RemoveTagRequest struct {
@@ -1063,7 +1063,7 @@ type RemoveTagRequest struct {
 
 func (x *RemoveTagRequest) Reset() {
 	*x = RemoveTagRequest{}
-	mi := &file_keystore_proto_msgTypes[22]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1075,7 +1075,7 @@ func (x *RemoveTagRequest) String() string {
 func (*RemoveTagRequest) ProtoMessage() {}
 
 func (x *RemoveTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[22]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1088,7 +1088,7 @@ func (x *RemoveTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveTagRequest.ProtoReflect.Descriptor instead.
 func (*RemoveTagRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{22}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *RemoveTagRequest) GetKeyID() []byte {
@@ -1113,7 +1113,7 @@ type RemoveTagResponse struct {
 
 func (x *RemoveTagResponse) Reset() {
 	*x = RemoveTagResponse{}
-	mi := &file_keystore_proto_msgTypes[23]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1125,7 +1125,7 @@ func (x *RemoveTagResponse) String() string {
 func (*RemoveTagResponse) ProtoMessage() {}
 
 func (x *RemoveTagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[23]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1138,7 @@ func (x *RemoveTagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveTagResponse.ProtoReflect.Descriptor instead.
 func (*RemoveTagResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{23}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{23}
 }
 
 type ListTagsRequest struct {
@@ -1150,7 +1150,7 @@ type ListTagsRequest struct {
 
 func (x *ListTagsRequest) Reset() {
 	*x = ListTagsRequest{}
-	mi := &file_keystore_proto_msgTypes[24]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1162,7 +1162,7 @@ func (x *ListTagsRequest) String() string {
 func (*ListTagsRequest) ProtoMessage() {}
 
 func (x *ListTagsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[24]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1175,7 +1175,7 @@ func (x *ListTagsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTagsRequest.ProtoReflect.Descriptor instead.
 func (*ListTagsRequest) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{24}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListTagsRequest) GetKeyID() []byte {
@@ -1194,7 +1194,7 @@ type ListTagsResponse struct {
 
 func (x *ListTagsResponse) Reset() {
 	*x = ListTagsResponse{}
-	mi := &file_keystore_proto_msgTypes[25]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1206,7 +1206,7 @@ func (x *ListTagsResponse) String() string {
 func (*ListTagsResponse) ProtoMessage() {}
 
 func (x *ListTagsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_keystore_proto_msgTypes[25]
+	mi := &file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1219,7 +1219,7 @@ func (x *ListTagsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTagsResponse.ProtoReflect.Descriptor instead.
 func (*ListTagsResponse) Descriptor() ([]byte, []int) {
-	return file_keystore_proto_rawDescGZIP(), []int{25}
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListTagsResponse) GetTags() []string {
@@ -1229,11 +1229,11 @@ func (x *ListTagsResponse) GetTags() []string {
 	return nil
 }
 
-var File_keystore_proto protoreflect.FileDescriptor
+var File_pkg_loop_internal_pb_keystore_keystore_proto protoreflect.FileDescriptor
 
-const file_keystore_proto_rawDesc = "" +
+const file_pkg_loop_internal_pb_keystore_keystore_proto_rawDesc = "" +
 	"\n" +
-	"\x0ekeystore.proto\x12\x19loop.internal.pb.keystore\"7\n" +
+	",pkg/loop/internal/pb/keystore/keystore.proto\x12\x19loop.internal.pb.keystore\"7\n" +
 	"\vSignRequest\x12\x14\n" +
 	"\x05keyID\x18\x01 \x01(\fR\x05keyID\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\"\"\n" +
@@ -1311,19 +1311,19 @@ const file_keystore_proto_rawDesc = "" +
 	"\x06RunUDF\x12(.loop.internal.pb.keystore.RunUDFRequest\x1a).loop.internal.pb.keystore.RunUDFResponseBWZUgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/keystore;keystorepbb\x06proto3"
 
 var (
-	file_keystore_proto_rawDescOnce sync.Once
-	file_keystore_proto_rawDescData []byte
+	file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescOnce sync.Once
+	file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescData []byte
 )
 
-func file_keystore_proto_rawDescGZIP() []byte {
-	file_keystore_proto_rawDescOnce.Do(func() {
-		file_keystore_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_keystore_proto_rawDesc), len(file_keystore_proto_rawDesc)))
+func file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescGZIP() []byte {
+	file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescOnce.Do(func() {
+		file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkg_loop_internal_pb_keystore_keystore_proto_rawDesc), len(file_pkg_loop_internal_pb_keystore_keystore_proto_rawDesc)))
 	})
-	return file_keystore_proto_rawDescData
+	return file_pkg_loop_internal_pb_keystore_keystore_proto_rawDescData
 }
 
-var file_keystore_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
-var file_keystore_proto_goTypes = []any{
+var file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_pkg_loop_internal_pb_keystore_keystore_proto_goTypes = []any{
 	(*SignRequest)(nil),         // 0: loop.internal.pb.keystore.SignRequest
 	(*SignResponse)(nil),        // 1: loop.internal.pb.keystore.SignResponse
 	(*SignBatchRequest)(nil),    // 2: loop.internal.pb.keystore.SignBatchRequest
@@ -1351,7 +1351,7 @@ var file_keystore_proto_goTypes = []any{
 	(*ListTagsRequest)(nil),     // 24: loop.internal.pb.keystore.ListTagsRequest
 	(*ListTagsResponse)(nil),    // 25: loop.internal.pb.keystore.ListTagsResponse
 }
-var file_keystore_proto_depIdxs = []int32{
+var file_pkg_loop_internal_pb_keystore_keystore_proto_depIdxs = []int32{
 	0,  // 0: loop.internal.pb.keystore.Keystore.Sign:input_type -> loop.internal.pb.keystore.SignRequest
 	2,  // 1: loop.internal.pb.keystore.Keystore.SignBatch:input_type -> loop.internal.pb.keystore.SignBatchRequest
 	4,  // 2: loop.internal.pb.keystore.Keystore.Verify:input_type -> loop.internal.pb.keystore.VerifyRequest
@@ -1385,26 +1385,26 @@ var file_keystore_proto_depIdxs = []int32{
 	0,  // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_keystore_proto_init() }
-func file_keystore_proto_init() {
-	if File_keystore_proto != nil {
+func init() { file_pkg_loop_internal_pb_keystore_keystore_proto_init() }
+func file_pkg_loop_internal_pb_keystore_keystore_proto_init() {
+	if File_pkg_loop_internal_pb_keystore_keystore_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_keystore_proto_rawDesc), len(file_keystore_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_loop_internal_pb_keystore_keystore_proto_rawDesc), len(file_pkg_loop_internal_pb_keystore_keystore_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_keystore_proto_goTypes,
-		DependencyIndexes: file_keystore_proto_depIdxs,
-		MessageInfos:      file_keystore_proto_msgTypes,
+		GoTypes:           file_pkg_loop_internal_pb_keystore_keystore_proto_goTypes,
+		DependencyIndexes: file_pkg_loop_internal_pb_keystore_keystore_proto_depIdxs,
+		MessageInfos:      file_pkg_loop_internal_pb_keystore_keystore_proto_msgTypes,
 	}.Build()
-	File_keystore_proto = out.File
-	file_keystore_proto_goTypes = nil
-	file_keystore_proto_depIdxs = nil
+	File_pkg_loop_internal_pb_keystore_keystore_proto = out.File
+	file_pkg_loop_internal_pb_keystore_keystore_proto_goTypes = nil
+	file_pkg_loop_internal_pb_keystore_keystore_proto_depIdxs = nil
 }

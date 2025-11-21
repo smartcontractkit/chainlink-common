@@ -149,7 +149,7 @@ func Test_SerializeToRemoteReportableString(t *testing.T) {
 		errors.New("some local reportable error occurred"),
 		caperrors.AlreadyExists,
 	)
-	serializeToRemoteReportableStringAndAssert(t, localReportableError, "LocalReportableError:ErrorCode=5: failed to execute capability")
+	serializeToRemoteReportableStringAndAssert(t, localReportableError, "LocalReportableError:ErrorCode=5: failed to execute capability - error message is not remotely reportable")
 }
 
 // Legacy format used before ReportableUser, LocalOnly types and Error Codes were introduced

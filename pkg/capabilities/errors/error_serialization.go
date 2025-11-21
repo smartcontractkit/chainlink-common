@@ -79,5 +79,5 @@ func (e *capabilityError) SerializeToRemoteReportableString() string {
 		return e.SerializeToString()
 	}
 
-	return localReportableErrorIdentifier + errorCodeIdentifier + strconv.Itoa(int(e.Code())) + ": failed to execute capability"
+	return localReportableErrorIdentifier + errorCodeIdentifier + strconv.Itoa(int(e.Code())) + ": failed to execute capability - error message is not remotely reportable"
 }

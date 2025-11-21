@@ -158,7 +158,7 @@ var errorCodeToString = map[ErrorCode]string{
 }
 
 // ErrorCodeFromInt returns the ErrorCode for a given int, or Uncategorized if not found.
-func ErrorCodeFromInt(i int) ErrorCode {
+func ErrorCodeFromInt(i uint32) ErrorCode {
 	code := ErrorCode(i)
 	if _, ok := errorCodeToString[code]; ok {
 		return code

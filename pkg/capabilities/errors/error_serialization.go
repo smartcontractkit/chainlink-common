@@ -25,9 +25,9 @@ func GetErrorCode(message string) (ErrorCode, string) {
 		colonIdx := strings.Index(rest, ":")
 		if colonIdx != -1 {
 			codeStr := rest[:colonIdx]
-			code, err := strconv.Atoi(codeStr)
+			code, err := strconv.ParseUint(codeStr, 10, 32)
 			if err == nil {
-				return ErrorCodeFromInt(code), rest[colonIdx+1:]
+				return ErrorCodeFromInt(uint32(code)), rest[colonIdx+1:]
 			}
 		}
 	}

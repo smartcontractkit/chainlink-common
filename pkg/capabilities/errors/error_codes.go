@@ -157,34 +157,6 @@ var errorCodeToString = map[ErrorCode]string{
 	ConsensusFailed:    "ConsensusFailed",
 }
 
-var stringToErrorCode = map[string]ErrorCode{
-	"Uncategorized":      Uncategorized,
-	"Cancelled":          Cancelled,
-	"InvalidArgument":    InvalidArgument,
-	"DeadlineExceeded":   DeadlineExceeded,
-	"NotFound":           NotFound,
-	"AlreadyExists":      AlreadyExists,
-	"PermissionDenied":   PermissionDenied,
-	"ResourceExhausted":  ResourceExhausted,
-	"FailedPrecondition": FailedPrecondition,
-	"Aborted":            Aborted,
-	"OutOfRange":         OutOfRange,
-	"Unimplemented":      Unimplemented,
-	"Internal":           Internal,
-	"Unavailable":        Unavailable,
-	"DataLoss":           DataLoss,
-	"Unauthenticated":    Unauthenticated,
-	"ConsensusFailed":    ConsensusFailed,
-}
-
-// ErrorCodeFromString returns the ErrorCode for a given string, or Uncategorized if not found.
-func ErrorCodeFromString(s string) ErrorCode {
-	if code, ok := stringToErrorCode[s]; ok {
-		return code
-	}
-	return Uncategorized
-}
-
 // ErrorCodeFromInt returns the ErrorCode for a given int, or Uncategorized if not found.
 func ErrorCodeFromInt(i int) ErrorCode {
 	code := ErrorCode(i)

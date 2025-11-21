@@ -359,7 +359,7 @@ func (c ChannelDefinitions) Value() (driver.Value, error) {
 type ChannelID = uint32
 
 type ChannelDefinitionCache interface {
-	Definitions() ChannelDefinitions
+	Definitions(previous ChannelDefinitions) ChannelDefinitions
 	services.Service
 }
 

@@ -18,10 +18,6 @@ func PrePendLocalReportableErrorIdentifier(errorMessage string) string {
 	return localReportableErrorIdentifier + errorMessage
 }
 
-func IsReportableUserErrorMessage(message string) bool {
-	return strings.HasPrefix(message, reportableUserErrorIdentifier)
-}
-
 // GetErrorCode Returns the error code and removes it from the message if present.
 func GetErrorCode(message string) (ErrorCode, string) {
 	if strings.HasPrefix(message, errorCodeIdentifier) {
@@ -66,13 +62,22 @@ func DeserializeErrorFromString(errorMsg string) Error {
 func (e *capabilityError) SerializeToString() string {
 	var prefix string
 	switch e.ReportType() {
-	case ErrorReportTypeRemote:
+	case RemoteReportable:
 		prefix = remoteReportableErrorIdentifier
-	case ErrorReportTypeUser:
+	case ReportableUser:
 		prefix = reportableUserErrorIdentifier
-	case ErrorReportTypeLocal:
+	case LocalOnly:
 		prefix = localReportableErrorIdentifier
 	}
 
 	return prefix + errorCodeIdentifier + strconv.Itoa(int(e.Code())) + ":" + e.err.Error()
+}
+
+func (e *capabilityError) SerializeToRemoteReportableString() string {
+	switch e.ReportType() {
+	case RemoteReportable, ReportableUser:
+		return e.SerializeToString()
+	}
+
+	return localReportableErrorIdentifier + errorCodeIdentifier + strconv.Itoa(int(e.Code())) + ": failed to execute capability"
 }

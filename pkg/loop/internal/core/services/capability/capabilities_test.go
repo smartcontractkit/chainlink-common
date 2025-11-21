@@ -484,7 +484,7 @@ func Test_Capabilities(t *testing.T) {
 
 		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
-		require.Equal(t, caperrors.ErrorReportTypeRemote, capErr.ReportType())
+		require.Equal(t, caperrors.RemoteReportable, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and executing it with reportable user error", func(t *testing.T) {
@@ -512,7 +512,7 @@ func Test_Capabilities(t *testing.T) {
 
 		require.Equal(t, "[4]NotFound: bang", capErr.Error())
 		require.Equal(t, caperrors.NotFound, capErr.Code())
-		require.Equal(t, caperrors.ErrorReportTypeUser, capErr.ReportType())
+		require.Equal(t, caperrors.ReportableUser, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and executing it with local error", func(t *testing.T) {
@@ -540,7 +540,7 @@ func Test_Capabilities(t *testing.T) {
 
 		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
-		require.Equal(t, caperrors.ErrorReportTypeLocal, capErr.ReportType())
+		require.Equal(t, caperrors.LocalOnly, capErr.ReportType())
 	})
 
 	// This will only happen a local capability has not had it's API migrated to always return capability.Error
@@ -569,7 +569,7 @@ func Test_Capabilities(t *testing.T) {
 
 		require.Equal(t, "[0]Uncategorized: bang", capErr.Error())
 		require.Equal(t, caperrors.Uncategorized, capErr.Code())
-		require.Equal(t, caperrors.ErrorReportTypeLocal, capErr.ReportType())
+		require.Equal(t, caperrors.LocalOnly, capErr.ReportType())
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {

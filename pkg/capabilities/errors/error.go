@@ -2,36 +2,37 @@ package errors
 
 import "fmt"
 
-type ErrorReportType int
+type ReportType int
 
 const (
-	// ErrorReportTypeLocal The message in the error may contain sensitive node local information and should not be reported remotely.
-	// In addition by marking the error as local it prevents the error from being accidentally or maliciously marked as remote reportable
-	// by injecting the remote reportable error identifier in front of the error message.
-	ErrorReportTypeLocal ErrorReportType = 0
+	// LocalOnly The message in the error may contain sensitive node local information and should not be reported remotely.
+	// In addition the serialised string representation is prefixed with an identify that prevents the error
+	// from being accidentally or maliciously marked as remote reportable by manipulating the error string.
+	LocalOnly ReportType = 0
 
-	// ErrorReportTypeRemote The message in the error is safe to report remotely between nodes.
-	ErrorReportTypeRemote ErrorReportType = 1
+	// RemoteReportable The message in the error is safe to report remotely between nodes.
+	RemoteReportable ReportType = 1
 
-	// ErrorReportTypeUser The error is due to user error and is safe to report remotely between nodes.
-	ErrorReportTypeUser ErrorReportType = 2
+	// ReportableUser The error is due to user error and is safe to report remotely between nodes.
+	ReportableUser ReportType = 2
 )
 
 type Error interface {
 	error
 
-	ReportType() ErrorReportType
+	ReportType() ReportType
 	Code() ErrorCode
 	SerializeToString() string
+	SerializeToRemoteReportableString() string
 }
 
 type capabilityError struct {
 	err        error
-	reportType ErrorReportType
+	reportType ReportType
 	errorCode  ErrorCode
 }
 
-func newError(err error, reportType ErrorReportType, errorCode ErrorCode) Error {
+func newError(err error, reportType ReportType, errorCode ErrorCode) Error {
 	return &capabilityError{
 		err:        err,
 		reportType: reportType,
@@ -40,22 +41,22 @@ func newError(err error, reportType ErrorReportType, errorCode ErrorCode) Error 
 }
 
 func NewRemoteReportableError(err error, errorCode ErrorCode) Error {
-	return newError(err, ErrorReportTypeRemote, errorCode)
+	return newError(err, RemoteReportable, errorCode)
 }
 
 func NewReportableUserError(err error, errorCode ErrorCode) Error {
-	return newError(err, ErrorReportTypeUser, errorCode)
+	return newError(err, ReportableUser, errorCode)
 }
 
 func NewLocalReportableError(err error, errorCode ErrorCode) Error {
-	return newError(err, ErrorReportTypeLocal, errorCode)
+	return newError(err, LocalOnly, errorCode)
 }
 
 func (e *capabilityError) Error() string {
 	return fmt.Sprintf("[%d]%s:", e.errorCode, e.errorCode.String()) + " " + e.err.Error()
 }
 
-func (e *capabilityError) ReportType() ErrorReportType {
+func (e *capabilityError) ReportType() ReportType {
 	return e.reportType
 }
 

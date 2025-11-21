@@ -150,13 +150,9 @@ type GetAccountInfoOpts struct {
 	MinContextSlot *uint64
 }
 
-type Context struct {
-	Slot uint64
-}
-
 // represents solana-go RPCContext
 type RPCContext struct {
-	Context Context
+	Slot uint64
 }
 
 // represents solana-go Account

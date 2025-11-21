@@ -24,45 +24,37 @@ service Solana {
   rpc GetLatestLPBlock(google.protobuf.Empty) returns (GetLatestLPBlockReply);
 }
 
-// Transaction execution status returned by submitters/simulations.
-enum TransactionStatus {
-  TX_FATAL = 0;    // unrecoverable failure
-  TX_ABORTED = 1;  // not executed / dropped
-  TX_SUCCESS = 2;  // executed successfully
-}
-
-// Level of tx details in block response.
-enum TransactionDetailsType {
-  TRANSACTION_DETAILS_FULL = 0;       // tx + meta
-  TRANSCTION_DETAILS_SIGNATURES = 1;  // signatures only
-  TRANSACTION_DETAILS_NONE = 2;       // no txs
-  TRANSACTION_DETAILS_ACCOUNTS = 3;   // account keys only
-}
-
 // Account/tx data encodings.
 enum EncodingType {
-  ENCODING_NONE = 0;
-  ENCODING_BASE58  = 1;   // for data <129 bytes
-  ENCODING_BASE64  = 2;   // any size
-  ENCODING_BASE64_ZST = 3; // zstd-compressed, base64-wrapped
-  ENCODING_JSON_PARSED = 4; // program parsers; fallback to base64 if unknown
-  ENCODING_JSON = 5;      // raw JSON (rare; prefer JSON_PARSED)
+  ENCODING_TYPE_NONE = 0;
+  ENCODING_TYPE_BASE58  = 1;   // for data <129 bytes
+  ENCODING_TYPE_BASE64  = 2;   // any size
+  ENCODING_TYPE_BASE64_ZSTD = 3; // zstd-compressed, base64-wrapped
+  ENCODING_TYPE_JSON_PARSED = 4; // program parsers; fallback to base64 if unknown
+  ENCODING_TYPE_JSON = 5;      // raw JSON (rare; prefer JSON_PARSED)
 }
 
 // Read consistency of queried state.
 enum CommitmentType {
-  COMMITMENT_NONE = 0;
-  COMMITMENT_FINALIZED = 1; // cluster-finalized
-  COMMITMENT_CONFIRMED = 2; // voted by supermajority
-  COMMITMENT_PROCESSED = 3; // node’s latest
+  COMMITMENT_TYPE_NONE = 0;
+  COMMITMENT_TYPE_FINALIZED = 1; // cluster-finalized
+  COMMITMENT_TYPE_CONFIRMED = 2; // voted by supermajority
+  COMMITMENT_TYPE_PROCESSED = 3; // node’s latest
 }
 
 // Cluster confirmation status of a tx/signature.
 enum ConfirmationStatusType {
-  CONFIRMATION_NONE = 0;
-  CONFIRMATION_PROCESSED = 1;
-  CONFIRMATION_CONFIRMED = 2;
-  CONFIRMATION_FINALIZED = 3;
+  CONFIRMATION_STATUS_TYPE_NONE = 0;
+  CONFIRMATION_STATUS_TYPE_PROCESSED = 1;
+  CONFIRMATION_STATUS_TYPE_CONFIRMED = 2;
+  CONFIRMATION_STATUS_TYPE_FINALIZED = 3;
+}
+
+// Transaction execution status returned by submitters/simulations.
+enum TxStatus {
+  TX_STATUS_FATAL = 0;    // unrecoverable failure
+  TX_STATUS_ABORTED = 1;  // not executed / dropped
+  TX_STATUS_SUCCESS = 2;  // executed successfully
 }
 
 // On-chain account state.
@@ -75,65 +67,25 @@ message Account {
   uint64 space = 6;                   // data length in bytes
 }
 
-// 32-byte address (Pubkey).
-message Address {
-  bytes address = 1; // 32 bytes
-}
-
 // Compute budget configuration when submitting txs.
 message ComputeConfig {
   uint32 compute_limit = 1;      // max CUs (approx per-tx limit)
   uint64 compute_max_price = 2;  // max lamports per CU
 }
 
-// RPC context (slot at which state was read).
-message Context {
-  uint64 slot = 1;
-}
-
 // Raw bytes vs parsed JSON (as returned by RPC).
 message DataBytesOrJSON {
-  EncodingType raw_data_encoding = 1; // encoding of payload
-  bytes as_decoded_binary = 2;        // if binary encoding
-  bytes as_json = 3;                  // if JSON/JSON_PARSED
+  EncodingType encoding = 1;
+  oneof body {
+    bytes raw  = 2;  // program data (node’s base64/base58 decoded)
+    bytes json = 3;  // json: UTF-8 bytes of the jsonParsed payload.
+  }
 }
 
 // Return a slice of account data.
 message DataSlice {
   uint64 offset = 1; // start byte
   uint64 length = 2; // number of bytes
-}
-
-// Event/topic filter by hashed value(s).
-message EventSig {
-  uint64 topic = 1;                                   // topic index
-  repeated HashedValueComparator hashed_value_comparers = 2; // comparisons
-}
-
-// Comparator for a single indexed value.
-message IndexedValueComparator {
-  bytes value = 1;                                   // raw bytes
-  loop.chain.common.ComparisonOperator operator = 2; // eq/lt/gt etc.
-}
-
-// Filter events by a subkey path.
-message EventBySubkey {
-  uint64 subkey_index = 1;                   // path element index
-  repeated IndexedValueComparator value_comparers = 2;
-}
-
-// Expression tree wrapper.
-message Expression {
-  oneof evaluator {
-    Primitive primitive = 1;            // leaf filter
-    BooleanExpression boolean_expression = 2; // AND/OR of expressions
-  }
-}
-
-// Boolean composition over expressions.
-message BooleanExpression {
-  loop.chain.common.BooleanOperator boolean_operator = 1; // AND/OR
-  repeated Expression expression = 2;
 }
 
 // Options for GetAccountInfo.
@@ -147,7 +99,7 @@ message GetAccountInfoOpts {
 // Reply for GetAccountInfoWithOpts.
 message GetAccountInfoWithOptsReply {
   RPCContext rpc_context = 1; // read slot
-  Account value = 2;          // account (may be empty)
+  optional Account value = 2;          // account (may be empty)
 }
 
 // Request for GetAccountInfoWithOpts.
@@ -169,7 +121,7 @@ message GetBalanceRequest {
 
 // Options for GetBlock.
 message GetBlockOpts {
-  CommitmentType commitment = 4;                   // read consistency
+  CommitmentType commitment = 4;  // read consistency
 }
 
 // Block response.
@@ -177,8 +129,8 @@ message GetBlockReply {
   bytes blockhash = 1;            // 32-byte block hash
   bytes previous_blockhash = 2;   // 32-byte parent hash
   uint64 parent_slot = 3;
-  int64 block_time = 6;           // unix seconds
-  uint64 block_height = 7;        // chain height
+  optional int64 block_time = 4;  // unix seconds, node may not report it
+  uint64 block_height = 5;        // chain height
 }
 
 // Request for GetBlock.
@@ -193,7 +145,7 @@ message GetFeeForMessageReply {
 }
 
 message GetFeeForMessageRequest {
-  string message = 1;             // base58-encoded Message
+  string message = 1;             // must be base58-encoded Message
   CommitmentType commitment = 2;  // read consistency
 }
 
@@ -205,10 +157,14 @@ message GetMultipleAccountsOpts {
   uint64 min_context_slot = 4;
 }
 
+message OptionalAccountWrapper {
+    optional Account account = 1;
+}
+
 // Reply for GetMultipleAccountsWithOpts.
 message GetMultipleAccountsWithOptsReply {
-  RPCContext r_p_c_context = 1; // read slot
-  repeated Account value = 2;   // accounts (nil entries allowed)
+  RPCContext rpc_context = 1; // read slot
+  repeated OptionalAccountWrapper value = 2;   // accounts (nil entries allowed)
 }
 
 // Request for GetMultipleAccountsWithOpts.
@@ -230,7 +186,7 @@ message GetSignatureStatusesRequest {
 // Per-signature status.
 message GetSignatureStatusesResult {
   uint64 slot = 1;                               // processed slot
-  uint64 confirmations = 2;                      // null->0 here
+  optional uint64 confirmations = 2;             // null->0 here
   string err = 3;                                // error JSON string (empty on success)
   ConfirmationStatusType confirmation_status = 4;
 }
@@ -275,8 +231,8 @@ message UiTokenAmount {
 // SPL token balance entry.
 message TokenBalance {
   uint32 account_index = 1;  // index in account_keys
-  bytes  owner = 2;          // 32-byte owner (optional)
-  bytes  program_id = 3;     // 32-byte token program (optional)
+  optional bytes  owner = 2;          // 32-byte owner (optional)
+  optional bytes  program_id = 3;     // 32-byte token program (optional)
   bytes  mint = 4;           // 32-byte mint
   UiTokenAmount ui = 5;      // formatted amounts
 }
@@ -325,7 +281,7 @@ message TransactionMeta {
   repeated InnerInstruction inner_instructions = 8;
   LoadedAddresses loaded_addresses = 9;
   ReturnData return_data = 10;
-  uint64 compute_units_consumed = 11;           // CUs
+  optional uint64 compute_units_consumed = 11;           // CUs
 }
 
 // Transaction envelope: raw bytes or parsed struct.
@@ -339,14 +295,104 @@ message TransactionEnvelope {
 // GetTransaction reply.
 message GetTransactionReply {
   uint64 slot = 1;                 // processed slot
-  int64 block_time = 2;            // unix seconds
-  TransactionEnvelope transaction = 3; // tx bytes or parsed
-  TransactionMeta meta = 12;       // may be omitted by node
+  optional int64 block_time = 2;            // unix seconds
+  optional TransactionEnvelope transaction = 3; // tx bytes or parsed
+  optional TransactionMeta meta = 4;       // may be omitted by node
 }
 
 // GetTransaction request.
 message GetTransactionRequest {
   bytes signature = 1; // 64-byte signature
+}
+
+// RPC read context.
+message RPCContext {
+  uint64 slot = 1;
+}
+
+// Simulation options.
+message SimulateTXOpts {
+  bool sig_verify = 1;                 // verify sigs
+  CommitmentType commitment = 2;       // read consistency
+  bool replace_recent_blockhash = 3;   // refresh blockhash
+  SimulateTransactionAccountsOpts accounts = 4; // return accounts
+}
+
+// Simulation result.
+message SimulateTXReply {
+  string err = 1;                 // empty on success
+  repeated string logs = 2;       // runtime logs
+  repeated Account accounts = 3;  // returned accounts
+  uint64 units_consumed = 4;      // CUs
+}
+
+// Simulation request.
+message SimulateTXRequest {
+  bytes receiver = 1;            // 32-byte program id (target)
+  string encoded_transaction = 2; // base64/base58 tx
+  SimulateTXOpts opts = 3;
+}
+
+// Accounts to return during simulation.
+message SimulateTransactionAccountsOpts {
+  EncodingType encoding = 1;   // account data encoding
+  repeated bytes addresses = 2; // 32-byte Pubkeys
+}
+
+// Submit transaction result.
+message SubmitTransactionReply {
+  bytes signature = 1;       // 64-byte signature
+  string idempotency_key = 2; // echo key
+  TxStatus status = 3;
+}
+
+// Submit transaction request.
+message SubmitTransactionRequest {
+  ComputeConfig cfg = 1;          // compute budget
+  bytes receiver = 2;             // 32-byte program id (target)
+  string encoded_transaction = 3; // base64/base58 tx
+}
+
+// Event/topic filter by hashed value(s).
+message EventSig {
+  uint64 topic = 1;                                   // topic index
+  repeated HashedValueComparator hashed_value_comparers = 2; // comparisons
+}
+
+// Comparator for a single indexed value.
+message IndexedValueComparator {
+  bytes value = 1;                                   // raw bytes
+  loop.chain.common.ComparisonOperator operator = 2; // eq/lt/gt etc.
+}
+
+// Filter events by a subkey path.
+message EventBySubkey {
+  uint64 subkey_index = 1;                   // path element index
+  repeated IndexedValueComparator value_comparers = 2;
+}
+
+// Expression tree wrapper.
+message Expression {
+  oneof evaluator {
+    Primitive primitive = 1;            // leaf filter
+    BooleanExpression boolean_expression = 2; // AND/OR of expressions
+  }
+}
+
+// Boolean composition over expressions.
+message BooleanExpression {
+  loop.chain.common.BooleanOperator boolean_operator = 1; // AND/OR
+  repeated Expression expression = 2;
+}
+
+// Primitive leaf for expressions/filters.
+message Primitive {
+  oneof primitive {
+    loop.chain.common.Primitive general_primitive = 1; // shared primitives
+    bytes address = 2;        // 32-byte program id
+    bytes event_sig = 3;      // 8-byte discriminator
+    EventBySubkey event_by_subkey = 4; // subkey filter
+  }
 }
 
 // Comparator against hashed values.
@@ -388,65 +434,6 @@ message Log {
   int64 sequence_num = 10;     // monotonic seq
   string error = 11;           // decode/processing error
 }
-
-// RPC read context.
-message RPCContext {
-  Context context = 1;
-}
-
-// Simulation options.
-message SimulateTXOpts {
-  bool sig_verify = 1;                 // verify sigs
-  CommitmentType commitment = 2;       // read consistency
-  bool replace_recent_blockhash = 3;   // refresh blockhash
-  SimulateTransactionAccountsOpts accounts = 4; // return accounts
-}
-
-// Simulation result.
-message SimulateTXReply {
-  string err = 1;                 // empty on success
-  repeated string logs = 2;       // runtime logs
-  repeated Account accounts = 3;  // returned accounts
-  uint64 units_consumed = 4;      // CUs
-}
-
-// Simulation request.
-message SimulateTXRequest {
-  bytes receiver = 1;            // 32-byte program id (target)
-  string encoded_transaction = 2; // base64/base58 tx
-  SimulateTXOpts opts = 3;
-}
-
-// Accounts to return during simulation.
-message SimulateTransactionAccountsOpts {
-  EncodingType encoding = 1;   // account data encoding
-  repeated bytes addresses = 2; // 32-byte Pubkeys
-}
-
-// Submit transaction result.
-message SubmitTransactionReply {
-  bytes signature = 1;       // 64-byte signature
-  string idempotency_key = 2; // echo key
-  TransactionStatus status = 3;
-}
-
-// Submit transaction request.
-message SubmitTransactionRequest {
-  ComputeConfig cfg = 1;          // compute budget
-  bytes receiver = 2;             // 32-byte program id (target)
-  string encoded_transaction = 3; // base64/base58 tx
-}
-
-// Primitive leaf for expressions/filters.
-message Primitive {
-  oneof primitive {
-    loop.chain.common.Primitive general_primitive = 1; // shared primitives
-    bytes address = 2;        // 32-byte program id
-    bytes event_sig = 3;      // 8-byte discriminator
-    EventBySubkey event_by_subkey = 4; // subkey filter
-  }
-}
-
 // Query tracked logs.
 message QueryTrackedLogsRequest {
   repeated Expression filterQuery = 1;             // filter tree

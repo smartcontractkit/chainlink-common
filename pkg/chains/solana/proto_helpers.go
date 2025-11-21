@@ -127,15 +127,15 @@ func ConvertEventSigFromProto(b []byte) (typesolana.EventSignature, error) {
 
 func ConvertEncodingTypeFromProto(e EncodingType) typesolana.EncodingType {
 	switch e {
-	case EncodingType_ENCODING_BASE58:
+	case EncodingType_ENCODING_TYPE_BASE58:
 		return typesolana.EncodingBase58
-	case EncodingType_ENCODING_BASE64:
+	case EncodingType_ENCODING_TYPE_BASE64:
 		return typesolana.EncodingBase64
-	case EncodingType_ENCODING_BASE64_ZST:
+	case EncodingType_ENCODING_TYPE_BASE64_ZSTD:
 		return typesolana.EncodingBase64Zstd
-	case EncodingType_ENCODING_JSON:
+	case EncodingType_ENCODING_TYPE_JSON:
 		return typesolana.EncodingJSON
-	case EncodingType_ENCODING_JSON_PARSED:
+	case EncodingType_ENCODING_TYPE_JSON_PARSED:
 		return typesolana.EncodingJSONParsed
 	default:
 		return typesolana.EncodingType("")
@@ -145,27 +145,27 @@ func ConvertEncodingTypeFromProto(e EncodingType) typesolana.EncodingType {
 func ConvertEncodingTypeToProto(e typesolana.EncodingType) EncodingType {
 	switch e {
 	case typesolana.EncodingBase64:
-		return EncodingType_ENCODING_BASE64
+		return EncodingType_ENCODING_TYPE_BASE64
 	case typesolana.EncodingBase58:
-		return EncodingType_ENCODING_BASE58
+		return EncodingType_ENCODING_TYPE_BASE58
 	case typesolana.EncodingBase64Zstd:
-		return EncodingType_ENCODING_BASE64_ZST
+		return EncodingType_ENCODING_TYPE_BASE64_ZSTD
 	case typesolana.EncodingJSONParsed:
-		return EncodingType_ENCODING_JSON_PARSED
+		return EncodingType_ENCODING_TYPE_JSON_PARSED
 	case typesolana.EncodingJSON:
-		return EncodingType_ENCODING_JSON
+		return EncodingType_ENCODING_TYPE_JSON
 	default:
-		return EncodingType_ENCODING_NONE
+		return EncodingType_ENCODING_TYPE_NONE
 	}
 }
 
 func ConvertCommitmentFromProto(c CommitmentType) typesolana.CommitmentType {
 	switch c {
-	case CommitmentType_COMMITMENT_CONFIRMED:
+	case CommitmentType_COMMITMENT_TYPE_CONFIRMED:
 		return typesolana.CommitmentConfirmed
-	case CommitmentType_COMMITMENT_FINALIZED:
+	case CommitmentType_COMMITMENT_TYPE_FINALIZED:
 		return typesolana.CommitmentFinalized
-	case CommitmentType_COMMITMENT_PROCESSED:
+	case CommitmentType_COMMITMENT_TYPE_PROCESSED:
 		return typesolana.CommitmentProcessed
 	default:
 		return typesolana.CommitmentType("")
@@ -175,36 +175,36 @@ func ConvertCommitmentFromProto(c CommitmentType) typesolana.CommitmentType {
 func ConvertCommitmentToProto(c typesolana.CommitmentType) CommitmentType {
 	switch c {
 	case typesolana.CommitmentFinalized:
-		return CommitmentType_COMMITMENT_FINALIZED
+		return CommitmentType_COMMITMENT_TYPE_FINALIZED
 	case typesolana.CommitmentConfirmed:
-		return CommitmentType_COMMITMENT_CONFIRMED
+		return CommitmentType_COMMITMENT_TYPE_CONFIRMED
 	case typesolana.CommitmentProcessed:
-		return CommitmentType_COMMITMENT_PROCESSED
+		return CommitmentType_COMMITMENT_TYPE_PROCESSED
 	default:
-		return CommitmentType_COMMITMENT_NONE
+		return CommitmentType_COMMITMENT_TYPE_NONE
 	}
 }
 
 func ConvertConfirmationStatusToProto(c typesolana.ConfirmationStatusType) ConfirmationStatusType {
 	switch c {
 	case typesolana.ConfirmationStatusFinalized:
-		return ConfirmationStatusType_CONFIRMATION_FINALIZED
+		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_FINALIZED
 	case typesolana.ConfirmationStatusConfirmed:
-		return ConfirmationStatusType_CONFIRMATION_CONFIRMED
+		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED
 	case typesolana.ConfirmationStatusProcessed:
-		return ConfirmationStatusType_CONFIRMATION_PROCESSED
+		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_PROCESSED
 	default:
-		return ConfirmationStatusType_CONFIRMATION_NONE
+		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_NONE
 	}
 }
 
 func ConvertConfirmationStatusFromProto(c ConfirmationStatusType) typesolana.ConfirmationStatusType {
 	switch c {
-	case ConfirmationStatusType_CONFIRMATION_CONFIRMED:
+	case ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED:
 		return typesolana.ConfirmationStatusConfirmed
-	case ConfirmationStatusType_CONFIRMATION_FINALIZED:
+	case ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_FINALIZED:
 		return typesolana.ConfirmationStatusFinalized
-	case ConfirmationStatusType_CONFIRMATION_PROCESSED:
+	case ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_PROCESSED:
 		return typesolana.ConfirmationStatusProcessed
 	default:
 		return typesolana.ConfirmationStatusType("")
@@ -268,10 +268,8 @@ func ConvertAccountFromProto(p *Account) (*typesolana.Account, error) {
 	if err != nil {
 		return nil, fmt.Errorf("owner: %w", err)
 	}
-	data, err := ConvertDataBytesOrJSONFromProto(p.Data)
-	if err != nil {
-		return nil, fmt.Errorf("data: %w", err)
-	}
+	data := ConvertDataBytesOrJSONFromProto(p.Data)
+
 	return &typesolana.Account{
 		Lamports:   p.Lamports,
 		Owner:      owner,
@@ -296,26 +294,42 @@ func ConvertAccountToProto(a *typesolana.Account) *Account {
 	}
 }
 
-func ConvertDataBytesOrJSONFromProto(p *DataBytesOrJSON) (*typesolana.DataBytesOrJSON, error) {
+func ConvertDataBytesOrJSONFromProto(p *DataBytesOrJSON) *typesolana.DataBytesOrJSON {
 	if p == nil {
-		return nil, nil
+		return nil
 	}
-	return &typesolana.DataBytesOrJSON{
-		RawDataEncoding: ConvertEncodingTypeFromProto(p.RawDataEncoding),
-		AsDecodedBinary: p.AsDecodedBinary,
-		AsJSON:          p.AsJson,
-	}, nil
+	switch t := p.GetBody().(type) {
+	case *DataBytesOrJSON_Raw:
+		return &typesolana.DataBytesOrJSON{
+			AsDecodedBinary: t.Raw,
+			RawDataEncoding: ConvertEncodingTypeFromProto(p.Encoding),
+		}
+	case *DataBytesOrJSON_Json:
+		return &typesolana.DataBytesOrJSON{
+			AsJSON:          t.Json,
+			RawDataEncoding: ConvertEncodingTypeFromProto(p.Encoding),
+		}
+	}
+
+	return nil
 }
 
 func ConvertDataBytesOrJSONToProto(d *typesolana.DataBytesOrJSON) *DataBytesOrJSON {
 	if d == nil {
 		return nil
 	}
-	return &DataBytesOrJSON{
-		RawDataEncoding: ConvertEncodingTypeToProto(d.RawDataEncoding),
-		AsDecodedBinary: d.AsDecodedBinary,
-		AsJson:          d.AsJSON,
+
+	ret := &DataBytesOrJSON{
+		Encoding: ConvertEncodingTypeToProto(d.RawDataEncoding),
 	}
+	if d.AsJSON != nil {
+		ret.Body = &DataBytesOrJSON_Json{Json: d.AsJSON}
+		return ret
+	}
+
+	ret.Body = &DataBytesOrJSON_Raw{Raw: d.AsDecodedBinary}
+
+	return ret
 }
 
 func ConvertGetAccountInfoOptsFromProto(p *GetAccountInfoOpts) *typesolana.GetAccountInfoOpts {
@@ -419,6 +433,7 @@ func ConvertCompiledInstructionFromProto(p *CompiledInstruction) typesolana.Comp
 	for i, a := range p.Accounts {
 		accts[i] = uint16(a)
 	}
+
 	return typesolana.CompiledInstruction{
 		ProgramIDIndex: uint16(p.ProgramIdIndex),
 		Accounts:       accts,
@@ -681,7 +696,7 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*typesolana.Transactio
 		LogMessages:          p.LogMessages,
 		LoadedAddresses:      la,
 		ReturnData:           *ret,
-		ComputeUnitsConsumed: ptrUint64(p.ComputeUnitsConsumed),
+		ComputeUnitsConsumed: p.ComputeUnitsConsumed,
 	}
 	return meta, nil
 }
@@ -717,7 +732,7 @@ func ConvertTransactionMetaToProto(m *typesolana.TransactionMeta) *TransactionMe
 		InnerInstructions:    inner,
 		LoadedAddresses:      ConvertLoadedAddressesToProto(m.LoadedAddresses),
 		ReturnData:           ConvertReturnDataToProto(&m.ReturnData),
-		ComputeUnitsConsumed: cuc,
+		ComputeUnitsConsumed: &cuc,
 	}
 }
 
@@ -775,8 +790,8 @@ func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*typesolana.Ge
 		return nil, err
 	}
 	var bt *typesolana.UnixTimeSeconds
-	if p.BlockTime != 0 {
-		bt = ptrUnix(typesolana.UnixTimeSeconds(p.BlockTime))
+	if p.BlockTime != nil {
+		bt = ptrUnix(typesolana.UnixTimeSeconds(*p.BlockTime))
 	}
 
 	return &typesolana.GetTransactionReply{
@@ -801,7 +816,7 @@ func ConvertGetTransactionReplyToProto(r *typesolana.GetTransactionReply) *GetTr
 	}
 	return &GetTransactionReply{
 		Slot:        r.Slot,
-		BlockTime:   bt,
+		BlockTime:   &bt,
 		Transaction: tx,
 		Meta:        ConvertTransactionMetaToProto(r.Meta),
 	}
@@ -887,9 +902,10 @@ func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*typesolana.GetBlockRe
 	}
 
 	var bt *solana.UnixTimeSeconds
-	if p.BlockTime != 0 {
-		bt = ptrUnix(typesolana.UnixTimeSeconds(p.BlockTime))
+	if p.BlockTime != nil {
+		bt = ptrUnix(typesolana.UnixTimeSeconds(*p.BlockTime))
 	}
+
 	return &typesolana.GetBlockReply{
 		Blockhash:         hash,
 		PreviousBlockhash: prev,
@@ -903,14 +919,16 @@ func ConvertGetBlockReplyToProto(r *typesolana.GetBlockReply) *GetBlockReply {
 	if r == nil {
 		return nil
 	}
-	var bt int64
+	var bt *int64
 	if r.BlockTime != nil {
-		bt = int64(*r.BlockTime)
+		t := int64(*r.BlockTime)
+		bt = &t
 	}
 	var bh uint64
 	if r.BlockHeight != nil {
 		bh = *r.BlockHeight
 	}
+
 	return &GetBlockReply{
 		Blockhash:         r.Blockhash[:],
 		PreviousBlockhash: r.PreviousBlockhash[:],
@@ -1001,7 +1019,7 @@ func ConvertGetMultipleAccountsReplyFromProto(p *GetMultipleAccountsWithOptsRepl
 	}
 	val := make([]*typesolana.Account, 0, len(p.Value))
 	for _, a := range p.Value {
-		acc, err := ConvertAccountFromProto(a)
+		acc, err := ConvertAccountFromProto(a.Account)
 		if err != nil {
 			return nil, err
 		}
@@ -1016,10 +1034,11 @@ func ConvertGetMultipleAccountsReplyToProto(r *typesolana.GetMultipleAccountsRep
 	if r == nil {
 		return nil
 	}
-	val := make([]*Account, 0, len(r.Value))
+	val := make([]*OptionalAccountWrapper, 0, len(r.Value))
 	for _, a := range r.Value {
-		val = append(val, ConvertAccountToProto(a))
+		val = append(val, &OptionalAccountWrapper{Account: ConvertAccountToProto(a)})
 	}
+
 	return &GetMultipleAccountsWithOptsReply{
 		Value: val,
 	}
@@ -1051,7 +1070,7 @@ func ConvertGetSignatureStatusesReplyFromProto(p *GetSignatureStatusesReply) *ty
 	for _, r := range p.Results {
 		out.Results = append(out.Results, typesolana.GetSignatureStatusesResult{
 			Slot:               r.Slot,
-			Confirmations:      ptrUint64(r.Confirmations),
+			Confirmations:      r.Confirmations,
 			Err:                r.Err,
 			ConfirmationStatus: ConvertConfirmationStatusFromProto(r.ConfirmationStatus),
 		})
@@ -1071,7 +1090,7 @@ func ConvertGetSignatureStatusesReplyToProto(r *typesolana.GetSignatureStatusesR
 		}
 		out.Results = append(out.Results, &GetSignatureStatusesResult{
 			Slot:               r.Results[i].Slot,
-			Confirmations:      conf,
+			Confirmations:      ptrUint64(conf),
 			Err:                r.Results[i].Err,
 			ConfirmationStatus: ConvertConfirmationStatusToProto(r.Results[i].ConfirmationStatus),
 		})
@@ -1257,30 +1276,19 @@ func ConvertSubmitTransactionReplyToProto(r *typesolana.SubmitTransactionReply) 
 	return &SubmitTransactionReply{
 		Signature:      r.Signature[:],
 		IdempotencyKey: r.IdempotencyKey,
-		Status:         TransactionStatus(r.Status),
+		Status:         TxStatus(r.Status),
 	}
-}
-
-func ConvertContextFromProto(p *Context) typesolana.Context {
-	if p == nil {
-		return typesolana.Context{}
-	}
-	return typesolana.Context{Slot: p.Slot}
-}
-
-func ConvertContextToProto(c typesolana.Context) *Context {
-	return &Context{Slot: c.Slot}
 }
 
 func ConvertRPCContextFromProto(p *RPCContext) typesolana.RPCContext {
 	if p == nil {
 		return typesolana.RPCContext{}
 	}
-	return typesolana.RPCContext{Context: ConvertContextFromProto(p.Context)}
+	return typesolana.RPCContext{Slot: p.Slot}
 }
 
 func ConvertRPCContextToProto(r typesolana.RPCContext) *RPCContext {
-	return &RPCContext{Context: ConvertContextToProto(r.Context)}
+	return &RPCContext{Slot: r.Slot}
 }
 
 func ConvertLogFromProto(p *Log) (*typesolana.Log, error) {

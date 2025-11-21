@@ -355,10 +355,10 @@ func TestGettersAndSmallStructs_Smoke(t *testing.T) {
 	require.EqualValues(t, 6, ui2.Decimals)
 
 	// Commitment/Encoding enums (spot)
-	require.Equal(t, conv.EncodingType_ENCODING_BASE64, conv.ConvertEncodingTypeToProto(typesolana.EncodingBase64))
-	require.Equal(t, typesolana.EncodingJSON, conv.ConvertEncodingTypeFromProto(conv.EncodingType_ENCODING_JSON))
-	require.Equal(t, conv.CommitmentType_COMMITMENT_FINALIZED, conv.ConvertCommitmentToProto(typesolana.CommitmentFinalized))
-	require.Equal(t, typesolana.CommitmentProcessed, conv.ConvertCommitmentFromProto(conv.CommitmentType_COMMITMENT_PROCESSED))
+	require.Equal(t, conv.EncodingType_ENCODING_TYPE_BASE64, conv.ConvertEncodingTypeToProto(typesolana.EncodingBase64))
+	require.Equal(t, typesolana.EncodingJSON, conv.ConvertEncodingTypeFromProto(conv.EncodingType_ENCODING_TYPE_JSON))
+	require.Equal(t, conv.CommitmentType_COMMITMENT_TYPE_FINALIZED, conv.ConvertCommitmentToProto(typesolana.CommitmentFinalized))
+	require.Equal(t, typesolana.CommitmentProcessed, conv.ConvertCommitmentFromProto(conv.CommitmentType_COMMITMENT_TYPE_PROCESSED))
 }
 
 func TestGetSignatureStatusesConverters(t *testing.T) {
@@ -368,23 +368,23 @@ func TestGetSignatureStatusesConverters(t *testing.T) {
 	req2 := conv.ConvertGetSignatureStatusesRequestToProto(dr)
 	require.Len(t, req2.Sigs, 1)
 	require.True(t, bytes.Equal(req.Sigs[0], req2.Sigs[0]))
-
+	c := uint64(2)
 	rep := &conv.GetSignatureStatusesReply{
 		Results: []*conv.GetSignatureStatusesResult{{
 			Slot:               1,
-			Confirmations:      2,
+			Confirmations:      &c,
 			Err:                "",
-			ConfirmationStatus: conv.ConfirmationStatusType_CONFIRMATION_CONFIRMED,
+			ConfirmationStatus: conv.ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED,
 		}},
 	}
 	drep := conv.ConvertGetSignatureStatusesReplyFromProto(rep)
 	require.EqualValues(t, 1, drep.Results[0].Slot)
 	require.NotNil(t, drep.Results[0].Confirmations)
-	require.EqualValues(t, 2, *drep.Results[0].Confirmations)
+	require.EqualValues(t, c, *drep.Results[0].Confirmations)
 
 	rep2 := conv.ConvertGetSignatureStatusesReplyToProto(drep)
-	require.EqualValues(t, 2, rep2.Results[0].Confirmations)
-	require.Equal(t, conv.ConfirmationStatusType_CONFIRMATION_CONFIRMED, rep2.Results[0].ConfirmationStatus)
+	require.EqualValues(t, &c, rep2.Results[0].Confirmations)
+	require.Equal(t, conv.ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED, rep2.Results[0].ConfirmationStatus)
 }
 
 func TestErrorJoinBehavior_PublicKeys(t *testing.T) {

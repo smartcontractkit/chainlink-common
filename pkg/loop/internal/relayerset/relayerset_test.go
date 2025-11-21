@@ -650,7 +650,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				mockSol.EXPECT().
 					GetAccountInfoWithOpts(mock.Anything, req).
 					Return(&soltypes.GetAccountInfoReply{
-						RPCContext: soltypes.RPCContext{Context: soltypes.Context{Slot: slot}},
+						RPCContext: soltypes.RPCContext{Slot: slot},
 						Value: &soltypes.Account{
 							Lamports:   lamports,
 							Executable: false,
@@ -660,7 +660,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				out, err := sol.GetAccountInfoWithOpts(ctx, req)
 				require.NoError(t, err)
 				require.Equal(t, lamports, out.Value.Lamports)
-				require.Equal(t, slot, out.RPCContext.Context.Slot)
+				require.Equal(t, slot, out.RPCContext.Slot)
 			},
 		},
 		{
@@ -678,7 +678,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				mockSol.EXPECT().
 					GetMultipleAccountsWithOpts(mock.Anything, req).
 					Return(&soltypes.GetMultipleAccountsReply{
-						RPCContext: soltypes.RPCContext{Context: soltypes.Context{Slot: slot}},
+						RPCContext: soltypes.RPCContext{Slot: slot},
 						Value: []*soltypes.Account{
 							{Lamports: lamports}, {Lamports: lamports},
 						},

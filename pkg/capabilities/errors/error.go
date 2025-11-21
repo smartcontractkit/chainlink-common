@@ -40,14 +40,20 @@ func newError(err error, reportType ReportType, errorCode ErrorCode) Error {
 	}
 }
 
+// NewRemoteReportableError indicates that the wrapped error does not contain any node local confidential information
+// and is safe to report to other nodes in the network.
 func NewRemoteReportableError(err error, errorCode ErrorCode) Error {
 	return newError(err, RemoteReportable, errorCode)
 }
 
+// NewReportableUserError indicates that the wrapped error is due to user error and does not contain any node local confidential information
+// and is safe to report to other nodes in the network.
 func NewReportableUserError(err error, errorCode ErrorCode) Error {
 	return newError(err, ReportableUser, errorCode)
 }
 
+// NewLocalReportableError indicates that the wrapped error may contain node local confidential information
+// that should not be reported to other nodes in the network.  Only the error code and generic message will be reported remotely.
 func NewLocalReportableError(err error, errorCode ErrorCode) Error {
 	return newError(err, LocalOnly, errorCode)
 }

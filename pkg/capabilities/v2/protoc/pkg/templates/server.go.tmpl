@@ -20,6 +20,7 @@ import (
 
     "github.com/smartcontractkit/chainlink-common/pkg/types/core"
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+    caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
     "github.com/smartcontractkit/chainlink-common/pkg/loop"
 )
 
@@ -39,7 +40,7 @@ type {{.GoName}}Capability interface {
     Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error
         {{- else }}
             {{ $hasActions = true }}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*capabilities.ResponseAndMetadata[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error)
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*capabilities.ResponseAndMetadata[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], caperrors.Error)
         {{- end }}
     {{- end }}
 

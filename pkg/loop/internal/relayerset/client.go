@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -26,22 +27,24 @@ type Client struct {
 
 	log logger.Logger
 
-	relayerSetClient     relayerset.RelayerSetClient
-	contractReaderClient pb.ContractReaderClient
-	evmRelayerSetClient  evm.EVMClient
-	tonRelayerSetClient  ton.TONClient
+	relayerSetClient       relayerset.RelayerSetClient
+	contractReaderClient   pb.ContractReaderClient
+	evmRelayerSetClient    evm.EVMClient
+	tonRelayerSetClient    ton.TONClient
+	solanaRelayerSetClient solana.SolanaClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
 	return &Client{
-		log:                  log,
-		BrokerExt:            b,
-		ServiceClient:        goplugin.NewServiceClient(b, conn),
-		relayerSetClient:     relayerset.NewRelayerSetClient(conn),
-		evmRelayerSetClient:  evm.NewEVMClient(conn),
-		tonRelayerSetClient:  ton.NewTONClient(conn),
-		contractReaderClient: pb.NewContractReaderClient(conn)}
+		log:                    log,
+		BrokerExt:              b,
+		ServiceClient:          goplugin.NewServiceClient(b, conn),
+		relayerSetClient:       relayerset.NewRelayerSetClient(conn),
+		evmRelayerSetClient:    evm.NewEVMClient(conn),
+		tonRelayerSetClient:    ton.NewTONClient(conn),
+		solanaRelayerSetClient: solana.NewSolanaClient(conn),
+		contractReaderClient:   pb.NewContractReaderClient(conn)}
 }
 
 func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, error) {
@@ -165,6 +168,19 @@ func (k *Client) TON(relayID types.RelayID) (types.TONService, error) {
 		relayID: relayID,
 		client:  k.tonRelayerSetClient,
 	}), nil
+}
+
+func (k *Client) Solana(relayID types.RelayID) (types.SolanaService, error) {
+	if k.solanaRelayerSetClient == nil {
+		return nil, errors.New("solanaRelayerSetClient can't be nil")
+	}
+
+	return rel.NewSolanaClient(
+		&solClient{
+			relayID: relayID,
+			client:  k.solanaRelayerSetClient,
+		},
+	), nil
 }
 
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -227,6 +228,33 @@ type TONService interface {
 	UnregisterFilter(ctx context.Context, name string) error
 }
 
+type SolanaService interface {
+	solana.Client
+
+	// Submits a transaction to the chain. It will return once the transaction is finalized or an error occurs.
+	SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error)
+
+	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
+	// based on the provided filter parameters. Once registered, matching logs will be collected
+	// over time and stored in a cache for future querying.
+	// noop guaranteed when filter.Name exists
+	RegisterLogTracking(ctx context.Context, req solana.LPFilterQuery) error
+
+	// UnregisterLogTracking removes a previously registered log filter by its name.
+	// After removal, logs matching this filter will no longer be collected or cached.
+	// noop guaranteed when filterName doesn't exist
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+
+	// QueryTrackedLogs retrieves logs from the  log storage based on the provided
+	// query expression, sorting, and confidence level. It only returns logs that were
+	// collected through previously registered log filters.
+	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
+		limitAndSort query.LimitAndSort) ([]*solana.Log, error)
+
+	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
+	GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error)
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
@@ -235,6 +263,9 @@ type Relayer interface {
 	EVM() (EVMService, error)
 	// TON returns TONService that provides access to TON specific functionalities
 	TON() (TONService, error)
+
+	Solana() (SolanaService, error)
+
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
@@ -319,6 +350,10 @@ func (u *UnimplementedRelayer) EVM() (EVMService, error) {
 
 func (u *UnimplementedRelayer) TON() (TONService, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
+}
+
+func (u *UnimplementedRelayer) Solana() (SolanaService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Solana not implemented")
 }
 
 func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
@@ -448,4 +483,57 @@ func (ues *UnimplementedEVMService) GetTransactionStatus(ctx context.Context, tr
 
 func (ues *UnimplementedEVMService) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error) {
 	return evm.Address{}, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
+}
+
+var _ SolanaService = &UnimplementedSolanaService{}
+
+// UnimplementedSolanaService implements the SolanaService interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real SolanaService implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement SolanaService (through use of an unexported method).
+type UnimplementedSolanaService struct{}
+
+func (uss *UnimplementedSolanaService) SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+func (uss *UnimplementedSolanaService) RegisterLogTracking(ctx context.Context, req solana.LPFilterQuery) error {
+	return status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
+}
+
+func (uss *UnimplementedSolanaService) UnregisterLogTracking(ctx context.Context, filterName string) error {
+	return status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+func (uss *UnimplementedSolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort) ([]*solana.Log, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
+}
+func (uss *UnimplementedSolanaService) GetBalance(ctx context.Context, req solana.GetBalanceRequest) (*solana.GetBalanceReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
+}
+func (uss *UnimplementedSolanaService) GetAccountInfoWithOpts(ctx context.Context, req solana.GetAccountInfoRequest) (*solana.GetAccountInfoReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccountInfoWithOpts not implemented")
+}
+func (uss *UnimplementedSolanaService) GetMultipleAccountsWithOpts(ctx context.Context, req solana.GetMultipleAccountsRequest) (*solana.GetMultipleAccountsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMultipleAccountsWithOpts not implemented")
+}
+func (uss *UnimplementedSolanaService) GetBlock(ctx context.Context, req solana.GetBlockRequest) (*solana.GetBlockReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBlock not implemented")
+}
+func (uss *UnimplementedSolanaService) GetSlotHeight(ctx context.Context, req solana.GetSlotHeightRequest) (*solana.GetSlotHeightReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSlotHeight not implemented")
+}
+func (uss *UnimplementedSolanaService) GetTransaction(ctx context.Context, req solana.GetTransactionRequest) (*solana.GetTransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
+func (uss *UnimplementedSolanaService) GetFeeForMessage(ctx context.Context, req solana.GetFeeForMessageRequest) (*solana.GetFeeForMessageReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeeForMessage not implemented")
+}
+func (uss *UnimplementedSolanaService) GetSignatureStatuses(ctx context.Context, req solana.GetSignatureStatusesRequest) (*solana.GetSignatureStatusesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSignatureStatuses not implemented")
+}
+func (uss *UnimplementedSolanaService) SimulateTX(ctx context.Context, req solana.SimulateTXRequest) (*solana.SimulateTXReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SimulateTX not implemented")
+}
+func (uss *UnimplementedSolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }

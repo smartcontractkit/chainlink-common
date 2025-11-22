@@ -74,14 +74,6 @@ type relayer struct {
 
 func (r *relayer) Name() string { return r.lggr.Name() }
 
-func (r *relayer) EVM() (types.EVMService, error) {
-	return nil, nil
-}
-
-func (r *relayer) TON() (types.TONService, error) {
-	return nil, nil
-}
-
 func (r *relayer) Start(ctx context.Context) error {
 	var names []string
 	// Test database connection with dummy query

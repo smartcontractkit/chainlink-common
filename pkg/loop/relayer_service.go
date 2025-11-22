@@ -56,6 +56,13 @@ func (r *RelayerService) TON() (types.TONService, error) {
 	return r.Service.TON()
 }
 
+func (r *RelayerService) Solana() (types.SolanaService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.Solana()
+}
+
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err

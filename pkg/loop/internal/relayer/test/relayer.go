@@ -245,6 +245,10 @@ func (s staticRelayer) TON() (types.TONService, error) {
 	return nil, nil
 }
 
+func (s staticRelayer) Solana() (types.SolanaService, error) {
+	return nil, nil
+}
+
 func (s staticRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if s.StaticChecks && !(bytes.Equal(s.contractReaderConfig, contractReaderConfig)) {
 		return nil, fmt.Errorf("expected contractReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.contractReaderConfig), string(contractReaderConfig))

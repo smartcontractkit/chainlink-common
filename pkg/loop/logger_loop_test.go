@@ -14,10 +14,7 @@ import (
 )
 
 func TestHCLogLoggerPanic(t *testing.T) {
-	lggr, ol := logger.TestObservedSugared(t, zapcore.DebugLevel)
-
 	type testCase struct {
-		name                string
 		level               int
 		expectedMessage     string
 		expectedCustomKey   string
@@ -77,7 +74,9 @@ func TestHCLogLoggerPanic(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(test.FormatLevel(tt.level), func(t *testing.T) {
+			t.Parallel()
+			lggr, ol := logger.TestObservedSugared(t, zapcore.DebugLevel)
 			loggerTest := &test.GRPCPluginLoggerTest{SugaredLogger: lggr}
 			cc := loggerTest.ClientConfig()
 			cc.Cmd = NewHelperProcessCommand(test.PluginLoggerTestName, false, tt.level)

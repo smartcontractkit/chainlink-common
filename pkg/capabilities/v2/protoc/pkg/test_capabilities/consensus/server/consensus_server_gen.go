@@ -56,7 +56,7 @@ func (c *ConsensusServer) Initialise(ctx context.Context, dependencies core.Stan
 	if err := dependencies.CapabilityRegistry.Add(ctx, &consensusCapability{
 		ConsensusCapability: c.ConsensusCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "consensus@1.0.0-alpha", err)
 	}
 
 	return nil

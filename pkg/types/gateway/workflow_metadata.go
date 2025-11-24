@@ -3,7 +3,11 @@ package gateway
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"fmt"
+	"sort"
+
+	jsonv2 "github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 const (
@@ -23,32 +27,42 @@ type WorkflowMetadata struct {
 	AuthorizedKeys   []AuthorizedKey
 }
 
+// Digest returns a digest of the workflow metadata. This is used for aggregating metadata
+// across multiple nodes. The digest is a SHA256 hash of the canonical JSON representation,
+// ensuring deterministic output regardless of the order in which authorized keys are reported.
 func (wm *WorkflowMetadata) Digest() (string, error) {
-	data, err := json.Marshal(wm)
-	if err != nil {
-		return "", err
+	sortedMetadata := WorkflowMetadata{
+		WorkflowSelector: wm.WorkflowSelector,
+		AuthorizedKeys:   make([]AuthorizedKey, len(wm.AuthorizedKeys)),
 	}
-	hasher := sha256.New()
-	hasher.Write(data)
-	digestBytes := hasher.Sum(nil)
+	copy(sortedMetadata.AuthorizedKeys, wm.AuthorizedKeys)
+	sort.Slice(sortedMetadata.AuthorizedKeys, func(i, j int) bool {
+		if sortedMetadata.AuthorizedKeys[i].KeyType != sortedMetadata.AuthorizedKeys[j].KeyType {
+			return sortedMetadata.AuthorizedKeys[i].KeyType < sortedMetadata.AuthorizedKeys[j].KeyType
+		}
+		return sortedMetadata.AuthorizedKeys[i].PublicKey < sortedMetadata.AuthorizedKeys[j].PublicKey
+	})
 
-	return hex.EncodeToString(digestBytes), nil
+	JSONBytes, err := jsonv2.Marshal(sortedMetadata, jsonv2.Deterministic(true))
+	if err != nil {
+		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	canonicalJSONBytes := jsontext.Value(JSONBytes)
+	err = canonicalJSONBytes.Canonicalize()
+	if err != nil {
+		return "", fmt.Errorf("error canonicalizing JSON: %w", err)
+	}
+
+	hasher := sha256.New()
+	if _, err := hasher.Write(canonicalJSONBytes); err != nil {
+		return "", fmt.Errorf("error writing to hasher: %w", err)
+	}
+
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 type AuthorizedKey struct {
-	KeyType   KeyType `json:"keyType"`
-	PublicKey string  `json:"publicKey"`
-}
-
-// MarshalJSON implements custom JSON marshalling to ensure alphabetical order of keys for AuthorizedKey,
-// and only includes non-empty fields.
-func (r AuthorizedKey) MarshalJSON() ([]byte, error) {
-	m := make(map[string]any)
-	if r.KeyType != "" {
-		m["keyType"] = r.KeyType
-	}
-	if r.PublicKey != "" {
-		m["publicKey"] = r.PublicKey
-	}
-	return marshalWithSortedKeys(m)
+	KeyType   KeyType `json:"keyType,omitempty"`
+	PublicKey string  `json:"publicKey,omitempty"`
 }

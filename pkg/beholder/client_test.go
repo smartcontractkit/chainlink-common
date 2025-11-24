@@ -21,6 +21,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
 type MockExporter struct {
@@ -491,6 +494,13 @@ func TestNewClient_Chip(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
+
+		// Verify it implements the Client interface
+		var _ chipingress.Client = client.Chip
+
+		// Verify the emitter is configured as dual source
+		assert.NotNil(t, client.Emitter)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
 
 	t.Run("chip interface can be enabled when chip ingress dual emitter is not enabled ", func(t *testing.T) {
@@ -503,6 +513,11 @@ func TestNewClient_Chip(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
+
+		// Verify it implements the Client interface
+		var _ chipingress.Client = client.Chip
+
+		// Verify emitter is not dual source when dual emitter is disabled
 		assert.NotNil(t, client.Emitter)
 	})
 
@@ -737,5 +752,193 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 
 		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
 		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+}
+
+func TestChipIngressClient(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("mock client implements interface", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+		var _ chipingress.Client = mockClient
+	})
+
+	t.Run("noop client implements interface", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		var _ chipingress.Client = noopClient
+	})
+
+	t.Run("noop client Close returns no error", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		err := noopClient.Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("noop client Ping returns success", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		resp, err := noopClient.Ping(ctx, &pb.EmptyRequest{})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "pong", resp.Message)
+	})
+
+	t.Run("noop client Publish returns empty response", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		event, err := chipingress.NewEvent("test-domain", "test.type", []byte("test"), nil)
+		require.NoError(t, err)
+
+		eventPb, err := chipingress.EventToProto(event)
+		require.NoError(t, err)
+
+		resp, err := noopClient.Publish(ctx, eventPb)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("noop client PublishBatch returns empty response", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		events := []chipingress.CloudEvent{}
+		for i := 0; i < 3; i++ {
+			event, err := chipingress.NewEvent(fmt.Sprintf("domain-%d", i), "test.type", []byte("test"), nil)
+			require.NoError(t, err)
+			events = append(events, event)
+		}
+
+		batch, err := chipingress.EventsToBatch(events)
+		require.NoError(t, err)
+
+		resp, err := noopClient.PublishBatch(ctx, batch)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("noop client RegisterSchema returns empty response", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		req := &pb.RegisterSchemaRequest{
+			Schemas: []*pb.Schema{
+				{Subject: "test-subject", Schema: `{"type":"record"}`, Format: 1},
+			},
+		}
+
+		resp, err := noopClient.RegisterSchema(ctx, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("noop client RegisterSchemas returns empty map", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		schemas := []*pb.Schema{
+			{Subject: "test-subject-1", Schema: `{"type":"record"}`, Format: 1},
+			{Subject: "test-subject-2", Schema: `{"type":"record"}`, Format: 2},
+		}
+
+		result, err := noopClient.RegisterSchemas(ctx, schemas...)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Empty(t, result)
+	})
+
+	t.Run("noop client StreamEvents returns nil", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		stream, err := noopClient.StreamEvents(ctx)
+		assert.NoError(t, err)
+		assert.Nil(t, stream)
+	})
+
+	t.Run("mock client Ping with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		expectedResp := &pb.PingResponse{Message: "pong"}
+		mockClient.EXPECT().Ping(ctx, &pb.EmptyRequest{}).Return(expectedResp, nil)
+
+		resp, err := mockClient.Ping(ctx, &pb.EmptyRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResp, resp)
+		assert.Equal(t, "pong", resp.Message)
+	})
+
+	t.Run("mock client Publish with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		event, err := chipingress.NewEvent("test-domain", "test.type", []byte("test"), nil)
+		require.NoError(t, err)
+
+		eventPb, err := chipingress.EventToProto(event)
+		require.NoError(t, err)
+
+		expectedResp := &pb.PublishResponse{
+			Results: []*pb.PublishResult{{EventId: "123"}},
+		}
+
+		mockClient.EXPECT().Publish(ctx, eventPb).Return(expectedResp, nil)
+
+		resp, err := mockClient.Publish(ctx, eventPb)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("mock client PublishBatch with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		events := []chipingress.CloudEvent{}
+		for i := 0; i < 2; i++ {
+			event, err := chipingress.NewEvent(fmt.Sprintf("domain-%d", i), "test.type", []byte("test"), nil)
+			require.NoError(t, err)
+			events = append(events, event)
+		}
+
+		batch, err := chipingress.EventsToBatch(events)
+		require.NoError(t, err)
+
+		expectedResp := &pb.PublishResponse{
+			Results: []*pb.PublishResult{
+				{EventId: "event-1"},
+				{EventId: "event-2"},
+			},
+		}
+
+		mockClient.EXPECT().PublishBatch(ctx, batch).Return(expectedResp, nil)
+
+		resp, err := mockClient.PublishBatch(ctx, batch)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("mock client RegisterSchemas with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		schemas := []*pb.Schema{
+			{Subject: "subject-1", Schema: `{"type":"record"}`, Format: 1},
+			{Subject: "subject-2", Schema: `{"type":"record"}`, Format: 2},
+		}
+
+		expectedMap := map[string]int{"subject-1": 1, "subject-2": 2}
+
+		mockClient.EXPECT().RegisterSchemas(ctx, schemas[0], schemas[1]).Return(expectedMap, nil)
+
+		result, err := mockClient.RegisterSchemas(ctx, schemas...)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedMap, result)
+	})
+
+	t.Run("mock client handles errors", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		expectedErr := errors.New("connection error")
+		mockClient.EXPECT().Ping(ctx, &pb.EmptyRequest{}).Return(nil, expectedErr)
+
+		resp, err := mockClient.Ping(ctx, &pb.EmptyRequest{})
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, expectedErr, err)
+	})
+
+	t.Run("mock client Close with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		mockClient.EXPECT().Close().Return(nil)
+
+		err := mockClient.Close()
+		assert.NoError(t, err)
 	})
 }

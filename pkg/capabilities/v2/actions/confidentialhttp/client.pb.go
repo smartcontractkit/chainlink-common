@@ -362,7 +362,7 @@ var File_capabilities_networking_confidentialhttp_v1alpha_client_proto protorefl
 
 const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"=capabilities/networking/confidentialhttp/v1alpha/client.proto\x120capabilities.networking.confidentialhttp.v1alpha\x1a)tools/generator/v1beta/cre_metadata.proto\"g\n" +
+	"=capabilities/networking/confidentialhttp/v1alpha/client.proto\x120capabilities.networking.confidentialhttp.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"g\n" +
 	"\x10SecretIdentifier\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x19\n" +
@@ -390,7 +390,7 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\x17HTTPEnclaveResponseData\x12`\n" +
 	"\tresponses\x18\x01 \x03(\v2B.capabilities.networking.confidentialhttp.v1alpha.ResponseTemplateR\tresponses2\xd1\x01\n" +
 	"\x06Client\x12\x9f\x01\n" +
-	"\fSendRequests\x12D.capabilities.networking.confidentialhttp.v1alpha.EnclaveActionInput\x1aI.capabilities.networking.confidentialhttp.v1alpha.HTTPEnclaveResponseData\x1a%\x92\xb5\x18!\b\x02\x12\x1dconfidential-http@1.0.0-alphab\x06proto3"
+	"\fSendRequests\x12D.capabilities.networking.confidentialhttp.v1alpha.EnclaveActionInput\x1aI.capabilities.networking.confidentialhttp.v1alpha.HTTPEnclaveResponseData\x1a%\x82\xb5\x18!\b\x02\x12\x1dconfidential-http@1.0.0-alphab\x06proto3"
 
 var (
 	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescOnce sync.Once

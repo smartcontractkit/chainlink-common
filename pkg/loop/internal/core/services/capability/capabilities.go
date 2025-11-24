@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -22,7 +23,7 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -39,7 +40,7 @@ type ExecutableCapability interface {
 	capabilities.BaseCapability
 }
 
-func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) ExecutableCapability {
 	return &ExecutableCapabilityClient{
 		executableClient:     newExecutableClient(brokerExt, conn),
 		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
@@ -52,7 +53,7 @@ type CombinedCapabilityClient struct {
 	*triggerExecutableClient
 }
 
-func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) ExecutableCapability {
 	return &CombinedCapabilityClient{
 		executableClient:        newExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -135,14 +136,18 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 }
 
 type baseCapabilityClient struct {
+	c    net.ClientConnInterface
 	grpc capabilitiespb.BaseCapabilityClient
 	*net.BrokerExt
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
-func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
-	return &baseCapabilityClient{grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) *baseCapabilityClient {
+	return &baseCapabilityClient{c: conn, grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+}
+func (c *baseCapabilityClient) GetState() connectivity.State {
+	return c.c.GetState()
 }
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -348,7 +353,7 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 	return nil
 }
 
-func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
+func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *triggerExecutableClient {
 	return &triggerExecutableClient{
 		grpc:        capabilitiespb.NewTriggerExecutableClient(conn),
 		BrokerExt:   brokerExt,
@@ -417,12 +422,17 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
 		var reportableError *capabilities.RemoteReportableError
-		if errors.As(err, &reportableError) {
+		var userError *capabilities.ReportableUserError
+		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError
+		if errors.As(err, &userError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendReportableUserErrorIdentifier(err.Error())}
+		} else if errors.As(err, &reportableError) {
 			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
 		} else {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+			// All other errors are treated as remote unreportable and are marked as such to prevent accidental or malicious
+			// reporting of sensitive information by prefixing the error message with the remote reportable identifier.
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteUnreportableErrorIdentifier(err.Error())}
 		}
-
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
 	}
@@ -439,7 +449,7 @@ type executableClient struct {
 	*net.BrokerExt
 }
 
-func newExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *executableClient {
+func newExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *executableClient {
 	return &executableClient{
 		grpc:      capabilitiespb.NewExecutableClient(conn),
 		BrokerExt: brokerExt,
@@ -460,12 +470,22 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
+		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError
+		if capabilities.IsReportableUserErrorMessage(resp.Error) {
+			return capabilities.CapabilityResponse{}, capabilities.NewReportableUserError(
+				errors.New(capabilities.RemoveReportableUserErrorIdentifier(resp.Error)))
+		}
+
 		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
 			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
 				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
-
 		}
-		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
+
+		// The error message may or make not have been prepended with the unreportable error identifier depending on
+		// if the capability is running locally or remotely. In either case, remove the remote unreportable identifier if it exists.
+		removedIdentifierErrorMessage := capabilities.RemoveRemoteUnreportableErrorIdentifier(resp.Error)
+
+		return capabilities.CapabilityResponse{}, errors.New(removedIdentifierErrorMessage)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

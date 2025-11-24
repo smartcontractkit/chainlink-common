@@ -5,10 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"os"
 	"strings"
 
 	"github.com/pelletier/go-toml"
 )
+
+const generatedHeader = "# File generated from source files. DO NOT EDIT.\n"
 
 // CombineTOMLFiles reads a set of TOML config files and combines them in to one file. The expected inputs are:
 //	- global.toml
@@ -26,24 +29,35 @@ func CombineTOMLFiles(files fs.FS) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	tree.Set("global", global)
+	if len(global.Values()) > 0 {
+		tree.Set("global", global)
+	}
 	orgs, err := readTOMLTrees(files, "org")
 	if err != nil {
 		return nil, err
 	}
-	tree.Set("org", orgs)
+	if len(orgs.Values()) > 0 {
+		tree.Set("org", orgs)
+	}
 	owners, err := readTOMLTrees(files, "owner")
 	if err != nil {
 		return nil, err
 	}
-	tree.Set("owner", owners)
+	if len(owners.Values()) > 0 {
+		tree.Set("owner", owners)
+	}
 	workflows, err := readTOMLTrees(files, "workflow")
 	if err != nil {
 		return nil, err
 	}
-	tree.Set("workflow", workflows)
+	if len(workflows.Values()) > 0 {
+		tree.Set("workflow", workflows)
+	}
+
 	var b bytes.Buffer
+	b.WriteString(generatedHeader)
 	e := toml.NewEncoder(&b).Indentation("")
+	e.Order(toml.OrderAlphabetical)
 	err = e.Encode(tree)
 	return b.Bytes(), err
 }
@@ -51,6 +65,9 @@ func CombineTOMLFiles(files fs.FS) ([]byte, error) {
 func readTOMLTree(files fs.FS, name string) (*toml.Tree, error) {
 	f, err := files.Open(name)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return toml.TreeFromMap(make(map[string]any))
+		}
 		return nil, fmt.Errorf("failed to open %s: %w", name, err)
 	}
 	defer f.Close()
@@ -81,7 +98,7 @@ func readTOMLTrees(files fs.FS, dir string) (*toml.Tree, error) {
 		name := strings.TrimSuffix(d.Name(), ".toml")
 		trees.Set(name, t)
 		return nil
-	}); err != nil {
+	}); err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("failed to walk %s: %w", dir, err)
 	}
 	return trees, nil

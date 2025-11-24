@@ -63,6 +63,7 @@ func TestMultiFeedMonitorSynchronousMode(t *testing.T) {
 		[]SourceFactory{factory},
 		[]ExporterFactory{prometheusExporterFactory, kafkaExporterFactory},
 		100, // bufferCapacity for source pollers
+		1*time.Second,
 	)
 	subs.Go(func() {
 		monitor.Run(ctx, RDDData{feeds, nodes})
@@ -147,6 +148,7 @@ func TestMultiFeedMonitorForPerformance(t *testing.T) {
 		[]SourceFactory{factory},
 		[]ExporterFactory{prometheusExporterFactory, kafkaExporterFactory},
 		100, // bufferCapacity for source pollers
+		1*time.Second,
 	)
 	subs.Go(func() {
 		monitor.Run(ctx, RDDData{feeds, nodes})
@@ -215,6 +217,7 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 			[]SourceFactory{sourceFactory1, sourceFactory2},
 			[]ExporterFactory{exporterFactory1, exporterFactory2},
 			10, // bufferCapacity for source pollers
+			1*time.Second,
 		)
 
 		sourceFactory1.On("NewSource", chainConfig, feeds[0]).Return(nil, fmt.Errorf("source_factory1/feed1 failed"))
@@ -256,6 +259,7 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 			[]SourceFactory{sourceFactory1, sourceFactory2, sourceFactory3},
 			[]ExporterFactory{exporterFactory1, exporterFactory2, exporterFactory3},
 			100, // bufferCapacity for source pollers
+			1*time.Second,
 		)
 
 		envelope, err := generateEnvelope(ctx)

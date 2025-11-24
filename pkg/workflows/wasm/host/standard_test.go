@@ -95,16 +95,19 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 		assert.Equal(t, "PerformAction", request.Method)
 		input := &basicaction.Inputs{}
 		assert.NoError(t, request.Payload.UnmarshalTo(input))
+
+		// Don't return until the second call has been executed
+		// Take the lock before accessing callsSeen to avoid a race
+		if input.InputThing {
+			mt.Lock()
+		}
+		defer mt.Unlock()
+
 		assert.False(t, callsSeen[input.InputThing])
 		callsSeen[input.InputThing] = true
 		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("%t", input.InputThing)})
 		require.NoError(t, err)
 
-		// Don't return until the second call has been executed
-		if input.InputThing {
-			mt.Lock()
-		}
-		defer mt.Unlock()
 		return &sdk.CapabilityResponse{
 			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
 		}, nil
@@ -519,7 +522,7 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 	if cfg == nil {
 		cfg = defaultNoDAGModCfg(t)
 	}
-	mod, err := NewModule(cfg, binary)
+	mod, err := NewModule(t.Context(), cfg, binary)
 	require.NoError(t, err)
 	return mod
 }

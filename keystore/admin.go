@@ -2,17 +2,23 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"time"
 
+	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	"golang.org/x/crypto/curve25519"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
 )
 
 var (
@@ -50,9 +56,9 @@ type ImportKeysRequest struct {
 }
 
 type ImportKeyRequest struct {
-	KeyName string
-	KeyType KeyType
-	Data    []byte
+	NewKeyName string
+	Data       []byte
+	Password   string
 }
 
 type ImportKeysResponse struct{}
@@ -86,12 +92,45 @@ type SetMetadataUpdate struct {
 
 type SetMetadataResponse struct{}
 
+type RenameKeyRequest struct {
+	OldName string
+	NewName string
+}
+
+type RenameKeyResponse struct{}
+
 type Admin interface {
+	// CreateKeys creates multiple keys in a single atomic operation.
+	// The response preserves the order of the keys in the request.
+	// Returns ErrKeyAlreadyExists if any key name already exists,
+	// ErrInvalidKeyName if any key name is invalid,
+	// ErrUnsupportedKeyType if any key type is not supported.
 	CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error)
+
+	// DeleteKeys deletes multiple keys in a single atomic operation.
+	// Returns ErrKeyNotFound if any key does not exist.
 	DeleteKeys(ctx context.Context, req DeleteKeysRequest) (DeleteKeysResponse, error)
+
+	// ImportKeys imports multiple encrypted keys in a single atomic operation.
+	// Keys can be renamed during import using NewKeyName.
+	// Returns ErrKeyAlreadyExists if a key with the target name exists,
+	// ErrInvalidKeyName if the target name is invalid.
 	ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error)
+
+	// ExportKeys exports multiple keys in encrypted format.
+	// Each key is encrypted using the parameters specified in the request.
+	// Returns ErrKeyNotFound if any key does not exist.
 	ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error)
+
+	// SetMetadata updates metadata for multiple keys in a single atomic operation.
+	// Returns ErrKeyNotFound if any key does not exist.
 	SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error)
+
+	// RenameKey renames an existing key.
+	// Returns ErrKeyNotFound if the old key name does not exist,
+	// ErrKeyAlreadyExists if the new key name exists,
+	// ErrInvalidKeyName if the new key name is invalid.
+	RenameKey(ctx context.Context, req RenameKeyRequest) (RenameKeyResponse, error)
 }
 
 // UnimplementedAdmin returns ErrUnimplemented for all Admin methods.
@@ -117,6 +156,10 @@ func (UnimplementedAdmin) SetMetadata(ctx context.Context, req SetMetadataReques
 	return SetMetadataResponse{}, fmt.Errorf("Admin.SetMetadata: %w", ErrUnimplemented)
 }
 
+func (UnimplementedAdmin) RenameKey(ctx context.Context, req RenameKeyRequest) (RenameKeyResponse, error) {
+	return RenameKeyResponse{}, fmt.Errorf("Admin.RenameKey: %w", ErrUnimplemented)
+}
+
 func ValidKeyName(name string) error {
 	if name == "" {
 		return fmt.Errorf("key name cannot be empty")
@@ -128,6 +171,8 @@ func ValidKeyName(name string) error {
 	return nil
 }
 
+// CreateKeys creates multiple keys in a single operation. The response preserves the order of the request.
+// It's atomic - either all keys are created or none are created.
 func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (CreateKeysResponse, error) {
 	ks.mu.Lock()
 	defer ks.mu.Unlock()
@@ -152,16 +197,19 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey), publicKey, time.Now(), []byte{})
-		case EcdsaSecp256k1:
+		case ECDSA_S256:
 			privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 			if err != nil {
-				return CreateKeysResponse{}, fmt.Errorf("failed to generate EcdsaSecp256k1 key: %w", err)
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDSA_S256 key: %w", err)
 			}
-			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.D.Bytes()), keyReq.KeyType)
+			// Must copy the private key into 32 byte slice because leading zeros are stripped.
+			privateKeyBytes := make([]byte, 32)
+			copy(privateKeyBytes, privateKey.D.Bytes())
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKeyBytes), keyReq.KeyType)
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
-			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.D.Bytes()), publicKey, time.Now(), []byte{})
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKeyBytes), publicKey, time.Now(), []byte{})
 		case X25519:
 			privateKey := [curve25519.ScalarSize]byte{}
 			_, err := rand.Read(privateKey[:])
@@ -173,6 +221,16 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey[:]), publicKey, time.Now(), []byte{})
+		case ECDH_P256:
+			privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDH_P256 key: %w", err)
+			}
+			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKey.Bytes()), keyReq.KeyType)
+			if err != nil {
+				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
+			}
+			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.Bytes()), publicKey, time.Now(), []byte{})
 		default:
 			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrUnsupportedKeyType, keyReq.KeyType)
 		}
@@ -211,14 +269,148 @@ func (k *keystore) DeleteKeys(ctx context.Context, req DeleteKeysRequest) (Delet
 	return DeleteKeysResponse{}, nil
 }
 
-func (k *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error) {
+func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (ImportKeysResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	ksCopy := maps.Clone(ks.keystore)
+	for i, keyReq := range req.Keys {
+		encData := gethkeystore.CryptoJSON{}
+		err := json.Unmarshal(keyReq.Data, &encData)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to unmarshal encrypted import data: %w", i, err)
+		}
+		decData, err := gethkeystore.DecryptDataV3(encData, keyReq.Password)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to decrypt key: %w", i, err)
+		}
+		keypb := &serialization.Key{}
+		err = proto.Unmarshal(decData, keypb)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to unmarshal key: %w", i, err)
+		}
+		pkRaw := internal.NewRaw(keypb.PrivateKey)
+		keyType := KeyType(keypb.KeyType)
+		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
+		if err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to get public key from private key: %w", i, err)
+		}
+		metadata := keypb.Metadata
+		// The proto compiler sets empty slices to nil during the serialization (https://github.com/golang/protobuf/issues/1348).
+		// We set metadata back to empty slice to be consistent with the Create method which initializes it as such.
+		if metadata == nil {
+			metadata = []byte{}
+		}
+
+		keyName := keyReq.NewKeyName
+		if keyName == "" {
+			keyName = keypb.Name
+		}
+		if err := ValidKeyName(keyName); err != nil {
+			return ImportKeysResponse{}, fmt.Errorf("key name = %s, %w: %s", keyName, ErrInvalidKeyName, err)
+		}
+		if _, ok := ksCopy[keyName]; ok {
+			return ImportKeysResponse{}, fmt.Errorf("key name = %s, %w: %s", keyName, ErrKeyAlreadyExists, keyName)
+		}
+		ksCopy[keyName] = newKey(keyType, pkRaw, publicKey, time.Unix(keypb.CreatedAt, 0), metadata)
+	}
+	// Persist it to storage.
+	if err := ks.save(ctx, ksCopy); err != nil {
+		return ImportKeysResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+	// If we succeed to save, update the in memory keystore.
+	ks.keystore = ksCopy
 	return ImportKeysResponse{}, nil
 }
 
-func (k *keystore) ExportKeys(ctx context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
-	return ExportKeysResponse{}, nil
+func (ks *keystore) ExportKeys(_ context.Context, req ExportKeysRequest) (ExportKeysResponse, error) {
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+
+	result := ExportKeysResponse{}
+	for _, keyReq := range req.Keys {
+		key, ok := ks.keystore[keyReq.KeyName]
+		if !ok {
+			return ExportKeysResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, keyReq.KeyName)
+		}
+		keypb := &serialization.Key{
+			Name:       keyReq.KeyName,
+			KeyType:    string(key.keyType),
+			PrivateKey: internal.Bytes(key.privateKey),
+			CreatedAt:  key.createdAt.Unix(),
+			Metadata:   key.metadata,
+		}
+		serialized, err := proto.Marshal(keypb)
+		if err != nil {
+			return ExportKeysResponse{}, fmt.Errorf("key = %s, failed to marshal key: %w", keyReq.KeyName, err)
+		}
+		encData, err := gethkeystore.EncryptDataV3(serialized, []byte(keyReq.Enc.Password), keyReq.Enc.ScryptParams.N, keyReq.Enc.ScryptParams.P)
+		if err != nil {
+			return ExportKeysResponse{}, fmt.Errorf("key = %s, failed to encrypt key: %w", keyReq.KeyName, err)
+		}
+		encDataBytes, err := json.Marshal(encData)
+		if err != nil {
+			return ExportKeysResponse{}, fmt.Errorf("key = %s, failed to marshal encrypted key: %w", keyReq.KeyName, err)
+		}
+		result.Keys = append(result.Keys, ExportKeyResponse{
+			KeyName: keyReq.KeyName,
+			Data:    encDataBytes,
+		})
+	}
+	return result, nil
 }
 
 func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (SetMetadataResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	ksCopy := maps.Clone(ks.keystore)
+	for _, metReq := range req.Updates {
+		key, ok := ksCopy[metReq.KeyName]
+		if !ok {
+			return SetMetadataResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, metReq.KeyName)
+		}
+		key.metadata = metReq.Metadata
+		ksCopy[metReq.KeyName] = key
+	}
+	// Persist it to storage.
+	if err := ks.save(ctx, ksCopy); err != nil {
+		return SetMetadataResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+	// If we succeed to save, update the in memory keystore.
+	ks.keystore = ksCopy
 	return SetMetadataResponse{}, nil
+}
+
+func (ks *keystore) RenameKey(ctx context.Context, req RenameKeyRequest) (RenameKeyResponse, error) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	if req.NewName == req.OldName {
+		return RenameKeyResponse{}, nil
+	}
+
+	if err := ValidKeyName(req.NewName); err != nil {
+		return RenameKeyResponse{}, fmt.Errorf("%w: %s", ErrInvalidKeyName, err)
+	}
+
+	if _, ok := ks.keystore[req.NewName]; ok {
+		return RenameKeyResponse{}, fmt.Errorf("%w: %s", ErrKeyAlreadyExists, req.NewName)
+	}
+
+	k, ok := ks.keystore[req.OldName]
+	if !ok {
+		return RenameKeyResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, req.OldName)
+	}
+
+	ksCopy := maps.Clone(ks.keystore)
+	ksCopy[req.NewName] = k
+	delete(ksCopy, req.OldName)
+
+	if err := ks.save(ctx, ksCopy); err != nil {
+		return RenameKeyResponse{}, fmt.Errorf("failed to save keystore: %w", err)
+	}
+
+	ks.keystore = ksCopy
+	return RenameKeyResponse{}, nil
 }

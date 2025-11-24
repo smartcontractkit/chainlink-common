@@ -546,7 +546,7 @@ func Test_Capabilities(t *testing.T) {
 		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
 	})
 
-	t.Run("fetching an action capability, and executing it with private user error", func(t *testing.T) {
+	t.Run("fetching an action capability, and executing it with private system error", func(t *testing.T) {
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)

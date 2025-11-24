@@ -125,7 +125,7 @@ func NewPrivateUserError(err error, errorCode ErrorCode) Error {
 }
 
 func (e capabilityError) Error() string {
-	return fmt.Sprintf("[%d]%s:", e.errorCode, e.errorCode.String()) + " " + e.err.Error()
+	return fmt.Sprintf("[%d]%s: %s", e.errorCode, e.errorCode.String(), e.err.Error())
 }
 
 func (e capabilityError) Origin() Origin {

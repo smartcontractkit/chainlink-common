@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -19,26 +20,26 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	GetAccountInfoWithOpts(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetAccountInfoWithOptsRequest) (*capabilities.ResponseAndMetadata[*solana.GetAccountInfoWithOptsReply], error)
+	GetAccountInfoWithOpts(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetAccountInfoWithOptsRequest) (*capabilities.ResponseAndMetadata[*solana.GetAccountInfoWithOptsReply], caperrors.Error)
 
-	GetBalance(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBalanceRequest) (*capabilities.ResponseAndMetadata[*solana.GetBalanceReply], error)
+	GetBalance(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBalanceRequest) (*capabilities.ResponseAndMetadata[*solana.GetBalanceReply], caperrors.Error)
 
-	GetBlock(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBlockRequest) (*capabilities.ResponseAndMetadata[*solana.GetBlockReply], error)
+	GetBlock(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBlockRequest) (*capabilities.ResponseAndMetadata[*solana.GetBlockReply], caperrors.Error)
 
-	GetFeeForMessage(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetFeeForMessageRequest) (*capabilities.ResponseAndMetadata[*solana.GetFeeForMessageReply], error)
+	GetFeeForMessage(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetFeeForMessageRequest) (*capabilities.ResponseAndMetadata[*solana.GetFeeForMessageReply], caperrors.Error)
 
-	GetMultipleAccountsWithOpts(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetMultipleAccountsWithOptsRequest) (*capabilities.ResponseAndMetadata[*solana.GetMultipleAccountsWithOptsReply], error)
+	GetMultipleAccountsWithOpts(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetMultipleAccountsWithOptsRequest) (*capabilities.ResponseAndMetadata[*solana.GetMultipleAccountsWithOptsReply], caperrors.Error)
 
-	GetSignatureStatuses(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSignatureStatusesRequest) (*capabilities.ResponseAndMetadata[*solana.GetSignatureStatusesReply], error)
+	GetSignatureStatuses(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSignatureStatusesRequest) (*capabilities.ResponseAndMetadata[*solana.GetSignatureStatusesReply], caperrors.Error)
 
-	GetSlotHeight(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSlotHeightRequest) (*capabilities.ResponseAndMetadata[*solana.GetSlotHeightReply], error)
+	GetSlotHeight(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSlotHeightRequest) (*capabilities.ResponseAndMetadata[*solana.GetSlotHeightReply], caperrors.Error)
 
-	GetTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest) (*capabilities.ResponseAndMetadata[*solana.GetTransactionReply], error)
+	GetTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest) (*capabilities.ResponseAndMetadata[*solana.GetTransactionReply], caperrors.Error)
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) error
 
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest) (*capabilities.ResponseAndMetadata[*solana.WriteReportReply], error)
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest) (*capabilities.ResponseAndMetadata[*solana.WriteReportReply], caperrors.Error)
 
 	ChainSelector() uint64
 

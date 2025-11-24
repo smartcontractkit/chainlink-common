@@ -83,8 +83,15 @@ func (s *contractReaderServiceClient) Ready() error {
 	return nil
 }
 
-func (s *Server) ContractReaderStart(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	reader, err := s.getReader(ctx)
+type readerServer struct {
+	pb.UnimplementedContractReaderServer
+	parent *Server
+}
+
+var _ pb.ContractReaderServer = (*readerServer)(nil)
+
+func (rs *readerServer) ContractReaderStart(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +99,8 @@ func (s *Server) ContractReaderStart(ctx context.Context, _ *emptypb.Empty) (*em
 	return &emptypb.Empty{}, reader.reader.Start(ctx)
 }
 
-func (s *Server) ContractReaderClose(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) ContractReaderClose(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +108,12 @@ func (s *Server) ContractReaderClose(ctx context.Context, _ *emptypb.Empty) (*em
 	if err != nil {
 		return nil, err
 	}
-	s.removeReader(id)
+	rs.parent.removeReader(id)
 	return &emptypb.Empty{}, reader.reader.Close()
 }
 
-func (s *Server) GetLatestValue(ctx context.Context, in *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) GetLatestValue(ctx context.Context, in *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +121,8 @@ func (s *Server) GetLatestValue(ctx context.Context, in *pb.GetLatestValueReques
 	return reader.server.GetLatestValue(ctx, in)
 }
 
-func (s *Server) GetLatestValueWithHeadData(ctx context.Context, in *pb.GetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) GetLatestValueWithHeadData(ctx context.Context, in *pb.GetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +130,8 @@ func (s *Server) GetLatestValueWithHeadData(ctx context.Context, in *pb.GetLates
 	return reader.server.GetLatestValueWithHeadData(ctx, in)
 }
 
-func (s *Server) GetLatestValues(ctx context.Context, in *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) GetLatestValues(ctx context.Context, in *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +139,8 @@ func (s *Server) GetLatestValues(ctx context.Context, in *pb.BatchGetLatestValue
 	return reader.server.BatchGetLatestValues(ctx, in)
 }
 
-func (s *Server) QueryKeys(ctx context.Context, in *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) QueryKeys(ctx context.Context, in *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +148,8 @@ func (s *Server) QueryKeys(ctx context.Context, in *pb.QueryKeysRequest) (*pb.Qu
 	return reader.server.QueryKeys(ctx, in)
 }
 
-func (s *Server) QueryKey(ctx context.Context, in *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) QueryKey(ctx context.Context, in *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +157,8 @@ func (s *Server) QueryKey(ctx context.Context, in *pb.QueryKeyRequest) (*pb.Quer
 	return reader.server.QueryKey(ctx, in)
 }
 
-func (s *Server) Bind(ctx context.Context, in *pb.BindRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) Bind(ctx context.Context, in *pb.BindRequest) (*emptypb.Empty, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -159,11 +166,18 @@ func (s *Server) Bind(ctx context.Context, in *pb.BindRequest) (*emptypb.Empty, 
 	return reader.server.Bind(ctx, in)
 }
 
-func (s *Server) Unbind(ctx context.Context, in *pb.UnbindRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(ctx)
+func (rs *readerServer) Unbind(ctx context.Context, in *pb.UnbindRequest) (*emptypb.Empty, error) {
+	reader, err := rs.parent.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return reader.server.Unbind(ctx, in)
+}
+
+func (s *Server) ContractReaderStart(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	return s.contractReader.ContractReaderStart(ctx, &emptypb.Empty{})
+}
+func (s *Server) ContractReaderClose(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	return s.contractReader.ContractReaderClose(ctx, &emptypb.Empty{})
 }

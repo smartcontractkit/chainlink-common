@@ -33,6 +33,8 @@ type Relayer interface {
 	EVM() (types.EVMService, error)
 	// TON returns TONService that provides access to TON specific functionalities
 	TON() (types.TONService, error)
+	// Solana returns SolanaService that provides access to Solana specific functionalities
+	Solana() (types.SolanaService, error)
 	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (PluginProvider, error)
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error)

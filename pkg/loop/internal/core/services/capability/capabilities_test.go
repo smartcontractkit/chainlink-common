@@ -482,9 +482,10 @@ func Test_Capabilities(t *testing.T) {
 		require.Error(t, err)
 		capErr := err.(caperrors.Error)
 
-		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
-		require.Equal(t, caperrors.PublicSystem, capErr.ReportType())
+		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())
+		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
 	})
 
 	t.Run("fetching an action capability, and executing it with reportable user error", func(t *testing.T) {
@@ -510,12 +511,13 @@ func Test_Capabilities(t *testing.T) {
 		require.Error(t, err)
 		capErr := err.(caperrors.Error)
 
-		require.Equal(t, "[4]NotFound: bang", capErr.Error())
+		require.Equal(t, "[5]NotFound: bang", capErr.Error())
 		require.Equal(t, caperrors.NotFound, capErr.Code())
-		require.Equal(t, caperrors.ReportableUser, capErr.ReportType())
+		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())
+		require.Equal(t, caperrors.OriginUser, capErr.Origin())
 	})
 
-	t.Run("fetching an action capability, and executing it with local error", func(t *testing.T) {
+	t.Run("fetching an action capability, and executing it with private system error", func(t *testing.T) {
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
@@ -538,9 +540,39 @@ func Test_Capabilities(t *testing.T) {
 		require.Error(t, err)
 		capErr := err.(caperrors.Error)
 
-		require.Equal(t, "[3]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
-		require.Equal(t, caperrors.LocalOnly, capErr.ReportType())
+		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())
+		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
+	})
+
+	t.Run("fetching an action capability, and executing it with private user error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = caperrors.NewPrivateSystemError(errors.New("bang"), caperrors.DeadlineExceeded)
+
+		_, err = c.(capabilities.ActionCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		capErr := err.(caperrors.Error)
+
+		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
+		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
+		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())
+		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
 	})
 
 	// This will only happen a local capability has not had it's API migrated to always return capability.Error
@@ -567,9 +599,10 @@ func Test_Capabilities(t *testing.T) {
 		require.Error(t, err)
 		capErr := err.(caperrors.Error)
 
-		require.Equal(t, "[0]Uncategorized: bang", capErr.Error())
-		require.Equal(t, caperrors.Uncategorized, capErr.Code())
-		require.Equal(t, caperrors.LocalOnly, capErr.ReportType())
+		require.Equal(t, "[2]Unknown: Private:bang", capErr.Error())
+		require.Equal(t, caperrors.Unknown, capErr.Code())
+		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())
+		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {

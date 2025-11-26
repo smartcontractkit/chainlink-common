@@ -151,7 +151,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_LeewayHandlesClockSkew(t *testing.
 		privateKey, csaPubKey := createValidatorTestKeys()
 		mockProvider := &mocks.NodeAuthProvider{}
 		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), WithLeeway(5*time.Second))
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -186,7 +186,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_LeewayHandlesClockSkew(t *testing.
 		// Given
 		privateKey, csaPubKey := createValidatorTestKeys()
 		mockProvider := &mocks.NodeAuthProvider{}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), WithLeeway(5*time.Second))
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -222,7 +222,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_LeewayHandlesClockSkew(t *testing.
 		privateKey, csaPubKey := createValidatorTestKeys()
 		mockProvider := &mocks.NodeAuthProvider{}
 		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), WithLeeway(5*time.Second))
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -257,7 +257,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_LeewayHandlesClockSkew(t *testing.
 		// Given
 		privateKey, csaPubKey := createValidatorTestKeys()
 		mockProvider := &mocks.NodeAuthProvider{}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), WithLeeway(5*time.Second))
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)

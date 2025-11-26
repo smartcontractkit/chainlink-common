@@ -34,9 +34,9 @@ func NewNodeJWTAuthenticator(nodeAuthProvider NodeAuthProvider, logger *slog.Log
 	}
 
 	// Apply optional configuration
-	if len(config) > 0 && config[0] != nil {
-		if config[0].Leeway > 0 {
-			parserOpts = append(parserOpts, jwt.WithLeeway(config[0].Leeway))
+	for _, cfg := range config {
+		if cfg != nil && cfg.Leeway > 0 {
+			parserOpts = append(parserOpts, jwt.WithLeeway(cfg.Leeway))
 		}
 	}
 

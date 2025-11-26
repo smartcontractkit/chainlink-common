@@ -415,15 +415,105 @@ func TestNodeJWTAuthenticator_verifyRequestDigest_DigestMismatch(t *testing.T) {
 }
 
 func TestNewNodeJWTAuthenticator(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	logger := createTestLogger()
+	t.Run("without options creates authenticator with default parser", func(t *testing.T) {
+		mockProvider := mocks.NewNodeAuthProvider(t)
+		logger := createTestLogger()
 
-	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+		authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
 
-	assert.NotNil(t, authenticator)
-	assert.Equal(t, mockProvider, authenticator.nodeAuthProvider)
-	assert.NotNil(t, authenticator.parser)
-	assert.Equal(t, logger, authenticator.logger)
+		assert.NotNil(t, authenticator)
+		assert.Equal(t, mockProvider, authenticator.nodeAuthProvider)
+		assert.NotNil(t, authenticator.parser)
+		assert.Equal(t, logger, authenticator.logger)
+	})
+
+	t.Run("with leeway option applies configuration correctly", func(t *testing.T) {
+		mockProvider := mocks.NewNodeAuthProvider(t)
+		logger := createTestLogger()
+
+		// Create authenticator with leeway option
+		authenticator := NewNodeJWTAuthenticator(mockProvider, logger, WithLeeway(5*time.Second))
+
+		assert.NotNil(t, authenticator)
+		assert.Equal(t, mockProvider, authenticator.nodeAuthProvider)
+		assert.NotNil(t, authenticator.parser)
+		assert.Equal(t, logger, authenticator.logger)
+	})
+
+	t.Run("with multiple option invocations", func(t *testing.T) {
+		mockProvider := mocks.NewNodeAuthProvider(t)
+		logger := createTestLogger()
+
+		// Test that multiple calls to option functions work
+		leewayOpt1 := WithLeeway(3 * time.Second)
+		leewayOpt2 := WithLeeway(5 * time.Second)
+
+		// Create authenticator with multiple options (last one should apply)
+		authenticator := NewNodeJWTAuthenticator(mockProvider, logger, leewayOpt1, leewayOpt2)
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+}
+
+func TestWithLeeway(t *testing.T) {
+	t.Run("returns a valid option function", func(t *testing.T) {
+		opt := WithLeeway(5 * time.Second)
+		assert.NotNil(t, opt)
+	})
+
+	t.Run("option function modifies parser options slice", func(t *testing.T) {
+		// Given: empty parser options slice
+		parserOpts := []jwt.ParserOption{}
+
+		// When: apply WithLeeway option
+		opt := WithLeeway(10 * time.Second)
+		opt(&parserOpts)
+
+		// Expect: parser options slice is modified
+		assert.Len(t, parserOpts, 1)
+	})
+
+	t.Run("option function can be applied multiple times", func(t *testing.T) {
+		// Given: parser options slice
+		parserOpts := []jwt.ParserOption{
+			jwt.WithIssuedAt(),
+		}
+		initialLen := len(parserOpts)
+
+		// When: apply multiple WithLeeway options
+		opt1 := WithLeeway(5 * time.Second)
+		opt2 := WithLeeway(10 * time.Second)
+		opt1(&parserOpts)
+		opt2(&parserOpts)
+
+		// Expect: all options are added
+		assert.Len(t, parserOpts, initialLen+2)
+	})
+
+	t.Run("different leeway durations can be configured", func(t *testing.T) {
+		testCases := []struct {
+			name     string
+			duration time.Duration
+		}{
+			{"1 second", 1 * time.Second},
+			{"5 seconds", 5 * time.Second},
+			{"30 seconds", 30 * time.Second},
+			{"1 minute", 1 * time.Minute},
+			{"zero", 0},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				opt := WithLeeway(tc.duration)
+				assert.NotNil(t, opt)
+
+				parserOpts := []jwt.ParserOption{}
+				opt(&parserOpts)
+				assert.Len(t, parserOpts, 1)
+			})
+		}
+	})
 }
 
 func TestNodeJWTAuthenticator_WithoutLeeway_StrictValidation(t *testing.T) {

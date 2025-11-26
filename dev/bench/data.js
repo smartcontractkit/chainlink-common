@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764067767391,
+  "lastUpdate": 1764181893459,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -33180,6 +33180,66 @@ window.BENCHMARK_DATA = {
             "value": 145185,
             "unit": "ns/op",
             "extra": "8454 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8fe363043c2c1d15f0a5735647805e8cb3bcc945",
+          "message": "Merge pull request #1721 from smartcontractkit/feat/jwt_leeway\n\nfeat: Introduced  leeway in jwtAuthenticator to buffer clock skew between systems.",
+          "timestamp": "2025-11-26T18:25:00Z",
+          "tree_id": "78fa9eef926093dba1b76362bc7b2c8656593f74",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8fe363043c2c1d15f0a5735647805e8cb3bcc945"
+        },
+        "date": 1764181891450,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 740.8,
+            "unit": "ns/op",
+            "extra": "1436437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96330,
+            "unit": "ns/op",
+            "extra": "12308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 428.4,
+            "unit": "ns/op",
+            "extra": "2794958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97274,
+            "unit": "ns/op",
+            "extra": "12339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26759,
+            "unit": "ns/op",
+            "extra": "44217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 143411,
+            "unit": "ns/op",
+            "extra": "8340 times\n4 procs"
           }
         ]
       }

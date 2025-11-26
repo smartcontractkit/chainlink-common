@@ -145,6 +145,128 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 	assert.Contains(t, err.Error(), "token is expired")
 }
 
+func TestWithLeeway_OptionApplication(t *testing.T) {
+	t.Run("WithLeeway option is applied correctly", func(t *testing.T) {
+		// Given
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
+		
+		// Create authenticator with WithLeeway option
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), WithLeeway(5*time.Second))
+
+		testRequest := testRequest{Field: "test-request"}
+		digest := utils.CalculateRequestDigest(testRequest)
+
+		// Create a token that expired 3 seconds ago (within 5s leeway)
+		now := time.Now()
+		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
+			PublicKey: hex.EncodeToString(csaPubKey),
+			Digest:    digest,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    hex.EncodeToString(csaPubKey),
+				Subject:   hex.EncodeToString(csaPubKey),
+				ExpiresAt: jwt.NewNumericDate(now.Add(-3 * time.Second)), // Expired 3s ago
+				IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
+			},
+		})
+
+		jwtToken, err := token.SignedString(privateKey)
+		require.NoError(t, err)
+
+		// When: Authenticate JWT - should succeed due to leeway
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, testRequest)
+
+		// Expect: Leeway was applied, token is accepted
+		require.NoError(t, err)
+		assert.True(t, valid)
+		assert.NotNil(t, claims)
+		mockProvider.AssertExpectations(t)
+	})
+
+	t.Run("multiple WithLeeway options can be applied", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		
+		// Create authenticator with multiple leeway options
+		authenticator := NewNodeJWTAuthenticator(
+			mockProvider, 
+			createTestLogger(), 
+			WithLeeway(3*time.Second),
+			WithLeeway(5*time.Second),
+		)
+
+		// Verify authenticator was created successfully with options applied
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+
+	t.Run("WithLeeway with different durations", func(t *testing.T) {
+		durations := []time.Duration{
+			0,
+			1 * time.Second,
+			5 * time.Second,
+			30 * time.Second,
+			1 * time.Minute,
+		}
+
+		for _, duration := range durations {
+			t.Run(duration.String(), func(t *testing.T) {
+				mockProvider := &mocks.NodeAuthProvider{}
+				
+				// Create option
+				opt := WithLeeway(duration)
+				
+				// Apply option when creating authenticator
+				authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), opt)
+				
+				assert.NotNil(t, authenticator)
+				assert.NotNil(t, authenticator.parser)
+			})
+		}
+	})
+}
+
+func TestNewNodeJWTAuthenticator_WithOptions(t *testing.T) {
+	t.Run("no options creates default authenticator", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		logger := createTestLogger()
+
+		authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+		assert.Equal(t, mockProvider, authenticator.nodeAuthProvider)
+		assert.Equal(t, logger, authenticator.logger)
+	})
+
+	t.Run("options loop applies single option", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		logger := createTestLogger()
+
+		// Single option
+		authenticator := NewNodeJWTAuthenticator(mockProvider, logger, WithLeeway(10*time.Second))
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+
+	t.Run("options loop applies multiple options", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		logger := createTestLogger()
+
+		// Multiple options applied via loop
+		authenticator := NewNodeJWTAuthenticator(
+			mockProvider, 
+			logger, 
+			WithLeeway(5*time.Second),
+			WithLeeway(10*time.Second),
+		)
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+}
+
 func TestNodeJWTAuthenticator_AuthenticateJWT_LeewayHandlesClockSkew(t *testing.T) {
 	t.Run("token expired within leeway window should be accepted", func(t *testing.T) {
 		// Given

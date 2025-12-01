@@ -8,7 +8,9 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/cog/plugins"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/polystat"
 )
 
 type Builder struct {
@@ -35,6 +37,7 @@ type BuilderOptions struct {
 func NewBuilder(options *BuilderOptions) *Builder {
 	plugins.RegisterDefaultPlugins()
 	cog.NewRuntime().RegisterPanelcfgVariant(businessvariable.VariantConfig())
+	cog.NewRuntime().RegisterPanelcfgVariant(polystat.VariantConfig())
 
 	builder := &Builder{}
 
@@ -113,6 +116,9 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.businessVariablePanelBuilder != nil {
 			item.businessVariablePanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.businessVariablePanelBuilder)
+		} else if item.polystatPanelBuilder != nil {
+			item.polystatPanelBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.polystatPanelBuilder)
 		}
 		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
 			b.AddAlert(item.alertBuilders...)

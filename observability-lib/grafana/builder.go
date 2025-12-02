@@ -120,7 +120,7 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 			item.polystatPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.polystatPanelBuilder)
 		}
-		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
+		if len(item.alertBuilders) > 0 {
 			b.AddAlert(item.alertBuilders...)
 		}
 	}
@@ -161,7 +161,7 @@ func (b *Builder) Build() (*Observability, error) {
 		}
 
 		// Add common tags to alerts
-		if b.alertsTags != nil && len(b.alertsTags) > 0 {
+		if len(b.alertsTags) > 0 {
 			tags := maps.Clone(b.alertsTags)
 			maps.Copy(tags, alert.Labels)
 

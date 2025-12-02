@@ -440,7 +440,7 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	}
 
 	var alertBuilders []*alerting.RuleBuilder
-	if options.AlertsOptions != nil && len(options.AlertsOptions) > 0 {
+	if len(options.AlertsOptions) > 0 {
 		for _, alert := range options.AlertsOptions {
 			// this is used as an internal mechanism to set the panel title in the alert to associate panelId with alert
 			alert.PanelTitle = *options.Title

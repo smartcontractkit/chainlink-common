@@ -1158,13 +1158,9 @@ func NewPolystatPanel(options *PolystatPanelOptions) *Panel {
 		newPanel.DefaultClickThrough(options.DefaultClickThrough)
 	}
 
-	if options.DefaultClickThroughNewTab {
-		newPanel.DefaultClickThroughNewTab(options.DefaultClickThroughNewTab)
-	}
+	newPanel.DefaultClickThroughNewTab(options.DefaultClickThroughNewTab)
 
-	if options.DefaultClickThroughSanitize {
-		newPanel.DefaultClickThroughSanitize(options.DefaultClickThroughSanitize)
-	}
+	newPanel.DefaultClickThroughSanitize(options.DefaultClickThroughSanitize)
 
 	if options.AnimationSpeed != nil {
 		newPanel.AnimationSpeed(*options.AnimationSpeed)

@@ -15,7 +15,9 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/table"
 	"github.com/grafana/grafana-foundation-sdk/go/text"
 	"github.com/grafana/grafana-foundation-sdk/go/timeseries"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/polystat"
 )
 
 type QueryType string
@@ -180,6 +182,7 @@ type Panel struct {
 	textPanelBuilder             *text.PanelBuilder
 	histogramPanelBuilder        *histogram.PanelBuilder
 	businessVariablePanelBuilder *businessvariable.PanelBuilder
+	polystatPanelBuilder         *polystat.PanelBuilder
 	alertBuilders                []*alerting.RuleBuilder
 }
 
@@ -437,7 +440,7 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	}
 
 	var alertBuilders []*alerting.RuleBuilder
-	if options.AlertsOptions != nil && len(options.AlertsOptions) > 0 {
+	if len(options.AlertsOptions) > 0 {
 		for _, alert := range options.AlertsOptions {
 			// this is used as an internal mechanism to set the panel title in the alert to associate panelId with alert
 			alert.PanelTitle = *options.Title
@@ -1090,5 +1093,128 @@ func NewBusinessVariablePanel(options *BusinessVariablePanelOptions) *Panel {
 
 	return &Panel{
 		businessVariablePanelBuilder: newPanel,
+	}
+}
+
+type PolystatPanelOptions struct {
+	*PanelOptions
+	Queries                         []Query
+	OperatorName                    polystat.OperatorName
+	PolygonGlobalFillColor          string
+	PolygonSize                     polystat.PolygonSize
+	Columns                         *int
+	Rows                            *int
+	DisplayLimit                    *int
+	DefaultClickThrough             string
+	DefaultClickThroughNewTab       bool
+	DefaultClickThroughSanitize     bool
+	AnimationSpeed                  *int
+	Radius                          string
+	TooltipDisplayMode              string
+	TooltipPrimarySortBy            polystat.SortByField
+	TooltipPrimarySortDirection     polystat.SortByDirection
+	TooltipSecondarySortBy          polystat.SortByField
+	TooltipSecondarySortDirection   polystat.SortByDirection
+	GlobalUnitFormat                string
+	GlobalDecimals                  *int
+	GlobalDisplayMode               string
+	GlobalDisplayTextTriggeredEmpty string
+	GlobalThresholds                []polystat.Threshold
+}
+
+func NewPolystatPanel(options *PolystatPanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := polystat.NewPanelBuilder().
+		Datasource(datasourceRef(options.Datasource)).
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		OperatorName(options.OperatorName)
+
+	if options.PolygonGlobalFillColor != "" {
+		newPanel.PolygonGlobalFillColor(options.PolygonGlobalFillColor)
+	}
+
+	if options.PolygonSize != 0 {
+		newPanel.PolygonSize(options.PolygonSize)
+	}
+
+	if options.Columns != nil {
+		newPanel.Columns(*options.Columns)
+	}
+
+	if options.Rows != nil {
+		newPanel.Rows(*options.Rows)
+	}
+
+	if options.DisplayLimit != nil {
+		newPanel.DisplayLimit(*options.DisplayLimit)
+	}
+
+	if options.DefaultClickThrough != "" {
+		newPanel.DefaultClickThrough(options.DefaultClickThrough)
+	}
+
+	newPanel.DefaultClickThroughNewTab(options.DefaultClickThroughNewTab)
+
+	newPanel.DefaultClickThroughSanitize(options.DefaultClickThroughSanitize)
+
+	if options.AnimationSpeed != nil {
+		newPanel.AnimationSpeed(*options.AnimationSpeed)
+	}
+
+	if options.Radius != "" {
+		newPanel.Radius(options.Radius)
+	}
+
+	if options.TooltipDisplayMode != "" {
+		newPanel.TooltipDisplayMode(options.TooltipDisplayMode)
+	}
+
+	if options.TooltipPrimarySortBy != "" {
+		newPanel.TooltipPrimarySortBy(options.TooltipPrimarySortBy)
+	}
+
+	if options.TooltipPrimarySortDirection != "" {
+		newPanel.TooltipPrimarySortDirection(options.TooltipPrimarySortDirection)
+	}
+
+	if options.TooltipSecondarySortBy != "" {
+		newPanel.TooltipSecondarySortBy(options.TooltipSecondarySortBy)
+	}
+
+	if options.TooltipSecondarySortDirection != "" {
+		newPanel.TooltipSecondarySortDirection(options.TooltipSecondarySortDirection)
+	}
+
+	if options.GlobalUnitFormat != "" {
+		newPanel.GlobalUnitFormat(options.GlobalUnitFormat)
+	}
+
+	if options.GlobalDecimals != nil {
+		newPanel.GlobalDecimals(*options.GlobalDecimals)
+	}
+
+	if options.GlobalDisplayMode != "" {
+		newPanel.GlobalDisplayMode(options.GlobalDisplayMode)
+	}
+
+	if options.GlobalDisplayTextTriggeredEmpty != "" {
+		newPanel.GlobalDisplayTextTriggeredEmpty(options.GlobalDisplayTextTriggeredEmpty)
+	}
+
+	if len(options.GlobalThresholds) > 0 {
+		newPanel.GlobalThresholds(options.GlobalThresholds)
+	}
+
+	for _, query := range options.Queries {
+		newPanel.WithTarget(newQuery(query))
+	}
+
+	return &Panel{
+		polystatPanelBuilder: newPanel,
 	}
 }

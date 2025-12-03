@@ -114,4 +114,19 @@ func TestCLI(t *testing.T) {
 	require.Equal(t, "testkey", resp.Keys[0].KeyInfo.Name)
 	// Metadata is []byte, Go's JSON unmarshaler automatically decodes base64 strings
 	require.Equal(t, "my-custom-metadata", string(resp.Keys[0].KeyInfo.Metadata))
+
+	// Delete the key with confirmation.
+	buf.Reset()
+	// cmd.SetIn(bytes.NewBufferString("yes\n"))
+	cmd.SetArgs([]string{"delete", "-d", `{"KeyNames": ["testkey", "testkey2"]}`})
+	require.NoError(t, cmd.ExecuteContext(t.Context()))
+
+	// List keys should be empty.
+	buf.Reset()
+	cmd.SetArgs([]string{"list"})
+	require.NoError(t, cmd.ExecuteContext(t.Context()))
+	resp = ks.GetKeysResponse{}
+	err = json.Unmarshal(buf.Bytes(), &resp)
+	require.NoError(t, err)
+	require.Len(t, resp.Keys, 0)
 }

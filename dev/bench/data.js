@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764181893459,
+  "lastUpdate": 1764758513454,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -33240,6 +33240,66 @@ window.BENCHMARK_DATA = {
             "value": 143411,
             "unit": "ns/op",
             "extra": "8340 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "maciej.wisniewski@smartcontract.com",
+            "name": "mchain0",
+            "username": "mchain0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "02ef24d577801fc5056b9ea0cee03a53dc1d3760",
+          "message": "Merge pull request #1722 from smartcontractkit/feat/CRE-1383_executive_dashboards\n\n[CRE-1383] support grafana-polystat-plugin",
+          "timestamp": "2025-12-03T10:31:09Z",
+          "tree_id": "6f254806faa559ec5cfb7ca8a5ad8c2dd5996083",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/02ef24d577801fc5056b9ea0cee03a53dc1d3760"
+        },
+        "date": 1764758507107,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.5,
+            "unit": "ns/op",
+            "extra": "3219780 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97440,
+            "unit": "ns/op",
+            "extra": "12290 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.7,
+            "unit": "ns/op",
+            "extra": "2913832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99021,
+            "unit": "ns/op",
+            "extra": "12108 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26627,
+            "unit": "ns/op",
+            "extra": "45003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 143432,
+            "unit": "ns/op",
+            "extra": "8101 times\n4 procs"
           }
         ]
       }

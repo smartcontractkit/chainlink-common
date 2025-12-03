@@ -25,15 +25,15 @@ func TestCLI(t *testing.T) {
 	os.Setenv("KEYSTORE_PASSWORD", "testpassword")
 
 	// No error just listing help.
-	out, err := runCommand(t, nil, "")
+	_, err = runCommand(t, nil, "")
 	require.NoError(t, err)
 
 	// Create a key.
-	out, err = runCommand(t, nil, "create", "-d", `{"Keys": [{"KeyName": "testkey", "KeyType": "X25519"}]}`)
+	_, err = runCommand(t, nil, "create", "-d", `{"Keys": [{"KeyName": "testkey", "KeyType": "X25519"}]}`)
 	require.NoError(t, err)
 
 	// List keys.
-	out, err = runCommand(t, nil, "get", "-d", `{"KeyNames": ["testkey"]}`)
+	out, err := runCommand(t, nil, "get", "-d", `{"KeyNames": ["testkey"]}`)
 	require.NoError(t, err)
 	resp := ks.GetKeysResponse{}
 	err = json.Unmarshal(out.Bytes(), &resp)
@@ -43,7 +43,7 @@ func TestCLI(t *testing.T) {
 	require.Equal(t, ks.X25519, resp.Keys[0].KeyInfo.KeyType)
 
 	// Create a second key we export.
-	out, err = runCommand(t, nil, "create", "-d", `{"Keys": [{"KeyName": "testkey2", "KeyType": "ECDSA_S256"}]}`)
+	_, err = runCommand(t, nil, "create", "-d", `{"Keys": [{"KeyName": "testkey2", "KeyType": "ECDSA_S256"}]}`)
 	require.NoError(t, err)
 
 	// Export the second key.
@@ -55,7 +55,7 @@ func TestCLI(t *testing.T) {
 	exportedKey2Data := base64.StdEncoding.EncodeToString(exportResp.Keys[0].Data)
 
 	// Delete the second key.
-	out, err = runCommand(t, nil, "delete", "-d", `{"KeyNames": ["testkey2"]}`, "--yes")
+	_, err = runCommand(t, nil, "delete", "-d", `{"KeyNames": ["testkey2"]}`, "--yes")
 	require.NoError(t, err)
 
 	// List key should only see first.
@@ -69,7 +69,7 @@ func TestCLI(t *testing.T) {
 	require.Equal(t, ks.X25519, resp.Keys[0].KeyInfo.KeyType)
 
 	// Import the exported key.
-	out, err = runCommand(t, nil, "import", "-d", `{"Keys": [{"KeyName": "testkey2", "Data": "`+exportedKey2Data+`", "Password": "testpassword2"}]}`)
+	_, err = runCommand(t, nil, "import", "-d", `{"Keys": [{"KeyName": "testkey2", "Data": "`+exportedKey2Data+`", "Password": "testpassword2"}]}`)
 	require.NoError(t, err)
 
 	// List keys.
@@ -86,7 +86,7 @@ func TestCLI(t *testing.T) {
 
 	// Set metadata on testkey.
 	metadata := base64.StdEncoding.EncodeToString([]byte("my-custom-metadata"))
-	out, err = runCommand(t, nil, "set-metadata", "-d", `{"Updates": [{"KeyName": "testkey", "Metadata": "`+metadata+`"}]}`)
+	_, err = runCommand(t, nil, "set-metadata", "-d", `{"Updates": [{"KeyName": "testkey", "Metadata": "`+metadata+`"}]}`)
 	require.NoError(t, err)
 
 	// Verify metadata was set.
@@ -111,7 +111,7 @@ func TestCLI(t *testing.T) {
 	resp = ks.GetKeysResponse{}
 	err = json.Unmarshal(out.Bytes(), &resp)
 	require.NoError(t, err)
-	require.Len(t, resp.Keys, 0)
+	require.Empty(t, resp.Keys)
 }
 
 func runCommand(t *testing.T, in *bytes.Buffer, args ...string) (bytes.Buffer, error) {

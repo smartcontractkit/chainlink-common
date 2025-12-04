@@ -279,6 +279,14 @@ type ChannelDefinition struct {
 }
 
 func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
+	if a.Tombstone != b.Tombstone {
+		return false
+	}
+
+	if a.Source != b.Source {
+		return false
+	}
+
 	if a.ReportFormat != b.ReportFormat {
 		return false
 	}

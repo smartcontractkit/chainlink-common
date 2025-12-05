@@ -8,7 +8,7 @@
 // Every limit requires a default value. Additional features like Otel metrics and dynamic updates are available by
 // using the [settings.Setting] variants.
 //
-// Limiter errors are GRPC [codes.ResourceExhausted] and [codes.DeadlineExceeded].
+// Limiter errors are GRPC [codes.ResourceExhausted], [codes.DeadlineExceeded], and [code.PermissionDenied].
 package limits
 
 import (

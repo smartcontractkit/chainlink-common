@@ -74,6 +74,12 @@ func TestSchema_Unmarshal(t *testing.T) {
 	},
 	"PerWorkflow": {
 		"WASMMemoryLimit": "250mb",
+		"ChainAllowed": {
+			"Default": "false",
+			"Values": {
+				"1": "true"
+			}
+		},
 		"CRONTrigger": {
 			"RateLimit": "every10s:5"
 		},
@@ -103,6 +109,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
+	assert.Equal(t, false, cfg.PerWorkflow.ChainAllowed.Default.DefaultValue)
+	assert.Equal(t, "true", cfg.PerWorkflow.ChainAllowed.Values["1"])
 	assert.Equal(t, config.Rate{Limit: rate.Every(10 * time.Second), Burst: 5}, cfg.PerWorkflow.CRONTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(30 * time.Second), Burst: 3}, cfg.PerWorkflow.HTTPTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)

@@ -96,3 +96,7 @@ func MakeQueueLimiter[T any](f Factory, limit settings.Setting[int]) (QueueLimit
 	}
 	return newScopedQueue[T](f, limit)
 }
+
+func MakeGateLimiter(f Factory, limit settings.Setting[bool]) (GateLimiter, error) {
+	return newGateLimiter(f, limit)
+}

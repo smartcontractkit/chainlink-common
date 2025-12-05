@@ -41,6 +41,10 @@
 		"ConsensusCallsLimit": "2000",
 		"LogLineLimit": "1kb",
 		"LogEventLimit": "1000",
+		"ChainAllowed": {
+			"Default": "false",
+			"Values": {}
+		},
 		"CRONTrigger": {
 			"FastestScheduleInterval": "30s",
 			"RateLimit": "every30s:1"

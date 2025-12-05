@@ -103,6 +103,9 @@ var Default = Schema{
 		ConsensusCallsLimit:           Int(2000),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
+		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
+			// none by default
+		}),
 
 		CRONTrigger: cronTrigger{
 			FastestScheduleInterval: Duration(30 * time.Second),
@@ -209,6 +212,8 @@ type Workflows struct {
 
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
+
+	ChainAllowed SettingMap[bool]
 
 	CRONTrigger cronTrigger
 	HTTPTrigger httpTrigger

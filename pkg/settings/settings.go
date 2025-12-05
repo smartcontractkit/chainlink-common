@@ -48,6 +48,9 @@ func (s *Setting[T]) UnmarshalText(b []byte) (err error) {
 	if len(b) >= 2 && b[0] == '"' && b[len(b)-1] == '"' {
 		b = b[1 : len(b)-1] // unquote string
 	}
+	if s.Parse == nil {
+		panic("nil Parse func")
+	}
 	s.DefaultValue, err = s.Parse(string(b))
 	if err != nil {
 		err = fmt.Errorf("%s: failed to parse %s: %w", s.Key, string(b), err)
@@ -76,6 +79,10 @@ func MarshaledText[T encoding.TextUnmarshaler](defaultValue T) Setting[T] {
 		err = t.UnmarshalText([]byte(s))
 		return
 	})
+}
+
+func Bool(defaultValue bool) Setting[bool] {
+	return NewSetting(defaultValue, strconv.ParseBool)
 }
 
 func Duration(defaultValue time.Duration) Setting[time.Duration] {

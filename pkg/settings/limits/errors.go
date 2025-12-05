@@ -144,3 +144,24 @@ func (e ErrorQueueFull) Error() string {
 }
 
 var ErrQueueEmpty = fmt.Errorf("queue is empty")
+
+type ErrorNotAllowed struct {
+	Key string
+
+	Scope  settings.Scope
+	Tenant string
+}
+
+func (e ErrorNotAllowed) GRPCStatus() *status.Status {
+	return status.New(codes.PermissionDenied, e.Error())
+}
+
+func (e ErrorNotAllowed) Is(target error) bool {
+	_, ok := target.(ErrorNotAllowed) //nolint:errcheck // implementing errors.Is
+	return ok
+}
+
+func (e ErrorNotAllowed) Error() string {
+	which, who := errArgs(e.Key, e.Scope, e.Tenant)
+	return fmt.Sprintf("%slimited%s: not allowed", which, who)
+}

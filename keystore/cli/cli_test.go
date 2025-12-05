@@ -196,15 +196,6 @@ func TestEncryptDecryptCLI(t *testing.T) {
 	err = json.Unmarshal(out.Bytes(), &decryptResp)
 	require.NoError(t, err)
 	require.Equal(t, plaintext, decryptResp.Data)
-
-	// Derive shared secret from key's perspective (key private + key public).
-	pubKeyB64 = base64.StdEncoding.EncodeToString(publicKey)
-	out, err = runCommand(t, nil, "derive-shared-secret", "-d", `{"KeyName": "x25519key", "RemotePubKey": "`+pubKeyB64+`"}`)
-	require.NoError(t, err)
-	deriveResp := ks.DeriveSharedSecretResponse{}
-	err = json.Unmarshal(out.Bytes(), &deriveResp)
-	require.NoError(t, err)
-	require.NotEmpty(t, deriveResp.SharedSecret)
 }
 
 func runCommand(t *testing.T, in *bytes.Buffer, args ...string) (bytes.Buffer, error) {

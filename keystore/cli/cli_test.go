@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"os"
@@ -14,18 +15,25 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/cli"
 )
 
-func TestCLI(t *testing.T) {
+func setupKeystore(t *testing.T) func(t *testing.T) {
 	tempDir := t.TempDir()
-	defer os.RemoveAll(tempDir)
 	keystoreFile := filepath.Join(tempDir, "keystore.json")
 	f, err := os.Create(keystoreFile)
 	require.NoError(t, err)
-	defer f.Close()
-	os.Setenv("KEYSTORE_FILE_PATH", keystoreFile)
-	os.Setenv("KEYSTORE_PASSWORD", "testpassword")
+	t.Setenv("KEYSTORE_FILE_PATH", keystoreFile)
+	t.Setenv("KEYSTORE_PASSWORD", "testpassword")
+	return func(t *testing.T) {
+		f.Close()
+		os.RemoveAll(tempDir)
+	}
+}
+
+func TestAdminCLI(t *testing.T) {
+	teardown := setupKeystore(t)
+	defer teardown(t)
 
 	// No error just listing help.
-	_, err = runCommand(t, nil, "")
+	_, err := runCommand(t, nil, "")
 	require.NoError(t, err)
 
 	// Create a key.
@@ -112,6 +120,82 @@ func TestCLI(t *testing.T) {
 	err = json.Unmarshal(out.Bytes(), &resp)
 	require.NoError(t, err)
 	require.Empty(t, resp.Keys)
+}
+
+func TestSignerCLI(t *testing.T) {
+	teardown := setupKeystore(t)
+	defer teardown(t)
+
+	// Create an ECDSA key for signing.
+	_, err := runCommand(t, nil, "create", "-d", `{"Keys": [{"KeyName": "ecdsakey", "KeyType": "ECDSA_S256"}]}`)
+	require.NoError(t, err)
+
+	// Get the key to retrieve the public key.
+	out, err := runCommand(t, nil, "get", "-d", `{"KeyNames": ["ecdsakey"]}`)
+	require.NoError(t, err)
+	getResp := ks.GetKeysResponse{}
+	err = json.Unmarshal(out.Bytes(), &getResp)
+	require.NoError(t, err)
+	require.Len(t, getResp.Keys, 1)
+	publicKey := getResp.Keys[0].KeyInfo.PublicKey
+
+	// ECDSA_S256 requires a 32-byte hash to sign.
+	dataToSign := sha256.Sum256([]byte("hello world"))
+	dataB64 := base64.StdEncoding.EncodeToString(dataToSign[:])
+	out, err = runCommand(t, nil, "sign", "-d", `{"KeyName": "ecdsakey", "Data": "`+dataB64+`"}`)
+	require.NoError(t, err)
+	signResp := ks.SignResponse{}
+	err = json.Unmarshal(out.Bytes(), &signResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, signResp.Signature)
+
+	// Verify the signature.
+	sigB64 := base64.StdEncoding.EncodeToString(signResp.Signature)
+	pubKeyB64 := base64.StdEncoding.EncodeToString(publicKey)
+	out, err = runCommand(t, nil, "verify", "-d", `{"KeyType": "ECDSA_S256", "PublicKey": "`+pubKeyB64+`", "Data": "`+dataB64+`", "Signature": "`+sigB64+`"}`)
+	require.NoError(t, err)
+	verifyResp := ks.VerifyResponse{}
+	err = json.Unmarshal(out.Bytes(), &verifyResp)
+	require.NoError(t, err)
+	require.True(t, verifyResp.Valid)
+}
+
+func TestEncryptDecryptCLI(t *testing.T) {
+	teardown := setupKeystore(t)
+	defer teardown(t)
+
+	// Create an X25519 key for encryption.
+	_, err := runCommand(t, nil, "create", "-d", `{"Keys": [{"KeyName": "x25519key", "KeyType": "X25519"}]}`)
+	require.NoError(t, err)
+
+	// Get the key to retrieve the public key.
+	out, err := runCommand(t, nil, "get", "-d", `{"KeyNames": ["x25519key"]}`)
+	require.NoError(t, err)
+	getResp := ks.GetKeysResponse{}
+	err = json.Unmarshal(out.Bytes(), &getResp)
+	require.NoError(t, err)
+	require.Len(t, getResp.Keys, 1)
+	publicKey := getResp.Keys[0].KeyInfo.PublicKey
+
+	// Encrypt some data to the key's public key.
+	plaintext := []byte("secret message")
+	pubKeyB64 := base64.StdEncoding.EncodeToString(publicKey)
+	plaintextB64 := base64.StdEncoding.EncodeToString(plaintext)
+	out, err = runCommand(t, nil, "encrypt", "-d", `{"RemoteKeyType": "X25519", "RemotePubKey": "`+pubKeyB64+`", "Data": "`+plaintextB64+`"}`)
+	require.NoError(t, err)
+	encryptResp := ks.EncryptResponse{}
+	err = json.Unmarshal(out.Bytes(), &encryptResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, encryptResp.EncryptedData)
+
+	// Decrypt the data.
+	encryptedB64 := base64.StdEncoding.EncodeToString(encryptResp.EncryptedData)
+	out, err = runCommand(t, nil, "decrypt", "-d", `{"KeyName": "x25519key", "EncryptedData": "`+encryptedB64+`"}`)
+	require.NoError(t, err)
+	decryptResp := ks.DecryptResponse{}
+	err = json.Unmarshal(out.Bytes(), &decryptResp)
+	require.NoError(t, err)
+	require.Equal(t, plaintext, decryptResp.Data)
 }
 
 func runCommand(t *testing.T, in *bytes.Buffer, args ...string) (bytes.Buffer, error) {

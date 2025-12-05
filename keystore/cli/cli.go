@@ -52,14 +52,14 @@ KEYSTORE_PASSWORD is the password used to encrypt the key material before storag
 	cmd.PersistentFlags().String("keystore-db-url", "", "Overrides KEYSTORE_DB_URL environment variable")
 	cmd.PersistentFlags().String("keystore-password", "", "Overrides KEYSTORE_PASSWORD environment variable. Not recommended as will leave shell traces.")
 
-	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd(), NewSetMetadataCmd())
+	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd(), NewSetMetadataCmd(), NewSignCmd(), NewVerifyCmd(), NewEncryptCmd(), NewDecryptCmd(), NewDeriveSharedSecretCmd())
 	return cmd
 }
 
 func NewListCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "list", Short: "List keys",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 			defer cancel()
 			k, err := loadKeystore(ctx, cmd)
@@ -84,31 +84,10 @@ func NewListCmd() *cobra.Command {
 func NewGetCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "get", Short: "Get keys",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			jsonBytes, err := readJSONInput(cmd)
-			if err != nil {
-				return err
-			}
-			var req ks.GetKeysRequest
-			if err := json.Unmarshal(jsonBytes, &req); err != nil {
-				return fmt.Errorf("invalid JSON request: %w", err)
-			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-			defer cancel()
-			k, err := loadKeystore(ctx, cmd)
-			if err != nil {
-				return err
-			}
-			resp, err := k.GetKeys(ctx, req)
-			if err != nil {
-				return err
-			}
-			jsonBytes, err = json.Marshal(resp)
-			if err != nil {
-				return err
-			}
-			_, err = cmd.OutOrStdout().Write(jsonBytes)
-			return err
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.GetKeysRequest, ks.GetKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.GetKeysRequest) (ks.GetKeysResponse, error) {
+				return k.GetKeys(ctx, req)
+			})
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
@@ -119,32 +98,10 @@ func NewGetCmd() *cobra.Command {
 func NewCreateCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "create", Short: "Create a key",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			jsonBytesIn, err := readJSONInput(cmd)
-			if err != nil {
-				return err
-			}
-			var req ks.CreateKeysRequest
-			err = json.Unmarshal(jsonBytesIn, &req)
-			if err != nil {
-				return err
-			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-			defer cancel()
-			k, err := loadKeystore(ctx, cmd)
-			if err != nil {
-				return err
-			}
-			resp, err := k.CreateKeys(ctx, req)
-			if err != nil {
-				return err
-			}
-			jsonBytes, err := json.Marshal(resp)
-			if err != nil {
-				return err
-			}
-			_, err = cmd.OutOrStdout().Write(jsonBytes)
-			return err
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.CreateKeysRequest, ks.CreateKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.CreateKeysRequest) (ks.CreateKeysResponse, error) {
+				return k.CreateKeys(ctx, req)
+			})
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
@@ -201,13 +158,120 @@ func NewDeleteCmd() *cobra.Command {
 func NewExportCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "export", Short: "Export a key to an encrypted JSON file",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.ExportKeysRequest, ks.ExportKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.ExportKeysRequest) (ks.ExportKeysResponse, error) {
+				return k.ExportKeys(ctx, req)
+			})
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Enc\": {\"Password\": \"pass\", \"ScryptParams\": {\"N\": 1024, \"P\": 1, \"R\": 8}}}]}'")
+	return &cmd
+}
+
+func NewImportCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "import", Short: "Import an encrypted key JSON file",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.ImportKeysRequest, ks.ImportKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.ImportKeysRequest) (ks.ImportKeysResponse, error) {
+				return k.ImportKeys(ctx, req)
+			})
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Data\": \"encBytes\", \"Password\": \"pass\"}]}'")
+	return &cmd
+}
+
+func NewSetMetadataCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "set-metadata", Short: "Set metadata for keys",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.SetMetadataRequest, ks.SetMetadataResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.SetMetadataRequest) (ks.SetMetadataResponse, error) {
+				return k.SetMetadata(ctx, req)
+			})
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Updates\": [{\"KeyName\": \"key1\", \"Metadata\": \"base64-encoded-metadata\"}]}'")
+	return &cmd
+}
+
+func zeroValue[T any]() T {
+	var t T
+	return t
+}
+
+func runKeystoreCommand[Req any, Resp any](cmd *cobra.Command, args []string, fn func(ctx context.Context, k ks.Keystore,
+	req Req) (Resp, error)) error {
+	jsonBytes, err := readJSONInput(cmd)
+	if err != nil {
+		return err
+	}
+	var req Req
+	err = json.Unmarshal(jsonBytes, &req)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
+	defer cancel()
+	k, err := loadKeystore(ctx, cmd)
+	if err != nil {
+		return err
+	}
+	resp, err := fn(ctx, k, req)
+	if err != nil {
+		return err
+	}
+	jsonBytesOut, err := json.Marshal(resp)
+	if err != nil {
+		return err
+	}
+	_, err = cmd.OutOrStdout().Write(jsonBytesOut)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewSignCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "sign", Short: "Sign data with a key",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.SignRequest, ks.SignResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.SignRequest) (ks.SignResponse, error) {
+				return k.Sign(ctx, req)
+			})
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"Data\": \"base64-encoded-data\"}'")
+	return &cmd
+}
+
+func NewVerifyCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "verify", Short: "Verify a signature",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.VerifyRequest, ks.VerifyResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.VerifyRequest) (ks.VerifyResponse, error) {
+				return k.Verify(ctx, req)
+			})
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyType\": \"Ed25519\", \"PublicKey\": \"base64-pubkey\", \"Data\": \"base64-data\", \"Signature\": \"base64-sig\"}'")
+	return &cmd
+}
+
+func NewEncryptCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "encrypt", Short: "Encrypt data to a remote public key",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			jsonBytesIn, err := readJSONInput(cmd)
+			jsonBytes, err := readJSONInput(cmd)
 			if err != nil {
 				return err
 			}
-			var req ks.ExportKeysRequest
-			err = json.Unmarshal(jsonBytesIn, &req)
+			var req ks.EncryptRequest
+			err = json.Unmarshal(jsonBytes, &req)
 			if err != nil {
 				return err
 			}
@@ -217,7 +281,7 @@ func NewExportCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			resp, err := k.ExportKeys(ctx, req)
+			resp, err := k.Encrypt(ctx, req)
 			if err != nil {
 				return err
 			}
@@ -230,19 +294,19 @@ func NewExportCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Enc\": {\"Password\": \"pass\", \"ScryptParams\": {\"N\": 1024, \"P\": 1, \"R\": 8}}}]}'")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"RemoteKeyType\": \"X25519\", \"RemotePubKey\": \"base64-pubkey\", \"Data\": \"base64-data\"}'")
 	return &cmd
 }
 
-func NewImportCmd() *cobra.Command {
+func NewDecryptCmd() *cobra.Command {
 	cmd := cobra.Command{
-		Use: "import", Short: "Import an encrypted key JSON file",
+		Use: "decrypt", Short: "Decrypt data with a key",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			jsonBytes, err := readJSONInput(cmd)
 			if err != nil {
 				return err
 			}
-			var req ks.ImportKeysRequest
+			var req ks.DecryptRequest
 			err = json.Unmarshal(jsonBytes, &req)
 			if err != nil {
 				return err
@@ -253,24 +317,32 @@ func NewImportCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, err = k.ImportKeys(ctx, req)
+			resp, err := k.Decrypt(ctx, req)
+			if err != nil {
+				return err
+			}
+			jsonBytesOut, err := json.Marshal(resp)
+			if err != nil {
+				return err
+			}
+			_, err = cmd.OutOrStdout().Write(jsonBytesOut)
 			return err
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Keys\": [{\"KeyName\": \"key1\", \"Data\": \"encBytes\", \"Password\": \"pass\"}]}'")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"EncryptedData\": \"base64-encrypted-data\"}'")
 	return &cmd
 }
 
-func NewSetMetadataCmd() *cobra.Command {
+func NewDeriveSharedSecretCmd() *cobra.Command {
 	cmd := cobra.Command{
-		Use: "set-metadata", Short: "Set metadata for keys",
+		Use: "derive-shared-secret", Short: "Derive a shared secret between a key and a remote public key",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			jsonBytes, err := readJSONInput(cmd)
 			if err != nil {
 				return err
 			}
-			var req ks.SetMetadataRequest
+			var req ks.DeriveSharedSecretRequest
 			err = json.Unmarshal(jsonBytes, &req)
 			if err != nil {
 				return err
@@ -281,12 +353,20 @@ func NewSetMetadataCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, err = k.SetMetadata(ctx, req)
+			resp, err := k.DeriveSharedSecret(ctx, req)
+			if err != nil {
+				return err
+			}
+			jsonBytesOut, err := json.Marshal(resp)
+			if err != nil {
+				return err
+			}
+			_, err = cmd.OutOrStdout().Write(jsonBytesOut)
 			return err
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Updates\": [{\"KeyName\": \"key1\", \"Metadata\": \"base64-encoded-metadata\"}]}'")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"RemotePubKey\": \"base64-remote-pubkey\"}'")
 	return &cmd
 }
 

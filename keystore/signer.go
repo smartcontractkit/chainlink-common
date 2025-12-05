@@ -82,7 +82,7 @@ func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, err
 			Signature: signature,
 		}, nil
 	default:
-		return SignResponse{}, fmt.Errorf("unsupported key type: %s", key.keyType)
+		return SignResponse{}, fmt.Errorf("unsupported key type: %s, available key types: %s", key.keyType, AllDigitalSignatureKeyTypes.String())
 	}
 }
 
@@ -119,6 +119,6 @@ func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyRespons
 			Valid: valid,
 		}, nil
 	default:
-		return VerifyResponse{}, fmt.Errorf("unsupported key type: %s", req.KeyType)
+		return VerifyResponse{}, fmt.Errorf("unsupported key type: %s, available key types: %s", req.KeyType, AllDigitalSignatureKeyTypes.String())
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -244,7 +245,32 @@ func NewSignCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"Data\": \"base64-encoded-data\"}'")
+	cmd.Flags().StringP("data", "d", "", `
+	Inline JSON request. Data is base64-encoded. 
+	Example:
+	echo -n 'hello' | base64 
+	aGVsbG8=
+
+	./keystore list | jq
+	{
+	  "Keys": [
+	    {
+	      "KeyName": "mykey",
+	      "KeyType": "Ed25519",
+	      "CreatedAt": "2025-01-01T00:00:00Z",
+	      "PublicKey": "GJnS+erQbyuEm1byCjXy+6JqyX5hrGLE8oUuHSb9DFc="
+	    }
+	  ]
+	}
+	./keystore sign -d '{"KeyName": "mykey", "Data": "aGVsbG8="}' | jq
+	{
+	  "Signature": "OVPaQIwQAZycQtiGjhwxZ3KmAdXOHczwi3LpwQTCbtMHfy5mmrp0KusICSO0lzCMeQvxJcd5y6f3siQsohQeCg=="
+	}
+	./keystore verify -d '{"KeyType": "Ed25519", "PublicKey": "GJnS+erQbyuEm1byCjXy+6JqyX5hrGLE8oUuHSb9DFc=", "Data": "aGVsbG8=", "Signature": "OVPaQIwQAZycQtiGjhwxZ3KmAdXOHczwi3LpwQTCbtMHfy5mmrp0KusICSO0lzCMeQvxJcd5y6f3siQsohQeCg=="}' | jq
+	{
+	  "Valid": true
+	}
+	`)
 	return &cmd
 }
 
@@ -258,7 +284,7 @@ func NewVerifyCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyType\": \"Ed25519\", \"PublicKey\": \"base64-pubkey\", \"Data\": \"base64-data\", \"Signature\": \"base64-sig\"}'")
+	cmd.Flags().StringP("data", "d", "", `inline JSON request. All byte fields are base64-encoded. Example: '{"KeyType": "Ed25519", "PublicKey": "<base64>", "Data": "aGVsbG8=", "Signature": "<base64>"}'`)
 	return &cmd
 }
 
@@ -272,7 +298,32 @@ func NewEncryptCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"RemoteKeyType\": \"X25519\", \"RemotePubKey\": \"base64-pubkey\", \"Data\": \"base64-data\"}'")
+	cmd.Flags().StringP("data", "d", "", ` 
+	Inline JSON request. Data/RemotePubKey are base64-encoded.
+	Example:
+	echo -n 'hello' | base64 
+	aGVsbG8=
+
+	./keystore list | jq
+	{
+	  "Keys": [
+	    {
+	      "KeyName": "x25519key",
+	      "KeyType": "X25519",
+	      "CreatedAt": "2025-01-01T00:00:00Z",
+	      "PublicKey": "GJnS+erQbyuEm1byCjXy+6JqyX5hrGLE8oUuHSb9DFc="
+	    }
+	  ]
+	}
+	./keystore encrypt -d '{"RemoteKeyType": "X25519", "RemotePubKey": "GJnS+erQbyuEm1byCjXy+6JqyX5hrGLE8oUuHSb9DFc=", "Data": "aGVsbG8="}' | jq
+	{
+	  "EncryptedData": "ZGVjb3JhdGVkRGF0YQ=="
+	}
+	./keystore decrypt -d '{"KeyName": "x25519key", "EncryptedData": "ZGVjb3JhdGVkRGF0YQ=="}' | jq
+	{
+	  "Data": "aGVsbG8="
+	}
+	`)
 	return &cmd
 }
 
@@ -286,7 +337,7 @@ func NewDecryptCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"EncryptedData\": \"base64-encrypted-data\"}'")
+	cmd.Flags().StringP("data", "d", "", `inline JSON request. EncryptedData is base64-encoded. Example: '{"KeyName": "mykey", "EncryptedData": "<base64>"}'`)
 	return &cmd
 }
 
@@ -339,7 +390,8 @@ func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) 
 	}
 	// Can revisit whether custom scrypt params are actually needed in a CLI context
 	// (I doubt it, so simpler to leave out).
-	return ks.LoadKeystore(ctx, storage, password)
+	lggr := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	return ks.LoadKeystore(ctx, storage, password, ks.WithLogger(lggr))
 }
 
 // readJSONInput reads JSON from either -f/--file (file path, "-" for stdin) or -d/--data (inline JSON).

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -390,8 +389,7 @@ func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) 
 	}
 	// Can revisit whether custom scrypt params are actually needed in a CLI context
 	// (I doubt it, so simpler to leave out).
-	lggr := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	return ks.LoadKeystore(ctx, storage, password, ks.WithLogger(lggr))
+	return ks.LoadKeystore(ctx, storage, password)
 }
 
 // readJSONInput reads JSON from either -f/--file (file path, "-" for stdin) or -d/--data (inline JSON).

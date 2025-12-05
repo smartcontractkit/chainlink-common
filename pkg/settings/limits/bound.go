@@ -54,9 +54,8 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 		updater: newUpdater[N](nil, func(ctx context.Context) (N, error) {
 			return bound.GetOrDefault(ctx, f.Settings)
 		}, nil),
-		defaultBound: bound.DefaultValue,
-		key:          bound.Key,
-		scope:        bound.Scope,
+		key:   bound.Key,
+		scope: bound.Scope,
 	}
 	b.updater.recordLimit = func(ctx context.Context, n N) { b.recordBound(ctx, n) }
 
@@ -115,7 +114,6 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 
 type boundLimiter[N Number] struct {
 	*updater[N]
-	defaultBound N
 
 	key   string // optional
 	scope settings.Scope

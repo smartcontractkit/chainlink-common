@@ -197,11 +197,6 @@ func NewSetMetadataCmd() *cobra.Command {
 	return &cmd
 }
 
-func zeroValue[T any]() T {
-	var t T
-	return t
-}
-
 func runKeystoreCommand[Req any, Resp any](cmd *cobra.Command, args []string, fn func(ctx context.Context, k ks.Keystore,
 	req Req) (Resp, error)) error {
 	jsonBytes, err := readJSONInput(cmd)

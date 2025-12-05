@@ -52,7 +52,7 @@ KEYSTORE_PASSWORD is the password used to encrypt the key material before storag
 	cmd.PersistentFlags().String("keystore-db-url", "", "Overrides KEYSTORE_DB_URL environment variable")
 	cmd.PersistentFlags().String("keystore-password", "", "Overrides KEYSTORE_PASSWORD environment variable. Not recommended as will leave shell traces.")
 
-	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd(), NewSetMetadataCmd(), NewSignCmd(), NewVerifyCmd(), NewEncryptCmd(), NewDecryptCmd(), NewDeriveSharedSecretCmd())
+	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd(), NewSetMetadataCmd(), NewSignCmd(), NewVerifyCmd(), NewEncryptCmd(), NewDecryptCmd())
 	return cmd
 }
 
@@ -265,32 +265,10 @@ func NewVerifyCmd() *cobra.Command {
 func NewEncryptCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "encrypt", Short: "Encrypt data to a remote public key",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			jsonBytes, err := readJSONInput(cmd)
-			if err != nil {
-				return err
-			}
-			var req ks.EncryptRequest
-			err = json.Unmarshal(jsonBytes, &req)
-			if err != nil {
-				return err
-			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-			defer cancel()
-			k, err := loadKeystore(ctx, cmd)
-			if err != nil {
-				return err
-			}
-			resp, err := k.Encrypt(ctx, req)
-			if err != nil {
-				return err
-			}
-			jsonBytesOut, err := json.Marshal(resp)
-			if err != nil {
-				return err
-			}
-			_, err = cmd.OutOrStdout().Write(jsonBytesOut)
-			return err
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.EncryptRequest, ks.EncryptResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.EncryptRequest) (ks.EncryptResponse, error) {
+				return k.Encrypt(ctx, req)
+			})
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
@@ -301,72 +279,14 @@ func NewEncryptCmd() *cobra.Command {
 func NewDecryptCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "decrypt", Short: "Decrypt data with a key",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			jsonBytes, err := readJSONInput(cmd)
-			if err != nil {
-				return err
-			}
-			var req ks.DecryptRequest
-			err = json.Unmarshal(jsonBytes, &req)
-			if err != nil {
-				return err
-			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-			defer cancel()
-			k, err := loadKeystore(ctx, cmd)
-			if err != nil {
-				return err
-			}
-			resp, err := k.Decrypt(ctx, req)
-			if err != nil {
-				return err
-			}
-			jsonBytesOut, err := json.Marshal(resp)
-			if err != nil {
-				return err
-			}
-			_, err = cmd.OutOrStdout().Write(jsonBytesOut)
-			return err
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.DecryptRequest, ks.DecryptResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.DecryptRequest) (ks.DecryptResponse, error) {
+				return k.Decrypt(ctx, req)
+			})
 		},
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
 	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"EncryptedData\": \"base64-encrypted-data\"}'")
-	return &cmd
-}
-
-func NewDeriveSharedSecretCmd() *cobra.Command {
-	cmd := cobra.Command{
-		Use: "derive-shared-secret", Short: "Derive a shared secret between a key and a remote public key",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			jsonBytes, err := readJSONInput(cmd)
-			if err != nil {
-				return err
-			}
-			var req ks.DeriveSharedSecretRequest
-			err = json.Unmarshal(jsonBytes, &req)
-			if err != nil {
-				return err
-			}
-			ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-			defer cancel()
-			k, err := loadKeystore(ctx, cmd)
-			if err != nil {
-				return err
-			}
-			resp, err := k.DeriveSharedSecret(ctx, req)
-			if err != nil {
-				return err
-			}
-			jsonBytesOut, err := json.Marshal(resp)
-			if err != nil {
-				return err
-			}
-			_, err = cmd.OutOrStdout().Write(jsonBytesOut)
-			return err
-		},
-	}
-	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
-	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"KeyName\": \"key1\", \"RemotePubKey\": \"base64-remote-pubkey\"}'")
 	return &cmd
 }
 

@@ -125,7 +125,7 @@ func (k *keystore) Encrypt(ctx context.Context, req EncryptRequest) (EncryptResp
 		}
 		return EncryptResponse{EncryptedData: encrypted}, nil
 	default:
-		k.lggr.Error("encrypt failed: unsupported remote key type, available key types: %s", "remoteKeyType", req.RemoteKeyType.String(), AllEncryptionKeyTypes.String())
+		k.lggr.Error("encrypt failed: unsupported remote key type", "remoteKeyType", req.RemoteKeyType.String(), "availableKeyTypes", AllEncryptionKeyTypes.String())
 		return EncryptResponse{}, ErrEncryptionFailed
 	}
 }
@@ -161,7 +161,7 @@ func (k *keystore) Decrypt(ctx context.Context, req DecryptRequest) (DecryptResp
 		}
 		return DecryptResponse{Data: decrypted}, nil
 	default:
-		k.lggr.Error("decrypt failed: unsupported key type, available key types: %s", "keyType", key.keyType.String(), AllEncryptionKeyTypes.String())
+		k.lggr.Error("decrypt failed: unsupported key type", "keyType", key.keyType.String(), "availableKeyTypes", AllEncryptionKeyTypes.String())
 		return DecryptResponse{}, ErrDecryptionFailed
 	}
 }
@@ -214,7 +214,7 @@ func (k *keystore) DeriveSharedSecret(ctx context.Context, req DeriveSharedSecre
 		}
 		return DeriveSharedSecretResponse{SharedSecret: shared}, nil
 	default:
-		k.lggr.Error("derive shared secret failed: unsupported key type, available key types: %s", "keyType", key.keyType.String(), AllEncryptionKeyTypes.String())
+		k.lggr.Error("derive shared secret failed: unsupported key type", "keyType", key.keyType.String(), "availableKeyTypes", AllEncryptionKeyTypes.String())
 		return DeriveSharedSecretResponse{}, ErrSharedSecretFailed
 	}
 }

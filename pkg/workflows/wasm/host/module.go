@@ -139,21 +139,24 @@ type linkFn[T any] func(m *module, store *wasmtime.Store, exec *execution[T]) (*
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
 // "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
-func WithDeterminism() func(*ModuleConfig) {
-	return func(cfg *ModuleConfig) {
+func WithDeterminism() func(*ModuleConfig) error {
+	return func(cfg *ModuleConfig) error {
 		t, err := time.Parse(time.RFC3339Nano, "2009-01-03T00:00:00Z")
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to parse determinism time: %w", err)
 		}
 
 		cfg.Determinism = &DeterminismConfig{Seed: t.Unix()}
+		return nil
 	}
 }
 
-func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
+func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig) error) (*module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
-		opt(modCfg)
+		if err := opt(modCfg); err != nil {
+			return nil, err
+		}
 	}
 
 	if modCfg.Logger == nil {

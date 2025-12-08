@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -18,7 +19,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	SendRequests(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.EnclaveActionInput) (*capabilities.ResponseAndMetadata[*confidentialhttp.HTTPEnclaveResponseData], error)
+	SendRequests(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.EnclaveActionInput) (*capabilities.ResponseAndMetadata[*confidentialhttp.HTTPEnclaveResponseData], caperrors.Error)
 
 	Start(ctx context.Context) error
 	Close() error

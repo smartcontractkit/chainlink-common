@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-foundation-sdk/go/expr"
-	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
 func TestGenerateJSON(t *testing.T) {
@@ -83,6 +84,7 @@ func TestGenerateJSON(t *testing.T) {
 		}
 
 		json, err := o.GenerateJSON()
+		require.NoError(t, err)
 		require.IsType(t, json, []byte{})
 	})
 }

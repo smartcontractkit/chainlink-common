@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -19,24 +20,24 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*capabilities.ResponseAndMetadata[*evm.CallContractReply], error)
+	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*capabilities.ResponseAndMetadata[*evm.CallContractReply], caperrors.Error)
 
-	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*capabilities.ResponseAndMetadata[*evm.FilterLogsReply], error)
+	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*capabilities.ResponseAndMetadata[*evm.FilterLogsReply], caperrors.Error)
 
-	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*capabilities.ResponseAndMetadata[*evm.BalanceAtReply], error)
+	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*capabilities.ResponseAndMetadata[*evm.BalanceAtReply], caperrors.Error)
 
-	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*capabilities.ResponseAndMetadata[*evm.EstimateGasReply], error)
+	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*capabilities.ResponseAndMetadata[*evm.EstimateGasReply], caperrors.Error)
 
-	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionByHashReply], error)
+	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionByHashReply], caperrors.Error)
 
-	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionReceiptReply], error)
+	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*capabilities.ResponseAndMetadata[*evm.GetTransactionReceiptReply], caperrors.Error)
 
-	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], error)
+	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], caperrors.Error)
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], error)
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], caperrors.Error)
 
 	ChainSelector() uint64
 

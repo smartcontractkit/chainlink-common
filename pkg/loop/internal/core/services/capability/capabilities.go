@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -421,13 +422,14 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		var reportableError *capabilities.RemoteReportableError
-		if errors.As(err, &reportableError) {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
+		var capabilityError caperrors.Error
+		if errors.As(err, &capabilityError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilityError.SerializeToString()}
 		} else {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+			// All other errors are treated as private visibility and are marked as such to prevent accidental or malicious
+			// reporting of sensitive information by prefixing the error message with the remote reportable identifier.
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: caperrors.PrePendPrivateVisibilityIdentifier(err.Error())}
 		}
-
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
 	}
@@ -465,12 +467,7 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
-		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
-			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
-				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
-
-		}
-		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
+		return capabilities.CapabilityResponse{}, caperrors.DeserializeErrorFromString(resp.Error)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

@@ -177,7 +177,7 @@ func NewDeleteCmd() *cobra.Command {
 				}
 				reader := bufio.NewReader(cmd.InOrStdin())
 				line, _ := reader.ReadString('\n')
-				if strings.TrimSpace(line) != "yes\n" {
+				if strings.TrimSpace(line) != "yes" {
 					return errors.New("delete aborted by user")
 				}
 			}

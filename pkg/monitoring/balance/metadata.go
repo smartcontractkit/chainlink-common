@@ -1,3 +1,5 @@
+// Package balance provides a generic chain-agnostic balance monitoring service
+// that tracks account balances across different blockchain networks.
 package balance
 
 import (
@@ -76,9 +78,9 @@ func (m ExecutionMetadata) decodeWorkflowName() string {
 	return string(bytes)
 }
 
+// ValOrUnknown returns the value if it is not empty, otherwise it returns "unknown"
 // This is needed to avoid issues during exporting OTel metrics to Prometheus
 // For more details see https://smartcontract-it.atlassian.net/browse/INFOPLAT-1349
-// ValOrUnknown returns the value if it is not empty, otherwise it returns "unknown"
 func ValOrUnknown(val string) string {
 	if val == "" {
 		return "unknown"
@@ -87,12 +89,12 @@ func ValOrUnknown(val string) string {
 }
 
 // ValShortOrUnknown returns the short len value if not empty or available, otherwise it returns "unknown"
-func ValShortOrUnknown(val string, _len int) string {
-	if val == "" || _len <= 0 {
+func ValShortOrUnknown(val string, maxLen int) string {
+	if val == "" || maxLen <= 0 {
 		return "unknown"
 	}
-	if _len > len(val) {
+	if maxLen > len(val) {
 		return val
 	}
-	return val[:_len]
+	return val[:maxLen]
 }

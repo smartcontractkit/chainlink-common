@@ -1,3 +1,5 @@
+// Package balance provides a generic chain-agnostic balance monitoring service
+// that tracks account balances across different blockchain networks.
 package balance
 
 import (

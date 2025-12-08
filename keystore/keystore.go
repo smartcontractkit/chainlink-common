@@ -98,9 +98,19 @@ const (
 	ECDSA_S256 KeyType = "ECDSA_S256"
 )
 
-var AllKeyTypes = []KeyType{X25519, ECDH_P256, Ed25519, ECDSA_S256}
-var AllEncryptionKeyTypes = []KeyType{X25519, ECDH_P256}
-var AllDigitalSignatureKeyTypes = []KeyType{Ed25519, ECDSA_S256}
+type KeyTypeList []KeyType
+
+func (k KeyTypeList) String() string {
+	types := make([]string, 0, len(k))
+	for _, k := range k {
+		types = append(types, k.String())
+	}
+	return strings.Join(types, ", ")
+}
+
+var AllKeyTypes = KeyTypeList{X25519, ECDH_P256, Ed25519, ECDSA_S256}
+var AllEncryptionKeyTypes = KeyTypeList{X25519, ECDH_P256}
+var AllDigitalSignatureKeyTypes = KeyTypeList{Ed25519, ECDSA_S256}
 
 type ScryptParams struct {
 	N int

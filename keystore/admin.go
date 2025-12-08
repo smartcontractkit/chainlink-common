@@ -232,7 +232,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			}
 			ksCopy[keyReq.KeyName] = newKey(keyReq.KeyType, internal.NewRaw(privateKey.Bytes()), publicKey, time.Now(), []byte{})
 		default:
-			return CreateKeysResponse{}, fmt.Errorf("%w: %s", ErrUnsupportedKeyType, keyReq.KeyType)
+			return CreateKeysResponse{}, fmt.Errorf("%w: %s, available key types: %s", ErrUnsupportedKeyType, keyReq.KeyType, AllKeyTypes.String())
 		}
 
 		created := ksCopy[keyReq.KeyName].createdAt

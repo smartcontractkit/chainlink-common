@@ -270,14 +270,188 @@ func TestNodeJWTAuthenticator_verifyRequestDigest_DigestMismatch(t *testing.T) {
 	assert.Contains(t, err.Error(), "digest mismatch")
 }
 
-func TestNewNodeJWTAuthenticator(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	logger := createTestLogger()
+func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
+	t.Run("without config - backward compatible", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
-	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
 
-	assert.NotNil(t, authenticator)
-	assert.Equal(t, mockProvider, authenticator.nodeAuthProvider)
-	assert.NotNil(t, authenticator.parser)
-	assert.Equal(t, logger, authenticator.logger)
+	t.Run("with config struct with leeway", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		config := &NodeJWTAuthenticatorConfig{
+			Leeway: 5 * time.Second,
+		}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+
+	t.Run("expired token within leeway - should pass", func(t *testing.T) {
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
+
+		config := &NodeJWTAuthenticatorConfig{
+			Leeway: 5 * time.Second,
+		}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+
+		testRequest := testRequest{Field: "test-request"}
+		digest := utils.CalculateRequestDigest(testRequest)
+
+		// Token expired 3 seconds ago (within 5s leeway)
+		now := time.Now()
+		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
+			PublicKey: hex.EncodeToString(csaPubKey),
+			Digest:    digest,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    hex.EncodeToString(csaPubKey),
+				Subject:   hex.EncodeToString(csaPubKey),
+				ExpiresAt: jwt.NewNumericDate(now.Add(-3 * time.Second)),
+				IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
+			},
+		})
+
+		jwtToken, err := token.SignedString(privateKey)
+		require.NoError(t, err)
+
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, testRequest)
+
+		require.NoError(t, err)
+		assert.True(t, valid)
+		assert.NotNil(t, claims)
+		mockProvider.AssertExpectations(t)
+	})
+
+	t.Run("expired token beyond leeway - should fail", func(t *testing.T) {
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+
+		config := &NodeJWTAuthenticatorConfig{
+			Leeway: 5 * time.Second,
+		}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+
+		testRequest := testRequest{Field: "test-request"}
+		digest := utils.CalculateRequestDigest(testRequest)
+
+		// Token expired 10 seconds ago (beyond 5s leeway)
+		now := time.Now()
+		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
+			PublicKey: hex.EncodeToString(csaPubKey),
+			Digest:    digest,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    hex.EncodeToString(csaPubKey),
+				Subject:   hex.EncodeToString(csaPubKey),
+				ExpiresAt: jwt.NewNumericDate(now.Add(-10 * time.Second)),
+				IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
+			},
+		})
+
+		jwtToken, err := token.SignedString(privateKey)
+		require.NoError(t, err)
+
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, testRequest)
+
+		require.Error(t, err)
+		assert.False(t, valid)
+		assert.NotNil(t, claims)
+		assert.Contains(t, err.Error(), "token is expired")
+	})
+
+	t.Run("future token within leeway - should pass", func(t *testing.T) {
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
+
+		config := &NodeJWTAuthenticatorConfig{
+			Leeway: 5 * time.Second,
+		}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+
+		testRequest := testRequest{Field: "test-request"}
+		digest := utils.CalculateRequestDigest(testRequest)
+
+		// Token issued 3 seconds in the future (within 5s leeway)
+		now := time.Now()
+		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
+			PublicKey: hex.EncodeToString(csaPubKey),
+			Digest:    digest,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    hex.EncodeToString(csaPubKey),
+				Subject:   hex.EncodeToString(csaPubKey),
+				ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
+				IssuedAt:  jwt.NewNumericDate(now.Add(3 * time.Second)),
+			},
+		})
+
+		jwtToken, err := token.SignedString(privateKey)
+		require.NoError(t, err)
+
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, testRequest)
+
+		require.NoError(t, err)
+		assert.True(t, valid)
+		assert.NotNil(t, claims)
+		mockProvider.AssertExpectations(t)
+	})
+
+	t.Run("future token beyond leeway - should fail", func(t *testing.T) {
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+
+		config := &NodeJWTAuthenticatorConfig{
+			Leeway: 5 * time.Second,
+		}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+
+		testRequest := testRequest{Field: "test-request"}
+		digest := utils.CalculateRequestDigest(testRequest)
+
+		// Token issued 10 seconds in the future (beyond 5s leeway)
+		now := time.Now()
+		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
+			PublicKey: hex.EncodeToString(csaPubKey),
+			Digest:    digest,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    hex.EncodeToString(csaPubKey),
+				Subject:   hex.EncodeToString(csaPubKey),
+				ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration + 10*time.Second)),
+				IssuedAt:  jwt.NewNumericDate(now.Add(10 * time.Second)),
+			},
+		})
+
+		jwtToken, err := token.SignedString(privateKey)
+		require.NoError(t, err)
+
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, testRequest)
+
+		require.Error(t, err)
+		assert.False(t, valid)
+		assert.NotNil(t, claims)
+		assert.Contains(t, err.Error(), "used before issued")
+	})
+
+	t.Run("with nil config - same as no config", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), nil)
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+
+	t.Run("with zero leeway - no leeway applied", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		config := &NodeJWTAuthenticatorConfig{
+			Leeway: 0,
+		}
+		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
 }

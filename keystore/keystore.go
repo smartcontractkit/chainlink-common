@@ -2,24 +2,75 @@ package keystore
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"slices"
+	"strings"
 	"sync"
+	"testing"
 	"time"
+
+	"log/slog"
 
 	"golang.org/x/crypto/curve25519"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
-	"github.com/smartcontractkit/chainlink-common/keystore/storage"
-	"google.golang.org/protobuf/proto"
 )
 
+type KeyPath []string
+
+func (k KeyPath) String() string {
+	return joinKeySegments(k...)
+}
+
+func (k KeyPath) Base() string {
+	return k[len(k)-1]
+}
+
+func NewKeyPath(segments ...string) KeyPath {
+	return segments
+}
+
+func NewKeyPathFromString(fullName string) KeyPath {
+	return strings.Split(fullName, "/")
+}
+
+// joinKeySegments joins path-like key name segments using "/" and avoids double slashes.
+// Empty segments are skipped so joinKeySegments("EVM", "TX", "my-key") => "EVM/TX/my-key".
+func joinKeySegments(segments ...string) string {
+	cleaned := make([]string, 0, len(segments))
+	for _, s := range segments {
+		s = strings.Trim(s, "/")
+		if s == "" {
+			continue
+		}
+		cleaned = append(cleaned, s)
+	}
+	return strings.Join(cleaned, "/")
+}
+
 type KeyType string
+
+func (k KeyType) String() string {
+	return string(k)
+}
+
+func (k KeyType) IsEncryptionKeyType() bool {
+	return slices.Contains(AllEncryptionKeyTypes, k)
+}
+
+func (k KeyType) IsDigitalSignatureKeyType() bool {
+	return slices.Contains(AllDigitalSignatureKeyTypes, k)
+}
 
 const (
 	// Hybrid encryption (key exchange + encryption) key types.
@@ -31,20 +82,35 @@ const (
 	// - X25519 for ECDH key exchange.
 	// - Box for encryption (ChaCha20Poly1305)
 	X25519 KeyType = "X25519"
-	// TODO: EcdhP256:
+	// ECDH_P256:
 	// - ECDH on P-256
-	// - Encryption with AES-GCM.
+	// - Encryption with AES-GCM and HKDF-SHA256
+	ECDH_P256 KeyType = "ECDH_P256"
 
 	// Digital signature key types.
 	// Ed25519:
 	// - Ed25519 for digital signatures.
-	Ed25519 KeyType = "ed25519"
-	// EcdsaSecp256k1:
+	// - Supports arbitrary messages sizes, no hashing required.
+	Ed25519 KeyType = "Ed25519"
+	// ECDSA_S256:
 	// - ECDSA on secp256k1 for digital signatures.
-	EcdsaSecp256k1 KeyType = "ecdsa-secp256k1"
+	// - Only signs 32 byte digests. Caller must hash the data before signing.
+	ECDSA_S256 KeyType = "ECDSA_S256"
 )
 
-var AllKeyTypes = []KeyType{X25519, Ed25519, EcdsaSecp256k1}
+type KeyTypeList []KeyType
+
+func (k KeyTypeList) String() string {
+	types := make([]string, 0, len(k))
+	for _, k := range k {
+		types = append(types, k.String())
+	}
+	return strings.Join(types, ", ")
+}
+
+var AllKeyTypes = KeyTypeList{X25519, ECDH_P256, Ed25519, ECDSA_S256}
+var AllEncryptionKeyTypes = KeyTypeList{X25519, ECDH_P256}
+var AllDigitalSignatureKeyTypes = KeyTypeList{Ed25519, ECDSA_S256}
 
 type ScryptParams struct {
 	N int
@@ -124,9 +190,9 @@ func newKey(keyType KeyType, privateKey internal.Raw, publicKey []byte, createdA
 	}
 }
 
-// EncryptionParams controls password-based encryption cost.
-// N and P are scrypt parameters; higher values increase CPU/memory cost.
+// EncryptionParams controls password-based encryption.
 // Password is the secret used to derive the encryption key.
+// ScryptParams control CPU/memory cost.
 type EncryptionParams struct {
 	Password     string
 	ScryptParams ScryptParams
@@ -135,8 +201,10 @@ type EncryptionParams struct {
 func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
 	switch keyType {
 	case Ed25519:
-		return ed25519.PublicKey(internal.Bytes(privateKeyBytes)), nil
-	case EcdsaSecp256k1:
+		privateKey := ed25519.PrivateKey(internal.Bytes(privateKeyBytes))
+		publicKey := privateKey.Public().(ed25519.PublicKey)
+		return publicKey, nil
+	case ECDSA_S256:
 		// Here we use SEC1 (uncompressed) format for ECDSA public keys.
 		// Its commonly used and EVM addresses are derived from this format.
 		// We use the geth crypto library for secp256k1 support
@@ -153,6 +221,13 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 			return nil, fmt.Errorf("failed to derive shared secret: %w", err)
 		}
 		return pubKey, nil
+	case ECDH_P256:
+		curve := ecdh.P256()
+		priv, err := curve.NewPrivateKey(internal.Bytes(privateKeyBytes))
+		if err != nil {
+			return nil, fmt.Errorf("invalid P-256 private key: %w", err)
+		}
+		return priv.PublicKey().Bytes(), nil
 	default:
 		// Some types may not have a public key.
 		return []byte{}, nil
@@ -162,14 +237,43 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 type keystore struct {
 	mu       sync.RWMutex
 	keystore map[string]key
-	storage  storage.Storage
+	storage  Storage
 	enc      EncryptionParams
+	lggr     *slog.Logger
 }
 
-func LoadKeystore(ctx context.Context, storage storage.Storage, enc EncryptionParams) (Keystore, error) {
+type Option func(*keystore)
+
+func WithLogger(l *slog.Logger) Option {
+	return func(k *keystore) {
+		if l != nil {
+			k.lggr = l
+		}
+	}
+}
+
+func WithScryptParams(sp ScryptParams) Option {
+	return func(k *keystore) {
+		k.enc.ScryptParams = sp
+	}
+}
+
+// LoadKeystore constructs a keystore with required args (ctx, storage, password)
+// and optional settings via functional options.
+// Default logger is a discard logger and default scrypt params are the standard scrypt params.
+func LoadKeystore(ctx context.Context, storage Storage, password string, opts ...Option) (Keystore, error) {
 	ks := &keystore{
 		storage: storage,
-		enc:     enc,
+		enc: EncryptionParams{
+			Password:     password,
+			ScryptParams: DefaultScryptParams,
+		},
+	}
+	for _, opt := range opts {
+		opt(ks)
+	}
+	if ks.lggr == nil || !testing.Testing() { // logging is not allowed in production binaries
+		ks.lggr = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
 	err := ks.load(ctx)
 	if err != nil {
@@ -185,7 +289,7 @@ func (k *keystore) load(ctx context.Context) error {
 	}
 
 	// If no data exists, return empty keystore
-	if encryptedKeystore == nil || len(encryptedKeystore) == 0 {
+	if len(encryptedKeystore) == 0 {
 		k.keystore = make(map[string]key)
 		return nil
 	}

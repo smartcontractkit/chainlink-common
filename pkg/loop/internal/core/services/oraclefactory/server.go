@@ -108,7 +108,6 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 		return nil, fmt.Errorf("failed to serve new oracle: %w", err)
 	}
 	resources = append(resources, oracleRes)
-
 	s.resources = append(s.resources, resources...)
 	return &oraclefactorypb.NewOracleReply{OracleId: oracleID}, nil
 }

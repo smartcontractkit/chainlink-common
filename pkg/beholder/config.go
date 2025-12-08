@@ -29,11 +29,15 @@ type Config struct {
 	TraceBatchTimeout time.Duration
 	TraceSpanExporter trace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
+	// TraceCompressor sets the gRPC compressor for traces. Valid values: "gzip" (default), "none".
+	TraceCompressor string
 
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View
+	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "none".
+	MetricCompressor string
 
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool
@@ -50,6 +54,8 @@ type Config struct {
 	LogRetryConfig      *RetryConfig
 	LogStreamingEnabled bool          // Enable logs streaming to the OTel log exporter
 	LogLevel            zapcore.Level // Log level for telemetry streaming
+	// LogCompressor sets the gRPC compressor for logs. Valid values: "gzip" (default), "none".
+	LogCompressor string
 
 	// Auth
 	// AuthHeaders serves two purposes:
@@ -110,10 +116,12 @@ func DefaultConfig() Config {
 		// Trace
 		TraceSampleRatio:  1,
 		TraceBatchTimeout: 1 * time.Second,
+		TraceCompressor:   "gzip",
 		// OTel trace exporter retry config
 		TraceRetryConfig: defaultRetryConfig.Copy(),
 		// Metric
 		MetricReaderInterval: 1 * time.Second,
+		MetricCompressor:     "gzip",
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
@@ -124,6 +132,7 @@ func DefaultConfig() Config {
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
 		LogLevel:              zapcore.InfoLevel,
+		LogCompressor:         "gzip",
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

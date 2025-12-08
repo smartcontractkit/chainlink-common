@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 
-	mock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,7 +32,7 @@ func Test_Sleep_Timeout(t *testing.T) {
 	mc := defaultNoDAGModCfg(t)
 	timeout := 1 * time.Second
 	mc.Timeout = &timeout
-	m, err := NewModule(mc, binary)
+	m, err := NewModule(t.Context(), mc, binary)
 	require.NoError(t, err)
 
 	m.v2ImportName = "test"
@@ -63,7 +63,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
-		m, err := NewModule(mc, binary)
+		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -81,7 +81,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 	t.Run("OK can subscribe without setting ExecutionHelper", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
-		m, err := NewModule(mc, binary)
+		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -122,7 +122,7 @@ func Test_NoDAG_LoggingWithLimits(t *testing.T) {
 
 	binary := createTestBinary(loggingLimitsBinaryCmd, loggingLimitsBinaryLocation, true, t)
 
-	m, err := NewModule(cfg, binary)
+	m, err := NewModule(t.Context(), cfg, binary)
 	require.NoError(t, err)
 
 	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)

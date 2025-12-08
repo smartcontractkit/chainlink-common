@@ -8,9 +8,11 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -22,7 +24,7 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -39,7 +41,7 @@ type ExecutableCapability interface {
 	capabilities.BaseCapability
 }
 
-func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) ExecutableCapability {
 	return &ExecutableCapabilityClient{
 		executableClient:     newExecutableClient(brokerExt, conn),
 		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
@@ -52,7 +54,7 @@ type CombinedCapabilityClient struct {
 	*triggerExecutableClient
 }
 
-func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) ExecutableCapability {
 	return &CombinedCapabilityClient{
 		executableClient:        newExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
@@ -135,14 +137,18 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 }
 
 type baseCapabilityClient struct {
+	c    net.ClientConnInterface
 	grpc capabilitiespb.BaseCapabilityClient
 	*net.BrokerExt
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
-func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *baseCapabilityClient {
-	return &baseCapabilityClient{grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) *baseCapabilityClient {
+	return &baseCapabilityClient{c: conn, grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+}
+func (c *baseCapabilityClient) GetState() connectivity.State {
+	return c.c.GetState()
 }
 
 func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -348,7 +354,7 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 	return nil
 }
 
-func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
+func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *triggerExecutableClient {
 	return &triggerExecutableClient{
 		grpc:        capabilitiespb.NewTriggerExecutableClient(conn),
 		BrokerExt:   brokerExt,
@@ -416,13 +422,14 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		var reportableError *capabilities.RemoteReportableError
-		if errors.As(err, &reportableError) {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
+		var capabilityError caperrors.Error
+		if errors.As(err, &capabilityError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilityError.SerializeToString()}
 		} else {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+			// All other errors are treated as private visibility and are marked as such to prevent accidental or malicious
+			// reporting of sensitive information by prefixing the error message with the remote reportable identifier.
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: caperrors.PrePendPrivateVisibilityIdentifier(err.Error())}
 		}
-
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
 	}
@@ -439,7 +446,7 @@ type executableClient struct {
 	*net.BrokerExt
 }
 
-func newExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *executableClient {
+func newExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *executableClient {
 	return &executableClient{
 		grpc:      capabilitiespb.NewExecutableClient(conn),
 		BrokerExt: brokerExt,
@@ -460,12 +467,7 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
-		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
-			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
-				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
-
-		}
-		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
+		return capabilities.CapabilityResponse{}, caperrors.DeserializeErrorFromString(resp.Error)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

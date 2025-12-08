@@ -57,8 +57,15 @@ func (t tonClient) UnregisterFilter(ctx context.Context, in *tonpb.UnregisterFil
 	return t.client.UnregisterFilter(appendRelayID(ctx, t.relayID), in, opts...)
 }
 
-func (s *Server) GetMasterchainInfo(ctx context.Context, request *emptypb.Empty) (*tonpb.BlockIDExt, error) {
-	tonService, err := s.getTONService(ctx)
+type tonServer struct {
+	tonpb.UnimplementedTONServer
+	parent *Server
+}
+
+var _ tonpb.TONServer = (*tonServer)(nil)
+
+func (ts *tonServer) GetMasterchainInfo(ctx context.Context, request *emptypb.Empty) (*tonpb.BlockIDExt, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +78,8 @@ func (s *Server) GetMasterchainInfo(ctx context.Context, request *emptypb.Empty)
 	return &tonpb.BlockIDExt{Workchain: blockIdExt.Workchain, Shard: blockIdExt.Shard, SeqNo: blockIdExt.SeqNo}, nil
 }
 
-func (s *Server) GetBlockData(ctx context.Context, request *tonpb.GetBlockDataRequest) (*tonpb.Block, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) GetBlockData(ctx context.Context, request *tonpb.GetBlockDataRequest) (*tonpb.Block, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +93,8 @@ func (s *Server) GetBlockData(ctx context.Context, request *tonpb.GetBlockDataRe
 	return tonpb.NewBlock(block), nil
 }
 
-func (s *Server) GetAccountBalance(ctx context.Context, request *tonpb.GetAccountBalanceRequest) (*tonpb.Balance, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) GetAccountBalance(ctx context.Context, request *tonpb.GetAccountBalanceRequest) (*tonpb.Balance, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +108,8 @@ func (s *Server) GetAccountBalance(ctx context.Context, request *tonpb.GetAccoun
 	return tonpb.NewBalance(balance), nil
 }
 
-func (s *Server) SendTx(ctx context.Context, request *tonpb.SendTxRequest) (*emptypb.Empty, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) SendTx(ctx context.Context, request *tonpb.SendTxRequest) (*emptypb.Empty, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +123,8 @@ func (s *Server) SendTx(ctx context.Context, request *tonpb.SendTxRequest) (*emp
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) GetTxStatus(ctx context.Context, request *tonpb.GetTxStatusRequest) (*tonpb.GetTxStatusReply, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) GetTxStatus(ctx context.Context, request *tonpb.GetTxStatusRequest) (*tonpb.GetTxStatusReply, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +141,8 @@ func (s *Server) GetTxStatus(ctx context.Context, request *tonpb.GetTxStatusRequ
 	}, nil
 }
 
-func (s *Server) GetTxExecutionFees(ctx context.Context, request *tonpb.GetTxExecutionFeesRequest) (*tonpb.GetTxExecutionFeesReply, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) GetTxExecutionFees(ctx context.Context, request *tonpb.GetTxExecutionFeesRequest) (*tonpb.GetTxExecutionFeesReply, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -151,25 +158,22 @@ func (s *Server) GetTxExecutionFees(ctx context.Context, request *tonpb.GetTxExe
 	}, nil
 }
 
-func (s *Server) HasFilter(ctx context.Context, request *tonpb.HasFilterRequest) (*tonpb.HasFilterReply, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) HasFilter(ctx context.Context, request *tonpb.HasFilterRequest) (*tonpb.HasFilterReply, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	name := request.GetName()
 	exists := tonService.HasFilter(ctx, name)
-	if err != nil {
-		return nil, err
-	}
 
 	return &tonpb.HasFilterReply{
 		Exists: exists,
 	}, nil
 }
 
-func (s *Server) RegisterFilter(ctx context.Context, request *tonpb.RegisterFilterRequest) (*emptypb.Empty, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) RegisterFilter(ctx context.Context, request *tonpb.RegisterFilterRequest) (*emptypb.Empty, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +187,8 @@ func (s *Server) RegisterFilter(ctx context.Context, request *tonpb.RegisterFilt
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) UnregisterFilter(ctx context.Context, request *tonpb.UnregisterFilterRequest) (*emptypb.Empty, error) {
-	tonService, err := s.getTONService(ctx)
+func (ts *tonServer) UnregisterFilter(ctx context.Context, request *tonpb.UnregisterFilterRequest) (*emptypb.Empty, error) {
+	tonService, err := ts.parent.getTONService(ctx)
 	if err != nil {
 		return nil, err
 	}

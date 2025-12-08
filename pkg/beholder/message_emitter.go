@@ -17,6 +17,8 @@ func NewMessageEmitter(logger otellog.Logger) Emitter {
 	}
 }
 
+func (e messageEmitter) Close() error { return nil }
+
 // Emits logs the message, but does not wait for the message to be processed.
 // Open question: what are pros/cons for using use map[]any vs use otellog.KeyValue
 func (e messageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {

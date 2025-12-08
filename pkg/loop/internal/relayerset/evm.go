@@ -91,8 +91,19 @@ func (e evmClient) GetForwarderForEOA(ctx context.Context, in *evmpb.GetForwarde
 	return e.client.GetForwarderForEOA(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
-func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (e evmClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetLatestLPBlockReply, error) {
+	return e.client.GetLatestLPBlock(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+type evmServer struct {
+	evmpb.UnimplementedEVMServer
+	parent *Server
+}
+
+var _ evmpb.EVMServer = (*evmServer)(nil)
+
+func (es *evmServer) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +119,8 @@ func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransa
 	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
 }
 
-func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRequest) (*evmpb.CallContractReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) CallContract(ctx context.Context, request *evmpb.CallContractRequest) (*evmpb.CallContractReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +153,8 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 	}, nil
 }
 
-func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +188,8 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 	return &evmpb.FilterLogsReply{Logs: logs}, nil
 }
 
-func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -209,8 +220,8 @@ func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest)
 	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(reply.Balance)}, nil
 }
 
-func (s *Server) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -228,8 +239,8 @@ func (s *Server) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequ
 	return &evmpb.EstimateGasReply{Gas: gasLimit}, nil
 }
 
-func (s *Server) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -252,8 +263,8 @@ func (s *Server) GetTransactionByHash(ctx context.Context, request *evmpb.GetTra
 	}, nil
 }
 
-func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -276,8 +287,8 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTr
 	}, nil
 }
 
-func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumberRequest) (*evmpb.HeaderByNumberReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumberRequest) (*evmpb.HeaderByNumberReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -309,8 +320,8 @@ func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumb
 	}, nil
 }
 
-func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -343,9 +354,9 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrack
 	return &evmpb.QueryTrackedLogsReply{Logs: l}, nil
 }
 
-func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
+func (es *evmServer) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
 	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
-	evmService, err := s.getEVMService(ctx)
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -358,8 +369,8 @@ func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.
 	return &evmpb.GetFiltersNamesReply{Items: names}, nil
 }
 
-func (s *Server) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -376,8 +387,8 @@ func (s *Server) RegisterLogTracking(ctx context.Context, request *evmpb.Registe
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) UnregisterLogTracking(ctx context.Context, request *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) UnregisterLogTracking(ctx context.Context, request *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -389,8 +400,8 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *evmpb.Unreg
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) GetTransactionStatus(ctx context.Context, request *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -404,8 +415,8 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *evmpb.GetTra
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }
 
-func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -434,8 +445,8 @@ func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTra
 	}, nil
 }
 
-func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -456,8 +467,30 @@ func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.Cal
 	}, nil
 }
 
-func (s *Server) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
-	evmService, err := s.getEVMService(ctx)
+func (es *evmServer) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty) (*evmpb.GetLatestLPBlockReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := evmService.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetLatestLPBlockReply{
+		LpBlock: &evmpb.LPBlock{
+			Hash:                 b.BlockHash[:],
+			LatestBlockNumber:    b.LatestBlockNumber,
+			FinalizedBlockNumber: b.FinalizedBlockNumber,
+			SafeBlockNumber:      b.SafeBlockNumber,
+			BlockTimestamp:       b.BlockTimestamp,
+		},
+	}, nil
+}
+
+func (es *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}

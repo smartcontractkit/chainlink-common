@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -18,7 +19,7 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicCapability interface {
-	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], error)
+	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], caperrors.Error)
 
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
@@ -56,7 +57,7 @@ func (c *BasicServer) Initialise(ctx context.Context, dependencies core.Standard
 	if err := dependencies.CapabilityRegistry.Add(ctx, &basicCapability{
 		BasicCapability: c.BasicCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "basic-test-action-trigger@1.0.0", err)
 	}
 
 	return nil

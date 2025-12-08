@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -19,7 +20,7 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicActionCapability interface {
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *p1.Item) (*capabilities.ResponseAndMetadata[*p2.Item], error)
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *p1.Item) (*capabilities.ResponseAndMetadata[*p2.Item], caperrors.Error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -54,7 +55,7 @@ func (c *BasicActionServer) Initialise(ctx context.Context, dependencies core.St
 	if err := dependencies.CapabilityRegistry.Add(ctx, &basicActionCapability{
 		BasicActionCapability: c.BasicActionCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "import-clash@1.0.0", err)
 	}
 
 	return nil

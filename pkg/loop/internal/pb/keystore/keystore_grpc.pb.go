@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: keystore.proto
+// source: pkg/loop/internal/pb/keystore/keystore.proto
 
 package keystorepb
 
@@ -573,5 +573,5 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "keystore.proto",
+	Metadata: "pkg/loop/internal/pb/keystore/keystore.proto",
 }

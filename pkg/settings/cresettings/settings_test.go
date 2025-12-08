@@ -15,6 +15,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 )
 
 var update = flag.Bool("update", false, "update the golden files of this test")
@@ -98,8 +99,6 @@ func TestSchema_Unmarshal(t *testing.T) {
 }`), &cfg))
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
-	assert.Equal(t, config.Rate{Limit: 200, Burst: 50}, cfg.GatewayUnauthenticatedRequestRateLimit.DefaultValue)
-	assert.Equal(t, config.Rate{Limit: 1, Burst: 100}, cfg.GatewayUnauthenticatedRequestRateLimitPerIP.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
@@ -111,4 +110,51 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 5*time.Minute, cfg.PerWorkflow.HTTPAction.CacheAgeLimit.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
+}
+
+func TestDefaultGetter(t *testing.T) {
+	limit := Default.PerWorkflow.HTTPAction.CallLimit
+
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "foo"})
+	overrideCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "test-wf-id"})
+
+	// Default 5
+	got, err := limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.Equal(t, 5, got)
+
+	// No override
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.Equal(t, 5, got)
+
+	t.Cleanup(reinit) // restore default vars
+	t.Setenv(envNameSettings, `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"HTTPAction": {
+					"CallLimit": "20"
+				}
+			}
+		}
+	}
+}`)
+	reinit() // set default vars
+
+	_ = `
+[workflow.test-wf-id]
+PerWorkflow.HTTPAction.CallLimit = 20
+`
+
+	// Default unchanged
+	got, err = limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.Equal(t, 5, got)
+
+	// Override applied
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.Equal(t, 20, got)
+
 }

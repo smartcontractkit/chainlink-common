@@ -1,3 +1,7 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/smartcontractkit/chainlink-common/keystore.svg)](https://pkg.go.dev/github.com/smartcontractkit/chainlink-common/keystore)
+
+WARNING: In development do not use in production.  
+
 # Keystore
 Design principles:
 - Use structs for typed extensibility of the interfaces. Easy

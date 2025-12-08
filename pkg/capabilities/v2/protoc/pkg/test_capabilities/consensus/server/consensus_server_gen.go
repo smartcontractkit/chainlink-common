@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -19,9 +20,9 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs) (*capabilities.ResponseAndMetadata[*pb.Value], caperrors.Error)
 
-	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest) (*capabilities.ResponseAndMetadata[*sdk.ReportResponse], error)
+	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest) (*capabilities.ResponseAndMetadata[*sdk.ReportResponse], caperrors.Error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -56,7 +57,7 @@ func (c *ConsensusServer) Initialise(ctx context.Context, dependencies core.Stan
 	if err := dependencies.CapabilityRegistry.Add(ctx, &consensusCapability{
 		ConsensusCapability: c.ConsensusCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "consensus@1.0.0-alpha", err)
 	}
 
 	return nil

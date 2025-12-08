@@ -75,6 +75,7 @@ func BenchmarkMultiFeedMonitor(b *testing.B) {
 			kafkaExporterFactory,
 		},
 		100, // bufferCapacity for source pollers
+		1*time.Second,
 	)
 	subs.Go(func() {
 		monitor.Run(ctx, RDDData{feeds, nodes})

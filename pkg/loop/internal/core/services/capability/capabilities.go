@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -421,17 +422,13 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		var reportableError *capabilities.RemoteReportableError
-		var userError *capabilities.ReportableUserError
-		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError
-		if errors.As(err, &userError) {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendReportableUserErrorIdentifier(err.Error())}
-		} else if errors.As(err, &reportableError) {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
+		var capabilityError caperrors.Error
+		if errors.As(err, &capabilityError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilityError.SerializeToString()}
 		} else {
-			// All other errors are treated as remote unreportable and are marked as such to prevent accidental or malicious
+			// All other errors are treated as private visibility and are marked as such to prevent accidental or malicious
 			// reporting of sensitive information by prefixing the error message with the remote reportable identifier.
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteUnreportableErrorIdentifier(err.Error())}
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: caperrors.PrePendPrivateVisibilityIdentifier(err.Error())}
 		}
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
@@ -470,22 +467,7 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
-		// The order is important here, as ReportableUserError is a subtype of RemoteReportableError
-		if capabilities.IsReportableUserErrorMessage(resp.Error) {
-			return capabilities.CapabilityResponse{}, capabilities.NewReportableUserError(
-				errors.New(capabilities.RemoveReportableUserErrorIdentifier(resp.Error)))
-		}
-
-		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
-			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
-				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
-		}
-
-		// The error message may or make not have been prepended with the unreportable error identifier depending on
-		// if the capability is running locally or remotely. In either case, remove the remote unreportable identifier if it exists.
-		removedIdentifierErrorMessage := capabilities.RemoveRemoteUnreportableErrorIdentifier(resp.Error)
-
-		return capabilities.CapabilityResponse{}, errors.New(removedIdentifierErrorMessage)
+		return capabilities.CapabilityResponse{}, caperrors.DeserializeErrorFromString(resp.Error)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

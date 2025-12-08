@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 )
 
@@ -73,7 +74,7 @@ func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID st
 	}
 
 	// check for alert rules by folder UID and group name
-	if alertGroups != nil && len(alertGroups) > 0 {
+	if len(alertGroups) > 0 {
 		for _, alertGroup := range alertGroups {
 			alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
 			if errGetAlertRulesPerGroup != nil {
@@ -219,7 +220,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	}
 
 	// Create contact points for the alerts
-	if o.ContactPoints != nil && len(o.ContactPoints) > 0 {
+	if len(o.ContactPoints) > 0 {
 		for _, contactPoint := range o.ContactPoints {
 			errCreateOrUpdateContactPoint := grafanaClient.CreateOrUpdateContactPoint(contactPoint)
 			if errCreateOrUpdateContactPoint != nil {
@@ -229,7 +230,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	}
 
 	// Create notification policies for the alerts
-	if o.NotificationPolicies != nil && len(o.NotificationPolicies) > 0 {
+	if len(o.NotificationPolicies) > 0 {
 		for _, notificationPolicy := range o.NotificationPolicies {
 			errAddNestedPolicy := grafanaClient.AddNestedPolicy(notificationPolicy)
 			if errAddNestedPolicy != nil {

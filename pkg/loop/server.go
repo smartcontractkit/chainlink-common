@@ -117,7 +117,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 	for _, opt := range opts {
 		opt(&s.cfg)
 	}
-	if s.cfg.settingsGetter != nil {
+	if s.cfg.settingsGetter == nil {
 		s.cfg.settingsGetter = cresettings.DefaultGetter
 	}
 

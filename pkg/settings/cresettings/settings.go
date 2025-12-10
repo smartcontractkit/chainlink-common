@@ -103,6 +103,12 @@ var Default = Schema{
 		ConsensusCallsLimit:           Int(2000),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
+		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
+			// geth-testnet
+			"3379446385462418246": true,
+			// geth-devnet2
+			"12922642891491394802": true,
+		}),
 
 		CRONTrigger: cronTrigger{
 			FastestScheduleInterval: Duration(30 * time.Second),
@@ -209,6 +215,8 @@ type Workflows struct {
 
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
+
+	ChainAllowed SettingMap[bool]
 
 	CRONTrigger cronTrigger
 	HTTPTrigger httpTrigger

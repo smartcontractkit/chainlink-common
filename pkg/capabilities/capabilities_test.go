@@ -302,3 +302,32 @@ func TestParseID(t *testing.T) {
 		})
 	}
 }
+
+func TestChainSelectorLabel(t *testing.T) {
+	for _, tc := range []struct {
+		id     string
+		cs     *uint64
+		errMsg string
+	}{
+		{"none@v1.0.0", nil, ""},
+		{"kv:ChainSelector_1@v1.0.0", ptr[uint64](1), ""},
+		{"kk:ChainSelector:1@v1.0.0", ptr[uint64](1), ""},
+		{"kv-others:k_v:ChainSelector_1@v1.0.0", ptr[uint64](1), ""},
+		{"kk-others:k_v:ChainSelector:1@v1.0.0", ptr[uint64](1), ""},
+
+		{"kv:ChainSelector_foo@v1.0.0", ptr[uint64](1), "invalid chain selector"},
+		{"kk:ChainSelector:bar@v1.0.0", ptr[uint64](1), "invalid chain selector"},
+	} {
+		t.Run(tc.id, func(t *testing.T) {
+			_, labels, _ := ParseID(tc.id)
+			cs, err := ChainSelectorLabel(labels)
+			if tc.errMsg != "" {
+				require.ErrorContains(t, err, tc.errMsg)
+			} else {
+				require.Equal(t, tc.cs, cs)
+			}
+		})
+	}
+}
+
+func ptr[T any](v T) *T { return &v }

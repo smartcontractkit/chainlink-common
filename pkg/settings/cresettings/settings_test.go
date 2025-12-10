@@ -16,6 +16,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 )
 
 var update = flag.Bool("update", false, "update the golden files of this test")
@@ -74,6 +76,12 @@ func TestSchema_Unmarshal(t *testing.T) {
 	},
 	"PerWorkflow": {
 		"WASMMemoryLimit": "250mb",
+		"ChainAllowed": {
+			"Default": "false",
+			"Values": {
+				"1": "true"
+			}
+		},
 		"CRONTrigger": {
 			"RateLimit": "every10s:5"
 		},
@@ -103,6 +111,10 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
+	assert.Equal(t, false, cfg.PerWorkflow.ChainAllowed.Default.DefaultValue)
+	assert.Equal(t, "true", cfg.PerWorkflow.ChainAllowed.Values["1"])
+	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.Default.Parse)
+	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.KeyFromCtx)
 	assert.Equal(t, config.Rate{Limit: rate.Every(10 * time.Second), Burst: 5}, cfg.PerWorkflow.CRONTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(30 * time.Second), Burst: 3}, cfg.PerWorkflow.HTTPTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
@@ -142,11 +154,6 @@ func TestDefaultGetter(t *testing.T) {
 }`)
 	reinit() // set default vars
 
-	_ = `
-[workflow.test-wf-id]
-PerWorkflow.HTTPAction.CallLimit = 20
-`
-
 	// Default unchanged
 	got, err = limit.GetOrDefault(ctx, DefaultGetter)
 	require.NoError(t, err)
@@ -157,4 +164,82 @@ PerWorkflow.HTTPAction.CallLimit = 20
 	require.NoError(t, err)
 	require.Equal(t, 20, got)
 
+}
+
+func TestDefaultGetter_SettingMap(t *testing.T) {
+	limit := Default.PerWorkflow.ChainAllowed
+
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "foo"})
+	ctx = contexts.WithChainSelector(ctx, 1234)
+	overrideCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "test-wf-id"})
+	overrideCtx = contexts.WithChainSelector(overrideCtx, 1234)
+
+	// None allowed by default
+	got, err := limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+
+	t.Cleanup(reinit) // restore default vars
+
+	// Org override to allow
+	t.Setenv(envNameSettings, `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"ChainAllowed": {
+					"Values": {
+						"1234": "true"
+					}
+				}
+			}
+		}
+	}
+}`)
+	reinit() // set default vars
+	got, err = limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.True(t, got)
+
+	// Org override to allow by default, but disallow some
+	t.Setenv(envNameSettings, `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"ChainAllowed": {
+					"Default": true,
+					"Values": {
+						"1234": "false"
+					}
+				}
+			}
+		}
+	}
+}`)
+	reinit() // set default vars
+	got, err = limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(contexts.WithChainSelector(overrideCtx, 42), DefaultGetter)
+	require.NoError(t, err)
+	require.True(t, got)
+}
+
+func TestChainAllows(t *testing.T) {
+	gl, err := limits.MakeGateLimiter(limits.Factory{Logger: logger.Test(t)}, Default.PerWorkflow.ChainAllowed)
+	require.NoError(t, err)
+
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "foo"})
+
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
+	assert.ErrorIs(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)), limits.ErrorNotAllowed{})
 }

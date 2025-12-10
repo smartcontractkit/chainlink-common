@@ -1,0 +1,85 @@
+package settings
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+)
+
+// PerChainSelector returns a new SettingMap for the given values, which is keyed on
+// chain selector from the context.Context.
+func PerChainSelector[T any](defaultValue Setting[T], vals map[string]T) SettingMap[T] {
+	svals := make(map[string]string, len(vals))
+	for k, v := range vals {
+		svals[k] = fmt.Sprint(v)
+	}
+	return SettingMap[T]{
+		Default:    defaultValue,
+		Values:     svals,
+		KeyFromCtx: contexts.ChainSelectorValue,
+	}
+}
+
+type SettingMap[T any] struct {
+	Default    Setting[T]
+	Values     map[string]string                     // unparsed
+	KeyFromCtx func(context.Context) (uint64, error) `json:"-" toml:"-"`
+}
+
+func (s *SettingMap[T]) initSetting(key string, scope Scope, unit *string) error {
+	if s.KeyFromCtx == nil {
+		return errors.New("missing KeyFromCtx func")
+	}
+	return s.Default.initSetting(key, scope, unit)
+}
+
+// GetOrDefault gets the setting from the Getter for the given Scope, or returns the default value with an error.
+func (s *SettingMap[T]) GetOrDefault(ctx context.Context, g Getter) (value T, err error) {
+	if s.KeyFromCtx == nil {
+		return s.Default.DefaultValue, errors.New("missing KeyFromCtx func")
+	}
+	k, err := s.KeyFromCtx(ctx)
+	if err != nil {
+		return s.Default.DefaultValue, fmt.Errorf("failed to get value from context: %w", err)
+	}
+	if g == nil {
+		if str, ok := s.Values[strconv.FormatUint(k, 10)]; ok {
+			value, err = s.Default.Parse(str)
+			if err != nil {
+				return s.Default.DefaultValue, err
+			}
+			return
+		}
+		return s.Default.DefaultValue, nil
+	}
+
+	valueKey := s.Default.Key + ".Values." + strconv.FormatUint(k, 10)
+	defaultKey := s.Default.Key + ".Default"
+
+	// Values override
+	str, err := g.GetScoped(ctx, s.Default.Scope, valueKey)
+	if err != nil {
+		return s.Default.DefaultValue, err
+	} else if str != "" {
+		value, err = s.Default.Parse(str)
+		if err != nil {
+			return s.Default.DefaultValue, err
+		}
+		return
+	}
+
+	// Default override
+	str, err = g.GetScoped(ctx, s.Default.Scope, defaultKey)
+	if err != nil || str == "" {
+		return s.Default.DefaultValue, err
+	}
+
+	value, err = s.Default.Parse(str)
+	if err != nil {
+		return s.Default.DefaultValue, err
+	}
+	return
+}

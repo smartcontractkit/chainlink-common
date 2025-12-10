@@ -85,7 +85,7 @@ type genericBalanceMonitor struct {
 	// Updates the balance metric
 	updateFn func(ctx context.Context, acc string, balance float64) // overridable for testing
 
-	// Cached instance, intermitently reset to nil.
+	// Cached instance, intermittently reset to nil.
 	reader GenericBalanceClient
 
 	stop services.StopChan

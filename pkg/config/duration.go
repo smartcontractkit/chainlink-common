@@ -4,6 +4,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -59,25 +62,24 @@ func (d Duration) String() string {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (d Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.String())
+	// json.Marshal to get a proper JSON string with quotes/escaping
+	return json.Marshal(formatDuration(d.d))
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *Duration) UnmarshalJSON(input []byte) error {
 	var txt string
-	err := json.Unmarshal(input, &txt)
+	if err := json.Unmarshal(input, &txt); err != nil {
+		return err
+	}
+
+	v, err := parseDuration(txt)
 	if err != nil {
 		return err
 	}
-	v, err := time.ParseDuration(txt)
-	if err != nil {
-		return err
-	}
+
 	*d, err = NewDuration(v)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (d *Duration) Scan(v any) (err error) {
@@ -102,14 +104,81 @@ func (d Duration) MarshalText() ([]byte, error) {
 
 // UnmarshalText implements the text.Unmarshaler interface.
 func (d *Duration) UnmarshalText(input []byte) error {
-	v, err := time.ParseDuration(string(input))
+	v, err := parseDuration(string(input))
 	if err != nil {
 		return err
 	}
+
 	pd, err := NewDuration(v)
 	if err != nil {
 		return err
 	}
+
 	*d = pd
+
 	return nil
+}
+
+func formatDuration(dur time.Duration) string {
+	if dur == 0 {
+		return "0s"
+	}
+
+	var parts []string
+
+	days := dur / (24 * time.Hour)
+	if days > 0 {
+		parts = append(parts, fmt.Sprintf("%dd", days))
+		dur %= 24 * time.Hour
+	}
+
+	if days > 0 && dur == 0 {
+		return strings.Join(parts, "")
+	}
+
+	hours := dur / time.Hour
+	minutes := (dur % time.Hour) / time.Minute
+	seconds := (dur % time.Minute) / time.Second
+	nanos := dur % time.Second
+
+	if days > 0 {
+		return fmt.Sprintf("%dd%dh%dm%ds", days, hours, minutes, seconds)
+	}
+
+	if hours > 0 {
+		parts = append(parts, fmt.Sprintf("%dh", hours))
+	}
+	if minutes > 0 || (hours > 0) {
+		parts = append(parts, fmt.Sprintf("%dm", minutes))
+	}
+
+	if dur < time.Second {
+		return dur.String()
+	}
+
+	if nanos == 0 {
+		if seconds > 0 || (minutes > 0) || (hours > 0) {
+			parts = append(parts, fmt.Sprintf("%ds", seconds))
+		}
+	} else {
+		parts = append(parts, fmt.Sprintf("%g", float64(seconds)+float64(nanos)/1e9)+"s")
+	}
+
+	if len(parts) == 0 {
+		return dur.String()
+	}
+
+	return strings.Join(parts, "")
+}
+
+func parseDuration(s string) (time.Duration, error) {
+	if strings.ContainsAny(s, "dhms") {
+		// Replace "d" with "h" and multiply the number by 24
+		re := regexp.MustCompile(`(\d+)d`)
+		s = re.ReplaceAllStringFunc(s, func(match string) string {
+			val, _ := strconv.Atoi(strings.TrimSuffix(match, "d"))
+			return fmt.Sprintf("%dh", val*24)
+		})
+	}
+	return time.ParseDuration(s)
 }

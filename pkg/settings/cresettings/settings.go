@@ -131,7 +131,7 @@ var Default = Schema{
 			TargetsLimit:    Int(10),
 			ReportSizeLimit: Size(5 * config.KByte),
 			EVM: evmChainWrite{
-				TransactionGasLimit: Uint64(5_000_000),
+				TransactionGasLimit: Uint64(2_500_000_000),
 			},
 		},
 		ChainRead: chainRead{

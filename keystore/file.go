@@ -12,12 +12,14 @@ var _ Storage = &FileStorage{}
 
 // FileStorage implements Storage using a file
 type FileStorage struct {
-	name string
+	name    string
+	Example bool
 }
 
 func NewFileStorage(name string) *FileStorage {
 	return &FileStorage{
-		name: name,
+		name:    name,
+		Example: false,
 	}
 }
 

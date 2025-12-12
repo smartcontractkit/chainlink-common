@@ -28,7 +28,7 @@ type clientConfig interface {
 
 // NewRestrictedClient returns a secure HTTP Client (queries to certain
 // local addresses are blocked)
-func NewRestrictedClient(cfg clientConfig, lggr logger.Logger) *http.Client {
+func NewRestrictedClient(cfg clientConfig, lggr logger.Logger, example bool) *http.Client {
 	tr := newDefaultTransport()
 	tr.DialContext = makeRestrictedDialContext(cfg, lggr)
 	return &http.Client{Transport: tr}
@@ -60,6 +60,7 @@ type Request struct {
 	Request *http.Request
 	Config  RequestConfig
 	Logger  logger.Logger
+	Example bool
 }
 
 // RequestConfig holds the configurable settings for a http request

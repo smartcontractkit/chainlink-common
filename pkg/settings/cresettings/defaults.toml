@@ -68,7 +68,7 @@ TargetsLimit = '10'
 ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM]
-TransactionGasLimit = '5000000'
+TransactionGasLimit = '2500000000'
 
 [PerWorkflow.ChainRead]
 CallLimit = '10'

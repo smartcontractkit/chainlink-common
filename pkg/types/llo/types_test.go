@@ -101,6 +101,37 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 		}
 		assert.False(t, a.Equals(b))
 	})
+	t.Run("different Tombstone", func(t *testing.T) {
+		a := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+		}
+		b := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+			Tombstone:    true,
+		}
+		assert.False(t, a.Equals(b))
+	})
+
+	t.Run("different Source", func(t *testing.T) {
+		a := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+			Source:       1,
+		}
+		b := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+			Source:       2,
+		}
+		assert.False(t, a.Equals(b))
+	})
+
 	t.Run("equal", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,

@@ -40,6 +40,8 @@ func reinit() {
 		if err != nil {
 			log.Fatalf("failed to initialize settings: %v", err)
 		}
+	} else {
+		DefaultGetter = nil
 	}
 }
 

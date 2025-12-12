@@ -45,15 +45,18 @@ func (s *SettingMap[T]) GetOrDefault(ctx context.Context, g Getter) (value T, er
 	if err != nil {
 		return s.Default.DefaultValue, fmt.Errorf("failed to get value from context: %w", err)
 	}
-	if g == nil {
+	valueOrDefault := func() (T, error) {
 		if str, ok := s.Values[strconv.FormatUint(k, 10)]; ok {
 			value, err = s.Default.Parse(str)
 			if err != nil {
 				return s.Default.DefaultValue, err
 			}
-			return
+			return value, nil
 		}
 		return s.Default.DefaultValue, nil
+	}
+	if g == nil {
+		return valueOrDefault()
 	}
 
 	valueKey := s.Default.Key + ".Values." + strconv.FormatUint(k, 10)
@@ -66,7 +69,7 @@ func (s *SettingMap[T]) GetOrDefault(ctx context.Context, g Getter) (value T, er
 	} else if str != "" {
 		value, err = s.Default.Parse(str)
 		if err != nil {
-			return s.Default.DefaultValue, err
+			return valueOrDefault()
 		}
 		return
 	}
@@ -74,12 +77,12 @@ func (s *SettingMap[T]) GetOrDefault(ctx context.Context, g Getter) (value T, er
 	// Default override
 	str, err = g.GetScoped(ctx, s.Default.Scope, defaultKey)
 	if err != nil || str == "" {
-		return s.Default.DefaultValue, err
+		return valueOrDefault()
 	}
 
 	value, err = s.Default.Parse(str)
 	if err != nil {
-		return s.Default.DefaultValue, err
+		return valueOrDefault()
 	}
 	return
 }

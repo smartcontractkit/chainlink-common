@@ -97,3 +97,29 @@ func SkipFlakey(t *testing.T, ticketURL string) {
 		t.Skip("Flakey", ticketURL)
 	}
 }
+
+const envVarTestSuite = "CL_CURRENT_TEST_SUITE"
+
+// BelongsToCISuite declares the test's suite, and only runs the tests if the environment is configured
+// to run the given suite. Usage inside a test:
+//
+//	func TestFoo(t *testing.T) {
+//	    testutil.BelongsToCISuite(t, "integration")
+//	    ...
+//	}
+//
+// If CL_CURRENT_TEST_SUITE is not set, all tests are run.
+// If CL_CURRENT_TEST_SUITE is set, only tests belonging to that suite are run; others are skipped.
+//
+// In general - this allows CI pipelines to run more targeted tests, to speed up feedback loops.
+func BelongsToCISuite(t *testing.T, suite string) {
+	t.Helper()
+
+	envSuite := os.Getenv(envVarTestSuite)
+	if envSuite == "" {
+		return
+	}
+	if envSuite != suite {
+		t.Skipf("Skipping test: suite %q does not match %s=%q", suite, envVarTestSuite, envSuite)
+	}
+}

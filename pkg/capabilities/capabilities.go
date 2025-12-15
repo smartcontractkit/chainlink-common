@@ -341,15 +341,20 @@ type TriggerExecutable interface {
 	AckEvent(ctx context.Context, triggerId string, eventId string) error
 }
 
-type BaseTriggerCapability struct {
+type BaseTriggerCapability interface {
 	/*
 	 Keeps track of workflow registrations (similar to LLO streams trigger).
 	 Handles retransmits based on T_retransmit and T_max.
 	 Persists pending events in the DB to be resilient to node restarts.
 	*/
+	deliverEvent(event *TriggerEvent, workflowIDs []string) error
 }
 
-func (*BaseTriggerCapability) deliverEvent(event *TriggerEvent, workflowIDs []string) error {
+type BaseTriggerCapabilityImpl struct {
+	// TODO: Every Trigger Capability should use this common implementation
+}
+
+func (*BaseTriggerCapabilityImpl) deliverEvent(event *TriggerEvent, workflowIDs []string) error {
 	/*
 	 Base Trigger Capability can interact with the Don2Don layer (in the remote capability setting)
 	 as well as directly with a consumer (in the local setting).
@@ -359,8 +364,8 @@ func (*BaseTriggerCapability) deliverEvent(event *TriggerEvent, workflowIDs []st
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
 type TriggerCapability interface {
-	BaseTriggerCapability
 	BaseCapability
+	BaseTriggerCapability
 	TriggerExecutable
 }
 

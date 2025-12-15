@@ -2,8 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -70,11 +68,7 @@ func NewSleeperTaskCtx(w WorkerCtx) *SleeperTask {
 func (s *SleeperTask) Stop() error {
 	return s.StopOnce("SleeperTask-"+s.worker.Name(), func() error {
 		close(s.chStop)
-		select {
-		case <-s.chDone:
-		case <-time.After(15 * time.Second):
-			return fmt.Errorf("SleeperTask-%s took too long to stop", s.worker.Name())
-		}
+		<-s.chDone
 		return nil
 	})
 }

@@ -338,10 +338,28 @@ type OCRAttributedOnchainSignature struct {
 type TriggerExecutable interface {
 	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
 	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
+	AckEvent(ctx context.Context, triggerId string, eventId string) error
+}
+
+type BaseTriggerCapability struct {
+	/*
+	 Keeps track of workflow registrations (similar to LLO streams trigger).
+	 Handles retransmits based on T_retransmit and T_max.
+	 Persists pending events in the DB to be resilient to node restarts.
+	*/
+}
+
+func (*BaseTriggerCapability) deliverEvent(event *TriggerEvent, workflowIDs []string) error {
+	/*
+	 Base Trigger Capability can interact with the Don2Don layer (in the remote capability setting)
+	 as well as directly with a consumer (in the local setting).
+	*/
+	return nil // only when the event is successfully persisted and ready to be reliably delivered
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
 type TriggerCapability interface {
+	BaseTriggerCapability
 	BaseCapability
 	TriggerExecutable
 }

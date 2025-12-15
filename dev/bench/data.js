@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765568260282,
+  "lastUpdate": 1765812525045,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -33720,6 +33720,66 @@ window.BENCHMARK_DATA = {
             "value": 140891,
             "unit": "ns/op",
             "extra": "8252 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "debc92f09a5e68297a4f97ebce7f8e2961b33612",
+          "message": "Port generic chain-agnostic balance monitor to cl-common (#1728)\n\n* Move generic chain-agnostic balance monitor to cl-common\n\n* gomods tidy\n\n* lint\n\n* lint\n\n* fix typo",
+          "timestamp": "2025-12-15T15:22:34Z",
+          "tree_id": "f41873c4befd4c76e9a2b3bada6f44a973b1feab",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/debc92f09a5e68297a4f97ebce7f8e2961b33612"
+        },
+        "date": 1765812523692,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 695.2,
+            "unit": "ns/op",
+            "extra": "1459387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93374,
+            "unit": "ns/op",
+            "extra": "12753 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.6,
+            "unit": "ns/op",
+            "extra": "2792451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95222,
+            "unit": "ns/op",
+            "extra": "12609 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26635,
+            "unit": "ns/op",
+            "extra": "45055 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140907,
+            "unit": "ns/op",
+            "extra": "7569 times\n4 procs"
           }
         ]
       }

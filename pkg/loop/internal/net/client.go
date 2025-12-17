@@ -84,6 +84,18 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply 
 	for cc != nil {
 		err := cc.Invoke(ctx, method, args, reply, opts...)
 		if isErrTerminal(err) {
+			if ctx.Err() != nil {
+				// If the context gets canceled or its deadline is exceeded, stop trying to
+				// connect in order to not block the caller indefinitely.
+				// If for whatever reason the LOOPP is down the client should retry whatever
+				// call they were making.
+				c.Logger.Warnw("clientConn: Invoke: context canceled, stopping refresh",
+					"method", method,
+					"err", err,
+					"ctxErr", ctx.Err())
+				// TODO: also return ctx.Err()?
+				return err
+			}
 			if method == pb.Service_Close_FullMethodName {
 				// don't reconnect just to call Close
 				c.Logger.Warnw("clientConn: Invoke: terminal error", "method", method, "err", err)
@@ -91,6 +103,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply 
 			}
 			c.Logger.Errorw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
 			cc, refErr = c.refresh(ctx, cc)
+			// TODO: refErr is never checked, should it? e.g. context being done and having to return?
 			continue
 		}
 		return err
@@ -110,6 +123,18 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	for cc != nil {
 		s, err := cc.NewStream(ctx, desc, method, opts...)
 		if isErrTerminal(err) {
+			if ctx.Err() != nil {
+				// If the context gets canceled or its deadline is exceeded, stop trying to
+				// connect in order to not block the caller indefinitely.
+				// If for whatever reason the LOOPP is down the client should retry whatever
+				// call they were making.
+				c.Logger.Warnw("clientConn: Invoke: context canceled, stopping refresh",
+					"method", method,
+					"err", err,
+					"ctxErr", ctx.Err())
+				// TODO: also return ctx.Err()?
+				return s, err
+			}
 			c.Logger.Errorw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
 			cc, refErr = c.refresh(ctx, cc)
 			continue
@@ -180,4 +205,17 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 	}
 
 	return c.cc, nil
+}
+
+// Close closes the underlying connection and all dependencies.
+func (c *clientConn) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cc != nil {
+		if err := c.cc.Close(); err != nil {
+			c.Logger.Errorw("Client close failed", "err", err)
+		}
+	}
+	c.CloseAll(c.deps...)
+	return nil
 }

@@ -87,7 +87,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply 
 			if ctx.Err() != nil {
 				// If the context gets canceled or its deadline is exceeded, stop trying to
 				// connect in order to not block the caller indefinitely.
-				// If for whatever reason the LOOPP is down the client should retry whatever
+				// If for whatever reason the LOOPP is down the caller should retry whatever
 				// call they were making.
 				c.Logger.Warnw("clientConn: Invoke: context canceled, stopping refresh",
 					"method", method,
@@ -126,9 +126,9 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 			if ctx.Err() != nil {
 				// If the context gets canceled or its deadline is exceeded, stop trying to
 				// connect in order to not block the caller indefinitely.
-				// If for whatever reason the LOOPP is down the client should retry whatever
+				// If for whatever reason the LOOPP is down the caller should retry whatever
 				// call they were making.
-				c.Logger.Warnw("clientConn: Invoke: context canceled, stopping refresh",
+				c.Logger.Warnw("clientConn: NewStream: context canceled, stopping refresh",
 					"method", method,
 					"err", err,
 					"ctxErr", ctx.Err())

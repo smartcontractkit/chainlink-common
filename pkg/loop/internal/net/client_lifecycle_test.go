@@ -90,8 +90,7 @@ func TestClient_Lifecycle(t *testing.T) {
 
 		// This call should return Canceled immediately and NOT trigger refresh.
 		err = setup.Invoke(ctxCancelled, "/Service/Foo", nil, nil)
-
-		require.Equal(t, codes.Canceled, status.Code(err))
+		require.ErrorIs(t, err, context.Canceled)
 
 		// If the bug exists, newClientFn will be called AGAIN (incrementing to 2).
 		// If fixed, it should remain 1.
@@ -136,7 +135,7 @@ func TestClient_Lifecycle(t *testing.T) {
 		stream, err := setup.NewStream(ctxCancelled, &grpc.StreamDesc{StreamName: "Foo", ClientStreams: true, ServerStreams: true}, "/Service/Foo")
 
 		require.Error(t, err)
-		require.Equal(t, codes.Canceled, status.Code(err))
+		require.ErrorIs(t, err, context.Canceled)
 		require.Nil(t, stream)
 
 		require.Equal(t, 1, setup.newClientCalls, "Should NOT refresh connection on NewStream context cancellation")

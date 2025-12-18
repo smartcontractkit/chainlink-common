@@ -89,12 +89,11 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply 
 				// connect in order to not block the caller indefinitely.
 				// If for whatever reason the LOOPP is down the caller should retry whatever
 				// call they were making.
-				c.Logger.Warnw("clientConn: Invoke: context canceled, stopping refresh",
+				c.Logger.Warnw("clientConn: Invoke: context done, stopping refresh",
 					"method", method,
 					"err", err,
 					"ctxErr", ctx.Err())
-				// TODO: also return ctx.Err()?
-				return err
+				return ctx.Err()
 			}
 			if method == pb.Service_Close_FullMethodName {
 				// don't reconnect just to call Close
@@ -128,12 +127,11 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 				// connect in order to not block the caller indefinitely.
 				// If for whatever reason the LOOPP is down the caller should retry whatever
 				// call they were making.
-				c.Logger.Warnw("clientConn: NewStream: context canceled, stopping refresh",
+				c.Logger.Warnw("clientConn: NewStream: context done, stopping refresh",
 					"method", method,
 					"err", err,
 					"ctxErr", ctx.Err())
-				// TODO: also return ctx.Err()?
-				return s, err
+				return s, ctx.Err()
 			}
 			c.Logger.Errorw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
 			cc, refErr = c.refresh(ctx, cc)

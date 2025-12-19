@@ -54,7 +54,6 @@ var Config Schema
 var Default = Schema{
 	WorkflowLimit:                     Int(200),
 	WorkflowExecutionConcurrencyLimit: Int(200),
-	WorkflowTriggerRateLimit:          Rate(200, 200),
 	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
@@ -69,12 +68,10 @@ var Default = Schema{
 	VaultRequestBatchSizeLimit:        Int(10),
 
 	PerOrg: Orgs{
-		WorkflowDeploymentRateLimit: Rate(rate.Every(time.Minute), 1),
-		ZeroBalancePruningTimeout:   Duration(24 * time.Hour),
+		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
 	},
 	PerOwner: Owners{
 		WorkflowExecutionConcurrencyLimit: Int(5),
-		WorkflowTriggerRateLimit:          Rate(5, 5),
 
 		// DANGER(cedric): Be extremely careful changing this vault limit as it acts as a default value
 		// used by the Vault OCR plugin -- changing this value could cause issues with the plugin during an image
@@ -83,7 +80,6 @@ var Default = Schema{
 		VaultSecretsLimit: Int(100),
 	},
 	PerWorkflow: Workflows{
-		TriggerRateLimit:              Rate(rate.Every(30*time.Second), 3),
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
 		TriggerEventQueueLimit:        Int(1_000),
 		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
@@ -100,9 +96,6 @@ var Default = Schema{
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
 		WASMConfigSizeLimit:           Size(config.MByte),
 		WASMSecretsSizeLimit:          Size(config.MByte),
-		WASMResponseSizeLimit:         Size(100 * config.KByte),
-		ConsensusObservationSizeLimit: Size(100 * config.KByte),
-		ConsensusCallsLimit:           Int(2000),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
@@ -114,13 +107,11 @@ var Default = Schema{
 
 		CRONTrigger: cronTrigger{
 			FastestScheduleInterval: Duration(30 * time.Second),
-			RateLimit:               Rate(rate.Every(30*time.Second), 1),
 		},
 		HTTPTrigger: httpTrigger{
 			RateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
 		LogTrigger: logTrigger{
-			Limit:                    Int(5),
 			EventRateLimit:           Rate(rate.Every(time.Minute/10), 10),
 			FilterAddressLimit:       Int(5),
 			FilterTopicsPerSlotLimit: Int(10),
@@ -156,9 +147,7 @@ var Default = Schema{
 type Schema struct {
 	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	// Deprecated
-	WorkflowTriggerRateLimit        Setting[config.Rate]
-	GatewayIncomingPayloadSizeLimit Setting[config.Size]
+	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
@@ -172,21 +161,15 @@ type Schema struct {
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
-	// Deprecated
-	WorkflowDeploymentRateLimit Setting[config.Rate]
-	ZeroBalancePruningTimeout   Setting[time.Duration]
+	ZeroBalancePruningTimeout Setting[time.Duration]
 }
 
 type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	// Deprecated
-	WorkflowTriggerRateLimit Setting[config.Rate]
-	VaultSecretsLimit        Setting[int] `unit:"{secret}"`
+	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 }
 
 type Workflows struct {
-	// Deprecated
-	TriggerRateLimit            Setting[config.Rate]
 	TriggerRegistrationsTimeout Setting[time.Duration]
 	TriggerSubscriptionTimeout  Setting[time.Duration]
 	TriggerSubscriptionLimit    Setting[int] `unit:"{subscription}"`
@@ -207,13 +190,6 @@ type Workflows struct {
 	WASMCompressedBinarySizeLimit Setting[config.Size]
 	WASMConfigSizeLimit           Setting[config.Size]
 	WASMSecretsSizeLimit          Setting[config.Size]
-	// Deprecated: use ExecutionResponseLimit
-	WASMResponseSizeLimit Setting[config.Size]
-
-	// Deprecated: use Consensus.ObservationSizeLimit
-	ConsensusObservationSizeLimit Setting[config.Size]
-	// Deprecated: use Consensus.CallLimit
-	ConsensusCallsLimit Setting[int] `unit:"{call}"`
 
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
@@ -232,15 +208,11 @@ type Workflows struct {
 
 type cronTrigger struct {
 	FastestScheduleInterval Setting[time.Duration]
-	// Deprecated: to be removed
-	RateLimit Setting[config.Rate]
 }
 type httpTrigger struct {
 	RateLimit Setting[config.Rate]
 }
 type logTrigger struct {
-	// Deprecated
-	Limit                    Setting[int] `unit:"{trigger}"`
 	EventRateLimit           Setting[config.Rate]
 	EventSizeLimit           Setting[config.Size]
 	FilterAddressLimit       Setting[int] `unit:"{address}"`

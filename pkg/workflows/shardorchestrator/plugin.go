@@ -44,8 +44,8 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 	if cfg == nil {
 		cfg = &ConsensusConfig{
 			MinShardCount: 1,
-			MaxShardCount: 10,
-			BatchSize:     100,
+			MaxShardCount: 100,
+			BatchSize:     1000,
 		}
 	}
 
@@ -101,8 +101,8 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	prevOutcome := &pb.Outcome{}
-	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
-		p.lggr.Warnf("failed to unmarshal previous outcome: %v", err)
+	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil || prevOutcome.State == nil {
+		p.lggr.Warnf("failed to unmarshal previous outcome or state is nil")
 		prevOutcome = &pb.Outcome{
 			State: &pb.RoutingState{
 				Id: 0,
@@ -116,8 +116,9 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	currentShardHealth := make(map[uint32]int)
 	totalObservations := len(aos)
+	allWorkflows := []string{}
 
-	// Collect shard health observations
+	// Collect shard health observations and workflows
 	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
@@ -130,13 +131,29 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 				currentShardHealth[shardID]++
 			}
 		}
+
+		// Collect workflow IDs
+		allWorkflows = append(allWorkflows, observation.Hashes...)
 	}
+
+	// Deduplicate workflows
+	workflowMap := make(map[string]bool)
+	for _, wf := range allWorkflows {
+		workflowMap[wf] = true
+	}
+	allWorkflows = make([]string, 0, len(workflowMap))
+	for wf := range workflowMap {
+		allWorkflows = append(allWorkflows, wf)
+	}
+	slices.Sort(allWorkflows) // Ensure deterministic order
 
 	// Determine desired shard count based on observations
 	healthyShardCount := uint32(0)
-	for _, count := range currentShardHealth {
+	for shardID, count := range currentShardHealth {
 		if count > int(p.config.F) {
 			healthyShardCount++
+			// Update store with healthy shard
+			p.store.SetShardHealth(shardID, true)
 		}
 	}
 
@@ -148,6 +165,15 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		healthyShardCount = p.maxShardCount
 	}
 
+	// Use deterministic hashing to assign workflows to shards
+	routes := make(map[string]*pb.WorkflowRoute)
+	for _, wfID := range allWorkflows {
+		assignedShard := p.store.GetShardForWorkflow(wfID)
+		routes[wfID] = &pb.WorkflowRoute{
+			Shard: assignedShard,
+		}
+	}
+
 	// Update routing state
 	outcome := &pb.Outcome{
 		State: &pb.RoutingState{
@@ -156,17 +182,10 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 				RoutableShards: healthyShardCount,
 			},
 		},
-		Routes: make(map[string]*pb.WorkflowRoute),
+		Routes: routes,
 	}
 
-	p.lggr.Infow("Consensus Outcome", "healthyShards", healthyShardCount, "totalObservations", totalObservations)
-
-	// Copy previous routes
-	if prevOutcome.Routes != nil {
-		for wfID, route := range prevOutcome.Routes {
-			outcome.Routes[wfID] = route
-		}
-	}
+	p.lggr.Infow("Consensus Outcome", "healthyShards", healthyShardCount, "totalObservations", totalObservations, "workflowCount", len(routes))
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
 }

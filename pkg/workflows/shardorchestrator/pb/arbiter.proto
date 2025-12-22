@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package shardorchestrator;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb";
+
+message ShardStatus {
+  map<uint32, bool> status = 1; // shard_id -> is_healthy
+}
+
+message ArbiterResponse {
+  uint32 want_shards = 1;
+}
+
+service Arbiter {
+  rpc GetDesiredReplicas(ShardStatus) returns (ArbiterResponse);
+}
+
+message ReplicaStatus {
+  uint32 want_shards = 1;
+  map<uint32, bool> status = 2;
+}
+
+message ConsensusWantShardsRequest {
+  uint32 n_shards = 1;
+}
+
+service ArbiterScaler {
+  rpc Status(google.protobuf.Empty) returns (ReplicaStatus);
+  rpc ConsensusWantShards(ConsensusWantShardsRequest) returns (google.protobuf.Empty);
+}
+

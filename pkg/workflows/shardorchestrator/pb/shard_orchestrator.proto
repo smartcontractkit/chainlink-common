@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package shardorchestrator;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb";
+
+message GetWorkflowShardMappingRequest {
+  repeated string workflow_ids = 1;
+}
+
+message WorkflowMappingState {
+  uint32 old_shard_id = 1;
+  uint32 new_shard_id = 2;
+  bool in_transition = 3;
+  google.protobuf.Timestamp last_updated = 4;
+}
+
+message GetWorkflowShardMappingResponse {
+  map<string, uint32> mappings = 1;
+  map<string, WorkflowMappingState> mapping_states = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  uint64 mapping_version = 4;
+}
+
+message SyncCapabilityJobSpecsRequest {
+  uint32 shard_id = 1;
+}
+
+message SyncCapabilityJobSpecsResponse {
+  enum SyncAction {
+    UNKNOWN = 0;
+    CREATE = 1;
+    UPDATE = 2;
+    DELETE = 3;
+    FULL_SYNC = 4;
+  }
+  
+  SyncAction action = 1;
+  string job_spec_id = 2;
+  string command = 3;
+  string config = 4;
+  map<string, string> template_context = 6;
+  uint64 spec_version = 7;
+  repeated string all_spec_ids = 8;
+  google.protobuf.Timestamp sync_timestamp = 9;
+}
+
+message ReportWorkflowTriggerRegistrationRequest {
+  uint32 source_shard_id = 1;
+  map<string, uint32> registered_workflows = 2;
+  google.protobuf.Timestamp report_timestamp = 3;
+  uint32 total_active_workflows = 4;
+}
+
+service ShardOrchestratorService {
+  rpc GetWorkflowShardMapping(GetWorkflowShardMappingRequest) returns (GetWorkflowShardMappingResponse);
+  rpc SyncCapabilityJobSpecs(SyncCapabilityJobSpecsRequest) returns (SyncCapabilityJobSpecsResponse);
+  rpc ReportWorkflowTriggerRegistration(ReportWorkflowTriggerRegistrationRequest) returns (google.protobuf.Empty);
+}
+

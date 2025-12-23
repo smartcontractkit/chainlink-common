@@ -273,7 +273,6 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 				Report: types.Report(outcome),
 				Info:   infoBytes,
 			},
-			TransmissionScheduleOverride: allOraclesTransmitNow,
 		},
 	}, nil
 }

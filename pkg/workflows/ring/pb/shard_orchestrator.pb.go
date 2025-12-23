@@ -304,7 +304,7 @@ func (x *SyncCapabilityJobSpecsRequest) GetShardId() uint32 {
 
 type SyncCapabilityJobSpecsResponse struct {
 	state           protoimpl.MessageState                    `protogen:"open.v1"`
-	Action          SyncCapabilityJobSpecsResponse_SyncAction `protobuf:"varint,1,opt,name=action,proto3,enum=shardorchestrator.SyncCapabilityJobSpecsResponse_SyncAction" json:"action,omitempty"`
+	Action          SyncCapabilityJobSpecsResponse_SyncAction `protobuf:"varint,1,opt,name=action,proto3,enum=ring.SyncCapabilityJobSpecsResponse_SyncAction" json:"action,omitempty"`
 	JobSpecId       string                                    `protobuf:"bytes,2,opt,name=job_spec_id,json=jobSpecId,proto3" json:"job_spec_id,omitempty"`
 	Command         string                                    `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
 	Config          string                                    `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
@@ -518,7 +518,7 @@ var File_shard_orchestrator_proto protoreflect.FileDescriptor
 
 const file_shard_orchestrator_proto_rawDesc = "" +
 	"\n" +
-	"\x18shard_orchestrator.proto\x12\x11shardorchestrator\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n" +
+	"\x18shard_orchestrator.proto\x12\x04ring\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n" +
 	"\x1eGetWorkflowShardMappingRequest\x12!\n" +
 	"\fworkflow_ids\x18\x01 \x03(\tR\vworkflowIds\"\xbe\x01\n" +
 	"\x14WorkflowMappingState\x12 \n" +
@@ -527,26 +527,26 @@ const file_shard_orchestrator_proto_rawDesc = "" +
 	"\fnew_shard_id\x18\x02 \x01(\rR\n" +
 	"newShardId\x12#\n" +
 	"\rin_transition\x18\x03 \x01(\bR\finTransition\x12=\n" +
-	"\flast_updated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\"\xf8\x03\n" +
-	"\x1fGetWorkflowShardMappingResponse\x12\\\n" +
-	"\bmappings\x18\x01 \x03(\v2@.shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntryR\bmappings\x12l\n" +
-	"\x0emapping_states\x18\x02 \x03(\v2E.shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntryR\rmappingStates\x128\n" +
+	"\flast_updated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\"\xd1\x03\n" +
+	"\x1fGetWorkflowShardMappingResponse\x12O\n" +
+	"\bmappings\x18\x01 \x03(\v23.ring.GetWorkflowShardMappingResponse.MappingsEntryR\bmappings\x12_\n" +
+	"\x0emapping_states\x18\x02 \x03(\v28.ring.GetWorkflowShardMappingResponse.MappingStatesEntryR\rmappingStates\x128\n" +
 	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12'\n" +
 	"\x0fmapping_version\x18\x04 \x01(\x04R\x0emappingVersion\x1a;\n" +
 	"\rMappingsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\x1ai\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\x1a\\\n" +
 	"\x12MappingStatesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
-	"\x05value\x18\x02 \x01(\v2'.shardorchestrator.WorkflowMappingStateR\x05value:\x028\x01\":\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
+	"\x05value\x18\x02 \x01(\v2\x1a.ring.WorkflowMappingStateR\x05value:\x028\x01\":\n" +
 	"\x1dSyncCapabilityJobSpecsRequest\x12\x19\n" +
-	"\bshard_id\x18\x01 \x01(\rR\ashardId\"\xd5\x04\n" +
-	"\x1eSyncCapabilityJobSpecsResponse\x12T\n" +
-	"\x06action\x18\x01 \x01(\x0e2<.shardorchestrator.SyncCapabilityJobSpecsResponse.SyncActionR\x06action\x12\x1e\n" +
+	"\bshard_id\x18\x01 \x01(\rR\ashardId\"\xbb\x04\n" +
+	"\x1eSyncCapabilityJobSpecsResponse\x12G\n" +
+	"\x06action\x18\x01 \x01(\x0e2/.ring.SyncCapabilityJobSpecsResponse.SyncActionR\x06action\x12\x1e\n" +
 	"\vjob_spec_id\x18\x02 \x01(\tR\tjobSpecId\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12\x16\n" +
-	"\x06config\x18\x04 \x01(\tR\x06config\x12q\n" +
-	"\x10template_context\x18\x06 \x03(\v2F.shardorchestrator.SyncCapabilityJobSpecsResponse.TemplateContextEntryR\x0ftemplateContext\x12!\n" +
+	"\x06config\x18\x04 \x01(\tR\x06config\x12d\n" +
+	"\x10template_context\x18\x06 \x03(\v29.ring.SyncCapabilityJobSpecsResponse.TemplateContextEntryR\x0ftemplateContext\x12!\n" +
 	"\fspec_version\x18\a \x01(\x04R\vspecVersion\x12 \n" +
 	"\fall_spec_ids\x18\b \x03(\tR\n" +
 	"allSpecIds\x12A\n" +
@@ -563,20 +563,20 @@ const file_shard_orchestrator_proto_rawDesc = "" +
 	"\x06UPDATE\x10\x02\x12\n" +
 	"\n" +
 	"\x06DELETE\x10\x03\x12\r\n" +
-	"\tFULL_SYNC\x10\x04\"\xa1\x03\n" +
+	"\tFULL_SYNC\x10\x04\"\x93\x03\n" +
 	"(ReportWorkflowTriggerRegistrationRequest\x12&\n" +
-	"\x0fsource_shard_id\x18\x01 \x01(\rR\rsourceShardId\x12\x87\x01\n" +
-	"\x14registered_workflows\x18\x02 \x03(\v2T.shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntryR\x13registeredWorkflows\x12E\n" +
+	"\x0fsource_shard_id\x18\x01 \x01(\rR\rsourceShardId\x12z\n" +
+	"\x14registered_workflows\x18\x02 \x03(\v2G.ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntryR\x13registeredWorkflows\x12E\n" +
 	"\x10report_timestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x0freportTimestamp\x124\n" +
 	"\x16total_active_workflows\x18\x04 \x01(\rR\x14totalActiveWorkflows\x1aF\n" +
 	"\x18RegisteredWorkflowsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"E\n" +
 	")ReportWorkflowTriggerRegistrationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xbe\x02\n" +
-	"\x18ShardOrchestratorService\x12\x80\x01\n" +
-	"\x17GetWorkflowShardMapping\x121.shardorchestrator.GetWorkflowShardMappingRequest\x1a2.shardorchestrator.GetWorkflowShardMappingResponse\x12\x9e\x01\n" +
-	"!ReportWorkflowTriggerRegistration\x12;.shardorchestrator.ReportWorkflowTriggerRegistrationRequest\x1a<.shardorchestrator.ReportWorkflowTriggerRegistrationResponseBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pbb\x06proto3"
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x89\x02\n" +
+	"\x18ShardOrchestratorService\x12f\n" +
+	"\x17GetWorkflowShardMapping\x12$.ring.GetWorkflowShardMappingRequest\x1a%.ring.GetWorkflowShardMappingResponse\x12\x84\x01\n" +
+	"!ReportWorkflowTriggerRegistration\x12..ring.ReportWorkflowTriggerRegistrationRequest\x1a/.ring.ReportWorkflowTriggerRegistrationResponseBDZBgithub.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pbb\x06proto3"
 
 var (
 	file_shard_orchestrator_proto_rawDescOnce sync.Once
@@ -593,35 +593,35 @@ func file_shard_orchestrator_proto_rawDescGZIP() []byte {
 var file_shard_orchestrator_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_shard_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_shard_orchestrator_proto_goTypes = []any{
-	(SyncCapabilityJobSpecsResponse_SyncAction)(0),    // 0: shardorchestrator.SyncCapabilityJobSpecsResponse.SyncAction
-	(*GetWorkflowShardMappingRequest)(nil),            // 1: shardorchestrator.GetWorkflowShardMappingRequest
-	(*WorkflowMappingState)(nil),                      // 2: shardorchestrator.WorkflowMappingState
-	(*GetWorkflowShardMappingResponse)(nil),           // 3: shardorchestrator.GetWorkflowShardMappingResponse
-	(*SyncCapabilityJobSpecsRequest)(nil),             // 4: shardorchestrator.SyncCapabilityJobSpecsRequest
-	(*SyncCapabilityJobSpecsResponse)(nil),            // 5: shardorchestrator.SyncCapabilityJobSpecsResponse
-	(*ReportWorkflowTriggerRegistrationRequest)(nil),  // 6: shardorchestrator.ReportWorkflowTriggerRegistrationRequest
-	(*ReportWorkflowTriggerRegistrationResponse)(nil), // 7: shardorchestrator.ReportWorkflowTriggerRegistrationResponse
-	nil,                           // 8: shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
-	nil,                           // 9: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
-	nil,                           // 10: shardorchestrator.SyncCapabilityJobSpecsResponse.TemplateContextEntry
-	nil,                           // 11: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	(SyncCapabilityJobSpecsResponse_SyncAction)(0),    // 0: ring.SyncCapabilityJobSpecsResponse.SyncAction
+	(*GetWorkflowShardMappingRequest)(nil),            // 1: ring.GetWorkflowShardMappingRequest
+	(*WorkflowMappingState)(nil),                      // 2: ring.WorkflowMappingState
+	(*GetWorkflowShardMappingResponse)(nil),           // 3: ring.GetWorkflowShardMappingResponse
+	(*SyncCapabilityJobSpecsRequest)(nil),             // 4: ring.SyncCapabilityJobSpecsRequest
+	(*SyncCapabilityJobSpecsResponse)(nil),            // 5: ring.SyncCapabilityJobSpecsResponse
+	(*ReportWorkflowTriggerRegistrationRequest)(nil),  // 6: ring.ReportWorkflowTriggerRegistrationRequest
+	(*ReportWorkflowTriggerRegistrationResponse)(nil), // 7: ring.ReportWorkflowTriggerRegistrationResponse
+	nil,                           // 8: ring.GetWorkflowShardMappingResponse.MappingsEntry
+	nil,                           // 9: ring.GetWorkflowShardMappingResponse.MappingStatesEntry
+	nil,                           // 10: ring.SyncCapabilityJobSpecsResponse.TemplateContextEntry
+	nil,                           // 11: ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
 	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
 }
 var file_shard_orchestrator_proto_depIdxs = []int32{
-	12, // 0: shardorchestrator.WorkflowMappingState.last_updated:type_name -> google.protobuf.Timestamp
-	8,  // 1: shardorchestrator.GetWorkflowShardMappingResponse.mappings:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
-	9,  // 2: shardorchestrator.GetWorkflowShardMappingResponse.mapping_states:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
-	12, // 3: shardorchestrator.GetWorkflowShardMappingResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 4: shardorchestrator.SyncCapabilityJobSpecsResponse.action:type_name -> shardorchestrator.SyncCapabilityJobSpecsResponse.SyncAction
-	10, // 5: shardorchestrator.SyncCapabilityJobSpecsResponse.template_context:type_name -> shardorchestrator.SyncCapabilityJobSpecsResponse.TemplateContextEntry
-	12, // 6: shardorchestrator.SyncCapabilityJobSpecsResponse.sync_timestamp:type_name -> google.protobuf.Timestamp
-	11, // 7: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
-	12, // 8: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.report_timestamp:type_name -> google.protobuf.Timestamp
-	2,  // 9: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> shardorchestrator.WorkflowMappingState
-	1,  // 10: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> shardorchestrator.GetWorkflowShardMappingRequest
-	6,  // 11: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest
-	3,  // 12: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> shardorchestrator.GetWorkflowShardMappingResponse
-	7,  // 13: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> shardorchestrator.ReportWorkflowTriggerRegistrationResponse
+	12, // 0: ring.WorkflowMappingState.last_updated:type_name -> google.protobuf.Timestamp
+	8,  // 1: ring.GetWorkflowShardMappingResponse.mappings:type_name -> ring.GetWorkflowShardMappingResponse.MappingsEntry
+	9,  // 2: ring.GetWorkflowShardMappingResponse.mapping_states:type_name -> ring.GetWorkflowShardMappingResponse.MappingStatesEntry
+	12, // 3: ring.GetWorkflowShardMappingResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 4: ring.SyncCapabilityJobSpecsResponse.action:type_name -> ring.SyncCapabilityJobSpecsResponse.SyncAction
+	10, // 5: ring.SyncCapabilityJobSpecsResponse.template_context:type_name -> ring.SyncCapabilityJobSpecsResponse.TemplateContextEntry
+	12, // 6: ring.SyncCapabilityJobSpecsResponse.sync_timestamp:type_name -> google.protobuf.Timestamp
+	11, // 7: ring.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	12, // 8: ring.ReportWorkflowTriggerRegistrationRequest.report_timestamp:type_name -> google.protobuf.Timestamp
+	2,  // 9: ring.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> ring.WorkflowMappingState
+	1,  // 10: ring.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> ring.GetWorkflowShardMappingRequest
+	6,  // 11: ring.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> ring.ReportWorkflowTriggerRegistrationRequest
+	3,  // 12: ring.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> ring.GetWorkflowShardMappingResponse
+	7,  // 13: ring.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> ring.ReportWorkflowTriggerRegistrationResponse
 	12, // [12:14] is the sub-list for method output_type
 	10, // [10:12] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name

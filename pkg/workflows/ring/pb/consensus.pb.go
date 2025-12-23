@@ -340,9 +340,9 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x11shardorchestrator\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd2\x01\n" +
-	"\vObservation\x12B\n" +
-	"\x06status\x18\x01 \x03(\v2*.shardorchestrator.Observation.StatusEntryR\x06status\x12\x16\n" +
+	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\x01\n" +
+	"\vObservation\x125\n" +
+	"\x06status\x18\x01 \x03(\v2\x1d.ring.Observation.StatusEntryR\x06status\x12\x16\n" +
 	"\x06hashes\x18\x02 \x03(\tR\x06hashes\x12,\n" +
 	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1a9\n" +
 	"\vStatusEntry\x12\x10\n" +
@@ -357,20 +357,20 @@ const file_consensus_proto_rawDesc = "" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
 	"wantShards\x12*\n" +
 	"\x11last_stable_count\x18\x02 \x01(\rR\x0flastStableCount\x12H\n" +
-	"\x12changes_safe_after\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x10changesSafeAfter\"\x93\x01\n" +
+	"\x12changes_safe_after\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x10changesSafeAfter\"\x86\x01\n" +
 	"\fRoutingState\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\x12?\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x122\n" +
 	"\n" +
-	"transition\x18\x02 \x01(\v2\x1d.shardorchestrator.TransitionH\x00R\n" +
+	"transition\x18\x02 \x01(\v2\x10.ring.TransitionH\x00R\n" +
 	"transition\x12)\n" +
 	"\x0froutable_shards\x18\x03 \x01(\rH\x00R\x0eroutableShardsB\a\n" +
-	"\x05state\"\xdd\x01\n" +
-	"\aOutcome\x125\n" +
-	"\x05state\x18\x01 \x01(\v2\x1f.shardorchestrator.RoutingStateR\x05state\x12>\n" +
-	"\x06routes\x18\x02 \x03(\v2&.shardorchestrator.Outcome.RoutesEntryR\x06routes\x1a[\n" +
+	"\x05state\"\xb6\x01\n" +
+	"\aOutcome\x12(\n" +
+	"\x05state\x18\x01 \x01(\v2\x12.ring.RoutingStateR\x05state\x121\n" +
+	"\x06routes\x18\x02 \x03(\v2\x19.ring.Outcome.RoutesEntryR\x06routes\x1aN\n" +
 	"\vRoutesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x126\n" +
-	"\x05value\x18\x02 \x01(\v2 .shardorchestrator.WorkflowRouteR\x05value:\x028\x01BQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pbb\x06proto3"
+	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
+	"\x05value\x18\x02 \x01(\v2\x13.ring.WorkflowRouteR\x05value:\x028\x01BDZBgithub.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pbb\x06proto3"
 
 var (
 	file_consensus_proto_rawDescOnce sync.Once
@@ -386,24 +386,24 @@ func file_consensus_proto_rawDescGZIP() []byte {
 
 var file_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_consensus_proto_goTypes = []any{
-	(*Observation)(nil),           // 0: shardorchestrator.Observation
-	(*WorkflowRoute)(nil),         // 1: shardorchestrator.WorkflowRoute
-	(*Transition)(nil),            // 2: shardorchestrator.Transition
-	(*RoutingState)(nil),          // 3: shardorchestrator.RoutingState
-	(*Outcome)(nil),               // 4: shardorchestrator.Outcome
-	nil,                           // 5: shardorchestrator.Observation.StatusEntry
-	nil,                           // 6: shardorchestrator.Outcome.RoutesEntry
+	(*Observation)(nil),           // 0: ring.Observation
+	(*WorkflowRoute)(nil),         // 1: ring.WorkflowRoute
+	(*Transition)(nil),            // 2: ring.Transition
+	(*RoutingState)(nil),          // 3: ring.RoutingState
+	(*Outcome)(nil),               // 4: ring.Outcome
+	nil,                           // 5: ring.Observation.StatusEntry
+	nil,                           // 6: ring.Outcome.RoutesEntry
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_consensus_proto_depIdxs = []int32{
-	5, // 0: shardorchestrator.Observation.status:type_name -> shardorchestrator.Observation.StatusEntry
-	7, // 1: shardorchestrator.Observation.now:type_name -> google.protobuf.Timestamp
-	7, // 2: shardorchestrator.WorkflowRoute.expires_at:type_name -> google.protobuf.Timestamp
-	7, // 3: shardorchestrator.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp
-	2, // 4: shardorchestrator.RoutingState.transition:type_name -> shardorchestrator.Transition
-	3, // 5: shardorchestrator.Outcome.state:type_name -> shardorchestrator.RoutingState
-	6, // 6: shardorchestrator.Outcome.routes:type_name -> shardorchestrator.Outcome.RoutesEntry
-	1, // 7: shardorchestrator.Outcome.RoutesEntry.value:type_name -> shardorchestrator.WorkflowRoute
+	5, // 0: ring.Observation.status:type_name -> ring.Observation.StatusEntry
+	7, // 1: ring.Observation.now:type_name -> google.protobuf.Timestamp
+	7, // 2: ring.WorkflowRoute.expires_at:type_name -> google.protobuf.Timestamp
+	7, // 3: ring.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp
+	2, // 4: ring.RoutingState.transition:type_name -> ring.Transition
+	3, // 5: ring.Outcome.state:type_name -> ring.RoutingState
+	6, // 6: ring.Outcome.routes:type_name -> ring.Outcome.RoutesEntry
+	1, // 7: ring.Outcome.RoutesEntry.value:type_name -> ring.WorkflowRoute
 	8, // [8:8] is the sub-list for method output_type
 	8, // [8:8] is the sub-list for method input_type
 	8, // [8:8] is the sub-list for extension type_name

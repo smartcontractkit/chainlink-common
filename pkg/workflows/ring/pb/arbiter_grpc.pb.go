@@ -20,7 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Arbiter_GetDesiredReplicas_FullMethodName = "/shardorchestrator.Arbiter/GetDesiredReplicas"
+	Arbiter_GetDesiredReplicas_FullMethodName = "/ring.Arbiter/GetDesiredReplicas"
 )
 
 // ArbiterClient is the client API for Arbiter service.
@@ -109,7 +109,7 @@ func _Arbiter_GetDesiredReplicas_Handler(srv interface{}, ctx context.Context, d
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Arbiter_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "shardorchestrator.Arbiter",
+	ServiceName: "ring.Arbiter",
 	HandlerType: (*ArbiterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -122,8 +122,8 @@ var Arbiter_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ArbiterScaler_Status_FullMethodName              = "/shardorchestrator.ArbiterScaler/Status"
-	ArbiterScaler_ConsensusWantShards_FullMethodName = "/shardorchestrator.ArbiterScaler/ConsensusWantShards"
+	ArbiterScaler_Status_FullMethodName              = "/ring.ArbiterScaler/Status"
+	ArbiterScaler_ConsensusWantShards_FullMethodName = "/ring.ArbiterScaler/ConsensusWantShards"
 )
 
 // ArbiterScalerClient is the client API for ArbiterScaler service.
@@ -245,7 +245,7 @@ func _ArbiterScaler_ConsensusWantShards_Handler(srv interface{}, ctx context.Con
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ArbiterScaler_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "shardorchestrator.ArbiterScaler",
+	ServiceName: "ring.ArbiterScaler",
 	HandlerType: (*ArbiterScalerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

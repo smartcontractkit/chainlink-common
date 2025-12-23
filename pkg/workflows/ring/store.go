@@ -1,4 +1,4 @@
-package shardorchestrator
+package ring
 
 import (
 	"slices"

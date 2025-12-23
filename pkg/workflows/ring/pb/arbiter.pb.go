@@ -210,29 +210,29 @@ var File_arbiter_proto protoreflect.FileDescriptor
 
 const file_arbiter_proto_rawDesc = "" +
 	"\n" +
-	"\rarbiter.proto\x12\x11shardorchestrator\x1a\x1bgoogle/protobuf/empty.proto\"\x8c\x01\n" +
-	"\vShardStatus\x12B\n" +
-	"\x06status\x18\x01 \x03(\v2*.shardorchestrator.ShardStatus.StatusEntryR\x06status\x1a9\n" +
+	"\rarbiter.proto\x12\x04ring\x1a\x1bgoogle/protobuf/empty.proto\"\x7f\n" +
+	"\vShardStatus\x125\n" +
+	"\x06status\x18\x01 \x03(\v2\x1d.ring.ShardStatus.StatusEntryR\x06status\x1a9\n" +
 	"\vStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"2\n" +
 	"\x0fArbiterResponse\x12\x1f\n" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
-	"wantShards\"\xb1\x01\n" +
+	"wantShards\"\xa4\x01\n" +
 	"\rReplicaStatus\x12\x1f\n" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
-	"wantShards\x12D\n" +
-	"\x06status\x18\x02 \x03(\v2,.shardorchestrator.ReplicaStatus.StatusEntryR\x06status\x1a9\n" +
+	"wantShards\x127\n" +
+	"\x06status\x18\x02 \x03(\v2\x1f.ring.ReplicaStatus.StatusEntryR\x06status\x1a9\n" +
 	"\vStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"7\n" +
 	"\x1aConsensusWantShardsRequest\x12\x19\n" +
-	"\bn_shards\x18\x01 \x01(\rR\anShards2c\n" +
-	"\aArbiter\x12X\n" +
-	"\x12GetDesiredReplicas\x12\x1e.shardorchestrator.ShardStatus\x1a\".shardorchestrator.ArbiterResponse2\xb1\x01\n" +
-	"\rArbiterScaler\x12B\n" +
-	"\x06Status\x12\x16.google.protobuf.Empty\x1a .shardorchestrator.ReplicaStatus\x12\\\n" +
-	"\x13ConsensusWantShards\x12-.shardorchestrator.ConsensusWantShardsRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pbb\x06proto3"
+	"\bn_shards\x18\x01 \x01(\rR\anShards2I\n" +
+	"\aArbiter\x12>\n" +
+	"\x12GetDesiredReplicas\x12\x11.ring.ShardStatus\x1a\x15.ring.ArbiterResponse2\x97\x01\n" +
+	"\rArbiterScaler\x125\n" +
+	"\x06Status\x12\x16.google.protobuf.Empty\x1a\x13.ring.ReplicaStatus\x12O\n" +
+	"\x13ConsensusWantShards\x12 .ring.ConsensusWantShardsRequest\x1a\x16.google.protobuf.EmptyBDZBgithub.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pbb\x06proto3"
 
 var (
 	file_arbiter_proto_rawDescOnce sync.Once
@@ -248,23 +248,23 @@ func file_arbiter_proto_rawDescGZIP() []byte {
 
 var file_arbiter_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_arbiter_proto_goTypes = []any{
-	(*ShardStatus)(nil),                // 0: shardorchestrator.ShardStatus
-	(*ArbiterResponse)(nil),            // 1: shardorchestrator.ArbiterResponse
-	(*ReplicaStatus)(nil),              // 2: shardorchestrator.ReplicaStatus
-	(*ConsensusWantShardsRequest)(nil), // 3: shardorchestrator.ConsensusWantShardsRequest
-	nil,                                // 4: shardorchestrator.ShardStatus.StatusEntry
-	nil,                                // 5: shardorchestrator.ReplicaStatus.StatusEntry
+	(*ShardStatus)(nil),                // 0: ring.ShardStatus
+	(*ArbiterResponse)(nil),            // 1: ring.ArbiterResponse
+	(*ReplicaStatus)(nil),              // 2: ring.ReplicaStatus
+	(*ConsensusWantShardsRequest)(nil), // 3: ring.ConsensusWantShardsRequest
+	nil,                                // 4: ring.ShardStatus.StatusEntry
+	nil,                                // 5: ring.ReplicaStatus.StatusEntry
 	(*emptypb.Empty)(nil),              // 6: google.protobuf.Empty
 }
 var file_arbiter_proto_depIdxs = []int32{
-	4, // 0: shardorchestrator.ShardStatus.status:type_name -> shardorchestrator.ShardStatus.StatusEntry
-	5, // 1: shardorchestrator.ReplicaStatus.status:type_name -> shardorchestrator.ReplicaStatus.StatusEntry
-	0, // 2: shardorchestrator.Arbiter.GetDesiredReplicas:input_type -> shardorchestrator.ShardStatus
-	6, // 3: shardorchestrator.ArbiterScaler.Status:input_type -> google.protobuf.Empty
-	3, // 4: shardorchestrator.ArbiterScaler.ConsensusWantShards:input_type -> shardorchestrator.ConsensusWantShardsRequest
-	1, // 5: shardorchestrator.Arbiter.GetDesiredReplicas:output_type -> shardorchestrator.ArbiterResponse
-	2, // 6: shardorchestrator.ArbiterScaler.Status:output_type -> shardorchestrator.ReplicaStatus
-	6, // 7: shardorchestrator.ArbiterScaler.ConsensusWantShards:output_type -> google.protobuf.Empty
+	4, // 0: ring.ShardStatus.status:type_name -> ring.ShardStatus.StatusEntry
+	5, // 1: ring.ReplicaStatus.status:type_name -> ring.ReplicaStatus.StatusEntry
+	0, // 2: ring.Arbiter.GetDesiredReplicas:input_type -> ring.ShardStatus
+	6, // 3: ring.ArbiterScaler.Status:input_type -> google.protobuf.Empty
+	3, // 4: ring.ArbiterScaler.ConsensusWantShards:input_type -> ring.ConsensusWantShardsRequest
+	1, // 5: ring.Arbiter.GetDesiredReplicas:output_type -> ring.ArbiterResponse
+	2, // 6: ring.ArbiterScaler.Status:output_type -> ring.ReplicaStatus
+	6, // 7: ring.ArbiterScaler.ConsensusWantShards:output_type -> google.protobuf.Empty
 	5, // [5:8] is the sub-list for method output_type
 	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

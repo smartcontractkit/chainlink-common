@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -21,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ShardOrchestratorService_GetWorkflowShardMapping_FullMethodName           = "/shardorchestrator.ShardOrchestratorService/GetWorkflowShardMapping"
-	ShardOrchestratorService_SyncCapabilityJobSpecs_FullMethodName            = "/shardorchestrator.ShardOrchestratorService/SyncCapabilityJobSpecs"
 	ShardOrchestratorService_ReportWorkflowTriggerRegistration_FullMethodName = "/shardorchestrator.ShardOrchestratorService/ReportWorkflowTriggerRegistration"
 )
 
@@ -30,8 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ShardOrchestratorServiceClient interface {
 	GetWorkflowShardMapping(ctx context.Context, in *GetWorkflowShardMappingRequest, opts ...grpc.CallOption) (*GetWorkflowShardMappingResponse, error)
-	SyncCapabilityJobSpecs(ctx context.Context, in *SyncCapabilityJobSpecsRequest, opts ...grpc.CallOption) (*SyncCapabilityJobSpecsResponse, error)
-	ReportWorkflowTriggerRegistration(ctx context.Context, in *ReportWorkflowTriggerRegistrationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReportWorkflowTriggerRegistration(ctx context.Context, in *ReportWorkflowTriggerRegistrationRequest, opts ...grpc.CallOption) (*ReportWorkflowTriggerRegistrationResponse, error)
 }
 
 type shardOrchestratorServiceClient struct {
@@ -52,19 +49,9 @@ func (c *shardOrchestratorServiceClient) GetWorkflowShardMapping(ctx context.Con
 	return out, nil
 }
 
-func (c *shardOrchestratorServiceClient) SyncCapabilityJobSpecs(ctx context.Context, in *SyncCapabilityJobSpecsRequest, opts ...grpc.CallOption) (*SyncCapabilityJobSpecsResponse, error) {
+func (c *shardOrchestratorServiceClient) ReportWorkflowTriggerRegistration(ctx context.Context, in *ReportWorkflowTriggerRegistrationRequest, opts ...grpc.CallOption) (*ReportWorkflowTriggerRegistrationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SyncCapabilityJobSpecsResponse)
-	err := c.cc.Invoke(ctx, ShardOrchestratorService_SyncCapabilityJobSpecs_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *shardOrchestratorServiceClient) ReportWorkflowTriggerRegistration(ctx context.Context, in *ReportWorkflowTriggerRegistrationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(ReportWorkflowTriggerRegistrationResponse)
 	err := c.cc.Invoke(ctx, ShardOrchestratorService_ReportWorkflowTriggerRegistration_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -77,8 +64,7 @@ func (c *shardOrchestratorServiceClient) ReportWorkflowTriggerRegistration(ctx c
 // for forward compatibility.
 type ShardOrchestratorServiceServer interface {
 	GetWorkflowShardMapping(context.Context, *GetWorkflowShardMappingRequest) (*GetWorkflowShardMappingResponse, error)
-	SyncCapabilityJobSpecs(context.Context, *SyncCapabilityJobSpecsRequest) (*SyncCapabilityJobSpecsResponse, error)
-	ReportWorkflowTriggerRegistration(context.Context, *ReportWorkflowTriggerRegistrationRequest) (*emptypb.Empty, error)
+	ReportWorkflowTriggerRegistration(context.Context, *ReportWorkflowTriggerRegistrationRequest) (*ReportWorkflowTriggerRegistrationResponse, error)
 	mustEmbedUnimplementedShardOrchestratorServiceServer()
 }
 
@@ -92,10 +78,7 @@ type UnimplementedShardOrchestratorServiceServer struct{}
 func (UnimplementedShardOrchestratorServiceServer) GetWorkflowShardMapping(context.Context, *GetWorkflowShardMappingRequest) (*GetWorkflowShardMappingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowShardMapping not implemented")
 }
-func (UnimplementedShardOrchestratorServiceServer) SyncCapabilityJobSpecs(context.Context, *SyncCapabilityJobSpecsRequest) (*SyncCapabilityJobSpecsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SyncCapabilityJobSpecs not implemented")
-}
-func (UnimplementedShardOrchestratorServiceServer) ReportWorkflowTriggerRegistration(context.Context, *ReportWorkflowTriggerRegistrationRequest) (*emptypb.Empty, error) {
+func (UnimplementedShardOrchestratorServiceServer) ReportWorkflowTriggerRegistration(context.Context, *ReportWorkflowTriggerRegistrationRequest) (*ReportWorkflowTriggerRegistrationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportWorkflowTriggerRegistration not implemented")
 }
 func (UnimplementedShardOrchestratorServiceServer) mustEmbedUnimplementedShardOrchestratorServiceServer() {
@@ -138,24 +121,6 @@ func _ShardOrchestratorService_GetWorkflowShardMapping_Handler(srv interface{}, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ShardOrchestratorService_SyncCapabilityJobSpecs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SyncCapabilityJobSpecsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ShardOrchestratorServiceServer).SyncCapabilityJobSpecs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ShardOrchestratorService_SyncCapabilityJobSpecs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ShardOrchestratorServiceServer).SyncCapabilityJobSpecs(ctx, req.(*SyncCapabilityJobSpecsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ShardOrchestratorService_ReportWorkflowTriggerRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportWorkflowTriggerRegistrationRequest)
 	if err := dec(in); err != nil {
@@ -184,10 +149,6 @@ var ShardOrchestratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWorkflowShardMapping",
 			Handler:    _ShardOrchestratorService_GetWorkflowShardMapping_Handler,
-		},
-		{
-			MethodName: "SyncCapabilityJobSpecs",
-			Handler:    _ShardOrchestratorService_SyncCapabilityJobSpecs_Handler,
 		},
 		{
 			MethodName: "ReportWorkflowTriggerRegistration",

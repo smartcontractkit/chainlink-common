@@ -55,6 +55,11 @@ message ReportWorkflowTriggerRegistrationRequest {
   uint32 total_active_workflows = 4;
 }
 
+message ReportWorkflowTriggerRegistrationResponse {
+  bool success = 1;
+}
+
 service ShardOrchestratorService {
   rpc GetWorkflowShardMapping(GetWorkflowShardMappingRequest) returns (GetWorkflowShardMappingResponse);
+  rpc ReportWorkflowTriggerRegistration(ReportWorkflowTriggerRegistrationRequest) returns (ReportWorkflowTriggerRegistrationResponse);
 }

@@ -76,15 +76,15 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
 	shardHealth := p.store.GetShardHealth()
 
-	hashes := []string{}
+	allWorkflowIDs := []string{}
 	for wfID := range p.store.GetAllRoutingState() {
-		hashes = append(hashes, wfID)
+		allWorkflowIDs = append(allWorkflowIDs, wfID)
 	}
-	slices.Sort(hashes)
+	slices.Sort(allWorkflowIDs)
 
 	observation := &pb.Observation{
 		Status: shardHealth,
-		Hashes: hashes,
+		Hashes: allWorkflowIDs,
 		Now:    nil,
 	}
 

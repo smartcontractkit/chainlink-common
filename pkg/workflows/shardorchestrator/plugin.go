@@ -100,20 +100,6 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	prevOutcome := &pb.Outcome{}
-	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil || prevOutcome.State == nil {
-		p.lggr.Warnf("failed to unmarshal previous outcome or state is nil")
-		prevOutcome = &pb.Outcome{
-			State: &pb.RoutingState{
-				Id: 0,
-				State: &pb.RoutingState_RoutableShards{
-					RoutableShards: p.minShardCount,
-				},
-			},
-			Routes: make(map[string]*pb.WorkflowRoute),
-		}
-	}
-
 	currentShardHealth := make(map[uint32]int)
 	totalObservations := len(aos)
 	allWorkflows := []string{}
@@ -177,7 +163,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	// Update routing state
 	outcome := &pb.Outcome{
 		State: &pb.RoutingState{
-			Id: prevOutcome.State.Id + 1,
+			Id: outctx.SeqNr,
 			State: &pb.RoutingState_RoutableShards{
 				RoutableShards: healthyShardCount,
 			},

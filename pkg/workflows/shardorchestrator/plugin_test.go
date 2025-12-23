@@ -30,7 +30,7 @@ func TestPlugin_OutcomeWithMultiNodeObservations(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := t.Context()
-	outcomeCtx := ocr3types.OutcomeContext{PreviousOutcome: []byte("")}
+	outcomeCtx := ocr3types.OutcomeContext{SeqNr: 42}
 
 	// Observations from 4 NOPs reporting health and workflows
 	observations := []struct {
@@ -87,6 +87,7 @@ func TestPlugin_OutcomeWithMultiNodeObservations(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check consensus results
+	require.Equal(t, uint64(42), outcomeProto.State.Id, "ID should match SeqNr")
 	t.Logf("Outcome - ID: %d, HealthyShards: %d", outcomeProto.State.Id, outcomeProto.State.GetRoutableShards())
 	t.Logf("Workflows assigned: %d", len(outcomeProto.Routes))
 

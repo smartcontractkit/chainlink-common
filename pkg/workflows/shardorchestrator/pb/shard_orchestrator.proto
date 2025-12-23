@@ -57,7 +57,4 @@ message ReportWorkflowTriggerRegistrationRequest {
 
 service ShardOrchestratorService {
   rpc GetWorkflowShardMapping(GetWorkflowShardMappingRequest) returns (GetWorkflowShardMappingResponse);
-  rpc SyncCapabilityJobSpecs(SyncCapabilityJobSpecsRequest) returns (SyncCapabilityJobSpecsResponse);
-  rpc ReportWorkflowTriggerRegistration(ReportWorkflowTriggerRegistrationRequest) returns (google.protobuf.Empty);
 }
-

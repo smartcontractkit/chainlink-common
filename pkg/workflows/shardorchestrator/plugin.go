@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb"
@@ -28,6 +29,7 @@ type Plugin struct {
 	batchSize     int
 	minShardCount uint32
 	maxShardCount uint32
+	timeToSync    time.Duration
 }
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
@@ -37,6 +39,7 @@ type ConsensusConfig struct {
 	MinShardCount uint32
 	MaxShardCount uint32
 	BatchSize     int
+	TimeToSync    time.Duration
 }
 
 // NewPlugin creates a consensus reporting plugin for shard orchestration
@@ -46,6 +49,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 			MinShardCount: 1,
 			MaxShardCount: 100,
 			BatchSize:     1000,
+			TimeToSync:    5 * time.Minute,
 		}
 	}
 
@@ -58,6 +62,9 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 	if cfg.BatchSize <= 0 {
 		cfg.BatchSize = 100
 	}
+	if cfg.TimeToSync <= 0 {
+		cfg.TimeToSync = 5 * time.Minute
+	}
 
 	return &Plugin{
 		store:         store,
@@ -66,6 +73,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		batchSize:     cfg.BatchSize,
 		minShardCount: cfg.MinShardCount,
 		maxShardCount: cfg.MaxShardCount,
+		timeToSync:    cfg.TimeToSync,
 	}, nil
 }
 
@@ -85,7 +93,7 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 	observation := &pb.Observation{
 		Status: shardHealth,
 		Hashes: allWorkflowIDs,
-		Now:    nil,
+		Now:    timestamppb.Now(),
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
@@ -100,9 +108,19 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+	// Load prior state
+	prior := &pb.Outcome{}
+	if outctx.PreviousOutcome == nil {
+		prior.Routes = map[string]*pb.WorkflowRoute{}
+		prior.State = &pb.RoutingState{Id: outctx.SeqNr, State: &pb.RoutingState_RoutableShards{RoutableShards: p.minShardCount}}
+	} else if err := proto.Unmarshal(outctx.PreviousOutcome, prior); err != nil {
+		return nil, err
+	}
+
 	currentShardHealth := make(map[uint32]int)
 	totalObservations := len(aos)
 	allWorkflows := []string{}
+	nows := []time.Time{}
 
 	// Collect shard health observations and workflows
 	for _, ao := range aos {
@@ -120,6 +138,18 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 		// Collect workflow IDs
 		allWorkflows = append(allWorkflows, observation.Hashes...)
+
+		// Collect timestamps
+		if observation.Now != nil {
+			nows = append(nows, observation.Now.AsTime())
+		}
+	}
+
+	// Calculate median time
+	now := time.Now()
+	if len(nows) > 0 {
+		slices.SortFunc(nows, time.Time.Compare)
+		now = nows[len(nows)/2]
 	}
 
 	// Deduplicate workflows
@@ -151,6 +181,12 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		healthyShardCount = p.maxShardCount
 	}
 
+	// Calculate next state using state machine
+	nextState, err := p.calculateNextState(prior.State, healthyShardCount, now)
+	if err != nil {
+		return nil, err
+	}
+
 	// Use deterministic hashing to assign workflows to shards
 	routes := make(map[string]*pb.WorkflowRoute)
 	for _, wfID := range allWorkflows {
@@ -162,18 +198,52 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	// Update routing state
 	outcome := &pb.Outcome{
-		State: &pb.RoutingState{
-			Id: outctx.SeqNr,
-			State: &pb.RoutingState_RoutableShards{
-				RoutableShards: healthyShardCount,
-			},
-		},
+		State:  nextState,
 		Routes: routes,
 	}
 
 	p.lggr.Infow("Consensus Outcome", "healthyShards", healthyShardCount, "totalObservations", totalObservations, "workflowCount", len(routes))
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+}
+
+func (p *Plugin) calculateNextState(priorState *pb.RoutingState, wantShards uint32, now time.Time) (*pb.RoutingState, error) {
+	switch ps := priorState.State.(type) {
+	case *pb.RoutingState_RoutableShards:
+		// If already at desired count, stay in stable state
+		if ps.RoutableShards == wantShards {
+			return priorState, nil
+		}
+
+		// Otherwise, initiate transition
+		return &pb.RoutingState{
+			Id: priorState.Id + 1,
+			State: &pb.RoutingState_Transition{
+				Transition: &pb.Transition{
+					WantShards:       wantShards,
+					LastStableCount:  ps.RoutableShards,
+					ChangesSafeAfter: timestamppb.New(now.Add(p.timeToSync)),
+				},
+			},
+		}, nil
+
+	case *pb.RoutingState_Transition:
+		// If still in safety period, stay in transition
+		if now.Before(ps.Transition.ChangesSafeAfter.AsTime()) {
+			return priorState, nil
+		}
+
+		// Safety period elapsed, transition to stable state
+		return &pb.RoutingState{
+			Id: priorState.Id + 1,
+			State: &pb.RoutingState_RoutableShards{
+				RoutableShards: ps.Transition.WantShards,
+			},
+		}, nil
+
+	default:
+		return nil, errors.New("unknown prior state type")
+	}
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {

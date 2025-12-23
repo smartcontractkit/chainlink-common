@@ -57,13 +57,13 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 }
 
 func (o *Factory) Start(ctx context.Context) error {
-	return o.StartOnce("ShardOrchestratorPlugin", func() error {
+	return o.StartOnce("RingPlugin", func() error {
 		return nil
 	})
 }
 
 func (o *Factory) Close() error {
-	return o.StopOnce("ShardOrchestratorPlugin", func() error {
+	return o.StopOnce("RingPlugin", func() error {
 		return nil
 	})
 }

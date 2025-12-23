@@ -69,7 +69,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 	return &Plugin{
 		store:         store,
 		config:        config,
-		lggr:          logger.Named(lggr, "ShardOrchestratorPlugin"),
+		lggr:          logger.Named(lggr, "RingPlugin"),
 		batchSize:     cfg.BatchSize,
 		minShardCount: cfg.MinShardCount,
 		maxShardCount: cfg.MaxShardCount,

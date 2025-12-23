@@ -15,7 +15,7 @@ message ArbiterResponse {
 }
 
 service Arbiter {
-  rpc GetDesiredReplicas(ShardStatus) returns (ArbiterResponse);
+  rpc GetDesiredReplicas(ShardStatus) returns (ArbiterResponse); // called periodically by Scaler
 }
 
 message ReplicaStatus {

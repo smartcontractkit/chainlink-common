@@ -81,19 +81,19 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 	return nil, nil
 }
 
-func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
+func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
 	shardHealth := p.store.GetShardHealth()
 
-	allWorkflowIDs := []string{}
+	allWorkflowIDs := make([]string, 0)
 	for wfID := range p.store.GetAllRoutingState() {
 		allWorkflowIDs = append(allWorkflowIDs, wfID)
 	}
 	slices.Sort(allWorkflowIDs)
 
 	observation := &pb.Observation{
-		Status: shardHealth,
-		Hashes: allWorkflowIDs,
-		Now:    timestamppb.Now(),
+		ShardHealthStatus: shardHealth,
+		WorkflowIDs:       allWorkflowIDs,
+		Now:               timestamppb.Now(),
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
@@ -119,8 +119,8 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	currentShardHealth := make(map[uint32]int)
 	totalObservations := len(aos)
-	allWorkflows := []string{}
-	nows := []time.Time{}
+	allWorkflows := make([]string, 0)
+	nows := make([]time.Time, 0)
 
 	// Collect shard health observations and workflows
 	for _, ao := range aos {
@@ -130,14 +130,14 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 			continue
 		}
 
-		for shardID, healthy := range observation.Status {
+		for shardID, healthy := range observation.ShardHealthStatus {
 			if healthy {
 				currentShardHealth[shardID]++
 			}
 		}
 
 		// Collect workflow IDs
-		allWorkflows = append(allWorkflows, observation.Hashes...)
+		allWorkflows = append(allWorkflows, observation.WorkflowIDs...)
 
 		// Collect timestamps
 		if observation.Now != nil {
@@ -166,7 +166,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	// Determine desired shard count based on observations
 	healthyShardCount := uint32(0)
 	for shardID, count := range currentShardHealth {
-		if count > int(p.config.F) {
+		if count > p.config.F {
 			healthyShardCount++
 			// Update store with healthy shard
 			p.store.SetShardHealth(shardID, true)
@@ -277,11 +277,11 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 	}, nil
 }
 
-func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+func (p *Plugin) ShouldAcceptAttestedReport(_ context.Context, _ uint64, _ ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 
-func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+func (p *Plugin) ShouldTransmitAcceptedReport(_ context.Context, _ uint64, _ ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 

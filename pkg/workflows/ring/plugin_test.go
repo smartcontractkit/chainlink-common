@@ -15,6 +15,12 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
+var twoHealthyShards = []map[uint32]bool{
+	{0: true, 1: true},
+	{0: true, 1: true},
+	{0: true, 1: true},
+}
+
 func TestPlugin_OutcomeWithMultiNodeObservations(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
@@ -67,9 +73,9 @@ func TestPlugin_OutcomeWithMultiNodeObservations(t *testing.T) {
 	aos := make([]types.AttributedObservation, 0)
 	for _, obs := range observations {
 		pbObs := &pb.Observation{
-			Status: obs.shardHealth,
-			Hashes: obs.workflows,
-			Now:    timestamppb.Now(),
+			ShardHealthStatus: obs.shardHealth,
+			WorkflowIDs:       obs.workflows,
+			Now:               timestamppb.Now(),
 		}
 		rawObs, err := proto.Marshal(pbObs)
 		require.NoError(t, err)
@@ -190,11 +196,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 		}
 
 		// Observations show 2 healthy shards now
-		aos := makeObservations(t, []map[uint32]bool{
-			{0: true, 1: true},
-			{0: true, 1: true},
-			{0: true, 1: true},
-		}, []string{"wf-1"}, now)
+		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -237,11 +239,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 		}
 
 		// Still showing 2 healthy shards, but safety period not elapsed
-		aos := makeObservations(t, []map[uint32]bool{
-			{0: true, 1: true},
-			{0: true, 1: true},
-			{0: true, 1: true},
-		}, []string{"wf-1"}, now)
+		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -281,11 +279,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 			PreviousOutcome: priorBytes,
 		}
 
-		aos := makeObservations(t, []map[uint32]bool{
-			{0: true, 1: true},
-			{0: true, 1: true},
-			{0: true, 1: true},
-		}, []string{"wf-1"}, now)
+		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -321,11 +315,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 		}
 
 		// Same 2 healthy shards
-		aos := makeObservations(t, []map[uint32]bool{
-			{0: true, 1: true},
-			{0: true, 1: true},
-			{0: true, 1: true},
-		}, []string{"wf-1"}, now)
+		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -347,9 +337,9 @@ func makeObservations(t *testing.T, shardHealths []map[uint32]bool, workflows []
 	aos := make([]types.AttributedObservation, 0, len(shardHealths))
 	for i, health := range shardHealths {
 		pbObs := &pb.Observation{
-			Status: health,
-			Hashes: workflows,
-			Now:    timestamppb.New(now),
+			ShardHealthStatus: health,
+			WorkflowIDs:       workflows,
+			Now:               timestamppb.New(now),
 		}
 		rawObs, err := proto.Marshal(pbObs)
 		require.NoError(t, err)

@@ -23,12 +23,12 @@ const (
 )
 
 type Observation struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        map[uint32]bool        `protobuf:"bytes,1,rep,name=status,proto3" json:"status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // shard_id -> is_healthy
-	Hashes        []string               `protobuf:"bytes,2,rep,name=hashes,proto3" json:"hashes,omitempty"`
-	Now           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ShardHealthStatus map[uint32]bool        `protobuf:"bytes,1,rep,name=shardHealthStatus,proto3" json:"shardHealthStatus,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // shard_id -> is_healthy
+	WorkflowIDs       []string               `protobuf:"bytes,2,rep,name=workflowIDs,proto3" json:"workflowIDs,omitempty"`
+	Now               *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Observation) Reset() {
@@ -61,16 +61,16 @@ func (*Observation) Descriptor() ([]byte, []int) {
 	return file_consensus_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Observation) GetStatus() map[uint32]bool {
+func (x *Observation) GetShardHealthStatus() map[uint32]bool {
 	if x != nil {
-		return x.Status
+		return x.ShardHealthStatus
 	}
 	return nil
 }
 
-func (x *Observation) GetHashes() []string {
+func (x *Observation) GetWorkflowIDs() []string {
 	if x != nil {
-		return x.Hashes
+		return x.WorkflowIDs
 	}
 	return nil
 }
@@ -340,12 +340,12 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\x01\n" +
-	"\vObservation\x125\n" +
-	"\x06status\x18\x01 \x03(\v2\x1d.ring.Observation.StatusEntryR\x06status\x12\x16\n" +
-	"\x06hashes\x18\x02 \x03(\tR\x06hashes\x12,\n" +
-	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1a9\n" +
-	"\vStatusEntry\x12\x10\n" +
+	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfb\x01\n" +
+	"\vObservation\x12V\n" +
+	"\x11shardHealthStatus\x18\x01 \x03(\v2(.ring.Observation.ShardHealthStatusEntryR\x11shardHealthStatus\x12 \n" +
+	"\vworkflowIDs\x18\x02 \x03(\tR\vworkflowIDs\x12,\n" +
+	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1aD\n" +
+	"\x16ShardHealthStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"`\n" +
 	"\rWorkflowRoute\x12\x14\n" +
@@ -391,12 +391,12 @@ var file_consensus_proto_goTypes = []any{
 	(*Transition)(nil),            // 2: ring.Transition
 	(*RoutingState)(nil),          // 3: ring.RoutingState
 	(*Outcome)(nil),               // 4: ring.Outcome
-	nil,                           // 5: ring.Observation.StatusEntry
+	nil,                           // 5: ring.Observation.ShardHealthStatusEntry
 	nil,                           // 6: ring.Outcome.RoutesEntry
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_consensus_proto_depIdxs = []int32{
-	5, // 0: ring.Observation.status:type_name -> ring.Observation.StatusEntry
+	5, // 0: ring.Observation.shardHealthStatus:type_name -> ring.Observation.ShardHealthStatusEntry
 	7, // 1: ring.Observation.now:type_name -> google.protobuf.Timestamp
 	7, // 2: ring.WorkflowRoute.expires_at:type_name -> google.protobuf.Timestamp
 	7, // 3: ring.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp

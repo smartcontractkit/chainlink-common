@@ -187,6 +187,7 @@ func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabi
 	remoteTriggerConfig := &capabilities.RemoteTriggerConfig{}
 	remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
 	remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+	remoteTriggerConfig.EventTimeout = prtc.EventTimeout.AsDuration()
 	remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
 	remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
 	remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize

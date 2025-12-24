@@ -421,13 +421,19 @@ func (es *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.Submi
 		return nil, err
 	}
 
-	address, err := evmpb.ConvertOptionalAddressFromProto(request.To)
+	from, err := evmpb.ConvertOptionalAddressFromProto(request.From)
+	if err != nil {
+		return nil, err
+	}
+
+	to, err := evmpb.ConvertOptionalAddressFromProto(request.To)
 	if err != nil {
 		return nil, err
 	}
 
 	reply, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
-		To:        address,
+		From:      from,
+		To:        to,
 		Data:      request.Data,
 		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetGasConfig()),
 	})

@@ -497,6 +497,7 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			name: "SubmitTransaction",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				txRequest := evmtypes.SubmitTransactionRequest{
+					From: address,
 					To:   address1,
 					Data: []byte("data"),
 				}

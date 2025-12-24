@@ -328,9 +328,10 @@ message CalculateTransactionFeeReply {
 }
 
 message SubmitTransactionRequest {
-  bytes to  = 1;
-  bytes data = 2;
-  optional GasConfig gas_config = 3;
+  bytes from  = 1;
+  bytes to  = 2;
+  bytes data = 3;
+  optional GasConfig gas_config = 4;
 }
 
 message SubmitTransactionReply {

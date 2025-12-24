@@ -287,6 +287,11 @@ type triggerExecutableClient struct {
 	cancelFuncs map[string]func()
 }
 
+func (t *triggerExecutableClient) AckEvent(ctx context.Context, eventId string) error {
+	//TODO implement
+	return nil
+}
+
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	ch, cancel, err := t.registerTrigger(ctx, req)
 	if err != nil {

@@ -2641,9 +2641,10 @@ func (x *CalculateTransactionFeeReply) GetTransactionFee() *pb.BigInt {
 
 type SubmitTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	To            []byte                 `protobuf:"bytes,1,opt,name=to,proto3" json:"to,omitempty"`
-	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
-	GasConfig     *GasConfig             `protobuf:"bytes,3,opt,name=gas_config,json=gasConfig,proto3,oneof" json:"gas_config,omitempty"`
+	From          []byte                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            []byte                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	Data          []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	GasConfig     *GasConfig             `protobuf:"bytes,4,opt,name=gas_config,json=gasConfig,proto3,oneof" json:"gas_config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2676,6 +2677,13 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *SubmitTransactionRequest) GetFrom() []byte {
+	if x != nil {
+		return x.From
+	}
+	return nil
 }
 
 func (x *SubmitTransactionRequest) GetTo() []byte {
@@ -3169,12 +3177,13 @@ const file_evm_proto_rawDesc = "" +
 	"\bgas_used\x18\x01 \x01(\x04R\agasUsed\x12A\n" +
 	"\x13effective_gas_price\x18\x02 \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\"Z\n" +
 	"\x1cCalculateTransactionFeeReply\x12:\n" +
-	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"\x86\x01\n" +
-	"\x18SubmitTransactionRequest\x12\x0e\n" +
-	"\x02to\x18\x01 \x01(\fR\x02to\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\x127\n" +
+	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"\x9a\x01\n" +
+	"\x18SubmitTransactionRequest\x12\x12\n" +
+	"\x04from\x18\x01 \x01(\fR\x04from\x12\x0e\n" +
+	"\x02to\x18\x02 \x01(\fR\x02to\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x127\n" +
 	"\n" +
-	"gas_config\x18\x03 \x01(\v2\x13.loop.evm.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
+	"gas_config\x18\x04 \x01(\v2\x13.loop.evm.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
 	"\v_gas_config\"\x8e\x01\n" +
 	"\x16SubmitTransactionReply\x12\x16\n" +
 	"\x06txHash\x18\x01 \x01(\fR\x06txHash\x12.\n" +

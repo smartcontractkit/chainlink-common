@@ -170,6 +170,7 @@ type GasConfig struct {
 }
 
 type SubmitTransactionRequest struct {
+	From Address
 	To   Address
 	Data ABIPayload
 	// Default to nil. If not specified the configured gas estimator config will be used

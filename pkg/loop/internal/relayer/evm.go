@@ -38,6 +38,7 @@ func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo 
 // SubmitTransaction implements types.EVMService.
 func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
 	pbTxRequest := &evmpb.SubmitTransactionRequest{
+		From: txRequest.From[:],
 		To:   txRequest.To[:],
 		Data: txRequest.Data,
 	}

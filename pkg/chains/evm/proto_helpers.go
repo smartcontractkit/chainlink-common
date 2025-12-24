@@ -758,6 +758,7 @@ func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionReques
 	}
 
 	return evmtypes.SubmitTransactionRequest{
+		From:      evmtypes.Address(txRequest.From),
 		To:        evmtypes.Address(txRequest.To),
 		Data:      txRequest.Data,
 		GasConfig: ConvertGasConfigFromProto(txRequest.GasConfig),

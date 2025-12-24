@@ -165,10 +165,11 @@ type RemoteTriggerConfig struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
 	RegistrationRefresh     *durationpb.Duration   `protobuf:"bytes,1,opt,name=registrationRefresh,proto3" json:"registrationRefresh,omitempty"`
 	RegistrationExpiry      *durationpb.Duration   `protobuf:"bytes,2,opt,name=registrationExpiry,proto3" json:"registrationExpiry,omitempty"`
-	MinResponsesToAggregate uint32                 `protobuf:"varint,3,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
-	MessageExpiry           *durationpb.Duration   `protobuf:"bytes,4,opt,name=messageExpiry,proto3" json:"messageExpiry,omitempty"`
-	MaxBatchSize            uint32                 `protobuf:"varint,5,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
-	BatchCollectionPeriod   *durationpb.Duration   `protobuf:"bytes,6,opt,name=batchCollectionPeriod,proto3" json:"batchCollectionPeriod,omitempty"`
+	EventTimeout            *durationpb.Duration   `protobuf:"bytes,3,opt,name=eventTimeout,proto3" json:"eventTimeout,omitempty"`
+	MinResponsesToAggregate uint32                 `protobuf:"varint,4,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
+	MessageExpiry           *durationpb.Duration   `protobuf:"bytes,5,opt,name=messageExpiry,proto3" json:"messageExpiry,omitempty"`
+	MaxBatchSize            uint32                 `protobuf:"varint,6,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
+	BatchCollectionPeriod   *durationpb.Duration   `protobuf:"bytes,7,opt,name=batchCollectionPeriod,proto3" json:"batchCollectionPeriod,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -213,6 +214,13 @@ func (x *RemoteTriggerConfig) GetRegistrationRefresh() *durationpb.Duration {
 func (x *RemoteTriggerConfig) GetRegistrationExpiry() *durationpb.Duration {
 	if x != nil {
 		return x.RegistrationExpiry
+	}
+	return nil
+}
+
+func (x *RemoteTriggerConfig) GetEventTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.EventTimeout
 	}
 	return nil
 }
@@ -658,14 +666,15 @@ var File_registry_proto protoreflect.FileDescriptor
 
 const file_registry_proto_rawDesc = "" +
 	"\n" +
-	"\x0eregistry.proto\x12\x04loop\x1a\x16values/v1/values.proto\x1a\x1egoogle/protobuf/duration.proto\"\x9d\x03\n" +
+	"\x0eregistry.proto\x12\x04loop\x1a\x16values/v1/values.proto\x1a\x1egoogle/protobuf/duration.proto\"\xdc\x03\n" +
 	"\x13RemoteTriggerConfig\x12K\n" +
 	"\x13registrationRefresh\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x13registrationRefresh\x12I\n" +
-	"\x12registrationExpiry\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\x128\n" +
-	"\x17minResponsesToAggregate\x18\x03 \x01(\rR\x17minResponsesToAggregate\x12?\n" +
-	"\rmessageExpiry\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\rmessageExpiry\x12\"\n" +
-	"\fmaxBatchSize\x18\x05 \x01(\rR\fmaxBatchSize\x12O\n" +
-	"\x15batchCollectionPeriod\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x15batchCollectionPeriod\"Z\n" +
+	"\x12registrationExpiry\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\x12=\n" +
+	"\feventTimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\feventTimeout\x128\n" +
+	"\x17minResponsesToAggregate\x18\x04 \x01(\rR\x17minResponsesToAggregate\x12?\n" +
+	"\rmessageExpiry\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\rmessageExpiry\x12\"\n" +
+	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSize\x12O\n" +
+	"\x15batchCollectionPeriod\x18\a \x01(\v2\x19.google.protobuf.DurationR\x15batchCollectionPeriod\"Z\n" +
 	"\x12RemoteTargetConfig\x12D\n" +
 	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\"\xc5\x03\n" +
 	"\x16RemoteExecutableConfig\x12D\n" +
@@ -740,28 +749,29 @@ var file_registry_proto_goTypes = []any{
 var file_registry_proto_depIdxs = []int32{
 	10, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
 	10, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	10, // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
-	10, // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
-	0,  // 4: loop.RemoteExecutableConfig.transmission_schedule:type_name -> loop.TransmissionSchedule
-	10, // 5: loop.RemoteExecutableConfig.delta_stage:type_name -> google.protobuf.Duration
-	10, // 6: loop.RemoteExecutableConfig.request_timeout:type_name -> google.protobuf.Duration
-	1,  // 7: loop.RemoteExecutableConfig.request_hasher_type:type_name -> loop.RequestHasherType
-	2,  // 8: loop.AggregatorConfig.aggregator_type:type_name -> loop.AggregatorType
-	3,  // 9: loop.CapabilityMethodConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
-	5,  // 10: loop.CapabilityMethodConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
-	6,  // 11: loop.CapabilityMethodConfig.aggregator_config:type_name -> loop.AggregatorConfig
-	11, // 12: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
-	3,  // 13: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
-	4,  // 14: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
-	5,  // 15: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
-	11, // 16: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
-	9,  // 17: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
-	7,  // 18: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
-	19, // [19:19] is the sub-list for method output_type
-	19, // [19:19] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	10, // 2: loop.RemoteTriggerConfig.eventTimeout:type_name -> google.protobuf.Duration
+	10, // 3: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
+	10, // 4: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
+	0,  // 5: loop.RemoteExecutableConfig.transmission_schedule:type_name -> loop.TransmissionSchedule
+	10, // 6: loop.RemoteExecutableConfig.delta_stage:type_name -> google.protobuf.Duration
+	10, // 7: loop.RemoteExecutableConfig.request_timeout:type_name -> google.protobuf.Duration
+	1,  // 8: loop.RemoteExecutableConfig.request_hasher_type:type_name -> loop.RequestHasherType
+	2,  // 9: loop.AggregatorConfig.aggregator_type:type_name -> loop.AggregatorType
+	3,  // 10: loop.CapabilityMethodConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
+	5,  // 11: loop.CapabilityMethodConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
+	6,  // 12: loop.CapabilityMethodConfig.aggregator_config:type_name -> loop.AggregatorConfig
+	11, // 13: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
+	3,  // 14: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
+	4,  // 15: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
+	5,  // 16: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
+	11, // 17: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
+	9,  // 18: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
+	7,  // 19: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_registry_proto_init() }

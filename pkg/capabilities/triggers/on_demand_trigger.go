@@ -72,6 +72,11 @@ func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities
 	return nil
 }
 
+func (o *OnDemand) AckEvent(ctx context.Context, eventId string) error {
+	//TODO Should this trigger type use BaseTriggerCapability?
+	return nil
+}
+
 func (o *OnDemand) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	wid := req.Metadata.WorkflowID
 	o.mu.Lock()

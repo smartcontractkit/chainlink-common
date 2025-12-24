@@ -37,6 +37,11 @@ type MercuryTriggerService struct {
 	metaOverride       datastreams.Metadata // usually empty, but set to a value in mock trigger
 }
 
+func (o *MercuryTriggerService) AckEvent(ctx context.Context, eventId string) error {
+	//TODO Use BaseTriggerCapability?
+	return nil
+}
+
 var _ capabilities.TriggerCapability = (*MercuryTriggerService)(nil)
 var _ services.Service = &MercuryTriggerService{}
 

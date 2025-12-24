@@ -73,7 +73,7 @@ func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities
 }
 
 func (o *OnDemand) AckEvent(ctx context.Context, eventId string) error {
-	//TODO Should this trigger type use BaseTriggerCapability?
+	//TODO Implement?
 	return nil
 }
 

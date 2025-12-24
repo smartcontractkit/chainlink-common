@@ -244,6 +244,14 @@ func (a *atomicTriggerCapability) GetState() connectivity.State {
 	return connectivity.State(-1) // unknown
 }
 
+func (a *atomicTriggerCapability) AckEvent(ctx context.Context, eventId string) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).AckEvent(ctx, eventId)
+}
+
 func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	c := a.Load()
 	if c == nil {
@@ -358,6 +366,14 @@ func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
+}
+
+func (a *atomicExecuteAndTriggerCapability) AckEvent(ctx context.Context, eventId string) error {
+	c := a.Load()
+	if c == nil {
+		return errors.New("capability unavailable")
+	}
+	return (*c).AckEvent(ctx, eventId)
 }
 
 func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {

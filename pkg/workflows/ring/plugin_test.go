@@ -138,10 +138,8 @@ func TestPlugin_StateTransitions(t *testing.T) {
 
 	// Use short time to sync for testing
 	plugin, err := NewPlugin(store, config, lggr, &ConsensusConfig{
-		MinShardCount: 1,
-		MaxShardCount: 10,
-		BatchSize:     100,
-		TimeToSync:    1 * time.Second,
+		BatchSize:  100,
+		TimeToSync: 1 * time.Second,
 	})
 	require.NoError(t, err)
 
@@ -354,25 +352,22 @@ func makeObservations(t *testing.T, shardHealths []map[uint32]bool, workflows []
 
 func TestPlugin_getHealthyShards(t *testing.T) {
 	tests := []struct {
-		name     string
-		min, max uint32
-		votes    map[uint32]int // shardID -> vote count
-		f        int
-		want     int
+		name  string
+		votes map[uint32]int // shardID -> vote count
+		f     int
+		want  int
 	}{
-		{"below min", 3, 10, map[uint32]int{0: 2, 1: 2}, 1, 3},
-		{"above max", 1, 2, map[uint32]int{0: 2, 1: 2, 2: 2, 3: 2}, 1, 2},
-		{"within bounds", 1, 10, map[uint32]int{0: 2, 1: 2, 2: 2}, 1, 3},
-		{"some unhealthy", 1, 10, map[uint32]int{0: 2, 1: 1, 2: 2}, 1, 2},
+		{"all healthy", map[uint32]int{0: 2, 1: 2, 2: 2}, 1, 3},
+		{"some unhealthy", map[uint32]int{0: 2, 1: 1, 2: 2}, 1, 2},
+		{"none healthy", map[uint32]int{0: 1, 1: 1}, 1, 0},
+		{"higher F threshold", map[uint32]int{0: 3, 1: 2, 2: 3}, 2, 2},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			plugin := &Plugin{
-				store:         NewStore(),
-				config:        ocr3types.ReportingPluginConfig{F: tc.f},
-				minShardCount: tc.min,
-				maxShardCount: tc.max,
+				store:  NewStore(),
+				config: ocr3types.ReportingPluginConfig{F: tc.f},
 			}
 			got := plugin.getHealthyShards(tc.votes)
 			require.Equal(t, tc.want, len(got))

@@ -29,9 +29,7 @@ type Factory struct {
 func NewFactory(s *Store, lggr logger.Logger, cfg *ConsensusConfig) (*Factory, error) {
 	if cfg == nil {
 		cfg = &ConsensusConfig{
-			MinShardCount: 1,
-			MaxShardCount: 10,
-			BatchSize:     defaultBatchSize,
+			BatchSize: defaultBatchSize,
 		}
 	}
 	return &Factory{

@@ -26,46 +26,31 @@ type Plugin struct {
 	config ocr3types.ReportingPluginConfig
 	lggr   logger.Logger
 
-	batchSize     int
-	minShardCount uint32
-	maxShardCount uint32
-	timeToSync    time.Duration
+	batchSize  int
+	timeToSync time.Duration
 }
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
 type ConsensusConfig struct {
-	MinShardCount uint32
-	MaxShardCount uint32
-	BatchSize     int
-	TimeToSync    time.Duration
+	BatchSize  int
+	TimeToSync time.Duration
 }
 
 const (
-	DefaultMinShardCount = 1
-	DefaultMaxShardCount = 100
-	DefaultBatchSize     = 100
-	DefaultTimeToSync    = 5 * time.Minute
+	DefaultBatchSize  = 100
+	DefaultTimeToSync = 5 * time.Minute
 )
 
 // NewPlugin creates a consensus reporting plugin for shard orchestration
 func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
 	if cfg == nil {
 		cfg = &ConsensusConfig{
-			MinShardCount: DefaultMinShardCount,
-			MaxShardCount: DefaultMaxShardCount,
-			BatchSize:     DefaultBatchSize,
-			TimeToSync:    DefaultTimeToSync,
+			BatchSize:  DefaultBatchSize,
+			TimeToSync: DefaultTimeToSync,
 		}
 	}
 
-	if cfg.MaxShardCount == 0 {
-		return nil, errors.New("max shard count cannot be 0")
-	}
-	if cfg.MinShardCount == 0 {
-		lggr.Infow("using default minShardCount", "default", DefaultMinShardCount)
-		cfg.MinShardCount = DefaultMinShardCount
-	}
 	if cfg.BatchSize <= 0 {
 		lggr.Infow("using default batchSize", "default", DefaultBatchSize)
 		cfg.BatchSize = DefaultBatchSize
@@ -76,20 +61,16 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 	}
 
 	lggr.Infow("RingPlugin config",
-		"minShardCount", cfg.MinShardCount,
-		"maxShardCount", cfg.MaxShardCount,
 		"batchSize", cfg.BatchSize,
 		"timeToSync", cfg.TimeToSync,
 	)
 
 	return &Plugin{
-		store:         store,
-		config:        config,
-		lggr:          logger.Named(lggr, "RingPlugin"),
-		batchSize:     cfg.BatchSize,
-		minShardCount: cfg.MinShardCount,
-		maxShardCount: cfg.MaxShardCount,
-		timeToSync:    cfg.TimeToSync,
+		store:      store,
+		config:     config,
+		lggr:       logger.Named(lggr, "RingPlugin"),
+		batchSize:  cfg.BatchSize,
+		timeToSync: cfg.TimeToSync,
 	}, nil
 }
 
@@ -161,29 +142,15 @@ func (p *Plugin) getHealthyShards(shardHealth map[uint32]int) []uint32 {
 	}
 	slices.Sort(healthyShards)
 
-	// Apply min/max bounds on shard count
-	if uint32(len(healthyShards)) < p.minShardCount {
-		// Pad with sequential shard IDs if below minimum
-		for i := uint32(0); uint32(len(healthyShards)) < p.minShardCount; i++ {
-			if !slices.Contains(healthyShards, i) {
-				healthyShards = append(healthyShards, i)
-			}
-		}
-		slices.Sort(healthyShards)
-	} else if uint32(len(healthyShards)) > p.maxShardCount {
-		// Truncate to max (keep lowest shard IDs for determinism)
-		healthyShards = healthyShards[:p.maxShardCount]
-	}
-
 	return healthyShards
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	// Bootstrap with minimum shards on first round; subsequent rounds build on prior outcome
+	// Bootstrap with 1 shard on first round; subsequent rounds build on prior outcome
 	prior := &pb.Outcome{}
 	if outctx.PreviousOutcome == nil {
 		prior.Routes = map[string]*pb.WorkflowRoute{}
-		prior.State = &pb.RoutingState{Id: outctx.SeqNr, State: &pb.RoutingState_RoutableShards{RoutableShards: p.minShardCount}}
+		prior.State = &pb.RoutingState{Id: outctx.SeqNr, State: &pb.RoutingState_RoutableShards{RoutableShards: 1}}
 	} else if err := proto.Unmarshal(outctx.PreviousOutcome, prior); err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package ring;
 
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb";
@@ -60,6 +59,6 @@ message ReportWorkflowTriggerRegistrationResponse {
 }
 
 service ShardOrchestratorService {
-  rpc GetWorkflowShardMapping(GetWorkflowShardMappingRequest) returns (GetWorkflowShardMappingResponse);
-  rpc ReportWorkflowTriggerRegistration(ReportWorkflowTriggerRegistrationRequest) returns (ReportWorkflowTriggerRegistrationResponse);
+  rpc GetWorkflowShardMapping(GetWorkflowShardMappingRequest) returns (GetWorkflowShardMappingResponse); // returns shard assignments for the specified workflows
+  rpc ReportWorkflowTriggerRegistration(ReportWorkflowTriggerRegistrationRequest) returns (ReportWorkflowTriggerRegistrationResponse); // called by shards to report their workflow trigger registrations
 }

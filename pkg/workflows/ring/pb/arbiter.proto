@@ -28,7 +28,7 @@ message ConsensusWantShardsRequest {
 }
 
 service ArbiterScaler {
-  rpc Status(google.protobuf.Empty) returns (ReplicaStatus);
-  rpc ConsensusWantShards(ConsensusWantShardsRequest) returns (google.protobuf.Empty);
+  rpc Status(google.protobuf.Empty) returns (ReplicaStatus); // called to collect current status of shards by Ring plugin
+  rpc ConsensusWantShards(ConsensusWantShardsRequest) returns (google.protobuf.Empty); // called at the end of the round with consensus shard count by Ring plugin
 }
 

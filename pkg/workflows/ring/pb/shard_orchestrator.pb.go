@@ -9,7 +9,6 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -518,7 +517,7 @@ var File_shard_orchestrator_proto protoreflect.FileDescriptor
 
 const file_shard_orchestrator_proto_rawDesc = "" +
 	"\n" +
-	"\x18shard_orchestrator.proto\x12\x04ring\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n" +
+	"\x18shard_orchestrator.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n" +
 	"\x1eGetWorkflowShardMappingRequest\x12!\n" +
 	"\fworkflow_ids\x18\x01 \x03(\tR\vworkflowIds\"\xbe\x01\n" +
 	"\x14WorkflowMappingState\x12 \n" +

@@ -85,7 +85,6 @@ func (x *Observation) GetNow() *timestamppb.Timestamp {
 type WorkflowRoute struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Shard         uint32                 `protobuf:"varint,1,opt,name=shard,proto3" json:"shard,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -125,13 +124,6 @@ func (x *WorkflowRoute) GetShard() uint32 {
 		return x.Shard
 	}
 	return 0
-}
-
-func (x *WorkflowRoute) GetExpiresAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.ExpiresAt
-	}
-	return nil
 }
 
 type Transition struct {
@@ -347,11 +339,9 @@ const file_consensus_proto_rawDesc = "" +
 	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1aD\n" +
 	"\x16ShardHealthStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"`\n" +
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"%\n" +
 	"\rWorkflowRoute\x12\x14\n" +
-	"\x05shard\x18\x01 \x01(\rR\x05shard\x129\n" +
-	"\n" +
-	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\xa3\x01\n" +
+	"\x05shard\x18\x01 \x01(\rR\x05shard\"\xa3\x01\n" +
 	"\n" +
 	"Transition\x12\x1f\n" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
@@ -398,17 +388,16 @@ var file_consensus_proto_goTypes = []any{
 var file_consensus_proto_depIdxs = []int32{
 	5, // 0: ring.Observation.shard_health_status:type_name -> ring.Observation.ShardHealthStatusEntry
 	7, // 1: ring.Observation.now:type_name -> google.protobuf.Timestamp
-	7, // 2: ring.WorkflowRoute.expires_at:type_name -> google.protobuf.Timestamp
-	7, // 3: ring.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp
-	2, // 4: ring.RoutingState.transition:type_name -> ring.Transition
-	3, // 5: ring.Outcome.state:type_name -> ring.RoutingState
-	6, // 6: ring.Outcome.routes:type_name -> ring.Outcome.RoutesEntry
-	1, // 7: ring.Outcome.RoutesEntry.value:type_name -> ring.WorkflowRoute
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	7, // 2: ring.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp
+	2, // 3: ring.RoutingState.transition:type_name -> ring.Transition
+	3, // 4: ring.Outcome.state:type_name -> ring.RoutingState
+	6, // 5: ring.Outcome.routes:type_name -> ring.Outcome.RoutesEntry
+	1, // 6: ring.Outcome.RoutesEntry.value:type_name -> ring.WorkflowRoute
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_consensus_proto_init() }

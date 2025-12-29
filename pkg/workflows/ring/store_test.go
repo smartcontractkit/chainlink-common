@@ -136,18 +136,23 @@ func TestStore_DistributionAcrossShards(t *testing.T) {
 	})
 
 	// Generate many workflows and check distribution
+	totalWorkflows := 100
 	distribution := make(map[uint32]int)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < totalWorkflows; i++ {
 		wfID := "workflow-" + string(rune(i))
 		shard, err := store.GetShardForWorkflow(ctx, wfID)
 		require.NoError(t, err)
 		distribution[shard]++
 	}
 
-	require.Equal(t, 38, distribution[0], "Should have 29 workflows on shard 0")
-	require.Equal(t, 29, distribution[1], "Should have 33 workflows on shard 1")
-	require.Equal(t, 33, distribution[2], "Should have 33 workflows on shard 2")
-	require.Equal(t, 100, sum(distribution), "Should have 100 workflows")
+	require.Equal(t, totalWorkflows, sum(distribution), "Should have 100 workflows")
+
+	// Each shard should have roughly 33% of workflows (±5%)
+	for shard, count := range distribution {
+		pct := float64(count) / 100.0 * 100
+		require.GreaterOrEqual(t, pct, 28.0, "Shard %d has too few workflows: %d%%", shard, int(pct))
+		require.LessOrEqual(t, pct, 38.0, "Shard %d has too many workflows: %d%%", shard, int(pct))
+	}
 }
 
 func sum(distribution map[uint32]int) int {

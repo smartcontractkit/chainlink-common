@@ -124,6 +124,30 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
+func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealth map[uint32]int, workflows []string, timestamps []time.Time) {
+	shardHealth = make(map[uint32]int)
+	for _, ao := range aos {
+		observation := &pb.Observation{}
+		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
+			p.lggr.Warnf("failed to unmarshal observation: %v", err)
+			continue
+		}
+
+		for shardID, healthy := range observation.ShardHealthStatus {
+			if healthy {
+				shardHealth[shardID]++
+			}
+		}
+
+		workflows = append(workflows, observation.WorkflowIds...)
+
+		if observation.Now != nil {
+			timestamps = append(timestamps, observation.Now.AsTime())
+		}
+	}
+	return shardHealth, workflows, timestamps
+}
+
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// Bootstrap with minimum shards on first round; subsequent rounds build on prior outcome
 	prior := &pb.Outcome{}
@@ -134,51 +158,19 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		return nil, err
 	}
 
-	currentShardHealth := make(map[uint32]int)
 	totalObservations := len(aos)
-	allWorkflows := make([]string, 0)
-	nows := make([]time.Time, 0)
+	currentShardHealth, allWorkflows, nows := p.collectShardInfo(aos)
 
-	// Collect shard health observations and workflows
-	for _, ao := range aos {
-		observation := &pb.Observation{}
-		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
-			p.lggr.Warnf("failed to unmarshal observation: %v", err)
-			continue
-		}
-
-		for shardID, healthy := range observation.ShardHealthStatus {
-			if healthy {
-				currentShardHealth[shardID]++
-			}
-		}
-
-		// Collect workflow IDs
-		allWorkflows = append(allWorkflows, observation.WorkflowIds...)
-
-		// Collect timestamps
-		if observation.Now != nil {
-			nows = append(nows, observation.Now.AsTime())
-		}
+	// Need at least F+1 timestamps; fewer means >F faulty nodes and we can't trust this round
+	if len(nows) < p.config.F+1 {
+		return nil, errors.New("insufficient observation timestamps")
 	}
+	slices.SortFunc(nows, time.Time.Compare)
 
-	// Calculate median time
-	now := time.Now()
-	if len(nows) > 0 {
-		slices.SortFunc(nows, time.Time.Compare)
-		now = nows[len(nows)/2]
-	}
+	// Use the median timestamp to determine the current time
+	now := nows[len(nows)/2]
 
-	// Deduplicate workflows
-	workflowMap := make(map[string]bool)
-	for _, wf := range allWorkflows {
-		workflowMap[wf] = true
-	}
-	allWorkflows = make([]string, 0, len(workflowMap))
-	for wf := range workflowMap {
-		allWorkflows = append(allWorkflows, wf)
-	}
-	slices.Sort(allWorkflows) // Ensure deterministic order
+	allWorkflows = uniqueSorted(allWorkflows)
 
 	// Determine desired shard count based on observations
 	healthyShardCount := uint32(0)

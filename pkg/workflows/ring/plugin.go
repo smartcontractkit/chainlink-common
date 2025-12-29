@@ -125,7 +125,7 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	// Load prior state
+	// Bootstrap with minimum shards on first round; subsequent rounds build on prior outcome
 	prior := &pb.Outcome{}
 	if outctx.PreviousOutcome == nil {
 		prior.Routes = map[string]*pb.WorkflowRoute{}

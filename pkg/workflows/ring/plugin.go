@@ -101,11 +101,17 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
 	shardHealth := p.store.GetShardHealth()
 
+	// Collect workflow IDs from cache and pending allocation requests
 	allWorkflowIDs := make([]string, 0)
 	for wfID := range p.store.GetAllRoutingState() {
 		allWorkflowIDs = append(allWorkflowIDs, wfID)
 	}
-	slices.Sort(allWorkflowIDs)
+
+	// Include any pending allocation requests (workflows waiting for assignment during transition)
+	pendingAllocs := p.store.GetPendingAllocations()
+	allWorkflowIDs = append(allWorkflowIDs, pendingAllocs...)
+
+	allWorkflowIDs = uniqueSorted(allWorkflowIDs)
 
 	observation := &pb.Observation{
 		ShardHealthStatus: shardHealth,

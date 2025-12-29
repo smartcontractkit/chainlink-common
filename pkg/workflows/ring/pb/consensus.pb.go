@@ -24,8 +24,8 @@ const (
 
 type Observation struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	ShardHealthStatus map[uint32]bool        `protobuf:"bytes,1,rep,name=shardHealthStatus,proto3" json:"shardHealthStatus,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // shard_id -> is_healthy
-	WorkflowIDs       []string               `protobuf:"bytes,2,rep,name=workflowIDs,proto3" json:"workflowIDs,omitempty"`
+	ShardHealthStatus map[uint32]bool        `protobuf:"bytes,1,rep,name=shard_health_status,json=shardHealthStatus,proto3" json:"shard_health_status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // shard_id -> is_healthy
+	WorkflowIds       []string               `protobuf:"bytes,2,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
 	Now               *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -68,9 +68,9 @@ func (x *Observation) GetShardHealthStatus() map[uint32]bool {
 	return nil
 }
 
-func (x *Observation) GetWorkflowIDs() []string {
+func (x *Observation) GetWorkflowIds() []string {
 	if x != nil {
-		return x.WorkflowIDs
+		return x.WorkflowIds
 	}
 	return nil
 }
@@ -340,10 +340,10 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfb\x01\n" +
-	"\vObservation\x12V\n" +
-	"\x11shardHealthStatus\x18\x01 \x03(\v2(.ring.Observation.ShardHealthStatusEntryR\x11shardHealthStatus\x12 \n" +
-	"\vworkflowIDs\x18\x02 \x03(\tR\vworkflowIDs\x12,\n" +
+	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfe\x01\n" +
+	"\vObservation\x12X\n" +
+	"\x13shard_health_status\x18\x01 \x03(\v2(.ring.Observation.ShardHealthStatusEntryR\x11shardHealthStatus\x12!\n" +
+	"\fworkflow_ids\x18\x02 \x03(\tR\vworkflowIds\x12,\n" +
 	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1aD\n" +
 	"\x16ShardHealthStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
@@ -396,7 +396,7 @@ var file_consensus_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_consensus_proto_depIdxs = []int32{
-	5, // 0: ring.Observation.shardHealthStatus:type_name -> ring.Observation.ShardHealthStatusEntry
+	5, // 0: ring.Observation.shard_health_status:type_name -> ring.Observation.ShardHealthStatusEntry
 	7, // 1: ring.Observation.now:type_name -> google.protobuf.Timestamp
 	7, // 2: ring.WorkflowRoute.expires_at:type_name -> google.protobuf.Timestamp
 	7, // 3: ring.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp

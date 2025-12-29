@@ -74,7 +74,7 @@ func TestPlugin_OutcomeWithMultiNodeObservations(t *testing.T) {
 	for _, obs := range observations {
 		pbObs := &pb.Observation{
 			ShardHealthStatus: obs.shardHealth,
-			WorkflowIDs:       obs.workflows,
+			WorkflowIds:       obs.workflows,
 			Now:               timestamppb.Now(),
 		}
 		rawObs, err := proto.Marshal(pbObs)
@@ -338,7 +338,7 @@ func makeObservations(t *testing.T, shardHealths []map[uint32]bool, workflows []
 	for i, health := range shardHealths {
 		pbObs := &pb.Observation{
 			ShardHealthStatus: health,
-			WorkflowIDs:       workflows,
+			WorkflowIds:       workflows,
 			Now:               timestamppb.New(now),
 		}
 		rawObs, err := proto.Marshal(pbObs)

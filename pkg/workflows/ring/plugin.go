@@ -92,7 +92,7 @@ func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ ty
 
 	observation := &pb.Observation{
 		ShardHealthStatus: shardHealth,
-		WorkflowIDs:       allWorkflowIDs,
+		WorkflowIds:       allWorkflowIDs,
 		Now:               timestamppb.Now(),
 	}
 
@@ -137,7 +137,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 
 		// Collect workflow IDs
-		allWorkflows = append(allWorkflows, observation.WorkflowIDs...)
+		allWorkflows = append(allWorkflows, observation.WorkflowIds...)
 
 		// Collect timestamps
 		if observation.Now != nil {

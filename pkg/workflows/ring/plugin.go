@@ -42,14 +42,21 @@ type ConsensusConfig struct {
 	TimeToSync    time.Duration
 }
 
+const (
+	DefaultMinShardCount = 1
+	DefaultMaxShardCount = 100
+	DefaultBatchSize     = 100
+	DefaultTimeToSync    = 5 * time.Minute
+)
+
 // NewPlugin creates a consensus reporting plugin for shard orchestration
 func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
 	if cfg == nil {
 		cfg = &ConsensusConfig{
-			MinShardCount: 1,
-			MaxShardCount: 100,
-			BatchSize:     1000,
-			TimeToSync:    5 * time.Minute,
+			MinShardCount: DefaultMinShardCount,
+			MaxShardCount: DefaultMaxShardCount,
+			BatchSize:     DefaultBatchSize,
+			TimeToSync:    DefaultTimeToSync,
 		}
 	}
 
@@ -57,14 +64,24 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		return nil, errors.New("max shard count cannot be 0")
 	}
 	if cfg.MinShardCount == 0 {
-		cfg.MinShardCount = 1
+		lggr.Infow("using default minShardCount", "default", DefaultMinShardCount)
+		cfg.MinShardCount = DefaultMinShardCount
 	}
 	if cfg.BatchSize <= 0 {
-		cfg.BatchSize = 100
+		lggr.Infow("using default batchSize", "default", DefaultBatchSize)
+		cfg.BatchSize = DefaultBatchSize
 	}
 	if cfg.TimeToSync <= 0 {
-		cfg.TimeToSync = 5 * time.Minute
+		lggr.Infow("using default timeToSync", "default", DefaultTimeToSync)
+		cfg.TimeToSync = DefaultTimeToSync
 	}
+
+	lggr.Infow("RingPlugin config",
+		"minShardCount", cfg.MinShardCount,
+		"maxShardCount", cfg.MaxShardCount,
+		"batchSize", cfg.BatchSize,
+		"timeToSync", cfg.TimeToSync,
+	)
 
 	return &Plugin{
 		store:         store,

@@ -151,15 +151,31 @@ func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealt
 	return shardHealth, workflows, timestamps
 }
 
-func (p *Plugin) countHealthyShards(shardHealth map[uint32]int) uint32 {
-	var count uint32
+func (p *Plugin) getHealthyShards(shardHealth map[uint32]int) []uint32 {
+	var healthyShards []uint32
 	for shardID, votes := range shardHealth {
 		if votes > p.config.F {
-			count++
+			healthyShards = append(healthyShards, shardID)
 			p.store.SetShardHealth(shardID, true)
 		}
 	}
-	return max(p.minShardCount, min(count, p.maxShardCount))
+	slices.Sort(healthyShards)
+
+	// Apply min/max bounds on shard count
+	if uint32(len(healthyShards)) < p.minShardCount {
+		// Pad with sequential shard IDs if below minimum
+		for i := uint32(0); uint32(len(healthyShards)) < p.minShardCount; i++ {
+			if !slices.Contains(healthyShards, i) {
+				healthyShards = append(healthyShards, i)
+			}
+		}
+		slices.Sort(healthyShards)
+	} else if uint32(len(healthyShards)) > p.maxShardCount {
+		// Truncate to max (keep lowest shard IDs for determinism)
+		healthyShards = healthyShards[:p.maxShardCount]
+	}
+
+	return healthyShards
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
@@ -185,9 +201,9 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	allWorkflows = uniqueSorted(allWorkflows)
 
-	healthyShardCount := p.countHealthyShards(currentShardHealth)
+	healthyShards := p.getHealthyShards(currentShardHealth)
 
-	nextState, err := p.calculateNextState(prior.State, healthyShardCount, now)
+	nextState, err := p.calculateNextState(prior.State, uint32(len(healthyShards)), now)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +212,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	// This must be a pure function of consensus-derived data to avoid protocol failures
 	routes := make(map[string]*pb.WorkflowRoute)
 	for _, wfID := range allWorkflows {
-		assignedShard := getShardForWorkflow(wfID, healthyShardCount)
+		assignedShard := getShardForWorkflow(wfID, healthyShards)
 		routes[wfID] = &pb.WorkflowRoute{
 			Shard: assignedShard,
 		}
@@ -207,7 +223,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		Routes: routes,
 	}
 
-	p.lggr.Infow("Consensus Outcome", "healthyShards", healthyShardCount, "totalObservations", len(aos), "workflowCount", len(routes))
+	p.lggr.Infow("Consensus Outcome", "healthyShards", len(healthyShards), "totalObservations", len(aos), "workflowCount", len(routes))
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
 }

@@ -35,14 +35,14 @@ func consistentHashConfig() consistent.Config {
 	}
 }
 
-func getShardForWorkflow(workflowID string, shardCount uint32) uint32 {
-	if shardCount == 0 {
+func getShardForWorkflow(workflowID string, healthyShards []uint32) uint32 {
+	if len(healthyShards) == 0 {
 		return 0
 	}
 
-	members := make([]consistent.Member, shardCount)
-	for i := uint32(0); i < shardCount; i++ {
-		members[i] = ShardMember(strconv.FormatUint(uint64(i), 10))
+	members := make([]consistent.Member, len(healthyShards))
+	for i, shardID := range healthyShards {
+		members[i] = ShardMember(strconv.FormatUint(uint64(shardID), 10))
 	}
 
 	ring := consistent.New(members, consistentHashConfig())

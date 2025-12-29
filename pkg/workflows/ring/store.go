@@ -73,9 +73,9 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 
 	// In steady state, compute locally using consistent hashing
 	if s.currentState == nil || s.isInSteadyState() {
-		shardCount := uint32(len(s.healthyShards))
+		healthyShards := slices.Clone(s.healthyShards)
 		s.mu.Unlock()
-		return getShardForWorkflow(workflowID, shardCount), nil
+		return getShardForWorkflow(workflowID, healthyShards), nil
 	}
 
 	// In transition state, enqueue request and wait for allocation

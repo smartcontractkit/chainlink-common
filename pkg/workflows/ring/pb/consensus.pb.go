@@ -278,8 +278,8 @@ func (*RoutingState_RoutableShards) isRoutingState_State() {}
 
 type Outcome struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
-	State         *RoutingState             `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	Routes        map[string]*WorkflowRoute `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	State         *RoutingState             `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`                                                                             // used internally for ring plugin
+	Routes        map[string]*WorkflowRoute `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // used by consumers to route requests to the appropriate shard
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -31,7 +31,7 @@ message RoutingState {
 }
 
 message Outcome {
-  RoutingState state = 1;
-  map<string, WorkflowRoute> routes = 2;
+  RoutingState state = 1; // used internally for ring plugin
+  map<string, WorkflowRoute> routes = 2; // used by consumers to route requests to the appropriate shard
 }
 

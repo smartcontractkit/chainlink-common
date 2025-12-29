@@ -158,7 +158,6 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		return nil, err
 	}
 
-	totalObservations := len(aos)
 	currentShardHealth, allWorkflows, nows := p.collectShardInfo(aos)
 
 	// Need at least F+1 timestamps; fewer means >F faulty nodes and we can't trust this round
@@ -211,7 +210,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		Routes: routes,
 	}
 
-	p.lggr.Infow("Consensus Outcome", "healthyShards", healthyShardCount, "totalObservations", totalObservations, "workflowCount", len(routes))
+	p.lggr.Infow("Consensus Outcome", "healthyShards", healthyShardCount, "totalObservations", len(aos), "workflowCount", len(routes))
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
 }

@@ -22,61 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type SyncCapabilityJobSpecsResponse_SyncAction int32
-
-const (
-	SyncCapabilityJobSpecsResponse_UNKNOWN   SyncCapabilityJobSpecsResponse_SyncAction = 0
-	SyncCapabilityJobSpecsResponse_CREATE    SyncCapabilityJobSpecsResponse_SyncAction = 1
-	SyncCapabilityJobSpecsResponse_UPDATE    SyncCapabilityJobSpecsResponse_SyncAction = 2
-	SyncCapabilityJobSpecsResponse_DELETE    SyncCapabilityJobSpecsResponse_SyncAction = 3
-	SyncCapabilityJobSpecsResponse_FULL_SYNC SyncCapabilityJobSpecsResponse_SyncAction = 4
-)
-
-// Enum value maps for SyncCapabilityJobSpecsResponse_SyncAction.
-var (
-	SyncCapabilityJobSpecsResponse_SyncAction_name = map[int32]string{
-		0: "UNKNOWN",
-		1: "CREATE",
-		2: "UPDATE",
-		3: "DELETE",
-		4: "FULL_SYNC",
-	}
-	SyncCapabilityJobSpecsResponse_SyncAction_value = map[string]int32{
-		"UNKNOWN":   0,
-		"CREATE":    1,
-		"UPDATE":    2,
-		"DELETE":    3,
-		"FULL_SYNC": 4,
-	}
-)
-
-func (x SyncCapabilityJobSpecsResponse_SyncAction) Enum() *SyncCapabilityJobSpecsResponse_SyncAction {
-	p := new(SyncCapabilityJobSpecsResponse_SyncAction)
-	*p = x
-	return p
-}
-
-func (x SyncCapabilityJobSpecsResponse_SyncAction) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (SyncCapabilityJobSpecsResponse_SyncAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_shard_orchestrator_proto_enumTypes[0].Descriptor()
-}
-
-func (SyncCapabilityJobSpecsResponse_SyncAction) Type() protoreflect.EnumType {
-	return &file_shard_orchestrator_proto_enumTypes[0]
-}
-
-func (x SyncCapabilityJobSpecsResponse_SyncAction) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use SyncCapabilityJobSpecsResponse_SyncAction.Descriptor instead.
-func (SyncCapabilityJobSpecsResponse_SyncAction) EnumDescriptor() ([]byte, []int) {
-	return file_shard_orchestrator_proto_rawDescGZIP(), []int{4, 0}
-}
-
 type GetWorkflowShardMappingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	WorkflowIds   []string               `protobuf:"bytes,1,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
@@ -257,150 +202,6 @@ func (x *GetWorkflowShardMappingResponse) GetMappingVersion() uint64 {
 	return 0
 }
 
-type SyncCapabilityJobSpecsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ShardId       uint32                 `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3" json:"shard_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SyncCapabilityJobSpecsRequest) Reset() {
-	*x = SyncCapabilityJobSpecsRequest{}
-	mi := &file_shard_orchestrator_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SyncCapabilityJobSpecsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SyncCapabilityJobSpecsRequest) ProtoMessage() {}
-
-func (x *SyncCapabilityJobSpecsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shard_orchestrator_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SyncCapabilityJobSpecsRequest.ProtoReflect.Descriptor instead.
-func (*SyncCapabilityJobSpecsRequest) Descriptor() ([]byte, []int) {
-	return file_shard_orchestrator_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *SyncCapabilityJobSpecsRequest) GetShardId() uint32 {
-	if x != nil {
-		return x.ShardId
-	}
-	return 0
-}
-
-type SyncCapabilityJobSpecsResponse struct {
-	state           protoimpl.MessageState                    `protogen:"open.v1"`
-	Action          SyncCapabilityJobSpecsResponse_SyncAction `protobuf:"varint,1,opt,name=action,proto3,enum=ring.SyncCapabilityJobSpecsResponse_SyncAction" json:"action,omitempty"`
-	JobSpecId       string                                    `protobuf:"bytes,2,opt,name=job_spec_id,json=jobSpecId,proto3" json:"job_spec_id,omitempty"`
-	Command         string                                    `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
-	Config          string                                    `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
-	TemplateContext map[string]string                         `protobuf:"bytes,6,rep,name=template_context,json=templateContext,proto3" json:"template_context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	SpecVersion     uint64                                    `protobuf:"varint,7,opt,name=spec_version,json=specVersion,proto3" json:"spec_version,omitempty"`
-	AllSpecIds      []string                                  `protobuf:"bytes,8,rep,name=all_spec_ids,json=allSpecIds,proto3" json:"all_spec_ids,omitempty"`
-	SyncTimestamp   *timestamppb.Timestamp                    `protobuf:"bytes,9,opt,name=sync_timestamp,json=syncTimestamp,proto3" json:"sync_timestamp,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *SyncCapabilityJobSpecsResponse) Reset() {
-	*x = SyncCapabilityJobSpecsResponse{}
-	mi := &file_shard_orchestrator_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SyncCapabilityJobSpecsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SyncCapabilityJobSpecsResponse) ProtoMessage() {}
-
-func (x *SyncCapabilityJobSpecsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_shard_orchestrator_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SyncCapabilityJobSpecsResponse.ProtoReflect.Descriptor instead.
-func (*SyncCapabilityJobSpecsResponse) Descriptor() ([]byte, []int) {
-	return file_shard_orchestrator_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetAction() SyncCapabilityJobSpecsResponse_SyncAction {
-	if x != nil {
-		return x.Action
-	}
-	return SyncCapabilityJobSpecsResponse_UNKNOWN
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetJobSpecId() string {
-	if x != nil {
-		return x.JobSpecId
-	}
-	return ""
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetCommand() string {
-	if x != nil {
-		return x.Command
-	}
-	return ""
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetConfig() string {
-	if x != nil {
-		return x.Config
-	}
-	return ""
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetTemplateContext() map[string]string {
-	if x != nil {
-		return x.TemplateContext
-	}
-	return nil
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetSpecVersion() uint64 {
-	if x != nil {
-		return x.SpecVersion
-	}
-	return 0
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetAllSpecIds() []string {
-	if x != nil {
-		return x.AllSpecIds
-	}
-	return nil
-}
-
-func (x *SyncCapabilityJobSpecsResponse) GetSyncTimestamp() *timestamppb.Timestamp {
-	if x != nil {
-		return x.SyncTimestamp
-	}
-	return nil
-}
-
 type ReportWorkflowTriggerRegistrationRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	SourceShardId        uint32                 `protobuf:"varint,1,opt,name=source_shard_id,json=sourceShardId,proto3" json:"source_shard_id,omitempty"`
@@ -413,7 +214,7 @@ type ReportWorkflowTriggerRegistrationRequest struct {
 
 func (x *ReportWorkflowTriggerRegistrationRequest) Reset() {
 	*x = ReportWorkflowTriggerRegistrationRequest{}
-	mi := &file_shard_orchestrator_proto_msgTypes[5]
+	mi := &file_shard_orchestrator_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -425,7 +226,7 @@ func (x *ReportWorkflowTriggerRegistrationRequest) String() string {
 func (*ReportWorkflowTriggerRegistrationRequest) ProtoMessage() {}
 
 func (x *ReportWorkflowTriggerRegistrationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shard_orchestrator_proto_msgTypes[5]
+	mi := &file_shard_orchestrator_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -438,7 +239,7 @@ func (x *ReportWorkflowTriggerRegistrationRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ReportWorkflowTriggerRegistrationRequest.ProtoReflect.Descriptor instead.
 func (*ReportWorkflowTriggerRegistrationRequest) Descriptor() ([]byte, []int) {
-	return file_shard_orchestrator_proto_rawDescGZIP(), []int{5}
+	return file_shard_orchestrator_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ReportWorkflowTriggerRegistrationRequest) GetSourceShardId() uint32 {
@@ -478,7 +279,7 @@ type ReportWorkflowTriggerRegistrationResponse struct {
 
 func (x *ReportWorkflowTriggerRegistrationResponse) Reset() {
 	*x = ReportWorkflowTriggerRegistrationResponse{}
-	mi := &file_shard_orchestrator_proto_msgTypes[6]
+	mi := &file_shard_orchestrator_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -490,7 +291,7 @@ func (x *ReportWorkflowTriggerRegistrationResponse) String() string {
 func (*ReportWorkflowTriggerRegistrationResponse) ProtoMessage() {}
 
 func (x *ReportWorkflowTriggerRegistrationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_shard_orchestrator_proto_msgTypes[6]
+	mi := &file_shard_orchestrator_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -503,7 +304,7 @@ func (x *ReportWorkflowTriggerRegistrationResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use ReportWorkflowTriggerRegistrationResponse.ProtoReflect.Descriptor instead.
 func (*ReportWorkflowTriggerRegistrationResponse) Descriptor() ([]byte, []int) {
-	return file_shard_orchestrator_proto_rawDescGZIP(), []int{6}
+	return file_shard_orchestrator_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReportWorkflowTriggerRegistrationResponse) GetSuccess() bool {
@@ -537,32 +338,7 @@ const file_shard_orchestrator_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\x1a\\\n" +
 	"\x12MappingStatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
-	"\x05value\x18\x02 \x01(\v2\x1a.ring.WorkflowMappingStateR\x05value:\x028\x01\":\n" +
-	"\x1dSyncCapabilityJobSpecsRequest\x12\x19\n" +
-	"\bshard_id\x18\x01 \x01(\rR\ashardId\"\xbb\x04\n" +
-	"\x1eSyncCapabilityJobSpecsResponse\x12G\n" +
-	"\x06action\x18\x01 \x01(\x0e2/.ring.SyncCapabilityJobSpecsResponse.SyncActionR\x06action\x12\x1e\n" +
-	"\vjob_spec_id\x18\x02 \x01(\tR\tjobSpecId\x12\x18\n" +
-	"\acommand\x18\x03 \x01(\tR\acommand\x12\x16\n" +
-	"\x06config\x18\x04 \x01(\tR\x06config\x12d\n" +
-	"\x10template_context\x18\x06 \x03(\v29.ring.SyncCapabilityJobSpecsResponse.TemplateContextEntryR\x0ftemplateContext\x12!\n" +
-	"\fspec_version\x18\a \x01(\x04R\vspecVersion\x12 \n" +
-	"\fall_spec_ids\x18\b \x03(\tR\n" +
-	"allSpecIds\x12A\n" +
-	"\x0esync_timestamp\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\rsyncTimestamp\x1aB\n" +
-	"\x14TemplateContextEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"L\n" +
-	"\n" +
-	"SyncAction\x12\v\n" +
-	"\aUNKNOWN\x10\x00\x12\n" +
-	"\n" +
-	"\x06CREATE\x10\x01\x12\n" +
-	"\n" +
-	"\x06UPDATE\x10\x02\x12\n" +
-	"\n" +
-	"\x06DELETE\x10\x03\x12\r\n" +
-	"\tFULL_SYNC\x10\x04\"\x93\x03\n" +
+	"\x05value\x18\x02 \x01(\v2\x1a.ring.WorkflowMappingStateR\x05value:\x028\x01\"\x93\x03\n" +
 	"(ReportWorkflowTriggerRegistrationRequest\x12&\n" +
 	"\x0fsource_shard_id\x18\x01 \x01(\rR\rsourceShardId\x12z\n" +
 	"\x14registered_workflows\x18\x02 \x03(\v2G.ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntryR\x13registeredWorkflows\x12E\n" +
@@ -589,43 +365,35 @@ func file_shard_orchestrator_proto_rawDescGZIP() []byte {
 	return file_shard_orchestrator_proto_rawDescData
 }
 
-var file_shard_orchestrator_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_shard_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_shard_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_shard_orchestrator_proto_goTypes = []any{
-	(SyncCapabilityJobSpecsResponse_SyncAction)(0),    // 0: ring.SyncCapabilityJobSpecsResponse.SyncAction
-	(*GetWorkflowShardMappingRequest)(nil),            // 1: ring.GetWorkflowShardMappingRequest
-	(*WorkflowMappingState)(nil),                      // 2: ring.WorkflowMappingState
-	(*GetWorkflowShardMappingResponse)(nil),           // 3: ring.GetWorkflowShardMappingResponse
-	(*SyncCapabilityJobSpecsRequest)(nil),             // 4: ring.SyncCapabilityJobSpecsRequest
-	(*SyncCapabilityJobSpecsResponse)(nil),            // 5: ring.SyncCapabilityJobSpecsResponse
-	(*ReportWorkflowTriggerRegistrationRequest)(nil),  // 6: ring.ReportWorkflowTriggerRegistrationRequest
-	(*ReportWorkflowTriggerRegistrationResponse)(nil), // 7: ring.ReportWorkflowTriggerRegistrationResponse
-	nil,                           // 8: ring.GetWorkflowShardMappingResponse.MappingsEntry
-	nil,                           // 9: ring.GetWorkflowShardMappingResponse.MappingStatesEntry
-	nil,                           // 10: ring.SyncCapabilityJobSpecsResponse.TemplateContextEntry
-	nil,                           // 11: ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(*GetWorkflowShardMappingRequest)(nil),            // 0: ring.GetWorkflowShardMappingRequest
+	(*WorkflowMappingState)(nil),                      // 1: ring.WorkflowMappingState
+	(*GetWorkflowShardMappingResponse)(nil),           // 2: ring.GetWorkflowShardMappingResponse
+	(*ReportWorkflowTriggerRegistrationRequest)(nil),  // 3: ring.ReportWorkflowTriggerRegistrationRequest
+	(*ReportWorkflowTriggerRegistrationResponse)(nil), // 4: ring.ReportWorkflowTriggerRegistrationResponse
+	nil,                           // 5: ring.GetWorkflowShardMappingResponse.MappingsEntry
+	nil,                           // 6: ring.GetWorkflowShardMappingResponse.MappingStatesEntry
+	nil,                           // 7: ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
 }
 var file_shard_orchestrator_proto_depIdxs = []int32{
-	12, // 0: ring.WorkflowMappingState.last_updated:type_name -> google.protobuf.Timestamp
-	8,  // 1: ring.GetWorkflowShardMappingResponse.mappings:type_name -> ring.GetWorkflowShardMappingResponse.MappingsEntry
-	9,  // 2: ring.GetWorkflowShardMappingResponse.mapping_states:type_name -> ring.GetWorkflowShardMappingResponse.MappingStatesEntry
-	12, // 3: ring.GetWorkflowShardMappingResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 4: ring.SyncCapabilityJobSpecsResponse.action:type_name -> ring.SyncCapabilityJobSpecsResponse.SyncAction
-	10, // 5: ring.SyncCapabilityJobSpecsResponse.template_context:type_name -> ring.SyncCapabilityJobSpecsResponse.TemplateContextEntry
-	12, // 6: ring.SyncCapabilityJobSpecsResponse.sync_timestamp:type_name -> google.protobuf.Timestamp
-	11, // 7: ring.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
-	12, // 8: ring.ReportWorkflowTriggerRegistrationRequest.report_timestamp:type_name -> google.protobuf.Timestamp
-	2,  // 9: ring.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> ring.WorkflowMappingState
-	1,  // 10: ring.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> ring.GetWorkflowShardMappingRequest
-	6,  // 11: ring.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> ring.ReportWorkflowTriggerRegistrationRequest
-	3,  // 12: ring.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> ring.GetWorkflowShardMappingResponse
-	7,  // 13: ring.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> ring.ReportWorkflowTriggerRegistrationResponse
-	12, // [12:14] is the sub-list for method output_type
-	10, // [10:12] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	8, // 0: ring.WorkflowMappingState.last_updated:type_name -> google.protobuf.Timestamp
+	5, // 1: ring.GetWorkflowShardMappingResponse.mappings:type_name -> ring.GetWorkflowShardMappingResponse.MappingsEntry
+	6, // 2: ring.GetWorkflowShardMappingResponse.mapping_states:type_name -> ring.GetWorkflowShardMappingResponse.MappingStatesEntry
+	8, // 3: ring.GetWorkflowShardMappingResponse.timestamp:type_name -> google.protobuf.Timestamp
+	7, // 4: ring.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> ring.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	8, // 5: ring.ReportWorkflowTriggerRegistrationRequest.report_timestamp:type_name -> google.protobuf.Timestamp
+	1, // 6: ring.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> ring.WorkflowMappingState
+	0, // 7: ring.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> ring.GetWorkflowShardMappingRequest
+	3, // 8: ring.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> ring.ReportWorkflowTriggerRegistrationRequest
+	2, // 9: ring.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> ring.GetWorkflowShardMappingResponse
+	4, // 10: ring.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> ring.ReportWorkflowTriggerRegistrationResponse
+	9, // [9:11] is the sub-list for method output_type
+	7, // [7:9] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_shard_orchestrator_proto_init() }
@@ -638,14 +406,13 @@ func file_shard_orchestrator_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shard_orchestrator_proto_rawDesc), len(file_shard_orchestrator_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   11,
+			NumEnums:      0,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_shard_orchestrator_proto_goTypes,
 		DependencyIndexes: file_shard_orchestrator_proto_depIdxs,
-		EnumInfos:         file_shard_orchestrator_proto_enumTypes,
 		MessageInfos:      file_shard_orchestrator_proto_msgTypes,
 	}.Build()
 	File_shard_orchestrator_proto = out.File

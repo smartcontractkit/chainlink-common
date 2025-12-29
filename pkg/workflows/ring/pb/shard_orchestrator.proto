@@ -24,29 +24,6 @@ message GetWorkflowShardMappingResponse {
   uint64 mapping_version = 4;
 }
 
-message SyncCapabilityJobSpecsRequest {
-  uint32 shard_id = 1;
-}
-
-message SyncCapabilityJobSpecsResponse {
-  enum SyncAction {
-    UNKNOWN = 0;
-    CREATE = 1;
-    UPDATE = 2;
-    DELETE = 3;
-    FULL_SYNC = 4;
-  }
-  
-  SyncAction action = 1;
-  string job_spec_id = 2;
-  string command = 3;
-  string config = 4;
-  map<string, string> template_context = 6;
-  uint64 spec_version = 7;
-  repeated string all_spec_ids = 8;
-  google.protobuf.Timestamp sync_timestamp = 9;
-}
-
 message ReportWorkflowTriggerRegistrationRequest {
   uint32 source_shard_id = 1;
   map<string, uint32> registered_workflows = 2;

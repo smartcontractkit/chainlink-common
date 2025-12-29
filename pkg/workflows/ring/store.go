@@ -38,7 +38,6 @@ func NewStore() *Store {
 	}
 }
 
-// updateHealthyShards rebuilds the sorted list of healthy shards
 func (s *Store) updateHealthyShards() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -84,14 +83,12 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 	s.pendingAllocs[workflowID] = append(s.pendingAllocs[workflowID], resultCh)
 	s.mu.Unlock()
 
-	// Submit allocation request
 	select {
 	case s.allocRequests <- AllocationRequest{WorkflowID: workflowID, Result: resultCh}:
 	case <-ctx.Done():
 		return 0, ctx.Err()
 	}
 
-	// Wait for result
 	select {
 	case shard := <-resultCh:
 		return shard, nil
@@ -126,14 +123,12 @@ func (s *Store) SetShardForWorkflow(workflowID string, shardID uint32) {
 	}
 }
 
-// SetRoutingState updates the current routing state (steady or transition)
 func (s *Store) SetRoutingState(state *pb.RoutingState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.currentState = state
 }
 
-// GetRoutingState returns the current routing state
 func (s *Store) GetRoutingState() *pb.RoutingState {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -153,7 +148,6 @@ func (s *Store) GetPendingAllocations() []string {
 	}
 }
 
-// IsInTransition returns true if the store is in transition state
 func (s *Store) IsInTransition() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -175,7 +169,6 @@ func (s *Store) SetShardHealth(shardID uint32, healthy bool) {
 	s.shardHealth[shardID] = healthy
 	s.mu.Unlock()
 
-	// Rebuild healthy shards list when shard health changes
 	s.updateHealthyShards()
 }
 
@@ -187,7 +180,6 @@ func (s *Store) SetAllShardHealth(health map[uint32]bool) {
 	}
 	s.mu.Unlock()
 
-	// Rebuild healthy shards list
 	s.updateHealthyShards()
 }
 
@@ -219,7 +211,6 @@ func (s *Store) GetHealthyShardCount() int {
 	return count
 }
 
-// GetHealthyShards returns a sorted list of healthy shards for inspection
 func (s *Store) GetHealthyShards() []uint32 {
 	s.mu.Lock()
 	defer s.mu.Unlock()

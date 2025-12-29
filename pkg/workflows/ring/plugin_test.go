@@ -332,6 +332,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 	})
 }
 
+// Helper function to create observations
 func makeObservations(t *testing.T, shardHealths []map[uint32]bool, workflows []string, now time.Time) []types.AttributedObservation {
 	aos := make([]types.AttributedObservation, 0, len(shardHealths))
 	for i, health := range shardHealths {

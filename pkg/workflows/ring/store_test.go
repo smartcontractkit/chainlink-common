@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestStore_DeterministicHashing verifies that workflow assignments are deterministic
 func TestStore_DeterministicHashing(t *testing.T) {
 	store := NewStore()
 
@@ -34,6 +35,7 @@ func TestStore_DeterministicHashing(t *testing.T) {
 	require.True(t, shard1 >= 0 && shard1 <= 2, "Shard should be in healthy set")
 }
 
+// TestStore_ConsistentRingConsistency verifies that all nodes with same healthy shards agree
 func TestStore_ConsistentRingConsistency(t *testing.T) {
 	store1 := NewStore()
 	store2 := NewStore()
@@ -62,6 +64,7 @@ func TestStore_ConsistentRingConsistency(t *testing.T) {
 	}
 }
 
+// TestStore_Rebalancing verifies rebalancing when shard health changes
 func TestStore_Rebalancing(t *testing.T) {
 	store := NewStore()
 	ctx := context.Background()
@@ -92,6 +95,7 @@ func TestStore_Rebalancing(t *testing.T) {
 	require.NotContains(t, healthyShards, uint32(1), "Shard 1 should not be healthy")
 }
 
+// TestStore_GetHealthyShards verifies that healthy shards list is correctly maintained
 func TestStore_GetHealthyShards(t *testing.T) {
 	store := NewStore()
 
@@ -107,6 +111,7 @@ func TestStore_GetHealthyShards(t *testing.T) {
 	require.Equal(t, []uint32{1, 2, 3}, healthyShards)
 }
 
+// TestStore_NilHashRingFallback verifies fallback when hash ring is uninitialized
 func TestStore_NilHashRingFallback(t *testing.T) {
 	store := NewStore()
 	ctx := context.Background()
@@ -117,6 +122,7 @@ func TestStore_NilHashRingFallback(t *testing.T) {
 	require.Equal(t, uint32(0), shard)
 }
 
+// TestStore_DistributionAcrossShards verifies that workflows are distributed across shards
 func TestStore_DistributionAcrossShards(t *testing.T) {
 	store := NewStore()
 	ctx := context.Background()
@@ -150,6 +156,8 @@ func sum(distribution map[uint32]int) int {
 	return total
 }
 
+// TestStore_PendingAllocsDuringTransition verifies that allocation requests block during transition
+// and are fulfilled when SetShardForWorkflow is called
 func TestStore_PendingAllocsDuringTransition(t *testing.T) {
 	store := NewStore()
 	store.SetAllShardHealth(map[uint32]bool{0: true, 1: true})

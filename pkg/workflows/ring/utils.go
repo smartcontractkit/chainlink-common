@@ -40,22 +40,18 @@ func getShardForWorkflow(workflowID string, shardCount uint32) uint32 {
 		return 0
 	}
 
-	// Create members for shards 0 to shardCount-1
 	members := make([]consistent.Member, shardCount)
 	for i := uint32(0); i < shardCount; i++ {
 		members[i] = ShardMember(strconv.FormatUint(uint64(i), 10))
 	}
 
-	// Create consistent hash ring
 	ring := consistent.New(members, consistentHashConfig())
 
-	// Use consistent hashing to find the member for this workflow
 	member := ring.LocateKey([]byte(workflowID))
 	if member == nil {
 		return 0
 	}
 
-	// Parse shard ID from member name
 	shardID, err := strconv.ParseUint(member.String(), 10, 32)
 	if err != nil {
 		return 0

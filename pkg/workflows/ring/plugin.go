@@ -34,7 +34,6 @@ type Plugin struct {
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
-// ConsensusConfig holds the plugin configuration
 type ConsensusConfig struct {
 	MinShardCount uint32
 	MaxShardCount uint32
@@ -101,13 +100,11 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
 	shardHealth := p.store.GetShardHealth()
 
-	// Collect workflow IDs from cache and pending allocation requests
 	allWorkflowIDs := make([]string, 0)
 	for wfID := range p.store.GetAllRoutingState() {
 		allWorkflowIDs = append(allWorkflowIDs, wfID)
 	}
 
-	// Include any pending allocation requests (workflows waiting for assignment during transition)
 	pendingAllocs := p.store.GetPendingAllocations()
 	allWorkflowIDs = append(allWorkflowIDs, pendingAllocs...)
 
@@ -190,7 +187,6 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	healthyShardCount := p.countHealthyShards(currentShardHealth)
 
-	// Calculate next state using state machine
 	nextState, err := p.calculateNextState(prior.State, healthyShardCount, now)
 	if err != nil {
 		return nil, err
@@ -206,7 +202,6 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	// Update routing state
 	outcome := &pb.Outcome{
 		State:  nextState,
 		Routes: routes,

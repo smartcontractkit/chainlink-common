@@ -37,10 +37,8 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 		return err
 	}
 
-	// Update routing state (steady vs transition)
 	t.store.SetRoutingState(outcome.State)
 
-	// Update workflow shard mappings (this also signals any waiting allocation requests)
 	for workflowID, route := range outcome.Routes {
 		t.store.SetShardForWorkflow(workflowID, route.Shard)
 		t.lggr.Debugw("Updated workflow shard mapping", "workflowID", workflowID, "shard", route.Shard)

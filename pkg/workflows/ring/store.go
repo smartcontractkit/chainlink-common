@@ -2,6 +2,7 @@ package ring
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"sync"
 
@@ -157,18 +158,13 @@ func (s *Store) IsInTransition() bool {
 func (s *Store) GetShardHealth() map[uint32]bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	copied := make(map[uint32]bool)
-	for k, v := range s.shardHealth {
-		copied[k] = v
-	}
-	return copied
+	return maps.Clone(s.shardHealth)
 }
 
 func (s *Store) SetShardHealth(shardID uint32, healthy bool) {
 	s.mu.Lock()
 	s.shardHealth[shardID] = healthy
 	s.mu.Unlock()
-
 	s.updateHealthyShards()
 }
 
@@ -186,11 +182,7 @@ func (s *Store) SetAllShardHealth(health map[uint32]bool) {
 func (s *Store) GetAllRoutingState() map[string]uint32 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	copied := make(map[string]uint32)
-	for k, v := range s.routingState {
-		copied[k] = v
-	}
-	return copied
+	return maps.Clone(s.routingState)
 }
 
 func (s *Store) DeleteWorkflow(workflowID string) {
@@ -202,13 +194,7 @@ func (s *Store) DeleteWorkflow(workflowID string) {
 func (s *Store) GetHealthyShardCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	count := 0
-	for _, healthy := range s.shardHealth {
-		if healthy {
-			count++
-		}
-	}
-	return count
+	return len(s.healthyShards)
 }
 
 func (s *Store) GetHealthyShards() []uint32 {

@@ -148,6 +148,17 @@ func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealt
 	return shardHealth, workflows, timestamps
 }
 
+func (p *Plugin) countHealthyShards(shardHealth map[uint32]int) uint32 {
+	var count uint32
+	for shardID, votes := range shardHealth {
+		if votes > p.config.F {
+			count++
+			p.store.SetShardHealth(shardID, true)
+		}
+	}
+	return max(p.minShardCount, min(count, p.maxShardCount))
+}
+
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// Bootstrap with minimum shards on first round; subsequent rounds build on prior outcome
 	prior := &pb.Outcome{}
@@ -171,23 +182,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	allWorkflows = uniqueSorted(allWorkflows)
 
-	// Determine desired shard count based on observations
-	healthyShardCount := uint32(0)
-	for shardID, count := range currentShardHealth {
-		if count > p.config.F {
-			healthyShardCount++
-			// Update store with healthy shard
-			p.store.SetShardHealth(shardID, true)
-		}
-	}
-
-	// Ensure within bounds
-	if healthyShardCount < p.minShardCount {
-		healthyShardCount = p.minShardCount
-	}
-	if healthyShardCount > p.maxShardCount {
-		healthyShardCount = p.maxShardCount
-	}
+	healthyShardCount := p.countHealthyShards(currentShardHealth)
 
 	// Calculate next state using state machine
 	nextState, err := p.calculateNextState(prior.State, healthyShardCount, now)

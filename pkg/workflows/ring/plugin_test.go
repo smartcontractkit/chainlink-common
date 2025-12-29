@@ -351,3 +351,31 @@ func makeObservations(t *testing.T, shardHealths []map[uint32]bool, workflows []
 	}
 	return aos
 }
+
+func TestPlugin_countHealthyShards(t *testing.T) {
+	tests := []struct {
+		name     string
+		min, max uint32
+		votes    map[uint32]int // shardID -> vote count
+		f        int
+		want     uint32
+	}{
+		{"below min", 3, 10, map[uint32]int{0: 2, 1: 2}, 1, 3},
+		{"above max", 1, 2, map[uint32]int{0: 2, 1: 2, 2: 2, 3: 2}, 1, 2},
+		{"within bounds", 1, 10, map[uint32]int{0: 2, 1: 2, 2: 2}, 1, 3},
+		{"some unhealthy", 1, 10, map[uint32]int{0: 2, 1: 1, 2: 2}, 1, 2},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			plugin := &Plugin{
+				store:         NewStore(),
+				config:        ocr3types.ReportingPluginConfig{F: tc.f},
+				minShardCount: tc.min,
+				maxShardCount: tc.max,
+			}
+			got := plugin.countHealthyShards(tc.votes)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}

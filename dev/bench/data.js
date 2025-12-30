@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767032482058,
+  "lastUpdate": 1767118267975,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34020,6 +34020,66 @@ window.BENCHMARK_DATA = {
             "value": 117449,
             "unit": "ns/op",
             "extra": "9746 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "6b1261cfaab93f9fd03f1e78ac1b402adc6c17fb",
+          "message": "CRE-1613: Fix internal errors passed from WASM host to guest and add a standard test for it (#1745)\n\n* CRE-1613: Fix internal errors passed from WASM host to guest and add a standard test for it\n\n* Fix a typo",
+          "timestamp": "2025-12-30T18:04:49Z",
+          "tree_id": "dcd6296b48079d4e4343abba4180faf9148a440d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6b1261cfaab93f9fd03f1e78ac1b402adc6c17fb"
+        },
+        "date": 1767118266644,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 605.8,
+            "unit": "ns/op",
+            "extra": "1819357 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93394,
+            "unit": "ns/op",
+            "extra": "12890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.2,
+            "unit": "ns/op",
+            "extra": "3050250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95026,
+            "unit": "ns/op",
+            "extra": "12693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26322,
+            "unit": "ns/op",
+            "extra": "45140 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 145694,
+            "unit": "ns/op",
+            "extra": "8077 times\n4 procs"
           }
         ]
       }

@@ -28,13 +28,15 @@ type Store struct {
 	mu sync.Mutex
 }
 
+const AllocationRequestChannelCapacity = 1000
+
 func NewStore() *Store {
 	return &Store{
 		routingState:  make(map[string]uint32),
 		shardHealth:   make(map[uint32]bool),
 		healthyShards: make([]uint32, 0),
 		pendingAllocs: make(map[string][]chan uint32),
-		allocRequests: make(chan AllocationRequest, 1000),
+		allocRequests: make(chan AllocationRequest, AllocationRequestChannelCapacity),
 		mu:            sync.Mutex{},
 	}
 }

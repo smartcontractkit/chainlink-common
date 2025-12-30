@@ -128,23 +128,6 @@ func TestStore_GetHealthyShards(t *testing.T) {
 	require.Equal(t, []uint32{1, 2, 3}, healthyShards)
 }
 
-func TestStore_NilHashRingFallback(t *testing.T) {
-	store := NewStore()
-	ctx := context.Background()
-
-	// Set all shards unhealthy
-	store.SetAllShardHealth(map[uint32]bool{0: false, 1: false, 2: false})
-	// Simulate OCR moved to steady (even with no healthy shards)
-	store.SetRoutingState(&pb.RoutingState{
-		State: &pb.RoutingState_RoutableShards{RoutableShards: 0},
-	})
-
-	// Should not panic, should return 0 as fallback (no healthy shards)
-	shard, err := store.GetShardForWorkflow(ctx, "workflow-123")
-	require.NoError(t, err)
-	require.Equal(t, uint32(0), shard)
-}
-
 func TestStore_DistributionAcrossShards(t *testing.T) {
 	store := NewStore()
 	ctx := context.Background()
@@ -184,6 +167,50 @@ func sum(distribution map[uint32]int) int {
 		total += count
 	}
 	return total
+}
+
+func TestStore_GetShardForWorkflow_CacheHit(t *testing.T) {
+	store := NewStore()
+	ctx := context.Background()
+
+	// Set up steady state
+	store.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: true})
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 3},
+	})
+
+	// Pre-populate cache with a specific shard assignment
+	store.SetShardForWorkflow("cached-workflow", 2)
+
+	// Should return cached value, not recompute
+	shard, err := store.GetShardForWorkflow(ctx, "cached-workflow")
+	require.NoError(t, err)
+	require.Equal(t, uint32(2), shard)
+}
+
+func TestStore_GetShardForWorkflow_ContextCancelledDuringSend(t *testing.T) {
+	store := NewStore()
+
+	// Put store in transition state
+	store.SetAllShardHealth(map[uint32]bool{0: true})
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_Transition{
+			Transition: &pb.Transition{WantShards: 2},
+		},
+	})
+
+	// Fill up the allocRequests channel
+	for i := 0; i < AllocationRequestChannelCapacity; i++ {
+		store.allocRequests <- AllocationRequest{WorkflowID: "filler"}
+	}
+
+	// Context that's already cancelled
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	// Should fail: channel is full and context is cancelled
+	_, err := store.GetShardForWorkflow(ctx, "workflow-123")
+	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestStore_PendingAllocsDuringTransition(t *testing.T) {

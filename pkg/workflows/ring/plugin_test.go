@@ -378,6 +378,113 @@ func TestPlugin_getHealthyShards(t *testing.T) {
 	}
 }
 
+func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore()
+
+	// Set all shards unhealthy - store starts in transition state
+	store.SetAllShardHealth(map[uint32]bool{0: false, 1: false, 2: false})
+
+	config := ocr3types.ReportingPluginConfig{
+		N: 4, F: 1,
+	}
+
+	plugin, err := NewPlugin(store, config, lggr, &ConsensusConfig{
+		BatchSize:  100,
+		TimeToSync: 1 * time.Second,
+	})
+	require.NoError(t, err)
+
+	transmitter := NewTransmitter(lggr, store, nil, "test-account")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	// Start a goroutine that requests allocation (will block waiting for OCR)
+	resultCh := make(chan uint32)
+	errCh := make(chan error, 1)
+	go func() {
+		shard, err := store.GetShardForWorkflow(ctx, "workflow-123")
+		if err != nil {
+			errCh <- err
+			return
+		}
+		resultCh <- shard
+	}()
+
+	// Give goroutine time to enqueue request
+	time.Sleep(10 * time.Millisecond)
+
+	// Verify request is pending for OCR consensus
+	pending := store.GetPendingAllocations()
+	require.Contains(t, pending, "workflow-123")
+
+	// Simulate OCR round with observations showing no healthy shards
+	// The pending allocation "workflow-123" should be included in observation
+	now := time.Now()
+	aos := make([]types.AttributedObservation, 3)
+	for i := 0; i < 3; i++ {
+		pbObs := &pb.Observation{
+			ShardHealthStatus: map[uint32]bool{0: false, 1: false, 2: false},
+			WorkflowIds:       []string{"workflow-123"},
+			Now:               timestamppb.New(now),
+		}
+		rawObs, err := proto.Marshal(pbObs)
+		require.NoError(t, err)
+		aos[i] = types.AttributedObservation{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(i),
+		}
+	}
+
+	// Use a previous outcome in steady state so we can test the fallback
+	priorOutcome := &pb.Outcome{
+		State: &pb.RoutingState{
+			Id:    1,
+			State: &pb.RoutingState_RoutableShards{RoutableShards: 3},
+		},
+		Routes: map[string]*pb.WorkflowRoute{},
+	}
+	priorBytes, err := proto.Marshal(priorOutcome)
+	require.NoError(t, err)
+
+	outcomeCtx := ocr3types.OutcomeContext{
+		SeqNr:           2,
+		PreviousOutcome: priorBytes,
+	}
+
+	// Run plugin Outcome phase
+	outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
+	require.NoError(t, err)
+
+	// Transmit the outcome (applies routes to store)
+	reports, err := plugin.Reports(ctx, 2, outcome)
+	require.NoError(t, err)
+	require.Len(t, reports, 1)
+
+	err = transmitter.Transmit(ctx, types.ConfigDigest{}, 2, reports[0].ReportWithInfo, nil)
+	require.NoError(t, err)
+
+	// Blocked goroutine should now receive result from OCR - should be shard 0 (fallback)
+	select {
+	case shard := <-resultCh:
+		require.Equal(t, uint32(0), shard, "should fallback to shard 0 when no healthy shards")
+	case err := <-errCh:
+		t.Fatalf("unexpected error: %v", err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("allocation was not fulfilled by OCR")
+	}
+
+	// Verify the outcome assigned workflow-123 to shard 0
+	outcomeProto := &pb.Outcome{}
+	err = proto.Unmarshal(outcome, outcomeProto)
+	require.NoError(t, err)
+
+	route, exists := outcomeProto.Routes["workflow-123"]
+	require.True(t, exists, "workflow-123 should be in routes")
+	require.Equal(t, uint32(0), route.Shard, "workflow-123 should be assigned to shard 0 (fallback)")
+}
+
 func TestPlugin_ObservationQuorum(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()

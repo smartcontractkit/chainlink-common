@@ -16,10 +16,18 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
-var twoHealthyShards = []map[uint32]bool{
-	{0: true, 1: true},
-	{0: true, 1: true},
-	{0: true, 1: true},
+var twoHealthyShards = []map[uint32]*pb.ShardStatus{
+	{0: {IsHealthy: true}, 1: {IsHealthy: true}},
+	{0: {IsHealthy: true}, 1: {IsHealthy: true}},
+	{0: {IsHealthy: true}, 1: {IsHealthy: true}},
+}
+
+func toShardStatus(m map[uint32]bool) map[uint32]*pb.ShardStatus {
+	result := make(map[uint32]*pb.ShardStatus, len(m))
+	for k, v := range m {
+		result[k] = &pb.ShardStatus{IsHealthy: v}
+	}
+	return result
 }
 
 func TestPlugin_Outcome(t *testing.T) {
@@ -46,27 +54,27 @@ func TestPlugin_Outcome(t *testing.T) {
 		// Observations from 4 NOPs reporting health and workflows
 		observations := []struct {
 			name        string
-			shardHealth map[uint32]bool
+			shardStatus map[uint32]*pb.ShardStatus
 			workflows   []string
 		}{
 			{
 				name:        "NOP 0",
-				shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
+				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: true}),
 				workflows:   []string{"wf-A", "wf-B", "wf-C"},
 			},
 			{
 				name:        "NOP 1",
-				shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
+				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: true}),
 				workflows:   []string{"wf-B", "wf-C", "wf-D"},
 			},
 			{
 				name:        "NOP 2",
-				shardHealth: map[uint32]bool{0: true, 1: true, 2: false}, // shard 2 unhealthy
+				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: false}), // shard 2 unhealthy
 				workflows:   []string{"wf-A", "wf-C"},
 			},
 			{
 				name:        "NOP 3",
-				shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
+				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: true}),
 				workflows:   []string{"wf-A", "wf-B", "wf-D"},
 			},
 		}
@@ -75,7 +83,7 @@ func TestPlugin_Outcome(t *testing.T) {
 		aos := make([]types.AttributedObservation, 0)
 		for _, obs := range observations {
 			pbObs := &pb.Observation{
-				ShardHealthStatus: obs.shardHealth,
+				ShardStatus: obs.shardStatus,
 				WorkflowIds:       obs.workflows,
 				Now:               timestamppb.Now(),
 			}
@@ -157,10 +165,10 @@ func TestPlugin_StateTransitions(t *testing.T) {
 		}
 
 		// Only 1 healthy shard in observations to match minShardCount
-		aos := makeObservations(t, []map[uint32]bool{
-			{0: true},
-			{0: true},
-			{0: true},
+		aos := makeObservations(t, []map[uint32]*pb.ShardStatus{
+			{0: {IsHealthy: true}},
+			{0: {IsHealthy: true}},
+			{0: {IsHealthy: true}},
 		}, []string{"wf-1"}, now)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
@@ -334,11 +342,11 @@ func TestPlugin_StateTransitions(t *testing.T) {
 }
 
 // Helper function to create observations
-func makeObservations(t *testing.T, shardHealths []map[uint32]bool, workflows []string, now time.Time) []types.AttributedObservation {
-	aos := make([]types.AttributedObservation, 0, len(shardHealths))
-	for i, health := range shardHealths {
+func makeObservations(t *testing.T, shardStatuses []map[uint32]*pb.ShardStatus, workflows []string, now time.Time) []types.AttributedObservation {
+	aos := make([]types.AttributedObservation, 0, len(shardStatuses))
+	for i, status := range shardStatuses {
 		pbObs := &pb.Observation{
-			ShardHealthStatus: health,
+			ShardStatus: status,
 			WorkflowIds:       workflows,
 			Now:               timestamppb.New(now),
 		}
@@ -425,7 +433,7 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 	aos := make([]types.AttributedObservation, 3)
 	for i := 0; i < 3; i++ {
 		pbObs := &pb.Observation{
-			ShardHealthStatus: map[uint32]bool{0: false, 1: false, 2: false},
+			ShardStatus: toShardStatus(map[uint32]bool{0: false, 1: false, 2: false}),
 			WorkflowIds:       []string{"workflow-123"},
 			Now:               timestamppb.New(now),
 		}

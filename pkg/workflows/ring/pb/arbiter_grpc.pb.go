@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ArbiterClient interface {
-	GetDesiredReplicas(ctx context.Context, in *ShardStatus, opts ...grpc.CallOption) (*ArbiterResponse, error)
+	GetDesiredReplicas(ctx context.Context, in *ShardStatusRequest, opts ...grpc.CallOption) (*ArbiterResponse, error)
 }
 
 type arbiterClient struct {
@@ -38,7 +38,7 @@ func NewArbiterClient(cc grpc.ClientConnInterface) ArbiterClient {
 	return &arbiterClient{cc}
 }
 
-func (c *arbiterClient) GetDesiredReplicas(ctx context.Context, in *ShardStatus, opts ...grpc.CallOption) (*ArbiterResponse, error) {
+func (c *arbiterClient) GetDesiredReplicas(ctx context.Context, in *ShardStatusRequest, opts ...grpc.CallOption) (*ArbiterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ArbiterResponse)
 	err := c.cc.Invoke(ctx, Arbiter_GetDesiredReplicas_FullMethodName, in, out, cOpts...)
@@ -52,7 +52,7 @@ func (c *arbiterClient) GetDesiredReplicas(ctx context.Context, in *ShardStatus,
 // All implementations must embed UnimplementedArbiterServer
 // for forward compatibility.
 type ArbiterServer interface {
-	GetDesiredReplicas(context.Context, *ShardStatus) (*ArbiterResponse, error)
+	GetDesiredReplicas(context.Context, *ShardStatusRequest) (*ArbiterResponse, error)
 	mustEmbedUnimplementedArbiterServer()
 }
 
@@ -63,7 +63,7 @@ type ArbiterServer interface {
 // pointer dereference when methods are called.
 type UnimplementedArbiterServer struct{}
 
-func (UnimplementedArbiterServer) GetDesiredReplicas(context.Context, *ShardStatus) (*ArbiterResponse, error) {
+func (UnimplementedArbiterServer) GetDesiredReplicas(context.Context, *ShardStatusRequest) (*ArbiterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDesiredReplicas not implemented")
 }
 func (UnimplementedArbiterServer) mustEmbedUnimplementedArbiterServer() {}
@@ -88,7 +88,7 @@ func RegisterArbiterServer(s grpc.ServiceRegistrar, srv ArbiterServer) {
 }
 
 func _Arbiter_GetDesiredReplicas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ShardStatus)
+	in := new(ShardStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func _Arbiter_GetDesiredReplicas_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: Arbiter_GetDesiredReplicas_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ArbiterServer).GetDesiredReplicas(ctx, req.(*ShardStatus))
+		return srv.(ArbiterServer).GetDesiredReplicas(ctx, req.(*ShardStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

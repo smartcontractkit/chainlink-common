@@ -92,10 +92,15 @@ func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ ty
 
 	allWorkflowIDs = uniqueSorted(allWorkflowIDs)
 
+	shardStatus := make(map[uint32]*pb.ShardStatus, len(shardHealth))
+	for shardID, healthy := range shardHealth {
+		shardStatus[shardID] = &pb.ShardStatus{IsHealthy: healthy}
+	}
+
 	observation := &pb.Observation{
-		ShardHealthStatus: shardHealth,
-		WorkflowIds:       allWorkflowIDs,
-		Now:               timestamppb.Now(),
+		ShardStatus: shardStatus,
+		WorkflowIds: allWorkflowIDs,
+		Now:         timestamppb.Now(),
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
@@ -119,8 +124,8 @@ func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealt
 			continue
 		}
 
-		for shardID, healthy := range observation.ShardHealthStatus {
-			if healthy {
+		for shardID, status := range observation.ShardStatus {
+			if status != nil && status.IsHealthy {
 				shardHealth[shardID]++
 			}
 		}

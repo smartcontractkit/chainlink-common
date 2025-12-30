@@ -22,27 +22,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ShardStatus struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        map[uint32]bool        `protobuf:"bytes,1,rep,name=status,proto3" json:"status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // shard_id -> is_healthy
+type ShardStatusRequest struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Status        map[uint32]*ShardStatus `protobuf:"bytes,1,rep,name=status,proto3" json:"status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // shard_id -> status
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ShardStatus) Reset() {
-	*x = ShardStatus{}
+func (x *ShardStatusRequest) Reset() {
+	*x = ShardStatusRequest{}
 	mi := &file_arbiter_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ShardStatus) String() string {
+func (x *ShardStatusRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ShardStatus) ProtoMessage() {}
+func (*ShardStatusRequest) ProtoMessage() {}
 
-func (x *ShardStatus) ProtoReflect() protoreflect.Message {
+func (x *ShardStatusRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_arbiter_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,12 +54,12 @@ func (x *ShardStatus) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ShardStatus.ProtoReflect.Descriptor instead.
-func (*ShardStatus) Descriptor() ([]byte, []int) {
+// Deprecated: Use ShardStatusRequest.ProtoReflect.Descriptor instead.
+func (*ShardStatusRequest) Descriptor() ([]byte, []int) {
 	return file_arbiter_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ShardStatus) GetStatus() map[uint32]bool {
+func (x *ShardStatusRequest) GetStatus() map[uint32]*ShardStatus {
 	if x != nil {
 		return x.Status
 	}
@@ -210,12 +210,12 @@ var File_arbiter_proto protoreflect.FileDescriptor
 
 const file_arbiter_proto_rawDesc = "" +
 	"\n" +
-	"\rarbiter.proto\x12\x04ring\x1a\x1bgoogle/protobuf/empty.proto\"\x7f\n" +
-	"\vShardStatus\x125\n" +
-	"\x06status\x18\x01 \x03(\v2\x1d.ring.ShardStatus.StatusEntryR\x06status\x1a9\n" +
+	"\rarbiter.proto\x12\x04ring\x1a\x1bgoogle/protobuf/empty.proto\x1a\fshared.proto\"\xa0\x01\n" +
+	"\x12ShardStatusRequest\x12<\n" +
+	"\x06status\x18\x01 \x03(\v2$.ring.ShardStatusRequest.StatusEntryR\x06status\x1aL\n" +
 	"\vStatusEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"2\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\v2\x11.ring.ShardStatusR\x05value:\x028\x01\"2\n" +
 	"\x0fArbiterResponse\x12\x1f\n" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
 	"wantShards\"\xa4\x01\n" +
@@ -227,9 +227,9 @@ const file_arbiter_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"7\n" +
 	"\x1aConsensusWantShardsRequest\x12\x19\n" +
-	"\bn_shards\x18\x01 \x01(\rR\anShards2I\n" +
-	"\aArbiter\x12>\n" +
-	"\x12GetDesiredReplicas\x12\x11.ring.ShardStatus\x1a\x15.ring.ArbiterResponse2\x97\x01\n" +
+	"\bn_shards\x18\x01 \x01(\rR\anShards2P\n" +
+	"\aArbiter\x12E\n" +
+	"\x12GetDesiredReplicas\x12\x18.ring.ShardStatusRequest\x1a\x15.ring.ArbiterResponse2\x97\x01\n" +
 	"\rArbiterScaler\x125\n" +
 	"\x06Status\x12\x16.google.protobuf.Empty\x1a\x13.ring.ReplicaStatus\x12O\n" +
 	"\x13ConsensusWantShards\x12 .ring.ConsensusWantShardsRequest\x1a\x16.google.protobuf.EmptyBDZBgithub.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pbb\x06proto3"
@@ -248,28 +248,30 @@ func file_arbiter_proto_rawDescGZIP() []byte {
 
 var file_arbiter_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_arbiter_proto_goTypes = []any{
-	(*ShardStatus)(nil),                // 0: ring.ShardStatus
+	(*ShardStatusRequest)(nil),         // 0: ring.ShardStatusRequest
 	(*ArbiterResponse)(nil),            // 1: ring.ArbiterResponse
 	(*ReplicaStatus)(nil),              // 2: ring.ReplicaStatus
 	(*ConsensusWantShardsRequest)(nil), // 3: ring.ConsensusWantShardsRequest
-	nil,                                // 4: ring.ShardStatus.StatusEntry
+	nil,                                // 4: ring.ShardStatusRequest.StatusEntry
 	nil,                                // 5: ring.ReplicaStatus.StatusEntry
-	(*emptypb.Empty)(nil),              // 6: google.protobuf.Empty
+	(*ShardStatus)(nil),                // 6: ring.ShardStatus
+	(*emptypb.Empty)(nil),              // 7: google.protobuf.Empty
 }
 var file_arbiter_proto_depIdxs = []int32{
-	4, // 0: ring.ShardStatus.status:type_name -> ring.ShardStatus.StatusEntry
+	4, // 0: ring.ShardStatusRequest.status:type_name -> ring.ShardStatusRequest.StatusEntry
 	5, // 1: ring.ReplicaStatus.status:type_name -> ring.ReplicaStatus.StatusEntry
-	0, // 2: ring.Arbiter.GetDesiredReplicas:input_type -> ring.ShardStatus
-	6, // 3: ring.ArbiterScaler.Status:input_type -> google.protobuf.Empty
-	3, // 4: ring.ArbiterScaler.ConsensusWantShards:input_type -> ring.ConsensusWantShardsRequest
-	1, // 5: ring.Arbiter.GetDesiredReplicas:output_type -> ring.ArbiterResponse
-	2, // 6: ring.ArbiterScaler.Status:output_type -> ring.ReplicaStatus
-	6, // 7: ring.ArbiterScaler.ConsensusWantShards:output_type -> google.protobuf.Empty
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 2: ring.ShardStatusRequest.StatusEntry.value:type_name -> ring.ShardStatus
+	0, // 3: ring.Arbiter.GetDesiredReplicas:input_type -> ring.ShardStatusRequest
+	7, // 4: ring.ArbiterScaler.Status:input_type -> google.protobuf.Empty
+	3, // 5: ring.ArbiterScaler.ConsensusWantShards:input_type -> ring.ConsensusWantShardsRequest
+	1, // 6: ring.Arbiter.GetDesiredReplicas:output_type -> ring.ArbiterResponse
+	2, // 7: ring.ArbiterScaler.Status:output_type -> ring.ReplicaStatus
+	7, // 8: ring.ArbiterScaler.ConsensusWantShards:output_type -> google.protobuf.Empty
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_arbiter_proto_init() }
@@ -277,6 +279,7 @@ func file_arbiter_proto_init() {
 	if File_arbiter_proto != nil {
 		return
 	}
+	file_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

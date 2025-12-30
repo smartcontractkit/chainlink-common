@@ -23,12 +23,12 @@ const (
 )
 
 type Observation struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ShardHealthStatus map[uint32]bool        `protobuf:"bytes,1,rep,name=shard_health_status,json=shardHealthStatus,proto3" json:"shard_health_status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // shard_id -> is_healthy
-	WorkflowIds       []string               `protobuf:"bytes,2,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
-	Now               *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	ShardStatus   map[uint32]*ShardStatus `protobuf:"bytes,1,rep,name=shard_status,json=shardStatus,proto3" json:"shard_status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // shard_id -> status
+	WorkflowIds   []string                `protobuf:"bytes,2,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
+	Now           *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Observation) Reset() {
@@ -61,9 +61,9 @@ func (*Observation) Descriptor() ([]byte, []int) {
 	return file_consensus_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Observation) GetShardHealthStatus() map[uint32]bool {
+func (x *Observation) GetShardStatus() map[uint32]*ShardStatus {
 	if x != nil {
-		return x.ShardHealthStatus
+		return x.ShardStatus
 	}
 	return nil
 }
@@ -332,14 +332,14 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfe\x01\n" +
-	"\vObservation\x12X\n" +
-	"\x13shard_health_status\x18\x01 \x03(\v2(.ring.Observation.ShardHealthStatusEntryR\x11shardHealthStatus\x12!\n" +
+	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fshared.proto\"\xf8\x01\n" +
+	"\vObservation\x12E\n" +
+	"\fshard_status\x18\x01 \x03(\v2\".ring.Observation.ShardStatusEntryR\vshardStatus\x12!\n" +
 	"\fworkflow_ids\x18\x02 \x03(\tR\vworkflowIds\x12,\n" +
-	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1aD\n" +
-	"\x16ShardHealthStatusEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"%\n" +
+	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1aQ\n" +
+	"\x10ShardStatusEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\v2\x11.ring.ShardStatusR\x05value:\x028\x01\"%\n" +
 	"\rWorkflowRoute\x12\x14\n" +
 	"\x05shard\x18\x01 \x01(\rR\x05shard\"\xa3\x01\n" +
 	"\n" +
@@ -381,23 +381,25 @@ var file_consensus_proto_goTypes = []any{
 	(*Transition)(nil),            // 2: ring.Transition
 	(*RoutingState)(nil),          // 3: ring.RoutingState
 	(*Outcome)(nil),               // 4: ring.Outcome
-	nil,                           // 5: ring.Observation.ShardHealthStatusEntry
+	nil,                           // 5: ring.Observation.ShardStatusEntry
 	nil,                           // 6: ring.Outcome.RoutesEntry
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(*ShardStatus)(nil),           // 8: ring.ShardStatus
 }
 var file_consensus_proto_depIdxs = []int32{
-	5, // 0: ring.Observation.shard_health_status:type_name -> ring.Observation.ShardHealthStatusEntry
+	5, // 0: ring.Observation.shard_status:type_name -> ring.Observation.ShardStatusEntry
 	7, // 1: ring.Observation.now:type_name -> google.protobuf.Timestamp
 	7, // 2: ring.Transition.changes_safe_after:type_name -> google.protobuf.Timestamp
 	2, // 3: ring.RoutingState.transition:type_name -> ring.Transition
 	3, // 4: ring.Outcome.state:type_name -> ring.RoutingState
 	6, // 5: ring.Outcome.routes:type_name -> ring.Outcome.RoutesEntry
-	1, // 6: ring.Outcome.RoutesEntry.value:type_name -> ring.WorkflowRoute
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	8, // 6: ring.Observation.ShardStatusEntry.value:type_name -> ring.ShardStatus
+	1, // 7: ring.Outcome.RoutesEntry.value:type_name -> ring.WorkflowRoute
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_consensus_proto_init() }
@@ -405,6 +407,7 @@ func file_consensus_proto_init() {
 	if File_consensus_proto != nil {
 		return
 	}
+	file_shared_proto_init()
 	file_consensus_proto_msgTypes[3].OneofWrappers = []any{
 		(*RoutingState_Transition)(nil),
 		(*RoutingState_RoutableShards)(nil),

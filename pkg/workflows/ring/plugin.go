@@ -200,7 +200,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 func (p *Plugin) calculateNextState(priorState *pb.RoutingState, wantShards uint32, now time.Time) (*pb.RoutingState, error) {
 	switch ps := priorState.State.(type) {
 	case *pb.RoutingState_RoutableShards:
-		// If already at desired count, stay in stable state
+		// No transition needed; avoid unnecessary workflow redistribution
 		if ps.RoutableShards == wantShards {
 			return priorState, nil
 		}
@@ -218,12 +218,12 @@ func (p *Plugin) calculateNextState(priorState *pb.RoutingState, wantShards uint
 		}, nil
 
 	case *pb.RoutingState_Transition:
-		// If still in safety period, stay in transition
+		// Wait for all nodes to sync before committing to new shard assignments
 		if now.Before(ps.Transition.ChangesSafeAfter.AsTime()) {
 			return priorState, nil
 		}
 
-		// Safety period elapsed, transition to stable state
+		// All nodes have synced; commit to new routing configuration
 		return &pb.RoutingState{
 			Id: priorState.Id + 1,
 			State: &pb.RoutingState_RoutableShards{

@@ -177,8 +177,8 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		return nil, err
 	}
 
-	// Use deterministic hashing to assign workflows to shards
-	// This must be a pure function of consensus-derived data to avoid protocol failures
+	// Deterministic hashing ensures all nodes agree on workflow-to-shard assignments
+	// without coordination, preventing protocol failures from inconsistent routing
 	routes := make(map[string]*pb.WorkflowRoute)
 	for _, wfID := range allWorkflows {
 		assignedShard := getShardForWorkflow(wfID, healthyShards)

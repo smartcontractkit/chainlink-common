@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -331,3 +332,31 @@ func TestChainSelectorLabel(t *testing.T) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+func TestRequestMetadata_ContextWithCRE(t *testing.T) {
+	ctx := t.Context()
+	require.Equal(t, "", contexts.CREValue(ctx).Org)
+
+	// set it
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+
+	// preserve it
+	md := RequestMetadata{WorkflowOwner: "owner-id", WorkflowID: "workflow-id"}
+	ctx = md.ContextWithCRE(ctx)
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+}
+
+func TestRegistrationMetadata_ContextWithCRE(t *testing.T) {
+	ctx := t.Context()
+	require.Equal(t, "", contexts.CREValue(ctx).Org)
+
+	// set it
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+
+	// preserve it
+	md := RegistrationMetadata{WorkflowOwner: "owner-id", WorkflowID: "workflow-id"}
+	ctx = md.ContextWithCRE(ctx)
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+}

@@ -22,111 +22,113 @@ var twoHealthyShards = []map[uint32]bool{
 	{0: true, 1: true},
 }
 
-func TestPlugin_OutcomeWithMultiNodeObservations(t *testing.T) {
-	lggr := logger.Test(t)
-	store := NewStore()
-	store.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: true})
+func TestPlugin_Outcome(t *testing.T) {
+	t.Run("WithMultiNodeObservations", func(t *testing.T) {
+		lggr := logger.Test(t)
+		store := NewStore()
+		store.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: true})
 
-	config := ocr3types.ReportingPluginConfig{
-		N: 4, F: 1,
-		OffchainConfig:                          []byte{},
-		MaxDurationObservation:                  0,
-		MaxDurationShouldAcceptAttestedReport:   0,
-		MaxDurationShouldTransmitAcceptedReport: 0,
-	}
-
-	plugin, err := NewPlugin(store, config, lggr, nil)
-	require.NoError(t, err)
-
-	ctx := t.Context()
-	intialSeqNr := uint64(42)
-	outcomeCtx := ocr3types.OutcomeContext{SeqNr: intialSeqNr}
-
-	// Observations from 4 NOPs reporting health and workflows
-	observations := []struct {
-		name        string
-		shardHealth map[uint32]bool
-		workflows   []string
-	}{
-		{
-			name:        "NOP 0",
-			shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
-			workflows:   []string{"wf-A", "wf-B", "wf-C"},
-		},
-		{
-			name:        "NOP 1",
-			shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
-			workflows:   []string{"wf-B", "wf-C", "wf-D"},
-		},
-		{
-			name:        "NOP 2",
-			shardHealth: map[uint32]bool{0: true, 1: true, 2: false}, // shard 2 unhealthy
-			workflows:   []string{"wf-A", "wf-C"},
-		},
-		{
-			name:        "NOP 3",
-			shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
-			workflows:   []string{"wf-A", "wf-B", "wf-D"},
-		},
-	}
-
-	// Build attributed observations
-	aos := make([]types.AttributedObservation, 0)
-	for _, obs := range observations {
-		pbObs := &pb.Observation{
-			ShardHealthStatus: obs.shardHealth,
-			WorkflowIds:       obs.workflows,
-			Now:               timestamppb.Now(),
+		config := ocr3types.ReportingPluginConfig{
+			N: 4, F: 1,
+			OffchainConfig:                          []byte{},
+			MaxDurationObservation:                  0,
+			MaxDurationShouldAcceptAttestedReport:   0,
+			MaxDurationShouldTransmitAcceptedReport: 0,
 		}
-		rawObs, err := proto.Marshal(pbObs)
+
+		plugin, err := NewPlugin(store, config, lggr, nil)
 		require.NoError(t, err)
 
-		aos = append(aos, types.AttributedObservation{
-			Observation: rawObs,
-			Observer:    commontypes.OracleID(len(aos)),
-		})
-	}
+		ctx := t.Context()
+		intialSeqNr := uint64(42)
+		outcomeCtx := ocr3types.OutcomeContext{SeqNr: intialSeqNr}
 
-	// Execute Outcome phase
-	outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
-	require.NoError(t, err)
-	require.NotNil(t, outcome)
+		// Observations from 4 NOPs reporting health and workflows
+		observations := []struct {
+			name        string
+			shardHealth map[uint32]bool
+			workflows   []string
+		}{
+			{
+				name:        "NOP 0",
+				shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
+				workflows:   []string{"wf-A", "wf-B", "wf-C"},
+			},
+			{
+				name:        "NOP 1",
+				shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
+				workflows:   []string{"wf-B", "wf-C", "wf-D"},
+			},
+			{
+				name:        "NOP 2",
+				shardHealth: map[uint32]bool{0: true, 1: true, 2: false}, // shard 2 unhealthy
+				workflows:   []string{"wf-A", "wf-C"},
+			},
+			{
+				name:        "NOP 3",
+				shardHealth: map[uint32]bool{0: true, 1: true, 2: true},
+				workflows:   []string{"wf-A", "wf-B", "wf-D"},
+			},
+		}
 
-	// Verify outcome
-	outcomeProto := &pb.Outcome{}
-	err = proto.Unmarshal(outcome, outcomeProto)
-	require.NoError(t, err)
+		// Build attributed observations
+		aos := make([]types.AttributedObservation, 0)
+		for _, obs := range observations {
+			pbObs := &pb.Observation{
+				ShardHealthStatus: obs.shardHealth,
+				WorkflowIds:       obs.workflows,
+				Now:               timestamppb.Now(),
+			}
+			rawObs, err := proto.Marshal(pbObs)
+			require.NoError(t, err)
 
-	// Check consensus results
-	require.NotNil(t, outcomeProto.State)
-	require.Equal(t, intialSeqNr+1, outcomeProto.State.Id, "ID should match SeqNr")
-	t.Logf("Outcome - ID: %d, HealthyShards: %v", outcomeProto.State.Id, outcomeProto.State.GetRoutableShards())
-	t.Logf("Workflows assigned: %d", len(outcomeProto.Routes))
+			aos = append(aos, types.AttributedObservation{
+				Observation: rawObs,
+				Observer:    commontypes.OracleID(len(aos)),
+			})
+		}
 
-	// Verify all workflows are assigned
-	expectedWorkflows := map[string]bool{"wf-A": true, "wf-B": true, "wf-C": true, "wf-D": true}
-	require.Equal(t, len(expectedWorkflows), len(outcomeProto.Routes))
-	for wf := range expectedWorkflows {
-		route, exists := outcomeProto.Routes[wf]
-		require.True(t, exists, "workflow %s should be assigned", wf)
-		require.True(t, route.Shard <= 2, "shard should be healthy (0-2)")
-		t.Logf("  %s → shard %d", wf, route.Shard)
-	}
+		// Execute Outcome phase
+		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
+		require.NoError(t, err)
+		require.NotNil(t, outcome)
 
-	// Verify determinism: run again, should get same assignments
-	outcome2, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
-	require.NoError(t, err)
+		// Verify outcome
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
 
-	outcomeProto2 := &pb.Outcome{}
-	err = proto.Unmarshal(outcome2, outcomeProto2)
-	require.NoError(t, err)
+		// Check consensus results
+		require.NotNil(t, outcomeProto.State)
+		require.Equal(t, intialSeqNr+1, outcomeProto.State.Id, "ID should match SeqNr")
+		t.Logf("Outcome - ID: %d, HealthyShards: %v", outcomeProto.State.Id, outcomeProto.State.GetRoutableShards())
+		t.Logf("Workflows assigned: %d", len(outcomeProto.Routes))
 
-	// Same workflows → same shards
-	for wf, route1 := range outcomeProto.Routes {
-		route2, exists := outcomeProto2.Routes[wf]
-		require.True(t, exists)
-		require.Equal(t, route1.Shard, route2.Shard, "workflow %s should assign to same shard", wf)
-	}
+		// Verify all workflows are assigned
+		expectedWorkflows := map[string]bool{"wf-A": true, "wf-B": true, "wf-C": true, "wf-D": true}
+		require.Equal(t, len(expectedWorkflows), len(outcomeProto.Routes))
+		for wf := range expectedWorkflows {
+			route, exists := outcomeProto.Routes[wf]
+			require.True(t, exists, "workflow %s should be assigned", wf)
+			require.True(t, route.Shard <= 2, "shard should be healthy (0-2)")
+			t.Logf("  %s → shard %d", wf, route.Shard)
+		}
+
+		// Verify determinism: run again, should get same assignments
+		outcome2, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
+		require.NoError(t, err)
+
+		outcomeProto2 := &pb.Outcome{}
+		err = proto.Unmarshal(outcome2, outcomeProto2)
+		require.NoError(t, err)
+
+		// Same workflows → same shards
+		for wf, route1 := range outcomeProto.Routes {
+			route2, exists := outcomeProto2.Routes[wf]
+			require.True(t, exists)
+			require.Equal(t, route1.Shard, route2.Shard, "workflow %s should assign to same shard", wf)
+		}
+	})
 }
 
 func TestPlugin_StateTransitions(t *testing.T) {

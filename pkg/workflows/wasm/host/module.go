@@ -1066,7 +1066,9 @@ func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int3
 		src = src[:size]
 	}
 
-	return write(memory, src, ptr, size)
+	// truncateWasmWrite is only called for returning error strings
+	// Therefore, we need to return the negated bytes written to indicate the failure to the guest.
+	return -write(memory, src, ptr, size)
 }
 
 // write copies the given src byte slice into the memory at the given pointer and max size.

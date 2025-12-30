@@ -21,7 +21,7 @@ service Arbiter {
 
 message ReplicaStatus {
   uint32 want_shards = 1;
-  map<uint32, bool> status = 2;
+  map<uint32, ShardStatus> status = 2;
 }
 
 message ConsensusWantShardsRequest {

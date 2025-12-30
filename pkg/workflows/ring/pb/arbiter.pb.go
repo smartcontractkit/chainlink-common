@@ -111,9 +111,9 @@ func (x *ArbiterResponse) GetWantShards() uint32 {
 }
 
 type ReplicaStatus struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	WantShards    uint32                 `protobuf:"varint,1,opt,name=want_shards,json=wantShards,proto3" json:"want_shards,omitempty"`
-	Status        map[uint32]bool        `protobuf:"bytes,2,rep,name=status,proto3" json:"status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	WantShards    uint32                  `protobuf:"varint,1,opt,name=want_shards,json=wantShards,proto3" json:"want_shards,omitempty"`
+	Status        map[uint32]*ShardStatus `protobuf:"bytes,2,rep,name=status,proto3" json:"status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -155,7 +155,7 @@ func (x *ReplicaStatus) GetWantShards() uint32 {
 	return 0
 }
 
-func (x *ReplicaStatus) GetStatus() map[uint32]bool {
+func (x *ReplicaStatus) GetStatus() map[uint32]*ShardStatus {
 	if x != nil {
 		return x.Status
 	}
@@ -218,14 +218,14 @@ const file_arbiter_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x11.ring.ShardStatusR\x05value:\x028\x01\"2\n" +
 	"\x0fArbiterResponse\x12\x1f\n" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
-	"wantShards\"\xa4\x01\n" +
+	"wantShards\"\xb7\x01\n" +
 	"\rReplicaStatus\x12\x1f\n" +
 	"\vwant_shards\x18\x01 \x01(\rR\n" +
 	"wantShards\x127\n" +
-	"\x06status\x18\x02 \x03(\v2\x1f.ring.ReplicaStatus.StatusEntryR\x06status\x1a9\n" +
+	"\x06status\x18\x02 \x03(\v2\x1f.ring.ReplicaStatus.StatusEntryR\x06status\x1aL\n" +
 	"\vStatusEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"7\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\v2\x11.ring.ShardStatusR\x05value:\x028\x01\"7\n" +
 	"\x1aConsensusWantShardsRequest\x12\x19\n" +
 	"\bn_shards\x18\x01 \x01(\rR\anShards2P\n" +
 	"\aArbiter\x12E\n" +
@@ -261,17 +261,18 @@ var file_arbiter_proto_depIdxs = []int32{
 	4, // 0: ring.ShardStatusRequest.status:type_name -> ring.ShardStatusRequest.StatusEntry
 	5, // 1: ring.ReplicaStatus.status:type_name -> ring.ReplicaStatus.StatusEntry
 	6, // 2: ring.ShardStatusRequest.StatusEntry.value:type_name -> ring.ShardStatus
-	0, // 3: ring.Arbiter.GetDesiredReplicas:input_type -> ring.ShardStatusRequest
-	7, // 4: ring.ArbiterScaler.Status:input_type -> google.protobuf.Empty
-	3, // 5: ring.ArbiterScaler.ConsensusWantShards:input_type -> ring.ConsensusWantShardsRequest
-	1, // 6: ring.Arbiter.GetDesiredReplicas:output_type -> ring.ArbiterResponse
-	2, // 7: ring.ArbiterScaler.Status:output_type -> ring.ReplicaStatus
-	7, // 8: ring.ArbiterScaler.ConsensusWantShards:output_type -> google.protobuf.Empty
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	6, // 3: ring.ReplicaStatus.StatusEntry.value:type_name -> ring.ShardStatus
+	0, // 4: ring.Arbiter.GetDesiredReplicas:input_type -> ring.ShardStatusRequest
+	7, // 5: ring.ArbiterScaler.Status:input_type -> google.protobuf.Empty
+	3, // 6: ring.ArbiterScaler.ConsensusWantShards:input_type -> ring.ConsensusWantShardsRequest
+	1, // 7: ring.Arbiter.GetDesiredReplicas:output_type -> ring.ArbiterResponse
+	2, // 8: ring.ArbiterScaler.Status:output_type -> ring.ReplicaStatus
+	7, // 9: ring.ArbiterScaler.ConsensusWantShards:output_type -> google.protobuf.Empty
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_arbiter_proto_init() }

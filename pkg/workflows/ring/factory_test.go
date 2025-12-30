@@ -14,14 +14,14 @@ func TestFactory_NewFactory(t *testing.T) {
 	store := NewStore()
 
 	t.Run("with_nil_config", func(t *testing.T) {
-		f, err := NewFactory(store, lggr, nil)
+		f, err := NewFactory(store, nil, lggr, nil)
 		require.NoError(t, err)
 		require.NotNil(t, f)
 	})
 
 	t.Run("with_custom_config", func(t *testing.T) {
 		cfg := &ConsensusConfig{BatchSize: 50}
-		f, err := NewFactory(store, lggr, cfg)
+		f, err := NewFactory(store, nil, lggr, cfg)
 		require.NoError(t, err)
 		require.NotNil(t, f)
 	})
@@ -30,7 +30,7 @@ func TestFactory_NewFactory(t *testing.T) {
 func TestFactory_NewReportingPlugin(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	f, err := NewFactory(store, lggr, nil)
+	f, err := NewFactory(store, nil, lggr, nil)
 	require.NoError(t, err)
 
 	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
@@ -45,7 +45,7 @@ func TestFactory_NewReportingPlugin(t *testing.T) {
 func TestFactory_Lifecycle(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	f, err := NewFactory(store, lggr, nil)
+	f, err := NewFactory(store, nil, lggr, nil)
 	require.NoError(t, err)
 
 	err = f.Start(context.Background())

@@ -44,38 +44,43 @@ func TestPlugin_Outcome(t *testing.T) {
 			MaxDurationShouldTransmitAcceptedReport: 0,
 		}
 
-		plugin, err := NewPlugin(store, config, lggr, nil)
+		plugin, err := NewPlugin(store, nil, config, lggr, nil)
 		require.NoError(t, err)
 
 		ctx := t.Context()
 		intialSeqNr := uint64(42)
 		outcomeCtx := ocr3types.OutcomeContext{SeqNr: intialSeqNr}
 
-		// Observations from 4 NOPs reporting health and workflows
+		// Observations from 4 NOPs reporting health, workflows, and wantShards=3
 		observations := []struct {
 			name        string
 			shardStatus map[uint32]*pb.ShardStatus
 			workflows   []string
+			wantShards  uint32
 		}{
 			{
 				name:        "NOP 0",
 				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: true}),
 				workflows:   []string{"wf-A", "wf-B", "wf-C"},
+				wantShards:  3,
 			},
 			{
 				name:        "NOP 1",
 				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: true}),
 				workflows:   []string{"wf-B", "wf-C", "wf-D"},
+				wantShards:  3,
 			},
 			{
 				name:        "NOP 2",
 				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: false}), // shard 2 unhealthy
 				workflows:   []string{"wf-A", "wf-C"},
+				wantShards:  3,
 			},
 			{
 				name:        "NOP 3",
 				shardStatus: toShardStatus(map[uint32]bool{0: true, 1: true, 2: true}),
 				workflows:   []string{"wf-A", "wf-B", "wf-D"},
+				wantShards:  3,
 			},
 		}
 
@@ -84,8 +89,9 @@ func TestPlugin_Outcome(t *testing.T) {
 		for _, obs := range observations {
 			pbObs := &pb.Observation{
 				ShardStatus: obs.shardStatus,
-				WorkflowIds:       obs.workflows,
-				Now:               timestamppb.Now(),
+				WorkflowIds: obs.workflows,
+				Now:         timestamppb.Now(),
+				WantShards:  obs.wantShards,
 			}
 			rawObs, err := proto.Marshal(pbObs)
 			require.NoError(t, err)
@@ -148,7 +154,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 	}
 
 	// Use short time to sync for testing
-	plugin, err := NewPlugin(store, config, lggr, &ConsensusConfig{
+	plugin, err := NewPlugin(store, nil, config, lggr, &ConsensusConfig{
 		BatchSize:  100,
 		TimeToSync: 1 * time.Second,
 	})
@@ -164,12 +170,12 @@ func TestPlugin_StateTransitions(t *testing.T) {
 			PreviousOutcome: nil,
 		}
 
-		// Only 1 healthy shard in observations to match minShardCount
-		aos := makeObservations(t, []map[uint32]*pb.ShardStatus{
+		// Only 1 healthy shard in observations with wantShards=1
+		aos := makeObservationsWithWantShards(t, []map[uint32]*pb.ShardStatus{
 			{0: {IsHealthy: true}},
 			{0: {IsHealthy: true}},
 			{0: {IsHealthy: true}},
-		}, []string{"wf-1"}, now)
+		}, []string{"wf-1"}, now, 1)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -184,7 +190,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 		t.Logf("Initial state: %d routable shards", outcomeProto.State.GetRoutableShards())
 	})
 
-	// Test 2: Transition triggered when shard count changes
+	// Test 2: Transition triggered when wantShards changes
 	t.Run("transition_triggered", func(t *testing.T) {
 		// Start with 1 shard in stable state
 		priorOutcome := &pb.Outcome{
@@ -204,8 +210,8 @@ func TestPlugin_StateTransitions(t *testing.T) {
 			PreviousOutcome: priorBytes,
 		}
 
-		// Observations show 2 healthy shards now
-		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
+		// Observations show 2 healthy shards and wantShards=2
+		aos := makeObservationsWithWantShards(t, twoHealthyShards, []string{"wf-1"}, now, 2)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -247,8 +253,8 @@ func TestPlugin_StateTransitions(t *testing.T) {
 			PreviousOutcome: priorBytes,
 		}
 
-		// Still showing 2 healthy shards, but safety period not elapsed
-		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
+		// Still showing 2 healthy shards with wantShards=2, but safety period not elapsed
+		aos := makeObservationsWithWantShards(t, twoHealthyShards, []string{"wf-1"}, now, 2)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -288,7 +294,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 			PreviousOutcome: priorBytes,
 		}
 
-		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
+		aos := makeObservationsWithWantShards(t, twoHealthyShards, []string{"wf-1"}, now, 2)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -304,7 +310,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 		t.Logf("Transition complete: now at %d routable shards", outcomeProto.State.GetRoutableShards())
 	})
 
-	// Test 5: Stay stable when shard count doesn't change
+	// Test 5: Stay stable when wantShards matches current
 	t.Run("stay_stable", func(t *testing.T) {
 		priorOutcome := &pb.Outcome{
 			State: &pb.RoutingState{
@@ -323,8 +329,8 @@ func TestPlugin_StateTransitions(t *testing.T) {
 			PreviousOutcome: priorBytes,
 		}
 
-		// Same 2 healthy shards
-		aos := makeObservations(t, twoHealthyShards, []string{"wf-1"}, now)
+		// Same 2 healthy shards with wantShards=2
+		aos := makeObservationsWithWantShards(t, twoHealthyShards, []string{"wf-1"}, now, 2)
 
 		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
 		require.NoError(t, err)
@@ -341,14 +347,18 @@ func TestPlugin_StateTransitions(t *testing.T) {
 	})
 }
 
-// Helper function to create observations
 func makeObservations(t *testing.T, shardStatuses []map[uint32]*pb.ShardStatus, workflows []string, now time.Time) []types.AttributedObservation {
+	return makeObservationsWithWantShards(t, shardStatuses, workflows, now, 0)
+}
+
+func makeObservationsWithWantShards(t *testing.T, shardStatuses []map[uint32]*pb.ShardStatus, workflows []string, now time.Time, wantShards uint32) []types.AttributedObservation {
 	aos := make([]types.AttributedObservation, 0, len(shardStatuses))
 	for i, status := range shardStatuses {
 		pbObs := &pb.Observation{
 			ShardStatus: status,
-			WorkflowIds:       workflows,
-			Now:               timestamppb.New(now),
+			WorkflowIds: workflows,
+			Now:         timestamppb.New(now),
+			WantShards:  wantShards,
 		}
 		rawObs, err := proto.Marshal(pbObs)
 		require.NoError(t, err)
@@ -397,7 +407,7 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 		N: 4, F: 1,
 	}
 
-	plugin, err := NewPlugin(store, config, lggr, &ConsensusConfig{
+	plugin, err := NewPlugin(store, nil, config, lggr, &ConsensusConfig{
 		BatchSize:  100,
 		TimeToSync: 1 * time.Second,
 	})
@@ -434,8 +444,8 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		pbObs := &pb.Observation{
 			ShardStatus: toShardStatus(map[uint32]bool{0: false, 1: false, 2: false}),
-			WorkflowIds:       []string{"workflow-123"},
-			Now:               timestamppb.New(now),
+			WorkflowIds: []string{"workflow-123"},
+			Now:         timestamppb.New(now),
 		}
 		rawObs, err := proto.Marshal(pbObs)
 		require.NoError(t, err)
@@ -497,7 +507,7 @@ func TestPlugin_ObservationQuorum(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
 	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
-	plugin, err := NewPlugin(store, config, lggr, nil)
+	plugin, err := NewPlugin(store, nil, config, lggr, nil)
 	require.NoError(t, err)
 
 	ctx := context.Background()

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -22,9 +23,10 @@ import (
 type Plugin struct {
 	mu sync.RWMutex
 
-	store  *Store
-	config ocr3types.ReportingPluginConfig
-	lggr   logger.Logger
+	store         *Store
+	arbiterScaler pb.ArbiterScalerClient
+	config        ocr3types.ReportingPluginConfig
+	lggr          logger.Logger
 
 	batchSize  int
 	timeToSync time.Duration
@@ -43,7 +45,7 @@ const (
 )
 
 // NewPlugin creates a consensus reporting plugin for shard orchestration
-func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
+func NewPlugin(store *Store, arbiterScaler pb.ArbiterScalerClient, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
 	if cfg == nil {
 		cfg = &ConsensusConfig{
 			BatchSize:  DefaultBatchSize,
@@ -66,11 +68,12 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 	)
 
 	return &Plugin{
-		store:      store,
-		config:     config,
-		lggr:       logger.Named(lggr, "RingPlugin"),
-		batchSize:  cfg.BatchSize,
-		timeToSync: cfg.TimeToSync,
+		store:         store,
+		arbiterScaler: arbiterScaler,
+		config:        config,
+		lggr:          logger.Named(lggr, "RingPlugin"),
+		batchSize:     cfg.BatchSize,
+		timeToSync:    cfg.TimeToSync,
 	}, nil
 }
 
@@ -79,8 +82,25 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 	return nil, nil
 }
 
-func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
-	shardHealth := p.store.GetShardHealth()
+func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
+	var wantShards uint32
+	shardStatus := make(map[uint32]*pb.ShardStatus)
+
+	if p.arbiterScaler != nil {
+		status, err := p.arbiterScaler.Status(ctx, &emptypb.Empty{})
+		if err != nil {
+			p.lggr.Warnw("failed to get arbiter scaler status", "error", err)
+		} else {
+			wantShards = status.WantShards
+			shardStatus = status.Status
+		}
+	} else {
+		// Fallback to store if no arbiter scaler configured
+		shardHealth := p.store.GetShardHealth()
+		for shardID, healthy := range shardHealth {
+			shardStatus[shardID] = &pb.ShardStatus{IsHealthy: healthy}
+		}
+	}
 
 	allWorkflowIDs := make([]string, 0)
 	for wfID := range p.store.GetAllRoutingState() {
@@ -92,15 +112,11 @@ func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ ty
 
 	allWorkflowIDs = uniqueSorted(allWorkflowIDs)
 
-	shardStatus := make(map[uint32]*pb.ShardStatus, len(shardHealth))
-	for shardID, healthy := range shardHealth {
-		shardStatus[shardID] = &pb.ShardStatus{IsHealthy: healthy}
-	}
-
 	observation := &pb.Observation{
 		ShardStatus: shardStatus,
 		WorkflowIds: allWorkflowIDs,
 		Now:         timestamppb.Now(),
+		WantShards:  wantShards,
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
@@ -115,7 +131,7 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
-func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealth map[uint32]int, workflows []string, timestamps []time.Time) {
+func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealth map[uint32]int, workflows []string, timestamps []time.Time, wantShardVotes []uint32) {
 	shardHealth = make(map[uint32]int)
 	for _, ao := range aos {
 		observation := &pb.Observation{}
@@ -135,8 +151,12 @@ func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealt
 		if observation.Now != nil {
 			timestamps = append(timestamps, observation.Now.AsTime())
 		}
+
+		if observation.WantShards > 0 {
+			wantShardVotes = append(wantShardVotes, observation.WantShards)
+		}
 	}
-	return shardHealth, workflows, timestamps
+	return shardHealth, workflows, timestamps, wantShardVotes
 }
 
 func (p *Plugin) getHealthyShards(shardHealth map[uint32]int) []uint32 {
@@ -162,7 +182,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		return nil, err
 	}
 
-	currentShardHealth, allWorkflows, nows := p.collectShardInfo(aos)
+	currentShardHealth, allWorkflows, nows, wantShardVotes := p.collectShardInfo(aos)
 
 	// Need at least F+1 timestamps; fewer means >F faulty nodes and we can't trust this round
 	if len(nows) < p.config.F+1 {
@@ -173,11 +193,24 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	// Use the median timestamp to determine the current time
 	now := nows[len(nows)/2]
 
+	// Use median for wantShards consensus; fall back to current state if insufficient votes
+	var wantShards uint32
+	if len(wantShardVotes) >= p.config.F+1 {
+		slices.Sort(wantShardVotes)
+		wantShards = wantShardVotes[len(wantShardVotes)/2]
+	} else if rs := prior.State.GetRoutableShards(); rs > 0 {
+		wantShards = rs
+	} else if tr := prior.State.GetTransition(); tr != nil {
+		wantShards = tr.WantShards
+	} else {
+		wantShards = 1 // ultimate fallback
+	}
+
 	allWorkflows = uniqueSorted(allWorkflows)
 
 	healthyShards := p.getHealthyShards(currentShardHealth)
 
-	nextState, err := NextState(prior.State, uint32(len(healthyShards)), now, p.timeToSync)
+	nextState, err := NextState(prior.State, wantShards, now, p.timeToSync)
 	if err != nil {
 		return nil, err
 	}

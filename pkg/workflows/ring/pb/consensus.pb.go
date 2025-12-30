@@ -27,6 +27,7 @@ type Observation struct {
 	ShardStatus   map[uint32]*ShardStatus `protobuf:"bytes,1,rep,name=shard_status,json=shardStatus,proto3" json:"shard_status,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // shard_id -> status
 	WorkflowIds   []string                `protobuf:"bytes,2,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
 	Now           *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`
+	WantShards    uint32                  `protobuf:"varint,4,opt,name=want_shards,json=wantShards,proto3" json:"want_shards,omitempty"` // from ArbiterScaler.Status()
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -80,6 +81,13 @@ func (x *Observation) GetNow() *timestamppb.Timestamp {
 		return x.Now
 	}
 	return nil
+}
+
+func (x *Observation) GetWantShards() uint32 {
+	if x != nil {
+		return x.WantShards
+	}
+	return 0
 }
 
 type WorkflowRoute struct {
@@ -332,11 +340,13 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fshared.proto\"\xf8\x01\n" +
+	"\x0fconsensus.proto\x12\x04ring\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fshared.proto\"\x99\x02\n" +
 	"\vObservation\x12E\n" +
 	"\fshard_status\x18\x01 \x03(\v2\".ring.Observation.ShardStatusEntryR\vshardStatus\x12!\n" +
 	"\fworkflow_ids\x18\x02 \x03(\tR\vworkflowIds\x12,\n" +
-	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x1aQ\n" +
+	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\x12\x1f\n" +
+	"\vwant_shards\x18\x04 \x01(\rR\n" +
+	"wantShards\x1aQ\n" +
 	"\x10ShardStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12'\n" +
 	"\x05value\x18\x02 \x01(\v2\x11.ring.ShardStatusR\x05value:\x028\x01\"%\n" +

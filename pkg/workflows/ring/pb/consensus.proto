@@ -11,6 +11,7 @@ message Observation {
   map<uint32, ShardStatus> shard_status = 1; // shard_id -> status
   repeated string workflow_ids = 2;
   google.protobuf.Timestamp now = 3;
+  uint32 want_shards = 4; // from ArbiterScaler.Status()
 }
 
 message WorkflowRoute {

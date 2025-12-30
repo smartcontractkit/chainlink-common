@@ -218,7 +218,8 @@ func (p *Plugin) calculateNextState(priorState *pb.RoutingState, wantShards uint
 		}, nil
 
 	case *pb.RoutingState_Transition:
-		// Wait for all nodes to sync before committing to new shard assignments
+		// Cannot commit to new routing until safety period elapses: some nodes may still
+		// be on the prior stable state and changing routes now would cause misalignment
 		if now.Before(ps.Transition.ChangesSafeAfter.AsTime()) {
 			return priorState, nil
 		}

@@ -205,7 +205,7 @@ func (p *Plugin) calculateNextState(priorState *pb.RoutingState, wantShards uint
 			return priorState, nil
 		}
 
-		// Otherwise, initiate transition
+		// Shard count changed; start transition with safety period for workflow redistribution
 		return &pb.RoutingState{
 			Id: priorState.Id + 1,
 			State: &pb.RoutingState_Transition{

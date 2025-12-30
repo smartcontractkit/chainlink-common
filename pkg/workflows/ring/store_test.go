@@ -18,6 +18,10 @@ func TestStore_DeterministicHashing(t *testing.T) {
 		1: true,
 		2: true,
 	})
+	// Simulate OCR having moved to steady state
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 3},
+	})
 
 	ctx := context.Background()
 
@@ -41,9 +45,15 @@ func TestStore_ConsistentRingConsistency(t *testing.T) {
 
 	// All stores with same healthy shards
 	healthyShards := map[uint32]bool{0: true, 1: true, 2: true}
+	steadyState := &pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 3},
+	}
 	store1.SetAllShardHealth(healthyShards)
+	store1.SetRoutingState(steadyState)
 	store2.SetAllShardHealth(healthyShards)
+	store2.SetRoutingState(steadyState)
 	store3.SetAllShardHealth(healthyShards)
+	store3.SetRoutingState(steadyState)
 
 	ctx := context.Background()
 
@@ -68,6 +78,9 @@ func TestStore_Rebalancing(t *testing.T) {
 
 	// Start with 3 healthy shards
 	store.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: true})
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 3},
+	})
 	assignments1 := make(map[string]uint32)
 	for i := 1; i <= 10; i++ {
 		wfID := "workflow-" + string(rune(i))
@@ -119,7 +132,14 @@ func TestStore_NilHashRingFallback(t *testing.T) {
 	store := NewStore()
 	ctx := context.Background()
 
-	// Should not panic, should return 0 as fallback (no healthy shards set)
+	// Set all shards unhealthy
+	store.SetAllShardHealth(map[uint32]bool{0: false, 1: false, 2: false})
+	// Simulate OCR moved to steady (even with no healthy shards)
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 0},
+	})
+
+	// Should not panic, should return 0 as fallback (no healthy shards)
 	shard, err := store.GetShardForWorkflow(ctx, "workflow-123")
 	require.NoError(t, err)
 	require.Equal(t, uint32(0), shard)
@@ -133,6 +153,9 @@ func TestStore_DistributionAcrossShards(t *testing.T) {
 		0: true,
 		1: true,
 		2: true,
+	})
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 3},
 	})
 
 	// Generate many workflows and check distribution

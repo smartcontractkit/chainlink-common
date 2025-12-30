@@ -60,26 +60,22 @@ func (s *Store) updateHealthyShards() {
 	}
 }
 
-// GetShardForWorkflow returns the shard for a workflow.
-// In steady state, it uses consistent hashing from cache.
-// In transition state, it enqueues an allocation request and waits for OCR to process it.
 func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uint32, error) {
 	s.mu.Lock()
 
-	// Check if already allocated in cache
-	if shard, ok := s.routingState[workflowID]; ok {
-		s.mu.Unlock()
-		return shard, nil
-	}
-
-	// In steady state, compute locally using consistent hashing
-	if s.currentState == nil || s.isInSteadyState() {
+	// Only trust the cache in steady state; during transition OCR may have invalidated it
+	if s.isInSteadyState() {
+		// Check if already allocated in cache
+		if shard, ok := s.routingState[workflowID]; ok {
+			s.mu.Unlock()
+			return shard, nil
+		}
 		healthyShards := slices.Clone(s.healthyShards)
 		s.mu.Unlock()
 		return getShardForWorkflow(workflowID, healthyShards), nil
 	}
 
-	// In transition state, enqueue request and wait for allocation
+	// During transition, defer to OCR consensus for consistent shard assignment across nodes
 	resultCh := make(chan uint32, 1)
 	s.pendingAllocs[workflowID] = append(s.pendingAllocs[workflowID], resultCh)
 	s.mu.Unlock()
@@ -100,7 +96,7 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 
 func (s *Store) isInSteadyState() bool {
 	if s.currentState == nil {
-		return true
+		return false // unknown state, assume transition until OCR confirms
 	}
 	_, ok := s.currentState.State.(*pb.RoutingState_RoutableShards)
 	return ok
@@ -136,7 +132,6 @@ func (s *Store) GetRoutingState() *pb.RoutingState {
 	return s.currentState
 }
 
-// GetPendingAllocations returns workflow IDs that need allocation (non-blocking)
 func (s *Store) GetPendingAllocations() []string {
 	var pending []string
 	for {
@@ -173,6 +168,23 @@ func (s *Store) SetAllShardHealth(health map[uint32]bool) {
 	s.shardHealth = make(map[uint32]bool)
 	for k, v := range health {
 		s.shardHealth[k] = v
+	}
+
+	// Uninitialized store must wait for OCR consensus before serving requests
+	if s.currentState == nil {
+		numHealthy := uint32(0)
+		for _, healthy := range health {
+			if healthy {
+				numHealthy++
+			}
+		}
+		s.currentState = &pb.RoutingState{
+			State: &pb.RoutingState_Transition{
+				Transition: &pb.Transition{
+					WantShards: numHealthy,
+				},
+			},
+		}
 	}
 	s.mu.Unlock()
 

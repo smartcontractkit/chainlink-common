@@ -66,7 +66,7 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 	s.mu.Lock()
 
 	// Only trust the cache in steady state; during transition OCR may have invalidated it
-	if s.isInSteadyState() {
+	if IsInSteadyState(s.currentState) {
 		// Check if already allocated in cache
 		if shard, ok := s.routingState[workflowID]; ok {
 			s.mu.Unlock()
@@ -94,14 +94,6 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 	case <-ctx.Done():
 		return 0, ctx.Err()
 	}
-}
-
-func (s *Store) isInSteadyState() bool {
-	if s.currentState == nil {
-		return false // unknown state, assume transition until OCR confirms
-	}
-	_, ok := s.currentState.State.(*pb.RoutingState_RoutableShards)
-	return ok
 }
 
 func (s *Store) SetShardForWorkflow(workflowID string, shardID uint32) {
@@ -149,7 +141,7 @@ func (s *Store) GetPendingAllocations() []string {
 func (s *Store) IsInTransition() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return !s.isInSteadyState()
+	return !IsInSteadyState(s.currentState)
 }
 
 func (s *Store) GetShardHealth() map[uint32]bool {

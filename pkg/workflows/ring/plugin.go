@@ -172,7 +172,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	healthyShards := p.getHealthyShards(currentShardHealth)
 
-	nextState, err := p.calculateNextState(prior.State, uint32(len(healthyShards)), now)
+	nextState, err := NextState(prior.State, uint32(len(healthyShards)), now, p.timeToSync)
 	if err != nil {
 		return nil, err
 	}
@@ -195,46 +195,6 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	p.lggr.Infow("Consensus Outcome", "healthyShards", len(healthyShards), "totalObservations", len(aos), "workflowCount", len(routes))
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
-}
-
-func (p *Plugin) calculateNextState(priorState *pb.RoutingState, wantShards uint32, now time.Time) (*pb.RoutingState, error) {
-	switch ps := priorState.State.(type) {
-	case *pb.RoutingState_RoutableShards:
-		// No transition needed; avoid unnecessary workflow redistribution
-		if ps.RoutableShards == wantShards {
-			return priorState, nil
-		}
-
-		// Shard count changed; start transition with safety period for workflow redistribution
-		return &pb.RoutingState{
-			Id: priorState.Id + 1,
-			State: &pb.RoutingState_Transition{
-				Transition: &pb.Transition{
-					WantShards:       wantShards,
-					LastStableCount:  ps.RoutableShards,
-					ChangesSafeAfter: timestamppb.New(now.Add(p.timeToSync)),
-				},
-			},
-		}, nil
-
-	case *pb.RoutingState_Transition:
-		// Cannot commit to new routing until safety period elapses: some nodes may still
-		// be on the prior stable state and changing routes now would cause misalignment
-		if now.Before(ps.Transition.ChangesSafeAfter.AsTime()) {
-			return priorState, nil
-		}
-
-		// All nodes have synced; commit to new routing configuration
-		return &pb.RoutingState{
-			Id: priorState.Id + 1,
-			State: &pb.RoutingState_RoutableShards{
-				RoutableShards: ps.Transition.WantShards,
-			},
-		}, nil
-
-	default:
-		return nil, errors.New("unknown prior state type")
-	}
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {

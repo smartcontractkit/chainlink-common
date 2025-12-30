@@ -1,6 +1,7 @@
 package ring
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -373,4 +374,63 @@ func TestPlugin_getHealthyShards(t *testing.T) {
 			require.Equal(t, tc.want, len(got))
 		})
 	}
+}
+
+func TestPlugin_ObservationQuorum(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore()
+	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
+	plugin, err := NewPlugin(store, config, lggr, nil)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	outctx := ocr3types.OutcomeContext{}
+
+	t.Run("quorum_reached", func(t *testing.T) {
+		// Need 2F+1 = 3 observations for quorum with N=4, F=1
+		aos := make([]types.AttributedObservation, 3)
+		for i := range aos {
+			aos[i] = types.AttributedObservation{Observer: commontypes.OracleID(i)}
+		}
+
+		quorum, err := plugin.ObservationQuorum(ctx, outctx, nil, aos)
+		require.NoError(t, err)
+		require.True(t, quorum)
+	})
+
+	t.Run("quorum_not_reached", func(t *testing.T) {
+		// Only 2 observations - not enough for quorum
+		aos := make([]types.AttributedObservation, 2)
+		for i := range aos {
+			aos[i] = types.AttributedObservation{Observer: commontypes.OracleID(i)}
+		}
+
+		quorum, err := plugin.ObservationQuorum(ctx, outctx, nil, aos)
+		require.NoError(t, err)
+		require.False(t, quorum)
+	})
+
+	t.Run("exact_quorum", func(t *testing.T) {
+		// Exactly 2F+1 = 3 observations
+		aos := make([]types.AttributedObservation, 3)
+		for i := range aos {
+			aos[i] = types.AttributedObservation{Observer: commontypes.OracleID(i)}
+		}
+
+		quorum, err := plugin.ObservationQuorum(ctx, outctx, nil, aos)
+		require.NoError(t, err)
+		require.True(t, quorum)
+	})
+
+	t.Run("all_observations", func(t *testing.T) {
+		// All N=4 observations
+		aos := make([]types.AttributedObservation, 4)
+		for i := range aos {
+			aos[i] = types.AttributedObservation{Observer: commontypes.OracleID(i)}
+		}
+
+		quorum, err := plugin.ObservationQuorum(ctx, outctx, nil, aos)
+		require.NoError(t, err)
+		require.True(t, quorum)
+	})
 }

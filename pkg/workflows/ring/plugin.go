@@ -74,6 +74,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 	}, nil
 }
 
+//coverage:ignore
 func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Query, error) {
 	return nil, nil
 }
@@ -100,6 +101,7 @@ func (p *Plugin) Observation(_ context.Context, _ ocr3types.OutcomeContext, _ ty
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
 }
 
+//coverage:ignore
 func (p *Plugin) ValidateObservation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, _ types.AttributedObservation) error {
 	return nil
 }
@@ -265,14 +267,17 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 	}, nil
 }
 
+//coverage:ignore
 func (p *Plugin) ShouldAcceptAttestedReport(_ context.Context, _ uint64, _ ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 
+//coverage:ignore
 func (p *Plugin) ShouldTransmitAcceptedReport(_ context.Context, _ uint64, _ ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 
+//coverage:ignore
 func (p *Plugin) Close() error {
 	return nil
 }

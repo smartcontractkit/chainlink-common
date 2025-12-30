@@ -225,3 +225,62 @@ func TestStore_PendingAllocsDuringTransition(t *testing.T) {
 		t.Fatal("allocation was not fulfilled")
 	}
 }
+
+func TestStore_AccessorMethods(t *testing.T) {
+	store := NewStore()
+
+	store.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: false})
+	store.SetRoutingState(&pb.RoutingState{
+		State: &pb.RoutingState_RoutableShards{RoutableShards: 2},
+	})
+	store.SetShardForWorkflow("wf-1", 0)
+	store.SetShardForWorkflow("wf-2", 1)
+
+	t.Run("GetRoutingState", func(t *testing.T) {
+		state := store.GetRoutingState()
+		require.NotNil(t, state)
+		require.Equal(t, uint32(2), state.GetRoutableShards())
+	})
+
+	t.Run("IsInTransition_steady_state", func(t *testing.T) {
+		require.False(t, store.IsInTransition())
+	})
+
+	t.Run("GetShardHealth", func(t *testing.T) {
+		health := store.GetShardHealth()
+		require.Len(t, health, 3)
+		require.True(t, health[0])
+		require.True(t, health[1])
+		require.False(t, health[2])
+	})
+
+	t.Run("GetAllRoutingState", func(t *testing.T) {
+		routes := store.GetAllRoutingState()
+		require.Len(t, routes, 2)
+		require.Equal(t, uint32(0), routes["wf-1"])
+		require.Equal(t, uint32(1), routes["wf-2"])
+	})
+
+	t.Run("GetHealthyShardCount", func(t *testing.T) {
+		require.Equal(t, 2, store.GetHealthyShardCount())
+	})
+
+	t.Run("DeleteWorkflow", func(t *testing.T) {
+		store.DeleteWorkflow("wf-1")
+		routes := store.GetAllRoutingState()
+		require.Len(t, routes, 1)
+		require.NotContains(t, routes, "wf-1")
+	})
+
+	t.Run("IsInTransition_transition_state", func(t *testing.T) {
+		store.SetRoutingState(&pb.RoutingState{
+			State: &pb.RoutingState_Transition{Transition: &pb.Transition{WantShards: 3}},
+		})
+		require.True(t, store.IsInTransition())
+	})
+
+	t.Run("IsInTransition_nil_state", func(t *testing.T) {
+		store.SetRoutingState(nil)
+		require.True(t, store.IsInTransition())
+	})
+}

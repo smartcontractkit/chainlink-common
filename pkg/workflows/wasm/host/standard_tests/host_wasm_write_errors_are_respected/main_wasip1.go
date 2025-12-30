@@ -11,5 +11,5 @@ func main() {
 	rId := rawsdk.DoRequestAsync("basic-test-action@1.0.0", "PerformAction", sdk.Mode_MODE_DON, input)
 
 	rawsdk.Await(rId, &basicaction.Outputs{})
-	rawsdk.SendResponse("should not get get here as Await sends error on errors...")
+	rawsdk.SendResponse("should not get here as Await sends error on errors...")
 }

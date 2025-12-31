@@ -86,7 +86,7 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 
 func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
 	var wantShards uint32
-	shardStatus := make(map[uint32]*pb.ShardStatus)
+	var shardStatus map[uint32]*pb.ShardStatus
 
 	status, err := p.arbiterScaler.Status(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -176,13 +176,8 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	currentShardHealth, allWorkflows, nows, wantShardVotes := p.collectShardInfo(aos)
 	p.lggr.Infow("RingOCR Outcome collect shard info", "currentShardHealth", currentShardHealth, "wantShardVotes", wantShardVotes)
 
-	// Need at least F+1 timestamps; fewer means >F faulty nodes and we can't trust this round
-	if len(nows) < p.config.F+1 {
-		return nil, errors.New("insufficient observation timestamps")
-	}
-	slices.SortFunc(nows, time.Time.Compare)
-
 	// Use the median timestamp to determine the current time
+	slices.SortFunc(nows, time.Time.Compare)
 	now := nows[len(nows)/2]
 
 	// Use median for wantShards consensus (all validated observations have WantShards > 0)

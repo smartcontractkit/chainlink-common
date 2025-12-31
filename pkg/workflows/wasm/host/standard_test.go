@@ -118,6 +118,37 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	assert.Equal(t, "truefalse", result)
 }
 
+func TestStandardHostWasmWriteErrorsAreRespected(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+		// In this test the response from the capability is successful,
+		// but the WASM didn't provide a large enough buffer to fit it
+		// 500 MB will suffice for the overflow on writes.
+
+		tooLargeResponse := make([]byte, 500000000)
+
+		// Since the bytes in the payload shouldn't be read, we don't need a valid proto
+		payload := &anypb.Any{
+			TypeUrl: "fake",
+			Value:   tooLargeResponse,
+		}
+
+		return &sdk.CapabilityResponse{Response: &sdk.CapabilityResponse_Payload{Payload: payload}}, nil
+	})
+
+	m := makeTestModule(t)
+	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+	errStr := executeWithError(t, m, request, mockExecutionHelper)
+
+	// Use Contains instead of Equal for flexibility, as languages have different conventions for errors.
+	require.Contains(t, errStr, ResponseBufferTooSmall)
+}
+
 func TestStandardModeSwitch(t *testing.T) {
 	t.Parallel()
 	t.Run("successful mode switch", func(t *testing.T) {

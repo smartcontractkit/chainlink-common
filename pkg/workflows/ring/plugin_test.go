@@ -131,7 +131,9 @@ func TestPlugin_Outcome(t *testing.T) {
 
 		// Check consensus results
 		require.NotNil(t, outcomeProto.State)
-		require.Equal(t, intialSeqNr+1, outcomeProto.State.Id, "ID should match SeqNr")
+		// When bootstrapping without PreviousOutcome, we use wantShards from observations (3)
+		// Since consensus wantShards (3) equals bootstrap shards, no transition needed - ID stays the same
+		require.Equal(t, intialSeqNr, outcomeProto.State.Id, "ID should match SeqNr (no transition needed)")
 		t.Logf("Outcome - ID: %d, HealthyShards: %v", outcomeProto.State.Id, outcomeProto.State.GetRoutableShards())
 		t.Logf("Workflows assigned: %d", len(outcomeProto.Routes))
 

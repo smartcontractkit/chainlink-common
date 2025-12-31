@@ -173,15 +173,6 @@ func (p *Plugin) getHealthyShards(shardHealth map[uint32]int) []uint32 {
 }
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	// Bootstrap with 1 shard on first round; subsequent rounds build on prior outcome
-	prior := &pb.Outcome{}
-	if outctx.PreviousOutcome == nil {
-		prior.Routes = map[string]*pb.WorkflowRoute{}
-		prior.State = &pb.RoutingState{Id: outctx.SeqNr, State: &pb.RoutingState_RoutableShards{RoutableShards: 1}}
-	} else if err := proto.Unmarshal(outctx.PreviousOutcome, prior); err != nil {
-		return nil, err
-	}
-
 	currentShardHealth, allWorkflows, nows, wantShardVotes := p.collectShardInfo(aos)
 	p.lggr.Infow("RingOCR Outcome collect shard info", "currentShardHealth", currentShardHealth, "wantShardVotes", wantShardVotes)
 
@@ -201,6 +192,15 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	}
 	slices.Sort(votes)
 	wantShards := votes[len(votes)/2]
+
+	// Bootstrap from Arbiter's current shard count on 1st round; subsequent rounds build on prior outcome
+	prior := &pb.Outcome{}
+	if outctx.PreviousOutcome == nil {
+		prior.Routes = map[string]*pb.WorkflowRoute{}
+		prior.State = &pb.RoutingState{Id: outctx.SeqNr, State: &pb.RoutingState_RoutableShards{RoutableShards: wantShards}}
+	} else if err := proto.Unmarshal(outctx.PreviousOutcome, prior); err != nil {
+		return nil, err
+	}
 
 	allWorkflows = uniqueSorted(allWorkflows)
 

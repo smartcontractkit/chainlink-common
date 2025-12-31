@@ -15,7 +15,11 @@ type AllocationRequest struct {
 	Result     chan uint32
 }
 
-// Store manages shard routing state and workflow mappings
+// Store manages shard routing state and workflow mappings.
+// It serves as a shared data layer across three components:
+//   - RingOCR plugin: produces consensus-driven routing updates
+//   - Arbiter: provides shard health and scaling decisions
+//   - ShardOrchestrator: consumes routing state to direct workflow execution
 type Store struct {
 	routingState  map[string]uint32 // workflow_id -> shard_id (cache of allocated workflows)
 	shardHealth   map[uint32]bool   // shard_id -> is_healthy
@@ -62,6 +66,7 @@ func (s *Store) updateHealthyShards() {
 	}
 }
 
+// GetShardForWorkflow called by Workflow Registry Syncers of all shards via ShardOrchestratorService.
 func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uint32, error) {
 	s.mu.Lock()
 
@@ -72,9 +77,9 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 			s.mu.Unlock()
 			return shard, nil
 		}
-		healthyShards := slices.Clone(s.healthyShards)
+		ring := newShardRing(s.healthyShards)
 		s.mu.Unlock()
-		return getShardForWorkflow(workflowID, healthyShards), nil
+		return locateShard(ring, workflowID)
 	}
 
 	// During transition, defer to OCR consensus for consistent shard assignment across nodes
@@ -96,6 +101,7 @@ func (s *Store) GetShardForWorkflow(ctx context.Context, workflowID string) (uin
 	}
 }
 
+// SetShardForWorkflow is called by the RingOCR plugin whenever it finishes a round with allocations for a given workflow ID.
 func (s *Store) SetShardForWorkflow(workflowID string, shardID uint32) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -114,6 +120,7 @@ func (s *Store) SetShardForWorkflow(workflowID string, shardID uint32) {
 	}
 }
 
+// SetRoutingState is called by the RingOCR plugin whenever a state transition happens.
 func (s *Store) SetRoutingState(state *pb.RoutingState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -126,6 +133,8 @@ func (s *Store) GetRoutingState() *pb.RoutingState {
 	return s.currentState
 }
 
+// GetPendingAllocations called by the RingOCR plugin in the observation phase
+// to collect all allocation requests (only applicable to the TRANSITION phase).
 func (s *Store) GetPendingAllocations() []string {
 	var pending []string
 	for {

@@ -7,7 +7,9 @@ import (
 
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -15,6 +17,21 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
+
+type mockArbiter struct {
+	status *pb.ReplicaStatus
+}
+
+func (m *mockArbiter) Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*pb.ReplicaStatus, error) {
+	if m.status != nil {
+		return m.status, nil
+	}
+	return &pb.ReplicaStatus{}, nil
+}
+
+func (m *mockArbiter) ConsensusWantShards(ctx context.Context, req *pb.ConsensusWantShardsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
 
 var twoHealthyShards = []map[uint32]*pb.ShardStatus{
 	{0: {IsHealthy: true}, 1: {IsHealthy: true}},
@@ -44,7 +61,7 @@ func TestPlugin_Outcome(t *testing.T) {
 			MaxDurationShouldTransmitAcceptedReport: 0,
 		}
 
-		plugin, err := NewPlugin(store, nil, config, lggr, nil)
+		plugin, err := NewPlugin(store, &mockArbiter{}, config, lggr, nil)
 		require.NoError(t, err)
 
 		ctx := t.Context()
@@ -154,7 +171,7 @@ func TestPlugin_StateTransitions(t *testing.T) {
 	}
 
 	// Use short time to sync for testing
-	plugin, err := NewPlugin(store, nil, config, lggr, &ConsensusConfig{
+	plugin, err := NewPlugin(store, &mockArbiter{}, config, lggr, &ConsensusConfig{
 		BatchSize:  100,
 		TimeToSync: 1 * time.Second,
 	})
@@ -371,6 +388,16 @@ func makeObservationsWithWantShards(t *testing.T, shardStatuses []map[uint32]*pb
 	return aos
 }
 
+func TestPlugin_NewPlugin_NilArbiter(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore()
+	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
+
+	_, err := NewPlugin(store, nil, config, lggr, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "RingOCR arbiterScaler is required")
+}
+
 func TestPlugin_getHealthyShards(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -407,13 +434,14 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 		N: 4, F: 1,
 	}
 
-	plugin, err := NewPlugin(store, nil, config, lggr, &ConsensusConfig{
+	arbiter := &mockArbiter{}
+	plugin, err := NewPlugin(store, arbiter, config, lggr, &ConsensusConfig{
 		BatchSize:  100,
 		TimeToSync: 1 * time.Second,
 	})
 	require.NoError(t, err)
 
-	transmitter := NewTransmitter(lggr, store, nil, "test-account")
+	transmitter := NewTransmitter(lggr, store, arbiter, "test-account")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
@@ -507,7 +535,7 @@ func TestPlugin_ObservationQuorum(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
 	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
-	plugin, err := NewPlugin(store, nil, config, lggr, nil)
+	plugin, err := NewPlugin(store, &mockArbiter{}, config, lggr, nil)
 	require.NoError(t, err)
 
 	ctx := context.Background()

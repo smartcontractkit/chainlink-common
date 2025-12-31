@@ -44,8 +44,10 @@ const (
 	DefaultTimeToSync = 5 * time.Minute
 )
 
-// NewPlugin creates a consensus reporting plugin for shard orchestration
 func NewPlugin(store *Store, arbiterScaler pb.ArbiterScalerClient, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
+	if arbiterScaler == nil {
+		return nil, errors.New("RingOCR arbiterScaler is required")
+	}
 	if cfg == nil {
 		cfg = &ConsensusConfig{
 			BatchSize:  DefaultBatchSize,
@@ -86,20 +88,14 @@ func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ 
 	var wantShards uint32
 	shardStatus := make(map[uint32]*pb.ShardStatus)
 
-	if p.arbiterScaler != nil {
-		status, err := p.arbiterScaler.Status(ctx, &emptypb.Empty{})
-		if err != nil {
-			p.lggr.Warnw("failed to get arbiter scaler status", "error", err)
-		} else {
-			wantShards = status.WantShards
-			shardStatus = status.Status
-		}
+	status, err := p.arbiterScaler.Status(ctx, &emptypb.Empty{})
+	if err != nil {
+		p.lggr.Warnw("RingOCR failed to get arbiter scaler status", "error", err)
+		wantShards = 0
+		shardStatus = make(map[uint32]*pb.ShardStatus)
 	} else {
-		// Fallback to store if no arbiter scaler configured
-		shardHealth := p.store.GetShardHealth()
-		for shardID, healthy := range shardHealth {
-			shardStatus[shardID] = &pb.ShardStatus{IsHealthy: healthy}
-		}
+		wantShards = status.WantShards
+		shardStatus = status.Status
 	}
 
 	allWorkflowIDs := make([]string, 0)
@@ -108,9 +104,11 @@ func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ 
 	}
 
 	pendingAllocs := p.store.GetPendingAllocations()
-	allWorkflowIDs = append(allWorkflowIDs, pendingAllocs...)
+	p.lggr.Infow("RingOCR Observation pending allocations", "pendingAllocs", pendingAllocs)
 
+	allWorkflowIDs = append(allWorkflowIDs, pendingAllocs...)
 	allWorkflowIDs = uniqueSorted(allWorkflowIDs)
+	p.lggr.Infow("RingOCR Observation all workflow IDs unique", "allWorkflowIDs", allWorkflowIDs, "wantShards", wantShards)
 
 	observation := &pb.Observation{
 		ShardStatus: shardStatus,
@@ -122,8 +120,17 @@ func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
 }
 
-//coverage:ignore
-func (p *Plugin) ValidateObservation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, _ types.AttributedObservation) error {
+func (p *Plugin) ValidateObservation(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
+	observation := &pb.Observation{}
+	if err := proto.Unmarshal(ao.Observation, observation); err != nil {
+		return err
+	}
+	if observation.Now == nil {
+		return errors.New("observation missing timestamp")
+	}
+	if observation.WantShards == 0 {
+		return errors.New("observation missing WantShards")
+	}
 	return nil
 }
 
@@ -131,14 +138,12 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
-func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealth map[uint32]int, workflows []string, timestamps []time.Time, wantShardVotes []uint32) {
+func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealth map[uint32]int, workflows []string, timestamps []time.Time, wantShardVotes map[commontypes.OracleID]uint32) {
 	shardHealth = make(map[uint32]int)
+	wantShardVotes = make(map[commontypes.OracleID]uint32)
 	for _, ao := range aos {
 		observation := &pb.Observation{}
-		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
-			p.lggr.Warnf("failed to unmarshal observation: %v", err)
-			continue
-		}
+		_ = proto.Unmarshal(ao.Observation, observation) // validated in ValidateObservation
 
 		for shardID, status := range observation.ShardStatus {
 			if status != nil && status.IsHealthy {
@@ -147,14 +152,9 @@ func (p *Plugin) collectShardInfo(aos []types.AttributedObservation) (shardHealt
 		}
 
 		workflows = append(workflows, observation.WorkflowIds...)
+		timestamps = append(timestamps, observation.Now.AsTime())
 
-		if observation.Now != nil {
-			timestamps = append(timestamps, observation.Now.AsTime())
-		}
-
-		if observation.WantShards > 0 {
-			wantShardVotes = append(wantShardVotes, observation.WantShards)
-		}
+		wantShardVotes[ao.Observer] = observation.WantShards
 	}
 	return shardHealth, workflows, timestamps, wantShardVotes
 }
@@ -183,6 +183,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	}
 
 	currentShardHealth, allWorkflows, nows, wantShardVotes := p.collectShardInfo(aos)
+	p.lggr.Infow("RingOCR Outcome collect shard info", "currentShardHealth", currentShardHealth, "wantShardVotes", wantShardVotes)
 
 	// Need at least F+1 timestamps; fewer means >F faulty nodes and we can't trust this round
 	if len(nows) < p.config.F+1 {
@@ -193,18 +194,13 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	// Use the median timestamp to determine the current time
 	now := nows[len(nows)/2]
 
-	// Use median for wantShards consensus; fall back to current state if insufficient votes
-	var wantShards uint32
-	if len(wantShardVotes) >= p.config.F+1 {
-		slices.Sort(wantShardVotes)
-		wantShards = wantShardVotes[len(wantShardVotes)/2]
-	} else if rs := prior.State.GetRoutableShards(); rs > 0 {
-		wantShards = rs
-	} else if tr := prior.State.GetTransition(); tr != nil {
-		wantShards = tr.WantShards
-	} else {
-		wantShards = 1 // ultimate fallback
+	// Use median for wantShards consensus (all validated observations have WantShards > 0)
+	votes := make([]uint32, 0, len(wantShardVotes))
+	for _, v := range wantShardVotes {
+		votes = append(votes, v)
 	}
+	slices.Sort(votes)
+	wantShards := votes[len(votes)/2]
 
 	allWorkflows = uniqueSorted(allWorkflows)
 
@@ -217,12 +213,15 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	// Deterministic hashing ensures all nodes agree on workflow-to-shard assignments
 	// without coordination, preventing protocol failures from inconsistent routing
+	ring := newShardRing(healthyShards)
 	routes := make(map[string]*pb.WorkflowRoute)
 	for _, wfID := range allWorkflows {
-		assignedShard := getShardForWorkflow(wfID, healthyShards)
-		routes[wfID] = &pb.WorkflowRoute{
-			Shard: assignedShard,
+		shard, err := locateShard(ring, wfID)
+		if err != nil {
+			p.lggr.Warnw("RingOCR failed to locate shard for workflow", "workflowID", wfID, "error", err)
+			shard = 0 // fallback to shard 0 when no healthy shards
 		}
+		routes[wfID] = &pb.WorkflowRoute{Shard: shard}
 	}
 
 	outcome := &pb.Outcome{
@@ -230,7 +229,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		Routes: routes,
 	}
 
-	p.lggr.Infow("Consensus Outcome", "healthyShards", len(healthyShards), "totalObservations", len(aos), "workflowCount", len(routes))
+	p.lggr.Infow("RingOCR Outcome", "healthyShards", len(healthyShards), "totalObservations", len(aos), "workflowCount", len(routes))
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
 }

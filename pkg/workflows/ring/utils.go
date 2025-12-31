@@ -1,12 +1,16 @@
 package ring
 
 import (
+	"errors"
 	"slices"
 	"strconv"
 
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash/v2"
 )
+
+var errInvalidRing = errors.New("RingOCR invalid ring for consistent hashing")
+var errInvalidMember = errors.New("RingOCR invalid member for consistent hashing")
 
 func uniqueSorted(s []string) []string {
 	result := slices.Clone(s)
@@ -35,27 +39,28 @@ func consistentHashConfig() consistent.Config {
 	}
 }
 
-func getShardForWorkflow(workflowID string, healthyShards []uint32) uint32 {
+func newShardRing(healthyShards []uint32) *consistent.Consistent {
 	if len(healthyShards) == 0 {
-		return 0
+		return nil
 	}
-
 	members := make([]consistent.Member, len(healthyShards))
 	for i, shardID := range healthyShards {
 		members[i] = ShardMember(strconv.FormatUint(uint64(shardID), 10))
 	}
+	return consistent.New(members, consistentHashConfig())
+}
 
-	ring := consistent.New(members, consistentHashConfig())
-
+func locateShard(ring *consistent.Consistent, workflowID string) (uint32, error) {
+	if ring == nil {
+		return 0, errInvalidRing
+	}
 	member := ring.LocateKey([]byte(workflowID))
 	if member == nil {
-		return 0
+		return 0, errInvalidMember
 	}
-
 	shardID, err := strconv.ParseUint(member.String(), 10, 32)
 	if err != nil {
-		return 0
+		return 0, err
 	}
-
-	return uint32(shardID)
+	return uint32(shardID), nil
 }

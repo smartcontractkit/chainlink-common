@@ -2,6 +2,7 @@ package ring
 
 import (
 	"context"
+	"errors"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -27,8 +28,10 @@ type Factory struct {
 	services.StateMachine
 }
 
-// NewFactory creates a factory for the shard orchestrator consensus plugin
 func NewFactory(s *Store, arbiterScaler pb.ArbiterScalerClient, lggr logger.Logger, cfg *ConsensusConfig) (*Factory, error) {
+	if arbiterScaler == nil {
+		return nil, errors.New("arbiterScaler is required")
+	}
 	if cfg == nil {
 		cfg = &ConsensusConfig{
 			BatchSize: defaultBatchSize,
@@ -38,14 +41,14 @@ func NewFactory(s *Store, arbiterScaler pb.ArbiterScalerClient, lggr logger.Logg
 		store:         s,
 		arbiterScaler: arbiterScaler,
 		config:        cfg,
-		lggr:          logger.Named(lggr, "ShardOrchestratorFactory"),
+		lggr:          logger.Named(lggr, "RingPluginFactory"),
 	}, nil
 }
 
 func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
 	plugin, err := NewPlugin(o.store, o.arbiterScaler, config, o.lggr, o.config)
 	pluginInfo := ocr3types.ReportingPluginInfo{
-		Name: "Shard Orchestrator Consensus Plugin",
+		Name: "RingPlugin",
 		Limits: ocr3types.ReportingPluginLimits{
 			MaxQueryLength:       defaultMaxPhaseOutputBytes,
 			MaxObservationLength: defaultMaxPhaseOutputBytes,

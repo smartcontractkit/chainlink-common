@@ -44,7 +44,7 @@ require (
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20251124151448-0448aefdaab9
 	github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b
 	github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0
-	github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20251020004840-4638e4262066
+	github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20260102221517-7fc18d32c1ce
 	github.com/smartcontractkit/freeport v0.1.3-0.20250716200817-cb5dfd0e369e
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7
 	github.com/smartcontractkit/libocr v0.0.0-20250912173940-f3ab0246e23d
@@ -73,9 +73,9 @@ require (
 	golang.org/x/time v0.12.0
 	golang.org/x/tools v0.38.0
 	gonum.org/v1/gonum v0.16.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5
-	google.golang.org/grpc v1.75.0
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda
+	google.golang.org/grpc v1.78.0
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -135,14 +135,14 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sanity-io/litter v1.5.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.36.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
@@ -153,6 +153,6 @@ require (
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20251029180050-ab9386a59fda // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

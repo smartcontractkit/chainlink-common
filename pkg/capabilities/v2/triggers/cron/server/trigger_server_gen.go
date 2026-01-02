@@ -20,9 +20,11 @@ var _ = emptypb.Empty{}
 type CronCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.Payload], error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
+	AckEvent(ctx context.Context, triggerId string, eventId string) error
 
 	RegisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.LegacyPayload], error)
 	UnregisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
+	AckEvent(ctx context.Context, triggerId string, eventId string) error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -134,6 +136,10 @@ func (c *cronCapability) UnregisterTrigger(ctx context.Context, request capabili
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
+}
+
+func (c *cronCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	return c.CronCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *cronCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

@@ -12,12 +12,13 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 )
 
 type Plugin struct {
@@ -90,13 +91,12 @@ func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ 
 
 	status, err := p.arbiterScaler.Status(ctx, &emptypb.Empty{})
 	if err != nil {
-		p.lggr.Warnw("RingOCR failed to get arbiter scaler status", "error", err)
-		wantShards = 0
-		shardStatus = make(map[uint32]*pb.ShardStatus)
-	} else {
-		wantShards = status.WantShards
-		shardStatus = status.Status
+		// NOTE: consider a fallback data source if Arbiter is not available
+		p.lggr.Errorw("RingOCR failed to get arbiter scaler status", "error", err)
+		return nil, err
 	}
+	wantShards = status.WantShards
+	shardStatus = status.Status
 
 	allWorkflowIDs := make([]string, 0)
 	for wfID := range p.store.GetAllRoutingState() {

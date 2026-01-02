@@ -81,11 +81,11 @@ var Default = Schema{
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
-		TriggerEventQueueLimit:        Int(1_000),
+		TriggerEventQueueLimit:        Int(50),
 		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
 		TriggerSubscriptionTimeout:    Duration(15 * time.Second),
 		TriggerSubscriptionLimit:      Int(10),
-		CapabilityConcurrencyLimit:    Int(3),
+		CapabilityConcurrencyLimit:    Int(30), // we should rely on per-capability execution limits instead of concurrency limit
 		CapabilityCallTimeout:         Duration(3 * time.Minute),
 		SecretsConcurrencyLimit:       Int(5),
 		ExecutionConcurrencyLimit:     Int(5),
@@ -132,7 +132,7 @@ var Default = Schema{
 		},
 		Consensus: consensus{
 			ObservationSizeLimit: Size(100 * config.KByte),
-			CallLimit:            Int(2000),
+			CallLimit:            Int(20),
 		},
 		HTTPAction: httpAction{
 			CallLimit:         Int(5),

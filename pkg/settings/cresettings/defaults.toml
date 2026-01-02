@@ -19,9 +19,9 @@ VaultSecretsLimit = '100'
 TriggerRegistrationsTimeout = '10s'
 TriggerSubscriptionTimeout = '15s'
 TriggerSubscriptionLimit = '10'
-TriggerEventQueueLimit = '1000'
+TriggerEventQueueLimit = '50'
 TriggerEventQueueTimeout = '10m0s'
-CapabilityConcurrencyLimit = '3'
+CapabilityConcurrencyLimit = '30'
 CapabilityCallTimeout = '3m0s'
 SecretsConcurrencyLimit = '5'
 ExecutionConcurrencyLimit = '5'
@@ -68,7 +68,7 @@ PayloadSizeLimit = '5kb'
 
 [PerWorkflow.Consensus]
 ObservationSizeLimit = '100kb'
-CallLimit = '2000'
+CallLimit = '20'
 
 [PerWorkflow.HTTPAction]
 CallLimit = '5'

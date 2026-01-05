@@ -110,16 +110,11 @@ func (b *BatchClient) sendBatch(ctx context.Context, events []*chipingress.Cloud
 		return
 	}
 
-	batch := make([]*chipingress.CloudEventPb, 0, len(events))
-	for _, event := range events {
-		batch = append(batch, event)
-	}
-
 	b.maxConcurrentSends <- struct{}{}
 
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
-		b.client.PublishBatch(ctx, &chipingress.CloudEventBatch{Events: batch})
+		b.client.PublishBatch(ctx, &chipingress.CloudEventBatch{Events: events})
 	}()
 }
 

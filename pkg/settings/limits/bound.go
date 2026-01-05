@@ -49,13 +49,13 @@ func (s *simpleBoundLimiter[N]) Limit(ctx context.Context) (N, error) {
 	return s.bound, nil
 }
 
-func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimiter[N], error) {
+func newBoundLimiter[N Number](f Factory, bound settings.SettingSpec[N]) (BoundLimiter[N], error) {
 	b := &boundLimiter[N]{
 		updater: newUpdater[N](nil, func(ctx context.Context) (N, error) {
 			return bound.GetOrDefault(ctx, f.Settings)
 		}, nil),
-		key:   bound.Key,
-		scope: bound.Scope,
+		key:   bound.GetKey(),
+		scope: bound.GetScope(),
 	}
 	b.updater.recordLimit = func(ctx context.Context, n N) { b.recordBound(ctx, n) }
 
@@ -63,23 +63,24 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 		if b.key == "" {
 			return nil, errors.New("metrics require Key to be set")
 		}
-		newGauge, newHist := metricConstructors[N](f.Meter, bound.Unit)
+		newGauge, newHist := metricConstructors[N](f.Meter, bound.GetUnit())
 
-		limitGauge, err := newGauge("bound." + bound.Key + ".limit")
+		key := bound.GetKey()
+		limitGauge, err := newGauge("bound." + key + ".limit")
 		if err != nil {
 			return nil, err
 		}
 		b.recordBound = func(ctx context.Context, value N, options ...metric.RecordOption) {
 			limitGauge.Record(ctx, value, options...)
 		}
-		usageHist, err := newHist("bound." + bound.Key + ".usage")
+		usageHist, err := newHist("bound." + key + ".usage")
 		if err != nil {
 			return nil, err
 		}
 		b.recordUsage = func(ctx context.Context, value N, options ...metric.RecordOption) {
 			usageHist.Record(ctx, value, options...)
 		}
-		deniedHist, err := newHist("bound." + bound.Key + ".denied")
+		deniedHist, err := newHist("bound." + key + ".denied")
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +94,7 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 	}
 
 	if f.Logger != nil {
-		b.lggr = logger.Sugared(f.Logger).Named("BoundLimiter").With("key", bound.Key)
+		b.lggr = logger.Sugared(f.Logger).Named("BoundLimiter").With("key", bound.GetKey())
 	}
 
 	if f.Settings != nil {
@@ -104,7 +105,7 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 		}
 	}
 
-	if bound.Scope == settings.ScopeGlobal {
+	if bound.GetScope() == settings.ScopeGlobal {
 		b.updateCRE(contexts.CRE{})
 		go b.updateLoop(contexts.CRE{})
 	}

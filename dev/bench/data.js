@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767390709123,
+  "lastUpdate": 1767603261238,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34200,6 +34200,66 @@ window.BENCHMARK_DATA = {
             "value": 152993,
             "unit": "ns/op",
             "extra": "7125 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "maciej.wisniewski@smartcontract.com",
+            "name": "mchain0",
+            "username": "mchain0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c86aff1c51825f8188f7a65d278289fbeb136cc6",
+          "message": "CRE-1601: Ring OCR plugin for shard orchestration (#1742)\n\n* cre-1601: shard orchestrator plugin for delegate\n\n* cre-1601: consistent hashing and plugin test\n\n* cre-1601: tidy\n\n* cre-1601: pb generate\n\n* cre-1601: review improvement\n\n* cre-1601: review improvement\n\n* cre-1601: review improvement\n\n* cre-1601: remove previous outcome, use outctx.SeqNr instead\n\n* cre-1601: transition state machine\n\n* cre-1601: removed TransmissionScheduleOverride\n\n* cre-1601: comments\n\n* cre-1601: rename plugin to ring\n\n* cre-1601: renames and cleanup\n\n* cre-1601: delegate integrations adjustments\n\n* cre-1601: proto comments; import fix\n\n* cre-1601: snake_case consistent for proto fields\n\n* cre-1601: remove unused field\n\n* cre-1601: more proto comments\n\n* cre-1601: proto cleanup, orphans removed\n\n* cre-1601: log overrides, log plugin config\n\n* cre-1601: better comment\n\n* cre-1601: deterministic time; f check for round; improved time median; improved workflows dedup; improved comments;\n\n* cre-1601: log improvement\n\n* cre-1601: shard count health refactor\n\n* cre-1601: hash ring pure function refactor for both storage and observation\n\n* cre-1601: Transmitter notifies Arbiter\n\n* cre-1601: store in two states, steady and transition; enque for allocation trigger post round;\n\n* cre-1601: comments improved\n\n* cre-1601: more comments improvements\n\n* cre-1601: test extension to validate workflows to shards eassignments\n\n* cre-1601: test improvement - distribution check by percents\n\n* cre-1601: using maps improvement\n\n* cre-1601: remove number of shards limits (ref. review)\n\n* cre-1601: initial state fix; intial transition state until OCR round; tests adjustments to simulate state confirmation;\n\n* cre-1601: more tests; boosting test coverage\n\n* cre-1601: better comments\n\n* cre-1601: better comments\n\n* cre-1601: improved test for plugin outcome\n\n* cre-1601: comments improved\n\n* cre-1601: comment improvement\n\n* cre-1601: more tests; more coverage\n\n* cre-1601: refactor of state; state verification tests; related changes;\n\n* cre-1601: bool wrapper ShardStatus to extend with weights later\n\n* cre-1601: ArbiterScaler.Status() wantShards being part of the observations in the consensus\n\n* cre-1601: improved comments; improved naming; simplified logic; observations validation; ring performance improvements\n\n* cre-1601: on 1st round make prior outcome wantShards equal to the current data from the arbiter\n\n* cre-1601: removed unnecessary check (code review suggestions)\n\n* Fail Observation() on Arbiter error\n\n---------\n\nCo-authored-by: Bolek Kulbabinski <1416262+bolekk@users.noreply.github.com>",
+          "timestamp": "2026-01-05T08:45:00Z",
+          "tree_id": "206f5ff980bcca71e9027abe2d4a2ac8290c8ada",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c86aff1c51825f8188f7a65d278289fbeb136cc6"
+        },
+        "date": 1767603259833,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.9,
+            "unit": "ns/op",
+            "extra": "3290443 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97613,
+            "unit": "ns/op",
+            "extra": "12223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.1,
+            "unit": "ns/op",
+            "extra": "2956396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98401,
+            "unit": "ns/op",
+            "extra": "12194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26737,
+            "unit": "ns/op",
+            "extra": "44965 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144607,
+            "unit": "ns/op",
+            "extra": "8172 times\n4 procs"
           }
         ]
       }

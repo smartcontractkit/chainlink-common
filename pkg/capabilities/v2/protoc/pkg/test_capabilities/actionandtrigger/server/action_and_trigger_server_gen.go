@@ -21,8 +21,8 @@ var _ = emptypb.Empty{}
 type BasicCapability interface {
 	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], caperrors.Error)
 
-	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
-	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], caperrors.Error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -106,7 +106,9 @@ func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilit
 	switch request.Method {
 	case "Trigger":
 		input := &actionandtrigger.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-action-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-action-trigger@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error) {
+			return c.BasicCapability.RegisterTrigger(ctx, triggerID, metadata, input)
+		})
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

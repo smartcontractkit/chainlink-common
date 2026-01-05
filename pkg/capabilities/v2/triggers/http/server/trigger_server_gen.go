@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -18,8 +19,8 @@ import (
 var _ = emptypb.Empty{}
 
 type HTTPCapability interface {
-	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], error)
-	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], caperrors.Error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -103,7 +104,9 @@ func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabiliti
 	switch request.Method {
 	case "Trigger":
 		input := &http.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@1.0.0-alpha", request, input, c.HTTPCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@1.0.0-alpha", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], error) {
+			return c.HTTPCapability.RegisterTrigger(ctx, triggerID, metadata, input)
+		})
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

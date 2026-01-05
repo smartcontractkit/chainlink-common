@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -18,8 +19,8 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicCapability interface {
-	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
-	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], caperrors.Error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -103,7 +104,9 @@ func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilit
 	switch request.Method {
 	case "Trigger":
 		input := &basictrigger.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-trigger@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error) {
+			return c.BasicCapability.RegisterTrigger(ctx, triggerID, metadata, input)
+		})
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

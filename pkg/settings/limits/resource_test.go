@@ -287,17 +287,17 @@ func Test_newScopedResourcePoolLimiterFromFactory(t *testing.T) {
 	require.Error(t, l.Use(ctx2, 1))
 }
 
-// TestFIFOResourcePoolLimiter_WaitOrderPreserved confirms that FIFOResourcePoolLimiter
+// TestResourcePoolLimiter_WaitOrderPreserved confirms that ResourcePoolLimiter
 // preserves FIFO ordering when multiple goroutines are waiting.
-func TestFIFOResourcePoolLimiter_WaitOrderPreserved(t *testing.T) {
+func TestResourcePoolLimiter_WaitOrderPreserved(t *testing.T) {
 	const numWaiters = 10
 
 	ctx := context.Background()
-	limiter := newFIFOResourcePoolLimiter(1)
+	limiter := newUnscopedResourcePoolLimiter(1)
 
 	// Channel to signal when each waiter has been enqueued
 	enqueued := make(chan struct{}, numWaiters)
-	limiter.setOnEnqueue(func() {
+	limiter.resourcePoolUsage.setOnEnqueue(func() {
 		enqueued <- struct{}{}
 	})
 
@@ -344,15 +344,15 @@ func TestFIFOResourcePoolLimiter_WaitOrderPreserved(t *testing.T) {
 	}
 }
 
-// TestFIFOResourcePoolLimiter_ContextCancellation tests that context cancellation
+// TestResourcePoolLimiter_ContextCancellation tests that context cancellation
 // properly removes waiters from the queue without breaking FIFO order.
-func TestFIFOResourcePoolLimiter_ContextCancellation(t *testing.T) {
+func TestResourcePoolLimiter_ContextCancellation(t *testing.T) {
 	ctx := context.Background()
-	limiter := newFIFOResourcePoolLimiter(1)
+	limiter := newUnscopedResourcePoolLimiter(1)
 
 	// Channel to signal when each waiter has been enqueued
 	enqueued := make(chan struct{}, 5)
-	limiter.setOnEnqueue(func() {
+	limiter.resourcePoolUsage.setOnEnqueue(func() {
 		enqueued <- struct{}{}
 	})
 
@@ -422,10 +422,10 @@ func TestFIFOResourcePoolLimiter_ContextCancellation(t *testing.T) {
 	assert.Equal(t, []int{0, 1, 3, 4}, acquiredIDs, "waiters should acquire in FIFO order, skipping cancelled")
 }
 
-// TestFIFOResourcePoolLimiter_BasicUsage tests basic Use/Free functionality.
-func TestFIFOResourcePoolLimiter_BasicUsage(t *testing.T) {
+// TestResourcePoolLimiter_BasicUsage tests basic Use/Free functionality.
+func TestResourcePoolLimiter_BasicUsage(t *testing.T) {
 	ctx := context.Background()
-	limiter := GlobalFIFOResourcePoolLimiter(5)
+	limiter := GlobalResourcePoolLimiter(5)
 
 	// Use should work
 	require.NoError(t, limiter.Use(ctx, 3))
@@ -451,4 +451,12 @@ func TestFIFOResourcePoolLimiter_BasicUsage(t *testing.T) {
 	avail, err = limiter.Available(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 5, avail)
+}
+
+// setOnEnqueue sets a callback that is invoked each time a waiter is added to the queue.
+// The callback is called with the mutex held. Used for testing to synchronize without sleeps.
+func (u *resourcePoolUsage[N]) setOnEnqueue(fn func()) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.onEnqueue = fn
 }

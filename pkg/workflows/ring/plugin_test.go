@@ -2,6 +2,7 @@ package ring
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -20,9 +21,13 @@ import (
 
 type mockArbiter struct {
 	status *pb.ReplicaStatus
+	err    error
 }
 
 func (m *mockArbiter) Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*pb.ReplicaStatus, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
 	if m.status != nil {
 		return m.status, nil
 	}
@@ -531,6 +536,39 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 	route, exists := outcomeProto.Routes["workflow-123"]
 	require.True(t, exists, "workflow-123 should be in routes")
 	require.Equal(t, uint32(0), route.Shard, "workflow-123 should be assigned to shard 0 (fallback)")
+}
+
+func TestPlugin_getArbiterStatus(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore()
+	store.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: false})
+	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
+
+	t.Run("success", func(t *testing.T) {
+		arbiter := &mockArbiter{
+			status: &pb.ReplicaStatus{
+				WantShards: 5,
+				Status:     map[uint32]*pb.ShardStatus{0: {IsHealthy: true}},
+			},
+		}
+		plugin, err := NewPlugin(store, arbiter, config, lggr, nil)
+		require.NoError(t, err)
+
+		wantShards, shardStatus := plugin.getArbiterStatus(t.Context())
+		require.Equal(t, uint32(5), wantShards)
+		require.Len(t, shardStatus, 1)
+	})
+
+	t.Run("fallback_on_error", func(t *testing.T) {
+		arbiter := &mockArbiter{err: errors.New("arbiter unavailable")}
+		plugin, err := NewPlugin(store, arbiter, config, lggr, nil)
+		require.NoError(t, err)
+
+		wantShards, shardStatus := plugin.getArbiterStatus(t.Context())
+		// Falls back to store: 3 shards total
+		require.Equal(t, uint32(3), wantShards)
+		require.Len(t, shardStatus, 3)
+	})
 }
 
 func TestPlugin_ObservationQuorum(t *testing.T) {

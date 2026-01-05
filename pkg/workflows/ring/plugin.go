@@ -85,18 +85,37 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 	return nil, nil
 }
 
-func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
-	var wantShards uint32
-	var shardStatus map[uint32]*pb.ShardStatus
-
-	status, err := p.arbiterScaler.Status(ctx, &emptypb.Empty{})
-	if err != nil {
-		// NOTE: consider a fallback data source if Arbiter is not available
-		p.lggr.Errorw("RingOCR failed to get arbiter scaler status", "error", err)
-		return nil, err
+func (p *Plugin) getArbiterStatus(ctx context.Context) (uint32, map[uint32]*pb.ShardStatus) {
+	const maxRetries = 3
+	var status *pb.ReplicaStatus
+	var err error
+retryLoop:
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		status, err = p.arbiterScaler.Status(ctx, &emptypb.Empty{})
+		if err == nil {
+			return status.WantShards, status.Status
+		}
+		p.lggr.Warnw("RingOCR failed to get arbiter scaler status, retrying", "error", err, "attempt", attempt+1)
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			break retryLoop
+		case <-time.After(100 * time.Millisecond):
+		}
 	}
-	wantShards = status.WantShards
-	shardStatus = status.Status
+
+	p.lggr.Errorw("RingOCR exhausted retries for arbiter scaler status, using fallback", "error", err)
+	// Fallback to store's previous state
+	shardHealth := p.store.GetShardHealth()
+	shardStatus := make(map[uint32]*pb.ShardStatus, len(shardHealth))
+	for shardID, healthy := range shardHealth {
+		shardStatus[shardID] = &pb.ShardStatus{IsHealthy: healthy}
+	}
+	return uint32(len(shardHealth)), shardStatus
+}
+
+func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ types.Query) (types.Observation, error) {
+	wantShards, shardStatus := p.getArbiterStatus(ctx)
 
 	allWorkflowIDs := make([]string, 0)
 	for wfID := range p.store.GetAllRoutingState() {

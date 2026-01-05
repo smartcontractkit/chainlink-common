@@ -36,8 +36,8 @@ type ClientCapability interface {
 
 	GetTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest) (*capabilities.ResponseAndMetadata[*solana.GetTransactionReply], caperrors.Error)
 
-	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], error)
-	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) error
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], caperrors.Error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest) (*capabilities.ResponseAndMetadata[*solana.WriteReportReply], caperrors.Error)
 
@@ -125,7 +125,9 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 	switch request.Method {
 	case "LogTrigger":
 		input := &solana.FilterLogTriggerRequest{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "solana"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "solana"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], error) {
+			return c.ClientCapability.RegisterLogTrigger(ctx, triggerID, metadata, input)
+		})
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

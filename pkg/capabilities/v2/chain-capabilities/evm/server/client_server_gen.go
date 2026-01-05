@@ -34,8 +34,8 @@ type ClientCapability interface {
 
 	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], caperrors.Error)
 
-	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
-	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], caperrors.Error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], caperrors.Error)
 
@@ -123,7 +123,9 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error) {
+			return c.ClientCapability.RegisterLogTrigger(ctx, triggerID, metadata, input)
+		})
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

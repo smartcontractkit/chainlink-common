@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"go.uber.org/zap"
 )
 
 type BatchClient struct {
@@ -15,6 +16,7 @@ type BatchClient struct {
 	compressionType    string
 	messageBuffer      chan *chipingress.CloudEventPb
 	shutdownChan       chan struct{}
+	log                *zap.SugaredLogger
 }
 
 type Opt func(*BatchClient)
@@ -114,7 +116,10 @@ func (b *BatchClient) sendBatch(ctx context.Context, events []*chipingress.Cloud
 
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
-		b.client.PublishBatch(ctx, &chipingress.CloudEventBatch{Events: events})
+		_, err := b.client.PublishBatch(ctx, &chipingress.CloudEventBatch{Events: events})
+		if err != nil {
+			b.log.Errorw("failed to publish batch", "error", err)
+		}
 	}()
 }
 

@@ -617,3 +617,157 @@ func (u unlimitedResourceLimiter[N]) Available(ctx context.Context) (n N, err er
 func (u unlimitedResourceLimiter[N]) Use(ctx context.Context, amount N) error { return nil }
 
 func (u unlimitedResourceLimiter[N]) Free(ctx context.Context, amount N) error { return nil }
+
+// FIFOResourcePoolLimiter is like ResourcePoolLimiter but guarantees FIFO ordering
+// for Wait() calls. Waiters that call Wait() first will be granted resources first.
+type FIFOResourcePoolLimiter[N Number] interface {
+	ResourcePoolLimiter[N]
+}
+
+// GlobalFIFOResourcePoolLimiter returns a FIFO-ordered ResourcePoolLimiter.
+// Unlike GlobalResourcePoolLimiter, this guarantees that Wait() calls are
+// serviced in the order they were made.
+func GlobalFIFOResourcePoolLimiter[N Number](limit N) FIFOResourcePoolLimiter[N] {
+	return newFIFOResourcePoolLimiter(limit)
+}
+
+// fifoWaiter represents a waiting goroutine in the FIFO queue.
+type fifoWaiter[N Number] struct {
+	amount N
+	ready  chan struct{} // closed when resources are granted
+}
+
+// fifoResourcePoolLimiter implements FIFO-ordered waiting for resources.
+type fifoResourcePoolLimiter[N Number] struct {
+	limit N
+	mu    sync.Mutex
+	used  N
+	// queue holds waiters in FIFO order; head of slice is first to be serviced
+	queue []*fifoWaiter[N]
+	// onEnqueue is an optional callback invoked (under lock) when a waiter is added to the queue.
+	// Used for testing to synchronize without sleeps.
+	onEnqueue func()
+}
+
+func newFIFOResourcePoolLimiter[N Number](limit N) *fifoResourcePoolLimiter[N] {
+	return &fifoResourcePoolLimiter[N]{
+		limit: limit,
+		queue: make([]*fifoWaiter[N], 0),
+	}
+}
+
+// setOnEnqueue sets a callback that is invoked each time a waiter is added to the queue.
+// The callback is called with the mutex held.
+func (l *fifoResourcePoolLimiter[N]) setOnEnqueue(fn func()) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.onEnqueue = fn
+}
+
+func (l *fifoResourcePoolLimiter[N]) Close() error {
+	return nil
+}
+
+func (l *fifoResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
+	return l.limit, nil
+}
+
+func (l *fifoResourcePoolLimiter[N]) Available(ctx context.Context) (N, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.limit - l.used, nil
+}
+
+func (l *fifoResourcePoolLimiter[N]) Use(ctx context.Context, amount N) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.used+amount > l.limit {
+		return ErrorResourceLimited[N]{
+			Used:   l.used,
+			Limit:  l.limit,
+			Amount: amount,
+		}
+	}
+	l.used += amount
+	return nil
+}
+
+func (l *fifoResourcePoolLimiter[N]) Free(_ context.Context, amount N) error {
+	l.mu.Lock()
+	l.used -= amount
+	l.tryWakeWaiters()
+	l.mu.Unlock()
+	return nil
+}
+
+// tryWakeWaiters attempts to wake waiters at the head of the queue
+// whose resource requests can now be satisfied.
+// Must be called with l.mu held.
+func (l *fifoResourcePoolLimiter[N]) tryWakeWaiters() {
+	for len(l.queue) > 0 {
+		head := l.queue[0]
+		if l.used+head.amount > l.limit {
+			// Not enough resources for the head waiter; stop here to preserve FIFO
+			break
+		}
+		// Grant resources to head waiter
+		l.used += head.amount
+		close(head.ready)
+		l.queue = l.queue[1:]
+	}
+}
+
+func (l *fifoResourcePoolLimiter[N]) Wait(ctx context.Context, amount N) (free func(), err error) {
+	l.mu.Lock()
+
+	// Fast path: resources available immediately and no one else waiting
+	if len(l.queue) == 0 && l.used+amount <= l.limit {
+		l.used += amount
+		l.mu.Unlock()
+		var once sync.Once
+		return func() { once.Do(func() { l.Free(ctx, amount) }) }, nil
+	}
+
+	// Slow path: need to queue up and wait
+	waiter := &fifoWaiter[N]{
+		amount: amount,
+		ready:  make(chan struct{}),
+	}
+	l.queue = append(l.queue, waiter)
+	if l.onEnqueue != nil {
+		l.onEnqueue()
+	}
+	l.mu.Unlock()
+
+	// Wait for our turn or context cancellation
+	select {
+	case <-waiter.ready:
+		// Resources have been granted to us
+		var once sync.Once
+		return func() { once.Do(func() { l.Free(ctx, amount) }) }, nil
+	case <-ctx.Done():
+		// Context cancelled - remove ourselves from queue
+		l.mu.Lock()
+		defer l.mu.Unlock()
+
+		// Check if we were already granted resources while acquiring the lock
+		select {
+		case <-waiter.ready:
+			// We got resources just as we were cancelling; return them
+			l.used -= amount
+			l.tryWakeWaiters()
+			return nil, ctx.Err()
+		default:
+		}
+
+		// Remove from queue
+		for i, w := range l.queue {
+			if w == waiter {
+				l.queue = append(l.queue[:i], l.queue[i+1:]...)
+				break
+			}
+		}
+		return nil, ctx.Err()
+	}
+}

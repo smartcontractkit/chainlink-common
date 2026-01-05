@@ -9,10 +9,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 )
 
 type mockArbiterScaler struct {
@@ -37,14 +38,14 @@ func (m *mockArbiterScaler) ConsensusWantShards(ctx context.Context, req *pb.Con
 func TestTransmitter_NewTransmitter(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	tx := NewTransmitter(lggr, store, nil, "test-account")
+	tx := NewTransmitter(lggr, store, nil, nil, "test-account")
 	require.NotNil(t, tx)
 }
 
 func TestTransmitter_FromAccount(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	tx := NewTransmitter(lggr, store, nil, "my-account")
+	tx := NewTransmitter(lggr, store, nil, nil, "my-account")
 
 	account, err := tx.FromAccount(context.Background())
 	require.NoError(t, err)
@@ -55,7 +56,7 @@ func TestTransmitter_Transmit(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
 	mock := &mockArbiterScaler{}
-	tx := NewTransmitter(lggr, store, mock, "test-account")
+	tx := NewTransmitter(lggr, store, nil, mock, "test-account")
 
 	outcome := &pb.Outcome{
 		State: &pb.RoutingState{
@@ -88,7 +89,7 @@ func TestTransmitter_Transmit(t *testing.T) {
 func TestTransmitter_Transmit_NilArbiter(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	tx := NewTransmitter(lggr, store, nil, "test-account")
+	tx := NewTransmitter(lggr, store, nil, nil, "test-account")
 
 	outcome := &pb.Outcome{
 		State: &pb.RoutingState{
@@ -107,7 +108,7 @@ func TestTransmitter_Transmit_TransitionState(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
 	mock := &mockArbiterScaler{}
-	tx := NewTransmitter(lggr, store, mock, "test-account")
+	tx := NewTransmitter(lggr, store, nil, mock, "test-account")
 
 	outcome := &pb.Outcome{
 		State: &pb.RoutingState{
@@ -127,7 +128,7 @@ func TestTransmitter_Transmit_TransitionState(t *testing.T) {
 func TestTransmitter_Transmit_InvalidReport(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	tx := NewTransmitter(lggr, store, nil, "test-account")
+	tx := NewTransmitter(lggr, store, nil, nil, "test-account")
 
 	// Send invalid protobuf data
 	report := ocr3types.ReportWithInfo[[]byte]{Report: []byte("invalid protobuf")}
@@ -139,7 +140,7 @@ func TestTransmitter_Transmit_ArbiterError(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
 	mock := &mockArbiterScaler{err: context.DeadlineExceeded}
-	tx := NewTransmitter(lggr, store, mock, "test-account")
+	tx := NewTransmitter(lggr, store, nil, mock, "test-account")
 
 	outcome := &pb.Outcome{
 		State: &pb.RoutingState{
@@ -156,7 +157,7 @@ func TestTransmitter_Transmit_ArbiterError(t *testing.T) {
 func TestTransmitter_Transmit_NilState(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	tx := NewTransmitter(lggr, store, nil, "test-account")
+	tx := NewTransmitter(lggr, store, nil, nil, "test-account")
 
 	outcome := &pb.Outcome{
 		State:  nil,

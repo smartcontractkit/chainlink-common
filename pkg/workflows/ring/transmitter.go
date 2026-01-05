@@ -5,24 +5,33 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator"
 )
 
 var _ ocr3types.ContractTransmitter[[]byte] = (*Transmitter)(nil)
 
 // Transmitter handles transmission of shard orchestration outcomes
 type Transmitter struct {
-	lggr          logger.Logger
-	store         *Store
-	arbiterScaler pb.ArbiterScalerClient
-	fromAccount   types.Account
+	lggr                   logger.Logger
+	ringStore              *Store
+	shardOrchestratorStore *shardorchestrator.Store
+	arbiterScaler          pb.ArbiterScalerClient
+	fromAccount            types.Account
 }
 
-func NewTransmitter(lggr logger.Logger, store *Store, arbiterScaler pb.ArbiterScalerClient, fromAccount types.Account) *Transmitter {
-	return &Transmitter{lggr: lggr, store: store, arbiterScaler: arbiterScaler, fromAccount: fromAccount}
+func NewTransmitter(lggr logger.Logger, ringStore *Store, shardOrchestratorStore *shardorchestrator.Store, arbiterScaler pb.ArbiterScalerClient, fromAccount types.Account) *Transmitter {
+	return &Transmitter{
+		lggr:                   lggr,
+		ringStore:              ringStore,
+		shardOrchestratorStore: shardOrchestratorStore,
+		arbiterScaler:          arbiterScaler,
+		fromAccount:            fromAccount,
+	}
 }
 
 func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
@@ -37,10 +46,63 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 		return err
 	}
 
-	t.store.SetRoutingState(outcome.State)
+	// Update Ring Store
+	t.ringStore.SetRoutingState(outcome.State)
 
+	// Determine if system is in transition state
+	systemInTransition := false
+	if outcome.State != nil {
+		if _, ok := outcome.State.State.(*pb.RoutingState_Transition); ok {
+			systemInTransition = true
+		}
+	}
+
+	// Update ShardOrchestrator store if available
+	if t.shardOrchestratorStore != nil {
+		mappings := make([]*shardorchestrator.WorkflowMappingState, 0, len(outcome.Routes))
+		for workflowID, route := range outcome.Routes {
+			// Get the current shard assignment for this workflow to detect changes
+			var oldShardID uint32
+			var transitionState string
+
+			existingMapping, err := t.shardOrchestratorStore.GetWorkflowMapping(ctx, workflowID)
+			if err != nil {
+				// New workflow - no previous assignment
+				oldShardID = 0
+				transitionState = "steady"
+			} else if existingMapping.NewShardID != route.Shard {
+				// Workflow is moving to a different shard
+				oldShardID = existingMapping.NewShardID
+				transitionState = "transitioning"
+			} else {
+				// Same shard - but might be in system transition
+				oldShardID = existingMapping.NewShardID
+				if systemInTransition {
+					transitionState = "transitioning"
+				} else {
+					transitionState = "steady"
+				}
+			}
+
+			mappings = append(mappings, &shardorchestrator.WorkflowMappingState{
+				WorkflowID:      workflowID,
+				OldShardID:      oldShardID,
+				NewShardID:      route.Shard,
+				TransitionState: transitionState,
+			})
+		}
+
+		if err := t.shardOrchestratorStore.BatchUpdateWorkflowMappings(ctx, mappings); err != nil {
+			t.lggr.Errorw("failed to update ShardOrchestrator store", "err", err, "workflowCount", len(mappings))
+			// Don't fail the entire transmission if ShardOrchestrator update fails
+		} else {
+			t.lggr.Debugw("Updated ShardOrchestrator store", "workflowCount", len(mappings))
+		}
+	}
+
+	// Update Ring Store workflow mappings
 	for workflowID, route := range outcome.Routes {
-		t.store.SetShardForWorkflow(workflowID, route.Shard)
+		t.ringStore.SetShardForWorkflow(workflowID, route.Shard)
 		t.lggr.Debugw("Updated workflow shard mapping", "workflowID", workflowID, "shard", route.Shard)
 	}
 

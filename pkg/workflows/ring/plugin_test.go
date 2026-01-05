@@ -12,10 +12,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 )
 
 type mockArbiter struct {
@@ -443,7 +444,7 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	transmitter := NewTransmitter(lggr, store, arbiter, "test-account")
+	transmitter := NewTransmitter(lggr, store, nil, arbiter, "test-account")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()

@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ring;
+package shardorchestrator;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb";
 
 message GetWorkflowShardMappingRequest {
   repeated string workflow_ids = 1;

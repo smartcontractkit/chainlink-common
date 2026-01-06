@@ -123,9 +123,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error) {
-			return c.ClientCapability.RegisterLogTrigger(ctx, triggerID, metadata, input)
-		})
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

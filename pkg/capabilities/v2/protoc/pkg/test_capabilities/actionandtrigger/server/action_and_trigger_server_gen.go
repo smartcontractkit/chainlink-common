@@ -106,9 +106,7 @@ func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilit
 	switch request.Method {
 	case "Trigger":
 		input := &actionandtrigger.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-action-trigger@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error) {
-			return c.BasicCapability.RegisterTrigger(ctx, triggerID, metadata, input)
-		})
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-action-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

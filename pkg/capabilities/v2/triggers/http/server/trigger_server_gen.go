@@ -104,9 +104,7 @@ func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabiliti
 	switch request.Method {
 	case "Trigger":
 		input := &http.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@1.0.0-alpha", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], error) {
-			return c.HTTPCapability.RegisterTrigger(ctx, triggerID, metadata, input)
-		})
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@1.0.0-alpha", request, input, c.HTTPCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

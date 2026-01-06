@@ -107,14 +107,10 @@ func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabiliti
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.Payload], error) {
-			return c.CronCapability.RegisterTrigger(ctx, triggerID, metadata, input)
-		})
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
 	case "":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.LegacyPayload], error) {
-			return c.CronCapability.RegisterLegacyTrigger(ctx, triggerID, metadata, input)
-		})
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterLegacyTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

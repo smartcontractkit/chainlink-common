@@ -136,9 +136,7 @@ func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, 
         {{- if (isTrigger .) }}
             case {{- if (MapToUntypedAPI .) }} "" {{- else}} "{{.GoName}}" {{- end }}:
                 input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
-                return capabilities.RegisterTrigger(ctx, c.stopCh, {{$fullCapabilityId}}, request, input, func(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<-chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error) {
-                    return c.{{$service.GoName}}Capability.Register{{.GoName}}(ctx, triggerID, metadata, input)
-                })
+                return capabilities.RegisterTrigger(ctx, c.stopCh, {{$fullCapabilityId}}, request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- end }}
         	default:

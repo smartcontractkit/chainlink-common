@@ -46,7 +46,7 @@ require (
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20251124151448-0448aefdaab9
 	github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b
 	github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0
-	github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20260105230139-d1920b684916
+	github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20260106052706-6dd937cb5ec6
 	github.com/smartcontractkit/freeport v0.1.3-0.20250716200817-cb5dfd0e369e
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7
 	github.com/smartcontractkit/libocr v0.0.0-20250912173940-f3ab0246e23d

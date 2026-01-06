@@ -10,9 +10,9 @@ import (
 
 func TestTenant_rawKeys(t *testing.T) {
 	const (
-		org      = "AcmeCorporation"
+		org      = "acmecorporation"
 		owner    = "1234abcd"
-		workflow = "ABCDEFGH"
+		workflow = "abcdefgh"
 		key      = "foo"
 	)
 	for _, test := range []struct {

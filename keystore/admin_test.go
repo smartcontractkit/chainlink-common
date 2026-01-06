@@ -258,7 +258,16 @@ func TestKeystore_ExportImport(t *testing.T) {
 		key1ks1, err := ks1.GetKeys(t.Context(), keystore.GetKeysRequest{KeyNames: []string{"key1"}})
 		require.NoError(t, err)
 		key1ks2, err := ks2.GetKeys(t.Context(), keystore.GetKeysRequest{KeyNames: []string{"key1"}})
-		require.Equal(t, key1ks1, key1ks2)
+		require.NoError(t, err)
+		// Test equality of the keys except of the CreatedAt field.
+		require.Len(t, key1ks1.Keys, 1)
+		require.Len(t, key1ks2.Keys, 1)
+		key1ks1Info := key1ks1.Keys[0].KeyInfo
+		key1ks2Info := key1ks2.Keys[0].KeyInfo
+		require.Equal(t, key1ks1Info.Name, key1ks2Info.Name)
+		require.Equal(t, key1ks1Info.PublicKey, key1ks2Info.PublicKey)
+		require.Equal(t, key1ks1Info.KeyType, key1ks2Info.KeyType)
+		require.Equal(t, key1ks1Info.Metadata, key1ks2Info.Metadata)
 
 		testData := []byte("hello world")
 		signature, err := ks2.Sign(t.Context(), keystore.SignRequest{

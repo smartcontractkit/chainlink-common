@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
@@ -260,7 +261,7 @@ func TestRegisterTrigger(t *testing.T) {
 			"type",
 			req,
 			&pb.TriggerEvent{},
-			func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+			func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], caperrors.Error) {
 				assert.Equal(t, "workflow-id", m.WorkflowID)
 				assert.Equal(t, "reg", r.Id)
 				return eventCh, nil
@@ -322,7 +323,7 @@ func TestRegisterTrigger(t *testing.T) {
 			"type",
 			req,
 			&pb.TriggerEvent{},
-			func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+			func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], caperrors.Error) {
 				assert.Equal(t, "workflow-id", m.WorkflowID)
 				assert.Equal(t, "reg", r.Id)
 				return eventCh, nil
@@ -367,8 +368,8 @@ func TestRegisterTrigger(t *testing.T) {
 			"type",
 			req,
 			&pb.TriggerEvent{},
-			func(ctx context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
-				return nil, ctx.Err()
+			func(ctx context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], caperrors.Error) {
+				return nil, caperrors.NewPublicSystemError(ctx.Err(), caperrors.Internal)
 			},
 		)
 		require.Error(t, err)
@@ -412,10 +413,14 @@ func TestRegisterTrigger(t *testing.T) {
 			"type",
 			req,
 			&pb.TriggerEvent{},
-			func(ctx context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+			func(ctx context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], caperrors.Error) {
 				assert.Equal(t, "workflow-id", m.WorkflowID)
 				assert.Equal(t, "reg", r.Id)
-				return eventCh, ctx.Err()
+				if ctx.Err() != nil {
+					return nil, caperrors.NewPublicSystemError(ctx.Err(), caperrors.Internal)
+				} else {
+					return eventCh, nil
+				}
 			},
 		)
 		require.NoError(t, err)

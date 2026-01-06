@@ -106,8 +106,8 @@ func (c *Client) addJWTAuth(ctx context.Context, req any) (context.Context, erro
 // families is the list of DON families to filter workflows by.
 // start is the pagination offset (0-indexed).
 // limit is the maximum number of workflows to return per page.
-// Returns workflows, head, hasMore flag indicating if more pages exist, and error.
-func (c *Client) ListWorkflowMetadata(ctx context.Context, families []string, start, limit int64) ([]*pb.WorkflowMetadata, *pb.Head, bool, error) {
+// Returns workflows, hasMore flag indicating if more pages exist, and error.
+func (c *Client) ListWorkflowMetadata(ctx context.Context, families []string, start, limit int64) ([]*pb.WorkflowMetadata, bool, error) {
 	req := &pb.ListWorkflowMetadataRequest{
 		DonFamilies: families,
 		Start:       start,
@@ -117,14 +117,14 @@ func (c *Client) ListWorkflowMetadata(ctx context.Context, families []string, st
 	// Inject JWT auth
 	ctx, err := c.addJWTAuth(ctx, req)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 
 	resp, err := c.client.ListWorkflowMetadata(ctx, req)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
-	return resp.Workflows, resp.Head, resp.HasMore, nil
+	return resp.Workflows, resp.HasMore, nil
 }
 
 // Close closes the underlying GRPC connection.

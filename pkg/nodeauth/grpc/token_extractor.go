@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	ErrMissingMetadata = errors.New("missing metadata")
+	ErrMissingMetadata   = errors.New("missing metadata")
 	ErrMissingAuthHeader = errors.New("missing authorization header")
 	ErrInvalidAuthFormat = errors.New("invalid authorization header format")
 )
@@ -41,4 +41,3 @@ func ExtractBearerToken(ctx context.Context) (string, error) {
 
 	return strings.TrimPrefix(authHeader, BearerPrefix), nil
 }
-

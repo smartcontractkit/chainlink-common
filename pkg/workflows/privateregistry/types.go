@@ -34,4 +34,3 @@ type WorkflowRegistration struct {
 	Tag          string
 	Attributes   []byte
 }
-

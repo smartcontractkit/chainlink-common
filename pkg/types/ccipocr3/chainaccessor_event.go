@@ -6,8 +6,7 @@ import (
 
 // ---------------------------------------------------
 // The following types match the structs defined in the EVM contracts are used to decode these
-// on-chain events. They should eventually be replaced by chain-reader modifiers and use the
-// base cciptypes.CommitReport type.
+// on-chain events.
 
 // SendRequestedEvent represents the contents of the event emitted by the CCIP OnRamp when a
 // message is sent.

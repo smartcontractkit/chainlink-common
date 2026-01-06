@@ -10,7 +10,6 @@ type WorkflowDeploymentAction interface {
 	AddWorkflow(ctx context.Context, workflow *WorkflowRegistration) error
 
 	// UpdateWorkflow updates the workflow's status configuration
-	// This is idempotent - calling with the same config multiple times has the same effect
 	UpdateWorkflow(ctx context.Context, workflowID [32]byte, config *WorkflowStatusConfig) error
 
 	// DeleteWorkflow removes the workflow from the source

@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	pb "github.com/smartcontractkit/chainlink-protos/workflows/go/sources"
-
+	nodeauthgrpc "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/grpc"
 	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt"
+	pb "github.com/smartcontractkit/chainlink-protos/workflows/go/sources"
 )
 
 // Client is a GRPC client for the WorkflowMetadataSourceService.
@@ -99,7 +99,7 @@ func (c *Client) addJWTAuth(ctx context.Context, req any) (context.Context, erro
 		return nil, fmt.Errorf("failed to create JWT: %w", err)
 	}
 
-	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
+	return metadata.AppendToOutgoingContext(ctx, nodeauthgrpc.AuthorizationHeader, nodeauthgrpc.BearerPrefix+jwtToken), nil
 }
 
 // ListWorkflowMetadata fetches workflow metadata from the GRPC source.

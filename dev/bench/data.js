@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767713018450,
+  "lastUpdate": 1767715746963,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34500,6 +34500,66 @@ window.BENCHMARK_DATA = {
             "value": 150162,
             "unit": "ns/op",
             "extra": "8120 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "bf2f64d0376d2ae4a79bc9efb6da883023abf4e7",
+          "message": "pkg/settings: add per-chain overridable EVM.GasLimit (#1757)",
+          "timestamp": "2026-01-06T16:01:38Z",
+          "tree_id": "66f4fff407346e12e02ee358e3a6abd67544acc6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bf2f64d0376d2ae4a79bc9efb6da883023abf4e7"
+        },
+        "date": 1767715745006,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 712.8,
+            "unit": "ns/op",
+            "extra": "1459042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98407,
+            "unit": "ns/op",
+            "extra": "12139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.2,
+            "unit": "ns/op",
+            "extra": "2912440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97928,
+            "unit": "ns/op",
+            "extra": "12214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26766,
+            "unit": "ns/op",
+            "extra": "44168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144488,
+            "unit": "ns/op",
+            "extra": "7948 times\n4 procs"
           }
         ]
       }

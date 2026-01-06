@@ -57,7 +57,14 @@
 			"TargetsLimit": "10",
 			"ReportSizeLimit": "5kb",
 			"EVM": {
-				"TransactionGasLimit": "5000000"
+				"TransactionGasLimit": "5000000",
+				"GasLimit": {
+					"Default": "5000000",
+					"Values": {
+						"12922642891491394802": "50000000",
+						"3379446385462418246": "10000000"
+					}
+				}
 			}
 		},
 		"ChainRead": {

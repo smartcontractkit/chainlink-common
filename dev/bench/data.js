@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767674824231,
+  "lastUpdate": 1767708323621,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34380,6 +34380,66 @@ window.BENCHMARK_DATA = {
             "value": 142466,
             "unit": "ns/op",
             "extra": "8173 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e801ad17315c50cc222e877211051c6de283db3c",
+          "message": "adding grpc workflow metadata source client and related types (#1749)\n\n* adding grpc workflow metadata source client and related types\n\n* downgrading dependencies to keep diff clean\n\n* updating chainlink-protos\n\n* bumping protos\n\n* bumping protos + PR feedback",
+          "timestamp": "2026-01-06T13:56:07Z",
+          "tree_id": "f40d1a86973c1da2877b073f6e6f59c1e3d69230",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e801ad17315c50cc222e877211051c6de283db3c"
+        },
+        "date": 1767708322038,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.6,
+            "unit": "ns/op",
+            "extra": "3320774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 70545,
+            "unit": "ns/op",
+            "extra": "16636 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.4,
+            "unit": "ns/op",
+            "extra": "2995310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 71010,
+            "unit": "ns/op",
+            "extra": "16866 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24705,
+            "unit": "ns/op",
+            "extra": "48654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 117047,
+            "unit": "ns/op",
+            "extra": "9045 times\n4 procs"
           }
         ]
       }

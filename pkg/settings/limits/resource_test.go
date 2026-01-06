@@ -286,3 +286,177 @@ func Test_newScopedResourcePoolLimiterFromFactory(t *testing.T) {
 	})
 	require.Error(t, l.Use(ctx2, 1))
 }
+
+// TestResourcePoolLimiter_WaitOrderPreserved confirms that ResourcePoolLimiter
+// preserves FIFO ordering when multiple goroutines are waiting.
+func TestResourcePoolLimiter_WaitOrderPreserved(t *testing.T) {
+	const numWaiters = 10
+
+	ctx := context.Background()
+	limiter := newUnscopedResourcePoolLimiter(1)
+
+	// Channel to signal when each waiter has been enqueued
+	enqueued := make(chan struct{}, numWaiters)
+	limiter.resourcePoolUsage.setOnEnqueue(func() {
+		enqueued <- struct{}{}
+	})
+
+	// Acquire the single resource first
+	free, err := limiter.Wait(ctx, 1)
+	require.NoError(t, err)
+
+	// Track the order in which waiters acquired resources
+	acquiredOrder := make(chan int, numWaiters)
+
+	// Start multiple waiters sequentially, waiting for each to be enqueued before starting the next
+	for i := range numWaiters {
+		waiterID := i
+		go func() {
+			f, err := limiter.Wait(ctx, 1)
+			if err != nil {
+				return
+			}
+			acquiredOrder <- waiterID
+			f()
+		}()
+		// Wait for this waiter to be enqueued before starting the next
+		<-enqueued
+	}
+
+	// All waiters are now in the queue in order 0, 1, 2, ... numWaiters-1
+	// Release the resource - this should wake up waiters in FIFO order
+	free()
+
+	// Collect the order in which waiters acquired the resource
+	acquired := make([]int, 0, numWaiters)
+	for range numWaiters {
+		select {
+		case id := <-acquiredOrder:
+			acquired = append(acquired, id)
+		case <-time.After(time.Second):
+			t.Fatalf("timed out waiting for waiter to acquire resource")
+		}
+	}
+
+	// Verify FIFO order is preserved
+	for i, id := range acquired {
+		require.Equalf(t, i, id, "expected waiter %d at position %d, got %d (acquired order: %v)", i, i, id, acquired)
+	}
+}
+
+// TestResourcePoolLimiter_ContextCancellation tests that context cancellation
+// properly removes waiters from the queue without breaking FIFO order.
+func TestResourcePoolLimiter_ContextCancellation(t *testing.T) {
+	ctx := context.Background()
+	limiter := newUnscopedResourcePoolLimiter(1)
+
+	// Channel to signal when each waiter has been enqueued
+	enqueued := make(chan struct{}, 5)
+	limiter.resourcePoolUsage.setOnEnqueue(func() {
+		enqueued <- struct{}{}
+	})
+
+	// Acquire the single resource
+	free, err := limiter.Wait(ctx, 1)
+	require.NoError(t, err)
+
+	// Start 5 waiters, but cancel the middle one
+	results := make(chan struct {
+		id  int
+		err error
+	}, 5)
+
+	var ctxs []context.Context
+	var cancels []context.CancelFunc
+	for range 5 {
+		c, cancel := context.WithCancel(ctx)
+		ctxs = append(ctxs, c)
+		cancels = append(cancels, cancel)
+	}
+
+	// Start waiters sequentially, waiting for each to be enqueued
+	for i := range 5 {
+		waiterID := i
+		go func() {
+			f, err := limiter.Wait(ctxs[waiterID], 1)
+			if err != nil {
+				results <- struct {
+					id  int
+					err error
+				}{waiterID, err}
+				return
+			}
+			results <- struct {
+				id  int
+				err error
+			}{waiterID, nil}
+			f()
+		}()
+		// Wait for this waiter to be enqueued
+		<-enqueued
+	}
+
+	// All 5 waiters are now in the queue in order 0, 1, 2, 3, 4
+	// Cancel waiter 2 (middle of the queue) and wait for the cancellation result
+	cancels[2]()
+	cancelResult := <-results
+	require.Equal(t, 2, cancelResult.id)
+	require.Error(t, cancelResult.err)
+
+	// Release the resource - remaining waiters should acquire in FIFO order
+	free()
+
+	// Collect remaining results
+	var acquiredIDs []int
+	for range 4 {
+		select {
+		case r := <-results:
+			require.NoError(t, r.err)
+			acquiredIDs = append(acquiredIDs, r.id)
+		case <-time.After(time.Second):
+			t.Fatal("timed out waiting for results")
+		}
+	}
+
+	// Remaining waiters should acquire in order: 0, 1, 3, 4
+	assert.Equal(t, []int{0, 1, 3, 4}, acquiredIDs, "waiters should acquire in FIFO order, skipping cancelled")
+}
+
+// TestResourcePoolLimiter_BasicUsage tests basic Use/Free functionality.
+func TestResourcePoolLimiter_BasicUsage(t *testing.T) {
+	ctx := context.Background()
+	limiter := GlobalResourcePoolLimiter(5)
+
+	// Use should work
+	require.NoError(t, limiter.Use(ctx, 3))
+
+	// Available should report 2
+	avail, err := limiter.Available(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 2, avail)
+
+	// Using more than available should fail
+	err = limiter.Use(ctx, 3)
+	require.Error(t, err)
+	var limitErr ErrorResourceLimited[int]
+	require.ErrorAs(t, err, &limitErr)
+	assert.Equal(t, 3, limitErr.Used)
+	assert.Equal(t, 5, limitErr.Limit)
+	assert.Equal(t, 3, limitErr.Amount)
+
+	// Free should work
+	require.NoError(t, limiter.Free(ctx, 3))
+
+	// Now should have 5 available
+	avail, err = limiter.Available(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 5, avail)
+}
+
+// setOnEnqueue sets a callback that is invoked each time a waiter is added to the queue.
+// The callback is called with the mutex held. Used for testing to synchronize without sleeps.
+func (u *resourcePoolUsage[N]) setOnEnqueue(fn func()) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.onEnqueue = fn
+}

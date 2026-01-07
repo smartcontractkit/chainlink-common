@@ -3,12 +3,15 @@ package keystore_test
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sort"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
 )
@@ -419,4 +422,21 @@ func TestKeystore_RenameKey(t *testing.T) {
 		})
 		require.EqualError(t, err, "key not found: key1")
 	})
+}
+
+func TestECDSA_Serialization_WithPadding(t *testing.T) {
+	// This test ensures that ECDSA private keys that serialize to less than 32 bytes
+	// are correctly padded with leading zeros during serialization and deserialization.
+	// This is important for compatibility with Ethereum's crypto library which expects
+	// 32-byte private keys.
+
+	// The example key has been found randomly such that it has 2 leading zero bytes when serialized.
+	key, ok := big.NewInt(0).SetString("57269542458293433845411819226400606954116463824740942170224417652371448", 10)
+	require.True(t, ok)
+	privateKeyBytes := make([]byte, 32)
+	key.FillBytes(privateKeyBytes)
+	require.Equal(t, []byte{0, 0, 8, 76, 62, 209, 247, 104, 97, 108, 141, 217, 255, 150, 114, 196, 223, 66, 254, 101, 209, 14, 233, 174, 149, 89, 207, 141, 2, 188, 111, 248}, privateKeyBytes)
+	deserializedKey, err := gethcrypto.ToECDSA(privateKeyBytes)
+	require.NoError(t, err)
+	require.Equal(t, key, deserializedKey.D)
 }

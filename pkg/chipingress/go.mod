@@ -36,4 +36,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
+// Retracted due to initial development versions
 retract [v1.0.0, v1.0.1]

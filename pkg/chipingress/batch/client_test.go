@@ -6,15 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 )
 
 func TestNewBatchClient(t *testing.T) {
-
 	t.Run("NewBatchClient", func(t *testing.T) {
 		client, err := NewBatchClient(nil)
 		require.NoError(t, err)
@@ -53,9 +53,7 @@ func TestNewBatchClient(t *testing.T) {
 }
 
 func TestQueueMessage(t *testing.T) {
-
 	t.Run("successfully queues a message", func(t *testing.T) {
-
 		client, err := NewBatchClient(nil, WithMessageBuffer(5))
 		require.NoError(t, err)
 
@@ -67,7 +65,7 @@ func TestQueueMessage(t *testing.T) {
 
 		client.QueueMessage(event)
 
-		assert.Equal(t, 1, len(client.messageBuffer))
+		assert.Len(t, client.messageBuffer, 1)
 
 		received := <-client.messageBuffer
 		assert.Equal(t, event.Id, received.Id)
@@ -76,7 +74,6 @@ func TestQueueMessage(t *testing.T) {
 	})
 
 	t.Run("drops message if buffer is full", func(t *testing.T) {
-
 		client, err := NewBatchClient(nil, WithMessageBuffer(1))
 		require.NoError(t, err)
 		require.NotNil(t, client)
@@ -90,7 +87,7 @@ func TestQueueMessage(t *testing.T) {
 		client.QueueMessage(event)
 		client.QueueMessage(event)
 
-		assert.Equal(t, 1, len(client.messageBuffer))
+		assert.Len(t, client.messageBuffer, 1)
 
 		received := <-client.messageBuffer
 		assert.Equal(t, event.Id, received.Id)
@@ -103,14 +100,12 @@ func TestQueueMessage(t *testing.T) {
 		require.NoError(t, err)
 
 		client.QueueMessage(nil)
-		assert.Equal(t, 0, len(client.messageBuffer))
+		assert.Empty(t, client.messageBuffer)
 	})
 }
 
 func TestSendBatch(t *testing.T) {
-
 	t.Run("successfully sends a batch", func(t *testing.T) {
-
 		mockClient := mocks.NewClient(t)
 		done := make(chan struct{})
 
@@ -150,7 +145,6 @@ func TestSendBatch(t *testing.T) {
 	})
 
 	t.Run("doesn't publish empty batch", func(t *testing.T) {
-
 		mockClient := mocks.NewClient(t)
 
 		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
@@ -208,7 +202,6 @@ func TestSendBatch(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-
 	t.Run("batch size trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		done := make(chan struct{})
@@ -366,7 +359,6 @@ func TestStart(t *testing.T) {
 	})
 
 	t.Run("no flush when batch is empty", func(t *testing.T) {
-
 		mockClient := mocks.NewClient(t)
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(5*time.Second))
@@ -385,7 +377,6 @@ func TestStart(t *testing.T) {
 	})
 
 	t.Run("multiple batches via size trigger", func(t *testing.T) {
-
 		mockClient := mocks.NewClient(t)
 		done := make(chan struct{})
 		callCount := 0

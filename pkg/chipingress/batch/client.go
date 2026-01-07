@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.uber.org/zap"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
-type BatchClient struct {
+type Client struct {
 	client             chipingress.Client
 	batchSize          int
 	maxConcurrentSends chan struct{}
@@ -19,11 +20,10 @@ type BatchClient struct {
 	log                *zap.SugaredLogger
 }
 
-type Opt func(*BatchClient)
+type Opt func(*Client)
 
-func NewBatchClient(client chipingress.Client, opts ...Opt) (*BatchClient, error) {
-
-	c := &BatchClient{
+func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
+	c := &Client{
 		client:             client,
 		batchSize:          1,
 		maxConcurrentSends: make(chan struct{}, 1),
@@ -40,9 +40,8 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*BatchClient, error
 	return c, nil
 }
 
-func (b *BatchClient) Start(ctx context.Context) {
+func (b *Client) Start(ctx context.Context) {
 	go func() {
-
 		batch := make([]*chipingress.CloudEventPb, 0, b.batchSize)
 		timer := time.NewTimer(b.batchTimeout)
 		timer.Stop()
@@ -57,7 +56,6 @@ func (b *BatchClient) Start(ctx context.Context) {
 				b.flush(batch)
 				return
 			case event := <-b.messageBuffer:
-
 				if len(batch) == 0 {
 					timer.Reset(b.batchTimeout)
 				}
@@ -81,7 +79,7 @@ func (b *BatchClient) Start(ctx context.Context) {
 	}()
 }
 
-func (b *BatchClient) Stop() {
+func (b *Client) Stop() {
 	close(b.shutdownChan)
 	// wait for pending sends by getting all semaphore slots
 	for range cap(b.maxConcurrentSends) {
@@ -92,8 +90,7 @@ func (b *BatchClient) Stop() {
 // QueueMessage queues a single message to the batch client.
 // Returns immediately with no blocking - drops message if channel is full.
 // Returns true if message was queued, false if it was dropped.
-func (b *BatchClient) QueueMessage(event *chipingress.CloudEventPb) bool {
-
+func (b *Client) QueueMessage(event *chipingress.CloudEventPb) bool {
 	if event == nil {
 		return false
 	}
@@ -106,8 +103,7 @@ func (b *BatchClient) QueueMessage(event *chipingress.CloudEventPb) bool {
 	}
 }
 
-func (b *BatchClient) sendBatch(ctx context.Context, events []*chipingress.CloudEventPb) {
-
+func (b *Client) sendBatch(ctx context.Context, events []*chipingress.CloudEventPb) {
 	if len(events) == 0 {
 		return
 	}
@@ -123,8 +119,7 @@ func (b *BatchClient) sendBatch(ctx context.Context, events []*chipingress.Cloud
 	}()
 }
 
-func (b *BatchClient) flush(batch []*chipingress.CloudEventPb) {
-
+func (b *Client) flush(batch []*chipingress.CloudEventPb) {
 	if len(batch) == 0 {
 		return
 	}
@@ -136,31 +131,31 @@ func (b *BatchClient) flush(batch []*chipingress.CloudEventPb) {
 }
 
 func WithBatchSize(batchSize int) Opt {
-	return func(c *BatchClient) {
+	return func(c *Client) {
 		c.batchSize = batchSize
 	}
 }
 
 func WithMaxConcurrentSends(maxConcurrentSends int) Opt {
-	return func(c *BatchClient) {
+	return func(c *Client) {
 		c.maxConcurrentSends = make(chan struct{}, maxConcurrentSends)
 	}
 }
 
 func WithBatchTimeout(batchTimeout time.Duration) Opt {
-	return func(c *BatchClient) {
+	return func(c *Client) {
 		c.batchTimeout = batchTimeout
 	}
 }
 
 func WithCompressionType(compressionType string) Opt {
-	return func(c *BatchClient) {
+	return func(c *Client) {
 		c.compressionType = compressionType
 	}
 }
 
 func WithMessageBuffer(messageBufferSize int) Opt {
-	return func(c *BatchClient) {
+	return func(c *Client) {
 		c.messageBuffer = make(chan *chipingress.CloudEventPb, messageBufferSize)
 	}
 }

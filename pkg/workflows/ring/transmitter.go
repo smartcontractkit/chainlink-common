@@ -63,24 +63,24 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 		for workflowID, route := range outcome.Routes {
 			// Get the current shard assignment for this workflow to detect changes
 			var oldShardID uint32
-			var transitionState string
+			var transitionState shardorchestrator.TransitionState
 
 			existingMapping, err := t.shardOrchestratorStore.GetWorkflowMapping(ctx, workflowID)
 			if err != nil {
 				// New workflow - no previous assignment
 				oldShardID = 0
-				transitionState = "steady"
+				transitionState = shardorchestrator.StateSteady
 			} else if existingMapping.NewShardID != route.Shard {
 				// Workflow is moving to a different shard
 				oldShardID = existingMapping.NewShardID
-				transitionState = "transitioning"
+				transitionState = shardorchestrator.StateTransitioning
 			} else {
 				// Same shard - but might be in system transition
 				oldShardID = existingMapping.NewShardID
 				if systemInTransition {
-					transitionState = "transitioning"
+					transitionState = shardorchestrator.StateTransitioning
 				} else {
-					transitionState = "steady"
+					transitionState = shardorchestrator.StateSteady
 				}
 			}
 

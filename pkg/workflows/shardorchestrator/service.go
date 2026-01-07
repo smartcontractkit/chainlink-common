@@ -58,11 +58,10 @@ func (s *Server) GetWorkflowShardMapping(ctx context.Context, req *pb.GetWorkflo
 		simpleMappings[workflowID] = mapping.NewShardID
 
 		// Detailed state: includes transition information
-		inTransition := mapping.TransitionState == "transitioning"
 		mappingStates[workflowID] = &pb.WorkflowMappingState{
 			OldShardId:   mapping.OldShardID,
 			NewShardId:   mapping.NewShardID,
-			InTransition: inTransition,
+			InTransition: mapping.TransitionState.InTransition(),
 			LastUpdated:  timestamppb.New(mapping.UpdatedAt),
 		}
 	}

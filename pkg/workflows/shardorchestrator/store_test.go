@@ -22,19 +22,19 @@ func TestStore_BatchUpdateAndQuery(t *testing.T) {
 			WorkflowID:      "workflow-1",
 			OldShardID:      0,
 			NewShardID:      1,
-			TransitionState: "steady",
+			TransitionState: shardorchestrator.StateSteady,
 		},
 		{
 			WorkflowID:      "workflow-2",
 			OldShardID:      0,
 			NewShardID:      2,
-			TransitionState: "steady",
+			TransitionState: shardorchestrator.StateSteady,
 		},
 		{
 			WorkflowID:      "workflow-3",
 			OldShardID:      0,
 			NewShardID:      1,
-			TransitionState: "steady",
+			TransitionState: shardorchestrator.StateSteady,
 		},
 	}
 
@@ -45,7 +45,7 @@ func TestStore_BatchUpdateAndQuery(t *testing.T) {
 	mapping1, err := store.GetWorkflowMapping(ctx, "workflow-1")
 	require.NoError(t, err)
 	assert.Equal(t, uint32(1), mapping1.NewShardID)
-	assert.Equal(t, "steady", mapping1.TransitionState)
+	assert.Equal(t, shardorchestrator.StateSteady, mapping1.TransitionState)
 
 	// Query all workflows
 	allMappings, err := store.GetAllWorkflowMappings(ctx)
@@ -66,32 +66,32 @@ func TestStore_WorkflowTransition(t *testing.T) {
 	store := shardorchestrator.NewStore(lggr)
 
 	// Initial assignment
-	err := store.UpdateWorkflowMapping(ctx, "workflow-123", 0, 1, "steady")
+	err := store.UpdateWorkflowMapping(ctx, "workflow-123", 0, 1, shardorchestrator.StateSteady)
 	require.NoError(t, err)
 
 	mapping, err := store.GetWorkflowMapping(ctx, "workflow-123")
 	require.NoError(t, err)
 	assert.Equal(t, uint32(1), mapping.NewShardID)
-	assert.Equal(t, "steady", mapping.TransitionState)
+	assert.Equal(t, shardorchestrator.StateSteady, mapping.TransitionState)
 
 	// Move to different shard (transitioning)
-	err = store.UpdateWorkflowMapping(ctx, "workflow-123", 1, 3, "transitioning")
+	err = store.UpdateWorkflowMapping(ctx, "workflow-123", 1, 3, shardorchestrator.StateTransitioning)
 	require.NoError(t, err)
 
 	mapping, err = store.GetWorkflowMapping(ctx, "workflow-123")
 	require.NoError(t, err)
 	assert.Equal(t, uint32(1), mapping.OldShardID)
 	assert.Equal(t, uint32(3), mapping.NewShardID)
-	assert.Equal(t, "transitioning", mapping.TransitionState)
+	assert.Equal(t, shardorchestrator.StateTransitioning, mapping.TransitionState)
 
 	// Complete transition
-	err = store.UpdateWorkflowMapping(ctx, "workflow-123", 1, 3, "steady")
+	err = store.UpdateWorkflowMapping(ctx, "workflow-123", 1, 3, shardorchestrator.StateSteady)
 	require.NoError(t, err)
 
 	mapping, err = store.GetWorkflowMapping(ctx, "workflow-123")
 	require.NoError(t, err)
 	assert.Equal(t, uint32(3), mapping.NewShardID)
-	assert.Equal(t, "steady", mapping.TransitionState)
+	assert.Equal(t, shardorchestrator.StateSteady, mapping.TransitionState)
 }
 
 func TestStore_VersionTracking(t *testing.T) {
@@ -103,13 +103,13 @@ func TestStore_VersionTracking(t *testing.T) {
 	assert.Equal(t, uint64(0), store.GetMappingVersion())
 
 	// First update increments version
-	err := store.UpdateWorkflowMapping(ctx, "wf-1", 0, 1, "steady")
+	err := store.UpdateWorkflowMapping(ctx, "wf-1", 0, 1, shardorchestrator.StateSteady)
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1), store.GetMappingVersion())
 
 	// Batch update increments version
 	err = store.BatchUpdateWorkflowMappings(ctx, []*shardorchestrator.WorkflowMappingState{
-		{WorkflowID: "wf-2", NewShardID: 2, TransitionState: "steady"},
+		{WorkflowID: "wf-2", NewShardID: 2, TransitionState: shardorchestrator.StateSteady},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, uint64(2), store.GetMappingVersion())
@@ -178,9 +178,9 @@ func TestStore_BatchQueryPartialResults(t *testing.T) {
 	store := shardorchestrator.NewStore(lggr)
 
 	// Insert only some workflows
-	err := store.UpdateWorkflowMapping(ctx, "exists-1", 0, 1, "steady")
+	err := store.UpdateWorkflowMapping(ctx, "exists-1", 0, 1, shardorchestrator.StateSteady)
 	require.NoError(t, err)
-	err = store.UpdateWorkflowMapping(ctx, "exists-2", 0, 2, "steady")
+	err = store.UpdateWorkflowMapping(ctx, "exists-2", 0, 2, shardorchestrator.StateSteady)
 	require.NoError(t, err)
 
 	// Query mix of existing and non-existing workflows

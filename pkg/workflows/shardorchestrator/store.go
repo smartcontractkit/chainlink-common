@@ -9,12 +9,37 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
+// TransitionState represents the state of a workflow's shard assignment
+type TransitionState uint8
+
+const (
+	StateSteady TransitionState = iota
+	StateTransitioning
+)
+
+// String returns the string representation of the TransitionState
+func (s TransitionState) String() string {
+	switch s {
+	case StateSteady:
+		return "steady"
+	case StateTransitioning:
+		return "transitioning"
+	default:
+		return "unknown"
+	}
+}
+
+// InTransition returns true if the state is transitioning
+func (s TransitionState) InTransition() bool {
+	return s == StateTransitioning
+}
+
 // WorkflowMappingState represents the state of a workflow assignment
 type WorkflowMappingState struct {
 	WorkflowID      string
 	OldShardID      uint32
 	NewShardID      uint32
-	TransitionState string // "steady", "transitioning"
+	TransitionState TransitionState
 	UpdatedAt       time.Time
 }
 
@@ -51,7 +76,7 @@ func NewStore(lggr logger.Logger) *Store {
 
 // UpdateWorkflowMapping is called by RingOCR to update workflow assignments
 // This is the primary data source for shard orchestration
-func (s *Store) UpdateWorkflowMapping(ctx context.Context, workflowID string, oldShardID, newShardID uint32, state string) error {
+func (s *Store) UpdateWorkflowMapping(ctx context.Context, workflowID string, oldShardID, newShardID uint32, state TransitionState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -71,7 +96,7 @@ func (s *Store) UpdateWorkflowMapping(ctx context.Context, workflowID string, ol
 		"workflowID", workflowID,
 		"oldShardID", oldShardID,
 		"newShardID", newShardID,
-		"state", state,
+		"state", state.String(),
 		"version", s.mappingVersion,
 	)
 

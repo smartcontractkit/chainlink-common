@@ -63,12 +63,7 @@ func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResp
 		}
 		seen[name] = true
 		responses = append(responses, GetKeyResponse{
-			KeyInfo: KeyInfo{
-				Name:      name,
-				KeyType:   key.keyType,
-				PublicKey: key.publicKey,
-				Metadata:  key.metadata,
-			},
+			KeyInfo: newKeyInfo(name, key.keyType, key.createdAt, key.publicKey, key.metadata),
 		})
 	}
 	sort.Slice(responses, func(i, j int) bool { return responses[i].KeyInfo.Name < responses[j].KeyInfo.Name })

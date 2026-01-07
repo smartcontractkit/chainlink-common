@@ -8,13 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"slices"
 	"strings"
 	"sync"
 	"testing"
 	"time"
-
-	"log/slog"
 
 	"golang.org/x/crypto/curve25519"
 
@@ -201,6 +200,9 @@ type EncryptionParams struct {
 func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
 	switch keyType {
 	case Ed25519:
+		if len(internal.Bytes(privateKeyBytes)) != ed25519.PrivateKeySize {
+			return nil, fmt.Errorf("invalid Ed25519 private key size: %d", len(internal.Bytes(privateKeyBytes)))
+		}
 		privateKey := ed25519.PrivateKey(internal.Bytes(privateKeyBytes))
 		publicKey := privateKey.Public().(ed25519.PublicKey)
 		return publicKey, nil
@@ -216,6 +218,9 @@ func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]b
 		pubKey := gethcrypto.FromECDSAPub(&privateKey.PublicKey)
 		return pubKey, nil
 	case X25519:
+		if len(internal.Bytes(privateKeyBytes)) != curve25519.ScalarSize {
+			return nil, fmt.Errorf("invalid X25519 private key size: %d", len(internal.Bytes(privateKeyBytes)))
+		}
 		pubKey, err := curve25519.X25519(internal.Bytes(privateKeyBytes)[:], curve25519.Basepoint)
 		if err != nil {
 			return nil, fmt.Errorf("failed to derive shared secret: %w", err)

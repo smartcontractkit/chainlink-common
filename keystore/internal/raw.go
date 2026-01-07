@@ -2,6 +2,8 @@
 // only available for use in the keystore sub-tree.
 package internal
 
+import "fmt"
+
 // Raw is a wrapper type that holds private key bytes
 // and is designed to prevent accidental logging.
 // The only way to access the internal bytes (without reflection) is to use Bytes,
@@ -20,6 +22,10 @@ func (raw Raw) String() string {
 
 func (raw Raw) GoString() string {
 	return raw.String()
+}
+
+func (raw Raw) Format(state fmt.State, _ rune) {
+	_, _ = fmt.Fprint(state, raw.String())
 }
 
 // Bytes is a func for accessing the internal bytes field of Raw.

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb"
@@ -42,7 +41,7 @@ func (s *Server) GetWorkflowShardMapping(ctx context.Context, req *pb.GetWorkflo
 	}
 
 	// Retrieve batch from store
-	mappings, version, timestamp, err := s.store.GetWorkflowMappingsBatch(ctx, req.WorkflowIds)
+	mappings, version, err := s.store.GetWorkflowMappingsBatch(ctx, req.WorkflowIds)
 	if err != nil {
 		s.logger.Errorw("Failed to get workflow mappings", "error", err)
 		return nil, fmt.Errorf("failed to get workflow mappings: %w", err)
@@ -62,14 +61,12 @@ func (s *Server) GetWorkflowShardMapping(ctx context.Context, req *pb.GetWorkflo
 			OldShardId:   mapping.OldShardID,
 			NewShardId:   mapping.NewShardID,
 			InTransition: mapping.TransitionState.InTransition(),
-			LastUpdated:  timestamppb.New(mapping.UpdatedAt),
 		}
 	}
 
 	return &pb.GetWorkflowShardMappingResponse{
 		Mappings:       simpleMappings,
 		MappingStates:  mappingStates,
-		Timestamp:      timestamppb.New(timestamp),
 		MappingVersion: version,
 	}, nil
 }

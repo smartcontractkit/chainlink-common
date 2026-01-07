@@ -210,7 +210,7 @@ func (s *Store) GetShardRegistrations(ctx context.Context, shardID uint32) ([]st
 }
 
 // GetWorkflowMappingsBatch retrieves mappings for multiple workflows
-func (s *Store) GetWorkflowMappingsBatch(ctx context.Context, workflowIDs []string) (map[string]*WorkflowMappingState, uint64, time.Time, error) {
+func (s *Store) GetWorkflowMappingsBatch(ctx context.Context, workflowIDs []string) (map[string]*WorkflowMappingState, uint64, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -229,7 +229,7 @@ func (s *Store) GetWorkflowMappingsBatch(ctx context.Context, workflowIDs []stri
 		}
 	}
 
-	return result, s.mappingVersion, s.lastUpdateTime, nil
+	return result, s.mappingVersion, nil
 }
 
 // GetMappingVersion returns the current version of the mapping set

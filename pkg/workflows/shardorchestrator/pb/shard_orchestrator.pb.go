@@ -9,7 +9,6 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -71,7 +70,6 @@ type WorkflowMappingState struct {
 	OldShardId    uint32                 `protobuf:"varint,1,opt,name=old_shard_id,json=oldShardId,proto3" json:"old_shard_id,omitempty"`
 	NewShardId    uint32                 `protobuf:"varint,2,opt,name=new_shard_id,json=newShardId,proto3" json:"new_shard_id,omitempty"`
 	InTransition  bool                   `protobuf:"varint,3,opt,name=in_transition,json=inTransition,proto3" json:"in_transition,omitempty"`
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -127,19 +125,11 @@ func (x *WorkflowMappingState) GetInTransition() bool {
 	return false
 }
 
-func (x *WorkflowMappingState) GetLastUpdated() *timestamppb.Timestamp {
-	if x != nil {
-		return x.LastUpdated
-	}
-	return nil
-}
-
 type GetWorkflowShardMappingResponse struct {
 	state          protoimpl.MessageState           `protogen:"open.v1"`
 	Mappings       map[string]uint32                `protobuf:"bytes,1,rep,name=mappings,proto3" json:"mappings,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	MappingStates  map[string]*WorkflowMappingState `protobuf:"bytes,2,rep,name=mapping_states,json=mappingStates,proto3" json:"mapping_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Timestamp      *timestamppb.Timestamp           `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	MappingVersion uint64                           `protobuf:"varint,4,opt,name=mapping_version,json=mappingVersion,proto3" json:"mapping_version,omitempty"`
+	MappingVersion uint64                           `protobuf:"varint,3,opt,name=mapping_version,json=mappingVersion,proto3" json:"mapping_version,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -188,13 +178,6 @@ func (x *GetWorkflowShardMappingResponse) GetMappingStates() map[string]*Workflo
 	return nil
 }
 
-func (x *GetWorkflowShardMappingResponse) GetTimestamp() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Timestamp
-	}
-	return nil
-}
-
 func (x *GetWorkflowShardMappingResponse) GetMappingVersion() uint64 {
 	if x != nil {
 		return x.MappingVersion
@@ -206,8 +189,7 @@ type ReportWorkflowTriggerRegistrationRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	SourceShardId        uint32                 `protobuf:"varint,1,opt,name=source_shard_id,json=sourceShardId,proto3" json:"source_shard_id,omitempty"`
 	RegisteredWorkflows  map[string]uint32      `protobuf:"bytes,2,rep,name=registered_workflows,json=registeredWorkflows,proto3" json:"registered_workflows,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	ReportTimestamp      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=report_timestamp,json=reportTimestamp,proto3" json:"report_timestamp,omitempty"`
-	TotalActiveWorkflows uint32                 `protobuf:"varint,4,opt,name=total_active_workflows,json=totalActiveWorkflows,proto3" json:"total_active_workflows,omitempty"`
+	TotalActiveWorkflows uint32                 `protobuf:"varint,3,opt,name=total_active_workflows,json=totalActiveWorkflows,proto3" json:"total_active_workflows,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -252,13 +234,6 @@ func (x *ReportWorkflowTriggerRegistrationRequest) GetSourceShardId() uint32 {
 func (x *ReportWorkflowTriggerRegistrationRequest) GetRegisteredWorkflows() map[string]uint32 {
 	if x != nil {
 		return x.RegisteredWorkflows
-	}
-	return nil
-}
-
-func (x *ReportWorkflowTriggerRegistrationRequest) GetReportTimestamp() *timestamppb.Timestamp {
-	if x != nil {
-		return x.ReportTimestamp
 	}
 	return nil
 }
@@ -318,32 +293,29 @@ var File_shard_orchestrator_proto protoreflect.FileDescriptor
 
 const file_shard_orchestrator_proto_rawDesc = "" +
 	"\n" +
-	"\x18shard_orchestrator.proto\x12\x11shardorchestrator\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n" +
+	"\x18shard_orchestrator.proto\x12\x11shardorchestrator\"C\n" +
 	"\x1eGetWorkflowShardMappingRequest\x12!\n" +
-	"\fworkflow_ids\x18\x01 \x03(\tR\vworkflowIds\"\xbe\x01\n" +
+	"\fworkflow_ids\x18\x01 \x03(\tR\vworkflowIds\"\x7f\n" +
 	"\x14WorkflowMappingState\x12 \n" +
 	"\fold_shard_id\x18\x01 \x01(\rR\n" +
 	"oldShardId\x12 \n" +
 	"\fnew_shard_id\x18\x02 \x01(\rR\n" +
 	"newShardId\x12#\n" +
-	"\rin_transition\x18\x03 \x01(\bR\finTransition\x12=\n" +
-	"\flast_updated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\"\xf8\x03\n" +
+	"\rin_transition\x18\x03 \x01(\bR\finTransition\"\xbe\x03\n" +
 	"\x1fGetWorkflowShardMappingResponse\x12\\\n" +
 	"\bmappings\x18\x01 \x03(\v2@.shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntryR\bmappings\x12l\n" +
-	"\x0emapping_states\x18\x02 \x03(\v2E.shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntryR\rmappingStates\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12'\n" +
-	"\x0fmapping_version\x18\x04 \x01(\x04R\x0emappingVersion\x1a;\n" +
+	"\x0emapping_states\x18\x02 \x03(\v2E.shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntryR\rmappingStates\x12'\n" +
+	"\x0fmapping_version\x18\x03 \x01(\x04R\x0emappingVersion\x1a;\n" +
 	"\rMappingsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\x1ai\n" +
 	"\x12MappingStatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
-	"\x05value\x18\x02 \x01(\v2'.shardorchestrator.WorkflowMappingStateR\x05value:\x028\x01\"\xa1\x03\n" +
+	"\x05value\x18\x02 \x01(\v2'.shardorchestrator.WorkflowMappingStateR\x05value:\x028\x01\"\xda\x02\n" +
 	"(ReportWorkflowTriggerRegistrationRequest\x12&\n" +
 	"\x0fsource_shard_id\x18\x01 \x01(\rR\rsourceShardId\x12\x87\x01\n" +
-	"\x14registered_workflows\x18\x02 \x03(\v2T.shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntryR\x13registeredWorkflows\x12E\n" +
-	"\x10report_timestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x0freportTimestamp\x124\n" +
-	"\x16total_active_workflows\x18\x04 \x01(\rR\x14totalActiveWorkflows\x1aF\n" +
+	"\x14registered_workflows\x18\x02 \x03(\v2T.shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntryR\x13registeredWorkflows\x124\n" +
+	"\x16total_active_workflows\x18\x03 \x01(\rR\x14totalActiveWorkflows\x1aF\n" +
 	"\x18RegisteredWorkflowsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"E\n" +
@@ -372,28 +344,24 @@ var file_shard_orchestrator_proto_goTypes = []any{
 	(*GetWorkflowShardMappingResponse)(nil),           // 2: shardorchestrator.GetWorkflowShardMappingResponse
 	(*ReportWorkflowTriggerRegistrationRequest)(nil),  // 3: shardorchestrator.ReportWorkflowTriggerRegistrationRequest
 	(*ReportWorkflowTriggerRegistrationResponse)(nil), // 4: shardorchestrator.ReportWorkflowTriggerRegistrationResponse
-	nil,                           // 5: shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
-	nil,                           // 6: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
-	nil,                           // 7: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	nil, // 5: shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
+	nil, // 6: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
+	nil, // 7: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
 }
 var file_shard_orchestrator_proto_depIdxs = []int32{
-	8, // 0: shardorchestrator.WorkflowMappingState.last_updated:type_name -> google.protobuf.Timestamp
-	5, // 1: shardorchestrator.GetWorkflowShardMappingResponse.mappings:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
-	6, // 2: shardorchestrator.GetWorkflowShardMappingResponse.mapping_states:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
-	8, // 3: shardorchestrator.GetWorkflowShardMappingResponse.timestamp:type_name -> google.protobuf.Timestamp
-	7, // 4: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
-	8, // 5: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.report_timestamp:type_name -> google.protobuf.Timestamp
-	1, // 6: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> shardorchestrator.WorkflowMappingState
-	0, // 7: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> shardorchestrator.GetWorkflowShardMappingRequest
-	3, // 8: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest
-	2, // 9: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> shardorchestrator.GetWorkflowShardMappingResponse
-	4, // 10: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> shardorchestrator.ReportWorkflowTriggerRegistrationResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	5, // 0: shardorchestrator.GetWorkflowShardMappingResponse.mappings:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
+	6, // 1: shardorchestrator.GetWorkflowShardMappingResponse.mapping_states:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
+	7, // 2: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	1, // 3: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> shardorchestrator.WorkflowMappingState
+	0, // 4: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> shardorchestrator.GetWorkflowShardMappingRequest
+	3, // 5: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest
+	2, // 6: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> shardorchestrator.GetWorkflowShardMappingResponse
+	4, // 7: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> shardorchestrator.ReportWorkflowTriggerRegistrationResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_shard_orchestrator_proto_init() }

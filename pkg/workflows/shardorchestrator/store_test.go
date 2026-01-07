@@ -53,11 +53,10 @@ func TestStore_BatchUpdateAndQuery(t *testing.T) {
 	assert.Len(t, allMappings, 3)
 
 	// Query batch
-	batchMappings, version, timestamp, err := store.GetWorkflowMappingsBatch(ctx, []string{"workflow-1", "workflow-2"})
+	batchMappings, version, err := store.GetWorkflowMappingsBatch(ctx, []string{"workflow-1", "workflow-2"})
 	require.NoError(t, err)
 	assert.Len(t, batchMappings, 2)
 	assert.Equal(t, uint64(1), version) // First update
-	assert.False(t, timestamp.IsZero())
 }
 
 func TestStore_WorkflowTransition(t *testing.T) {
@@ -115,7 +114,7 @@ func TestStore_VersionTracking(t *testing.T) {
 	assert.Equal(t, uint64(2), store.GetMappingVersion())
 
 	// Version is included in batch query response
-	_, version, _, err := store.GetWorkflowMappingsBatch(ctx, []string{"wf-1", "wf-2"})
+	_, version, err := store.GetWorkflowMappingsBatch(ctx, []string{"wf-1", "wf-2"})
 	require.NoError(t, err)
 	assert.Equal(t, uint64(2), version)
 }
@@ -184,7 +183,7 @@ func TestStore_BatchQueryPartialResults(t *testing.T) {
 	require.NoError(t, err)
 
 	// Query mix of existing and non-existing workflows
-	results, _, _, err := store.GetWorkflowMappingsBatch(ctx, []string{
+	results, _, err := store.GetWorkflowMappingsBatch(ctx, []string{
 		"exists-1",
 		"non-existent",
 		"exists-2",

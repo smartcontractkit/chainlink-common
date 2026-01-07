@@ -3,7 +3,6 @@ package shardorchestrator_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -76,10 +75,6 @@ func TestServer_GetWorkflowShardMapping(t *testing.T) {
 
 		// Verify version
 		require.Equal(t, uint64(1), resp.MappingVersion)
-
-		// Verify timestamp is recent
-		require.NotNil(t, resp.Timestamp)
-		require.True(t, time.Since(resp.Timestamp.AsTime()) < 5*time.Second)
 	})
 
 	t.Run("rejects_empty_workflow_ids", func(t *testing.T) {

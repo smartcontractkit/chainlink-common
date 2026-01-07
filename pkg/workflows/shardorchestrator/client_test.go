@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb"
@@ -37,7 +36,6 @@ func (m *mockShardOrchestratorServer) GetWorkflowShardMapping(ctx context.Contex
 				OldShardId:   0,
 				NewShardId:   shardID,
 				InTransition: false,
-				LastUpdated:  timestamppb.Now(),
 			}
 		}
 	}
@@ -45,7 +43,6 @@ func (m *mockShardOrchestratorServer) GetWorkflowShardMapping(ctx context.Contex
 	return &pb.GetWorkflowShardMappingResponse{
 		Mappings:       mappings,
 		MappingStates:  mappingStates,
-		Timestamp:      timestamppb.Now(),
 		MappingVersion: 1,
 	}, nil
 }
@@ -164,7 +161,6 @@ func TestClient_ReportWorkflowTriggerRegistration(t *testing.T) {
 				"workflow-1": 1,
 				"workflow-2": 1,
 			},
-			ReportTimestamp:      timestamppb.Now(),
 			TotalActiveWorkflows: 2,
 		}
 

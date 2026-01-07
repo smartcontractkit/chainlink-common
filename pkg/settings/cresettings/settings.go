@@ -123,6 +123,12 @@ var Default = Schema{
 			ReportSizeLimit: Size(5 * config.KByte),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
+				GasLimit: PerChainSelector(Uint64(5_000_000), map[string]uint64{
+					// geth-testnet
+					"3379446385462418246": 10_000_000,
+					// geth-devnet2
+					"12922642891491394802": 50_000_000,
+				}),
 			},
 		},
 		ChainRead: chainRead{
@@ -225,7 +231,8 @@ type chainWrite struct {
 	EVM evmChainWrite
 }
 type evmChainWrite struct {
-	TransactionGasLimit Setting[uint64] `unit:"{gas}"`
+	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
+	GasLimit            SettingMap[uint64] `unit:"{gas}"`
 }
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`

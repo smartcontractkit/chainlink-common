@@ -172,11 +172,6 @@ func (s *Store) ReportShardRegistration(ctx context.Context, shardID uint32, wor
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Initialize the set for this shard if needed
-	if s.shardRegistrations[shardID] == nil {
-		s.shardRegistrations[shardID] = make(map[string]bool)
-	}
-
 	// Clear and update
 	s.shardRegistrations[shardID] = make(map[string]bool)
 	for _, wfID := range workflowIDs {

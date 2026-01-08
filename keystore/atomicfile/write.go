@@ -28,8 +28,9 @@ func WriteFile(filename string, r io.Reader, mode os.FileMode) (err error) {
 			_ = os.Remove(f.Name()) // yes, ignore the error, not much we can do about it.
 		}
 	}()
-	// ensure we always close f. Note that this does not conflict with the close below, as close is idempotent.
-	defer f.Close()
+	// ensure we always close f. Note that this does not conflict with the close below, as close is idempotent while
+	// it returns an error for repeating close operations.
+	defer f.Close() //nolint:errcheck
 	name := f.Name()
 	if _, err := io.Copy(f, r); err != nil {
 		return fmt.Errorf("cannot write data to tempfile %q: %v", name, err)

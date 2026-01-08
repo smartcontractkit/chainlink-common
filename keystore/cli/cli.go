@@ -25,7 +25,7 @@ const (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "./keystore <command>",
+		Use: "keystore",
 		Long: ` 
 CLI for managing keystore keys. Must specify KEYSTORE_FILE_PATH or KEYSTORE_DB_URL 
 and KEYSTORE_PASSWORD in order to load the keystore. 
@@ -336,16 +336,18 @@ func NewDecryptCmd() *cobra.Command {
 }
 
 func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {
-	root := cmd.Root()
-	filePath, err := root.Flags().GetString("keystore-file-path")
+	// Use parent command which has the persistent flags.
+	// This works whether keystore CLI is standalone or embedded as a subcommand.
+	parent := cmd.Parent()
+	filePath, err := parent.Flags().GetString("keystore-file-path")
 	if err != nil {
 		return nil, err
 	}
-	dbURL, err := root.Flags().GetString("keystore-db-url")
+	dbURL, err := parent.Flags().GetString("keystore-db-url")
 	if err != nil {
 		return nil, err
 	}
-	password, err := cmd.Flags().GetString("keystore-password")
+	password, err := parent.Flags().GetString("keystore-password")
 	if err != nil {
 		return nil, err
 	}

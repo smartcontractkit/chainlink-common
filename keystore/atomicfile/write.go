@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-// WriteFile atomically writes the contents of r to the specified filepath with the default permission 0600.
+// WriteFile atomically writes the contents of r to the specified filepath with the given mode.
 // This is a copy of https://github.com/natefinch/atomic/blob/master/atomic.go with minor modifications allowing
 // to set mode of the written file. If the file already exists, its mode is preserved.
 func WriteFile(filename string, r io.Reader, mode os.FileMode) (err error) {

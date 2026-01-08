@@ -20,7 +20,7 @@ func WriteFile(filename string, r io.Reader, mode os.FileMode) (err error) {
 
 	f, err := os.CreateTemp(dir, file)
 	if err != nil {
-		return fmt.Errorf("cannot create temp file: %v", err)
+		return fmt.Errorf("cannot create temp file: %w", err)
 	}
 	defer func() {
 		if err != nil {
@@ -32,23 +32,23 @@ func WriteFile(filename string, r io.Reader, mode os.FileMode) (err error) {
 	// it returns an error for repeating close operations.
 	defer f.Close() //nolint:errcheck
 	name := f.Name()
-	if _, err := io.Copy(f, r); err != nil {
-		return fmt.Errorf("cannot write data to tempfile %q: %v", name, err)
+	if _, err = io.Copy(f, r); err != nil {
+		return fmt.Errorf("cannot write data to tempfile %q: %w", name, err)
 	}
 	// fsync is important, otherwise os.Rename could rename a zero-length file
-	if err := f.Sync(); err != nil {
-		return fmt.Errorf("can't flush tempfile %q: %v", name, err)
+	if err = f.Sync(); err != nil {
+		return fmt.Errorf("can't flush tempfile %q: %w", name, err)
 	}
-	if err := f.Close(); err != nil {
-		return fmt.Errorf("can't close tempfile %q: %v", name, err)
+	if err = f.Close(); err != nil {
+		return fmt.Errorf("can't close tempfile %q: %w", name, err)
 	}
 
 	// get the file mode from the original file and use that for the replacement file, too.
 	destInfo, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		// no original file
-		if err := os.Chmod(name, mode); err != nil {
-			return fmt.Errorf("can't set filemode on tempfile %q: %v", name, err)
+		if err = os.Chmod(name, mode); err != nil {
+			return fmt.Errorf("can't set filemode on tempfile %q: %w", name, err)
 		}
 	} else if err != nil {
 		return err
@@ -59,13 +59,13 @@ func WriteFile(filename string, r io.Reader, mode os.FileMode) (err error) {
 		}
 
 		if sourceInfo.Mode() != destInfo.Mode() {
-			if err := os.Chmod(name, destInfo.Mode()); err != nil {
-				return fmt.Errorf("can't set filemode on tempfile %q: %v", name, err)
+			if err = os.Chmod(name, destInfo.Mode()); err != nil {
+				return fmt.Errorf("can't set filemode on tempfile %q: %w", name, err)
 			}
 		}
 	}
 	if err := os.Rename(name, filename); err != nil {
-		return fmt.Errorf("cannot replace %q with tempfile %q: %v", filename, name, err)
+		return fmt.Errorf("cannot replace %q with tempfile %q: %w", filename, name, err)
 	}
 	return nil
 }

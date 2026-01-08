@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767808784183,
+  "lastUpdate": 1767867454735,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34740,6 +34740,66 @@ window.BENCHMARK_DATA = {
             "value": 143989,
             "unit": "ns/op",
             "extra": "8016 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "7044bd402d84da793f120f9ace59298cbfc8d027",
+          "message": "[CRE-1601] shard-orchestrator implementation (#1747)\n\n* feat: implement shard-orchestrator logic\n\n* chore: use state constants instead of strings\n\n* test: add pluging <-> shardorchestrator integration tests\n\n* tests: add server tests\n\n* feat: add client to communicate with shard 0\n\n* chore: remove unused timestamps\n\n* fix: remove reduntant check\n\n---------\n\nCo-authored-by: mchain0 <maciej.wisniewski@smartcontract.com>",
+          "timestamp": "2026-01-08T10:07:21Z",
+          "tree_id": "801f1496764b335f052d8da8818bf7d0e9cbaa75",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7044bd402d84da793f120f9ace59298cbfc8d027"
+        },
+        "date": 1767867453365,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 807.4,
+            "unit": "ns/op",
+            "extra": "1465863 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 105036,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.8,
+            "unit": "ns/op",
+            "extra": "3001502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 104238,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26936,
+            "unit": "ns/op",
+            "extra": "45085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 153474,
+            "unit": "ns/op",
+            "extra": "7339 times\n4 procs"
           }
         ]
       }

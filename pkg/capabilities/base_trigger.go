@@ -66,7 +66,6 @@ func NewBaseTriggerCapability(
 	tRetransmit, tMax time.Duration,
 ) *BaseTriggerCapability {
 	ctx, cancel := context.WithCancel(context.Background())
-
 	return &BaseTriggerCapability{
 		store:       store,
 		send:        send,
@@ -79,9 +78,6 @@ func NewBaseTriggerCapability(
 		cancel:      cancel,
 	}
 }
-
-// If you want logs:
-func (b *BaseTriggerCapability) SetLogger(l *log.Logger) { b.lggr = l }
 
 func (b *BaseTriggerCapability) Start(ctx context.Context) error {
 	b.ctx, b.cancel = context.WithCancel(ctx)

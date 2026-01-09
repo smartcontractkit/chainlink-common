@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator"
 )
 
 const (
@@ -20,15 +22,16 @@ const (
 var _ core.OCR3ReportingPluginFactory = &Factory{}
 
 type Factory struct {
-	store         *Store
-	arbiterScaler pb.ArbiterScalerClient
-	config        *ConsensusConfig
-	lggr          logger.Logger
+	ringStore              *Store
+	shardOrchestratorStore *shardorchestrator.Store
+	arbiterScaler          pb.ArbiterScalerClient
+	config                 *ConsensusConfig
+	lggr                   logger.Logger
 
 	services.StateMachine
 }
 
-func NewFactory(s *Store, arbiterScaler pb.ArbiterScalerClient, lggr logger.Logger, cfg *ConsensusConfig) (*Factory, error) {
+func NewFactory(s *Store, shardOrchestratorStore *shardorchestrator.Store, arbiterScaler pb.ArbiterScalerClient, lggr logger.Logger, cfg *ConsensusConfig) (*Factory, error) {
 	if arbiterScaler == nil {
 		return nil, errors.New("arbiterScaler is required")
 	}
@@ -38,15 +41,16 @@ func NewFactory(s *Store, arbiterScaler pb.ArbiterScalerClient, lggr logger.Logg
 		}
 	}
 	return &Factory{
-		store:         s,
-		arbiterScaler: arbiterScaler,
-		config:        cfg,
-		lggr:          logger.Named(lggr, "RingPluginFactory"),
+		ringStore:              s,
+		shardOrchestratorStore: shardOrchestratorStore,
+		arbiterScaler:          arbiterScaler,
+		config:                 cfg,
+		lggr:                   logger.Named(lggr, "RingPluginFactory"),
 	}, nil
 }
 
 func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
-	plugin, err := NewPlugin(o.store, o.arbiterScaler, config, o.lggr, o.config)
+	plugin, err := NewPlugin(o.ringStore, o.arbiterScaler, config, o.lggr, o.config)
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "RingPlugin",
 		Limits: ocr3types.ReportingPluginLimits{

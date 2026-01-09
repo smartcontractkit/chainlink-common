@@ -4,15 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator"
 )
 
 func TestFactory_NewFactory(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
+	shardOrchestratorStore := shardorchestrator.NewStore(lggr)
 	arbiter := &mockArbiter{}
 
 	tests := []struct {
@@ -45,7 +48,7 @@ func TestFactory_NewFactory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := NewFactory(store, tt.arbiter, lggr, tt.config)
+			f, err := NewFactory(store, shardOrchestratorStore, tt.arbiter, lggr, tt.config)
 			if tt.wantErr {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.errSubstr)
@@ -60,7 +63,7 @@ func TestFactory_NewFactory(t *testing.T) {
 func TestFactory_NewReportingPlugin(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	f, err := NewFactory(store, &mockArbiter{}, lggr, nil)
+	f, err := NewFactory(store, nil, &mockArbiter{}, lggr, nil)
 	require.NoError(t, err)
 
 	config := ocr3types.ReportingPluginConfig{N: 4, F: 1}
@@ -75,7 +78,7 @@ func TestFactory_NewReportingPlugin(t *testing.T) {
 func TestFactory_Lifecycle(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore()
-	f, err := NewFactory(store, &mockArbiter{}, lggr, nil)
+	f, err := NewFactory(store, nil, &mockArbiter{}, lggr, nil)
 	require.NoError(t, err)
 
 	err = f.Start(context.Background())

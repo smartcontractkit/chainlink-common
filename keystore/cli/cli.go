@@ -25,7 +25,7 @@ const (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "./keystore <command>",
+		Use: "keys",
 		Long: ` 
 CLI for managing keystore keys. Must specify KEYSTORE_FILE_PATH or KEYSTORE_DB_URL 
 and KEYSTORE_PASSWORD in order to load the keystore. 
@@ -48,9 +48,9 @@ KEYSTORE_PASSWORD is the password used to encrypt the key material before storag
 		Short:        "CLI for managing keystore keys",
 		SilenceUsage: true,
 	}
-	cmd.PersistentFlags().String("keystore-file-path", "", "Overrides KEYSTORE_FILE_PATH environment variable")
-	cmd.PersistentFlags().String("keystore-db-url", "", "Overrides KEYSTORE_DB_URL environment variable")
-	cmd.PersistentFlags().String("keystore-password", "", "Overrides KEYSTORE_PASSWORD environment variable. Not recommended as will leave shell traces.")
+	cmd.PersistentFlags().String("file-path", "", "Overrides KEYSTORE_FILE_PATH environment variable")
+	cmd.PersistentFlags().String("db-url", "", "Overrides KEYSTORE_DB_URL environment variable")
+	cmd.PersistentFlags().String("password", "", "Overrides KEYSTORE_PASSWORD environment variable. Not recommended as will leave shell traces.")
 
 	cmd.AddCommand(NewListCmd(), NewGetCmd(), NewCreateCmd(), NewDeleteCmd(), NewExportCmd(), NewImportCmd(), NewSetMetadataCmd(), NewSignCmd(), NewVerifyCmd(), NewEncryptCmd(), NewDecryptCmd())
 	return cmd
@@ -336,16 +336,18 @@ func NewDecryptCmd() *cobra.Command {
 }
 
 func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {
-	root := cmd.Root()
-	filePath, err := root.Flags().GetString("keystore-file-path")
+	// Use parent command which has the persistent flags.
+	// This works whether keystore CLI is standalone or embedded as a subcommand.
+	parent := cmd.Parent()
+	filePath, err := parent.Flags().GetString("file-path")
 	if err != nil {
 		return nil, err
 	}
-	dbURL, err := root.Flags().GetString("keystore-db-url")
+	dbURL, err := parent.Flags().GetString("db-url")
 	if err != nil {
 		return nil, err
 	}
-	password, err := cmd.Flags().GetString("keystore-password")
+	password, err := parent.Flags().GetString("password")
 	if err != nil {
 		return nil, err
 	}

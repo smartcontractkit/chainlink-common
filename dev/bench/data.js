@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767975049474,
+  "lastUpdate": 1767991157803,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34920,6 +34920,66 @@ window.BENCHMARK_DATA = {
             "value": 136720,
             "unit": "ns/op",
             "extra": "8408 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6efadaacad99d354abc8a4438ff2c8ee36a673ce",
+          "message": "[ARCH-327] Address security comments. 2 (#1760)\n\n* Minor.\n\n* Minor.\n\n* Minor.\n\n* Minor.\n\n* Minor.\n\n* Minor.\n\n* Minor.\n\n---------\n\nCo-authored-by: Connor Stein <connor.stein2@gmail.com>",
+          "timestamp": "2026-01-09T20:32:10Z",
+          "tree_id": "98ad8948ffe81f6072dc79712ef560883db4ecd8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6efadaacad99d354abc8a4438ff2c8ee36a673ce"
+        },
+        "date": 1767991155787,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 790.1,
+            "unit": "ns/op",
+            "extra": "1458034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95662,
+            "unit": "ns/op",
+            "extra": "12560 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.6,
+            "unit": "ns/op",
+            "extra": "3010461 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 96066,
+            "unit": "ns/op",
+            "extra": "12511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26590,
+            "unit": "ns/op",
+            "extra": "45144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141776,
+            "unit": "ns/op",
+            "extra": "8317 times\n4 procs"
           }
         ]
       }

@@ -1,10 +1,8 @@
 syntax = "proto3";
 
-package ring;
+package shardorchestrator;
 
-import "google/protobuf/timestamp.proto";
-
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb";
 
 message GetWorkflowShardMappingRequest {
   repeated string workflow_ids = 1;
@@ -14,21 +12,18 @@ message WorkflowMappingState {
   uint32 old_shard_id = 1;
   uint32 new_shard_id = 2;
   bool in_transition = 3;
-  google.protobuf.Timestamp last_updated = 4;
 }
 
 message GetWorkflowShardMappingResponse {
   map<string, uint32> mappings = 1;
   map<string, WorkflowMappingState> mapping_states = 2;
-  google.protobuf.Timestamp timestamp = 3;
-  uint64 mapping_version = 4;
+  uint64 mapping_version = 3;
 }
 
 message ReportWorkflowTriggerRegistrationRequest {
   uint32 source_shard_id = 1;
   map<string, uint32> registered_workflows = 2;
-  google.protobuf.Timestamp report_timestamp = 3;
-  uint32 total_active_workflows = 4;
+  uint32 total_active_workflows = 3;
 }
 
 message ReportWorkflowTriggerRegistrationResponse {

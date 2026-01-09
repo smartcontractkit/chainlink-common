@@ -7,7 +7,24 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator"
 )
+
+// TransitionStateFromBool converts a proto bool (in_transition) to TransitionState
+func TransitionStateFromBool(inTransition bool) shardorchestrator.TransitionState {
+	if inTransition {
+		return shardorchestrator.StateTransitioning
+	}
+	return shardorchestrator.StateSteady
+}
+
+// TransitionStateFromRoutingState returns the TransitionState based on RoutingState
+func TransitionStateFromRoutingState(state *pb.RoutingState) shardorchestrator.TransitionState {
+	if IsInSteadyState(state) {
+		return shardorchestrator.StateSteady
+	}
+	return shardorchestrator.StateTransitioning
+}
 
 func IsInSteadyState(state *pb.RoutingState) bool {
 	if state == nil {

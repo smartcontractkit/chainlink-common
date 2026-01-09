@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ShardOrchestratorService_GetWorkflowShardMapping_FullMethodName           = "/ring.ShardOrchestratorService/GetWorkflowShardMapping"
-	ShardOrchestratorService_ReportWorkflowTriggerRegistration_FullMethodName = "/ring.ShardOrchestratorService/ReportWorkflowTriggerRegistration"
+	ShardOrchestratorService_GetWorkflowShardMapping_FullMethodName           = "/shardorchestrator.ShardOrchestratorService/GetWorkflowShardMapping"
+	ShardOrchestratorService_ReportWorkflowTriggerRegistration_FullMethodName = "/shardorchestrator.ShardOrchestratorService/ReportWorkflowTriggerRegistration"
 )
 
 // ShardOrchestratorServiceClient is the client API for ShardOrchestratorService service.
@@ -143,7 +143,7 @@ func _ShardOrchestratorService_ReportWorkflowTriggerRegistration_Handler(srv int
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ShardOrchestratorService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ring.ShardOrchestratorService",
+	ServiceName: "shardorchestrator.ShardOrchestratorService",
 	HandlerType: (*ShardOrchestratorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

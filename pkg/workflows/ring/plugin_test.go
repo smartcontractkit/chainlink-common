@@ -12,10 +12,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator"
 )
 
 type mockArbiter struct {
@@ -443,7 +445,7 @@ func TestPlugin_NoHealthyShardsFallbackToShardZero(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	transmitter := NewTransmitter(lggr, store, arbiter, "test-account")
+	transmitter := NewTransmitter(lggr, store, nil, arbiter, "test-account")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
@@ -589,5 +591,160 @@ func TestPlugin_ObservationQuorum(t *testing.T) {
 		quorum, err := plugin.ObservationQuorum(ctx, outctx, nil, aos)
 		require.NoError(t, err)
 		require.True(t, quorum)
+	})
+}
+
+func TestPlugin_ShardOrchestratorIntegration(t *testing.T) {
+	lggr := logger.Test(t)
+
+	// Create both stores
+	ringStore := NewStore()
+	orchestratorStore := shardorchestrator.NewStore(lggr)
+
+	// Initialize ring store with healthy shards
+	ringStore.SetAllShardHealth(map[uint32]bool{0: true, 1: true, 2: true})
+
+	config := ocr3types.ReportingPluginConfig{
+		N: 4, F: 1,
+	}
+
+	arbiter := &mockArbiter{}
+	plugin, err := NewPlugin(ringStore, arbiter, config, lggr, &ConsensusConfig{
+		BatchSize:  100,
+		TimeToSync: 1 * time.Second,
+	})
+	require.NoError(t, err)
+
+	// Create transmitter with both stores
+	transmitter := NewTransmitter(lggr, ringStore, orchestratorStore, arbiter, "test-account")
+
+	ctx := context.Background()
+	now := time.Now()
+
+	t.Run("initial_workflow_assignments", func(t *testing.T) {
+		// Create observations with workflows
+		workflows := []string{"wf-A", "wf-B", "wf-C"}
+		aos := makeObservationsWithWantShards(t, []map[uint32]*pb.ShardStatus{
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}, 2: {IsHealthy: true}},
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}, 2: {IsHealthy: true}},
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}, 2: {IsHealthy: true}},
+		}, workflows, now, 3)
+
+		outcomeCtx := ocr3types.OutcomeContext{
+			SeqNr:           1,
+			PreviousOutcome: nil,
+		}
+
+		// Generate outcome
+		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, aos)
+		require.NoError(t, err)
+
+		// Generate report and transmit
+		reports, err := plugin.Reports(ctx, 1, outcome)
+		require.NoError(t, err)
+		require.Len(t, reports, 1)
+
+		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 1, reports[0].ReportWithInfo, nil)
+		require.NoError(t, err)
+
+		// Verify ring store was updated
+		for _, wf := range workflows {
+			shard, err := ringStore.GetShardForWorkflow(ctx, wf)
+			require.NoError(t, err)
+			require.LessOrEqual(t, shard, uint32(2), "workflow should be assigned to valid shard")
+			t.Logf("Ring store: %s → shard %d", wf, shard)
+		}
+
+		// Verify orchestrator store was updated with correct state
+		for _, wf := range workflows {
+			mapping, err := orchestratorStore.GetWorkflowMapping(ctx, wf)
+			require.NoError(t, err)
+			require.Equal(t, wf, mapping.WorkflowID)
+			require.LessOrEqual(t, mapping.NewShardID, uint32(2))
+			require.Equal(t, uint32(0), mapping.OldShardID, "initial assignment should have oldShardID=0")
+			require.Equal(t, shardorchestrator.StateSteady, mapping.TransitionState, "initial assignment should be steady")
+			t.Logf("Orchestrator store: %s → shard %d (state: %s)", wf, mapping.NewShardID, mapping.TransitionState.String())
+		}
+
+		// Verify version tracking
+		version := orchestratorStore.GetMappingVersion()
+		require.Equal(t, uint64(1), version, "version should increment after first update")
+	})
+
+	t.Run("workflow_transition_detected", func(t *testing.T) {
+		// First, establish a baseline with workflows distributed across 3 shards
+		// Use wantShards=3 to ensure workflows actually get assigned to shard 2
+		baselineAos := makeObservationsWithWantShards(t, []map[uint32]*pb.ShardStatus{
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}, 2: {IsHealthy: true}},
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}, 2: {IsHealthy: true}},
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}, 2: {IsHealthy: true}},
+		}, []string{"wf-A", "wf-B", "wf-C", "wf-D", "wf-E"}, now, 3)
+
+		baselineOutcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{SeqNr: 2}, nil, baselineAos)
+		require.NoError(t, err)
+
+		baselineReports, err := plugin.Reports(ctx, 2, baselineOutcome)
+		require.NoError(t, err)
+
+		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 2, baselineReports[0].ReportWithInfo, nil)
+		require.NoError(t, err)
+
+		// Parse baseline to see which workflows were on shard 2
+		baselineProto := &pb.Outcome{}
+		err = proto.Unmarshal(baselineOutcome, baselineProto)
+		require.NoError(t, err)
+
+		workflowsOnShard2 := []string{}
+		for wfID, route := range baselineProto.Routes {
+			if route.Shard == 2 {
+				workflowsOnShard2 = append(workflowsOnShard2, wfID)
+			}
+			t.Logf("Baseline: %s on shard %d", wfID, route.Shard)
+		}
+		require.NotEmpty(t, workflowsOnShard2, "at least one workflow should be on shard 2 for this test")
+
+		// Now scale down to 2 shards - workflows on shard 2 MUST move
+		transitionAos := makeObservationsWithWantShards(t, []map[uint32]*pb.ShardStatus{
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}},
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}},
+			{0: {IsHealthy: true}, 1: {IsHealthy: true}},
+		}, []string{"wf-A", "wf-B", "wf-C", "wf-D", "wf-E"}, now, 2)
+
+		outcomeCtx := ocr3types.OutcomeContext{
+			SeqNr:           3,
+			PreviousOutcome: baselineOutcome,
+		}
+
+		outcome, err := plugin.Outcome(ctx, outcomeCtx, nil, transitionAos)
+		require.NoError(t, err)
+
+		reports, err := plugin.Reports(ctx, 3, outcome)
+		require.NoError(t, err)
+
+		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 3, reports[0].ReportWithInfo, nil)
+		require.NoError(t, err)
+
+		// Verify orchestrator store shows transition state for workflows that moved from shard 2
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+
+		// Workflows that were on shard 2 must have moved and should show TransitionState
+		for _, wfID := range workflowsOnShard2 {
+			mapping, err := orchestratorStore.GetWorkflowMapping(ctx, wfID)
+			require.NoError(t, err)
+
+			newRoute := outcomeProto.Routes[wfID]
+			require.NotEqual(t, uint32(2), newRoute.Shard, "workflow should have moved from shard 2")
+			require.Equal(t, shardorchestrator.StateTransitioning, mapping.TransitionState,
+				"workflow %s moved from shard 2 to shard %d, should be transitioning", wfID, newRoute.Shard)
+			require.Equal(t, uint32(2), mapping.OldShardID, "should track old shard")
+			require.Equal(t, newRoute.Shard, mapping.NewShardID, "should track new shard")
+			t.Logf("Workflow %s transitioned: shard 2 → %d", wfID, newRoute.Shard)
+		}
+
+		// Verify version incremented
+		version := orchestratorStore.GetMappingVersion()
+		require.Equal(t, uint64(3), version, "version should increment after update")
 	})
 }

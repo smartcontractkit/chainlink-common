@@ -106,6 +106,10 @@ func (b *BaseTriggerCapability) Start(ctx context.Context) error {
 	return nil
 }
 
+func (b *BaseTriggerCapability) Stop() {
+	b.cancel()
+}
+
 func (b *BaseTriggerCapability) DeliverEvent(
 	ctx context.Context,
 	te TriggerEvent,

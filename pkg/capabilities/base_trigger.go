@@ -108,6 +108,7 @@ func (b *BaseTriggerCapability) Start(ctx context.Context) error {
 
 func (b *BaseTriggerCapability) Stop() {
 	b.cancel()
+	b.wg.Wait()
 }
 
 func (b *BaseTriggerCapability) DeliverEvent(
@@ -174,15 +175,38 @@ func (b *BaseTriggerCapability) retransmitLoop() {
 func (b *BaseTriggerCapability) scanPending() {
 	now := time.Now()
 
-	for _, rec := range b.pending {
+	b.mu.Lock()
+	toResend := make([]PendingEvent, 0, len(b.pending))
+	toLost := make([]PendingEvent, 0)
+	for k, rec := range b.pending {
+		// LOST: exceeded max time without ACK
 		if now.Sub(rec.FirstAt) >= b.tMax {
-			_ = b.AckEvent(b.ctx, rec.TriggerId, rec.WorkflowId, rec.EventId)
-			b.lost(b.ctx, *rec)
+			toLost = append(toLost, *rec)
+			delete(b.pending, k)
 			continue
 		}
+
+		// RESEND: hasn't been sent recently enough
 		if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= b.tRetransmit {
-			_ = b.trySend(b.ctx, rec.TriggerId, rec.WorkflowId, rec.EventId)
+			toResend = append(toResend, PendingEvent{
+				TriggerId:  rec.TriggerId,
+				WorkflowId: rec.WorkflowId,
+				EventId:    rec.EventId,
+			})
 		}
+	}
+	b.mu.Unlock()
+
+	for _, rec := range toLost {
+		err := b.store.Delete(b.ctx, rec.TriggerId, rec.WorkflowId, rec.EventId)
+		if err != nil {
+			b.lggr.Errorw("failed to delete event from store")
+		}
+		b.lost(b.ctx, rec)
+	}
+
+	for _, k := range toResend {
+		_ = b.trySend(b.ctx, k.TriggerId, k.WorkflowId, k.EventId)
 	}
 }
 

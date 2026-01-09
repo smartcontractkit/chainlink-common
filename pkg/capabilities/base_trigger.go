@@ -58,12 +58,26 @@ type BaseTriggerCapability struct {
 	wg     sync.WaitGroup
 }
 
-func (b *BaseTriggerCapability) SetSend(fn OutboundSend) { b.send = fn }
-func (b *BaseTriggerCapability) SetLostHook(h LostHook)  { b.lost = h }
-func (b *BaseTriggerCapability) SetStore(s EventStore)   { b.store = s }
-func (b *BaseTriggerCapability) SetTiming(retry, max time.Duration) {
-	b.tRetransmit = retry
-	b.tMax = max
+func NewBaseTriggerCapability(
+	store EventStore,
+	send OutboundSend,
+	lost LostHook,
+	lggr logger.Logger,
+	tRetransmit, tMax time.Duration,
+) *BaseTriggerCapability {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return &BaseTriggerCapability{
+		store:       store,
+		send:        send,
+		lost:        lost,
+		lggr:        lggr,
+		tRetransmit: tRetransmit,
+		tMax:        tMax,
+		pending:     make(map[string]*PendingEvent),
+		ctx:         ctx,
+		cancel:      cancel,
+	}
 }
 
 // If you want logs:

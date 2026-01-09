@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767899431544,
+  "lastUpdate": 1767975049474,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -34860,6 +34860,66 @@ window.BENCHMARK_DATA = {
             "value": 142191,
             "unit": "ns/op",
             "extra": "8352 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "8bde3ee09d5b66dcf02a3c2d2cddea0abcc624e3",
+          "message": "[CRE][Limits] Handle limit flip to zero and back correctly (#1762)",
+          "timestamp": "2026-01-09T16:00:15Z",
+          "tree_id": "f8cd5a5d83ef811d37082e3a3faa3449ed740405",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8bde3ee09d5b66dcf02a3c2d2cddea0abcc624e3"
+        },
+        "date": 1767975047864,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 817.8,
+            "unit": "ns/op",
+            "extra": "1380292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92181,
+            "unit": "ns/op",
+            "extra": "13069 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.3,
+            "unit": "ns/op",
+            "extra": "2958055 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91350,
+            "unit": "ns/op",
+            "extra": "13184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24711,
+            "unit": "ns/op",
+            "extra": "48488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136720,
+            "unit": "ns/op",
+            "extra": "8408 times\n4 procs"
           }
         ]
       }

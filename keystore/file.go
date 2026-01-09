@@ -5,7 +5,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/smartcontractkit/chainlink-common/keystore/atomicfile"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal/atomicfile"
 )
 
 var _ Storage = &FileStorage{}

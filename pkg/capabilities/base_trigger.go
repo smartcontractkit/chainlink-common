@@ -58,6 +58,17 @@ type BaseTriggerCapability struct {
 	wg     sync.WaitGroup
 }
 
+func (b *BaseTriggerCapability) SetSend(fn OutboundSend) { b.send = fn }
+func (b *BaseTriggerCapability) SetLostHook(h LostHook)  { b.lost = h }
+func (b *BaseTriggerCapability) SetStore(s EventStore)   { b.store = s }
+func (b *BaseTriggerCapability) SetTiming(retry, max time.Duration) {
+	b.tRetransmit = retry
+	b.tMax = max
+}
+
+// If you want logs:
+func (b *BaseTriggerCapability) SetLogger(l *log.Logger) { b.lggr = l }
+
 func (b *BaseTriggerCapability) Start(ctx context.Context) error {
 	b.ctx, b.cancel = context.WithCancel(ctx)
 

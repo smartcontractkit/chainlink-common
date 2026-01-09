@@ -90,6 +90,10 @@ type resourcePoolLimiter[N Number] struct {
 	recordDenied    func(context.Context, N, ...metric.RecordOption)       // optional
 }
 
+func (l *resourcePoolLimiter[N]) setOnLimitUpdate(fn func(ctx context.Context)) {
+	l.updater.onLimitUpdate = fn
+}
+
 func (l *resourcePoolLimiter[N]) createGauges(meter metric.Meter, unit string) error {
 	if l.key == "" {
 		return errors.New("metrics require Key to be set")
@@ -170,6 +174,14 @@ type resourcePoolUsage[N Number] struct {
 	stopCh    services.StopChan
 	done      chan struct{}
 	cancelSub func() // optional
+}
+
+// onLimitUpdate is invoked when the configured limit changes. It attempts to
+// wake queued waiters using the new limit.
+func (u *resourcePoolUsage[N]) onLimitUpdate() {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.tryWakeWaiters()
 }
 
 func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *resourcePoolUsage[N] {
@@ -367,6 +379,9 @@ func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourceP
 		},
 	}
 	l.resourcePoolUsage = l.newLimitUsage()
+	l.setOnLimitUpdate(func(context.Context) {
+		l.resourcePoolUsage.onLimitUpdate()
+	})
 	return l
 }
 
@@ -489,6 +504,15 @@ func newScopedResourcePoolLimiter[N Number](scope settings.Scope, key string, de
 		},
 		scope: scope,
 	}
+	l.setOnLimitUpdate(func(ctx context.Context) {
+		tenant := l.scope.Value(ctx)
+		if tenant == "" {
+			return
+		}
+		if usage, ok := l.used.Load(tenant); ok {
+			usage.(*resourcePoolUsage[N]).onLimitUpdate()
+		}
+	})
 	return l
 }
 

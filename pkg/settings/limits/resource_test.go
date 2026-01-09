@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"sync/atomic"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
@@ -451,6 +453,57 @@ func TestResourcePoolLimiter_BasicUsage(t *testing.T) {
 	avail, err = limiter.Available(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 5, avail)
+}
+
+// TestResourcePoolLimiter_LimitFlapToZeroDoesNotDeadlock verifies that a waiter
+// is woken up when the limit is reduced to zero and then increased again.
+func TestResourcePoolLimiter_LimitFlapToZeroDoesNotDeadlock(t *testing.T) {
+	t.Parallel()
+
+	var limit atomic.Int64
+	limit.Store(1)
+
+	limiter := newUnscopedResourcePoolLimiter(1)
+	limiter.getLimitFn = func(context.Context) (int, error) {
+		return int(limit.Load()), nil
+	}
+	go limiter.updateLoop(contexts.CRE{})
+	t.Cleanup(func() { assert.NoError(t, limiter.Close()) })
+
+	ctx := t.Context()
+
+	// Consume the single available resource to force the next waiter to enqueue.
+	freeFirst, err := limiter.Wait(ctx, 1)
+	require.NoError(t, err)
+
+	enqueued := make(chan struct{}, 1)
+	limiter.resourcePoolUsage.setOnEnqueue(func() { enqueued <- struct{}{} })
+
+	waitErr := make(chan error, 1)
+	go func() {
+		_, err := limiter.Wait(t.Context(), 1)
+		waitErr <- err
+	}()
+
+	// Ensure the waiter is queued before mutating the limit.
+	<-enqueued
+
+	// Drop the limit to zero, then free the first resource. The queued waiter
+	// remains blocked because tryWakeWaiters sees a zero limit.
+	limit.Store(0)
+	freeFirst()
+
+	// Raise the limit again; the queued waiter should be woken by the update.
+	limit.Store(1)
+
+	select {
+	case err := <-waitErr:
+		require.NoError(t, err)
+		// release to avoid affecting subsequent waits
+		_ = limiter.Free(ctx, 1)
+	case <-time.After(pollPeriod * 3):
+		t.Fatal("waiter did not return after limit flap")
+	}
 }
 
 // setOnEnqueue sets a callback that is invoked each time a waiter is added to the queue.

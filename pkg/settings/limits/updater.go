@@ -15,10 +15,11 @@ import (
 // updater monitors limit updates via subscriptions or polling and reports them via recordLimit.
 // If an updateLoop goroutine is spawned, then Close must be called.
 type updater[N any] struct {
-	lggr        logger.Logger
-	getLimitFn  func(context.Context) (N, error)
-	subFn       func(ctx context.Context) (<-chan settings.Update[N], func()) // optional
-	recordLimit func(context.Context, N)
+	lggr          logger.Logger
+	getLimitFn    func(context.Context) (N, error)
+	subFn         func(ctx context.Context) (<-chan settings.Update[N], func()) // optional
+	recordLimit   func(context.Context, N)
+	onLimitUpdate func(context.Context)
 
 	creCh chan struct{}
 	cre   atomic.Value
@@ -99,13 +100,21 @@ func (u *updater[N]) updateLoop(cre contexts.CRE) {
 			if err != nil {
 				u.lggr.Errorw("Failed to get limit. Using default value", "default", limit, "err", err)
 			}
-			u.recordLimit(contexts.WithCRE(ctx, cre), limit)
+			rcCtx := contexts.WithCRE(ctx, cre)
+			u.recordLimit(rcCtx, limit)
+			if u.onLimitUpdate != nil {
+				u.onLimitUpdate(rcCtx)
+			}
 
 		case update := <-updates:
 			if update.Err != nil {
 				u.lggr.Errorw("Failed to update limit. Using default value", "default", update.Value, "err", update.Err)
 			}
-			u.recordLimit(contexts.WithCRE(ctx, cre), update.Value)
+			rcCtx := contexts.WithCRE(ctx, cre)
+			u.recordLimit(rcCtx, update.Value)
+			if u.onLimitUpdate != nil {
+				u.onLimitUpdate(rcCtx)
+			}
 
 		case <-u.creCh:
 			cre = u.cre.Load().(contexts.CRE)

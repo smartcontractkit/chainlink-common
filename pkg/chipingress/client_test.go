@@ -568,6 +568,20 @@ func TestOptions(t *testing.T) {
 		WithTokenAuth(mockProvider)(&config)
 		assert.NotNil(t, config.perRPCCredentials)
 	})
+
+	t.Run("WithNopLookup", func(t *testing.T) {
+		mockProvider := &mockHeaderProvider{
+			headers: map[string]string{"x-include-nop-info": "true"},
+		}
+		config := defaultCfg
+		WithNOPLookup()(&config)
+		assert.NotNil(t, config.nopInfoHeaderProvider)
+
+		headers, err := config.nopInfoHeaderProvider.Headers(t.Context())
+		assert.NoError(t, err)
+		assert.Equal(t, mockProvider.headers, headers)
+
+	})
 }
 
 func TestHeaderInterceptor(t *testing.T) {

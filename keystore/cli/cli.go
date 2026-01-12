@@ -408,9 +408,11 @@ func loadKMSKeystore(ctx context.Context) (ks.KeystoreSignerReader, error) {
 	if kmsProfile == "" {
 		return nil, errors.New("KEYSTORE_KMS_PROFILE is required for KMS keystore")
 	}
-	return kms.NewKMSKeystore(kms.KeystoreConfig{
-		AWSProfile: kmsProfile,
-	})
+	client, err := kms.NewClient(kmsProfile)
+	if err != nil {
+		return nil, fmt.Errorf("create KMS client: %w", err)
+	}
+	return kms.NewKeystore(client)
 }
 
 func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {

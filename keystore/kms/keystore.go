@@ -9,29 +9,15 @@ import (
 	kmslib "github.com/aws/aws-sdk-go/service/kms"
 	"github.com/smartcontractkit/chainlink-common/keystore"
 	kms "github.com/smartcontractkit/chainlink-common/keystore/kms/internal"
-	kmsinternal "github.com/smartcontractkit/chainlink-common/keystore/kms/internal"
 )
 
-// KeystoreConfig is the configuration for the KMS keystore.
-// Struct for extensibility in the future.
-// Uses the default region from the AWS profile.
-type KeystoreConfig struct {
-	AWSProfile string
+type keystoreSignerReader struct {
+	client Client
 }
 
-type kmsKeystoreSignerReader struct {
-	client kmsinternal.Client
-	config KeystoreConfig
-}
-
-func NewKMSKeystore(config KeystoreConfig) (keystore.KeystoreSignerReader, error) {
-	client, err := kmsinternal.NewClient(config.AWSProfile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create KMS client: %w", err)
-	}
-	return &kmsKeystoreSignerReader{
+func NewKeystore(client Client) (keystore.KeystoreSignerReader, error) {
+	return &keystoreSignerReader{
 		client: client,
-		config: config,
 	}, nil
 }
 
@@ -51,7 +37,7 @@ func keySpecToKeyType(keySpec string) (keystore.KeyType, error) {
 // Note: possible that ListKeys is not supported for a given AWS role
 // but specific GetPublicKey/DescribeKey are supported. We transparently
 // let the user use whatever they are permitted to given their AWS perms.
-func (k *kmsKeystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeysRequest) (keystore.GetKeysResponse, error) {
+func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeysRequest) (keystore.GetKeysResponse, error) {
 	if len(req.KeyNames) == 0 {
 		listResp, err := k.client.ListKeys(&kmslib.ListKeysInput{})
 		if err != nil {
@@ -112,7 +98,7 @@ func (k *kmsKeystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetK
 }
 
 // Sign signs data using the KMS key specified by the key name.
-func (k *kmsKeystoreSignerReader) Sign(ctx context.Context, req keystore.SignRequest) (keystore.SignResponse, error) {
+func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignRequest) (keystore.SignResponse, error) {
 	key, err := k.client.GetPublicKey(&kmslib.GetPublicKeyInput{
 		KeyId: aws.String(req.KeyName),
 	})
@@ -151,7 +137,7 @@ func (k *kmsKeystoreSignerReader) Sign(ctx context.Context, req keystore.SignReq
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to sign data: %w", err)
 		}
-		signature, err := kms.KMSToSEC1Sig(sig.Signature, pubKeyBytes, req.Data)
+		signature, err := kms.ASN1ToSEC1Sig(sig.Signature, pubKeyBytes, req.Data)
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to convert KMS signature to SEC1 signature: %w", err)
 		}
@@ -164,6 +150,6 @@ func (k *kmsKeystoreSignerReader) Sign(ctx context.Context, req keystore.SignReq
 
 }
 
-func (k *kmsKeystoreSignerReader) Verify(ctx context.Context, req keystore.VerifyRequest) (keystore.VerifyResponse, error) {
+func (k *keystoreSignerReader) Verify(ctx context.Context, req keystore.VerifyRequest) (keystore.VerifyResponse, error) {
 	return keystore.Verify(ctx, req)
 }

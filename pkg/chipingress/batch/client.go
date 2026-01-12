@@ -13,7 +13,8 @@ type Client struct {
 	client             chipingress.Client
 	batchSize          int
 	maxConcurrentSends chan struct{}
-	batchTimeout       time.Duration
+	batchInterval      time.Duration
+	maxPublishTimeout     time.Duration
 	compressionType    string
 	messageBuffer      chan *chipingress.CloudEventPb
 	shutdownChan       chan struct{}
@@ -28,7 +29,8 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		batchSize:          1,
 		maxConcurrentSends: make(chan struct{}, 1),
 		messageBuffer:      make(chan *chipingress.CloudEventPb, 1000),
-		batchTimeout:       100 * time.Millisecond,
+		batchInterval:      100 * time.Millisecond,
+		maxPublishTimeout:     5 * time.Second,
 		compressionType:    "gzip",
 		shutdownChan:       make(chan struct{}),
 	}
@@ -43,7 +45,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 func (b *Client) Start(ctx context.Context) {
 	go func() {
 		batch := make([]*chipingress.CloudEventPb, 0, b.batchSize)
-		timer := time.NewTimer(b.batchTimeout)
+		timer := time.NewTimer(b.batchInterval)
 		timer.Stop()
 
 		for {
@@ -57,7 +59,7 @@ func (b *Client) Start(ctx context.Context) {
 				return
 			case event := <-b.messageBuffer:
 				if len(batch) == 0 {
-					timer.Reset(b.batchTimeout)
+					timer.Reset(b.batchInterval)
 				}
 
 				batch = append(batch, event)
@@ -112,7 +114,11 @@ func (b *Client) sendBatch(ctx context.Context, events []*chipingress.CloudEvent
 
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
-		_, err := b.client.PublishBatch(ctx, &chipingress.CloudEventBatch{Events: events})
+
+		ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
+		defer cancel()
+
+		_, err := b.client.PublishBatch(ctxTimeout, &chipingress.CloudEventBatch{Events: events})
 		if err != nil {
 			b.log.Errorw("failed to publish batch", "error", err)
 		}
@@ -124,7 +130,7 @@ func (b *Client) flush(batch []*chipingress.CloudEventPb) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), b.maxPublishTimeout)
 	defer cancel()
 
 	b.sendBatch(ctx, batch)
@@ -144,7 +150,7 @@ func WithMaxConcurrentSends(maxConcurrentSends int) Opt {
 
 func WithBatchTimeout(batchTimeout time.Duration) Opt {
 	return func(c *Client) {
-		c.batchTimeout = batchTimeout
+		c.batchInterval = batchTimeout
 	}
 }
 

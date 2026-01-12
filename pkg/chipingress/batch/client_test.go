@@ -36,7 +36,7 @@ func TestNewBatchClient(t *testing.T) {
 	t.Run("WithBatchTimeout", func(t *testing.T) {
 		client, err := NewBatchClient(nil, WithBatchTimeout(100*time.Millisecond))
 		require.NoError(t, err)
-		assert.Equal(t, 100*time.Millisecond, client.batchTimeout)
+		assert.Equal(t, 100*time.Millisecond, client.batchInterval)
 	})
 
 	t.Run("WithCompressionType", func(t *testing.T) {

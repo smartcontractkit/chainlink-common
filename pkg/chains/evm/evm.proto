@@ -310,6 +310,9 @@ enum TxStatus {
 
 message GasConfig {
   uint64 gas_limit = 1;
+  // Maximum gas price (in wei) the user is willing to pay for this transaction.
+  // If not specified, the value configured in GasEstimator will be used.
+  optional values.v1.BigInt max_gas_price = 2;
 }
 
 message CalculateTransactionFeeRequest {

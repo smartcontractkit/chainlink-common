@@ -81,7 +81,7 @@ func (m *MockKMSClient) DescribeKey(input *kmslib.DescribeKeyInput) (*kmslib.Des
 }
 
 // ListKeys returns a list of key IDs.
-func (m *MockKMSClient) ListKeys(input *kmslib.ListKeysInput) (*kmslib.ListKeysOutput, error) {
+func (m *MockKMSClient) ListKeys(_ *kmslib.ListKeysInput) (*kmslib.ListKeysOutput, error) {
 	keys := make([]*kmslib.KeyListEntry, 0, len(m.keys))
 	for _, key := range m.keys {
 		keys = append(keys, &kmslib.KeyListEntry{

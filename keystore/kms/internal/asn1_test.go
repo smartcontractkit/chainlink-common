@@ -1,7 +1,6 @@
 package kms_test
 
 import (
-	"log"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,7 +20,6 @@ func TestSEC1ToASN1PublicKey(t *testing.T) {
 	// Convert to ASN.1
 	asn1PubKey, err := kmsinternal.SEC1ToASN1PublicKey(sec1PubKey)
 	require.NoError(t, err)
-	log.Println("asn1PubKey", len(asn1PubKey))
 
 	// Convert back to SEC1
 	sec1PubKey2, err := kmsinternal.ASN1ToSEC1PublicKey(asn1PubKey)

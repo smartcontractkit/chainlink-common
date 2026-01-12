@@ -408,6 +408,18 @@ func loadKMSKeystore(ctx context.Context) (ks.KeystoreSignerReader, error) {
 	if kmsProfile == "" {
 		return nil, errors.New("KEYSTORE_KMS_PROFILE is required for KMS keystore")
 	}
+	if kmsProfile == "xxx_test_profile" {
+
+		key, err := crypto.GenerateKey()
+		if err != nil {
+			return nil, fmt.Errorf("generate key: %w", err)
+		}
+		return kms.NewKeystore(kmsinternal.NewMockKMSClient([]kmsinternal.Key{
+			{
+				KeyID:      "test-key-id",
+				PrivateKey: key,
+			}))
+	}
 	client, err := kms.NewClient(kmsProfile)
 	if err != nil {
 		return nil, fmt.Errorf("create KMS client: %w", err)

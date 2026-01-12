@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	kmslib "github.com/aws/aws-sdk-go/service/kms"
 	"github.com/smartcontractkit/chainlink-common/keystore"
-	kms "github.com/smartcontractkit/chainlink-common/keystore/kms/internal"
 )
 
 type keystoreSignerReader struct {
@@ -77,7 +76,7 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 		var publicKeyBytes []byte
 		switch keyType {
 		case keystore.ECDSA_S256:
-			publicKeyBytes, err = kms.ASN1ToSEC1PublicKey(key.PublicKey)
+			publicKeyBytes, err = ASN1ToSEC1PublicKey(key.PublicKey)
 			if err != nil {
 				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert public key for key %s: %w", keyID, err)
 			}
@@ -122,7 +121,7 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 		if len(req.Data) != 32 {
 			return keystore.SignResponse{}, fmt.Errorf("data must be 32 bytes for ECDSA_S256, got %d: %w", len(req.Data), keystore.ErrInvalidSignRequest)
 		}
-		pubKeyBytes, err := kms.ASN1ToSEC1PublicKey(key.PublicKey)
+		pubKeyBytes, err := ASN1ToSEC1PublicKey(key.PublicKey)
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to convert public key for KeyId=%s: %w", req.KeyName, err)
 		}
@@ -137,7 +136,7 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to sign data: %w", err)
 		}
-		signature, err := kms.ASN1ToSEC1Sig(sig.Signature, pubKeyBytes, req.Data)
+		signature, err := ASN1ToSEC1Sig(sig.Signature, pubKeyBytes, req.Data)
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to convert KMS signature to SEC1 signature: %w", err)
 		}

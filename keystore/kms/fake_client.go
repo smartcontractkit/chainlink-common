@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-type MockKMSClient struct {
+type FakeKMSClient struct {
 	keys      []Key
 	createdAt time.Time
 }
@@ -21,14 +21,14 @@ type Key struct {
 	KeyID      string
 }
 
-func NewMockKMSClient(keys []Key) (*MockKMSClient, error) {
-	return &MockKMSClient{
+func NewFakeKMSClient(keys []Key) (*FakeKMSClient, error) {
+	return &FakeKMSClient{
 		keys:      keys,
 		createdAt: time.Now(),
 	}, nil
 }
 
-func (m *MockKMSClient) GetPublicKey(input *kmslib.GetPublicKeyInput) (*kmslib.GetPublicKeyOutput, error) {
+func (m *FakeKMSClient) GetPublicKey(input *kmslib.GetPublicKeyInput) (*kmslib.GetPublicKeyOutput, error) {
 	for _, key := range m.keys {
 		if aws.StringValue(input.KeyId) == key.KeyID {
 			asn1PubKey, err := SEC1ToASN1PublicKey(crypto.FromECDSAPub(&key.PrivateKey.PublicKey))
@@ -44,7 +44,7 @@ func (m *MockKMSClient) GetPublicKey(input *kmslib.GetPublicKeyInput) (*kmslib.G
 	return nil, awserr.New(kmslib.ErrCodeNotFoundException, "key not found", errors.New("key not found"))
 }
 
-func (m *MockKMSClient) Sign(input *kmslib.SignInput) (*kmslib.SignOutput, error) {
+func (m *FakeKMSClient) Sign(input *kmslib.SignInput) (*kmslib.SignOutput, error) {
 	for _, key := range m.keys {
 		if aws.StringValue(input.KeyId) == key.KeyID {
 			sig, err := crypto.Sign(input.Message, key.PrivateKey)
@@ -65,7 +65,7 @@ func (m *MockKMSClient) Sign(input *kmslib.SignInput) (*kmslib.SignOutput, error
 }
 
 // DescribeKey returns metadata about the key.
-func (m *MockKMSClient) DescribeKey(input *kmslib.DescribeKeyInput) (*kmslib.DescribeKeyOutput, error) {
+func (m *FakeKMSClient) DescribeKey(input *kmslib.DescribeKeyInput) (*kmslib.DescribeKeyOutput, error) {
 	for _, key := range m.keys {
 		if aws.StringValue(input.KeyId) == key.KeyID {
 			return &kmslib.DescribeKeyOutput{
@@ -81,7 +81,7 @@ func (m *MockKMSClient) DescribeKey(input *kmslib.DescribeKeyInput) (*kmslib.Des
 }
 
 // ListKeys returns a list of key IDs.
-func (m *MockKMSClient) ListKeys(_ *kmslib.ListKeysInput) (*kmslib.ListKeysOutput, error) {
+func (m *FakeKMSClient) ListKeys(_ *kmslib.ListKeysInput) (*kmslib.ListKeysOutput, error) {
 	keys := make([]*kmslib.KeyListEntry, 0, len(m.keys))
 	for _, key := range m.keys {
 		keys = append(keys, &kmslib.KeyListEntry{

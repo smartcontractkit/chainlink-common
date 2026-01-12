@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartcontractkit/chainlink-common/keystore"
 	kms "github.com/smartcontractkit/chainlink-common/keystore/kms"
-	kmsinternal "github.com/smartcontractkit/chainlink-common/keystore/kms/internal"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,18 +15,18 @@ func TestKMSKeystore(t *testing.T) {
 	require.NoError(t, err)
 	key2, err := crypto.GenerateKey()
 	require.NoError(t, err)
-	mockClient, err := kmsinternal.NewMockKMSClient([]kmsinternal.Key{
+	fakeClient, err := kms.NewFakeKMSClient([]kms.Key{
 		{
-			KeyID:      keyID,
 			PrivateKey: key,
+			KeyID:      keyID,
 		},
 		{
-			KeyID:      keyID2,
 			PrivateKey: key2,
+			KeyID:      keyID2,
 		},
 	})
 	require.NoError(t, err)
-	ks, err := kms.NewKeystore(mockClient)
+	ks, err := kms.NewKeystore(fakeClient)
 	require.NoError(t, err)
 	ctx := t.Context()
 

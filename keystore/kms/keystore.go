@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	kmslib "github.com/aws/aws-sdk-go/service/kms"
+
 	"github.com/smartcontractkit/chainlink-common/keystore"
 )
 
@@ -146,7 +147,6 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 	default:
 		return keystore.SignResponse{}, fmt.Errorf("key %s: %w", req.KeyName, keystore.ErrInvalidSignRequest)
 	}
-
 }
 
 func (k *keystoreSignerReader) Verify(ctx context.Context, req keystore.VerifyRequest) (keystore.VerifyResponse, error) {

@@ -71,11 +71,10 @@ func ASN1ToSEC1PublicKey(asn1PublicKey []byte) ([]byte, error) {
 	if len(pubKeyBytes) == 64 {
 		// BitString is 64 bytes (X || Y), prepend 0x04
 		pubKeyBytes = append([]byte{0x04}, pubKeyBytes...)
-	} else if len(pubKeyBytes) == 65 && pubKeyBytes[0] == 0x04 {
-		// BitString already has 0x04 prefix (KMS format), use as-is
-	} else {
+	} else if len(pubKeyBytes) != 65 || pubKeyBytes[0] != 0x04 {
 		return nil, fmt.Errorf("invalid public key length in BitString: expected 64 or 65 bytes, got %d", len(pubKeyBytes))
 	}
+	// BitString already has 0x04 prefix (KMS format), use as-is
 
 	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 	if err != nil {

@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-common/keystore"
 	kms "github.com/smartcontractkit/chainlink-common/keystore/kms"
-	"github.com/stretchr/testify/require"
 )
 
 func TestKMSKeystore(t *testing.T) {

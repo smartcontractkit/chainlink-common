@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	kms "github.com/smartcontractkit/chainlink-common/keystore/kms"
 	"github.com/stretchr/testify/require"
+
+	kms "github.com/smartcontractkit/chainlink-common/keystore/kms"
 )
 
 func TestSEC1ToASN1PublicKey(t *testing.T) {
@@ -26,8 +27,9 @@ func TestSEC1ToASN1PublicKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, sec1PubKey2, 65)
 	require.Equal(t, byte(0x04), sec1PubKey2[0])
-	require.Equal(t, privateKey.PublicKey.X.Bytes(), sec1PubKey2[1:33])
-	require.Equal(t, privateKey.PublicKey.Y.Bytes(), sec1PubKey2[33:65])
+	pubKey := privateKey.PublicKey
+	require.Equal(t, pubKey.X.Bytes(), sec1PubKey2[1:33])
+	require.Equal(t, pubKey.Y.Bytes(), sec1PubKey2[33:65])
 }
 
 func TestASN1SignatureToSEC1Signature(t *testing.T) {

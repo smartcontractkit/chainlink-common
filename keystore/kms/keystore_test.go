@@ -27,7 +27,7 @@ func TestKMSKeystore(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ks, err := kms.NewKMSKeystore(mockClient)
+	ks, err := kms.NewKeystore(mockClient)
 	require.NoError(t, err)
 	ctx := t.Context()
 

@@ -21,8 +21,6 @@ import (
 
 type KeystoreConfig struct {
 	AWSProfile string
-	KeyIDs     []string
-	KeyRegion  string
 }
 
 type kmsKeystoreSignerReader struct {
@@ -32,7 +30,6 @@ type kmsKeystoreSignerReader struct {
 
 func NewKMSKeystore(config KeystoreConfig) (keystore.KeystoreSignerReader, error) {
 	client, err := kmsinternal.NewClient(kmsinternal.ClientConfig{
-		KeyRegion:  config.KeyRegion,
 		AWSProfile: config.AWSProfile,
 	})
 	if err != nil {
@@ -62,8 +59,19 @@ func keySpecToKeyType(keySpec string) (keystore.KeyType, error) {
 }
 
 func (k *kmsKeystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeysRequest) (keystore.GetKeysResponse, error) {
-	keys := make([]keystore.GetKeyResponse, 0, len(k.config.KeyIDs))
-	for _, keyID := range k.config.KeyIDs {
+	if len(req.KeyNames) == 0 {
+		listResp, err := k.client.ListKeys(&kmslib.ListKeysInput{})
+		if err != nil {
+			return keystore.GetKeysResponse{}, fmt.Errorf("failed to list KMS keys: %w", err)
+		}
+		req.KeyNames = make([]string, 0, len(listResp.Keys))
+		for _, key := range listResp.Keys {
+			req.KeyNames = append(req.KeyNames, aws.StringValue(key.KeyId))
+		}
+	}
+
+	keys := make([]keystore.GetKeyResponse, 0, len(req.KeyNames))
+	for _, keyID := range req.KeyNames {
 		// Get public key
 		key, err := k.client.GetPublicKey(&kmslib.GetPublicKeyInput{
 			KeyId: aws.String(keyID),

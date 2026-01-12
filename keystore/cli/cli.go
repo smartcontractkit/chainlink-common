@@ -26,7 +26,7 @@ const (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "./keystore <command>",
+		Use: "keys",
 		Long: ` 
 CLI for managing keystore keys. 
 
@@ -414,35 +414,10 @@ func loadKMSKeystore(ctx context.Context) (ks.KeystoreSignerReader, error) {
 }
 
 func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {
-	root := cmd.Root()
-	filePath, err := root.Flags().GetString("keystore-file-path")
-	if err != nil {
-		return nil, err
-	}
-	dbURL, err := root.Flags().GetString("keystore-db-url")
-	if err != nil {
-		return nil, err
-	}
-	password, err := root.Flags().GetString("keystore-password")
-	if err != nil {
-		return nil, err
-	}
-	// Env var fallbacks (flags override)
-	if filePath == "" {
-		if v := os.Getenv("KEYSTORE_FILE_PATH"); v != "" {
-			filePath = v
-		}
-	}
-	if dbURL == "" {
-		if v := os.Getenv("KEYSTORE_DB_URL"); v != "" {
-			dbURL = v
-		}
-	}
-	if password == "" {
-		if v := os.Getenv("KEYSTORE_PASSWORD"); v != "" {
-			password = v
-		}
-	}
+	// Read from environment variables only
+	filePath := os.Getenv("KEYSTORE_FILE_PATH")
+	dbURL := os.Getenv("KEYSTORE_DB_URL")
+	password := os.Getenv("KEYSTORE_PASSWORD")
 	if password == "" {
 		return nil, errors.New("keystore password is required")
 	}

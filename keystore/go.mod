@@ -7,7 +7,6 @@ require (
 	github.com/ethereum/go-ethereum v1.16.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/natefinch/atomic v1.0.1
 	github.com/smartcontractkit/chainlink-common v0.9.6-0.20251107154219-ec6d8370ebbf
 	github.com/smartcontractkit/libocr v0.0.0-20250912173940-f3ab0246e23d
 	github.com/spf13/cobra v1.8.1

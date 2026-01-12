@@ -466,7 +466,7 @@ func TestCallbacks(t *testing.T) {
 		// wait for callback
 		select {
 		case err := <-callbackDone:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback")
 		}
@@ -518,7 +518,6 @@ func TestCallbacks(t *testing.T) {
 		// wait for callback to be invoked with error
 		select {
 		case err := <-callbackDone:
-			assert.Error(t, err)
 			assert.Equal(t, expectedErr, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback")
@@ -626,21 +625,21 @@ func TestCallbacks(t *testing.T) {
 
 		select {
 		case err := <-callback1Done:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback 1")
 		}
 
 		select {
 		case err := <-callback2Done:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback 2")
 		}
 
 		select {
 		case err := <-callback3Done:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback 3")
 		}
@@ -690,7 +689,7 @@ func TestCallbacks(t *testing.T) {
 		// wait for callback
 		select {
 		case err := <-callbackDone:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback")
 		}
@@ -744,7 +743,7 @@ func TestCallbacks(t *testing.T) {
 
 		select {
 		case err := <-callbackDone:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback")
 		}
@@ -797,7 +796,7 @@ func TestCallbacks(t *testing.T) {
 
 		select {
 		case err := <-callbackDone:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for callback")
 		}

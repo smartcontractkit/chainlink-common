@@ -282,7 +282,6 @@ func TestProtoToEvent(t *testing.T) {
 	t.Run("conversion with nil protobuf event", func(t *testing.T) {
 		// Test with nil input
 		convertedEvent, err := ProtoToEvent(nil)
-		assert.Error(t, err)
 		assert.Equal(t, CloudEvent{}, convertedEvent)
 		assert.Contains(t, err.Error(), "could not convert proto to event")
 	})

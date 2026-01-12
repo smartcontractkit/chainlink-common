@@ -80,6 +80,7 @@ func (k *kmsKeystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetK
 		if err != nil {
 			return keystore.GetKeysResponse{}, fmt.Errorf("failed to describe key %s: %w", keyID, err)
 		}
+		createdAt := time.Unix(describeKey.KeyMetadata.CreationDate.Unix(), 0)
 
 		// Convert KMS KeySpec to keystore KeyType
 		keySpec := aws.StringValue(describeKey.KeyMetadata.KeySpec)
@@ -87,18 +88,22 @@ func (k *kmsKeystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetK
 		if err != nil {
 			return keystore.GetKeysResponse{}, fmt.Errorf("key %s: %w", keyID, err)
 		}
-
-		// Get creation date from metadata
-		createdAt := time.Now() // fallback
-		if describeKey.KeyMetadata.CreationDate != nil {
-			createdAt = *describeKey.KeyMetadata.CreationDate
+		var publicKeyBytes []byte
+		switch keyType {
+		case keystore.ECDSA_S256:
+			publicKeyBytes, err = kms.ASN1ToSEC1PublicKey(key.PublicKey)
+			if err != nil {
+				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert public key for key %s: %w", keyID, err)
+			}
+		default:
+			return keystore.GetKeysResponse{}, fmt.Errorf("unsupported key type: %s", keyType)
 		}
 
 		keys = append(keys, keystore.GetKeyResponse{
 			KeyInfo: keystore.KeyInfo{
 				Name:      keyID,
 				KeyType:   keyType,
-				PublicKey: key.PublicKey,
+				PublicKey: publicKeyBytes,
 				CreatedAt: createdAt,
 			},
 		})

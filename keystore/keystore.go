@@ -150,9 +150,18 @@ func newKeyInfo(name string, keyType KeyType, createdAt time.Time, publicKey []b
 
 type Keystore interface {
 	Admin
+	Signer
+	Reader
+	Encryptor
+}
+
+// KeystoreSignerReader is useful for
+// services which just need to sign using pre-established keys.
+// Useful for TXM only / non-OCR services.
+// Add more narrow interface as needed.
+type KeystoreSignerReader interface {
 	Reader
 	Signer
-	Encryptor
 }
 
 var ErrUnimplemented = errors.New("unimplemented")

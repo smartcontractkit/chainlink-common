@@ -12,10 +12,9 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // Register postgres driver
 	"github.com/spf13/cobra"
 
-	"github.com/smartcontractkit/chainlink-common/keystore"
 	ks "github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/kms"
 	"github.com/smartcontractkit/chainlink-common/keystore/pgstore"
@@ -129,7 +128,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "create", Short: "Create a key",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.Keystore, ks.CreateKeysRequest, ks.CreateKeysResponse](cmd, args, loadKeystore, func(ctx context.Context, k keystore.Keystore, req ks.CreateKeysRequest) (ks.CreateKeysResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.CreateKeysRequest, ks.CreateKeysResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.CreateKeysRequest) (ks.CreateKeysResponse, error) {
 				return k.CreateKeys(ctx, req)
 			})
 		},
@@ -158,7 +157,7 @@ func NewDeleteCmd() *cobra.Command {
 			}
 			if !confirmYes {
 				// Prompt for confirmation on stdin
-				_, err = cmd.OutOrStderr().Write([]byte(fmt.Sprintf("This will permanently delete keys: %v. Type 'yes' to confirm: ", strings.Join(req.KeyNames, ", "))))
+				_, err = fmt.Fprintf(cmd.OutOrStderr(), "This will permanently delete keys: %v. Type 'yes' to confirm: ", strings.Join(req.KeyNames, ", "))
 				if err != nil {
 					return err
 				}

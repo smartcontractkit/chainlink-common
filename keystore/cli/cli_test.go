@@ -22,6 +22,8 @@ func setupKeystore(t *testing.T) func(t *testing.T) {
 	require.NoError(t, err)
 	t.Setenv("KEYSTORE_FILE_PATH", keystoreFile)
 	t.Setenv("KEYSTORE_PASSWORD", "testpassword")
+	// Set to empty string to test regular keystore mode.
+	t.Setenv("KEYSTORE_KMS_PROFILE", "")
 	return func(t *testing.T) {
 		f.Close()
 		os.RemoveAll(tempDir)

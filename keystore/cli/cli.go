@@ -373,10 +373,6 @@ func loadKeystoreSignerReader(ctx context.Context, cmd *cobra.Command) (ks.Keyst
 	// Check if KMS mode is enabled
 	kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
 	if kmsProfile != "" {
-		kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
-		if kmsProfile == "" {
-			return nil, errors.New("KEYSTORE_KMS_PROFILE is required for KMS keystore")
-		}
 		client, err := kms.NewClient(kmsProfile)
 		if err != nil {
 			return nil, fmt.Errorf("create KMS client: %w", err)

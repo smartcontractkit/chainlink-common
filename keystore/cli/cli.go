@@ -15,6 +15,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 
+	"github.com/smartcontractkit/chainlink-common/keystore"
 	ks "github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/kms"
 	"github.com/smartcontractkit/chainlink-common/keystore/pgstore"
@@ -114,7 +115,7 @@ func NewGetCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "get", Short: "Get keys",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommandWithSigner[ks.GetKeysRequest, ks.GetKeysResponse](cmd, args, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.GetKeysRequest) (ks.GetKeysResponse, error) {
+			return runKeystoreCommand[ks.KeystoreSignerReader, ks.GetKeysRequest, ks.GetKeysResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.GetKeysRequest) (ks.GetKeysResponse, error) {
 				return k.GetKeys(ctx, req)
 			})
 		},
@@ -128,7 +129,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "create", Short: "Create a key",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.CreateKeysRequest, ks.CreateKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.CreateKeysRequest) (ks.CreateKeysResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.CreateKeysRequest, ks.CreateKeysResponse](cmd, args, loadKeystore, func(ctx context.Context, k keystore.Keystore, req ks.CreateKeysRequest) (ks.CreateKeysResponse, error) {
 				return k.CreateKeys(ctx, req)
 			})
 		},
@@ -188,7 +189,7 @@ func NewExportCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "export", Short: "Export a key to an encrypted JSON file",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.ExportKeysRequest, ks.ExportKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.ExportKeysRequest) (ks.ExportKeysResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.ExportKeysRequest, ks.ExportKeysResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.ExportKeysRequest) (ks.ExportKeysResponse, error) {
 				return k.ExportKeys(ctx, req)
 			})
 		},
@@ -202,7 +203,7 @@ func NewImportCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "import", Short: "Import an encrypted key JSON file",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.ImportKeysRequest, ks.ImportKeysResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.ImportKeysRequest) (ks.ImportKeysResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.ImportKeysRequest, ks.ImportKeysResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.ImportKeysRequest) (ks.ImportKeysResponse, error) {
 				return k.ImportKeys(ctx, req)
 			})
 		},
@@ -216,7 +217,7 @@ func NewSetMetadataCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "set-metadata", Short: "Set metadata for keys",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.SetMetadataRequest, ks.SetMetadataResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.SetMetadataRequest) (ks.SetMetadataResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.SetMetadataRequest, ks.SetMetadataResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.SetMetadataRequest) (ks.SetMetadataResponse, error) {
 				return k.SetMetadata(ctx, req)
 			})
 		},
@@ -226,7 +227,13 @@ func NewSetMetadataCmd() *cobra.Command {
 	return &cmd
 }
 
-func runKeystoreCommandWithSigner[Req any, Resp any](cmd *cobra.Command, args []string, fn func(ctx context.Context, k ks.KeystoreSignerReader, req Req) (Resp, error)) error {
+// runKeystoreCommandGeneric is a generic helper that runs a keystore command with a custom loader function.
+func runKeystoreCommand[K any, Req any, Resp any](
+	cmd *cobra.Command,
+	args []string,
+	loader func(ctx context.Context, cmd *cobra.Command) (K, error),
+	fn func(ctx context.Context, k K, req Req) (Resp, error),
+) error {
 	jsonBytes, err := readJSONInput(cmd)
 	if err != nil {
 		return err
@@ -238,38 +245,7 @@ func runKeystoreCommandWithSigner[Req any, Resp any](cmd *cobra.Command, args []
 	}
 	ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
 	defer cancel()
-	k, err := loadKeystoreSignerReader(ctx, cmd)
-	if err != nil {
-		return err
-	}
-	resp, err := fn(ctx, k, req)
-	if err != nil {
-		return err
-	}
-	jsonBytesOut, err := json.Marshal(resp)
-	if err != nil {
-		return err
-	}
-	_, err = cmd.OutOrStdout().Write(jsonBytesOut)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func runKeystoreCommand[Req any, Resp any](cmd *cobra.Command, args []string, fn func(ctx context.Context, k ks.Keystore, req Req) (Resp, error)) error {
-	jsonBytes, err := readJSONInput(cmd)
-	if err != nil {
-		return err
-	}
-	var req Req
-	err = json.Unmarshal(jsonBytes, &req)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(cmd.Context(), KeystoreLoadTimeout)
-	defer cancel()
-	k, err := loadKeystore(ctx, cmd)
+	k, err := loader(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -292,7 +268,7 @@ func NewSignCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "sign", Short: "Sign data with a key",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommandWithSigner[ks.SignRequest, ks.SignResponse](cmd, args, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.SignRequest) (ks.SignResponse, error) {
+			return runKeystoreCommand[ks.KeystoreSignerReader, ks.SignRequest, ks.SignResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.SignRequest) (ks.SignResponse, error) {
 				return k.Sign(ctx, req)
 			})
 		},
@@ -331,7 +307,7 @@ func NewVerifyCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "verify", Short: "Verify a signature",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommandWithSigner[ks.VerifyRequest, ks.VerifyResponse](cmd, args, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.VerifyRequest) (ks.VerifyResponse, error) {
+			return runKeystoreCommand[ks.KeystoreSignerReader, ks.VerifyRequest, ks.VerifyResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.VerifyRequest) (ks.VerifyResponse, error) {
 				return k.Verify(ctx, req)
 			})
 		},
@@ -345,7 +321,7 @@ func NewEncryptCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "encrypt", Short: "Encrypt data to a remote public key",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.EncryptRequest, ks.EncryptResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.EncryptRequest) (ks.EncryptResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.EncryptRequest, ks.EncryptResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.EncryptRequest) (ks.EncryptResponse, error) {
 				return k.Encrypt(ctx, req)
 			})
 		},
@@ -384,7 +360,7 @@ func NewDecryptCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "decrypt", Short: "Decrypt data with a key",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.DecryptRequest, ks.DecryptResponse](cmd, args, func(ctx context.Context, k ks.Keystore, req ks.DecryptRequest) (ks.DecryptResponse, error) {
+			return runKeystoreCommand[ks.Keystore, ks.DecryptRequest, ks.DecryptResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.DecryptRequest) (ks.DecryptResponse, error) {
 				return k.Decrypt(ctx, req)
 			})
 		},
@@ -398,21 +374,17 @@ func loadKeystoreSignerReader(ctx context.Context, cmd *cobra.Command) (ks.Keyst
 	// Check if KMS mode is enabled
 	kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
 	if kmsProfile != "" {
-		return loadKMSKeystore(ctx)
+		kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
+		if kmsProfile == "" {
+			return nil, errors.New("KEYSTORE_KMS_PROFILE is required for KMS keystore")
+		}
+		client, err := kms.NewClient(kmsProfile)
+		if err != nil {
+			return nil, fmt.Errorf("create KMS client: %w", err)
+		}
+		return kms.NewKeystore(client)
 	}
 	return loadKeystore(ctx, cmd)
-}
-
-func loadKMSKeystore(ctx context.Context) (ks.KeystoreSignerReader, error) {
-	kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
-	if kmsProfile == "" {
-		return nil, errors.New("KEYSTORE_KMS_PROFILE is required for KMS keystore")
-	}
-	client, err := kms.NewClient(kmsProfile)
-	if err != nil {
-		return nil, fmt.Errorf("create KMS client: %w", err)
-	}
-	return kms.NewKeystore(client)
 }
 
 func loadKeystore(ctx context.Context, cmd *cobra.Command) (ks.Keystore, error) {

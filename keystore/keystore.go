@@ -155,15 +155,6 @@ type Keystore interface {
 	Encryptor
 }
 
-// KeystoreSignerReader is useful for
-// services which just need to sign using pre-established keys.
-// Useful for TXM only / non-OCR services.
-// Add more narrow interfaces as needed.
-type KeystoreSignerReader interface {
-	Reader
-	Signer
-}
-
 var ErrUnimplemented = errors.New("unimplemented")
 
 // UnimplementedKeystore provides a no-op implementation of Keystore.

@@ -114,7 +114,13 @@ func NewGetCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "get", Short: "Get keys",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.KeystoreSignerReader, ks.GetKeysRequest, ks.GetKeysResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.GetKeysRequest) (ks.GetKeysResponse, error) {
+			return runKeystoreCommand[interface {
+				ks.Reader
+				ks.Signer
+			}, ks.GetKeysRequest, ks.GetKeysResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k interface {
+				ks.Reader
+				ks.Signer
+			}, req ks.GetKeysRequest) (ks.GetKeysResponse, error) {
 				return k.GetKeys(ctx, req)
 			})
 		},
@@ -267,7 +273,13 @@ func NewSignCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "sign", Short: "Sign data with a key",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.KeystoreSignerReader, ks.SignRequest, ks.SignResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.SignRequest) (ks.SignResponse, error) {
+			return runKeystoreCommand[interface {
+				ks.Reader
+				ks.Signer
+			}, ks.SignRequest, ks.SignResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k interface {
+				ks.Reader
+				ks.Signer
+			}, req ks.SignRequest) (ks.SignResponse, error) {
 				return k.Sign(ctx, req)
 			})
 		},
@@ -306,7 +318,13 @@ func NewVerifyCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "verify", Short: "Verify a signature",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeystoreCommand[ks.KeystoreSignerReader, ks.VerifyRequest, ks.VerifyResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k ks.KeystoreSignerReader, req ks.VerifyRequest) (ks.VerifyResponse, error) {
+			return runKeystoreCommand[interface {
+				ks.Reader
+				ks.Signer
+			}, ks.VerifyRequest, ks.VerifyResponse](cmd, args, loadKeystoreSignerReader, func(ctx context.Context, k interface {
+				ks.Reader
+				ks.Signer
+			}, req ks.VerifyRequest) (ks.VerifyResponse, error) {
 				return k.Verify(ctx, req)
 			})
 		},
@@ -369,7 +387,10 @@ func NewDecryptCmd() *cobra.Command {
 	return &cmd
 }
 
-func loadKeystoreSignerReader(ctx context.Context, cmd *cobra.Command) (ks.KeystoreSignerReader, error) {
+func loadKeystoreSignerReader(ctx context.Context, cmd *cobra.Command) (interface {
+	ks.Reader
+	ks.Signer
+}, error) {
 	// Check if KMS mode is enabled
 	kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
 	if kmsProfile != "" {

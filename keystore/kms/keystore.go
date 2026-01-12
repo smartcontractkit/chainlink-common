@@ -15,7 +15,10 @@ type keystoreSignerReader struct {
 	client Client
 }
 
-func NewKeystore(client Client) (keystore.KeystoreSignerReader, error) {
+func NewKeystore(client Client) (interface {
+	keystore.Reader
+	keystore.Signer
+}, error) {
 	return &keystoreSignerReader{
 		client: client,
 	}, nil

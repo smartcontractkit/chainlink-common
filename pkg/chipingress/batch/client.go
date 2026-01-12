@@ -9,14 +9,19 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+type messageWithCallback struct {
+	event    *chipingress.CloudEventPb
+	callback func(error)
+}
+
 type Client struct {
 	client             chipingress.Client
 	batchSize          int
 	maxConcurrentSends chan struct{}
 	batchInterval      time.Duration
-	maxPublishTimeout     time.Duration
+	maxPublishTimeout  time.Duration
 	compressionType    string
-	messageBuffer      chan *chipingress.CloudEventPb
+	messageBuffer      chan *messageWithCallback
 	shutdownChan       chan struct{}
 	log                *zap.SugaredLogger
 }
@@ -28,9 +33,9 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		client:             client,
 		batchSize:          1,
 		maxConcurrentSends: make(chan struct{}, 1),
-		messageBuffer:      make(chan *chipingress.CloudEventPb, 1000),
+		messageBuffer:      make(chan *messageWithCallback, 1000),
 		batchInterval:      100 * time.Millisecond,
-		maxPublishTimeout:     5 * time.Second,
+		maxPublishTimeout:  5 * time.Second,
 		compressionType:    "gzip",
 		shutdownChan:       make(chan struct{}),
 	}
@@ -44,7 +49,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 
 func (b *Client) Start(ctx context.Context) {
 	go func() {
-		batch := make([]*chipingress.CloudEventPb, 0, b.batchSize)
+		batch := make([]*messageWithCallback, 0, b.batchSize)
 		timer := time.NewTimer(b.batchInterval)
 		timer.Stop()
 
@@ -57,23 +62,23 @@ func (b *Client) Start(ctx context.Context) {
 			case <-b.shutdownChan:
 				b.flush(batch)
 				return
-			case event := <-b.messageBuffer:
+			case msg := <-b.messageBuffer:
 				if len(batch) == 0 {
 					timer.Reset(b.batchInterval)
 				}
 
-				batch = append(batch, event)
+				batch = append(batch, msg)
 
 				if len(batch) >= b.batchSize {
 					batchToSend := batch
-					batch = make([]*chipingress.CloudEventPb, 0, b.batchSize)
+					batch = make([]*messageWithCallback, 0, b.batchSize)
 					timer.Stop()
 					b.sendBatch(ctx, batchToSend)
 				}
 			case <-timer.C:
 				if len(batch) > 0 {
 					batchToSend := batch
-					batch = make([]*chipingress.CloudEventPb, 0, b.batchSize)
+					batch = make([]*messageWithCallback, 0, b.batchSize)
 					b.sendBatch(ctx, batchToSend)
 				}
 			}
@@ -89,24 +94,32 @@ func (b *Client) Stop() {
 	}
 }
 
-// QueueMessage queues a single message to the batch client.
+// QueueMessage queues a single message to the batch client with an optional callback.
+// The callback will be invoked after the batch containing this message is sent.
+// The callback receives an error parameter (nil on success).
+// Callbacks are invoked from goroutines
 // Returns immediately with no blocking - drops message if channel is full.
 // Returns true if message was queued, false if it was dropped.
-func (b *Client) QueueMessage(event *chipingress.CloudEventPb) bool {
+func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(error)) bool {
 	if event == nil {
 		return false
 	}
 
+	msg := &messageWithCallback{
+		event:    event,
+		callback: callback,
+	}
+
 	select {
-	case b.messageBuffer <- event:
+	case b.messageBuffer <- msg:
 		return true
 	default:
 		return false
 	}
 }
 
-func (b *Client) sendBatch(ctx context.Context, events []*chipingress.CloudEventPb) {
-	if len(events) == 0 {
+func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback) {
+	if len(messages) == 0 {
 		return
 	}
 
@@ -118,14 +131,26 @@ func (b *Client) sendBatch(ctx context.Context, events []*chipingress.CloudEvent
 		ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
 		defer cancel()
 
+		events := make([]*chipingress.CloudEventPb, len(messages))
+		for i, msg := range messages {
+			events[i] = msg.event
+		}
+
 		_, err := b.client.PublishBatch(ctxTimeout, &chipingress.CloudEventBatch{Events: events})
-		if err != nil {
+		if err != nil && b.log != nil {
 			b.log.Errorw("failed to publish batch", "error", err)
+		}
+
+		// Invoke callbacks for all messages in the batch
+		for _, msg := range messages {
+			if msg.callback != nil {
+				msg.callback(err)
+			}
 		}
 	}()
 }
 
-func (b *Client) flush(batch []*chipingress.CloudEventPb) {
+func (b *Client) flush(batch []*messageWithCallback) {
 	if len(batch) == 0 {
 		return
 	}
@@ -162,6 +187,12 @@ func WithCompressionType(compressionType string) Opt {
 
 func WithMessageBuffer(messageBufferSize int) Opt {
 	return func(c *Client) {
-		c.messageBuffer = make(chan *chipingress.CloudEventPb, messageBufferSize)
+		c.messageBuffer = make(chan *messageWithCallback, messageBufferSize)
+	}
+}
+
+func WithLogger(log *zap.SugaredLogger) Opt {
+	return func(c *Client) {
+		c.log = log
 	}
 }

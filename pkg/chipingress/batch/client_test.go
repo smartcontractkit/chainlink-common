@@ -63,14 +63,14 @@ func TestQueueMessage(t *testing.T) {
 			Type:   "test.event.type",
 		}
 
-		client.QueueMessage(event)
+		client.QueueMessage(event, nil)
 
 		assert.Len(t, client.messageBuffer, 1)
 
 		received := <-client.messageBuffer
-		assert.Equal(t, event.Id, received.Id)
-		assert.Equal(t, event.Source, received.Source)
-		assert.Equal(t, event.Type, received.Type)
+		assert.Equal(t, event.Id, received.event.Id)
+		assert.Equal(t, event.Source, received.event.Source)
+		assert.Equal(t, event.Type, received.event.Type)
 	})
 
 	t.Run("drops message if buffer is full", func(t *testing.T) {
@@ -84,22 +84,22 @@ func TestQueueMessage(t *testing.T) {
 			Type:   "test.event.type",
 		}
 
-		client.QueueMessage(event)
-		client.QueueMessage(event)
+		client.QueueMessage(event, nil)
+		client.QueueMessage(event, nil)
 
 		assert.Len(t, client.messageBuffer, 1)
 
 		received := <-client.messageBuffer
-		assert.Equal(t, event.Id, received.Id)
-		assert.Equal(t, event.Source, received.Source)
-		assert.Equal(t, event.Type, received.Type)
+		assert.Equal(t, event.Id, received.event.Id)
+		assert.Equal(t, event.Source, received.event.Source)
+		assert.Equal(t, event.Type, received.event.Type)
 	})
 
 	t.Run("handles nil event", func(t *testing.T) {
 		client, err := NewBatchClient(nil, WithMessageBuffer(5))
 		require.NoError(t, err)
 
-		client.QueueMessage(nil)
+		client.QueueMessage(nil, nil)
 		assert.Empty(t, client.messageBuffer)
 	})
 }
@@ -126,13 +126,13 @@ func TestSendBatch(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
 
-		events := []*chipingress.CloudEventPb{
-			{Id: "test-id-1", Source: "test-source", Type: "test.event.type"},
-			{Id: "test-id-2", Source: "test-source", Type: "test.event.type"},
-			{Id: "test-id-3", Source: "test-source", Type: "test.event.type"},
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}},
+			{event: &chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}},
+			{event: &chipingress.CloudEventPb{Id: "test-id-3", Source: "test-source", Type: "test.event.type"}},
 		}
 
-		client.sendBatch(t.Context(), events)
+		client.sendBatch(t.Context(), messages)
 
 		// wait for the internal goroutine to complete
 		select {
@@ -150,7 +150,7 @@ func TestSendBatch(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
 
-		client.sendBatch(t.Context(), []*chipingress.CloudEventPb{})
+		client.sendBatch(t.Context(), []*messageWithCallback{})
 
 		mockClient.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
 	})
@@ -175,15 +175,15 @@ func TestSendBatch(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
 
-		batch1 := []*chipingress.CloudEventPb{
-			{Id: "batch1-id-1", Source: "test-source", Type: "test.event.type"},
+		batch1 := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "batch1-id-1", Source: "test-source", Type: "test.event.type"}},
 		}
-		batch2 := []*chipingress.CloudEventPb{
-			{Id: "batch2-id-1", Source: "test-source", Type: "test.event.type"},
-			{Id: "batch2-id-2", Source: "test-source", Type: "test.event.type"},
+		batch2 := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "batch2-id-1", Source: "test-source", Type: "test.event.type"}},
+			{event: &chipingress.CloudEventPb{Id: "batch2-id-2", Source: "test-source", Type: "test.event.type"}},
 		}
-		batch3 := []*chipingress.CloudEventPb{
-			{Id: "batch3-id-1", Source: "test-source", Type: "test.event.type"},
+		batch3 := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "batch3-id-1", Source: "test-source", Type: "test.event.type"}},
 		}
 
 		client.sendBatch(context.Background(), batch1)
@@ -228,9 +228,9 @@ func TestStart(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"})
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"})
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-3", Source: "test-source", Type: "test.event.type"})
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-3", Source: "test-source", Type: "test.event.type"}, nil)
 
 		select {
 		case <-done:
@@ -266,8 +266,8 @@ func TestStart(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"})
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"})
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 
 		select {
 		case <-done:
@@ -304,8 +304,8 @@ func TestStart(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"})
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"})
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 
 		time.Sleep(10 * time.Millisecond)
 
@@ -342,8 +342,8 @@ func TestStart(t *testing.T) {
 
 		client.Start(t.Context())
 
-		queued1 := client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"})
-		queued2 := client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"})
+		queued1 := client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		queued2 := client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 		require.True(t, queued1)
 		require.True(t, queued2)
 
@@ -410,13 +410,396 @@ func TestStart(t *testing.T) {
 				Id:     "test-id-" + strconv.Itoa(i),
 				Source: "test-source",
 				Type:   "test.event.type",
-			})
+			}, nil)
 		}
 
 		select {
 		case <-done:
 		case <-time.After(time.Second):
 			t.Fatal("timeout waiting for multiple batches to be sent")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestCallbacks(t *testing.T) {
+	t.Run("callback invoked on successful send", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, 1)
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 1 &&
+						batch.Events[0].Id == "test-id-1"
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(1))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callbackDone <- err
+		})
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch to be sent")
+		}
+
+		// wait for callback
+		select {
+		case err := <-callbackDone:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("callback receives error on failed send", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, 1)
+		expectedErr := assert.AnError
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 1 &&
+						batch.Events[0].Id == "test-id-1"
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, expectedErr).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(1))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callbackDone <- err
+		})
+
+		// wait for batch to be sent
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch to be sent")
+		}
+
+		// wait for callback to be invoked with error
+		select {
+		case err := <-callbackDone:
+			assert.Error(t, err)
+			assert.Equal(t, expectedErr, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("nil callback works without panic", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 1 &&
+						batch.Events[0].Id == "test-id-1"
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(1))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		// Queue message with nil callback - should not panic
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, nil)
+
+		// wait for batch to be sent
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch to be sent")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("multiple messages with different callbacks", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callback1Done := make(chan error, 1)
+		callback2Done := make(chan error, 1)
+		callback3Done := make(chan error, 1)
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 3
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(3))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callback1Done <- err
+		})
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-2",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callback2Done <- err
+		})
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-3",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callback3Done <- err
+		})
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch to be sent")
+		}
+
+		select {
+		case err := <-callback1Done:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback 1")
+		}
+
+		select {
+		case err := <-callback2Done:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback 2")
+		}
+
+		select {
+		case err := <-callback3Done:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback 3")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("callback invoked for timeout-triggered batch", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, 1)
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 1 &&
+						batch.Events[0].Id == "test-id-1"
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(50*time.Millisecond))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callbackDone <- err
+		})
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch to be sent")
+		}
+
+		// wait for callback
+		select {
+		case err := <-callbackDone:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("callback invoked for size-triggered batch", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, 1)
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 2
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchTimeout(5*time.Second))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, nil)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-2",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callbackDone <- err
+		})
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch to be sent")
+		}
+
+		select {
+		case err := <-callbackDone:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
+		}
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("callbacks invoked on context cancellation", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, 1)
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) == 1 &&
+						batch.Events[0].Id == "test-id-1"
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(5*time.Second))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+
+		client.Start(ctx)
+
+		client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, func(err error) {
+			callbackDone <- err
+		})
+
+		time.Sleep(10 * time.Millisecond)
+
+		// cancel context to trigger flush
+		cancel()
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for flush on cancellation")
+		}
+
+		select {
+		case err := <-callbackDone:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
 		}
 
 		mockClient.AssertExpectations(t)

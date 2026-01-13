@@ -128,6 +128,7 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
 
+		// this is specifically to prevent long running network calls
 		ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
 		defer cancel()
 
@@ -141,12 +142,18 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			b.log.Errorw("failed to publish batch", "error", err)
 		}
 
-		// Invoke callbacks for all messages in the batch
-		for _, msg := range messages {
-			if msg.callback != nil {
-				msg.callback(err)
+		go func() {
+			for _, msg := range messages {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if msg.callback != nil {
+						msg.callback(err)
+					}
+				}
 			}
-		}
+		}()
 	}()
 }
 

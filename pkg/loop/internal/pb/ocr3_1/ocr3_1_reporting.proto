@@ -1,0 +1,213 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3_1;ocr3_1pb";
+
+package loop.internal.pb.ocr3_1;
+
+import "google/protobuf/empty.proto";
+
+service ReportingPluginFactory {
+  rpc NewReportingPlugin (NewReportingPluginRequest) returns (NewReportingPluginReply) {}
+}
+
+message NewReportingPluginRequest {
+  ReportingPluginConfig reportingPluginConfig = 1;
+}
+
+message NewReportingPluginReply {
+  uint32 reportingPluginID = 1;
+  ReportingPluginInfo reportingPluginInfo = 2;
+}
+
+message ReportingPluginConfig {
+  bytes configDigest = 1;
+  uint32 oracleID = 2;
+  uint32 n = 3;
+  uint32 f = 4;
+  bytes onchainConfig = 5;
+  bytes offchainConfig = 6;
+  int64 estimatedRoundInterval = 7;
+  int64 maxDurationQuery = 8;
+  int64 maxDurationObservation = 9;
+  int64 MaxDurationShouldAcceptAttestedReport = 10;
+  int64 MaxDurationShouldTransmitAcceptedReport = 11;
+
+}
+
+message ReportingPluginLimits {
+  uint64 maxQueryLength = 1;
+  uint64 maxObservationLength = 2;
+  uint64 MaxReportLength = 3;
+  uint64 MaxReportCount = 4;
+}
+
+message ReportingPluginInfo {
+  string name = 1;
+  ReportingPluginLimits reportingPluginLimits = 2;
+}
+
+
+service ReportingPlugin {
+  rpc Query(QueryRequest) returns (QueryReply) {}
+  rpc Observation(ObservationRequest)returns (ObservationReply) {}
+  rpc ValidateObservation(ValidateObservationRequest) returns (google.protobuf.Empty) {}
+  rpc ObservationQuorum(ObservationQuorumRequest) returns (ObservationQuorumReply) {}
+  rpc StateTransition(StateTransitionRequest) returns (StateTransitionReply) {}
+  rpc Committed(CommittedRequest) returns (google.protobuf.Empty) {}
+  rpc Reports(ReportsRequest)returns (ReportsReply) {}
+  rpc ShouldAcceptAttestedReport(ShouldAcceptAttestedReportRequest) returns (ShouldAcceptAttestedReportReply) {}
+  rpc ShouldTransmitAcceptedReport(ShouldTransmitAcceptedReportRequest) returns (ShouldTransmitAcceptedReportReply) {}
+  rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+  rpc KeyValueStateRead(KeyValueStateReadRequest) returns (KeyValueStateReadReply) {}
+  rpc KeyValueStateWrite(KeyValueStateWriteRequest) returns (google.protobuf.Empty) {}
+  rpc KeyValueStateDelete(KeyValueStateDeleteRequest) returns (google.protobuf.Empty) {}
+
+  rpc BroadcastBlob(BroadcastBlobRequest) returns (BroadcastBlobReply) {} // here how to implement these to pass blob handle etc
+  rpc FetchBlob(FetchBlobRequest) returns (FetchBlobReply)  {}  // here how to implement these to pass blob handle etc
+}
+
+// TODO the blob cannot be constructed outside of libocr right now, need to modify libocr to allow to support cross process blob-handles
+message FetchBlobRequest {
+  bytes blobHandle = 1;
+}
+
+message FetchBlobReply {
+  bytes payload = 1;
+}
+
+message BroadcastBlobRequest {
+  bytes payload = 1;
+  uint64 blobExpirationHint = 2;
+}
+
+message BroadcastBlobReply {
+  bytes blobHandle = 1;
+}
+
+message KeyValueStateReadRequest {
+  string keyValueStateReaderID = 1;
+  bytes key = 2;
+}
+
+message KeyValueStateWriteRequest {
+  string keyValueStateReaderID = 1;
+  bytes key = 2;
+  bytes value = 3;
+}
+
+message KeyValueStateDeleteRequest {
+  string keyValueStateReaderID = 1;
+  bytes key = 2;
+}
+
+message KeyValueStateReadReply {
+  bytes value = 1;
+}
+
+message QueryRequest {
+  string keyValueStateReaderID = 1;
+  uint64 seqNr=2;
+
+}
+
+message AttributedQuery{
+  bytes query=1;
+  uint32 oracleID=2;
+}
+
+message AttributedObservation{
+  bytes observation=1;
+  uint32 oracleID=2;
+}
+
+
+message QueryReply {
+  bytes query =1;
+}
+
+message ObservationRequest {
+  string keyValueStateReaderID = 1;
+  uint64 seqNr=2;
+  AttributedQuery query=3;
+}
+
+message ObservationReply {
+  bytes observation=1;
+}
+
+message ValidateObservationRequest{
+  string keyValueStateReaderID = 1;
+  uint64 seqNr=2;
+  AttributedQuery query=3;
+  AttributedObservation observation=4;
+}
+
+message ObservationQuorumRequest {
+  string keyValueStateReaderID = 1;
+  uint64 seqNr=2;
+  AttributedQuery query=3;
+  repeated AttributedObservation observations=4;
+}
+
+message ObservationQuorumReply {
+  bool quorumReached=1;
+}
+
+message StateTransitionRequest{
+  string keyValueStateReaderID = 1;
+  uint64 seqNr=2;
+  AttributedQuery query=3;
+  repeated AttributedObservation observation=4;
+}
+
+message StateTransitionReply{
+ bytes outcome=1;
+}
+
+message CommittedRequest{
+  string keyValueStateReaderID = 1;
+  uint64 seqNr=2;
+}
+
+message ReportsRequest{
+ uint64 seqNr=1;
+ bytes outcome=2;
+}
+
+message ReportsReply{
+ repeated ReportPlus reportPlus=1;
+}
+
+message ReportPlus{
+  ReportWithInfo reportWithInfo=1;
+  TransmissionSchedule transmissionScheduleOverride=2;
+}
+
+message ReportWithInfo{
+  bytes report=1;
+  bytes info=2;
+}
+
+message TransmissionSchedule{
+  repeated uint32 transmitters=1; // OracleID
+  repeated int64 transmissionDelays=2;
+}
+
+message ShouldAcceptAttestedReportRequest{
+  uint64  segNr=1;
+  ReportWithInfo ri=2;
+}
+
+message ShouldAcceptAttestedReportReply{
+  bool shouldAccept=1;
+}
+
+message ShouldTransmitAcceptedReportRequest{
+  uint64  segNr=1;
+  ReportWithInfo ri=2;
+}
+
+message ShouldTransmitAcceptedReportReply{
+  bool shouldTransmit=1;
+}

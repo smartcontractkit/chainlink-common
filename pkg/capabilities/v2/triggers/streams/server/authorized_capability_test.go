@@ -260,4 +260,3 @@ func (m *mockStreamsCapability) Ready() error {
 func (m *mockStreamsCapability) Initialise(ctx context.Context, deps core.StandardCapabilitiesDependencies) error {
 	return nil
 }
-

@@ -152,6 +152,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
+	// Record beholder config as a metric
+	if err := beholderConfigMetric(meter, cfg); err != nil {
+		return nil, err
+	}
+
 	// Shared log exporter for both logger and message emitter
 	logOpts, err := newLoggerOpts(cfg, auth, creds, meterProvider, tracerProvider)
 	if err != nil {
@@ -341,6 +346,49 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 	return
+}
+
+// beholderConfigMetric creates a configuration info metric with Beholder settings as attributes.
+func beholderConfigMetric(meter otelmetric.Meter, cfg Config) error {
+	configGauge, err := meter.Int64Gauge(
+		"beholder.config.info",
+		otelmetric.WithDescription("Beholder SDK config info metric"),
+		otelmetric.WithUnit("{info}"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create beholder config info metric: %w", err)
+	}
+
+	configAttrs := []attribute.KeyValue{
+		// Logging config
+		attribute.Bool("log_streaming_enabled", cfg.LogStreamingEnabled),
+		attribute.String("log_level", cfg.LogLevel.String()),
+		attribute.Bool("log_batch_processor", cfg.LogBatchProcessor),
+		attribute.String("log_export_interval", cfg.LogExportInterval.String()),
+		attribute.Int("log_export_max_batch_size", cfg.LogExportMaxBatchSize),
+		attribute.Int("log_max_queue_size", cfg.LogMaxQueueSize),
+		attribute.String("log_compressor", cfg.LogCompressor),
+
+		// Message emitter config
+		attribute.Bool("chip_ingress_enabled", cfg.ChipIngressEmitterEnabled),
+		attribute.Bool("emitter_batch_processor", cfg.EmitterBatchProcessor),
+		attribute.String("emitter_export_interval", cfg.EmitterExportInterval.String()),
+		attribute.Int("emitter_export_max_batch_size", cfg.EmitterExportMaxBatchSize),
+		attribute.Int("emitter_max_queue_size", cfg.EmitterMaxQueueSize),
+
+		// Tracing config
+		attribute.Float64("trace_sample_ratio", cfg.TraceSampleRatio),
+		attribute.String("trace_batch_timeout", cfg.TraceBatchTimeout.String()),
+		attribute.String("trace_compressor", cfg.TraceCompressor),
+
+		// Metrics config
+		attribute.String("metric_reader_interval", cfg.MetricReaderInterval.String()),
+		attribute.String("metric_compressor", cfg.MetricCompressor),
+	}
+
+	configGauge.Record(context.Background(), 1, otelmetric.WithAttributes(configAttrs...))
+
+	return nil
 }
 
 type shutdowner interface {

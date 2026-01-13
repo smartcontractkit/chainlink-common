@@ -7,7 +7,6 @@ import (
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -110,7 +111,7 @@ func SEC1ToASN1PublicKey(sec1PubKey []byte) ([]byte, error) {
 	// Create the public key as a BitString
 	// KMS includes the 0x04 prefix in the BitString (65 bytes: 0x04 || X || Y)
 	// This matches the SEC1 uncompressed format
-	pubKeyBytes := append([]byte{0x04}, append(x, y...)...)
+	pubKeyBytes := slices.Concat([]byte{0x04}, x, y)
 
 	// OID for ecPublicKey: 1.2.840.10045.2.1
 	ecPublicKeyOID := asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}

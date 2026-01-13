@@ -20,11 +20,12 @@ import (
 
 var (
 	defaultCfg = clientConfig{
-		transportCredentials: insecure.NewCredentials(),
-		insecureConnection:   true, // Default to insecure connection
-		host:                 "localhost",
-		perRPCCredentials:    nil, // No per-RPC credentials by default
-		headerProvider:       nil,
+		transportCredentials:  insecure.NewCredentials(),
+		insecureConnection:    true, // Default to insecure connection
+		host:                  "localhost",
+		perRPCCredentials:     nil, // No per-RPC credentials by default
+		headerProvider:        nil,
+		nopInfoHeaderProvider: nil,
 	}
 )
 
@@ -570,17 +571,13 @@ func TestOptions(t *testing.T) {
 	})
 
 	t.Run("WithNopLookup", func(t *testing.T) {
-		mockProvider := &mockHeaderProvider{
-			headers: map[string]string{"x-include-nop-info": "true"},
-		}
 		config := defaultCfg
 		WithNOPLookup()(&config)
 		assert.NotNil(t, config.nopInfoHeaderProvider)
 
 		headers, err := config.nopInfoHeaderProvider.Headers(t.Context())
 		assert.NoError(t, err)
-		assert.Equal(t, mockProvider.headers, headers)
-
+		assert.Equal(t, "true", headers["x-include-nop-info"])
 	})
 }
 

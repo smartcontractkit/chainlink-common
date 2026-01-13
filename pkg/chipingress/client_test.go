@@ -16,6 +16,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -35,7 +36,7 @@ func TestClient(t *testing.T) {
 		// Create new client
 		client, err := NewClient("localhost:8080",
 			WithTransportCredentials(insecure.NewCredentials()))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, client)
 	})
 
@@ -54,7 +55,7 @@ func TestClient(t *testing.T) {
 
 	t.Run("valid address with port", func(t *testing.T) {
 		client, err := NewClient("localhost:8080")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, client)
 	})
 
@@ -67,11 +68,11 @@ func TestClient(t *testing.T) {
 
 		// Test Close returns no error
 		err := client.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Test Ping returns success
 		pingResp, err := client.Ping(context.Background(), &pb.EmptyRequest{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, pingResp)
 		assert.Equal(t, "pong", pingResp.Message)
 
@@ -80,7 +81,7 @@ func TestClient(t *testing.T) {
 			{Subject: "test", Schema: `{"test":"value"}`, Format: 1},
 		}
 		result, err := client.RegisterSchemas(context.Background(), schemas...)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Empty(t, result)
 	})
@@ -98,14 +99,14 @@ func TestNewEvent(t *testing.T) {
 		"subject":         "example-subject",
 		"time":            time.Now().Add(-5 * time.Second),
 	}
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes, attributes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// There should be no validation errors
 	err = event.Validate()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Assert fields were set as expected
 	assert.Equal(t, "some-domain_here", event.Source())
@@ -121,7 +122,7 @@ func TestNewEvent(t *testing.T) {
 	// Assert the event data was set as expected
 	var resultProto pb.PingResponse
 	err = proto.Unmarshal(event.Data(), &resultProto)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, testProto.Message, resultProto.Message)
 }
 
@@ -129,15 +130,15 @@ func TestEventToProto(t *testing.T) {
 	// Create a test protobuf message
 	testProto := pb.PingResponse{Message: "test message"}
 	protoBytes, err := proto.Marshal(&testProto)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	t.Run("successful conversion", func(t *testing.T) {
 		// Create a CloudEvent
 		event, err := NewEvent("test-domain", "test.event.type", protoBytes, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto
 		eventPb, err := EventToProto(event)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, eventPb)
 
 		// Verify the converted protobuf event has the expected fields
@@ -155,12 +156,12 @@ func TestEventToProto(t *testing.T) {
 		}
 
 		event, err := NewEvent("test-domain", "test.event.type", protoBytes, attributes)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto
 		eventPb, err := EventToProto(event)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, eventPb)
 
 		// Verify the converted protobuf event has the expected fields
@@ -172,7 +173,7 @@ func TestEventToProto(t *testing.T) {
 		assert.NotNil(t, eventPb.Attributes["dataschema"])
 
 		eventFromPb, err := ProtoToEvent(eventPb)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, eventFromPb)
 
 		// Verify attributes were preserved
@@ -184,11 +185,11 @@ func TestEventToProto(t *testing.T) {
 	t.Run("conversion preserves extensions", func(t *testing.T) {
 		// Create event which should have recordedtime extension
 		event, err := NewEvent("test-domain", "test.event.type", protoBytes, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto
 		eventPb, err := EventToProto(event)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, eventPb)
 
 		// Verify extensions are present
@@ -203,11 +204,11 @@ func TestEventToProto(t *testing.T) {
 	t.Run("conversion with empty data", func(t *testing.T) {
 		// Create event with empty data
 		event, err := NewEvent("test-domain", "test.event.type", []byte{}, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto
 		eventPb, err := EventToProto(event)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, eventPb)
 
 		// Verify basic fields are still set
@@ -221,21 +222,21 @@ func TestProtoToEvent(t *testing.T) {
 	// Create a test protobuf message
 	testProto := pb.PingResponse{Message: "test message for proto conversion"}
 	protoBytes, err := proto.Marshal(&testProto)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("successful conversion from protobuf", func(t *testing.T) {
 		// First create a CloudEvent and convert to proto
 		originalEvent, err := NewEvent("test-domain", "test.event.type", protoBytes, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto
 		eventPb, err := EventToProto(originalEvent)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, eventPb)
 
 		// Now test ProtoToEvent conversion back
 		convertedEvent, err := ProtoToEvent(eventPb)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, convertedEvent)
 
 		// Verify the converted event has the expected fields
@@ -247,7 +248,7 @@ func TestProtoToEvent(t *testing.T) {
 		// Verify the data can be unmarshaled back to the original proto
 		var resultProto pb.PingResponse
 		err = proto.Unmarshal(convertedEvent.Data(), &resultProto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testProto.Message, resultProto.Message)
 	})
 
@@ -259,14 +260,14 @@ func TestProtoToEvent(t *testing.T) {
 		}
 
 		originalEvent, err := NewEvent("test-domain", "test.event.type", protoBytes, attributes)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto and back
 		eventPb, err := EventToProto(originalEvent)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		convertedEvent, err := ProtoToEvent(eventPb)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, convertedEvent)
 
 		// Verify all attributes were preserved
@@ -283,7 +284,7 @@ func TestProtoToEvent(t *testing.T) {
 	t.Run("conversion with nil protobuf event", func(t *testing.T) {
 		// Test with nil input
 		convertedEvent, err := ProtoToEvent(nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, CloudEvent{}, convertedEvent)
 		assert.Contains(t, err.Error(), "could not convert proto to event")
 	})
@@ -298,25 +299,25 @@ func TestProtoToEvent(t *testing.T) {
 			},
 		}
 		complexBytes, err := proto.Marshal(complexProto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Create original event
 		originalEvent, err := NewEvent("complex-domain", "complex.event.type", complexBytes, map[string]any{
 			"subject": "complex-subject",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto and back
 		eventPb, err := EventToProto(originalEvent)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		convertedEvent, err := ProtoToEvent(eventPb)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify data integrity
 		var resultProto pb.PublishResponse
 		err = proto.Unmarshal(convertedEvent.Data(), &resultProto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, resultProto.Results, 3)
 		assert.Equal(t, "event-1", resultProto.Results[0].EventId)
 		assert.Equal(t, "event-2", resultProto.Results[1].EventId)
@@ -331,14 +332,14 @@ func TestProtoToEvent(t *testing.T) {
 	t.Run("conversion with empty data", func(t *testing.T) {
 		// Create event with empty data
 		originalEvent, err := NewEvent("empty-domain", "empty.event.type", []byte{}, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Convert to proto and back
 		eventPb, err := EventToProto(originalEvent)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		convertedEvent, err := ProtoToEvent(eventPb)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, convertedEvent)
 
 		// Verify basic fields are preserved
@@ -353,25 +354,25 @@ func TestEventsToBatch(t *testing.T) {
 	testProto1 := pb.PingResponse{Message: "test message 1"}
 	testProto2 := pb.PingResponse{Message: "test message 2"}
 	protoBytes1, err := proto.Marshal(&testProto1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	protoBytes2, err := proto.Marshal(&testProto2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("successful batch conversion with multiple events", func(t *testing.T) {
 		// Create multiple CloudEvents
 		event1, err := NewEvent("domain1", "type1", protoBytes1, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		event2, err := NewEvent("domain2", "type2", protoBytes2, map[string]any{
 			"subject": "test-subject",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		events := []CloudEvent{event1, event2}
 
 		// Convert to batch
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
 		assert.Len(t, batch.Events, 2)
 
@@ -389,12 +390,12 @@ func TestEventsToBatch(t *testing.T) {
 
 	t.Run("batch conversion with single event", func(t *testing.T) {
 		event, err := NewEvent("single-domain", "single-type", protoBytes1, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		events := []CloudEvent{event}
 
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
 		assert.Len(t, batch.Events, 1)
 
@@ -408,9 +409,9 @@ func TestEventsToBatch(t *testing.T) {
 		events := []CloudEvent{}
 
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
-		assert.Len(t, batch.Events, 0)
+		assert.Empty(t, batch.Events)
 	})
 
 	t.Run("batch conversion preserves event data", func(t *testing.T) {
@@ -422,38 +423,38 @@ func TestEventsToBatch(t *testing.T) {
 			},
 		}
 		complexBytes, err := proto.Marshal(complexProto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		event1, err := NewEvent("data-domain1", "data-type1", protoBytes1, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		event2, err := NewEvent("data-domain2", "data-type2", complexBytes, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		events := []CloudEvent{event1, event2}
 
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
 		assert.Len(t, batch.Events, 2)
 
 		// Convert protobuf events back to CloudEvents to verify data
 		convertedEvent1, err := ProtoToEvent(batch.Events[0])
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		convertedEvent2, err := ProtoToEvent(batch.Events[1])
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify first event data can be unmarshaled
 		var resultProto1 pb.PingResponse
 		err = proto.Unmarshal(convertedEvent1.Data(), &resultProto1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testProto1.Message, resultProto1.Message)
 
 		// Verify second event data can be unmarshaled
 		var resultProto2 pb.PublishResponse
 		err = proto.Unmarshal(convertedEvent2.Data(), &resultProto2)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, resultProto2.Results, 2)
 		assert.Equal(t, "batch-event-1", resultProto2.Results[0].EventId)
 		assert.Equal(t, "batch-event-2", resultProto2.Results[1].EventId)
@@ -463,9 +464,9 @@ func TestEventsToBatch(t *testing.T) {
 		var events []CloudEvent
 
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
-		assert.Len(t, batch.Events, 0)
+		assert.Empty(t, batch.Events)
 	})
 
 	t.Run("batch conversion preserves all event attributes", func(t *testing.T) {
@@ -481,15 +482,15 @@ func TestEventsToBatch(t *testing.T) {
 		}
 
 		event1, err := NewEvent("attr-domain1", "attr-type1", protoBytes1, attributes1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		event2, err := NewEvent("attr-domain2", "attr-type2", protoBytes2, attributes2)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		events := []CloudEvent{event1, event2}
 
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
 		assert.Len(t, batch.Events, 2)
 
@@ -518,12 +519,12 @@ func TestEventsToBatch(t *testing.T) {
 					"subject": fmt.Sprintf("subject-%d", i),
 				},
 			)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			events[i] = event
 		}
 
 		batch, err := EventsToBatch(events)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, batch)
 		assert.Len(t, batch.Events, numEvents)
 
@@ -576,7 +577,7 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, config.nopInfoHeaderProvider)
 
 		headers, err := config.nopInfoHeaderProvider.Headers(t.Context())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "true", headers["x-include-nop-info"])
 	})
 }
@@ -603,7 +604,7 @@ func TestHeaderInterceptor(t *testing.T) {
 
 	// Call the interceptor
 	err := interceptor(t.Context(), "testMethod", nil, nil, nil, mockInvoker)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Extract metadata from context and verify headers were added
 	md, ok := metadata.FromOutgoingContext(capturedCtx)
@@ -688,7 +689,7 @@ func TestClient_RegisterSchemas(t *testing.T) {
 		}
 
 		result, err := client.RegisterSchemas(context.Background(), schemas...)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, map[string]int{"schema1": 1, "schema2": 2}, result)
 	})
 

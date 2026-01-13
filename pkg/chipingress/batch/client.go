@@ -147,6 +147,8 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 				select {
 				case <-ctx.Done():
 					return
+				case <-b.shutdownChan:
+					return
 				default:
 					if msg.callback != nil {
 						msg.callback(err)

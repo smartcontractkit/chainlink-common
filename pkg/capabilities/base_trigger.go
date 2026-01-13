@@ -116,12 +116,6 @@ func (b *BaseTriggerCapability) DeliverEvent(
 	te TriggerEvent,
 	workflowIds []string,
 ) error {
-	/*
-	 Base Trigger Capability can interact with the Don2Don layer (in the remote capability setting)
-	 as well as directly with a consumer (in the local setting).
-	*/
-	now := time.Now()
-
 	for _, workflowId := range workflowIds {
 		rec := PendingEvent{
 			TriggerId:  te.TriggerType,
@@ -129,7 +123,7 @@ func (b *BaseTriggerCapability) DeliverEvent(
 			EventId:    te.ID,
 			AnyTypeURL: te.Payload.GetTypeUrl(),
 			Payload:    te.Payload.GetValue(),
-			FirstAt:    now,
+			FirstAt:    time.Now(),
 		}
 
 		if err := b.store.Insert(ctx, rec); err != nil {

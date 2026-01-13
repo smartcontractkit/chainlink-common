@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -58,7 +59,7 @@ func (p *sendProbe) fn(ctx context.Context, te TriggerEvent, workflowId string) 
 	// Optionally fail some sends
 	if atomic.LoadInt32(&p.failFirstN) > 0 {
 		atomic.AddInt32(&p.failFirstN, -1)
-		return assertErr // sentinel below
+		return fmt.Errorf("test error")
 	}
 	p.mu.Lock()
 	p.calls = append(p.calls, struct {
@@ -74,12 +75,6 @@ func (p *sendProbe) count() int {
 	defer p.mu.Unlock()
 	return len(p.calls)
 }
-
-var assertErr = &temporaryError{"boom"}
-
-type temporaryError struct{ s string }
-
-func (e *temporaryError) Error() string { return e.s }
 
 // lost hook probe
 type lostProbe struct {
@@ -107,7 +102,6 @@ func newBase(t *testing.T, store EventStore, send OutboundSend, lost LostHook) *
 		store:       store,
 		send:        send,
 		lost:        lost,
-		// lggr:     your test logger if desired
 	}
 	return b
 }
@@ -139,7 +133,7 @@ func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, b.Start(ctx))
-	t.Cleanup(func() { b.cancel(); b.wg.Wait() })
+	t.Cleanup(func() { b.Stop() })
 
 	// Initial send triggered on Start
 	require.Eventually(t, func() bool { return probe.count() >= 1 }, 200*time.Millisecond, 5*time.Millisecond)
@@ -154,14 +148,14 @@ func TestDeliverEvent_PersistsAndSends(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, b.Start(ctx))
-	t.Cleanup(func() { b.cancel(); b.wg.Wait() })
+	t.Cleanup(func() { b.Stop() })
 
 	te := TriggerEvent{
 		TriggerType: "trigB",
 		ID:          "e2",
 		Payload:     &anypb.Any{TypeUrl: "type.googleapis.com/thing", Value: []byte("x")},
 	}
-	require.NoError(t, b.deliverEvent(ctx, te, []string{"wf1", "wf2"}))
+	require.NoError(t, b.DeliverEvent(ctx, te, []string{"wf1", "wf2"}))
 
 	// Persisted twice (two workflows)
 	recs, _ := store.List(ctx)
@@ -180,14 +174,14 @@ func TestAckEvent_StopsRetransmit(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, b.Start(ctx))
-	t.Cleanup(func() { b.cancel(); b.wg.Wait() })
+	t.Cleanup(func() { b.Stop() })
 
 	te := TriggerEvent{
 		TriggerType: "trigC",
 		ID:          "e3",
 		Payload:     &anypb.Any{TypeUrl: "type.googleapis.com/thing", Value: []byte("x")},
 	}
-	require.NoError(t, b.deliverEvent(ctx, te, []string{"wf1"}))
+	require.NoError(t, b.DeliverEvent(ctx, te, []string{"wf1"}))
 	require.Eventually(t, func() bool { return probe.count() >= 1 }, 200*time.Millisecond, 5*time.Millisecond)
 
 	// Ack and ensure no more sends occur after a couple of retransmit periods
@@ -203,7 +197,6 @@ func TestRetryThenLost_AfterTmax(t *testing.T) {
 	lostp := &lostProbe{}
 	b := newBase(t, store, probe.fn, lostp.fn)
 
-	// tighten timers for the test
 	b.tRetransmit = 20 * time.Millisecond
 	b.tMax = 80 * time.Millisecond
 
@@ -211,17 +204,18 @@ func TestRetryThenLost_AfterTmax(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, b.Start(ctx))
-	t.Cleanup(func() { b.cancel(); b.wg.Wait() })
+	t.Cleanup(func() { b.Stop() })
 
 	te := TriggerEvent{
 		TriggerType: "trigD",
 		ID:          "e4",
 		Payload:     &anypb.Any{TypeUrl: "type.googleapis.com/thing", Value: []byte("x")},
 	}
-	require.NoError(t, b.deliverEvent(ctx, te, []string{"wf1"}))
+	require.NoError(t, b.DeliverEvent(ctx, te, []string{"wf1"}))
 
 	// Should attempt several sends, then mark lost and delete from store
 	require.Eventually(t, func() bool { return lostp.count() >= 1 }, 500*time.Millisecond, 5*time.Millisecond)
+	require.True(t, probe.count() == 0)
 
 	// Ensure the record is gone from the store after lost
 	recs, _ := store.List(ctx)
@@ -237,7 +231,7 @@ func TestTrySendErrorIsIgnoredByCallSites(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, b.Start(ctx))
-	t.Cleanup(func() { b.cancel(); b.wg.Wait() })
+	t.Cleanup(func() { b.Stop() })
 
 	te := TriggerEvent{
 		TriggerType: "trigE",
@@ -246,7 +240,7 @@ func TestTrySendErrorIsIgnoredByCallSites(t *testing.T) {
 	}
 	// deliverEvent should not return an error even if the first send fails;
 	// retransmitLoop will retry later.
-	require.NoError(t, b.deliverEvent(ctx, te, []string{"wf1"}))
+	require.NoError(t, b.DeliverEvent(ctx, te, []string{"wf1"}))
 
 	// Eventually should succeed on a subsequent attempt (after the first forced failure)
 	require.Eventually(t, func() bool { return probe.count() >= 1 }, 300*time.Millisecond, 5*time.Millisecond)

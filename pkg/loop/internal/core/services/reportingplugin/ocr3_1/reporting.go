@@ -11,9 +11,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/libocr/commontypes"
-	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3_1types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -127,47 +127,79 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 
 var _ ocr3_1types.ReportingPlugin[[]byte] = (*reportingPluginClient)(nil)
 
-type keyValueReaders struct {
-	keyValueReaders sync.Map
+type methodScopedStore[T any] struct {
+	store sync.Map
 }
 
-func newKeyValueReaders() *keyValueReaders {
-	return &keyValueReaders{keyValueReaders: sync.Map{}}
+func newMethodScopedStore[T any]() *methodScopedStore[T] {
+	return &methodScopedStore[T]{store: sync.Map{}}
 }
 
-func (kvr *keyValueReaders) Get(id string) ocr3_1types.KeyValueReader {
-	v, ok := kvr.keyValueReaders.Load(id)
+func (kvr *methodScopedStore[T]) Get(id string) T {
+	v, ok := kvr.store.Load(id)
 	if !ok {
-		return nil
+		var zero T
+		return zero
 	}
-	return v.(ocr3_1types.KeyValueReader)
+	return v.(T)
 }
 
-func (kvr *keyValueReaders) Put(kvr2 ocr3_1types.KeyValueReader) string {
+func (kvr *methodScopedStore[T]) Put(kvr2 T) string {
 	id := uuid.NewString()
-	kvr.keyValueReaders.Store(id, kvr2)
-
+	kvr.store.Store(id, kvr2)
 	return id
 }
 
-func (kvr *keyValueReaders) Delete(id string) {
-	kvr.keyValueReaders.Delete(id)
+func (kvr *methodScopedStore[T]) Delete(id string) {
+	kvr.store.Delete(id)
 }
 
 type reportingPluginClient struct {
 	*net.BrokerExt
-	grpc            ocr3.ReportingPluginClient
-	keyValueReaders *keyValueReaders
+	grpc                  ocr3.ReportingPluginClient
+	keyValueReaders       *methodScopedStore[ocr3_1types.KeyValueReader]
+	keyValueReaderWriters *methodScopedStore[ocr3_1types.KeyValueReadWriter]
 }
 
-func (o *reportingPluginClient) StateTransition(ctx context.Context, seqNr uint64, aq libocr.AttributedQuery, aos []libocr.AttributedObservation, keyValueReadWriter ocr3_1types.KeyValueReadWriter, blobFetcher ocr3_1types.BlobFetcher) (ocr3_1types.ReportsPlusPrecursor, error) {
-	//TODO implement me
-	panic("implement me")
+func (o *reportingPluginClient) StateTransition(ctx context.Context, seqNr uint64,
+	aq types.AttributedQuery,
+	aos []types.AttributedObservation,
+	keyValueReaderWriter ocr3_1types.KeyValueReadWriter, blobBroadcastFetcher ocr3_1types.BlobFetcher) (ocr3_1types.ReportsPlusPrecursor, error) {
+	kvrID := o.keyValueReaderWriters.Put(keyValueReaderWriter)
+	defer o.keyValueReaderWriters.Delete(kvrID)
+
+	var observations []*ocr3_1.AttributedObservation
+	for _, ao := range aos {
+		observations = append(observations, &ocr3_1.AttributedObservation{
+			Observation: ao.Observation,
+			OracleID:    uint32(ao.Observer),
+		})
+	}
+
+	reply, err := o.grpc.StateTransition(ctx, &ocr3_1.StateTransitionRequest{
+		KeyValueStateReaderID: kvrID,
+		SeqNr:                 seqNr,
+		Query: &ocr3_1.AttributedQuery{
+			Query:    aq.Query,
+			OracleID: uint32(aq.Proposer),
+		},
+		Observations: observations,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return reply.Outcome, nil
 }
 
 func (o *reportingPluginClient) Committed(ctx context.Context, seqNr uint64, keyValueReader ocr3_1types.KeyValueReader) error {
-	//TODO implement me
-	panic("implement me")
+	kvrID := o.keyValueReaders.Put(keyValueReader)
+	defer o.keyValueReaders.Delete(kvrID)
+
+	_, err := o.grpc.Committed(ctx, &ocr3_1.CommittedRequest{
+		KeyValueStateReaderID: kvrID,
+		SeqNr:                 seqNr,
+	})
+	return err
 }
 
 func (o *reportingPluginClient) Query(ctx context.Context, seqNr uint64, keyValueReader ocr3_1types.KeyValueReader, blobBroadcastFetcher ocr3_1types.BlobBroadcastFetcher) (libocr.Query, error) {
@@ -203,7 +235,7 @@ func (o *reportingPluginClient) Observation(ctx context.Context, seqNr uint64, a
 func (o *reportingPluginClient) ValidateObservation(ctx context.Context, seqNr uint64,
 	aq libocr.AttributedQuery,
 	ao libocr.AttributedObservation,
-	keyValueReader ocr3_1types.KeyValueReader, blobBroadcastFetcher ocr3_1types.BlobBroadcastFetcher) error {
+	keyValueReader ocr3_1types.KeyValueReader, blobBroadcastFetcher ocr3_1types.BlobFetcher) error {
 	kvrID := o.keyValueReaders.Put(keyValueReader)
 	defer o.keyValueReaders.Delete(kvrID)
 	_, err := o.grpc.ValidateObservation(ctx, &ocr3.ValidateObservationRequest{
@@ -224,24 +256,26 @@ func (o *reportingPluginClient) ValidateObservation(ctx context.Context, seqNr u
 func (o *reportingPluginClient) ObservationQuorum(ctx context.Context, seqNr uint64,
 	aq libocr.AttributedQuery,
 	aos []types.AttributedObservation,
-	keyValueReader ocr3_1types.KeyValueReader, blobBroadcastFetcher ocr3_1types.BlobBroadcastFetcher) (bool, error) {
+	keyValueReader ocr3_1types.KeyValueReader, blobBroadcastFetcher ocr3_1types.BlobFetcher) (bool, error) {
 	kvrID := o.keyValueReaders.Put(keyValueReader)
 	defer o.keyValueReaders.Delete(kvrID)
 
-	observations :=  []types.AttributedObservation,
+	var observations []*ocr3_1.AttributedObservation
+	for _, ao := range aos {
+		observations = append(observations, &ocr3_1.AttributedObservation{
+			Observation: ao.Observation,
+			OracleID:    uint32(ao.Observer),
+		})
+	}
 
-	reply, err := o.grpc.ObservationQuorum(ctx, &ocr3.ObservationQuorumRequest{
+	reply, err := o.grpc.ObservationQuorum(ctx, &ocr3_1.ObservationQuorumRequest{
 		KeyValueStateReaderID: kvrID,
 		SeqNr:                 seqNr,
 		Query: &ocr3_1.AttributedQuery{
 			Query:    aq.Query,
 			OracleID: uint32(aq.Proposer),
 		},
-		Observation: &ocr3_1.AttributedObservation{
-			Observation: ao.Observation,
-			OracleID:    uint32(ao.Observer),
-		},
-
+		Observations: observations,
 	})
 	if err != nil {
 		return false, err
@@ -249,22 +283,10 @@ func (o *reportingPluginClient) ObservationQuorum(ctx context.Context, seqNr uin
 	return reply.QuorumReached, nil
 }
 
-func (o *reportingPluginClient) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, query libocr.Query, aos []libocr.AttributedObservation) (ocr3types.Outcome, error) {
-	reply, err := o.grpc.Outcome(ctx, &ocr3.OutcomeRequest{
-		OutcomeContext: pbOutcomeContext(outctx),
-		Query:          query,
-		Ao:             pbAttributedObservations(aos),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return reply.Outcome, nil
-}
-
-func (o *reportingPluginClient) Reports(ctx context.Context, seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
-	reply, err := o.grpc.Reports(ctx, &ocr3.ReportsRequest{
+func (o *reportingPluginClient) Reports(ctx context.Context, seqNr uint64, reportsPlusPrecursor ocr3_1types.ReportsPlusPrecursor) ([]ocr3types.ReportPlus[[]byte], error) {
+	reply, err := o.grpc.Reports(ctx, &ocr3_1.ReportsRequest{
 		SeqNr:   seqNr,
-		Outcome: outcome,
+		Outcome: reportsPlusPrecursor,
 	})
 	if err != nil {
 		return nil, err

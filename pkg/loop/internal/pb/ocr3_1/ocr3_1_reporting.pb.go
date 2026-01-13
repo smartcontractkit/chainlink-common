@@ -1244,7 +1244,7 @@ type StateTransitionRequest struct {
 	KeyValueStateReaderID string                   `protobuf:"bytes,1,opt,name=keyValueStateReaderID,proto3" json:"keyValueStateReaderID,omitempty"`
 	SeqNr                 uint64                   `protobuf:"varint,2,opt,name=seqNr,proto3" json:"seqNr,omitempty"`
 	Query                 *AttributedQuery         `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
-	Observation           []*AttributedObservation `protobuf:"bytes,4,rep,name=observation,proto3" json:"observation,omitempty"`
+	Observations          []*AttributedObservation `protobuf:"bytes,4,rep,name=observations,proto3" json:"observations,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -1300,9 +1300,9 @@ func (x *StateTransitionRequest) GetQuery() *AttributedQuery {
 	return nil
 }
 
-func (x *StateTransitionRequest) GetObservation() []*AttributedObservation {
+func (x *StateTransitionRequest) GetObservations() []*AttributedObservation {
 	if x != nil {
-		return x.Observation
+		return x.Observations
 	}
 	return nil
 }
@@ -1932,12 +1932,12 @@ const file_ocr3_1_reporting_proto_rawDesc = "" +
 	"\x05query\x18\x03 \x01(\v2(.loop.internal.pb.ocr3_1.AttributedQueryR\x05query\x12R\n" +
 	"\fobservations\x18\x04 \x03(\v2..loop.internal.pb.ocr3_1.AttributedObservationR\fobservations\">\n" +
 	"\x16ObservationQuorumReply\x12$\n" +
-	"\rquorumReached\x18\x01 \x01(\bR\rquorumReached\"\xf6\x01\n" +
+	"\rquorumReached\x18\x01 \x01(\bR\rquorumReached\"\xf8\x01\n" +
 	"\x16StateTransitionRequest\x124\n" +
 	"\x15keyValueStateReaderID\x18\x01 \x01(\tR\x15keyValueStateReaderID\x12\x14\n" +
 	"\x05seqNr\x18\x02 \x01(\x04R\x05seqNr\x12>\n" +
-	"\x05query\x18\x03 \x01(\v2(.loop.internal.pb.ocr3_1.AttributedQueryR\x05query\x12P\n" +
-	"\vobservation\x18\x04 \x03(\v2..loop.internal.pb.ocr3_1.AttributedObservationR\vobservation\"0\n" +
+	"\x05query\x18\x03 \x01(\v2(.loop.internal.pb.ocr3_1.AttributedQueryR\x05query\x12R\n" +
+	"\fobservations\x18\x04 \x03(\v2..loop.internal.pb.ocr3_1.AttributedObservationR\fobservations\"0\n" +
 	"\x14StateTransitionReply\x12\x18\n" +
 	"\aoutcome\x18\x01 \x01(\fR\aoutcome\"^\n" +
 	"\x10CommittedRequest\x124\n" +
@@ -2049,7 +2049,7 @@ var file_ocr3_1_reporting_proto_depIdxs = []int32{
 	14, // 6: loop.internal.pb.ocr3_1.ObservationQuorumRequest.query:type_name -> loop.internal.pb.ocr3_1.AttributedQuery
 	15, // 7: loop.internal.pb.ocr3_1.ObservationQuorumRequest.observations:type_name -> loop.internal.pb.ocr3_1.AttributedObservation
 	14, // 8: loop.internal.pb.ocr3_1.StateTransitionRequest.query:type_name -> loop.internal.pb.ocr3_1.AttributedQuery
-	15, // 9: loop.internal.pb.ocr3_1.StateTransitionRequest.observation:type_name -> loop.internal.pb.ocr3_1.AttributedObservation
+	15, // 9: loop.internal.pb.ocr3_1.StateTransitionRequest.observations:type_name -> loop.internal.pb.ocr3_1.AttributedObservation
 	27, // 10: loop.internal.pb.ocr3_1.ReportsReply.reportPlus:type_name -> loop.internal.pb.ocr3_1.ReportPlus
 	28, // 11: loop.internal.pb.ocr3_1.ReportPlus.reportWithInfo:type_name -> loop.internal.pb.ocr3_1.ReportWithInfo
 	29, // 12: loop.internal.pb.ocr3_1.ReportPlus.transmissionScheduleOverride:type_name -> loop.internal.pb.ocr3_1.TransmissionSchedule

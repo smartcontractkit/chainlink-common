@@ -158,7 +158,7 @@ message StateTransitionRequest{
   string keyValueStateReaderID = 1;
   uint64 seqNr=2;
   AttributedQuery query=3;
-  repeated AttributedObservation observation=4;
+  repeated AttributedObservation observations=4;
 }
 
 message StateTransitionReply{

@@ -14,9 +14,9 @@ type HeaderProvider interface {
 	Headers(ctx context.Context) (map[string]string, error)
 }
 
-type HeaderProviderFunc func(ctx context.Context) (map[string]string, error)
+type headerProviderFunc func(ctx context.Context) (map[string]string, error)
 
-func (f HeaderProviderFunc) Headers(ctx context.Context) (map[string]string, error) {
+func (f headerProviderFunc) Headers(ctx context.Context) (map[string]string, error) {
 	return f(ctx)
 }
 

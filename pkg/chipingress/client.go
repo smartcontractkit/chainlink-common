@@ -234,7 +234,7 @@ func WithTracerProvider(provider trace.TracerProvider) Opt {
 
 func WithNOPLookup() Opt {
 	return func(c *clientConfig) {
-		c.nopInfoHeaderProvider = HeaderProviderFunc(func(ctx context.Context) (map[string]string, error) {
+		c.nopInfoHeaderProvider = headerProviderFunc(func(ctx context.Context) (map[string]string, error) {
 			return map[string]string{
 				"x-include-nop-info": "true",
 			}, nil

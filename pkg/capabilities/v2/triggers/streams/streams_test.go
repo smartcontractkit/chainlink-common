@@ -21,63 +21,66 @@ import (
 func TestProtoTypesExist(t *testing.T) {
 	// Config type
 	config := &streams.Config{
-		FeedIds:        []string{"0x0001", "0x0002"},
+		StreamIds:      []uint32{1, 2, 3},
 		MaxFrequencyMs: 5000,
 	}
 	assert.NotNil(t, config)
-	assert.Len(t, config.FeedIds, 2)
+	assert.Len(t, config.StreamIds, 3)
 	assert.Equal(t, uint64(5000), config.MaxFrequencyMs)
 
-	// Feed type
-	feed := &streams.Feed{
-		Timestamp: 1234567890,
-		Metadata: &streams.SignersMetadata{
-			Signers:               []string{"signer1", "signer2"},
-			MinRequiredSignatures: 2,
-		},
-		Payload: []*streams.FeedReport{
+	// Report type
+	report := &streams.Report{
+		ConfigDigest: []byte{1, 2, 3, 4},
+		SeqNr:        42,
+		Report:       []byte("report-data"),
+		Sigs: []*streams.OCRSignature{
 			{
-				FeedId:               "0x0001",
-				FullReport:           []byte("report-data"),
-				ReportContext:        []byte("context"),
-				Signatures:           [][]byte{[]byte("sig1")},
-				BenchmarkPrice:       []byte("price"),
-				ObservationTimestamp: 1234567890,
+				Signer:    1,
+				Signature: []byte("sig1"),
+			},
+			{
+				Signer:    2,
+				Signature: []byte("sig2"),
 			},
 		},
 	}
-	assert.NotNil(t, feed)
-	assert.Equal(t, int64(1234567890), feed.Timestamp)
-	assert.Len(t, feed.Payload, 1)
+	assert.NotNil(t, report)
+	assert.Equal(t, []byte{1, 2, 3, 4}, report.ConfigDigest)
+	assert.Equal(t, uint64(42), report.SeqNr)
+	assert.Len(t, report.Sigs, 2)
 }
 
 // TestConfigGetters verifies getter methods work
 func TestConfigGetters(t *testing.T) {
 	config := &streams.Config{
-		FeedIds:        []string{"0xfeed1", "0xfeed2", "0xfeed3"},
+		StreamIds:      []uint32{1, 2, 3},
 		MaxFrequencyMs: 10000,
 	}
 
-	assert.Equal(t, []string{"0xfeed1", "0xfeed2", "0xfeed3"}, config.GetFeedIds())
+	assert.Equal(t, []uint32{1, 2, 3}, config.GetStreamIds())
 	assert.Equal(t, uint64(10000), config.GetMaxFrequencyMs())
 }
 
-// TestFeedGetters verifies Feed getter methods
-func TestFeedGetters(t *testing.T) {
-	metadata := &streams.SignersMetadata{
-		Signers:               []string{"signer1"},
-		MinRequiredSignatures: 1,
+// TestReportGetters verifies Report getter methods
+func TestReportGetters(t *testing.T) {
+	sigs := []*streams.OCRSignature{
+		{
+			Signer:    1,
+			Signature: []byte("sig1"),
+		},
 	}
 
-	feed := &streams.Feed{
-		Timestamp: 9999999999,
-		Metadata:  metadata,
-		Payload:   []*streams.FeedReport{},
+	report := &streams.Report{
+		ConfigDigest: []byte{1, 2, 3, 4},
+		SeqNr:        99,
+		Report:       []byte("test-report"),
+		Sigs:         sigs,
 	}
 
-	assert.Equal(t, int64(9999999999), feed.GetTimestamp())
-	assert.Equal(t, metadata, feed.GetMetadata())
-	assert.NotNil(t, feed.GetPayload())
+	assert.Equal(t, []byte{1, 2, 3, 4}, report.GetConfigDigest())
+	assert.Equal(t, uint64(99), report.GetSeqNr())
+	assert.Equal(t, []byte("test-report"), report.GetReport())
+	assert.Equal(t, sigs, report.GetSigs())
 }
 
 // TestStreamsCapabilityInterface verifies the server interface
@@ -94,13 +97,13 @@ type mockStreamsCapability struct {
 	closeCalled      bool
 }
 
-func (m *mockStreamsCapability) RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) (<-chan capabilities.TriggerAndId[*streams.Feed], caperrors.Error) {
+func (m *mockStreamsCapability) RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) (<-chan capabilities.TriggerAndId[*streams.Report], caperrors.Error) {
 	m.registerCalled = true
-	ch := make(chan capabilities.TriggerAndId[*streams.Feed], 1)
+	ch := make(chan capabilities.TriggerAndId[*streams.Report], 1)
 	return ch, nil
 }
 
-func (m *mockStreamsCapability) UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) error {
+func (m *mockStreamsCapability) UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) caperrors.Error {
 	m.unregisterCalled = true
 	return nil
 }
@@ -177,7 +180,7 @@ func TestTriggerRegistration(t *testing.T) {
 	}
 	
 	config := &streams.Config{
-		FeedIds:        []string{"0x0001"},
+		StreamIds:      []uint32{1},
 		MaxFrequencyMs: 1000,
 	}
 	
@@ -192,34 +195,35 @@ func TestTriggerRegistration(t *testing.T) {
 	assert.True(t, mock.unregisterCalled)
 }
 
-// TestFeedReportStructure tests the FeedReport structure
-func TestFeedReportStructure(t *testing.T) {
-	report := &streams.FeedReport{
-		FeedId:               "0xfeedid12345",
-		FullReport:           []byte("full-report-bytes"),
-		ReportContext:        []byte("report-context"),
-		Signatures:           [][]byte{[]byte("sig1"), []byte("sig2")},
-		BenchmarkPrice:       []byte("benchmark-price-bytes"),
-		ObservationTimestamp: 1700000000,
+// TestReportStructure tests the Report structure
+func TestReportStructure(t *testing.T) {
+	sigs := []*streams.OCRSignature{
+		{Signer: 1, Signature: []byte("sig1")},
+		{Signer: 2, Signature: []byte("sig2")},
 	}
 	
-	assert.Equal(t, "0xfeedid12345", report.GetFeedId())
-	assert.Equal(t, []byte("full-report-bytes"), report.GetFullReport())
-	assert.Equal(t, []byte("report-context"), report.GetReportContext())
-	assert.Len(t, report.GetSignatures(), 2)
-	assert.Equal(t, []byte("benchmark-price-bytes"), report.GetBenchmarkPrice())
-	assert.Equal(t, int64(1700000000), report.GetObservationTimestamp())
+	report := &streams.Report{
+		ConfigDigest: []byte{1, 2, 3, 4, 5},
+		SeqNr:        123,
+		Report:       []byte("full-report-bytes"),
+		Sigs:         sigs,
+	}
+	
+	assert.Equal(t, []byte{1, 2, 3, 4, 5}, report.GetConfigDigest())
+	assert.Equal(t, uint64(123), report.GetSeqNr())
+	assert.Equal(t, []byte("full-report-bytes"), report.GetReport())
+	assert.Len(t, report.GetSigs(), 2)
 }
 
-// TestSignersMetadata tests the SignersMetadata structure
-func TestSignersMetadata(t *testing.T) {
-	metadata := &streams.SignersMetadata{
-		Signers:               []string{"0xsigner1", "0xsigner2", "0xsigner3"},
-		MinRequiredSignatures: 2,
+// TestOCRSignature tests the OCRSignature structure
+func TestOCRSignature(t *testing.T) {
+	sig := &streams.OCRSignature{
+		Signer:    5,
+		Signature: []byte("signature-bytes"),
 	}
 	
-	assert.Len(t, metadata.GetSigners(), 3)
-	assert.Equal(t, int64(2), metadata.GetMinRequiredSignatures())
+	assert.Equal(t, uint32(5), sig.GetSigner())
+	assert.Equal(t, []byte("signature-bytes"), sig.GetSignature())
 }
 
 // TestConfigValidation tests configuration validation scenarios
@@ -230,17 +234,17 @@ func TestConfigValidation(t *testing.T) {
 		expectValid bool
 	}{
 		{
-			name: "valid config with single feed",
+			name: "valid config with single stream",
 			config: &streams.Config{
-				FeedIds:        []string{"0x0001"},
+				StreamIds:      []uint32{1},
 				MaxFrequencyMs: 1000,
 			},
 			expectValid: true,
 		},
 		{
-			name: "valid config with multiple feeds",
+			name: "valid config with multiple streams",
 			config: &streams.Config{
-				FeedIds:        []string{"0x0001", "0x0002", "0x0003"},
+				StreamIds:      []uint32{1, 2, 3},
 				MaxFrequencyMs: 5000,
 			},
 			expectValid: true,
@@ -248,7 +252,7 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name: "high frequency",
 			config: &streams.Config{
-				FeedIds:        []string{"0x0001"},
+				StreamIds:      []uint32{1},
 				MaxFrequencyMs: 100,
 			},
 			expectValid: true,
@@ -259,7 +263,7 @@ func TestConfigValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Basic validation - config should be creatable
 			assert.NotNil(t, tt.config)
-			assert.NotEmpty(t, tt.config.FeedIds)
+			assert.NotEmpty(t, tt.config.StreamIds)
 			assert.Greater(t, tt.config.MaxFrequencyMs, uint64(0))
 		})
 	}
@@ -352,33 +356,31 @@ func TestServerLifecycle(t *testing.T) {
 	infos, err := srv.Infos(ctx)
 	require.NoError(t, err)
 	require.Len(t, infos, 1)
-	assert.Equal(t, "streams-trigger@1.0.0", infos[0].ID)
+	assert.Equal(t, "streams-trigger@2.0.0", infos[0].ID)
 	
 	// Close
 	err = srv.Close()
 	require.NoError(t, err)
 	assert.True(t, mock.closeCalled, "Close should be called")
 	assert.Len(t, mockRegistry.removed, 1, "Capability should be unregistered")
-	assert.Equal(t, "streams-trigger@1.0.0", mockRegistry.removed[0])
+	assert.Equal(t, "streams-trigger@2.0.0", mockRegistry.removed[0])
 }
 
-// BenchmarkFeedCreation benchmarks creating Feed objects
-func BenchmarkFeedCreation(b *testing.B) {
+// BenchmarkReportCreation benchmarks creating Report objects
+func BenchmarkReportCreation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = &streams.Feed{
-			Timestamp: int64(i),
-			Metadata: &streams.SignersMetadata{
-				Signers:               []string{"signer1", "signer2"},
-				MinRequiredSignatures: 2,
-			},
-			Payload: []*streams.FeedReport{
+		_ = &streams.Report{
+			ConfigDigest: []byte{1, 2, 3, 4},
+			SeqNr:        uint64(i),
+			Report:       []byte("report-data"),
+			Sigs: []*streams.OCRSignature{
 				{
-					FeedId:               "0x0001",
-					FullReport:           []byte("report"),
-					ReportContext:        []byte("context"),
-					Signatures:           [][]byte{[]byte("sig")},
-					BenchmarkPrice:       []byte("price"),
-					ObservationTimestamp: int64(i),
+					Signer:    1,
+					Signature: []byte("sig1"),
+				},
+				{
+					Signer:    2,
+					Signature: []byte("sig2"),
 				},
 			},
 		}

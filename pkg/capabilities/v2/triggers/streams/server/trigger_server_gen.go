@@ -19,8 +19,8 @@ import (
 var _ = emptypb.Empty{}
 
 type StreamsCapability interface {
-	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) (<-chan capabilities.TriggerAndId[*streams.Feed], caperrors.Error)
-	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) (<-chan capabilities.TriggerAndId[*streams.Report], caperrors.Error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -55,7 +55,7 @@ func (c *StreamsServer) Initialise(ctx context.Context, dependencies core.Standa
 	if err := dependencies.CapabilityRegistry.Add(ctx, &streamsCapability{
 		StreamsCapability: c.StreamsCapability,
 	}); err != nil {
-		return fmt.Errorf("error when adding %s to the registry: %w", "streams-trigger@1.0.0", err)
+		return fmt.Errorf("error when adding %s to the registry: %w", "streams-trigger@2.0.0", err)
 	}
 
 	return nil
@@ -66,7 +66,7 @@ func (c *StreamsServer) Close() error {
 	defer cancel()
 
 	if c.capabilityRegistry != nil {
-		if err := c.capabilityRegistry.Remove(ctx, "streams-trigger@1.0.0"); err != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "streams-trigger@2.0.0"); err != nil {
 			return err
 		}
 	}
@@ -93,21 +93,18 @@ type streamsCapability struct {
 
 func (c *streamsCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("streams-trigger@1.0.0", capabilities.CapabilityTypeCombined, c.StreamsCapability.Description())
+	return capabilities.NewCapabilityInfo("streams-trigger@2.0.0", capabilities.CapabilityTypeCombined, c.StreamsCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*streamsCapability)(nil)
 
-const StreamsID = "streams-trigger@1.0.0"
+const StreamsID = "streams-trigger@2.0.0"
 
 func (c *streamsCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "Trigger":
 		input := &streams.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "streams-trigger@1.0.0", request, input, c.StreamsCapability.RegisterTrigger)
-	case "":
-		input := &streams.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "streams-trigger@1.0.0", request, input, c.StreamsCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "streams-trigger@2.0.0", request, input, c.StreamsCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}
@@ -116,13 +113,6 @@ func (c *streamsCapability) RegisterTrigger(ctx context.Context, request capabil
 func (c *streamsCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
 	case "Trigger":
-		input := &streams.Config{}
-		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
-		if err != nil {
-			return err
-		}
-		return c.StreamsCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
-	case "":
 		input := &streams.Config{}
 		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
 		if err != nil {
@@ -145,4 +135,3 @@ func (c *streamsCapability) UnregisterFromWorkflow(ctx context.Context, request 
 func (c *streamsCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	return capabilities.CapabilityResponse{}, fmt.Errorf("method %s not found", request.Method)
 }
-

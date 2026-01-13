@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/streams/server"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -93,7 +94,7 @@ type mockStreamsCapability struct {
 	closeCalled      bool
 }
 
-func (m *mockStreamsCapability) RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) (<-chan capabilities.TriggerAndId[*streams.Feed], error) {
+func (m *mockStreamsCapability) RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *streams.Config) (<-chan capabilities.TriggerAndId[*streams.Feed], caperrors.Error) {
 	m.registerCalled = true
 	ch := make(chan capabilities.TriggerAndId[*streams.Feed], 1)
 	return ch, nil
@@ -186,8 +187,8 @@ func TestTriggerRegistration(t *testing.T) {
 	assert.True(t, mock.registerCalled)
 	
 	// Test unregister
-	err = mock.UnregisterTrigger(ctx, triggerID, metadata, config)
-	assert.NoError(t, err)
+	unregErr := mock.UnregisterTrigger(ctx, triggerID, metadata, config)
+	assert.NoError(t, unregErr)
 	assert.True(t, mock.unregisterCalled)
 }
 

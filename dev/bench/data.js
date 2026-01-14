@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768401264794,
+  "lastUpdate": 1768407725281,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -35100,6 +35100,66 @@ window.BENCHMARK_DATA = {
             "value": 144905,
             "unit": "ns/op",
             "extra": "7730 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3ff7d6ffd02c40329e0e4d60b42d44813bbdb176",
+          "message": "[ARCH-332] KMS keystore support (#1767)\n\n* Wip\n\n* Simplify\n\n* Simpler\n\n* Fix pubkey\n\n* Testing\n\n* test\n\n* Lint\n\n* Expore ASN utilities\n\n* Linter\n\n* Old cli thing\n\n* Simpler cli\n\n* Lint\n\n* More lint\n\n* Lint and simpler interface comp\n\n* Comments",
+          "timestamp": "2026-01-14T16:15:00Z",
+          "tree_id": "8114eaa3ed3b9060d3a6199fd368acdc72a3d897",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3ff7d6ffd02c40329e0e4d60b42d44813bbdb176"
+        },
+        "date": 1768407723264,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 842.6,
+            "unit": "ns/op",
+            "extra": "1405885 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 99396,
+            "unit": "ns/op",
+            "extra": "12048 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.2,
+            "unit": "ns/op",
+            "extra": "2988745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99891,
+            "unit": "ns/op",
+            "extra": "12054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26756,
+            "unit": "ns/op",
+            "extra": "44940 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 146968,
+            "unit": "ns/op",
+            "extra": "8030 times\n4 procs"
           }
         ]
       }

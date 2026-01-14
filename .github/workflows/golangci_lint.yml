@@ -22,6 +22,8 @@ jobs:
     if: ${{ github.event_name != 'merge_group' }}
     needs: detect-modules
     runs-on: ubuntu-latest
+    # Modules are independent
+    continue-on-error: true
     strategy:
       matrix:
         module: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
@@ -50,6 +52,7 @@ jobs:
           checkout-repo: false
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
+          golangci-lint-args: --output.text.path=stdout --output.checkstyle.path=${{ matrix.module }}/golangci-lint-report.xml
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

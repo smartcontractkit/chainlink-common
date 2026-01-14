@@ -52,6 +52,7 @@ jobs:
           checkout-repo: false
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
+          only-new-issues: false
 
       - name: Debug
         if: ${{ always() }}

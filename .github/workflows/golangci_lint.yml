@@ -57,11 +57,24 @@ jobs:
         if: ${{ always() }}
         run: |
           echo "Debugging lint results for module ${{ matrix.module }}"
-          find . -name "golangci-lint-report.xml"
           echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
           echo "Current working directory: $(pwd)"
-          echo "Looking for golangci-lint-report.xml files from workspace root:"
-          find "$GITHUB_WORKSPACE" -name "golangci-lint-report.xml"
+          echo ""
+          echo "=== Searching for all XML files from workspace root ==="
+          find "$GITHUB_WORKSPACE" -name "*.xml" -type f 2>/dev/null || echo "No XML files found"
+          echo ""
+          echo "=== Checking expected location ==="
+          if [ -f "./pkg/chipingress/golangci-lint-report.xml" ]; then
+            echo "✓ File EXISTS at ./pkg/chipingress/golangci-lint-report.xml"
+            ls -lh "./pkg/chipingress/golangci-lint-report.xml"
+            echo "Contents:"
+            cat "./pkg/chipingress/golangci-lint-report.xml"
+          else
+            echo "✗ File DOES NOT EXIST at ./pkg/chipingress/golangci-lint-report.xml"
+          fi
+          echo ""
+          echo "=== Listing all files in chipingress directory ==="
+          ls -la "./pkg/chipingress/" || echo "Directory doesn't exist"
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

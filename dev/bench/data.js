@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768407725281,
+  "lastUpdate": 1768418288498,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -35160,6 +35160,66 @@ window.BENCHMARK_DATA = {
             "value": 146968,
             "unit": "ns/op",
             "extra": "8030 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "168561091+engnke@users.noreply.github.com",
+            "name": "engnke",
+            "username": "engnke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74301cd99dc3196454e92abc734f90347d3aec20",
+          "message": "Add nop info lookup token option (#1768)\n\n* add nop info lookup token\n\n* refactoring\n\n* make headerfunc unexported\n\n* fix testifylint errors\n\n* fix import order\n\n* Update pkg/chipingress/client_test.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Enable continue-on-error for golangci_lint job\n\nAllow module linting to continue on errors.\n\n* Use module path for golangci-lint report XML\n\n* Add debug step to find path to xml report for golangci-lint\n\n* refactor for lint\n\n* Show working dir\n\n* Revert \"Show working dir\"\n\nThis reverts commit 46d22f61819553e233b2bf946e6b13a8fe0d71cf.\n\n* Revert \"Add debug step to find path to xml report for golangci-lint\"\n\nThis reverts commit 36b468dcb5f80cb62bd6ccec6097112c7c73eab6.\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\nCo-authored-by: chainchad <96362174+chainchad@users.noreply.github.com>",
+          "timestamp": "2026-01-14T19:08:11Z",
+          "tree_id": "1ca8a7227d96febc58c2cb5dd46cf49cacb5e25f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/74301cd99dc3196454e92abc734f90347d3aec20"
+        },
+        "date": 1768418286441,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 535.1,
+            "unit": "ns/op",
+            "extra": "2072451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96904,
+            "unit": "ns/op",
+            "extra": "12342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399,
+            "unit": "ns/op",
+            "extra": "3014218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 96617,
+            "unit": "ns/op",
+            "extra": "12403 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26728,
+            "unit": "ns/op",
+            "extra": "45084 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142813,
+            "unit": "ns/op",
+            "extra": "8218 times\n4 procs"
           }
         ]
       }

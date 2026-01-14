@@ -47,7 +47,7 @@ jobs:
       - name: golangci-lint ${{ matrix.module }}
         if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
-        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/v3
+        uses: smartcontractkit/.github/actions/ci-lint-go@dx-2618/golangci-lint # TODO - use versioned release
         with:
           checkout-repo: false
           golangci-lint-version: v${{ steps.get-version.outputs.version }}

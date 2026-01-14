@@ -109,6 +109,32 @@ func TestAdminCLI(t *testing.T) {
 	require.Equal(t, "testkey", resp.Keys[0].KeyInfo.Name)
 	// Metadata is []byte, Go's JSON unmarshaler automatically decodes base64 strings
 	require.Equal(t, "my-custom-metadata", string(resp.Keys[0].KeyInfo.Metadata))
+	originalPublicKey := resp.Keys[0].KeyInfo.PublicKey
+
+	// Rename testkey to renamedkey.
+	_, err = runCommand(t, nil, "rename", "-d", `{"OldName": "testkey", "NewName": "renamedkey"}`)
+	require.NoError(t, err)
+
+	// Verify the old name doesn't exist.
+	out, err = runCommand(t, nil, "get", "-d", `{"KeyNames": ["testkey"]}`)
+	require.Error(t, err)
+
+	// Verify the new name exists with the same key material.
+	out, err = runCommand(t, nil, "get", "-d", `{"KeyNames": ["renamedkey"]}`)
+	require.NoError(t, err)
+	resp = ks.GetKeysResponse{}
+	err = json.Unmarshal(out.Bytes(), &resp)
+	require.NoError(t, err)
+	require.Len(t, resp.Keys, 1)
+	require.Equal(t, "renamedkey", resp.Keys[0].KeyInfo.Name)
+	require.Equal(t, ks.X25519, resp.Keys[0].KeyInfo.KeyType)
+	require.Equal(t, originalPublicKey, resp.Keys[0].KeyInfo.PublicKey)
+	// Metadata should be preserved
+	require.Equal(t, "my-custom-metadata", string(resp.Keys[0].KeyInfo.Metadata))
+
+	// Rename it back to testkey for cleanup.
+	_, err = runCommand(t, nil, "rename", "-d", `{"OldName": "renamedkey", "NewName": "testkey"}`)
+	require.NoError(t, err)
 
 	// Delete the keys with confirmation.
 	out, err = runCommand(t, bytes.NewBufferString("yes\n"), "delete", "-d", `{"KeyNames": ["testkey", "testkey2"]}`)

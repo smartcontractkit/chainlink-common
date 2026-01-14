@@ -54,7 +54,7 @@ jobs:
           checkout-repo: false
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
-          golangci-lint-args: "--output.text.path=stdout --output.checkstyle.path=${{ matrix.module }}/golangci-lint-report.xml"
+          golangci-lint-args: "--output.text.path=stdout --output.checkstyle.path=${{ github.workspace }}/${{ matrix.module }}/golangci-lint-report.xml"
           only-new-issues: false
 
       - name: Debug

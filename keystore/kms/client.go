@@ -1,10 +1,8 @@
 package kms
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	kmslib "github.com/aws/aws-sdk-go/service/kms"
 )
@@ -24,30 +22,8 @@ type Client interface {
 // NewClient constructs a new kmslib.KMS instance using the provided AWS profile. This adheres to
 // the KMSClient interface, allowing for signing and public key retrieval using AWS KMS.
 // The region is automatically read from the AWS profile configuration.
-func NewClient(awsProfile string) (Client, error) {
-	if awsProfile == "" {
-		return nil, errors.New("AWSProfile is required")
-	}
-	sess, err := session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-		Profile:           awsProfile,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AWS session: %w", err)
-	}
-	return kmslib.New(sess), nil
-}
-
-// NewClientWithDefaultCredentials constructs a new kmslib.KMS instance using the default AWS
-// credential chain. This is suitable for use in Kubernetes with IRSA (IAM Roles for Service Accounts),
-// EC2 instance profiles, or environment variables.
-func NewClientWithDefaultCredentials(region string) (Client, error) {
-	if region == "" {
-		return nil, errors.New("region is required")
-	}
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{Region: aws.String(region)},
-	})
+func NewClient(options session.Options) (Client, error) {
+	sess, err := session.NewSessionWithOptions(options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AWS session: %w", err)
 	}

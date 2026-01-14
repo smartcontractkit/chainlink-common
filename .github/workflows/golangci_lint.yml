@@ -22,6 +22,8 @@ jobs:
     if: ${{ github.event_name != 'merge_group' }}
     needs: detect-modules
     runs-on: ubuntu-latest
+    env:
+      GO_DIR: ${{ matrix.module }}
     # Modules are independent
     continue-on-error: true
     strategy:
@@ -57,7 +59,9 @@ jobs:
       - name: Debug
         if: ${{ always() }}
         run: |
-          echo "Debugging lint results for module ${{ matrix.module }}"
+          module_dir="${{ matrix.module }}"
+          report_path="${module_dir%/}/golangci-lint-report.xml"
+          echo "Debugging lint results for module ${module_dir}"
           echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
           echo "Current working directory: $(pwd)"
           echo ""
@@ -65,17 +69,17 @@ jobs:
           find "$GITHUB_WORKSPACE" -name "*.xml" -type f 2>/dev/null || echo "No XML files found"
           echo ""
           echo "=== Checking expected location ==="
-          if [ -f "./pkg/chipingress/golangci-lint-report.xml" ]; then
-            echo "✓ File EXISTS at ./pkg/chipingress/golangci-lint-report.xml"
-            ls -lh "./pkg/chipingress/golangci-lint-report.xml"
+          if [ -f "${report_path}" ]; then
+            echo "✓ File EXISTS at ${report_path}"
+            ls -lh "${report_path}"
             echo "Contents:"
-            cat "./pkg/chipingress/golangci-lint-report.xml"
+            cat "${report_path}"
           else
-            echo "✗ File DOES NOT EXIST at ./pkg/chipingress/golangci-lint-report.xml"
+            echo "✗ File DOES NOT EXIST at ${report_path}"
           fi
           echo ""
-          echo "=== Listing all files in chipingress directory ==="
-          ls -la "./pkg/chipingress/" || echo "Directory doesn't exist"
+          echo "=== Listing all files in module directory ==="
+          ls -la "${module_dir%/}/" || echo "Directory doesn't exist"
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

@@ -54,12 +54,6 @@ jobs:
           go-directory: ${{ matrix.module }}
           golangci-lint-args: --output.text.path=stdout --output.checkstyle.path=${{ matrix.module }}/golangci-lint-report.xml
 
-      - name: Debug
-        if: ${{ always() }}
-        run: |
-          echo "Debugging lint results for module ${{ matrix.module }}"
-          find . -name "golangci-lint-report.xml"
-
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete
     if: ${{ github.event_name != 'merge_group' }}

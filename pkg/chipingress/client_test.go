@@ -7,14 +7,15 @@ import (
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+	"google.golang.org/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	gp "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-
+	
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
@@ -594,7 +595,7 @@ func TestHeaderInterceptor(t *testing.T) {
 
 	// Create a mock invoker that captures the context
 	var capturedCtx context.Context
-	mockInvoker := func(ctx context.Context, method string, req, reply interface{}, cc *gp.ClientConn, opts ...gp.CallOption) error {
+	mockInvoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 		capturedCtx = ctx
 		return nil
 	}

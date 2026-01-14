@@ -332,15 +332,15 @@ func newReportingPluginClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *re
 	}
 }
 
-var _ ocr3.ReportingPluginServer = (*reportingPluginServer)(nil)
+var _ ocr3_1.ReportingPluginServer = (*reportingPluginServer)(nil)
 
 type reportingPluginServer struct {
 	ocr3.UnimplementedReportingPluginServer
 
-	impl ocr3types.ReportingPlugin[[]byte]
+	impl ocr3_1types.ReportingPlugin[[]byte]
 }
 
-func (o *reportingPluginServer) Query(ctx context.Context, request *ocr3.QueryRequest) (*ocr3.QueryReply, error) {
+func (o *reportingPluginServer) Query(ctx context.Context, request *ocr3_1.QueryRequest) (*ocr3_1.QueryReply, error) {
 	oc := outcomeContext(request.OutcomeContext)
 	q, err := o.impl.Query(ctx, oc)
 	if err != nil {
@@ -378,7 +378,7 @@ func (o *reportingPluginServer) ObservationQuorum(ctx context.Context, request *
 	return &ocr3.ObservationQuorumReply{QuorumReached: oq}, nil
 }
 
-func (o *reportingPluginServer) Outcome(ctx context.Context, request *ocr3.OutcomeRequest) (*ocr3.OutcomeReply, error) {
+func (o *reportingPluginServer) StateTransition(ctx context.Context, request *ocr3.OutcomeRequest) (*ocr3.OutcomeReply, error) {
 	aos, err := attributedObservations(request.Ao)
 	if err != nil {
 		return nil, err

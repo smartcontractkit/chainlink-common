@@ -29,6 +29,7 @@ func NewClient(awsProfile string) (Client, error) {
 		return nil, errors.New("AWSProfile is required")
 	}
 	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String("us-west-2")},
 		SharedConfigState: session.SharedConfigEnable,
 		Profile:           awsProfile,
 	})

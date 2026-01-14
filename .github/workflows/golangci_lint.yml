@@ -53,6 +53,16 @@ jobs:
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
 
+      - name: Debug
+        if: ${{ always() }}
+        run: |
+          echo "Debugging lint results for module ${{ matrix.module }}"
+          find . -name "golangci-lint-report.xml"
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "Current working directory: $(pwd)"
+          echo "Looking for golangci-lint-report.xml files from workspace root:"
+          find "$GITHUB_WORKSPACE" -name "golangci-lint-report.xml"
+
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete
     if: ${{ github.event_name != 'merge_group' }}

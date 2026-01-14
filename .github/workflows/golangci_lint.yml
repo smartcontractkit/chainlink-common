@@ -58,9 +58,7 @@ jobs:
         if: ${{ always() }}
         run: |
           echo "Debugging lint results for module ${{ matrix.module }}"
-          echo "Current working directory: $(pwd)"
-          echo "Looking for golangci-lint-report.xml files:"
-          find . -name "golangci-lint-report.xml" -type f -exec ls -lh {} \; -exec echo "Contents of {}:" \; -exec cat {} \;
+          find . -name "golangci-lint-report.xml"
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

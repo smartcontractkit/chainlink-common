@@ -1,13 +1,13 @@
 package kms
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	kmslib "github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
+	kmstypes "github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -28,25 +28,31 @@ func NewFakeKMSClient(keys []Key) (*FakeKMSClient, error) {
 	}, nil
 }
 
-func (m *FakeKMSClient) GetPublicKey(input *kmslib.GetPublicKeyInput) (*kmslib.GetPublicKeyOutput, error) {
+func (m *FakeKMSClient) GetPublicKey(ctx context.Context, input *kms.GetPublicKeyInput, opts ...func(*kms.Options)) (*kms.GetPublicKeyOutput, error) {
+	if input.KeyId == nil {
+		return nil, errors.New("key ID is required")
+	}
 	for _, key := range m.keys {
-		if aws.StringValue(input.KeyId) == key.KeyID {
+		if *input.KeyId == key.KeyID {
 			asn1PubKey, err := SEC1ToASN1PublicKey(crypto.FromECDSAPub(&key.PrivateKey.PublicKey))
 			if err != nil {
 				return nil, err
 			}
-			return &kmslib.GetPublicKeyOutput{
-				KeyId:     aws.String(key.KeyID),
+			return &kms.GetPublicKeyOutput{
+				KeyId:     &key.KeyID,
 				PublicKey: asn1PubKey,
 			}, nil
 		}
 	}
-	return nil, awserr.New(kmslib.ErrCodeNotFoundException, "key not found", errors.New("key not found"))
+	return nil, errors.New("key not found")
 }
 
-func (m *FakeKMSClient) Sign(input *kmslib.SignInput) (*kmslib.SignOutput, error) {
+func (m *FakeKMSClient) Sign(ctx context.Context, input *kms.SignInput, opts ...func(*kms.Options)) (*kms.SignOutput, error) {
+	if input.KeyId == nil {
+		return nil, errors.New("key ID is required")
+	}
 	for _, key := range m.keys {
-		if aws.StringValue(input.KeyId) == key.KeyID {
+		if *input.KeyId == key.KeyID {
 			sig, err := crypto.Sign(input.Message, key.PrivateKey)
 			if err != nil {
 				return nil, err
@@ -55,40 +61,45 @@ func (m *FakeKMSClient) Sign(input *kmslib.SignInput) (*kmslib.SignOutput, error
 			if err != nil {
 				return nil, err
 			}
-			return &kmslib.SignOutput{
-				KeyId:     aws.String(key.KeyID),
+			return &kms.SignOutput{
+				KeyId:     &key.KeyID,
 				Signature: asn1Sig,
 			}, nil
 		}
 	}
-	return nil, awserr.New(kmslib.ErrCodeNotFoundException, "key not found", errors.New("key not found"))
+	return nil, errors.New("key not found")
 }
 
 // DescribeKey returns metadata about the key.
-func (m *FakeKMSClient) DescribeKey(input *kmslib.DescribeKeyInput) (*kmslib.DescribeKeyOutput, error) {
+func (m *FakeKMSClient) DescribeKey(ctx context.Context, input *kms.DescribeKeyInput, opts ...func(*kms.Options)) (*kms.DescribeKeyOutput, error) {
+	if input.KeyId == nil {
+		return nil, errors.New("key ID is required")
+	}
 	for _, key := range m.keys {
-		if aws.StringValue(input.KeyId) == key.KeyID {
-			return &kmslib.DescribeKeyOutput{
-				KeyMetadata: &kmslib.KeyMetadata{
-					KeyId:        aws.String(key.KeyID),
-					KeySpec:      aws.String(kmslib.KeySpecEccSecgP256k1),
-					CreationDate: aws.Time(m.createdAt),
+		if *input.KeyId == key.KeyID {
+			keySpec := kmstypes.KeySpecEccSecgP256k1
+			return &kms.DescribeKeyOutput{
+				KeyMetadata: &kmstypes.KeyMetadata{
+					KeyId:        &key.KeyID,
+					KeySpec:      keySpec,
+					CreationDate: &m.createdAt,
 				},
 			}, nil
 		}
 	}
-	return nil, awserr.New(kmslib.ErrCodeNotFoundException, "key not found", errors.New("key not found"))
+	return nil, errors.New("key not found")
 }
 
 // ListKeys returns a list of key IDs.
-func (m *FakeKMSClient) ListKeys(_ *kmslib.ListKeysInput) (*kmslib.ListKeysOutput, error) {
-	keys := make([]*kmslib.KeyListEntry, 0, len(m.keys))
+func (m *FakeKMSClient) ListKeys(ctx context.Context, input *kms.ListKeysInput, opts ...func(*kms.Options)) (*kms.ListKeysOutput, error) {
+	keys := make([]kmstypes.KeyListEntry, 0, len(m.keys))
 	for _, key := range m.keys {
-		keys = append(keys, &kmslib.KeyListEntry{
-			KeyId: aws.String(key.KeyID),
+		keyID := key.KeyID
+		keys = append(keys, kmstypes.KeyListEntry{
+			KeyId: &keyID,
 		})
 	}
-	return &kmslib.ListKeysOutput{
+	return &kms.ListKeysOutput{
 		Keys: keys,
 	}, nil
 }

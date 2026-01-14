@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // Register postgres driver
 	"github.com/spf13/cobra"
@@ -396,9 +394,8 @@ func loadKeystoreSignerReader(ctx context.Context, cmd *cobra.Command) (interfac
 	// Check if KMS mode is enabled
 	kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
 	if kmsProfile != "" {
-		client, err := kms.NewClient(session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-			Profile:           kmsProfile,
+		client, err := kms.NewClient(ctx, kms.ClientOptions{
+			Profile: kmsProfile,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("create KMS client: %w", err)

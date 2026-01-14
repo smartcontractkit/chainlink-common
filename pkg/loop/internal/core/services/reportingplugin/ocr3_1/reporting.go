@@ -34,7 +34,7 @@ func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterfa
 	return &reportingPluginFactoryClient{b, goplugin.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }
 
-func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3_1types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3_1types.ReportingPlugin[[]byte], ocr3_1types.ReportingPluginInfo, error) {
 	reply, err := r.grpc.NewReportingPlugin(ctx, &ocr3.NewReportingPluginRequest{ReportingPluginConfig: &ocr3.ReportingPluginConfig{
 		ConfigDigest:                            config.ConfigDigest[:],
 		OracleID:                                uint32(config.OracleID),
@@ -49,7 +49,7 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, c
 		MaxDurationShouldAcceptAttestedReport:   int64(config.MaxDurationShouldAcceptAttestedReport),
 	}})
 	if err != nil {
-		return nil, ocr3types.ReportingPluginInfo{}, err
+		return nil, ocr3_1types.ReportingPluginInfo{}, err
 	}
 	rpi := ocr3_1types.ReportingPluginInfo{
 		Name: reply.ReportingPluginInfo.Name,
@@ -62,7 +62,7 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, c
 	}
 	cc, err := r.BrokerExt.Dial(reply.ReportingPluginID)
 	if err != nil {
-		return nil, ocr3types.ReportingPluginInfo{}, err
+		return nil, ocr3_1types.ReportingPluginInfo{}, err
 	}
 	return newReportingPluginClient(r.BrokerExt, cc), rpi, nil
 }
@@ -107,7 +107,7 @@ func (r *reportingPluginFactoryServer) NewReportingPlugin(ctx context.Context, r
 
 	const name = "OCR3_1ReportingPlugin"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr3.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
+		ocr3_1.RegisterReportingPluginServer(s, &reportingPluginServer{impl: rp})
 	}, net.Resource{Closer: rp, Name: name})
 	if err != nil {
 		return nil, err
@@ -325,8 +325,11 @@ func (o *reportingPluginClient) Close() error {
 }
 
 func newReportingPluginClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
-	return &reportingPluginClient{b.WithName("OCR3ReportingPluginClient"), ocr3.NewReportingPluginClient(cc),
-		keyValueReaders: *newKeyValueReaders()}
+	return &reportingPluginClient{b.WithName("OCR3ReportingPluginClient"),
+		ocr3_1.NewReportingPluginClient(cc),
+		newMethodScopedStore[ocr3_1types.KeyValueReader](),
+		newMethodScopedStore[ocr3_1types.KeyValueReadWriter](),
+	}
 }
 
 var _ ocr3.ReportingPluginServer = (*reportingPluginServer)(nil)
@@ -427,15 +430,6 @@ func (o *reportingPluginServer) ShouldTransmitAcceptedReport(ctx context.Context
 
 func (o *reportingPluginServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, o.impl.Close()
-}
-
-func pbOutcomeContext(oc ocr3types.OutcomeContext) *ocr3.OutcomeContext {
-	return &ocr3.OutcomeContext{
-		SeqNr:           oc.SeqNr,
-		PreviousOutcome: oc.PreviousOutcome,
-		Epoch:           oc.Epoch, //nolint:all
-		Round:           oc.Round, //nolint:all
-	}
 }
 
 func pbAttributedObservation(ao libocr.AttributedObservation) *ocr3.AttributedObservation {

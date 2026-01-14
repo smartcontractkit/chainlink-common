@@ -52,6 +52,7 @@ jobs:
         uses: smartcontractkit/.github/actions/ci-lint-go@dx-2618/golangci-lint # TODO - use versioned release
         with:
           checkout-repo: false
+          artifact-name: golalngci-lint-report-${{ matrix.module }}
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
           golangci-lint-args: "--output.text.path=stdout --output.checkstyle.path=${{ github.workspace }}/${{ matrix.module }}/golangci-lint-report.xml"

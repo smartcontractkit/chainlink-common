@@ -11,11 +11,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
-type messageWithCallback struct {
-	event    *chipingress.CloudEventPb
-	callback func(error)
-}
-
 type Client struct {
 	client             chipingress.Client
 	batchSize          int
@@ -28,11 +23,12 @@ type Client struct {
 	callbackWg         sync.WaitGroup
 	shutdownTimeout    time.Duration
 	shutdownOnce       sync.Once
+	batch              *messageBatch
 }
 
 type Opt func(*Client)
 
-func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
+func NewClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c := &Client{
 		client:             client,
 		log:                zap.NewNop().Sugar(),
@@ -44,6 +40,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		shutdownChan:       make(chan struct{}),
 		callbackWg:         sync.WaitGroup{},
 		shutdownTimeout:    5 * time.Second,
+		batch:              newMessageBatch(10),
 	}
 
 	for _, opt := range opts {
@@ -55,35 +52,36 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 
 func (b *Client) Start(ctx context.Context) {
 	go func() {
-		batch := make([]*messageWithCallback, 0, b.batchSize)
 		timer := time.NewTimer(b.batchInterval)
 		timer.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
-				b.flush(batch)
+				// ensure:
+				// - current batch is flushed
+				// - all current network calls are completed
+				// - all callbacks are completed
+				b.Stop()
 				return
-			case <-b.shutdownChan:
-				b.flush(batch)
+			case <-b.shutdownChan: // this can only happen if .Stop()
+				// since this was called from Stop, the remaining batch will be flushed alredy
 				return
 			case msg := <-b.messageBuffer:
-				if len(batch) == 0 {
+				if b.batch.Len() == 0 {
 					timer.Reset(b.batchInterval)
 				}
 
-				batch = append(batch, msg)
+				b.batch.Add(msg)
 
-				if len(batch) >= b.batchSize {
-					batchToSend := batch
-					batch = make([]*messageWithCallback, 0, b.batchSize)
+				if b.batch.Len() >= b.batchSize {
+					batchToSend := b.batch.Clear()
 					timer.Stop()
 					b.sendBatch(ctx, batchToSend)
 				}
 			case <-timer.C:
-				if len(batch) > 0 {
-					batchToSend := batch
-					batch = make([]*messageWithCallback, 0, b.batchSize)
+				if b.batch.Len() > 0 {
+					batchToSend := b.batch.Clear()
 					b.sendBatch(ctx, batchToSend)
 				}
 			}
@@ -91,25 +89,33 @@ func (b *Client) Start(ctx context.Context) {
 	}()
 }
 
+// Stop ensures:
+// - current batch is flushed
+// - all current network calls are completed
+// - all callbacks are completed
+// Forcibly shutdowns down after timeout if not completed.
 func (b *Client) Stop() {
 	b.shutdownOnce.Do(func() {
 		close(b.shutdownChan)
-		// wait for pending sends by getting all semaphore slots
-		for range cap(b.maxConcurrentSends) {
-			b.maxConcurrentSends <- struct{}{}
-		}
-		// wait for all callbacks to complete with timeout
+
 		done := make(chan struct{})
 		go func() {
+			// flush remaining batch
+			b.flush(b.batch.Clear())
+			// wait for pending sends by getting all semaphore slots
+			for range cap(b.maxConcurrentSends) {
+				b.maxConcurrentSends <- struct{}{}
+			}
+			// wait for all callbacks to complete
 			b.callbackWg.Wait()
 			close(done)
 		}()
 
 		select {
 		case <-done:
-			// All callbacks completed successfully
+			// All successfully shutdown
 		case <-time.After(b.shutdownTimeout):
-			b.log.Warnw("timed out waiting for callbacks to complete", "timeout", b.shutdownTimeout)
+			b.log.Warnw("timed out waiting for shutdown to finish, force closing", "timeout", b.shutdownTimeout)
 		}
 	})
 }
@@ -126,14 +132,19 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 		return nil
 	}
 
+	// Check shutdown first to avoid race with buffer send
+	select {
+	case <-b.shutdownChan:
+		return errors.New("client is shutdown")
+	default:
+	}
+
 	msg := &messageWithCallback{
 		event:    event,
 		callback: callback,
 	}
 
 	select {
-	case <-b.shutdownChan:
-		return errors.New("client is shutdown")
 	case b.messageBuffer <- msg:
 		return nil
 	default:

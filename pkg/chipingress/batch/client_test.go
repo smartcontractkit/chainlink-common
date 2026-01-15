@@ -16,31 +16,31 @@ import (
 
 func TestNewBatchClient(t *testing.T) {
 	t.Run("NewBatchClient", func(t *testing.T) {
-		client, err := NewBatchClient(nil)
+		client, err := NewClient(nil)
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 	})
 
 	t.Run("WithBatchSize", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithBatchSize(100))
+		client, err := NewClient(nil, WithBatchSize(100))
 		require.NoError(t, err)
 		assert.Equal(t, 100, client.batchSize)
 	})
 
 	t.Run("WithMaxConcurrentSends", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMaxConcurrentSends(10))
+		client, err := NewClient(nil, WithMaxConcurrentSends(10))
 		require.NoError(t, err)
 		assert.Equal(t, 10, cap(client.maxConcurrentSends))
 	})
 
 	t.Run("WithBatchInterval", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithBatchInterval(100*time.Millisecond))
+		client, err := NewClient(nil, WithBatchInterval(100*time.Millisecond))
 		require.NoError(t, err)
 		assert.Equal(t, 100*time.Millisecond, client.batchInterval)
 	})
 
 	t.Run("WithMessageBuffer", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(1000))
+		client, err := NewClient(nil, WithMessageBuffer(1000))
 		require.NoError(t, err)
 		assert.Equal(t, 1000, cap(client.messageBuffer))
 	})
@@ -48,7 +48,7 @@ func TestNewBatchClient(t *testing.T) {
 
 func TestQueueMessage(t *testing.T) {
 	t.Run("successfully queues a message", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(5))
+		client, err := NewClient(nil, WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		event := &chipingress.CloudEventPb{
@@ -68,7 +68,7 @@ func TestQueueMessage(t *testing.T) {
 	})
 
 	t.Run("drops message if buffer is full", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(1))
+		client, err := NewClient(nil, WithMessageBuffer(1))
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
@@ -90,7 +90,7 @@ func TestQueueMessage(t *testing.T) {
 	})
 
 	t.Run("handles nil event", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(5))
+		client, err := NewClient(nil, WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		client.QueueMessage(nil, nil)
@@ -117,7 +117,7 @@ func TestSendBatch(t *testing.T) {
 			Return(&chipingress.PublishResponse{}, nil).Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
+		client, err := NewClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		messages := []*messageWithCallback{
@@ -141,7 +141,7 @@ func TestSendBatch(t *testing.T) {
 	t.Run("doesn't publish empty batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 
-		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
+		client, err := NewClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		client.sendBatch(t.Context(), []*messageWithCallback{})
@@ -166,7 +166,7 @@ func TestSendBatch(t *testing.T) {
 			}).
 			Times(3)
 
-		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
+		client, err := NewClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		batch1 := []*messageWithCallback{
@@ -214,7 +214,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(3), WithBatchInterval(5*time.Second))
+		client, err := NewClient(mockClient, WithBatchSize(3), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -252,7 +252,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
+		client, err := NewClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -291,7 +291,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
+		client, err := NewClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -331,7 +331,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(100*time.Millisecond), WithMessageBuffer(10))
+		client, err := NewClient(mockClient, WithBatchSize(10), WithBatchInterval(100*time.Millisecond), WithMessageBuffer(10))
 		require.NoError(t, err)
 
 		client.Start(t.Context())
@@ -355,7 +355,7 @@ func TestStart(t *testing.T) {
 	t.Run("no flush when batch is empty", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
+		client, err := NewClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -391,7 +391,7 @@ func TestStart(t *testing.T) {
 			}).
 			Times(3)
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
+		client, err := NewClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -435,7 +435,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(1))
+		client, err := NewClient(mockClient, WithBatchSize(1))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -486,7 +486,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(1))
+		client, err := NewClient(mockClient, WithBatchSize(1))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -536,7 +536,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(1))
+		client, err := NewClient(mockClient, WithBatchSize(1))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -579,7 +579,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(3))
+		client, err := NewClient(mockClient, WithBatchSize(3))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -658,7 +658,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
+		client, err := NewClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -707,7 +707,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
+		client, err := NewClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -762,7 +762,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
+		client, err := NewClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -802,7 +802,7 @@ func TestCallbacks(t *testing.T) {
 func TestStop(t *testing.T) {
 	t.Run("can call Stop multiple times without panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
-		client, err := NewBatchClient(mockClient, WithBatchSize(10))
+		client, err := NewClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -816,7 +816,7 @@ func TestStop(t *testing.T) {
 
 	t.Run("QueueMessage returns error after Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
-		client, err := NewBatchClient(mockClient, WithBatchSize(10))
+		client, err := NewClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())

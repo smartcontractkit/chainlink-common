@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -118,10 +119,11 @@ func (b *Client) Stop() {
 // The callback receives an error parameter (nil on success).
 // Callbacks are invoked from goroutines
 // Returns immediately with no blocking - drops message if channel is full.
-// Returns true if message was queued, false if it was dropped.
-func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(error)) bool {
+// Returns an error if the message was dropped.
+func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(error)) error {
+
 	if event == nil {
-		return false
+		return nil
 	}
 
 	msg := &messageWithCallback{
@@ -130,10 +132,12 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	}
 
 	select {
+	case <-b.shutdownChan:
+		return errors.New("client is shutdown")
 	case b.messageBuffer <- msg:
-		return true
+		return nil
 	default:
-		return false
+		return errors.New("message buffer is full")
 	}
 }
 

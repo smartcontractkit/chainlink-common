@@ -338,8 +338,8 @@ func TestStart(t *testing.T) {
 
 		queued1 := client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
 		queued2 := client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
-		require.True(t, queued1)
-		require.True(t, queued2)
+		require.NoError(t, queued1)
+		require.NoError(t, queued2)
 
 		select {
 		case <-done:
@@ -812,5 +812,36 @@ func TestStop(t *testing.T) {
 		client.Stop()
 		client.Stop()
 		client.Stop()
+	})
+
+	t.Run("QueueMessage returns error after Stop", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		client, err := NewBatchClient(mockClient, WithBatchSize(10))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+
+		// Queue message before stop - should succeed
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-1",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, nil)
+		require.NoError(t, err)
+
+		// Stop the client
+		client.Stop()
+
+		// Queue message after stop - should fail
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "test-id-2",
+			Source: "test-source",
+			Type:   "test.event.type",
+		}, nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "shutdown")
 	})
 }

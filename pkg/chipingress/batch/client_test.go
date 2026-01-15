@@ -804,3 +804,19 @@ func TestCallbacks(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 }
+
+func TestStop(t *testing.T) {
+	t.Run("can call Stop multiple times without panic", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		client, err := NewBatchClient(mockClient, WithBatchSize(10))
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+		client.Stop()
+		client.Stop()
+		client.Stop()
+	})
+}

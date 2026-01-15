@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -24,6 +25,9 @@ type Client struct {
 	messageBuffer      chan *messageWithCallback
 	shutdownChan       chan struct{}
 	log                *zap.SugaredLogger
+	callbackWg         sync.WaitGroup
+	shutdownTimeout    time.Duration
+	shutdownOnce       sync.Once
 }
 
 type Opt func(*Client)
@@ -31,6 +35,7 @@ type Opt func(*Client)
 func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c := &Client{
 		client:             client,
+		log:                zap.NewNop().Sugar(),
 		batchSize:          1,
 		maxConcurrentSends: make(chan struct{}, 1),
 		messageBuffer:      make(chan *messageWithCallback, 1000),
@@ -38,6 +43,8 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		maxPublishTimeout:  5 * time.Second,
 		compressionType:    "gzip",
 		shutdownChan:       make(chan struct{}),
+		callbackWg:         sync.WaitGroup{},
+		shutdownTimeout:    5 * time.Second,
 	}
 
 	for _, opt := range opts {
@@ -57,7 +64,6 @@ func (b *Client) Start(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				b.flush(batch)
-				close(b.shutdownChan)
 				return
 			case <-b.shutdownChan:
 				b.flush(batch)
@@ -87,11 +93,26 @@ func (b *Client) Start(ctx context.Context) {
 }
 
 func (b *Client) Stop() {
-	close(b.shutdownChan)
-	// wait for pending sends by getting all semaphore slots
-	for range cap(b.maxConcurrentSends) {
-		b.maxConcurrentSends <- struct{}{}
-	}
+	b.shutdownOnce.Do(func() {
+		close(b.shutdownChan)
+		// wait for pending sends by getting all semaphore slots
+		for range cap(b.maxConcurrentSends) {
+			b.maxConcurrentSends <- struct{}{}
+		}
+		// wait for all callbacks to complete with timeout
+		done := make(chan struct{})
+		go func() {
+			b.callbackWg.Wait()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			// All callbacks completed successfully
+		case <-time.After(b.shutdownTimeout):
+			b.log.Warnw("timed out waiting for callbacks to complete", "timeout", b.shutdownTimeout)
+		}
+	})
 }
 
 // QueueMessage queues a single message to the batch client with an optional callback.
@@ -119,15 +140,16 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 }
 
 func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback) {
+
 	if len(messages) == 0 {
 		return
 	}
 
+	// acquire semaphore, limiting concurrent sends
 	b.maxConcurrentSends <- struct{}{}
 
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
-
 		// this is specifically to prevent long running network calls
 		ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
 		defer cancel()
@@ -138,25 +160,20 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 		}
 
 		_, err := b.client.PublishBatch(ctxTimeout, &chipingress.CloudEventBatch{Events: events})
-		if err != nil && b.log != nil {
+		if err != nil {
 			b.log.Errorw("failed to publish batch", "error", err)
 		}
-
-		go func() {
+		// the callbacks are placed in their own goroutine to not block releasing the semaphore
+		// we use a wait group, to ensure all callbacks are completed if  .Stop() is called.
+		b.callbackWg.Go(func() {
 			for _, msg := range messages {
-				select {
-				case <-ctx.Done():
-					return
-				case <-b.shutdownChan:
-					return
-				default:
-					if msg.callback != nil {
-						msg.callback(err)
-					}
+				if msg.callback != nil {
+					msg.callback(err)
 				}
 			}
-		}()
+		})
 	}()
+
 }
 
 func (b *Client) flush(batch []*messageWithCallback) {

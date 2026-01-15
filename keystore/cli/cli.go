@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS encrypted_keystore (
 	exportCmd := NewExportCmd()
 	importCmd := NewImportCmd()
 	setMetadataCmd := NewSetMetadataCmd()
+	renameCmd := NewRenameCmd()
 	// Note these could potentially be supported with KMS, but not yet implemented.
 	encryptCmd := NewEncryptCmd()
 	decryptCmd := NewDecryptCmd()
@@ -77,11 +78,12 @@ CREATE TABLE IF NOT EXISTS encrypted_keystore (
 		exportCmd.Hidden = true
 		importCmd.Hidden = true
 		setMetadataCmd.Hidden = true
+		renameCmd.Hidden = true
 		encryptCmd.Hidden = true
 		decryptCmd.Hidden = true
 	}
 
-	cmd.AddCommand(listCmd, getCmd, createCmd, deleteCmd, exportCmd, importCmd, setMetadataCmd, signCmd, verifyCmd, encryptCmd, decryptCmd)
+	cmd.AddCommand(listCmd, getCmd, createCmd, deleteCmd, exportCmd, importCmd, setMetadataCmd, renameCmd, signCmd, verifyCmd, encryptCmd, decryptCmd)
 	return cmd
 }
 
@@ -229,6 +231,20 @@ func NewSetMetadataCmd() *cobra.Command {
 	}
 	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
 	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"Updates\": [{\"KeyName\": \"key1\", \"Metadata\": \"base64-encoded-metadata\"}]}'")
+	return &cmd
+}
+
+func NewRenameCmd() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "rename", Short: "Rename a key",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKeystoreCommand[ks.Keystore, ks.RenameKeyRequest, ks.RenameKeyResponse](cmd, args, loadKeystore, func(ctx context.Context, k ks.Keystore, req ks.RenameKeyRequest) (ks.RenameKeyResponse, error) {
+				return k.RenameKey(ctx, req)
+			})
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "input file path (use \"-\" for stdin)")
+	cmd.Flags().StringP("data", "d", "", "inline JSON request, e.g. '{\"OldName\": \"key1\", \"NewName\": \"key2\"}'")
 	return &cmd
 }
 

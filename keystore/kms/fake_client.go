@@ -2,6 +2,7 @@ package kms
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/x509"
 	"errors"
@@ -44,7 +45,8 @@ func (m *FakeKMSClient) GetPublicKey(ctx context.Context, input *kms.GetPublicKe
 			var err error
 			switch key.KeyType {
 			case keystore.ECDSA_S256:
-				ecdsaKey, err := crypto.ToECDSA(internal.Bytes(key.PrivateKey))
+				var ecdsaKey *ecdsa.PrivateKey
+				ecdsaKey, err = crypto.ToECDSA(internal.Bytes(key.PrivateKey))
 				if err != nil {
 					return nil, err
 				}

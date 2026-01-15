@@ -41,7 +41,6 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		messageBuffer:      make(chan *messageWithCallback, 1000),
 		batchInterval:      100 * time.Millisecond,
 		maxPublishTimeout:  5 * time.Second,
-		compressionType:    "gzip",
 		shutdownChan:       make(chan struct{}),
 		callbackWg:         sync.WaitGroup{},
 		shutdownTimeout:    5 * time.Second,

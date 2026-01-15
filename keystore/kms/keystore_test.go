@@ -4,11 +4,11 @@ import (
 	"crypto/ed25519"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	kms "github.com/smartcontractkit/chainlink-common/keystore/kms"
 )
 
@@ -20,12 +20,14 @@ func TestKMSKeystore(t *testing.T) {
 	require.NoError(t, err)
 	fakeClient, err := kms.NewFakeKMSClient([]kms.Key{
 		{
-			ECDSAKey: key,
-			KeyID:    keyID,
+			KeyType:    keystore.ECDSA_S256,
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(key)),
+			KeyID:      keyID,
 		},
 		{
-			ECDSAKey: key2,
-			KeyID:    keyID2,
+			KeyType:    keystore.ECDSA_S256,
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(key2)),
+			KeyID:      keyID2,
 		},
 	})
 	require.NoError(t, err)
@@ -100,9 +102,9 @@ func TestKMSKeystore_Ed25519(t *testing.T) {
 
 	fakeClient, err := kms.NewFakeKMSClient([]kms.Key{
 		{
-			Ed25519Key: ed25519PrivKey,
+			KeyType:    keystore.Ed25519,
 			KeyID:      keyID,
-			KeySpec:    types.KeySpecEccNistEdwards25519,
+			PrivateKey: internal.NewRaw(ed25519PrivKey),
 		},
 	})
 	require.NoError(t, err)

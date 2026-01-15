@@ -2,7 +2,6 @@ package kms
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/x509"
 	"errors"
@@ -11,28 +10,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 	kmstypes "github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/smartcontractkit/chainlink-common/keystore"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
 type FakeKMSClient struct {
-	keys      []Key
+	keys []Key
+
 	createdAt time.Time
 }
 
 type Key struct {
-	ECDSAKey   *ecdsa.PrivateKey
-	Ed25519Key ed25519.PrivateKey
+	KeyType    keystore.KeyType
 	KeyID      string
-	KeySpec    kmstypes.KeySpec
-}
-
-// IsECDSA returns true if this key is an ECDSA key.
-func (k Key) IsECDSA() bool {
-	return k.ECDSAKey != nil
-}
-
-// IsEd25519 returns true if this key is an Ed25519 key.
-func (k Key) IsEd25519() bool {
-	return len(k.Ed25519Key) > 0
+	PrivateKey internal.Raw
 }
 
 func NewFakeKMSClient(keys []Key) (*FakeKMSClient, error) {
@@ -50,20 +42,29 @@ func (m *FakeKMSClient) GetPublicKey(ctx context.Context, input *kms.GetPublicKe
 		if *input.KeyId == key.KeyID {
 			var asn1PubKey []byte
 			var err error
-			if key.IsECDSA() {
-				asn1PubKey, err = SEC1ToASN1PublicKey(crypto.FromECDSAPub(&key.ECDSAKey.PublicKey))
+			switch key.KeyType {
+			case keystore.ECDSA_S256:
+				ecdsaKey, err := crypto.ToECDSA(internal.Bytes(key.PrivateKey))
 				if err != nil {
 					return nil, err
 				}
-			} else if key.IsEd25519() {
-				// Ed25519 public key is the last 32 bytes of the private key
-				pubKey := ed25519.PublicKey(key.Ed25519Key[32:])
+				asn1PubKey, err = SEC1ToASN1PublicKey(crypto.FromECDSAPub(&ecdsaKey.PublicKey))
+				if err != nil {
+					return nil, err
+				}
+			case keystore.Ed25519:
+				// Ed25519 private key is 64 bytes, public key is the last 32 bytes
+				ed25519PrivKey := ed25519.PrivateKey(internal.Bytes(key.PrivateKey))
+				if len(ed25519PrivKey) != 64 {
+					return nil, errors.New("invalid Ed25519 private key length")
+				}
+				pubKey := ed25519.PublicKey(ed25519PrivKey[32:])
 				asn1PubKey, err = x509.MarshalPKIXPublicKey(pubKey)
 				if err != nil {
 					return nil, err
 				}
-			} else {
-				return nil, errors.New("key has no valid private key")
+			default:
+				return nil, errors.New("unsupported key type")
 			}
 			return &kms.GetPublicKeyOutput{
 				KeyId:     &key.KeyID,
@@ -81,8 +82,13 @@ func (m *FakeKMSClient) Sign(ctx context.Context, input *kms.SignInput, opts ...
 	for _, key := range m.keys {
 		if *input.KeyId == key.KeyID {
 			var signature []byte
-			if key.IsECDSA() {
-				sig, err := crypto.Sign(input.Message, key.ECDSAKey)
+			switch key.KeyType {
+			case keystore.ECDSA_S256:
+				ecdsaKey, err := crypto.ToECDSA(internal.Bytes(key.PrivateKey))
+				if err != nil {
+					return nil, err
+				}
+				sig, err := crypto.Sign(input.Message, ecdsaKey)
 				if err != nil {
 					return nil, err
 				}
@@ -90,11 +96,12 @@ func (m *FakeKMSClient) Sign(ctx context.Context, input *kms.SignInput, opts ...
 				if err != nil {
 					return nil, err
 				}
-			} else if key.IsEd25519() {
+			case keystore.Ed25519:
 				// Ed25519 signatures are 64 bytes and don't need ASN.1 encoding
-				signature = ed25519.Sign(key.Ed25519Key, input.Message)
-			} else {
-				return nil, errors.New("key has no valid private key")
+				ed25519PrivKey := ed25519.PrivateKey(internal.Bytes(key.PrivateKey))
+				signature = ed25519.Sign(ed25519PrivKey, input.Message)
+			default:
+				return nil, errors.New("unsupported key type")
 			}
 			return &kms.SignOutput{
 				KeyId:     &key.KeyID,
@@ -112,16 +119,14 @@ func (m *FakeKMSClient) DescribeKey(ctx context.Context, input *kms.DescribeKeyI
 	}
 	for _, key := range m.keys {
 		if *input.KeyId == key.KeyID {
-			keySpec := key.KeySpec
-			// Default based on key type if not specified
-			if keySpec == "" {
-				if key.IsECDSA() {
-					keySpec = kmstypes.KeySpecEccSecgP256k1
-				} else if key.IsEd25519() {
-					keySpec = kmstypes.KeySpecEccNistEdwards25519
-				} else {
-					return nil, errors.New("key has no valid private key")
-				}
+			var keySpec kmstypes.KeySpec
+			switch key.KeyType {
+			case keystore.ECDSA_S256:
+				keySpec = kmstypes.KeySpecEccSecgP256k1
+			case keystore.Ed25519:
+				keySpec = kmstypes.KeySpecEccNistEdwards25519
+			default:
+				return nil, errors.New("unsupported key type")
 			}
 			return &kms.DescribeKeyOutput{
 				KeyMetadata: &kmstypes.KeyMetadata{

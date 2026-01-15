@@ -151,8 +151,8 @@ type KeyInfo struct {
 	Metadata  []byte
 }
 
-// newKeyInfo is a private constructor that ensures all fields are set explicitly.
-func newKeyInfo(name string, keyType KeyType, createdAt time.Time, publicKey []byte, metadata []byte) KeyInfo {
+// NewKeyInfo is a constructor that ensures all fields are set explicitly.
+func NewKeyInfo(name string, keyType KeyType, createdAt time.Time, publicKey []byte, metadata []byte) KeyInfo {
 	return KeyInfo{
 		Name:      name,
 		KeyType:   keyType,

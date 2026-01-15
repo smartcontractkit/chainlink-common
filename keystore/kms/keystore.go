@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	kmslib "github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
+	kmstypes "github.com/aws/aws-sdk-go-v2/service/kms/types"
+
+	"crypto/ed25519"
+	"crypto/x509"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
 )
@@ -27,12 +30,15 @@ func NewKeystore(client Client) (interface {
 // keySpecToKeyType converts an AWS KMS KeySpec to a keystore KeyType.
 // AWS KMS supports:
 //   - ECC_SECG_P256K1 (secp256k1) -> ECDSA_S256
-func keySpecToKeyType(keySpec string) (keystore.KeyType, error) {
+//   - ECC_NIST_EDWARDS25519 (Ed25519) -> Ed25519
+func keySpecToKeyType(keySpec kmstypes.KeySpec) (keystore.KeyType, error) {
 	switch keySpec {
-	case kmslib.KeySpecEccSecgP256k1:
+	case kmstypes.KeySpecEccSecgP256k1:
 		return keystore.ECDSA_S256, nil
+	case kmstypes.KeySpecEccNistEdwards25519:
+		return keystore.Ed25519, nil
 	default:
-		return "", fmt.Errorf("unsupported KMS key spec: %s (only ECC_SECG_P256K1 is supported)", keySpec)
+		return "", fmt.Errorf("unsupported KMS key spec: %s (supported: ECC_SECG_P256K1, ECC_NIST_EDWARDS25519)", keySpec)
 	}
 }
 
@@ -42,29 +48,31 @@ func keySpecToKeyType(keySpec string) (keystore.KeyType, error) {
 // let the user use whatever they are permitted to given their AWS perms.
 func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeysRequest) (keystore.GetKeysResponse, error) {
 	if len(req.KeyNames) == 0 {
-		listResp, err := k.client.ListKeys(&kmslib.ListKeysInput{})
+		listResp, err := k.client.ListKeys(ctx, &kms.ListKeysInput{})
 		if err != nil {
 			return keystore.GetKeysResponse{}, fmt.Errorf("failed to list KMS keys: %w", err)
 		}
 		req.KeyNames = make([]string, 0, len(listResp.Keys))
 		for _, key := range listResp.Keys {
-			req.KeyNames = append(req.KeyNames, aws.StringValue(key.KeyId))
+			if key.KeyId != nil {
+				req.KeyNames = append(req.KeyNames, *key.KeyId)
+			}
 		}
 	}
 
 	keys := make([]keystore.GetKeyResponse, 0, len(req.KeyNames))
 	for _, keyID := range req.KeyNames {
 		// Get public key
-		key, err := k.client.GetPublicKey(&kmslib.GetPublicKeyInput{
-			KeyId: aws.String(keyID),
+		key, err := k.client.GetPublicKey(ctx, &kms.GetPublicKeyInput{
+			KeyId: &keyID,
 		})
 		if err != nil {
 			return keystore.GetKeysResponse{}, fmt.Errorf("failed to get public key for key %s: %w", keyID, err)
 		}
 
 		// Get key metadata to determine key type and creation date
-		describeKey, err := k.client.DescribeKey(&kmslib.DescribeKeyInput{
-			KeyId: aws.String(keyID),
+		describeKey, err := k.client.DescribeKey(ctx, &kms.DescribeKeyInput{
+			KeyId: &keyID,
 		})
 		if err != nil {
 			return keystore.GetKeysResponse{}, fmt.Errorf("failed to describe key %s: %w", keyID, err)
@@ -72,8 +80,7 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 		createdAt := time.Unix(describeKey.KeyMetadata.CreationDate.Unix(), 0)
 
 		// Convert KMS KeySpec to keystore KeyType
-		keySpec := aws.StringValue(describeKey.KeyMetadata.KeySpec)
-		keyType, err := keySpecToKeyType(keySpec)
+		keyType, err := keySpecToKeyType(describeKey.KeyMetadata.KeySpec)
 		if err != nil {
 			return keystore.GetKeysResponse{}, fmt.Errorf("key %s: %w", keyID, err)
 		}
@@ -84,17 +91,23 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 			if err != nil {
 				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert public key for key %s: %w", keyID, err)
 			}
+		case keystore.Ed25519:
+			// ed25519 supported by standard libraries unlike secp256k1.
+			pubKey, err := x509.ParsePKIXPublicKey(key.PublicKey)
+			if err != nil {
+				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert Ed25519 public key for key %s: %w", keyID, err)
+			}
+			ed25519PubKey, ok := pubKey.(ed25519.PublicKey)
+			if !ok {
+				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert Ed25519 public key for key %s to ed25519.PublicKey: %w", keyID, err)
+			}
+			publicKeyBytes = ed25519PubKey
 		default:
 			return keystore.GetKeysResponse{}, fmt.Errorf("unsupported key type: %s", keyType)
 		}
 
 		keys = append(keys, keystore.GetKeyResponse{
-			KeyInfo: keystore.KeyInfo{
-				Name:      keyID,
-				KeyType:   keyType,
-				PublicKey: publicKeyBytes,
-				CreatedAt: createdAt,
-			},
+			KeyInfo: keystore.NewKeyInfo(keyID, keyType, createdAt, publicKeyBytes, []byte{}),
 		})
 	}
 	return keystore.GetKeysResponse{Keys: keys}, nil
@@ -102,20 +115,19 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 
 // Sign signs data using the KMS key specified by the key name.
 func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignRequest) (keystore.SignResponse, error) {
-	key, err := k.client.GetPublicKey(&kmslib.GetPublicKeyInput{
-		KeyId: aws.String(req.KeyName),
+	key, err := k.client.GetPublicKey(ctx, &kms.GetPublicKeyInput{
+		KeyId: &req.KeyName,
 	})
 	if err != nil {
 		return keystore.SignResponse{}, fmt.Errorf("failed to get public key for key %s: %w", req.KeyName, err)
 	}
-	describeKey, err := k.client.DescribeKey(&kmslib.DescribeKeyInput{
-		KeyId: aws.String(req.KeyName),
+	describeKey, err := k.client.DescribeKey(ctx, &kms.DescribeKeyInput{
+		KeyId: &req.KeyName,
 	})
 	if err != nil {
 		return keystore.SignResponse{}, fmt.Errorf("failed to describe key %s: %w", req.KeyName, err)
 	}
-	keySpec := aws.StringValue(describeKey.KeyMetadata.KeySpec)
-	keyType, err := keySpecToKeyType(keySpec)
+	keyType, err := keySpecToKeyType(describeKey.KeyMetadata.KeySpec)
 	if err != nil {
 		return keystore.SignResponse{}, fmt.Errorf("key %s: %w", req.KeyName, err)
 	}
@@ -131,11 +143,11 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 		}
 
 		// MessageType is digest because its prehashed.
-		sig, err := k.client.Sign(&kmslib.SignInput{
-			KeyId:            aws.String(req.KeyName),
+		sig, err := k.client.Sign(ctx, &kms.SignInput{
+			KeyId:            &req.KeyName,
 			Message:          req.Data,
-			SigningAlgorithm: aws.String(string(kmslib.SigningAlgorithmSpecEcdsaSha256)),
-			MessageType:      aws.String(string(kmslib.MessageTypeDigest)),
+			SigningAlgorithm: kmstypes.SigningAlgorithmSpecEcdsaSha256,
+			MessageType:      kmstypes.MessageTypeDigest,
 		})
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to sign data: %w", err)
@@ -146,6 +158,24 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 		}
 		return keystore.SignResponse{
 			Signature: signature,
+		}, nil
+	case keystore.Ed25519:
+		// Ed25519 can sign arbitrary length messages, uses RAW message type
+		sig, err := k.client.Sign(ctx, &kms.SignInput{
+			KeyId:            &req.KeyName,
+			Message:          req.Data,
+			SigningAlgorithm: kmstypes.SigningAlgorithmSpecEd25519Sha512,
+			MessageType:      kmstypes.MessageTypeRaw,
+		})
+		if err != nil {
+			return keystore.SignResponse{}, fmt.Errorf("failed to sign data: %w", err)
+		}
+		// Ed25519 signatures from KMS are already in the correct format (64 bytes)
+		if len(sig.Signature) != 64 {
+			return keystore.SignResponse{}, fmt.Errorf("invalid Ed25519 signature length: expected 64 bytes, got %d", len(sig.Signature))
+		}
+		return keystore.SignResponse{
+			Signature: sig.Signature,
 		}, nil
 	default:
 		return keystore.SignResponse{}, fmt.Errorf("key %s: %w", req.KeyName, keystore.ErrInvalidSignRequest)

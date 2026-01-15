@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+// Client is a batching client that accumulates messages and sends them in batches.
 type Client struct {
 	client             chipingress.Client
 	batchSize          int
@@ -26,9 +27,11 @@ type Client struct {
 	batch              *messageBatch
 }
 
+// Opt is a functional option for configuring the batch Client.
 type Opt func(*Client)
 
-func NewClient(client chipingress.Client, opts ...Opt) (*Client, error) {
+// NewBatchClient creates a new batching client with the given options.
+func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c := &Client{
 		client:             client,
 		log:                zap.NewNop().Sugar(),
@@ -50,6 +53,7 @@ func NewClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	return c, nil
 }
 
+// Start begins processing messages from the queue and sending them in batches
 func (b *Client) Start(ctx context.Context) {
 	go func() {
 		timer := time.NewTimer(b.batchInterval)
@@ -153,7 +157,6 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 }
 
 func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback) {
-
 	if len(messages) == 0 {
 		return
 	}
@@ -200,42 +203,49 @@ func (b *Client) flush(batch []*messageWithCallback) {
 	b.sendBatch(ctx, batch)
 }
 
+// WithBatchSize sets the number of messages to accumulate before sending a batch
 func WithBatchSize(batchSize int) Opt {
 	return func(c *Client) {
 		c.batchSize = batchSize
 	}
 }
 
+// WithMaxConcurrentSends sets the maximum number of concurrent batch send operations
 func WithMaxConcurrentSends(maxConcurrentSends int) Opt {
 	return func(c *Client) {
 		c.maxConcurrentSends = make(chan struct{}, maxConcurrentSends)
 	}
 }
 
+// WithBatchInterval sets the maximum time to wait before sending an incomplete batch
 func WithBatchInterval(batchTimeout time.Duration) Opt {
 	return func(c *Client) {
 		c.batchInterval = batchTimeout
 	}
 }
 
+// WithShutdownTimeout sets the maximum time to wait for shutdown to complete
 func WithShutdownTimeout(shutdownTimeout time.Duration) Opt {
 	return func(c *Client) {
 		c.shutdownTimeout = shutdownTimeout
 	}
 }
 
+// WithMessageBuffer sets the size of the message queue buffer
 func WithMessageBuffer(messageBufferSize int) Opt {
 	return func(c *Client) {
 		c.messageBuffer = make(chan *messageWithCallback, messageBufferSize)
 	}
 }
 
+// WithMaxPublishTimeout sets the maximum time to wait for a batch publish operation
 func WithMaxPublishTimeout(maxPublishTimeout time.Duration) Opt {
 	return func(c *Client) {
 		c.maxPublishTimeout = maxPublishTimeout
 	}
 }
 
+// WithLogger sets the logger for the batch client
 func WithLogger(log *zap.SugaredLogger) Opt {
 	return func(c *Client) {
 		c.log = log

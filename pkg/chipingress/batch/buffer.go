@@ -1,3 +1,4 @@
+// Package batch provides a thread-safe batching client for chip ingress messages.
 package batch
 
 import (

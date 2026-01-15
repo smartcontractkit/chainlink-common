@@ -42,12 +42,25 @@ func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.Su
 		Data: txRequest.Data,
 	}
 
+	// DEBUG: Log incoming request
+	var inputMaxGasPrice string
+	if txRequest.GasConfig != nil && txRequest.GasConfig.MaxGasPrice != nil {
+		inputMaxGasPrice = txRequest.GasConfig.MaxGasPrice.String()
+	} else if txRequest.GasConfig != nil {
+		inputMaxGasPrice = "nil (GasConfig exists but MaxGasPrice is nil)"
+	} else {
+		inputMaxGasPrice = "nil (no GasConfig)"
+	}
+	fmt.Printf("DEBUG EVMClient.SubmitTransaction: INPUT MaxGasPrice=%s\n", inputMaxGasPrice)
+
 	if txRequest.GasConfig != nil {
 		gasCfg, err := evmpb.ConvertGasConfigToProto(*txRequest.GasConfig)
 		if err != nil {
 			return nil, err
 		}
 		pbTxRequest.GasConfig = gasCfg
+		// DEBUG: Log converted protobuf
+		fmt.Printf("DEBUG EVMClient.SubmitTransaction: CONVERTED pb.GasConfig=%+v, pb.MaxGasPrice=%v\n", gasCfg, gasCfg.MaxGasPrice)
 	}
 
 	reply, err := e.grpcClient.SubmitTransaction(ctx, pbTxRequest)

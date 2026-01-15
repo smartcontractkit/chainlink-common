@@ -716,18 +716,28 @@ func ConvertGasConfigToProto(gasConfig evmtypes.GasConfig) (*GasConfig, error) {
 		return nil, fmt.Errorf("gas limit can't be nil")
 	}
 
-	return &GasConfig{
+	pbGasConfig := &GasConfig{
 		GasLimit: *gasConfig.GasLimit,
-	}, nil
+	}
+
+	if gasConfig.MaxGasPrice != nil {
+		pbGasConfig.MaxGasPrice = valuespb.NewBigIntFromInt(gasConfig.MaxGasPrice)
+	}
+
+	return pbGasConfig, nil
 }
 
 func ConvertGasConfigFromProto(gasConfig *GasConfig) *evmtypes.GasConfig {
 	if gasConfig == nil {
 		return nil
 	}
-	return &evmtypes.GasConfig{
+	result := &evmtypes.GasConfig{
 		GasLimit: &gasConfig.GasLimit,
 	}
+	if gasConfig.MaxGasPrice != nil {
+		result.MaxGasPrice = valuespb.NewIntFromBigInt(gasConfig.MaxGasPrice)
+	}
+	return result
 }
 
 func ConvertTxStatusFromProto(txStatus TxStatus) evmtypes.TransactionStatus {

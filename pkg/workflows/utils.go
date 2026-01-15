@@ -2,6 +2,7 @@ package workflows
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"strings"
 
@@ -75,50 +76,63 @@ func GenerateWorkflowID(owner []byte, name string, workflow []byte, config []byt
 	return sha, nil
 }
 
+// CREATE2-style address derivation with domain separation and collision resistance:
+// ownerAddress = keccak256(0xff ++ bytes.repeat(0x0, 84) ++
+// "Chainlink Runtime Environment GenerateWorkflowOwnerAddress\x00" ++
+// len(prefix).to_bytes(8, byteorder='big') ++ prefix ++
+// len(ownerKey).to_bytes(8, byteorder='big') ++ ownerKey)[12:]
 func GenerateWorkflowOwnerAddress(prefix string, ownerKey string) ([]byte, error) {
-	// CREATE2 proposed in EIP-1014:
-	// keccak256(0xff ++ address ++ salt ++ keccak256(init_code))[12:]
-	// CREATE2-style address derivation inspired by the above:
-	// ownerAddress = keccak256(0xff ++ bytes.repeat(0x0, 84) ++ keccak256(prefix ++ ownerKey))[12:]
-
-	outerHash := sha3.NewLegacyKeccak256()
+	hash := sha3.NewLegacyKeccak256()
 
 	// Write 0xff byte
-	_, err := outerHash.Write([]byte{0xff})
+	_, err := hash.Write([]byte{0xff})
 	if err != nil {
 		return nil, err
 	}
 
 	// Write 84 zero bytes because preimage for the final hashing round is always exactly 85 bytes
 	zeroBytes := make([]byte, 84)
-	_, err = outerHash.Write(zeroBytes)
+	_, err = hash.Write(zeroBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	// Creation of the nested hash
-	nestedHash := sha3.NewLegacyKeccak256()
+	// Write domain separator string
+	domainSeparator := "Chainlink Runtime Environment GenerateWorkflowOwnerAddress\x00"
+	_, err = hash.Write([]byte(domainSeparator))
+	if err != nil {
+		return nil, err
+	}
+
+	// Write length-prefixed prefix as big endian
+	prefixLen := uint64(len(prefix))
+	err = binary.Write(hash, binary.BigEndian, prefixLen)
+	if err != nil {
+		return nil, err
+	}
 
 	// Write prefix
-	_, err = nestedHash.Write([]byte(prefix))
+	_, err = hash.Write([]byte(prefix))
+	if err != nil {
+		return nil, err
+	}
+
+	// Write length-prefixed ownerKey as big endian
+	ownerKeyLen := uint64(len(ownerKey))
+	err = binary.Write(hash, binary.BigEndian, ownerKeyLen)
 	if err != nil {
 		return nil, err
 	}
 
 	// Write ownerKey
-	_, err = nestedHash.Write([]byte(ownerKey))
+	_, err = hash.Write([]byte(ownerKey))
 	if err != nil {
 		return nil, err
 	}
 
-	// Write the nested hash within the outer hash
-	_, err = outerHash.Write(nestedHash.Sum(nil))
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the last 20 bytes (EVM compatible address)
-	return outerHash.Sum(nil)[12:], nil
+	// Return the first 20 bytes (Ethereum address)
+	fullHash := hash.Sum(nil)
+	return fullHash[:20], nil
 }
 
 // HashTruncateName returns the SHA-256 hash of the workflow name truncated to the first 10 bytes.

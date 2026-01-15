@@ -81,11 +81,11 @@ var Default = Schema{
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
-		TriggerEventQueueLimit:        Int(1_000),
+		TriggerEventQueueLimit:        Int(50),
 		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
 		TriggerSubscriptionTimeout:    Duration(15 * time.Second),
 		TriggerSubscriptionLimit:      Int(10),
-		CapabilityConcurrencyLimit:    Int(3),
+		CapabilityConcurrencyLimit:    Int(30), // we should rely on per-capability execution limits instead of concurrency limit
 		CapabilityCallTimeout:         Duration(3 * time.Minute),
 		SecretsConcurrencyLimit:       Int(5),
 		ExecutionConcurrencyLimit:     Int(5),
@@ -123,6 +123,12 @@ var Default = Schema{
 			ReportSizeLimit: Size(5 * config.KByte),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
+				GasLimit: PerChainSelector(Uint64(5_000_000), map[string]uint64{
+					// geth-testnet
+					"3379446385462418246": 10_000_000,
+					// geth-devnet2
+					"12922642891491394802": 50_000_000,
+				}),
 			},
 		},
 		ChainRead: chainRead{
@@ -132,7 +138,7 @@ var Default = Schema{
 		},
 		Consensus: consensus{
 			ObservationSizeLimit: Size(100 * config.KByte),
-			CallLimit:            Int(2000),
+			CallLimit:            Int(20),
 		},
 		HTTPAction: httpAction{
 			CallLimit:         Int(5),
@@ -225,7 +231,8 @@ type chainWrite struct {
 	EVM evmChainWrite
 }
 type evmChainWrite struct {
-	TransactionGasLimit Setting[uint64] `unit:"{gas}"`
+	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
+	GasLimit            SettingMap[uint64] `unit:"{gas}"`
 }
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`

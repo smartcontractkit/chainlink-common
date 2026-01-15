@@ -36,9 +36,8 @@ type ClientCapability interface {
 
 	GetTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest) (*capabilities.ResponseAndMetadata[*solana.GetTransactionReply], caperrors.Error)
 
-	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], error)
-	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) error
-	AckEvent(ctx context.Context, triggerId string, eventId string) error
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], caperrors.Error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest) (*capabilities.ResponseAndMetadata[*solana.WriteReportReply], caperrors.Error)
 
@@ -144,10 +143,6 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
-}
-
-func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	return c.ClientCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

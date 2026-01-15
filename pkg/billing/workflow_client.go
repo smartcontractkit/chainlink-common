@@ -11,10 +11,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	nodeauthgrpc "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/grpc"
 	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt"
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // WorkflowClient is a specialized interface for the Workflow node use-case.
@@ -139,7 +139,7 @@ func (wc *workflowClient) addJWTAuth(ctx context.Context, req any) (context.Cont
 	}
 
 	// Add JWT to Authorization header
-	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
+	return metadata.AppendToOutgoingContext(ctx, nodeauthgrpc.AuthorizationHeader, nodeauthgrpc.BearerPrefix+jwtToken), nil
 }
 
 func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error) {

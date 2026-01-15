@@ -34,9 +34,8 @@ type ClientCapability interface {
 
 	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*capabilities.ResponseAndMetadata[*evm.HeaderByNumberReply], caperrors.Error)
 
-	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
-	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
-	AckEvent(ctx context.Context, triggerId string, eventId string) error
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], caperrors.Error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], caperrors.Error)
 
@@ -142,10 +141,6 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
-}
-
-func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	return c.ClientCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

@@ -21,9 +21,8 @@ var _ = emptypb.Empty{}
 type BasicCapability interface {
 	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*capabilities.ResponseAndMetadata[*actionandtrigger.Output], caperrors.Error)
 
-	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
-	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
-	AckEvent(ctx context.Context, triggerId string, eventId string) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], caperrors.Error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -125,10 +124,6 @@ func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabil
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
-}
-
-func (c *basicCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	return c.BasicCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *basicCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

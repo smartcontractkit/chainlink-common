@@ -8,6 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 	kmstypes "github.com/aws/aws-sdk-go-v2/service/kms/types"
 
+	"crypto/ed25519"
+	"crypto/x509"
+
 	"github.com/smartcontractkit/chainlink-common/keystore"
 )
 
@@ -89,10 +92,16 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert public key for key %s: %w", keyID, err)
 			}
 		case keystore.Ed25519:
-			publicKeyBytes, err = ASN1ToEd25519PublicKey(key.PublicKey)
+			// ed25519 supported by standard libraries unlike secp256k1.
+			pubKey, err := x509.ParsePKIXPublicKey(key.PublicKey)
 			if err != nil {
 				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert Ed25519 public key for key %s: %w", keyID, err)
 			}
+			ed25519PubKey, ok := pubKey.(ed25519.PublicKey)
+			if !ok {
+				return keystore.GetKeysResponse{}, fmt.Errorf("failed to convert Ed25519 public key for key %s to ed25519.PublicKey: %w", keyID, err)
+			}
+			publicKeyBytes = ed25519PubKey
 		default:
 			return keystore.GetKeysResponse{}, fmt.Errorf("unsupported key type: %s", keyType)
 		}

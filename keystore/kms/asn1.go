@@ -240,22 +240,3 @@ func padTo32Bytes(buffer []byte) []byte {
 
 	return buffer
 }
-
-// ASN1ToEd25519PublicKey extracts an Ed25519 public key from AWS KMS ASN.1 DER-encoded SPKI format.
-//
-// AWS KMS returns Ed25519 public keys in ASN.1 DER-encoded SubjectPublicKeyInfo (SPKI) format.
-// The actual Ed25519 public key is 32 bytes and is contained in the SubjectPublicKey BitString.
-func ASN1ToEd25519PublicKey(asn1PublicKey []byte) ([]byte, error) {
-	var spki SPKI
-	if _, err := asn1.Unmarshal(asn1PublicKey, &spki); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal ASN.1 public key: %w", err)
-	}
-
-	// Ed25519 public keys are 32 bytes raw in the BitString
-	pubKeyBytes := spki.SubjectPublicKey.Bytes
-	if len(pubKeyBytes) != 32 {
-		return nil, fmt.Errorf("invalid Ed25519 public key length in BitString: expected 32 bytes, got %d", len(pubKeyBytes))
-	}
-
-	return pubKeyBytes, nil
-}

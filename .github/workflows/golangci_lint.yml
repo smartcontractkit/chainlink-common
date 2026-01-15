@@ -49,7 +49,12 @@ jobs:
         env:
           MODULE: ${{ matrix.module }}
         run: |
-          safe_name=${MODULE//\//-}
+          safe_name="${MODULE#./}"
+          safe_name="${safe_name#/}"
+          safe_name="${safe_name//\//-}"
+          if [[ -z "$safe_name" || "$safe_name" = "." ]]; then
+            safe_name="root"
+          fi
           echo "value=golangci-lint-report-${safe_name}" | tee -a "$GITHUB_OUTPUT"
 
       - name: golangci-lint ${{ matrix.module }}

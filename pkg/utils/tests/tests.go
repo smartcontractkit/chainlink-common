@@ -2,9 +2,6 @@ package tests
 
 import (
 	"context"
-	"os"
-	"strconv"
-	"sync"
 	"testing"
 	"time"
 
@@ -69,31 +66,5 @@ func RequireSignal(t *testing.T, ch <-chan struct{}, failMsg string) {
 	case <-ch:
 	case <-time.After(WaitTimeout(t)):
 		t.Fatal(failMsg)
-	}
-}
-
-// SkipShort skips tb during -short runs, and notes why.
-func SkipShort(tb testing.TB, why string) {
-	if testing.Short() {
-		tb.Skipf("skipping: %s", why)
-	}
-}
-
-const envVarRunFlakey = "CL_RUN_FLAKEY"
-
-var runFlakey = sync.OnceValues(func() (bool, error) {
-	s := os.Getenv(envVarRunFlakey)
-	if s == "" {
-		return false, nil
-	}
-	return strconv.ParseBool(s)
-})
-
-func SkipFlakey(t *testing.T, ticketURL string) {
-	if ok, err := runFlakey(); !ok {
-		if err != nil {
-			t.Logf("Failed to parse %s: %v", envVarRunFlakey, err)
-		}
-		t.Skip("Flakey", ticketURL)
 	}
 }

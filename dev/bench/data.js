@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768504678550,
+  "lastUpdate": 1768517056689,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -35520,6 +35520,66 @@ window.BENCHMARK_DATA = {
             "value": 115295,
             "unit": "ns/op",
             "extra": "9802 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "connor.stein2@gmail.com",
+            "name": "Connor Stein",
+            "username": "connorwstein"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "5b1627d94b6ebd99f786e863a0ca231ad943e6fa",
+          "message": "ARCH-332 Part 2 KMS ed25519 support (#1778)\n\n* Wip\n\n* Try region\n\n* Revert \"Try region\"\n\nThis reverts commit a7122b9e24d4f12d4f14b70d2f3e8183744546b9.\n\n* Cli client\n\n* Wip ed25519\n\n* Apply rename\n\n* Switch to stdlib\n\n* Follow up from previous PR\n\n* Add ed25519 to the fake\n\n* Comments\n\n* Lint",
+          "timestamp": "2026-01-15T22:37:30Z",
+          "tree_id": "85772bd744d46bfba3ec9a4961c1480c745a84fe",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5b1627d94b6ebd99f786e863a0ca231ad943e6fa"
+        },
+        "date": 1768517054717,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 728.4,
+            "unit": "ns/op",
+            "extra": "1459723 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95149,
+            "unit": "ns/op",
+            "extra": "12537 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.9,
+            "unit": "ns/op",
+            "extra": "3011394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94196,
+            "unit": "ns/op",
+            "extra": "12673 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26704,
+            "unit": "ns/op",
+            "extra": "44706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139923,
+            "unit": "ns/op",
+            "extra": "8988 times\n4 procs"
           }
         ]
       }

@@ -21,6 +21,7 @@ var _ = emptypb.Empty{}
 type HTTPCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], caperrors.Error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) caperrors.Error
+	AckEvent(ctx context.Context, triggerId string, eventId string) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -122,6 +123,10 @@ func (c *hTTPCapability) UnregisterTrigger(ctx context.Context, request capabili
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
+}
+
+func (c *hTTPCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	return c.HTTPCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *hTTPCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

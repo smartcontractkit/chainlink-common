@@ -36,6 +36,7 @@ type ClientCapability interface {
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], caperrors.Error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) caperrors.Error
+	AckEvent(ctx context.Context, triggerId string, eventId string) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], caperrors.Error)
 
@@ -141,6 +142,10 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
+}
+
+func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	return c.ClientCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

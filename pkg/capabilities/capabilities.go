@@ -340,6 +340,7 @@ type OCRAttributedOnchainSignature struct {
 type TriggerExecutable interface {
 	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
 	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
+	AckEvent(ctx context.Context, triggerId string, eventId string) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
@@ -553,6 +554,7 @@ func MustNewRemoteCapabilityInfo(
 const (
 	DefaultRegistrationRefresh       = 30 * time.Second
 	DefaultRegistrationExpiry        = 2 * time.Minute
+	DefaultEventTimeout              = 2 * time.Minute // TODO: determine best value
 	DefaultMessageExpiry             = 2 * time.Minute
 	DefaultBatchSize                 = 100
 	DefaultBatchCollectionPeriod     = 100 * time.Millisecond
@@ -563,6 +565,7 @@ const (
 type RemoteTriggerConfig struct {
 	RegistrationRefresh     time.Duration
 	RegistrationExpiry      time.Duration
+	EventTimeout            time.Duration
 	MinResponsesToAggregate uint32
 	MessageExpiry           time.Duration
 	MaxBatchSize            uint32
@@ -595,6 +598,9 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 	if c.RegistrationExpiry == 0 {
 		c.RegistrationExpiry = DefaultRegistrationExpiry
+	}
+	if c.EventTimeout == 0 {
+		c.EventTimeout = DefaultEventTimeout
 	}
 	if c.MessageExpiry == 0 {
 		c.MessageExpiry = DefaultMessageExpiry

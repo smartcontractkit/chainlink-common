@@ -22,8 +22,6 @@ jobs:
     if: ${{ github.event_name != 'merge_group' }}
     needs: detect-modules
     runs-on: ubuntu-latest
-    env:
-      GO_DIR: ${{ matrix.module }}
     # Modules are independent
     continue-on-error: true
     strategy:
@@ -65,31 +63,6 @@ jobs:
           go-directory: ${{ matrix.module }}
           golangci-lint-args: "--output.text.path=stdout --output.checkstyle.path=${{ github.workspace }}/${{ matrix.module }}/golangci-lint-report.xml"
           only-new-issues: false
-
-      - name: Debug
-        if: ${{ always() }}
-        run: |
-          module_dir="${{ matrix.module }}"
-          report_path="${module_dir%/}/golangci-lint-report.xml"
-          echo "Debugging lint results for module ${module_dir}"
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-          echo "Current working directory: $(pwd)"
-          echo ""
-          echo "=== Searching for all XML files from workspace root ==="
-          find "$GITHUB_WORKSPACE" -name "*.xml" -type f 2>/dev/null || echo "No XML files found"
-          echo ""
-          echo "=== Checking expected location ==="
-          if [ -f "${report_path}" ]; then
-            echo "✓ File EXISTS at ${report_path}"
-            ls -lh "${report_path}"
-            echo "Contents:"
-            cat "${report_path}"
-          else
-            echo "✗ File DOES NOT EXIST at ${report_path}"
-          fi
-          echo ""
-          echo "=== Listing all files in module directory ==="
-          ls -la "${module_dir%/}/" || echo "Directory doesn't exist"
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

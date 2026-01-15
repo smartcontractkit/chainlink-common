@@ -107,12 +107,7 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 		}
 
 		keys = append(keys, keystore.GetKeyResponse{
-			KeyInfo: keystore.KeyInfo{
-				Name:      keyID,
-				KeyType:   keyType,
-				PublicKey: publicKeyBytes,
-				CreatedAt: createdAt,
-			},
+			KeyInfo: keystore.NewKeyInfo(keyID, keyType, createdAt, publicKeyBytes, []byte{}),
 		})
 	}
 	return keystore.GetKeysResponse{Keys: keys}, nil

@@ -21,7 +21,6 @@ type Client struct {
 	maxConcurrentSends chan struct{}
 	batchInterval      time.Duration
 	maxPublishTimeout  time.Duration
-	compressionType    string
 	messageBuffer      chan *messageWithCallback
 	shutdownChan       chan struct{}
 	log                *zap.SugaredLogger
@@ -36,9 +35,9 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c := &Client{
 		client:             client,
 		log:                zap.NewNop().Sugar(),
-		batchSize:          1,
+		batchSize:          10,
 		maxConcurrentSends: make(chan struct{}, 1),
-		messageBuffer:      make(chan *messageWithCallback, 1000),
+		messageBuffer:      make(chan *messageWithCallback, 200),
 		batchInterval:      100 * time.Millisecond,
 		maxPublishTimeout:  5 * time.Second,
 		shutdownChan:       make(chan struct{}),
@@ -198,21 +197,27 @@ func WithMaxConcurrentSends(maxConcurrentSends int) Opt {
 	}
 }
 
-func WithBatchTimeout(batchTimeout time.Duration) Opt {
+func WithBatchInterval(batchTimeout time.Duration) Opt {
 	return func(c *Client) {
 		c.batchInterval = batchTimeout
 	}
 }
 
-func WithCompressionType(compressionType string) Opt {
+func WithShutdownTimeout(shutdownTimeout time.Duration) Opt {
 	return func(c *Client) {
-		c.compressionType = compressionType
+		c.shutdownTimeout = shutdownTimeout
 	}
 }
 
 func WithMessageBuffer(messageBufferSize int) Opt {
 	return func(c *Client) {
 		c.messageBuffer = make(chan *messageWithCallback, messageBufferSize)
+	}
+}
+
+func WithMaxPublishTimeout(maxPublishTimeout time.Duration) Opt {
+	return func(c *Client) {
+		c.maxPublishTimeout = maxPublishTimeout
 	}
 }
 

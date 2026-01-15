@@ -33,16 +33,10 @@ func TestNewBatchClient(t *testing.T) {
 		assert.Equal(t, 10, cap(client.maxConcurrentSends))
 	})
 
-	t.Run("WithBatchTimeout", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithBatchTimeout(100*time.Millisecond))
+	t.Run("WithBatchInterval", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithBatchInterval(100*time.Millisecond))
 		require.NoError(t, err)
 		assert.Equal(t, 100*time.Millisecond, client.batchInterval)
-	})
-
-	t.Run("WithCompressionType", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithCompressionType("gzip"))
-		require.NoError(t, err)
-		assert.Equal(t, "gzip", client.compressionType)
 	})
 
 	t.Run("WithMessageBuffer", func(t *testing.T) {
@@ -220,7 +214,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(3), WithBatchTimeout(5*time.Second))
+		client, err := NewBatchClient(mockClient, WithBatchSize(3), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -258,7 +252,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(50*time.Millisecond))
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -297,7 +291,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(5*time.Second))
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -337,7 +331,7 @@ func TestStart(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(100*time.Millisecond), WithMessageBuffer(10))
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(100*time.Millisecond), WithMessageBuffer(10))
 		require.NoError(t, err)
 
 		client.Start(t.Context())
@@ -361,7 +355,7 @@ func TestStart(t *testing.T) {
 	t.Run("no flush when batch is empty", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(5*time.Second))
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -397,7 +391,7 @@ func TestStart(t *testing.T) {
 			}).
 			Times(3)
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchTimeout(5*time.Second))
+		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -664,7 +658,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(50*time.Millisecond))
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -713,7 +707,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchTimeout(5*time.Second))
+		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())
@@ -768,7 +762,7 @@ func TestCallbacks(t *testing.T) {
 			Run(func(args mock.Arguments) { close(done) }).
 			Once()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchTimeout(5*time.Second))
+		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(t.Context())

@@ -80,7 +80,7 @@ func GenerateWorkflowID(owner []byte, name string, workflow []byte, config []byt
 // ownerAddress = keccak256(0xff ++ bytes.repeat(0x0, 84) ++
 // "Chainlink Runtime Environment GenerateWorkflowOwnerAddress\x00" ++
 // len(prefix).to_bytes(8, byteorder='big') ++ prefix ++
-// len(ownerKey).to_bytes(8, byteorder='big') ++ ownerKey)[12:]
+// len(ownerKey).to_bytes(8, byteorder='big') ++ ownerKey)[:20]
 func GenerateWorkflowOwnerAddress(prefix string, ownerKey string) ([]byte, error) {
 	hash := sha3.NewLegacyKeccak256()
 

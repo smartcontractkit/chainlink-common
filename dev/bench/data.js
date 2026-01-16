@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768517056689,
+  "lastUpdate": 1768525852873,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -35580,6 +35580,66 @@ window.BENCHMARK_DATA = {
             "value": 139923,
             "unit": "ns/op",
             "extra": "8988 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d4b05a30bec6f77488ef651d6c4578148a0813dd",
+          "message": "[CRE] Add Load() methods to atomic* capability wrappers (#1781)",
+          "timestamp": "2026-01-16T01:00:57Z",
+          "tree_id": "2ca3b82d3a47fdd2697ff6322333a0cb139cdd12",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d4b05a30bec6f77488ef651d6c4578148a0813dd"
+        },
+        "date": 1768525851314,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 705.1,
+            "unit": "ns/op",
+            "extra": "1488528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95948,
+            "unit": "ns/op",
+            "extra": "12409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.6,
+            "unit": "ns/op",
+            "extra": "2945426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98342,
+            "unit": "ns/op",
+            "extra": "12219 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27023,
+            "unit": "ns/op",
+            "extra": "44768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147115,
+            "unit": "ns/op",
+            "extra": "7879 times\n4 procs"
           }
         ]
       }

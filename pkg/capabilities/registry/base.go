@@ -372,6 +372,16 @@ func (a *atomicTriggerCapability) GetState() connectivity.State {
 	return connectivity.State(-1) // unknown
 }
 
+func (a *atomicTriggerCapability) Load() *capabilities.TriggerCapability {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
+		return nil
+	}
+	cap := a.cap
+	return &cap
+}
+
 func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -431,6 +441,16 @@ func (a *atomicExecuteCapability) GetState() connectivity.State {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
+}
+
+func (a *atomicExecuteCapability) Load() *capabilities.ExecutableCapability {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
+		return nil
+	}
+	cap := a.cap
+	return &cap
 }
 
 func (a *atomicExecuteCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
@@ -510,6 +530,16 @@ func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
+}
+
+func (a *atomicExecuteAndTriggerCapability) Load() *capabilities.ExecutableAndTriggerCapability {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
+		return nil
+	}
+	cap := a.cap
+	return &cap
 }
 
 func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {

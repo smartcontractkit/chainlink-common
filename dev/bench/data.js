@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768525852873,
+  "lastUpdate": 1768551433733,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -35640,6 +35640,66 @@ window.BENCHMARK_DATA = {
             "value": 147115,
             "unit": "ns/op",
             "extra": "7879 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "iva.brajer@smartcontract.com",
+            "name": "Iva Brajer",
+            "username": "ibrajer"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c6cb30b141b00d67aa3f5b65d798d89ce79f44b",
+          "message": "Derived workflow owner address utility function (#1771)\n\n* Derived workflow owner address utility function\n\n* Update to the derivation function and more test vectors\n\n* Update comment",
+          "timestamp": "2026-01-16T08:09:10Z",
+          "tree_id": "0cb982a3b11f220e2a41c0d499cebf47363d5b33",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3c6cb30b141b00d67aa3f5b65d798d89ce79f44b"
+        },
+        "date": 1768551431711,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.5,
+            "unit": "ns/op",
+            "extra": "3279705 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94900,
+            "unit": "ns/op",
+            "extra": "12601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 442.5,
+            "unit": "ns/op",
+            "extra": "2787668 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93972,
+            "unit": "ns/op",
+            "extra": "12704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26681,
+            "unit": "ns/op",
+            "extra": "44974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 143884,
+            "unit": "ns/op",
+            "extra": "8013 times\n4 procs"
           }
         ]
       }

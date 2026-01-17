@@ -9,6 +9,7 @@ package vault
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -1403,10 +1404,12 @@ func (*Observation_DeleteSecretsResponse) isObservation_Response() {}
 func (*Observation_ListSecretIdentifiersResponse) isObservation_Response() {}
 
 type Observations struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Observations  []*Observation         `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Observations      []*Observation         `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
+	PendingQueueItems [][]byte               `protobuf:"bytes,2,rep,name=pending_queue_items,json=pendingQueueItems,proto3" json:"pending_queue_items,omitempty"`
+	SortNonce         []byte                 `protobuf:"bytes,3,opt,name=sortNonce,proto3" json:"sortNonce,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Observations) Reset() {
@@ -1442,6 +1445,20 @@ func (*Observations) Descriptor() ([]byte, []int) {
 func (x *Observations) GetObservations() []*Observation {
 	if x != nil {
 		return x.Observations
+	}
+	return nil
+}
+
+func (x *Observations) GetPendingQueueItems() [][]byte {
+	if x != nil {
+		return x.PendingQueueItems
+	}
+	return nil
+}
+
+func (x *Observations) GetSortNonce() []byte {
+	if x != nil {
+		return x.SortNonce
 	}
 	return nil
 }
@@ -1882,6 +1899,106 @@ func (x *StoredMetadata) GetSecretIdentifiers() []*SecretIdentifier {
 	return nil
 }
 
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+type StoredPendingQueueIndex struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Length        int64                  `protobuf:"varint,1,opt,name=length,proto3" json:"length,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StoredPendingQueueIndex) Reset() {
+	*x = StoredPendingQueueIndex{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredPendingQueueIndex) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredPendingQueueIndex) ProtoMessage() {}
+
+func (x *StoredPendingQueueIndex) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredPendingQueueIndex.ProtoReflect.Descriptor instead.
+func (*StoredPendingQueueIndex) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *StoredPendingQueueIndex) GetLength() int64 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+type StoredPendingQueueItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Item          *anypb.Any             `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StoredPendingQueueItem) Reset() {
+	*x = StoredPendingQueueItem{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredPendingQueueItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredPendingQueueItem) ProtoMessage() {}
+
+func (x *StoredPendingQueueItem) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredPendingQueueItem.ProtoReflect.Descriptor instead.
+func (*StoredPendingQueueItem) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *StoredPendingQueueItem) GetItem() *anypb.Any {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
+func (x *StoredPendingQueueItem) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 type ReportingPluginConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Plugin-specific configuration
@@ -1892,6 +2009,7 @@ type ReportingPluginConfig struct {
 	MaxIdentifierOwnerLengthBytes     int32   `protobuf:"varint,5,opt,name=MaxIdentifierOwnerLengthBytes,proto3" json:"MaxIdentifierOwnerLengthBytes,omitempty"`
 	MaxIdentifierNamespaceLengthBytes int32   `protobuf:"varint,6,opt,name=MaxIdentifierNamespaceLengthBytes,proto3" json:"MaxIdentifierNamespaceLengthBytes,omitempty"`
 	DKGInstanceID                     *string `protobuf:"bytes,7,opt,name=DKGInstanceID,proto3,oneof" json:"DKGInstanceID,omitempty"`
+	EnableDeterministicPendingQueue   bool    `protobuf:"varint,8,opt,name=EnableDeterministicPendingQueue,proto3" json:"EnableDeterministicPendingQueue,omitempty"`
 	// OCR 3.1 ReportInfo configuration
 	LimitsMaxQueryLength                                  int32 `protobuf:"varint,20,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
 	LimitsMaxObservationLength                            int32 `protobuf:"varint,21,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
@@ -1909,7 +2027,7 @@ type ReportingPluginConfig struct {
 
 func (x *ReportingPluginConfig) Reset() {
 	*x = ReportingPluginConfig{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1921,7 +2039,7 @@ func (x *ReportingPluginConfig) String() string {
 func (*ReportingPluginConfig) ProtoMessage() {}
 
 func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1934,7 +2052,7 @@ func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginConfig.ProtoReflect.Descriptor instead.
 func (*ReportingPluginConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{26}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ReportingPluginConfig) GetBatchSize() int32 {
@@ -1984,6 +2102,13 @@ func (x *ReportingPluginConfig) GetDKGInstanceID() string {
 		return *x.DKGInstanceID
 	}
 	return ""
+}
+
+func (x *ReportingPluginConfig) GetEnableDeterministicPendingQueue() bool {
+	if x != nil {
+		return x.EnableDeterministicPendingQueue
+	}
+	return false
 }
 
 func (x *ReportingPluginConfig) GetLimitsMaxQueryLength() int32 {
@@ -2060,7 +2185,7 @@ var File_capabilities_actions_vault_messages_proto protoreflect.FileDescriptor
 
 const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/actions/vault/messages.proto\x12\x05vault\"X\n" +
+	")capabilities/actions/vault/messages.proto\x12\x05vault\x1a\x19google/protobuf/any.proto\"X\n" +
 	"\x10SecretIdentifier\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x14\n" +
@@ -2142,9 +2267,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	" list_secret_identifiers_response\x18\f \x01(\v2$.vault.ListSecretIdentifiersResponseH\x01R\x1dlistSecretIdentifiersResponseB\t\n" +
 	"\arequestB\n" +
 	"\n" +
-	"\bresponse\"F\n" +
+	"\bresponse\"\x94\x01\n" +
 	"\fObservations\x126\n" +
-	"\fobservations\x18\x01 \x03(\v2\x12.vault.ObservationR\fobservations\"\xe8\a\n" +
+	"\fobservations\x18\x01 \x03(\v2\x12.vault.ObservationR\fobservations\x12.\n" +
+	"\x13pending_queue_items\x18\x02 \x03(\fR\x11pendingQueueItems\x12\x1c\n" +
+	"\tsortNonce\x18\x03 \x01(\fR\tsortNonce\"\xe8\a\n" +
 	"\aOutcome\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +
@@ -2172,7 +2299,12 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\fStoredSecret\x12)\n" +
 	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"X\n" +
 	"\x0eStoredMetadata\x12F\n" +
-	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"\x9a\t\n" +
+	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"1\n" +
+	"\x17StoredPendingQueueIndex\x12\x16\n" +
+	"\x06length\x18\x01 \x01(\x03R\x06length\"R\n" +
+	"\x16StoredPendingQueueItem\x12(\n" +
+	"\x04item\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x04item\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"\xe4\t\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
 	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +
@@ -2180,7 +2312,8 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x1bMaxIdentifierKeyLengthBytes\x18\x04 \x01(\x05R\x1bMaxIdentifierKeyLengthBytes\x12D\n" +
 	"\x1dMaxIdentifierOwnerLengthBytes\x18\x05 \x01(\x05R\x1dMaxIdentifierOwnerLengthBytes\x12L\n" +
 	"!MaxIdentifierNamespaceLengthBytes\x18\x06 \x01(\x05R!MaxIdentifierNamespaceLengthBytes\x12)\n" +
-	"\rDKGInstanceID\x18\a \x01(\tH\x00R\rDKGInstanceID\x88\x01\x01\x122\n" +
+	"\rDKGInstanceID\x18\a \x01(\tH\x00R\rDKGInstanceID\x88\x01\x01\x12H\n" +
+	"\x1fEnableDeterministicPendingQueue\x18\b \x01(\bR\x1fEnableDeterministicPendingQueue\x122\n" +
 	"\x14LimitsMaxQueryLength\x18\x14 \x01(\x05R\x14LimitsMaxQueryLength\x12>\n" +
 	"\x1aLimitsMaxObservationLength\x18\x15 \x01(\x05R\x1aLimitsMaxObservationLength\x12P\n" +
 	"#LimitsMaxReportsPlusPrecursorLength\x18\x16 \x01(\x05R#LimitsMaxReportsPlusPrecursorLength\x124\n" +
@@ -2217,7 +2350,7 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(RequestType)(0),                      // 0: vault.RequestType
 	(ReportFormat)(0),                     // 1: vault.ReportFormat
@@ -2247,7 +2380,10 @@ var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(*ReportInfo)(nil),                    // 25: vault.ReportInfo
 	(*StoredSecret)(nil),                  // 26: vault.StoredSecret
 	(*StoredMetadata)(nil),                // 27: vault.StoredMetadata
-	(*ReportingPluginConfig)(nil),         // 28: vault.ReportingPluginConfig
+	(*StoredPendingQueueIndex)(nil),       // 28: vault.StoredPendingQueueIndex
+	(*StoredPendingQueueItem)(nil),        // 29: vault.StoredPendingQueueItem
+	(*ReportingPluginConfig)(nil),         // 30: vault.ReportingPluginConfig
+	(*anypb.Any)(nil),                     // 31: google.protobuf.Any
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	2,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
@@ -2294,11 +2430,12 @@ var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	0,  // 41: vault.ReportInfo.request_type:type_name -> vault.RequestType
 	1,  // 42: vault.ReportInfo.format:type_name -> vault.ReportFormat
 	2,  // 43: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
-	44, // [44:44] is the sub-list for method output_type
-	44, // [44:44] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	31, // 44: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
+	45, // [45:45] is the sub-list for method output_type
+	45, // [45:45] is the sub-list for method input_type
+	45, // [45:45] is the sub-list for extension type_name
+	45, // [45:45] is the sub-list for extension extendee
+	0,  // [0:45] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }
@@ -2334,14 +2471,14 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*Outcome_DeleteSecretsResponse)(nil),
 		(*Outcome_ListSecretIdentifiersResponse)(nil),
 	}
-	file_capabilities_actions_vault_messages_proto_msgTypes[26].OneofWrappers = []any{}
+	file_capabilities_actions_vault_messages_proto_msgTypes[28].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   27,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

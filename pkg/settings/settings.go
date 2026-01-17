@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -236,10 +237,10 @@ func (s *Setting[T]) Subscribe(ctx context.Context, r Registry) (<-chan Update[T
 			}
 		}
 	}()
-	return values, func() {
+	return values, sync.OnceFunc(func() {
 		stop()
 		close(stopped)
-	}
+	})
 }
 
 // InitConfig accepts a pointer to a config struct and iterates over all the fields, initializing any Setting fields

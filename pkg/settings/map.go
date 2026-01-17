@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 )
@@ -102,5 +103,5 @@ func (s *SettingMap[T]) Subscribe(ctx context.Context, registry Registry) (<-cha
 
 	// no-op
 	ch := make(chan Update[T])
-	return ch, func() { close(ch) }
+	return ch, sync.OnceFunc(func() { close(ch) })
 }

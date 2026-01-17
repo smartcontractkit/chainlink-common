@@ -117,7 +117,7 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, "example-subject", event.Subject())
 	assert.Equal(t, attributes["time"].(time.Time).UTC(), event.Time())
 	assert.NotEmpty(t, event.Extensions()["recordedtime"])
-	assert.True(t, event.Extensions()["recordedtime"].(ce.Timestamp).Time.After(attributes["time"].(time.Time)))
+	assert.True(t, event.Extensions()["recordedtime"].(ce.Timestamp).After(attributes["time"].(time.Time)))
 
 	// Assert the event data was set as expected
 	var resultProto pb.PingResponse

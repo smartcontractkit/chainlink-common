@@ -152,11 +152,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
-	// Record beholder config as a metric
-	if err := beholderConfigMetric(meter, cfg); err != nil {
-		return nil, err
-	}
-
 	// Shared log exporter for both logger and message emitter
 	logOpts, err := newLoggerOpts(cfg, auth, creds, meterProvider, tracerProvider)
 	if err != nil {
@@ -348,15 +343,25 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 	return
 }
 
-// beholderConfigMetric creates a configuration info metric with Beholder settings as attributes.
-func beholderConfigMetric(meter otelmetric.Meter, cfg Config) error {
+// RecordConfig records the beholder config as a metric.
+func (c *Client) RecordConfigMetric(ctx context.Context) error {
+	configGauge, configAttrs, err := createConfigMetric(c.Meter, c.Config)
+	if err != nil {
+		return err
+	}
+	configGauge.Record(ctx, 1, otelmetric.WithAttributes(configAttrs...))
+	return nil
+}
+
+// createConfigMetric creates a configuration info metric with Beholder settings as attributes.
+func createConfigMetric(meter otelmetric.Meter, cfg Config) (otelmetric.Int64Gauge, []attribute.KeyValue, error) {
 	configGauge, err := meter.Int64Gauge(
 		"beholder.config.info",
-		otelmetric.WithDescription("Beholder SDK config info metric"),
+		otelmetric.WithDescription("Beholder config info metric"),
 		otelmetric.WithUnit("{info}"),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create beholder config info metric: %w", err)
+		return nil, nil, fmt.Errorf("failed to create beholder config info metric: %w", err)
 	}
 
 	configAttrs := []attribute.KeyValue{
@@ -386,9 +391,7 @@ func beholderConfigMetric(meter otelmetric.Meter, cfg Config) error {
 		attribute.String("metric_compressor", cfg.MetricCompressor),
 	}
 
-	configGauge.Record(context.Background(), 1, otelmetric.WithAttributes(configAttrs...))
-
-	return nil
+	return configGauge, configAttrs, nil
 }
 
 type shutdowner interface {

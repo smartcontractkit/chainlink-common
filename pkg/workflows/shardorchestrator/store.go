@@ -168,19 +168,44 @@ func (s *Store) GetAllWorkflowMappings(ctx context.Context) ([]*WorkflowMappingS
 
 // ReportShardRegistration is called when a shard reports its registered workflows
 // This helps track which workflows each shard has successfully loaded
+// It also updates workflowMappings so GetWorkflowShardMapping returns correct data
 func (s *Store) ReportShardRegistration(ctx context.Context, shardID uint32, workflowIDs []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Clear and update
+	now := time.Now()
+
+	// Clear and update shard registrations
 	s.shardRegistrations[shardID] = make(map[string]bool)
 	for _, wfID := range workflowIDs {
 		s.shardRegistrations[shardID][wfID] = true
 	}
 
+	// Also update workflowMappings - when a shard reports it has a workflow,
+	// that's authoritative information about where the workflow is running
+	for _, wfID := range workflowIDs {
+		existing, ok := s.workflowMappings[wfID]
+		if !ok || existing.NewShardID != shardID {
+			s.workflowMappings[wfID] = &WorkflowMappingState{
+				WorkflowID:      wfID,
+				OldShardID:      0,
+				NewShardID:      shardID,
+				TransitionState: StateSteady,
+				UpdatedAt:       now,
+			}
+			if ok {
+				s.workflowMappings[wfID].OldShardID = existing.NewShardID
+			}
+		}
+	}
+
+	s.mappingVersion++
+	s.lastUpdateTime = now
+
 	s.logger.Debugw("Updated shard registrations",
 		"shardID", shardID,
 		"workflowCount", len(workflowIDs),
+		"version", s.mappingVersion,
 	)
 
 	return nil

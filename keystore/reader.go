@@ -44,7 +44,7 @@ func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResp
 		responses := make([]GetKeyResponse, 0, len(k.keystore))
 		for name, key := range k.keystore {
 			responses = append(responses, GetKeyResponse{
-				KeyInfo: newKeyInfo(name, key.keyType, key.createdAt, key.publicKey, key.metadata),
+				KeyInfo: NewKeyInfo(name, key.keyType, key.createdAt, key.publicKey, key.metadata),
 			})
 		}
 		sort.Slice(responses, func(i, j int) bool { return responses[i].KeyInfo.Name < responses[j].KeyInfo.Name })
@@ -63,7 +63,7 @@ func (k *keystore) GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResp
 		}
 		seen[name] = true
 		responses = append(responses, GetKeyResponse{
-			KeyInfo: newKeyInfo(name, key.keyType, key.createdAt, key.publicKey, key.metadata),
+			KeyInfo: NewKeyInfo(name, key.keyType, key.createdAt, key.publicKey, key.metadata),
 		})
 	}
 	sort.Slice(responses, func(i, j int) bool { return responses[i].KeyInfo.Name < responses[j].KeyInfo.Name })

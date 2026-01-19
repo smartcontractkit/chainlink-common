@@ -2,12 +2,16 @@ package registry_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
@@ -270,4 +274,101 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+type testTrigger struct {
+	capabilities.CapabilityInfo
+	mu            sync.Mutex
+	registrations map[string]chan capabilities.TriggerResponse
+	registerCount atomic.Int32
+	failAfter     int32 // fail RegisterTrigger after this many successful calls (-1 = never fail)
+}
+
+func newTestTrigger(name string) *testTrigger {
+	return newTestTriggerWithFailures(name, -1)
+}
+
+func newTestTriggerWithFailures(name string, failAfter int32) *testTrigger {
+	info := capabilities.MustNewCapabilityInfo(
+		name+"@1.0.0",
+		capabilities.CapabilityTypeTrigger,
+		name,
+	)
+	return &testTrigger{
+		CapabilityInfo: info,
+		registrations:  make(map[string]chan capabilities.TriggerResponse),
+		failAfter:      failAfter,
+	}
+}
+
+func (t *testTrigger) RegisterTrigger(_ context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	count := t.registerCount.Add(1)
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.failAfter >= 0 && count > t.failAfter {
+		return nil, errors.New("simulated registration failure")
+	}
+	ch := make(chan capabilities.TriggerResponse, 10)
+	t.registrations[req.TriggerID] = ch
+	return ch, nil
+}
+
+func (t *testTrigger) UnregisterTrigger(_ context.Context, req capabilities.TriggerRegistrationRequest) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if ch, ok := t.registrations[req.TriggerID]; ok {
+		close(ch)
+		delete(t.registrations, req.TriggerID)
+	}
+	return nil
+}
+
+func (t *testTrigger) SendEvent(triggerID string, resp capabilities.TriggerResponse) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	ch, ok := t.registrations[triggerID]
+	if !ok {
+		return false
+	}
+	select {
+	case ch <- resp:
+		return true
+	default:
+		return false
+	}
+}
+
+func (t *testTrigger) GetRegistrationCount() int32 {
+	return t.registerCount.Load()
+}
+
+func (t *testTrigger) GetState() connectivity.State {
+	return connectivity.Shutdown
+}
+
+func TestAtomicTrigger_RegistrationsReplayed(t *testing.T) {
+	ctx := t.Context()
+	r := registry.NewBaseRegistry(logger.Test(t))
+
+	trigger1 := newTestTriggerWithFailures("trigger", 1) // fails on 2nd call to RegisterTrigger
+	require.NoError(t, r.Add(ctx, trigger1))
+
+	tc, err := r.GetTrigger(ctx, "trigger@1.0.0")
+	require.NoError(t, err)
+
+	outCh, err := tc.RegisterTrigger(ctx, capabilities.TriggerRegistrationRequest{TriggerID: "reg1"})
+	require.NoError(t, err)
+	require.NotNil(t, outCh)
+
+	_, err = tc.RegisterTrigger(ctx, capabilities.TriggerRegistrationRequest{TriggerID: "reg2"})
+	require.Error(t, err)
+
+	trigger2 := newTestTrigger("trigger")
+	require.NoError(t, r.Add(ctx, trigger2))                    // replace with a new trigger
+	require.Equal(t, int32(1), trigger2.GetRegistrationCount()) // only successful registration replayed
+
+	trigger2.SendEvent("reg1", capabilities.TriggerResponse{Event: capabilities.TriggerEvent{ID: "event1"}})
+
+	resp1 := <-outCh
+	assert.Equal(t, "event1", resp1.Event.ID)
 }

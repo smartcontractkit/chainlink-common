@@ -287,7 +287,7 @@ type triggerExecutableClient struct {
 	cancelFuncs map[string]func()
 }
 
-func (t *triggerExecutableClient) AckEvent(ctx context.Context, eventId string) error {
+func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string, eventId string) error {
 	//TODO implement
 	return nil
 }

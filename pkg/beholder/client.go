@@ -367,31 +367,45 @@ func createConfigMetric(meter otelmetric.Meter, cfg Config) (otelmetric.Int64Gau
 	configAttrs := []attribute.KeyValue{
 		// Logging config
 		attribute.Bool(
-				"log_streaming_enabled", cfg.LogStreamingEnabled),
+			"log_streaming_enabled", cfg.LogStreamingEnabled),
 		attribute.String(
-				"log_level", cfg.LogLevel.String()),
+			"log_level", cfg.LogLevel.String()),
 		attribute.Bool(
-				"log_batch_processor", cfg.LogBatchProcessor),
-		attribute.String("log_export_interval", cfg.LogExportInterval.String()),
-		attribute.Int("log_export_max_batch_size", cfg.LogExportMaxBatchSize),
-		attribute.Int("log_max_queue_size", cfg.LogMaxQueueSize),
-		attribute.String("log_compressor", cfg.LogCompressor),
+			"log_batch_processor", cfg.LogBatchProcessor),
+		attribute.String(
+			"log_export_interval", cfg.LogExportInterval.String()),
+		attribute.Int(
+			"log_export_max_batch_size", cfg.LogExportMaxBatchSize),
+		attribute.Int(
+			"log_max_queue_size", cfg.LogMaxQueueSize),
+		attribute.String(
+			"log_compressor", cfg.LogCompressor),
 
 		// Message emitter config
-		attribute.Bool("chip_ingress_enabled", cfg.ChipIngressEmitterEnabled),
-		attribute.Bool("emitter_batch_processor", cfg.EmitterBatchProcessor),
-		attribute.String("emitter_export_interval", cfg.EmitterExportInterval.String()),
-		attribute.Int("emitter_export_max_batch_size", cfg.EmitterExportMaxBatchSize),
-		attribute.Int("emitter_max_queue_size", cfg.EmitterMaxQueueSize),
+		attribute.Bool(
+			"chip_ingress_enabled", cfg.ChipIngressEmitterEnabled),
+		attribute.Bool(
+			"emitter_batch_processor", cfg.EmitterBatchProcessor),
+		attribute.String(
+			"emitter_export_interval", cfg.EmitterExportInterval.String()),
+		attribute.Int(
+			"emitter_export_max_batch_size", cfg.EmitterExportMaxBatchSize),
+		attribute.Int(
+			"emitter_max_queue_size", cfg.EmitterMaxQueueSize),
 
 		// Tracing config
-		attribute.Float64("trace_sample_ratio", cfg.TraceSampleRatio),
-		attribute.String("trace_batch_timeout", cfg.TraceBatchTimeout.String()),
-		attribute.String("trace_compressor", cfg.TraceCompressor),
+		attribute.Float64(
+			"trace_sample_ratio", cfg.TraceSampleRatio),
+		attribute.String(
+			"trace_batch_timeout", cfg.TraceBatchTimeout.String()),
+		attribute.String(
+			"trace_compressor", cfg.TraceCompressor),
 
 		// Metrics config
-		attribute.String("metric_reader_interval", cfg.MetricReaderInterval.String()),
-		attribute.String("metric_compressor", cfg.MetricCompressor),
+		attribute.String(
+			"metric_reader_interval", cfg.MetricReaderInterval.String()),
+		attribute.String(
+			"metric_compressor", cfg.MetricCompressor),
 	}
 
 	return configGauge, configAttrs, nil

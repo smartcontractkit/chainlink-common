@@ -372,12 +372,13 @@ func (a *atomicTriggerCapability) GetState() connectivity.State {
 	return connectivity.State(-1) // unknown
 }
 
-func (a *atomicTriggerCapability) AckEvent(ctx context.Context, eventId string) error {
-	c := a.Load()
-	if c == nil {
+func (a *atomicTriggerCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).AckEvent(ctx, eventId)
+	return a.cap.AckEvent(ctx, triggerId, eventId)
 }
 
 func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
@@ -520,12 +521,13 @@ func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 	return connectivity.State(-1) // unknown
 }
 
-func (a *atomicExecuteAndTriggerCapability) AckEvent(ctx context.Context, eventId string) error {
-	c := a.Load()
-	if c == nil {
+func (a *atomicExecuteAndTriggerCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).AckEvent(ctx, eventId)
+	return a.cap.AckEvent(ctx, triggerId, eventId)
 }
 
 func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {

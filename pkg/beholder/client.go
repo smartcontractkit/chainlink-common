@@ -366,9 +366,12 @@ func createConfigMetric(meter otelmetric.Meter, cfg Config) (otelmetric.Int64Gau
 
 	configAttrs := []attribute.KeyValue{
 		// Logging config
-		attribute.Bool("log_streaming_enabled", cfg.LogStreamingEnabled),
-		attribute.String("log_level", cfg.LogLevel.String()),
-		attribute.Bool("log_batch_processor", cfg.LogBatchProcessor),
+		attribute.Bool(
+				"log_streaming_enabled", cfg.LogStreamingEnabled),
+		attribute.String(
+				"log_level", cfg.LogLevel.String()),
+		attribute.Bool(
+				"log_batch_processor", cfg.LogBatchProcessor),
 		attribute.String("log_export_interval", cfg.LogExportInterval.String()),
 		attribute.Int("log_export_max_batch_size", cfg.LogExportMaxBatchSize),
 		attribute.Int("log_max_queue_size", cfg.LogMaxQueueSize),

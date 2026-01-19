@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768585225600,
+  "lastUpdate": 1768835687667,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -35760,6 +35760,66 @@ window.BENCHMARK_DATA = {
             "value": 115237,
             "unit": "ns/op",
             "extra": "9945 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "31ad843060e6b2d676b8e133433598e45ecfa7e3",
+          "message": "Add beholder.config.info metric (#1769)\n\n* Add beholder.config.info metric\n\n* Split creating the metric from recording that on client dialing\n\n* Update pkg/beholder/client.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Small alignment\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2026-01-19T15:04:26Z",
+          "tree_id": "83276bdc63c7643d7969b69cd49dddcb2739041b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/31ad843060e6b2d676b8e133433598e45ecfa7e3"
+        },
+        "date": 1768835685422,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 603.6,
+            "unit": "ns/op",
+            "extra": "1826392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 68127,
+            "unit": "ns/op",
+            "extra": "17586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.7,
+            "unit": "ns/op",
+            "extra": "2918661 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 67470,
+            "unit": "ns/op",
+            "extra": "17341 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24534,
+            "unit": "ns/op",
+            "extra": "48804 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 109290,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

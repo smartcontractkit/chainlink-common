@@ -10,6 +10,35 @@ import (
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 )
 
+func TestErrorProtoSerialization(t *testing.T) {
+	// Assuming you have types: Visibility, Origin, and a custom Error type with serialization logic.
+	visibilities := []caperrors.Visibility{caperrors.VisibilityPublic, caperrors.VisibilityPrivate}
+	origins := []caperrors.Origin{caperrors.OriginUser, caperrors.OriginSystem}
+	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InvalidArgument}
+
+	for _, v := range visibilities {
+		for _, o := range origins {
+			for _, c := range errorCodes {
+
+				errMsg := "test error"
+				originalErr := caperrors.NewError(errors.New(errMsg), v, o, c)
+				protoErr := originalErr.ToProto()
+				deserializedErr := caperrors.FromProto(protoErr)
+
+				if v == caperrors.VisibilityPrivate {
+					errMsg = "error whilst executing capability - the error message is not publicly reportable"
+				}
+
+				expectedErr := caperrors.NewError(errors.New(errMsg), v, o, c)
+
+				if !expectedErr.Equals(deserializedErr) {
+					t.Errorf("expected %v, got %v", expectedErr, deserializedErr)
+				}
+			}
+		}
+	}
+}
+
 func TestErrorSerializationAndDeserialization(t *testing.T) {
 	// Assuming you have types: Visibility, Origin, and a custom Error type with serialization logic.
 	visibilities := []caperrors.Visibility{caperrors.VisibilityPublic, caperrors.VisibilityPrivate}

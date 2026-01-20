@@ -1,8 +1,12 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
 
-type Origin int
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors/pb"
+)
+
+type Origin int32
 
 const (
 	// OriginSystem The error originated from a system issue.
@@ -35,7 +39,7 @@ func FromOriginString(s string) Origin {
 	}
 }
 
-type Visibility int
+type Visibility int32
 
 const (
 	// VisibilityPublic The full details of the error can be shared across all nodes in the network.
@@ -77,6 +81,7 @@ type Error interface {
 	Code() ErrorCode
 	SerializeToString() string
 	SerializeToRemoteString() string
+	ToProto() *pb.Error
 	Equals(otherErr Error) bool
 }
 

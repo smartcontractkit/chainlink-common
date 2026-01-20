@@ -3,9 +3,12 @@ package errors
 import (
 	"errors"
 	"strings"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors/pb"
 )
 
 const errorMessageSeparator = ":"
+const notPubliclyReportableErrorMsg = "error whilst executing capability - the error message is not publicly reportable"
 
 func PrePendPrivateVisibilityIdentifier(errorMessage string) string {
 	return VisibilityPrivate.String() + errorMessageSeparator + errorMessage
@@ -43,5 +46,34 @@ func (e capabilityError) SerializeToRemoteString() string {
 		return e.serializeToString(e.err.Error())
 	}
 
-	return e.serializeToString("error whilst executing capability - the error message is not publicly reportable")
+	return e.serializeToString(notPubliclyReportableErrorMsg)
+}
+
+// ToRemoteProto serializes the error to a protobuf message for sending to remote nodes.
+// If the error is private, the actual error message is replaced with a generic message.
+func (e capabilityError) ToRemoteProto() *pb.Error {
+	msg := e.err.Error()
+	if e.Visibility() == VisibilityPrivate {
+		msg = notPubliclyReportableErrorMsg
+	}
+
+	return &pb.Error{
+		Visibility: pb.Visibility(e.visibility),
+		Origin:     pb.Origin(e.origin),
+		Code:       uint32(e.Code()),
+		Message:    msg,
+	}
+}
+
+func FromProto(pbErr *pb.Error) Error {
+	if pbErr == nil {
+		return nil
+	}
+
+	visibility := Visibility(pbErr.Visibility)
+	origin := Origin(pbErr.Origin)
+	errorCode := ErrorCode(pbErr.Code)
+	errorMsg := pbErr.Message
+
+	return NewError(errors.New(errorMsg), visibility, origin, errorCode)
 }

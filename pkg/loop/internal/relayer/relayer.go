@@ -137,7 +137,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
 
 	csaKeystore := ks.NewClient(ksCSAConn)
-	
+
 	// Sets the auth header signing mechanism
 	beholder.GetClient().SetSigner(csaKeystore)
 

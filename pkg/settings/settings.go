@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 	"encoding"
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -29,6 +30,21 @@ type Registry interface {
 	SubscribeScoped(ctx context.Context, scope Scope, key string) (updates <-chan Update[string], stop func())
 }
 
+//TODO use this everywhere
+type IsSetting[T any] interface {
+	GetSpec() SettingSpec[T]
+}
+
+type SettingSpec[T any] interface {
+	GetKey() string
+	GetScope() Scope
+	GetUnit() string
+	GetOrDefault(context.Context, Getter) (T, error)
+	Subscribe(context.Context, Registry) (<-chan Update[T], func())
+}
+
+var _ IsSetting[int] = Setting[int]{}
+
 // Setting holds a key, default value, and parsing function for a particular setting.
 // Use Setting.GetOrDefault with a Getter to look up settings.
 // Use Setting.Subscribe with a Registry to have updates pushed over a channel.
@@ -40,6 +56,14 @@ type Setting[T any] struct {
 	Unit         string
 }
 
+func (s Setting[T]) GetSpec() SettingSpec[T] { return &s }
+
+func (s *Setting[T]) GetKey() string { return s.Key }
+
+func (s *Setting[T]) GetScope() Scope { return s.Scope }
+
+func (s *Setting[T]) GetUnit() string { return s.Unit }
+
 func (s Setting[T]) MarshalText() ([]byte, error) {
 	return fmt.Appendf(nil, "%v", s.DefaultValue), nil
 }
@@ -47,6 +71,9 @@ func (s Setting[T]) MarshalText() ([]byte, error) {
 func (s *Setting[T]) UnmarshalText(b []byte) (err error) {
 	if len(b) >= 2 && b[0] == '"' && b[len(b)-1] == '"' {
 		b = b[1 : len(b)-1] // unquote string
+	}
+	if s.Parse == nil {
+		return errors.New("missing Parse func")
 	}
 	s.DefaultValue, err = s.Parse(string(b))
 	if err != nil {
@@ -76,6 +103,10 @@ func MarshaledText[T encoding.TextUnmarshaler](defaultValue T) Setting[T] {
 		err = t.UnmarshalText([]byte(s))
 		return
 	})
+}
+
+func Bool(defaultValue bool) Setting[bool] {
+	return NewSetting(defaultValue, strconv.ParseBool)
 }
 
 func Duration(defaultValue time.Duration) Setting[time.Duration] {

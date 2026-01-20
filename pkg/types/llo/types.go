@@ -279,6 +279,14 @@ type ChannelDefinition struct {
 }
 
 func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
+	if a.Tombstone != b.Tombstone {
+		return false
+	}
+
+	if a.Source != b.Source {
+		return false
+	}
+
 	if a.ReportFormat != b.ReportFormat {
 		return false
 	}
@@ -359,7 +367,7 @@ func (c ChannelDefinitions) Value() (driver.Value, error) {
 type ChannelID = uint32
 
 type ChannelDefinitionCache interface {
-	Definitions() ChannelDefinitions
+	Definitions(previous ChannelDefinitions) ChannelDefinitions
 	services.Service
 }
 

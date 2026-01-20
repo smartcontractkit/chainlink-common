@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/any.proto";
+
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault";
 
 package vault;
@@ -136,6 +138,8 @@ message Observation {
 
 message Observations {
   repeated Observation observations = 1;
+  repeated bytes pending_queue_items = 2;
+  bytes sortNonce = 3;
 }
 
 message Outcome {
@@ -187,6 +191,19 @@ message StoredMetadata {
   repeated SecretIdentifier secret_identifiers = 2;
 }
 
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredPendingQueueIndex {
+  int64 length = 1;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredPendingQueueItem {
+  google.protobuf.Any item = 1;
+  string id = 2;
+}
+
 message ReportingPluginConfig {
   // Plugin-specific configuration
   int32 BatchSize = 1;
@@ -196,6 +213,7 @@ message ReportingPluginConfig {
   int32 MaxIdentifierOwnerLengthBytes = 5;
   int32 MaxIdentifierNamespaceLengthBytes = 6;
   optional string DKGInstanceID = 7;
+  bool EnableDeterministicPendingQueue = 8;
 
   // OCR 3.1 ReportInfo configuration
   int32 LimitsMaxQueryLength = 20;

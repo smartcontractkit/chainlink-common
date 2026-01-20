@@ -17,8 +17,9 @@ func (s Scope) rawKeys(ctx context.Context, key string) (keys []string, err erro
 			if i.IsTenantRequired() {
 				err = errors.Join(err, fmt.Errorf("empty %s key", i))
 			}
+		} else {
+			keys = append(keys, i.String()+"."+tenant+"."+key)
 		}
-		keys = append(keys, i.String()+"."+tenant+"."+key)
 	}
 	keys = append(keys, ScopeGlobal.String()+"."+key) // ScopeGlobal
 	return

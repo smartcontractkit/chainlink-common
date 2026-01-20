@@ -82,12 +82,16 @@ func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, err
 			Signature: signature,
 		}, nil
 	default:
-		return SignResponse{}, fmt.Errorf("unsupported key type: %s", key.keyType)
+		return SignResponse{}, fmt.Errorf("unsupported key type: %s, available key types: %s", key.keyType, AllDigitalSignatureKeyTypes.String())
 	}
 }
 
 func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
 	// Note don't need the lock since this is a pure function.
+	return Verify(ctx, req)
+}
+
+func Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
 	switch req.KeyType {
 	case Ed25519:
 		if len(req.Signature) != 64 {
@@ -119,6 +123,6 @@ func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyRespons
 			Valid: valid,
 		}, nil
 	default:
-		return VerifyResponse{}, fmt.Errorf("unsupported key type: %s", req.KeyType)
+		return VerifyResponse{}, fmt.Errorf("unsupported key type: %s, available key types: %s", req.KeyType, AllDigitalSignatureKeyTypes.String())
 	}
 }

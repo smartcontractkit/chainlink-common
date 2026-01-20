@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -301,4 +302,61 @@ func TestParseID(t *testing.T) {
 			assert.Equal(t, tc.version, version)
 		})
 	}
+}
+
+func TestChainSelectorLabel(t *testing.T) {
+	for _, tc := range []struct {
+		id     string
+		cs     *uint64
+		errMsg string
+	}{
+		{"none@v1.0.0", nil, ""},
+		{"kv:ChainSelector_1@v1.0.0", ptr[uint64](1), ""},
+		{"kk:ChainSelector:1@v1.0.0", ptr[uint64](1), ""},
+		{"kv-others:k_v:ChainSelector_1@v1.0.0", ptr[uint64](1), ""},
+		{"kk-others:k_v:ChainSelector:1@v1.0.0", ptr[uint64](1), ""},
+
+		{"kv:ChainSelector_foo@v1.0.0", ptr[uint64](1), "invalid chain selector"},
+		{"kk:ChainSelector:bar@v1.0.0", ptr[uint64](1), "invalid chain selector"},
+	} {
+		t.Run(tc.id, func(t *testing.T) {
+			_, labels, _ := ParseID(tc.id)
+			cs, err := ChainSelectorLabel(labels)
+			if tc.errMsg != "" {
+				require.ErrorContains(t, err, tc.errMsg)
+			} else {
+				require.Equal(t, tc.cs, cs)
+			}
+		})
+	}
+}
+
+func ptr[T any](v T) *T { return &v }
+
+func TestRequestMetadata_ContextWithCRE(t *testing.T) {
+	ctx := t.Context()
+	require.Equal(t, "", contexts.CREValue(ctx).Org)
+
+	// set it
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+
+	// preserve it
+	md := RequestMetadata{WorkflowOwner: "owner-id", WorkflowID: "workflow-id"}
+	ctx = md.ContextWithCRE(ctx)
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+}
+
+func TestRegistrationMetadata_ContextWithCRE(t *testing.T) {
+	ctx := t.Context()
+	require.Equal(t, "", contexts.CREValue(ctx).Org)
+
+	// set it
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+
+	// preserve it
+	md := RegistrationMetadata{WorkflowOwner: "owner-id", WorkflowID: "workflow-id"}
+	ctx = md.ContextWithCRE(ctx)
+	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
 }

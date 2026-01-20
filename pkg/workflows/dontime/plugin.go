@@ -11,12 +11,13 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
 type Plugin struct {
@@ -121,7 +122,12 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-	var times []int64
+	type timestampNodePair struct {
+		Timestamp        int64
+		NodeID           int
+		OffsetFromMedian int64
+	}
+	var timestampNodePairs []timestampNodePair
 
 	prevOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
@@ -131,7 +137,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		prevOutcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
 	}
 
-	for _, ao := range aos {
+	for idx, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
@@ -153,12 +159,26 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 			}
 		}
 
-		times = append(times, observation.Timestamp)
+		timestampNodePairs = append(timestampNodePairs, timestampNodePair{Timestamp: observation.Timestamp, NodeID: idx})
+	}
+	if len(timestampNodePairs) == 0 {
+		return nil, errors.New("no observation contains a valid timestamp")
 	}
 
-	p.lggr.Debugw("Observed Node Timestamps", "timestamps", times)
-	slices.Sort(times)
-	donTime := times[len(times)/2]
+	slices.SortFunc(timestampNodePairs, func(a, b timestampNodePair) int {
+		return int(a.Timestamp - b.Timestamp)
+	})
+	donTime := timestampNodePairs[len(timestampNodePairs)/2].Timestamp
+	for i := range timestampNodePairs {
+		timestampNodePairs[i].OffsetFromMedian = timestampNodePairs[i].Timestamp - donTime
+	}
+	p.lggr.Debugw("Observed Node Timestamps",
+		"timestampNodePairs", timestampNodePairs,
+		"median", donTime,
+		"collectedDataPoints", len(timestampNodePairs),
+		"minOffsetFromMedian", timestampNodePairs[0].OffsetFromMedian,
+		"maxOffsetFromMedian", timestampNodePairs[len(timestampNodePairs)-1].OffsetFromMedian,
+	)
 
 	outcome := prevOutcome
 

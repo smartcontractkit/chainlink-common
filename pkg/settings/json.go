@@ -8,14 +8,16 @@ import (
 	"io/fs"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 )
 
 // CombineJSONFiles reads a set of JSON config files and combines them in to one file. The expected inputs are:
-//	- global.json
-// 	- org/*.json
-// 	- owner/*.json
-// 	- workflow/*.json
+//   - global.json
+//   - org/*.json
+//   - owner/*.json
+//   - workflow/*.json
+//
 // The directory and file names translate to keys in the JSON structure, while the file extensions are discarded.
 // For example: owner/0x1234.json:Foo.Bar becomes owner.0x1234.Foo.Bar
 func CombineJSONFiles(files fs.FS) ([]byte, error) {
@@ -152,11 +154,17 @@ func (s *jsonSettings) get(key string) (string, error) {
 	}
 
 	field := parts[len(parts)-1]
-	switch t := m[field].(type) {
-	case string:
-		return t, nil
-	case json.Number:
-		return t.String(), nil
+	if val, ok := m[field]; ok {
+		switch t := val.(type) {
+		case string:
+			return t, nil
+		case json.Number:
+			return t.String(), nil
+		case bool:
+			return strconv.FormatBool(t), nil
+		default:
+			return "", fmt.Errorf("non-string value: %s: %t(%v)", key, val, val)
+		}
 	}
 	return "", nil // no value
 }
@@ -166,7 +174,7 @@ type jsonGetter struct {
 }
 
 // NewJSONGetter returns a static Getter backed by the given JSON.
-//TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
 // NewJSONRegistry with polling & subscriptions
 func NewJSONGetter(b []byte) (Getter, error) {
 	s, err := newJSONSettings(b)

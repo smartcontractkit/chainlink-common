@@ -16,6 +16,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 )
 
 var update = flag.Bool("update", false, "update the golden files of this test")
@@ -74,6 +77,12 @@ func TestSchema_Unmarshal(t *testing.T) {
 	},
 	"PerWorkflow": {
 		"WASMMemoryLimit": "250mb",
+		"ChainAllowed": {
+			"Default": "false",
+			"Values": {
+				"1": "true"
+			}
+		},
 		"CRONTrigger": {
 			"RateLimit": "every10s:5"
 		},
@@ -103,7 +112,10 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
-	assert.Equal(t, config.Rate{Limit: rate.Every(10 * time.Second), Burst: 5}, cfg.PerWorkflow.CRONTrigger.RateLimit.DefaultValue)
+	assert.Equal(t, false, cfg.PerWorkflow.ChainAllowed.Default.DefaultValue)
+	assert.Equal(t, "true", cfg.PerWorkflow.ChainAllowed.Values["1"])
+	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.Default.Parse)
+	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.KeyFromCtx)
 	assert.Equal(t, config.Rate{Limit: rate.Every(30 * time.Second), Burst: 3}, cfg.PerWorkflow.HTTPTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
 	assert.Equal(t, 5, cfg.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
@@ -142,11 +154,6 @@ func TestDefaultGetter(t *testing.T) {
 }`)
 	reinit() // set default vars
 
-	_ = `
-[workflow.test-wf-id]
-PerWorkflow.HTTPAction.CallLimit = 20
-`
-
 	// Default unchanged
 	got, err = limit.GetOrDefault(ctx, DefaultGetter)
 	require.NoError(t, err)
@@ -157,4 +164,146 @@ PerWorkflow.HTTPAction.CallLimit = 20
 	require.NoError(t, err)
 	require.Equal(t, 20, got)
 
+}
+
+func TestDefaultGetter_SettingMap(t *testing.T) {
+	limit := Default.PerWorkflow.ChainAllowed
+
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "foo"})
+	ctx = contexts.WithChainSelector(ctx, 1234)
+	overrideCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "test-wf-id"})
+	overrideCtx = contexts.WithChainSelector(overrideCtx, 1234)
+
+	// None allowed by default
+	got, err := limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+
+	t.Cleanup(reinit) // restore default vars
+
+	// Org override to allow
+	t.Setenv(envNameSettings, `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"ChainAllowed": {
+					"Values": {
+						"1234": "true"
+					}
+				}
+			}
+		}
+	}
+}`)
+	reinit() // set default vars
+
+	// ensure merged values; defaults must remain
+	require.Equal(t, "true", Default.PerWorkflow.ChainAllowed.Values["3379446385462418246"])
+	// confirm
+	got, err = limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.True(t, got)
+
+	// Org override to allow by default, but disallow some
+	t.Setenv(envNameSettings, `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"ChainAllowed": {
+					"Default": true,
+					"Values": {
+						"1234": "false"
+					}
+				}
+			}
+		}
+	}
+}`)
+	reinit() // set default vars
+	got, err = limit.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	require.False(t, got)
+	got, err = limit.GetOrDefault(contexts.WithChainSelector(overrideCtx, 42), DefaultGetter)
+	require.NoError(t, err)
+	require.True(t, got)
+}
+
+func TestDefaultEnvVars(t *testing.T) {
+	// confirm defaults
+	require.Equal(t, "", Default.PerWorkflow.ChainAllowed.Values["1234"])
+	require.Equal(t, "true", Default.PerWorkflow.ChainAllowed.Values["3379446385462418246"])
+
+	t.Cleanup(reinit) // restore after
+
+	// update defaults
+	t.Setenv(envNameSettingsDefault, `{
+	"PerWorkflow": {
+		"ChainAllowed": {
+			"Values": {
+				"1234": "true"
+			}
+		}
+	}
+}`)
+	reinit() // set default vars
+
+	// confirm through Default
+	require.Equal(t, "true", Default.PerWorkflow.ChainAllowed.Values["1234"])
+	// without affecting others (they must merge)
+	require.Equal(t, "true", Default.PerWorkflow.ChainAllowed.Values["3379446385462418246"])
+
+	// confirm through DefaultGetter
+	gl, err := limits.MakeGateLimiter(limits.Factory{Logger: logger.Test(t), Settings: DefaultGetter}, Default.PerWorkflow.ChainAllowed)
+	require.NoError(t, err)
+
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Org: "foo", Owner: "owner-id", Workflow: "foo"})
+	// defaults and global override allowed
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
+
+	// update overrides
+	t.Setenv(envNameSettingsDefault, "{}")
+	t.Setenv(envNameSettings, `{
+	"global": {
+		"PerWorkflow": {
+			"ChainAllowed": {
+				"Values": {
+					"1234": "true"
+				}
+			}
+		}
+	}
+}`)
+
+	reinit() // set default vars
+
+	// confirm through DefaultGetter
+	gl, err = limits.MakeGateLimiter(limits.Factory{Logger: logger.Test(t), Settings: DefaultGetter}, Default.PerWorkflow.ChainAllowed)
+	require.NoError(t, err)
+
+	// defaults and global override allowed
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
+
+	// confirm through an empty, but non-nil getter
+	getter, err := settings.NewJSONGetter([]byte(`{}`))
+	require.NoError(t, err)
+	gl, err = limits.MakeGateLimiter(limits.Factory{Logger: logger.Test(t), Settings: getter}, Default.PerWorkflow.ChainAllowed)
+	require.NoError(t, err)
+
+	// defaults and global override allowed
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
+	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
 }

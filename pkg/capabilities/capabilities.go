@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,8 +13,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 )
 
 // CapabilityType is an enum for the type of capability.
@@ -115,10 +117,11 @@ type RequestMetadata struct {
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
-	return contexts.WithCRE(ctx, contexts.CRE{
-		Owner:    m.WorkflowOwner,
-		Workflow: m.WorkflowID,
-	})
+	val := contexts.CREValue(ctx)
+	// preserve org, if set
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
+	return contexts.WithCRE(ctx, val)
 }
 
 type RegistrationMetadata struct {
@@ -129,10 +132,11 @@ type RegistrationMetadata struct {
 }
 
 func (m *RegistrationMetadata) ContextWithCRE(ctx context.Context) context.Context {
-	return contexts.WithCRE(ctx, contexts.CRE{
-		Owner:    m.WorkflowOwner,
-		Workflow: m.WorkflowID,
-	})
+	val := contexts.CREValue(ctx)
+	// preserve org, if set
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
+	return contexts.WithCRE(ctx, val)
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -178,6 +182,35 @@ func ParseID(id string) (name string, labels iter.Seq2[string, string], version 
 		}
 	}
 	return
+}
+
+// ChainSelectorLabel returns a chain selector value from the labels if one is present.
+// It supports both a normal key/value pair, and sequential keys for historical reasons.
+func ChainSelectorLabel(labels iter.Seq2[string, string]) (*uint64, error) {
+	const key = "ChainSelector"
+	var next bool
+	for k, v := range labels {
+		if next {
+			cs, err := strconv.ParseUint(k, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid chain selector: %s", v)
+			}
+			return &cs, nil
+		}
+		if k == key {
+			if v != "" {
+				cs, err := strconv.ParseUint(v, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("invalid chain selector: %s", v)
+				}
+				return &cs, nil
+			} else {
+				// empty value means it will be in the next key
+				next = true
+			}
+		}
+	}
+	return nil, nil
 }
 
 type RegisterToWorkflowRequest struct {

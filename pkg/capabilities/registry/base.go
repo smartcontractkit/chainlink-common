@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc"
@@ -152,6 +151,9 @@ func (r *baseRegistry) List(_ context.Context) ([]capabilities.BaseCapability, e
 }
 
 func (r *baseRegistry) Add(ctx context.Context, c capabilities.BaseCapability) error {
+	if c == nil {
+		return errors.New("cannot add a nil capability to the registry")
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	info, err := c.Info(ctx)
@@ -173,13 +175,14 @@ func (r *baseRegistry) Add(ctx context.Context, c capabilities.BaseCapability) e
 		}
 	} else {
 		var ac atomicBaseCapability
+		lggr := logger.With(r.lggr, "capabilityID", id)
 		switch info.CapabilityType {
 		case capabilities.CapabilityTypeTrigger:
-			ac = &atomicTriggerCapability{}
+			ac = newAtomicTriggerCapability(lggr)
 		case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
 			ac = &atomicExecuteCapability{}
 		case capabilities.CapabilityTypeCombined:
-			ac = &atomicExecuteAndTriggerCapability{}
+			ac = newAtomicExecuteAndTriggerCapability(lggr)
 		default:
 			return fmt.Errorf("unknown capability type: %s", info.CapabilityType)
 		}
@@ -206,196 +209,380 @@ func (r *baseRegistry) Remove(_ context.Context, id string) error {
 	return nil
 }
 
+// Caches all trigger registrations and replays them when the underlying capability is updated.
+// Owns channels passed to the higher layer (Engine or Don2Don) and goroutines forwarding events
+// from the underlying capability.
+// NOT thread-safe - the caller is responsible for locking.
+type triggerRegistrationManager struct {
+	lggr logger.Logger
+	regs map[string]*triggerRegistration
+}
+
+type triggerRegistration struct {
+	request capabilities.TriggerRegistrationRequest
+	outCh   chan capabilities.TriggerResponse
+	cancel  context.CancelFunc // used to shut down the forwarding goroutine when the trigger is unregistered
+}
+
+func newTriggerRegistrationManager(lggr logger.Logger) *triggerRegistrationManager {
+	return &triggerRegistrationManager{
+		lggr: lggr,
+		regs: make(map[string]*triggerRegistration),
+	}
+}
+
+func (m *triggerRegistrationManager) register(ctx context.Context, underlying capabilities.TriggerExecutable, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	in, err := underlying.RegisterTrigger(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return m.upsertRegistration(req, nil, in), nil
+}
+
+func (m *triggerRegistrationManager) unregister(ctx context.Context, underlying capabilities.TriggerExecutable, req capabilities.TriggerRegistrationRequest) error {
+	var out chan capabilities.TriggerResponse
+	if reg, ok := m.regs[req.TriggerID]; ok {
+		if reg.cancel != nil {
+			reg.cancel()
+		}
+		out = reg.outCh
+		delete(m.regs, req.TriggerID)
+	}
+
+	if out != nil {
+		close(out)
+	}
+	return underlying.UnregisterTrigger(ctx, req)
+}
+
+func (m *triggerRegistrationManager) upsertRegistration(req capabilities.TriggerRegistrationRequest, outCh chan capabilities.TriggerResponse, in <-chan capabilities.TriggerResponse) chan capabilities.TriggerResponse {
+	registrationID := req.TriggerID // Engine sets it to (workflowID, triggerIndex)
+	regInMap, ok := m.regs[registrationID]
+	if !ok {
+		if outCh == nil {
+			outCh = make(chan capabilities.TriggerResponse)
+		}
+		regInMap = &triggerRegistration{
+			request: req,
+			outCh:   outCh,
+		}
+		m.regs[registrationID] = regInMap
+	} else {
+		regInMap.request = req
+		if outCh != nil {
+			regInMap.outCh = outCh
+		}
+		if regInMap.cancel != nil {
+			regInMap.cancel() // shuts down the previous forwarding goroutine
+			regInMap.cancel = nil
+		}
+	}
+	if in != nil {
+		ctxForward, cancel := context.WithCancel(context.Background())
+		regInMap.cancel = cancel
+		go forwardTriggerResponses(ctxForward, in, regInMap.outCh)
+	}
+	return regInMap.outCh
+}
+
+func (m *triggerRegistrationManager) rebind(newUnderlying capabilities.TriggerExecutable) {
+	for _, reg := range m.regs {
+		var in <-chan capabilities.TriggerResponse
+		var err error
+		if newUnderlying != nil {
+			// NOTE: this is tricky - if an existing registration fails on rebind, there is no way to notify the user ...
+			in, err = newUnderlying.RegisterTrigger(context.Background(), reg.request)
+		}
+		if err != nil {
+			m.lggr.Errorw("failed to rebind trigger registration", "triggerID", reg.request.TriggerID, "err", err)
+		} else {
+			m.lggr.Debugw("rebind trigger registration", "triggerID", reg.request.TriggerID)
+		}
+		_ = m.upsertRegistration(reg.request, reg.outCh, in) // user already has this channel
+	}
+}
+
+func forwardTriggerResponses(ctx context.Context, in <-chan capabilities.TriggerResponse, out chan<- capabilities.TriggerResponse) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case resp, ok := <-in:
+			if !ok {
+				return
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case out <- resp:
+			}
+		}
+	}
+}
+
 var _ capabilities.TriggerCapability = &atomicTriggerCapability{}
 
 type atomicTriggerCapability struct {
-	atomic.Pointer[capabilities.TriggerCapability]
+	mu            sync.RWMutex
+	cap           capabilities.TriggerCapability
+	registrations *triggerRegistrationManager
+}
+
+func newAtomicTriggerCapability(lggr logger.Logger) *atomicTriggerCapability {
+	return &atomicTriggerCapability{
+		registrations: newTriggerRegistrationManager(lggr),
+	}
 }
 
 func (a *atomicTriggerCapability) Update(c capabilities.BaseCapability) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if c == nil {
-		a.Store(nil)
+		a.cap = nil
+		a.registrations.rebind(nil)
 		return nil
 	}
 	tc, ok := c.(capabilities.TriggerCapability)
 	if !ok {
 		return errors.New("trigger capability does not satisfy TriggerCapability interface")
 	}
-	a.Store(&tc)
+	a.cap = tc
+	a.registrations.rebind(tc)
 	return nil
 }
 
 func (a *atomicTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
 	}
-	return (*c).Info(ctx)
+	return a.cap.Info(ctx)
 }
 
 func (a *atomicTriggerCapability) GetState() connectivity.State {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return connectivity.Shutdown
 	}
-	if sg, ok := (*c).(StateGetter); ok {
+	if sg, ok := a.cap.(StateGetter); ok {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
 }
 
+func (a *atomicTriggerCapability) Load() *capabilities.TriggerCapability {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
+		return nil
+	}
+	cap := a.cap
+	return &cap
+}
+
 func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cap == nil {
 		return nil, errors.New("capability unavailable")
 	}
-	return (*c).RegisterTrigger(ctx, request)
+	return a.registrations.register(ctx, a.cap, request)
 }
 
 func (a *atomicTriggerCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	c := a.Load()
-	if c == nil {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).UnregisterTrigger(ctx, request)
+	return a.registrations.unregister(ctx, a.cap, request)
 }
 
 var _ capabilities.ExecutableCapability = &atomicExecuteCapability{}
 
 type atomicExecuteCapability struct {
-	atomic.Pointer[capabilities.ExecutableCapability]
+	mu  sync.RWMutex
+	cap capabilities.ExecutableCapability
 }
 
 func (a *atomicExecuteCapability) Update(c capabilities.BaseCapability) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if c == nil {
-		a.Store(nil)
+		a.cap = nil
 		return nil
 	}
 	tc, ok := c.(capabilities.ExecutableCapability)
 	if !ok {
 		return errors.New("action does not satisfy ExecutableCapability interface")
 	}
-	a.Store(&tc)
+	a.cap = tc
 	return nil
 }
 
 func (a *atomicExecuteCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
 	}
-	return (*c).Info(ctx)
+	return a.cap.Info(ctx)
 }
 
 func (a *atomicExecuteCapability) GetState() connectivity.State {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return connectivity.Shutdown
 	}
-	if sg, ok := (*c).(StateGetter); ok {
+	if sg, ok := a.cap.(StateGetter); ok {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
 }
 
+func (a *atomicExecuteCapability) Load() *capabilities.ExecutableCapability {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
+		return nil
+	}
+	cap := a.cap
+	return &cap
+}
+
 func (a *atomicExecuteCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).RegisterToWorkflow(ctx, request)
+	return a.cap.RegisterToWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).UnregisterFromWorkflow(ctx, request)
+	return a.cap.UnregisterFromWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return capabilities.CapabilityResponse{}, errors.New("capability unavailable")
 	}
-	return (*c).Execute(ctx, request)
+	return a.cap.Execute(ctx, request)
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = &atomicExecuteAndTriggerCapability{}
 
 type atomicExecuteAndTriggerCapability struct {
-	atomic.Pointer[capabilities.ExecutableAndTriggerCapability]
+	mu            sync.RWMutex
+	cap           capabilities.ExecutableAndTriggerCapability
+	registrations *triggerRegistrationManager
+}
+
+func newAtomicExecuteAndTriggerCapability(lggr logger.Logger) *atomicExecuteAndTriggerCapability {
+	return &atomicExecuteAndTriggerCapability{
+		registrations: newTriggerRegistrationManager(lggr),
+	}
 }
 
 func (a *atomicExecuteAndTriggerCapability) Update(c capabilities.BaseCapability) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if c == nil {
-		a.Store(nil)
+		a.cap = nil
+		a.registrations.rebind(nil)
 		return nil
 	}
 	tc, ok := c.(capabilities.ExecutableAndTriggerCapability)
 	if !ok {
 		return errors.New("target capability does not satisfy ExecutableAndTriggerCapability interface")
 	}
-	a.Store(&tc)
+	a.cap = tc
+	a.registrations.rebind(tc)
 	return nil
 }
 
 func (a *atomicExecuteAndTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
 	}
-	return (*c).Info(ctx)
+	return a.cap.Info(ctx)
 }
 
 func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return connectivity.Shutdown
 	}
-	if sg, ok := (*c).(StateGetter); ok {
+	if sg, ok := a.cap.(StateGetter); ok {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
 }
 
+func (a *atomicExecuteAndTriggerCapability) Load() *capabilities.ExecutableAndTriggerCapability {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
+		return nil
+	}
+	cap := a.cap
+	return &cap
+}
+
 func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cap == nil {
 		return nil, errors.New("capability unavailable")
 	}
-	return (*c).RegisterTrigger(ctx, request)
+	return a.registrations.register(ctx, a.cap, request)
 }
 
 func (a *atomicExecuteAndTriggerCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	c := a.Load()
-	if c == nil {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).UnregisterTrigger(ctx, request)
+	return a.registrations.unregister(ctx, a.cap, request)
 }
 
 func (a *atomicExecuteAndTriggerCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).RegisterToWorkflow(ctx, request)
+	return a.cap.RegisterToWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteAndTriggerCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return (*c).UnregisterFromWorkflow(ctx, request)
+	return a.cap.UnregisterFromWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteAndTriggerCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
-	c := a.Load()
-	if c == nil {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.cap == nil {
 		return capabilities.CapabilityResponse{}, errors.New("capability unavailable")
 	}
-	return (*c).Execute(ctx, request)
+	return a.cap.Execute(ctx, request)
 }

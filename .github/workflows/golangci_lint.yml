@@ -44,15 +44,29 @@ jobs:
           version=$(grep '^golangci-lint ' .tool-versions | awk '{print $2}')
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
+      - name: Sanitize artifact name
+        id: artifact-name
+        env:
+          MODULE: ${{ matrix.module }}
+        run: |
+          safe_name="${MODULE#./}"
+          safe_name="${safe_name#/}"
+          safe_name="${safe_name//\//-}"
+          if [[ -z "$safe_name" || "$safe_name" = "." ]]; then
+            safe_name="root"
+          fi
+          echo "value=golangci-lint-report-${safe_name}" | tee -a "$GITHUB_OUTPUT"
+
       - name: golangci-lint ${{ matrix.module }}
         if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
-        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
+        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/v4
         with:
           checkout-repo: false
+          artifact-name: ${{ steps.artifact-name.outputs.value }}
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
-          golangci-lint-args: --output.text.path=stdout --output.checkstyle.path=${{ matrix.module }}/golangci-lint-report.xml
+          golangci-lint-args: "--output.text.path=stdout --output.checkstyle.path=${{ github.workspace }}/${{ matrix.module }}/golangci-lint-report.xml"
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

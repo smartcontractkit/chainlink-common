@@ -63,6 +63,7 @@ func (s *testWorkflowServer) CheckAggregationStatus(ctx context.Context, req *pb
 // ---------- Test GRPC Dial with TLS Credentials ----------
 
 func TestIntegration_GRPCWithCerts(t *testing.T) {
+	t.Parallel()
 	// Paths to self-signed certificate and key fixtures.
 	serverCertPath := "./test-fixtures/domain_test.pem"
 	serverKeyPath := "./test-fixtures/domain_test.key"
@@ -130,6 +131,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 }
 
 func TestIntegration_GRPC_Insecure(t *testing.T) {
+	t.Parallel()
 	// Paths to self-signed certificate and key fixtures.
 	serverCertPath := "./test-fixtures/domain_test.pem"
 	serverKeyPath := "./test-fixtures/domain_test.key"
@@ -170,6 +172,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 
 // Test that NewWorkflowClient fails when given an invalid address.
 func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
+	t.Parallel()
 	lggr := logger.Test(t)
 	wc, err := NewWorkflowClient(lggr, "invalid-address",
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
@@ -186,6 +189,7 @@ func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 
 // Test that calling Close() twice does not cause a panic.
 func TestWorkflowClient_CloseTwice(t *testing.T) {
+	t.Parallel()
 	lis, err := net.Listen("tcp", "localhost:0")
 	require.NoError(t, err)
 	grpcServer := grpc.NewServer()
@@ -212,6 +216,7 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 
 // Additional test: Verify that dialGrpc fails if an unreachable address is provided.
 func TestWorkflowClient_DialUnreachable(t *testing.T) {
+	t.Parallel()
 	lggr := logger.Test(t)
 	unreachableAddr := "192.0.2.1:12345" // Reserved for documentation.
 	wc, err := NewWorkflowClient(lggr, unreachableAddr,
@@ -230,6 +235,7 @@ func TestWorkflowClient_DialUnreachable(t *testing.T) {
 // ---------- Test JWT Token Creation ----------
 
 func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
+	t.Parallel()
 
 	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "test request"}
@@ -258,6 +264,7 @@ func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 
 // Test that client handles the case when no JWT manager is provided.
 func TestWorkflowClient_NoSigningKey(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	req := MockRequest{Field: "test"}
 	wc := &workflowClient{
@@ -273,6 +280,7 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 
 // Test that client handles JWT manager errors properly
 func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
+	t.Parallel()
 	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "test"}
 
@@ -290,6 +298,7 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 }
 
 func TestWorkflowClient_RepeatedSign(t *testing.T) {
+	t.Parallel()
 	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "repeatable"}
 	expectedToken := "consistent.jwt.token"

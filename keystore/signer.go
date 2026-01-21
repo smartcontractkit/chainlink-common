@@ -88,6 +88,10 @@ func (k *keystore) Sign(ctx context.Context, req SignRequest) (SignResponse, err
 
 func (k *keystore) Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
 	// Note don't need the lock since this is a pure function.
+	return Verify(ctx, req)
+}
+
+func Verify(ctx context.Context, req VerifyRequest) (VerifyResponse, error) {
 	switch req.KeyType {
 	case Ed25519:
 		if len(req.Signature) != 64 {

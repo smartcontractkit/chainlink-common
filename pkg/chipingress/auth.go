@@ -14,6 +14,12 @@ type HeaderProvider interface {
 	Headers(ctx context.Context) (map[string]string, error)
 }
 
+type headerProviderFunc func(ctx context.Context) (map[string]string, error)
+
+func (f headerProviderFunc) Headers(ctx context.Context) (map[string]string, error) {
+	return f(ctx)
+}
+
 // Basic-Auth authentication for Chip Ingress
 type basicAuthCredentials struct {
 	authHeader map[string]string

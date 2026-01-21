@@ -82,8 +82,8 @@ func MakeResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (Re
 //   - bound.*.limit - gauge
 //   - bound.*.usage - histogram
 //   - bound.*.denied - histogram
-func MakeBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimiter[N], error) {
-	return newBoundLimiter(f, bound)
+func MakeBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
+	return newBoundLimiter(f, bound.GetSpec())
 }
 
 // MakeQueueLimiter returns a QueueLimiter for the given limit and configured by the Factory.
@@ -103,8 +103,6 @@ func MakeQueueLimiter[T any](f Factory, limit settings.Setting[int]) (QueueLimit
 //   - gate.*.limit - int gauge
 //   - gate.*.usage - int counter
 //   - gate.*.denied - int counter
-//
-// OPT: accept an interface for limit
-func MakeGateLimiter(f Factory, limit settings.SettingMap[bool]) (GateLimiter, error) {
-	return newGateLimiter(f, limit)
+func MakeGateLimiter(f Factory, limit settings.IsSetting[bool]) (GateLimiter, error) {
+	return newGateLimiter(f, limit.GetSpec())
 }

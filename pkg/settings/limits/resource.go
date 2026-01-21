@@ -90,6 +90,10 @@ type resourcePoolLimiter[N Number] struct {
 	recordDenied    func(context.Context, N, ...metric.RecordOption)       // optional
 }
 
+func (l *resourcePoolLimiter[N]) setOnLimitUpdate(fn func(ctx context.Context)) {
+	l.updater.onLimitUpdate = fn
+}
+
 func (l *resourcePoolLimiter[N]) createGauges(meter metric.Meter, unit string) error {
 	if l.key == "" {
 		return errors.New("metrics require Key to be set")
@@ -142,13 +146,23 @@ func (l *resourcePoolLimiter[N]) getLimit(ctx context.Context) (limit N) {
 	return limit
 }
 
+// waiter represents a goroutine waiting for resources in the FIFO queue.
+type waiter[N Number] struct {
+	amount N
+	ready  chan struct{} // closed when resources are granted
+}
+
 type resourcePoolUsage[N Number] struct {
 	*resourcePoolLimiter[N]
 	scope  settings.Scope // optional
 	tenant string         // optional
 	mu     sync.Mutex
-	cond   sync.Cond
 	used   N
+	// queue holds waiters in FIFO order; head of slice is first to be serviced
+	queue []*waiter[N]
+	// onEnqueue is an optional callback invoked (under lock) when a waiter is added to the queue.
+	// Used for testing to synchronize without sleeps.
+	onEnqueue func()
 
 	recordUsage     func(context.Context, N)
 	recordLimit     func(context.Context, N)
@@ -162,9 +176,18 @@ type resourcePoolUsage[N Number] struct {
 	cancelSub func() // optional
 }
 
+// onLimitUpdate is invoked when the configured limit changes. It attempts to
+// wake queued waiters using the new limit.
+func (u *resourcePoolUsage[N]) onLimitUpdate() {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.tryWakeWaiters()
+}
+
 func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *resourcePoolUsage[N] {
 	u := resourcePoolUsage[N]{
 		resourcePoolLimiter: l,
+		queue:               make([]*waiter[N], 0),
 		stopCh:              make(services.StopChan),
 		done:                make(chan struct{}),
 		recordUsage: func(ctx context.Context, n N) {
@@ -193,7 +216,6 @@ func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *res
 			}
 		},
 	}
-	u.cond.L = &u.mu
 	return &u
 }
 
@@ -207,9 +229,25 @@ func (u *resourcePoolUsage[N]) free(amount N) {
 	defer cancel()
 	u.recordUsage(ctx, u.used)
 
-	u.cond.Broadcast() // notify others blocked on cond.Wait
+	u.tryWakeWaiters()
+}
 
-	return
+// tryWakeWaiters attempts to wake waiters at the head of the queue
+// whose resource requests can now be satisfied.
+// Must be called with u.mu held.
+func (u *resourcePoolUsage[N]) tryWakeWaiters() {
+	for len(u.queue) > 0 {
+		head := u.queue[0]
+		limit := u.getLimit(context.Background())
+		if u.used+head.amount > limit {
+			// Not enough resources for the head waiter; stop here to preserve FIFO
+			break
+		}
+		// Grant resources to head waiter
+		u.used += head.amount
+		close(head.ready)
+		u.queue = u.queue[1:]
+	}
 }
 
 func (u *resourcePoolUsage[N]) newErrorLimitReached(limit, amount N) ErrorResourceLimited[N] {
@@ -241,7 +279,6 @@ func (u *resourcePoolUsage[N]) available(ctx context.Context) (N, error) {
 	return limit - u.used, nil
 }
 
-// opt: queue instead of racing for the [sync.Mutex] & [sync.Cond]
 func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) error {
 	limit, err := u.get(ctx)
 	if err != nil {
@@ -250,34 +287,73 @@ func (u *resourcePoolUsage[N]) use(ctx context.Context, amount N, block bool) er
 
 	start := time.Now()
 	u.mu.Lock()
-	defer u.mu.Unlock()
 
-	if u.used+amount > limit {
-		if !block {
+	// Fast path: resources available immediately and no one else waiting
+	if len(u.queue) == 0 && u.used+amount <= limit {
+		u.used += amount
+		u.recordUsage(ctx, u.used)
+		u.recordAmount(ctx, amount)
+		u.recordBlockTime(ctx, time.Since(start).Seconds())
+		u.mu.Unlock()
+		return nil
+	}
+
+	// Not enough resources
+	if !block {
+		u.recordDenied(ctx, amount)
+		err := u.newErrorLimitReached(limit, amount)
+		u.mu.Unlock()
+		return err
+	}
+
+	// Slow path: need to queue up and wait (FIFO ordering)
+	w := &waiter[N]{
+		amount: amount,
+		ready:  make(chan struct{}),
+	}
+	u.queue = append(u.queue, w)
+	if u.onEnqueue != nil {
+		u.onEnqueue()
+	}
+	u.mu.Unlock()
+
+	// Wait for our turn or context cancellation
+	select {
+	case <-w.ready:
+		// Resources have been granted to us
+		u.mu.Lock()
+		u.recordUsage(ctx, u.used)
+		u.recordAmount(ctx, amount)
+		u.recordBlockTime(ctx, time.Since(start).Seconds())
+		u.mu.Unlock()
+		return nil
+	case <-ctx.Done():
+		// Context cancelled - remove ourselves from queue
+		u.mu.Lock()
+		defer u.mu.Unlock()
+
+		// Check if we were already granted resources while acquiring the lock
+		select {
+		case <-w.ready:
+			// We got resources just as we were cancelling; return them
+			u.used -= amount
+			u.tryWakeWaiters()
 			u.recordDenied(ctx, amount)
-			return u.newErrorLimitReached(limit, amount)
+			return fmt.Errorf("context error (%w) after waiting %s for limit: %w", ctx.Err(), time.Since(start), u.newErrorLimitReached(limit, amount))
+		default:
 		}
-		// Ensure cond.Wait() yields to context expiration
-		stop := context.AfterFunc(ctx, func() {
-			u.mu.Lock()
-			defer u.mu.Unlock()
-			u.cond.Broadcast()
-		})
-		defer stop()
-		start := time.Now()
-		for u.used+amount > limit {
-			u.cond.Wait() // wait until some resources are freed, or context expiration
-			if err := ctx.Err(); err != nil {
-				u.recordDenied(ctx, amount)
-				return fmt.Errorf("context error (%w) after waiting %s for limit: %w", err, time.Since(start), u.newErrorLimitReached(limit, amount))
+
+		// Remove from queue. Only needed when the context was cancelled before the element got to the head of the queue.
+		// Otherwise it is already removed by tryWakeWaiters().
+		for i, waiter := range u.queue {
+			if waiter == w {
+				u.queue = append(u.queue[:i], u.queue[i+1:]...)
+				break
 			}
 		}
+		u.recordDenied(ctx, amount)
+		return fmt.Errorf("context error (%w) after waiting %s for limit: %w", ctx.Err(), time.Since(start), u.newErrorLimitReached(limit, amount))
 	}
-	u.used += amount
-	u.recordUsage(ctx, u.used)
-	u.recordAmount(ctx, amount)
-	u.recordBlockTime(ctx, time.Since(start).Seconds())
-	return nil
 }
 
 func (u *resourcePoolUsage[N]) wait(ctx context.Context, amount N) (free func(), err error) {
@@ -303,6 +379,9 @@ func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourceP
 		},
 	}
 	l.resourcePoolUsage = l.newLimitUsage()
+	l.setOnLimitUpdate(func(context.Context) {
+		l.resourcePoolUsage.onLimitUpdate()
+	})
 	return l
 }
 
@@ -425,6 +504,15 @@ func newScopedResourcePoolLimiter[N Number](scope settings.Scope, key string, de
 		},
 		scope: scope,
 	}
+	l.setOnLimitUpdate(func(ctx context.Context) {
+		tenant := l.scope.Value(ctx)
+		if tenant == "" {
+			return
+		}
+		if usage, ok := l.used.Load(tenant); ok {
+			usage.(*resourcePoolUsage[N]).onLimitUpdate()
+		}
+	})
 	return l
 }
 

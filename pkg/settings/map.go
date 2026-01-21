@@ -23,11 +23,21 @@ func PerChainSelector[T any](defaultValue Setting[T], vals map[string]T) Setting
 	}
 }
 
+var _ IsSetting[int] = SettingMap[int]{}
+
 type SettingMap[T any] struct {
 	Default    Setting[T]
 	Values     map[string]string                     // unparsed
 	KeyFromCtx func(context.Context) (uint64, error) `json:"-" toml:"-"`
 }
+
+func (s SettingMap[T]) GetSpec() SettingSpec[T] { return &s }
+
+func (s *SettingMap[T]) GetKey() string { return s.Default.Key }
+
+func (s *SettingMap[T]) GetScope() Scope { return s.Default.Scope }
+
+func (s *SettingMap[T]) GetUnit() string { return s.Default.Unit }
 
 func (s *SettingMap[T]) initSetting(key string, scope Scope, unit *string) error {
 	if s.KeyFromCtx == nil {
@@ -85,4 +95,12 @@ func (s *SettingMap[T]) GetOrDefault(ctx context.Context, g Getter) (value T, er
 		return valueOrDefault()
 	}
 	return
+}
+
+func (s *SettingMap[T]) Subscribe(ctx context.Context, registry Registry) (<-chan Update[T], func()) {
+	//TODO subscribe to Values & Default
+
+	// no-op
+	ch := make(chan Update[T])
+	return ch, func() { close(ch) }
 }

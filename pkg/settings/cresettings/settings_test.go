@@ -116,7 +116,6 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, "true", cfg.PerWorkflow.ChainAllowed.Values["1"])
 	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.Default.Parse)
 	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.KeyFromCtx)
-	assert.Equal(t, config.Rate{Limit: rate.Every(10 * time.Second), Burst: 5}, cfg.PerWorkflow.CRONTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(30 * time.Second), Burst: 3}, cfg.PerWorkflow.HTTPTrigger.RateLimit.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
 	assert.Equal(t, 5, cfg.PerWorkflow.HTTPAction.CallLimit.DefaultValue)

@@ -44,13 +44,14 @@ type Opt func(*clientConfig)
 
 // clientConfig is the configuration for the ChipIngressClient.
 type clientConfig struct {
-	transportCredentials credentials.TransportCredentials
-	perRPCCredentials    credentials.PerRPCCredentials
-	headerProvider       HeaderProvider
-	insecureConnection   bool
-	host                 string
-	meterProvider        metric.MeterProvider
-	tracerProvider       trace.TracerProvider
+	transportCredentials  credentials.TransportCredentials
+	perRPCCredentials     credentials.PerRPCCredentials
+	headerProvider        HeaderProvider
+	insecureConnection    bool
+	host                  string
+	meterProvider         metric.MeterProvider
+	tracerProvider        trace.TracerProvider
+	nopInfoHeaderProvider HeaderProvider
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -59,8 +60,9 @@ func newClientConfig(host string) *clientConfig {
 		perRPCCredentials: nil,
 		host:              host,
 		// Default to insecure connection
-		insecureConnection:   true,
-		transportCredentials: insecure.NewCredentials(),
+		insecureConnection:    true,
+		transportCredentials:  insecure.NewCredentials(),
+		nopInfoHeaderProvider: nil,
 	}
 	return cfg
 }
@@ -114,6 +116,10 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	if cfg.headerProvider != nil {
 		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
 		// NOTE: not supporting streaming interceptors
+	}
+
+	if cfg.nopInfoHeaderProvider != nil {
+		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.nopInfoHeaderProvider)))
 	}
 
 	conn, err := grpc.NewClient(address, grpcOpts...)
@@ -224,6 +230,16 @@ func WithMeterProvider(provider metric.MeterProvider) Opt {
 // If not set, the global tracer provider will be used.
 func WithTracerProvider(provider trace.TracerProvider) Opt {
 	return func(c *clientConfig) { c.tracerProvider = provider }
+}
+
+func WithNOPLookup() Opt {
+	return func(c *clientConfig) {
+		c.nopInfoHeaderProvider = headerProviderFunc(func(ctx context.Context) (map[string]string, error) {
+			return map[string]string{
+				"x-include-nop-info": "true",
+			}, nil
+		})
+	}
 }
 
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider

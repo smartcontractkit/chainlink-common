@@ -17,6 +17,7 @@ const (
 	OCR3Capability OCR2PluginType = "ocr3-capability"
 	VaultPlugin    OCR2PluginType = "vault-plugin"
 	DonTimePlugin  OCR2PluginType = "dontime"
+	RingPlugin     OCR2PluginType = "ring"
 	SecureMint     OCR2PluginType = "securemint"
 
 	CCIPCommit    OCR2PluginType = "ccip-commit"

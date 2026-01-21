@@ -1,6 +1,5 @@
 WorkflowLimit = '200'
 WorkflowExecutionConcurrencyLimit = '200'
-WorkflowTriggerRateLimit = '200rps:200'
 GatewayIncomingPayloadSizeLimit = '1mb'
 VaultCiphertextSizeLimit = '2kb'
 VaultIdentifierKeySizeLimit = '64b'
@@ -10,22 +9,19 @@ VaultPluginBatchSizeLimit = '20'
 VaultRequestBatchSizeLimit = '10'
 
 [PerOrg]
-WorkflowDeploymentRateLimit = 'every1m0s:1'
 ZeroBalancePruningTimeout = '24h0m0s'
 
 [PerOwner]
 WorkflowExecutionConcurrencyLimit = '5'
-WorkflowTriggerRateLimit = '5rps:5'
 VaultSecretsLimit = '100'
 
 [PerWorkflow]
-TriggerRateLimit = 'every30s:3'
 TriggerRegistrationsTimeout = '10s'
 TriggerSubscriptionTimeout = '15s'
 TriggerSubscriptionLimit = '10'
-TriggerEventQueueLimit = '1000'
+TriggerEventQueueLimit = '50'
 TriggerEventQueueTimeout = '10m0s'
-CapabilityConcurrencyLimit = '3'
+CapabilityConcurrencyLimit = '30'
 CapabilityCallTimeout = '3m0s'
 SecretsConcurrencyLimit = '5'
 ExecutionConcurrencyLimit = '5'
@@ -36,9 +32,6 @@ WASMBinarySizeLimit = '100mb'
 WASMCompressedBinarySizeLimit = '20mb'
 WASMConfigSizeLimit = '1mb'
 WASMSecretsSizeLimit = '1mb'
-WASMResponseSizeLimit = '100kb'
-ConsensusObservationSizeLimit = '100kb'
-ConsensusCallsLimit = '2000'
 LogLineLimit = '1kb'
 LogEventLimit = '1000'
 
@@ -51,13 +44,11 @@ Default = 'false'
 
 [PerWorkflow.CRONTrigger]
 FastestScheduleInterval = '30s'
-RateLimit = 'every30s:1'
 
 [PerWorkflow.HTTPTrigger]
 RateLimit = 'every30s:3'
 
 [PerWorkflow.LogTrigger]
-Limit = '5'
 EventRateLimit = 'every6s:10'
 EventSizeLimit = '5kb'
 FilterAddressLimit = '5'
@@ -70,6 +61,13 @@ ReportSizeLimit = '5kb'
 [PerWorkflow.ChainWrite.EVM]
 TransactionGasLimit = '5000000'
 
+[PerWorkflow.ChainWrite.EVM.GasLimit]
+Default = '5000000'
+
+[PerWorkflow.ChainWrite.EVM.GasLimit.Values]
+12922642891491394802 = '50000000'
+3379446385462418246 = '10000000'
+
 [PerWorkflow.ChainRead]
 CallLimit = '10'
 LogQueryBlockLimit = '100'
@@ -77,7 +75,7 @@ PayloadSizeLimit = '5kb'
 
 [PerWorkflow.Consensus]
 ObservationSizeLimit = '100kb'
-CallLimit = '2000'
+CallLimit = '20'
 
 [PerWorkflow.HTTPAction]
 CallLimit = '5'

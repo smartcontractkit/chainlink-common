@@ -117,10 +117,11 @@ type RequestMetadata struct {
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
-	return contexts.WithCRE(ctx, contexts.CRE{
-		Owner:    m.WorkflowOwner,
-		Workflow: m.WorkflowID,
-	})
+	val := contexts.CREValue(ctx)
+	// preserve org, if set
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
+	return contexts.WithCRE(ctx, val)
 }
 
 type RegistrationMetadata struct {
@@ -131,10 +132,11 @@ type RegistrationMetadata struct {
 }
 
 func (m *RegistrationMetadata) ContextWithCRE(ctx context.Context) context.Context {
-	return contexts.WithCRE(ctx, contexts.CRE{
-		Owner:    m.WorkflowOwner,
-		Workflow: m.WorkflowID,
-	})
+	val := contexts.CREValue(ctx)
+	// preserve org, if set
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
+	return contexts.WithCRE(ctx, val)
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.

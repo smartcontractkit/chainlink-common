@@ -8,6 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -124,7 +125,7 @@ func RegisterTrigger[I, O proto.Message](
 	triggerType string,
 	request TriggerRegistrationRequest,
 	message I,
-	fn func(context.Context, string, RequestMetadata, I) (<-chan TriggerAndId[O], error),
+	fn func(context.Context, string, RequestMetadata, I) (<-chan TriggerAndId[O], caperrors.Error),
 ) (<-chan TriggerResponse, error) {
 	migrated, err := FromValueOrAny(request.Config, request.Payload, message)
 	if err != nil {

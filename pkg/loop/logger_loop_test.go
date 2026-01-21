@@ -14,6 +14,7 @@ import (
 )
 
 func TestHCLogLoggerPanic(t *testing.T) {
+	t.Parallel()
 	type testCase struct {
 		level               int
 		expectedMessage     string

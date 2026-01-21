@@ -197,7 +197,8 @@ func await[I, O proto.Message](input I, output O, fn awaitFn) {
 	bytes := fn(mptr, mlen, responsePtr, responseLen)
 
 	if bytes < 0 {
-		SendError(errors.New("awaitCapabilities returned an error"))
+		response = response[:-bytes]
+		SendError(fmt.Errorf("awaitCapabilities returned an error %s", string(response)))
 	}
 
 	if proto.Unmarshal(response[:bytes], output) != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/curve25519"
 
+	chainselectors "github.com/smartcontractkit/chain-selectors"
 	"github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/ocr2offchain"
 )
@@ -16,7 +17,7 @@ func TestOCRKeyBundleRoundTrip(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	password := "test-password"
-	chainType := ChainType("evm")
+	chainType := chainselectors.FamilyEVM
 
 	st := keystore.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, "test",
@@ -32,7 +33,7 @@ func TestOCRKeyBundleRoundTrip(t *testing.T) {
 
 	signingKeyPath := keystore.NewKeyPath(ocr2offchain.PrefixOCR2Offchain, nameDefault, ocr2offchain.OCR2OffchainSigning)
 	encryptionKeyPath := keystore.NewKeyPath(ocr2offchain.PrefixOCR2Offchain, nameDefault, ocr2offchain.OCR2OffchainEncryption)
-	onchainKeyPath := keystore.NewKeyPath(PrefixOCR2Onchain, nameDefault, string(chainType))
+	onchainKeyPath := keystore.NewKeyPath(PrefixOCR2Onchain, nameDefault, chainType)
 
 	getKeysResp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
 		KeyNames: []string{
@@ -83,7 +84,7 @@ func TestOCRKeyBundleImportWithWrongPassword(t *testing.T) {
 	ctx := t.Context()
 	password := "test-password"
 	wrongPassword := "wrong-password"
-	chainType := ChainType("evm")
+	chainType := chainselectors.FamilyEVM
 
 	st := keystore.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, "test",

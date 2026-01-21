@@ -6,15 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	chainselectors "github.com/smartcontractkit/chain-selectors"
 	"github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/ocr2offchain"
-)
-
-type ChainType string
-
-const (
-	// Must match ChainType in core.
-	chainTypeEVM ChainType = "evm"
 )
 
 const (
@@ -23,13 +17,13 @@ const (
 )
 
 type OCRKeyBundle struct {
-	ChainType             ChainType
+	ChainType             string
 	OffchainSigningKey    []byte
 	OffchainEncryptionKey []byte
 	OnchainSigningKey     []byte
 }
 
-func (ks *Store) GenerateEncryptedOCRKeyBundle(ctx context.Context, chainType ChainType, password string) ([]byte, error) {
+func (ks *Store) GenerateEncryptedOCRKeyBundle(ctx context.Context, chainType string, password string) ([]byte, error) {
 	_, err := ocr2offchain.CreateOCR2OffchainKeyring(ctx, ks.Keystore, nameDefault)
 	if err != nil {
 		return nil, err
@@ -37,8 +31,8 @@ func (ks *Store) GenerateEncryptedOCRKeyBundle(ctx context.Context, chainType Ch
 
 	var onchainKeyPath keystore.KeyPath
 	switch chainType {
-	case chainTypeEVM:
-		path := keystore.NewKeyPath(PrefixOCR2Onchain, nameDefault, string(chainType))
+	case chainselectors.FamilyEVM:
+		path := keystore.NewKeyPath(PrefixOCR2Onchain, nameDefault, chainType)
 		_, ierr := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
 			Keys: []keystore.CreateKeyRequest{
 				{
@@ -134,7 +128,7 @@ func FromEncryptedOCRKeyBundle(data []byte, password string) (*OCRKeyBundle, err
 			bundle.OnchainSigningKey = keypb.PrivateKey
 			// Extract chain type from the key path
 			keyPath := keystore.NewKeyPathFromString(key.KeyName)
-			bundle.ChainType = ChainType(strings.ToLower(keyPath.Base()))
+			bundle.ChainType = strings.ToLower(keyPath.Base())
 		}
 	}
 

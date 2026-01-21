@@ -106,6 +106,17 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	// Create or update dashboard
 	var newDashboard api.PostDashboardResponse
 	var errPostDashboard error
+
+	dashboardFound, _, err := grafanaClient.GetDashboardByName(*o.Dashboard.Title)
+	if err != nil {
+		return err
+	}
+	if dashboardFound.UID != nil {
+		if o.Dashboard.Uid == nil {
+			o.Dashboard.Uid = dashboardFound.UID
+		}
+	}
+
 	if folder != nil && o.Dashboard != nil {
 		newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
 			Dashboard: o.Dashboard,

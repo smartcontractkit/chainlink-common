@@ -123,7 +123,8 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
 				Dashboard: o.Dashboard,
 				Overwrite: true,
-				FolderID:  int(folder.ID),
+				//nolint:gosec // disable G115
+				FolderID: int(folder.ID),
 			})
 			if errPostDashboard != nil {
 				return errPostDashboard

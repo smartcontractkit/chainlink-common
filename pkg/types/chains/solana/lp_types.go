@@ -20,7 +20,7 @@ type LPFilterQuery struct {
 	EventName       string
 	EventSig        EventSignature
 	StartingBlock   int64
-	EventIdlJSON    []byte
+	ContractIdlJSON []byte
 	SubkeyPaths     SubKeyPaths
 	Retention       time.Duration
 	MaxLogsKept     int64

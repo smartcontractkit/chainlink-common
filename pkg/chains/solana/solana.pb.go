@@ -3392,7 +3392,7 @@ type LPFilterQuery struct {
 	EventName       string                 `protobuf:"bytes,3,opt,name=event_name,json=eventName,proto3" json:"event_name,omitempty"`                     // optional label
 	EventSig        []byte                 `protobuf:"bytes,4,opt,name=event_sig,json=eventSig,proto3" json:"event_sig,omitempty"`                        // 8-byte event discriminator
 	StartingBlock   int64                  `protobuf:"varint,5,opt,name=starting_block,json=startingBlock,proto3" json:"starting_block,omitempty"`        // start slot
-	EventIdlJson    []byte                 `protobuf:"bytes,6,opt,name=event_idl_json,json=eventIdlJson,proto3" json:"event_idl_json,omitempty"`          // IDL JSON bytes
+	ContractIdlJson []byte                 `protobuf:"bytes,6,opt,name=contract_idl_json,json=contractIdlJson,proto3" json:"contract_idl_json,omitempty"` // contract IDL JSON bytes
 	SubkeyPaths     []*Subkeys             `protobuf:"bytes,7,rep,name=subkey_paths,json=subkeyPaths,proto3" json:"subkey_paths,omitempty"`               // subkey selectors
 	Retention       int64                  `protobuf:"varint,8,opt,name=retention,proto3" json:"retention,omitempty"`                                     // seconds to keep logs
 	MaxLogsKept     int64                  `protobuf:"varint,9,opt,name=max_logs_kept,json=maxLogsKept,proto3" json:"max_logs_kept,omitempty"`            // 0 = unlimited
@@ -3466,9 +3466,9 @@ func (x *LPFilterQuery) GetStartingBlock() int64 {
 	return 0
 }
 
-func (x *LPFilterQuery) GetEventIdlJson() []byte {
+func (x *LPFilterQuery) GetContractIdlJson() []byte {
 	if x != nil {
-		return x.EventIdlJson
+		return x.ContractIdlJson
 	}
 	return nil
 }
@@ -4173,15 +4173,15 @@ const file_solana_proto_rawDesc = "" +
 	"\x06values\x18\x01 \x03(\fR\x06values\x12\x1a\n" +
 	"\boperator\x18\x02 \x01(\x03R\boperator\"#\n" +
 	"\aSubkeys\x12\x18\n" +
-	"\asubkeys\x18\x01 \x03(\tR\asubkeys\"\xec\x02\n" +
+	"\asubkeys\x18\x01 \x03(\tR\asubkeys\"\xf2\x02\n" +
 	"\rLPFilterQuery\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\fR\aaddress\x12\x1d\n" +
 	"\n" +
 	"event_name\x18\x03 \x01(\tR\teventName\x12\x1b\n" +
 	"\tevent_sig\x18\x04 \x01(\fR\beventSig\x12%\n" +
-	"\x0estarting_block\x18\x05 \x01(\x03R\rstartingBlock\x12$\n" +
-	"\x0eevent_idl_json\x18\x06 \x01(\fR\feventIdlJson\x127\n" +
+	"\x0estarting_block\x18\x05 \x01(\x03R\rstartingBlock\x12*\n" +
+	"\x11contract_idl_json\x18\x06 \x01(\fR\x0fcontractIdlJson\x127\n" +
 	"\fsubkey_paths\x18\a \x03(\v2\x14.loop.solana.SubkeysR\vsubkeyPaths\x12\x1c\n" +
 	"\tretention\x18\b \x01(\x03R\tretention\x12\"\n" +
 	"\rmax_logs_kept\x18\t \x01(\x03R\vmaxLogsKept\x12)\n" +

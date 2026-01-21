@@ -11,13 +11,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 )
 
-type TypePlatform string
-
-const (
-	TypePlatformKubernetes TypePlatform = "kubernetes"
-	TypePlatformDocker     TypePlatform = "docker"
-)
-
 type Observability struct {
 	Dashboard            *dashboard.Dashboard
 	Alerts               []alerting.Rule
@@ -36,11 +29,12 @@ func (o *Observability) GenerateJSON() ([]byte, error) {
 }
 
 type DeployOptions struct {
-	GrafanaURL            string
-	GrafanaToken          string
-	FolderName            string
-	EnableAlerts          bool
-	NotificationTemplates string
+	GrafanaURL             string
+	GrafanaToken           string
+	FolderName             string
+	EnableAlerts           bool
+	RuleGroupFromDashboard bool // if true, set the alert rule group to the dashboard title on all alerts
+	NotificationTemplates  string
 }
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
@@ -166,7 +160,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 				alert.FolderUID = folder.UID
 			}
 			if o.Dashboard != nil {
-				if alert.RuleGroup == "" {
+				if options.RuleGroupFromDashboard {
 					alert.RuleGroup = *o.Dashboard.Title
 				}
 				if alert.Annotations["panel_title"] != "" {

@@ -237,6 +237,8 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 
 	if options.RuleGroupTitle != "" {
 		rule.RuleGroup(options.RuleGroupTitle)
+	} else {
+		rule.RuleGroup("Default")
 	}
 
 	for _, query := range options.Query {

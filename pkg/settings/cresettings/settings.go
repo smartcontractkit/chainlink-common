@@ -103,6 +103,8 @@ var Default = Schema{
 			"3379446385462418246": true,
 			// geth-devnet2
 			"12922642891491394802": true,
+			// solana-devnet
+			"16423721717087811551": true,
 		}),
 
 		CRONTrigger: cronTrigger{

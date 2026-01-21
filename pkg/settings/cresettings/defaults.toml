@@ -41,6 +41,7 @@ Default = 'false'
 [PerWorkflow.ChainAllowed.Values]
 12922642891491394802 = 'true'
 3379446385462418246 = 'true'
+16423721717087811551 = 'true' # solana_devnet
 
 [PerWorkflow.CRONTrigger]
 FastestScheduleInterval = '30s'

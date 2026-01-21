@@ -11,6 +11,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 )
 
+type TypePlatform string
+
+const (
+	TypePlatformKubernetes TypePlatform = "kubernetes"
+	TypePlatformDocker     TypePlatform = "docker"
+)
+
 type Observability struct {
 	Dashboard            *dashboard.Dashboard
 	Alerts               []alerting.Rule
@@ -101,24 +108,26 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	var newDashboard api.PostDashboardResponse
 	var errPostDashboard error
 
-	dashboardFound, _, err := grafanaClient.GetDashboardByName(*o.Dashboard.Title)
-	if err != nil {
-		return err
-	}
-	if dashboardFound.UID != nil {
-		if o.Dashboard.Uid == nil {
-			o.Dashboard.Uid = dashboardFound.UID
+	if o.Dashboard != nil {
+		dashboardFound, _, err := grafanaClient.GetDashboardByName(*o.Dashboard.Title)
+		if err != nil {
+			return err
 		}
-	}
+		if dashboardFound.UID != nil {
+			if o.Dashboard.Uid == nil {
+				o.Dashboard.Uid = dashboardFound.UID
+			}
+		}
 
-	if folder != nil && o.Dashboard != nil {
-		newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
-			Dashboard: o.Dashboard,
-			Overwrite: true,
-			FolderID:  int(folder.ID),
-		})
-		if errPostDashboard != nil {
-			return errPostDashboard
+		if folder != nil && o.Dashboard != nil {
+			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
+				Dashboard: o.Dashboard,
+				Overwrite: true,
+				FolderID:  int(folder.ID),
+			})
+			if errPostDashboard != nil {
+				return errPostDashboard
+			}
 		}
 	}
 

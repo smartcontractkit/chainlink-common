@@ -36,11 +36,12 @@ func (o *Observability) GenerateJSON() ([]byte, error) {
 }
 
 type DeployOptions struct {
-	GrafanaURL            string
-	GrafanaToken          string
-	FolderName            string
-	EnableAlerts          bool
-	NotificationTemplates string
+	GrafanaURL             string
+	GrafanaToken           string
+	FolderName             string
+	EnableAlerts           bool
+	RuleGroupFromDashboard bool // if true, set the alert rule group to the dashboard title on all alerts
+	NotificationTemplates  string
 }
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
@@ -106,14 +107,28 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	// Create or update dashboard
 	var newDashboard api.PostDashboardResponse
 	var errPostDashboard error
-	if folder != nil && o.Dashboard != nil {
-		newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
-			Dashboard: o.Dashboard,
-			Overwrite: true,
-			FolderID:  int(folder.ID),
-		})
-		if errPostDashboard != nil {
-			return errPostDashboard
+
+	if o.Dashboard != nil {
+		dashboardFound, _, err := grafanaClient.GetDashboardByName(*o.Dashboard.Title)
+		if err != nil {
+			return err
+		}
+		if dashboardFound.UID != nil {
+			if o.Dashboard.Uid == nil {
+				o.Dashboard.Uid = dashboardFound.UID
+			}
+		}
+
+		if folder != nil && o.Dashboard != nil {
+			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
+				Dashboard: o.Dashboard,
+				Overwrite: true,
+				//nolint:gosec // disable G115
+				FolderID: int(folder.ID),
+			})
+			if errPostDashboard != nil {
+				return errPostDashboard
+			}
 		}
 	}
 
@@ -155,7 +170,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 				alert.FolderUID = folder.UID
 			}
 			if o.Dashboard != nil {
-				if alert.RuleGroup == "" {
+				if options.RuleGroupFromDashboard {
 					alert.RuleGroup = *o.Dashboard.Title
 				}
 				if alert.Annotations["panel_title"] != "" {

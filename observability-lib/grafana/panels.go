@@ -448,6 +448,9 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 			if alert.Title == "" {
 				alert.Title = *options.Title
 			}
+			if alert.RuleGroupTitle == "" {
+				alert.RuleGroupTitle = *options.Title
+			}
 			alertBuilders = append(alertBuilders, NewAlertRule(&alert))
 		}
 	}

@@ -23,16 +23,16 @@ type PendingEvent struct {
 
 type EventStore interface {
 	Insert(ctx context.Context, rec PendingEvent) error
-	Delete(ctx context.Context, triggerId, workflowId, eventId string) error
+	Delete(ctx context.Context, triggerId, eventId, workflowId string) error
 	List(ctx context.Context) ([]PendingEvent, error)
 }
 
 type OutboundSend func(ctx context.Context, te TriggerEvent, workflowId string) error
-type LostHook func(ctx context.Context, rec PendingEvent)
+type LostHook func(ctx context.Context, rec PendingEvent) // TODO: implement observability for lost
 
-// key builds the composite lookup key used in b.pending
-func key(triggerId, workflowId, eventId string) string {
-	return triggerId + "|" + workflowId + "|" + eventId
+// key builds the composite lookup key used in pending
+func key(triggerId, eventId, workflowId string) string {
+	return triggerId + "|" + eventId + "|" + workflowId
 }
 
 type BaseTriggerCapability struct {
@@ -51,7 +51,7 @@ type BaseTriggerCapability struct {
 	lggr  logger.Logger
 
 	mu      sync.Mutex
-	pending map[string]*PendingEvent // key(triggerID|workflowID|eventID)
+	pending map[string]*PendingEvent // key(triggerID|eventID|workflowID)
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -141,15 +141,15 @@ func (b *BaseTriggerCapability) DeliverEvent(
 
 func (b *BaseTriggerCapability) AckEvent(
 	ctx context.Context,
-	triggerId, workflowId, eventId string,
+	triggerId, eventId, workflowId string,
 ) error {
-	k := key(triggerId, workflowId, eventId) // NOTE: WorkflowID we want to start ;P
+	k := key(triggerId, eventId, workflowId)
 
 	b.mu.Lock()
 	delete(b.pending, k)
 	b.mu.Unlock()
 
-	return b.store.Delete(ctx, triggerId, workflowId, eventId)
+	return b.store.Delete(ctx, triggerId, eventId, workflowId)
 }
 
 func (b *BaseTriggerCapability) retransmitLoop() {
@@ -192,11 +192,12 @@ func (b *BaseTriggerCapability) scanPending() {
 	b.mu.Unlock()
 
 	for _, rec := range toLost {
+		b.lost(b.ctx, rec)
+
 		err := b.store.Delete(b.ctx, rec.TriggerId, rec.WorkflowId, rec.EventId)
 		if err != nil {
 			b.lggr.Errorw("failed to delete event from store")
 		}
-		b.lost(b.ctx, rec)
 	}
 
 	for _, k := range toResend {

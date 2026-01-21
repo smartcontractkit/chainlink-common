@@ -451,7 +451,7 @@ func (m *mockRegistrationTester) UnregisterTrigger(ctx context.Context, request 
 	return m.unregister(request.Config)
 }
 
-func (m *mockRegistrationTester) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (m *mockRegistrationTester) AckEvent(ctx context.Context, triggerId string, eventId string, workflowId string) error {
 	return nil
 }
 

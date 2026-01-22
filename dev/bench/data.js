@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769101456832,
+  "lastUpdate": 1769101631275,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -36300,6 +36300,66 @@ window.BENCHMARK_DATA = {
             "value": 146912,
             "unit": "ns/op",
             "extra": "7842 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "hendoxc",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "94e0fad14fe824670f2ee1c50431aa77038ee25b",
+          "message": "INFOPLAT-2963 Wires up Signer for Loop Server (#1630)\n\n* INFOPLAT-2963 Wires up Signer for Loop Server\n\n* gofmt\n\n* add keystore signer for beholder auth\n\n---------\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>\nCo-authored-by: engnke <168561091+engnke@users.noreply.github.com>\nCo-authored-by: engnke <nkeng.atabong@smartcontract.com>",
+          "timestamp": "2026-01-22T16:59:24Z",
+          "tree_id": "7260723e8ee89c601d6377a1f01b96095a71ca4a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/94e0fad14fe824670f2ee1c50431aa77038ee25b"
+        },
+        "date": 1769101629094,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 479.3,
+            "unit": "ns/op",
+            "extra": "2408590 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 101221,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 423.4,
+            "unit": "ns/op",
+            "extra": "2836371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 101093,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26798,
+            "unit": "ns/op",
+            "extra": "44829 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 150061,
+            "unit": "ns/op",
+            "extra": "7822 times\n4 procs"
           }
         ]
       }

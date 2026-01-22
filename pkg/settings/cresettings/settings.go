@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	envNameSettings        = "CL_CRE_SETTINGS"
-	envNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
+	EnvNameSettings        = "CL_CRE_SETTINGS"
+	EnvNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
 )
 
 func init() { reinit() }
 func reinit() {
-	if v, ok := os.LookupEnv(envNameSettingsDefault); ok {
+	if v, ok := os.LookupEnv(EnvNameSettingsDefault); ok {
 		err := json.Unmarshal([]byte(v), &Default)
 		if err != nil {
 			log.Fatalf("failed to initialize defaults: %v", err)
@@ -35,7 +35,7 @@ func reinit() {
 	}
 	Config = Default
 
-	if v, ok := os.LookupEnv(envNameSettings); ok {
+	if v, ok := os.LookupEnv(EnvNameSettings); ok {
 		DefaultGetter, err = NewJSONGetter([]byte(v))
 		if err != nil {
 			log.Fatalf("failed to initialize settings: %v", err)

@@ -143,7 +143,7 @@ func TestDefaultGetter(t *testing.T) {
 	require.Equal(t, 5, got)
 
 	t.Cleanup(reinit) // restore default vars
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -187,7 +187,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 	t.Cleanup(reinit) // restore default vars
 
 	// Org override to allow
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -213,7 +213,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 	require.True(t, got)
 
 	// Org override to allow by default, but disallow some
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -247,7 +247,7 @@ func TestDefaultEnvVars(t *testing.T) {
 	t.Cleanup(reinit) // restore after
 
 	// update defaults
-	t.Setenv(envNameSettingsDefault, `{
+	t.Setenv(EnvNameSettingsDefault, `{
 	"PerWorkflow": {
 		"ChainAllowed": {
 			"Values": {
@@ -274,8 +274,8 @@ func TestDefaultEnvVars(t *testing.T) {
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
 
 	// update overrides
-	t.Setenv(envNameSettingsDefault, "{}")
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettingsDefault, "{}")
+	t.Setenv(EnvNameSettings, `{
 	"global": {
 		"PerWorkflow": {
 			"ChainAllowed": {

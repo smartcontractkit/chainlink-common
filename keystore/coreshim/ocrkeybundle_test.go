@@ -123,7 +123,6 @@ func TestOCRKeyBundleInvalidKeyType(t *testing.T) {
 
 	coreshimKs := NewKeystore(ks)
 
-	// Generate a CSA key and try to import it as an OCR key bundle
 	encryptedCSAKey, err := coreshimKs.GenerateEncryptedCSAKey(ctx, password)
 	require.NoError(t, err)
 

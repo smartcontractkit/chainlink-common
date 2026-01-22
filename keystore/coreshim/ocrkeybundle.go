@@ -13,11 +13,17 @@ import (
 type ChainType string
 
 const (
+	// Must match ChainType in core.
+	chainTypeEVM ChainType = "evm"
+)
+
+const (
 	KeyTypeOCR        = "OCR"
 	PrefixOCR2Onchain = "ocr2_onchain"
 )
 
 type OCRKeyBundle struct {
+	ChainType             ChainType
 	OffchainSigningKey    []byte
 	OffchainEncryptionKey []byte
 	OnchainSigningKey     []byte
@@ -31,7 +37,7 @@ func (ks *Keystore) GenerateEncryptedOCRKeyBundle(ctx context.Context, chainType
 
 	var onchainKeyPath keystore.KeyPath
 	switch chainType {
-	case "EVM":
+	case chainTypeEVM:
 		path := keystore.NewKeyPath(PrefixOCR2Onchain, keyNameDefault, string(chainType))
 		_, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
 			Keys: []keystore.CreateKeyRequest{
@@ -126,6 +132,9 @@ func FromEncryptedOCRKeyBundle(data []byte, password string) (*OCRKeyBundle, err
 			bundle.OffchainEncryptionKey = keypb.PrivateKey
 		} else if strings.Contains(key.KeyName, PrefixOCR2Onchain) {
 			bundle.OnchainSigningKey = keypb.PrivateKey
+			// Extract chain type from the key path
+			keyPath := keystore.NewKeyPathFromString(key.KeyName)
+			bundle.ChainType = ChainType(strings.ToLower(keyPath.Base()))
 		}
 	}
 

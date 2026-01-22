@@ -413,12 +413,12 @@ message LPFilterQuery {
   string event_name = 3;             // optional label
   bytes event_sig = 4;               // 8-byte event discriminator
   int64 starting_block = 5;          // start slot
-  bytes event_idl_json = 6;          // event IDL JSON bytes
+  bytes event_idl_json = 6 [deprecated = true];          // event IDL JSON bytes
   repeated Subkeys subkey_paths = 7; // subkey selectors
   int64 retention = 8;               // seconds to keep logs
   int64 max_logs_kept = 9;           // 0 = unlimited
   bool include_reverted = 10;        // include rolled-back
-  bytes contract_idl_json = 11 [deprecated = true];     // contract IDL JSON bytes
+  bytes contract_idl_json = 11;      // contract IDL JSON bytes
 }
 
 // Canonical log shape for tracked events.

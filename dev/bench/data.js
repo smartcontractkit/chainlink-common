@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769113606482,
+  "lastUpdate": 1769159049595,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -36420,6 +36420,66 @@ window.BENCHMARK_DATA = {
             "value": 145179,
             "unit": "ns/op",
             "extra": "7960 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yikjiun.lee@smartcontract.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "3b253630536f08c2e3dae3684fb9ab5b5c435645",
+          "message": "fix(observability-lib): use int64 for Folder.ID to match Grafana API (#1792)\n\nGrafana's API returns -1 for folder IDs in certain cases (e.g., nested\nfolders feature). The previous uint type cannot represent negative\nvalues, causing JSON unmarshaling to fail.\n\nChanged to int64 to match Grafana's official Go client:\nhttps://github.com/grafana/grafana-api-golang-client/blob/master/folder.go",
+          "timestamp": "2026-01-23T08:57:18Z",
+          "tree_id": "5422cc3d23a3304d6356caa1c5e1452f1ffb9c2e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3b253630536f08c2e3dae3684fb9ab5b5c435645"
+        },
+        "date": 1769159048139,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 867.3,
+            "unit": "ns/op",
+            "extra": "1391122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96103,
+            "unit": "ns/op",
+            "extra": "12571 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.5,
+            "unit": "ns/op",
+            "extra": "2910908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99145,
+            "unit": "ns/op",
+            "extra": "12073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26618,
+            "unit": "ns/op",
+            "extra": "45145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 149472,
+            "unit": "ns/op",
+            "extra": "7617 times\n4 procs"
           }
         ]
       }

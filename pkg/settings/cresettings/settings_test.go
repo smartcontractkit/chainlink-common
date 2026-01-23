@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,6 +35,8 @@ var (
 	defaultsJSON string
 	//go:embed defaults.toml
 	defaultsTOML string
+	//go:embed defaults.yaml
+	defaultsYAML string
 )
 
 func TestDefault(t *testing.T) {
@@ -58,6 +61,22 @@ func TestDefault(t *testing.T) {
 			require.NoError(t, os.WriteFile("defaults.toml", b, 0644))
 		} else {
 			require.Equal(t, defaultsTOML, string(b))
+		}
+	})
+
+	t.Run("yaml", func(t *testing.T) {
+		jb, err := json.MarshalIndent(Default, "", "\t")
+		if err != nil {
+			log.Fatal(err)
+		}
+		b, err := yaml.JSONToYAML(jb)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if *update {
+			require.NoError(t, os.WriteFile("defaults.yaml", b, 0644))
+		} else {
+			require.Equal(t, defaultsYAML, string(b))
 		}
 	})
 }

@@ -59,7 +59,7 @@ func TestGenerateJSON(t *testing.T) {
 								Expression: "A",
 								Reducer:    expr.TypeReduceReducerSum,
 								ReduceSettings: &expr.ExprTypeReduceSettings{
-									Mode: expr.TypeReduceModeDropNN,
+									Mode: expr.ExprTypeReduceSettingsModeDropNN,
 								},
 							},
 						},
@@ -69,7 +69,7 @@ func TestGenerateJSON(t *testing.T) {
 								Expression: "B",
 								ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
 									Params: []float64{2},
-									Type:   grafana.TypeThresholdTypeLt,
+									Type:   expr.ExprTypeThresholdConditionsEvaluatorTypeLt,
 								},
 							},
 						},
@@ -84,6 +84,7 @@ func TestGenerateJSON(t *testing.T) {
 		}
 
 		json, err := o.GenerateJSON()
+		t.Log(string(json))
 		require.NoError(t, err)
 		require.IsType(t, json, []byte{})
 	})

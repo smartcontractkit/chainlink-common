@@ -85,18 +85,9 @@ type ThresholdExpression struct {
 	ThresholdConditionsOptions ThresholdConditionsOption
 }
 
-type TypeThresholdType string
-
-const (
-	TypeThresholdTypeGt           TypeThresholdType = "gt"
-	TypeThresholdTypeLt           TypeThresholdType = "lt"
-	TypeThresholdTypeWithinRange  TypeThresholdType = "within_range"
-	TypeThresholdTypeOutsideRange TypeThresholdType = "outside_range"
-)
-
 type ThresholdConditionsOption struct {
 	Params []float64
-	Type   TypeThresholdType
+	Type   expr.ExprTypeThresholdConditionsEvaluatorType
 }
 
 func newThresholdConditionsOptions(options ThresholdConditionsOption) []cog.Builder[expr.ExprTypeThresholdConditions] {
@@ -113,7 +104,7 @@ func newThresholdConditionsOptions(options ThresholdConditionsOption) []cog.Buil
 		Evaluator(
 			expr.NewExprTypeThresholdConditionsEvaluatorBuilder().
 				Params(params).
-				Type(expr.TypeThresholdType(options.Type)),
+				Type(options.Type),
 		),
 	)
 
@@ -124,7 +115,7 @@ func newReduceSettingsOptions(options expr.ExprTypeReduceSettings) cog.Builder[e
 	builder := expr.NewExprTypeReduceSettingsBuilder().
 		Mode(options.Mode)
 
-	if options.Mode == expr.TypeReduceModeReplaceNN && options.ReplaceWithValue != nil {
+	if options.Mode == expr.ExprTypeReduceSettingsModeReplaceNN && options.ReplaceWithValue != nil {
 		builder.ReplaceWithValue(*options.ReplaceWithValue)
 	}
 
@@ -246,6 +237,8 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 
 	if options.RuleGroupTitle != "" {
 		rule.RuleGroup(options.RuleGroupTitle)
+	} else {
+		rule.RuleGroup("Default")
 	}
 
 	for _, query := range options.Query {

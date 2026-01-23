@@ -311,7 +311,7 @@ func TestLPFilterAndSubkeysConverters(t *testing.T) {
 		EventName:       "Evt",
 		EventSig:        mkBytes(typesolana.EventSignatureLength, 0xBB),
 		StartingBlock:   10,
-		EventIdlJson:    []byte(`{"idl":1}`),
+		ContractIdlJson: []byte(`{"idl":1}`),
 		SubkeyPaths:     []*conv.Subkeys{{Subkeys: []string{"a", "b"}}, {Subkeys: []string{"c"}}},
 		Retention:       int64(time.Hour),
 		MaxLogsKept:     100,

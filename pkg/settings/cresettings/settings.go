@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	envNameSettings        = "CL_CRE_SETTINGS"
-	envNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
+	EnvNameSettings        = "CL_CRE_SETTINGS"
+	EnvNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
 )
 
 func init() { reinit() }
 func reinit() {
-	if v, ok := os.LookupEnv(envNameSettingsDefault); ok {
+	if v, ok := os.LookupEnv(EnvNameSettingsDefault); ok {
 		err := json.Unmarshal([]byte(v), &Default)
 		if err != nil {
 			log.Fatalf("failed to initialize defaults: %v", err)
@@ -35,7 +35,7 @@ func reinit() {
 	}
 	Config = Default
 
-	if v, ok := os.LookupEnv(envNameSettings); ok {
+	if v, ok := os.LookupEnv(EnvNameSettings); ok {
 		DefaultGetter, err = NewJSONGetter([]byte(v))
 		if err != nil {
 			log.Fatalf("failed to initialize settings: %v", err)
@@ -55,6 +55,7 @@ var Default = Schema{
 	WorkflowLimit:                     Int(200),
 	WorkflowExecutionConcurrencyLimit: Int(200),
 	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:     Bool(true),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -154,6 +155,7 @@ type Schema struct {
 	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
+	GatewayVaultManagementEnabled     Setting[bool]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]

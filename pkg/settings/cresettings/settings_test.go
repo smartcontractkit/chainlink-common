@@ -69,6 +69,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	"GatewayUnauthenticatedRequestRateLimit": "200rps:50",
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:100",
 	"GatewayIncomingPayloadSizeLimit": "14kb",
+    "GatewayVaultManagementEnabled": "true",
 	"PerOrg": {
 		"ZeroBalancePruningTimeout": "48h"
 	},
@@ -109,6 +110,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
+	assert.Equal(t, true, cfg.GatewayVaultManagementEnabled.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
@@ -141,7 +143,7 @@ func TestDefaultGetter(t *testing.T) {
 	require.Equal(t, 5, got)
 
 	t.Cleanup(reinit) // restore default vars
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -185,7 +187,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 	t.Cleanup(reinit) // restore default vars
 
 	// Org override to allow
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -211,7 +213,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 	require.True(t, got)
 
 	// Org override to allow by default, but disallow some
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -245,7 +247,7 @@ func TestDefaultEnvVars(t *testing.T) {
 	t.Cleanup(reinit) // restore after
 
 	// update defaults
-	t.Setenv(envNameSettingsDefault, `{
+	t.Setenv(EnvNameSettingsDefault, `{
 	"PerWorkflow": {
 		"ChainAllowed": {
 			"Values": {
@@ -272,8 +274,8 @@ func TestDefaultEnvVars(t *testing.T) {
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
 
 	// update overrides
-	t.Setenv(envNameSettingsDefault, "{}")
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettingsDefault, "{}")
+	t.Setenv(EnvNameSettings, `{
 	"global": {
 		"PerWorkflow": {
 			"ChainAllowed": {

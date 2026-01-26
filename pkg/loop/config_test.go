@@ -78,6 +78,9 @@ func TestEnvConfig_parse(t *testing.T) {
 
 				envChipIngressEndpoint:           "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection: "true",
+
+				envCRESettings:        `{"global":{}}`,
+				envCRESettingsDefault: `{"foo":"bar"}`,
 			},
 			expectError:  false,
 			expectConfig: envCfgFull,
@@ -177,6 +180,9 @@ var envCfgFull = EnvConfig{
 
 	ChipIngressEndpoint:           "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection: true,
+
+	CRESettings:        `{"global":{}}`,
+	CRESettingsDefault: `{"foo":"bar"}`,
 }
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
@@ -228,6 +234,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
 	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
+
+	assert.Equal(t, `{"global":{}}`, got[envCRESettings])
+	assert.Equal(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
 }
 
 func TestGetMap(t *testing.T) {

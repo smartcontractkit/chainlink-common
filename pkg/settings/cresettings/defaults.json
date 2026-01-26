@@ -2,6 +2,7 @@
 	"WorkflowLimit": "200",
 	"WorkflowExecutionConcurrencyLimit": "200",
 	"GatewayIncomingPayloadSizeLimit": "1mb",
+	"GatewayVaultManagementEnabled": "true",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultIdentifierKeySizeLimit": "64b",
 	"VaultIdentifierOwnerSizeLimit": "64b",

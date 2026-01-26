@@ -108,8 +108,8 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	var newDashboard api.PostDashboardResponse
 	var errPostDashboard error
 
-	if o.Dashboard != nil {
-		dashboardFound, _, err := grafanaClient.GetDashboardByName(*o.Dashboard.Title)
+	if o.Dashboard != nil && folder != nil {
+		dashboardFound, _, err := grafanaClient.GetDashboardByNameFolderUID(*o.Dashboard.Title, folder.UID)
 		if err != nil {
 			return err
 		}
@@ -271,6 +271,7 @@ type DeleteOptions struct {
 	Name         string
 	GrafanaURL   string
 	GrafanaToken string
+	FolderUID    string
 }
 
 func DeleteDashboard(options *DeleteOptions) error {
@@ -279,7 +280,7 @@ func DeleteDashboard(options *DeleteOptions) error {
 		options.GrafanaToken,
 	)
 
-	db, _, errGetDashboard := grafanaClient.GetDashboardByName(options.Name)
+	db, _, errGetDashboard := grafanaClient.GetDashboardByNameFolderUID(options.Name, options.FolderUID)
 	if errGetDashboard != nil {
 		return errGetDashboard
 	}

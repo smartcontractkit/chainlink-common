@@ -7,7 +7,7 @@ import (
 )
 
 type Folder struct {
-	ID    uint   `json:"id"`
+	ID    int64  `json:"id"` // int64 to handle Grafana returning -1 for some folders (e.g. General folder)
 	UID   string `json:"uid"`
 	Title string `json:"title"`
 }

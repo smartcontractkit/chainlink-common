@@ -64,4 +64,3 @@ func pluginKey(pluginType string, plugin PluginDef) string {
 func isPluginEnabled(plugin PluginDef) bool {
 	return plugin.Enabled == nil || *plugin.Enabled
 }
-

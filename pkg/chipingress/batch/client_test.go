@@ -57,7 +57,8 @@ func TestQueueMessage(t *testing.T) {
 			Type:   "test.event.type",
 		}
 
-		client.QueueMessage(event, nil)
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
 
 		assert.Len(t, client.messageBuffer, 1)
 
@@ -93,7 +94,8 @@ func TestQueueMessage(t *testing.T) {
 		client, err := NewBatchClient(nil, WithMessageBuffer(5))
 		require.NoError(t, err)
 
-		client.QueueMessage(nil, nil)
+		err = client.QueueMessage(nil, nil)
+		require.NoError(t, err)
 		assert.Empty(t, client.messageBuffer)
 	})
 }
@@ -211,7 +213,7 @@ func TestStart(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(3), WithBatchInterval(5*time.Second))
@@ -222,9 +224,12 @@ func TestStart(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-3", Source: "test-source", Type: "test.event.type"}, nil)
+		err = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		require.NoError(t, err)
+		err = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
+		require.NoError(t, err)
+		err = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-3", Source: "test-source", Type: "test.event.type"}, nil)
+		require.NoError(t, err)
 
 		select {
 		case <-done:
@@ -249,7 +254,7 @@ func TestStart(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
@@ -260,8 +265,8 @@ func TestStart(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
+		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 
 		select {
 		case <-done:
@@ -288,7 +293,7 @@ func TestStart(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
@@ -298,8 +303,8 @@ func TestStart(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
-		client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
+		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
+		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 
 		time.Sleep(10 * time.Millisecond)
 
@@ -328,7 +333,7 @@ func TestStart(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(100*time.Millisecond), WithMessageBuffer(10))
@@ -383,7 +388,7 @@ func TestStart(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) {
+			Run(func(_ mock.Arguments) {
 				callCount++
 				if callCount == 3 {
 					close(done)
@@ -400,7 +405,7 @@ func TestStart(t *testing.T) {
 		client.Start(ctx)
 
 		for i := 1; i <= 6; i++ {
-			client.QueueMessage(&chipingress.CloudEventPb{
+			_ = client.QueueMessage(&chipingress.CloudEventPb{
 				Id:     "test-id-" + strconv.Itoa(i),
 				Source: "test-source",
 				Type:   "test.event.type",
@@ -432,7 +437,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(1))
@@ -443,7 +448,7 @@ func TestCallbacks(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -483,7 +488,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, expectedErr).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(1))
@@ -494,7 +499,7 @@ func TestCallbacks(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -533,7 +538,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(1))
@@ -545,7 +550,7 @@ func TestCallbacks(t *testing.T) {
 		client.Start(ctx)
 
 		// Queue message with nil callback - should not panic
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -576,7 +581,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(3))
@@ -587,7 +592,7 @@ func TestCallbacks(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -595,7 +600,7 @@ func TestCallbacks(t *testing.T) {
 			callback1Done <- err
 		})
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-2",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -603,7 +608,7 @@ func TestCallbacks(t *testing.T) {
 			callback2Done <- err
 		})
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-3",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -655,7 +660,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(50*time.Millisecond))
@@ -666,7 +671,7 @@ func TestCallbacks(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -704,7 +709,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(2), WithBatchInterval(5*time.Second))
@@ -715,13 +720,13 @@ func TestCallbacks(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",
 		}, nil)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-2",
 			Source: "test-source",
 			Type:   "test.event.type",
@@ -759,7 +764,7 @@ func TestCallbacks(t *testing.T) {
 				}),
 			).
 			Return(&chipingress.PublishResponse{}, nil).
-			Run(func(args mock.Arguments) { close(done) }).
+			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
@@ -769,7 +774,7 @@ func TestCallbacks(t *testing.T) {
 
 		client.Start(ctx)
 
-		client.QueueMessage(&chipingress.CloudEventPb{
+		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
 			Source: "test-source",
 			Type:   "test.event.type",

@@ -131,7 +131,6 @@ func (b *Client) Stop() {
 // Returns immediately with no blocking - drops message if channel is full.
 // Returns an error if the message was dropped.
 func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(error)) error {
-
 	if event == nil {
 		return nil
 	}
@@ -189,7 +188,6 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			}
 		})
 	}()
-
 }
 
 func (b *Client) flush(batch []*messageWithCallback) {

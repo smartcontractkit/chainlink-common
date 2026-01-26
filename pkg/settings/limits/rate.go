@@ -321,6 +321,7 @@ func (l *rateLimiter) WaitN(ctx context.Context, n int) error {
 
 func (f Factory) newScopedRateLimiter(limit settings.Setting[config.Rate]) (RateLimiter, error) {
 	l := &scopedRateLimiter{
+		key:         limit.Key,
 		scope:       limit.Scope,
 		defaultRate: limit.DefaultValue,
 	}
@@ -373,6 +374,7 @@ func (f Factory) newScopedRateLimiter(limit settings.Setting[config.Rate]) (Rate
 
 type scopedRateLimiter struct {
 	lggr        logger.Logger
+	key         string
 	scope       settings.Scope
 	defaultRate config.Rate
 
@@ -432,6 +434,7 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 
 func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 	l := &rateLimiter{
+		key:     s.key,
 		scope:   s.scope,
 		tenant:  tenant,
 		updater: newUpdater[config.Rate](logger.With(s.lggr, s.scope.String(), tenant), s.rateFn, s.subFn),

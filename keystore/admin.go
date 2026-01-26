@@ -243,7 +243,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 		created := ksCopy[keyReq.KeyName].createdAt
 		k := ksCopy[keyReq.KeyName]
 		responses = append(responses, CreateKeyResponse{
-			KeyInfo: newKeyInfo(keyReq.KeyName, keyReq.KeyType, created, k.publicKey, k.metadata),
+			KeyInfo: NewKeyInfo(keyReq.KeyName, keyReq.KeyType, created, k.publicKey, k.metadata),
 		})
 	}
 

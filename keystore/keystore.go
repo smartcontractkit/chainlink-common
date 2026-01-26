@@ -35,6 +35,20 @@ func (k KeyPath) Base() string {
 	return k[len(k)-1]
 }
 
+// HasPrefix returns true if k starts with the given prefix path.
+// For example, KeyPath{"solana", "tx", "my-key"}.HasPrefix(KeyPath{"solana", "tx"}) returns true.
+func (k KeyPath) HasPrefix(prefix KeyPath) bool {
+	if len(prefix) > len(k) {
+		return false
+	}
+	for i := range prefix {
+		if k[i] != prefix[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func NewKeyPath(segments ...string) KeyPath {
 	return segments
 }
@@ -44,7 +58,7 @@ func NewKeyPathFromString(fullName string) KeyPath {
 }
 
 // joinKeySegments joins path-like key name segments using "/" and avoids double slashes.
-// Empty segments are skipped so joinKeySegments("EVM", "TX", "my-key") => "EVM/TX/my-key".
+// Empty segments are skipped so joinKeySegments("evm", "tx", "my-key") => "evm/tx/my-key".
 func joinKeySegments(segments ...string) string {
 	cleaned := make([]string, 0, len(segments))
 	for _, s := range segments {
@@ -137,8 +151,8 @@ type KeyInfo struct {
 	Metadata  []byte
 }
 
-// newKeyInfo is a private constructor that ensures all fields are set explicitly.
-func newKeyInfo(name string, keyType KeyType, createdAt time.Time, publicKey []byte, metadata []byte) KeyInfo {
+// NewKeyInfo is a constructor that ensures all fields are set explicitly.
+func NewKeyInfo(name string, keyType KeyType, createdAt time.Time, publicKey []byte, metadata []byte) KeyInfo {
 	return KeyInfo{
 		Name:      name,
 		KeyType:   keyType,

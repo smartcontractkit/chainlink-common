@@ -1,12 +1,14 @@
 package kms_test
 
 import (
+	"crypto/ed25519"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	kms "github.com/smartcontractkit/chainlink-common/keystore/kms"
 )
 
@@ -18,11 +20,13 @@ func TestKMSKeystore(t *testing.T) {
 	require.NoError(t, err)
 	fakeClient, err := kms.NewFakeKMSClient([]kms.Key{
 		{
-			PrivateKey: key,
+			KeyType:    keystore.ECDSA_S256,
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(key)),
 			KeyID:      keyID,
 		},
 		{
-			PrivateKey: key2,
+			KeyType:    keystore.ECDSA_S256,
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(key2)),
 			KeyID:      keyID2,
 		},
 	})
@@ -87,5 +91,54 @@ func TestKMSKeystore(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, verifyResp.Valid)
 		})
+	})
+}
+
+func TestKMSKeystore_Ed25519(t *testing.T) {
+	keyID := "test-ed25519-key-id"
+	_, ed25519PrivKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	ed25519PubKey := ed25519PrivKey.Public().(ed25519.PublicKey)
+
+	fakeClient, err := kms.NewFakeKMSClient([]kms.Key{
+		{
+			KeyType:    keystore.Ed25519,
+			KeyID:      keyID,
+			PrivateKey: internal.NewRaw(ed25519PrivKey),
+		},
+	})
+	require.NoError(t, err)
+	ks, err := kms.NewKeystore(fakeClient)
+	require.NoError(t, err)
+	ctx := t.Context()
+
+	t.Run("GetKeys", func(t *testing.T) {
+		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
+		require.NoError(t, err)
+		require.Len(t, resp.Keys, 1)
+		require.Equal(t, keyID, resp.Keys[0].KeyInfo.Name)
+		require.Equal(t, keystore.Ed25519, resp.Keys[0].KeyInfo.KeyType)
+		require.Equal(t, []byte(ed25519PubKey), resp.Keys[0].KeyInfo.PublicKey)
+	})
+
+	t.Run("SignVerify", func(t *testing.T) {
+		// Ed25519 can sign arbitrary length messages
+		testData := []byte("hello, world")
+		signResp, err := ks.Sign(ctx, keystore.SignRequest{
+			KeyName: keyID,
+			Data:    testData,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, signResp.Signature)
+		require.Len(t, signResp.Signature, 64) // Ed25519 signatures are 64 bytes
+
+		verifyResp, err := ks.Verify(ctx, keystore.VerifyRequest{
+			KeyType:   keystore.Ed25519,
+			PublicKey: ed25519PubKey,
+			Data:      testData,
+			Signature: signResp.Signature,
+		})
+		require.NoError(t, err)
+		require.True(t, verifyResp.Valid)
 	})
 }

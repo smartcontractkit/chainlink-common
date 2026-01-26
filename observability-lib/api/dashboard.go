@@ -8,12 +8,15 @@ import (
 )
 
 type GetDashboardResponse struct {
-	ID    *uint   `json:"id"`
-	UID   *string `json:"uid"`
-	Title *string `json:"title"`
+	ID          *uint   `json:"id"`
+	UID         *string `json:"uid"`
+	Title       *string `json:"title"`
+	FolderTitle *string `json:"folderTitle"`
+	FolderUID   *string `json:"folderUid"`
+	FolderID    *uint   `json:"folderId"`
 }
 
-func (c *Client) GetDashboardByName(name string) (GetDashboardResponse, *resty.Response, error) {
+func (c *Client) GetDashboardByNameFolderUID(name string, folderUID string) (GetDashboardResponse, *resty.Response, error) {
 	var grafanaResp []GetDashboardResponse
 
 	resp, err := c.resty.R().
@@ -33,7 +36,7 @@ func (c *Client) GetDashboardByName(name string) (GetDashboardResponse, *resty.R
 
 	if len(grafanaResp) > 0 {
 		for _, dashboard := range grafanaResp {
-			if strings.EqualFold(*dashboard.Title, name) {
+			if strings.EqualFold(*dashboard.Title, name) && strings.EqualFold(*dashboard.FolderUID, folderUID) {
 				return dashboard, resp, nil
 			}
 		}

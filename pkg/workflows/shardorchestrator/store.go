@@ -60,6 +60,8 @@ type Store struct {
 	// lastUpdateTime tracks when mappings were last modified
 	lastUpdateTime time.Time
 
+	allSeenWorkflows []string // list of all workflow_ids ever seen
+
 	mu     sync.RWMutex
 	logger logger.Logger
 }
@@ -257,4 +259,23 @@ func (s *Store) GetMappingVersion() uint64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.mappingVersion
+}
+
+func (s *Store) SetAllSeenWorkflows(workflowIDs []string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.allSeenWorkflows = workflowIDs
+	s.logger.Debugw("all seen workflows updated", "count", len(workflowIDs))
+	return nil
+}
+
+func (s *Store) GetAllSeenWorkflows() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Return a copy to avoid external mutations
+	result := make([]string, len(s.allSeenWorkflows))
+	copy(result, s.allSeenWorkflows)
+	return result
 }

@@ -19,15 +19,17 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/ring/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator"
 )
 
 type Plugin struct {
 	mu sync.RWMutex
 
-	store         *Store
-	arbiterScaler pb.ArbiterScalerClient
-	config        ocr3types.ReportingPluginConfig
-	lggr          logger.Logger
+	store                  *Store
+	shardOrchestratorStore *shardorchestrator.Store
+	arbiterScaler          pb.ArbiterScalerClient
+	config                 ocr3types.ReportingPluginConfig
+	lggr                   logger.Logger
 
 	batchSize  int
 	timeToSync time.Duration
@@ -45,7 +47,15 @@ const (
 	DefaultTimeToSync = 5 * time.Minute
 )
 
-func NewPlugin(store *Store, arbiterScaler pb.ArbiterScalerClient, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
+func NewPlugin(store *Store, shardOrchestratorStore *shardorchestrator.Store, arbiterScaler pb.ArbiterScalerClient, config ocr3types.ReportingPluginConfig, lggr logger.Logger, cfg *ConsensusConfig) (*Plugin, error) {
+	if store == nil {
+		return nil, errors.New("RingOCR store is required")
+	}
+
+	if shardOrchestratorStore == nil {
+		return nil, errors.New("ShardOrchestrator store is required")
+	}
+
 	if arbiterScaler == nil {
 		return nil, errors.New("RingOCR arbiterScaler is required")
 	}
@@ -71,12 +81,13 @@ func NewPlugin(store *Store, arbiterScaler pb.ArbiterScalerClient, config ocr3ty
 	)
 
 	return &Plugin{
-		store:         store,
-		arbiterScaler: arbiterScaler,
-		config:        config,
-		lggr:          logger.Named(lggr, "RingPlugin"),
-		batchSize:     cfg.BatchSize,
-		timeToSync:    cfg.TimeToSync,
+		store:                  store,
+		shardOrchestratorStore: shardOrchestratorStore,
+		arbiterScaler:          arbiterScaler,
+		config:                 config,
+		lggr:                   logger.Named(lggr, "RingPlugin"),
+		batchSize:              cfg.BatchSize,
+		timeToSync:             cfg.TimeToSync,
 	}, nil
 }
 
@@ -99,7 +110,9 @@ func (p *Plugin) Observation(ctx context.Context, _ ocr3types.OutcomeContext, _ 
 	shardStatus = status.Status
 
 	allWorkflowIDs := make([]string, 0)
-	for wfID := range p.store.GetAllRoutingState() {
+
+	seenWorkflows := p.shardOrchestratorStore.GetAllSeenWorkflows()
+	for _, wfID := range seenWorkflows {
 		allWorkflowIDs = append(allWorkflowIDs, wfID)
 	}
 

@@ -81,10 +81,7 @@ func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
 
 	if options.SortBy != "" {
 		builder.SortBy(options.SortBy)
-	}
-
-	if options.SortDesc {
-		builder.SortDesc(true)
+		builder.SortDesc(options.SortDesc)
 	}
 
 	return builder

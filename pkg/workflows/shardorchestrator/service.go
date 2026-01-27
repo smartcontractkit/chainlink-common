@@ -10,18 +10,26 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb"
 )
 
+// ShardAllocator is an interface for determining which shard should handle a workflow
+// This is implemented by ring.Store to avoid import cycles
+type ShardAllocator interface {
+	GetShardForWorkflow(ctx context.Context, workflowID string) (uint32, error)
+}
+
 // Server implements the gRPC ShardOrchestratorService
 // This runs on shard zero and serves requests from other shards
 type Server struct {
 	pb.UnimplementedShardOrchestratorServiceServer
-	store  *Store
-	logger logger.Logger
+	store          *Store
+	shardAllocator ShardAllocator
+	logger         logger.Logger
 }
 
-func NewServer(store *Store, lggr logger.Logger) *Server {
+func NewServer(store *Store, shardAllocator ShardAllocator, lggr logger.Logger) *Server {
 	return &Server{
-		store:  store,
-		logger: logger.Named(lggr, "ShardOrchestratorServer"),
+		store:          store,
+		shardAllocator: shardAllocator,
+		logger:         logger.Named(lggr, "ShardOrchestratorServer"),
 	}
 }
 
@@ -103,6 +111,65 @@ func (s *Server) ReportWorkflowTriggerRegistration(ctx context.Context, req *pb.
 	)
 
 	return &pb.ReportWorkflowTriggerRegistrationResponse{
+		Success: true,
+	}, nil
+}
+
+// ReportWorkflows handles workflow discovery from shard 0
+// Shard 0 calls this to inform the orchestrator about workflows seen on-chain
+func (s *Server) ReportWorkflows(ctx context.Context, req *pb.ReportWorkflowsRequest) (*pb.ReportWorkflowsResponse, error) {
+	s.logger.Debugw("ReportWorkflows called", "workflowCount", len(req.WorkflowIds))
+
+	if len(req.WorkflowIds) == 0 {
+		return nil, fmt.Errorf("workflow_ids is required and must not be empty")
+	}
+
+	// Process each workflow ID to determine shard assignment
+	successCount := 0
+	for _, workflowID := range req.WorkflowIds {
+		existingMapping, err := s.store.GetWorkflowMapping(ctx, workflowID)
+		if err == nil && !existingMapping.TransitionState.InTransition() {
+			// Workflow already has a stable mapping; skip reassignment
+			s.logger.Debugw("Workflow already has stable shard mapping; skipping",
+				"workflowID", workflowID,
+				"shardID", existingMapping.NewShardID,
+			)
+			successCount++
+			continue
+		}
+
+		// Determine shard assignment using the shard allocator
+		shardID, err := s.shardAllocator.GetShardForWorkflow(ctx, workflowID)
+		if err != nil {
+			s.logger.Warnw("Failed to get shard assignment for workflow",
+				"workflowID", workflowID,
+				"error", err,
+			)
+			continue
+		}
+
+		s.logger.Debugw("Assigned workflow to shard",
+			"workflowID", workflowID,
+			"shardID", shardID,
+		)
+		successCount++
+	}
+
+	if successCount == 0 {
+		s.logger.Errorw("Failed to assign any workflows to shards",
+			"totalWorkflows", len(req.WorkflowIds),
+		)
+		return &pb.ReportWorkflowsResponse{
+			Success: false,
+		}, nil
+	}
+
+	s.logger.Infow("Successfully processed workflow assignments",
+		"totalWorkflows", len(req.WorkflowIds),
+		"successCount", successCount,
+	)
+
+	return &pb.ReportWorkflowsResponse{
 		Success: true,
 	}, nil
 }

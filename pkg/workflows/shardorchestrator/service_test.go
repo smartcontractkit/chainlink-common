@@ -11,13 +11,27 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb"
 )
 
+// mockShardAllocator is a simple mock implementation for testing
+type mockShardAllocator struct {
+	shardID uint32
+	err     error
+}
+
+func (m *mockShardAllocator) GetShardForWorkflow(ctx context.Context, workflowID string) (uint32, error) {
+	if m.err != nil {
+		return 0, m.err
+	}
+	return m.shardID, nil
+}
+
 func TestServer_GetWorkflowShardMapping(t *testing.T) {
 	ctx := context.Background()
 	lggr := logger.Test(t)
 
 	t.Run("returns_mappings_for_multiple_workflows", func(t *testing.T) {
 		store := shardorchestrator.NewStore(lggr)
-		server := shardorchestrator.NewServer(store, lggr)
+		mockAllocator := &mockShardAllocator{shardID: 0}
+		server := shardorchestrator.NewServer(store, mockAllocator, lggr)
 
 		// Set up some workflow mappings
 		mappings := []*shardorchestrator.WorkflowMappingState{
@@ -79,7 +93,8 @@ func TestServer_GetWorkflowShardMapping(t *testing.T) {
 
 	t.Run("rejects_empty_workflow_ids", func(t *testing.T) {
 		store := shardorchestrator.NewStore(lggr)
-		server := shardorchestrator.NewServer(store, lggr)
+		mockAllocator := &mockShardAllocator{shardID: 0}
+		server := shardorchestrator.NewServer(store, mockAllocator, lggr)
 
 		req := &pb.GetWorkflowShardMappingRequest{
 			WorkflowIds: []string{},
@@ -93,7 +108,8 @@ func TestServer_GetWorkflowShardMapping(t *testing.T) {
 
 	t.Run("handles_partial_results_for_nonexistent_workflows", func(t *testing.T) {
 		store := shardorchestrator.NewStore(lggr)
-		server := shardorchestrator.NewServer(store, lggr)
+		mockAllocator := &mockShardAllocator{shardID: 0}
+		server := shardorchestrator.NewServer(store, mockAllocator, lggr)
 
 		// Add one workflow
 		err := store.BatchUpdateWorkflowMappings(ctx, []*shardorchestrator.WorkflowMappingState{

@@ -289,6 +289,182 @@ func (x *ReportWorkflowTriggerRegistrationResponse) GetSuccess() bool {
 	return false
 }
 
+type ReportWorkflowsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkflowIds   []string               `protobuf:"bytes,1,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportWorkflowsRequest) Reset() {
+	*x = ReportWorkflowsRequest{}
+	mi := &file_shard_orchestrator_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportWorkflowsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportWorkflowsRequest) ProtoMessage() {}
+
+func (x *ReportWorkflowsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shard_orchestrator_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportWorkflowsRequest.ProtoReflect.Descriptor instead.
+func (*ReportWorkflowsRequest) Descriptor() ([]byte, []int) {
+	return file_shard_orchestrator_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ReportWorkflowsRequest) GetWorkflowIds() []string {
+	if x != nil {
+		return x.WorkflowIds
+	}
+	return nil
+}
+
+type ReportWorkflowsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportWorkflowsResponse) Reset() {
+	*x = ReportWorkflowsResponse{}
+	mi := &file_shard_orchestrator_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportWorkflowsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportWorkflowsResponse) ProtoMessage() {}
+
+func (x *ReportWorkflowsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shard_orchestrator_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportWorkflowsResponse.ProtoReflect.Descriptor instead.
+func (*ReportWorkflowsResponse) Descriptor() ([]byte, []int) {
+	return file_shard_orchestrator_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ReportWorkflowsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type GetWorkflowsForShardRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ShardId       uint32                 `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3" json:"shard_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWorkflowsForShardRequest) Reset() {
+	*x = GetWorkflowsForShardRequest{}
+	mi := &file_shard_orchestrator_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorkflowsForShardRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorkflowsForShardRequest) ProtoMessage() {}
+
+func (x *GetWorkflowsForShardRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shard_orchestrator_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWorkflowsForShardRequest.ProtoReflect.Descriptor instead.
+func (*GetWorkflowsForShardRequest) Descriptor() ([]byte, []int) {
+	return file_shard_orchestrator_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetWorkflowsForShardRequest) GetShardId() uint32 {
+	if x != nil {
+		return x.ShardId
+	}
+	return 0
+}
+
+type GetWorkflowsForShardResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkflowIds   []string               `protobuf:"bytes,1,rep,name=workflow_ids,json=workflowIds,proto3" json:"workflow_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWorkflowsForShardResponse) Reset() {
+	*x = GetWorkflowsForShardResponse{}
+	mi := &file_shard_orchestrator_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorkflowsForShardResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorkflowsForShardResponse) ProtoMessage() {}
+
+func (x *GetWorkflowsForShardResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shard_orchestrator_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWorkflowsForShardResponse.ProtoReflect.Descriptor instead.
+func (*GetWorkflowsForShardResponse) Descriptor() ([]byte, []int) {
+	return file_shard_orchestrator_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetWorkflowsForShardResponse) GetWorkflowIds() []string {
+	if x != nil {
+		return x.WorkflowIds
+	}
+	return nil
+}
+
 var File_shard_orchestrator_proto protoreflect.FileDescriptor
 
 const file_shard_orchestrator_proto_rawDesc = "" +
@@ -320,10 +496,20 @@ const file_shard_orchestrator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"E\n" +
 	")ReportWorkflowTriggerRegistrationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xbe\x02\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\";\n" +
+	"\x16ReportWorkflowsRequest\x12!\n" +
+	"\fworkflow_ids\x18\x01 \x03(\tR\vworkflowIds\"3\n" +
+	"\x17ReportWorkflowsResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"8\n" +
+	"\x1bGetWorkflowsForShardRequest\x12\x19\n" +
+	"\bshard_id\x18\x01 \x01(\rR\ashardId\"A\n" +
+	"\x1cGetWorkflowsForShardResponse\x12!\n" +
+	"\fworkflow_ids\x18\x01 \x03(\tR\vworkflowIds2\xa1\x04\n" +
 	"\x18ShardOrchestratorService\x12\x80\x01\n" +
 	"\x17GetWorkflowShardMapping\x121.shardorchestrator.GetWorkflowShardMappingRequest\x1a2.shardorchestrator.GetWorkflowShardMappingResponse\x12\x9e\x01\n" +
-	"!ReportWorkflowTriggerRegistration\x12;.shardorchestrator.ReportWorkflowTriggerRegistrationRequest\x1a<.shardorchestrator.ReportWorkflowTriggerRegistrationResponseBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pbb\x06proto3"
+	"!ReportWorkflowTriggerRegistration\x12;.shardorchestrator.ReportWorkflowTriggerRegistrationRequest\x1a<.shardorchestrator.ReportWorkflowTriggerRegistrationResponse\x12h\n" +
+	"\x0fReportWorkflows\x12).shardorchestrator.ReportWorkflowsRequest\x1a*.shardorchestrator.ReportWorkflowsResponse\x12w\n" +
+	"\x14GetWorkflowsForShard\x12..shardorchestrator.GetWorkflowsForShardRequest\x1a/.shardorchestrator.GetWorkflowsForShardResponseBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pbb\x06proto3"
 
 var (
 	file_shard_orchestrator_proto_rawDescOnce sync.Once
@@ -337,31 +523,39 @@ func file_shard_orchestrator_proto_rawDescGZIP() []byte {
 	return file_shard_orchestrator_proto_rawDescData
 }
 
-var file_shard_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_shard_orchestrator_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_shard_orchestrator_proto_goTypes = []any{
 	(*GetWorkflowShardMappingRequest)(nil),            // 0: shardorchestrator.GetWorkflowShardMappingRequest
 	(*WorkflowMappingState)(nil),                      // 1: shardorchestrator.WorkflowMappingState
 	(*GetWorkflowShardMappingResponse)(nil),           // 2: shardorchestrator.GetWorkflowShardMappingResponse
 	(*ReportWorkflowTriggerRegistrationRequest)(nil),  // 3: shardorchestrator.ReportWorkflowTriggerRegistrationRequest
 	(*ReportWorkflowTriggerRegistrationResponse)(nil), // 4: shardorchestrator.ReportWorkflowTriggerRegistrationResponse
-	nil, // 5: shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
-	nil, // 6: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
-	nil, // 7: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	(*ReportWorkflowsRequest)(nil),                    // 5: shardorchestrator.ReportWorkflowsRequest
+	(*ReportWorkflowsResponse)(nil),                   // 6: shardorchestrator.ReportWorkflowsResponse
+	(*GetWorkflowsForShardRequest)(nil),               // 7: shardorchestrator.GetWorkflowsForShardRequest
+	(*GetWorkflowsForShardResponse)(nil),              // 8: shardorchestrator.GetWorkflowsForShardResponse
+	nil,                                               // 9: shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
+	nil,                                               // 10: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
+	nil,                                               // 11: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
 }
 var file_shard_orchestrator_proto_depIdxs = []int32{
-	5, // 0: shardorchestrator.GetWorkflowShardMappingResponse.mappings:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
-	6, // 1: shardorchestrator.GetWorkflowShardMappingResponse.mapping_states:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
-	7, // 2: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
-	1, // 3: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> shardorchestrator.WorkflowMappingState
-	0, // 4: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> shardorchestrator.GetWorkflowShardMappingRequest
-	3, // 5: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest
-	2, // 6: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> shardorchestrator.GetWorkflowShardMappingResponse
-	4, // 7: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> shardorchestrator.ReportWorkflowTriggerRegistrationResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	9,  // 0: shardorchestrator.GetWorkflowShardMappingResponse.mappings:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingsEntry
+	10, // 1: shardorchestrator.GetWorkflowShardMappingResponse.mapping_states:type_name -> shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry
+	11, // 2: shardorchestrator.ReportWorkflowTriggerRegistrationRequest.registered_workflows:type_name -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest.RegisteredWorkflowsEntry
+	1,  // 3: shardorchestrator.GetWorkflowShardMappingResponse.MappingStatesEntry.value:type_name -> shardorchestrator.WorkflowMappingState
+	0,  // 4: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:input_type -> shardorchestrator.GetWorkflowShardMappingRequest
+	3,  // 5: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:input_type -> shardorchestrator.ReportWorkflowTriggerRegistrationRequest
+	5,  // 6: shardorchestrator.ShardOrchestratorService.ReportWorkflows:input_type -> shardorchestrator.ReportWorkflowsRequest
+	7,  // 7: shardorchestrator.ShardOrchestratorService.GetWorkflowsForShard:input_type -> shardorchestrator.GetWorkflowsForShardRequest
+	2,  // 8: shardorchestrator.ShardOrchestratorService.GetWorkflowShardMapping:output_type -> shardorchestrator.GetWorkflowShardMappingResponse
+	4,  // 9: shardorchestrator.ShardOrchestratorService.ReportWorkflowTriggerRegistration:output_type -> shardorchestrator.ReportWorkflowTriggerRegistrationResponse
+	6,  // 10: shardorchestrator.ShardOrchestratorService.ReportWorkflows:output_type -> shardorchestrator.ReportWorkflowsResponse
+	8,  // 11: shardorchestrator.ShardOrchestratorService.GetWorkflowsForShard:output_type -> shardorchestrator.GetWorkflowsForShardResponse
+	8,  // [8:12] is the sub-list for method output_type
+	4,  // [4:8] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_shard_orchestrator_proto_init() }
@@ -375,7 +569,7 @@ func file_shard_orchestrator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shard_orchestrator_proto_rawDesc), len(file_shard_orchestrator_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ShardOrchestratorService_GetWorkflowShardMapping_FullMethodName           = "/shardorchestrator.ShardOrchestratorService/GetWorkflowShardMapping"
 	ShardOrchestratorService_ReportWorkflowTriggerRegistration_FullMethodName = "/shardorchestrator.ShardOrchestratorService/ReportWorkflowTriggerRegistration"
+	ShardOrchestratorService_ReportWorkflows_FullMethodName                   = "/shardorchestrator.ShardOrchestratorService/ReportWorkflows"
+	ShardOrchestratorService_GetWorkflowsForShard_FullMethodName              = "/shardorchestrator.ShardOrchestratorService/GetWorkflowsForShard"
 )
 
 // ShardOrchestratorServiceClient is the client API for ShardOrchestratorService service.
@@ -29,6 +31,8 @@ const (
 type ShardOrchestratorServiceClient interface {
 	GetWorkflowShardMapping(ctx context.Context, in *GetWorkflowShardMappingRequest, opts ...grpc.CallOption) (*GetWorkflowShardMappingResponse, error)
 	ReportWorkflowTriggerRegistration(ctx context.Context, in *ReportWorkflowTriggerRegistrationRequest, opts ...grpc.CallOption) (*ReportWorkflowTriggerRegistrationResponse, error)
+	ReportWorkflows(ctx context.Context, in *ReportWorkflowsRequest, opts ...grpc.CallOption) (*ReportWorkflowsResponse, error)
+	GetWorkflowsForShard(ctx context.Context, in *GetWorkflowsForShardRequest, opts ...grpc.CallOption) (*GetWorkflowsForShardResponse, error)
 }
 
 type shardOrchestratorServiceClient struct {
@@ -59,12 +63,34 @@ func (c *shardOrchestratorServiceClient) ReportWorkflowTriggerRegistration(ctx c
 	return out, nil
 }
 
+func (c *shardOrchestratorServiceClient) ReportWorkflows(ctx context.Context, in *ReportWorkflowsRequest, opts ...grpc.CallOption) (*ReportWorkflowsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportWorkflowsResponse)
+	err := c.cc.Invoke(ctx, ShardOrchestratorService_ReportWorkflows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *shardOrchestratorServiceClient) GetWorkflowsForShard(ctx context.Context, in *GetWorkflowsForShardRequest, opts ...grpc.CallOption) (*GetWorkflowsForShardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWorkflowsForShardResponse)
+	err := c.cc.Invoke(ctx, ShardOrchestratorService_GetWorkflowsForShard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ShardOrchestratorServiceServer is the server API for ShardOrchestratorService service.
 // All implementations must embed UnimplementedShardOrchestratorServiceServer
 // for forward compatibility.
 type ShardOrchestratorServiceServer interface {
 	GetWorkflowShardMapping(context.Context, *GetWorkflowShardMappingRequest) (*GetWorkflowShardMappingResponse, error)
 	ReportWorkflowTriggerRegistration(context.Context, *ReportWorkflowTriggerRegistrationRequest) (*ReportWorkflowTriggerRegistrationResponse, error)
+	ReportWorkflows(context.Context, *ReportWorkflowsRequest) (*ReportWorkflowsResponse, error)
+	GetWorkflowsForShard(context.Context, *GetWorkflowsForShardRequest) (*GetWorkflowsForShardResponse, error)
 	mustEmbedUnimplementedShardOrchestratorServiceServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedShardOrchestratorServiceServer) GetWorkflowShardMapping(conte
 }
 func (UnimplementedShardOrchestratorServiceServer) ReportWorkflowTriggerRegistration(context.Context, *ReportWorkflowTriggerRegistrationRequest) (*ReportWorkflowTriggerRegistrationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportWorkflowTriggerRegistration not implemented")
+}
+func (UnimplementedShardOrchestratorServiceServer) ReportWorkflows(context.Context, *ReportWorkflowsRequest) (*ReportWorkflowsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportWorkflows not implemented")
+}
+func (UnimplementedShardOrchestratorServiceServer) GetWorkflowsForShard(context.Context, *GetWorkflowsForShardRequest) (*GetWorkflowsForShardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWorkflowsForShard not implemented")
 }
 func (UnimplementedShardOrchestratorServiceServer) mustEmbedUnimplementedShardOrchestratorServiceServer() {
 }
@@ -139,6 +171,42 @@ func _ShardOrchestratorService_ReportWorkflowTriggerRegistration_Handler(srv int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ShardOrchestratorService_ReportWorkflows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportWorkflowsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShardOrchestratorServiceServer).ReportWorkflows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShardOrchestratorService_ReportWorkflows_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShardOrchestratorServiceServer).ReportWorkflows(ctx, req.(*ReportWorkflowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ShardOrchestratorService_GetWorkflowsForShard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkflowsForShardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShardOrchestratorServiceServer).GetWorkflowsForShard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShardOrchestratorService_GetWorkflowsForShard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShardOrchestratorServiceServer).GetWorkflowsForShard(ctx, req.(*GetWorkflowsForShardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ShardOrchestratorService_ServiceDesc is the grpc.ServiceDesc for ShardOrchestratorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -153,6 +221,14 @@ var ShardOrchestratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportWorkflowTriggerRegistration",
 			Handler:    _ShardOrchestratorService_ReportWorkflowTriggerRegistration_Handler,
+		},
+		{
+			MethodName: "ReportWorkflows",
+			Handler:    _ShardOrchestratorService_ReportWorkflows_Handler,
+		},
+		{
+			MethodName: "GetWorkflowsForShard",
+			Handler:    _ShardOrchestratorService_GetWorkflowsForShard_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

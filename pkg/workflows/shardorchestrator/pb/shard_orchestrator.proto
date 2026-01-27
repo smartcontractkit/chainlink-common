@@ -30,7 +30,26 @@ message ReportWorkflowTriggerRegistrationResponse {
   bool success = 1;
 }
 
+message ReportWorkflowsRequest {
+  repeated string workflow_ids = 1;
+}
+
+message ReportWorkflowsResponse {
+  bool success = 1;
+}
+
+message GetWorkflowsForShardRequest {
+  uint32 shard_id = 1;
+}
+
+message GetWorkflowsForShardResponse {
+  repeated string workflow_ids = 1;
+}
+
 service ShardOrchestratorService {
   rpc GetWorkflowShardMapping(GetWorkflowShardMappingRequest) returns (GetWorkflowShardMappingResponse); // returns shard assignments for the specified workflows
   rpc ReportWorkflowTriggerRegistration(ReportWorkflowTriggerRegistrationRequest) returns (ReportWorkflowTriggerRegistrationResponse); // called by shards to report their workflow trigger registrations
+
+  rpc ReportWorkflows(ReportWorkflowsRequest) returns (ReportWorkflowsResponse); // called by shard 0 to inform the workflows seen on-chain
+  rpc GetWorkflowsForShard(GetWorkflowsForShardRequest) returns (GetWorkflowsForShardResponse); // called by all shards to fetch the workflows it has assigned
 }

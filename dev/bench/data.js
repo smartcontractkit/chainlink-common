@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769457816946,
+  "lastUpdate": 1769527158137,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -36600,6 +36600,66 @@ window.BENCHMARK_DATA = {
             "value": 147788,
             "unit": "ns/op",
             "extra": "7767 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yikjiun.lee@smartcontract.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f04b59ef66b1269165a81c4c2bcdf72358eb6a9f",
+          "message": "feat(observability-lib): add SortBy and SortDesc to LegendOptions (#1799)\n\n* feat(observability-lib): add SortBy and SortDesc to LegendOptions\n\nExpose the underlying Grafana SDK's VizLegendOptions sorting fields\nto allow legend tables to be sorted by a specific calculation field\n(e.g., \"Last *\", \"Max\") in ascending or descending order.\n\nThis enables dashboards to surface the most important series at the\ntop of the legend table, improving readability for error rate panels.\n\n* refactor: simplify SortDesc handling per review feedback\n\nOnly set SortDesc when SortBy is specified, and pass the value directly\nrather than hardcoding true.\n\n* fix: address review comments\n\n- Fix comment examples to match actual Grafana format (\"Last *\", \"Max\")\n- Only set SortDesc when true to avoid unnecessary explicit false values",
+          "timestamp": "2026-01-27T15:12:25Z",
+          "tree_id": "e85b52b34a1ec1a76042727f7fed3c7c0d9a9835",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f04b59ef66b1269165a81c4c2bcdf72358eb6a9f"
+        },
+        "date": 1769527156492,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 779.8,
+            "unit": "ns/op",
+            "extra": "1415558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 102428,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.3,
+            "unit": "ns/op",
+            "extra": "2913495 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98797,
+            "unit": "ns/op",
+            "extra": "12117 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27246,
+            "unit": "ns/op",
+            "extra": "44889 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 149842,
+            "unit": "ns/op",
+            "extra": "7497 times\n4 procs"
           }
         ]
       }

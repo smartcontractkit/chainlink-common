@@ -55,7 +55,7 @@ type LegendOptions struct {
 	Placement   common.LegendPlacement
 	DisplayMode common.LegendDisplayMode
 	Calcs       []string
-	SortBy      string // Sort legend by this field (e.g., "last", "max", "mean")
+	SortBy      string // Sort legend by this field (e.g., "Last *", "Max", "Mean")
 	SortDesc    bool   // Sort in descending order
 }
 
@@ -81,7 +81,9 @@ func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
 
 	if options.SortBy != "" {
 		builder.SortBy(options.SortBy)
-		builder.SortDesc(options.SortDesc)
+		if options.SortDesc {
+			builder.SortDesc(true)
+		}
 	}
 
 	return builder

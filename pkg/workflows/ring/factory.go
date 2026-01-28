@@ -50,7 +50,7 @@ func NewFactory(s *Store, shardOrchestratorStore *shardorchestrator.Store, arbit
 }
 
 func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
-	plugin, err := NewPlugin(o.ringStore, o.arbiterScaler, config, o.lggr, o.config)
+	plugin, err := NewPlugin(o.ringStore, o.shardOrchestratorStore, o.arbiterScaler, config, o.lggr, o.config)
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "RingPlugin",
 		Limits: ocr3types.ReportingPluginLimits{

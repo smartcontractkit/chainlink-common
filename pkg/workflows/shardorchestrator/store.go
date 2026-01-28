@@ -279,3 +279,16 @@ func (s *Store) GetAllSeenWorkflows() []string {
 	copy(result, s.allSeenWorkflows)
 	return result
 }
+
+func (s *Store) GetWorkflowForShard(ctx context.Context, shardIndex uint32) []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]string, 0)
+	for workflowID, mapping := range s.workflowMappings {
+		if mapping.NewShardID == shardIndex {
+			result = append(result, workflowID)
+		}
+	}
+	return result
+}

@@ -10,18 +10,26 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/shardorchestrator/pb"
 )
 
+// ShardAllocator is an interface for determining which shard should handle a workflow
+// This is implemented by ring.Store to avoid import cycles
+type ShardAllocator interface {
+	GetShardForWorkflow(ctx context.Context, workflowID string) (uint32, error)
+}
+
 // Server implements the gRPC ShardOrchestratorService
 // This runs on shard zero and serves requests from other shards
 type Server struct {
 	pb.UnimplementedShardOrchestratorServiceServer
-	store  *Store
-	logger logger.Logger
+	store          *Store
+	shardAllocator ShardAllocator
+	logger         logger.Logger
 }
 
-func NewServer(store *Store, lggr logger.Logger) *Server {
+func NewServer(store *Store, shardAllocator ShardAllocator, lggr logger.Logger) *Server {
 	return &Server{
-		store:  store,
-		logger: logger.Named(lggr, "ShardOrchestratorServer"),
+		store:          store,
+		shardAllocator: shardAllocator,
+		logger:         logger.Named(lggr, "ShardOrchestratorServer"),
 	}
 }
 
@@ -40,11 +48,30 @@ func (s *Server) GetWorkflowShardMapping(ctx context.Context, req *pb.GetWorkflo
 		return nil, fmt.Errorf("workflow_ids is required and must not be empty")
 	}
 
-	// Retrieve batch from store
+	// Process each workflow ID to determine shard assignment
+	for _, workflowID := range req.WorkflowIds {
+		// Determine shard assignment using the shard allocator
+		shardID, err := s.shardAllocator.GetShardForWorkflow(ctx, workflowID)
+		if err != nil {
+			s.logger.Warnw("Failed to get shard assignment for workflow",
+				"workflowID", workflowID,
+				"error", err,
+			)
+			continue
+		}
+
+		s.logger.Debugw("Assigned workflow to shard",
+			"workflowID", workflowID,
+			"shardID", shardID,
+		)
+	}
+
 	mappings, version, err := s.store.GetWorkflowMappingsBatch(ctx, req.WorkflowIds)
 	if err != nil {
-		s.logger.Errorw("Failed to get workflow mappings", "error", err)
-		return nil, fmt.Errorf("failed to get workflow mappings: %w", err)
+		s.logger.Errorw("Failed to get workflow shard mappings",
+			"error", err,
+		)
+		return nil, err
 	}
 
 	// Build simple mappings map (workflow_id -> shard_id)

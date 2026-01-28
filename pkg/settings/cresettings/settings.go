@@ -148,6 +148,9 @@ var Default = Schema{
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
+		Secrets: secrets{
+			CallLimit: Int(5),
+		},
 	},
 }
 
@@ -212,6 +215,7 @@ type Workflows struct {
 	ChainRead  chainRead
 	Consensus  consensus
 	HTTPAction httpAction
+	Secrets    secrets
 }
 
 type cronTrigger struct {
@@ -247,6 +251,9 @@ type httpAction struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+type secrets struct {
+	CallLimit Setting[int] `unit:"{call}"`
 }
 type consensus struct {
 	ObservationSizeLimit Setting[config.Size]

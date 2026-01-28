@@ -31,6 +31,7 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 		WorkflowName:  "wf-test-1",
 		WorkflowPath:  "./testdata/main.go",
 		ConfigPath:    "./testdata/config.yaml",
+		BinaryPath:    "testdata/binary",
 	}, s.lggr)
 	err := artifacts.Compile()
 	s.NoError(err, "failed to compile workflow")
@@ -66,6 +67,57 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 	s.Equal("myContract: 0x44DD9D24349965E5e20E3D6118F560BCd64828E9\nchainID: 11155111", string(artifacts.GetConfigData()))
 
 	s.Equal("008619548c29a2ed3eee5f904dc34305191e23e22559d788272b0d4587d776ef", artifacts.GetWorkflowID())
+}
+
+func (s *ArtifactsTestSuite) TestArtifactsSadPaths() {
+	missingBinaryArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main.go",
+		ConfigPath:    "./testdata/config.yaml",
+		BinaryPath:    "testdata/binary",
+	}, s.lggr)
+	err := missingBinaryArtifacts.Prepare()
+	s.ErrorContains(err, "no such file or directory", "failed to prepare artifacts")
+
+	invalidBinaryArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main.go",
+		ConfigPath:    "./testdata/config.yaml",
+		BinaryPath:    "./testdata/main.go", // Not valid base64 encoded
+	}, s.lggr)
+	err = invalidBinaryArtifacts.Prepare()
+	s.ErrorContains(err, "failed to decode base64 binary data", "failed to prepare artifacts")
+
+	invalidConfigArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main.go",
+		ConfigPath:    "./testdata/config2.yaml", // Not valid yaml
+		BinaryPath:    "testdata/main.go",
+	}, s.lggr)
+	err = invalidConfigArtifacts.Prepare()
+	s.ErrorContains(err, "no such file or directory", "failed to prepare artifacts")
+
+	invalidWorkflowPathArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main2.go",
+		ConfigPath:    "./testdata/config.yaml",
+	}, s.lggr)
+	err = invalidWorkflowPathArtifacts.Compile()
+	s.ErrorContains(err, "workflow file not found", "failed to prepare artifacts")
+
+	invalidBinaryFolderArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main.go",
+		ConfigPath:    "./testdata/config.yaml",
+		BinaryPath:    "testdata2/binary",
+	}, s.lggr)
+	err = invalidBinaryFolderArtifacts.Compile()
+	s.ErrorContains(err, "failed to base64 encode the WASM binary: open", "failed to compile workflow")
 }
 
 func (s *ArtifactsTestSuite) TestScanFilesForContent() {
@@ -151,7 +203,6 @@ func OnLog(cfg *wfcommon.Config, rt cre.Runtime, payload *evm.Log) (string, erro
 		WorkflowName:  "wf-test-1",
 		WorkflowPath:  testDir,
 		ConfigPath:    "",
-		BinaryPath:    "testdata/binary",
 	}, s.lggr)
 	foundPath, err := artifacts.GetWorkflowMainFile(testDir)
 	s.NoError(err, "ScanFilesForContent should not return an error")

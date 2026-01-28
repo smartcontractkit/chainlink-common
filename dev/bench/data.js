@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769638635243,
+  "lastUpdate": 1769642410195,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -36900,6 +36900,66 @@ window.BENCHMARK_DATA = {
             "value": 140850,
             "unit": "ns/op",
             "extra": "8439 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "806a16d1c4d5d385dad9fc3c5a7cb96713ac89b3",
+          "message": "Remove unnecessary locking from baseAtomicCapability (#1803)",
+          "timestamp": "2026-01-28T23:13:13Z",
+          "tree_id": "46e872b4c05a4eca78a9a42a30c27e359a3283c9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/806a16d1c4d5d385dad9fc3c5a7cb96713ac89b3"
+        },
+        "date": 1769642408620,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 793.9,
+            "unit": "ns/op",
+            "extra": "1420818 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100780,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 428.5,
+            "unit": "ns/op",
+            "extra": "2914406 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98586,
+            "unit": "ns/op",
+            "extra": "12192 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26669,
+            "unit": "ns/op",
+            "extra": "44961 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148898,
+            "unit": "ns/op",
+            "extra": "7621 times\n4 procs"
           }
         ]
       }

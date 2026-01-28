@@ -155,7 +155,7 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"` // Deprecated
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
 	GatewayVaultManagementEnabled     Setting[bool]

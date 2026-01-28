@@ -26,7 +26,7 @@ func (a *Artifacts) Compile() error {
 		return fmt.Errorf("workflow file not found: %s", workflowAbsFile)
 	}
 
-	workflowMainFilePath, err := a.getWorkflowMainFile(a.input.WorkflowPath)
+	workflowMainFilePath, err := a.GetWorkflowMainFile(a.input.WorkflowPath)
 	if err != nil {
 		return fmt.Errorf("failed to get workflow main file: %w", err)
 	}
@@ -133,7 +133,7 @@ func (a *Artifacts) b64EncodeAndWriteFile(input []byte, outputFile string) error
 }
 
 // Get the path to main workflow file for a Go workflow
-func (a *Artifacts) getWorkflowMainFile(workflowPath string) (string, error) {
+func (a *Artifacts) GetWorkflowMainFile(workflowPath string) (string, error) {
 	f, err := os.Stat(workflowPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to get file info for the workflow path: %w", err)

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769527158137,
+  "lastUpdate": 1769611647737,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -36660,6 +36660,66 @@ window.BENCHMARK_DATA = {
             "value": 149842,
             "unit": "ns/op",
             "extra": "7497 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "362e7e2abb041e9d4c2c327c5bdc1415be4de4e3",
+          "message": "Add corekeys package with CSA/OCRKeyBundle types (#1793)\n\n* Add corekeys package with keystorelib implementations for CSA and OCRKeyBundle\n\n* Add corekeys package with keystorelib implementations for CSA and OCRKeyBundle",
+          "timestamp": "2026-01-28T14:39:28Z",
+          "tree_id": "2f607f70016db6d0d6a3db7730cad7b224dc4188",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/362e7e2abb041e9d4c2c327c5bdc1415be4de4e3"
+        },
+        "date": 1769611645973,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 739.4,
+            "unit": "ns/op",
+            "extra": "1413151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 72406,
+            "unit": "ns/op",
+            "extra": "16482 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411,
+            "unit": "ns/op",
+            "extra": "2908377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 74137,
+            "unit": "ns/op",
+            "extra": "16118 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24667,
+            "unit": "ns/op",
+            "extra": "48655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 123289,
+            "unit": "ns/op",
+            "extra": "9421 times\n4 procs"
           }
         ]
       }

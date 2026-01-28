@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -308,4 +309,30 @@ func TestDefaultEnvVars(t *testing.T) {
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
+}
+
+//go:embed README.md
+var readme string
+
+// TestFlowchartComplete ensures that every field is included in the flowchart.
+func TestFlowchartComplete(t *testing.T) {
+	var keys []string
+	var addKeys func(a any)
+	addKeys = func(a any) {
+		if v := reflect.ValueOf(a).Elem(); v.Type().Kind() == reflect.Struct {
+			for i := range v.NumField() {
+				f := v.Field(i)
+				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
+					keys = append(keys, gk.GetKey())
+					return
+				}
+				addKeys(f.Addr().Interface())
+			}
+		}
+	}
+	addKeys(&Default)
+	require.NotEmpty(t, keys)
+	for _, k := range keys {
+		assert.Contains(t, readme, k, "missing key %q in README.md", k)
+	}
 }

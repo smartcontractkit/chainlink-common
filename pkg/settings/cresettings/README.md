@@ -151,6 +151,9 @@ flowchart
             RequestSizeLimit{{RequestSizeLimit}}:::bound
             ResponseSizeLimit{{ResponseSizeLimit}}:::bound
         end
+        subgraph PerWorkflow.Secrets
+            secrets.CallLimit{{CallLimit}}:::bound
+        end
     end
     subgraph vault
         VaultCiphertextSizeLimit{{VaultCiphertextSizeLimit}}:::bound

@@ -70,6 +70,7 @@ func GetBuildCmd(inputFile string, outputFile string, rootFolder string) *exec.C
 			"-o", outputFile,
 			"-trimpath",
 			"-ldflags=-buildid= -w -s",
+			"-buildvcs=false",
 			inputFile,
 		)
 		buildCmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")

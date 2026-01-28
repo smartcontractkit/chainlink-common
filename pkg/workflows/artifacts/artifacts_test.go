@@ -2,6 +2,7 @@ package artifacts
 
 import (
 	"encoding/hex"
+	"errors"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -118,6 +119,60 @@ func (s *ArtifactsTestSuite) TestArtifactsSadPaths() {
 	}, s.lggr)
 	err = invalidBinaryFolderArtifacts.Compile()
 	s.ErrorContains(err, "failed to base64 encode the WASM binary: open", "failed to compile workflow")
+}
+
+func (s *ArtifactsTestSuite) TestCompileGoEnsureToolError() {
+	// Mock EnsureTool to return an error so Compile fails at tool check for Go
+	origEnsureToolFn := ensureToolFn
+	defer func() { ensureToolFn = origEnsureToolFn }()
+	ensureToolFn = func(string) error { return errors.New("go not found in PATH") }
+
+	artifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main.go",
+		ConfigPath:    "",
+		BinaryPath:    "",
+	}, s.lggr)
+	err := artifacts.Compile()
+	s.Error(err, "Compile should fail when EnsureTool returns error for Go workflow")
+	s.Contains(err.Error(), "go toolchain is required for Go workflows but was not found in PATH",
+		"error message should mention Go toolchain requirement")
+	s.Contains(err.Error(), "https://go.dev/dl", "error message should include install URL")
+
+	// Mock EnsureTool to return an error so Compile fails at tool check for TypeScript
+	ensureToolFn = func(string) error { return errors.New("bun not found in PATH") }
+
+	os.WriteFile("./testdata/main2.ts", []byte(`
+	export default function main() {
+		return "Hello, World!";
+	}
+	`), 0644)
+	artifacts = NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main2.ts",
+		ConfigPath:    "",
+		BinaryPath:    "",
+	}, s.lggr)
+	err = artifacts.Compile()
+	s.Error(err, "failed to compile TS workflow")
+	s.Contains(err.Error(), "bun is required for TypeScript workflows but was not found in PATH",
+		"error message should mention TypeScript toolchain requirement")
+	s.Contains(err.Error(), "https://bun.com/docs/installation", "error message should include install URL")
+	os.Remove("./testdata/main2.ts")
+}
+
+func (s *ArtifactsTestSuite) TestCompileTypeScript() {
+	artifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  "./testdata/main2.ts",
+		ConfigPath:    "",
+		BinaryPath:    "",
+	}, s.lggr)
+	err := artifacts.Compile()
+	s.Error(err, "failed to compile TS workflow")
 }
 
 func (s *ArtifactsTestSuite) TestScanFilesForContent() {

@@ -37,12 +37,17 @@ func GetWorkflowLanguage(inputFile string) string {
 	return WorkflowLanguageGolang
 }
 
-// EnsureTool checks that the binary exists on PATH
-func EnsureTool(bin string) error {
+// ensureToolFn is the function used by EnsureTool; replaced in tests to mock.
+var ensureToolFn = func(bin string) error {
 	if _, err := exec.LookPath(bin); err != nil {
 		return fmt.Errorf("%q not found in PATH: %w", bin, err)
 	}
 	return nil
+}
+
+// EnsureTool checks that the binary exists on PATH
+func EnsureTool(bin string) error {
+	return ensureToolFn(bin)
 }
 
 // Gets a build command for either Golang or Typescript based on the filename

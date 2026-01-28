@@ -84,3 +84,6 @@ CacheAgeLimit = '10m0s'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
+
+[PerWorkflow.Secrets]
+CallLimit = '5'

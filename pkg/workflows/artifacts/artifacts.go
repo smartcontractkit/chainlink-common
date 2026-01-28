@@ -60,7 +60,8 @@ func (a *Artifacts) Prepare() error {
 			return err
 		}
 	}
-	// Note: the binary data read from file is base64 encoded, so we need to decode it before generating the workflow ID.
+	// Note: the binary data read from file is base64 encoded, so we need to decode it
+	// before generating the workflow ID.
 	binaryDataDecoded, err := base64.StdEncoding.DecodeString(string(a.binaryData))
 	if err != nil {
 		return fmt.Errorf("failed to decode base64 binary data: %w", err)
@@ -74,6 +75,19 @@ func (a *Artifacts) Prepare() error {
 }
 
 // Returns the generated workflow ID after preparing the artifacts
+// This value is empty until Prepare() is called
 func (a *Artifacts) GetWorkflowID() string {
 	return a.workflowID
+}
+
+// Returns the binary data after preparing the artifacts
+// This value is empty until Prepare() is called
+func (a *Artifacts) GetBinaryData() []byte {
+	return a.binaryData
+}
+
+// Returns the config data after preparing the artifacts
+// This value is empty until Prepare() is called
+func (a *Artifacts) GetConfigData() []byte {
+	return a.configData
 }

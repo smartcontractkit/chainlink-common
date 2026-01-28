@@ -17,19 +17,6 @@ var defaultBinaryPath = "./binary.wasm.br.b64"
 func (a *Artifacts) Compile() error {
 	a.log.Info("Compiling workflow", "workflow path", a.input.WorkflowPath)
 
-	if a.input.BinaryPath == "" {
-		a.input.BinaryPath = defaultBinaryPath
-	}
-	if !strings.HasSuffix(a.input.BinaryPath, ".b64") {
-		if !strings.HasSuffix(a.input.BinaryPath, ".br") {
-			if !strings.HasSuffix(a.input.BinaryPath, ".wasm") {
-				a.input.BinaryPath += ".wasm" // Append ".wasm" if it doesn't already end with ".wasm"
-			}
-			a.input.BinaryPath += ".br" // Append ".br" if it doesn't already end with ".br"
-		}
-		a.input.BinaryPath += ".b64" // Append ".b64" if it doesn't already end with ".b64"
-	}
-
 	workflowAbsFile, err := filepath.Abs(a.input.WorkflowPath)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path for the workflow file: %w", err)
@@ -46,7 +33,21 @@ func (a *Artifacts) Compile() error {
 	workflowRootFolder := filepath.Dir(workflowMainFilePath)
 	workflowMainFile := filepath.Base(workflowMainFilePath)
 	tmpWasmFileName := "tmp.wasm"
-	a.log.Info("Workflow details", "main_file", workflowMainFilePath, "parent_folder", workflowRootFolder)
+	if a.input.BinaryPath == "" {
+		a.input.BinaryPath = filepath.Join(workflowRootFolder, defaultBinaryPath)
+	}
+	if !strings.HasSuffix(a.input.BinaryPath, ".b64") {
+		if !strings.HasSuffix(a.input.BinaryPath, ".br") {
+			if !strings.HasSuffix(a.input.BinaryPath, ".wasm") {
+				a.input.BinaryPath += ".wasm" // Append ".wasm" if it doesn't already end with ".wasm"
+			}
+			a.input.BinaryPath += ".br" // Append ".br" if it doesn't already end with ".br"
+		}
+		a.input.BinaryPath += ".b64" // Append ".b64" if it doesn't already end with ".b64"
+	}
+	a.log.Info("Workflow details", "main_file", workflowMainFilePath,
+		"parent_folder", workflowRootFolder,
+		"binary_path", a.input.BinaryPath)
 
 	// Set language based on workflow file extension
 	workflowLanguage := GetWorkflowLanguage(workflowMainFile)
@@ -66,7 +67,7 @@ func (a *Artifacts) Compile() error {
 	}
 
 	buildCmd := GetBuildCmd(".", tmpWasmFileName, workflowRootFolder)
-	a.log.Debug("Executing workflow build command", "workflow directory", buildCmd.Dir, "command", buildCmd.String())
+	a.log.Info("Executing workflow build command", "workflow directory", buildCmd.Dir, "command", buildCmd.String())
 
 	buildOutput, err := buildCmd.CombinedOutput()
 	if err != nil {

@@ -40,7 +40,8 @@ func parseArgs() *artifacts.Input {
 		log.Fatalf("workflow main file does not exist: %s", workflowMainFile)
 	}
 	if _, err := os.Stat(workflowConfigFile); os.IsNotExist(err) {
-		log.Fatalf("workflow config file does not exist: %s", workflowConfigFile)
+		log.Printf("workflow config file does not exist: %s", workflowConfigFile)
+		workflowConfigFile = ""
 	}
 
 	if !isValidEVMAddr(*workflowOwner) {

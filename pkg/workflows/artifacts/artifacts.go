@@ -54,9 +54,11 @@ func (a *Artifacts) Prepare() error {
 	if err != nil {
 		return err
 	}
-	a.configData, err = a.readFile(a.input.ConfigPath, "config")
-	if err != nil {
-		return err
+	if a.input.ConfigPath != "" {
+		a.configData, err = a.readFile(a.input.ConfigPath, "config")
+		if err != nil {
+			return err
+		}
 	}
 	// Note: the binary data read from file is base64 encoded, so we need to decode it before generating the workflow ID.
 	binaryDataDecoded, err := base64.StdEncoding.DecodeString(string(a.binaryData))

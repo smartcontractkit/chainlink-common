@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -303,6 +304,9 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	}
 	resources = append(resources, net.Resource{Closer: keystoreConn, Name: "KeystoreConn"})
 	keyStore := keystoreservice.NewClient(keystoreConn)
+
+	// Sets the auth header signing mechanism
+	beholder.GetClient().SetSigner(keyStore)
 
 	capabilitiesRegistryConn, err := s.Dial(request.CapRegistryId)
 	if err != nil {

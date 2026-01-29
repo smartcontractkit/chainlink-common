@@ -70,6 +70,12 @@ func (a *AtomicSettings) Unsubscribe(ch <-chan core.SettingsUpdate) {
 	}
 }
 
+func (a *AtomicSettings) Load() (core.SettingsUpdate, error) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return *a.current, nil
+}
+
 func (a *AtomicSettings) Store(update core.SettingsUpdate) error {
 	getter, err := settings.NewTOMLGetter([]byte(update.Settings))
 	if err != nil {

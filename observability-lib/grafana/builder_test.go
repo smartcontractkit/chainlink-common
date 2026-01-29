@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
+	"github.com/grafana/grafana-foundation-sdk/go/expr"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -46,13 +47,21 @@ func TestNewBuilder(t *testing.T) {
 			Title: "Alert Title",
 		}))
 
+		builder.AddAlert(grafana.NewAlertRule(&grafana.AlertOptions{
+			Title:          "Alert Title 2",
+			RuleGroupTitle: "RuleGroup Title",
+		}))
+
 		o, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error during build: %v", err)
 		}
 		require.NotEmpty(t, o.Dashboard)
 		require.NotEmpty(t, o.Alerts)
-		require.Len(t, o.Alerts, 1)
+		require.Len(t, o.Alerts, 2)
+		require.Equal(t, "Default", o.Alerts[0].RuleGroup)
+		require.Equal(t, "RuleGroup Title", o.Alerts[1].RuleGroup)
+
 		require.Empty(t, o.ContactPoints)
 		require.Empty(t, o.NotificationPolicies)
 	})
@@ -220,5 +229,71 @@ func TestBuilder_AddPanel(t *testing.T) {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 		require.IsType(t, dashboard.Panel{}, *o.Dashboard.Panels[0].Panel)
+	})
+}
+
+func TestBuilder_AddTimeSeriesPanelWithAlert(t *testing.T) {
+	t.Run("AddPanel adds a panel to the dashboard", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		panel := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: grafana.Pointer("Panel Title"),
+			},
+			AlertsOptions: []grafana.AlertOptions{
+				{
+					Summary:     `Test Alert Summary`,
+					Description: `Test Description with value {{ index $values "A" }}`,
+					RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+					For:         "1m",
+					Tags: map[string]string{
+						"severity": "warning",
+					},
+					Query: []grafana.RuleQuery{
+						{
+							Expr:       `my_metric`,
+							Instant:    true,
+							RefID:      "A",
+							Datasource: "datasource-uid",
+						},
+					},
+					QueryRefCondition: "B",
+					Condition: []grafana.ConditionQuery{
+						{
+							RefID: "B",
+							ReduceExpression: &grafana.ReduceExpression{
+								Expression: "A",
+								Reducer:    expr.TypeReduceReducerSum,
+								ReduceSettings: &expr.ExprTypeReduceSettings{
+									Mode: expr.ExprTypeReduceSettingsModeDropNN,
+								},
+							},
+						},
+						{
+							RefID: "C",
+							ThresholdExpression: &grafana.ThresholdExpression{
+								Expression: "B",
+								ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+									Params: []float64{2},
+									Type:   expr.ExprTypeThresholdConditionsEvaluatorTypeLt,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		builder.AddPanel(panel)
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error building dashboard: %v", err)
+		}
+		require.IsType(t, dashboard.Panel{}, *o.Dashboard.Panels[0].Panel)
+		require.Len(t, o.Alerts, 1)
+		// RuleGroup defaults to Panel Title
+		require.Equal(t, "Panel Title", o.Alerts[0].RuleGroup)
 	})
 }

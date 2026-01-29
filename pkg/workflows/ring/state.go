@@ -28,7 +28,7 @@ func TransitionStateFromRoutingState(state *pb.RoutingState) shardorchestrator.T
 
 func IsInSteadyState(state *pb.RoutingState) bool {
 	if state == nil {
-		return false
+		return true
 	}
 	_, ok := state.State.(*pb.RoutingState_RoutableShards)
 	return ok

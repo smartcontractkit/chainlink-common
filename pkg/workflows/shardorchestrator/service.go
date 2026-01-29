@@ -42,7 +42,7 @@ func (s *Server) RegisterWithGRPCServer(grpcServer *grpc.Server) {
 // GetWorkflowShardMapping handles batch requests for workflow-to-shard mappings
 // This is called by other shards to determine where to route workflow executions
 func (s *Server) GetWorkflowShardMapping(ctx context.Context, req *pb.GetWorkflowShardMappingRequest) (*pb.GetWorkflowShardMappingResponse, error) {
-	s.logger.Debugw("GetWorkflowShardMapping called", "workflowCount", len(req.WorkflowIds))
+	s.logger.Debugw("GetWorkflowShardMapping server called", "workflowCount", len(req.WorkflowIds))
 
 	if len(req.WorkflowIds) == 0 {
 		return nil, fmt.Errorf("workflow_ids is required and must not be empty")
@@ -50,6 +50,7 @@ func (s *Server) GetWorkflowShardMapping(ctx context.Context, req *pb.GetWorkflo
 
 	// Process each workflow ID to determine shard assignment
 	for _, workflowID := range req.WorkflowIds {
+		s.logger.Debugw("Processing workflow for shard assignment", "workflowID", workflowID)
 		// Determine shard assignment using the shard allocator
 		shardID, err := s.shardAllocator.GetShardForWorkflow(ctx, workflowID)
 		if err != nil {

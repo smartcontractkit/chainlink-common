@@ -38,7 +38,7 @@ type ClientCapability interface {
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*capabilities.ResponseAndMetadata[*evm.WriteReportReply], caperrors.Error)
-	AckEvent(ctx context.Context, triggerId string, eventId string, workflowId string) caperrors.Error
+	AckEvent(ctx context.Context, triggerId string, eventId string) caperrors.Error
 
 	ChainSelector() uint64
 
@@ -144,8 +144,8 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 	}
 }
 
-func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string, workflowId string) error {
-	return c.ClientCapability.AckEvent(ctx, triggerId, eventId, workflowId)
+func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	return c.ClientCapability.AckEvent(ctx, triggerId, eventId)
 }
 
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

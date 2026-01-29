@@ -1,5 +1,6 @@
 package capabilities
 
+/*
 import (
 	"context"
 	"database/sql"
@@ -7,25 +8,23 @@ import (
 	"time"
 )
 
-type pgEventStore struct {
+type pgTriggerEventStore struct {
 	db        *sql.DB
 	tableName string
 }
 
-// NewPostgresEventStore creates the table (if needed) and returns an EventStore backed by Postgres.
 func NewPostgresEventStore(ctx context.Context, db *sql.DB, tableName string) (EventStore, error) {
-	s := &pgEventStore{db: db, tableName: tableName}
+	s := &pgTriggerEventStore{db: db, tableName: tableName}
 	if err := s.ensureSchema(ctx); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-func (s *pgEventStore) ensureSchema(ctx context.Context) error {
+func (s *pgTriggerEventStore) ensureSchema(ctx context.Context) error {
 	ddl := fmt.Sprintf(`
 CREATE TABLE IF NOT EXISTS %s (
   trigger_id   TEXT NOT NULL,
-  workflow_id  TEXT NOT NULL,
   event_id     TEXT NOT NULL,
   any_type_url TEXT NOT NULL,
   payload      BYTEA NOT NULL,
@@ -37,16 +36,15 @@ CREATE TABLE IF NOT EXISTS %s (
 CREATE INDEX IF NOT EXISTS %s_firstat_idx ON %s (first_at);
 `, s.tableName, s.tableName, s.tableName)
 
-	// Exec can run multiple statements on Postgres.
 	_, err := s.db.ExecContext(ctx, ddl)
 	return err
 }
 
-func (s *pgEventStore) Insert(ctx context.Context, rec PendingEvent) error {
+func (s *pgTriggerEventStore) Insert(ctx context.Context, rec PendingEvent) error {
 	q := fmt.Sprintf(`
-INSERT INTO %s (trigger_id, workflow_id, event_id, any_type_url, payload, first_at, last_sent_at, attempts)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-ON CONFLICT (trigger_id, workflow_id, event_id)
+INSERT INTO %s (trigger_id, event_id, any_type_url, payload, first_at, last_sent_at, attempts)
+VALUES ($1,$2,$3,$4,$5,$6,$7)
+ON CONFLICT (trigger_id, event_id)
 DO UPDATE SET
   any_type_url = EXCLUDED.any_type_url,
   payload      = EXCLUDED.payload,
@@ -56,22 +54,22 @@ DO UPDATE SET
 
 	_, err := s.db.ExecContext(
 		ctx, q,
-		rec.TriggerId, rec.WorkflowId, rec.EventId,
+		rec.TriggerId, rec.EventId,
 		rec.AnyTypeURL, rec.Payload,
 		rec.FirstAt, nullTime(rec.LastSentAt), rec.Attempts,
 	)
 	return err
 }
 
-func (s *pgEventStore) Delete(ctx context.Context, triggerId, workflowId, eventId string) error {
-	q := fmt.Sprintf(`DELETE FROM %s WHERE trigger_id=$1 AND workflow_id=$2 AND event_id=$3;`, s.tableName)
-	_, err := s.db.ExecContext(ctx, q, triggerId, workflowId, eventId)
+func (s *pgTriggerEventStore) Delete(ctx context.Context, triggerId, eventId string) error {
+	q := fmt.Sprintf(`DELETE FROM %s WHERE trigger_id=$1 AND event_id=$2;`, s.tableName)
+	_, err := s.db.ExecContext(ctx, q, triggerId, eventId)
 	return err
 }
 
-func (s *pgEventStore) List(ctx context.Context) ([]PendingEvent, error) {
+func (s *pgTriggerEventStore) List(ctx context.Context) ([]PendingEvent, error) {
 	q := fmt.Sprintf(`
-SELECT trigger_id, workflow_id, event_id, any_type_url, payload, first_at, last_sent_at, attempts
+SELECT trigger_id, event_id, any_type_url, payload, first_at, last_sent_at, attempts
 FROM %s
 ORDER BY first_at ASC;`, s.tableName)
 
@@ -86,7 +84,7 @@ ORDER BY first_at ASC;`, s.tableName)
 		var rec PendingEvent
 		var lastSent sql.NullTime
 		if err := rows.Scan(
-			&rec.TriggerId, &rec.WorkflowId, &rec.EventId,
+			&rec.TriggerId, &rec.EventId,
 			&rec.AnyTypeURL, &rec.Payload,
 			&rec.FirstAt, &lastSent, &rec.Attempts,
 		); err != nil {
@@ -106,3 +104,4 @@ func nullTime(t time.Time) sql.NullTime {
 	}
 	return sql.NullTime{Time: t, Valid: true}
 }
+*/

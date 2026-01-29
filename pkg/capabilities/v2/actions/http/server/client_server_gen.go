@@ -107,7 +107,7 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 	return fmt.Errorf("trigger %s not found", request.Method)
 }
 
-func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string, workflowId string) error {
+func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
 	return fmt.Errorf("trigger %s not found", triggerId)
 }
 

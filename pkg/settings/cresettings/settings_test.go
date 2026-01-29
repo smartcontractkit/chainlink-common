@@ -328,7 +328,7 @@ func TestFlowchartComplete(t *testing.T) {
 				f := v.Field(i)
 				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
 					keys = append(keys, gk.GetKey())
-					return
+					continue
 				}
 				addKeys(f.Addr().Interface())
 			}
@@ -336,6 +336,7 @@ func TestFlowchartComplete(t *testing.T) {
 	}
 	addKeys(&Default)
 	require.NotEmpty(t, keys)
+	require.Greater(t, len(keys), 20) // sanity check
 	for _, k := range keys {
 		assert.Contains(t, readme, k, "missing key %q in README.md", k)
 	}

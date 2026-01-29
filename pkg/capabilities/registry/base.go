@@ -222,6 +222,7 @@ type triggerRegistration struct {
 	request capabilities.TriggerRegistrationRequest
 	outCh   chan capabilities.TriggerResponse
 	cancel  context.CancelFunc // used to shut down the forwarding goroutine when the trigger is unregistered
+	done    chan struct{}      // closed by forwarding goroutine upon exit
 }
 
 func newTriggerRegistrationManager(lggr logger.Logger) *triggerRegistrationManager {
@@ -240,17 +241,15 @@ func (m *triggerRegistrationManager) register(ctx context.Context, underlying ca
 }
 
 func (m *triggerRegistrationManager) unregister(ctx context.Context, underlying capabilities.TriggerExecutable, req capabilities.TriggerRegistrationRequest) error {
-	var out chan capabilities.TriggerResponse
 	if reg, ok := m.regs[req.TriggerID]; ok {
 		if reg.cancel != nil {
 			reg.cancel()
+			<-reg.done
 		}
-		out = reg.outCh
+		if reg.outCh != nil {
+			close(reg.outCh)
+		}
 		delete(m.regs, req.TriggerID)
-	}
-
-	if out != nil {
-		close(out)
 	}
 	return underlying.UnregisterTrigger(ctx, req)
 }
@@ -274,13 +273,16 @@ func (m *triggerRegistrationManager) upsertRegistration(req capabilities.Trigger
 		}
 		if regInMap.cancel != nil {
 			regInMap.cancel() // shuts down the previous forwarding goroutine
+			<-regInMap.done
 			regInMap.cancel = nil
+			regInMap.done = nil
 		}
 	}
 	if in != nil {
 		ctxForward, cancel := context.WithCancel(context.Background())
 		regInMap.cancel = cancel
-		go forwardTriggerResponses(ctxForward, in, regInMap.outCh)
+		regInMap.done = make(chan struct{})
+		go forwardTriggerResponses(ctxForward, in, regInMap.outCh, func() { close(regInMap.done) })
 	}
 	return regInMap.outCh
 }
@@ -302,7 +304,8 @@ func (m *triggerRegistrationManager) rebind(newUnderlying capabilities.TriggerEx
 	}
 }
 
-func forwardTriggerResponses(ctx context.Context, in <-chan capabilities.TriggerResponse, out chan<- capabilities.TriggerResponse) {
+func forwardTriggerResponses(ctx context.Context, in <-chan capabilities.TriggerResponse, out chan<- capabilities.TriggerResponse, done func()) {
+	defer done()
 	for {
 		select {
 		case <-ctx.Done():
@@ -353,20 +356,22 @@ func (a *atomicTriggerCapability) Update(c capabilities.BaseCapability) error {
 
 func (a *atomicTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
 	}
-	return a.cap.Info(ctx)
+	return cap.Info(ctx)
 }
 
 func (a *atomicTriggerCapability) GetState() connectivity.State {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return connectivity.Shutdown
 	}
-	if sg, ok := a.cap.(StateGetter); ok {
+	if sg, ok := cap.(StateGetter); ok {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
@@ -433,20 +438,22 @@ func (a *atomicExecuteCapability) Update(c capabilities.BaseCapability) error {
 
 func (a *atomicExecuteCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
 	}
-	return a.cap.Info(ctx)
+	return cap.Info(ctx)
 }
 
 func (a *atomicExecuteCapability) GetState() connectivity.State {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return connectivity.Shutdown
 	}
-	if sg, ok := a.cap.(StateGetter); ok {
+	if sg, ok := cap.(StateGetter); ok {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
@@ -464,29 +471,32 @@ func (a *atomicExecuteCapability) Load() *capabilities.ExecutableCapability {
 
 func (a *atomicExecuteCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return a.cap.RegisterToWorkflow(ctx, request)
+	return cap.RegisterToWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return a.cap.UnregisterFromWorkflow(ctx, request)
+	return cap.UnregisterFromWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return capabilities.CapabilityResponse{}, errors.New("capability unavailable")
 	}
-	return a.cap.Execute(ctx, request)
+	return cap.Execute(ctx, request)
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = &atomicExecuteAndTriggerCapability{}
@@ -522,20 +532,22 @@ func (a *atomicExecuteAndTriggerCapability) Update(c capabilities.BaseCapability
 
 func (a *atomicExecuteAndTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return capabilities.CapabilityInfo{}, errors.New("capability unavailable")
 	}
-	return a.cap.Info(ctx)
+	return cap.Info(ctx)
 }
 
 func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
+	cap := a.cap
+	a.mu.RUnlock()
 	if a.cap == nil {
 		return connectivity.Shutdown
 	}
-	if sg, ok := a.cap.(StateGetter); ok {
+	if sg, ok := cap.(StateGetter); ok {
 		return sg.GetState()
 	}
 	return connectivity.State(-1) // unknown
@@ -580,27 +592,30 @@ func (a *atomicExecuteAndTriggerCapability) UnregisterTrigger(ctx context.Contex
 
 func (a *atomicExecuteAndTriggerCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return a.cap.RegisterToWorkflow(ctx, request)
+	return cap.RegisterToWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteAndTriggerCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return a.cap.UnregisterFromWorkflow(ctx, request)
+	return cap.UnregisterFromWorkflow(ctx, request)
 }
 
 func (a *atomicExecuteAndTriggerCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
-	if a.cap == nil {
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return capabilities.CapabilityResponse{}, errors.New("capability unavailable")
 	}
-	return a.cap.Execute(ctx, request)
+	return cap.Execute(ctx, request)
 }

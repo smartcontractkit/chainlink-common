@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
@@ -135,7 +136,12 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	crRes := net.Resource{Closer: capRegistryConn, Name: "CapabilityRegistry"}
 	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
 
-	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), ks.NewClient(ksCSAConn), capRegistry)
+	csaKeystore := ks.NewClient(ksCSAConn)
+
+	// Sets the auth header signing mechanism
+	beholder.GetClient().SetSigner(csaKeystore)
+
+	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), csaKeystore, capRegistry)
 	if err != nil {
 		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err

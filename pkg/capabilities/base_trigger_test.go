@@ -12,55 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-type memStore struct {
-	mu   sync.Mutex
-	recs map[string]PendingEvent
-}
-
-func newMemStore() *memStore {
-	return &memStore{recs: make(map[string]PendingEvent)}
-}
-
-func (m *memStore) Insert(ctx context.Context, rec PendingEvent) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.recs[key(rec.TriggerId, rec.EventId)] = rec
-	return nil
-}
-
-func (m *memStore) DeleteEvent(ctx context.Context, triggerId, eventId string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.recs, key(triggerId, eventId))
-	return nil
-}
-
-func (m *memStore) DeleteEventsForTrigger(ctx context.Context, triggerId string) error {
-	events, err := m.List(ctx)
-	if err != nil {
-		return err
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, event := range events {
-		if event.TriggerId == triggerId {
-			delete(m.recs, key(triggerId, event.EventId))
-		}
-	}
-	return nil
-}
-
-func (m *memStore) List(ctx context.Context) ([]PendingEvent, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	out := make([]PendingEvent, 0, len(m.recs))
-	for _, r := range m.recs {
-		out = append(out, r)
-	}
-	return out, nil
-}
-
 // lost hook probe
 type lostProbe struct {
 	mu    sync.Mutex
@@ -94,7 +45,7 @@ func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
 }
 
 func TestStart_LoadsAndSendsPersisted(t *testing.T) {
-	store := newMemStore()
+	store := NewMemEventStore()
 	lostp := &lostProbe{}
 	sendCh := make(chan TriggerEvent, 10)
 
@@ -131,7 +82,7 @@ func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 }
 
 func TestDeliverEvent_PersistsAndSends(t *testing.T) {
-	store := newMemStore()
+	store := NewMemEventStore()
 	lostp := &lostProbe{}
 	sendCh := make(chan TriggerEvent, 10)
 
@@ -170,7 +121,7 @@ func TestDeliverEvent_PersistsAndSends(t *testing.T) {
 }
 
 func TestAckEvent_StopsRetransmit(t *testing.T) {
-	store := newMemStore()
+	store := NewMemEventStore()
 	sendCh := make(chan TriggerEvent, 10)
 
 	lostp := &lostProbe{}

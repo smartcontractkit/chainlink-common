@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769657012773,
+  "lastUpdate": 1769689455717,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37020,6 +37020,66 @@ window.BENCHMARK_DATA = {
             "value": 140221,
             "unit": "ns/op",
             "extra": "8354 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1702865+kidambisrinivas@users.noreply.github.com",
+            "name": "Sri Kidambi",
+            "username": "kidambisrinivas"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "28d901593c41553479a7f888171d2d5b9f1beeb7",
+          "message": "Common workflow compile abstraction (#1800)\n\n* Compile wasm workflow\n\n* Make config path optional\n\n* Tests for artifacts pkg\n\n* Fix tests\n\n* Improve test coverage\n\n* More test coverage\n\n* More tests\n\n* Sad paths for artifacts compile and prepare\n\n* Remove tmp files on all sad paths",
+          "timestamp": "2026-01-29T12:16:12Z",
+          "tree_id": "ceddca605bc4207d82a1a78bc0f38f28f8052ac6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/28d901593c41553479a7f888171d2d5b9f1beeb7"
+        },
+        "date": 1769689453956,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 819.7,
+            "unit": "ns/op",
+            "extra": "1403720 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98761,
+            "unit": "ns/op",
+            "extra": "12117 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 428.5,
+            "unit": "ns/op",
+            "extra": "2860288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99481,
+            "unit": "ns/op",
+            "extra": "12064 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26729,
+            "unit": "ns/op",
+            "extra": "44907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 150177,
+            "unit": "ns/op",
+            "extra": "7819 times\n4 procs"
           }
         ]
       }

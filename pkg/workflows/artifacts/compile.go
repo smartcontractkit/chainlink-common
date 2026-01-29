@@ -82,6 +82,13 @@ func (a *Artifacts) Compile() error {
 	a.log.Info("Workflow compiled successfully", "build_output", buildOutput)
 
 	tmpWasmFilePath := filepath.Join(workflowRootFolder, tmpWasmFileName)
+	defer func() {
+		if _, err := os.Stat(tmpWasmFilePath); err == nil {
+			if err := os.Remove(tmpWasmFilePath); err != nil {
+				a.log.Error("Failed to remove the temporary file", "error", err)
+			}
+		}
+	}()
 	compressedWasmBytes, err := brotliCompressFile(tmpWasmFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to compress WASM binary: %w", err)
@@ -90,10 +97,6 @@ func (a *Artifacts) Compile() error {
 
 	if err = a.b64EncodeAndWriteFile(compressedWasmBytes, a.input.BinaryPath); err != nil {
 		return fmt.Errorf("failed to base64 encode the WASM binary: %w", err)
-	}
-
-	if err = os.Remove(tmpWasmFilePath); err != nil {
-		return fmt.Errorf("failed to remove the temporary file:  %w", err)
 	}
 
 	return nil

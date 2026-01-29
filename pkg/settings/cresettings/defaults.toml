@@ -39,8 +39,8 @@ LogEventLimit = '1000'
 Default = 'false'
 
 [PerWorkflow.ChainAllowed.Values]
-12922642891491394802 = 'true'
 12463857294658392847 = 'true'
+12922642891491394802 = 'true'
 3379446385462418246 = 'true'
 
 [PerWorkflow.CRONTrigger]

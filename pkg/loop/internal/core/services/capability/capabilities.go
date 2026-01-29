@@ -207,6 +207,13 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
+func (t *triggerExecutableServer) AckEvent(ctx context.Context, req *capabilitiespb.AckEventRequest) (*emptypb.Empty, error) {
+	if err := t.impl.AckEvent(ctx, req.TriggerId, req.EventId); err != nil {
+		return nil, fmt.Errorf("error acking event: %w", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.TriggerRegistrationRequest,
 	server capabilitiespb.TriggerExecutable_RegisterTriggerServer) error {
 	req, err := pb.TriggerRegistrationRequestFromProto(request)

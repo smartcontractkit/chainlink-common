@@ -155,6 +155,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 }
 
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	b.lggr.Infof("Event ACK (triggerID: %s, eventID %s)", triggerId, eventId)
 	k := key(triggerId, eventId)
 
 	b.mu.Lock()

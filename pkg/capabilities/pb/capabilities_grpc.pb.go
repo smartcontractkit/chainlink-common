@@ -124,6 +124,7 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 const (
 	TriggerExecutable_RegisterTrigger_FullMethodName   = "/capabilities.TriggerExecutable/RegisterTrigger"
 	TriggerExecutable_UnregisterTrigger_FullMethodName = "/capabilities.TriggerExecutable/UnregisterTrigger"
+	TriggerExecutable_AckEvent_FullMethodName          = "/capabilities.TriggerExecutable/AckEvent"
 )
 
 // TriggerExecutableClient is the client API for TriggerExecutable service.
@@ -132,6 +133,7 @@ const (
 type TriggerExecutableClient interface {
 	RegisterTrigger(ctx context.Context, in *TriggerRegistrationRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TriggerResponseMessage], error)
 	UnregisterTrigger(ctx context.Context, in *TriggerRegistrationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AckEvent(ctx context.Context, in *AckEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type triggerExecutableClient struct {
@@ -171,12 +173,23 @@ func (c *triggerExecutableClient) UnregisterTrigger(ctx context.Context, in *Tri
 	return out, nil
 }
 
+func (c *triggerExecutableClient) AckEvent(ctx context.Context, in *AckEventRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, TriggerExecutable_AckEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TriggerExecutableServer is the server API for TriggerExecutable service.
 // All implementations must embed UnimplementedTriggerExecutableServer
 // for forward compatibility.
 type TriggerExecutableServer interface {
 	RegisterTrigger(*TriggerRegistrationRequest, grpc.ServerStreamingServer[TriggerResponseMessage]) error
 	UnregisterTrigger(context.Context, *TriggerRegistrationRequest) (*emptypb.Empty, error)
+	AckEvent(context.Context, *AckEventRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedTriggerExecutableServer()
 }
 
@@ -192,6 +205,9 @@ func (UnimplementedTriggerExecutableServer) RegisterTrigger(*TriggerRegistration
 }
 func (UnimplementedTriggerExecutableServer) UnregisterTrigger(context.Context, *TriggerRegistrationRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterTrigger not implemented")
+}
+func (UnimplementedTriggerExecutableServer) AckEvent(context.Context, *AckEventRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AckEvent not implemented")
 }
 func (UnimplementedTriggerExecutableServer) mustEmbedUnimplementedTriggerExecutableServer() {}
 func (UnimplementedTriggerExecutableServer) testEmbeddedByValue()                           {}
@@ -243,6 +259,24 @@ func _TriggerExecutable_UnregisterTrigger_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TriggerExecutable_AckEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AckEventRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TriggerExecutableServer).AckEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TriggerExecutable_AckEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TriggerExecutableServer).AckEvent(ctx, req.(*AckEventRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TriggerExecutable_ServiceDesc is the grpc.ServiceDesc for TriggerExecutable service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -253,6 +287,10 @@ var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnregisterTrigger",
 			Handler:    _TriggerExecutable_UnregisterTrigger_Handler,
+		},
+		{
+			MethodName: "AckEvent",
+			Handler:    _TriggerExecutable_AckEvent_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

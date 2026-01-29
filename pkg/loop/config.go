@@ -229,8 +229,12 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 
-	add(envCRESettings, e.CRESettings)
-	add(envCRESettingsDefault, e.CRESettingsDefault)
+	if e.CRESettings != "" {
+		add(envCRESettings, e.CRESettings)
+	}
+	if e.CRESettingsDefault != "" {
+		add(envCRESettingsDefault, e.CRESettingsDefault)
+	}
 
 	return
 }

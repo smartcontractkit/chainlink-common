@@ -148,8 +148,10 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.pending[key(triggerID, te.ID)] = &rec
 	b.mu.Unlock()
 
-	_ = b.trySend(ctx, rec)
-	return nil
+	if err := b.trySend(ctx, rec); err != nil {
+		b.lggr.Infof("failed to send event: %v", err)
+	}
+	return nil // Retry will occur later
 }
 
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {

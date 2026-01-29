@@ -148,13 +148,15 @@ func (a *Artifacts) upload(uploadInput *UploadInput) error {
 	return nil
 }
 
+var backOffSleep time.Duration = 1 * time.Second
+
 // DurableUpload uploads an artifact with up to 3 attempts and exponential backoff.
 func (a *Artifacts) DurableUpload(uploadInput *UploadInput) error {
 	var lastErr error
 	const maxUploadAttempts = 3
-	for attempt := 0; attempt < maxUploadAttempts; attempt++ {
+	for attempt := range maxUploadAttempts {
 		if attempt > 0 {
-			backoff := time.Duration(1<<(attempt)) * time.Second
+			backoff := backOffSleep * time.Duration(1<<(attempt-1))
 			a.log.Debug("Retrying upload after backoff", "attempt", attempt+1, "backoff", backoff)
 			time.Sleep(backoff)
 		}

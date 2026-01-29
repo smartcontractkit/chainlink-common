@@ -81,6 +81,33 @@ func (s *UploadTestSuite) TestUpload() {
 		// If the binary is smaller than 100 bytes, compare the whole thing
 		s.Equal(expected, actual, "binary data do not match")
 	}
+
+	// SadPath: Bad filepath
+	backOffSleep = 1 * time.Millisecond
+	badFilepathUploadInput := &UploadInput{
+		PresignedURL: fmt.Sprintf("http://localhost:%s/artifacts/%s/binary.wasm", testServerPort, artifacts.GetWorkflowID()),
+		PresignedFields: []Field{
+			{Key: "key1", Value: "value1"},
+		},
+		Filepath: "testdata/binary",
+		Timeout:  10 * time.Second,
+	}
+	err = artifacts.DurableUpload(badFilepathUploadInput)
+	s.ErrorContains(err, "upload failed after 3 attempts: failed to read file: open",
+		"failed to upload artifact")
+
+	// SadPath: Bad presigned URL
+	badPresignedURLUploadInput := &UploadInput{
+		PresignedURL: fmt.Sprintf("http://localhost:%s/artifacts2/%s/binary.wasm", testServerPort, artifacts.GetWorkflowID()),
+		PresignedFields: []Field{
+			{Key: "key1", Value: "value1"},
+		},
+		Filepath: artifacts.GetBinaryPath(),
+		Timeout:  10 * time.Second,
+	}
+	err = artifacts.DurableUpload(badPresignedURLUploadInput)
+	s.ErrorContains(err, "upload failed after 3 attempts: expected status 204 or 201, got 404",
+		"failed to upload artifact")
 }
 
 func TestUploadTestSuite(t *testing.T) {

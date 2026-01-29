@@ -119,6 +119,49 @@ func (s *ArtifactsTestSuite) TestArtifactsSadPaths() {
 	}, s.lggr)
 	err = invalidBinaryFolderArtifacts.Compile()
 	s.ErrorContains(err, "failed to base64 encode the WASM binary: open", "failed to compile workflow")
+
+	// Create temporary testworkflow directory
+	testDir := "testworkflowsadpaths"
+	err = os.MkdirAll(testDir, 0755)
+	s.NoError(err, "failed to create testworkflowsadpaths directory")
+
+	// Ensure cleanup at the end
+	defer func() {
+		err := os.RemoveAll(testDir)
+		s.NoError(err, "failed to remove testworkflowsadpaths directory")
+	}()
+
+	// Create main.go file
+	invalidGoContent := `
+	package main
+	func main() {
+		println("Hello, World!")
+	`
+	err = os.WriteFile(filepath.Join(testDir, "cmd.go"), []byte(invalidGoContent), 0644)
+	s.NoError(err, "failed to create main.go file")
+
+	// Create config.yaml file
+	nonWorkflowDirArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  testDir,
+		ConfigPath:    "",
+		BinaryPath:    "",
+	}, s.lggr)
+	err = nonWorkflowDirArtifacts.Compile()
+	s.ErrorContains(err, "failed to get workflow main file: no ts or go workflow file",
+		"failed to compile workflow")
+
+	invalidGoFileArtifacts := NewWorkflowArtifacts(&Input{
+		WorkflowOwner: "0x97f8a56d48290f35A23A074e7c73615E93f21885",
+		WorkflowName:  "wf-test-1",
+		WorkflowPath:  filepath.Join(testDir, "cmd.go"),
+		ConfigPath:    "",
+		BinaryPath:    "",
+	}, s.lggr)
+	err = invalidGoFileArtifacts.Compile()
+	s.ErrorContains(err, "failed to compile workflow",
+		"failed to compile workflow")
 }
 
 func (s *ArtifactsTestSuite) TestCompileGoEnsureToolError() {
@@ -175,6 +218,13 @@ func (s *ArtifactsTestSuite) TestCompileTypeScript() {
 	s.Error(err, "failed to compile TS workflow")
 }
 
+func (s *ArtifactsTestSuite) writeFile(parentDir string, path string, content string) string {
+	path = filepath.Join(parentDir, path)
+	err := os.WriteFile(path, []byte(content), 0644)
+	s.NoError(err, "failed to create file")
+	return path
+}
+
 func (s *ArtifactsTestSuite) TestScanFilesForContent() {
 	// Create temporary testworkflow directory
 	testDir := "testworkflow"
@@ -189,18 +239,13 @@ func (s *ArtifactsTestSuite) TestScanFilesForContent() {
 
 	// Create workflow.go file
 	workflowGoContent := `//go:build wasip1
-
 package main
-
 import (
 	"log/slog"
-
 	"github.com/smartcontractkit/cre-sdk-go/cre"
 	"github.com/smartcontractkit/cre-sdk-go/cre/wasm"
-
 	wfcommon "github.com/smartcontractkit/cre-workflow-utils"
 )
-
 func main() {
 	r := wasm.NewRunner(wfcommon.ParseWorkflowConfig)
 	r.Run(func(cfg *wfcommon.Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Workflow[*wfcommon.Config], error) {
@@ -209,13 +254,10 @@ func main() {
 	})
 }
 `
-	workflowGoPath := filepath.Join(testDir, "workflow.go")
-	err = os.WriteFile(workflowGoPath, []byte(workflowGoContent), 0644)
-	s.NoError(err, "failed to create workflow.go file")
+	workflowGoPath := s.writeFile(testDir, "workflow.go", workflowGoContent)
 
 	// Create utils.go file
 	utilsGoContent := `package workflow
-
 import (
 	"encoding/hex"
 	"encoding/json"
@@ -223,16 +265,12 @@ import (
 	"log/slog"
 	"math/big"
 	"strings"
-
 	gethCommon "github.com/ethereum/go-ethereum/common"
-
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm"
 	httpcap "github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/cre"
-
 	wfcommon "github.com/smartcontractkit/cre-workflow-utils"
 )
-
 // OnLog reads log events
 func OnLog(cfg *wfcommon.Config, rt cre.Runtime, payload *evm.Log) (string, error) {
 	// Log receipt of trigger similar to operation-writer, but minimal
@@ -248,9 +286,11 @@ func OnLog(cfg *wfcommon.Config, rt cre.Runtime, payload *evm.Log) (string, erro
 	)
 }
 `
-	utilsGoPath := filepath.Join(testDir, "utils.go")
-	err = os.WriteFile(utilsGoPath, []byte(utilsGoContent), 0644)
-	s.NoError(err, "failed to create utils.go file")
+	s.writeFile(testDir, "utils.go", utilsGoContent)
+
+	// To check if non Go/TS files are ignored by ScanFilesForContent
+	txtContent := "Hello, World!"
+	s.writeFile(testDir, "readme.txt", txtContent)
 
 	// Test ScanFilesForContent
 	artifacts := NewWorkflowArtifacts(&Input{

@@ -14,6 +14,10 @@ import (
 
 var defaultBinaryPath = "./binary.wasm.br.b64"
 
+// Function to compile CRE workflow into a WASM binary, brotli compress it and base64 encode it
+// Input.WorkflowPath is the path to the workflow directory or file. If it's a directory, it
+// will be scanned for a main workflow file either in .go or .ts/.tsx files for CRE Workflow
+// Runner execution.
 func (a *Artifacts) Compile() error {
 	a.log.Info("Compiling workflow", "workflow path", a.input.WorkflowPath)
 

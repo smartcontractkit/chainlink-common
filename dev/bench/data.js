@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769689455717,
+  "lastUpdate": 1769700661923,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37080,6 +37080,66 @@ window.BENCHMARK_DATA = {
             "value": 150177,
             "unit": "ns/op",
             "extra": "7819 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "maciej.wisniewski@smartcontract.com",
+            "name": "mchain0",
+            "username": "mchain0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "32197b5cea6530892afb0e14c5aecb3bf2ae2d9c",
+          "message": "CRE-1647: refactor (#1806)\n\n* cre-1647: reorganize ring to core\n\n* cre-1647: go mod cleanup",
+          "timestamp": "2026-01-29T15:21:55Z",
+          "tree_id": "d178dd1babeadbc0109a71e7116ca8cdcc124ae8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/32197b5cea6530892afb0e14c5aecb3bf2ae2d9c"
+        },
+        "date": 1769700659942,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369.2,
+            "unit": "ns/op",
+            "extra": "3205094 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92569,
+            "unit": "ns/op",
+            "extra": "12948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.8,
+            "unit": "ns/op",
+            "extra": "2966629 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91962,
+            "unit": "ns/op",
+            "extra": "13060 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26634,
+            "unit": "ns/op",
+            "extra": "45106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 138062,
+            "unit": "ns/op",
+            "extra": "8274 times\n4 procs"
           }
         ]
       }

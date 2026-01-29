@@ -288,7 +288,7 @@ type triggerExecutableClient struct {
 }
 
 func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	return nil
+	return fmt.Errorf("not implemented")
 }
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {

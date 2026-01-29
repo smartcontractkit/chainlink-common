@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
 
 const (
@@ -76,6 +77,9 @@ const (
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+
+	envCRESettings        = cresettings.EnvNameSettings
+	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -142,6 +146,9 @@ type EnvConfig struct {
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
+
+	CRESettings        string
+	CRESettingsDefault string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -221,6 +228,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
+
+	if e.CRESettings != "" {
+		add(envCRESettings, e.CRESettings)
+	}
+	if e.CRESettingsDefault != "" {
+		add(envCRESettingsDefault, e.CRESettingsDefault)
+	}
 
 	return
 }
@@ -425,6 +439,9 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressInsecureConnection, err)
 		}
 	}
+
+	e.CRESettings = os.Getenv(envCRESettings)
+	e.CRESettingsDefault = os.Getenv(envCRESettingsDefault)
 
 	return nil
 }

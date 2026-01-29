@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -69,6 +70,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	"GatewayUnauthenticatedRequestRateLimit": "200rps:50",
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:100",
 	"GatewayIncomingPayloadSizeLimit": "14kb",
+    "GatewayVaultManagementEnabled": "true",
 	"PerOrg": {
 		"ZeroBalancePruningTimeout": "48h"
 	},
@@ -96,6 +98,9 @@ func TestSchema_Unmarshal(t *testing.T) {
 			"CallLimit": "5",
 			"CacheAgeLimit": "5m"
 		},
+		"Secrets": {
+			"CallLimit": "5"
+		},
 		"ChainWrite": {
 			"EVM": {
 				"TransactionGasLimit": "500000"
@@ -109,6 +114,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
+	assert.Equal(t, true, cfg.GatewayVaultManagementEnabled.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
@@ -120,6 +126,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
 	assert.Equal(t, 5, cfg.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
 	assert.Equal(t, 5*time.Minute, cfg.PerWorkflow.HTTPAction.CacheAgeLimit.DefaultValue)
+	assert.Equal(t, 5, cfg.PerWorkflow.Secrets.CallLimit.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 }
@@ -141,7 +148,7 @@ func TestDefaultGetter(t *testing.T) {
 	require.Equal(t, 5, got)
 
 	t.Cleanup(reinit) // restore default vars
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -185,7 +192,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 	t.Cleanup(reinit) // restore default vars
 
 	// Org override to allow
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -211,7 +218,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 	require.True(t, got)
 
 	// Org override to allow by default, but disallow some
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettings, `{
 	"workflow": {
 		"test-wf-id": {
 			"PerWorkflow": {
@@ -245,7 +252,7 @@ func TestDefaultEnvVars(t *testing.T) {
 	t.Cleanup(reinit) // restore after
 
 	// update defaults
-	t.Setenv(envNameSettingsDefault, `{
+	t.Setenv(EnvNameSettingsDefault, `{
 	"PerWorkflow": {
 		"ChainAllowed": {
 			"Values": {
@@ -272,8 +279,8 @@ func TestDefaultEnvVars(t *testing.T) {
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
 
 	// update overrides
-	t.Setenv(envNameSettingsDefault, "{}")
-	t.Setenv(envNameSettings, `{
+	t.Setenv(EnvNameSettingsDefault, "{}")
+	t.Setenv(EnvNameSettings, `{
 	"global": {
 		"PerWorkflow": {
 			"ChainAllowed": {
@@ -306,4 +313,30 @@ func TestDefaultEnvVars(t *testing.T) {
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
+}
+
+//go:embed README.md
+var readme string
+
+// TestFlowchartComplete ensures that every field is included in the flowchart.
+func TestFlowchartComplete(t *testing.T) {
+	var keys []string
+	var addKeys func(a any)
+	addKeys = func(a any) {
+		if v := reflect.ValueOf(a).Elem(); v.Type().Kind() == reflect.Struct {
+			for i := range v.NumField() {
+				f := v.Field(i)
+				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
+					keys = append(keys, gk.GetKey())
+					return
+				}
+				addKeys(f.Addr().Interface())
+			}
+		}
+	}
+	addKeys(&Default)
+	require.NotEmpty(t, keys)
+	for _, k := range keys {
+		assert.Contains(t, readme, k, "missing key %q in README.md", k)
+	}
 }

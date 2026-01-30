@@ -148,7 +148,7 @@ var Default = Schema{
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
-		ConfidentialHTTP: confidentialHttp{
+		ConfidentialHTTP: confidentialHTTP{
 			CallLimit:         Int(5),
 			ConnectionTimeout: Duration(10 * time.Second),
 			RequestSizeLimit:  Size(10 * config.KByte),
@@ -221,7 +221,7 @@ type Workflows struct {
 	ChainRead        chainRead
 	Consensus        consensus
 	HTTPAction       httpAction
-	ConfidentialHTTP confidentialHttp
+	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 }
 
@@ -259,7 +259,7 @@ type httpAction struct {
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
 }
-type confidentialHttp struct {
+type confidentialHTTP struct {
 	CallLimit         Setting[int] `unit:"{call}"`
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]

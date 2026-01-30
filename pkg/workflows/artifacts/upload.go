@@ -47,9 +47,9 @@ func NewArtifactUpload(filepath string) (*ArtifactUpload, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-	contentType := ArtifactTypeBinary
-	if strings.HasSuffix(filepath, ".yaml") || strings.HasSuffix(filepath, ".yml") {
-		contentType = ArtifactTypeConfig
+	contentType := ArtifactTypeConfig
+	if strings.Contains(filepath, ".wasm") {
+		contentType = ArtifactTypeBinary
 	}
 	return &ArtifactUpload{
 		Content:     content,

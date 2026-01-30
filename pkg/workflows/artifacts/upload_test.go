@@ -62,8 +62,9 @@ func (s *UploadTestSuite) TestUpload() {
 		PresignedFields: []Field{
 			{Key: "key1", Value: "value1"},
 		},
-		Filepath: artifacts.GetBinaryPath(),
-		Timeout:  10 * time.Second,
+		ContentType: ArtifactTypeBinary,
+		Filepath:    artifacts.GetBinaryPath(),
+		Timeout:     10 * time.Second,
 	}
 	err = artifacts.DurableUpload(uploadInput)
 	s.NoError(err, "failed to upload artifact")
@@ -89,8 +90,9 @@ func (s *UploadTestSuite) TestUpload() {
 		PresignedFields: []Field{
 			{Key: "key1", Value: "value1"},
 		},
-		Filepath: "testdata/binary",
-		Timeout:  10 * time.Second,
+		ContentType: ArtifactTypeBinary,
+		Filepath:    "testdata/binary",
+		Timeout:     10 * time.Second,
 	}
 	err = artifacts.DurableUpload(badFilepathUploadInput)
 	s.ErrorContains(err, "upload failed after 3 attempts: failed to read file: open",
@@ -102,8 +104,9 @@ func (s *UploadTestSuite) TestUpload() {
 		PresignedFields: []Field{
 			{Key: "key1", Value: "value1"},
 		},
-		Filepath: artifacts.GetBinaryPath(),
-		Timeout:  10 * time.Second,
+		ContentType: ArtifactTypeBinary,
+		Filepath:    artifacts.GetBinaryPath(),
+		Timeout:     10 * time.Second,
 	}
 	err = artifacts.DurableUpload(badPresignedURLUploadInput)
 	s.ErrorContains(err, "upload failed after 3 attempts: expected status 204 or 201, got 404",

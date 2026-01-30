@@ -10,7 +10,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -23,6 +22,7 @@ type Field struct {
 type UploadInput struct {
 	PresignedURL    string        `json:"presignedUrl"`
 	PresignedFields []Field       `json:"presignedFields"`
+	ContentType     ArtifactType  `json:"contentType"`
 	Filepath        string        `json:"-"`
 	Timeout         time.Duration `json:"-"`
 }
@@ -42,14 +42,10 @@ type ArtifactUpload struct {
 }
 
 // Constructor for ArtifactUpload
-func NewArtifactUpload(filepath string) (*ArtifactUpload, error) {
+func NewArtifactUpload(filepath string, contentType ArtifactType) (*ArtifactUpload, error) {
 	content, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-	contentType := ArtifactTypeConfig
-	if strings.Contains(filepath, ".wasm") {
-		contentType = ArtifactTypeBinary
 	}
 	return &ArtifactUpload{
 		Content:     content,
@@ -68,7 +64,7 @@ func CalculateContentHash(content []byte) string {
 
 // Upload artifacts to storage service using presigned URLs
 func (a *Artifacts) upload(uploadInput *UploadInput) error {
-	artifactUpload, err := NewArtifactUpload(uploadInput.Filepath)
+	artifactUpload, err := NewArtifactUpload(uploadInput.Filepath, uploadInput.ContentType)
 	if err != nil {
 		return err
 	}

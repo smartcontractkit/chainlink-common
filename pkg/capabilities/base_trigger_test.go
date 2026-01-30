@@ -2,7 +2,6 @@ package capabilities
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -12,31 +11,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-// lost hook probe
-type lostProbe struct {
-	mu    sync.Mutex
-	calls []PendingEvent
-}
-
-func (p *lostProbe) fn(ctx context.Context, rec PendingEvent) {
-	p.mu.Lock()
-	p.calls = append(p.calls, rec)
-	p.mu.Unlock()
-}
-
-func (p *lostProbe) count() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return len(p.calls)
-}
-
-func newBase(t *testing.T, store EventStore, lost LostHook) *BaseTriggerCapability[TriggerEvent] {
+func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[TriggerEvent] {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	decode := func(te TriggerEvent) (TriggerEvent, error) {
 		return te, nil
 	}
-	return NewBaseTriggerCapability(store, decode, lost, lggr, 100*time.Millisecond, 10*time.Minute)
+	return NewBaseTriggerCapability(store, decode, lggr, 100*time.Millisecond)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -46,7 +27,6 @@ func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
 
 func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 	store := NewMemEventStore()
-	lostp := &lostProbe{}
 	sendCh := make(chan TriggerEvent, 10)
 
 	// Preload store with one record
@@ -59,7 +39,7 @@ func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 	}
 	require.NoError(t, store.Insert(context.Background(), rec))
 
-	b := newBase(t, store, lostp.fn)
+	b := newBase(t, store)
 
 	b.RegisterTrigger("trigA", sendCh)
 
@@ -83,10 +63,9 @@ func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 
 func TestDeliverEvent_PersistsAndSends(t *testing.T) {
 	store := NewMemEventStore()
-	lostp := &lostProbe{}
 	sendCh := make(chan TriggerEvent, 10)
 
-	b := newBase(t, store, lostp.fn)
+	b := newBase(t, store)
 	ctx, cancel := ctxWithCancel(t)
 	defer cancel()
 
@@ -124,8 +103,7 @@ func TestAckEvent_StopsRetransmit(t *testing.T) {
 	store := NewMemEventStore()
 	sendCh := make(chan TriggerEvent, 10)
 
-	lostp := &lostProbe{}
-	b := newBase(t, store, lostp.fn)
+	b := newBase(t, store)
 	ctx, cancel := ctxWithCancel(t)
 	defer cancel()
 

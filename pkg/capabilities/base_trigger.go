@@ -30,12 +30,6 @@ type EventStore interface {
 
 // Decode takes a persisted record (type URL + raw bytes) and produces a typed message for the inbox.
 type Decode[T any] func(te TriggerEvent) (T, error)
-type LostHook func(ctx context.Context, rec PendingEvent)
-
-// key builds the composite lookup key used in pending
-func key(triggerId, eventId string) string {
-	return triggerId + "|" + eventId
-}
 
 type BaseTriggerCapability[T any] struct {
 	/*
@@ -44,16 +38,14 @@ type BaseTriggerCapability[T any] struct {
 	 Persists pending events in the DB to be resilient to node restarts.
 	*/
 	tRetransmit time.Duration // time window for an event being ACKd before we retransmit
-	tMax        time.Duration // timeout before events are considered lost if not ACKd
 
 	store  EventStore
 	decode Decode[T]
-	lost   LostHook
 	lggr   logger.Logger
 
 	mu      sync.Mutex
-	inboxes map[string]chan<- T      // triggerID -> registered send channel
-	pending map[string]*PendingEvent // key(triggerID|eventID)
+	inboxes map[string]chan<- T                 // triggerID -> registered send channel
+	pending map[string]map[string]*PendingEvent // triggerID --> eventID
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -63,21 +55,18 @@ type BaseTriggerCapability[T any] struct {
 func NewBaseTriggerCapability[T any](
 	store EventStore,
 	decode Decode[T],
-	lost LostHook,
 	lggr logger.Logger,
-	tRetransmit, tMax time.Duration,
+	tRetransmit time.Duration,
 ) *BaseTriggerCapability[T] {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &BaseTriggerCapability[T]{
 		store:       store,
 		decode:      decode,
-		lost:        lost,
 		lggr:        lggr,
 		tRetransmit: tRetransmit,
-		tMax:        tMax,
 		mu:          sync.Mutex{},
 		inboxes:     make(map[string]chan<- T),
-		pending:     make(map[string]*PendingEvent),
+		pending:     make(map[string]map[string]*PendingEvent),
 		ctx:         ctx,
 		cancel:      cancel,
 	}
@@ -94,10 +83,13 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	}
 
 	// Initialize in-memory persistence
-	b.pending = make(map[string]*PendingEvent)
+	b.pending = make(map[string]map[string]*PendingEvent)
 	for i := range recs {
-		r := recs[i]
-		b.pending[key(r.TriggerId, r.EventId)] = &r
+		r := &recs[i]
+		if _, ok := b.pending[r.TriggerId]; !ok {
+			b.pending[r.TriggerId] = map[string]*PendingEvent{}
+		}
+		b.pending[r.TriggerId][r.EventId] = r
 	}
 
 	b.wg.Add(1)
@@ -122,9 +114,11 @@ func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan
 func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	b.mu.Lock()
 	delete(b.inboxes, triggerID)
+	delete(b.pending, triggerID)
 	b.mu.Unlock()
-	err := b.store.DeleteEventsForTrigger(b.ctx, triggerID)
-	b.lggr.Errorf("Failed to delete events for trigger (TriggerID=%s): %v", triggerID, err)
+	if err := b.store.DeleteEventsForTrigger(b.ctx, triggerID); err != nil {
+		b.lggr.Errorf("Failed to delete events for trigger (TriggerID=%s): %v", triggerID, err)
+	}
 }
 
 func (b *BaseTriggerCapability[T]) DeliverEvent(
@@ -144,8 +138,12 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 		return err
 	}
 
+	// TODO: Problem here?
 	b.mu.Lock()
-	b.pending[key(triggerID, te.ID)] = &rec
+	if b.pending[triggerID] == nil {
+		b.pending[triggerID] = map[string]*PendingEvent{}
+	}
+	b.pending[triggerID][te.ID] = &rec
 	b.mu.Unlock()
 
 	if err := b.trySend(ctx, rec); err != nil {
@@ -156,12 +154,14 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
 	b.lggr.Infof("Event ACK (triggerID: %s, eventID %s)", triggerId, eventId)
-	k := key(triggerId, eventId)
-
 	b.mu.Lock()
-	delete(b.pending, k)
+	if eventsForTrigger, ok := b.pending[triggerId]; ok && eventsForTrigger != nil {
+		delete(eventsForTrigger, eventId)
+		if len(eventsForTrigger) == 0 {
+			delete(b.pending, triggerId)
+		}
+	}
 	b.mu.Unlock()
-
 	return b.store.DeleteEvent(ctx, triggerId, eventId)
 }
 
@@ -174,7 +174,7 @@ func (b *BaseTriggerCapability[T]) retransmitLoop() {
 		case <-b.ctx.Done():
 			return
 		case <-ticker.C:
-			b.lggr.Info("retransmitting unacknowledged events")
+			b.lggr.Debug("retransmitting unacknowledged events")
 			b.scanPending()
 		}
 	}
@@ -185,36 +185,17 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 
 	b.mu.Lock()
 	toResend := make([]PendingEvent, 0, len(b.pending))
-	toLost := make([]PendingEvent, 0)
-	for _, rec := range b.pending {
-		// LOST: exceeded max time without ACK
-		/* TODO: We should NEVER do this...?
-		if now.Sub(rec.FirstAt) >= b.tMax {
-			b.lggr.Warnf("event lost: deleting event (evendID: %s) from persistence", rec.EventId)
-			toLost = append(toLost, *rec)
-			delete(b.pending, k)
-			continue
-		}
-		*/
-
-		// RESEND: hasn't been sent recently enough
-		if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= b.tRetransmit {
-			toResend = append(toResend, PendingEvent{
-				TriggerId: rec.TriggerId,
-				EventId:   rec.EventId,
-			})
+	for _, pendingForTrigger := range b.pending {
+		for _, rec := range pendingForTrigger {
+			if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= b.tRetransmit {
+				toResend = append(toResend, PendingEvent{
+					TriggerId: rec.TriggerId,
+					EventId:   rec.EventId,
+				})
+			}
 		}
 	}
 	b.mu.Unlock()
-
-	for _, rec := range toLost {
-		b.lost(b.ctx, rec)
-
-		err := b.store.DeleteEvent(b.ctx, rec.TriggerId, rec.EventId)
-		if err != nil {
-			b.lggr.Errorf("failed to delete event from store: %v", err)
-		}
-	}
 
 	for _, event := range toResend {
 		err := b.trySend(b.ctx, event)
@@ -229,27 +210,24 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 // later by an AckEvent call.
 func (b *BaseTriggerCapability[T]) trySend(ctx context.Context, event PendingEvent) error {
 	b.lggr.Infof("resending event (triggerID: %s, eventID: %s)", event.TriggerId, event.EventId)
-	k := key(event.TriggerId, event.EventId)
-
 	b.mu.Lock()
-	rec, ok := b.pending[k]
+	eventsForTrigger, ok := b.pending[event.TriggerId]
+	if !ok || eventsForTrigger == nil {
+		b.mu.Unlock()
+		return nil
+	}
+
+	rec, ok := eventsForTrigger[event.EventId]
 	if !ok || rec == nil {
 		b.mu.Unlock()
 		return nil
 	}
+
 	rec.Attempts++
 	rec.LastSentAt = time.Now()
 
-	anyPayload := &anypb.Any{
-		TypeUrl: rec.AnyTypeURL,
-		Value:   append([]byte(nil), rec.Payload...),
-	}
-
-	te := TriggerEvent{
-		TriggerType: event.TriggerId,
-		ID:          event.EventId,
-		Payload:     anyPayload,
-	}
+	typeURL := rec.AnyTypeURL
+	payloadCopy := append([]byte(nil), rec.Payload...)
 
 	sendCh, ok := b.inboxes[event.TriggerId]
 	b.mu.Unlock()
@@ -257,6 +235,12 @@ func (b *BaseTriggerCapability[T]) trySend(ctx context.Context, event PendingEve
 		err := fmt.Errorf("no inbox registered for trigger %s", event.TriggerId)
 		b.lggr.Errorf(err.Error())
 		return err
+	}
+
+	te := TriggerEvent{
+		TriggerType: event.TriggerId,
+		ID:          event.EventId,
+		Payload:     &anypb.Any{TypeUrl: typeURL, Value: payloadCopy},
 	}
 
 	msg, err := b.decode(te)

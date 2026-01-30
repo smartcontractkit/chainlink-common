@@ -73,7 +73,6 @@ func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities
 }
 
 func (o *OnDemand) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	//TODO Implement?
 	return nil
 }
 

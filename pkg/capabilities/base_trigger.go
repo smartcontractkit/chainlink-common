@@ -28,7 +28,7 @@ type EventStore interface {
 	DeleteEventsForTrigger(ctx context.Context, triggerID string) error
 }
 
-// Decode takes a persisted record (type URL + raw bytes) and produces a typed message for the inbox.
+// Decode produces a typed message for the inbox for a given trigger event
 type Decode[T any] func(te TriggerEvent) (T, error)
 
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until

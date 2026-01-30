@@ -57,7 +57,6 @@ func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 		default:
 			return false
 		}
-		//return probe.count() >= 1
 	}, 200*time.Millisecond, 5*time.Millisecond)
 }
 

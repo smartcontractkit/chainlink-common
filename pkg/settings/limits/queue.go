@@ -193,8 +193,7 @@ func newUnscopedQueue[T any](f Factory, limit settings.Setting[int]) (QueueLimit
 		}
 	}
 
-	q.cre.Store(contexts.CRE{})
-	go q.updateLoop(contexts.CRE{})
+	go q.updateLoop(context.Background())
 
 	return unscopedQueue[T]{q}, nil
 }
@@ -336,13 +335,12 @@ func (s *scopedQueue[T]) getOrCreate(ctx context.Context) (*queue[T], func(), er
 
 	q := s.newQueue(tenant)
 	actual, loaded := s.queues.LoadOrStore(tenant, q)
-	cre := s.scope.RoundCRE(contexts.CREValue(ctx))
+	creCtx := contexts.WithCRE(ctx, s.scope.RoundCRE(contexts.CREValue(ctx)))
 	if !loaded {
-		q.cre.Store(cre)
-		go q.updateLoop(cre)
+		go q.updateLoop(creCtx)
 	} else {
 		q = actual.(*queue[T])
-		q.updateCRE(cre)
+		q.updateCtx(creCtx)
 	}
 	return q, s.wg.Done, nil
 }

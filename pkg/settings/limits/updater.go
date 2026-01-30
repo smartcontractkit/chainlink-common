@@ -3,10 +3,8 @@ package limits
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
@@ -21,8 +19,7 @@ type updater[N any] struct {
 	recordLimit   func(context.Context, N)
 	onLimitUpdate func(context.Context)
 
-	creCh chan struct{}
-	cre   atomic.Value
+	ctxCh chan context.Context // to receive updates
 
 	stopOnce  sync.Once
 	stopCh    services.StopChan
@@ -40,7 +37,7 @@ func newUpdater[N any](lggr logger.Logger, getLimitFn func(context.Context) (N, 
 		getLimitFn:  getLimitFn,
 		subFn:       subFn,
 		recordLimit: func(ctx context.Context, n N) {}, // no-op
-		creCh:       make(chan struct{}, 1),
+		ctxCh:       make(chan context.Context, 1),
 		stopCh:      make(chan struct{}),
 		done:        make(chan struct{}),
 	}
@@ -59,13 +56,9 @@ func (u *updater[N]) Close() error {
 
 }
 
-func (u *updater[N]) updateCRE(cre contexts.CRE) {
-	if v := u.cre.Load(); v != nil && v.(contexts.CRE) == cre {
-		return
-	}
-	u.cre.Store(cre)
+func (u *updater[N]) updateCtx(ctx context.Context) {
 	select {
-	case u.creCh <- struct{}{}:
+	case u.ctxCh <- ctx:
 	default:
 	}
 }
@@ -73,16 +66,16 @@ func (u *updater[N]) updateCRE(cre contexts.CRE) {
 // updateLoop updates the limit either by subscribing via subFn or polling if subFn is not set. It also processes
 // contexts.CRE updates. Stopped by Close.
 // opt: reap after period of non-use
-func (u *updater[N]) updateLoop(cre contexts.CRE) {
+func (u *updater[N]) updateLoop(ctx context.Context) {
 	defer close(u.done)
-	ctx, cancel := u.stopCh.NewCtx()
+	ctx, cancel := u.stopCh.Ctx(context.WithoutCancel(ctx))
 	defer cancel()
 
 	var updates <-chan settings.Update[N]
 	var cancelSub func()
 	var c <-chan time.Time
 	if u.subFn != nil {
-		updates, cancelSub = u.subFn(contexts.WithCRE(ctx, cre))
+		updates, cancelSub = u.subFn(ctx)
 		defer func() { cancelSub() }() // extra func wrapper is required to ensure we get the final cancelSub value
 		// opt: poll now to initialize
 	} else {
@@ -96,31 +89,30 @@ func (u *updater[N]) updateLoop(cre contexts.CRE) {
 			return
 
 		case <-c:
-			limit, err := u.getLimitFn(contexts.WithCRE(ctx, cre))
+			limit, err := u.getLimitFn(ctx)
 			if err != nil {
 				u.lggr.Errorw("Failed to get limit. Using default value", "default", limit, "err", err)
 			}
-			rcCtx := contexts.WithCRE(ctx, cre)
-			u.recordLimit(rcCtx, limit)
+			u.recordLimit(ctx, limit)
 			if u.onLimitUpdate != nil {
-				u.onLimitUpdate(rcCtx)
+				u.onLimitUpdate(ctx)
 			}
 
 		case update := <-updates:
 			if update.Err != nil {
 				u.lggr.Errorw("Failed to update limit. Using default value", "default", update.Value, "err", update.Err)
 			}
-			rcCtx := contexts.WithCRE(ctx, cre)
-			u.recordLimit(rcCtx, update.Value)
+			u.recordLimit(ctx, update.Value)
 			if u.onLimitUpdate != nil {
-				u.onLimitUpdate(rcCtx)
+				u.onLimitUpdate(ctx)
 			}
 
-		case <-u.creCh:
-			cre = u.cre.Load().(contexts.CRE)
+		case newCtx := <-u.ctxCh:
+			cancel()
+			ctx, cancel = u.stopCh.Ctx(newCtx)
 			if u.subFn != nil {
 				cancelSub()
-				updates, cancelSub = u.subFn(contexts.WithCRE(ctx, cre))
+				updates, cancelSub = u.subFn(ctx)
 			}
 			// opt: update now
 		}

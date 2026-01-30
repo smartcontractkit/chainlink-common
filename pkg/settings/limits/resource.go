@@ -72,8 +72,7 @@ func newGlobalResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]
 		}
 	}
 
-	l.cre.Store(contexts.CRE{})
-	go l.updateLoop(contexts.CRE{})
+	go l.updateLoop(context.Background())
 
 	return l, nil
 }
@@ -656,13 +655,12 @@ func (s *scopedResourcePoolLimiter[N]) getOrCreate(ctx context.Context) (resourc
 
 	usage := s.newLimitUsage(tenant)
 	actual, loaded := s.used.LoadOrStore(tenant, usage)
-	cre := s.scope.RoundCRE(contexts.CREValue(ctx))
+	creCtx := contexts.WithCRE(ctx, s.scope.RoundCRE(contexts.CREValue(ctx)))
 	if !loaded {
-		usage.cre.Store(cre)
-		go usage.updateLoop(cre)
+		go usage.updateLoop(creCtx)
 	} else {
 		usage = actual.(*resourcePoolUsage[N])
-		usage.updateCRE(cre)
+		usage.updateCtx(creCtx)
 	}
 
 	return usage, s.wg.Done, nil

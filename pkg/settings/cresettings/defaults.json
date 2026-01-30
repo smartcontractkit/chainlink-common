@@ -84,6 +84,12 @@
 			"RequestSizeLimit": "10kb",
 			"ResponseSizeLimit": "100kb"
 		},
+		"ConfidentialHTTP": {
+			"CallLimit": "5",
+			"ConnectionTimeout": "10s",
+			"RequestSizeLimit": "10kb",
+			"ResponseSizeLimit": "100kb"
+		},
 		"Secrets": {
 			"CallLimit": "5"
 		}

@@ -23,7 +23,7 @@ type PendingEvent struct {
 
 type EventStore interface {
 	Insert(ctx context.Context, rec PendingEvent) error
-	List(ctx context.Context) ([]PendingEvent, error) // TODO: batching
+	List(ctx context.Context) ([]PendingEvent, error)
 	DeleteEvent(ctx context.Context, triggerId string, eventId string) error
 	DeleteEventsForTrigger(ctx context.Context, triggerID string) error
 }
@@ -31,12 +31,9 @@ type EventStore interface {
 // Decode takes a persisted record (type URL + raw bytes) and produces a typed message for the inbox.
 type Decode[T any] func(te TriggerEvent) (T, error)
 
+// BaseTriggerCapability keeps track of trigger registrations and handles resending events until
+// they are ACKd. Events are persisted to be resilient to node restarts.
 type BaseTriggerCapability[T any] struct {
-	/*
-	 Keeps track of workflow registrations (similar to LLO streams trigger).
-	 Handles retransmits based on T_retransmit and T_max.
-	 Persists pending events in the DB to be resilient to node restarts.
-	*/
 	tRetransmit time.Duration // time window for an event being ACKd before we retransmit
 
 	store  EventStore
@@ -138,7 +135,6 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 		return err
 	}
 
-	// TODO: Problem here?
 	b.mu.Lock()
 	if b.pending[triggerID] == nil {
 		b.pending[triggerID] = map[string]*PendingEvent{}

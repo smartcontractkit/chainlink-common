@@ -135,7 +135,7 @@ var Default = Schema{
 			},
 		},
 		ChainRead: chainRead{
-			CallLimit:          Int(10),
+			CallLimit:          Int(15),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
 		},

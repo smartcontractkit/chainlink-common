@@ -35,6 +35,7 @@ title: Limits
 flowchart
     subgraph handleRequest[httpServer/websocketServer.handleRequest]
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
+%%        TODO GatewayVaultManagementEnabled
     end
 %%    WorkflowLimit - Deprecated
 %%    TODO unused
@@ -71,18 +72,18 @@ flowchart
         direction TB
 
         subgraph PerWorkflow.CRONTrigger
-            FastestScheduleInterval>FastestScheduleInterval]:::time
+            PerWorkflow.CRONTrigger.FastestScheduleInterval>FastestScheduleInterval]:::time
         end
         subgraph PerWorkflow.HTTPTrigger
-            RateLimit[\RateLimit/]:::rate
+            PerWorkflow.HTTPTrigger.RateLimit[\RateLimit/]:::rate
         end
         subgraph PerWorkflow.LogTrigger
             direction LR
 
-            EventRateLimit[\EventRateLimit/]:::rate
-            EventSizeLimit{{EventSizeLimit}}:::bound
-            FilterAddressLimit{{FilterAddressLimit}}:::bound
-            FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
+            PerWorkflow.LogTrigger.EventRateLimit[\EventRateLimit/]:::rate
+            PerWorkflow.LogTrigger.EventSizeLimit{{EventSizeLimit}}:::bound
+            PerWorkflow.LogTrigger.FilterAddressLimit{{FilterAddressLimit}}:::bound
+            PerWorkflow.LogTrigger.FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
         end
     end
 
@@ -124,35 +125,36 @@ flowchart
         
         subgraph PerWorkflow.ChainWrite
             direction LR
-            
-            TargetsLimit{{TargetsLimit}}:::bound
-            ReportSizeLimit{{ReportSizeLimit}}:::bound
+
+            PerWorkflow.ChainWrite.TargetsLimit{{TargetsLimit}}:::bound
+            PerWorkflow.ChainWrite.ReportSizeLimit{{ReportSizeLimit}}:::bound
 
             subgraph EVM
-                GasLimit{{GasLimit}}:::bound
+                PerWorkflow.ChainWrite.EVM.GasLimit{{GasLimit}}:::bound
+%%                PerWorkflow.ChainWrite.EVM.TransactionGasLimit - Deprecated
             end
         end
         subgraph PerWorkflow.ChainRead
             direction LR
-            chainread.CallLimit{{CallLimit}}:::bound
-            LogQueryBlockLimit{{LogQueryBlockLimit}}:::bound
-            PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            PerWorkflow.ChainRead.CallLimit{{CallLimit}}:::bound
+            PerWorkflow.ChainRead.LogQueryBlockLimit{{LogQueryBlockLimit}}:::bound
+            PerWorkflow.ChainRead.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
         end
         subgraph PerWorkflow.Consensus
-            ObservationSizeLimit{{ObservationSizeLimit}}:::bound
-            consensus.CallLimit{{CallLimit}}:::bound
+            PerWorkflow.Consensus.ObservationSizeLimit{{ObservationSizeLimit}}:::bound
+            PerWorkflow.Consensus.CallLimit{{CallLimit}}:::bound
         end
         subgraph PerWorkflow.HTTPAction
             direction LR
-            
-            httpaction.CallLimit{{CallLimit}}:::bound
-            CacheAgeLimit{{CacheAgeLimit}}:::bound
-            ConnectionTimeout{{ConnectionTimeout}}:::bound
-            RequestSizeLimit{{RequestSizeLimit}}:::bound
-            ResponseSizeLimit{{ResponseSizeLimit}}:::bound
+
+            PerWorkflow.HTTPAction.CallLimit{{CallLimit}}:::bound
+            PerWorkflow.HTTPAction.CacheAgeLimit{{CacheAgeLimit}}:::bound
+            PerWorkflow.HTTPAction.ConnectionTimeout{{ConnectionTimeout}}:::bound
+            PerWorkflow.HTTPAction.RequestSizeLimit{{RequestSizeLimit}}:::bound
+            PerWorkflow.HTTPAction.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
         end
         subgraph PerWorkflow.Secrets
-            secrets.CallLimit{{CallLimit}}:::bound
+            PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
         end
     end
     subgraph vault

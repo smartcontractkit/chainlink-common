@@ -71,7 +71,7 @@ Default = '5000000'
 3379446385462418246 = '10000000'
 
 [PerWorkflow.ChainRead]
-CallLimit = '10'
+CallLimit = '15'
 LogQueryBlockLimit = '100'
 PayloadSizeLimit = '5kb'
 

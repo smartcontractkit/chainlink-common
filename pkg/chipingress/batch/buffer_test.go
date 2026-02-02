@@ -60,7 +60,7 @@ func TestMessageBatch(t *testing.T) {
 		batch := newBuffer(10)
 		result := batch.Clear()
 		require.NotNil(t, result)
-		assert.Len(t, result, 0)
+		assert.Empty(t, result)
 	})
 
 	t.Run("Values returns copy without clearing", func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestMessageBatch(t *testing.T) {
 		batch := newBuffer(10)
 		result := batch.Values()
 		require.NotNil(t, result)
-		assert.Len(t, result, 0)
+		assert.Empty(t, result)
 	})
 
 	t.Run("Values returns slice copy with same pointers", func(t *testing.T) {

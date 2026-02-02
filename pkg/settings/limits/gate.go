@@ -192,10 +192,7 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 		actual, loaded := g.updaters.LoadOrStore(tenant, u)
 		creCtx := contexts.WithCRE(ctx, g.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			// OPT: restore with support for SettingMap
-			//u.cre.Store(cre)
-			//go u.updateLoop(cre)
-			close(u.done)
+			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[bool])
 			u.updateCtx(creCtx)

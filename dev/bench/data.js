@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770046896196,
+  "lastUpdate": 1770055318826,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37440,6 +37440,66 @@ window.BENCHMARK_DATA = {
             "value": 145056,
             "unit": "ns/op",
             "extra": "8016 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "ee6c9d2f89356e8ee727a3ad2dead8960b194983",
+          "message": "PLEX-1920 add solana devnet into default ChainAllowed list (#1787)\n\n* add solana devnet to defaults\n\n* add solana devnet to allowed chains\n\n* fix tests\n\n* replace devnet with testnet selector\n\n* run tests\n\n* fix converters\n\n* add capacity prealloc",
+          "timestamp": "2026-02-02T17:54:43Z",
+          "tree_id": "29c9a456f77314bce92024829a0e56b723213f02",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ee6c9d2f89356e8ee727a3ad2dead8960b194983"
+        },
+        "date": 1770055317077,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.4,
+            "unit": "ns/op",
+            "extra": "3255871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98946,
+            "unit": "ns/op",
+            "extra": "12097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.5,
+            "unit": "ns/op",
+            "extra": "2941406 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98342,
+            "unit": "ns/op",
+            "extra": "12190 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26796,
+            "unit": "ns/op",
+            "extra": "44684 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148159,
+            "unit": "ns/op",
+            "extra": "7843 times\n4 procs"
           }
         ]
       }

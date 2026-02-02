@@ -12,13 +12,13 @@ import (
 
 func TestMessageBatch(t *testing.T) {
 	t.Run("newMessageBatch creates empty batch", func(t *testing.T) {
-		batch := newMessageBatch(10)
+		batch := newBuffer(10)
 		require.NotNil(t, batch)
 		assert.Equal(t, 0, batch.Len())
 	})
 
 	t.Run("Add appends messages", func(t *testing.T) {
-		batch := newMessageBatch(10)
+		batch := newBuffer(10)
 
 		msg1 := &messageWithCallback{
 			event: &chipingress.CloudEventPb{Id: "test-1"},
@@ -35,7 +35,7 @@ func TestMessageBatch(t *testing.T) {
 	})
 
 	t.Run("Clear returns copy and empties batch", func(t *testing.T) {
-		batch := newMessageBatch(10)
+		batch := newBuffer(10)
 
 		msg1 := &messageWithCallback{
 			event: &chipingress.CloudEventPb{Id: "test-1"},
@@ -56,14 +56,15 @@ func TestMessageBatch(t *testing.T) {
 		assert.Equal(t, 0, batch.Len())
 	})
 
-	t.Run("Clear on empty batch returns nil", func(t *testing.T) {
-		batch := newMessageBatch(10)
+	t.Run("Clear on empty batch returns empty slice", func(t *testing.T) {
+		batch := newBuffer(10)
 		result := batch.Clear()
-		assert.Nil(t, result)
+		require.NotNil(t, result)
+		assert.Len(t, result, 0)
 	})
 
 	t.Run("Values returns copy without clearing", func(t *testing.T) {
-		batch := newMessageBatch(10)
+		batch := newBuffer(10)
 
 		msg1 := &messageWithCallback{
 			event: &chipingress.CloudEventPb{Id: "test-1"},
@@ -85,14 +86,15 @@ func TestMessageBatch(t *testing.T) {
 		assert.Equal(t, 2, batch.Len())
 	})
 
-	t.Run("Values on empty batch returns nil", func(t *testing.T) {
-		batch := newMessageBatch(10)
+	t.Run("Values on empty batch returns empty slice", func(t *testing.T) {
+		batch := newBuffer(10)
 		result := batch.Values()
-		assert.Nil(t, result)
+		require.NotNil(t, result)
+		assert.Len(t, result, 0)
 	})
 
 	t.Run("Values returns slice copy with same pointers", func(t *testing.T) {
-		batch := newMessageBatch(10)
+		batch := newBuffer(10)
 
 		msg1 := &messageWithCallback{
 			event: &chipingress.CloudEventPb{Id: "test-1"},
@@ -113,7 +115,7 @@ func TestMessageBatch(t *testing.T) {
 	})
 
 	t.Run("concurrent Add operations are safe", func(t *testing.T) {
-		batch := newMessageBatch(100)
+		batch := newBuffer(100)
 		var wg sync.WaitGroup
 		numGoroutines := 10
 		messagesPerGoroutine := 10
@@ -134,7 +136,7 @@ func TestMessageBatch(t *testing.T) {
 	})
 
 	t.Run("concurrent Add and Clear operations are safe", func(t *testing.T) {
-		batch := newMessageBatch(100)
+		batch := newBuffer(100)
 		var wg sync.WaitGroup
 		numAdders := 5
 		numClears := 3
@@ -163,7 +165,7 @@ func TestMessageBatch(t *testing.T) {
 	})
 
 	t.Run("concurrent Len operations are safe", func(t *testing.T) {
-		batch := newMessageBatch(100)
+		batch := newBuffer(100)
 		var wg sync.WaitGroup
 		for range 10 {
 			batch.Add(&messageWithCallback{

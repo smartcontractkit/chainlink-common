@@ -24,7 +24,7 @@ type Client struct {
 	callbackWg         sync.WaitGroup
 	shutdownTimeout    time.Duration
 	shutdownOnce       sync.Once
-	batch              *messageBatch
+	batch              *buffer
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -43,7 +43,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		shutdownChan:       make(chan struct{}),
 		callbackWg:         sync.WaitGroup{},
 		shutdownTimeout:    5 * time.Second,
-		batch:              newMessageBatch(10),
+		batch:              newBuffer(10),
 	}
 
 	for _, opt := range opts {

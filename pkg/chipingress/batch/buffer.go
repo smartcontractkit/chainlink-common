@@ -1,16 +1,17 @@
-// Package batch provides a thread-safe batching client for chip ingress messages.
 package batch
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
-// messageBatch is a thread-safe buffer for accumulating messages before sending as a batch
-type messageBatch struct {
+// buffer is a thread-safe buffer for accumulating messages before sending as a batch
+type buffer struct {
 	messages []*messageWithCallback
-	mu       sync.Mutex
+	capacity int
+	mu       sync.RWMutex
 }
 
 type messageWithCallback struct {
@@ -18,56 +19,40 @@ type messageWithCallback struct {
 	callback func(error)
 }
 
-// newMessageBatch creates a new messageBatch with the given initial capacity
-func newMessageBatch(capacity int) *messageBatch {
-	return &messageBatch{
+// newBuffer creates a buffer with the given capacity
+func newBuffer(capacity int) *buffer {
+	return &buffer{
 		messages: make([]*messageWithCallback, 0, capacity),
+		capacity: capacity,
 	}
 }
 
 // Add appends a message to the batch
-func (b *messageBatch) Add(msg *messageWithCallback) {
+func (b *buffer) Add(msg *messageWithCallback) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.messages = append(b.messages, msg)
 }
 
 // Len returns the current number of messages in the batch
-func (b *messageBatch) Len() int {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+func (b *buffer) Len() int {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	return len(b.messages)
 }
 
-// Clear removes all messages from the batch and returns a copy of them
-func (b *messageBatch) Clear() []*messageWithCallback {
+// Values returns a copy of the current messages without clearing them
+func (b *buffer) Values() []*messageWithCallback {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-
-	if len(b.messages) == 0 {
-		return nil
-	}
-
-	// Make a copy
-	result := make([]*messageWithCallback, len(b.messages))
-	copy(result, b.messages)
-
-	// Reset the internal slice
-	b.messages = b.messages[:0]
-
-	return result
+	return slices.Clone(b.messages)
 }
 
-// Values returns a copy of the current messages without clearing them
-func (b *messageBatch) Values() []*messageWithCallback {
+// Clear removes all messages from the batch and returns a copy of them
+func (b *buffer) Clear() []*messageWithCallback {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-
-	if len(b.messages) == 0 {
-		return nil
-	}
-
-	result := make([]*messageWithCallback, len(b.messages))
-	copy(result, b.messages)
-	return result
+	cloned := slices.Clone(b.messages)
+	b.messages = make([]*messageWithCallback, 0, b.capacity)
+	return cloned
 }

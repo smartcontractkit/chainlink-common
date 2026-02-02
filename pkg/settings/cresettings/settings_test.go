@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -97,6 +98,9 @@ func TestSchema_Unmarshal(t *testing.T) {
 			"CallLimit": "5",
 			"CacheAgeLimit": "5m"
 		},
+		"Secrets": {
+			"CallLimit": "5"
+		},
 		"ChainWrite": {
 			"EVM": {
 				"TransactionGasLimit": "500000"
@@ -122,6 +126,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, config.Rate{Limit: rate.Every(13 * time.Second), Burst: 6}, cfg.PerWorkflow.LogTrigger.EventRateLimit.DefaultValue)
 	assert.Equal(t, 5, cfg.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
 	assert.Equal(t, 5*time.Minute, cfg.PerWorkflow.HTTPAction.CacheAgeLimit.DefaultValue)
+	assert.Equal(t, 5, cfg.PerWorkflow.Secrets.CallLimit.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 }
@@ -308,4 +313,31 @@ func TestDefaultEnvVars(t *testing.T) {
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 3379446385462418246)))
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 12922642891491394802)))
 	assert.NoError(t, gl.AllowErr(contexts.WithChainSelector(ctx, 1234)))
+}
+
+//go:embed README.md
+var readme string
+
+// TestFlowchartComplete ensures that every field is included in the flowchart.
+func TestFlowchartComplete(t *testing.T) {
+	var keys []string
+	var addKeys func(a any)
+	addKeys = func(a any) {
+		if v := reflect.ValueOf(a).Elem(); v.Type().Kind() == reflect.Struct {
+			for i := range v.NumField() {
+				f := v.Field(i)
+				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
+					keys = append(keys, gk.GetKey())
+					continue
+				}
+				addKeys(f.Addr().Interface())
+			}
+		}
+	}
+	addKeys(&Default)
+	require.NotEmpty(t, keys)
+	require.Greater(t, len(keys), 20) // sanity check
+	for _, k := range keys {
+		assert.Contains(t, readme, k, "missing key %q in README.md", k)
+	}
 }

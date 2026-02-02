@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // Client is a batching client that accumulates messages and sends them in batches.
@@ -19,7 +20,7 @@ type Client struct {
 	batchInterval      time.Duration
 	maxPublishTimeout  time.Duration
 	messageBuffer      chan *messageWithCallback
-	shutdownChan       chan struct{}
+	stopCh             services.StopChan
 	log                *zap.SugaredLogger
 	callbackWg         sync.WaitGroup
 	shutdownTimeout    time.Duration
@@ -40,7 +41,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		messageBuffer:      make(chan *messageWithCallback, 200),
 		batchInterval:      100 * time.Millisecond,
 		maxPublishTimeout:  5 * time.Second,
-		shutdownChan:       make(chan struct{}),
+		stopCh:             make(chan struct{}),
 		callbackWg:         sync.WaitGroup{},
 		shutdownTimeout:    5 * time.Second,
 		batch:              newBuffer(10),
@@ -68,7 +69,7 @@ func (b *Client) Start(ctx context.Context) {
 				// - all callbacks are completed
 				b.Stop()
 				return
-			case <-b.shutdownChan: // this can only happen if .Stop()
+			case <-b.stopCh: // this can only happen if .Stop()
 				// since this was called from Stop, the remaining batch will be flushed alredy
 				return
 			case msg := <-b.messageBuffer:
@@ -100,7 +101,11 @@ func (b *Client) Start(ctx context.Context) {
 // Forcibly shutdowns down after timeout if not completed.
 func (b *Client) Stop() {
 	b.shutdownOnce.Do(func() {
-		close(b.shutdownChan)
+
+		ctx, cancel := b.stopCh.CtxWithTimeout(b.shutdownTimeout)
+		defer cancel()
+
+		close(b.stopCh)
 
 		done := make(chan struct{})
 		go func() {
@@ -118,7 +123,7 @@ func (b *Client) Stop() {
 		select {
 		case <-done:
 			// All successfully shutdown
-		case <-time.After(b.shutdownTimeout):
+		case <-ctx.Done(): // timeout or context cancelled
 			b.log.Warnw("timed out waiting for shutdown to finish, force closing", "timeout", b.shutdownTimeout)
 		}
 	})
@@ -137,7 +142,7 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 
 	// Check shutdown first to avoid race with buffer send
 	select {
-	case <-b.shutdownChan:
+	case <-b.stopCh:
 		return errors.New("client is shutdown")
 	default:
 	}
@@ -195,7 +200,7 @@ func (b *Client) flush(batch []*messageWithCallback) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), b.maxPublishTimeout)
+	ctx, cancel := b.stopCh.CtxWithTimeout(b.maxPublishTimeout)
 	defer cancel()
 
 	b.sendBatch(ctx, batch)

@@ -99,9 +99,9 @@ func TestSchema_Unmarshal(t *testing.T) {
 			"CacheAgeLimit": "5m"
 		},
 		"ConfidentialHTTP": {
-			"CallLimit": "5",
+			"CallLimit":         "5",
 			"ConnectionTimeout": "10s",
-			"RequestSizeLimit": "10kb",
+			"RequestSizeLimit":  "10kb",
 		    "ResponseSizeLimit": "100kb"
 		},
 		"Secrets": {

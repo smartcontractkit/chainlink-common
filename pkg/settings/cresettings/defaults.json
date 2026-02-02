@@ -69,7 +69,7 @@
 			}
 		},
 		"ChainRead": {
-			"CallLimit": "10",
+			"CallLimit": "15",
 			"LogQueryBlockLimit": "100",
 			"PayloadSizeLimit": "5kb"
 		},

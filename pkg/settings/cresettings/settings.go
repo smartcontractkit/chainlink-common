@@ -150,6 +150,12 @@ var Default = Schema{
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
+		ConfidentialHTTP: confidentialHTTP{
+			CallLimit:         Int(5),
+			ConnectionTimeout: Duration(10 * time.Second),
+			RequestSizeLimit:  Size(10 * config.KByte),
+			ResponseSizeLimit: Size(100 * config.KByte),
+		},
 		Secrets: secrets{
 			CallLimit: Int(5),
 		},
@@ -213,11 +219,12 @@ type Workflows struct {
 	HTTPTrigger httpTrigger
 	LogTrigger  logTrigger
 
-	ChainWrite chainWrite
-	ChainRead  chainRead
-	Consensus  consensus
-	HTTPAction httpAction
-	Secrets    secrets
+	ChainWrite       chainWrite
+	ChainRead        chainRead
+	Consensus        consensus
+	HTTPAction       httpAction
+	ConfidentialHTTP confidentialHTTP
+	Secrets          secrets
 }
 
 type cronTrigger struct {
@@ -250,6 +257,12 @@ type chainRead struct {
 type httpAction struct {
 	CallLimit         Setting[int] `unit:"{call}"`
 	CacheAgeLimit     Setting[time.Duration]
+	ConnectionTimeout Setting[time.Duration]
+	RequestSizeLimit  Setting[config.Size]
+	ResponseSizeLimit Setting[config.Size]
+}
+type confidentialHTTP struct {
+	CallLimit         Setting[int] `unit:"{call}"`
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]

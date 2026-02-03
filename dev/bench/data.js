@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770087498076,
+  "lastUpdate": 1770143637544,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37620,6 +37620,66 @@ window.BENCHMARK_DATA = {
             "value": 147340,
             "unit": "ns/op",
             "extra": "8038 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "20f261f2d6129b38cba141527613858f47dfbc1a",
+          "message": "[CAPPL-1071] Protos for storing OCR config in CapRegistry (#1813)",
+          "timestamp": "2026-02-03T18:26:13Z",
+          "tree_id": "6313c801fd2b04cb70ca6eca4472257c5c237af9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/20f261f2d6129b38cba141527613858f47dfbc1a"
+        },
+        "date": 1770143635280,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 705.9,
+            "unit": "ns/op",
+            "extra": "1435310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94820,
+            "unit": "ns/op",
+            "extra": "12615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.3,
+            "unit": "ns/op",
+            "extra": "2941869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94552,
+            "unit": "ns/op",
+            "extra": "12666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26709,
+            "unit": "ns/op",
+            "extra": "44934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141990,
+            "unit": "ns/op",
+            "extra": "8265 times\n4 procs"
           }
         ]
       }

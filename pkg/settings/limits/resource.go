@@ -152,7 +152,7 @@ type waiter[N Number] struct {
 }
 
 type resourcePoolUsage[N Number] struct {
-	*resourcePoolLimiter[N]
+	resourcePoolLimiter[N]
 	scope  settings.Scope // optional
 	tenant string         // optional
 	mu     sync.Mutex
@@ -185,10 +185,9 @@ func (u *resourcePoolUsage[N]) onLimitUpdate() {
 
 func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *resourcePoolUsage[N] {
 	u := resourcePoolUsage[N]{
-		resourcePoolLimiter: l,
-		queue:               make([]*waiter[N], 0),
-		stopCh:              make(services.StopChan),
-		done:                make(chan struct{}),
+		queue:  make([]*waiter[N], 0),
+		stopCh: make(services.StopChan),
+		done:   make(chan struct{}),
 		recordUsage: func(ctx context.Context, n N) {
 			if l.recordUsage != nil {
 				l.recordUsage(ctx, n, opts...)
@@ -215,6 +214,9 @@ func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *res
 			}
 		},
 	}
+	// copy but replace updater
+	u.resourcePoolLimiter = *l
+	u.resourcePoolLimiter.updater = newUpdater(l.lggr, l.getLimitFn, l.subFn)
 	return &u
 }
 
@@ -383,8 +385,6 @@ func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourceP
 	})
 	return l
 }
-
-func recordNoop[T any](ctx context.Context, value T) {}
 
 func (u *unscopedResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
 	return u.get(ctx)

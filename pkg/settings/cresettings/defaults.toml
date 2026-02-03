@@ -86,5 +86,11 @@ ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
 
+[PerWorkflow.ConfidentialHTTP]
+CallLimit = '5'
+ConnectionTimeout = '10s'
+RequestSizeLimit = '10kb'
+ResponseSizeLimit = '100kb'
+
 [PerWorkflow.Secrets]
 CallLimit = '5'

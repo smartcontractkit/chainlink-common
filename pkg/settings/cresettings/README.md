@@ -153,6 +153,14 @@ flowchart
             PerWorkflow.HTTPAction.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.HTTPAction.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
         end
+        subgraph PerWorkflow.ConfidentialHTTP
+            direction LR
+
+            PerWorkflow.ConfidentialHTTP.CallLimit{{CallLimit}}:::bound
+            PerWorkflow.ConfidentialHTTP.ConnectionTimeout{{ConnectionTimeout}}:::bound
+            PerWorkflow.ConfidentialHTTP.RequestSizeLimit{{RequestSizeLimit}}:::bound
+            PerWorkflow.ConfidentialHTTP.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
+        end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
         end

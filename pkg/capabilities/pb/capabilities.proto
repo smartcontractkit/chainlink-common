@@ -105,9 +105,16 @@ message TriggerResponseMessage {
   }
 }
 
+message AckEventRequest {
+  string trigger_id = 1;
+  string event_id = 2;
+}
+
+
 service TriggerExecutable {
   rpc RegisterTrigger (TriggerRegistrationRequest) returns (stream TriggerResponseMessage) {}
   rpc UnregisterTrigger (TriggerRegistrationRequest) returns (google.protobuf.Empty) {}
+  rpc AckEvent (AckEventRequest) returns (google.protobuf.Empty) {}
 }
 
 message CapabilityResponse {

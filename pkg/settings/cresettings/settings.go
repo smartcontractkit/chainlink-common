@@ -100,10 +100,12 @@ var Default = Schema{
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
-			// geth-testnet
-			"3379446385462418246": true,
 			// geth-devnet2
 			"12922642891491394802": true,
+			// geth-testnet
+			"3379446385462418246": true,
+			// solana-testnet
+			"12463857294658392847": true,
 		}),
 
 		CRONTrigger: cronTrigger{
@@ -133,7 +135,7 @@ var Default = Schema{
 			},
 		},
 		ChainRead: chainRead{
-			CallLimit:          Int(10),
+			CallLimit:          Int(15),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
 		},

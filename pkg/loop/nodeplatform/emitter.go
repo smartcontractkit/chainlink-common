@@ -108,6 +108,7 @@ func NormalizeEndpoints(raw []string) []string {
 	}
 
 	seen := make(map[string]struct{}, len(raw))
+	out := make([]string, 0, len(raw))
 	for _, item := range raw {
 		normalized := NormalizeEndpoint(item)
 		if normalized == "" {
@@ -117,8 +118,9 @@ func NormalizeEndpoints(raw []string) []string {
 			continue
 		}
 		seen[normalized] = struct{}{}
+		out = append(out, normalized)
 	}
-	return slices.Collect(maps.Keys(seen))
+	return out
 }
 
 // NormalizeEndpoint returns only scheme://host (no port/userinfo/path/query/fragment).

@@ -102,8 +102,6 @@ var Default = Schema{
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
-			// solana-devnet
-			"16423721717087811551": true,
 			// geth-testnet
 			"3379446385462418246": true,
 			// solana-testnet

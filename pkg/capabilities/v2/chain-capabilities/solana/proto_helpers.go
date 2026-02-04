@@ -11,17 +11,17 @@ import (
 // ConvertComparisonOperatorFromProto converts a proto ComparisonOperator to primitives.ComparisonOperator
 func ConvertComparisonOperatorFromProto(op ComparisonOperator) primitives.ComparisonOperator {
 	switch op {
-	case ComparisonOperator_EQ:
+	case ComparisonOperator_COMPARISON_OPERATOR_EQ:
 		return primitives.Eq
-	case ComparisonOperator_NEQ:
+	case ComparisonOperator_COMPARISON_OPERATOR_NEQ:
 		return primitives.Neq
-	case ComparisonOperator_GT:
+	case ComparisonOperator_COMPARISON_OPERATOR_GT:
 		return primitives.Gt
-	case ComparisonOperator_LT:
+	case ComparisonOperator_COMPARISON_OPERATOR_LT:
 		return primitives.Lt
-	case ComparisonOperator_GTE:
+	case ComparisonOperator_COMPARISON_OPERATOR_GTE:
 		return primitives.Gte
-	case ComparisonOperator_LTE:
+	case ComparisonOperator_COMPARISON_OPERATOR_LTE:
 		return primitives.Lte
 	default:
 		return primitives.Eq
@@ -32,46 +32,20 @@ func ConvertComparisonOperatorFromProto(op ComparisonOperator) primitives.Compar
 func ConvertComparisonOperatorToProto(op primitives.ComparisonOperator) ComparisonOperator {
 	switch op {
 	case primitives.Eq:
-		return ComparisonOperator_EQ
+		return ComparisonOperator_COMPARISON_OPERATOR_EQ
 	case primitives.Neq:
-		return ComparisonOperator_NEQ
+		return ComparisonOperator_COMPARISON_OPERATOR_NEQ
 	case primitives.Gt:
-		return ComparisonOperator_GT
+		return ComparisonOperator_COMPARISON_OPERATOR_GT
 	case primitives.Lt:
-		return ComparisonOperator_LT
+		return ComparisonOperator_COMPARISON_OPERATOR_LT
 	case primitives.Gte:
-		return ComparisonOperator_GTE
+		return ComparisonOperator_COMPARISON_OPERATOR_GTE
 	case primitives.Lte:
-		return ComparisonOperator_LTE
+		return ComparisonOperator_COMPARISON_OPERATOR_LTE
 	default:
-		return ComparisonOperator_EQ
+		return ComparisonOperator_COMPARISON_OPERATOR_EQ
 	}
-}
-
-// ConvertSubkeyPathsFromProto converts proto SubkeyPath slice to [][]string
-func ConvertSubkeyPathsFromProto(paths []*SubkeyPath) [][]string {
-	if paths == nil {
-		return nil
-	}
-	result := make([][]string, len(paths))
-	for i, p := range paths {
-		if p != nil {
-			result[i] = p.Path
-		}
-	}
-	return result
-}
-
-// ConvertSubkeyPathsToProto converts [][]string to proto SubkeyPath slice
-func ConvertSubkeyPathsToProto(paths [][]string) []*SubkeyPath {
-	if paths == nil {
-		return nil
-	}
-	result := make([]*SubkeyPath, len(paths))
-	for i, p := range paths {
-		result[i] = &SubkeyPath{Path: p}
-	}
-	return result
 }
 
 // ConvertValueComparatorsFromProto converts proto ValueComparator slice to primitives.ValueComparator slice

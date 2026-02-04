@@ -21,8 +21,6 @@ var _ = emptypb.Empty{}
 type ClientCapability interface {
 	SendRequest(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.ConfidentialHTTPRequest) (*capabilities.ResponseAndMetadata[*confidentialhttp.HTTPResponse], caperrors.Error)
 
-	SendRequests(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.EnclaveActionInput) (*capabilities.ResponseAndMetadata[*confidentialhttp.HTTPEnclaveResponseData], caperrors.Error)
-
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -130,20 +128,6 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method SendRequest(..) (if output is nil error must be present)")
-			}
-			return output.Response, output.ResponseMetadata, err
-		}
-		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "SendRequests":
-		input := &confidentialhttp.EnclaveActionInput{}
-		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *confidentialhttp.EnclaveActionInput, _ *emptypb.Empty) (*confidentialhttp.HTTPEnclaveResponseData, capabilities.ResponseMetadata, error) {
-			output, err := c.ClientCapability.SendRequests(ctx, metadata, input)
-			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
-			}
-			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method SendRequests(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err
 		}

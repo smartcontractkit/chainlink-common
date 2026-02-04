@@ -54,6 +54,59 @@ func TestNormalizeEndpoint(t *testing.T) {
 	}
 }
 
+func TestNormalizeEndpointsDedup(t *testing.T) {
+	got := NormalizeEndpoints([]string{
+		"",
+		"   ",
+		"https://user:pass@host:8545/path",
+		"host:8545",
+		"https://user:pass@host:8545/path", // duplicate
+		"host:8545",                        // duplicate
+	})
+	require.Equal(t, []string{"https://host", "host"}, got)
+}
+
+func TestParseOriginURL(t *testing.T) {
+	scheme, host, err := parseOriginURL("https://user:pass@host:8545/path")
+	require.NoError(t, err)
+	require.Equal(t, "https", scheme)
+	require.Equal(t, "host", host)
+
+	scheme, host, err = parseOriginURL("user:pass@host:8545/path")
+	require.NoError(t, err)
+	require.Equal(t, "", scheme)
+	require.Equal(t, "host", host)
+
+	scheme, host, err = parseOriginURL("/just/path")
+	require.NoError(t, err)
+	require.Equal(t, "", scheme)
+	require.Equal(t, "/just/path", host)
+
+	_, _, err = parseOriginURL("http://\x7f")
+	require.Error(t, err)
+}
+
+func TestNewChainPluginConfigEmitterWithIntervalDefaults(t *testing.T) {
+	prev := beholder.GetClient()
+	client := beholder.NewNoopClient()
+	client.Config.AuthPublicKeyHex = "from-beholder"
+	beholder.SetClient(client)
+	t.Cleanup(func() { beholder.SetClient(prev) })
+
+	emitter := NewChainPluginConfigEmitterWithInterval(
+		logger.Test(t),
+		"",
+		"",
+		[]string{"host:8545"},
+		0,
+	)
+
+	require.Equal(t, DefaultEmitInterval, emitter.interval)
+	require.Equal(t, "from-beholder", emitter.csaPublicKey)
+	require.Equal(t, "", emitter.chainID)
+	require.Equal(t, []string{"host"}, emitter.urls)
+}
+
 func TestEmitterEmit(t *testing.T) {
 	obs := beholdertest.NewObserver(t)
 	lggr := logger.Test(t)

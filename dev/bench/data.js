@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770143637544,
+  "lastUpdate": 1770248285069,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37680,6 +37680,66 @@ window.BENCHMARK_DATA = {
             "value": 141990,
             "unit": "ns/op",
             "extra": "8265 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c7d66f2dab434297e0b299e7445b7e40d0b2826e",
+          "message": "Regenerate confidential HTTP types with new deterministic types (#1814)\n\n* Regenerate confidential HTTP types from chainlink-protos\n\nUpdate chainlink-protos dependency to include new confidential HTTP types:\n- HTTPRequest, HTTPResponse, Header, TemplatePublicValue (new)\n- ConfidentialHTTPRequest (updated)\n- SendRequest RPC (new)\n\nOld types (Request, ResponseTemplate, etc.) and SendRequests RPC are\npreserved with deprecation markers for backward compatibility.\n\nDepends on: smartcontractkit/chainlink-protos#281\n\n* Remove deprecated types from confidential HTTP capability\n\nRegenerate from chainlink-protos with deprecated types removed:\n- Request, ResponseTemplate, HTTPEnclaveRequestData\n- EnclaveActionInput, HTTPEnclaveResponseData\n- SendRequests RPC\n\nOnly SendRequest with the new types remains.\n\n* update chainlink-protos\n\n* Update chainlink-protos\n\n* update generated files\n\n---------\n\nCo-authored-by: vreff <104409744+vreff@users.noreply.github.com>",
+          "timestamp": "2026-02-04T23:28:50Z",
+          "tree_id": "ff6a9f020b8d997b7d361c3383ee16c47f0ee957",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c7d66f2dab434297e0b299e7445b7e40d0b2826e"
+        },
+        "date": 1770248283370,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.1,
+            "unit": "ns/op",
+            "extra": "3276841 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94575,
+            "unit": "ns/op",
+            "extra": "12658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.7,
+            "unit": "ns/op",
+            "extra": "3020071 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95316,
+            "unit": "ns/op",
+            "extra": "12585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26640,
+            "unit": "ns/op",
+            "extra": "44998 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141016,
+            "unit": "ns/op",
+            "extra": "8222 times\n4 procs"
           }
         ]
       }

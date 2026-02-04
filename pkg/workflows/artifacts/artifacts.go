@@ -80,6 +80,12 @@ func (a *Artifacts) GetWorkflowID() string {
 	return a.workflowID
 }
 
+// Returns the binary path after preparing the artifacts
+// This value is empty until Prepare() is called
+func (a *Artifacts) GetBinaryPath() string {
+	return a.input.BinaryPath
+}
+
 // Returns the binary data after preparing the artifacts
 // This value is empty until Prepare() is called
 func (a *Artifacts) GetBinaryData() []byte {

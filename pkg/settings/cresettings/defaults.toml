@@ -71,7 +71,7 @@ Default = '5000000'
 3379446385462418246 = '10000000'
 
 [PerWorkflow.ChainRead]
-CallLimit = '10'
+CallLimit = '15'
 LogQueryBlockLimit = '100'
 PayloadSizeLimit = '5kb'
 
@@ -82,6 +82,12 @@ CallLimit = '20'
 [PerWorkflow.HTTPAction]
 CallLimit = '5'
 CacheAgeLimit = '10m0s'
+ConnectionTimeout = '10s'
+RequestSizeLimit = '10kb'
+ResponseSizeLimit = '100kb'
+
+[PerWorkflow.ConfidentialHTTP]
+CallLimit = '5'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'

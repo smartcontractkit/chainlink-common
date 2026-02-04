@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -16,7 +17,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
@@ -173,6 +176,33 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		}
 	}
 
+	var ocr3Configs map[string]ocrtypes.ContractConfig
+	if res.CapabilityConfig.Ocr3Configs != nil {
+		ocr3Configs = make(map[string]ocrtypes.ContractConfig, len(res.CapabilityConfig.Ocr3Configs))
+		for key, pbCfg := range res.CapabilityConfig.Ocr3Configs {
+			ocr3Configs[key] = decodeOcr3Config(pbCfg)
+		}
+	}
+
+	var oracleFactoryConfigs map[string]values.Map
+	if res.CapabilityConfig.OracleFactoryConfigs != nil {
+		oracleFactoryConfigs = make(map[string]values.Map, len(res.CapabilityConfig.OracleFactoryConfigs))
+		for key, pbMap := range res.CapabilityConfig.OracleFactoryConfigs {
+			m, err := values.FromMapValueProto(pbMap)
+			if err != nil {
+				return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode oracle factory config for key %s: %w", key, err)
+			}
+			if m != nil {
+				oracleFactoryConfigs[key] = *m
+			}
+		}
+	}
+
+	specConfig, err := values.FromMapValueProto(res.CapabilityConfig.SpecConfig)
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode spec config: %w", err)
+	}
+
 	return capabilities.CapabilityConfiguration{
 		DefaultConfig:          mc,
 		RemoteTriggerConfig:    remoteTriggerConfig,
@@ -180,6 +210,9 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		RemoteExecutableConfig: remoteExecutableConfig,
 		CapabilityMethodConfig: methodConfig,
 		LocalOnly:              res.CapabilityConfig.LocalOnly,
+		Ocr3Configs:            ocr3Configs,
+		OracleFactoryConfigs:   oracleFactoryConfigs,
+		SpecConfig:             specConfig,
 	}, nil
 }
 
@@ -203,6 +236,27 @@ func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *
 	remoteExecutableConfig.ServerMaxParallelRequests = prtc.ServerMaxParallelRequests
 	remoteExecutableConfig.RequestHasherType = capabilities.RequestHasherType(prtc.RequestHasherType)
 	return remoteExecutableConfig
+}
+
+func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig {
+	signers := make([]ocrtypes.OnchainPublicKey, len(pbCfg.Signers))
+	for i, s := range pbCfg.Signers {
+		signers[i] = ocrtypes.OnchainPublicKey(s)
+	}
+	transmitters := make([]ocrtypes.Account, len(pbCfg.Transmitters))
+	for i, t := range pbCfg.Transmitters {
+		transmitters[i] = ocrtypes.Account(hex.EncodeToString(t))
+	}
+	return ocrtypes.ContractConfig{
+		ConfigCount:           pbCfg.ConfigCount,
+		Signers:               signers,
+		Transmitters:          transmitters,
+		F:                     uint8(pbCfg.F),
+		OnchainConfig:         pbCfg.OnchainConfig,
+		OffchainConfigVersion: pbCfg.OffchainConfigVersion,
+		OffchainConfig:        pbCfg.OffchainConfig,
+		// NOTE: ConfigDigest will be appended later by ContractConfigTracker.
+	}
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -447,6 +501,47 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	}
 
 	ccp.LocalOnly = cc.LocalOnly
+
+	// Handle OCR3 configs
+	if cc.Ocr3Configs != nil {
+		ccp.Ocr3Configs = make(map[string]*capabilitiespb.OCR3Config, len(cc.Ocr3Configs))
+		for key, cfg := range cc.Ocr3Configs {
+			signers := make([][]byte, len(cfg.Signers))
+			for i, s := range cfg.Signers {
+				signers[i] = []byte(s)
+			}
+			transmitters := make([][]byte, len(cfg.Transmitters))
+			for i, t := range cfg.Transmitters {
+				transmitters[i], err = hex.DecodeString(string(t))
+				if err != nil {
+					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
+				}
+			}
+			ccp.Ocr3Configs[key] = &capabilitiespb.OCR3Config{
+				ConfigCount:           cfg.ConfigCount,
+				Signers:               signers,
+				Transmitters:          transmitters,
+				F:                     uint32(cfg.F),
+				OnchainConfig:         cfg.OnchainConfig,
+				OffchainConfigVersion: cfg.OffchainConfigVersion,
+				OffchainConfig:        cfg.OffchainConfig,
+				// NOTE: ConfigDigest is not passed in the proto, nor stored directly onchain.
+			}
+		}
+	}
+
+	// Handle Oracle factory configs
+	if cc.OracleFactoryConfigs != nil {
+		ccp.OracleFactoryConfigs = make(map[string]*valuespb.Map, len(cc.OracleFactoryConfigs))
+		for key, m := range cc.OracleFactoryConfigs {
+			ccp.OracleFactoryConfigs[key] = values.Proto(&m).GetMapValue()
+		}
+	}
+
+	// Handle Spec config
+	if cc.SpecConfig != nil {
+		ccp.SpecConfig = values.Proto(cc.SpecConfig).GetMapValue()
+	}
 
 	return &pb.ConfigForCapabilityReply{
 		CapabilityConfig: ccp,

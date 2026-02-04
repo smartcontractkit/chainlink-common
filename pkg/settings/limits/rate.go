@@ -202,8 +202,7 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 		l.recordLimit(ctx, float64(r.Limit))
 		l.recordBurst(ctx, int64(r.Burst))
 	}
-	l.cre.Store(contexts.CRE{})
-	go l.updateLoop(contexts.CRE{})
+	go l.updateLoop(context.Background())
 
 	return l, nil
 }
@@ -421,13 +420,12 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 
 	limiter := s.newRateLimiter(tenant)
 	actual, loaded := s.limiters.LoadOrStore(tenant, limiter)
-	cre := s.scope.RoundCRE(contexts.CREValue(ctx))
+	creCtx := contexts.WithCRE(ctx, s.scope.RoundCRE(contexts.CREValue(ctx)))
 	if !loaded {
-		limiter.cre.Store(cre)
-		go limiter.updateLoop(cre)
+		go limiter.updateLoop(creCtx)
 	} else {
 		limiter = actual.(*rateLimiter)
-		limiter.updateCRE(cre)
+		limiter.updateCtx(creCtx)
 	}
 	return limiter, s.wg.Done, nil
 }

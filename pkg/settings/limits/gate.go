@@ -105,7 +105,7 @@ func newGateLimiter(f Factory, limit settings.SettingSpec[bool]) (GateLimiter, e
 
 	// OPT: restore with support for SettingMap
 	//if limit.Default.Scope == settings.ScopeGlobal {
-	//	g.updateCRE(contexts.CRE{})
+	//	g.updateCtx(contexts.CRE{})
 	//	go g.updateLoop(contexts.CRE{})
 	//}
 	close(g.done)
@@ -190,15 +190,12 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 
 		u := newUpdater(g.lggr, g.getLimitFn, g.subFn)
 		actual, loaded := g.updaters.LoadOrStore(tenant, u)
-		cre := g.scope.RoundCRE(contexts.CREValue(ctx))
+		creCtx := contexts.WithCRE(ctx, g.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			// OPT: restore with support for SettingMap
-			//u.cre.Store(cre)
-			//go u.updateLoop(cre)
-			close(u.done)
+			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[bool])
-			u.updateCRE(cre)
+			u.updateCtx(creCtx)
 		}
 	}
 

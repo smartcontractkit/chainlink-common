@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync/atomic"
 	"testing"
 	"time"
-
-	"sync/atomic"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -467,7 +466,7 @@ func TestResourcePoolLimiter_LimitFlapToZeroDoesNotDeadlock(t *testing.T) {
 	limiter.getLimitFn = func(context.Context) (int, error) {
 		return int(limit.Load()), nil
 	}
-	go limiter.updateLoop(contexts.CRE{})
+	go limiter.updateLoop(t.Context())
 	t.Cleanup(func() { assert.NoError(t, limiter.Close()) })
 
 	ctx := t.Context()

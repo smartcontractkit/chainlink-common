@@ -1419,7 +1419,7 @@ func ConvertValueComparatorsToProto(comparators []solprimitives.IndexedValueComp
 		return nil
 	}
 
-	out := make([]*IndexedValueComparator, 0)
+	out := make([]*IndexedValueComparator, 0, len(comparators))
 	for _, c := range comparators {
 		out = append(out, &IndexedValueComparator{
 			Value:    c.Value,

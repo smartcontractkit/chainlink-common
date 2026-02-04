@@ -106,8 +106,7 @@ func newBoundLimiter[N Number](f Factory, bound settings.SettingSpec[N]) (BoundL
 	}
 
 	if bound.GetScope() == settings.ScopeGlobal {
-		b.updateCRE(contexts.CRE{})
-		go b.updateLoop(contexts.CRE{})
+		go b.updateLoop(context.Background())
 	}
 
 	return b, nil
@@ -200,13 +199,12 @@ func (b *boundLimiter[N]) get(ctx context.Context) (tenant string, bound N, err 
 
 		u := newUpdater(b.lggr, b.getLimitFn, b.subFn)
 		actual, loaded := b.updaters.LoadOrStore(tenant, u)
-		cre := b.scope.RoundCRE(contexts.CREValue(ctx))
+		creCtx := contexts.WithCRE(ctx, b.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			u.cre.Store(cre)
-			go u.updateLoop(cre)
+			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[N])
-			u.updateCRE(cre)
+			u.updateCtx(creCtx)
 		}
 	}
 

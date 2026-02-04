@@ -46,7 +46,7 @@ func TestDKGKeyRoundTrip(t *testing.T) {
 	p256PrivateKey, err := curve.NewPrivateKey(privateKey)
 	require.NoError(t, err)
 	derivedPublicKey := p256PrivateKey.PublicKey().Bytes()
-	require.Equal(t, storedPublicKey, []byte(derivedPublicKey))
+	require.Equal(t, storedPublicKey, derivedPublicKey)
 }
 
 func TestDKGKeyImportWithWrongPassword(t *testing.T) {

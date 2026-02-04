@@ -44,7 +44,7 @@ func TestWorkflowKeyRoundTrip(t *testing.T) {
 
 	derivedPublicKey, err := curve25519.X25519(privateKey, curve25519.Basepoint)
 	require.NoError(t, err)
-	require.Equal(t, storedPublicKey, []byte(derivedPublicKey))
+	require.Equal(t, storedPublicKey, derivedPublicKey)
 }
 
 func TestWorkflowKeyImportWithWrongPassword(t *testing.T) {

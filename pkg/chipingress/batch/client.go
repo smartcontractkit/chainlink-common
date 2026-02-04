@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // Client is a batching client that accumulates messages and sends them in batches.
@@ -20,7 +19,7 @@ type Client struct {
 	batchInterval      time.Duration
 	maxPublishTimeout  time.Duration
 	messageBuffer      chan *messageWithCallback
-	stopCh             services.StopChan
+	stopCh             stopCh
 	log                *zap.SugaredLogger
 	callbackWg         sync.WaitGroup
 	shutdownTimeout    time.Duration

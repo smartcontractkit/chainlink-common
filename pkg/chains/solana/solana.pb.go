@@ -3940,6 +3940,51 @@ func (x *GetLatestLPBlockReply) GetSlot() uint64 {
 	return 0
 }
 
+// GetFiltersNames returns all registered filter names
+type GetFiltersNamesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []string               `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFiltersNamesReply) Reset() {
+	*x = GetFiltersNamesReply{}
+	mi := &file_solana_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFiltersNamesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFiltersNamesReply) ProtoMessage() {}
+
+func (x *GetFiltersNamesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFiltersNamesReply.ProtoReflect.Descriptor instead.
+func (*GetFiltersNamesReply) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *GetFiltersNamesReply) GetItems() []string {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
 var File_solana_proto protoreflect.FileDescriptor
 
 const file_solana_proto_rawDesc = "" +
@@ -4226,7 +4271,9 @@ const file_solana_proto_rawDesc = "" +
 	"filterName\"\x1c\n" +
 	"\x1aUnregisterLogTrackingReply\"+\n" +
 	"\x15GetLatestLPBlockReply\x12\x12\n" +
-	"\x04slot\x18\x01 \x01(\x04R\x04slot*\xb0\x01\n" +
+	"\x04slot\x18\x01 \x01(\x04R\x04slot\",\n" +
+	"\x14GetFiltersNamesReply\x12\x14\n" +
+	"\x05items\x18\x01 \x03(\tR\x05items*\xb0\x01\n" +
 	"\fEncodingType\x12\x16\n" +
 	"\x12ENCODING_TYPE_NONE\x10\x00\x12\x18\n" +
 	"\x14ENCODING_TYPE_BASE58\x10\x01\x12\x18\n" +
@@ -4247,7 +4294,7 @@ const file_solana_proto_rawDesc = "" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x15\n" +
 	"\x11TX_STATUS_ABORTED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\xad\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x022\xfb\n" +
 	"\n" +
 	"\x06Solana\x12n\n" +
 	"\x16GetAccountInfoWithOpts\x12*.loop.solana.GetAccountInfoWithOptsRequest\x1a(.loop.solana.GetAccountInfoWithOptsReply\x12J\n" +
@@ -4265,7 +4312,8 @@ const file_solana_proto_rawDesc = "" +
 	"SimulateTX\x12\x1e.loop.solana.SimulateTXRequest\x1a\x1c.loop.solana.SimulateTXReply\x12_\n" +
 	"\x11SubmitTransaction\x12%.loop.solana.SubmitTransactionRequest\x1a#.loop.solana.SubmitTransactionReply\x12k\n" +
 	"\x15UnregisterLogTracking\x12).loop.solana.UnregisterLogTrackingRequest\x1a'.loop.solana.UnregisterLogTrackingReply\x12N\n" +
-	"\x10GetLatestLPBlock\x12\x16.google.protobuf.Empty\x1a\".loop.solana.GetLatestLPBlockReplyB@Z>github.com/smartcontractkit/chainlink-common/pkg/chains/solanab\x06proto3"
+	"\x10GetLatestLPBlock\x12\x16.google.protobuf.Empty\x1a\".loop.solana.GetLatestLPBlockReply\x12L\n" +
+	"\x0fGetFiltersNames\x12\x16.google.protobuf.Empty\x1a!.loop.solana.GetFiltersNamesReplyB@Z>github.com/smartcontractkit/chainlink-common/pkg/chains/solanab\x06proto3"
 
 var (
 	file_solana_proto_rawDescOnce sync.Once
@@ -4280,7 +4328,7 @@ func file_solana_proto_rawDescGZIP() []byte {
 }
 
 var file_solana_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 61)
+var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_solana_proto_goTypes = []any{
 	(EncodingType)(0),                          // 0: loop.solana.EncodingType
 	(CommitmentType)(0),                        // 1: loop.solana.CommitmentType
@@ -4347,16 +4395,17 @@ var file_solana_proto_goTypes = []any{
 	(*UnregisterLogTrackingRequest)(nil),       // 62: loop.solana.UnregisterLogTrackingRequest
 	(*UnregisterLogTrackingReply)(nil),         // 63: loop.solana.UnregisterLogTrackingReply
 	(*GetLatestLPBlockReply)(nil),              // 64: loop.solana.GetLatestLPBlockReply
-	(*pb.BigInt)(nil),                          // 65: values.v1.BigInt
-	(chain_common.ComparisonOperator)(0),       // 66: loop.chain.common.ComparisonOperator
-	(chain_common.BooleanOperator)(0),          // 67: loop.chain.common.BooleanOperator
-	(*chain_common.Primitive)(nil),             // 68: loop.chain.common.Primitive
-	(*chain_common.LimitAndSort)(nil),          // 69: loop.chain.common.LimitAndSort
-	(*emptypb.Empty)(nil),                      // 70: google.protobuf.Empty
+	(*GetFiltersNamesReply)(nil),               // 65: loop.solana.GetFiltersNamesReply
+	(*pb.BigInt)(nil),                          // 66: values.v1.BigInt
+	(chain_common.ComparisonOperator)(0),       // 67: loop.chain.common.ComparisonOperator
+	(chain_common.BooleanOperator)(0),          // 68: loop.chain.common.BooleanOperator
+	(*chain_common.Primitive)(nil),             // 69: loop.chain.common.Primitive
+	(*chain_common.LimitAndSort)(nil),          // 70: loop.chain.common.LimitAndSort
+	(*emptypb.Empty)(nil),                      // 71: google.protobuf.Empty
 }
 var file_solana_proto_depIdxs = []int32{
 	6,  // 0: loop.solana.Account.data:type_name -> loop.solana.DataBytesOrJSON
-	65, // 1: loop.solana.Account.rent_epoch:type_name -> values.v1.BigInt
+	66, // 1: loop.solana.Account.rent_epoch:type_name -> values.v1.BigInt
 	0,  // 2: loop.solana.DataBytesOrJSON.encoding:type_name -> loop.solana.EncodingType
 	0,  // 3: loop.solana.GetAccountInfoOpts.encoding:type_name -> loop.solana.EncodingType
 	1,  // 4: loop.solana.GetAccountInfoOpts.commitment:type_name -> loop.solana.CommitmentType
@@ -4401,17 +4450,17 @@ var file_solana_proto_depIdxs = []int32{
 	3,  // 43: loop.solana.SubmitTransactionReply.status:type_name -> loop.solana.TxStatus
 	5,  // 44: loop.solana.SubmitTransactionRequest.cfg:type_name -> loop.solana.ComputeConfig
 	54, // 45: loop.solana.EventSig.hashed_value_comparers:type_name -> loop.solana.HashedValueComparator
-	66, // 46: loop.solana.IndexedValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	67, // 46: loop.solana.IndexedValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
 	49, // 47: loop.solana.EventBySubkey.value_comparers:type_name -> loop.solana.IndexedValueComparator
 	53, // 48: loop.solana.Expression.primitive:type_name -> loop.solana.Primitive
 	52, // 49: loop.solana.Expression.boolean_expression:type_name -> loop.solana.BooleanExpression
-	67, // 50: loop.solana.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	68, // 50: loop.solana.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
 	51, // 51: loop.solana.BooleanExpression.expression:type_name -> loop.solana.Expression
-	68, // 52: loop.solana.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
+	69, // 52: loop.solana.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
 	50, // 53: loop.solana.Primitive.event_by_subkey:type_name -> loop.solana.EventBySubkey
 	55, // 54: loop.solana.LPFilterQuery.subkey_paths:type_name -> loop.solana.Subkeys
 	51, // 55: loop.solana.QueryTrackedLogsRequest.filterQuery:type_name -> loop.solana.Expression
-	69, // 56: loop.solana.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	70, // 56: loop.solana.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
 	57, // 57: loop.solana.QueryTrackedLogsReply.logs:type_name -> loop.solana.Log
 	56, // 58: loop.solana.RegisterLogTrackingRequest.filter:type_name -> loop.solana.LPFilterQuery
 	10, // 59: loop.solana.Solana.GetAccountInfoWithOpts:input_type -> loop.solana.GetAccountInfoWithOptsRequest
@@ -4427,23 +4476,25 @@ var file_solana_proto_depIdxs = []int32{
 	44, // 69: loop.solana.Solana.SimulateTX:input_type -> loop.solana.SimulateTXRequest
 	47, // 70: loop.solana.Solana.SubmitTransaction:input_type -> loop.solana.SubmitTransactionRequest
 	62, // 71: loop.solana.Solana.UnregisterLogTracking:input_type -> loop.solana.UnregisterLogTrackingRequest
-	70, // 72: loop.solana.Solana.GetLatestLPBlock:input_type -> google.protobuf.Empty
-	9,  // 73: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
-	11, // 74: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
-	14, // 75: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
-	16, // 76: loop.solana.Solana.GetFeeForMessage:output_type -> loop.solana.GetFeeForMessageReply
-	20, // 77: loop.solana.Solana.GetMultipleAccountsWithOpts:output_type -> loop.solana.GetMultipleAccountsWithOptsReply
-	22, // 78: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
-	25, // 79: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
-	39, // 80: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
-	59, // 81: loop.solana.Solana.QueryTrackedLogs:output_type -> loop.solana.QueryTrackedLogsReply
-	61, // 82: loop.solana.Solana.RegisterLogTracking:output_type -> loop.solana.RegisterLogTrackingReply
-	43, // 83: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
-	46, // 84: loop.solana.Solana.SubmitTransaction:output_type -> loop.solana.SubmitTransactionReply
-	63, // 85: loop.solana.Solana.UnregisterLogTracking:output_type -> loop.solana.UnregisterLogTrackingReply
-	64, // 86: loop.solana.Solana.GetLatestLPBlock:output_type -> loop.solana.GetLatestLPBlockReply
-	73, // [73:87] is the sub-list for method output_type
-	59, // [59:73] is the sub-list for method input_type
+	71, // 72: loop.solana.Solana.GetLatestLPBlock:input_type -> google.protobuf.Empty
+	71, // 73: loop.solana.Solana.GetFiltersNames:input_type -> google.protobuf.Empty
+	9,  // 74: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
+	11, // 75: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
+	14, // 76: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
+	16, // 77: loop.solana.Solana.GetFeeForMessage:output_type -> loop.solana.GetFeeForMessageReply
+	20, // 78: loop.solana.Solana.GetMultipleAccountsWithOpts:output_type -> loop.solana.GetMultipleAccountsWithOptsReply
+	22, // 79: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
+	25, // 80: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
+	39, // 81: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
+	59, // 82: loop.solana.Solana.QueryTrackedLogs:output_type -> loop.solana.QueryTrackedLogsReply
+	61, // 83: loop.solana.Solana.RegisterLogTracking:output_type -> loop.solana.RegisterLogTrackingReply
+	43, // 84: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
+	46, // 85: loop.solana.Solana.SubmitTransaction:output_type -> loop.solana.SubmitTransactionReply
+	63, // 86: loop.solana.Solana.UnregisterLogTracking:output_type -> loop.solana.UnregisterLogTrackingReply
+	64, // 87: loop.solana.Solana.GetLatestLPBlock:output_type -> loop.solana.GetLatestLPBlockReply
+	65, // 88: loop.solana.Solana.GetFiltersNames:output_type -> loop.solana.GetFiltersNamesReply
+	74, // [74:89] is the sub-list for method output_type
+	59, // [59:74] is the sub-list for method input_type
 	59, // [59:59] is the sub-list for extension type_name
 	59, // [59:59] is the sub-list for extension extendee
 	0,  // [0:59] is the sub-list for field type_name
@@ -4485,7 +4536,7 @@ func file_solana_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_solana_proto_rawDesc), len(file_solana_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   61,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -11,6 +11,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+type messageWithCallback struct {
+	event    *chipingress.CloudEventPb
+	callback func(error)
+}
+
 // Client is a batching client that accumulates messages and sends them in batches.
 type Client struct {
 	client             chipingress.Client
@@ -24,7 +29,7 @@ type Client struct {
 	callbackWg         sync.WaitGroup
 	shutdownTimeout    time.Duration
 	shutdownOnce       sync.Once
-	batch              *buffer
+	batch              *buffer[*messageWithCallback]
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -43,7 +48,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		stopCh:             make(chan struct{}),
 		callbackWg:         sync.WaitGroup{},
 		shutdownTimeout:    5 * time.Second,
-		batch:              newBuffer(10),
+		batch:              newBuffer[*messageWithCallback](10),
 	}
 
 	for _, opt := range opts {
@@ -176,7 +181,6 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 		for i, msg := range messages {
 			events[i] = msg.event
 		}
-
 		_, err := b.client.PublishBatch(ctxTimeout, &chipingress.CloudEventBatch{Events: events})
 		if err != nil {
 			b.log.Errorw("failed to publish batch", "error", err)

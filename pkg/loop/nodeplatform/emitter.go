@@ -33,9 +33,6 @@ type ChainPluginConfigEmitter struct {
 	chainID      string
 	urls         []string
 	interval     time.Duration
-
-	warnedMissingCSA     bool
-	warnedMissingChainID bool
 }
 
 func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawURLs []string) *ChainPluginConfigEmitter {
@@ -45,6 +42,16 @@ func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID strin
 func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawURLs []string, interval time.Duration) *ChainPluginConfigEmitter {
 	if interval <= 0 {
 		interval = DefaultEmitInterval
+	}
+
+	if csaPublicKey == "" {
+		csaPublicKey = beholder.GetClient().Config.AuthPublicKeyHex
+		if csaPublicKey == "" {
+			lggr.Warn("csa_public_key not configured for node-platform emitter")
+		}
+	}
+	if chainID == "" {
+		lggr.Warn("chain_id not configured for node-platform emitter")
 	}
 
 	emitter := &ChainPluginConfigEmitter{
@@ -87,22 +94,8 @@ func (e *ChainPluginConfigEmitter) emit(ctx context.Context) {
 }
 
 func (e *ChainPluginConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {
-	csaKey := e.csaPublicKey
-	if csaKey == "" {
-		csaKey = beholder.GetClient().Config.AuthPublicKeyHex
-		if csaKey == "" && !e.warnedMissingCSA {
-			e.lggr.Warn("csa_public_key not configured for node-platform emitter")
-			e.warnedMissingCSA = true
-		}
-	}
-
-	if e.chainID == "" && !e.warnedMissingChainID {
-		e.lggr.Warn("chain_id not configured for node-platform emitter")
-		e.warnedMissingChainID = true
-	}
-
 	return &commonv1.ChainPluginConfig{
-		CsaPublicKey: csaKey,
+		CsaPublicKey: e.csaPublicKey,
 		ChainId:      e.chainID,
 		Urls:         e.urls,
 	}

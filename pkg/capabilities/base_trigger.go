@@ -2,7 +2,6 @@ package capabilities
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -142,10 +141,8 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.pending[triggerID][te.ID] = &rec
 	b.mu.Unlock()
 
-	if err := b.trySend(ctx, rec); err != nil {
-		b.lggr.Infof("failed to send event: %v", err)
-	}
-	return nil // Retry will occur later
+	b.trySend(rec)
+	return nil
 }
 
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
@@ -194,29 +191,24 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	b.mu.Unlock()
 
 	for _, event := range toResend {
-		err := b.trySend(b.ctx, event)
-		if err != nil {
-			b.lggr.Errorf("failed to resend event (triggerID: %s, eventID: %s): %v", event.TriggerId, event.EventId, err)
-		}
+		b.trySend(event)
 	}
 }
 
 // trySend attempts a delivery for the given event.
 // It updates Attempts and LastSentAt on every attempt locally. Success is determined
 // later by an AckEvent call.
-func (b *BaseTriggerCapability[T]) trySend(ctx context.Context, event PendingEvent) error {
+func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	b.lggr.Infof("resending event (triggerID: %s, eventID: %s)", event.TriggerId, event.EventId)
 	b.mu.Lock()
 	eventsForTrigger, ok := b.pending[event.TriggerId]
 	if !ok || eventsForTrigger == nil {
 		b.mu.Unlock()
-		return nil
 	}
 
 	rec, ok := eventsForTrigger[event.EventId]
 	if !ok || rec == nil {
 		b.mu.Unlock()
-		return nil
 	}
 
 	rec.Attempts++
@@ -228,9 +220,7 @@ func (b *BaseTriggerCapability[T]) trySend(ctx context.Context, event PendingEve
 	sendCh, ok := b.inboxes[event.TriggerId]
 	b.mu.Unlock()
 	if !ok {
-		err := fmt.Errorf("no inbox registered for trigger %s", event.TriggerId)
-		b.lggr.Errorf(err.Error())
-		return err
+		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
 	}
 
 	te := TriggerEvent{
@@ -242,15 +232,13 @@ func (b *BaseTriggerCapability[T]) trySend(ctx context.Context, event PendingEve
 	msg, err := b.decode(te)
 	if err != nil {
 		b.lggr.Errorf("failed to decode payload into trigger message type: %v", err)
-		return err
 	}
 
 	select {
 	case sendCh <- msg:
 		b.lggr.Infof("event dispatched: trigger=%s event=%s attempt=%d",
 			event.TriggerId, event.EventId, rec.Attempts)
-		return nil
 	default:
-		return fmt.Errorf("inbox full for trigger %s", event.TriggerId)
+		b.lggr.Warnf("inbox full for trigger %s", event.TriggerId)
 	}
 }

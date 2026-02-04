@@ -131,36 +131,43 @@ func NormalizeEndpoint(raw string) string {
 		return ""
 	}
 
-	if !strings.Contains(s, "://") {
-		u, err := url.Parse("scheme://" + s)
-		if err != nil {
-			return ""
-		}
-		return hostOnlyFromParsed(u)
-	}
-
-	u, err := url.Parse(s)
+	scheme, host, err := parseOriginURL(s)
 	if err != nil {
 		return ""
 	}
-
-	host := u.Hostname()
 	if host == "" {
 		return ""
 	}
 	if strings.Contains(host, ":") {
 		host = "[" + host + "]"
 	}
-	return u.Scheme + "://" + host
+	if scheme == "" {
+		return host
+	}
+	return scheme + "://" + host
 }
 
-func hostOnlyFromParsed(u *url.URL) string {
-	host := u.Hostname()
-	if host == "" {
-		return ""
+// parseOriginURL is based on go-ethereum's parseOriginURL, adapted for our needs:
+// - returns only scheme and hostname (port is discarded)
+// - handles schemeless inputs with userinfo/port/path
+func parseOriginURL(origin string) (string, string, error) {
+	parsedURL, err := url.Parse(strings.ToLower(origin))
+	if err != nil {
+		return "", "", err
 	}
-	if strings.Contains(host, ":") && !strings.HasPrefix(host, "[") {
-		host = "[" + host + "]"
+	if strings.Contains(origin, "://") {
+		return parsedURL.Scheme, parsedURL.Hostname(), nil
 	}
-	return host
+
+	if hostURL, err := url.Parse("//" + origin); err == nil {
+		if host := hostURL.Hostname(); host != "" {
+			return "", host, nil
+		}
+	}
+
+	hostname := parsedURL.Scheme
+	if hostname == "" {
+		hostname = origin
+	}
+	return "", hostname, nil
 }

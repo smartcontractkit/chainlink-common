@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
@@ -563,12 +564,13 @@ const (
 )
 
 type RemoteTriggerConfig struct {
-	RegistrationRefresh     time.Duration
-	RegistrationExpiry      time.Duration
-	MinResponsesToAggregate uint32
-	MessageExpiry           time.Duration
-	MaxBatchSize            uint32
-	BatchCollectionPeriod   time.Duration
+	RegistrationRefresh             time.Duration
+	RegistrationExpiry              time.Duration
+	MinResponsesToAggregate         uint32
+	MessageExpiry                   time.Duration
+	MaxBatchSize                    uint32
+	BatchCollectionPeriod           time.Duration
+	RegistrationStatusUpdateTimeout time.Duration
 }
 
 type RemoteTargetConfig struct { // deprecated - v1 only

@@ -336,8 +336,8 @@ github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20251124151448-0448ae
 github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20251124151448-0448aefdaab9/go.mod h1:jUC52kZzEnWF9tddHh85zolKybmLpbQ1oNA4FjOHt1Q=
 github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b h1:QuI6SmQFK/zyUlVWEf0GMkiUYBPY4lssn26nKSd/bOM=
 github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b/go.mod h1:qSTSwX3cBP3FKQwQacdjArqv0g6QnukjV4XuzO6UyoY=
-github.com/smartcontractkit/chainlink-protos/node-platform v0.0.0-20260204162530-b3a9bb3c317c h1:COOrg1YppG29hqaFHMKloNLKPm3E0mXYA43Ob+NsXyM=
-github.com/smartcontractkit/chainlink-protos/node-platform v0.0.0-20260204162530-b3a9bb3c317c/go.mod h1:dkR2uYg9XYJuT1JASkPzWE51jjFkVb86P7a/yXe5/GM=
+github.com/smartcontractkit/chainlink-protos/node-platform v0.0.0-20260204180432-9d776f46abf4 h1:JRfmcReSSvDCo/72ipF5sYii8THt6pQNgPUMlCpGzgY=
+github.com/smartcontractkit/chainlink-protos/node-platform v0.0.0-20260204180432-9d776f46abf4/go.mod h1:dkR2uYg9XYJuT1JASkPzWE51jjFkVb86P7a/yXe5/GM=
 github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0 h1:B7itmjy+CMJ26elVw/cAJqqhBQ3Xa/mBYWK0/rQ5MuI=
 github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0/go.mod h1:h6kqaGajbNRrezm56zhx03p0mVmmA2xxj7E/M4ytLUA=
 github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20260106052706-6dd937cb5ec6 h1:BXMylId1EoFxuAy++JRifxUF+P/I7v5BEBh0wECtrEM=

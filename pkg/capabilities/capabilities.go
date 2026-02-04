@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
@@ -554,22 +555,24 @@ func MustNewRemoteCapabilityInfo(
 }
 
 const (
-	DefaultRegistrationRefresh       = 30 * time.Second
-	DefaultRegistrationExpiry        = 2 * time.Minute
-	DefaultMessageExpiry             = 2 * time.Minute
-	DefaultBatchSize                 = 100
-	DefaultBatchCollectionPeriod     = 100 * time.Millisecond
-	DefaultExecutableRequestTimeout  = 8 * time.Minute
-	DefaultServerMaxParallelRequests = uint32(1000)
+	DefaultRegistrationRefresh             = 30 * time.Second
+	DefaultRegistrationExpiry              = 2 * time.Minute
+	DefaultMessageExpiry                   = 2 * time.Minute
+	DefaultBatchSize                       = 100
+	DefaultBatchCollectionPeriod           = 100 * time.Millisecond
+	DefaultExecutableRequestTimeout        = 8 * time.Minute
+	DefaultServerMaxParallelRequests       = uint32(1000)
+	DefaultRegistrationStatusUpdateTimeout = 0
 )
 
 type RemoteTriggerConfig struct {
-	RegistrationRefresh     time.Duration
-	RegistrationExpiry      time.Duration
-	MinResponsesToAggregate uint32
-	MessageExpiry           time.Duration
-	MaxBatchSize            uint32
-	BatchCollectionPeriod   time.Duration
+	RegistrationRefresh             time.Duration
+	RegistrationExpiry              time.Duration
+	MinResponsesToAggregate         uint32
+	MessageExpiry                   time.Duration
+	MaxBatchSize                    uint32
+	BatchCollectionPeriod           time.Duration
+	RegistrationStatusUpdateTimeout time.Duration
 }
 
 type RemoteTargetConfig struct { // deprecated - v1 only
@@ -607,6 +610,10 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 	if c.BatchCollectionPeriod == 0 {
 		c.BatchCollectionPeriod = DefaultBatchCollectionPeriod
+	}
+
+	if c.RegistrationStatusUpdateTimeout == 0 {
+		c.RegistrationStatusUpdateTimeout = DefaultRegistrationStatusUpdateTimeout
 	}
 }
 

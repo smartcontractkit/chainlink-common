@@ -54,16 +54,18 @@ func TestNormalizeEndpoint(t *testing.T) {
 	}
 }
 
-func TestNormalizeEndpointsDedup(t *testing.T) {
-	got := NormalizeEndpoints([]string{
-		"",
-		"   ",
-		"https://user:pass@host:8545/path",
-		"host:8545",
-		"https://user:pass@host:8545/path", // duplicate
-		"host:8545",                        // duplicate
+func TestNormalizeEndpointsMap(t *testing.T) {
+	got := NormalizeEndpoints(map[string]string{
+		"":      "https://host",
+		"   ":   "https://host",
+		"URL_0": "https://user:pass@host:8545/path",
+		"URL_1": "host:8545",
+		"URL_2": "://",
 	})
-	require.Equal(t, []string{"https://host", "host"}, got)
+	require.Equal(t, map[string]string{
+		"URL_0": "https://host",
+		"URL_1": "host",
+	}, got)
 }
 
 func TestParseOriginURL(t *testing.T) {
@@ -97,14 +99,14 @@ func TestNewChainPluginConfigEmitterWithIntervalDefaults(t *testing.T) {
 		logger.Test(t),
 		"",
 		"",
-		[]string{"host:8545"},
+		map[string]string{"URL_0": "host:8545"},
 		0,
 	)
 
 	require.Equal(t, DefaultEmitInterval, emitter.interval)
 	require.Equal(t, "from-beholder", emitter.csaPublicKey)
 	require.Equal(t, "", emitter.chainID)
-	require.Equal(t, []string{"host"}, emitter.urls)
+	require.Equal(t, map[string]string{"URL_0": "host"}, emitter.urls)
 }
 
 func TestEmitterEmit(t *testing.T) {
@@ -115,10 +117,10 @@ func TestEmitterEmit(t *testing.T) {
 		lggr,
 		"csa-123",
 		"chain-1",
-		[]string{
-			"https://user:pass@host:8545/path",
-			"host:8545",
-			"https://user:pass@host:8545/path", // duplicate
+		map[string]string{
+			"URL_0": "https://user:pass@host:8545/path",
+			"URL_1": "host:8545",
+			"URL_2": "https://user:pass@host:8545/path",
 		},
 		DefaultEmitInterval,
 	)
@@ -137,5 +139,9 @@ func TestEmitterEmit(t *testing.T) {
 	require.NoError(t, proto.Unmarshal(msg.Body, &got))
 	require.Equal(t, "csa-123", got.CsaPublicKey)
 	require.Equal(t, "chain-1", got.ChainId)
-	require.Equal(t, []string{"https://host", "host"}, got.Urls)
+	require.Equal(t, map[string]string{
+		"URL_0": "https://host",
+		"URL_1": "host",
+		"URL_2": "https://host",
+	}, got.Urls)
 }

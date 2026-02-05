@@ -31,15 +31,15 @@ type ChainPluginConfigEmitter struct {
 
 	csaPublicKey string
 	chainID      string
-	urls         []string
+	urls         map[string]string
 	interval     time.Duration
 }
 
-func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawURLs []string) *ChainPluginConfigEmitter {
+func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawURLs map[string]string) *ChainPluginConfigEmitter {
 	return NewChainPluginConfigEmitterWithInterval(lggr, csaPublicKey, chainID, rawURLs, DefaultEmitInterval)
 }
 
-func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawURLs []string, interval time.Duration) *ChainPluginConfigEmitter {
+func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawURLs map[string]string, interval time.Duration) *ChainPluginConfigEmitter {
 	if interval <= 0 {
 		interval = DefaultEmitInterval
 	}
@@ -101,24 +101,25 @@ func (e *ChainPluginConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {
 	}
 }
 
-// NormalizeEndpoints sanitizes and de-duplicates URLs, preserving order.
-func NormalizeEndpoints(raw []string) []string {
+// NormalizeEndpoints sanitizes and filters URL map values.
+func NormalizeEndpoints(raw map[string]string) map[string]string {
 	if len(raw) == 0 {
 		return nil
 	}
 
-	seen := make(map[string]struct{}, len(raw))
-	out := make([]string, 0, len(raw))
-	for _, item := range raw {
+	out := make(map[string]string, len(raw))
+	for key, item := range raw {
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
 		normalized := NormalizeEndpoint(item)
 		if normalized == "" {
 			continue
 		}
-		if _, ok := seen[normalized]; ok {
-			continue
-		}
-		seen[normalized] = struct{}{}
-		out = append(out, normalized)
+		out[key] = normalized
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }

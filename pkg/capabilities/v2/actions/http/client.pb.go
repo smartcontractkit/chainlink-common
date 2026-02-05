@@ -76,21 +76,68 @@ func (x *CacheSettings) GetMaxAge() *durationpb.Duration {
 	return nil
 }
 
-type Request struct {
+// HeaderValues represents multiple values for a single header key
+type HeaderValues struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Headers       map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	Timeout       *durationpb.Duration   `protobuf:"bytes,5,opt,name=timeout,proto3" json:"timeout,omitempty"` // Request timeout duration
-	CacheSettings *CacheSettings         `protobuf:"bytes,6,opt,name=cache_settings,json=cacheSettings,proto3" json:"cache_settings,omitempty"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeaderValues) Reset() {
+	*x = HeaderValues{}
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeaderValues) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeaderValues) ProtoMessage() {}
+
+func (x *HeaderValues) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeaderValues.ProtoReflect.Descriptor instead.
+func (*HeaderValues) Descriptor() ([]byte, []int) {
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *HeaderValues) GetValues() []string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
+}
+
+type Request struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Url    string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	Method string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/networking/http/v1alpha/client.proto.
+	Headers       map[string]string        `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Deprecated: use multi_headers
+	Body          []byte                   `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	Timeout       *durationpb.Duration     `protobuf:"bytes,5,opt,name=timeout,proto3" json:"timeout,omitempty"` // Request timeout duration
+	CacheSettings *CacheSettings           `protobuf:"bytes,6,opt,name=cache_settings,json=cacheSettings,proto3" json:"cache_settings,omitempty"`
+	MultiHeaders  map[string]*HeaderValues `protobuf:"bytes,7,rep,name=multi_headers,json=multiHeaders,proto3" json:"multi_headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[1]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -102,7 +149,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[1]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -115,7 +162,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Request) GetUrl() string {
@@ -132,6 +179,7 @@ func (x *Request) GetMethod() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/networking/http/v1alpha/client.proto.
 func (x *Request) GetHeaders() map[string]string {
 	if x != nil {
 		return x.Headers
@@ -160,18 +208,27 @@ func (x *Request) GetCacheSettings() *CacheSettings {
 	return nil
 }
 
+func (x *Request) GetMultiHeaders() map[string]*HeaderValues {
+	if x != nil {
+		return x.MultiHeaders
+	}
+	return nil
+}
+
 type Response struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StatusCode    uint32                 `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
-	Headers       map[string]string      `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Body          []byte                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode uint32                 `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/networking/http/v1alpha/client.proto.
+	Headers       map[string]string        `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Deprecated: use multi_headers
+	Body          []byte                   `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	MultiHeaders  map[string]*HeaderValues `protobuf:"bytes,4,rep,name=multi_headers,json=multiHeaders,proto3" json:"multi_headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Response) Reset() {
 	*x = Response{}
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -183,7 +240,7 @@ func (x *Response) String() string {
 func (*Response) ProtoMessage() {}
 
 func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -196,7 +253,7 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Response) GetStatusCode() uint32 {
@@ -206,6 +263,7 @@ func (x *Response) GetStatusCode() uint32 {
 	return 0
 }
 
+// Deprecated: Marked as deprecated in capabilities/networking/http/v1alpha/client.proto.
 func (x *Response) GetHeaders() map[string]string {
 	if x != nil {
 		return x.Headers
@@ -220,6 +278,13 @@ func (x *Response) GetBody() []byte {
 	return nil
 }
 
+func (x *Response) GetMultiHeaders() map[string]*HeaderValues {
+	if x != nil {
+		return x.MultiHeaders
+	}
+	return nil
+}
+
 var File_capabilities_networking_http_v1alpha_client_proto protoreflect.FileDescriptor
 
 const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
@@ -227,25 +292,35 @@ const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"1capabilities/networking/http/v1alpha/client.proto\x12$capabilities.networking.http.v1alpha\x1a\x1egoogle/protobuf/duration.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"Y\n" +
 	"\rCacheSettings\x12\x14\n" +
 	"\x05store\x18\x01 \x01(\bR\x05store\x122\n" +
-	"\amax_age\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x06maxAge\"\xea\x02\n" +
+	"\amax_age\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x06maxAge\"&\n" +
+	"\fHeaderValues\x12\x16\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"\xc9\x04\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12T\n" +
-	"\aheaders\x18\x03 \x03(\v2:.capabilities.networking.http.v1alpha.Request.HeadersEntryR\aheaders\x12\x12\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12X\n" +
+	"\aheaders\x18\x03 \x03(\v2:.capabilities.networking.http.v1alpha.Request.HeadersEntryB\x02\x18\x01R\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x123\n" +
 	"\atimeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12Z\n" +
-	"\x0ecache_settings\x18\x06 \x01(\v23.capabilities.networking.http.v1alpha.CacheSettingsR\rcacheSettings\x1a:\n" +
+	"\x0ecache_settings\x18\x06 \x01(\v23.capabilities.networking.http.v1alpha.CacheSettingsR\rcacheSettings\x12d\n" +
+	"\rmulti_headers\x18\a \x03(\v2?.capabilities.networking.http.v1alpha.Request.MultiHeadersEntryR\fmultiHeaders\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd2\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1as\n" +
+	"\x11MultiHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
+	"\x05value\x18\x02 \x01(\v22.capabilities.networking.http.v1alpha.HeaderValuesR\x05value:\x028\x01\"\xb2\x03\n" +
 	"\bResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\rR\n" +
-	"statusCode\x12U\n" +
-	"\aheaders\x18\x02 \x03(\v2;.capabilities.networking.http.v1alpha.Response.HeadersEntryR\aheaders\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body\x1a:\n" +
+	"statusCode\x12Y\n" +
+	"\aheaders\x18\x02 \x03(\v2;.capabilities.networking.http.v1alpha.Response.HeadersEntryB\x02\x18\x01R\aheaders\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\x12e\n" +
+	"\rmulti_headers\x18\x04 \x03(\v2@.capabilities.networking.http.v1alpha.Response.MultiHeadersEntryR\fmultiHeaders\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012\x98\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1as\n" +
+	"\x11MultiHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
+	"\x05value\x18\x02 \x01(\v22.capabilities.networking.http.v1alpha.HeaderValuesR\x05value:\x028\x012\x98\x01\n" +
 	"\x06Client\x12l\n" +
 	"\vSendRequest\x12-.capabilities.networking.http.v1alpha.Request\x1a..capabilities.networking.http.v1alpha.Response\x1a \x82\xb5\x18\x1c\b\x02\x12\x18http-actions@1.0.0-alphab\x06proto3"
 
@@ -261,28 +336,35 @@ func file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP() []byte
 	return file_capabilities_networking_http_v1alpha_client_proto_rawDescData
 }
 
-var file_capabilities_networking_http_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_capabilities_networking_http_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_capabilities_networking_http_v1alpha_client_proto_goTypes = []any{
 	(*CacheSettings)(nil),       // 0: capabilities.networking.http.v1alpha.CacheSettings
-	(*Request)(nil),             // 1: capabilities.networking.http.v1alpha.Request
-	(*Response)(nil),            // 2: capabilities.networking.http.v1alpha.Response
-	nil,                         // 3: capabilities.networking.http.v1alpha.Request.HeadersEntry
-	nil,                         // 4: capabilities.networking.http.v1alpha.Response.HeadersEntry
-	(*durationpb.Duration)(nil), // 5: google.protobuf.Duration
+	(*HeaderValues)(nil),        // 1: capabilities.networking.http.v1alpha.HeaderValues
+	(*Request)(nil),             // 2: capabilities.networking.http.v1alpha.Request
+	(*Response)(nil),            // 3: capabilities.networking.http.v1alpha.Response
+	nil,                         // 4: capabilities.networking.http.v1alpha.Request.HeadersEntry
+	nil,                         // 5: capabilities.networking.http.v1alpha.Request.MultiHeadersEntry
+	nil,                         // 6: capabilities.networking.http.v1alpha.Response.HeadersEntry
+	nil,                         // 7: capabilities.networking.http.v1alpha.Response.MultiHeadersEntry
+	(*durationpb.Duration)(nil), // 8: google.protobuf.Duration
 }
 var file_capabilities_networking_http_v1alpha_client_proto_depIdxs = []int32{
-	5, // 0: capabilities.networking.http.v1alpha.CacheSettings.max_age:type_name -> google.protobuf.Duration
-	3, // 1: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
-	5, // 2: capabilities.networking.http.v1alpha.Request.timeout:type_name -> google.protobuf.Duration
-	0, // 3: capabilities.networking.http.v1alpha.Request.cache_settings:type_name -> capabilities.networking.http.v1alpha.CacheSettings
-	4, // 4: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
-	1, // 5: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
-	2, // 6: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	8,  // 0: capabilities.networking.http.v1alpha.CacheSettings.max_age:type_name -> google.protobuf.Duration
+	4,  // 1: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
+	8,  // 2: capabilities.networking.http.v1alpha.Request.timeout:type_name -> google.protobuf.Duration
+	0,  // 3: capabilities.networking.http.v1alpha.Request.cache_settings:type_name -> capabilities.networking.http.v1alpha.CacheSettings
+	5,  // 4: capabilities.networking.http.v1alpha.Request.multi_headers:type_name -> capabilities.networking.http.v1alpha.Request.MultiHeadersEntry
+	6,  // 5: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
+	7,  // 6: capabilities.networking.http.v1alpha.Response.multi_headers:type_name -> capabilities.networking.http.v1alpha.Response.MultiHeadersEntry
+	1,  // 7: capabilities.networking.http.v1alpha.Request.MultiHeadersEntry.value:type_name -> capabilities.networking.http.v1alpha.HeaderValues
+	1,  // 8: capabilities.networking.http.v1alpha.Response.MultiHeadersEntry.value:type_name -> capabilities.networking.http.v1alpha.HeaderValues
+	2,  // 9: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
+	3,  // 10: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
+	10, // [10:11] is the sub-list for method output_type
+	9,  // [9:10] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_networking_http_v1alpha_client_proto_init() }
@@ -296,7 +378,7 @@ func file_capabilities_networking_http_v1alpha_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_networking_http_v1alpha_client_proto_rawDesc), len(file_capabilities_networking_http_v1alpha_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

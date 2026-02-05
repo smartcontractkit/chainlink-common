@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	beholderDomain     = "node-platform"
-	beholderEntity     = "common.v1.ChainPluginConfig"
-	beholderDataSchema = "common/v1/chain_plugin_config.proto"
+	beholderDomain = "node-platform"
+	beholderEntity = "ChainPluginConfig"
 
 	defaultEmitInterval = time.Minute * 3
 	serviceName         = "PluginRelayerConfigEmitter"
@@ -87,7 +86,6 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
 		beholder.AttrKeyDomain, beholderDomain,
 		beholder.AttrKeyEntity, beholderEntity,
-		beholder.AttrKeyDataSchema, beholderDataSchema,
 	)
 	if err != nil {
 		e.lggr.Errorw("failed to emit ChainPluginConfig", "err", err)

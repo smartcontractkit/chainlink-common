@@ -1,4 +1,4 @@
-package nodeplatform
+package loop
 
 import (
 	"context"
@@ -49,13 +49,13 @@ func TestNormalizeEndpoint(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, NormalizeEndpoint(tt.in))
+			require.Equal(t, tt.want, normalizeEndpoint(tt.in))
 		})
 	}
 }
 
 func TestNormalizeEndpointsMap(t *testing.T) {
-	got := NormalizeEndpoints(map[string]string{
+	got := normalizeEndpoints(map[string]string{
 		"":      "https://host",
 		"   ":   "https://host",
 		"URL_0": "https://user:pass@host:8545/path",
@@ -88,14 +88,14 @@ func TestParseOriginURL(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestNewChainPluginConfigEmitterWithIntervalDefaults(t *testing.T) {
+func TestNewPluginRelayerConfigEmitterWithIntervalDefaults(t *testing.T) {
 	prev := beholder.GetClient()
 	client := beholder.NewNoopClient()
 	client.Config.AuthPublicKeyHex = "from-beholder"
 	beholder.SetClient(client)
 	t.Cleanup(func() { beholder.SetClient(prev) })
 
-	emitter := NewChainPluginConfigEmitterWithInterval(
+	emitter := newPluginRelayerConfigEmitterWithInterval(
 		logger.Test(t),
 		"",
 		"",
@@ -103,7 +103,7 @@ func TestNewChainPluginConfigEmitterWithIntervalDefaults(t *testing.T) {
 		0,
 	)
 
-	require.Equal(t, DefaultEmitInterval, emitter.interval)
+	require.Equal(t, defaultEmitInterval, emitter.interval)
 	require.Equal(t, "from-beholder", emitter.csaPublicKey)
 	require.Equal(t, "", emitter.chainID)
 	require.Equal(t, []*commonv1.Node{{Urls: map[string]string{"URL": "host"}}}, emitter.nodes)
@@ -113,7 +113,7 @@ func TestEmitterEmit(t *testing.T) {
 	obs := beholdertest.NewObserver(t)
 	lggr := logger.Test(t)
 
-	emitter := NewChainPluginConfigEmitterWithInterval(
+	emitter := newPluginRelayerConfigEmitterWithInterval(
 		lggr,
 		"csa-123",
 		"chain-1",
@@ -122,25 +122,25 @@ func TestEmitterEmit(t *testing.T) {
 			{"URL": "host:8545"},
 			{"URL": "https://user:pass@host:8545/path"},
 		},
-		DefaultEmitInterval,
+		defaultEmitInterval,
 	)
 
 	emitter.emit(context.Background())
 
-	msgs := obs.Messages(t, beholder.AttrKeyDomain, BeholderDomain)
+	msgs := obs.Messages(t, beholder.AttrKeyDomain, beholderDomain)
 	require.Len(t, msgs, 1)
 
 	msg := msgs[0]
-	require.Equal(t, BeholderDomain, msg.Attrs[beholder.AttrKeyDomain])
-	require.Equal(t, BeholderEntity, msg.Attrs[beholder.AttrKeyEntity])
-	require.Equal(t, BeholderDataSchema, msg.Attrs[beholder.AttrKeyDataSchema])
+	require.Equal(t, beholderDomain, msg.Attrs[beholder.AttrKeyDomain])
+	require.Equal(t, beholderEntity, msg.Attrs[beholder.AttrKeyEntity])
+	require.Equal(t, beholderDataSchema, msg.Attrs[beholder.AttrKeyDataSchema])
 
 	var got commonv1.ChainPluginConfig
 	require.NoError(t, proto.Unmarshal(msg.Body, &got))
 	require.Equal(t, "csa-123", got.CsaPublicKey)
 	require.Equal(t, "chain-1", got.ChainId)
-	require.Len(t, got.Nodes, 3)
-	require.Equal(t, map[string]string{"URL": "https://host"}, got.Nodes[0].Urls)
-	require.Equal(t, map[string]string{"URL": "host"}, got.Nodes[1].Urls)
-	require.Equal(t, map[string]string{"URL": "https://host"}, got.Nodes[2].Urls)
+	require.Len(t, got.Urls, 3)
+	require.Equal(t, map[string]string{"URL": "https://host"}, got.Urls[0].Urls)
+	require.Equal(t, map[string]string{"URL": "host"}, got.Urls[1].Urls)
+	require.Equal(t, map[string]string{"URL": "https://host"}, got.Urls[2].Urls)
 }

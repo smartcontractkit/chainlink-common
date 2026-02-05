@@ -1,4 +1,4 @@
-package nodeplatform
+package loop
 
 import (
 	"context"
@@ -15,15 +15,15 @@ import (
 )
 
 const (
-	BeholderDomain     = "node-platform"
-	BeholderEntity     = "common.v1.ChainPluginConfig"
-	BeholderDataSchema = "common/v1/chain_plugin_config.proto"
+	beholderDomain     = "node-platform"
+	beholderEntity     = "common.v1.ChainPluginConfig"
+	beholderDataSchema = "common/v1/chain_plugin_config.proto"
 
-	DefaultEmitInterval = time.Hour
-	serviceName         = "NodePlatformEmitter"
+	defaultEmitInterval = time.Hour
+	serviceName         = "PluginRelayerConfigEmitter"
 )
 
-type ChainPluginConfigEmitter struct {
+type pluginRelayerConfigEmitter struct {
 	services.Service
 	eng *services.Engine
 
@@ -35,30 +35,31 @@ type ChainPluginConfigEmitter struct {
 	interval     time.Duration
 }
 
-func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string) *ChainPluginConfigEmitter {
-	return NewChainPluginConfigEmitterWithInterval(lggr, csaPublicKey, chainID, rawNodes, DefaultEmitInterval)
+// NewPluginRelayerConfigEmitter constructs a service that emits ChainPluginConfig to Beholder.
+func NewPluginRelayerConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string) *pluginRelayerConfigEmitter {
+	return newPluginRelayerConfigEmitterWithInterval(lggr, csaPublicKey, chainID, rawNodes, defaultEmitInterval)
 }
 
-func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string, interval time.Duration) *ChainPluginConfigEmitter {
+func newPluginRelayerConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string, interval time.Duration) *pluginRelayerConfigEmitter {
 	if interval <= 0 {
-		interval = DefaultEmitInterval
+		interval = defaultEmitInterval
 	}
 
 	if csaPublicKey == "" {
 		csaPublicKey = beholder.GetClient().Config.AuthPublicKeyHex
 		if csaPublicKey == "" {
-			lggr.Warn("csa_public_key not configured for node-platform emitter")
+			lggr.Warn("csa_public_key not configured for plugin relayer config emitter")
 		}
 	}
 	if chainID == "" {
-		lggr.Warn("chain_id not configured for node-platform emitter")
+		lggr.Warn("chain_id not configured for plugin relayer config emitter")
 	}
 
-	emitter := &ChainPluginConfigEmitter{
+	emitter := &pluginRelayerConfigEmitter{
 		lggr:         lggr,
 		csaPublicKey: csaPublicKey,
 		chainID:      chainID,
-		nodes:        NormalizeNodes(rawNodes),
+		nodes:        normalizeNodes(rawNodes),
 		interval:     interval,
 	}
 
@@ -70,12 +71,12 @@ func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, c
 	return emitter
 }
 
-func (e *ChainPluginConfigEmitter) start(ctx context.Context) error {
+func (e *pluginRelayerConfigEmitter) start(ctx context.Context) error {
 	e.eng.GoTick(services.NewTicker(e.interval), e.emit)
 	return nil
 }
 
-func (e *ChainPluginConfigEmitter) emit(ctx context.Context) {
+func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 	payload := e.buildConfig()
 	payloadBytes, err := proto.Marshal(payload)
 	if err != nil {
@@ -84,32 +85,32 @@ func (e *ChainPluginConfigEmitter) emit(ctx context.Context) {
 	}
 
 	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
-		beholder.AttrKeyDomain, BeholderDomain,
-		beholder.AttrKeyEntity, BeholderEntity,
-		beholder.AttrKeyDataSchema, BeholderDataSchema,
+		beholder.AttrKeyDomain, beholderDomain,
+		beholder.AttrKeyEntity, beholderEntity,
+		beholder.AttrKeyDataSchema, beholderDataSchema,
 	)
 	if err != nil {
 		e.lggr.Errorw("failed to emit ChainPluginConfig", "err", err)
 	}
 }
 
-func (e *ChainPluginConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {
+func (e *pluginRelayerConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {
 	return &commonv1.ChainPluginConfig{
 		CsaPublicKey: e.csaPublicKey,
 		ChainId:      e.chainID,
-		Nodes:        e.nodes,
+		Urls:         e.nodes,
 	}
 }
 
-// NormalizeNodes sanitizes and filters URL map values for node entries.
-func NormalizeNodes(rawNodes []map[string]string) []*commonv1.Node {
+// normalizeNodes sanitizes and filters URL map values for node entries.
+func normalizeNodes(rawNodes []map[string]string) []*commonv1.Node {
 	if len(rawNodes) == 0 {
 		return nil
 	}
 
 	out := make([]*commonv1.Node, 0, len(rawNodes))
 	for _, raw := range rawNodes {
-		normalized := NormalizeEndpoints(raw)
+		normalized := normalizeEndpoints(raw)
 		if len(normalized) == 0 {
 			continue
 		}
@@ -121,8 +122,8 @@ func NormalizeNodes(rawNodes []map[string]string) []*commonv1.Node {
 	return out
 }
 
-// NormalizeEndpoints sanitizes and filters URL map values.
-func NormalizeEndpoints(raw map[string]string) map[string]string {
+// normalizeEndpoints sanitizes and filters URL map values.
+func normalizeEndpoints(raw map[string]string) map[string]string {
 	if len(raw) == 0 {
 		return nil
 	}
@@ -132,7 +133,7 @@ func NormalizeEndpoints(raw map[string]string) map[string]string {
 		if strings.TrimSpace(key) == "" {
 			continue
 		}
-		normalized := NormalizeEndpoint(item)
+		normalized := normalizeEndpoint(item)
 		if normalized == "" {
 			continue
 		}
@@ -144,9 +145,9 @@ func NormalizeEndpoints(raw map[string]string) map[string]string {
 	return out
 }
 
-// NormalizeEndpoint returns only scheme://host (no port/userinfo/path/query/fragment).
+// normalizeEndpoint returns only scheme://host (no port/userinfo/path/query/fragment).
 // If the input has no scheme, the host-only string is returned.
-func NormalizeEndpoint(raw string) string {
+func normalizeEndpoint(raw string) string {
 	s := strings.TrimSpace(raw)
 	if s == "" {
 		return ""

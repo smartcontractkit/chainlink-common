@@ -99,14 +99,14 @@ func TestNewChainPluginConfigEmitterWithIntervalDefaults(t *testing.T) {
 		logger.Test(t),
 		"",
 		"",
-		map[string]string{"URL_0": "host:8545"},
+		[]map[string]string{{"URL": "host:8545"}},
 		0,
 	)
 
 	require.Equal(t, DefaultEmitInterval, emitter.interval)
 	require.Equal(t, "from-beholder", emitter.csaPublicKey)
 	require.Equal(t, "", emitter.chainID)
-	require.Equal(t, map[string]string{"URL_0": "host"}, emitter.urls)
+	require.Equal(t, []*commonv1.Node{{Urls: map[string]string{"URL": "host"}}}, emitter.nodes)
 }
 
 func TestEmitterEmit(t *testing.T) {
@@ -117,10 +117,10 @@ func TestEmitterEmit(t *testing.T) {
 		lggr,
 		"csa-123",
 		"chain-1",
-		map[string]string{
-			"URL_0": "https://user:pass@host:8545/path",
-			"URL_1": "host:8545",
-			"URL_2": "https://user:pass@host:8545/path",
+		[]map[string]string{
+			{"URL": "https://user:pass@host:8545/path"},
+			{"URL": "host:8545"},
+			{"URL": "https://user:pass@host:8545/path"},
 		},
 		DefaultEmitInterval,
 	)
@@ -139,9 +139,8 @@ func TestEmitterEmit(t *testing.T) {
 	require.NoError(t, proto.Unmarshal(msg.Body, &got))
 	require.Equal(t, "csa-123", got.CsaPublicKey)
 	require.Equal(t, "chain-1", got.ChainId)
-	require.Equal(t, map[string]string{
-		"URL_0": "https://host",
-		"URL_1": "host",
-		"URL_2": "https://host",
-	}, got.Urls)
+	require.Len(t, got.Urls, 3)
+	require.Equal(t, map[string]string{"URL": "https://host"}, got.Urls[0].Urls)
+	require.Equal(t, map[string]string{"URL": "host"}, got.Urls[1].Urls)
+	require.Equal(t, map[string]string{"URL": "https://host"}, got.Urls[2].Urls)
 }

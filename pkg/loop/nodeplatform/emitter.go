@@ -31,15 +31,15 @@ type ChainPluginConfigEmitter struct {
 
 	csaPublicKey string
 	chainID      string
-	urls         map[string]string
+	nodes        []*commonv1.Node
 	interval     time.Duration
 }
 
-func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawURLs map[string]string) *ChainPluginConfigEmitter {
-	return NewChainPluginConfigEmitterWithInterval(lggr, csaPublicKey, chainID, rawURLs, DefaultEmitInterval)
+func NewChainPluginConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string) *ChainPluginConfigEmitter {
+	return NewChainPluginConfigEmitterWithInterval(lggr, csaPublicKey, chainID, rawNodes, DefaultEmitInterval)
 }
 
-func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawURLs map[string]string, interval time.Duration) *ChainPluginConfigEmitter {
+func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string, interval time.Duration) *ChainPluginConfigEmitter {
 	if interval <= 0 {
 		interval = DefaultEmitInterval
 	}
@@ -58,7 +58,7 @@ func NewChainPluginConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, c
 		lggr:         lggr,
 		csaPublicKey: csaPublicKey,
 		chainID:      chainID,
-		urls:         NormalizeEndpoints(rawURLs),
+		nodes:        NormalizeNodes(rawNodes),
 		interval:     interval,
 	}
 
@@ -97,8 +97,28 @@ func (e *ChainPluginConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {
 	return &commonv1.ChainPluginConfig{
 		CsaPublicKey: e.csaPublicKey,
 		ChainId:      e.chainID,
-		Urls:         e.urls,
+		Nodes:        e.nodes,
 	}
+}
+
+// NormalizeNodes sanitizes and filters URL map values for node entries.
+func NormalizeNodes(rawNodes []map[string]string) []*commonv1.Node {
+	if len(rawNodes) == 0 {
+		return nil
+	}
+
+	out := make([]*commonv1.Node, 0, len(rawNodes))
+	for _, raw := range rawNodes {
+		normalized := NormalizeEndpoints(raw)
+		if len(normalized) == 0 {
+			continue
+		}
+		out = append(out, &commonv1.Node{Urls: normalized})
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // NormalizeEndpoints sanitizes and filters URL map values.

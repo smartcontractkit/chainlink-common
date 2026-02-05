@@ -19,7 +19,7 @@ const (
 	beholderEntity     = "common.v1.ChainPluginConfig"
 	beholderDataSchema = "common/v1/chain_plugin_config.proto"
 
-	defaultEmitInterval = time.Hour
+	defaultEmitInterval = time.Minute * 3
 	serviceName         = "PluginRelayerConfigEmitter"
 )
 
@@ -98,7 +98,7 @@ func (e *pluginRelayerConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {
 	return &commonv1.ChainPluginConfig{
 		CsaPublicKey: e.csaPublicKey,
 		ChainId:      e.chainID,
-		Urls:         e.nodes,
+		Nodes:        e.nodes,
 	}
 }
 

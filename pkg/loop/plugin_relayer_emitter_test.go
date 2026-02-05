@@ -139,8 +139,8 @@ func TestEmitterEmit(t *testing.T) {
 	require.NoError(t, proto.Unmarshal(msg.Body, &got))
 	require.Equal(t, "csa-123", got.CsaPublicKey)
 	require.Equal(t, "chain-1", got.ChainId)
-	require.Len(t, got.Urls, 3)
-	require.Equal(t, map[string]string{"URL": "https://host"}, got.Urls[0].Urls)
-	require.Equal(t, map[string]string{"URL": "host"}, got.Urls[1].Urls)
-	require.Equal(t, map[string]string{"URL": "https://host"}, got.Urls[2].Urls)
+	require.Len(t, got.Nodes, 3)
+	require.Equal(t, map[string]string{"URL": "https://host"}, got.Nodes[0].Urls)
+	require.Equal(t, map[string]string{"URL": "host"}, got.Nodes[1].Urls)
+	require.Equal(t, map[string]string{"URL": "https://host"}, got.Nodes[2].Urls)
 }

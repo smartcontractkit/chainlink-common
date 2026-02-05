@@ -84,7 +84,7 @@ func (x *SecretIdentifier) GetOwner() string {
 }
 
 // Header represents a single HTTP header as a name-value pair.
-// Using a message instead of a map ensures deterministic ordering for request hashing.
+// Using repeated messages instead of a map allows duplicate header names (e.g., multiple Set-Cookie headers).
 type Header struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -137,60 +137,6 @@ func (x *Header) GetValue() string {
 	return ""
 }
 
-// TemplatePublicValue represents a single template variable as a name-value pair.
-// Using a message instead of a map ensures deterministic ordering for request hashing.
-type TemplatePublicValue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TemplatePublicValue) Reset() {
-	*x = TemplatePublicValue{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TemplatePublicValue) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TemplatePublicValue) ProtoMessage() {}
-
-func (x *TemplatePublicValue) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TemplatePublicValue.ProtoReflect.Descriptor instead.
-func (*TemplatePublicValue) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *TemplatePublicValue) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *TemplatePublicValue) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
 // HTTPRequest contains the HTTP fields used to make a request from the enclave.
 type HTTPRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -206,9 +152,9 @@ type HTTPRequest struct {
 	//	*HTTPRequest_BodyBytes
 	Body isHTTPRequest_Body `protobuf_oneof:"body"`
 	// headers are the request headers as name-value pairs.
-	Headers []*Header `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty"`
+	Headers map[string]string `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// template_public_values are public values used to fill in request body and header templates.
-	TemplatePublicValues []*TemplatePublicValue `protobuf:"bytes,5,rep,name=template_public_values,json=templatePublicValues,proto3" json:"template_public_values,omitempty"`
+	TemplatePublicValues map[string]string `protobuf:"bytes,5,rep,name=template_public_values,json=templatePublicValues,proto3" json:"template_public_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// custom_root_ca_cert_pem is an optional custom root CA certificate (PEM format)
 	// for verifying the external server's TLS certificate.
 	CustomRootCaCertPem []byte `protobuf:"bytes,6,opt,name=custom_root_ca_cert_pem,json=customRootCaCertPem,proto3" json:"custom_root_ca_cert_pem,omitempty"`
@@ -220,7 +166,7 @@ type HTTPRequest struct {
 
 func (x *HTTPRequest) Reset() {
 	*x = HTTPRequest{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[3]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +178,7 @@ func (x *HTTPRequest) String() string {
 func (*HTTPRequest) ProtoMessage() {}
 
 func (x *HTTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[3]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +191,7 @@ func (x *HTTPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HTTPRequest.ProtoReflect.Descriptor instead.
 func (*HTTPRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *HTTPRequest) GetUrl() string {
@@ -287,14 +233,14 @@ func (x *HTTPRequest) GetBodyBytes() []byte {
 	return nil
 }
 
-func (x *HTTPRequest) GetHeaders() []*Header {
+func (x *HTTPRequest) GetHeaders() map[string]string {
 	if x != nil {
 		return x.Headers
 	}
 	return nil
 }
 
-func (x *HTTPRequest) GetTemplatePublicValues() []*TemplatePublicValue {
+func (x *HTTPRequest) GetTemplatePublicValues() map[string]string {
 	if x != nil {
 		return x.TemplatePublicValues
 	}
@@ -346,7 +292,7 @@ type HTTPResponse struct {
 
 func (x *HTTPResponse) Reset() {
 	*x = HTTPResponse{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[4]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +304,7 @@ func (x *HTTPResponse) String() string {
 func (*HTTPResponse) ProtoMessage() {}
 
 func (x *HTTPResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[4]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +317,7 @@ func (x *HTTPResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HTTPResponse.ProtoReflect.Descriptor instead.
 func (*HTTPResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{4}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *HTTPResponse) GetStatusCode() uint32 {
@@ -407,7 +353,7 @@ type ConfidentialHTTPRequest struct {
 
 func (x *ConfidentialHTTPRequest) Reset() {
 	*x = ConfidentialHTTPRequest{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -419,7 +365,7 @@ func (x *ConfidentialHTTPRequest) String() string {
 func (*ConfidentialHTTPRequest) ProtoMessage() {}
 
 func (x *ConfidentialHTTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -432,7 +378,7 @@ func (x *ConfidentialHTTPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfidentialHTTPRequest.ProtoReflect.Descriptor instead.
 func (*ConfidentialHTTPRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{5}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ConfidentialHTTPRequest) GetVaultDonSecrets() []*SecretIdentifier {
@@ -461,21 +407,24 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\x06_owner\"2\n" +
 	"\x06Header\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"?\n" +
-	"\x13TemplatePublicValue\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"\xbf\x03\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\xe9\x04\n" +
 	"\vHTTPRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12!\n" +
 	"\vbody_string\x18\x03 \x01(\tH\x00R\n" +
 	"bodyString\x12\x1f\n" +
 	"\n" +
-	"body_bytes\x18\b \x01(\fH\x00R\tbodyBytes\x12R\n" +
-	"\aheaders\x18\x04 \x03(\v28.capabilities.networking.confidentialhttp.v1alpha.HeaderR\aheaders\x12{\n" +
-	"\x16template_public_values\x18\x05 \x03(\v2E.capabilities.networking.confidentialhttp.v1alpha.TemplatePublicValueR\x14templatePublicValues\x124\n" +
+	"body_bytes\x18\b \x01(\fH\x00R\tbodyBytes\x12d\n" +
+	"\aheaders\x18\x04 \x03(\v2J.capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.HeadersEntryR\aheaders\x12\x8d\x01\n" +
+	"\x16template_public_values\x18\x05 \x03(\v2W.capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntryR\x14templatePublicValues\x124\n" +
 	"\x17custom_root_ca_cert_pem\x18\x06 \x01(\fR\x13customRootCaCertPem\x123\n" +
-	"\atimeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\atimeoutB\x06\n" +
+	"\atimeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\atimeout\x1a:\n" +
+	"\fHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aG\n" +
+	"\x19TemplatePublicValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x06\n" +
 	"\x04body\"\x97\x01\n" +
 	"\fHTTPResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\rR\n" +
@@ -500,25 +449,26 @@ func file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescG
 	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescData
 }
 
-var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_goTypes = []any{
 	(*SecretIdentifier)(nil),        // 0: capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
 	(*Header)(nil),                  // 1: capabilities.networking.confidentialhttp.v1alpha.Header
-	(*TemplatePublicValue)(nil),     // 2: capabilities.networking.confidentialhttp.v1alpha.TemplatePublicValue
-	(*HTTPRequest)(nil),             // 3: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
-	(*HTTPResponse)(nil),            // 4: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
-	(*ConfidentialHTTPRequest)(nil), // 5: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
-	(*durationpb.Duration)(nil),     // 6: google.protobuf.Duration
+	(*HTTPRequest)(nil),             // 2: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
+	(*HTTPResponse)(nil),            // 3: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
+	(*ConfidentialHTTPRequest)(nil), // 4: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
+	nil,                             // 5: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.HeadersEntry
+	nil,                             // 6: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntry
+	(*durationpb.Duration)(nil),     // 7: google.protobuf.Duration
 }
 var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_depIdxs = []int32{
-	1, // 0: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.Header
-	2, // 1: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.template_public_values:type_name -> capabilities.networking.confidentialhttp.v1alpha.TemplatePublicValue
-	6, // 2: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.timeout:type_name -> google.protobuf.Duration
+	5, // 0: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.HeadersEntry
+	6, // 1: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.template_public_values:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntry
+	7, // 2: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.timeout:type_name -> google.protobuf.Duration
 	1, // 3: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.Header
 	0, // 4: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.vault_don_secrets:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	3, // 5: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.request:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
-	5, // 6: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:input_type -> capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
-	4, // 7: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:output_type -> capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
+	2, // 5: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.request:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
+	4, // 6: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:input_type -> capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
+	3, // 7: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:output_type -> capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
 	7, // [7:8] is the sub-list for method output_type
 	6, // [6:7] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
@@ -532,7 +482,7 @@ func file_capabilities_networking_confidentialhttp_v1alpha_client_proto_init() {
 		return
 	}
 	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[0].OneofWrappers = []any{}
-	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[3].OneofWrappers = []any{
+	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[2].OneofWrappers = []any{
 		(*HTTPRequest_BodyString)(nil),
 		(*HTTPRequest_BodyBytes)(nil),
 	}
@@ -542,7 +492,7 @@ func file_capabilities_networking_confidentialhttp_v1alpha_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc), len(file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

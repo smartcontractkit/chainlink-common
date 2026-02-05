@@ -23,12 +23,13 @@ type CacheSettings struct {
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.
 type OutboundHTTPRequest struct {
-	URL           string            `json:"url"`                 // URL to query, only http and https protocols are supported.
-	Method        string            `json:"method,omitempty"`    // HTTP verb, defaults to GET.
-	Headers       map[string]string `json:"headers,omitempty"`   // HTTP headers, defaults to empty.
-	Body          []byte            `json:"body,omitempty"`      // HTTP request body
-	TimeoutMs     uint32            `json:"timeoutMs,omitempty"` // Timeout in milliseconds
-	CacheSettings CacheSettings     `json:"cacheSettings"`       // Best-effort cache control for the request
+	URL           string              `json:"url"`                    // URL to query, only http and https protocols are supported.
+	Method        string              `json:"method,omitempty"`       // HTTP verb, defaults to GET.
+	Headers       map[string]string   `json:"headers,omitempty"`      // HTTP headers, defaults to empty.
+	MultiHeaders  map[string][]string `json:"multiHeaders,omitempty"` // HTTP headers with all values preserved
+	Body          []byte              `json:"body,omitempty"`         // HTTP request body
+	TimeoutMs     uint32              `json:"timeoutMs,omitempty"`    // Timeout in milliseconds
+	CacheSettings CacheSettings       `json:"cacheSettings"`          // Best-effort cache control for the request
 
 	// Maximum number of bytes to read from the response body.  If the gateway max response size is smaller than this value, the gateway max response size will be used.
 	MaxResponseBytes uint32 `json:"maxBytes,omitempty"`
@@ -88,7 +89,8 @@ type OutboundHTTPResponse struct {
 	// This field is only populated when the request successfully reaches the customer's endpoint and the response is received.
 	StatusCode int `json:"statusCode,omitempty"`
 
-	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers returned by the customer's endpoint
-	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body returned by the customer's endpoint
-	ExternalEndpointLatency time.Duration     `json:"externalEndpointLatency,omitempty"` // Time taken by the customer's endpoint to respond
+	Headers                 map[string]string   `json:"headers,omitempty"`                 // HTTP headers returned by the customer's endpoint (deprecated: use MultiHeaders, contains first value only for backward compatibility)
+	MultiHeaders            map[string][]string `json:"multiHeaders,omitempty"`            // HTTP headers with all values preserved
+	Body                    []byte              `json:"body,omitempty"`                    // HTTP response body returned by the customer's endpoint
+	ExternalEndpointLatency time.Duration       `json:"externalEndpointLatency,omitempty"` // Time taken by the customer's endpoint to respond
 }

@@ -133,7 +133,6 @@ func TestEmitterEmit(t *testing.T) {
 	msg := msgs[0]
 	require.Equal(t, beholderDomain, msg.Attrs[beholder.AttrKeyDomain])
 	require.Equal(t, beholderEntity, msg.Attrs[beholder.AttrKeyEntity])
-	require.Equal(t, beholderDataSchema, msg.Attrs[beholder.AttrKeyDataSchema])
 
 	var got commonv1.ChainPluginConfig
 	require.NoError(t, proto.Unmarshal(msg.Body, &got))

@@ -16,7 +16,7 @@ import (
 
 const (
 	beholderDomain = "node-platform"
-	beholderEntity = "ChainPluginConfig"
+	beholderEntity = "node-platform-common.v1.ChainPluginConfig"
 
 	defaultEmitInterval = time.Minute * 3
 	serviceName         = "PluginRelayerConfigEmitter"

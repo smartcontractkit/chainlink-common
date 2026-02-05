@@ -8,7 +8,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Go
         uses: ./.github/actions/setup-go
         with:
@@ -18,8 +17,14 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      # Runs go tests, uploads results, and skips quarantined flaky tests.
       - name: Unit Tests
-        run: go test ./... -coverpkg=./... -coverprofile=coverage.txt
+        uses: smartcontractkit/.github/actions/branch-out-upload@branch-out-upload/v1
+        with:
+          go-test-args: ./... -coverpkg=./... -coverprofile=coverage.txt
+          trunk-org-slug: chainlink
+          trunk-token: ${{ secrets.TRUNK_API_KEY }}
+          trunk-job-url: ${{ format('https://github.com/{0}/actions/runs/{1}/job/{2}/attempts/{3}', github.repository, github.run_id, job.check_run_id, github.run_attempt) }}
 
       - name: Fuzz Tests
         # the amount of --seconds here is subject to change based on how long the CI job takes in the future
@@ -34,11 +39,11 @@ jobs:
         if: failure()
         run: find . -type f|fgrep '/testdata/fuzz/'|while read f; do echo $f; cat $f; done
 
-      - name: Upload Go test results
+      - name: Upload Go test coverage
         if: always()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-          name: go-test-results
+          name: go-test-coverage
           path: |
             ./coverage.txt
 

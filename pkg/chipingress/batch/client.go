@@ -29,7 +29,8 @@ type Client struct {
 	callbackWg         sync.WaitGroup
 	shutdownTimeout    time.Duration
 	shutdownOnce       sync.Once
-	batch              *buffer[*messageWithCallback]
+	batcherDone        chan struct{}
+	cancelBatcher      context.CancelFunc
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -48,7 +49,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		stopCh:             make(chan struct{}),
 		callbackWg:         sync.WaitGroup{},
 		shutdownTimeout:    5 * time.Second,
-		batch:              newBuffer[*messageWithCallback](10),
+		batcherDone:        make(chan struct{}),
 	}
 
 	for _, opt := range opts {
@@ -60,41 +61,31 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 
 // Start begins processing messages from the queue and sending them in batches
 func (b *Client) Start(ctx context.Context) {
-	go func() {
-		timer := time.NewTimer(b.batchInterval)
-		timer.Stop()
+	// Create a cancellable context for the batcher
+	batcherCtx, cancel := context.WithCancel(ctx)
+	b.cancelBatcher = cancel
 
-		for {
+	go func() {
+		defer close(b.batcherDone)
+
+		go func() {
 			select {
 			case <-ctx.Done():
-				// ensure:
-				// - current batch is flushed
-				// - all current network calls are completed
-				// - all callbacks are completed
 				b.Stop()
-				return
-			case <-b.stopCh: // this can only happen if .Stop()
-				// since this was called from Stop, the remaining batch will be flushed alredy
-				return
-			case msg := <-b.messageBuffer:
-				if b.batch.Len() == 0 {
-					timer.Reset(b.batchInterval)
-				}
-
-				b.batch.Add(msg)
-
-				if b.batch.Len() >= b.batchSize {
-					batchToSend := b.batch.Clear()
-					timer.Stop()
-					b.sendBatch(ctx, batchToSend)
-				}
-			case <-timer.C:
-				if b.batch.Len() > 0 {
-					batchToSend := b.batch.Clear()
-					b.sendBatch(ctx, batchToSend)
-				}
+			case <-b.stopCh:
+				cancel()
 			}
-		}
+		}()
+
+		batchWithInterval(
+			batcherCtx,
+			b.messageBuffer,
+			b.batchSize,
+			b.batchInterval,
+			func(batch []*messageWithCallback) {
+				b.sendBatch(batcherCtx, batch)
+			},
+		)
 	}()
 }
 
@@ -108,13 +99,14 @@ func (b *Client) Stop() {
 		ctx, cancel := b.stopCh.CtxWithTimeout(b.shutdownTimeout)
 		defer cancel()
 
+		if b.cancelBatcher != nil {
+			b.cancelBatcher()
+		}
 		close(b.stopCh)
 
 		done := make(chan struct{})
 		go func() {
-			// flush remaining batch
-			b.flush(b.batch.Clear())
-			// wait for pending sends by getting all semaphore slots
+			<-b.batcherDone
 			for range cap(b.maxConcurrentSends) {
 				b.maxConcurrentSends <- struct{}{}
 			}
@@ -195,17 +187,6 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			}
 		})
 	}()
-}
-
-func (b *Client) flush(batch []*messageWithCallback) {
-	if len(batch) == 0 {
-		return
-	}
-
-	ctx, cancel := b.stopCh.CtxWithTimeout(b.maxPublishTimeout)
-	defer cancel()
-
-	b.sendBatch(ctx, batch)
 }
 
 // WithBatchSize sets the number of messages to accumulate before sending a batch

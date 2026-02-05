@@ -19,12 +19,11 @@ jobs:
 
       # Runs go tests, uploads results, and skips quarantined flaky tests.
       - name: Unit Tests
-        uses: smartcontractkit/.github/actions/branch-out-upload@branch-out-upload/v1
+        uses: smartcontractkit/.github/actions/branch-out-upload@6d861dbe0a0825eb2211a6517c181edea0f7a892 # DEBUG: Checking fix version
         with:
           go-test-args: ./... -coverpkg=./... -coverprofile=coverage.txt
           trunk-org-slug: chainlink
           trunk-token: ${{ secrets.TRUNK_API_KEY }}
-          trunk-job-url: ${{ format('https://github.com/{0}/actions/runs/{1}/job/{2}/attempts/{3}', github.repository, github.run_id, job.check_run_id, github.run_attempt) }}
 
       - name: Fuzz Tests
         # the amount of --seconds here is subject to change based on how long the CI job takes in the future

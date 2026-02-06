@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770248285069,
+  "lastUpdate": 1770341066801,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37740,6 +37740,66 @@ window.BENCHMARK_DATA = {
             "value": 141016,
             "unit": "ns/op",
             "extra": "8222 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "ed1fb0284e5d75dc9ab3fe3696e598e21b8fcde6",
+          "message": "Update confidential HTTP types with multi_headers and encrypt_output (#1824)\n\n* Update confidential HTTP types with multi_headers and encrypt_output\n\nBump chainlink-protos/cre/go to cre-sdk/v1alpha.18 and regenerate.\n\nChanges from chainlink-protos PR #289:\n- Add encrypt_output field to ConfidentialHTTPRequest\n- Add HeaderValues message for multi-value header support\n- Replace headers with multi_headers (map[string]*HeaderValues) in HTTPRequest\n- Replace headers with multi_headers (map[string]*HeaderValues) in HTTPResponse\n\n* Run gomodtidy",
+          "timestamp": "2026-02-06T01:14:44Z",
+          "tree_id": "49d05898d51f013fd93d6b8a7e84425910ab0ffc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ed1fb0284e5d75dc9ab3fe3696e598e21b8fcde6"
+        },
+        "date": 1770341065111,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.4,
+            "unit": "ns/op",
+            "extra": "3382104 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97944,
+            "unit": "ns/op",
+            "extra": "12262 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.9,
+            "unit": "ns/op",
+            "extra": "2880736 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97850,
+            "unit": "ns/op",
+            "extra": "12280 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26633,
+            "unit": "ns/op",
+            "extra": "44989 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147733,
+            "unit": "ns/op",
+            "extra": "8010 times\n4 procs"
           }
         ]
       }

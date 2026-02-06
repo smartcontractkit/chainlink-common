@@ -63,6 +63,22 @@ func (e *pluginRelayerConfigEmitter) start(ctx context.Context) error {
 	if e.interval <= 0 {
 		e.interval = defaultEmitInterval
 	}
+	if e.csaPublicKey == "" {
+		e.eng.Warn("csa_public_key not configured for plugin relayer config emitter")
+	}
+	if e.chainID == "" {
+		e.eng.Warn("chain_id not configured for plugin relayer config emitter")
+	}
+	if len(e.nodes) == 0 {
+		e.eng.Warn("no nodes configured for plugin relayer config emitter")
+	}
+	e.eng.Infow(
+		"Starting plugin relayer config emitter",
+		"interval", e.interval,
+		"chainID", e.chainID,
+		"csaPublicKeyPresent", e.csaPublicKey != "",
+		"nodes", len(e.nodes),
+	)
 	e.eng.GoTick(services.NewTicker(e.interval), e.emit)
 	return nil
 }
@@ -71,17 +87,43 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 	payload := e.buildConfig()
 	payloadBytes, err := proto.Marshal(payload)
 	if err != nil {
-		e.eng.Errorw("failed to marshal ChainPluginConfig", "err", err)
+		e.eng.Errorw(
+			"failed to marshal ChainPluginConfig",
+			"err", err,
+			"chainID", e.chainID,
+			"nodes", len(payload.Nodes),
+		)
 		return
 	}
+
+	e.eng.Debugw(
+		"Emitting ChainPluginConfig",
+		"payloadBytes", len(payloadBytes),
+		"chainID", e.chainID,
+		"nodes", len(payload.Nodes),
+	)
 
 	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
 		beholder.AttrKeyDomain, beholderDomain,
 		beholder.AttrKeyEntity, beholderEntity,
 	)
 	if err != nil {
-		e.eng.Errorw("failed to emit ChainPluginConfig", "err", err)
+		e.eng.Errorw(
+			"failed to emit ChainPluginConfig",
+			"err", err,
+			"payloadBytes", len(payloadBytes),
+			"chainID", e.chainID,
+			"nodes", len(payload.Nodes),
+		)
+		return
 	}
+
+	e.eng.Debugw(
+		"Emitted ChainPluginConfig",
+		"payloadBytes", len(payloadBytes),
+		"chainID", e.chainID,
+		"nodes", len(payload.Nodes),
+	)
 }
 
 func (e *pluginRelayerConfigEmitter) buildConfig() *commonv1.ChainPluginConfig {

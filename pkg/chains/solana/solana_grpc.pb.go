@@ -34,6 +34,7 @@ const (
 	Solana_SubmitTransaction_FullMethodName           = "/loop.solana.Solana/SubmitTransaction"
 	Solana_UnregisterLogTracking_FullMethodName       = "/loop.solana.Solana/UnregisterLogTracking"
 	Solana_GetLatestLPBlock_FullMethodName            = "/loop.solana.Solana/GetLatestLPBlock"
+	Solana_GetFiltersNames_FullMethodName             = "/loop.solana.Solana/GetFiltersNames"
 )
 
 // SolanaClient is the client API for Solana service.
@@ -54,6 +55,7 @@ type SolanaClient interface {
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*UnregisterLogTrackingReply, error)
 	GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLPBlockReply, error)
+	GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFiltersNamesReply, error)
 }
 
 type solanaClient struct {
@@ -204,6 +206,16 @@ func (c *solanaClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, 
 	return out, nil
 }
 
+func (c *solanaClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFiltersNamesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFiltersNamesReply)
+	err := c.cc.Invoke(ctx, Solana_GetFiltersNames_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SolanaServer is the server API for Solana service.
 // All implementations must embed UnimplementedSolanaServer
 // for forward compatibility.
@@ -222,6 +234,7 @@ type SolanaServer interface {
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*UnregisterLogTrackingReply, error)
 	GetLatestLPBlock(context.Context, *emptypb.Empty) (*GetLatestLPBlockReply, error)
+	GetFiltersNames(context.Context, *emptypb.Empty) (*GetFiltersNamesReply, error)
 	mustEmbedUnimplementedSolanaServer()
 }
 
@@ -273,6 +286,9 @@ func (UnimplementedSolanaServer) UnregisterLogTracking(context.Context, *Unregis
 }
 func (UnimplementedSolanaServer) GetLatestLPBlock(context.Context, *emptypb.Empty) (*GetLatestLPBlockReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
+}
+func (UnimplementedSolanaServer) GetFiltersNames(context.Context, *emptypb.Empty) (*GetFiltersNamesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
 func (UnimplementedSolanaServer) mustEmbedUnimplementedSolanaServer() {}
 func (UnimplementedSolanaServer) testEmbeddedByValue()                {}
@@ -547,6 +563,24 @@ func _Solana_GetLatestLPBlock_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Solana_GetFiltersNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolanaServer).GetFiltersNames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Solana_GetFiltersNames_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolanaServer).GetFiltersNames(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Solana_ServiceDesc is the grpc.ServiceDesc for Solana service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -609,6 +643,10 @@ var Solana_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestLPBlock",
 			Handler:    _Solana_GetLatestLPBlock_Handler,
+		},
+		{
+			MethodName: "GetFiltersNames",
+			Handler:    _Solana_GetFiltersNames_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

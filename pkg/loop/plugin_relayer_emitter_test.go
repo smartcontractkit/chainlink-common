@@ -20,9 +20,19 @@ func TestNormalizeEndpoint(t *testing.T) {
 		want string
 	}{
 		{
+			name: "blank",
+			in:   "   ",
+			want: "",
+		},
+		{
 			name: "https with userinfo path and port",
 			in:   "https://user:pass@host:8545/path?x=y",
 			want: "https://host",
+		},
+		{
+			name: "https missing host",
+			in:   "https://",
+			want: "",
 		},
 		{
 			name: "wss with path",
@@ -33,6 +43,11 @@ func TestNormalizeEndpoint(t *testing.T) {
 			name: "host with port no scheme",
 			in:   "host:8545",
 			want: "host",
+		},
+		{
+			name: "ipv6 host",
+			in:   "https://[2001:db8::1]:8545/path",
+			want: "https://[2001:db8::1]",
 		},
 		{
 			name: "userinfo host path no scheme",
@@ -66,6 +81,24 @@ func TestNormalizeEndpointsMap(t *testing.T) {
 		"URL_0": "https://host",
 		"URL_1": "host",
 	}, got)
+}
+
+func TestNormalizeEndpointsEmpty(t *testing.T) {
+	require.Nil(t, normalizeEndpoints(nil))
+	require.Nil(t, normalizeEndpoints(map[string]string{}))
+	require.Nil(t, normalizeEndpoints(map[string]string{
+		"":    "https://host",
+		"URL": "://",
+	}))
+}
+
+func TestNormalizeNodesEmpty(t *testing.T) {
+	require.Nil(t, normalizeNodes(nil))
+	require.Nil(t, normalizeNodes([]map[string]string{}))
+	require.Nil(t, normalizeNodes([]map[string]string{
+		{"": "https://host"},
+		{"URL": "://"},
+	}))
 }
 
 func TestParseOriginURL(t *testing.T) {
@@ -106,6 +139,24 @@ func TestNewPluginRelayerConfigEmitterDefaults(t *testing.T) {
 	require.Equal(t, "from-beholder", emitter.csaPublicKey)
 	require.Equal(t, "", emitter.chainID)
 	require.Equal(t, []*commonv1.Node{{Urls: map[string]string{"URL": "host"}}}, emitter.nodes)
+}
+
+func TestPluginRelayerConfigEmitterStartDefaults(t *testing.T) {
+	emitter := NewPluginRelayerConfigEmitter(
+		logger.Test(t),
+		"csa-123",
+		"chain-1",
+		nil,
+	)
+	emitter.interval = 0
+	emitter.csaPublicKey = ""
+	emitter.chainID = ""
+	emitter.nodes = nil
+
+	require.NoError(t, emitter.Start(context.Background()))
+	t.Cleanup(func() { require.NoError(t, emitter.Close()) })
+
+	require.Equal(t, defaultEmitInterval, emitter.interval)
 }
 
 func TestEmitterEmit(t *testing.T) {

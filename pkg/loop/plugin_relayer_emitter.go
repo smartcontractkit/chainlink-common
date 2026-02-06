@@ -16,7 +16,7 @@ import (
 
 const (
 	beholderDomain     = "node-platform"
-	beholderEntity     = "node-platform-common.v1.ChainPluginConfig"
+	beholderEntity     = "common.v1.ChainPluginConfig"
 	beholderDataSchema = "/node-platform/common/v1"
 
 	defaultEmitInterval = time.Minute * 3

@@ -97,7 +97,7 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 		return
 	}
 
-	e.eng.Debugw(
+	e.eng.Infow(
 		"Emitting ChainPluginConfig",
 		"payloadBytes", len(payloadBytes),
 		"chainID", e.chainID,
@@ -120,7 +120,7 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 		return
 	}
 
-	e.eng.Debugw(
+	e.eng.Infow(
 		"Emitted ChainPluginConfig",
 		"payloadBytes", len(payloadBytes),
 		"chainID", e.chainID,

@@ -26,8 +26,6 @@ type pluginRelayerConfigEmitter struct {
 	services.Service
 	eng *services.Engine
 
-	lggr logger.Logger
-
 	csaPublicKey string
 	chainID      string
 	nodes        []*commonv1.Node
@@ -36,14 +34,6 @@ type pluginRelayerConfigEmitter struct {
 
 // NewPluginRelayerConfigEmitter constructs a service that emits ChainPluginConfig to Beholder.
 func NewPluginRelayerConfigEmitter(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string) *pluginRelayerConfigEmitter {
-	return newPluginRelayerConfigEmitterWithInterval(lggr, csaPublicKey, chainID, rawNodes, defaultEmitInterval)
-}
-
-func newPluginRelayerConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey, chainID string, rawNodes []map[string]string, interval time.Duration) *pluginRelayerConfigEmitter {
-	if interval <= 0 {
-		interval = defaultEmitInterval
-	}
-
 	if csaPublicKey == "" {
 		csaPublicKey = beholder.GetClient().Config.AuthPublicKeyHex
 		if csaPublicKey == "" {
@@ -55,11 +45,10 @@ func newPluginRelayerConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey,
 	}
 
 	emitter := &pluginRelayerConfigEmitter{
-		lggr:         lggr,
 		csaPublicKey: csaPublicKey,
 		chainID:      chainID,
 		nodes:        normalizeNodes(rawNodes),
-		interval:     interval,
+		interval:     defaultEmitInterval,
 	}
 
 	emitter.Service, emitter.eng = services.Config{
@@ -71,6 +60,9 @@ func newPluginRelayerConfigEmitterWithInterval(lggr logger.Logger, csaPublicKey,
 }
 
 func (e *pluginRelayerConfigEmitter) start(ctx context.Context) error {
+	if e.interval <= 0 {
+		e.interval = defaultEmitInterval
+	}
 	e.eng.GoTick(services.NewTicker(e.interval), e.emit)
 	return nil
 }
@@ -79,7 +71,7 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 	payload := e.buildConfig()
 	payloadBytes, err := proto.Marshal(payload)
 	if err != nil {
-		e.lggr.Errorw("failed to marshal ChainPluginConfig", "err", err)
+		e.eng.Errorw("failed to marshal ChainPluginConfig", "err", err)
 		return
 	}
 
@@ -88,7 +80,7 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 		beholder.AttrKeyEntity, beholderEntity,
 	)
 	if err != nil {
-		e.lggr.Errorw("failed to emit ChainPluginConfig", "err", err)
+		e.eng.Errorw("failed to emit ChainPluginConfig", "err", err)
 	}
 }
 

@@ -88,19 +88,18 @@ func TestParseOriginURL(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestNewPluginRelayerConfigEmitterWithIntervalDefaults(t *testing.T) {
+func TestNewPluginRelayerConfigEmitterDefaults(t *testing.T) {
 	prev := beholder.GetClient()
 	client := beholder.NewNoopClient()
 	client.Config.AuthPublicKeyHex = "from-beholder"
 	beholder.SetClient(client)
 	t.Cleanup(func() { beholder.SetClient(prev) })
 
-	emitter := newPluginRelayerConfigEmitterWithInterval(
+	emitter := NewPluginRelayerConfigEmitter(
 		logger.Test(t),
 		"",
 		"",
 		[]map[string]string{{"URL": "host:8545"}},
-		0,
 	)
 
 	require.Equal(t, defaultEmitInterval, emitter.interval)
@@ -113,7 +112,7 @@ func TestEmitterEmit(t *testing.T) {
 	obs := beholdertest.NewObserver(t)
 	lggr := logger.Test(t)
 
-	emitter := newPluginRelayerConfigEmitterWithInterval(
+	emitter := NewPluginRelayerConfigEmitter(
 		lggr,
 		"csa-123",
 		"chain-1",
@@ -122,7 +121,6 @@ func TestEmitterEmit(t *testing.T) {
 			{"URL": "host:8545"},
 			{"URL": "https://user:pass@host:8545/path"},
 		},
-		defaultEmitInterval,
 	)
 
 	emitter.emit(context.Background())

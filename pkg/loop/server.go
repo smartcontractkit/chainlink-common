@@ -84,10 +84,10 @@ func WithSettingsGetter(settingsGetter settings.Getter) ServerOpt {
 
 // Server holds common plugin server fields.
 type Server struct {
+	Logger          logger.SugaredLogger
 	EnvConfig       EnvConfig
 	cfg             ServerConfig
 	GRPCOpts        GRPCOpts
-	Logger          logger.SugaredLogger
 	db              *sqlx.DB           // optional
 	dbStatsReporter *pg.StatsReporter  // optional
 	DataSource      sqlutil.DataSource // optional
@@ -101,11 +101,7 @@ func newServer(loggerName string) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
-	lggr = logger.Named(lggr, loggerName)
-	return &Server{
-		GRPCOpts: NewGRPCOpts(nil), // default prometheus.Registerer
-		Logger:   logger.Sugared(lggr),
-	}, nil
+	return &Server{Logger: logger.Sugared(logger.Named(lggr, loggerName))}, nil
 }
 
 func (s *Server) start(opts ...ServerOpt) error {
@@ -124,6 +120,11 @@ func (s *Server) start(opts ...ServerOpt) error {
 	if err := s.EnvConfig.parse(); err != nil {
 		return fmt.Errorf("error getting environment configuration: %w", err)
 	}
+
+	s.GRPCOpts = GRPCOptsConfig{
+		Registerer:           nil, // default prometheus.Registerer
+		ServerMaxRecvMsgSize: s.EnvConfig.GRPCServerMaxRecvMsgSize,
+	}.New(s.Logger)
 
 	tracingAttrs := s.EnvConfig.TracingAttributes
 	if tracingAttrs == nil {

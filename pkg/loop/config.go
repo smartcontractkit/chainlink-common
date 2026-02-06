@@ -30,6 +30,8 @@ const (
 
 	envFeatureLogPoller = "CL_FEATURE_LOG_POLLER"
 
+	envGRPCServerMaxRecvMsgSize = "CL_GRPC_SERVER_MAX_RECV_MSG_SIZE"
+
 	envMercuryCacheLatestReportDeadline = "CL_MERCURY_CACHE_LATEST_REPORT_DEADLINE"
 	envMercuryCacheLatestReportTTL      = "CL_MERCURY_CACHE_LATEST_REPORT_TTL"
 	envMercuryCacheMaxStaleAge          = "CL_MERCURY_CACHE_MAX_STALE_AGE"
@@ -98,6 +100,8 @@ type EnvConfig struct {
 	DatabaseTracingEnabled               bool
 
 	FeatureLogPoller bool
+
+	GRPCServerMaxRecvMsgSize int
 
 	MercuryCacheLatestReportDeadline time.Duration
 	MercuryCacheLatestReportTTL      time.Duration
@@ -172,6 +176,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	}
 
 	add(envFeatureLogPoller, strconv.FormatBool(e.FeatureLogPoller))
+
+	add(envGRPCServerMaxRecvMsgSize, strconv.Itoa(e.GRPCServerMaxRecvMsgSize))
 
 	add(envMercuryCacheLatestReportDeadline, e.MercuryCacheLatestReportDeadline.String())
 	add(envMercuryCacheLatestReportTTL, e.MercuryCacheLatestReportTTL.String())
@@ -292,6 +298,11 @@ func (e *EnvConfig) parse() error {
 	}
 
 	e.FeatureLogPoller, err = getBool(envFeatureLogPoller)
+	if err != nil {
+		return err
+	}
+
+	e.GRPCServerMaxRecvMsgSize, err = getInt(envGRPCServerMaxRecvMsgSize)
 	if err != nil {
 		return err
 	}

@@ -40,6 +40,8 @@ func TestEnvConfig_parse(t *testing.T) {
 
 				envFeatureLogPoller: "true",
 
+				envGRPCServerMaxRecvMsgSize: "42",
+
 				envMercuryCacheLatestReportDeadline: "1ms",
 				envMercuryCacheLatestReportTTL:      "1µs",
 				envMercuryCacheMaxStaleAge:          "1ns",
@@ -143,6 +145,8 @@ var envCfgFull = EnvConfig{
 
 	FeatureLogPoller: true,
 
+	GRPCServerMaxRecvMsgSize: 42,
+
 	MercuryCacheLatestReportDeadline: time.Millisecond,
 	MercuryCacheLatestReportTTL:      time.Microsecond,
 	MercuryCacheMaxStaleAge:          time.Nanosecond,
@@ -196,6 +200,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
 	assert.Equal(t, "true", got["CL_DATABASE_TRACING_ENABLED"])
 
+	assert.Equal(t, "42", got[envGRPCServerMaxRecvMsgSize])
 	assert.Equal(t, "1ms", got[envMercuryCacheLatestReportDeadline])
 	assert.Equal(t, "1µs", got[envMercuryCacheLatestReportTTL])
 	assert.Equal(t, "1ns", got[envMercuryCacheMaxStaleAge])

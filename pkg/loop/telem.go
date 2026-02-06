@@ -55,21 +55,30 @@ type TracingConfig struct {
 }
 
 type GRPCOptsConfig struct {
-	Registerer prometheus.Registerer // leave nil to use default prometheus.Registerer
+	Registerer           prometheus.Registerer // leave nil to use default [prometheus.Registerer]
+	ServerMaxRecvMsgSize int                   // [grpc.MaxRecvMsgSize]
 }
 
 func (c GRPCOptsConfig) New(lggr logger.Logger) GRPCOpts {
 	if c.Registerer == nil {
 		c.Registerer = prometheus.DefaultRegisterer
 	}
-	return GRPCOpts{DialOpts: dialOptions(c.Registerer), NewServer: newServerFn(lggr, c.Registerer)}
+	opts := GRPCOpts{DialOpts: dialOptions(c.Registerer), NewServer: newServerFn(lggr, c.Registerer)}
+	if c.ServerMaxRecvMsgSize > 0 {
+		newFn := opts.NewServer
+		opts.NewServer = func(opts []grpc.ServerOption) *grpc.Server {
+			opts = append(opts, grpc.MaxRecvMsgSize(c.ServerMaxRecvMsgSize))
+			return newFn(opts)
+		}
+	}
+	return opts
 }
 
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
 // It is called from the host and each plugin - intended as there is bidirectional communication
 // Deprecated: Use GRPCOptsConfig.New
 func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
-	return GRPCOptsConfig{registerer}.New(logger.Nop())
+	return GRPCOptsConfig{Registerer: registerer}.New(logger.Nop())
 }
 
 // SetupTracing initializes open telemetry with the provided config.

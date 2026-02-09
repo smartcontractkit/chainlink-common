@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770634780881,
+  "lastUpdate": 1770651745555,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37920,6 +37920,66 @@ window.BENCHMARK_DATA = {
             "value": 144908,
             "unit": "ns/op",
             "extra": "8216 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "studentcuza@gmail.com",
+            "name": "Gheorghe Strimtu",
+            "username": "gheorghestrimtu"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "67bf1aaa3e1e8b2e56e398906def473ea6e6ec8d",
+          "message": "feat(node-platform): add ChainPluginConfigEmitter and URL normalizati… (#1818)\n\n* feat(node-platform): add ChainPluginConfigEmitter and URL normalization functions\n\n* feat(node-platform): improve configuration handling in ChainPluginConfigEmitter\n\n* fix(node-platform): update node-platform dependency version in go.mod and go.sum\n\n* feat(node-platform): add node-platform to flowchart and links in go.md\n\n* feat(node-platform): enhance URL normalization in NormalizeEndpoint and parseOriginURL functions\n\n* feat(node-platform): add tests for NormalizeEndpoints, parseOriginURL, and ChainPluginConfigEmitter\n\n* Update pkg/loop/nodeplatform/emitter.go\n\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>\n\n* fix slices and maps\n\n* feat(node-platform): refactor URL handling to use map in ChainPluginConfigEmitter and update related tests\n\n* feat(node-platform): update ChainPluginConfigEmitter to use nodes instead of URLs and add NormalizeNodes function\n\n* feat(node-platform): update TestEmitterEmit to validate Nodes instead of Urls\n\n* feat(node-platform): add PluginRelayerConfigEmitter and associated tests for node configuration emission\n\n* feat(node-platform): update default emit interval and refactor URLs to Nodes in PluginRelayerConfigEmitter\n\n* fix(node-platform): remove unused beholderDataSchema constant from PluginRelayerConfigEmitter\n\n* fix(node-platform): update beholderEntity to include full namespace in PluginRelayerConfigEmitter\n\n* fix(node-platform): remove unused beholderDataSchema assertion in TestEmitterEmit\n\n* refactor(node-platform): simplify PluginRelayerConfigEmitter initialization and update tests\n\n* feat(node-platform): add logging for configuration validation and emission in PluginRelayerConfigEmitter\n\n* feat(node-platform): add data schema attribute to emission in PluginRelayerConfigEmitter\n\n* feat(node-platform): change logging level from Debug to Info for ChainPluginConfig emissions\n\n* feat(node-platform): change logging level from Info to Debug for ChainPluginConfig emissions\n\n* fix(node-platform): correct beholderEntity value in plugin relayer emitter\n\n* feat(tests): add additional test cases for endpoint normalization and emitter defaults\n\n* refactor(plugin relayer): remove redundant warnings for unconfigured fields\n\n---------\n\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>",
+          "timestamp": "2026-02-09T15:33:33Z",
+          "tree_id": "0a82c57f1ba0f04f2f271dc7ef375ea42d69ccd8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/67bf1aaa3e1e8b2e56e398906def473ea6e6ec8d"
+        },
+        "date": 1770651744013,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.9,
+            "unit": "ns/op",
+            "extra": "3327217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90532,
+            "unit": "ns/op",
+            "extra": "13233 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.9,
+            "unit": "ns/op",
+            "extra": "2928075 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 89720,
+            "unit": "ns/op",
+            "extra": "13423 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26669,
+            "unit": "ns/op",
+            "extra": "45025 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 137666,
+            "unit": "ns/op",
+            "extra": "8337 times\n4 procs"
           }
         ]
       }

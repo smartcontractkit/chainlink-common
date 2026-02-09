@@ -64,15 +64,6 @@ func (e *pluginRelayerConfigEmitter) start(ctx context.Context) error {
 	if e.interval <= 0 {
 		e.interval = defaultEmitInterval
 	}
-	if e.csaPublicKey == "" {
-		e.eng.Warn("csa_public_key not configured for plugin relayer config emitter")
-	}
-	if e.chainID == "" {
-		e.eng.Warn("chain_id not configured for plugin relayer config emitter")
-	}
-	if len(e.nodes) == 0 {
-		e.eng.Warn("no nodes configured for plugin relayer config emitter")
-	}
 	e.eng.Infow(
 		"Starting plugin relayer config emitter",
 		"interval", e.interval,

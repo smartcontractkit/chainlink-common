@@ -22,14 +22,14 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 		ks   func() core.Keystore
 	}{
 		{"nop", func() core.Keystore {
-			return benchKeystore{
+			return &benchKeystore{
 				sign: func(ctx context.Context, _ string, data []byte) ([]byte, error) {
 					return data, nil
 				},
 			}
 		}},
 		{"hex", func() core.Keystore {
-			return benchKeystore{
+			return &benchKeystore{
 				sign: func(ctx context.Context, _ string, data []byte) ([]byte, error) {
 					return []byte(hex.EncodeToString(data)), nil
 				},
@@ -37,7 +37,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 		}},
 		{"ed25519", func() core.Keystore {
 			pk := ed25519.NewKeyFromSeed([]byte{31: 42})
-			return benchKeystore{
+			return &benchKeystore{
 				sign: func(ctx context.Context, _ string, data []byte) ([]byte, error) {
 					return ed25519.Sign(pk, data), nil
 				},
@@ -81,6 +81,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 }
 
 type benchKeystore struct {
+	core.UnimplementedKeystore
 	account func(ctx context.Context) ([]string, error)
 	sign    func(ctx context.Context, account string, data []byte) ([]byte, error)
 }

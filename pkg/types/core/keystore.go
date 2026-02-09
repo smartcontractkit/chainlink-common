@@ -18,10 +18,17 @@ import (
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
+type AccountsFilter struct {
+	// WithDeterminism set ensures that the accounts list is returned in a fixed
+	// order across all node restarts.
+	WithDeterminism bool
+}
+
 // Implementations of this interface should embed the UnimplementedKeystore struct,
 // as to ensure forward compatibility with changes to the Keystore interface.
 type Keystore interface {
 	Accounts(ctx context.Context) (accounts []string, err error)
+	ListAccounts(context.Context, *AccountsFilter) ([]string, error)
 	// Sign returns data signed by account.
 	// nil data can be used as a no-op to check for account existence.
 	Sign(ctx context.Context, account string, data []byte) (signed []byte, err error)
@@ -88,6 +95,7 @@ var StandardCapabilityAccount = "STANDARD_CAPABILITY_ACCOUNT"
 
 // singleAccountSigner implements Keystore for a single account.
 type singleAccountSigner struct {
+	UnimplementedKeystore
 	account *string
 	signer  crypto.Signer
 }
@@ -123,6 +131,7 @@ type Decrypter interface {
 
 // signerDecrypter implements Keystore for a single sign account and decrypt account.
 type signerDecrypter struct {
+	UnimplementedKeystore
 	account   string
 	signer    crypto.Signer
 	decrypter Decrypter
@@ -176,6 +185,10 @@ type UnimplementedKeystore struct{}
 
 func (u *UnimplementedKeystore) Accounts(ctx context.Context) (accounts []string, err error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Accounts not implemented")
+}
+
+func (u *UnimplementedKeystore) ListAccounts(ctx context.Context, filter *AccountsFilter) ([]string, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
 }
 
 func (u *UnimplementedKeystore) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {

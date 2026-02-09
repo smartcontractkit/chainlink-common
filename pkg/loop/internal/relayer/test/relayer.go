@@ -411,7 +411,7 @@ func (s staticRelayer) Replay(ctx context.Context, fromBlock string, args map[st
 
 func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
 	t.Run("ContractReader", func(t *testing.T) {
-		//t.Parallel()
+		// t.Parallel()
 		ctx := t.Context()
 		contractReader, err := relayer.NewContractReader(ctx, []byte("test"))
 		require.NoError(t, err)
@@ -576,7 +576,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.P
 		}
 
 		ctx := t.Context()
-		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, keystore, nil)
+		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, &keystore, &keystore, nil)
 
 		grpcUnavailableErr(t, err)
 	})
@@ -687,6 +687,7 @@ func grpcUnavailableErr(t *testing.T, err error) {
 }
 
 type fuzzerKeystore struct {
+	core.UnimplementedKeystore
 	accounts      []string
 	acctErr       bool
 	signed        []byte

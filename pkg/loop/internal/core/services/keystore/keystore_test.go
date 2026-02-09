@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 func Test_KeyStoreClient(t *testing.T) {
@@ -85,6 +86,7 @@ func (t *testGrpcClient) Decrypt(ctx context.Context, req *pb.DecryptRequest, op
 }
 
 type testKeyStore struct {
+	core.UnimplementedKeystore
 	account       string
 	signedData    []byte
 	decryptedData []byte

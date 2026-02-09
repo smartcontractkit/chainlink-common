@@ -14,10 +14,11 @@ import (
 var _ core.Keystore = (*Client)(nil)
 
 type Client struct {
+	core.UnimplementedKeystore
 	grpc pb.KeystoreClient
 }
 
-func (k Client) Accounts(ctx context.Context) ([]string, error) {
+func (k *Client) Accounts(ctx context.Context) ([]string, error) {
 	accts, err := k.grpc.Accounts(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accounts: %w", err)
@@ -26,7 +27,7 @@ func (k Client) Accounts(ctx context.Context) ([]string, error) {
 	return accts.Accounts, nil
 }
 
-func (k Client) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
+func (k *Client) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
 	resp, err := k.grpc.Sign(ctx, &pb.SignRequest{Account: account, Data: data})
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign data for account: %s: %w", account, err)
@@ -35,7 +36,7 @@ func (k Client) Sign(ctx context.Context, account string, data []byte) ([]byte, 
 	return resp.SignedData, nil
 }
 
-func (k Client) Decrypt(ctx context.Context, account string, data []byte) ([]byte, error) {
+func (k *Client) Decrypt(ctx context.Context, account string, data []byte) ([]byte, error) {
 	resp, err := k.grpc.Decrypt(ctx, &pb.DecryptRequest{Account: account, Data: data})
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt data for account: %s: %w", account, err)
@@ -45,7 +46,7 @@ func (k Client) Decrypt(ctx context.Context, account string, data []byte) ([]byt
 }
 
 func NewClient(cc grpc.ClientConnInterface) *Client {
-	return &Client{pb.NewKeystoreClient(cc)}
+	return &Client{grpc: pb.NewKeystoreClient(cc)}
 }
 
 var _ pb.KeystoreServer = (*Server)(nil)
@@ -59,7 +60,7 @@ func NewServer(impl core.Keystore) *Server {
 	return &Server{impl: impl}
 }
 
-func (s Server) Accounts(ctx context.Context, req *emptypb.Empty) (*pb.AccountsReply, error) {
+func (s *Server) Accounts(ctx context.Context, req *emptypb.Empty) (*pb.AccountsReply, error) {
 	accts, err := s.impl.Accounts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accounts: %w", err)
@@ -67,7 +68,7 @@ func (s Server) Accounts(ctx context.Context, req *emptypb.Empty) (*pb.AccountsR
 	return &pb.AccountsReply{Accounts: accts}, nil
 }
 
-func (s Server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignReply, error) {
+func (s *Server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignReply, error) {
 	signedData, err := s.impl.Sign(ctx, req.Account, req.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign data for account: %s: %w", req.Account, err)
@@ -76,7 +77,7 @@ func (s Server) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignReply, e
 	return &pb.SignReply{SignedData: signedData}, nil
 }
 
-func (s Server) Decrypt(ctx context.Context, req *pb.DecryptRequest) (*pb.DecryptReply, error) {
+func (s *Server) Decrypt(ctx context.Context, req *pb.DecryptRequest) (*pb.DecryptReply, error) {
 	decryptedData, err := s.impl.Decrypt(ctx, req.Account, req.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt data for account: %s: %w", req.Account, err)

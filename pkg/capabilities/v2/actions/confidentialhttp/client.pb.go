@@ -151,7 +151,12 @@ type HTTPRequest struct {
 	// for verifying the external server's TLS certificate.
 	CustomRootCaCertPem []byte `protobuf:"bytes,6,opt,name=custom_root_ca_cert_pem,json=customRootCaCertPem,proto3" json:"custom_root_ca_cert_pem,omitempty"`
 	// timeout is the request timeout duration.
-	Timeout       *durationpb.Duration `protobuf:"bytes,7,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	Timeout *durationpb.Duration `protobuf:"bytes,7,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// encrypt_output controls whether the enclave response should be encrypted.
+	// If true, the response will be AES-GCM encrypted using the
+	// "san_marino_aes_gcm_encryption_key" secret.
+	// Default is false (response returned unencrypted).
+	EncryptOutput bool `protobuf:"varint,9,opt,name=encrypt_output,json=encryptOutput,proto3" json:"encrypt_output,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -253,6 +258,13 @@ func (x *HTTPRequest) GetTimeout() *durationpb.Duration {
 	return nil
 }
 
+func (x *HTTPRequest) GetEncryptOutput() bool {
+	if x != nil {
+		return x.EncryptOutput
+	}
+	return false
+}
+
 type isHTTPRequest_Body interface {
 	isHTTPRequest_Body()
 }
@@ -340,15 +352,8 @@ type ConfidentialHTTPRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	VaultDonSecrets []*SecretIdentifier    `protobuf:"bytes,1,rep,name=vault_don_secrets,json=vaultDonSecrets,proto3" json:"vault_don_secrets,omitempty"`
 	Request         *HTTPRequest           `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
-	// encrypt_output controls whether the enclave response should be encrypted.
-	// If true and a secret named "san_marino_aes_gcm_encryption_key" is provided,
-	// the response will be AES-GCM encrypted using that key.
-	// If true and no such key is provided, the response will be TDH2 encrypted
-	// using the VaultDON master public key.
-	// Default is false (response returned unencrypted).
-	EncryptOutput bool `protobuf:"varint,3,opt,name=encrypt_output,json=encryptOutput,proto3" json:"encrypt_output,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ConfidentialHTTPRequest) Reset() {
@@ -395,13 +400,6 @@ func (x *ConfidentialHTTPRequest) GetRequest() *HTTPRequest {
 	return nil
 }
 
-func (x *ConfidentialHTTPRequest) GetEncryptOutput() bool {
-	if x != nil {
-		return x.EncryptOutput
-	}
-	return false
-}
-
 var File_capabilities_networking_confidentialhttp_v1alpha_client_proto protoreflect.FileDescriptor
 
 const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc = "" +
@@ -413,7 +411,7 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\x05owner\x18\x03 \x01(\tH\x00R\x05owner\x88\x01\x01B\b\n" +
 	"\x06_owner\"&\n" +
 	"\fHeaderValues\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values\"\xbe\x05\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"\xe5\x05\n" +
 	"\vHTTPRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12!\n" +
@@ -424,7 +422,8 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\rmulti_headers\x18\x04 \x03(\v2O.capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntryR\fmultiHeaders\x12\x8d\x01\n" +
 	"\x16template_public_values\x18\x05 \x03(\v2W.capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntryR\x14templatePublicValues\x124\n" +
 	"\x17custom_root_ca_cert_pem\x18\x06 \x01(\fR\x13customRootCaCertPem\x123\n" +
-	"\atimeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\atimeout\x1a\x7f\n" +
+	"\atimeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12%\n" +
+	"\x0eencrypt_output\x18\t \x01(\bR\rencryptOutput\x1a\x7f\n" +
 	"\x11MultiHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12T\n" +
 	"\x05value\x18\x02 \x01(\v2>.capabilities.networking.confidentialhttp.v1alpha.HeaderValuesR\x05value:\x028\x01\x1aG\n" +
@@ -439,11 +438,10 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\rmulti_headers\x18\x03 \x03(\v2P.capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntryR\fmultiHeaders\x1a\x7f\n" +
 	"\x11MultiHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12T\n" +
-	"\x05value\x18\x02 \x01(\v2>.capabilities.networking.confidentialhttp.v1alpha.HeaderValuesR\x05value:\x028\x01\"\x89\x02\n" +
+	"\x05value\x18\x02 \x01(\v2>.capabilities.networking.confidentialhttp.v1alpha.HeaderValuesR\x05value:\x028\x01\"\xe2\x01\n" +
 	"\x17ConfidentialHTTPRequest\x12n\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2B.capabilities.networking.confidentialhttp.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12W\n" +
-	"\arequest\x18\x02 \x01(\v2=.capabilities.networking.confidentialhttp.v1alpha.HTTPRequestR\arequest\x12%\n" +
-	"\x0eencrypt_output\x18\x03 \x01(\bR\rencryptOutput2\xca\x01\n" +
+	"\arequest\x18\x02 \x01(\v2=.capabilities.networking.confidentialhttp.v1alpha.HTTPRequestR\arequest2\xca\x01\n" +
 	"\x06Client\x12\x98\x01\n" +
 	"\vSendRequest\x12I.capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest\x1a>.capabilities.networking.confidentialhttp.v1alpha.HTTPResponse\x1a%\x82\xb5\x18!\b\x02\x12\x1dconfidential-http@1.0.0-alphab\x06proto3"
 

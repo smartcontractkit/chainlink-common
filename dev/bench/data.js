@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770651745555,
+  "lastUpdate": 1770673561003,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -37980,6 +37980,66 @@ window.BENCHMARK_DATA = {
             "value": 137666,
             "unit": "ns/op",
             "extra": "8337 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a82fa419e48383d6be1881afcee7317649508ed1",
+          "message": "Move encrypt_output from ConfidentialHTTPRequest to HTTPRequest (#1828)\n\n* Move encrypt_output from ConfidentialHTTPRequest to HTTPRequest\n\nBump chainlink-protos/cre/go to cre-sdk/v1alpha.19 and regenerate\nconfidential HTTP types. encrypt_output is now on HTTPRequest (field 9)\ninstead of ConfidentialHTTPRequest (field 3).\n\n* trigger CI with updated PR description",
+          "timestamp": "2026-02-09T21:35:44Z",
+          "tree_id": "21e8a5826ed7e5ad14032dae3af7e2c722e6cf3e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a82fa419e48383d6be1881afcee7317649508ed1"
+        },
+        "date": 1770673559319,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 379,
+            "unit": "ns/op",
+            "extra": "3155308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92819,
+            "unit": "ns/op",
+            "extra": "12894 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.6,
+            "unit": "ns/op",
+            "extra": "2916322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93324,
+            "unit": "ns/op",
+            "extra": "12844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26815,
+            "unit": "ns/op",
+            "extra": "44964 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139345,
+            "unit": "ns/op",
+            "extra": "8268 times\n4 procs"
           }
         ]
       }

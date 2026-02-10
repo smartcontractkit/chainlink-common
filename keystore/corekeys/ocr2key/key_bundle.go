@@ -1,6 +1,7 @@
 package ocr2key
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -150,4 +151,9 @@ func KeyFor(raw internal.Raw) (kb KeyBundle) {
 func adulteratedPassword(auth string) string {
 	s := "ocr2key" + auth
 	return s
+}
+
+// ConcatBytes appends a bunch of byte arrays into a single byte array
+func concatBytes(bufs ...[]byte) []byte {
+	return bytes.Join(bufs, []byte{})
 }

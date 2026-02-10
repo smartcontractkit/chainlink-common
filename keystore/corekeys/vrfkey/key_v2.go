@@ -11,9 +11,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-evm/pkg/utils"
 
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
-	"github.com/smartcontractkit/chainlink/v2/core/services/signatures/secp256k1"
-	bm "github.com/smartcontractkit/chainlink/v2/core/utils/big_math"
+	bm "github.com/smartcontractkit/chainlink-common/pkg/utils/big_math"
 )
 
 var suite = secp256k1.NewBlakeKeccackSecp256k1()

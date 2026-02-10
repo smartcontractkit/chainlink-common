@@ -4,7 +4,7 @@ go 1.25.5
 
 replace github.com/smartcontractkit/chainlink-common => ../
 
-require github.com/smartcontractkit/chainlink-common v0.9.6-0.20260107095648-223976d2b9f1
+require github.com/smartcontractkit/chainlink-common v0.9.6-0.20260119150426-31ad843060e6
 
 require (
 	github.com/NethermindEth/juno v0.12.5
@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.28.4
 	github.com/aws/aws-sdk-go-v2/service/kms v1.49.5
+	github.com/btcsuite/btcd/btcec/v2 v2.3.5
 	github.com/cosmos/cosmos-sdk v0.53.5
 	github.com/ethereum/go-ethereum v1.16.8
 	github.com/gagliardetto/solana-go v1.14.0
@@ -21,7 +22,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/smartcontractkit/chainlink-evm v0.3.4-0.20251210110629-10c56e8d2cec
+	github.com/smartcontractkit/chainlink-evm v0.3.4-0.20260205183656-836ec9472717
 	github.com/smartcontractkit/chainlink/v2 v2.32.0
 	github.com/smartcontractkit/libocr v0.0.0-20251212213002-0a5e2f907dda
 	github.com/smartcontractkit/smdkg v0.0.0-20251029093710-c38905e58aeb
@@ -29,6 +30,7 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/xssnick/tonutils-go v1.14.1
+	go.dedis.ch/fixbuf v1.0.3
 	go.dedis.ch/kyber/v3 v3.1.0
 	golang.org/x/crypto v0.47.0
 	google.golang.org/protobuf v1.36.11
@@ -71,7 +73,6 @@ require (
 	github.com/bgentry/speakeasy v0.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.3 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.14.2 // indirect
@@ -200,9 +201,7 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
-	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.0.9 // indirect
-	github.com/olekukonko/tablewriter v1.0.9 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
@@ -261,7 +260,6 @@ require (
 	github.com/zondax/golem v0.27.0 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
 	github.com/zondax/ledger-go v1.0.1 // indirect
-	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.etcd.io/bbolt v1.4.2 // indirect
 	go.mongodb.org/mongo-driver v1.17.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

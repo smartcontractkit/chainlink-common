@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
-	"github.com/smartcontractkit/chainlink/v2/core/services/signatures/secp256k1"
 )
 
 func FromEncryptedJSON(keyJSON []byte, password string) (KeyV2, error) {

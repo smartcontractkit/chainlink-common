@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
-	"github.com/smartcontractkit/chainlink/v2/core/services/signatures/secp256k1"
 )
 
 func TestVRFKeys_KeyV2(t *testing.T) {

@@ -1,6 +1,7 @@
 package vrfkey
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -10,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/pkg/errors"
 
-	"github.com/smartcontractkit/chainlink/v2/core/services/signatures/secp256k1"
-	"github.com/smartcontractkit/chainlink/v2/core/utils"
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal/atomicfile"
 )
 
 // EncryptedVRFKey contains encrypted private key to be serialized to DB
@@ -43,7 +44,7 @@ func (e *EncryptedVRFKey) WriteToDisk(path string) error {
 		return errors.Wrapf(err, "while marshaling key to save to %s", path)
 	}
 	userReadWriteOtherNoAccess := os.FileMode(0600)
-	return utils.WriteFileWithMaxPerms(path, keyJSON, userReadWriteOtherNoAccess)
+	return atomicfile.WriteFile(path, bytes.NewReader(keyJSON), userReadWriteOtherNoAccess)
 }
 
 // Copied from go-ethereum/accounts/keystore/key.go's encryptedKeyJSONV3

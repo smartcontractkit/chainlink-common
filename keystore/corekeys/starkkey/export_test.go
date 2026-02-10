@@ -3,19 +3,20 @@ package starkkey
 import (
 	"testing"
 
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
 )
 
 func TestStarkNetKeys_ExportImport(t *testing.T) {
-	corekeys2.RunKeyExportImportTestcase(t, createKey, decryptKey)
+	corekeys.RunKeyExportImportTestcase(t, createKey, decryptKey)
 }
 
-func createKey() (corekeys2.KeyType, error) {
+func createKey() (corekeys.KeyType, error) {
 	key, err := New()
 	return TestWrapped{key}, err
 }
 
-func decryptKey(keyJSON []byte, password string) (corekeys2.KeyType, error) {
+func decryptKey(keyJSON []byte, password string) (corekeys.KeyType, error) {
 	key, err := FromEncryptedJSON(keyJSON, password)
 	return TestWrapped{key}, err
 }

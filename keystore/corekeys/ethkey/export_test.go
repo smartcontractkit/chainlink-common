@@ -2,15 +2,17 @@ package ethkey
 
 import (
 	"testing"
+
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 )
 
 func TestEthKeys_ExportImport(t *testing.T) {
-	corekeys2.RunKeyExportImportTestcase(t, createKey, func(keyJSON []byte, password string) (kt corekeys2.KeyType, err error) {
+	corekeys.RunKeyExportImportTestcase(t, createKey, func(keyJSON []byte, password string) (kt corekeys.KeyType, err error) {
 		t.SkipNow()
 		return kt, err
 	})
 }
 
-func createKey() (corekeys2.KeyType, error) {
+func createKey() (corekeys.KeyType, error) {
 	return NewV2()
 }

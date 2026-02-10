@@ -85,7 +85,7 @@ func NewKeyStates() *KeyStates {
 
 // warning: not thread-safe! caller must sync
 // adds or replaces a state
-func (ks *KeyStates) add(state *ethkey.State) {
+func (ks *KeyStates) Add(state *ethkey.State) {
 	cid := state.EVMChainID.String()
 	kid := state.KeyID()
 
@@ -117,7 +117,7 @@ func (ks *KeyStates) add(state *ethkey.State) {
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *KeyStates) get(addr common.Address, chainID *big.Int) *ethkey.State {
+func (ks *KeyStates) Get(addr common.Address, chainID *big.Int) *ethkey.State {
 	chainStates, exists := ks.KeyIDChainID[addr.Hex()]
 	if !exists {
 		return nil
@@ -126,21 +126,21 @@ func (ks *KeyStates) get(addr common.Address, chainID *big.Int) *ethkey.State {
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *KeyStates) disable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
-	state := ks.get(addr, chainID)
+func (ks *KeyStates) Disable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
+	state := ks.Get(addr, chainID)
 	state.Disabled = true
 	state.UpdatedAt = updatedAt
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *KeyStates) enable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
-	state := ks.get(addr, chainID)
+func (ks *KeyStates) Enable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
+	state := ks.Get(addr, chainID)
 	state.Disabled = false
 	state.UpdatedAt = updatedAt
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *KeyStates) delete(addr common.Address) {
+func (ks *KeyStates) Delete(addr common.Address) {
 	var chainIDs []*big.Int
 	for i := len(ks.All) - 1; i >= 0; i-- {
 		if ks.All[i].Address.Address() == addr {

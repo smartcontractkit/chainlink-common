@@ -83,7 +83,9 @@ func (b *Client) Start(ctx context.Context) {
 			b.batchSize,
 			b.batchInterval,
 			func(batch []*messageWithCallback) {
-				b.sendBatch(batcherCtx, batch)
+				// Detach from cancellation so final flush can still publish during shutdown.
+				// sendBatch still enforces maxPublishTimeout for each publish call.
+				b.sendBatch(context.WithoutCancel(batcherCtx), batch)
 			},
 		)
 	}()

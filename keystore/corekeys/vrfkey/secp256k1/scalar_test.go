@@ -11,8 +11,6 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/curve25519"
-
-	"github.com/smartcontractkit/chainlink/v2/core/services/signatures/cryptotest"
 )
 
 var numScalarSamples = 10
@@ -31,8 +29,6 @@ func observedScalar(t *testing.T, s kyber.Scalar) {
 	require.False(t, observedScalars[scalar])
 	observedScalars[scalar] = true
 }
-
-var randomStreamScalar = cryptotest.NewStream(&testing.T{}, 0)
 
 func TestScalar_SetAndEqual(t *testing.T) {
 	tests := []int64{5, 67108864, 67108865, 4294967295}
@@ -58,7 +54,7 @@ func TestNewScalar(t *testing.T) {
 func TestScalar_SmokeTestPick(t *testing.T) {
 	f := newScalar(scalarZero).Clone()
 	for range numScalarSamples {
-		f.Pick(randomStreamScalar)
+		f.Pick(randomStreamPoint)
 		observedScalar(t, f)
 		require.Equal(t, 1, ToInt(f).Cmp(big.NewInt(1000000000)),
 			"implausibly low value returned from Pick: %v", f)
@@ -68,7 +64,7 @@ func TestScalar_SmokeTestPick(t *testing.T) {
 func TestScalar_Neg(t *testing.T) {
 	f := newScalar(scalarZero).Clone()
 	for range numScalarSamples {
-		f.Pick(randomStreamScalar)
+		f.Pick(randomStreamPoint)
 		observedScalar(t, f)
 		g := f.Clone()
 		g.Neg(g)
@@ -79,7 +75,7 @@ func TestScalar_Neg(t *testing.T) {
 func TestScalar_Sub(t *testing.T) {
 	f := newScalar(scalarZero).Clone()
 	for range numScalarSamples {
-		f.Pick(randomStreamScalar)
+		f.Pick(randomStreamPoint)
 		observedScalar(t, f)
 		require.True(t, f.Sub(f, f).Equal(newScalar(scalarZero)),
 			"subtracting something from itself should give zero")
@@ -99,7 +95,7 @@ func TestScalar_Marshal(t *testing.T) {
 	f := newScalar(scalarZero)
 	g := newScalar(scalarZero)
 	for range numFieldSamples {
-		f.Pick(randomStreamScalar)
+		f.Pick(randomStreamPoint)
 		observedScalar(t, f)
 		data, err := f.MarshalBinary()
 		require.NoError(t, err)
@@ -127,7 +123,7 @@ func TestScalar_MulDivInv(t *testing.T) {
 	j := newScalar(scalarZero)
 	k := newScalar(scalarZero)
 	for range numFieldSamples {
-		f.Pick(randomStreamScalar)
+		f.Pick(randomStreamPoint)
 		observedScalar(t, f)
 		g.Inv(f)
 		h.Mul(f, g)
@@ -136,7 +132,7 @@ func TestScalar_MulDivInv(t *testing.T) {
 		require.True(t, h.Equal(newScalar(big.NewInt(1))))
 		h.Div(newScalar(big.NewInt(1)), f)
 		require.True(t, h.Equal(g))
-		h.Pick(randomStreamScalar)
+		h.Pick(randomStreamPoint)
 		observedScalar(t, h)
 		j.Neg(j.Mul(h, f))
 		k.Mul(h, k.Neg(f))

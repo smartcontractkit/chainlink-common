@@ -11,13 +11,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/smartcontractkit/chainlink/v2/core/services/signatures/cryptotest"
 )
 
 var numPointSamples = 10
-
-var randomStreamPoint = cryptotest.NewStream(&testing.T{}, 0)
 
 func TestPoint_String(t *testing.T) {
 	require.Equal(t, "Secp256k1{X: fieldElt{0}, Y: fieldElt{0}}", newPoint().String())

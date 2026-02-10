@@ -31,12 +31,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
 )
 
-type encryptedKeyRing struct {
+type EncryptedKeyRing struct {
 	UpdatedAt     time.Time
 	EncryptedKeys []byte
 }
 
-func (ekr encryptedKeyRing) Decrypt(password string) (*keyRing, error) {
+func (ekr EncryptedKeyRing) Decrypt(password string) (*KeyRing, error) {
 	if len(ekr.EncryptedKeys) == 0 {
 		return NewKeyRing(), nil
 	}
@@ -68,7 +68,7 @@ func (ekr encryptedKeyRing) Decrypt(password string) (*keyRing, error) {
 	return ring, nil
 }
 
-type keyStates struct {
+type KeyStates struct {
 	// Key ID => chain ID => state
 	KeyIDChainID map[string]map[string]*ethkey.State
 	// Chain ID => Key ID => state
@@ -76,8 +76,8 @@ type keyStates struct {
 	All          []*ethkey.State
 }
 
-func NewKeyStates() *keyStates {
-	return &keyStates{
+func NewKeyStates() *KeyStates {
+	return &KeyStates{
 		KeyIDChainID: make(map[string]map[string]*ethkey.State),
 		ChainIDKeyID: make(map[string]map[string]*ethkey.State),
 	}
@@ -85,7 +85,7 @@ func NewKeyStates() *keyStates {
 
 // warning: not thread-safe! caller must sync
 // adds or replaces a state
-func (ks *keyStates) add(state *ethkey.State) {
+func (ks *KeyStates) add(state *ethkey.State) {
 	cid := state.EVMChainID.String()
 	kid := state.KeyID()
 
@@ -117,7 +117,7 @@ func (ks *keyStates) add(state *ethkey.State) {
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *keyStates) get(addr common.Address, chainID *big.Int) *ethkey.State {
+func (ks *KeyStates) get(addr common.Address, chainID *big.Int) *ethkey.State {
 	chainStates, exists := ks.KeyIDChainID[addr.Hex()]
 	if !exists {
 		return nil
@@ -126,21 +126,21 @@ func (ks *keyStates) get(addr common.Address, chainID *big.Int) *ethkey.State {
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *keyStates) disable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
+func (ks *KeyStates) disable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
 	state := ks.get(addr, chainID)
 	state.Disabled = true
 	state.UpdatedAt = updatedAt
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *keyStates) enable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
+func (ks *KeyStates) enable(addr common.Address, chainID *big.Int, updatedAt time.Time) {
 	state := ks.get(addr, chainID)
 	state.Disabled = false
 	state.UpdatedAt = updatedAt
 }
 
 // warning: not thread-safe! caller must sync
-func (ks *keyStates) delete(addr common.Address) {
+func (ks *KeyStates) delete(addr common.Address) {
 	var chainIDs []*big.Int
 	for i := len(ks.All) - 1; i >= 0; i-- {
 		if ks.All[i].Address.Address() == addr {
@@ -154,7 +154,7 @@ func (ks *keyStates) delete(addr common.Address) {
 	}
 }
 
-type keyRing struct {
+type KeyRing struct {
 	CSA          map[string]csakey.KeyV2
 	Eth          map[string]ethkey.KeyV2
 	OCR          map[string]ocrkey.KeyV2
@@ -173,8 +173,8 @@ type keyRing struct {
 	LegacyKeys   LegacyKeyStorage
 }
 
-func NewKeyRing() *keyRing {
-	return &keyRing{
+func NewKeyRing() *KeyRing {
+	return &KeyRing{
 		CSA:          make(map[string]csakey.KeyV2),
 		Eth:          make(map[string]ethkey.KeyV2),
 		OCR:          make(map[string]ocrkey.KeyV2),
@@ -193,7 +193,7 @@ func NewKeyRing() *keyRing {
 	}
 }
 
-func (kr *keyRing) Encrypt(password string, scryptParams scrypt.ScryptParams) (ekr encryptedKeyRing, err error) {
+func (kr *KeyRing) Encrypt(password string, scryptParams scrypt.ScryptParams) (ekr EncryptedKeyRing, err error) {
 	marshalledRawKeyRingJson, err := json.Marshal(kr.raw())
 	if err != nil {
 		return ekr, err
@@ -201,7 +201,7 @@ func (kr *keyRing) Encrypt(password string, scryptParams scrypt.ScryptParams) (e
 
 	marshalledRawKeyRingJson, err = kr.LegacyKeys.UnloadUnsupported(marshalledRawKeyRingJson)
 	if err != nil {
-		return encryptedKeyRing{}, err
+		return EncryptedKeyRing{}, err
 	}
 
 	cryptoJSON, err := gethkeystore.EncryptDataV3(
@@ -217,12 +217,12 @@ func (kr *keyRing) Encrypt(password string, scryptParams scrypt.ScryptParams) (e
 	if err != nil {
 		return ekr, errors.Wrapf(err, "could not encode cryptoJSON")
 	}
-	return encryptedKeyRing{
+	return EncryptedKeyRing{
 		EncryptedKeys: encryptedKeys,
 	}, nil
 }
 
-func (kr *keyRing) raw() (rawKeys rawKeyRing) {
+func (kr *KeyRing) raw() (rawKeys rawKeyRing) {
 	for _, csaKey := range kr.CSA {
 		rawKeys.CSA = append(rawKeys.CSA, internal.RawBytes(csaKey))
 	}
@@ -271,7 +271,7 @@ func (kr *keyRing) raw() (rawKeys rawKeyRing) {
 	return rawKeys
 }
 
-func (kr *keyRing) logPubKeys(lggr logger.Logger) {
+func (kr *KeyRing) logPubKeys(lggr logger.Logger) {
 	lggr = logger.Named(lggr, "KeyRing")
 	var csaIDs []string
 	for _, CSAKey := range kr.CSA {
@@ -385,7 +385,7 @@ func (kr *keyRing) logPubKeys(lggr logger.Logger) {
 	}
 }
 
-// rawKeyRing is an intermediate struct for encrypting / decrypting keyRing
+// rawKeyRing is an intermediate struct for encrypting / decrypting KeyRing
 // it holds only the essential key information to avoid adding unnecessary data
 // (like public keys) to the database
 type rawKeyRing struct {
@@ -407,7 +407,7 @@ type rawKeyRing struct {
 	LegacyKeys   LegacyKeyStorage `json:"-"`
 }
 
-func (rawKeys rawKeyRing) keys() (*keyRing, error) {
+func (rawKeys rawKeyRing) keys() (*KeyRing, error) {
 	keyRing := NewKeyRing()
 	for _, rawCSAKey := range rawKeys.CSA {
 		csaKey := csakey.KeyFor(internal.NewRaw(rawCSAKey))

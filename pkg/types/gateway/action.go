@@ -47,6 +47,11 @@ type OutboundHTTPRequest struct {
 var ErrBothHeadersAndMultiHeaders = errors.New("must not set both Headers and MultiHeaders; use MultiHeaders only")
 
 // Hash generates a hash of the request for caching purposes.
+//
+// Deprecated: Use HashValidated for cache keys so that invalid requests (e.g. both Headers and
+// MultiHeaders set) are rejected with an error instead of hashed. Hash is retained for backward
+// compatibility.
+//
 // WorkflowID is not included in the hash because cached responses can be used across workflows.
 // Headers are included in a deterministic order: MultiHeaders is used when non-empty, otherwise Headers.
 // When using MultiHeaders, keys and values within each key are sorted for determinism.
@@ -68,6 +73,16 @@ func (req OutboundHTTPRequest) Hash() string {
 	s.Write([]byte(strconv.FormatUint(uint64(req.MaxResponseBytes), 10)))
 
 	return hex.EncodeToString(s.Sum(nil))
+}
+
+// HashValidated returns the same hash as Hash() but only after validating the request.
+// It returns an error if both Headers and MultiHeaders are set. Use HashValidated for cache keys
+// so invalid requests are rejected instead of cached.
+func (req OutboundHTTPRequest) HashValidated() (string, error) {
+	if err := req.Validate(); err != nil {
+		return "", err
+	}
+	return req.Hash(), nil
 }
 
 // writeHeadersToHash writes a deterministic encoding of headers into the hash.

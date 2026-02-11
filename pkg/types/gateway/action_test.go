@@ -99,3 +99,29 @@ func TestOutboundHTTPRequest_Hash_DifferentContent_DifferentHash(t *testing.T) {
 	otherMulti.MultiHeaders = map[string][]string{"A": {"1", "3"}}
 	require.NotEqual(t, hMultiA, otherMulti.Hash(), "different MultiHeaders content must yield different hash")
 }
+
+func TestOutboundHTTPRequest_HashValidated_Success(t *testing.T) {
+	req := OutboundHTTPRequest{
+		Method:       "GET",
+		URL:          "https://example.com/",
+		WorkflowOwner: "owner",
+		Headers:       map[string]string{"A": "1"},
+	}
+	hash, err := req.HashValidated()
+	require.NoError(t, err)
+	require.Equal(t, req.Hash(), hash, "HashValidated() must return same hash as Hash() for valid request")
+}
+
+func TestOutboundHTTPRequest_HashValidated_ReturnsErrorWhenBothHeadersAndMultiHeadersSet(t *testing.T) {
+	req := OutboundHTTPRequest{
+		Method:       "GET",
+		URL:          "https://example.com/",
+		WorkflowOwner: "owner",
+		Headers:       map[string]string{"A": "1"},
+		MultiHeaders:  map[string][]string{"B": {"2"}},
+	}
+	hash, err := req.HashValidated()
+	require.Error(t, err)
+	require.Empty(t, hash)
+	require.ErrorIs(t, err, ErrBothHeadersAndMultiHeaders)
+}

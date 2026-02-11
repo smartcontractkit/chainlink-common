@@ -1,4 +1,4 @@
-package keystore
+package corekeys
 
 import (
 	"fmt"

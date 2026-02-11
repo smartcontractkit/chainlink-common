@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -501,6 +502,82 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	expectedCapConfig := capabilities.CapabilityConfiguration{
 		DefaultConfig:          wm,
 		RemoteExecutableConfig: &rec,
+	}
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
+
+	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
+	require.NoError(t, err)
+	assert.Equal(t, expectedCapConfig, capConf)
+}
+
+func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfigs(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "ocr-cap@1.0.0"
+	donID := uint32(1)
+	wm, err := values.WrapMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
+	oracleFactoryConfig, err := values.WrapMap(map[string]any{"maxQueryLength": 1000})
+	require.NoError(t, err)
+
+	specConfig, err := values.WrapMap(map[string]any{"contractID": "0x123"})
+	require.NoError(t, err)
+
+	expectedCapConfig := capabilities.CapabilityConfiguration{
+		DefaultConfig: wm,
+		Ocr3Configs: map[string]ocrtypes.ContractConfig{
+			"__default__": {
+				ConfigCount:           5,
+				Signers:               []ocrtypes.OnchainPublicKey{{0x01, 0x02}, {0x03, 0x04}},
+				Transmitters:          []ocrtypes.Account{"abcd", "def0"},
+				F:                     1,
+				OnchainConfig:         []byte{0x10, 0x20},
+				OffchainConfigVersion: 2,
+				OffchainConfig:        []byte{0x30, 0x40},
+			},
+			"blue": {
+				ConfigCount:           10,
+				Signers:               []ocrtypes.OnchainPublicKey{{0x05, 0x06}},
+				Transmitters:          []ocrtypes.Account{"123e"},
+				F:                     0,
+				OnchainConfig:         nil,
+				OffchainConfigVersion: 1,
+				OffchainConfig:        []byte{0x50},
+			},
+		},
+		OracleFactoryConfigs: map[string]values.Map{
+			"__default__": *oracleFactoryConfig,
+		},
+		SpecConfig: specConfig,
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 

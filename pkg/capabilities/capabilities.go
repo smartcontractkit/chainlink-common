@@ -15,6 +15,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 )
 
@@ -664,8 +666,22 @@ type CapabilityConfiguration struct {
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig
 
-	// v2 / "NoDAG" capabilities
+	// v2 / "NoDAG" capabilities - config for Don2Don framework.
 	CapabilityMethodConfig map[string]CapabilityMethodConfig
 	// if true, the capability won't be callable via don2don
 	LocalOnly bool
+
+	// OCR3 configurations for OCR-based capabilities.
+	// Map key is an OCR instance name:
+	//   - "__default__" for single-instance capabilities
+	//   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
+	// When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
+	Ocr3Configs map[string]ocrtypes.ContractConfig
+
+	// Oracle factory configs for OCR-based capabilities (moved from job specs).
+	// Map key is an OCR instance name (same as above).
+	OracleFactoryConfigs map[string]values.Map
+
+	// Config moved from job specs.
+	SpecConfig *values.Map
 }

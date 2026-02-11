@@ -165,11 +165,10 @@ type RemoteTriggerConfig struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
 	RegistrationRefresh     *durationpb.Duration   `protobuf:"bytes,1,opt,name=registrationRefresh,proto3" json:"registrationRefresh,omitempty"`
 	RegistrationExpiry      *durationpb.Duration   `protobuf:"bytes,2,opt,name=registrationExpiry,proto3" json:"registrationExpiry,omitempty"`
-	EventTimeout            *durationpb.Duration   `protobuf:"bytes,3,opt,name=eventTimeout,proto3" json:"eventTimeout,omitempty"`
-	MinResponsesToAggregate uint32                 `protobuf:"varint,4,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
-	MessageExpiry           *durationpb.Duration   `protobuf:"bytes,5,opt,name=messageExpiry,proto3" json:"messageExpiry,omitempty"`
-	MaxBatchSize            uint32                 `protobuf:"varint,6,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
-	BatchCollectionPeriod   *durationpb.Duration   `protobuf:"bytes,7,opt,name=batchCollectionPeriod,proto3" json:"batchCollectionPeriod,omitempty"`
+	MinResponsesToAggregate uint32                 `protobuf:"varint,3,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
+	MessageExpiry           *durationpb.Duration   `protobuf:"bytes,4,opt,name=messageExpiry,proto3" json:"messageExpiry,omitempty"`
+	MaxBatchSize            uint32                 `protobuf:"varint,5,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
+	BatchCollectionPeriod   *durationpb.Duration   `protobuf:"bytes,6,opt,name=batchCollectionPeriod,proto3" json:"batchCollectionPeriod,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -214,13 +213,6 @@ func (x *RemoteTriggerConfig) GetRegistrationRefresh() *durationpb.Duration {
 func (x *RemoteTriggerConfig) GetRegistrationExpiry() *durationpb.Duration {
 	if x != nil {
 		return x.RegistrationExpiry
-	}
-	return nil
-}
-
-func (x *RemoteTriggerConfig) GetEventTimeout() *durationpb.Duration {
-	if x != nil {
-		return x.EventTimeout
 	}
 	return nil
 }
@@ -522,6 +514,103 @@ func (*CapabilityMethodConfig_RemoteTriggerConfig) isCapabilityMethodConfig_Remo
 
 func (*CapabilityMethodConfig_RemoteExecutableConfig) isCapabilityMethodConfig_RemoteConfig() {}
 
+// OCR3Config contains the configuration for an OCR3 instance.
+// This mirrors the libocr ContractConfig struct and is used for storing
+// OCR configuration in the CapabilitiesRegistry contract.
+type OCR3Config struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Signers               [][]byte               `protobuf:"bytes,1,rep,name=signers,proto3" json:"signers,omitempty"`
+	Transmitters          [][]byte               `protobuf:"bytes,2,rep,name=transmitters,proto3" json:"transmitters,omitempty"`
+	F                     uint32                 `protobuf:"varint,3,opt,name=f,proto3" json:"f,omitempty"`
+	OnchainConfig         []byte                 `protobuf:"bytes,4,opt,name=onchain_config,json=onchainConfig,proto3" json:"onchain_config,omitempty"`
+	OffchainConfigVersion uint64                 `protobuf:"varint,5,opt,name=offchain_config_version,json=offchainConfigVersion,proto3" json:"offchain_config_version,omitempty"`
+	OffchainConfig        []byte                 `protobuf:"bytes,6,opt,name=offchain_config,json=offchainConfig,proto3" json:"offchain_config,omitempty"`
+	// Configuration counter, must be incremented on each config change.
+	// Used for computing config digest.
+	ConfigCount   uint64 `protobuf:"varint,7,opt,name=config_count,json=configCount,proto3" json:"config_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OCR3Config) Reset() {
+	*x = OCR3Config{}
+	mi := &file_registry_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OCR3Config) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OCR3Config) ProtoMessage() {}
+
+func (x *OCR3Config) ProtoReflect() protoreflect.Message {
+	mi := &file_registry_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OCR3Config.ProtoReflect.Descriptor instead.
+func (*OCR3Config) Descriptor() ([]byte, []int) {
+	return file_registry_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OCR3Config) GetSigners() [][]byte {
+	if x != nil {
+		return x.Signers
+	}
+	return nil
+}
+
+func (x *OCR3Config) GetTransmitters() [][]byte {
+	if x != nil {
+		return x.Transmitters
+	}
+	return nil
+}
+
+func (x *OCR3Config) GetF() uint32 {
+	if x != nil {
+		return x.F
+	}
+	return 0
+}
+
+func (x *OCR3Config) GetOnchainConfig() []byte {
+	if x != nil {
+		return x.OnchainConfig
+	}
+	return nil
+}
+
+func (x *OCR3Config) GetOffchainConfigVersion() uint64 {
+	if x != nil {
+		return x.OffchainConfigVersion
+	}
+	return 0
+}
+
+func (x *OCR3Config) GetOffchainConfig() []byte {
+	if x != nil {
+		return x.OffchainConfig
+	}
+	return nil
+}
+
+func (x *OCR3Config) GetConfigCount() uint64 {
+	if x != nil {
+		return x.ConfigCount
+	}
+	return 0
+}
+
 type CapabilityConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DefaultConfig *pb.Map                `protobuf:"bytes,1,opt,name=default_config,json=defaultConfig,proto3" json:"default_config,omitempty"`
@@ -533,17 +622,29 @@ type CapabilityConfig struct {
 	RemoteConfig     isCapabilityConfig_RemoteConfig `protobuf_oneof:"remote_config"`
 	RestrictedConfig *pb.Map                         `protobuf:"bytes,5,opt,name=restricted_config,json=restrictedConfig,proto3" json:"restricted_config,omitempty"`
 	RestrictedKeys   []string                        `protobuf:"bytes,6,rep,name=restricted_keys,json=restrictedKeys,proto3" json:"restricted_keys,omitempty"`
-	// v2 ("NoDAG") capabilities
+	// v2 ("NoDAG") capabilities - config for Don2Don framework.
 	MethodConfigs map[string]*CapabilityMethodConfig `protobuf:"bytes,7,rep,name=method_configs,json=methodConfigs,proto3" json:"method_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// if true, the capability won't be callable via don2don
-	LocalOnly     bool `protobuf:"varint,8,opt,name=local_only,json=localOnly,proto3" json:"local_only,omitempty"`
+	// if true, the capability won't be callable via don2don.
+	LocalOnly bool `protobuf:"varint,8,opt,name=local_only,json=localOnly,proto3" json:"local_only,omitempty"`
+	// OCR3 configurations for OCR-based capabilities.
+	// Map key is an OCR instance name:
+	//   - "__default__" for single-instance capabilities
+	//   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
+	//
+	// When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
+	Ocr3Configs map[string]*OCR3Config `protobuf:"bytes,9,rep,name=ocr3_configs,json=ocr3Configs,proto3" json:"ocr3_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Oracle factory configs for OCR-based capabilities (moved from job specs).
+	// Map key is an OCR instance name (same as above).
+	OracleFactoryConfigs map[string]*pb.Map `protobuf:"bytes,10,rep,name=oracle_factory_configs,json=oracleFactoryConfigs,proto3" json:"oracle_factory_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Config moved from job specs.
+	SpecConfig    *pb.Map `protobuf:"bytes,11,opt,name=spec_config,json=specConfig,proto3" json:"spec_config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CapabilityConfig) Reset() {
 	*x = CapabilityConfig{}
-	mi := &file_registry_proto_msgTypes[5]
+	mi := &file_registry_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -555,7 +656,7 @@ func (x *CapabilityConfig) String() string {
 func (*CapabilityConfig) ProtoMessage() {}
 
 func (x *CapabilityConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_proto_msgTypes[5]
+	mi := &file_registry_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -568,7 +669,7 @@ func (x *CapabilityConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityConfig.ProtoReflect.Descriptor instead.
 func (*CapabilityConfig) Descriptor() ([]byte, []int) {
-	return file_registry_proto_rawDescGZIP(), []int{5}
+	return file_registry_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CapabilityConfig) GetDefaultConfig() *pb.Map {
@@ -640,6 +741,27 @@ func (x *CapabilityConfig) GetLocalOnly() bool {
 	return false
 }
 
+func (x *CapabilityConfig) GetOcr3Configs() map[string]*OCR3Config {
+	if x != nil {
+		return x.Ocr3Configs
+	}
+	return nil
+}
+
+func (x *CapabilityConfig) GetOracleFactoryConfigs() map[string]*pb.Map {
+	if x != nil {
+		return x.OracleFactoryConfigs
+	}
+	return nil
+}
+
+func (x *CapabilityConfig) GetSpecConfig() *pb.Map {
+	if x != nil {
+		return x.SpecConfig
+	}
+	return nil
+}
+
 type isCapabilityConfig_RemoteConfig interface {
 	isCapabilityConfig_RemoteConfig()
 }
@@ -666,15 +788,14 @@ var File_registry_proto protoreflect.FileDescriptor
 
 const file_registry_proto_rawDesc = "" +
 	"\n" +
-	"\x0eregistry.proto\x12\x04loop\x1a\x16values/v1/values.proto\x1a\x1egoogle/protobuf/duration.proto\"\xdc\x03\n" +
+	"\x0eregistry.proto\x12\x04loop\x1a\x16values/v1/values.proto\x1a\x1egoogle/protobuf/duration.proto\"\x9d\x03\n" +
 	"\x13RemoteTriggerConfig\x12K\n" +
 	"\x13registrationRefresh\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x13registrationRefresh\x12I\n" +
-	"\x12registrationExpiry\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\x12=\n" +
-	"\feventTimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\feventTimeout\x128\n" +
-	"\x17minResponsesToAggregate\x18\x04 \x01(\rR\x17minResponsesToAggregate\x12?\n" +
-	"\rmessageExpiry\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\rmessageExpiry\x12\"\n" +
-	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSize\x12O\n" +
-	"\x15batchCollectionPeriod\x18\a \x01(\v2\x19.google.protobuf.DurationR\x15batchCollectionPeriod\"Z\n" +
+	"\x12registrationExpiry\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\x128\n" +
+	"\x17minResponsesToAggregate\x18\x03 \x01(\rR\x17minResponsesToAggregate\x12?\n" +
+	"\rmessageExpiry\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\rmessageExpiry\x12\"\n" +
+	"\fmaxBatchSize\x18\x05 \x01(\rR\fmaxBatchSize\x12O\n" +
+	"\x15batchCollectionPeriod\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x15batchCollectionPeriod\"Z\n" +
 	"\x12RemoteTargetConfig\x12D\n" +
 	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\"\xc5\x03\n" +
 	"\x16RemoteExecutableConfig\x12D\n" +
@@ -691,7 +812,16 @@ const file_registry_proto_rawDesc = "" +
 	"\x15remote_trigger_config\x18\x01 \x01(\v2\x19.loop.RemoteTriggerConfigH\x00R\x13remoteTriggerConfig\x12X\n" +
 	"\x18remote_executable_config\x18\x02 \x01(\v2\x1c.loop.RemoteExecutableConfigH\x00R\x16remoteExecutableConfig\x12C\n" +
 	"\x11aggregator_config\x18\x03 \x01(\v2\x16.loop.AggregatorConfigR\x10aggregatorConfigB\x0f\n" +
-	"\rremote_config\"\x8a\x05\n" +
+	"\rremote_config\"\x83\x02\n" +
+	"\n" +
+	"OCR3Config\x12\x18\n" +
+	"\asigners\x18\x01 \x03(\fR\asigners\x12\"\n" +
+	"\ftransmitters\x18\x02 \x03(\fR\ftransmitters\x12\f\n" +
+	"\x01f\x18\x03 \x01(\rR\x01f\x12%\n" +
+	"\x0eonchain_config\x18\x04 \x01(\fR\ronchainConfig\x126\n" +
+	"\x17offchain_config_version\x18\x05 \x01(\x04R\x15offchainConfigVersion\x12'\n" +
+	"\x0foffchain_config\x18\x06 \x01(\fR\x0eoffchainConfig\x12!\n" +
+	"\fconfig_count\x18\a \x01(\x04R\vconfigCount\"\x9a\b\n" +
 	"\x10CapabilityConfig\x125\n" +
 	"\x0edefault_config\x18\x01 \x01(\v2\x0e.values.v1.MapR\rdefaultConfig\x12O\n" +
 	"\x15remote_trigger_config\x18\x02 \x01(\v2\x19.loop.RemoteTriggerConfigH\x00R\x13remoteTriggerConfig\x12L\n" +
@@ -701,10 +831,21 @@ const file_registry_proto_rawDesc = "" +
 	"\x0frestricted_keys\x18\x06 \x03(\tR\x0erestrictedKeys\x12P\n" +
 	"\x0emethod_configs\x18\a \x03(\v2).loop.CapabilityConfig.MethodConfigsEntryR\rmethodConfigs\x12\x1d\n" +
 	"\n" +
-	"local_only\x18\b \x01(\bR\tlocalOnly\x1a^\n" +
+	"local_only\x18\b \x01(\bR\tlocalOnly\x12J\n" +
+	"\focr3_configs\x18\t \x03(\v2'.loop.CapabilityConfig.Ocr3ConfigsEntryR\vocr3Configs\x12f\n" +
+	"\x16oracle_factory_configs\x18\n" +
+	" \x03(\v20.loop.CapabilityConfig.OracleFactoryConfigsEntryR\x14oracleFactoryConfigs\x12/\n" +
+	"\vspec_config\x18\v \x01(\v2\x0e.values.v1.MapR\n" +
+	"specConfig\x1a^\n" +
 	"\x12MethodConfigsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
-	"\x05value\x18\x02 \x01(\v2\x1c.loop.CapabilityMethodConfigR\x05value:\x028\x01B\x0f\n" +
+	"\x05value\x18\x02 \x01(\v2\x1c.loop.CapabilityMethodConfigR\x05value:\x028\x01\x1aP\n" +
+	"\x10Ocr3ConfigsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12&\n" +
+	"\x05value\x18\x02 \x01(\v2\x10.loop.OCR3ConfigR\x05value:\x028\x01\x1aW\n" +
+	"\x19OracleFactoryConfigsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12$\n" +
+	"\x05value\x18\x02 \x01(\v2\x0e.values.v1.MapR\x05value:\x028\x01B\x0f\n" +
 	"\rremote_config*5\n" +
 	"\x14TransmissionSchedule\x12\r\n" +
 	"\tAllAtOnce\x10\x00\x12\x0e\n" +
@@ -731,7 +872,7 @@ func file_registry_proto_rawDescGZIP() []byte {
 }
 
 var file_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_registry_proto_goTypes = []any{
 	(TransmissionSchedule)(0),      // 0: loop.TransmissionSchedule
 	(RequestHasherType)(0),         // 1: loop.RequestHasherType
@@ -741,37 +882,44 @@ var file_registry_proto_goTypes = []any{
 	(*RemoteExecutableConfig)(nil), // 5: loop.RemoteExecutableConfig
 	(*AggregatorConfig)(nil),       // 6: loop.AggregatorConfig
 	(*CapabilityMethodConfig)(nil), // 7: loop.CapabilityMethodConfig
-	(*CapabilityConfig)(nil),       // 8: loop.CapabilityConfig
-	nil,                            // 9: loop.CapabilityConfig.MethodConfigsEntry
-	(*durationpb.Duration)(nil),    // 10: google.protobuf.Duration
-	(*pb.Map)(nil),                 // 11: values.v1.Map
+	(*OCR3Config)(nil),             // 8: loop.OCR3Config
+	(*CapabilityConfig)(nil),       // 9: loop.CapabilityConfig
+	nil,                            // 10: loop.CapabilityConfig.MethodConfigsEntry
+	nil,                            // 11: loop.CapabilityConfig.Ocr3ConfigsEntry
+	nil,                            // 12: loop.CapabilityConfig.OracleFactoryConfigsEntry
+	(*durationpb.Duration)(nil),    // 13: google.protobuf.Duration
+	(*pb.Map)(nil),                 // 14: values.v1.Map
 }
 var file_registry_proto_depIdxs = []int32{
-	10, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
-	10, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	10, // 2: loop.RemoteTriggerConfig.eventTimeout:type_name -> google.protobuf.Duration
-	10, // 3: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
-	10, // 4: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
-	0,  // 5: loop.RemoteExecutableConfig.transmission_schedule:type_name -> loop.TransmissionSchedule
-	10, // 6: loop.RemoteExecutableConfig.delta_stage:type_name -> google.protobuf.Duration
-	10, // 7: loop.RemoteExecutableConfig.request_timeout:type_name -> google.protobuf.Duration
-	1,  // 8: loop.RemoteExecutableConfig.request_hasher_type:type_name -> loop.RequestHasherType
-	2,  // 9: loop.AggregatorConfig.aggregator_type:type_name -> loop.AggregatorType
-	3,  // 10: loop.CapabilityMethodConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
-	5,  // 11: loop.CapabilityMethodConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
-	6,  // 12: loop.CapabilityMethodConfig.aggregator_config:type_name -> loop.AggregatorConfig
-	11, // 13: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
-	3,  // 14: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
-	4,  // 15: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
-	5,  // 16: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
-	11, // 17: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
-	9,  // 18: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
-	7,  // 19: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	13, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
+	13, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
+	13, // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
+	13, // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
+	0,  // 4: loop.RemoteExecutableConfig.transmission_schedule:type_name -> loop.TransmissionSchedule
+	13, // 5: loop.RemoteExecutableConfig.delta_stage:type_name -> google.protobuf.Duration
+	13, // 6: loop.RemoteExecutableConfig.request_timeout:type_name -> google.protobuf.Duration
+	1,  // 7: loop.RemoteExecutableConfig.request_hasher_type:type_name -> loop.RequestHasherType
+	2,  // 8: loop.AggregatorConfig.aggregator_type:type_name -> loop.AggregatorType
+	3,  // 9: loop.CapabilityMethodConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
+	5,  // 10: loop.CapabilityMethodConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
+	6,  // 11: loop.CapabilityMethodConfig.aggregator_config:type_name -> loop.AggregatorConfig
+	14, // 12: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
+	3,  // 13: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
+	4,  // 14: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
+	5,  // 15: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
+	14, // 16: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
+	10, // 17: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
+	11, // 18: loop.CapabilityConfig.ocr3_configs:type_name -> loop.CapabilityConfig.Ocr3ConfigsEntry
+	12, // 19: loop.CapabilityConfig.oracle_factory_configs:type_name -> loop.CapabilityConfig.OracleFactoryConfigsEntry
+	14, // 20: loop.CapabilityConfig.spec_config:type_name -> values.v1.Map
+	7,  // 21: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
+	8,  // 22: loop.CapabilityConfig.Ocr3ConfigsEntry.value:type_name -> loop.OCR3Config
+	14, // 23: loop.CapabilityConfig.OracleFactoryConfigsEntry.value:type_name -> values.v1.Map
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_registry_proto_init() }
@@ -783,7 +931,7 @@ func file_registry_proto_init() {
 		(*CapabilityMethodConfig_RemoteTriggerConfig)(nil),
 		(*CapabilityMethodConfig_RemoteExecutableConfig)(nil),
 	}
-	file_registry_proto_msgTypes[5].OneofWrappers = []any{
+	file_registry_proto_msgTypes[6].OneofWrappers = []any{
 		(*CapabilityConfig_RemoteTriggerConfig)(nil),
 		(*CapabilityConfig_RemoteTargetConfig)(nil),
 		(*CapabilityConfig_RemoteExecutableConfig)(nil),
@@ -794,7 +942,7 @@ func file_registry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_registry_proto_rawDesc), len(file_registry_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   7,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

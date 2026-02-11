@@ -67,6 +67,21 @@ message CapabilityMethodConfig {
   AggregatorConfig aggregator_config = 3;
 }
 
+// OCR3Config contains the configuration for an OCR3 instance.
+// This mirrors the libocr ContractConfig struct and is used for storing
+// OCR configuration in the CapabilitiesRegistry contract.
+message OCR3Config {
+  repeated bytes signers = 1;
+  repeated bytes transmitters = 2;
+  uint32 f = 3;
+  bytes onchain_config = 4;
+  uint64 offchain_config_version = 5;
+  bytes offchain_config = 6;
+  // Configuration counter, must be incremented on each config change.
+  // Used for computing config digest.
+  uint64 config_count = 7;
+}
+
 message CapabilityConfig {
   values.v1.Map default_config = 1;
 
@@ -79,9 +94,23 @@ message CapabilityConfig {
   values.v1.Map restricted_config = 5;
   repeated string restricted_keys = 6;
 
-  // v2 ("NoDAG") capabilities
+  // v2 ("NoDAG") capabilities - config for Don2Don framework.
   map<string, CapabilityMethodConfig> method_configs = 7;
-  // if true, the capability won't be callable via don2don
+  // if true, the capability won't be callable via don2don.
   bool local_only = 8;
+
+  // OCR3 configurations for OCR-based capabilities.
+  // Map key is an OCR instance name:
+  //   - "__default__" for single-instance capabilities
+  //   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
+  // When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
+  map<string, OCR3Config> ocr3_configs = 9;
+
+  // Oracle factory configs for OCR-based capabilities (moved from job specs).
+  // Map key is an OCR instance name (same as above).
+  map<string, values.v1.Map> oracle_factory_configs = 10;
+
+  // Config moved from job specs.
+  values.v1.Map spec_config = 11;
 }
 

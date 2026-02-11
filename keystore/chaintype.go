@@ -1,4 +1,4 @@
-package chaintype
+package keystore
 
 import (
 	"fmt"

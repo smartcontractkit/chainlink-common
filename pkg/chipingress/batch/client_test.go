@@ -284,7 +284,8 @@ func TestStart(t *testing.T) {
 		mockClient.
 			On("PublishBatch",
 				mock.MatchedBy(func(ctx context.Context) bool {
-					return ctx != nil
+					// Regression guard: flush on cancellation must not use an already-canceled context.
+					return ctx != nil && ctx.Err() == nil
 				}),
 				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
 					return len(batch.Events) == 2 &&
@@ -757,7 +758,10 @@ func TestCallbacks(t *testing.T) {
 
 		mockClient.
 			On("PublishBatch",
-				mock.Anything,
+				mock.MatchedBy(func(ctx context.Context) bool {
+					// Regression guard: flush on cancellation must not use an already-canceled context.
+					return ctx != nil && ctx.Err() == nil
+				}),
 				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
 					return len(batch.Events) == 1 &&
 						batch.Events[0].Id == "test-id-1"

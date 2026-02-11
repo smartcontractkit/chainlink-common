@@ -108,7 +108,7 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 }
 
 func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
-	return fmt.Errorf("trigger %s not found", triggerId)
+	return fmt.Errorf("trigger %s not found", method)
 }
 
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

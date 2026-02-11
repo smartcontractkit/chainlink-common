@@ -140,7 +140,14 @@ func (c *cronCapability) UnregisterTrigger(ctx context.Context, request capabili
 }
 
 func (c *cronCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
-	return c.CronCapability.AckEvent(ctx, triggerId, eventId, method)
+	switch method {
+	case "Trigger":
+		return c.CronCapability.AckEvent(ctx, triggerId, eventId, method)
+	case "":
+		return c.CronCapability.AckEvent(ctx, triggerId, eventId, method)
+	default:
+		return fmt.Errorf("trigger %s not found", method)
+	}
 }
 
 func (c *cronCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

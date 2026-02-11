@@ -171,10 +171,20 @@ func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context
 }
 
 func (c *{{.GoName|LowerFirst}}Capability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
-{{- if $hasTriggers	  }}
-    return c.{{.GoName}}Capability.AckEvent(ctx, triggerId, eventId, method)
+
+{{- if $hasTriggers }}
+    switch method {
+        {{- range .Methods}}
+        {{- if (isTrigger .) }}
+            case {{- if (MapToUntypedAPI .) }} "" {{- else}} "{{.GoName}}" {{- end }}:
+                return c.{{$service.GoName}}Capability.AckEvent(ctx, triggerId, eventId, method)
+        {{- end }}
+        {{- end }}
+        	default:
+        	    return fmt.Errorf("trigger %s not found", method)
+        }
 {{- else }}
-        return fmt.Errorf("trigger %s not found", triggerId)
+    return fmt.Errorf("trigger %s not found", method)
 {{- end }}
 }
 

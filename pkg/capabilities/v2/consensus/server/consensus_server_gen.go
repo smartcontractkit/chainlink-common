@@ -111,7 +111,7 @@ func (c *consensusCapability) UnregisterTrigger(ctx context.Context, request cap
 }
 
 func (c *consensusCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
-	return fmt.Errorf("trigger %s not found", triggerId)
+	return fmt.Errorf("trigger %s not found", method)
 }
 
 func (c *consensusCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

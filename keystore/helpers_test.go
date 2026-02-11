@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
+	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +29,7 @@ func NewKeystoreTH(t *testing.T) *KeystoreTH {
 	ctx := t.Context()
 	st := keystore.NewMemoryStorage()
 	ks, err := keystore.LoadKeystore(ctx, st, "test",
-		keystore.WithScryptParams(keystore.FastScryptParams),
+		keystore.WithScryptParams(scrypt.FastScryptParams),
 		keystore.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))),
 	)
 	require.NoError(t, err)

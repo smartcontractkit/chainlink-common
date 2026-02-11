@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
 	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
 )
 
@@ -125,22 +126,6 @@ var AllKeyTypes = KeyTypeList{X25519, ECDH_P256, Ed25519, ECDSA_S256}
 var AllEncryptionKeyTypes = KeyTypeList{X25519, ECDH_P256}
 var AllDigitalSignatureKeyTypes = KeyTypeList{Ed25519, ECDSA_S256}
 
-type ScryptParams struct {
-	N int
-	P int
-}
-
-var (
-	DefaultScryptParams = ScryptParams{
-		N: gethkeystore.StandardScryptN,
-		P: gethkeystore.StandardScryptP,
-	}
-	FastScryptParams ScryptParams = ScryptParams{
-		N: 1 << 14,
-		P: 1,
-	}
-)
-
 // KeyInfo is the information about a key in the keystore.
 // Public key may be empty for non-asymmetric key types.
 type KeyInfo struct {
@@ -208,7 +193,7 @@ func newKey(keyType KeyType, privateKey internal.Raw, publicKey []byte, createdA
 // ScryptParams control CPU/memory cost.
 type EncryptionParams struct {
 	Password     string
-	ScryptParams ScryptParams
+	ScryptParams scrypt.ScryptParams
 }
 
 func publicKeyFromPrivateKey(privateKeyBytes internal.Raw, keyType KeyType) ([]byte, error) {
@@ -271,7 +256,7 @@ func WithLogger(l *slog.Logger) Option {
 	}
 }
 
-func WithScryptParams(sp ScryptParams) Option {
+func WithScryptParams(sp scrypt.ScryptParams) Option {
 	return func(k *keystore) {
 		k.enc.ScryptParams = sp
 	}
@@ -285,7 +270,7 @@ func LoadKeystore(ctx context.Context, storage Storage, password string, opts ..
 		storage: storage,
 		enc: EncryptionParams{
 			Password:     password,
-			ScryptParams: DefaultScryptParams,
+			ScryptParams: scrypt.DefaultScryptParams,
 		},
 	}
 	for _, opt := range opts {

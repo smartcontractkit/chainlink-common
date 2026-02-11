@@ -7,12 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
+	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
 )
 
 func TestCoreKeystore(t *testing.T) {
 	ctx := t.Context()
 
-	ks, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), "test-password", keystore.WithScryptParams(keystore.FastScryptParams))
+	ks, err := keystore.LoadKeystore(t.Context(), keystore.NewMemoryStorage(), "test-password", keystore.WithScryptParams(scrypt.FastScryptParams))
 	require.NoError(t, err)
 	coreKs := keystore.NewCoreKeystore(ks)
 

@@ -14,6 +14,7 @@ import (
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
+	"github.com/smartcontractkit/chainlink-common/keystore/scrypt"
 )
 
 func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
@@ -114,7 +115,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 	for _, tt := range tt {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := keystore.NewMemoryStorage()
-			ks, err := keystore.LoadKeystore(ctx, storage, "test-password", keystore.WithScryptParams(keystore.FastScryptParams))
+			ks, err := keystore.LoadKeystore(ctx, storage, "test-password", keystore.WithScryptParams(scrypt.FastScryptParams))
 			require.NoError(t, err)
 			for _, op := range tt.keyOps {
 				switch op.op {
@@ -163,7 +164,7 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 
 	ctx := context.Background()
 	st := keystore.NewMemoryStorage()
-	ks, err := keystore.LoadKeystore(ctx, st, "test", keystore.WithScryptParams(keystore.FastScryptParams))
+	ks, err := keystore.LoadKeystore(ctx, st, "test", keystore.WithScryptParams(scrypt.FastScryptParams))
 	require.NoError(t, err)
 
 	const (
@@ -217,7 +218,7 @@ func TestKeystore_ExportImport(t *testing.T) {
 	t.Run("export and import", func(t *testing.T) {
 		exportParams := keystore.EncryptionParams{
 			Password:     "export-pass",
-			ScryptParams: keystore.FastScryptParams,
+			ScryptParams: scrypt.FastScryptParams,
 		}
 		_, err = ks1.CreateKeys(t.Context(), keystore.CreateKeysRequest{
 			Keys: []keystore.CreateKeyRequest{

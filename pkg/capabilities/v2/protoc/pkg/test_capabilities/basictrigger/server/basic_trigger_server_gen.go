@@ -21,7 +21,7 @@ var _ = emptypb.Empty{}
 type BasicCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], caperrors.Error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) caperrors.Error
-	AckEvent(ctx context.Context, triggerID string, eventID string, method string) caperrors.Error
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error

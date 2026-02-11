@@ -21,7 +21,7 @@ var _ = emptypb.Empty{}
 type HTTPCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], caperrors.Error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) caperrors.Error
-	AckEvent(ctx context.Context, triggerID string, eventID string, method string) caperrors.Error
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error

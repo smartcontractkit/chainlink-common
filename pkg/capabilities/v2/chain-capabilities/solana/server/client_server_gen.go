@@ -38,9 +38,9 @@ type ClientCapability interface {
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*solana.Log], caperrors.Error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) caperrors.Error
-	AckEvent(ctx context.Context, triggerID string, eventID string, method string) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest) (*capabilities.ResponseAndMetadata[*solana.WriteReportReply], caperrors.Error)
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) caperrors.Error
 
 	ChainSelector() uint64
 

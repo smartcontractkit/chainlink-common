@@ -27,9 +27,6 @@ type EventStore interface {
 	DeleteEventsForTrigger(ctx context.Context, triggerID string) error
 }
 
-// Decode produces a typed message for the inbox for a given trigger event
-type Decode[T any] func(te TriggerEvent) (T, error)
-
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until
 // they are ACKd. Events are persisted to be resilient to node restarts.
 type BaseTriggerCapability[T proto.Message] struct {

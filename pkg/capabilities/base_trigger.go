@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -32,26 +32,25 @@ type Decode[T any] func(te TriggerEvent) (T, error)
 
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until
 // they are ACKd. Events are persisted to be resilient to node restarts.
-type BaseTriggerCapability[T any] struct {
-	tRetransmit time.Duration // time window for an event being ACKd before we retransmit
-
+type BaseTriggerCapability[T proto.Message] struct {
+	tRetransmit  time.Duration // time window for an event being ACKd before we retransmit
 	store        EventStore
-	decode       Decode[T]
+	newMsg       func() T // factory to allocate a new T for unmarshalling
 	lggr         logger.Logger
 	capabilityId string
 
 	mu      sync.Mutex
-	inboxes map[string]chan<- T                 // triggerID -> registered send channel
-	pending map[string]map[string]*PendingEvent // triggerID --> eventID
+	inboxes map[string]chan<- TriggerAndId[T]   // triggerID --> registered send channel
+	pending map[string]map[string]*PendingEvent // triggerID --> eventID --> PendingEvent
 
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
 
-func NewBaseTriggerCapability[T any](
+func NewBaseTriggerCapability[T proto.Message](
 	store EventStore,
-	decode Decode[T],
+	newMsg func() T,
 	lggr logger.Logger,
 	capabilityId string,
 	tRetransmit time.Duration,
@@ -59,12 +58,12 @@ func NewBaseTriggerCapability[T any](
 	ctx, cancel := context.WithCancel(context.Background())
 	return &BaseTriggerCapability[T]{
 		store:        store,
-		decode:       decode,
+		newMsg:       newMsg,
 		lggr:         lggr,
 		capabilityId: capabilityId,
 		tRetransmit:  tRetransmit,
 		mu:           sync.Mutex{},
-		inboxes:      make(map[string]chan<- T),
+		inboxes:      make(map[string]chan<- TriggerAndId[T]),
 		pending:      make(map[string]map[string]*PendingEvent),
 		ctx:          ctx,
 		cancel:       cancel,
@@ -104,7 +103,7 @@ func (b *BaseTriggerCapability[T]) Stop() {
 	b.wg.Wait()
 }
 
-func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan<- T) {
+func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan<- TriggerAndId[T]) {
 	b.mu.Lock()
 	b.inboxes[triggerID] = sendCh
 	b.mu.Unlock()
@@ -226,19 +225,19 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
 	}
 
-	te := TriggerEvent{
-		TriggerType: event.TriggerId,
-		ID:          event.EventId,
-		Payload:     &anypb.Any{TypeUrl: typeURL, Value: payloadCopy},
+	msg := b.newMsg()
+	if err := proto.Unmarshal(payloadCopy, msg); err != nil {
+		b.lggr.Errorf("failed to unmarshal payload to message type (typeURL=%s): %v", typeURL, err)
+		return
 	}
 
-	msg, err := b.decode(te)
-	if err != nil {
-		b.lggr.Errorf("failed to decode payload into trigger message type: %v", err)
+	wrapped := TriggerAndId[T]{
+		Trigger: msg,
+		Id:      event.EventId,
 	}
 
 	select {
-	case sendCh <- msg:
+	case sendCh <- wrapped:
 		b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
 			b.capabilityId, event.TriggerId, event.EventId, rec.Attempts)
 	default:

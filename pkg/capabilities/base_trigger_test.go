@@ -7,17 +7,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[TriggerEvent] {
+func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	decode := func(te TriggerEvent) (TriggerEvent, error) {
-		return te, nil
-	}
-	return NewBaseTriggerCapability(store, decode, lggr, "testCap", 100*time.Millisecond)
+	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr, "testCap", 100*time.Millisecond)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -25,16 +23,33 @@ func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
+func makeTE(t *testing.T, trigger, id string, b []byte) TriggerEvent {
+	t.Helper()
+	m := &wrapperspb.BytesValue{Value: b}
+	a, err := anypb.New(m)
+	require.NoError(t, err)
+
+	return TriggerEvent{
+		TriggerType: trigger,
+		ID:          id,
+		Payload:     a,
+	}
+}
+
 func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 	store := NewMemEventStore()
-	sendCh := make(chan TriggerEvent, 10)
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
 
 	// Preload store with one record
+	msg := &wrapperspb.BytesValue{Value: []byte("payload")}
+	anyMsg, err := anypb.New(msg)
+	require.NoError(t, err)
+
 	rec := PendingEvent{
 		TriggerId:  "trigA",
 		EventId:    "e1",
-		AnyTypeURL: "type.googleapis.com/some.Msg",
-		Payload:    []byte("payload"),
+		AnyTypeURL: anyMsg.TypeUrl,
+		Payload:    anyMsg.Value,
 		FirstAt:    time.Now().Add(-1 * time.Minute),
 	}
 	require.NoError(t, store.Insert(context.Background(), rec))
@@ -62,7 +77,7 @@ func TestStart_LoadsAndSendsPersisted(t *testing.T) {
 
 func TestDeliverEvent_PersistsAndSends(t *testing.T) {
 	store := NewMemEventStore()
-	sendCh := make(chan TriggerEvent, 10)
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
 
 	b := newBase(t, store)
 	ctx, cancel := ctxWithCancel(t)
@@ -76,11 +91,7 @@ func TestDeliverEvent_PersistsAndSends(t *testing.T) {
 		b.UnregisterTrigger("trigA")
 	})
 
-	te := TriggerEvent{
-		TriggerType: "trigA",
-		ID:          "e2",
-		Payload:     &anypb.Any{TypeUrl: "type.googleapis.com/thing", Value: []byte("x")},
-	}
+	te := makeTE(t, "trigA", "e2", []byte("x"))
 	require.NoError(t, b.DeliverEvent(ctx, te, "trigA"))
 
 	recs, _ := store.List(ctx)
@@ -100,7 +111,7 @@ func TestDeliverEvent_PersistsAndSends(t *testing.T) {
 
 func TestAckEvent_StopsRetransmit(t *testing.T) {
 	store := NewMemEventStore()
-	sendCh := make(chan TriggerEvent, 10)
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
 
 	b := newBase(t, store)
 	ctx, cancel := ctxWithCancel(t)
@@ -114,11 +125,7 @@ func TestAckEvent_StopsRetransmit(t *testing.T) {
 		b.UnregisterTrigger("trigC")
 	})
 
-	te := TriggerEvent{
-		TriggerType: "trigC",
-		ID:          "e3",
-		Payload:     &anypb.Any{TypeUrl: "type.googleapis.com/thing", Value: []byte("x")},
-	}
+	te := makeTE(t, "trigC", "e3", []byte("x"))
 	require.NoError(t, b.DeliverEvent(ctx, te, "trigC"))
 
 	// Wait for at least one send

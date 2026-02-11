@@ -208,7 +208,7 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
 func (t *triggerExecutableServer) AckEvent(ctx context.Context, req *capabilitiespb.AckEventRequest) (*emptypb.Empty, error) {
-	if err := t.impl.AckEvent(ctx, req.TriggerId, req.EventId); err != nil {
+	if err := t.impl.AckEvent(ctx, req.TriggerId, req.EventId, req.Method); err != nil {
 		return nil, fmt.Errorf("error acking event: %w", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -294,10 +294,11 @@ type triggerExecutableClient struct {
 	cancelFuncs map[string]func()
 }
 
-func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
 	req := &capabilitiespb.AckEventRequest{
 		TriggerId: triggerId,
 		EventId:   eventId,
+		Method:    method,
 	}
 	_, err := t.grpc.AckEvent(ctx, req)
 	if err != nil {

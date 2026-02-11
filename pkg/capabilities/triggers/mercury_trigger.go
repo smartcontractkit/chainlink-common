@@ -91,7 +91,7 @@ func (o *MercuryTriggerService) ProcessReport(reports []datastreams.FeedReport) 
 	return nil
 }
 
-func (o *MercuryTriggerService) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (o *MercuryTriggerService) AckEvent(ctx context.Context, triggerID string, eventID string, method string) error {
 	return nil
 }
 

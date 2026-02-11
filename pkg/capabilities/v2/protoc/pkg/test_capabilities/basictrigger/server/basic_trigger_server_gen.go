@@ -21,7 +21,7 @@ var _ = emptypb.Empty{}
 type BasicCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], caperrors.Error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) caperrors.Error
-	AckEvent(ctx context.Context, triggerId string, eventId string) caperrors.Error
+	AckEvent(ctx context.Context, triggerID string, eventID string, method string) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -125,8 +125,8 @@ func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabil
 	}
 }
 
-func (c *basicCapability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	return c.BasicCapability.AckEvent(ctx, triggerId, eventId)
+func (c *basicCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return c.BasicCapability.AckEvent(ctx, triggerId, eventId, method)
 }
 
 func (c *basicCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

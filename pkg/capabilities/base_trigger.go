@@ -35,9 +35,10 @@ type Decode[T any] func(te TriggerEvent) (T, error)
 type BaseTriggerCapability[T any] struct {
 	tRetransmit time.Duration // time window for an event being ACKd before we retransmit
 
-	store  EventStore
-	decode Decode[T]
-	lggr   logger.Logger
+	store        EventStore
+	decode       Decode[T]
+	lggr         logger.Logger
+	capabilityId string
 
 	mu      sync.Mutex
 	inboxes map[string]chan<- T                 // triggerID -> registered send channel
@@ -52,19 +53,21 @@ func NewBaseTriggerCapability[T any](
 	store EventStore,
 	decode Decode[T],
 	lggr logger.Logger,
+	capabilityId string,
 	tRetransmit time.Duration,
 ) *BaseTriggerCapability[T] {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &BaseTriggerCapability[T]{
-		store:       store,
-		decode:      decode,
-		lggr:        lggr,
-		tRetransmit: tRetransmit,
-		mu:          sync.Mutex{},
-		inboxes:     make(map[string]chan<- T),
-		pending:     make(map[string]map[string]*PendingEvent),
-		ctx:         ctx,
-		cancel:      cancel,
+		store:        store,
+		decode:       decode,
+		lggr:         lggr,
+		capabilityId: capabilityId,
+		tRetransmit:  tRetransmit,
+		mu:           sync.Mutex{},
+		inboxes:      make(map[string]chan<- T),
+		pending:      make(map[string]map[string]*PendingEvent),
+		ctx:          ctx,
+		cancel:       cancel,
 	}
 }
 
@@ -123,7 +126,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	triggerID string,
 ) error {
 	rec := PendingEvent{
-		TriggerId:  te.TriggerType,
+		TriggerId:  triggerID,
 		EventId:    te.ID,
 		AnyTypeURL: te.Payload.GetTypeUrl(),
 		Payload:    te.Payload.GetValue(),
@@ -236,8 +239,8 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 
 	select {
 	case sendCh <- msg:
-		b.lggr.Infof("event dispatched: trigger=%s event=%s attempt=%d",
-			event.TriggerId, event.EventId, rec.Attempts)
+		b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
+			b.capabilityId, event.TriggerId, event.EventId, rec.Attempts)
 	default:
 		b.lggr.Warnf("inbox full for trigger %s", event.TriggerId)
 	}

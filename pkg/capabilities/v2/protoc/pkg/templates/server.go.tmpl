@@ -38,14 +38,11 @@ type {{.GoName}}Capability interface {
             {{ $hasTriggers = true }}
     Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], caperrors.Error)
     Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) caperrors.Error
+    AckEvent(ctx context.Context, triggerID string, eventID string, method string) caperrors.Error
         {{- else }}
             {{ $hasActions = true }}
     {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*capabilities.ResponseAndMetadata[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], caperrors.Error)
         {{- end }}
-    {{- end }}
-
-    {{- if $hasTriggers }}
-        AckEvent(ctx context.Context, triggerId string, eventId string) caperrors.Error
     {{- end }}
 
     {{ range Labels . }}
@@ -173,9 +170,9 @@ func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context
 {{- end }}
 }
 
-func (c *{{.GoName|LowerFirst}}Capability) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (c *{{.GoName|LowerFirst}}Capability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
 {{- if $hasTriggers	  }}
-    return c.{{.GoName}}Capability.AckEvent(ctx, triggerId, eventId)
+    return c.{{.GoName}}Capability.AckEvent(ctx, triggerId, eventId, method)
 {{- else }}
         return fmt.Errorf("trigger %s not found", triggerId)
 {{- end }}

@@ -65,7 +65,7 @@ func (m *mockTrigger) UnregisterTrigger(ctx context.Context, request capabilitie
 	return nil
 }
 
-func (m *mockTrigger) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (m *mockTrigger) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
 	return nil
 }
 

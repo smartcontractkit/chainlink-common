@@ -743,6 +743,7 @@ type AckEventRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TriggerId     string                 `protobuf:"bytes,1,opt,name=trigger_id,json=triggerId,proto3" json:"trigger_id,omitempty"`
 	EventId       string                 `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -787,6 +788,13 @@ func (x *AckEventRequest) GetTriggerId() string {
 func (x *AckEventRequest) GetEventId() string {
 	if x != nil {
 		return x.EventId
+	}
+	return ""
+}
+
+func (x *AckEventRequest) GetMethod() string {
+	if x != nil {
+		return x.Method
 	}
 	return ""
 }
@@ -1374,11 +1382,12 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x16TriggerResponseMessage\x12*\n" +
 	"\x03ack\x18\x01 \x01(\v2\x16.google.protobuf.EmptyH\x00R\x03ack\x12;\n" +
 	"\bresponse\x18\x02 \x01(\v2\x1d.capabilities.TriggerResponseH\x00R\bresponseB\t\n" +
-	"\amessage\"K\n" +
+	"\amessage\"c\n" +
 	"\x0fAckEventRequest\x12\x1d\n" +
 	"\n" +
 	"trigger_id\x18\x01 \x01(\tR\ttriggerId\x12\x19\n" +
-	"\bevent_id\x18\x02 \x01(\tR\aeventId\"\xbc\x01\n" +
+	"\bevent_id\x18\x02 \x01(\tR\aeventId\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\"\xbc\x01\n" +
 	"\x12CapabilityResponse\x12$\n" +
 	"\x05value\x18\x01 \x01(\v2\x0e.values.v1.MapR\x05value\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12:\n" +

@@ -17,7 +17,7 @@ func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[TriggerEvent
 	decode := func(te TriggerEvent) (TriggerEvent, error) {
 		return te, nil
 	}
-	return NewBaseTriggerCapability(store, decode, lggr, 100*time.Millisecond)
+	return NewBaseTriggerCapability(store, decode, lggr, "testCap", 100*time.Millisecond)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {

@@ -340,7 +340,7 @@ type OCRAttributedOnchainSignature struct {
 type TriggerExecutable interface {
 	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
 	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
-	AckEvent(ctx context.Context, triggerId string, eventId string) error
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.

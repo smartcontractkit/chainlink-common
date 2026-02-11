@@ -72,7 +72,7 @@ func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities
 	return nil
 }
 
-func (o *OnDemand) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (o *OnDemand) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
 	return nil
 }
 

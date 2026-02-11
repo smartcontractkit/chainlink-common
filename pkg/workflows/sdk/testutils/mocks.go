@@ -157,7 +157,7 @@ func (t *TriggerMock[O]) UnregisterTrigger(ctx context.Context, request capabili
 	return nil
 }
 
-func (t *TriggerMock[O]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+func (t *TriggerMock[O]) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
 	return nil
 }
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770763863388,
+  "lastUpdate": 1770819453371,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -38160,6 +38160,66 @@ window.BENCHMARK_DATA = {
             "value": 141667,
             "unit": "ns/op",
             "extra": "8256 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "b833b412cdd91bca6cec95c7277aaa2cd2fbd26e",
+          "message": "[PRODCRE-1746] Move core chain types into common keystore (#1830)\n\n* Minor.\n\n* Minor.\n\n* Minor.",
+          "timestamp": "2026-02-11T14:08:22Z",
+          "tree_id": "b35d0e51a7072f7bfb7c2cb06828d5a6871e93b7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b833b412cdd91bca6cec95c7277aaa2cd2fbd26e"
+        },
+        "date": 1770819450960,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.2,
+            "unit": "ns/op",
+            "extra": "3229298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94508,
+            "unit": "ns/op",
+            "extra": "12708 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.7,
+            "unit": "ns/op",
+            "extra": "2908459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94320,
+            "unit": "ns/op",
+            "extra": "12724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26809,
+            "unit": "ns/op",
+            "extra": "44985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144088,
+            "unit": "ns/op",
+            "extra": "7869 times\n4 procs"
           }
         ]
       }

@@ -3,7 +3,6 @@ package gateway
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"hash"
 	"sort"
 	"strconv"
@@ -42,19 +41,9 @@ type OutboundHTTPRequest struct {
 	WorkflowOwner    string `json:"workflowOwner"`
 }
 
-// ErrBothHeadersAndMultiHeaders is returned when both Headers and MultiHeaders are non-empty.
-// Callers must use only one of the two for a given request or response.
-var ErrBothHeadersAndMultiHeaders = errors.New("must not set both Headers and MultiHeaders; use MultiHeaders only")
-
-// Hash generates a hash of the request for caching purposes.
-//
-// Deprecated: Use HashValidated for cache keys so that invalid requests (e.g. both Headers and
-// MultiHeaders set) are rejected with an error instead of hashed. Hash is retained for backward
-// compatibility.
-//
-// WorkflowID is not included in the hash because cached responses can be used across workflows.
-// Headers are included in a deterministic order: MultiHeaders is used when non-empty, otherwise Headers.
-// When using MultiHeaders, keys and values within each key are sorted for determinism.
+// Hash generates a deterministic hash of the request for caching purposes.
+// Every field that is present is included; map and slice order is normalized by sorting.
+// WorkflowID is not included so cached responses can be shared across workflows.
 func (req OutboundHTTPRequest) Hash() string {
 	s := sha256.New()
 	sep := []byte("/")
@@ -75,70 +64,37 @@ func (req OutboundHTTPRequest) Hash() string {
 	return hex.EncodeToString(s.Sum(nil))
 }
 
-// HashValidated returns the same hash as Hash() but only after validating the request.
-// It returns an error if both Headers and MultiHeaders are set. Use HashValidated for cache keys
-// so invalid requests are rejected instead of cached.
-func (req OutboundHTTPRequest) HashValidated() (string, error) {
-	if err := req.Validate(); err != nil {
-		return "", err
-	}
-	return req.Hash(), nil
-}
-
-// writeHeadersToHash writes a deterministic encoding of headers into the hash.
-// MultiHeaders is used when non-empty; otherwise Headers is used. Keys and values are sorted.
+// writeHeadersToHash writes all present header data in a deterministic order:
+// Headers (sorted keys) then MultiHeaders (sorted keys, sorted values per key).
 func writeHeadersToHash(s hash.Hash, sep []byte, headers map[string]string, multiHeaders map[string][]string) {
-	if len(multiHeaders) > 0 {
-		keys := make([]string, 0, len(multiHeaders))
-		for k := range multiHeaders {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, key := range keys {
-			vals := multiHeaders[key]
-			valsCopy := make([]string, len(vals))
-			copy(valsCopy, vals)
-			sort.Strings(valsCopy)
-			s.Write([]byte(key))
-			s.Write(sep)
-			for _, v := range valsCopy {
-				s.Write([]byte(v))
-				s.Write(sep)
-			}
-		}
-		return
+	keys := make([]string, 0, len(headers))
+	for k := range headers {
+		keys = append(keys, k)
 	}
-	if len(headers) > 0 {
-		keys := make([]string, 0, len(headers))
-		for k := range headers {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, key := range keys {
-			s.Write([]byte(key))
-			s.Write(sep)
-			s.Write([]byte(headers[key]))
+	sort.Strings(keys)
+	for _, key := range keys {
+		s.Write([]byte(key))
+		s.Write(sep)
+		s.Write([]byte(headers[key]))
+		s.Write(sep)
+	}
+	keys = make([]string, 0, len(multiHeaders))
+	for k := range multiHeaders {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		vals := multiHeaders[key]
+		valsCopy := make([]string, len(vals))
+		copy(valsCopy, vals)
+		sort.Strings(valsCopy)
+		s.Write([]byte(key))
+		s.Write(sep)
+		for _, v := range valsCopy {
+			s.Write([]byte(v))
 			s.Write(sep)
 		}
 	}
-}
-
-// Validate returns an error if both Headers and MultiHeaders are non-empty.
-// Callers must populate only one of the two.
-func (req *OutboundHTTPRequest) Validate() error {
-	if len(req.Headers) > 0 && len(req.MultiHeaders) > 0 {
-		return ErrBothHeadersAndMultiHeaders
-	}
-	return nil
-}
-
-// Validate returns an error if both Headers and MultiHeaders are non-empty.
-// Callers must populate only one of the two.
-func (resp *OutboundHTTPResponse) Validate() error {
-	if len(resp.Headers) > 0 && len(resp.MultiHeaders) > 0 {
-		return ErrBothHeadersAndMultiHeaders
-	}
-	return nil
 }
 
 // OutboundHTTPResponse represents the response from gateway to workflow node.

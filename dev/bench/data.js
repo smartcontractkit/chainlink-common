@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770851944156,
+  "lastUpdate": 1770919790629,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -38280,6 +38280,66 @@ window.BENCHMARK_DATA = {
             "value": 149027,
             "unit": "ns/op",
             "extra": "7771 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "hendoxc",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "ec982b4878aef738838bdc26bfb647872d02bef4",
+          "message": "INFOPLAT 3099 chip ingress batching (#1756)\n\n* Adds chipingress batching client\n\n* Adds unit-tests\n\nFIxes test\n\n* Removes copying of slice\n\n* Adds zap logger\n\n* Fixes mod file\n\n* FIxes linting\n\n* Rename timeout vars\n\n* Adds callback mechanism\n\n* fixes linting\n\n* Move callback execution into separate goroutine\n\nstops semaphore blocking on callback execution to complete\n\n* check for shutdown\n\n* Ensures all callbacks complete after .Stop\n\n- ensures no panic if .Stop is called multiple times\n\n* Removes compression type\n\n* Adjust configuration\n\n* Return errors from queue message\n\n* Adds buffer\n\n* Correct shutdown protocol\n\n* Fix linting errors\n\n* Fixes linting\n\n* Addresses comments\n\n* Uses `services.StopChan`\n\nderives contexts\n\n* linter fixes\n\n* Removes `services.StopChan` usage\n\ncircular dependency on `common`\n\n* Make buffer generic\n\n* simplify\n\n* Removes unused functions\n\nadds comment\n\n* fix batch flush publish context on shutdown (#1832)\n\n* Removes unused code\n\n---------\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>",
+          "timestamp": "2026-02-12T17:59:59Z",
+          "tree_id": "2838acda365894f2fc7623428b5dc7893759a4cd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ec982b4878aef738838bdc26bfb647872d02bef4"
+        },
+        "date": 1770919788925,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363,
+            "unit": "ns/op",
+            "extra": "3310833 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96816,
+            "unit": "ns/op",
+            "extra": "12364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 420.7,
+            "unit": "ns/op",
+            "extra": "2869118 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97157,
+            "unit": "ns/op",
+            "extra": "12332 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26545,
+            "unit": "ns/op",
+            "extra": "45222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 146590,
+            "unit": "ns/op",
+            "extra": "8268 times\n4 procs"
           }
         ]
       }

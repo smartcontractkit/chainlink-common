@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770919790629,
+  "lastUpdate": 1770923553726,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -38340,6 +38340,66 @@ window.BENCHMARK_DATA = {
             "value": 146590,
             "unit": "ns/op",
             "extra": "8268 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "421e13bdce15602e5fa2095dd5f068d562bb31a5",
+          "message": "feat(cre): adds MultiHeaders support to gateway (#1822)\n\n* chore: adds MultiHeaders to OutboundHTTPReq/Res\n\n* chore(gateway): adds tests for fields\n\n* chore(gateway): deprecates Hash method\n\n* fix(gateway): hashes all headers related fields\n\n* refactor(gateway): uses slices and maps pkgs\n\n* fix: compatability -> compatibility",
+          "timestamp": "2026-02-12T19:05:19Z",
+          "tree_id": "ac695f35c25de3408acb2dc7dff171afcc57c451",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/421e13bdce15602e5fa2095dd5f068d562bb31a5"
+        },
+        "date": 1770923552285,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362,
+            "unit": "ns/op",
+            "extra": "3306057 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90827,
+            "unit": "ns/op",
+            "extra": "13180 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.9,
+            "unit": "ns/op",
+            "extra": "2855289 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92343,
+            "unit": "ns/op",
+            "extra": "12960 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26591,
+            "unit": "ns/op",
+            "extra": "45118 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 145372,
+            "unit": "ns/op",
+            "extra": "8755 times\n4 procs"
           }
         ]
       }

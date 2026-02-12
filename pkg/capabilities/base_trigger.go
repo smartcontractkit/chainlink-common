@@ -22,6 +22,7 @@ type PendingEvent struct {
 
 type EventStore interface {
 	Insert(ctx context.Context, rec PendingEvent) error
+	UpdateDelivery(ctx context.Context, triggerId string, eventId string, lastSentAt time.Time, attempts int) error
 	List(ctx context.Context) ([]PendingEvent, error)
 	DeleteEvent(ctx context.Context, triggerId string, eventId string) error
 	DeleteEventsForTrigger(ctx context.Context, triggerID string) error
@@ -215,10 +216,16 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 
 	typeURL := rec.AnyTypeURL
 	payloadCopy := append([]byte(nil), rec.Payload...)
-
-	sendCh, ok := b.inboxes[event.TriggerId]
+	sendCh, inboxOk := b.inboxes[event.TriggerId]
+	attempts := rec.Attempts
+	lastSent := rec.LastSentAt
 	b.mu.Unlock()
-	if !ok {
+
+	if err := b.store.UpdateDelivery(b.ctx, event.TriggerId, event.EventId, lastSent, attempts); err != nil {
+		b.lggr.Errorf("failed to persist delivery update for trigger=%s event=%s: %v", event.TriggerId, event.EventId, err)
+	}
+
+	if !inboxOk {
 		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
 	}
 

@@ -2,7 +2,9 @@ package capabilities
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 )
 
 type MemEventStore struct {
@@ -26,6 +28,26 @@ func (m *MemEventStore) Insert(ctx context.Context, r PendingEvent) error {
 		m.recs[r.TriggerId] = eventsForTrigger
 	}
 	eventsForTrigger[r.EventId] = r
+	return nil
+}
+
+func (m *MemEventStore) UpdateDelivery(ctx context.Context, triggerId string, eventId string, lastSentAt time.Time, attempts int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	eventsForTrigger := m.recs[triggerId]
+	if eventsForTrigger == nil {
+		return fmt.Errorf("event not found trigger=%s event=%s", triggerId, eventId)
+	}
+
+	rec, ok := eventsForTrigger[eventId]
+	if !ok {
+		return fmt.Errorf("event not found trigger=%s event=%s", triggerId, eventId)
+	}
+
+	rec.Attempts = attempts
+	rec.LastSentAt = lastSentAt
+	eventsForTrigger[eventId] = rec
 	return nil
 }
 

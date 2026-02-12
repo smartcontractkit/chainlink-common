@@ -4,7 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"hash"
-	"sort"
+	"maps"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -67,27 +68,20 @@ func (req OutboundHTTPRequest) Hash() string {
 // writeHeadersToHash writes all present header data in a deterministic order:
 // Headers (sorted keys) then MultiHeaders (sorted keys, sorted values per key).
 func writeHeadersToHash(s hash.Hash, sep []byte, headers map[string]string, multiHeaders map[string][]string) {
-	keys := make([]string, 0, len(headers))
-	for k := range headers {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := slices.Collect(maps.Keys(headers))
+	slices.Sort(keys)
 	for _, key := range keys {
 		s.Write([]byte(key))
 		s.Write(sep)
 		s.Write([]byte(headers[key]))
 		s.Write(sep)
 	}
-	keys = make([]string, 0, len(multiHeaders))
-	for k := range multiHeaders {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys = slices.Collect(maps.Keys(multiHeaders))
+	slices.Sort(keys)
 	for _, key := range keys {
 		vals := multiHeaders[key]
-		valsCopy := make([]string, len(vals))
-		copy(valsCopy, vals)
-		sort.Strings(valsCopy)
+		valsCopy := slices.Clone(vals)
+		slices.Sort(valsCopy)
 		s.Write([]byte(key))
 		s.Write(sep)
 		for _, v := range valsCopy {

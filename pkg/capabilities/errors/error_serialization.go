@@ -15,7 +15,7 @@ func DeserializeErrorFromString(errorMsg string) Error {
 	parts := strings.SplitN(errorMsg, errorMessageSeparator, 4)
 
 	if len(parts) < 4 {
-		// To maintain backwards compatability with messages from remote nodes on an older code version, create an error
+		// To maintain backwards compatibility with messages from remote nodes on an older code version, create an error
 		// with the full message and default to private system error with an unknown error code.
 		return NewError(errors.New(errorMsg), VisibilityPrivate, OriginSystem, Unknown)
 	}

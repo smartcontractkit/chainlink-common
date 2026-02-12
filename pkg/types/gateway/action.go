@@ -29,7 +29,7 @@ type OutboundHTTPRequest struct {
 	Method string `json:"method,omitempty"` // HTTP verb, defaults to GET.
 
 	// Deprecated: Use MultiHeaders instead. Headers is a comma joined string of all values for a given header for backwards
-	// compatability.
+	// compatibility.
 	Headers       map[string]string   `json:"headers,omitempty"`      // HTTP headers, defaults to empty.
 	MultiHeaders  map[string][]string `json:"multiHeaders,omitempty"` // HTTP headers with all values preserved
 	Body          []byte              `json:"body,omitempty"`         // HTTP request body
@@ -111,7 +111,7 @@ type OutboundHTTPResponse struct {
 	StatusCode int `json:"statusCode,omitempty"`
 
 	// Deprecated: Use MultiHeaders instead. Headers is a comma joined string of all values for a given header for backwards
-	// compatability.
+	// compatibility.
 	Headers                 map[string]string   `json:"headers,omitempty"`                 // HTTP headers returned by the customer's endpoint
 	MultiHeaders            map[string][]string `json:"multiHeaders,omitempty"`            // HTTP headers with all values preserved
 	Body                    []byte              `json:"body,omitempty"`                    // HTTP response body returned by the customer's endpoint

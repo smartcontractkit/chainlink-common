@@ -33,18 +33,7 @@ type ViewRequest struct {
 }
 
 type ViewReply struct {
-	// Result is a slice of values returned by the view function.
-	// Each value can be either raw BCS bytes or JSON decoded.
-	Result []*ViewResultValue
-}
-
-// ViewResultValue represents a single return value from a view function.
-// It can be either raw BCS encoded bytes or JSON decoded data.
-type ViewResultValue struct {
-	// AsDecodedBinary contains the raw BCS encoded bytes
-	AsDecodedBinary []byte
-	// AsJSON contains the JSON representation of the value
-	AsJSON []byte
+	Data []byte
 }
 
 // ViewPayload represents the payload for a view function call.

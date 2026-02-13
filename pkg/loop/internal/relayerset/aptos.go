@@ -87,14 +87,7 @@ func (as *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*apt
 	}
 
 	// Convert Go types back to proto types
-	protoResult, err := aptospb.ConvertViewResultToProto(reply.Result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert view result: %w", err)
-	}
-
-	return &aptospb.ViewReply{
-		Result: protoResult,
-	}, nil
+	return aptospb.ConvertViewReplyToProto(reply)
 }
 
 func (as *aptosServer) EventsByHandle(ctx context.Context, req *aptospb.EventsByHandleRequest) (*aptospb.EventsByHandleReply, error) {

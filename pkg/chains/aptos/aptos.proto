@@ -3,8 +3,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/apt
 
 package loop.aptos;
 
-import "google/protobuf/any.proto";
-
 service Aptos {
   rpc AccountAPTBalance(AccountAPTBalanceRequest) returns (AccountAPTBalanceReply);
   rpc View(ViewRequest) returns (ViewReply);
@@ -30,14 +28,14 @@ message ViewRequest {
 }
 
 message ViewReply {
-  repeated google.protobuf.Any result = 1;
+  bytes data = 1;
 }
 
 message ViewPayload {
   ModuleID module = 1;
   string function = 2;
   repeated TypeTag arg_types = 3;
-  repeated google.protobuf.Any args = 4;
+  repeated bytes args = 4;
 }
 
 message ModuleID {

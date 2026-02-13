@@ -3,30 +3,28 @@ package aptos
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/types/known/anypb"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
+	typeaptos "github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
 )
 
 // ConvertViewPayloadFromProto converts a proto ViewPayload to Go types
-func ConvertViewPayloadFromProto(proto *ViewPayload) (*aptos.ViewPayload, error) {
+func ConvertViewPayloadFromProto(proto *ViewPayload) (*typeaptos.ViewPayload, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto payload is nil")
 	}
 
-	if len(proto.Module.Address) != aptos.AccountAddressLength {
-		return nil, fmt.Errorf("invalid address length: expected %d, got %d", aptos.AccountAddressLength, len(proto.Module.Address))
+	if len(proto.Module.Address) != typeaptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.Module.Address))
 	}
 
-	var address aptos.AccountAddress
+	var address typeaptos.AccountAddress
 	copy(address[:], proto.Module.Address)
 
-	module := aptos.ModuleID{
+	module := typeaptos.ModuleID{
 		Address: address,
 		Name:    proto.Module.Name,
 	}
 
-	argTypes := make([]aptos.TypeTag, len(proto.ArgTypes))
+	argTypes := make([]typeaptos.TypeTag, len(proto.ArgTypes))
 	for i, protoTypeTag := range proto.ArgTypes {
 		typeTag, err := ConvertTypeTagFromProto(protoTypeTag)
 		if err != nil {
@@ -37,11 +35,10 @@ func ConvertViewPayloadFromProto(proto *ViewPayload) (*aptos.ViewPayload, error)
 
 	args := make([][]byte, len(proto.Args))
 	for i, protoArg := range proto.Args {
-		// Extract the BCS encoded bytes from Any
-		args[i] = protoArg.Value
+		args[i] = protoArg
 	}
 
-	return &aptos.ViewPayload{
+	return &typeaptos.ViewPayload{
 		Module:   module,
 		Function: proto.Function,
 		ArgTypes: argTypes,
@@ -50,7 +47,7 @@ func ConvertViewPayloadFromProto(proto *ViewPayload) (*aptos.ViewPayload, error)
 }
 
 // ConvertViewPayloadToProto converts a Go ViewPayload to proto types
-func ConvertViewPayloadToProto(payload *aptos.ViewPayload) (*ViewPayload, error) {
+func ConvertViewPayloadToProto(payload *typeaptos.ViewPayload) (*ViewPayload, error) {
 	if payload == nil {
 		return nil, fmt.Errorf("payload is nil")
 	}
@@ -69,13 +66,9 @@ func ConvertViewPayloadToProto(payload *aptos.ViewPayload) (*ViewPayload, error)
 		protoArgTypes[i] = protoTypeTag
 	}
 
-	protoArgs := make([]*anypb.Any, len(payload.Args))
+	protoArgs := make([][]byte, len(payload.Args))
 	for i, arg := range payload.Args {
-		// Args are already BCS encoded bytes, wrap them in Any
-		anyArg := &anypb.Any{
-			Value: arg,
-		}
-		protoArgs[i] = anyArg
+		protoArgs[i] = arg
 	}
 
 	return &ViewPayload{
@@ -87,32 +80,32 @@ func ConvertViewPayloadToProto(payload *aptos.ViewPayload) (*ViewPayload, error)
 }
 
 // ConvertTypeTagFromProto converts a proto TypeTag to Go types
-func ConvertTypeTagFromProto(proto *TypeTag) (*aptos.TypeTag, error) {
+func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto type tag is nil")
 	}
 
-	var impl aptos.TypeTagImpl
+	var impl typeaptos.TypeTagImpl
 
 	switch proto.Type {
 	case TypeTagType_TYPE_TAG_BOOL:
-		impl = aptos.BoolTag{}
+		impl = typeaptos.BoolTag{}
 	case TypeTagType_TYPE_TAG_U8:
-		impl = aptos.U8Tag{}
+		impl = typeaptos.U8Tag{}
 	case TypeTagType_TYPE_TAG_U16:
-		impl = aptos.U16Tag{}
+		impl = typeaptos.U16Tag{}
 	case TypeTagType_TYPE_TAG_U32:
-		impl = aptos.U32Tag{}
+		impl = typeaptos.U32Tag{}
 	case TypeTagType_TYPE_TAG_U64:
-		impl = aptos.U64Tag{}
+		impl = typeaptos.U64Tag{}
 	case TypeTagType_TYPE_TAG_U128:
-		impl = aptos.U128Tag{}
+		impl = typeaptos.U128Tag{}
 	case TypeTagType_TYPE_TAG_U256:
-		impl = aptos.U256Tag{}
+		impl = typeaptos.U256Tag{}
 	case TypeTagType_TYPE_TAG_ADDRESS:
-		impl = aptos.AddressTag{}
+		impl = typeaptos.AddressTag{}
 	case TypeTagType_TYPE_TAG_SIGNER:
-		impl = aptos.SignerTag{}
+		impl = typeaptos.SignerTag{}
 	case TypeTagType_TYPE_TAG_VECTOR:
 		vectorValue := proto.GetVector()
 		if vectorValue == nil {
@@ -122,7 +115,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*aptos.TypeTag, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert vector element type: %w", err)
 		}
-		impl = aptos.VectorTag{
+		impl = typeaptos.VectorTag{
 			ElementType: *elementType,
 		}
 	case TypeTagType_TYPE_TAG_STRUCT:
@@ -130,13 +123,13 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*aptos.TypeTag, error) {
 		if structValue == nil {
 			return nil, fmt.Errorf("struct type tag missing struct value")
 		}
-		if len(structValue.Address) != aptos.AccountAddressLength {
-			return nil, fmt.Errorf("invalid struct address length: expected %d, got %d", aptos.AccountAddressLength, len(structValue.Address))
+		if len(structValue.Address) != typeaptos.AccountAddressLength {
+			return nil, fmt.Errorf("invalid struct address length: expected %d, got %d", typeaptos.AccountAddressLength, len(structValue.Address))
 		}
-		var address aptos.AccountAddress
+		var address typeaptos.AccountAddress
 		copy(address[:], structValue.Address)
 
-		typeParams := make([]aptos.TypeTag, len(structValue.TypeParams))
+		typeParams := make([]typeaptos.TypeTag, len(structValue.TypeParams))
 		for i, protoParam := range structValue.TypeParams {
 			param, err := ConvertTypeTagFromProto(protoParam)
 			if err != nil {
@@ -144,7 +137,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*aptos.TypeTag, error) {
 			}
 			typeParams[i] = *param
 		}
-		impl = aptos.StructTag{
+		impl = typeaptos.StructTag{
 			Address:    address,
 			Module:     structValue.Module,
 			Name:       structValue.Name,
@@ -155,20 +148,20 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*aptos.TypeTag, error) {
 		if genericValue == nil {
 			return nil, fmt.Errorf("generic type tag missing generic value")
 		}
-		impl = aptos.GenericTag{
+		impl = typeaptos.GenericTag{
 			Index: uint16(genericValue.Index),
 		}
 	default:
 		return nil, fmt.Errorf("unknown type tag type: %v", proto.Type)
 	}
 
-	return &aptos.TypeTag{
+	return &typeaptos.TypeTag{
 		Value: impl,
 	}, nil
 }
 
 // ConvertTypeTagToProto converts a Go TypeTag to proto types
-func ConvertTypeTagToProto(tag *aptos.TypeTag) (*TypeTag, error) {
+func ConvertTypeTagToProto(tag *typeaptos.TypeTag) (*TypeTag, error) {
 	if tag == nil || tag.Value == nil {
 		return nil, fmt.Errorf("type tag or value is nil")
 	}
@@ -178,7 +171,7 @@ func ConvertTypeTagToProto(tag *aptos.TypeTag) (*TypeTag, error) {
 	}
 
 	switch v := tag.Value.(type) {
-	case aptos.VectorTag:
+	case typeaptos.VectorTag:
 		elementType, err := ConvertTypeTagToProto(&v.ElementType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert vector element type: %w", err)
@@ -188,7 +181,7 @@ func ConvertTypeTagToProto(tag *aptos.TypeTag) (*TypeTag, error) {
 				ElementType: elementType,
 			},
 		}
-	case aptos.StructTag:
+	case typeaptos.StructTag:
 		typeParams := make([]*TypeTag, len(v.TypeParams))
 		for i, param := range v.TypeParams {
 			protoParam, err := ConvertTypeTagToProto(&param)
@@ -205,7 +198,7 @@ func ConvertTypeTagToProto(tag *aptos.TypeTag) (*TypeTag, error) {
 				TypeParams: typeParams,
 			},
 		}
-	case aptos.GenericTag:
+	case typeaptos.GenericTag:
 		protoTag.Value = &TypeTag_Generic{
 			Generic: &GenericTag{
 				Index: uint32(v.Index),
@@ -219,42 +212,28 @@ func ConvertTypeTagToProto(tag *aptos.TypeTag) (*TypeTag, error) {
 	return protoTag, nil
 }
 
-// ConvertViewResultFromProto converts proto result to Go types
-func ConvertViewResultFromProto(protoResult []*anypb.Any) ([]*aptos.ViewResultValue, error) {
-	result := make([]*aptos.ViewResultValue, len(protoResult))
-	for i, protoVal := range protoResult {
-		// The Any.Value contains the raw bytes, which could be BCS or JSON
-		// For now, we store it as raw bytes and let the caller decide how to decode
-		result[i] = &aptos.ViewResultValue{
-			AsDecodedBinary: protoVal.Value,
-		}
+// ConvertViewReplyFromProto converts proto reply to Go types
+func ConvertViewReplyFromProto(protoReply *ViewReply) (*typeaptos.ViewReply, error) {
+	if protoReply == nil {
+		return nil, fmt.Errorf("proto reply is nil")
 	}
-	return result, nil
+	return &typeaptos.ViewReply{
+		Data: protoReply.Data,
+	}, nil
 }
 
-// ConvertViewResultToProto converts Go result to proto types
-func ConvertViewResultToProto(result []*aptos.ViewResultValue) ([]*anypb.Any, error) {
-	protoResult := make([]*anypb.Any, len(result))
-	for i, val := range result {
-		if val == nil {
-			return nil, fmt.Errorf("view result value %d is nil", i)
-		}
-		// Prefer JSON if available, otherwise use raw bytes
-		var data []byte
-		if len(val.AsJSON) > 0 {
-			data = val.AsJSON
-		} else {
-			data = val.AsDecodedBinary
-		}
-		protoResult[i] = &anypb.Any{
-			Value: data,
-		}
+// ConvertViewReplyToProto converts Go reply to proto types
+func ConvertViewReplyToProto(reply *typeaptos.ViewReply) (*ViewReply, error) {
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
 	}
-	return protoResult, nil
+	return &ViewReply{
+		Data: reply.Data,
+	}, nil
 }
 
 // ConvertEventsByHandleRequestToProto converts Go request to proto
-func ConvertEventsByHandleRequestToProto(req *aptos.EventsByHandleRequest) (*EventsByHandleRequest, error) {
+func ConvertEventsByHandleRequestToProto(req *typeaptos.EventsByHandleRequest) (*EventsByHandleRequest, error) {
 	if req == nil {
 		return nil, fmt.Errorf("request is nil")
 	}
@@ -275,19 +254,19 @@ func ConvertEventsByHandleRequestToProto(req *aptos.EventsByHandleRequest) (*Eve
 }
 
 // ConvertEventsByHandleRequestFromProto converts proto request to Go
-func ConvertEventsByHandleRequestFromProto(proto *EventsByHandleRequest) (*aptos.EventsByHandleRequest, error) {
+func ConvertEventsByHandleRequestFromProto(proto *EventsByHandleRequest) (*typeaptos.EventsByHandleRequest, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto request is nil")
 	}
 
-	if len(proto.Account) != aptos.AccountAddressLength {
-		return nil, fmt.Errorf("invalid account address length: expected %d, got %d", aptos.AccountAddressLength, len(proto.Account))
+	if len(proto.Account) != typeaptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid account address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.Account))
 	}
 
-	var account aptos.AccountAddress
+	var account typeaptos.AccountAddress
 	copy(account[:], proto.Account)
 
-	req := &aptos.EventsByHandleRequest{
+	req := &typeaptos.EventsByHandleRequest{
 		Account:     account,
 		EventHandle: proto.EventHandle,
 		FieldName:   proto.FieldName,
@@ -303,7 +282,7 @@ func ConvertEventsByHandleRequestFromProto(proto *EventsByHandleRequest) (*aptos
 }
 
 // ConvertEventsByHandleReplyToProto converts Go reply to proto
-func ConvertEventsByHandleReplyToProto(reply *aptos.EventsByHandleReply) (*EventsByHandleReply, error) {
+func ConvertEventsByHandleReplyToProto(reply *typeaptos.EventsByHandleReply) (*EventsByHandleReply, error) {
 	if reply == nil {
 		return nil, fmt.Errorf("reply is nil")
 	}
@@ -323,12 +302,12 @@ func ConvertEventsByHandleReplyToProto(reply *aptos.EventsByHandleReply) (*Event
 }
 
 // ConvertEventsByHandleReplyFromProto converts proto reply to Go
-func ConvertEventsByHandleReplyFromProto(proto *EventsByHandleReply) (*aptos.EventsByHandleReply, error) {
+func ConvertEventsByHandleReplyFromProto(proto *EventsByHandleReply) (*typeaptos.EventsByHandleReply, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto reply is nil")
 	}
 
-	events := make([]*aptos.Event, len(proto.Events))
+	events := make([]*typeaptos.Event, len(proto.Events))
 	for i, protoEvent := range proto.Events {
 		event, err := ConvertEventFromProto(protoEvent)
 		if err != nil {
@@ -337,13 +316,13 @@ func ConvertEventsByHandleReplyFromProto(proto *EventsByHandleReply) (*aptos.Eve
 		events[i] = event
 	}
 
-	return &aptos.EventsByHandleReply{
+	return &typeaptos.EventsByHandleReply{
 		Events: events,
 	}, nil
 }
 
 // ConvertEventToProto converts Go Event to proto
-func ConvertEventToProto(event *aptos.Event) (*Event, error) {
+func ConvertEventToProto(event *typeaptos.Event) (*Event, error) {
 	if event == nil {
 		return nil, fmt.Errorf("event is nil")
 	}
@@ -367,12 +346,12 @@ func ConvertEventToProto(event *aptos.Event) (*Event, error) {
 }
 
 // ConvertEventFromProto converts proto Event to Go
-func ConvertEventFromProto(proto *Event) (*aptos.Event, error) {
+func ConvertEventFromProto(proto *Event) (*typeaptos.Event, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto event is nil")
 	}
 
-	event := &aptos.Event{
+	event := &typeaptos.Event{
 		Version:        proto.Version,
 		Type:           proto.Type,
 		SequenceNumber: proto.SequenceNumber,
@@ -391,7 +370,7 @@ func ConvertEventFromProto(proto *Event) (*aptos.Event, error) {
 }
 
 // ConvertGUIDToProto converts Go GUID to proto
-func ConvertGUIDToProto(guid *aptos.GUID) (*GUID, error) {
+func ConvertGUIDToProto(guid *typeaptos.GUID) (*GUID, error) {
 	if guid == nil {
 		return nil, fmt.Errorf("guid is nil")
 	}
@@ -403,19 +382,19 @@ func ConvertGUIDToProto(guid *aptos.GUID) (*GUID, error) {
 }
 
 // ConvertGUIDFromProto converts proto GUID to Go
-func ConvertGUIDFromProto(proto *GUID) (*aptos.GUID, error) {
+func ConvertGUIDFromProto(proto *GUID) (*typeaptos.GUID, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto guid is nil")
 	}
 
-	if len(proto.AccountAddress) != aptos.AccountAddressLength {
-		return nil, fmt.Errorf("invalid account address length: expected %d, got %d", aptos.AccountAddressLength, len(proto.AccountAddress))
+	if len(proto.AccountAddress) != typeaptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid account address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.AccountAddress))
 	}
 
-	var address aptos.AccountAddress
+	var address typeaptos.AccountAddress
 	copy(address[:], proto.AccountAddress)
 
-	return &aptos.GUID{
+	return &typeaptos.GUID{
 		CreationNumber: proto.CreationNumber,
 		AccountAddress: address,
 	}, nil
@@ -423,19 +402,19 @@ func ConvertGUIDFromProto(proto *GUID) (*aptos.GUID, error) {
 
 // ========== TransactionByHash Conversion ==========
 
-func ConvertTransactionByHashRequestToProto(req aptos.TransactionByHashRequest) *TransactionByHashRequest {
+func ConvertTransactionByHashRequestToProto(req typeaptos.TransactionByHashRequest) *TransactionByHashRequest {
 	return &TransactionByHashRequest{
 		Hash: req.Hash,
 	}
 }
 
-func ConvertTransactionByHashRequestFromProto(proto *TransactionByHashRequest) aptos.TransactionByHashRequest {
-	return aptos.TransactionByHashRequest{
+func ConvertTransactionByHashRequestFromProto(proto *TransactionByHashRequest) typeaptos.TransactionByHashRequest {
+	return typeaptos.TransactionByHashRequest{
 		Hash: proto.Hash,
 	}
 }
 
-func ConvertTransactionByHashReplyToProto(reply *aptos.TransactionByHashReply) *TransactionByHashReply {
+func ConvertTransactionByHashReplyToProto(reply *typeaptos.TransactionByHashReply) *TransactionByHashReply {
 	if reply == nil {
 		return nil
 	}
@@ -444,7 +423,7 @@ func ConvertTransactionByHashReplyToProto(reply *aptos.TransactionByHashReply) *
 	}
 }
 
-func ConvertTransactionByHashReplyFromProto(proto *TransactionByHashReply) (*aptos.TransactionByHashReply, error) {
+func ConvertTransactionByHashReplyFromProto(proto *TransactionByHashReply) (*typeaptos.TransactionByHashReply, error) {
 	if proto == nil {
 		return nil, nil
 	}
@@ -454,12 +433,12 @@ func ConvertTransactionByHashReplyFromProto(proto *TransactionByHashReply) (*apt
 		return nil, err
 	}
 
-	return &aptos.TransactionByHashReply{
+	return &typeaptos.TransactionByHashReply{
 		Transaction: tx,
 	}, nil
 }
 
-func ConvertTransactionToProto(tx *aptos.Transaction) *Transaction {
+func ConvertTransactionToProto(tx *typeaptos.Transaction) *Transaction {
 	if tx == nil {
 		return nil
 	}
@@ -481,12 +460,12 @@ func ConvertTransactionToProto(tx *aptos.Transaction) *Transaction {
 	return protoTx
 }
 
-func ConvertTransactionFromProto(proto *Transaction) (*aptos.Transaction, error) {
+func ConvertTransactionFromProto(proto *Transaction) (*typeaptos.Transaction, error) {
 	if proto == nil {
 		return nil, nil
 	}
 
-	tx := &aptos.Transaction{
+	tx := &typeaptos.Transaction{
 		Type: ConvertTransactionVariantFromProto(proto.Type),
 		Hash: proto.Hash,
 		Data: proto.Data,
@@ -503,55 +482,55 @@ func ConvertTransactionFromProto(proto *Transaction) (*aptos.Transaction, error)
 	return tx, nil
 }
 
-func ConvertTransactionVariantToProto(variant aptos.TransactionVariant) TransactionVariant {
+func ConvertTransactionVariantToProto(variant typeaptos.TransactionVariant) TransactionVariant {
 	switch variant {
-	case aptos.TransactionVariantPending:
+	case typeaptos.TransactionVariantPending:
 		return TransactionVariant_TRANSACTION_VARIANT_PENDING
-	case aptos.TransactionVariantUser:
+	case typeaptos.TransactionVariantUser:
 		return TransactionVariant_TRANSACTION_VARIANT_USER
-	case aptos.TransactionVariantGenesis:
+	case typeaptos.TransactionVariantGenesis:
 		return TransactionVariant_TRANSACTION_VARIANT_GENESIS
-	case aptos.TransactionVariantBlockMetadata:
+	case typeaptos.TransactionVariantBlockMetadata:
 		return TransactionVariant_TRANSACTION_VARIANT_BLOCK_METADATA
-	case aptos.TransactionVariantBlockEpilogue:
+	case typeaptos.TransactionVariantBlockEpilogue:
 		return TransactionVariant_TRANSACTION_VARIANT_BLOCK_EPILOGUE
-	case aptos.TransactionVariantStateCheckpoint:
+	case typeaptos.TransactionVariantStateCheckpoint:
 		return TransactionVariant_TRANSACTION_VARIANT_STATE_CHECKPOINT
-	case aptos.TransactionVariantValidator:
+	case typeaptos.TransactionVariantValidator:
 		return TransactionVariant_TRANSACTION_VARIANT_VALIDATOR
-	case aptos.TransactionVariantUnknown:
+	case typeaptos.TransactionVariantUnknown:
 		return TransactionVariant_TRANSACTION_VARIANT_UNKNOWN
 	default:
 		return TransactionVariant_TRANSACTION_VARIANT_UNKNOWN
 	}
 }
 
-func ConvertTransactionVariantFromProto(proto TransactionVariant) aptos.TransactionVariant {
+func ConvertTransactionVariantFromProto(proto TransactionVariant) typeaptos.TransactionVariant {
 	switch proto {
 	case TransactionVariant_TRANSACTION_VARIANT_PENDING:
-		return aptos.TransactionVariantPending
+		return typeaptos.TransactionVariantPending
 	case TransactionVariant_TRANSACTION_VARIANT_USER:
-		return aptos.TransactionVariantUser
+		return typeaptos.TransactionVariantUser
 	case TransactionVariant_TRANSACTION_VARIANT_GENESIS:
-		return aptos.TransactionVariantGenesis
+		return typeaptos.TransactionVariantGenesis
 	case TransactionVariant_TRANSACTION_VARIANT_BLOCK_METADATA:
-		return aptos.TransactionVariantBlockMetadata
+		return typeaptos.TransactionVariantBlockMetadata
 	case TransactionVariant_TRANSACTION_VARIANT_BLOCK_EPILOGUE:
-		return aptos.TransactionVariantBlockEpilogue
+		return typeaptos.TransactionVariantBlockEpilogue
 	case TransactionVariant_TRANSACTION_VARIANT_STATE_CHECKPOINT:
-		return aptos.TransactionVariantStateCheckpoint
+		return typeaptos.TransactionVariantStateCheckpoint
 	case TransactionVariant_TRANSACTION_VARIANT_VALIDATOR:
-		return aptos.TransactionVariantValidator
+		return typeaptos.TransactionVariantValidator
 	case TransactionVariant_TRANSACTION_VARIANT_UNKNOWN:
-		return aptos.TransactionVariantUnknown
+		return typeaptos.TransactionVariantUnknown
 	default:
-		return aptos.TransactionVariantUnknown
+		return typeaptos.TransactionVariantUnknown
 	}
 }
 
 // ========== SubmitTransaction Conversion ==========
 
-func ConvertSubmitTransactionRequestToProto(req aptos.SubmitTransactionRequest) (*SubmitTransactionRequest, error) {
+func ConvertSubmitTransactionRequestToProto(req typeaptos.SubmitTransactionRequest) (*SubmitTransactionRequest, error) {
 	protoReq := &SubmitTransactionRequest{
 		ReceiverModuleId: &ModuleID{
 			Address: req.ReceiverModuleID.Address[:],
@@ -570,7 +549,7 @@ func ConvertSubmitTransactionRequestToProto(req aptos.SubmitTransactionRequest) 
 	return protoReq, nil
 }
 
-func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (*aptos.SubmitTransactionRequest, error) {
+func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (*typeaptos.SubmitTransactionRequest, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto request is nil")
 	}
@@ -579,15 +558,15 @@ func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (
 		return nil, fmt.Errorf("receiver module id is nil")
 	}
 
-	if len(proto.ReceiverModuleId.Address) != aptos.AccountAddressLength {
-		return nil, fmt.Errorf("invalid address length: expected %d, got %d", aptos.AccountAddressLength, len(proto.ReceiverModuleId.Address))
+	if len(proto.ReceiverModuleId.Address) != typeaptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.ReceiverModuleId.Address))
 	}
 
-	var address aptos.AccountAddress
+	var address typeaptos.AccountAddress
 	copy(address[:], proto.ReceiverModuleId.Address)
 
-	req := &aptos.SubmitTransactionRequest{
-		ReceiverModuleID: aptos.ModuleID{
+	req := &typeaptos.SubmitTransactionRequest{
+		ReceiverModuleID: typeaptos.ModuleID{
 			Address: address,
 			Name:    proto.ReceiverModuleId.Name,
 		},
@@ -595,7 +574,7 @@ func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (
 	}
 
 	if proto.GasConfig != nil {
-		req.GasConfig = &aptos.GasConfig{
+		req.GasConfig = &typeaptos.GasConfig{
 			MaxGasAmount: proto.GasConfig.MaxGasAmount,
 			GasUnitPrice: proto.GasConfig.GasUnitPrice,
 		}
@@ -604,7 +583,7 @@ func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (
 	return req, nil
 }
 
-func ConvertSubmitTransactionReplyToProto(reply *aptos.SubmitTransactionReply) (*SubmitTransactionReply, error) {
+func ConvertSubmitTransactionReplyToProto(reply *typeaptos.SubmitTransactionReply) (*SubmitTransactionReply, error) {
 	if reply == nil {
 		return nil, fmt.Errorf("reply is nil")
 	}
@@ -622,12 +601,12 @@ func ConvertSubmitTransactionReplyToProto(reply *aptos.SubmitTransactionReply) (
 	return protoReply, nil
 }
 
-func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*aptos.SubmitTransactionReply, error) {
+func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*typeaptos.SubmitTransactionReply, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto reply is nil")
 	}
 
-	reply := &aptos.SubmitTransactionReply{}
+	reply := &typeaptos.SubmitTransactionReply{}
 
 	if proto.PendingTransaction != nil {
 		pending, err := ConvertPendingTransactionFromProto(proto.PendingTransaction)
@@ -640,7 +619,7 @@ func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*apt
 	return reply, nil
 }
 
-func ConvertPendingTransactionToProto(tx *aptos.PendingTransaction) (*PendingTransaction, error) {
+func ConvertPendingTransactionToProto(tx *typeaptos.PendingTransaction) (*PendingTransaction, error) {
 	if tx == nil {
 		return nil, fmt.Errorf("pending transaction is nil")
 	}
@@ -663,19 +642,19 @@ func ConvertPendingTransactionToProto(tx *aptos.PendingTransaction) (*PendingTra
 	return protoTx, nil
 }
 
-func ConvertPendingTransactionFromProto(proto *PendingTransaction) (*aptos.PendingTransaction, error) {
+func ConvertPendingTransactionFromProto(proto *PendingTransaction) (*typeaptos.PendingTransaction, error) {
 	if proto == nil {
 		return nil, fmt.Errorf("proto pending transaction is nil")
 	}
 
-	if len(proto.Sender) != aptos.AccountAddressLength {
-		return nil, fmt.Errorf("invalid sender address length: expected %d, got %d", aptos.AccountAddressLength, len(proto.Sender))
+	if len(proto.Sender) != typeaptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid sender address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.Sender))
 	}
 
-	var sender aptos.AccountAddress
+	var sender typeaptos.AccountAddress
 	copy(sender[:], proto.Sender)
 
-	tx := &aptos.PendingTransaction{
+	tx := &typeaptos.PendingTransaction{
 		Hash:                    proto.Hash,
 		Sender:                  sender,
 		SequenceNumber:          proto.SequenceNumber,

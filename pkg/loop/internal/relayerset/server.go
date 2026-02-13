@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
@@ -42,6 +43,7 @@ type Server struct {
 	sol            *solServer
 	ton            *tonServer
 	evm            *evmServer
+	aptos          *aptosServer
 	contractReader *readerServer
 
 	serverResources net.Resources
@@ -62,6 +64,7 @@ func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *
 	server.sol = &solServer{parent: server}
 	server.ton = &tonServer{parent: server}
 	server.evm = &evmServer{parent: server}
+	server.aptos = &aptosServer{parent: server}
 	server.contractReader = &readerServer{parent: server}
 
 	return server, net.Resource{
@@ -73,6 +76,7 @@ func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *
 func (s *Server) SolanaServer() solpb.SolanaServer              { return s.sol }
 func (s *Server) TONServer() tonpb.TONServer                    { return s.ton }
 func (s *Server) EVMServer() evmpb.EVMServer                    { return s.evm }
+func (s *Server) AptosServer() aptospb.AptosServer              { return s.aptos }
 func (s *Server) ContractReaderServer() pb.ContractReaderServer { return s.contractReader }
 
 func (s *Server) Close() error {

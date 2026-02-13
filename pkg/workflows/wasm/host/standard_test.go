@@ -502,6 +502,27 @@ func TestStandardSecretsFailInNodeMode(t *testing.T) {
 	require.Contains(t, errStr, "cannot use Runtime inside RunInNodeMode")
 }
 
+func TestStandardTimeInterpretation(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	// Inject fixed timestamp: 1577934245000 milliseconds = 2020-01-02T03:04:05Z
+	fixedTime := time.UnixMilli(1577934245000)
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return fixedTime, nil
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	m := makeTestModule(t)
+	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+	result := executeWithResult[string](t, m, request, mockExecutionHelper)
+
+	// Assert exact ISO 8601 UTC string
+	require.Equal(t, "2020-01-02T03:04:05Z", result)
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)

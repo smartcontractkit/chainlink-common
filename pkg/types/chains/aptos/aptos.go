@@ -217,20 +217,6 @@ type Transaction struct {
 	Data    []byte  // Raw transaction data
 }
 
-/*
-	Payload: &aptos.EntryFunction{
-				Module: aptos.ModuleId{
-					Address: aptos.AccountOne,
-					Name:    "aptos_account",
-				},
-				Function: "transfer",
-				ArgTypes: []aptos.TypeTag{},
-				Args: [][]byte{
-					accountBytes,
-					amountBytes,
-				},
-			},
-*/
 type SubmitTransactionRequest struct {
 	ReceiverModuleID ModuleID
 	// Function string // will always be onReport

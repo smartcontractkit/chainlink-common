@@ -1,0 +1,274 @@
+package aptos
+
+import "context"
+
+const (
+	AccountAddressLength = 32
+)
+
+type AccountAddress [AccountAddressLength]byte
+
+// Client wraps the Aptos RPC client methods
+type Client interface {
+	AccountAPTBalance(ctx context.Context, req AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
+	View(ctx context.Context, req ViewRequest) (*ViewReply, error)
+	EventsByHandle(ctx context.Context, req EventsByHandleRequest) (*EventsByHandleReply, error)
+	TransactionByHash(ctx context.Context, req TransactionByHashRequest) (*TransactionByHashReply, error)
+}
+
+// ========== AccountAPTBalance ==========
+
+type AccountAPTBalanceRequest struct {
+	Address AccountAddress
+}
+
+type AccountAPTBalanceReply struct {
+	Value uint64
+}
+
+// ========== View ==========
+
+type ViewRequest struct {
+	Payload *ViewPayload
+}
+
+type ViewReply struct {
+	// Result is a slice of values returned by the view function.
+	// Each value can be either raw BCS bytes or JSON decoded.
+	Result []*ViewResultValue
+}
+
+// ViewResultValue represents a single return value from a view function.
+// It can be either raw BCS encoded bytes or JSON decoded data.
+type ViewResultValue struct {
+	// AsDecodedBinary contains the raw BCS encoded bytes
+	AsDecodedBinary []byte
+	// AsJSON contains the JSON representation of the value
+	AsJSON []byte
+}
+
+// ViewPayload represents the payload for a view function call.
+type ViewPayload struct {
+	Module   ModuleID
+	Function string
+	ArgTypes []TypeTag
+	Args     [][]byte // Arguments encoded in BCS
+}
+
+// ModuleID identifies a Move module.
+type ModuleID struct {
+	Address AccountAddress
+	Name    string
+}
+
+// TypeTag is a wrapper around a TypeTagImpl for serialization/deserialization.
+// This represents Move type arguments like u64, address, vector<u8>, etc.
+type TypeTag struct {
+	Value TypeTagImpl
+}
+
+// TypeTagImpl is the interface for all type tag implementations.
+// Different type tags represent different Move types.
+type TypeTagImpl interface {
+	// TypeTagType returns the type discriminator for this type tag.
+	TypeTagType() TypeTagType
+}
+
+// TypeTagType is an enum for different type tag variants.
+type TypeTagType uint8
+
+const (
+	TypeTagBool TypeTagType = iota
+	TypeTagU8
+	TypeTagU16
+	TypeTagU32
+	TypeTagU64
+	TypeTagU128
+	TypeTagU256
+	TypeTagAddress
+	TypeTagSigner
+	TypeTagVector
+	TypeTagStruct
+	TypeTagGeneric
+)
+
+// ========== Type Tag Implementations ==========
+
+// BoolTag represents a boolean type.
+type BoolTag struct{}
+
+func (BoolTag) TypeTagType() TypeTagType { return TypeTagBool }
+
+// U8Tag represents an unsigned 8-bit integer type.
+type U8Tag struct{}
+
+func (U8Tag) TypeTagType() TypeTagType { return TypeTagU8 }
+
+// U16Tag represents an unsigned 16-bit integer type.
+type U16Tag struct{}
+
+func (U16Tag) TypeTagType() TypeTagType { return TypeTagU16 }
+
+// U32Tag represents an unsigned 32-bit integer type.
+type U32Tag struct{}
+
+func (U32Tag) TypeTagType() TypeTagType { return TypeTagU32 }
+
+// U64Tag represents an unsigned 64-bit integer type.
+type U64Tag struct{}
+
+func (U64Tag) TypeTagType() TypeTagType { return TypeTagU64 }
+
+// U128Tag represents an unsigned 128-bit integer type.
+type U128Tag struct{}
+
+func (U128Tag) TypeTagType() TypeTagType { return TypeTagU128 }
+
+// U256Tag represents an unsigned 256-bit integer type.
+type U256Tag struct{}
+
+func (U256Tag) TypeTagType() TypeTagType { return TypeTagU256 }
+
+// AddressTag represents an account address type.
+type AddressTag struct{}
+
+func (AddressTag) TypeTagType() TypeTagType { return TypeTagAddress }
+
+// SignerTag represents a signer type.
+type SignerTag struct{}
+
+func (SignerTag) TypeTagType() TypeTagType { return TypeTagSigner }
+
+// VectorTag represents a vector type with an element type.
+type VectorTag struct {
+	ElementType TypeTag
+}
+
+func (VectorTag) TypeTagType() TypeTagType { return TypeTagVector }
+
+// StructTag represents a struct type with full type information.
+type StructTag struct {
+	Address    AccountAddress
+	Module     string
+	Name       string
+	TypeParams []TypeTag
+}
+
+func (StructTag) TypeTagType() TypeTagType { return TypeTagStruct }
+
+// GenericTag represents a generic type parameter (e.g., T in a generic function).
+type GenericTag struct {
+	Index uint16
+}
+
+func (GenericTag) TypeTagType() TypeTagType { return TypeTagGeneric }
+
+// ========== EventsByHandle ==========
+
+type EventsByHandleRequest struct {
+	Account     AccountAddress
+	EventHandle string
+	FieldName   string
+	Start       *uint64 // optional, nil for most recent events
+	Limit       *uint64 // optional, 100 by default
+}
+
+type EventsByHandleReply struct {
+	Events []*Event
+}
+
+// Event represents an on-chain event from Move.
+// There are two types of events:
+// - Handle events (V1): have a GUID and SequenceNumber
+// - Module events: do not have a GUID and SequenceNumber
+type Event struct {
+	Version        uint64 // Block version of the event
+	Type           string // Fully qualified name e.g. 0x1::coin::WithdrawEvent
+	Guid           *GUID  // Unique identifier (only for V1 events)
+	SequenceNumber uint64 // Sequence number (only for V1 events)
+	Data           []byte // Event data as raw bytes
+}
+
+// GUID describes a GUID associated with V1 events
+type GUID struct {
+	CreationNumber uint64         // Number of the GUID
+	AccountAddress AccountAddress // Account address of the creator
+}
+
+// TransactionByHashRequest represents a request to get a transaction by hash
+type TransactionByHashRequest struct {
+	Hash string // Transaction hash (hex string with 0x prefix)
+}
+
+// TransactionByHashReply represents the response from TransactionByHash
+type TransactionByHashReply struct {
+	Transaction *Transaction
+}
+
+// TransactionVariant represents the type of transaction
+type TransactionVariant string
+
+const (
+	TransactionVariantPending         TransactionVariant = "pending_transaction"
+	TransactionVariantUser            TransactionVariant = "user_transaction"
+	TransactionVariantGenesis         TransactionVariant = "genesis_transaction"
+	TransactionVariantBlockMetadata   TransactionVariant = "block_metadata_transaction"
+	TransactionVariantBlockEpilogue   TransactionVariant = "block_epilogue_transaction"
+	TransactionVariantStateCheckpoint TransactionVariant = "state_checkpoint_transaction"
+	TransactionVariantValidator       TransactionVariant = "validator_transaction"
+	TransactionVariantUnknown         TransactionVariant = "unknown"
+)
+
+// Transaction represents any transaction type (pending or committed)
+type Transaction struct {
+	Type    TransactionVariant
+	Hash    string
+	Version *uint64 // nil for pending transactions
+	Success *bool   // nil for pending/genesis transactions
+	Data    []byte  // Raw transaction data
+}
+
+/*
+	Payload: &aptos.EntryFunction{
+				Module: aptos.ModuleId{
+					Address: aptos.AccountOne,
+					Name:    "aptos_account",
+				},
+				Function: "transfer",
+				ArgTypes: []aptos.TypeTag{},
+				Args: [][]byte{
+					accountBytes,
+					amountBytes,
+				},
+			},
+*/
+type SubmitTransactionRequest struct {
+	ReceiverModuleID ModuleID
+	// Function string // will always be onReport
+	// ArgTypes []TypeTag // the user is sending us an encoded payload, so we should not need this
+	EncodedPayload []byte
+	GasConfig      *GasConfig
+}
+
+type SubmitTransactionReply struct {
+	PendingTransaction *PendingTransaction
+}
+
+// GasConfig represents gas configuration for a transaction
+type GasConfig struct {
+	MaxGasAmount uint64 // Maximum gas units willing to pay
+	GasUnitPrice uint64 // Price per gas unit in octas
+}
+
+// PendingTransaction represents a transaction that has been submitted but not yet committed
+type PendingTransaction struct {
+	Hash                    string         // Transaction hash (hex string with 0x prefix)
+	Sender                  AccountAddress // Sender's account address
+	SequenceNumber          uint64         // Sequence number of the transaction
+	ReplayProtectionNonce   *uint64        // Optional nonce for replay protection
+	MaxGasAmount            uint64         // Maximum gas amount
+	GasUnitPrice            uint64         // Gas unit price
+	ExpirationTimestampSecs uint64         // Expiration timestamp in seconds
+	Payload                 []byte         // Transaction payload as raw bytes
+	Signature               []byte         // Signature as raw bytes
+}

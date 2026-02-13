@@ -219,10 +219,8 @@ type Transaction struct {
 
 type SubmitTransactionRequest struct {
 	ReceiverModuleID ModuleID
-	// Function string // will always be onReport
-	// ArgTypes []TypeTag // the user is sending us an encoded payload, so we should not need this
-	EncodedPayload []byte
-	GasConfig      *GasConfig
+	EncodedPayload   []byte
+	GasConfig        *GasConfig
 }
 
 type SubmitTransactionReply struct {

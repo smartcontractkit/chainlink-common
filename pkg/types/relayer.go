@@ -258,6 +258,7 @@ type SolanaService interface {
 
 type AptosService interface {
 	aptos.Client
+	// SubmitTransaction submits a transaction to the chain. It will return once the transaction is finalized or an error occurs.
 	SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error)
 }
 

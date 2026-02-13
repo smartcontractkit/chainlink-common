@@ -115,7 +115,7 @@ type EnvConfig struct {
 	MercuryTransmitterReaperMaxAge         time.Duration
 	MercuryVerboseLogging                  bool
 
-	PrometheusPort int
+	PrometheusPort int //TODO more than just prom
 
 	TracingEnabled         bool
 	TracingCollectorTarget string

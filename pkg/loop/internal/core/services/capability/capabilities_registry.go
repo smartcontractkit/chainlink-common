@@ -220,6 +220,7 @@ func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabi
 	remoteTriggerConfig := &capabilities.RemoteTriggerConfig{}
 	remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
 	remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
+	remoteTriggerConfig.EventTimeout = prtc.EventTimeout.AsDuration()
 	remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
 	remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
 	remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
@@ -426,6 +427,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
 				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
 				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
+				EventTimeout:            durationpb.New(cc.RemoteTriggerConfig.EventTimeout),
 				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
 				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
 				MaxBatchSize:            cc.RemoteTriggerConfig.MaxBatchSize,
@@ -467,6 +469,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 					RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
 						RegistrationRefresh:     durationpb.New(mConfig.RemoteTriggerConfig.RegistrationRefresh),
 						RegistrationExpiry:      durationpb.New(mConfig.RemoteTriggerConfig.RegistrationExpiry),
+						EventTimeout:            durationpb.New(mConfig.RemoteTriggerConfig.EventTimeout),
 						MinResponsesToAggregate: mConfig.RemoteTriggerConfig.MinResponsesToAggregate,
 						MessageExpiry:           durationpb.New(mConfig.RemoteTriggerConfig.MessageExpiry),
 						MaxBatchSize:            mConfig.RemoteTriggerConfig.MaxBatchSize,

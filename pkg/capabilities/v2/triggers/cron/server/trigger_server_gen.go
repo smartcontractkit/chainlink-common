@@ -24,6 +24,7 @@ type CronCapability interface {
 
 	RegisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.LegacyPayload], caperrors.Error)
 	UnregisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) caperrors.Error
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) caperrors.Error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -134,6 +135,17 @@ func (c *cronCapability) UnregisterTrigger(ctx context.Context, request capabili
 		return c.CronCapability.UnregisterLegacyTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
+	}
+}
+
+func (c *cronCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	switch method {
+	case "Trigger":
+		return c.CronCapability.AckEvent(ctx, triggerId, eventId, method)
+	case "":
+		return c.CronCapability.AckEvent(ctx, triggerId, eventId, method)
+	default:
+		return fmt.Errorf("trigger %s not found", method)
 	}
 }
 

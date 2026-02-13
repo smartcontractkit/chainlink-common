@@ -59,6 +59,10 @@ func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request c
 	return nil
 }
 
+func (f *mockTriggerExecutable) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return nil
+}
+
 var _ capabilities.Executable = (*mockExecutableCapability)(nil)
 
 type mockExecutableCapability struct {

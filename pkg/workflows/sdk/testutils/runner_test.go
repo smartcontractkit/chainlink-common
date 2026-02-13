@@ -451,6 +451,10 @@ func (m *mockRegistrationTester) UnregisterTrigger(ctx context.Context, request 
 	return m.unregister(request.Config)
 }
 
+func (m *mockRegistrationTester) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return nil
+}
+
 func (m *mockRegistrationTester) register(wrappedConfig *values.Map) error {
 	m.wasRegistered = true
 	m.verifyConfig(wrappedConfig)

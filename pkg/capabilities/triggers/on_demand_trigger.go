@@ -72,6 +72,10 @@ func (o *OnDemand) SendEvent(ctx context.Context, wid string, event capabilities
 	return nil
 }
 
+func (o *OnDemand) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return nil
+}
+
 func (o *OnDemand) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	wid := req.Metadata.WorkflowID
 	o.mu.Lock()

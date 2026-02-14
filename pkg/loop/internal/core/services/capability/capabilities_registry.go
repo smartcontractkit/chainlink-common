@@ -224,6 +224,7 @@ func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabi
 	remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
 	remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
 	remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
+	remoteTriggerConfig.RegistrationStatusUpdateTimeout = prtc.RegistrationStatusUpdateTimeout.AsDuration()
 	return remoteTriggerConfig
 }
 
@@ -424,12 +425,13 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	if cc.RemoteTriggerConfig != nil {
 		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
 			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
-				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
-				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
-				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
-				MaxBatchSize:            cc.RemoteTriggerConfig.MaxBatchSize,
-				BatchCollectionPeriod:   durationpb.New(cc.RemoteTriggerConfig.BatchCollectionPeriod),
+				RegistrationRefresh:             durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
+				RegistrationExpiry:              durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
+				MinResponsesToAggregate:         cc.RemoteTriggerConfig.MinResponsesToAggregate,
+				MessageExpiry:                   durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
+				MaxBatchSize:                    cc.RemoteTriggerConfig.MaxBatchSize,
+				BatchCollectionPeriod:           durationpb.New(cc.RemoteTriggerConfig.BatchCollectionPeriod),
+				RegistrationStatusUpdateTimeout: durationpb.New(cc.RemoteTriggerConfig.RegistrationStatusUpdateTimeout),
 			},
 		}
 	}
@@ -465,12 +467,13 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			if mConfig.RemoteTriggerConfig != nil {
 				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig{
 					RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-						RegistrationRefresh:     durationpb.New(mConfig.RemoteTriggerConfig.RegistrationRefresh),
-						RegistrationExpiry:      durationpb.New(mConfig.RemoteTriggerConfig.RegistrationExpiry),
-						MinResponsesToAggregate: mConfig.RemoteTriggerConfig.MinResponsesToAggregate,
-						MessageExpiry:           durationpb.New(mConfig.RemoteTriggerConfig.MessageExpiry),
-						MaxBatchSize:            mConfig.RemoteTriggerConfig.MaxBatchSize,
-						BatchCollectionPeriod:   durationpb.New(mConfig.RemoteTriggerConfig.BatchCollectionPeriod),
+						RegistrationRefresh:             durationpb.New(mConfig.RemoteTriggerConfig.RegistrationRefresh),
+						RegistrationExpiry:              durationpb.New(mConfig.RemoteTriggerConfig.RegistrationExpiry),
+						MinResponsesToAggregate:         mConfig.RemoteTriggerConfig.MinResponsesToAggregate,
+						MessageExpiry:                   durationpb.New(mConfig.RemoteTriggerConfig.MessageExpiry),
+						MaxBatchSize:                    mConfig.RemoteTriggerConfig.MaxBatchSize,
+						BatchCollectionPeriod:           durationpb.New(mConfig.RemoteTriggerConfig.BatchCollectionPeriod),
+						RegistrationStatusUpdateTimeout: durationpb.New(mConfig.RemoteTriggerConfig.RegistrationStatusUpdateTimeout),
 					},
 				}
 			}

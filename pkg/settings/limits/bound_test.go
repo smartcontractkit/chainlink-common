@@ -28,7 +28,7 @@ func ExampleBoundLimiter_Check() {
 	fn(4)
 	fn(10)
 	// Output:
-	// limited: cannot use 11, limit is 10
+	// limited: cannot use 11, maximum allowed is 10. Reduce usage or request a limit increase
 	// used 4
 	// used 10
 }

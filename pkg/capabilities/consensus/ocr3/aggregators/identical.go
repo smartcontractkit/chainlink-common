@@ -83,7 +83,7 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 			}
 		}
 		if highestCount < 2*f+1 {
-			return nil, fmt.Errorf("can't reach consensus on observations with index %d", idx)
+			return nil, fmt.Errorf("consensus failed: cannot reach agreement on observation at index %d. Fewer than %d nodes (2f+1, f=%d) agreed on the same value. This may indicate data source inconsistency across nodes or a non-deterministic computation", idx, 2*f+1, f)
 		}
 		if useOverrides {
 			outcome[a.config.KeyOverrides[idx]] = highestObservation

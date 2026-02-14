@@ -96,7 +96,7 @@ func ExampleRateLimiter_AllowErr() {
 	}
 
 	// Output:
-	// 5: rate limited
+	// 5: rate limited: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying
 	// 4: success
 }
 
@@ -168,7 +168,7 @@ func ExampleMultiRateLimiter() {
 
 	// Output:
 	// A: success
-	// A&B: rate limited
+	// A&B: rate limited: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying
 }
 
 func TestFactory_NewRateLimiter(t *testing.T) {

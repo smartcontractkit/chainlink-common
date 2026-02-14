@@ -100,7 +100,7 @@ func readJSONMaps(files fs.FS, dir string) (jsonMap, error) {
 		}
 		m, err := readJSONMap(files, path)
 		if err != nil {
-			return fmt.Errorf("failed to read toml file %s: %w", path, err)
+			return fmt.Errorf("failed to read json file %s: %w", path, err)
 		}
 		name := strings.TrimSuffix(d.Name(), ".json")
 		ms[name] = m

@@ -28,7 +28,8 @@ func ToEncryptedJSON(key Key, password string, scryptParams commonkeystore.Scryp
 		keyTypeIdentifier,
 		key,
 		password,
-		scryptParams,
+		scryptParams.N,
+		scryptParams.P,
 		adulteratedPassword,
 		func(id string, key Key, cryptoJSON keystore.CryptoJSON) internal.EncryptedKeyExport {
 			return internal.EncryptedKeyExport{

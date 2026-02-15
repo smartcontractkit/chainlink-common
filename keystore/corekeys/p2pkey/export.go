@@ -37,7 +37,8 @@ func (key KeyV2) ToEncryptedJSON(password string, scryptParams commonkeystore.Sc
 		keyTypeIdentifier,
 		key,
 		password,
-		scryptParams,
+		scryptParams.N,
+		scryptParams.P,
 		adulteratedPassword,
 		func(id string, key KeyV2, cryptoJSON keystore.CryptoJSON) EncryptedP2PKeyExport {
 			return EncryptedP2PKeyExport{

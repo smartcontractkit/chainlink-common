@@ -71,7 +71,8 @@ func ToEncryptedJSON(key KeyBundle, password string, scryptParams commonkeystore
 		keyTypeIdentifier,
 		key,
 		password,
-		scryptParams,
+		scryptParams.N,
+		scryptParams.P,
 		adulteratedPassword,
 		func(id string, key KeyBundle, cryptoJSON keystore.CryptoJSON) EncryptedOCRKeyExport {
 			pubKeyConfig := key.ConfigEncryptionPublicKey()

@@ -12,7 +12,7 @@ import (
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	keys "github.com/smartcontractkit/chainlink-common/keystore/corekeys"
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
@@ -33,7 +33,7 @@ type (
 		ChainType       corekeys.ChainType
 		OffchainKeyring []byte
 		Keyring         []byte
-		ID              keys.Sha256Hash // tracked to preserve bundle ID in case of migrations
+		ID              corekeys.Sha256Hash // tracked to preserve bundle ID in case of migrations
 
 		// old chain specific format for migrating
 		EVMKeyring    []byte `json:",omitempty"`
@@ -182,7 +182,7 @@ func (kbraw *keyBundleRawData) Migrate(b []byte) error {
 
 	// if key does not have an ID associated with it (old formats),
 	// derive the key ID and preserve it
-	if bytes.Equal(kbraw.ID[:], keys.EmptySha256Hash[:]) {
+	if bytes.Equal(kbraw.ID[:], corekeys.EmptySha256Hash[:]) {
 		kbraw.ID = sha256.Sum256(b)
 	}
 

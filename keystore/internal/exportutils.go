@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
-
-	commonkeystore "github.com/smartcontractkit/chainlink-common/keystore"
 )
 
 type Encrypted interface {
@@ -62,7 +60,7 @@ func ToEncryptedJSON[E Encrypted, K Key](
 	identifier string,
 	key K,
 	password string,
-	scryptParams commonkeystore.ScryptParams,
+	scryptN, scryptP int,
 	passwordFunc func(string) string,
 	buildExport func(id string, key K, cryptoJSON keystore.CryptoJSON) E,
 ) (export []byte, err error) {
@@ -70,8 +68,8 @@ func ToEncryptedJSON[E Encrypted, K Key](
 	cryptoJSON, err := keystore.EncryptDataV3(
 		key.Raw().bytes,
 		[]byte(passwordFunc(password)),
-		scryptParams.N,
-		scryptParams.P,
+		scryptN,
+		scryptP,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not encrypt %s key: %w", identifier, err)

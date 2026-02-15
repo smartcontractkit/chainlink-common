@@ -140,7 +140,7 @@ func (e ErrorQueueFull) Is(target error) bool {
 
 func (e ErrorQueueFull) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%slimited%s: queue is full (capacity: %d). Incoming items are being dropped. Consider reducing submission rate or requesting a capacity increase", which, who, e.Limit)
+	return fmt.Sprintf("%slimited%s: queue is full (capacity: %d). New items are being rejected (failed to enqueue). Consider reducing submission rate or requesting a capacity increase", which, who, e.Limit)
 }
 
 var ErrQueueEmpty = fmt.Errorf("queue is empty")

@@ -359,7 +359,8 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		}
 
 		if len(obs) < (2*r.config.F + 1) {
-			lggr.Debugw("insufficient observations for workflow execution id")
+			lggr.Warnw("Insufficient observations for workflow execution: consensus skipped because fewer than 2f+1 nodes reported observations",
+				"observationCount", len(obs), "requiredCount", 2*r.config.F+1, "workflowExecutionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
 			continue
 		}
 

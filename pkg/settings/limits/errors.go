@@ -163,5 +163,5 @@ func (e ErrorNotAllowed) Is(target error) bool {
 
 func (e ErrorNotAllowed) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%slimited%s: operation not allowed. This action is restricted by current configuration or permissions", which, who)
+	return fmt.Sprintf("%slimited%s: operation not allowed. This action is restricted by current configuration and gate settings", which, who)
 }

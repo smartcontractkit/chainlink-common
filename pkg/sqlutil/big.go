@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/bytes"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/hex"
 )
@@ -84,7 +82,7 @@ func (b *Big) UnmarshalText(input []byte) error {
 	input = bytes.TrimQuotes(input)
 	str := string(input)
 	if hex.HasPrefix(str) {
-		decoded, err := hexutil.DecodeBig(str)
+		decoded, err := hex.ParseBig(str[2:])
 		if err != nil {
 			return err
 		}
@@ -145,9 +143,4 @@ func (b *Big) ToInt() *big.Int {
 // String returns the base 10 encoding of b.
 func (b *Big) String() string {
 	return b.ToInt().String()
-}
-
-// Bytes returns the absolute value of b as a big-endian byte slice.
-func (b *Big) Hex() string {
-	return hexutil.EncodeBig(b.ToInt())
 }

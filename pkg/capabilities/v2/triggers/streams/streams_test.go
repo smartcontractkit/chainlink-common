@@ -142,24 +142,24 @@ func (m *mockStreamsCapability) Initialise(ctx context.Context, deps core.Standa
 func TestStreamsServerCreation(t *testing.T) {
 	mock := &mockStreamsCapability{}
 	srv := server.NewStreamsServer(mock)
-	
+
 	require.NotNil(t, srv)
-	
+
 	// Test initialization
 	ctx := context.Background()
 	mockRegistry := &mockCapabilityRegistry{}
 	deps := core.StandardCapabilitiesDependencies{
 		CapabilityRegistry: mockRegistry,
 	}
-	
+
 	err := srv.Initialise(ctx, deps)
 	assert.NoError(t, err)
-	
+
 	// Start should be called separately
 	err = mock.Start(ctx)
 	assert.NoError(t, err)
 	assert.True(t, mock.startCalled)
-	
+
 	// Test close
 	err = srv.Close()
 	assert.NoError(t, err)
@@ -172,23 +172,23 @@ func TestStreamsServerCreation(t *testing.T) {
 // TestTriggerRegistration tests the trigger registration flow
 func TestTriggerRegistration(t *testing.T) {
 	mock := &mockStreamsCapability{}
-	
+
 	ctx := context.Background()
 	triggerID := "test-trigger-123"
 	metadata := capabilities.RequestMetadata{
 		WorkflowID: "test-workflow",
 	}
-	
+
 	config := &streams.Config{
 		StreamIds:      []uint32{1},
 		MaxFrequencyMs: 1000,
 	}
-	
+
 	ch, err := mock.RegisterTrigger(ctx, triggerID, metadata, config)
 	require.NoError(t, err)
 	require.NotNil(t, ch)
 	assert.True(t, mock.registerCalled)
-	
+
 	// Test unregister
 	unregErr := mock.UnregisterTrigger(ctx, triggerID, metadata, config)
 	assert.NoError(t, unregErr)
@@ -201,14 +201,14 @@ func TestReportStructure(t *testing.T) {
 		{Signer: 1, Signature: []byte("sig1")},
 		{Signer: 2, Signature: []byte("sig2")},
 	}
-	
+
 	report := &streams.Report{
 		ConfigDigest: []byte{1, 2, 3, 4, 5},
 		SeqNr:        123,
 		Report:       []byte("full-report-bytes"),
 		Sigs:         sigs,
 	}
-	
+
 	assert.Equal(t, []byte{1, 2, 3, 4, 5}, report.GetConfigDigest())
 	assert.Equal(t, uint64(123), report.GetSeqNr())
 	assert.Equal(t, []byte("full-report-bytes"), report.GetReport())
@@ -221,7 +221,7 @@ func TestOCRSignature(t *testing.T) {
 		Signer:    5,
 		Signature: []byte("signature-bytes"),
 	}
-	
+
 	assert.Equal(t, uint32(5), sig.GetSigner())
 	assert.Equal(t, []byte("signature-bytes"), sig.GetSignature())
 }
@@ -258,7 +258,7 @@ func TestConfigValidation(t *testing.T) {
 			expectValid: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Basic validation - config should be creatable
@@ -333,31 +333,31 @@ func (m *mockCapabilityRegistry) NodeByPeerID(ctx context.Context, peerID types.
 func TestServerLifecycle(t *testing.T) {
 	mock := &mockStreamsCapability{}
 	srv := server.NewStreamsServer(mock)
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	mockRegistry := &mockCapabilityRegistry{}
 	deps := core.StandardCapabilitiesDependencies{
 		CapabilityRegistry: mockRegistry,
 	}
-	
+
 	// Initialize
 	err := srv.Initialise(ctx, deps)
 	require.NoError(t, err)
 	assert.Len(t, mockRegistry.added, 1, "Capability should be registered")
-	
+
 	// Start must be called separately
 	err = mock.Start(ctx)
 	require.NoError(t, err)
 	assert.True(t, mock.startCalled, "Start should be called")
-	
+
 	// Get infos
 	infos, err := srv.Infos(ctx)
 	require.NoError(t, err)
 	require.Len(t, infos, 1)
 	assert.Equal(t, "streams-trigger@2.0.0", infos[0].ID)
-	
+
 	// Close
 	err = srv.Close()
 	require.NoError(t, err)
@@ -386,4 +386,3 @@ func BenchmarkReportCreation(b *testing.B) {
 		}
 	}
 }
-

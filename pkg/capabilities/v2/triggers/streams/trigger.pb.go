@@ -32,8 +32,12 @@ type Config struct {
 	// The minimum interval in milliseconds between trigger events.
 	// Trigger will only emit events at most once per this interval.
 	MaxFrequencyMs uint64 `protobuf:"varint,2,opt,name=max_frequency_ms,json=maxFrequencyMs,proto3" json:"max_frequency_ms,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Report encoding formats the workflow accepts (e.g. 5 = CapabilityTrigger, 7 = EVMABIEncodeUnpackedExpr). DON filters by this.
+	AcceptedReportFormats []uint32 `protobuf:"varint,3,rep,packed,name=accepted_report_formats,json=acceptedReportFormats,proto3" json:"accepted_report_formats,omitempty"`
+	// Transmission window in ms. When > 0, DON delays pushing until the next wall-clock boundary. 0 = use default or immediate.
+	TransmissionWindowMs uint64 `protobuf:"varint,4,opt,name=transmission_window_ms,json=transmissionWindowMs,proto3" json:"transmission_window_ms,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -76,6 +80,20 @@ func (x *Config) GetStreamIds() []uint32 {
 func (x *Config) GetMaxFrequencyMs() uint64 {
 	if x != nil {
 		return x.MaxFrequencyMs
+	}
+	return 0
+}
+
+func (x *Config) GetAcceptedReportFormats() []uint32 {
+	if x != nil {
+		return x.AcceptedReportFormats
+	}
+	return nil
+}
+
+func (x *Config) GetTransmissionWindowMs() uint64 {
+	if x != nil {
+		return x.TransmissionWindowMs
 	}
 	return 0
 }
@@ -146,7 +164,9 @@ type Report struct {
 	// The report bytes (raw OCR report)
 	Report []byte `protobuf:"bytes,3,opt,name=report,proto3" json:"report,omitempty"`
 	// Attributed onchain signatures
-	Sigs          []*OCRSignature `protobuf:"bytes,4,rep,name=sigs,proto3" json:"sigs,omitempty"`
+	Sigs []*OCRSignature `protobuf:"bytes,4,rep,name=sigs,proto3" json:"sigs,omitempty"`
+	// Report encoding format. 0 = unspecified (use expected_report_format from config). 5 = CapabilityTrigger (protobuf). 7 = EVMABIEncodeUnpackedExpr (ABI).
+	ReportFormat  uint32 `protobuf:"varint,5,opt,name=report_format,json=reportFormat,proto3" json:"report_format,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,6 +227,13 @@ func (x *Report) GetSigs() []*OCRSignature {
 		return x.Sigs
 	}
 	return nil
+}
+
+func (x *Report) GetReportFormat() uint32 {
+	if x != nil {
+		return x.ReportFormat
+	}
+	return 0
 }
 
 var File_cre_capabilities_streams_v1_trigger_proto protoreflect.FileDescriptor

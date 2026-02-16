@@ -10,7 +10,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dominikbraun/graph v0.23.0
-	github.com/ethereum/go-ethereum v1.15.3
+	github.com/ethereum/go-ethereum v1.16.8
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/gagliardetto/utilz v0.1.3
 	github.com/go-json-experiment/json v0.0.0-20250223041408-d3c622f1b874

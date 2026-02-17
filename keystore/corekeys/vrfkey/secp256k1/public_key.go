@@ -5,12 +5,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"go.dedis.ch/kyber/v3"
-
-	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey"
 )
 
 // PublicKey is a secp256k1 point in compressed format
@@ -93,7 +92,7 @@ func (k *PublicKey) Hash() (common.Hash, error) {
 	if err != nil {
 		return common.Hash{}, err
 	}
-	return vrfkey.MustKeccakHash(string(LongMarshal(p))), nil
+	return MustKeccakHash(string(LongMarshal(p))), nil
 }
 
 // MustHash is like Hash, but panics on error. Useful for testing.
@@ -147,4 +146,13 @@ func (k *PublicKey) Scan(value any) error {
 		return errors.Wrapf(err, "while scanning %s as PublicKey", rawKey)
 	}
 	return nil
+}
+
+func MustKeccakHash(in string) common.Hash {
+	hash := sha3.NewLegacyKeccak256()
+	_, err := hash.Write([]byte(in))
+	if err != nil {
+		panic(err)
+	}
+	return common.BytesToHash(hash.Sum(nil))
 }

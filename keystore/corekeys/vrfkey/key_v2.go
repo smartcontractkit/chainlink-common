@@ -81,7 +81,7 @@ func (key KeyV2) GenerateProofWithNonce(seed, nonce *big.Int) (Proof, error) {
 	if e := checkCGammaNotEqualToSHash(c, gamma, s, h); e != nil {
 		return Proof{}, e
 	}
-	outputHash := MustKeccakHash(string(append(RandomOutputHashPrefix,
+	outputHash := secp256k1.MustKeccakHash(string(append(RandomOutputHashPrefix,
 		secp256k1.LongMarshal(gamma)...)))
 	rv := Proof{
 		PublicKey: publicKey,

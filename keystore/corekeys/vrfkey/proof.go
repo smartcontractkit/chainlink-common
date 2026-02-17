@@ -60,7 +60,7 @@ func (p *Proof) VerifyVRFProof() (bool, error) {
 	vPrime := linearCombination(p.C, p.Gamma, p.S, h)
 	uWitness := secp256k1.EthereumAddress(uPrime)
 	cPrime := ScalarFromCurvePoints(h, p.PublicKey, p.Gamma, uWitness, vPrime)
-	output := MustKeccakHash(string(append(
+	output := secp256k1.MustKeccakHash(string(append(
 		RandomOutputHashPrefix, secp256k1.LongMarshal(p.Gamma)...)))
 	return bm.Equal(p.C, cPrime) && bm.Equal(p.Output, output.Big()), nil
 }

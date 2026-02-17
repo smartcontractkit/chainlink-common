@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-evm/pkg/types"
-
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
@@ -23,7 +21,7 @@ func TestEthKeyV2_ToKey(t *testing.T) {
 	assert.Equal(t, k.getPK(), privateKeyECDSA)
 	assert.Equal(t, k.getPK().X, privateKeyECDSA.X)
 	assert.Equal(t, k.getPK().Y, privateKeyECDSA.Y)
-	assert.Equal(t, types.EIP55AddressFromAddress(crypto.PubkeyToAddress(privateKeyECDSA.PublicKey)).Hex(), k.ID())
+	assert.Equal(t, EIP55AddressFromAddress(crypto.PubkeyToAddress(privateKeyECDSA.PublicKey)).Hex(), k.ID())
 }
 
 func TestEthKeyV2_NewV2(t *testing.T) {

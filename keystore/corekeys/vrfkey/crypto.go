@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	bm "github.com/smartcontractkit/chainlink-common/pkg/utils/big_math"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/hex"
-	"github.com/smartcontractkit/chainlink-evm/pkg/utils"
 )
 
 // This file contains golang re-implementations of functions on the VRF solidity
@@ -149,7 +148,7 @@ func HashToCurve(p kyber.Point, input *big.Int, ordinates func(x *big.Int),
 		return nil, errors.New("bad input to vrf.HashToCurve")
 	}
 	x := FieldHash(append(hashToCurveHashPrefix, append(secp256k1.LongMarshal(p),
-		utils.Uint256ToBytes32(input)...)...))
+		uint256ToBytes32(input)...)...))
 	ordinates(x)
 	for !IsCurveXOrdinate(x) { // Hash recursively until x^3+7 is a square
 		x.Set(FieldHash(common.BigToHash(x).Bytes()))
@@ -194,4 +193,11 @@ func MustKeccakHash(in string) common.Hash {
 		panic(err)
 	}
 	return common.BytesToHash(hash.Sum(nil))
+}
+
+func uint256ToBytes32(n *big.Int) []byte {
+	if n.BitLen() > 256 {
+		panic("vrf.uint256ToBytes32: too big to marshal to uint256")
+	}
+	return common.LeftPadBytes(n.Bytes(), 32)
 }

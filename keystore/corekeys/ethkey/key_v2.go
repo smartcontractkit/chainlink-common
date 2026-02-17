@@ -12,8 +12,6 @@ import (
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/smartcontractkit/chainlink-evm/pkg/types"
-
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
@@ -31,15 +29,15 @@ func KeyFor(raw internal.Raw) KeyV2 {
 }
 
 type KeyV2 struct {
-	raw          internal.Raw
-	getPK        func() *ecdsa.PrivateKey
-	Address      common.Address
-	EIP55Address types.EIP55Address
+	raw     internal.Raw
+	getPK   func() *ecdsa.PrivateKey
+	Address common.Address
+	EIP55Address
 }
 
 func newKeyV2(privKey *ecdsa.PrivateKey) KeyV2 {
 	address := crypto.PubkeyToAddress(privKey.PublicKey)
-	eip55 := types.EIP55AddressFromAddress(address)
+	eip55 := EIP55AddressFromAddress(address)
 	return KeyV2{
 		getPK:        func() *ecdsa.PrivateKey { return privKey },
 		Address:      address,

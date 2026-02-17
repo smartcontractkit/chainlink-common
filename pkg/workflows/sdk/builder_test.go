@@ -140,7 +140,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*sdk.WorkflowSpecFactory, 
 
 	payload := streams.NewFeedReportFromFields(
 		notStreamsTrigger.Payload().BuyPrice(),
-		sdk.ConstantDefinition[streams.FeedId](anyFakeFeedID),
+		streams.FeedIdWrapper(sdk.ConstantDefinition[streams.FeedId](anyFakeFeedID)),
 		notStreamsTrigger.Payload().FullReport(),
 		notStreamsTrigger.Payload().ObservationTimestamp(),
 		notStreamsTrigger.Payload().ReportContext(),

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"go.dedis.ch/kyber/v3"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	bm "github.com/smartcontractkit/chainlink-common/pkg/utils/big_math"
@@ -111,11 +112,11 @@ func IsCurveXOrdinate(x *big.Int) bool {
 // FieldHash hashes xs uniformly into {0, ..., fieldSize-1}. msg is assumed to
 // already be a 256-bit hash
 func FieldHash(msg []byte) *big.Int {
-	rv := utils.MustHash(string(msg)).Big()
+	rv := MustKeccakHash(string(msg)).Big()
 	// Hash recursively until rv < q. P(success per iteration) >= 0.5, so
 	// number of extra hashes is geometrically distributed, with mean < 1.
 	for rv.Cmp(FieldSize) >= 0 {
-		rv = utils.MustHash(string(common.BigToHash(rv).Bytes())).Big()
+		rv = MustKeccakHash(string(common.BigToHash(rv).Bytes())).Big()
 	}
 	return rv
 }
@@ -175,7 +176,7 @@ func ScalarFromCurvePoints(
 		msg = append(msg, secp256k1.LongMarshal(p)...)
 	}
 	msg = append(msg, uWitness[:]...)
-	return bm.I().SetBytes(utils.MustHash(string(msg)).Bytes())
+	return bm.I().SetBytes(MustKeccakHash(string(msg)).Bytes())
 }
 
 func mustParseBig(hx string) *big.Int {
@@ -184,4 +185,13 @@ func mustParseBig(hx string) *big.Int {
 		panic(fmt.Errorf(`failed to convert "%s" as hex to big.Int`, hx))
 	}
 	return n
+}
+
+func MustKeccakHash(in string) common.Hash {
+	hash := sha3.NewLegacyKeccak256()
+	_, err := hash.Write([]byte(in))
+	if err != nil {
+		panic(err)
+	}
+	return common.BytesToHash(hash.Sum(nil))
 }

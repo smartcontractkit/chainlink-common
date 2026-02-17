@@ -9,11 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"go.dedis.ch/kyber/v3"
 
-	bm "github.com/smartcontractkit/chainlink-common/pkg/utils/big_math"
-	"github.com/smartcontractkit/chainlink-evm/pkg/utils"
-
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
+	bm "github.com/smartcontractkit/chainlink-common/pkg/utils/big_math"
 )
 
 var suite = secp256k1.NewBlakeKeccackSecp256k1()
@@ -83,7 +81,7 @@ func (key KeyV2) GenerateProofWithNonce(seed, nonce *big.Int) (Proof, error) {
 	if e := checkCGammaNotEqualToSHash(c, gamma, s, h); e != nil {
 		return Proof{}, e
 	}
-	outputHash := utils.MustHash(string(append(RandomOutputHashPrefix,
+	outputHash := MustKeccakHash(string(append(RandomOutputHashPrefix,
 		secp256k1.LongMarshal(gamma)...)))
 	rv := Proof{
 		PublicKey: publicKey,

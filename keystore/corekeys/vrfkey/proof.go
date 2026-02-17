@@ -9,7 +9,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	bm "github.com/smartcontractkit/chainlink-common/pkg/utils/big_math"
-	"github.com/smartcontractkit/chainlink-evm/pkg/utils"
 )
 
 // Proof represents a proof that Gamma was constructed from the Seed
@@ -61,7 +60,7 @@ func (p *Proof) VerifyVRFProof() (bool, error) {
 	vPrime := linearCombination(p.C, p.Gamma, p.S, h)
 	uWitness := secp256k1.EthereumAddress(uPrime)
 	cPrime := ScalarFromCurvePoints(h, p.PublicKey, p.Gamma, uWitness, vPrime)
-	output := utils.MustHash(string(append(
+	output := MustKeccakHash(string(append(
 		RandomOutputHashPrefix, secp256k1.LongMarshal(p.Gamma)...)))
 	return bm.Equal(p.C, cPrime) && bm.Equal(p.Output, output.Big()), nil
 }

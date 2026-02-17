@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/smartcontractkit/chainlink-evm/pkg/utils"
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey"
 )
 
 // PublicKey is a secp256k1 point in compressed format
@@ -93,7 +93,7 @@ func (k *PublicKey) Hash() (common.Hash, error) {
 	if err != nil {
 		return common.Hash{}, err
 	}
-	return utils.MustHash(string(LongMarshal(p))), nil
+	return vrfkey.MustKeccakHash(string(LongMarshal(p))), nil
 }
 
 // MustHash is like Hash, but panics on error. Useful for testing.

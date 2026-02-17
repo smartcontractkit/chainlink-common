@@ -10,11 +10,10 @@ import "google/protobuf/duration.proto";
 message RemoteTriggerConfig {
   google.protobuf.Duration registrationRefresh = 1;
   google.protobuf.Duration registrationExpiry = 2;
-  google.protobuf.Duration eventTimeout =3;
-  uint32 minResponsesToAggregate = 4;
-  google.protobuf.Duration messageExpiry = 5;
-  uint32 maxBatchSize = 6;
-  google.protobuf.Duration batchCollectionPeriod = 7;
+  uint32 minResponsesToAggregate = 3;
+  google.protobuf.Duration messageExpiry = 4;
+  uint32 maxBatchSize = 5;
+  google.protobuf.Duration batchCollectionPeriod = 6;
 }
 
 // deprecated - v1 only

@@ -106,7 +106,7 @@ message TriggerResponseMessage {
 }
 
 message AckEventRequest {
-  string trigger_id = 1;
+  string trigger_id = 1; // Note: triggerID is unique per workflow as it contains the workflowID
   string event_id = 2;
   string method = 3;
 }

@@ -23,6 +23,7 @@ import (
 type Plugin struct {
 	mu sync.RWMutex
 
+	metrics        GenericDONTimeMetrics
 	store          *Store
 	config         ocr3types.ReportingPluginConfig
 	offChainConfig *pb.Config
@@ -50,7 +51,13 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		return nil, errors.New("execution removal time must be positive")
 	}
 
+	metrics, err := NewGenericDONTimeMetrics(string(config.OracleID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to register DON Time metrics: %w", err)
+	}
+
 	return &Plugin{
+		metrics:         metrics,
 		store:           store,
 		config:          config,
 		offChainConfig:  offchainCfg,
@@ -188,7 +195,12 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		donTime = outcome.Timestamp + p.minTimeIncrease
 	}
 
-	p.lggr.Infow("New DON Time", "donTime", donTime)
+	driftMs := time.Now().UTC().UnixMilli() - donTime
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	p.metrics.RecordClockDrift(ctx, driftMs)
+	p.lggr.Infow("New DON Time", "donTime", donTime, "clockDriftMs", driftMs)
+
 	outcome.Timestamp = donTime
 
 	for id, numRequests := range observationCounts {

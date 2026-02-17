@@ -1011,48 +1011,6 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 				require.Equal(t, expectedData, reply.Data)
 			},
 		},
-		// {
-		// 	name: "EventsByHandle",
-		// 	run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
-		// 		accountAddr := aptos.AccountAddress{
-		// 			0xAA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		// 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		// 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		// 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		// 		}
-		// 		start := uint64(0)
-		// 		limit := uint64(10)
-		// 		req := aptos.EventsByHandleRequest{
-		// 			Account:     accountAddr,
-		// 			EventHandle: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
-		// 			FieldName:   "withdraw_events",
-		// 			Start:       &start,
-		// 			Limit:       &limit,
-		// 		}
-		// 		expectedEvents := []*aptos.Event{
-		// 			{
-		// 				Version:        100,
-		// 				Type:           "0x1::coin::WithdrawEvent",
-		// 				SequenceNumber: 1,
-		// 				Data:           []byte(`{"amount":"500"}`),
-		// 			},
-		// 			{
-		// 				Version:        101,
-		// 				Type:           "0x1::coin::DepositEvent",
-		// 				SequenceNumber: 2,
-		// 				Data:           []byte(`{"amount":"300"}`),
-		// 			},
-		// 		}
-		// 		mockApt.EXPECT().EventsByHandle(mock.Anything, req).
-		// 			Return(&aptos.EventsByHandleReply{Events: expectedEvents}, nil)
-
-		// 		reply, err := apt.EventsByHandle(ctx, req)
-		// 		require.NoError(t, err)
-		// 		require.Len(t, reply.Events, 2)
-		// 		require.Equal(t, uint64(100), reply.Events[0].Version)
-		// 		require.Equal(t, "0x1::coin::WithdrawEvent", reply.Events[0].Type)
-		// 	},
-		// },
 		{
 			name: "TransactionByHash",
 			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {

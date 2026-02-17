@@ -8,11 +8,15 @@ const (
 
 type AccountAddress [AccountAddressLength]byte
 
-// Client wraps the Aptos RPC client methods
+// Client wraps the Aptos RPC client methods used for reading on-chain state.
 type Client interface {
+	// AccountAPTBalance returns the native APT coin balance (in octas) for the given account address.
 	AccountAPTBalance(ctx context.Context, req AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
+	// View executes a Move view function (read-only) and returns the raw result.
 	View(ctx context.Context, req ViewRequest) (*ViewReply, error)
+	// EventsByHandle retrieves events emitted by a specific event handle on an account.
 	EventsByHandle(ctx context.Context, req EventsByHandleRequest) (*EventsByHandleReply, error)
+	// TransactionByHash looks up a transaction (pending or committed) by its hash.
 	TransactionByHash(ctx context.Context, req TransactionByHashRequest) (*TransactionByHashReply, error)
 }
 

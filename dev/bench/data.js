@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771344541702,
+  "lastUpdate": 1771425852995,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -38700,6 +38700,66 @@ window.BENCHMARK_DATA = {
             "value": 149270,
             "unit": "ns/op",
             "extra": "7774 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yashvardhan.nevatia@smartcontract.com",
+            "name": "Yashvardhan Nevatia",
+            "username": "yashnevatia"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f4e93991b51804c1af5cf852be456f8b884a6fd8",
+          "message": "Adding aptos service (#1836)\n\n* Adding aptos service\n\n* wip\n\n* Update pkg/types/relayer.go\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update pkg/chains/aptos/aptos_grpc.pb.go\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update pkg/types/chains/aptos/aptos.go\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update pkg/types/chains/aptos/aptos.go\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* required\n\n* clean up\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-02-18T14:31:49Z",
+          "tree_id": "7ef9181f886f4a95df14640a0e4af27a04516f06",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f4e93991b51804c1af5cf852be456f8b884a6fd8"
+        },
+        "date": 1771425850697,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 408.7,
+            "unit": "ns/op",
+            "extra": "2855829 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 72245,
+            "unit": "ns/op",
+            "extra": "16564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.6,
+            "unit": "ns/op",
+            "extra": "2935764 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 70370,
+            "unit": "ns/op",
+            "extra": "16922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24792,
+            "unit": "ns/op",
+            "extra": "48204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 116326,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

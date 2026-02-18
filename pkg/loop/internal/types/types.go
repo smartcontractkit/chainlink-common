@@ -49,6 +49,7 @@ type Relayer interface {
 	EVM() (types.EVMService, error)
 	TON() (types.TONService, error)
 	Solana() (types.SolanaService, error)
+	Aptos() (types.AptosService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)

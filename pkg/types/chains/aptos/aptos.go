@@ -33,7 +33,7 @@ type ViewRequest struct {
 }
 
 type ViewReply struct {
-	Data []byte
+	Data []byte // this is marshaled JSON because the aptos rpc client returns JSON
 }
 
 // ViewPayload represents the payload for a view function call.
@@ -218,30 +218,30 @@ type Transaction struct {
 }
 
 type SubmitTransactionRequest struct {
-	ReceiverModuleID ModuleID
+	ReceiverModuleID ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
 	EncodedPayload   []byte
 	GasConfig        *GasConfig
 }
 
+type TransactionStatus int
+
+const (
+	// Transaction processing failed due to a network issue, RPC issue, or other fatal error
+	TxFatal TransactionStatus = iota
+	// Transaction was sent successfully to the chain but the smart contract execution reverted
+	TxReverted
+	// Transaction was sent successfully to the chain, smart contract executed successfully and mined into a block.
+	TxSuccess
+)
+
 type SubmitTransactionReply struct {
-	PendingTransaction *PendingTransaction
+	TxStatus         TransactionStatus
+	TxHash           string
+	TxIdempotencyKey string
 }
 
 // GasConfig represents gas configuration for a transaction
 type GasConfig struct {
 	MaxGasAmount uint64 // Maximum gas units willing to pay
 	GasUnitPrice uint64 // Price per gas unit in octas
-}
-
-// PendingTransaction represents a transaction that has been submitted but not yet committed
-type PendingTransaction struct {
-	Hash                    string         // Transaction hash (hex string with 0x prefix)
-	Sender                  AccountAddress // Sender's account address
-	SequenceNumber          uint64         // Sequence number of the transaction
-	ReplayProtectionNonce   *uint64        // Optional nonce for replay protection
-	MaxGasAmount            uint64         // Maximum gas amount
-	GasUnitPrice            uint64         // Gas unit price
-	ExpirationTimestampSecs uint64         // Expiration timestamp in seconds
-	Payload                 []byte         // Transaction payload as raw bytes
-	Signature               []byte         // Signature as raw bytes
 }

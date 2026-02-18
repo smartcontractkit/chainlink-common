@@ -14,6 +14,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
@@ -268,6 +269,9 @@ func (s *Server) start(opts ...ServerOpt) error {
 		s.LimitsFactory.Meter = bc.Meter
 		s.LimitsFactory.Settings = s.cfg.settingsGetter
 	}
+
+	// Wrap logger with beholder so all logs are emitted via BaseMessage
+	s.Logger = logger.Sugared(custmsg.NewBeholderLogger(s.Logger, custmsg.NewLabeler()))
 
 	return nil
 }

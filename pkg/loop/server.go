@@ -91,7 +91,7 @@ type Server struct {
 	db              *sqlx.DB           // optional
 	dbStatsReporter *pg.StatsReporter  // optional
 	DataSource      sqlutil.DataSource // optional
-	promServer      *PromServer
+	webServer       *webServer
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
 }
@@ -221,8 +221,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 		}
 	}
 
-	s.promServer = NewPromServer(s.EnvConfig.PrometheusPort, s.Logger)
-	if err := s.promServer.Start(); err != nil {
+	s.webServer = WebServerOpts{}.New(s.Logger, s.EnvConfig.PrometheusPort)
+	if err := s.webServer.Start(ctx); err != nil {
 		return fmt.Errorf("error starting prometheus server: %w", err)
 	}
 
@@ -290,7 +290,7 @@ func (s *Server) Stop() {
 		s.Logger.ErrorIfFn(s.db.Close, "Failed to close database connection")
 	}
 	s.Logger.ErrorIfFn(s.checker.Close, "Failed to close health checker")
-	s.Logger.ErrorIfFn(s.promServer.Close, "Failed to close prometheus server")
+	s.Logger.ErrorIfFn(s.webServer.Close, "Failed to close web server")
 	if err := s.Logger.Sync(); err != nil {
 		fmt.Println("Failed to sync logger:", err)
 	}

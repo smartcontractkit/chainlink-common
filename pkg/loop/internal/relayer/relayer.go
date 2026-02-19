@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
@@ -166,6 +167,9 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		if solService, ok := r.(types.SolanaService); ok {
 			solpb.RegisterSolanaServer(s, newSolServer(solService, p.BrokerExt))
 		}
+		if aptosService, ok := r.(types.AptosService); ok {
+			aptospb.RegisterAptosServer(s, newAptosServer(aptosService, p.BrokerExt))
+		}
 	}, rRes, ksRes, ksCSARes, crRes)
 	if err != nil {
 		return nil, err
@@ -179,15 +183,23 @@ type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
-	relayer   pb.RelayerClient
-	evmClient evmpb.EVMClient
-	tonClient tonpb.TONClient
-	solClient solpb.SolanaClient
+	relayer     pb.RelayerClient
+	evmClient   evmpb.EVMClient
+	tonClient   tonpb.TONClient
+	solClient   solpb.SolanaClient
+	aptosClient aptospb.AptosClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), evmpb.NewEVMClient(conn), tonpb.NewTONClient(conn), solpb.NewSolanaClient(conn)}
+	return &relayerClient{
+		b, goplugin.NewServiceClient(b, conn),
+		pb.NewRelayerClient(conn),
+		evmpb.NewEVMClient(conn),
+		tonpb.NewTONClient(conn),
+		solpb.NewSolanaClient(conn),
+		aptospb.NewAptosClient(conn),
+	}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -440,6 +452,12 @@ func (r *relayerClient) TON() (types.TONService, error) {
 func (r *relayerClient) Solana() (types.SolanaService, error) {
 	return &SolClient{
 		r.solClient,
+	}, nil
+}
+
+func (r *relayerClient) Aptos() (types.AptosService, error) {
+	return &AptosClient{
+		r.aptosClient,
 	}, nil
 }
 

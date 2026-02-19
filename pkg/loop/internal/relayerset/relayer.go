@@ -47,6 +47,10 @@ func (r *relayer) Solana() (types.SolanaService, error) {
 	return r.relayerSetClient.Solana(r.relayerID)
 }
 
+func (r *relayer) Aptos() (types.AptosService, error) {
+	return r.relayerSetClient.Aptos(r.relayerID)
+}
+
 func (r *relayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	return r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
 }

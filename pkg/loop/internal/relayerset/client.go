@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
@@ -32,6 +33,7 @@ type Client struct {
 	evmRelayerSetClient    evm.EVMClient
 	tonRelayerSetClient    ton.TONClient
 	solanaRelayerSetClient solana.SolanaClient
+	aptosRelayerSetClient  aptos.AptosClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
@@ -44,6 +46,7 @@ func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientCo
 		evmRelayerSetClient:    evm.NewEVMClient(conn),
 		tonRelayerSetClient:    ton.NewTONClient(conn),
 		solanaRelayerSetClient: solana.NewSolanaClient(conn),
+		aptosRelayerSetClient:  aptos.NewAptosClient(conn),
 		contractReaderClient:   pb.NewContractReaderClient(conn)}
 }
 
@@ -181,6 +184,16 @@ func (k *Client) Solana(relayID types.RelayID) (types.SolanaService, error) {
 			client:  k.solanaRelayerSetClient,
 		},
 	), nil
+}
+
+func (k *Client) Aptos(relayID types.RelayID) (types.AptosService, error) {
+	if k.aptosRelayerSetClient == nil {
+		return nil, errors.New("aptosRelayerSetClient can't be nil")
+	}
+	return rel.NewAptosClient(&aptosClient{
+		relayID: relayID,
+		client:  k.aptosRelayerSetClient,
+	}), nil
 }
 
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {

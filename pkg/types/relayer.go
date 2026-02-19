@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
@@ -255,6 +256,12 @@ type SolanaService interface {
 	GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error)
 }
 
+type AptosService interface {
+	aptos.Client
+	// SubmitTransaction submits a transaction to the chain. It will return once the transaction is finalized or an error occurs.
+	SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error)
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
@@ -263,9 +270,10 @@ type Relayer interface {
 	EVM() (EVMService, error)
 	// TON returns TONService that provides access to TON specific functionalities
 	TON() (TONService, error)
-
+	// Solana returns SolanaService that provides access to Solana specific functionalities
 	Solana() (SolanaService, error)
-
+	// Aptos returns AptosService that provides access to Aptos specific functionalities
+	Aptos() (AptosService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
@@ -354,6 +362,10 @@ func (u *UnimplementedRelayer) TON() (TONService, error) {
 
 func (u *UnimplementedRelayer) Solana() (SolanaService, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Solana not implemented")
+}
+
+func (u *UnimplementedRelayer) Aptos() (AptosService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Aptos not implemented")
 }
 
 func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
@@ -536,4 +548,32 @@ func (uss *UnimplementedSolanaService) SimulateTX(ctx context.Context, req solan
 }
 func (uss *UnimplementedSolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
+}
+
+var _ AptosService = &UnimplementedAptosService{}
+
+// UnimplementedAptosService implements the AptosService interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real AptosService implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement AptosService (through use of an unexported method).
+type UnimplementedAptosService struct{}
+
+func (ua *UnimplementedAptosService) AccountAPTBalance(ctx context.Context, req aptos.AccountAPTBalanceRequest) (*aptos.AccountAPTBalanceReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountAPTBalance not implemented")
+}
+
+func (ua *UnimplementedAptosService) View(ctx context.Context, req aptos.ViewRequest) (*aptos.ViewReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method View not implemented")
+}
+
+func (ua *UnimplementedAptosService) EventsByHandle(ctx context.Context, req aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EventsByHandle not implemented")
+}
+
+func (ua *UnimplementedAptosService) TransactionByHash(ctx context.Context, req aptos.TransactionByHashRequest) (*aptos.TransactionByHashReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransactionByHash not implemented")
+}
+
+func (ua *UnimplementedAptosService) SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }

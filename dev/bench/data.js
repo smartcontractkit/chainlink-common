@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771425852995,
+  "lastUpdate": 1771558705262,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -38760,6 +38760,66 @@ window.BENCHMARK_DATA = {
             "value": 116326,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "bfbba3b9c9ab305e106a1f41c6e1761f9c968529",
+          "message": "Extend Trigger Capability for Event ACKing (#1736)\n\n* Create BaseTriggerCapability\n\n* Update capabilities.go\n\n* Remove triggerID from AckEvent\n\n* Add event timeout to protos\n\n* Include AckEvent\n\n* Implement atomicTrigger AckEvent\n\n* Update capabilities.go\n\n* Update base_trigger.go\n\n* Add AckEvent to server template\n\n* Base trigger\n\n* Setters\n\n* Update base_trigger.go\n\n* Add event store\n\n* Update base_trigger.go\n\n* Update base_trigger.go\n\n* Update tests\n\n* Add AckEvent\n\n* Add triggerId\n\n* Fix base\n\n* Fix server gen\n\n* fix build\n\n* Add AckEvent\n\n* Fix triggers\n\n* Update runner_test.go\n\n* Add EventTimeout and AckEvent\n\n* Update base_test.go\n\n* update AckEvent\n\n* Update BaseTrigger\n\n* Update base_trigger.go\n\n* Create mem_trigger_event_store.go\n\n* use NewMemEventStore\n\n* Fix AckEvent\n\n* Ad log\n\n* Test\n\n* AckEvent protos grpc\n\n* Add AckEvent server\n\n* Update mem storage\n\n* Update base_trigger.go\n\n* Clean up\n\n* Clean up trySend\n\n* Add method\n\n* Update registry.pb.go\n\n* Fix generate\n\n* Fix AckEvent tmpl\n\n* Use TriggerAndId\n\n* Update base_trigger.go\n\n* Add triggerEventStore to dependencies\n\n* Add UpdateDelivery to Trigger EventStore\n\n* Remove eventTimeout\n\n* generate",
+          "timestamp": "2026-02-20T03:30:40Z",
+          "tree_id": "db3fe071c530892fc08201c83a615f442ee91971",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bfbba3b9c9ab305e106a1f41c6e1761f9c968529"
+        },
+        "date": 1771558703400,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 399.2,
+            "unit": "ns/op",
+            "extra": "2578322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93400,
+            "unit": "ns/op",
+            "extra": "12798 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.3,
+            "unit": "ns/op",
+            "extra": "2902946 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93712,
+            "unit": "ns/op",
+            "extra": "12798 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26592,
+            "unit": "ns/op",
+            "extra": "45116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140663,
+            "unit": "ns/op",
+            "extra": "8073 times\n4 procs"
           }
         ]
       }

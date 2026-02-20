@@ -3,9 +3,12 @@ package batch
 import (
 	"context"
 	"errors"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -31,6 +34,7 @@ type Client struct {
 	shutdownOnce       sync.Once
 	batcherDone        chan struct{}
 	cancelBatcher      context.CancelFunc
+	counters           sync.Map // map[string]*atomic.Uint64 for per-(source,type) seqnum
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -126,6 +130,14 @@ func (b *Client) Stop() {
 	})
 }
 
+// seqnumFor returns the next sequence number for the given source+type pair.
+// Each unique (source, type) pair has its own independent counter starting at 1.
+func (b *Client) seqnumFor(source, typ string) uint64 {
+	key := source + "\x00" + typ
+	v, _ := b.counters.LoadOrStore(key, &atomic.Uint64{})
+	return v.(*atomic.Uint64).Add(1)
+}
+
 // QueueMessage queues a single message to the batch client with an optional callback.
 // The callback will be invoked after the batch containing this message is sent.
 // The callback receives an error parameter (nil on success).
@@ -142,6 +154,17 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	case <-b.stopCh:
 		return errors.New("client is shutdown")
 	default:
+	}
+
+	// Stamp seqnum extension attribute
+	seq := b.seqnumFor(event.Source, event.Type)
+	if event.Attributes == nil {
+		event.Attributes = make(map[string]*cepb.CloudEventAttributeValue)
+	}
+	event.Attributes["seqnum"] = &cepb.CloudEventAttributeValue{
+		Attr: &cepb.CloudEventAttributeValue_CeString{
+			CeString: strconv.FormatUint(seq, 10),
+		},
 	}
 
 	msg := &messageWithCallback{

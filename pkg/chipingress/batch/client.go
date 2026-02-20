@@ -36,7 +36,7 @@ type Client struct {
 	shutdownOnce       sync.Once
 	batcherDone        chan struct{}
 	cancelBatcher      context.CancelFunc
-	counters           sync.Map // map[string]*atomic.Uint64 for per-(source,type) seqnum
+	counters           sync.Map // map[string]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -130,6 +130,16 @@ func (b *Client) Stop() {
 		case <-ctx.Done(): // timeout or context cancelled
 			b.log.Warnw("timed out waiting for shutdown to finish, force closing", "timeout", b.shutdownTimeout)
 		}
+
+		// Release per-stream seqnum state to avoid unbounded growth from high-cardinality source/type values.
+		b.clearCounters()
+	})
+}
+
+func (b *Client) clearCounters() {
+	b.counters.Range(func(key, _ any) bool {
+		b.counters.Delete(key)
+		return true
 	})
 }
 

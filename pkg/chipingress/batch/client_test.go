@@ -865,6 +865,33 @@ func TestStop(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "shutdown")
 	})
+
+	t.Run("clears seqnum counters on Stop", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		client, err := NewBatchClient(mockClient, WithBatchSize(10))
+		require.NoError(t, err)
+
+		_ = client.seqnumFor("domain-a", "entity-x")
+		_ = client.seqnumFor("domain-b", "entity-y")
+		assert.Equal(t, 2, countCounters(&client.counters))
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+		client.Stop()
+
+		assert.Equal(t, 0, countCounters(&client.counters))
+	})
+}
+
+func countCounters(counters *sync.Map) int {
+	n := 0
+	counters.Range(func(_, _ any) bool {
+		n++
+		return true
+	})
+	return n
 }
 
 func TestSeqnum(t *testing.T) {

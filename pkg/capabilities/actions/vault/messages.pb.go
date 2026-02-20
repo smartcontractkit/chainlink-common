@@ -2009,7 +2009,6 @@ type ReportingPluginConfig struct {
 	MaxIdentifierOwnerLengthBytes     int32   `protobuf:"varint,5,opt,name=MaxIdentifierOwnerLengthBytes,proto3" json:"MaxIdentifierOwnerLengthBytes,omitempty"`
 	MaxIdentifierNamespaceLengthBytes int32   `protobuf:"varint,6,opt,name=MaxIdentifierNamespaceLengthBytes,proto3" json:"MaxIdentifierNamespaceLengthBytes,omitempty"`
 	DKGInstanceID                     *string `protobuf:"bytes,7,opt,name=DKGInstanceID,proto3,oneof" json:"DKGInstanceID,omitempty"`
-	EnableDeterministicPendingQueue   bool    `protobuf:"varint,8,opt,name=EnableDeterministicPendingQueue,proto3" json:"EnableDeterministicPendingQueue,omitempty"`
 	// OCR 3.1 ReportInfo configuration
 	LimitsMaxQueryLength                                  int32 `protobuf:"varint,20,opt,name=LimitsMaxQueryLength,proto3" json:"LimitsMaxQueryLength,omitempty"`
 	LimitsMaxObservationLength                            int32 `protobuf:"varint,21,opt,name=LimitsMaxObservationLength,proto3" json:"LimitsMaxObservationLength,omitempty"`
@@ -2102,13 +2101,6 @@ func (x *ReportingPluginConfig) GetDKGInstanceID() string {
 		return *x.DKGInstanceID
 	}
 	return ""
-}
-
-func (x *ReportingPluginConfig) GetEnableDeterministicPendingQueue() bool {
-	if x != nil {
-		return x.EnableDeterministicPendingQueue
-	}
-	return false
 }
 
 func (x *ReportingPluginConfig) GetLimitsMaxQueryLength() int32 {
@@ -2304,7 +2296,7 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x06length\x18\x01 \x01(\x03R\x06length\"R\n" +
 	"\x16StoredPendingQueueItem\x12(\n" +
 	"\x04item\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x04item\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"\xe4\t\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"\xa0\t\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
 	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +
@@ -2312,8 +2304,7 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x1bMaxIdentifierKeyLengthBytes\x18\x04 \x01(\x05R\x1bMaxIdentifierKeyLengthBytes\x12D\n" +
 	"\x1dMaxIdentifierOwnerLengthBytes\x18\x05 \x01(\x05R\x1dMaxIdentifierOwnerLengthBytes\x12L\n" +
 	"!MaxIdentifierNamespaceLengthBytes\x18\x06 \x01(\x05R!MaxIdentifierNamespaceLengthBytes\x12)\n" +
-	"\rDKGInstanceID\x18\a \x01(\tH\x00R\rDKGInstanceID\x88\x01\x01\x12H\n" +
-	"\x1fEnableDeterministicPendingQueue\x18\b \x01(\bR\x1fEnableDeterministicPendingQueue\x122\n" +
+	"\rDKGInstanceID\x18\a \x01(\tH\x00R\rDKGInstanceID\x88\x01\x01\x122\n" +
 	"\x14LimitsMaxQueryLength\x18\x14 \x01(\x05R\x14LimitsMaxQueryLength\x12>\n" +
 	"\x1aLimitsMaxObservationLength\x18\x15 \x01(\x05R\x1aLimitsMaxObservationLength\x12P\n" +
 	"#LimitsMaxReportsPlusPrecursorLength\x18\x16 \x01(\x05R#LimitsMaxReportsPlusPrecursorLength\x124\n" +
@@ -2324,7 +2315,7 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x1dLimitsMaxKeyValueModifiedKeys\x18\x1b \x01(\x05R\x1dLimitsMaxKeyValueModifiedKeys\x12t\n" +
 	"5LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes\x18\x1c \x01(\x05R5LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes\x12R\n" +
 	"$LimitsMaxPerOracleUnexpiredBlobCount\x18\x1d \x01(\x05R$LimitsMaxPerOracleUnexpiredBlobCountB\x10\n" +
-	"\x0e_DKGInstanceID*\x84\x01\n" +
+	"\x0e_DKGInstanceIDJ\x04\b\b\x10\t*\x84\x01\n" +
 	"\vRequestType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0f\n" +
 	"\vGET_SECRETS\x10\x01\x12\x12\n" +

@@ -28,7 +28,7 @@ func ConfigureHooks(orig services.HealthCheckerConfig, meter metric.Meter) (serv
 	if err != nil {
 		return services.HealthCheckerConfig{}, err
 	}
-	uptimeSeconds, err := meter.Float64Gauge("uptime_seconds", metric.WithDescription("Uptime of the service"))
+	uptimeSeconds, err := meter.Float64Counter("uptime_seconds", metric.WithDescription("Uptime of the service in seconds"))
 	if err != nil {
 		return services.HealthCheckerConfig{}, err
 	}
@@ -36,7 +36,7 @@ func ConfigureHooks(orig services.HealthCheckerConfig, meter metric.Meter) (serv
 		if orig.AddUptime != nil {
 			orig.AddUptime(ctx, d)
 		}
-		uptimeSeconds.Record(ctx, d.Seconds())
+		uptimeSeconds.Add(ctx, d.Seconds())
 	}
 	cfg.IncVersion = func(ctx context.Context, ver string, sha string) {
 		if orig.IncVersion != nil {

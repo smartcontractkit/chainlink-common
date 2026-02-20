@@ -21,8 +21,8 @@ type messageWithCallback struct {
 }
 
 type seqnumKey struct {
-	source string
-	typ    string
+	source    string
+	eventType string
 }
 
 // Client is a batching client that accumulates messages and sends them in batches.
@@ -151,7 +151,7 @@ func (b *Client) clearCounters() {
 // seqnumFor returns the next sequence number for the given source+type pair.
 // Each unique (source, type) pair has its own independent counter starting at 1.
 func (b *Client) seqnumFor(source, typ string) uint64 {
-	key := seqnumKey{source: source, typ: typ}
+	key := seqnumKey{source: source, eventType: typ}
 	v, _ := b.counters.LoadOrStore(key, &atomic.Uint64{})
 	return v.(*atomic.Uint64).Add(1)
 }
@@ -188,8 +188,8 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 		eventToQueue = eventCopy
 	}
 
-	// Stamp seqnum extension attribute
-	seq := b.seqnumFor(event.Source, event.Type)
+	// Stamp seqnum extension attribute using the event snapshot being queued.
+	seq := b.seqnumFor(eventToQueue.Source, eventToQueue.Type)
 	if eventToQueue.Attributes == nil {
 		eventToQueue.Attributes = make(map[string]*cepb.CloudEventAttributeValue)
 	}

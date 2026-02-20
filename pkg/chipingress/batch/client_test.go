@@ -1037,8 +1037,10 @@ func TestSeqnum(t *testing.T) {
 		// Sort and verify all unique and in range [1, totalEvents]
 		sort.Slice(seqnums, func(i, j int) bool { return seqnums[i] < seqnums[j] })
 
+		expectedSeq := uint64(1)
 		for i, seq := range seqnums {
-			assert.Equal(t, uint64(i+1), seq, "seqnum at index %d should be %d", i, i+1)
+			assert.Equal(t, expectedSeq, seq, "seqnum at index %d should be %d", i, expectedSeq)
+			expectedSeq++
 		}
 	})
 }

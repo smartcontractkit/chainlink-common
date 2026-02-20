@@ -207,6 +207,13 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 
 var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
+func (t *triggerExecutableServer) AckEvent(ctx context.Context, req *capabilitiespb.AckEventRequest) (*emptypb.Empty, error) {
+	if err := t.impl.AckEvent(ctx, req.TriggerId, req.EventId, req.Method); err != nil {
+		return nil, fmt.Errorf("error acking event: %w", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.TriggerRegistrationRequest,
 	server capabilitiespb.TriggerExecutable_RegisterTriggerServer) error {
 	req, err := pb.TriggerRegistrationRequestFromProto(request)
@@ -285,6 +292,19 @@ type triggerExecutableClient struct {
 	// manage cancelation of gRPC client stream by trigger ID
 	mu          sync.Mutex
 	cancelFuncs map[string]func()
+}
+
+func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	req := &capabilitiespb.AckEventRequest{
+		TriggerId: triggerId,
+		EventId:   eventId,
+		Method:    method,
+	}
+	_, err := t.grpc.AckEvent(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to call AckEvent: %w", err)
+	}
+	return nil
 }
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {

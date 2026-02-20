@@ -858,6 +858,53 @@ func TestStop(t *testing.T) {
 }
 
 func TestSeqnum(t *testing.T) {
+	t.Run("dropped messages consume seqnum and create detectable gaps", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(1))
+		require.NoError(t, err)
+
+		first := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
+		second := &chipingress.CloudEventPb{Id: "id-2", Source: "domain-a", Type: "entity-x"}
+		third := &chipingress.CloudEventPb{Id: "id-3", Source: "domain-a", Type: "entity-x"}
+
+		err = client.QueueMessage(first, nil)
+		require.NoError(t, err)
+
+		err = client.QueueMessage(second, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "message buffer is full")
+
+		msg := <-client.messageBuffer
+		require.NotNil(t, msg.event.Attributes["seqnum"])
+		assert.Equal(t, "1", msg.event.Attributes["seqnum"].GetCeString())
+
+		err = client.QueueMessage(third, nil)
+		require.NoError(t, err)
+
+		msg = <-client.messageBuffer
+		require.NotNil(t, msg.event.Attributes["seqnum"])
+		assert.Equal(t, "3", msg.event.Attributes["seqnum"].GetCeString())
+	})
+
+	t.Run("reusing event pointer preserves queued seqnum snapshots", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(2))
+		require.NoError(t, err)
+
+		event := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
+
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+
+		first := <-client.messageBuffer
+		second := <-client.messageBuffer
+
+		require.NotNil(t, first.event.Attributes["seqnum"])
+		require.NotNil(t, second.event.Attributes["seqnum"])
+		assert.Equal(t, "1", first.event.Attributes["seqnum"].GetCeString())
+		assert.Equal(t, "2", second.event.Attributes["seqnum"].GetCeString())
+	})
+
 	t.Run("stamps sequential seqnum for same source+type", func(t *testing.T) {
 		client, err := NewBatchClient(nil, WithMessageBuffer(10))
 		require.NoError(t, err)

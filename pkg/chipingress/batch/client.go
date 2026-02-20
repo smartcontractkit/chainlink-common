@@ -9,6 +9,7 @@ import (
 	"time"
 
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
+	"google.golang.org/protobuf/proto"
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -156,19 +157,25 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	default:
 	}
 
+	// Clone the caller-owned event so queued messages keep an immutable seqnum snapshot.
+	eventCopy, ok := proto.Clone(event).(*chipingress.CloudEventPb)
+	if !ok {
+		return errors.New("failed to clone event")
+	}
+
 	// Stamp seqnum extension attribute
 	seq := b.seqnumFor(event.Source, event.Type)
-	if event.Attributes == nil {
-		event.Attributes = make(map[string]*cepb.CloudEventAttributeValue)
+	if eventCopy.Attributes == nil {
+		eventCopy.Attributes = make(map[string]*cepb.CloudEventAttributeValue)
 	}
-	event.Attributes["seqnum"] = &cepb.CloudEventAttributeValue{
+	eventCopy.Attributes["seqnum"] = &cepb.CloudEventAttributeValue{
 		Attr: &cepb.CloudEventAttributeValue_CeString{
 			CeString: strconv.FormatUint(seq, 10),
 		},
 	}
 
 	msg := &messageWithCallback{
-		event:    event,
+		event:    eventCopy,
 		callback: callback,
 	}
 

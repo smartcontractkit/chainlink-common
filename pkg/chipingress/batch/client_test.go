@@ -1023,6 +1023,34 @@ func TestSeqnum(t *testing.T) {
 		}
 	})
 
+	t.Run("source and type values containing separator do not collide", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		require.NoError(t, err)
+
+		events := []*chipingress.CloudEventPb{
+			{Id: "sep-1", Source: "a\x00b", Type: "c"},
+			{Id: "sep-2", Source: "a", Type: "b\x00c"},
+		}
+
+		for _, e := range events {
+			err := client.QueueMessage(e, nil)
+			require.NoError(t, err)
+		}
+
+		expected := map[string]string{
+			"sep-1": "1",
+			"sep-2": "1",
+		}
+
+		for range events {
+			msg := <-client.messageBuffer
+			seqAttr := msg.event.Attributes["seqnum"]
+			require.NotNil(t, seqAttr)
+			assert.Equal(t, expected[msg.event.Id], seqAttr.GetCeString(),
+				"seqnum mismatch for event %s", msg.event.Id)
+		}
+	})
+
 	t.Run("concurrent access produces unique seqnums", func(t *testing.T) {
 		client, err := NewBatchClient(nil, WithMessageBuffer(1000))
 		require.NoError(t, err)

@@ -20,6 +20,11 @@ type messageWithCallback struct {
 	callback func(error)
 }
 
+type seqnumKey struct {
+	source string
+	typ    string
+}
+
 // Client is a batching client that accumulates messages and sends them in batches.
 type Client struct {
 	client             chipingress.Client
@@ -36,7 +41,7 @@ type Client struct {
 	shutdownOnce       sync.Once
 	batcherDone        chan struct{}
 	cancelBatcher      context.CancelFunc
-	counters           sync.Map // map[string]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
+	counters           sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -146,7 +151,7 @@ func (b *Client) clearCounters() {
 // seqnumFor returns the next sequence number for the given source+type pair.
 // Each unique (source, type) pair has its own independent counter starting at 1.
 func (b *Client) seqnumFor(source, typ string) uint64 {
-	key := source + "\x00" + typ
+	key := seqnumKey{source: source, typ: typ}
 	v, _ := b.counters.LoadOrStore(key, &atomic.Uint64{})
 	return v.(*atomic.Uint64).Add(1)
 }

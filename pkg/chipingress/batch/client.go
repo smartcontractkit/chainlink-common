@@ -24,6 +24,7 @@ type messageWithCallback struct {
 type Client struct {
 	client             chipingress.Client
 	batchSize          int
+	cloneEvent         bool
 	maxConcurrentSends chan struct{}
 	batchInterval      time.Duration
 	maxPublishTimeout  time.Duration
@@ -47,6 +48,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		client:             client,
 		log:                zap.NewNop().Sugar(),
 		batchSize:          10,
+		cloneEvent:         true,
 		maxConcurrentSends: make(chan struct{}, 1),
 		messageBuffer:      make(chan *messageWithCallback, 200),
 		batchInterval:      100 * time.Millisecond,
@@ -145,6 +147,10 @@ func (b *Client) seqnumFor(source, typ string) uint64 {
 // Callbacks are invoked from goroutines
 // Returns immediately with no blocking - drops message if channel is full.
 // Returns an error if the message was dropped.
+// QueueMessage stamps/overwrites the "seqnum" extension on the event it buffers.
+// By default, it clones the input event first (WithEventClone(true)) so caller-owned
+// objects are not mutated and queued snapshots remain immutable under pointer reuse.
+// If cloning is disabled via WithEventClone(false), the caller event is mutated in place.
 func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(error)) error {
 	if event == nil {
 		return nil
@@ -157,25 +163,29 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	default:
 	}
 
-	// Clone the caller-owned event so queued messages keep an immutable seqnum snapshot.
-	eventCopy, ok := proto.Clone(event).(*chipingress.CloudEventPb)
-	if !ok {
-		return errors.New("failed to clone event")
+	eventToQueue := event
+	if b.cloneEvent {
+		// Clone the caller-owned event so queued messages keep an immutable seqnum snapshot.
+		eventCopy, ok := proto.Clone(event).(*chipingress.CloudEventPb)
+		if !ok {
+			return errors.New("failed to clone event")
+		}
+		eventToQueue = eventCopy
 	}
 
 	// Stamp seqnum extension attribute
 	seq := b.seqnumFor(event.Source, event.Type)
-	if eventCopy.Attributes == nil {
-		eventCopy.Attributes = make(map[string]*cepb.CloudEventAttributeValue)
+	if eventToQueue.Attributes == nil {
+		eventToQueue.Attributes = make(map[string]*cepb.CloudEventAttributeValue)
 	}
-	eventCopy.Attributes["seqnum"] = &cepb.CloudEventAttributeValue{
+	eventToQueue.Attributes["seqnum"] = &cepb.CloudEventAttributeValue{
 		Attr: &cepb.CloudEventAttributeValue_CeString{
 			CeString: strconv.FormatUint(seq, 10),
 		},
 	}
 
 	msg := &messageWithCallback{
-		event:    eventCopy,
+		event:    eventToQueue,
 		callback: callback,
 	}
 
@@ -225,6 +235,14 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 func WithBatchSize(batchSize int) Opt {
 	return func(c *Client) {
 		c.batchSize = batchSize
+	}
+}
+
+// WithEventClone controls whether QueueMessage clones events before stamping seqnum and buffering.
+// Defaults to true for safety when caller reuses event pointers.
+func WithEventClone(clone bool) Opt {
+	return func(c *Client) {
+		c.cloneEvent = clone
 	}
 }
 

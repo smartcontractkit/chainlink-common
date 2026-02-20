@@ -29,6 +29,16 @@ func TestNewBatchClient(t *testing.T) {
 		assert.Equal(t, 100, client.batchSize)
 	})
 
+	t.Run("WithEventClone", func(t *testing.T) {
+		client, err := NewBatchClient(nil)
+		require.NoError(t, err)
+		assert.True(t, client.cloneEvent)
+
+		client, err = NewBatchClient(nil, WithEventClone(false))
+		require.NoError(t, err)
+		assert.False(t, client.cloneEvent)
+	})
+
 	t.Run("WithMaxConcurrentSends", func(t *testing.T) {
 		client, err := NewBatchClient(nil, WithMaxConcurrentSends(10))
 		require.NoError(t, err)
@@ -902,6 +912,26 @@ func TestSeqnum(t *testing.T) {
 		require.NotNil(t, first.event.Attributes["seqnum"])
 		require.NotNil(t, second.event.Attributes["seqnum"])
 		assert.Equal(t, "1", first.event.Attributes["seqnum"].GetCeString())
+		assert.Equal(t, "2", second.event.Attributes["seqnum"].GetCeString())
+	})
+
+	t.Run("reusing event pointer can overwrite queued seqnum when clone disabled", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(2), WithEventClone(false))
+		require.NoError(t, err)
+
+		event := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
+
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+
+		first := <-client.messageBuffer
+		second := <-client.messageBuffer
+
+		require.NotNil(t, first.event.Attributes["seqnum"])
+		require.NotNil(t, second.event.Attributes["seqnum"])
+		assert.Equal(t, "2", first.event.Attributes["seqnum"].GetCeString())
 		assert.Equal(t, "2", second.event.Attributes["seqnum"].GetCeString())
 	})
 

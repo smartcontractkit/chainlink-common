@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771558705262,
+  "lastUpdate": 1771568973243,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -38820,6 +38820,66 @@ window.BENCHMARK_DATA = {
             "value": 140663,
             "unit": "ns/op",
             "extra": "8073 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be435b17f71dc83a8ea531260724cde4bc01a658",
+          "message": "pkg/services/otelhealth: fix uptime_seconds metric type from Gauge to Counter (#1847)\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2026-02-20T06:22:03Z",
+          "tree_id": "004be15bd0a90c0cd953c748700c47e2540d7b9e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/be435b17f71dc83a8ea531260724cde4bc01a658"
+        },
+        "date": 1771568971432,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 424.4,
+            "unit": "ns/op",
+            "extra": "2727294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96579,
+            "unit": "ns/op",
+            "extra": "12438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.4,
+            "unit": "ns/op",
+            "extra": "2945343 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97290,
+            "unit": "ns/op",
+            "extra": "12307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27124,
+            "unit": "ns/op",
+            "extra": "44990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 145054,
+            "unit": "ns/op",
+            "extra": "7857 times\n4 procs"
           }
         ]
       }

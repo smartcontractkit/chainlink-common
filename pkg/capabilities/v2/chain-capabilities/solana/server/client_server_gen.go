@@ -40,6 +40,7 @@ type ClientCapability interface {
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *solana.FilterLogTriggerRequest) caperrors.Error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest) (*capabilities.ResponseAndMetadata[*solana.WriteReportReply], caperrors.Error)
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) caperrors.Error
 
 	ChainSelector() uint64
 
@@ -142,6 +143,15 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 		return c.ClientCapability.UnregisterLogTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
+	}
+}
+
+func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	switch method {
+	case "LogTrigger":
+		return c.ClientCapability.AckEvent(ctx, triggerId, eventId, method)
+	default:
+		return fmt.Errorf("trigger %s not found", method)
 	}
 }
 

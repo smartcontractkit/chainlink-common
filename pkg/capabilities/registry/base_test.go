@@ -323,6 +323,10 @@ func (t *testTrigger) UnregisterTrigger(_ context.Context, req capabilities.Trig
 	return nil
 }
 
+func (t *testTrigger) AckEvent(_ context.Context, triggerID string, eventID string, method string) error {
+	return nil
+}
+
 func (t *testTrigger) SendEvent(triggerID string, resp capabilities.TriggerResponse) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()

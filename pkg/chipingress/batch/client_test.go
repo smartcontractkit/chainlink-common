@@ -2,7 +2,9 @@ package batch
 
 import (
 	"context"
+	"sort"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,6 +27,16 @@ func TestNewBatchClient(t *testing.T) {
 		client, err := NewBatchClient(nil, WithBatchSize(100))
 		require.NoError(t, err)
 		assert.Equal(t, 100, client.batchSize)
+	})
+
+	t.Run("WithEventClone", func(t *testing.T) {
+		client, err := NewBatchClient(nil)
+		require.NoError(t, err)
+		assert.True(t, client.cloneEvent)
+
+		client, err = NewBatchClient(nil, WithEventClone(false))
+		require.NoError(t, err)
+		assert.False(t, client.cloneEvent)
 	})
 
 	t.Run("WithMaxConcurrentSends", func(t *testing.T) {
@@ -852,5 +864,248 @@ func TestStop(t *testing.T) {
 		}, nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "shutdown")
+	})
+
+	t.Run("clears seqnum counters on Stop", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		client, err := NewBatchClient(mockClient, WithBatchSize(10))
+		require.NoError(t, err)
+
+		_ = client.seqnumFor("domain-a", "entity-x")
+		_ = client.seqnumFor("domain-b", "entity-y")
+		assert.Equal(t, 2, countCounters(&client.counters))
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		client.Start(ctx)
+		client.Stop()
+
+		assert.Equal(t, 0, countCounters(&client.counters))
+	})
+}
+
+func countCounters(counters *sync.Map) int {
+	n := 0
+	counters.Range(func(_, _ any) bool {
+		n++
+		return true
+	})
+	return n
+}
+
+func TestSeqnum(t *testing.T) {
+	t.Run("dropped messages consume seqnum and create detectable gaps", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(1))
+		require.NoError(t, err)
+
+		first := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
+		second := &chipingress.CloudEventPb{Id: "id-2", Source: "domain-a", Type: "entity-x"}
+		third := &chipingress.CloudEventPb{Id: "id-3", Source: "domain-a", Type: "entity-x"}
+
+		err = client.QueueMessage(first, nil)
+		require.NoError(t, err)
+
+		err = client.QueueMessage(second, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "message buffer is full")
+
+		msg := <-client.messageBuffer
+		require.NotNil(t, msg.event.Attributes["seqnum"])
+		assert.Equal(t, "1", msg.event.Attributes["seqnum"].GetCeString())
+
+		err = client.QueueMessage(third, nil)
+		require.NoError(t, err)
+
+		msg = <-client.messageBuffer
+		require.NotNil(t, msg.event.Attributes["seqnum"])
+		assert.Equal(t, "3", msg.event.Attributes["seqnum"].GetCeString())
+	})
+
+	t.Run("reusing event pointer preserves queued seqnum snapshots", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(2))
+		require.NoError(t, err)
+
+		event := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
+
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+
+		first := <-client.messageBuffer
+		second := <-client.messageBuffer
+
+		require.NotNil(t, first.event.Attributes["seqnum"])
+		require.NotNil(t, second.event.Attributes["seqnum"])
+		assert.Equal(t, "1", first.event.Attributes["seqnum"].GetCeString())
+		assert.Equal(t, "2", second.event.Attributes["seqnum"].GetCeString())
+	})
+
+	t.Run("reusing event pointer can overwrite queued seqnum when clone disabled", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(2), WithEventClone(false))
+		require.NoError(t, err)
+
+		event := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
+
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+		err = client.QueueMessage(event, nil)
+		require.NoError(t, err)
+
+		first := <-client.messageBuffer
+		second := <-client.messageBuffer
+
+		require.NotNil(t, first.event.Attributes["seqnum"])
+		require.NotNil(t, second.event.Attributes["seqnum"])
+		assert.Equal(t, "2", first.event.Attributes["seqnum"].GetCeString())
+		assert.Equal(t, "2", second.event.Attributes["seqnum"].GetCeString())
+	})
+
+	t.Run("stamps sequential seqnum for same source+type", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		require.NoError(t, err)
+
+		events := []*chipingress.CloudEventPb{
+			{Id: "id-1", Source: "domain-a", Type: "entity-x"},
+			{Id: "id-2", Source: "domain-a", Type: "entity-x"},
+			{Id: "id-3", Source: "domain-a", Type: "entity-x"},
+		}
+
+		for _, e := range events {
+			err := client.QueueMessage(e, nil)
+			require.NoError(t, err)
+		}
+
+		// Drain buffer and verify seqnums
+		for i, expected := range []string{"1", "2", "3"} {
+			msg := <-client.messageBuffer
+			require.NotNil(t, msg.event.Attributes, "event %d should have attributes", i)
+			seqAttr, ok := msg.event.Attributes["seqnum"]
+			require.True(t, ok, "event %d should have seqnum attribute", i)
+			assert.Equal(t, expected, seqAttr.GetCeString(), "event %d seqnum mismatch", i)
+		}
+	})
+
+	t.Run("independent counters per source+type pair", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		require.NoError(t, err)
+
+		// Queue events with different source+type combinations
+		events := []*chipingress.CloudEventPb{
+			{Id: "a1", Source: "domain-a", Type: "entity-x"},
+			{Id: "b1", Source: "domain-b", Type: "entity-y"},
+			{Id: "a2", Source: "domain-a", Type: "entity-x"},
+			{Id: "b2", Source: "domain-b", Type: "entity-y"},
+			{Id: "c1", Source: "domain-a", Type: "entity-z"}, // same domain, different type
+		}
+
+		for _, e := range events {
+			err := client.QueueMessage(e, nil)
+			require.NoError(t, err)
+		}
+
+		// Expected seqnums by event ID
+		expected := map[string]string{
+			"a1": "1", // first for domain-a/entity-x
+			"b1": "1", // first for domain-b/entity-y
+			"a2": "2", // second for domain-a/entity-x
+			"b2": "2", // second for domain-b/entity-y
+			"c1": "1", // first for domain-a/entity-z (new type)
+		}
+
+		for range events {
+			msg := <-client.messageBuffer
+			seqAttr := msg.event.Attributes["seqnum"]
+			require.NotNil(t, seqAttr)
+			assert.Equal(t, expected[msg.event.Id], seqAttr.GetCeString(),
+				"seqnum mismatch for event %s", msg.event.Id)
+		}
+	})
+
+	t.Run("source and type values containing separator do not collide", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		require.NoError(t, err)
+
+		events := []*chipingress.CloudEventPb{
+			{Id: "sep-1", Source: "a\x00b", Type: "c"},
+			{Id: "sep-2", Source: "a", Type: "b\x00c"},
+		}
+
+		for _, e := range events {
+			err := client.QueueMessage(e, nil)
+			require.NoError(t, err)
+		}
+
+		expected := map[string]string{
+			"sep-1": "1",
+			"sep-2": "1",
+		}
+
+		for range events {
+			msg := <-client.messageBuffer
+			seqAttr := msg.event.Attributes["seqnum"]
+			require.NotNil(t, seqAttr)
+			assert.Equal(t, expected[msg.event.Id], seqAttr.GetCeString(),
+				"seqnum mismatch for event %s", msg.event.Id)
+		}
+	})
+
+	t.Run("concurrent access produces unique seqnums", func(t *testing.T) {
+		client, err := NewBatchClient(nil, WithMessageBuffer(1000))
+		require.NoError(t, err)
+
+		const numGoroutines = 50
+		const eventsPerGoroutine = 10
+		totalEvents := numGoroutines * eventsPerGoroutine
+
+		queueErrors := make(chan error, totalEvents)
+		var wg sync.WaitGroup
+		wg.Add(numGoroutines)
+
+		for g := 0; g < numGoroutines; g++ {
+			go func(goroutineID int) {
+				defer wg.Done()
+				for i := 0; i < eventsPerGoroutine; i++ {
+					event := &chipingress.CloudEventPb{
+						Id:     strconv.Itoa(goroutineID*eventsPerGoroutine + i),
+						Source: "concurrent-domain",
+						Type:   "concurrent-type",
+					}
+					if err := client.QueueMessage(event, nil); err != nil {
+						queueErrors <- err
+					}
+				}
+			}(g)
+		}
+
+		wg.Wait()
+		close(queueErrors)
+
+		var collectedQueueErrors []error
+		for err := range queueErrors {
+			collectedQueueErrors = append(collectedQueueErrors, err)
+		}
+		require.Empty(t, collectedQueueErrors, "expected all concurrent QueueMessage calls to succeed")
+
+		// Collect all seqnums
+		seqnums := make([]uint64, 0, totalEvents)
+		for i := 0; i < totalEvents; i++ {
+			msg := <-client.messageBuffer
+			seqAttr := msg.event.Attributes["seqnum"]
+			require.NotNil(t, seqAttr)
+			seq, err := strconv.ParseUint(seqAttr.GetCeString(), 10, 64)
+			require.NoError(t, err)
+			seqnums = append(seqnums, seq)
+		}
+
+		// Sort and verify all unique and in range [1, totalEvents]
+		sort.Slice(seqnums, func(i, j int) bool { return seqnums[i] < seqnums[j] })
+
+		expectedSeq := uint64(1)
+		for i, seq := range seqnums {
+			assert.Equal(t, expectedSeq, seq, "seqnum at index %d should be %d", i, expectedSeq)
+			expectedSeq++
+		}
 	})
 }

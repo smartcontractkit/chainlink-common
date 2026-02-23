@@ -1059,6 +1059,7 @@ func TestSeqnum(t *testing.T) {
 		const eventsPerGoroutine = 10
 		totalEvents := numGoroutines * eventsPerGoroutine
 
+		queueErrors := make(chan error, totalEvents)
 		var wg sync.WaitGroup
 		wg.Add(numGoroutines)
 
@@ -1071,12 +1072,21 @@ func TestSeqnum(t *testing.T) {
 						Source: "concurrent-domain",
 						Type:   "concurrent-type",
 					}
-					_ = client.QueueMessage(event, nil)
+					if err := client.QueueMessage(event, nil); err != nil {
+						queueErrors <- err
+					}
 				}
 			}(g)
 		}
 
 		wg.Wait()
+		close(queueErrors)
+
+		var collectedQueueErrors []error
+		for err := range queueErrors {
+			collectedQueueErrors = append(collectedQueueErrors, err)
+		}
+		require.Empty(t, collectedQueueErrors, "expected all concurrent QueueMessage calls to succeed")
 
 		// Collect all seqnums
 		seqnums := make([]uint64, 0, totalEvents)

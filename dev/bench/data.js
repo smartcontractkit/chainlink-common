@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771610615530,
+  "lastUpdate": 1771879773263,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -39000,6 +39000,66 @@ window.BENCHMARK_DATA = {
             "value": 152099,
             "unit": "ns/op",
             "extra": "7854 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c4713ecec7d475aac5021ec4b1a8a82eae8bca8f",
+          "message": "pkg/chipingress/batch: add seqnum CloudEvents extension attribute (#1848)\n\n* pkg/chipingress/batch: add seqnum extension attribute for gap detection\n\n* Fix seqnum snapshot safety in batch queue\n\n* Add configurable event cloning for batch queue\n\n* Fix chipingress batch lint issues\n\n* Clear batch seqnum counters on shutdown\n\n* Use struct key for batch seqnum counters\n\n* Use queued event snapshot for seqnum stamping\n\n* Fail fast in seqnum concurrency test on queue errors",
+          "timestamp": "2026-02-23T20:39:40Z",
+          "tree_id": "a8516d82896f8693068811e5b510447414074812",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c4713ecec7d475aac5021ec4b1a8a82eae8bca8f"
+        },
+        "date": 1771879771448,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 455.2,
+            "unit": "ns/op",
+            "extra": "2519689 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100508,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 460.9,
+            "unit": "ns/op",
+            "extra": "2638831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 100161,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26551,
+            "unit": "ns/op",
+            "extra": "45039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148012,
+            "unit": "ns/op",
+            "extra": "7562 times\n4 procs"
           }
         ]
       }

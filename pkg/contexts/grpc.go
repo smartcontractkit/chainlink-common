@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	headerKeyOrg      = "X-Chainlink-Org"
-	headerKeyOwner    = "X-Chainlink-Owner"
-	headerKeyWorkflow = "X-Chainlink-Workflow"
+	headerKeyOrg                  = "X-Chainlink-Org"
+	headerKeyOwner                = "X-Chainlink-Owner"
+	headerKeyWorkflow             = "X-Chainlink-Workflow"
+	headerKeyTransmissionSchedule = "X-Chainlink-Transmission-Schedule"
 )
 
 // CREUnaryInterceptor is a [grpc.UnaryInterceptor] that converts CRE context values to GRPC metadata.
@@ -38,6 +39,9 @@ func appendOutgoingMetadata(ctx context.Context) context.Context {
 	}
 	if cre.Workflow != "" {
 		kvs = append(kvs, headerKeyWorkflow, cre.Workflow)
+	}
+	if ts := TransmissionScheduleValue(ctx); ts != "" {
+		kvs = append(kvs, headerKeyTransmissionSchedule, ts)
 	}
 	if len(kvs) > 0 {
 		ctx = metadata.AppendToOutgoingContext(ctx, kvs...)
@@ -88,6 +92,11 @@ func (i *CREServerInterceptor) extractIncomingMetadata(ctx context.Context) cont
 		cre.Workflow = vs[0]
 	} else if len(vs) > 1 {
 		i.lggr.Criticalw("GRPC header contains multiple workflows", "workflows", vs)
+	}
+	if vs := md.Get(headerKeyTransmissionSchedule); len(vs) == 1 {
+		ctx = WithTransmissionSchedule(ctx, vs[0])
+	} else if len(vs) > 1 {
+		i.lggr.Criticalw("GRPC header contains multiple transmission schedules", "schedules", vs)
 	}
 	return WithCRE(ctx, cre)
 }

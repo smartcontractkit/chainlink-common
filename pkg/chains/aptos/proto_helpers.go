@@ -402,6 +402,67 @@ func ConvertGUIDFromProto(proto *GUID) (*typeaptos.GUID, error) {
 
 // ========== TransactionByHash Conversion ==========
 
+func ConvertAccountTransactionsRequestToProto(req typeaptos.AccountTransactionsRequest) *AccountTransactionsRequest {
+	protoReq := &AccountTransactionsRequest{
+		Address: req.Address[:],
+	}
+	if req.Start != nil {
+		protoReq.Start = req.Start
+	}
+	if req.Limit != nil {
+		protoReq.Limit = req.Limit
+	}
+	return protoReq
+}
+
+func ConvertAccountTransactionsRequestFromProto(proto *AccountTransactionsRequest) (*typeaptos.AccountTransactionsRequest, error) {
+	if proto == nil {
+		return nil, fmt.Errorf("proto request is nil")
+	}
+	if len(proto.Address) != typeaptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid account address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.Address))
+	}
+
+	var address typeaptos.AccountAddress
+	copy(address[:], proto.Address)
+
+	return &typeaptos.AccountTransactionsRequest{
+		Address: address,
+		Start:   proto.Start,
+		Limit:   proto.Limit,
+	}, nil
+}
+
+func ConvertAccountTransactionsReplyToProto(reply *typeaptos.AccountTransactionsReply) *AccountTransactionsReply {
+	if reply == nil {
+		return nil
+	}
+
+	txs := make([]*Transaction, 0, len(reply.Transactions))
+	for _, tx := range reply.Transactions {
+		txs = append(txs, ConvertTransactionToProto(tx))
+	}
+	return &AccountTransactionsReply{Transactions: txs}
+}
+
+func ConvertAccountTransactionsReplyFromProto(proto *AccountTransactionsReply) (*typeaptos.AccountTransactionsReply, error) {
+	if proto == nil {
+		return nil, nil
+	}
+
+	txs := make([]*typeaptos.Transaction, 0, len(proto.Transactions))
+	for _, tx := range proto.Transactions {
+		decoded, err := ConvertTransactionFromProto(tx)
+		if err != nil {
+			return nil, err
+		}
+		if decoded != nil {
+			txs = append(txs, decoded)
+		}
+	}
+	return &typeaptos.AccountTransactionsReply{Transactions: txs}, nil
+}
+
 func ConvertTransactionByHashRequestToProto(req typeaptos.TransactionByHashRequest) *TransactionByHashRequest {
 	return &TransactionByHashRequest{
 		Hash: req.Hash,

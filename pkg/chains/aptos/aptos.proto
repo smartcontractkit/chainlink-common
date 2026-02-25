@@ -5,6 +5,7 @@ package loop.aptos;
 
 service Aptos {
   rpc AccountAPTBalance(AccountAPTBalanceRequest) returns (AccountAPTBalanceReply);
+  rpc AccountTransactions(AccountTransactionsRequest) returns (AccountTransactionsReply);
   rpc View(ViewRequest) returns (ViewReply);
   rpc EventsByHandle(EventsByHandleRequest) returns (EventsByHandleReply);
   rpc TransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
@@ -19,6 +20,18 @@ message AccountAPTBalanceRequest {
 
 message AccountAPTBalanceReply {
   uint64 value = 1;
+}
+
+// ========== AccountTransactions ==========
+
+message AccountTransactionsRequest {
+  bytes address = 1;         // 32-byte account address
+  optional uint64 start = 2; // optional start sequence
+  optional uint64 limit = 3; // optional page size
+}
+
+message AccountTransactionsReply {
+  repeated Transaction transactions = 1;
 }
 
 // ========== View ==========

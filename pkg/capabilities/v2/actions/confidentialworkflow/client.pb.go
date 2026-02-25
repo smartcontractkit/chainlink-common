@@ -23,10 +23,10 @@ const (
 )
 
 type SecretIdentifier struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Owner         *string                `protobuf:"bytes,3,opt,name=owner,proto3,oneof" json:"owner,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// namespace defaults to "main" when unset.
+	Namespace     *string `protobuf:"bytes,2,opt,name=namespace,proto3,oneof" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,15 +69,8 @@ func (x *SecretIdentifier) GetKey() string {
 }
 
 func (x *SecretIdentifier) GetNamespace() string {
-	if x != nil {
-		return x.Namespace
-	}
-	return ""
-}
-
-func (x *SecretIdentifier) GetOwner() string {
-	if x != nil && x.Owner != nil {
-		return *x.Owner
+	if x != nil && x.Namespace != nil {
+		return *x.Namespace
 	}
 	return ""
 }
@@ -261,12 +254,12 @@ var File_capabilities_compute_confidentialworkflow_v1alpha_client_proto protoref
 
 const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"g\n" +
+	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"U\n" +
 	"\x10SecretIdentifier\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x1c\n" +
-	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x19\n" +
-	"\x05owner\x18\x03 \x01(\tH\x00R\x05owner\x88\x01\x01B\b\n" +
-	"\x06_owner\"\x9d\x01\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
+	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
+	"\n" +
+	"_namespace\"\x9d\x01\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x1d\n" +

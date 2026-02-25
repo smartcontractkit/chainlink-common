@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771989571336,
+  "lastUpdate": 1772039370322,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -39120,6 +39120,66 @@ window.BENCHMARK_DATA = {
             "value": 137368,
             "unit": "ns/op",
             "extra": "8402 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32529249+silaslenihan@users.noreply.github.com",
+            "name": "Silas Lenihan",
+            "username": "silaslenihan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "ca7f453e0dcc378ba247f953cb15eb9e11a91367",
+          "message": "Solana: Add GetFiltersNames and proto helpers (#1801)",
+          "timestamp": "2026-02-25T16:59:59Z",
+          "tree_id": "fd567ab857a9e1dc2cd1e4a788d881f737be1de8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ca7f453e0dcc378ba247f953cb15eb9e11a91367"
+        },
+        "date": 1772039368560,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.4,
+            "unit": "ns/op",
+            "extra": "3356084 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98964,
+            "unit": "ns/op",
+            "extra": "12129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.3,
+            "unit": "ns/op",
+            "extra": "2992250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95088,
+            "unit": "ns/op",
+            "extra": "12633 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26950,
+            "unit": "ns/op",
+            "extra": "44145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148750,
+            "unit": "ns/op",
+            "extra": "7947 times\n4 procs"
           }
         ]
       }

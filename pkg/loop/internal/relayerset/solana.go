@@ -79,6 +79,10 @@ func (sc *solClient) UnregisterLogTracking(ctx context.Context, in *solpb.Unregi
 	return sc.client.UnregisterLogTracking(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *solClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*solpb.GetFiltersNamesReply, error) {
+	return sc.client.GetFiltersNames(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 type solServer struct {
 	solpb.UnimplementedSolanaServer
 	parent *Server
@@ -342,6 +346,22 @@ func (ss *solServer) SimulateTX(ctx context.Context, req *solpb.SimulateTXReques
 	}
 
 	return solpb.ConvertSimulateTXReplyToProto(dResp), nil
+}
+
+func (ss *solServer) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*solpb.GetFiltersNamesReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	names, err := solService.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &solpb.GetFiltersNamesReply{
+		Items: names,
+	}, nil
 }
 
 func (s *Server) getSolService(ctx context.Context) (types.SolanaService, error) {

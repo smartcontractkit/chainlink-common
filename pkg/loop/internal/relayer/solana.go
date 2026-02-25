@@ -36,6 +36,15 @@ func (sc *SolClient) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, err
 	}, nil
 }
 
+func (sc *SolClient) GetFiltersNames(ctx context.Context) ([]string, error) {
+	resp, err := sc.grpcClient.GetFiltersNames(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return resp.GetItems(), nil
+}
+
 func (sc *SolClient) SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error) {
 	pReq := solpb.ConvertSubmitTransactionRequestToProto(req)
 
@@ -237,6 +246,17 @@ func (s *solServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*so
 
 	return &solpb.GetLatestLPBlockReply{
 		Slot: dResp.Slot,
+	}, nil
+}
+
+func (s *solServer) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*solpb.GetFiltersNamesReply, error) {
+	names, err := s.impl.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &solpb.GetFiltersNamesReply{
+		Items: names,
 	}, nil
 }
 

@@ -254,6 +254,9 @@ type SolanaService interface {
 
 	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
 	GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error)
+
+	// GetFiltersNames returns all registered filters' names for later pruning
+	GetFiltersNames(ctx context.Context) ([]string, error)
 }
 
 type AptosService interface {
@@ -548,6 +551,9 @@ func (uss *UnimplementedSolanaService) SimulateTX(ctx context.Context, req solan
 }
 func (uss *UnimplementedSolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
+}
+func (uss *UnimplementedSolanaService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
 
 var _ AptosService = &UnimplementedAptosService{}

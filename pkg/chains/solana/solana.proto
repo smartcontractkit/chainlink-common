@@ -22,6 +22,7 @@ service Solana {
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (UnregisterLogTrackingReply);
   rpc GetLatestLPBlock(google.protobuf.Empty) returns (GetLatestLPBlockReply);
+  rpc GetFiltersNames(google.protobuf.Empty) returns (GetFiltersNamesReply);
 }
 
 // Account/tx data encodings.
@@ -463,4 +464,9 @@ message UnregisterLogTrackingReply {}
 // latest block processed by lp
 message GetLatestLPBlockReply {
 	uint64 slot = 1; // block slot
+}
+
+// GetFiltersNames returns all registered filter names
+message GetFiltersNamesReply {
+  repeated string items = 1;
 }

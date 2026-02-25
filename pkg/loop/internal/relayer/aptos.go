@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -32,6 +35,16 @@ func (ac *AptosClient) AccountAPTBalance(ctx context.Context, req aptos.AccountA
 	return &aptos.AccountAPTBalanceReply{
 		Value: reply.Value,
 	}, nil
+}
+
+// AccountTransactions exposes Aptos account transaction listing for callers that need
+// canonical tx hash derivation from transmitter account history.
+func (ac *AptosClient) AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error) {
+	reply, err := ac.grpcClient.AccountTransactions(ctx, aptospb.ConvertAccountTransactionsRequestToProto(req))
+	if err != nil {
+		return nil, err
+	}
+	return aptospb.ConvertAccountTransactionsReplyFromProto(reply)
 }
 
 func (ac *AptosClient) View(ctx context.Context, req aptos.ViewRequest) (*aptos.ViewReply, error) {
@@ -96,6 +109,10 @@ type aptosServer struct {
 
 var _ aptospb.AptosServer = (*aptosServer)(nil)
 
+type accountTransactionsReader interface {
+	AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error)
+}
+
 func newAptosServer(impl types.AptosService, b *net.BrokerExt) *aptosServer {
 	return &aptosServer{impl: impl, BrokerExt: b.WithName("AptosServer")}
 }
@@ -110,6 +127,22 @@ func (s *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.Accoun
 	return &aptospb.AccountAPTBalanceReply{
 		Value: reply.Value,
 	}, nil
+}
+
+func (s *aptosServer) AccountTransactions(ctx context.Context, req *aptospb.AccountTransactionsRequest) (*aptospb.AccountTransactionsReply, error) {
+	impl, ok := s.impl.(accountTransactionsReader)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "AccountTransactions not supported by aptos service")
+	}
+	goReq, err := aptospb.ConvertAccountTransactionsRequestFromProto(req)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := impl.AccountTransactions(ctx, *goReq)
+	if err != nil {
+		return nil, err
+	}
+	return aptospb.ConvertAccountTransactionsReplyToProto(reply), nil
 }
 
 func (s *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*aptospb.ViewReply, error) {

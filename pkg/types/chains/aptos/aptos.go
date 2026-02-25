@@ -30,6 +30,18 @@ type AccountAPTBalanceReply struct {
 	Value uint64
 }
 
+// ========== AccountTransactions ==========
+
+type AccountTransactionsRequest struct {
+	Address AccountAddress
+	Start   *uint64 // optional, nil for provider default
+	Limit   *uint64 // optional, nil for provider default
+}
+
+type AccountTransactionsReply struct {
+	Transactions []*Transaction
+}
+
 // ========== View ==========
 
 type ViewRequest struct {

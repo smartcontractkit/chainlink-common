@@ -5,9 +5,10 @@ package loop.aptos;
 
 service Aptos {
   rpc AccountAPTBalance(AccountAPTBalanceRequest) returns (AccountAPTBalanceReply);
-  rpc View(ViewRequest) returns (ViewReply);
-  rpc TransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
   rpc AccountTransactions(AccountTransactionsRequest) returns (AccountTransactionsReply);
+  rpc View(ViewRequest) returns (ViewReply);
+  rpc EventsByHandle(EventsByHandleRequest) returns (EventsByHandleReply);
+  rpc TransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
 }
 
@@ -19,6 +20,18 @@ message AccountAPTBalanceRequest {
 
 message AccountAPTBalanceReply {
   uint64 value = 1;
+}
+
+// ========== AccountTransactions ==========
+
+message AccountTransactionsRequest {
+  bytes address = 1;         // 32-byte account address
+  optional uint64 start = 2; // optional start sequence
+  optional uint64 limit = 3; // optional page size
+}
+
+message AccountTransactionsReply {
+  repeated Transaction transactions = 1;
 }
 
 // ========== View ==========
@@ -44,7 +57,7 @@ message ModuleID {
 }
 
 message TypeTag {
-  TypeTagKind kind = 1;
+  TypeTagType type = 1;
   oneof value {
     VectorTag vector = 2;
     StructTag struct = 3;
@@ -52,19 +65,19 @@ message TypeTag {
   }
 }
 
-enum TypeTagKind {
-  TYPE_TAG_KIND_BOOL = 0;
-  TYPE_TAG_KIND_U8 = 1;
-  TYPE_TAG_KIND_U16 = 2;
-  TYPE_TAG_KIND_U32 = 3;
-  TYPE_TAG_KIND_U64 = 4;
-  TYPE_TAG_KIND_U128 = 5;
-  TYPE_TAG_KIND_U256 = 6;
-  TYPE_TAG_KIND_ADDRESS = 7;
-  TYPE_TAG_KIND_SIGNER = 8;
-  TYPE_TAG_KIND_VECTOR = 9;
-  TYPE_TAG_KIND_STRUCT = 10;
-  TYPE_TAG_KIND_GENERIC = 11;
+enum TypeTagType {
+  TYPE_TAG_BOOL = 0;
+  TYPE_TAG_U8 = 1;
+  TYPE_TAG_U16 = 2;
+  TYPE_TAG_U32 = 3;
+  TYPE_TAG_U64 = 4;
+  TYPE_TAG_U128 = 5;
+  TYPE_TAG_U256 = 6;
+  TYPE_TAG_ADDRESS = 7;
+  TYPE_TAG_SIGNER = 8;
+  TYPE_TAG_VECTOR = 9;
+  TYPE_TAG_STRUCT = 10;
+  TYPE_TAG_GENERIC = 11;
 }
 
 message VectorTag {
@@ -82,6 +95,32 @@ message GenericTag {
   uint32 index = 1;
 }
 
+// ========== EventsByHandle ==========
+
+message EventsByHandleRequest {
+  bytes account = 1;           // 32-byte address
+  string event_handle = 2;     // Event handle struct tag
+  string field_name = 3;       // Field in the event handle struct
+  optional uint64 start = 4;   // Starting sequence number
+  optional uint64 limit = 5;   // Number of events to return (default 100)
+}
+
+message EventsByHandleReply {
+  repeated Event events = 1;
+}
+
+message Event {
+  uint64 version = 1;          // Block version of the event
+  string type = 2;             // Fully qualified name e.g. 0x1::coin::WithdrawEvent
+  optional GUID guid = 3;      // Unique identifier (V1 events only)
+  uint64 sequence_number = 4;  // Sequence number (V1 events only)
+  bytes data = 5;              // Event data as raw bytes
+}
+
+message GUID {
+  uint64 creation_number = 1;  // Number of the GUID
+  bytes account_address = 2;   // 32-byte account address of creator
+}
 
 // ========== TransactionByHash ==========
 
@@ -112,18 +151,6 @@ message Transaction {
   bytes data = 5;               // Raw transaction data
 }
 
-// ========== AccountTransactions ==========
-
-message AccountTransactionsRequest {
-  bytes address = 1;              // 32-byte address
-  optional uint64 start = 2;     // Starting version number; nil for most recent
-  optional uint64 limit = 3;     // Number of transactions to return; nil for default (~100)
-}
-
-message AccountTransactionsReply {
-  repeated Transaction transactions = 1;
-}
-
 // ========== SubmitTransaction ==========
 
 message SubmitTransactionRequest {
@@ -132,16 +159,8 @@ message SubmitTransactionRequest {
   optional GasConfig gas_config = 3;
 }
 
-enum TxStatus {
-  TX_STATUS_FATAL = 0;     // Transaction processing failed due to a network issue, RPC issue, or other fatal error
-  TX_STATUS_REVERTED = 1;  // Transaction was sent successfully but the smart contract execution reverted
-  TX_STATUS_SUCCESS = 2;   // Transaction was sent successfully, executed and mined into a block
-}
-
 message SubmitTransactionReply {
-  TxStatus tx_status = 1;
-  string tx_hash = 2;
-  string tx_idempotency_key = 3;
+  optional PendingTransaction pending_transaction = 1;
 }
 
 message GasConfig {
@@ -149,3 +168,14 @@ message GasConfig {
   uint64 gas_unit_price = 2;  // Price per gas unit in octas
 }
 
+message PendingTransaction {
+  string hash = 1;                             // Transaction hash (hex string with 0x prefix)
+  bytes sender = 2;                            // 32-byte sender address
+  uint64 sequence_number = 3;                  // Sequence number
+  optional uint64 replay_protection_nonce = 4; // Optional nonce for replay protection
+  uint64 max_gas_amount = 5;                   // Maximum gas amount
+  uint64 gas_unit_price = 6;                   // Gas unit price
+  uint64 expiration_timestamp_secs = 7;        // Expiration timestamp in seconds
+  bytes payload = 8;                           // Transaction payload as raw bytes
+  bytes signature = 9;                         // Signature as raw bytes
+}

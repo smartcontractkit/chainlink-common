@@ -25,6 +25,10 @@ func (ac *aptosClient) AccountAPTBalance(ctx context.Context, in *aptospb.Accoun
 	return ac.client.AccountAPTBalance(appendRelayID(ctx, ac.relayID), in, opts...)
 }
 
+func (ac *aptosClient) AccountTransactions(ctx context.Context, in *aptospb.AccountTransactionsRequest, opts ...grpc.CallOption) (*aptospb.AccountTransactionsReply, error) {
+	return ac.client.AccountTransactions(appendRelayID(ctx, ac.relayID), in, opts...)
+}
+
 func (ac *aptosClient) View(ctx context.Context, in *aptospb.ViewRequest, opts ...grpc.CallOption) (*aptospb.ViewReply, error) {
 	return ac.client.View(appendRelayID(ctx, ac.relayID), in, opts...)
 }
@@ -48,6 +52,10 @@ type aptosServer struct {
 
 var _ aptospb.AptosServer = (*aptosServer)(nil)
 
+type accountTransactionsReader interface {
+	AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error)
+}
+
 func (as *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.AccountAPTBalanceRequest) (*aptospb.AccountAPTBalanceReply, error) {
 	aptosService, err := as.parent.getAptosService(ctx)
 	if err != nil {
@@ -63,6 +71,26 @@ func (as *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.Accou
 	return &aptospb.AccountAPTBalanceReply{
 		Value: reply.Value,
 	}, nil
+}
+
+func (as *aptosServer) AccountTransactions(ctx context.Context, req *aptospb.AccountTransactionsRequest) (*aptospb.AccountTransactionsReply, error) {
+	aptosService, err := as.parent.getAptosService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, ok := aptosService.(accountTransactionsReader)
+	if !ok {
+		return nil, fmt.Errorf("AccountTransactions not supported by aptos service")
+	}
+	goReq, err := aptospb.ConvertAccountTransactionsRequestFromProto(req)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := client.AccountTransactions(ctx, *goReq)
+	if err != nil {
+		return nil, err
+	}
+	return aptospb.ConvertAccountTransactionsReplyToProto(reply), nil
 }
 
 func (as *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*aptospb.ViewReply, error) {

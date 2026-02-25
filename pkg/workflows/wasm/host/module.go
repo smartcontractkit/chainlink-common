@@ -79,6 +79,10 @@ type ModuleConfig struct {
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
 
+	// SdkLabeler is called with the discovered v2 import name after module creation.
+	// If nil, it defaults to a no-op. Used to add metrics labels (e.g. sdk=name).
+	SdkLabeler func(string)
+
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
@@ -172,6 +176,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.Labeler == nil {
 		modCfg.Labeler = &unimplementedMessageEmitter{}
+	}
+
+	if modCfg.SdkLabeler == nil {
+		modCfg.SdkLabeler = func(string) {}
 	}
 
 	if modCfg.TickInterval == 0 {
@@ -306,6 +314,8 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 			break
 		}
 	}
+
+	modCfg.SdkLabeler(v2ImportName)
 
 	return &module{
 		engine:       engine,

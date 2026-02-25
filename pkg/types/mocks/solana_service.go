@@ -260,6 +260,64 @@ func (_c *SolanaService_GetFeeForMessage_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// GetFiltersNames provides a mock function with given fields: ctx
+func (_m *SolanaService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFiltersNames")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SolanaService_GetFiltersNames_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFiltersNames'
+type SolanaService_GetFiltersNames_Call struct {
+	*mock.Call
+}
+
+// GetFiltersNames is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *SolanaService_Expecter) GetFiltersNames(ctx interface{}) *SolanaService_GetFiltersNames_Call {
+	return &SolanaService_GetFiltersNames_Call{Call: _e.mock.On("GetFiltersNames", ctx)}
+}
+
+func (_c *SolanaService_GetFiltersNames_Call) Run(run func(ctx context.Context)) *SolanaService_GetFiltersNames_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *SolanaService_GetFiltersNames_Call) Return(_a0 []string, _a1 error) *SolanaService_GetFiltersNames_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SolanaService_GetFiltersNames_Call) RunAndReturn(run func(context.Context) ([]string, error)) *SolanaService_GetFiltersNames_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestLPBlock provides a mock function with given fields: ctx
 func (_m *SolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
 	ret := _m.Called(ctx)

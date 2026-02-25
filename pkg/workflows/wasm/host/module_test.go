@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"encoding/binary"
+	"strings"
 	"sync"
 	"testing"
 
@@ -584,6 +585,35 @@ func Test_toEmissible(t *testing.T) {
 	t.Run("fails with bad message", func(t *testing.T) {
 		_, _, _, err := toEmissible([]byte("not proto bufs"))
 		assert.Error(t, err)
+	})
+}
+
+func Test_SdkLabeler(t *testing.T) {
+	t.Run("defaults to no-op when nil", func(t *testing.T) {
+		// ModuleConfig with nil SdkLabeler should not panic when creating a module
+		binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
+		mc := &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+			Fetch:          func(context.Context, *FetchRequest) (*FetchResponse, error) { return &FetchResponse{}, nil },
+		}
+		_, err := NewModule(t.Context(), mc, binary)
+		require.NoError(t, err)
+		require.NotNil(t, mc.SdkLabeler, "SdkLabeler should be set to no-op")
+	})
+
+	t.Run("is called with v2ImportName after discovery", func(t *testing.T) {
+		binary := createTestBinary(nodagRandomBinaryCmd, nodagRandomBinaryLocation, true, t)
+		var capturedName string
+		mc := defaultNoDAGModCfg(t)
+		mc.SdkLabeler = func(name string) {
+			capturedName = name
+		}
+		m, err := NewModule(t.Context(), mc, binary)
+		require.NoError(t, err)
+		require.False(t, m.IsLegacyDAG(), "expected NoDAG module")
+		require.NotEmpty(t, capturedName, "SdkLabeler should have been called with v2 import name")
+		require.True(t, strings.HasPrefix(capturedName, v2ImportPrefix), "captured name should have v2 prefix")
 	})
 }
 

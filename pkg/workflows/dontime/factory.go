@@ -2,17 +2,17 @@ package dontime
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 const (
@@ -73,13 +73,10 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)
 	}
 
-	updatedOffchainConfig, err := proto.Marshal(&configProto)
+	plugin, err := NewPlugin(o.store, config, &configProto, o.lggr)
 	if err != nil {
-		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("failed to re-marshal updated configProto: %w", err)
+		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
-	config.OffchainConfig = updatedOffchainConfig
-
-	plugin, err := NewPlugin(o.store, config, o.lggr)
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "DON Time Plugin",
 		Limits: ocr3types.ReportingPluginLimits{
@@ -90,6 +87,16 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 			MaxReportCount:       int(configProto.MaxReportCount),
 		},
 	}
+	o.lggr.Infow("DON Time Plugin created with config",
+		"maxQueryLengthBytes", configProto.MaxQueryLengthBytes,
+		"maxObservationLengthBytes", configProto.MaxObservationLengthBytes,
+		"maxOutcomeLengthBytes", configProto.MaxOutcomeLengthBytes,
+		"maxReportLengthBytes", configProto.MaxReportLengthBytes,
+		"maxReportCount", configProto.MaxReportCount,
+		"maxBatchSize", configProto.MaxBatchSize,
+		"executionRemovalTime", configProto.ExecutionRemovalTime.AsDuration(),
+		"minTimeIncrease", configProto.MinTimeIncrease,
+	)
 	return plugin, pluginInfo, err
 }
 

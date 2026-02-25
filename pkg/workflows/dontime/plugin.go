@@ -34,12 +34,7 @@ type Plugin struct {
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
-func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*Plugin, error) {
-	offchainCfg := &pb.Config{}
-	err := proto.Unmarshal(config.OffchainConfig, offchainCfg)
-	if err != nil {
-		return nil, err
-	}
+func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, offchainCfg *pb.Config, lggr logger.Logger) (*Plugin, error) {
 	if offchainCfg.MaxBatchSize == 0 {
 		return nil, errors.New("batch size cannot be 0")
 	}

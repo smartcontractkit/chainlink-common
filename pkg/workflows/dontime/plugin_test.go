@@ -9,14 +9,15 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
-func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
-	offChainCfg := &pb.Config{
+func newTestPluginOffchainConfig(t *testing.T) *pb.Config {
+	return &pb.Config{
 		MaxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
 		MaxObservationLengthBytes: defaultMaxPhaseOutputBytes,
 		MaxReportLengthBytes:      defaultMaxPhaseOutputBytes,
@@ -24,6 +25,10 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 		MinTimeIncrease:           int64(defaultMinTimeIncrease),
 		ExecutionRemovalTime:      durationpb.New(defaultExecutionRemovalTime),
 	}
+}
+
+func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
+	offChainCfg := newTestPluginOffchainConfig(t)
 
 	offChainCfgBytes, err := proto.Marshal(offChainCfg)
 	if err != nil {
@@ -43,10 +48,10 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 func TestPlugin_Observation(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)
-	config := newTestPluginConfig(t)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -80,12 +85,12 @@ func TestPlugin_Observation(t *testing.T) {
 
 func TestPlugin_ValidateObservation(t *testing.T) {
 	lggr := logger.Test(t)
-	config := newTestPluginConfig(t)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
 	t.Run("Valid Observation", func(t *testing.T) {
 		store := NewStore(DefaultRequestTimeout)
-		plugin, err := NewPlugin(store, config, lggr)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 		require.NoError(t, err)
 
 		outcomeCtx := ocr3types.OutcomeContext{
@@ -113,7 +118,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 	t.Run("Invalid sequence number", func(t *testing.T) {
 		store := NewStore(DefaultRequestTimeout)
-		plugin, err := NewPlugin(store, config, lggr)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 		require.NoError(t, err)
 
 		outcomeCtx := ocr3types.OutcomeContext{
@@ -138,10 +143,10 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 func TestPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)
-	config := newTestPluginConfig(t)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
@@ -211,11 +216,11 @@ func TestPlugin_Outcome(t *testing.T) {
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)
-	config := newTestPluginConfig(t)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, "")
-	plugin, err := NewPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
@@ -286,10 +291,10 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 func TestPlugin_ExpiredRequest(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore(0)
-	config := newTestPluginConfig(t)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{

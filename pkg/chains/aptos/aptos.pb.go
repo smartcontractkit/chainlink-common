@@ -21,26 +21,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type TypeTagType int32
+type TypeTagKind int32
 
 const (
-	TypeTagType_TYPE_TAG_BOOL    TypeTagType = 0
-	TypeTagType_TYPE_TAG_U8      TypeTagType = 1
-	TypeTagType_TYPE_TAG_U16     TypeTagType = 2
-	TypeTagType_TYPE_TAG_U32     TypeTagType = 3
-	TypeTagType_TYPE_TAG_U64     TypeTagType = 4
-	TypeTagType_TYPE_TAG_U128    TypeTagType = 5
-	TypeTagType_TYPE_TAG_U256    TypeTagType = 6
-	TypeTagType_TYPE_TAG_ADDRESS TypeTagType = 7
-	TypeTagType_TYPE_TAG_SIGNER  TypeTagType = 8
-	TypeTagType_TYPE_TAG_VECTOR  TypeTagType = 9
-	TypeTagType_TYPE_TAG_STRUCT  TypeTagType = 10
-	TypeTagType_TYPE_TAG_GENERIC TypeTagType = 11
+	TypeTagKind_TYPE_TAG_BOOL    TypeTagKind = 0
+	TypeTagKind_TYPE_TAG_U8      TypeTagKind = 1
+	TypeTagKind_TYPE_TAG_U16     TypeTagKind = 2
+	TypeTagKind_TYPE_TAG_U32     TypeTagKind = 3
+	TypeTagKind_TYPE_TAG_U64     TypeTagKind = 4
+	TypeTagKind_TYPE_TAG_U128    TypeTagKind = 5
+	TypeTagKind_TYPE_TAG_U256    TypeTagKind = 6
+	TypeTagKind_TYPE_TAG_ADDRESS TypeTagKind = 7
+	TypeTagKind_TYPE_TAG_SIGNER  TypeTagKind = 8
+	TypeTagKind_TYPE_TAG_VECTOR  TypeTagKind = 9
+	TypeTagKind_TYPE_TAG_STRUCT  TypeTagKind = 10
+	TypeTagKind_TYPE_TAG_GENERIC TypeTagKind = 11
 )
 
-// Enum value maps for TypeTagType.
+// Enum value maps for TypeTagKind.
 var (
-	TypeTagType_name = map[int32]string{
+	TypeTagKind_name = map[int32]string{
 		0:  "TYPE_TAG_BOOL",
 		1:  "TYPE_TAG_U8",
 		2:  "TYPE_TAG_U16",
@@ -54,7 +54,7 @@ var (
 		10: "TYPE_TAG_STRUCT",
 		11: "TYPE_TAG_GENERIC",
 	}
-	TypeTagType_value = map[string]int32{
+	TypeTagKind_value = map[string]int32{
 		"TYPE_TAG_BOOL":    0,
 		"TYPE_TAG_U8":      1,
 		"TYPE_TAG_U16":     2,
@@ -70,30 +70,30 @@ var (
 	}
 )
 
-func (x TypeTagType) Enum() *TypeTagType {
-	p := new(TypeTagType)
+func (x TypeTagKind) Enum() *TypeTagKind {
+	p := new(TypeTagKind)
 	*p = x
 	return p
 }
 
-func (x TypeTagType) String() string {
+func (x TypeTagKind) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (TypeTagType) Descriptor() protoreflect.EnumDescriptor {
+func (TypeTagKind) Descriptor() protoreflect.EnumDescriptor {
 	return file_aptos_proto_enumTypes[0].Descriptor()
 }
 
-func (TypeTagType) Type() protoreflect.EnumType {
+func (TypeTagKind) Type() protoreflect.EnumType {
 	return &file_aptos_proto_enumTypes[0]
 }
 
-func (x TypeTagType) Number() protoreflect.EnumNumber {
+func (x TypeTagKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use TypeTagType.Descriptor instead.
-func (TypeTagType) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use TypeTagKind.Descriptor instead.
+func (TypeTagKind) EnumDescriptor() ([]byte, []int) {
 	return file_aptos_proto_rawDescGZIP(), []int{0}
 }
 
@@ -508,7 +508,7 @@ func (x *ModuleID) GetName() string {
 
 type TypeTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Type  TypeTagType            `protobuf:"varint,1,opt,name=type,proto3,enum=loop.aptos.TypeTagType" json:"type,omitempty"`
+	Kind  TypeTagKind            `protobuf:"varint,1,opt,name=kind,proto3,enum=loop.aptos.TypeTagKind" json:"kind,omitempty"`
 	// Types that are valid to be assigned to Value:
 	//
 	//	*TypeTag_Vector
@@ -549,11 +549,11 @@ func (*TypeTag) Descriptor() ([]byte, []int) {
 	return file_aptos_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *TypeTag) GetType() TypeTagType {
+func (x *TypeTag) GetKind() TypeTagKind {
 	if x != nil {
-		return x.Type
+		return x.Kind
 	}
-	return TypeTagType_TYPE_TAG_BOOL
+	return TypeTagKind_TYPE_TAG_BOOL
 }
 
 func (x *TypeTag) GetValue() isTypeTag_Value {
@@ -1231,7 +1231,7 @@ const file_aptos_proto_rawDesc = "" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"\xd5\x01\n" +
 	"\aTypeTag\x12+\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x17.loop.aptos.TypeTagTypeR\x04type\x12/\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x17.loop.aptos.TypeTagKindR\x04kind\x12/\n" +
 	"\x06vector\x18\x02 \x01(\v2\x15.loop.aptos.VectorTagH\x00R\x06vector\x12/\n" +
 	"\x06struct\x18\x03 \x01(\v2\x15.loop.aptos.StructTagH\x00R\x06struct\x122\n" +
 	"\ageneric\x18\x04 \x01(\v2\x16.loop.aptos.GenericTagH\x00R\agenericB\a\n" +
@@ -1283,7 +1283,7 @@ const file_aptos_proto_rawDesc = "" +
 	"\tGasConfig\x12$\n" +
 	"\x0emax_gas_amount\x18\x01 \x01(\x04R\fmaxGasAmount\x12$\n" +
 	"\x0egas_unit_price\x18\x02 \x01(\x04R\fgasUnitPrice*\xf8\x01\n" +
-	"\vTypeTagType\x12\x11\n" +
+	"\vTypeTagKind\x12\x11\n" +
 	"\rTYPE_TAG_BOOL\x10\x00\x12\x0f\n" +
 	"\vTYPE_TAG_U8\x10\x01\x12\x10\n" +
 	"\fTYPE_TAG_U16\x10\x02\x12\x10\n" +
@@ -1332,7 +1332,7 @@ func file_aptos_proto_rawDescGZIP() []byte {
 var file_aptos_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_aptos_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_aptos_proto_goTypes = []any{
-	(TypeTagType)(0),                   // 0: loop.aptos.TypeTagType
+	(TypeTagKind)(0),                   // 0: loop.aptos.TypeTagKind
 	(TransactionVariant)(0),            // 1: loop.aptos.TransactionVariant
 	(TxStatus)(0),                      // 2: loop.aptos.TxStatus
 	(*AccountAPTBalanceRequest)(nil),   // 3: loop.aptos.AccountAPTBalanceRequest
@@ -1358,7 +1358,7 @@ var file_aptos_proto_depIdxs = []int32{
 	7,  // 0: loop.aptos.ViewRequest.payload:type_name -> loop.aptos.ViewPayload
 	8,  // 1: loop.aptos.ViewPayload.module:type_name -> loop.aptos.ModuleID
 	9,  // 2: loop.aptos.ViewPayload.arg_types:type_name -> loop.aptos.TypeTag
-	0,  // 3: loop.aptos.TypeTag.type:type_name -> loop.aptos.TypeTagType
+	0,  // 3: loop.aptos.TypeTag.kind:type_name -> loop.aptos.TypeTagKind
 	10, // 4: loop.aptos.TypeTag.vector:type_name -> loop.aptos.VectorTag
 	11, // 5: loop.aptos.TypeTag.struct:type_name -> loop.aptos.StructTag
 	12, // 6: loop.aptos.TypeTag.generic:type_name -> loop.aptos.GenericTag

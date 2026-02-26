@@ -44,7 +44,7 @@ message ModuleID {
 }
 
 message TypeTag {
-  TypeTagType type = 1;
+  TypeTagKind kind = 1;
   oneof value {
     VectorTag vector = 2;
     StructTag struct = 3;
@@ -52,7 +52,7 @@ message TypeTag {
   }
 }
 
-enum TypeTagType {
+enum TypeTagKind {
   TYPE_TAG_BOOL = 0;
   TYPE_TAG_U8 = 1;
   TYPE_TAG_U16 = 2;

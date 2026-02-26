@@ -87,7 +87,7 @@ func TestTypeTagConverters(t *testing.T) {
 
 			roundtrip, err := conv.ConvertTypeTagFromProto(proto)
 			require.NoError(t, err, "failed to convert back tag %d", i)
-			require.Equal(t, tag.Value.TypeTagType(), roundtrip.Value.TypeTagType())
+			require.Equal(t, tag.Value.TypeTagKind(), roundtrip.Value.TypeTagKind())
 		}
 	})
 
@@ -106,7 +106,7 @@ func TestTypeTagConverters(t *testing.T) {
 		require.NoError(t, err)
 		vec, ok := roundtrip.Value.(typeaptos.VectorTag)
 		require.True(t, ok)
-		require.Equal(t, typeaptos.TypeTagU64, vec.ElementType.Value.TypeTagType())
+		require.Equal(t, typeaptos.TypeTagU64, vec.ElementType.Value.TypeTagKind())
 	})
 
 	t.Run("StructTag roundtrip", func(t *testing.T) {
@@ -166,7 +166,7 @@ func TestTypeTagConverters(t *testing.T) {
 
 	t.Run("Invalid struct address length", func(t *testing.T) {
 		protoTag := &conv.TypeTag{
-			Type: conv.TypeTagType_TYPE_TAG_STRUCT,
+			Kind: conv.TypeTagKind_TYPE_TAG_STRUCT,
 			Value: &conv.TypeTag_Struct{
 				Struct: &conv.StructTag{
 					Address:    mkBytes(typeaptos.AccountAddressLength-1, 0x01),

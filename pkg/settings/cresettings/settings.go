@@ -92,6 +92,7 @@ var Default = Schema{
 		ExecutionConcurrencyLimit:     Int(5),
 		ExecutionTimeout:              Duration(5 * time.Minute),
 		ExecutionResponseLimit:        Size(100 * config.KByte),
+		ExecutionTimestampsEnabled:    Bool(false),
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
@@ -200,9 +201,10 @@ type Workflows struct {
 
 	SecretsConcurrencyLimit Setting[int] `unit:"{secret}"`
 
-	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	ExecutionTimeout          Setting[time.Duration]
-	ExecutionResponseLimit    Setting[config.Size]
+	ExecutionConcurrencyLimit  Setting[int] `unit:"{workflow}"`
+	ExecutionTimeout           Setting[time.Duration]
+	ExecutionResponseLimit     Setting[config.Size]
+	ExecutionTimestampsEnabled Setting[bool]
 
 	WASMMemoryLimit               Setting[config.Size]
 	WASMBinarySizeLimit           Setting[config.Size]

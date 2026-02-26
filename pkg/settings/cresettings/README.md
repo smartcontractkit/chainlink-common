@@ -105,6 +105,7 @@ flowchart
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
+        PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
 
         PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end

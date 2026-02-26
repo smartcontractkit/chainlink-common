@@ -1071,13 +1071,6 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				}
-				senderAddr := aptos.AccountAddress{
-					0xCC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				}
-				nonce := uint64(999)
 				req := aptos.SubmitTransactionRequest{
 					ReceiverModuleID: aptos.ModuleID{
 						Address: receiverAddr,
@@ -1090,28 +1083,18 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 					},
 				}
 				expectedReply := &aptos.SubmitTransactionReply{
-					PendingTransaction: &aptos.PendingTransaction{
-						Hash:                    "0xtxhash123",
-						Sender:                  senderAddr,
-						SequenceNumber:          42,
-						ReplayProtectionNonce:   &nonce,
-						MaxGasAmount:            10000,
-						GasUnitPrice:            100,
-						ExpirationTimestampSecs: 1234567890,
-						Payload:                 []byte{0x11, 0x22, 0x33},
-						Signature:               []byte{0xAA, 0xBB, 0xCC},
-					},
+					TxStatus:         aptos.TxSuccess,
+					TxHash:           "0xtxhash123",
+					TxIdempotencyKey: "key-456",
 				}
 				mockApt.EXPECT().SubmitTransaction(mock.Anything, req).
 					Return(expectedReply, nil)
 
 				reply, err := apt.SubmitTransaction(ctx, req)
 				require.NoError(t, err)
-				require.NotNil(t, reply.PendingTransaction)
-				require.Equal(t, "0xtxhash123", reply.PendingTransaction.Hash)
-				require.Equal(t, uint64(42), reply.PendingTransaction.SequenceNumber)
-				require.NotNil(t, reply.PendingTransaction.ReplayProtectionNonce)
-				require.Equal(t, nonce, *reply.PendingTransaction.ReplayProtectionNonce)
+				require.NotNil(t, reply.TxHash)
+				require.Equal(t, expectedReply.TxHash, reply.TxHash)
+				require.Equal(t, expectedReply.TxIdempotencyKey, reply.TxIdempotencyKey)
 			},
 		},
 	}

@@ -146,23 +146,19 @@ message SubmitTransactionRequest {
   optional GasConfig gas_config = 3;
 }
 
+enum TxStatus {
+  TX_STATUS_FATAL = 0;     // Transaction processing failed due to a network issue, RPC issue, or other fatal error
+  TX_STATUS_REVERTED = 1;  // Transaction was sent successfully but the smart contract execution reverted
+  TX_STATUS_SUCCESS = 2;   // Transaction was sent successfully, executed and mined into a block
+}
+
 message SubmitTransactionReply {
-  optional PendingTransaction pending_transaction = 1;
+  TxStatus tx_status = 1;
+  string tx_hash = 2;
+  string tx_idempotency_key = 3;
 }
 
 message GasConfig {
   uint64 max_gas_amount = 1;  // Maximum gas units willing to pay
   uint64 gas_unit_price = 2;  // Price per gas unit in octas
-}
-
-message PendingTransaction {
-  string hash = 1;                             // Transaction hash (hex string with 0x prefix)
-  bytes sender = 2;                            // 32-byte sender address
-  uint64 sequence_number = 3;                  // Sequence number
-  optional uint64 replay_protection_nonce = 4; // Optional nonce for replay protection
-  uint64 max_gas_amount = 5;                   // Maximum gas amount
-  uint64 gas_unit_price = 6;                   // Gas unit price
-  uint64 expiration_timestamp_secs = 7;        // Expiration timestamp in seconds
-  bytes payload = 8;                           // Transaction payload as raw bytes
-  bytes signature = 9;                         // Signature as raw bytes
 }

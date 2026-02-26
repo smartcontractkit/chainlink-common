@@ -364,35 +364,24 @@ func TestSubmitTransactionConverters(t *testing.T) {
 		require.Nil(t, roundtrip.GasConfig)
 	})
 
-	t.Run("PendingTransaction roundtrip", func(t *testing.T) {
-		senderAddr := mkBytes(typeaptos.AccountAddressLength, 0xAA)
-		nonce := uint64(999)
-		tx := &typeaptos.PendingTransaction{
-			Hash:                    "0xpending123",
-			Sender:                  [32]byte(senderAddr),
-			SequenceNumber:          42,
-			ReplayProtectionNonce:   &nonce,
-			MaxGasAmount:            10000,
-			GasUnitPrice:            200,
-			ExpirationTimestampSecs: 1234567890,
-			Payload:                 []byte{0x11, 0x22, 0x33},
-			Signature:               []byte{0xAA, 0xBB, 0xCC},
+	t.Run("SubmitTransactionReply roundtrip", func(t *testing.T) {
+		reply := &typeaptos.SubmitTransactionReply{
+			TxStatus:         typeaptos.TxSuccess,
+			TxHash:           "0xabc123",
+			TxIdempotencyKey: "key-456",
 		}
 
-		protoTx, err := conv.ConvertPendingTransactionToProto(tx)
+		protoReply, err := conv.ConvertSubmitTransactionReplyToProto(reply)
 		require.NoError(t, err)
-		require.Equal(t, "0xpending123", protoTx.Hash)
-		require.Equal(t, uint64(42), protoTx.SequenceNumber)
-		require.NotNil(t, protoTx.ReplayProtectionNonce)
-		require.Equal(t, uint64(999), *protoTx.ReplayProtectionNonce)
+		require.Equal(t, conv.TxStatus(typeaptos.TxSuccess), protoReply.TxStatus)
+		require.Equal(t, "0xabc123", protoReply.TxHash)
+		require.Equal(t, "key-456", protoReply.TxIdempotencyKey)
 
-		roundtrip, err := conv.ConvertPendingTransactionFromProto(protoTx)
+		roundtrip, err := conv.ConvertSubmitTransactionReplyFromProto(protoReply)
 		require.NoError(t, err)
-		require.Equal(t, tx.Hash, roundtrip.Hash)
-		require.True(t, bytes.Equal(senderAddr, roundtrip.Sender[:]))
-		require.Equal(t, tx.SequenceNumber, roundtrip.SequenceNumber)
-		require.NotNil(t, roundtrip.ReplayProtectionNonce)
-		require.Equal(t, nonce, *roundtrip.ReplayProtectionNonce)
+		require.Equal(t, reply.TxStatus, roundtrip.TxStatus)
+		require.Equal(t, reply.TxHash, roundtrip.TxHash)
+		require.Equal(t, reply.TxIdempotencyKey, roundtrip.TxIdempotencyKey)
 	})
 
 	t.Run("Invalid request errors", func(t *testing.T) {
@@ -500,15 +489,4 @@ func TestNilHandling(t *testing.T) {
 		require.Nil(t, result)
 	})
 
-	t.Run("ConvertPendingTransactionToProto with nil", func(t *testing.T) {
-		_, err := conv.ConvertPendingTransactionToProto(nil)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "pending transaction is nil")
-	})
-
-	t.Run("ConvertPendingTransactionFromProto with nil", func(t *testing.T) {
-		_, err := conv.ConvertPendingTransactionFromProto(nil)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "proto pending transaction is nil")
-	})
 }

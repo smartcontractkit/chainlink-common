@@ -588,17 +588,11 @@ func ConvertSubmitTransactionReplyToProto(reply *typeaptos.SubmitTransactionRepl
 		return nil, fmt.Errorf("reply is nil")
 	}
 
-	protoReply := &SubmitTransactionReply{}
-
-	if reply.PendingTransaction != nil {
-		protoPending, err := ConvertPendingTransactionToProto(reply.PendingTransaction)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert pending transaction: %w", err)
-		}
-		protoReply.PendingTransaction = protoPending
-	}
-
-	return protoReply, nil
+	return &SubmitTransactionReply{
+		TxStatus:         TxStatus(reply.TxStatus),
+		TxHash:           reply.TxHash,
+		TxIdempotencyKey: reply.TxIdempotencyKey,
+	}, nil
 }
 
 func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*typeaptos.SubmitTransactionReply, error) {
@@ -606,68 +600,9 @@ func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*typ
 		return nil, fmt.Errorf("proto reply is nil")
 	}
 
-	reply := &typeaptos.SubmitTransactionReply{}
-
-	if proto.PendingTransaction != nil {
-		pending, err := ConvertPendingTransactionFromProto(proto.PendingTransaction)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert pending transaction: %w", err)
-		}
-		reply.PendingTransaction = pending
-	}
-
-	return reply, nil
-}
-
-func ConvertPendingTransactionToProto(tx *typeaptos.PendingTransaction) (*PendingTransaction, error) {
-	if tx == nil {
-		return nil, fmt.Errorf("pending transaction is nil")
-	}
-
-	protoTx := &PendingTransaction{
-		Hash:                    tx.Hash,
-		Sender:                  tx.Sender[:],
-		SequenceNumber:          tx.SequenceNumber,
-		MaxGasAmount:            tx.MaxGasAmount,
-		GasUnitPrice:            tx.GasUnitPrice,
-		ExpirationTimestampSecs: tx.ExpirationTimestampSecs,
-		Payload:                 tx.Payload,
-		Signature:               tx.Signature,
-	}
-
-	if tx.ReplayProtectionNonce != nil {
-		protoTx.ReplayProtectionNonce = tx.ReplayProtectionNonce
-	}
-
-	return protoTx, nil
-}
-
-func ConvertPendingTransactionFromProto(proto *PendingTransaction) (*typeaptos.PendingTransaction, error) {
-	if proto == nil {
-		return nil, fmt.Errorf("proto pending transaction is nil")
-	}
-
-	if len(proto.Sender) != typeaptos.AccountAddressLength {
-		return nil, fmt.Errorf("invalid sender address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.Sender))
-	}
-
-	var sender typeaptos.AccountAddress
-	copy(sender[:], proto.Sender)
-
-	tx := &typeaptos.PendingTransaction{
-		Hash:                    proto.Hash,
-		Sender:                  sender,
-		SequenceNumber:          proto.SequenceNumber,
-		MaxGasAmount:            proto.MaxGasAmount,
-		GasUnitPrice:            proto.GasUnitPrice,
-		ExpirationTimestampSecs: proto.ExpirationTimestampSecs,
-		Payload:                 proto.Payload,
-		Signature:               proto.Signature,
-	}
-
-	if proto.ReplayProtectionNonce != nil {
-		tx.ReplayProtectionNonce = proto.ReplayProtectionNonce
-	}
-
-	return tx, nil
+	return &typeaptos.SubmitTransactionReply{
+		TxStatus:         typeaptos.TransactionStatus(proto.TxStatus),
+		TxHash:           proto.TxHash,
+		TxIdempotencyKey: proto.TxIdempotencyKey,
+	}, nil
 }

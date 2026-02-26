@@ -2,11 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v5.29.3
-// source: aptos.proto
+// source: capabilities/blockchain/aptos/v1alpha/client.proto
 
 package aptos
 
 import (
+	sdk "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	_ "github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -20,6 +22,56 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+// Transaction execution status returned by the forwarder.
+type TxStatus int32
+
+const (
+	TxStatus_TX_STATUS_FATAL   TxStatus = 0 // unrecoverable failure
+	TxStatus_TX_STATUS_ABORTED TxStatus = 1 // not executed / dropped
+	TxStatus_TX_STATUS_SUCCESS TxStatus = 2 // executed successfully
+)
+
+// Enum value maps for TxStatus.
+var (
+	TxStatus_name = map[int32]string{
+		0: "TX_STATUS_FATAL",
+		1: "TX_STATUS_ABORTED",
+		2: "TX_STATUS_SUCCESS",
+	}
+	TxStatus_value = map[string]int32{
+		"TX_STATUS_FATAL":   0,
+		"TX_STATUS_ABORTED": 1,
+		"TX_STATUS_SUCCESS": 2,
+	}
+)
+
+func (x TxStatus) Enum() *TxStatus {
+	p := new(TxStatus)
+	*p = x
+	return p
+}
+
+func (x TxStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TxStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes[0].Descriptor()
+}
+
+func (TxStatus) Type() protoreflect.EnumType {
+	return &file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes[0]
+}
+
+func (x TxStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TxStatus.Descriptor instead.
+func (TxStatus) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{0}
+}
 
 type TypeTagKind int32
 
@@ -81,11 +133,11 @@ func (x TypeTagKind) String() string {
 }
 
 func (TypeTagKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_aptos_proto_enumTypes[0].Descriptor()
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes[1].Descriptor()
 }
 
 func (TypeTagKind) Type() protoreflect.EnumType {
-	return &file_aptos_proto_enumTypes[0]
+	return &file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes[1]
 }
 
 func (x TypeTagKind) Number() protoreflect.EnumNumber {
@@ -94,7 +146,7 @@ func (x TypeTagKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TypeTagKind.Descriptor instead.
 func (TypeTagKind) EnumDescriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{1}
 }
 
 type TransactionVariant int32
@@ -145,11 +197,11 @@ func (x TransactionVariant) String() string {
 }
 
 func (TransactionVariant) Descriptor() protoreflect.EnumDescriptor {
-	return file_aptos_proto_enumTypes[1].Descriptor()
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes[2].Descriptor()
 }
 
 func (TransactionVariant) Type() protoreflect.EnumType {
-	return &file_aptos_proto_enumTypes[1]
+	return &file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes[2]
 }
 
 func (x TransactionVariant) Number() protoreflect.EnumNumber {
@@ -158,56 +210,7 @@ func (x TransactionVariant) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TransactionVariant.Descriptor instead.
 func (TransactionVariant) EnumDescriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{1}
-}
-
-type TxStatus int32
-
-const (
-	TxStatus_TX_STATUS_FATAL    TxStatus = 0 // Transaction processing failed due to a network issue, RPC issue, or other fatal error
-	TxStatus_TX_STATUS_REVERTED TxStatus = 1 // Transaction was sent successfully but the smart contract execution reverted
-	TxStatus_TX_STATUS_SUCCESS  TxStatus = 2 // Transaction was sent successfully, executed and mined into a block
-)
-
-// Enum value maps for TxStatus.
-var (
-	TxStatus_name = map[int32]string{
-		0: "TX_STATUS_FATAL",
-		1: "TX_STATUS_REVERTED",
-		2: "TX_STATUS_SUCCESS",
-	}
-	TxStatus_value = map[string]int32{
-		"TX_STATUS_FATAL":    0,
-		"TX_STATUS_REVERTED": 1,
-		"TX_STATUS_SUCCESS":  2,
-	}
-)
-
-func (x TxStatus) Enum() *TxStatus {
-	p := new(TxStatus)
-	*p = x
-	return p
-}
-
-func (x TxStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (TxStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_aptos_proto_enumTypes[2].Descriptor()
-}
-
-func (TxStatus) Type() protoreflect.EnumType {
-	return &file_aptos_proto_enumTypes[2]
-}
-
-func (x TxStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use TxStatus.Descriptor instead.
-func (TxStatus) EnumDescriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{2}
 }
 
 type AccountAPTBalanceRequest struct {
@@ -219,7 +222,7 @@ type AccountAPTBalanceRequest struct {
 
 func (x *AccountAPTBalanceRequest) Reset() {
 	*x = AccountAPTBalanceRequest{}
-	mi := &file_aptos_proto_msgTypes[0]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -231,7 +234,7 @@ func (x *AccountAPTBalanceRequest) String() string {
 func (*AccountAPTBalanceRequest) ProtoMessage() {}
 
 func (x *AccountAPTBalanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[0]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -244,7 +247,7 @@ func (x *AccountAPTBalanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountAPTBalanceRequest.ProtoReflect.Descriptor instead.
 func (*AccountAPTBalanceRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AccountAPTBalanceRequest) GetAddress() []byte {
@@ -263,7 +266,7 @@ type AccountAPTBalanceReply struct {
 
 func (x *AccountAPTBalanceReply) Reset() {
 	*x = AccountAPTBalanceReply{}
-	mi := &file_aptos_proto_msgTypes[1]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -275,7 +278,7 @@ func (x *AccountAPTBalanceReply) String() string {
 func (*AccountAPTBalanceReply) ProtoMessage() {}
 
 func (x *AccountAPTBalanceReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[1]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -288,7 +291,7 @@ func (x *AccountAPTBalanceReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountAPTBalanceReply.ProtoReflect.Descriptor instead.
 func (*AccountAPTBalanceReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AccountAPTBalanceReply) GetValue() uint64 {
@@ -307,7 +310,7 @@ type ViewRequest struct {
 
 func (x *ViewRequest) Reset() {
 	*x = ViewRequest{}
-	mi := &file_aptos_proto_msgTypes[2]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -319,7 +322,7 @@ func (x *ViewRequest) String() string {
 func (*ViewRequest) ProtoMessage() {}
 
 func (x *ViewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[2]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -332,7 +335,7 @@ func (x *ViewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ViewRequest.ProtoReflect.Descriptor instead.
 func (*ViewRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ViewRequest) GetPayload() *ViewPayload {
@@ -351,7 +354,7 @@ type ViewReply struct {
 
 func (x *ViewReply) Reset() {
 	*x = ViewReply{}
-	mi := &file_aptos_proto_msgTypes[3]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -363,7 +366,7 @@ func (x *ViewReply) String() string {
 func (*ViewReply) ProtoMessage() {}
 
 func (x *ViewReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[3]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -376,7 +379,7 @@ func (x *ViewReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ViewReply.ProtoReflect.Descriptor instead.
 func (*ViewReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ViewReply) GetData() []byte {
@@ -398,7 +401,7 @@ type ViewPayload struct {
 
 func (x *ViewPayload) Reset() {
 	*x = ViewPayload{}
-	mi := &file_aptos_proto_msgTypes[4]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -410,7 +413,7 @@ func (x *ViewPayload) String() string {
 func (*ViewPayload) ProtoMessage() {}
 
 func (x *ViewPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[4]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -423,7 +426,7 @@ func (x *ViewPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ViewPayload.ProtoReflect.Descriptor instead.
 func (*ViewPayload) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{4}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ViewPayload) GetModule() *ModuleID {
@@ -464,7 +467,7 @@ type ModuleID struct {
 
 func (x *ModuleID) Reset() {
 	*x = ModuleID{}
-	mi := &file_aptos_proto_msgTypes[5]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +479,7 @@ func (x *ModuleID) String() string {
 func (*ModuleID) ProtoMessage() {}
 
 func (x *ModuleID) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[5]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,7 +492,7 @@ func (x *ModuleID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModuleID.ProtoReflect.Descriptor instead.
 func (*ModuleID) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{5}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ModuleID) GetAddress() []byte {
@@ -508,7 +511,7 @@ func (x *ModuleID) GetName() string {
 
 type TypeTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Kind  TypeTagKind            `protobuf:"varint,1,opt,name=kind,proto3,enum=loop.aptos.TypeTagKind" json:"kind,omitempty"`
+	Kind  TypeTagKind            `protobuf:"varint,1,opt,name=kind,proto3,enum=capabilities.blockchain.aptos.v1alpha.TypeTagKind" json:"kind,omitempty"`
 	// Types that are valid to be assigned to Value:
 	//
 	//	*TypeTag_Vector
@@ -521,7 +524,7 @@ type TypeTag struct {
 
 func (x *TypeTag) Reset() {
 	*x = TypeTag{}
-	mi := &file_aptos_proto_msgTypes[6]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +536,7 @@ func (x *TypeTag) String() string {
 func (*TypeTag) ProtoMessage() {}
 
 func (x *TypeTag) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[6]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +549,7 @@ func (x *TypeTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TypeTag.ProtoReflect.Descriptor instead.
 func (*TypeTag) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{6}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TypeTag) GetKind() TypeTagKind {
@@ -621,7 +624,7 @@ type VectorTag struct {
 
 func (x *VectorTag) Reset() {
 	*x = VectorTag{}
-	mi := &file_aptos_proto_msgTypes[7]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -633,7 +636,7 @@ func (x *VectorTag) String() string {
 func (*VectorTag) ProtoMessage() {}
 
 func (x *VectorTag) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[7]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -646,7 +649,7 @@ func (x *VectorTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VectorTag.ProtoReflect.Descriptor instead.
 func (*VectorTag) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{7}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *VectorTag) GetElementType() *TypeTag {
@@ -668,7 +671,7 @@ type StructTag struct {
 
 func (x *StructTag) Reset() {
 	*x = StructTag{}
-	mi := &file_aptos_proto_msgTypes[8]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -680,7 +683,7 @@ func (x *StructTag) String() string {
 func (*StructTag) ProtoMessage() {}
 
 func (x *StructTag) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[8]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -693,7 +696,7 @@ func (x *StructTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StructTag.ProtoReflect.Descriptor instead.
 func (*StructTag) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{8}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StructTag) GetAddress() []byte {
@@ -733,7 +736,7 @@ type GenericTag struct {
 
 func (x *GenericTag) Reset() {
 	*x = GenericTag{}
-	mi := &file_aptos_proto_msgTypes[9]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -745,7 +748,7 @@ func (x *GenericTag) String() string {
 func (*GenericTag) ProtoMessage() {}
 
 func (x *GenericTag) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[9]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -758,7 +761,7 @@ func (x *GenericTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenericTag.ProtoReflect.Descriptor instead.
 func (*GenericTag) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{9}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GenericTag) GetIndex() uint32 {
@@ -777,7 +780,7 @@ type TransactionByHashRequest struct {
 
 func (x *TransactionByHashRequest) Reset() {
 	*x = TransactionByHashRequest{}
-	mi := &file_aptos_proto_msgTypes[10]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -789,7 +792,7 @@ func (x *TransactionByHashRequest) String() string {
 func (*TransactionByHashRequest) ProtoMessage() {}
 
 func (x *TransactionByHashRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[10]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -802,7 +805,7 @@ func (x *TransactionByHashRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionByHashRequest.ProtoReflect.Descriptor instead.
 func (*TransactionByHashRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{10}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *TransactionByHashRequest) GetHash() string {
@@ -821,7 +824,7 @@ type TransactionByHashReply struct {
 
 func (x *TransactionByHashReply) Reset() {
 	*x = TransactionByHashReply{}
-	mi := &file_aptos_proto_msgTypes[11]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -833,7 +836,7 @@ func (x *TransactionByHashReply) String() string {
 func (*TransactionByHashReply) ProtoMessage() {}
 
 func (x *TransactionByHashReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[11]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -846,7 +849,7 @@ func (x *TransactionByHashReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionByHashReply.ProtoReflect.Descriptor instead.
 func (*TransactionByHashReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{11}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *TransactionByHashReply) GetTransaction() *Transaction {
@@ -858,7 +861,7 @@ func (x *TransactionByHashReply) GetTransaction() *Transaction {
 
 type Transaction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          TransactionVariant     `protobuf:"varint,1,opt,name=type,proto3,enum=loop.aptos.TransactionVariant" json:"type,omitempty"`
+	Type          TransactionVariant     `protobuf:"varint,1,opt,name=type,proto3,enum=capabilities.blockchain.aptos.v1alpha.TransactionVariant" json:"type,omitempty"`
 	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
 	Version       *uint64                `protobuf:"varint,3,opt,name=version,proto3,oneof" json:"version,omitempty"` // nil for pending transactions
 	Success       *bool                  `protobuf:"varint,4,opt,name=success,proto3,oneof" json:"success,omitempty"` // nil for pending/genesis transactions
@@ -869,7 +872,7 @@ type Transaction struct {
 
 func (x *Transaction) Reset() {
 	*x = Transaction{}
-	mi := &file_aptos_proto_msgTypes[12]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -881,7 +884,7 @@ func (x *Transaction) String() string {
 func (*Transaction) ProtoMessage() {}
 
 func (x *Transaction) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[12]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -894,7 +897,7 @@ func (x *Transaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{12}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Transaction) GetType() TransactionVariant {
@@ -943,7 +946,7 @@ type AccountTransactionsRequest struct {
 
 func (x *AccountTransactionsRequest) Reset() {
 	*x = AccountTransactionsRequest{}
-	mi := &file_aptos_proto_msgTypes[13]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -955,7 +958,7 @@ func (x *AccountTransactionsRequest) String() string {
 func (*AccountTransactionsRequest) ProtoMessage() {}
 
 func (x *AccountTransactionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[13]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -968,7 +971,7 @@ func (x *AccountTransactionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountTransactionsRequest.ProtoReflect.Descriptor instead.
 func (*AccountTransactionsRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{13}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AccountTransactionsRequest) GetAddress() []byte {
@@ -1001,7 +1004,7 @@ type AccountTransactionsReply struct {
 
 func (x *AccountTransactionsReply) Reset() {
 	*x = AccountTransactionsReply{}
-	mi := &file_aptos_proto_msgTypes[14]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1013,7 +1016,7 @@ func (x *AccountTransactionsReply) String() string {
 func (*AccountTransactionsReply) ProtoMessage() {}
 
 func (x *AccountTransactionsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[14]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1026,7 +1029,7 @@ func (x *AccountTransactionsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountTransactionsReply.ProtoReflect.Descriptor instead.
 func (*AccountTransactionsReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{14}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *AccountTransactionsReply) GetTransactions() []*Transaction {
@@ -1047,7 +1050,7 @@ type SubmitTransactionRequest struct {
 
 func (x *SubmitTransactionRequest) Reset() {
 	*x = SubmitTransactionRequest{}
-	mi := &file_aptos_proto_msgTypes[15]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1059,7 +1062,7 @@ func (x *SubmitTransactionRequest) String() string {
 func (*SubmitTransactionRequest) ProtoMessage() {}
 
 func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[15]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1072,7 +1075,7 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{15}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SubmitTransactionRequest) GetReceiverModuleId() *ModuleID {
@@ -1098,7 +1101,7 @@ func (x *SubmitTransactionRequest) GetGasConfig() *GasConfig {
 
 type SubmitTransactionReply struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	TxStatus         TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.aptos.TxStatus" json:"tx_status,omitempty"`
+	TxStatus         TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=capabilities.blockchain.aptos.v1alpha.TxStatus" json:"tx_status,omitempty"`
 	TxHash           string                 `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -1107,7 +1110,7 @@ type SubmitTransactionReply struct {
 
 func (x *SubmitTransactionReply) Reset() {
 	*x = SubmitTransactionReply{}
-	mi := &file_aptos_proto_msgTypes[16]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1119,7 +1122,7 @@ func (x *SubmitTransactionReply) String() string {
 func (*SubmitTransactionReply) ProtoMessage() {}
 
 func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[16]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1132,7 +1135,7 @@ func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionReply.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{16}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SubmitTransactionReply) GetTxStatus() TxStatus {
@@ -1166,7 +1169,7 @@ type GasConfig struct {
 
 func (x *GasConfig) Reset() {
 	*x = GasConfig{}
-	mi := &file_aptos_proto_msgTypes[17]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1178,7 +1181,7 @@ func (x *GasConfig) String() string {
 func (*GasConfig) ProtoMessage() {}
 
 func (x *GasConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[17]
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1191,7 +1194,7 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
 func (*GasConfig) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{17}
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GasConfig) GetMaxGasAmount() uint64 {
@@ -1208,52 +1211,179 @@ func (x *GasConfig) GetGasUnitPrice() uint64 {
 	return 0
 }
 
-var File_aptos_proto protoreflect.FileDescriptor
+type WriteReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Receiver      []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`                          // 32-byte Aptos account address of the receiver module
+	GasConfig     *GasConfig             `protobuf:"bytes,2,opt,name=gas_config,json=gasConfig,proto3,oneof" json:"gas_config,omitempty"` // optional gas configuration
+	Report        *sdk.ReportResponse    `protobuf:"bytes,3,opt,name=report,proto3" json:"report,omitempty"`                              // signed report from consensus
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_aptos_proto_rawDesc = "" +
+func (x *WriteReportRequest) Reset() {
+	*x = WriteReportRequest{}
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteReportRequest) ProtoMessage() {}
+
+func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
+func (*WriteReportRequest) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *WriteReportRequest) GetReceiver() []byte {
+	if x != nil {
+		return x.Receiver
+	}
+	return nil
+}
+
+func (x *WriteReportRequest) GetGasConfig() *GasConfig {
+	if x != nil {
+		return x.GasConfig
+	}
+	return nil
+}
+
+func (x *WriteReportRequest) GetReport() *sdk.ReportResponse {
+	if x != nil {
+		return x.Report
+	}
+	return nil
+}
+
+type WriteReportReply struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TxStatus       TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=capabilities.blockchain.aptos.v1alpha.TxStatus" json:"tx_status,omitempty"`
+	TxHash         *string                `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3,oneof" json:"tx_hash,omitempty"`                          // transaction hash (hex string with 0x prefix)
+	TransactionFee *uint64                `protobuf:"varint,3,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // gas used in octas
+	ErrorMessage   *string                `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *WriteReportReply) Reset() {
+	*x = WriteReportReply{}
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteReportReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteReportReply) ProtoMessage() {}
+
+func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
+func (*WriteReportReply) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *WriteReportReply) GetTxStatus() TxStatus {
+	if x != nil {
+		return x.TxStatus
+	}
+	return TxStatus_TX_STATUS_FATAL
+}
+
+func (x *WriteReportReply) GetTxHash() string {
+	if x != nil && x.TxHash != nil {
+		return *x.TxHash
+	}
+	return ""
+}
+
+func (x *WriteReportReply) GetTransactionFee() uint64 {
+	if x != nil && x.TransactionFee != nil {
+		return *x.TransactionFee
+	}
+	return 0
+}
+
+func (x *WriteReportReply) GetErrorMessage() string {
+	if x != nil && x.ErrorMessage != nil {
+		return *x.ErrorMessage
+	}
+	return ""
+}
+
+var File_capabilities_blockchain_aptos_v1alpha_client_proto protoreflect.FileDescriptor
+
+const file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"\vaptos.proto\x12\n" +
-	"loop.aptos\"4\n" +
+	"2capabilities/blockchain/aptos/v1alpha/client.proto\x12%capabilities.blockchain.aptos.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"4\n" +
 	"\x18AccountAPTBalanceRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\".\n" +
 	"\x16AccountAPTBalanceReply\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\x04R\x05value\"@\n" +
-	"\vViewRequest\x121\n" +
-	"\apayload\x18\x01 \x01(\v2\x17.loop.aptos.ViewPayloadR\apayload\"\x1f\n" +
+	"\x05value\x18\x01 \x01(\x04R\x05value\"[\n" +
+	"\vViewRequest\x12L\n" +
+	"\apayload\x18\x01 \x01(\v22.capabilities.blockchain.aptos.v1alpha.ViewPayloadR\apayload\"\x1f\n" +
 	"\tViewReply\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\fR\x04data\"\x9d\x01\n" +
-	"\vViewPayload\x12,\n" +
-	"\x06module\x18\x01 \x01(\v2\x14.loop.aptos.ModuleIDR\x06module\x12\x1a\n" +
-	"\bfunction\x18\x02 \x01(\tR\bfunction\x120\n" +
-	"\targ_types\x18\x03 \x03(\v2\x13.loop.aptos.TypeTagR\bargTypes\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\"\xd3\x01\n" +
+	"\vViewPayload\x12G\n" +
+	"\x06module\x18\x01 \x01(\v2/.capabilities.blockchain.aptos.v1alpha.ModuleIDR\x06module\x12\x1a\n" +
+	"\bfunction\x18\x02 \x01(\tR\bfunction\x12K\n" +
+	"\targ_types\x18\x03 \x03(\v2..capabilities.blockchain.aptos.v1alpha.TypeTagR\bargTypes\x12\x12\n" +
 	"\x04args\x18\x04 \x03(\fR\x04args\"8\n" +
 	"\bModuleID\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xd5\x01\n" +
-	"\aTypeTag\x12+\n" +
-	"\x04kind\x18\x01 \x01(\x0e2\x17.loop.aptos.TypeTagKindR\x04kind\x12/\n" +
-	"\x06vector\x18\x02 \x01(\v2\x15.loop.aptos.VectorTagH\x00R\x06vector\x12/\n" +
-	"\x06struct\x18\x03 \x01(\v2\x15.loop.aptos.StructTagH\x00R\x06struct\x122\n" +
-	"\ageneric\x18\x04 \x01(\v2\x16.loop.aptos.GenericTagH\x00R\agenericB\a\n" +
-	"\x05value\"C\n" +
-	"\tVectorTag\x126\n" +
-	"\felement_type\x18\x01 \x01(\v2\x13.loop.aptos.TypeTagR\velementType\"\x87\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xc1\x02\n" +
+	"\aTypeTag\x12F\n" +
+	"\x04kind\x18\x01 \x01(\x0e22.capabilities.blockchain.aptos.v1alpha.TypeTagKindR\x04kind\x12J\n" +
+	"\x06vector\x18\x02 \x01(\v20.capabilities.blockchain.aptos.v1alpha.VectorTagH\x00R\x06vector\x12J\n" +
+	"\x06struct\x18\x03 \x01(\v20.capabilities.blockchain.aptos.v1alpha.StructTagH\x00R\x06struct\x12M\n" +
+	"\ageneric\x18\x04 \x01(\v21.capabilities.blockchain.aptos.v1alpha.GenericTagH\x00R\agenericB\a\n" +
+	"\x05value\"^\n" +
+	"\tVectorTag\x12Q\n" +
+	"\felement_type\x18\x01 \x01(\v2..capabilities.blockchain.aptos.v1alpha.TypeTagR\velementType\"\xa2\x01\n" +
 	"\tStructTag\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\x12\x16\n" +
 	"\x06module\x18\x02 \x01(\tR\x06module\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x124\n" +
-	"\vtype_params\x18\x04 \x03(\v2\x13.loop.aptos.TypeTagR\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12O\n" +
+	"\vtype_params\x18\x04 \x03(\v2..capabilities.blockchain.aptos.v1alpha.TypeTagR\n" +
 	"typeParams\"\"\n" +
 	"\n" +
 	"GenericTag\x12\x14\n" +
 	"\x05index\x18\x01 \x01(\rR\x05index\".\n" +
 	"\x18TransactionByHashRequest\x12\x12\n" +
-	"\x04hash\x18\x01 \x01(\tR\x04hash\"h\n" +
-	"\x16TransactionByHashReply\x12>\n" +
-	"\vtransaction\x18\x01 \x01(\v2\x17.loop.aptos.TransactionH\x00R\vtransaction\x88\x01\x01B\x0e\n" +
-	"\f_transaction\"\xbf\x01\n" +
-	"\vTransaction\x122\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x1e.loop.aptos.TransactionVariantR\x04type\x12\x12\n" +
+	"\x04hash\x18\x01 \x01(\tR\x04hash\"\x83\x01\n" +
+	"\x16TransactionByHashReply\x12Y\n" +
+	"\vtransaction\x18\x01 \x01(\v22.capabilities.blockchain.aptos.v1alpha.TransactionH\x00R\vtransaction\x88\x01\x01B\x0e\n" +
+	"\f_transaction\"\xda\x01\n" +
+	"\vTransaction\x12M\n" +
+	"\x04type\x18\x01 \x01(\x0e29.capabilities.blockchain.aptos.v1alpha.TransactionVariantR\x04type\x12\x12\n" +
 	"\x04hash\x18\x02 \x01(\tR\x04hash\x12\x1d\n" +
 	"\aversion\x18\x03 \x01(\x04H\x00R\aversion\x88\x01\x01\x12\x1d\n" +
 	"\asuccess\x18\x04 \x01(\bH\x01R\asuccess\x88\x01\x01\x12\x12\n" +
@@ -1267,22 +1397,41 @@ const file_aptos_proto_rawDesc = "" +
 	"\x05start\x18\x02 \x01(\x04H\x00R\x05start\x88\x01\x01\x12\x19\n" +
 	"\x05limit\x18\x03 \x01(\x04H\x01R\x05limit\x88\x01\x01B\b\n" +
 	"\x06_startB\b\n" +
-	"\x06_limit\"W\n" +
-	"\x18AccountTransactionsReply\x12;\n" +
-	"\ftransactions\x18\x01 \x03(\v2\x17.loop.aptos.TransactionR\ftransactions\"\xd1\x01\n" +
-	"\x18SubmitTransactionRequest\x12B\n" +
-	"\x12receiver_module_id\x18\x01 \x01(\v2\x14.loop.aptos.ModuleIDR\x10receiverModuleId\x12'\n" +
-	"\x0fencoded_payload\x18\x02 \x01(\fR\x0eencodedPayload\x129\n" +
+	"\x06_limit\"r\n" +
+	"\x18AccountTransactionsReply\x12V\n" +
+	"\ftransactions\x18\x01 \x03(\v22.capabilities.blockchain.aptos.v1alpha.TransactionR\ftransactions\"\x87\x02\n" +
+	"\x18SubmitTransactionRequest\x12]\n" +
+	"\x12receiver_module_id\x18\x01 \x01(\v2/.capabilities.blockchain.aptos.v1alpha.ModuleIDR\x10receiverModuleId\x12'\n" +
+	"\x0fencoded_payload\x18\x02 \x01(\fR\x0eencodedPayload\x12T\n" +
 	"\n" +
-	"gas_config\x18\x03 \x01(\v2\x15.loop.aptos.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
-	"\v_gas_config\"\x92\x01\n" +
-	"\x16SubmitTransactionReply\x121\n" +
-	"\ttx_status\x18\x01 \x01(\x0e2\x14.loop.aptos.TxStatusR\btxStatus\x12\x17\n" +
+	"gas_config\x18\x03 \x01(\v20.capabilities.blockchain.aptos.v1alpha.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
+	"\v_gas_config\"\xad\x01\n" +
+	"\x16SubmitTransactionReply\x12L\n" +
+	"\ttx_status\x18\x01 \x01(\x0e2/.capabilities.blockchain.aptos.v1alpha.TxStatusR\btxStatus\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +
 	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\"W\n" +
 	"\tGasConfig\x12$\n" +
 	"\x0emax_gas_amount\x18\x01 \x01(\x04R\fmaxGasAmount\x12$\n" +
-	"\x0egas_unit_price\x18\x02 \x01(\x04R\fgasUnitPrice*\xb4\x02\n" +
+	"\x0egas_unit_price\x18\x02 \x01(\x04R\fgasUnitPrice\"\xca\x01\n" +
+	"\x12WriteReportRequest\x12\x1a\n" +
+	"\breceiver\x18\x01 \x01(\fR\breceiver\x12T\n" +
+	"\n" +
+	"gas_config\x18\x02 \x01(\v20.capabilities.blockchain.aptos.v1alpha.GasConfigH\x00R\tgasConfig\x88\x01\x01\x123\n" +
+	"\x06report\x18\x03 \x01(\v2\x1b.sdk.v1alpha.ReportResponseR\x06reportB\r\n" +
+	"\v_gas_config\"\x88\x02\n" +
+	"\x10WriteReportReply\x12L\n" +
+	"\ttx_status\x18\x01 \x01(\x0e2/.capabilities.blockchain.aptos.v1alpha.TxStatusR\btxStatus\x12\x1c\n" +
+	"\atx_hash\x18\x02 \x01(\tH\x00R\x06txHash\x88\x01\x01\x12,\n" +
+	"\x0ftransaction_fee\x18\x03 \x01(\x04H\x01R\x0etransactionFee\x88\x01\x01\x12(\n" +
+	"\rerror_message\x18\x04 \x01(\tH\x02R\ferrorMessage\x88\x01\x01B\n" +
+	"\n" +
+	"\b_tx_hashB\x12\n" +
+	"\x10_transaction_feeB\x10\n" +
+	"\x0e_error_message*M\n" +
+	"\bTxStatus\x12\x13\n" +
+	"\x0fTX_STATUS_FATAL\x10\x00\x12\x15\n" +
+	"\x11TX_STATUS_ABORTED\x10\x01\x12\x15\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x02*\xb4\x02\n" +
 	"\vTypeTagKind\x12\x16\n" +
 	"\x12TYPE_TAG_KIND_BOOL\x10\x00\x12\x14\n" +
 	"\x10TYPE_TAG_KIND_U8\x10\x01\x12\x15\n" +
@@ -1305,118 +1454,128 @@ const file_aptos_proto_rawDesc = "" +
 	"\"TRANSACTION_VARIANT_BLOCK_EPILOGUE\x10\x04\x12(\n" +
 	"$TRANSACTION_VARIANT_STATE_CHECKPOINT\x10\x05\x12!\n" +
 	"\x1dTRANSACTION_VARIANT_VALIDATOR\x10\x06\x12\x1f\n" +
-	"\x1bTRANSACTION_VARIANT_UNKNOWN\x10\a*N\n" +
-	"\bTxStatus\x12\x13\n" +
-	"\x0fTX_STATUS_FATAL\x10\x00\x12\x16\n" +
-	"\x12TX_STATUS_REVERTED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\xc1\x03\n" +
-	"\x05Aptos\x12]\n" +
-	"\x11AccountAPTBalance\x12$.loop.aptos.AccountAPTBalanceRequest\x1a\".loop.aptos.AccountAPTBalanceReply\x126\n" +
-	"\x04View\x12\x17.loop.aptos.ViewRequest\x1a\x15.loop.aptos.ViewReply\x12]\n" +
-	"\x11TransactionByHash\x12$.loop.aptos.TransactionByHashRequest\x1a\".loop.aptos.TransactionByHashReply\x12c\n" +
-	"\x13AccountTransactions\x12&.loop.aptos.AccountTransactionsRequest\x1a$.loop.aptos.AccountTransactionsReply\x12]\n" +
-	"\x11SubmitTransaction\x12$.loop.aptos.SubmitTransactionRequest\x1a\".loop.aptos.SubmitTransactionReplyB?Z=github.com/smartcontractkit/chainlink-common/pkg/chains/aptosb\x06proto3"
+	"\x1bTRANSACTION_VARIANT_UNKNOWN\x10\a2\xa2\x06\n" +
+	"\x06Client\x12\x93\x01\n" +
+	"\x11AccountAPTBalance\x12?.capabilities.blockchain.aptos.v1alpha.AccountAPTBalanceRequest\x1a=.capabilities.blockchain.aptos.v1alpha.AccountAPTBalanceReply\x12l\n" +
+	"\x04View\x122.capabilities.blockchain.aptos.v1alpha.ViewRequest\x1a0.capabilities.blockchain.aptos.v1alpha.ViewReply\x12\x93\x01\n" +
+	"\x11TransactionByHash\x12?.capabilities.blockchain.aptos.v1alpha.TransactionByHashRequest\x1a=.capabilities.blockchain.aptos.v1alpha.TransactionByHashReply\x12\x99\x01\n" +
+	"\x13AccountTransactions\x12A.capabilities.blockchain.aptos.v1alpha.AccountTransactionsRequest\x1a?.capabilities.blockchain.aptos.v1alpha.AccountTransactionsReply\x12\x81\x01\n" +
+	"\vWriteReport\x129.capabilities.blockchain.aptos.v1alpha.WriteReportRequest\x1a7.capabilities.blockchain.aptos.v1alpha.WriteReportReply\x1a^\x82\xb5\x18Z\b\x01\x12\vaptos@1.0.0\x1aI\n" +
+	"\rChainSelector\x128\x126\n" +
+	"\x19\n" +
+	"\raptos-mainnet\x10\ued42\x90\x9b\x99\xbd\xe6A\n" +
+	"\x19\n" +
+	"\raptos-testnet\x10\x95҆\x9e\xe3\xfd\x94\xa8\n" +
+	"b\x06proto3"
 
 var (
-	file_aptos_proto_rawDescOnce sync.Once
-	file_aptos_proto_rawDescData []byte
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescOnce sync.Once
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescData []byte
 )
 
-func file_aptos_proto_rawDescGZIP() []byte {
-	file_aptos_proto_rawDescOnce.Do(func() {
-		file_aptos_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_aptos_proto_rawDesc), len(file_aptos_proto_rawDesc)))
+func file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescGZIP() []byte {
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescOnce.Do(func() {
+		file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDesc), len(file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDesc)))
 	})
-	return file_aptos_proto_rawDescData
+	return file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDescData
 }
 
-var file_aptos_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_aptos_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
-var file_aptos_proto_goTypes = []any{
-	(TypeTagKind)(0),                   // 0: loop.aptos.TypeTagKind
-	(TransactionVariant)(0),            // 1: loop.aptos.TransactionVariant
-	(TxStatus)(0),                      // 2: loop.aptos.TxStatus
-	(*AccountAPTBalanceRequest)(nil),   // 3: loop.aptos.AccountAPTBalanceRequest
-	(*AccountAPTBalanceReply)(nil),     // 4: loop.aptos.AccountAPTBalanceReply
-	(*ViewRequest)(nil),                // 5: loop.aptos.ViewRequest
-	(*ViewReply)(nil),                  // 6: loop.aptos.ViewReply
-	(*ViewPayload)(nil),                // 7: loop.aptos.ViewPayload
-	(*ModuleID)(nil),                   // 8: loop.aptos.ModuleID
-	(*TypeTag)(nil),                    // 9: loop.aptos.TypeTag
-	(*VectorTag)(nil),                  // 10: loop.aptos.VectorTag
-	(*StructTag)(nil),                  // 11: loop.aptos.StructTag
-	(*GenericTag)(nil),                 // 12: loop.aptos.GenericTag
-	(*TransactionByHashRequest)(nil),   // 13: loop.aptos.TransactionByHashRequest
-	(*TransactionByHashReply)(nil),     // 14: loop.aptos.TransactionByHashReply
-	(*Transaction)(nil),                // 15: loop.aptos.Transaction
-	(*AccountTransactionsRequest)(nil), // 16: loop.aptos.AccountTransactionsRequest
-	(*AccountTransactionsReply)(nil),   // 17: loop.aptos.AccountTransactionsReply
-	(*SubmitTransactionRequest)(nil),   // 18: loop.aptos.SubmitTransactionRequest
-	(*SubmitTransactionReply)(nil),     // 19: loop.aptos.SubmitTransactionReply
-	(*GasConfig)(nil),                  // 20: loop.aptos.GasConfig
+var file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_capabilities_blockchain_aptos_v1alpha_client_proto_goTypes = []any{
+	(TxStatus)(0),                      // 0: capabilities.blockchain.aptos.v1alpha.TxStatus
+	(TypeTagKind)(0),                   // 1: capabilities.blockchain.aptos.v1alpha.TypeTagKind
+	(TransactionVariant)(0),            // 2: capabilities.blockchain.aptos.v1alpha.TransactionVariant
+	(*AccountAPTBalanceRequest)(nil),   // 3: capabilities.blockchain.aptos.v1alpha.AccountAPTBalanceRequest
+	(*AccountAPTBalanceReply)(nil),     // 4: capabilities.blockchain.aptos.v1alpha.AccountAPTBalanceReply
+	(*ViewRequest)(nil),                // 5: capabilities.blockchain.aptos.v1alpha.ViewRequest
+	(*ViewReply)(nil),                  // 6: capabilities.blockchain.aptos.v1alpha.ViewReply
+	(*ViewPayload)(nil),                // 7: capabilities.blockchain.aptos.v1alpha.ViewPayload
+	(*ModuleID)(nil),                   // 8: capabilities.blockchain.aptos.v1alpha.ModuleID
+	(*TypeTag)(nil),                    // 9: capabilities.blockchain.aptos.v1alpha.TypeTag
+	(*VectorTag)(nil),                  // 10: capabilities.blockchain.aptos.v1alpha.VectorTag
+	(*StructTag)(nil),                  // 11: capabilities.blockchain.aptos.v1alpha.StructTag
+	(*GenericTag)(nil),                 // 12: capabilities.blockchain.aptos.v1alpha.GenericTag
+	(*TransactionByHashRequest)(nil),   // 13: capabilities.blockchain.aptos.v1alpha.TransactionByHashRequest
+	(*TransactionByHashReply)(nil),     // 14: capabilities.blockchain.aptos.v1alpha.TransactionByHashReply
+	(*Transaction)(nil),                // 15: capabilities.blockchain.aptos.v1alpha.Transaction
+	(*AccountTransactionsRequest)(nil), // 16: capabilities.blockchain.aptos.v1alpha.AccountTransactionsRequest
+	(*AccountTransactionsReply)(nil),   // 17: capabilities.blockchain.aptos.v1alpha.AccountTransactionsReply
+	(*SubmitTransactionRequest)(nil),   // 18: capabilities.blockchain.aptos.v1alpha.SubmitTransactionRequest
+	(*SubmitTransactionReply)(nil),     // 19: capabilities.blockchain.aptos.v1alpha.SubmitTransactionReply
+	(*GasConfig)(nil),                  // 20: capabilities.blockchain.aptos.v1alpha.GasConfig
+	(*WriteReportRequest)(nil),         // 21: capabilities.blockchain.aptos.v1alpha.WriteReportRequest
+	(*WriteReportReply)(nil),           // 22: capabilities.blockchain.aptos.v1alpha.WriteReportReply
+	(*sdk.ReportResponse)(nil),         // 23: sdk.v1alpha.ReportResponse
 }
-var file_aptos_proto_depIdxs = []int32{
-	7,  // 0: loop.aptos.ViewRequest.payload:type_name -> loop.aptos.ViewPayload
-	8,  // 1: loop.aptos.ViewPayload.module:type_name -> loop.aptos.ModuleID
-	9,  // 2: loop.aptos.ViewPayload.arg_types:type_name -> loop.aptos.TypeTag
-	0,  // 3: loop.aptos.TypeTag.kind:type_name -> loop.aptos.TypeTagKind
-	10, // 4: loop.aptos.TypeTag.vector:type_name -> loop.aptos.VectorTag
-	11, // 5: loop.aptos.TypeTag.struct:type_name -> loop.aptos.StructTag
-	12, // 6: loop.aptos.TypeTag.generic:type_name -> loop.aptos.GenericTag
-	9,  // 7: loop.aptos.VectorTag.element_type:type_name -> loop.aptos.TypeTag
-	9,  // 8: loop.aptos.StructTag.type_params:type_name -> loop.aptos.TypeTag
-	15, // 9: loop.aptos.TransactionByHashReply.transaction:type_name -> loop.aptos.Transaction
-	1,  // 10: loop.aptos.Transaction.type:type_name -> loop.aptos.TransactionVariant
-	15, // 11: loop.aptos.AccountTransactionsReply.transactions:type_name -> loop.aptos.Transaction
-	8,  // 12: loop.aptos.SubmitTransactionRequest.receiver_module_id:type_name -> loop.aptos.ModuleID
-	20, // 13: loop.aptos.SubmitTransactionRequest.gas_config:type_name -> loop.aptos.GasConfig
-	2,  // 14: loop.aptos.SubmitTransactionReply.tx_status:type_name -> loop.aptos.TxStatus
-	3,  // 15: loop.aptos.Aptos.AccountAPTBalance:input_type -> loop.aptos.AccountAPTBalanceRequest
-	5,  // 16: loop.aptos.Aptos.View:input_type -> loop.aptos.ViewRequest
-	13, // 17: loop.aptos.Aptos.TransactionByHash:input_type -> loop.aptos.TransactionByHashRequest
-	16, // 18: loop.aptos.Aptos.AccountTransactions:input_type -> loop.aptos.AccountTransactionsRequest
-	18, // 19: loop.aptos.Aptos.SubmitTransaction:input_type -> loop.aptos.SubmitTransactionRequest
-	4,  // 20: loop.aptos.Aptos.AccountAPTBalance:output_type -> loop.aptos.AccountAPTBalanceReply
-	6,  // 21: loop.aptos.Aptos.View:output_type -> loop.aptos.ViewReply
-	14, // 22: loop.aptos.Aptos.TransactionByHash:output_type -> loop.aptos.TransactionByHashReply
-	17, // 23: loop.aptos.Aptos.AccountTransactions:output_type -> loop.aptos.AccountTransactionsReply
-	19, // 24: loop.aptos.Aptos.SubmitTransaction:output_type -> loop.aptos.SubmitTransactionReply
-	20, // [20:25] is the sub-list for method output_type
-	15, // [15:20] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+var file_capabilities_blockchain_aptos_v1alpha_client_proto_depIdxs = []int32{
+	7,  // 0: capabilities.blockchain.aptos.v1alpha.ViewRequest.payload:type_name -> capabilities.blockchain.aptos.v1alpha.ViewPayload
+	8,  // 1: capabilities.blockchain.aptos.v1alpha.ViewPayload.module:type_name -> capabilities.blockchain.aptos.v1alpha.ModuleID
+	9,  // 2: capabilities.blockchain.aptos.v1alpha.ViewPayload.arg_types:type_name -> capabilities.blockchain.aptos.v1alpha.TypeTag
+	1,  // 3: capabilities.blockchain.aptos.v1alpha.TypeTag.kind:type_name -> capabilities.blockchain.aptos.v1alpha.TypeTagKind
+	10, // 4: capabilities.blockchain.aptos.v1alpha.TypeTag.vector:type_name -> capabilities.blockchain.aptos.v1alpha.VectorTag
+	11, // 5: capabilities.blockchain.aptos.v1alpha.TypeTag.struct:type_name -> capabilities.blockchain.aptos.v1alpha.StructTag
+	12, // 6: capabilities.blockchain.aptos.v1alpha.TypeTag.generic:type_name -> capabilities.blockchain.aptos.v1alpha.GenericTag
+	9,  // 7: capabilities.blockchain.aptos.v1alpha.VectorTag.element_type:type_name -> capabilities.blockchain.aptos.v1alpha.TypeTag
+	9,  // 8: capabilities.blockchain.aptos.v1alpha.StructTag.type_params:type_name -> capabilities.blockchain.aptos.v1alpha.TypeTag
+	15, // 9: capabilities.blockchain.aptos.v1alpha.TransactionByHashReply.transaction:type_name -> capabilities.blockchain.aptos.v1alpha.Transaction
+	2,  // 10: capabilities.blockchain.aptos.v1alpha.Transaction.type:type_name -> capabilities.blockchain.aptos.v1alpha.TransactionVariant
+	15, // 11: capabilities.blockchain.aptos.v1alpha.AccountTransactionsReply.transactions:type_name -> capabilities.blockchain.aptos.v1alpha.Transaction
+	8,  // 12: capabilities.blockchain.aptos.v1alpha.SubmitTransactionRequest.receiver_module_id:type_name -> capabilities.blockchain.aptos.v1alpha.ModuleID
+	20, // 13: capabilities.blockchain.aptos.v1alpha.SubmitTransactionRequest.gas_config:type_name -> capabilities.blockchain.aptos.v1alpha.GasConfig
+	0,  // 14: capabilities.blockchain.aptos.v1alpha.SubmitTransactionReply.tx_status:type_name -> capabilities.blockchain.aptos.v1alpha.TxStatus
+	20, // 15: capabilities.blockchain.aptos.v1alpha.WriteReportRequest.gas_config:type_name -> capabilities.blockchain.aptos.v1alpha.GasConfig
+	23, // 16: capabilities.blockchain.aptos.v1alpha.WriteReportRequest.report:type_name -> sdk.v1alpha.ReportResponse
+	0,  // 17: capabilities.blockchain.aptos.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.aptos.v1alpha.TxStatus
+	3,  // 18: capabilities.blockchain.aptos.v1alpha.Client.AccountAPTBalance:input_type -> capabilities.blockchain.aptos.v1alpha.AccountAPTBalanceRequest
+	5,  // 19: capabilities.blockchain.aptos.v1alpha.Client.View:input_type -> capabilities.blockchain.aptos.v1alpha.ViewRequest
+	13, // 20: capabilities.blockchain.aptos.v1alpha.Client.TransactionByHash:input_type -> capabilities.blockchain.aptos.v1alpha.TransactionByHashRequest
+	16, // 21: capabilities.blockchain.aptos.v1alpha.Client.AccountTransactions:input_type -> capabilities.blockchain.aptos.v1alpha.AccountTransactionsRequest
+	21, // 22: capabilities.blockchain.aptos.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.aptos.v1alpha.WriteReportRequest
+	4,  // 23: capabilities.blockchain.aptos.v1alpha.Client.AccountAPTBalance:output_type -> capabilities.blockchain.aptos.v1alpha.AccountAPTBalanceReply
+	6,  // 24: capabilities.blockchain.aptos.v1alpha.Client.View:output_type -> capabilities.blockchain.aptos.v1alpha.ViewReply
+	14, // 25: capabilities.blockchain.aptos.v1alpha.Client.TransactionByHash:output_type -> capabilities.blockchain.aptos.v1alpha.TransactionByHashReply
+	17, // 26: capabilities.blockchain.aptos.v1alpha.Client.AccountTransactions:output_type -> capabilities.blockchain.aptos.v1alpha.AccountTransactionsReply
+	22, // 27: capabilities.blockchain.aptos.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.aptos.v1alpha.WriteReportReply
+	23, // [23:28] is the sub-list for method output_type
+	18, // [18:23] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_aptos_proto_init() }
-func file_aptos_proto_init() {
-	if File_aptos_proto != nil {
+func init() { file_capabilities_blockchain_aptos_v1alpha_client_proto_init() }
+func file_capabilities_blockchain_aptos_v1alpha_client_proto_init() {
+	if File_capabilities_blockchain_aptos_v1alpha_client_proto != nil {
 		return
 	}
-	file_aptos_proto_msgTypes[6].OneofWrappers = []any{
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[6].OneofWrappers = []any{
 		(*TypeTag_Vector)(nil),
 		(*TypeTag_Struct)(nil),
 		(*TypeTag_Generic)(nil),
 	}
-	file_aptos_proto_msgTypes[11].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[12].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[13].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[15].OneofWrappers = []any{}
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[11].OneofWrappers = []any{}
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[12].OneofWrappers = []any{}
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[13].OneofWrappers = []any{}
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[15].OneofWrappers = []any{}
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[18].OneofWrappers = []any{}
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes[19].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aptos_proto_rawDesc), len(file_aptos_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDesc), len(file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_aptos_proto_goTypes,
-		DependencyIndexes: file_aptos_proto_depIdxs,
-		EnumInfos:         file_aptos_proto_enumTypes,
-		MessageInfos:      file_aptos_proto_msgTypes,
+		GoTypes:           file_capabilities_blockchain_aptos_v1alpha_client_proto_goTypes,
+		DependencyIndexes: file_capabilities_blockchain_aptos_v1alpha_client_proto_depIdxs,
+		EnumInfos:         file_capabilities_blockchain_aptos_v1alpha_client_proto_enumTypes,
+		MessageInfos:      file_capabilities_blockchain_aptos_v1alpha_client_proto_msgTypes,
 	}.Build()
-	File_aptos_proto = out.File
-	file_aptos_proto_goTypes = nil
-	file_aptos_proto_depIdxs = nil
+	File_capabilities_blockchain_aptos_v1alpha_client_proto = out.File
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_goTypes = nil
+	file_capabilities_blockchain_aptos_v1alpha_client_proto_depIdxs = nil
 }

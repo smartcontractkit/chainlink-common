@@ -1063,6 +1063,81 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 			},
 		},
 		{
+			name: "AccountTransactions",
+			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
+				address := aptos.AccountAddress{
+					0x01, 0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				}
+				start := uint64(10)
+				limit := uint64(5)
+				req := aptos.AccountTransactionsRequest{
+					Address: address,
+					Start:   &start,
+					Limit:   &limit,
+				}
+				version1 := uint64(100)
+				success1 := true
+				version2 := uint64(101)
+				success2 := true
+				expectedReply := &aptos.AccountTransactionsReply{
+					Transactions: []*aptos.Transaction{
+						{
+							Type:    aptos.TransactionVariantUser,
+							Hash:    "0xtx1",
+							Version: &version1,
+							Success: &success1,
+							Data:    []byte(`{"sender":"0x1"}`),
+						},
+						{
+							Type:    aptos.TransactionVariantUser,
+							Hash:    "0xtx2",
+							Version: &version2,
+							Success: &success2,
+							Data:    []byte(`{"sender":"0x2"}`),
+						},
+					},
+				}
+				mockApt.EXPECT().AccountTransactions(mock.Anything, req).
+					Return(expectedReply, nil)
+
+				reply, err := apt.AccountTransactions(ctx, req)
+				require.NoError(t, err)
+				require.Len(t, reply.Transactions, 2)
+				require.Equal(t, "0xtx1", reply.Transactions[0].Hash)
+				require.Equal(t, version1, *reply.Transactions[0].Version)
+				require.Equal(t, "0xtx2", reply.Transactions[1].Hash)
+				require.Equal(t, version2, *reply.Transactions[1].Version)
+			},
+		},
+		{
+			name: "AccountTransactions - empty result",
+			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
+				address := aptos.AccountAddress{
+					0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				}
+				req := aptos.AccountTransactionsRequest{
+					Address: address,
+					Start:   nil,
+					Limit:   nil,
+				}
+				expectedReply := &aptos.AccountTransactionsReply{
+					Transactions: []*aptos.Transaction{},
+				}
+				mockApt.EXPECT().AccountTransactions(mock.Anything, req).
+					Return(expectedReply, nil)
+
+				reply, err := apt.AccountTransactions(ctx, req)
+				require.NoError(t, err)
+				require.Len(t, reply.Transactions, 0)
+			},
+		},
+		{
 			name: "SubmitTransaction",
 			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
 				receiverAddr := aptos.AccountAddress{
@@ -1071,13 +1146,6 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				}
-				senderAddr := aptos.AccountAddress{
-					0xCC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				}
-				nonce := uint64(999)
 				req := aptos.SubmitTransactionRequest{
 					ReceiverModuleID: aptos.ModuleID{
 						Address: receiverAddr,
@@ -1090,28 +1158,18 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 					},
 				}
 				expectedReply := &aptos.SubmitTransactionReply{
-					PendingTransaction: &aptos.PendingTransaction{
-						Hash:                    "0xtxhash123",
-						Sender:                  senderAddr,
-						SequenceNumber:          42,
-						ReplayProtectionNonce:   &nonce,
-						MaxGasAmount:            10000,
-						GasUnitPrice:            100,
-						ExpirationTimestampSecs: 1234567890,
-						Payload:                 []byte{0x11, 0x22, 0x33},
-						Signature:               []byte{0xAA, 0xBB, 0xCC},
-					},
+					TxStatus:         aptos.TxSuccess,
+					TxHash:           "0xtxhash123",
+					TxIdempotencyKey: "key-456",
 				}
 				mockApt.EXPECT().SubmitTransaction(mock.Anything, req).
 					Return(expectedReply, nil)
 
 				reply, err := apt.SubmitTransaction(ctx, req)
 				require.NoError(t, err)
-				require.NotNil(t, reply.PendingTransaction)
-				require.Equal(t, "0xtxhash123", reply.PendingTransaction.Hash)
-				require.Equal(t, uint64(42), reply.PendingTransaction.SequenceNumber)
-				require.NotNil(t, reply.PendingTransaction.ReplayProtectionNonce)
-				require.Equal(t, nonce, *reply.PendingTransaction.ReplayProtectionNonce)
+				require.NotNil(t, reply.TxHash)
+				require.Equal(t, expectedReply.TxHash, reply.TxHash)
+				require.Equal(t, expectedReply.TxIdempotencyKey, reply.TxIdempotencyKey)
 			},
 		},
 	}

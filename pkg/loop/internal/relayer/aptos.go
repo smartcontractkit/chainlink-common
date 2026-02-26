@@ -27,7 +27,7 @@ func (ac *AptosClient) AccountAPTBalance(ctx context.Context, req aptos.AccountA
 		Address: req.Address[:],
 	})
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 	return &aptos.AccountAPTBalanceReply{
 		Value: reply.Value,
@@ -47,7 +47,7 @@ func (ac *AptosClient) View(ctx context.Context, req aptos.ViewRequest) (*aptos.
 
 	reply, err := ac.grpcClient.View(ctx, protoReq)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
 	// Convert proto types back to Go types
@@ -58,7 +58,7 @@ func (ac *AptosClient) TransactionByHash(ctx context.Context, req aptos.Transact
 	protoReq := aptospb.ConvertTransactionByHashRequestToProto(req)
 	protoResp, err := ac.grpcClient.TransactionByHash(ctx, protoReq)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 	return aptospb.ConvertTransactionByHashReplyFromProto(protoResp)
 }
@@ -67,7 +67,7 @@ func (ac *AptosClient) AccountTransactions(ctx context.Context, req aptos.Accoun
 	protoReq := aptospb.ConvertAccountTransactionsRequestToProto(req)
 	protoResp, err := ac.grpcClient.AccountTransactions(ctx, protoReq)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 	return aptospb.ConvertAccountTransactionsReplyFromProto(protoResp)
 }
@@ -80,7 +80,7 @@ func (ac *AptosClient) SubmitTransaction(ctx context.Context, req aptos.SubmitTr
 
 	protoResp, err := ac.grpcClient.SubmitTransaction(ctx, protoReq)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return aptospb.ConvertSubmitTransactionReplyFromProto(protoResp)

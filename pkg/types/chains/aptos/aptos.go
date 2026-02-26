@@ -45,7 +45,8 @@ type AccountTransactionsReply struct {
 // ========== View ==========
 
 type ViewRequest struct {
-	Payload *ViewPayload
+	Payload       *ViewPayload
+	LedgerVersion *uint64 // optional, nil uses latest ledger version on the node
 }
 
 type ViewReply struct {

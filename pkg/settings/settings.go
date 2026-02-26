@@ -116,6 +116,15 @@ func Duration(defaultValue time.Duration) Setting[time.Duration] {
 	return s
 }
 
+func Time(defaultValue time.Time) Setting[time.Time] {
+	return NewSetting(defaultValue, func(s string) (time.Time, error) {
+		if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+			return t, nil
+		}
+		return time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", s)
+	})
+}
+
 func URL(defaultValue *url.URL) Setting[*url.URL] {
 	return NewSetting(defaultValue, url.Parse)
 }

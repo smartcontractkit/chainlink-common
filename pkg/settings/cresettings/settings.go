@@ -160,6 +160,8 @@ var Default = Schema{
 		Secrets: secrets{
 			CallLimit: Int(5),
 		},
+
+		FeatureFlagMultiTriggerExecutionIDs: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -227,6 +229,8 @@ type Workflows struct {
 	HTTPAction       httpAction
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
+
+	FeatureFlagMultiTriggerExecutionIDs Setting[time.Time]
 }
 
 type cronTrigger struct {

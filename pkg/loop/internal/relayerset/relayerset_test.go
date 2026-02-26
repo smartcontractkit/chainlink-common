@@ -1170,6 +1170,7 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 				require.NotNil(t, reply.TxHash)
 				require.Equal(t, expectedReply.TxHash, reply.TxHash)
 				require.Equal(t, expectedReply.TxIdempotencyKey, reply.TxIdempotencyKey)
+				require.Equal(t, expectedReply.TxStatus, reply.TxStatus)
 			},
 		},
 	}

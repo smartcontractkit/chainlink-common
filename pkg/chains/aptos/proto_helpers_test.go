@@ -166,7 +166,7 @@ func TestTypeTagConverters(t *testing.T) {
 
 	t.Run("Invalid struct address length", func(t *testing.T) {
 		protoTag := &conv.TypeTag{
-			Kind: conv.TypeTagKind_TYPE_TAG_STRUCT,
+			Kind: conv.TypeTagKind_TYPE_TAG_KIND_STRUCT,
 			Value: &conv.TypeTag_Struct{
 				Struct: &conv.StructTag{
 					Address:    mkBytes(typeaptos.AccountAddressLength-1, 0x01),

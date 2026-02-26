@@ -88,25 +88,25 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 	var impl typeaptos.TypeTagImpl
 
 	switch proto.Kind {
-	case TypeTagKind_TYPE_TAG_BOOL:
+	case TypeTagKind_TYPE_TAG_KIND_BOOL:
 		impl = typeaptos.BoolTag{}
-	case TypeTagKind_TYPE_TAG_U8:
+	case TypeTagKind_TYPE_TAG_KIND_U8:
 		impl = typeaptos.U8Tag{}
-	case TypeTagKind_TYPE_TAG_U16:
+	case TypeTagKind_TYPE_TAG_KIND_U16:
 		impl = typeaptos.U16Tag{}
-	case TypeTagKind_TYPE_TAG_U32:
+	case TypeTagKind_TYPE_TAG_KIND_U32:
 		impl = typeaptos.U32Tag{}
-	case TypeTagKind_TYPE_TAG_U64:
+	case TypeTagKind_TYPE_TAG_KIND_U64:
 		impl = typeaptos.U64Tag{}
-	case TypeTagKind_TYPE_TAG_U128:
+	case TypeTagKind_TYPE_TAG_KIND_U128:
 		impl = typeaptos.U128Tag{}
-	case TypeTagKind_TYPE_TAG_U256:
+	case TypeTagKind_TYPE_TAG_KIND_U256:
 		impl = typeaptos.U256Tag{}
-	case TypeTagKind_TYPE_TAG_ADDRESS:
+	case TypeTagKind_TYPE_TAG_KIND_ADDRESS:
 		impl = typeaptos.AddressTag{}
-	case TypeTagKind_TYPE_TAG_SIGNER:
+	case TypeTagKind_TYPE_TAG_KIND_SIGNER:
 		impl = typeaptos.SignerTag{}
-	case TypeTagKind_TYPE_TAG_VECTOR:
+	case TypeTagKind_TYPE_TAG_KIND_VECTOR:
 		vectorValue := proto.GetVector()
 		if vectorValue == nil {
 			return nil, fmt.Errorf("vector type tag missing vector value")
@@ -118,7 +118,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 		impl = typeaptos.VectorTag{
 			ElementType: *elementType,
 		}
-	case TypeTagKind_TYPE_TAG_STRUCT:
+	case TypeTagKind_TYPE_TAG_KIND_STRUCT:
 		structValue := proto.GetStruct()
 		if structValue == nil {
 			return nil, fmt.Errorf("struct type tag missing struct value")
@@ -143,7 +143,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 			Name:       structValue.Name,
 			TypeParams: typeParams,
 		}
-	case TypeTagKind_TYPE_TAG_GENERIC:
+	case TypeTagKind_TYPE_TAG_KIND_GENERIC:
 		genericValue := proto.GetGeneric()
 		if genericValue == nil {
 			return nil, fmt.Errorf("generic type tag missing generic value")

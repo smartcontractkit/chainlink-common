@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772045499418,
+  "lastUpdate": 1772120379912,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -39240,6 +39240,66 @@ window.BENCHMARK_DATA = {
             "value": 148740,
             "unit": "ns/op",
             "extra": "7562 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yashvardhan.nevatia@smartcontract.com",
+            "name": "Yashvardhan Nevatia",
+            "username": "yashnevatia"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e60172063307fe26e73a56e0c3d747775bdc9e12",
+          "message": "Aptos service changes (#1856)\n\n* aptos service changes\n\n* Aptos service changes\n\n* Update pkg/loop/internal/relayerset/relayerset_test.go\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* typetagtype to typetagkind\n\n* type tag kind enum\n\n* tidy\n\n* Add aptos capability server\n\n* tidy\n\n* tidy\n\n* wrap err with net\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-02-26T15:29:56Z",
+          "tree_id": "403b896c75257b8845cb32c1fff0b9594125206d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e60172063307fe26e73a56e0c3d747775bdc9e12"
+        },
+        "date": 1772120377529,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.9,
+            "unit": "ns/op",
+            "extra": "3357421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 67487,
+            "unit": "ns/op",
+            "extra": "17450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.2,
+            "unit": "ns/op",
+            "extra": "2988993 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 65504,
+            "unit": "ns/op",
+            "extra": "17928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24755,
+            "unit": "ns/op",
+            "extra": "48490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 114867,
+            "unit": "ns/op",
+            "extra": "9854 times\n4 procs"
           }
         ]
       }

@@ -9,14 +9,18 @@
 	"VaultIdentifierNamespaceSizeLimit": "64b",
 	"VaultPluginBatchSizeLimit": "20",
 	"VaultRequestBatchSizeLimit": "10",
+	"FeatureFlags": {},
 	"PerOrg": {
+		"FeatureFlags": {},
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
 	"PerOwner": {
+		"FeatureFlags": {},
 		"WorkflowExecutionConcurrencyLimit": "5",
 		"VaultSecretsLimit": "100"
 	},
 	"PerWorkflow": {
+		"FeatureFlags": {},
 		"TriggerRegistrationsTimeout": "10s",
 		"TriggerSubscriptionTimeout": "15s",
 		"TriggerSubscriptionLimit": "10",

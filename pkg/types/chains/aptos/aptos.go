@@ -37,11 +37,7 @@ type ViewRequest struct {
 }
 
 type ViewReply struct {
-<<<<<<< HEAD
 	Data []byte // this is marshaled JSON because the aptos rpc client returns JSON
-=======
-	Data []byte
->>>>>>> 053d0fd4e19a5140164f54235b921585bd5dc468
 }
 
 // ViewPayload represents the payload for a view function call.
@@ -226,16 +222,11 @@ type Transaction struct {
 }
 
 type SubmitTransactionRequest struct {
-<<<<<<< HEAD
 	ReceiverModuleID ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
-=======
-	ReceiverModuleID ModuleID
->>>>>>> 053d0fd4e19a5140164f54235b921585bd5dc468
 	EncodedPayload   []byte
 	GasConfig        *GasConfig
 }
 
-<<<<<<< HEAD
 type TransactionStatus int
 
 const (
@@ -251,10 +242,6 @@ type SubmitTransactionReply struct {
 	TxStatus         TransactionStatus
 	TxHash           string
 	TxIdempotencyKey string
-=======
-type SubmitTransactionReply struct {
-	PendingTransaction *PendingTransaction
->>>>>>> 053d0fd4e19a5140164f54235b921585bd5dc468
 }
 
 // GasConfig represents gas configuration for a transaction
@@ -262,19 +249,3 @@ type GasConfig struct {
 	MaxGasAmount uint64 // Maximum gas units willing to pay
 	GasUnitPrice uint64 // Price per gas unit in octas
 }
-<<<<<<< HEAD
-=======
-
-// PendingTransaction represents a transaction that has been submitted but not yet committed
-type PendingTransaction struct {
-	Hash                    string         // Transaction hash (hex string with 0x prefix)
-	Sender                  AccountAddress // Sender's account address
-	SequenceNumber          uint64         // Sequence number of the transaction
-	ReplayProtectionNonce   *uint64        // Optional nonce for replay protection
-	MaxGasAmount            uint64         // Maximum gas amount
-	GasUnitPrice            uint64         // Gas unit price
-	ExpirationTimestampSecs uint64         // Expiration timestamp in seconds
-	Payload                 []byte         // Transaction payload as raw bytes
-	Signature               []byte         // Signature as raw bytes
-}
->>>>>>> 053d0fd4e19a5140164f54235b921585bd5dc468

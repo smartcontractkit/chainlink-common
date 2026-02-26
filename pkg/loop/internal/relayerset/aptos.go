@@ -21,6 +21,10 @@ type aptosClient struct {
 
 var _ aptospb.AptosClient = (*aptosClient)(nil)
 
+func (ac *aptosClient) LedgerVersion(ctx context.Context, in *aptospb.LedgerVersionRequest, opts ...grpc.CallOption) (*aptospb.LedgerVersionReply, error) {
+	return ac.client.LedgerVersion(appendRelayID(ctx, ac.relayID), in, opts...)
+}
+
 func (ac *aptosClient) AccountAPTBalance(ctx context.Context, in *aptospb.AccountAPTBalanceRequest, opts ...grpc.CallOption) (*aptospb.AccountAPTBalanceReply, error) {
 	return ac.client.AccountAPTBalance(appendRelayID(ctx, ac.relayID), in, opts...)
 }
@@ -73,6 +77,19 @@ func (as *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.Accou
 	}, nil
 }
 
+func (as *aptosServer) LedgerVersion(ctx context.Context, _ *aptospb.LedgerVersionRequest) (*aptospb.LedgerVersionReply, error) {
+	aptosService, err := as.parent.getAptosService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ledgerVersion, err := aptosService.LedgerVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &aptospb.LedgerVersionReply{LedgerVersion: ledgerVersion}, nil
+}
+
 func (as *aptosServer) AccountTransactions(ctx context.Context, req *aptospb.AccountTransactionsRequest) (*aptospb.AccountTransactionsReply, error) {
 	aptosService, err := as.parent.getAptosService(ctx)
 	if err != nil {
@@ -107,6 +124,10 @@ func (as *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*apt
 
 	goReq := aptos.ViewRequest{
 		Payload: goPayload,
+	}
+	if req.LedgerVersion != nil {
+		ledgerVersion := req.GetLedgerVersion()
+		goReq.LedgerVersion = &ledgerVersion
 	}
 
 	reply, err := aptosService.View(ctx, goReq)

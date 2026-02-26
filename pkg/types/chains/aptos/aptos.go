@@ -10,6 +10,8 @@ type AccountAddress [AccountAddressLength]byte
 
 // Client wraps the Aptos RPC client methods used for reading on-chain state.
 type Client interface {
+	// LedgerVersion returns the latest committed ledger (transaction) version.
+	LedgerVersion(ctx context.Context) (uint64, error)
 	// AccountAPTBalance returns the native APT coin balance (in octas) for the given account address.
 	AccountAPTBalance(ctx context.Context, req AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
 	// View executes a Move view function (read-only) and returns the raw result.

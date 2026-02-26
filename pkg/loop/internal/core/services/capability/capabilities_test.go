@@ -65,6 +65,10 @@ func (m *mockTrigger) UnregisterTrigger(ctx context.Context, request capabilitie
 	return nil
 }
 
+func (m *mockTrigger) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return nil
+}
+
 func (m *mockTrigger) Stop() {
 	m.mu.Lock()
 	defer m.mu.Unlock()

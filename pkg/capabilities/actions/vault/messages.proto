@@ -205,6 +205,8 @@ message StoredPendingQueueItem {
 }
 
 message ReportingPluginConfig {
+  reserved 8;
+
   // Plugin-specific configuration
   int32 BatchSize = 1;
   int32 MaxSecretsPerOwner = 2;
@@ -213,7 +215,6 @@ message ReportingPluginConfig {
   int32 MaxIdentifierOwnerLengthBytes = 5;
   int32 MaxIdentifierNamespaceLengthBytes = 6;
   optional string DKGInstanceID = 7;
-  bool EnableDeterministicPendingQueue = 8;
 
   // OCR 3.1 ReportInfo configuration
   int32 LimitsMaxQueryLength = 20;

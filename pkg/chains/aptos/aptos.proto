@@ -4,12 +4,21 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/apt
 package loop.aptos;
 
 service Aptos {
+  rpc LedgerVersion(LedgerVersionRequest) returns (LedgerVersionReply);
   rpc AccountAPTBalance(AccountAPTBalanceRequest) returns (AccountAPTBalanceReply);
   rpc AccountTransactions(AccountTransactionsRequest) returns (AccountTransactionsReply);
   rpc View(ViewRequest) returns (ViewReply);
   rpc EventsByHandle(EventsByHandleRequest) returns (EventsByHandleReply);
   rpc TransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
+}
+
+// ========== LedgerVersion ==========
+
+message LedgerVersionRequest {}
+
+message LedgerVersionReply {
+  uint64 ledger_version = 1;
 }
 
 // ========== AccountAPTBalance ==========
@@ -38,6 +47,7 @@ message AccountTransactionsReply {
 
 message ViewRequest {
   ViewPayload payload = 1;
+  optional uint64 ledger_version = 2;
 }
 
 message ViewReply {

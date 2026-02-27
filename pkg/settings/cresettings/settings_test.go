@@ -114,7 +114,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 		},
 		"ChainRead": {
 			"CallLimit": "3"
-		}
+		},
+		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC"
 	}
 }`), &cfg))
 
@@ -137,6 +138,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 5, cfg.PerWorkflow.Secrets.CallLimit.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
+	assert.Equal(t, time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
 }
 
 func TestDefaultGetter(t *testing.T) {

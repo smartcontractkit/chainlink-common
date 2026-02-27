@@ -26,6 +26,30 @@ func TestTime(t *testing.T) {
 		assert.Equal(t, time.Date(2025, 6, 15, 12, 30, 0, 123456789, time.UTC), got)
 	})
 
+	t.Run("parse Go default format", func(t *testing.T) {
+		got, err := s.Parse("2025-06-15 00:00:00 +0000 UTC")
+		require.NoError(t, err)
+		assert.Equal(t, time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC), got)
+	})
+
+	t.Run("parse Go default format with offset", func(t *testing.T) {
+		got, err := s.Parse("2025-06-15 12:30:00 +0530 IST")
+		require.NoError(t, err)
+		assert.Equal(t, 2025, got.Year())
+		assert.Equal(t, time.Month(6), got.Month())
+		assert.Equal(t, 15, got.Day())
+		assert.Equal(t, 12, got.Hour())
+		assert.Equal(t, 30, got.Minute())
+	})
+
+	t.Run("MarshalText round-trip", func(t *testing.T) {
+		b, err := s.MarshalText()
+		require.NoError(t, err)
+		got, err := s.Parse(string(b))
+		require.NoError(t, err)
+		assert.Equal(t, s.DefaultValue, got)
+	})
+
 	t.Run("MarshalText", func(t *testing.T) {
 		b, err := s.MarshalText()
 		require.NoError(t, err)

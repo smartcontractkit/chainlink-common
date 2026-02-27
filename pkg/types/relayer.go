@@ -564,12 +564,20 @@ var _ AptosService = &UnimplementedAptosService{}
 // In the future, embedding this type may be required to implement AptosService (through use of an unexported method).
 type UnimplementedAptosService struct{}
 
+func (ua *UnimplementedAptosService) LedgerVersion(ctx context.Context) (uint64, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method LedgerVersion not implemented")
+}
+
 func (ua *UnimplementedAptosService) AccountAPTBalance(ctx context.Context, req aptos.AccountAPTBalanceRequest) (*aptos.AccountAPTBalanceReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountAPTBalance not implemented")
 }
 
 func (ua *UnimplementedAptosService) View(ctx context.Context, req aptos.ViewRequest) (*aptos.ViewReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method View not implemented")
+}
+
+func (ua *UnimplementedAptosService) EventsByHandle(ctx context.Context, req aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EventsByHandle not implemented")
 }
 
 func (ua *UnimplementedAptosService) TransactionByHash(ctx context.Context, req aptos.TransactionByHashRequest) (*aptos.TransactionByHashReply, error) {

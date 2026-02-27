@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -22,16 +25,34 @@ func NewAptosClient(client aptospb.AptosClient) *AptosClient {
 	}
 }
 
+func (ac *AptosClient) LedgerVersion(ctx context.Context) (uint64, error) {
+	reply, err := ac.grpcClient.LedgerVersion(ctx, &aptospb.LedgerVersionRequest{})
+	if err != nil {
+		return 0, err
+	}
+	return reply.LedgerVersion, nil
+}
+
 func (ac *AptosClient) AccountAPTBalance(ctx context.Context, req aptos.AccountAPTBalanceRequest) (*aptos.AccountAPTBalanceReply, error) {
 	reply, err := ac.grpcClient.AccountAPTBalance(ctx, &aptospb.AccountAPTBalanceRequest{
 		Address: req.Address[:],
 	})
 	if err != nil {
-		return nil, net.WrapRPCErr(err)
+		return nil, err
 	}
 	return &aptos.AccountAPTBalanceReply{
 		Value: reply.Value,
 	}, nil
+}
+
+// AccountTransactions exposes Aptos account transaction listing for callers that need
+// canonical tx hash derivation from transmitter account history.
+func (ac *AptosClient) AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error) {
+	reply, err := ac.grpcClient.AccountTransactions(ctx, aptospb.ConvertAccountTransactionsRequestToProto(req))
+	if err != nil {
+		return nil, err
+	}
+	return aptospb.ConvertAccountTransactionsReplyFromProto(reply)
 }
 
 func (ac *AptosClient) View(ctx context.Context, req aptos.ViewRequest) (*aptos.ViewReply, error) {
@@ -44,32 +65,47 @@ func (ac *AptosClient) View(ctx context.Context, req aptos.ViewRequest) (*aptos.
 	protoReq := &aptospb.ViewRequest{
 		Payload: protoPayload,
 	}
+	if req.LedgerVersion != nil {
+		protoReq.LedgerVersion = req.LedgerVersion
+	}
 
 	reply, err := ac.grpcClient.View(ctx, protoReq)
 	if err != nil {
-		return nil, net.WrapRPCErr(err)
+		return nil, err
 	}
 
 	// Convert proto types back to Go types
 	return aptospb.ConvertViewReplyFromProto(reply)
 }
 
+func (ac *AptosClient) EventsByHandle(ctx context.Context, req aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error) {
+	// Convert Go types to proto types
+	protoReq, err := aptospb.ConvertEventsByHandleRequestToProto(&req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert request: %w", err)
+	}
+
+	reply, err := ac.grpcClient.EventsByHandle(ctx, protoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert proto types back to Go types
+	goReply, err := aptospb.ConvertEventsByHandleReplyFromProto(reply)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert reply: %w", err)
+	}
+
+	return goReply, nil
+}
+
 func (ac *AptosClient) TransactionByHash(ctx context.Context, req aptos.TransactionByHashRequest) (*aptos.TransactionByHashReply, error) {
 	protoReq := aptospb.ConvertTransactionByHashRequestToProto(req)
 	protoResp, err := ac.grpcClient.TransactionByHash(ctx, protoReq)
 	if err != nil {
-		return nil, net.WrapRPCErr(err)
+		return nil, err
 	}
 	return aptospb.ConvertTransactionByHashReplyFromProto(protoResp)
-}
-
-func (ac *AptosClient) AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error) {
-	protoReq := aptospb.ConvertAccountTransactionsRequestToProto(req)
-	protoResp, err := ac.grpcClient.AccountTransactions(ctx, protoReq)
-	if err != nil {
-		return nil, net.WrapRPCErr(err)
-	}
-	return aptospb.ConvertAccountTransactionsReplyFromProto(protoResp)
 }
 
 func (ac *AptosClient) SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error) {
@@ -80,7 +116,7 @@ func (ac *AptosClient) SubmitTransaction(ctx context.Context, req aptos.SubmitTr
 
 	protoResp, err := ac.grpcClient.SubmitTransaction(ctx, protoReq)
 	if err != nil {
-		return nil, net.WrapRPCErr(err)
+		return nil, err
 	}
 
 	return aptospb.ConvertSubmitTransactionReplyFromProto(protoResp)
@@ -95,6 +131,10 @@ type aptosServer struct {
 }
 
 var _ aptospb.AptosServer = (*aptosServer)(nil)
+
+type accountTransactionsReader interface {
+	AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error)
+}
 
 func newAptosServer(impl types.AptosService, b *net.BrokerExt) *aptosServer {
 	return &aptosServer{impl: impl, BrokerExt: b.WithName("AptosServer")}
@@ -112,6 +152,30 @@ func (s *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.Accoun
 	}, nil
 }
 
+func (s *aptosServer) LedgerVersion(ctx context.Context, _ *aptospb.LedgerVersionRequest) (*aptospb.LedgerVersionReply, error) {
+	ledgerVersion, err := s.impl.LedgerVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &aptospb.LedgerVersionReply{LedgerVersion: ledgerVersion}, nil
+}
+
+func (s *aptosServer) AccountTransactions(ctx context.Context, req *aptospb.AccountTransactionsRequest) (*aptospb.AccountTransactionsReply, error) {
+	impl, ok := s.impl.(accountTransactionsReader)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "AccountTransactions not supported by aptos service")
+	}
+	goReq, err := aptospb.ConvertAccountTransactionsRequestFromProto(req)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := impl.AccountTransactions(ctx, *goReq)
+	if err != nil {
+		return nil, err
+	}
+	return aptospb.ConvertAccountTransactionsReplyToProto(reply), nil
+}
+
 func (s *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*aptospb.ViewReply, error) {
 	// Convert proto types to Go types
 	goPayload, err := aptospb.ConvertViewPayloadFromProto(req.Payload)
@@ -122,6 +186,10 @@ func (s *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*apto
 	goReq := aptos.ViewRequest{
 		Payload: goPayload,
 	}
+	if req.LedgerVersion != nil {
+		ledgerVersion := req.GetLedgerVersion()
+		goReq.LedgerVersion = &ledgerVersion
+	}
 
 	reply, err := s.impl.View(ctx, goReq)
 	if err != nil {
@@ -130,6 +198,27 @@ func (s *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*apto
 
 	// Convert Go types back to proto types
 	return aptospb.ConvertViewReplyToProto(reply)
+}
+
+func (s *aptosServer) EventsByHandle(ctx context.Context, req *aptospb.EventsByHandleRequest) (*aptospb.EventsByHandleReply, error) {
+	// Convert proto types to Go types
+	goReq, err := aptospb.ConvertEventsByHandleRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert request: %w", err)
+	}
+
+	reply, err := s.impl.EventsByHandle(ctx, *goReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert Go types back to proto types
+	protoReply, err := aptospb.ConvertEventsByHandleReplyToProto(reply)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert reply: %w", err)
+	}
+
+	return protoReply, nil
 }
 
 func (s *aptosServer) TransactionByHash(ctx context.Context, req *aptospb.TransactionByHashRequest) (*aptospb.TransactionByHashReply, error) {
@@ -143,20 +232,6 @@ func (s *aptosServer) TransactionByHash(ctx context.Context, req *aptospb.Transa
 
 	// Convert Go types back to proto types
 	return aptospb.ConvertTransactionByHashReplyToProto(reply), nil
-}
-
-func (s *aptosServer) AccountTransactions(ctx context.Context, req *aptospb.AccountTransactionsRequest) (*aptospb.AccountTransactionsReply, error) {
-	goReq, err := aptospb.ConvertAccountTransactionsRequestFromProto(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert request: %w", err)
-	}
-
-	reply, err := s.impl.AccountTransactions(ctx, goReq)
-	if err != nil {
-		return nil, err
-	}
-
-	return aptospb.ConvertAccountTransactionsReplyToProto(reply), nil
 }
 
 func (s *aptosServer) SubmitTransaction(ctx context.Context, req *aptospb.SubmitTransactionRequest) (*aptospb.SubmitTransactionReply, error) {

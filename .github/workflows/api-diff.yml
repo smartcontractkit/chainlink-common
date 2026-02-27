@@ -33,6 +33,7 @@ jobs:
             **
 
   analyze-api-changes:
+    if: ${{ needs.changed-modules.outputs.modules-json != '[]' }}
     name: Analyze (${{ matrix.module }})
     runs-on: ubuntu-latest
     needs: changed-modules

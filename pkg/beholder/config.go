@@ -44,6 +44,12 @@ type Config struct {
 	ChipIngressEmitterGRPCEndpoint string
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
 
+	// Chip Ingress Batch Emitter
+	ChipIngressBufferSize   uint          // Per-worker channel buffer size (default 100)
+	ChipIngressMaxBatchSize uint          // Max events per PublishBatch call (default 50)
+	ChipIngressSendInterval time.Duration // Flush interval per worker (default 500ms when zero or unset)
+	ChipIngressSendTimeout  time.Duration // Timeout per PublishBatch call (default 10s)
+
 	// OTel Log
 	LogExportTimeout      time.Duration
 	LogExportInterval     time.Duration
@@ -131,8 +137,13 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
-		LogLevel:              zapcore.InfoLevel,
-		LogCompressor:         "gzip",
+		LogLevel:      zapcore.InfoLevel,
+		LogCompressor: "gzip",
+		// Chip Ingress Batch Emitter
+		ChipIngressBufferSize:   100,
+		ChipIngressMaxBatchSize: 50,
+		ChipIngressSendInterval: 500 * time.Millisecond,
+		ChipIngressSendTimeout:  10 * time.Second,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

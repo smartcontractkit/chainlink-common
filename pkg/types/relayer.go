@@ -576,6 +576,10 @@ func (ua *UnimplementedAptosService) View(ctx context.Context, req aptos.ViewReq
 	return nil, status.Errorf(codes.Unimplemented, "method View not implemented")
 }
 
+func (ua *UnimplementedAptosService) EventsByHandle(ctx context.Context, req aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EventsByHandle not implemented")
+}
+
 func (ua *UnimplementedAptosService) TransactionByHash(ctx context.Context, req aptos.TransactionByHashRequest) (*aptos.TransactionByHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TransactionByHash not implemented")
 }

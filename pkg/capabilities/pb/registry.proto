@@ -14,7 +14,6 @@ message RemoteTriggerConfig {
   google.protobuf.Duration messageExpiry = 4;
   uint32 maxBatchSize = 5;
   google.protobuf.Duration batchCollectionPeriod = 6;
-  google.protobuf.Duration registrationStatusUpdateTimeout = 7;
 }
 
 // deprecated - v1 only

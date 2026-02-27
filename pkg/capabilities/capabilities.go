@@ -555,24 +555,22 @@ func MustNewRemoteCapabilityInfo(
 }
 
 const (
-	DefaultRegistrationRefresh             = 30 * time.Second
-	DefaultRegistrationExpiry              = 2 * time.Minute
-	DefaultMessageExpiry                   = 2 * time.Minute
-	DefaultBatchSize                       = 100
-	DefaultBatchCollectionPeriod           = 100 * time.Millisecond
-	DefaultExecutableRequestTimeout        = 8 * time.Minute
-	DefaultServerMaxParallelRequests       = uint32(1000)
-	DefaultRegistrationStatusUpdateTimeout = 0
+	DefaultRegistrationRefresh       = 30 * time.Second
+	DefaultRegistrationExpiry        = 2 * time.Minute
+	DefaultMessageExpiry             = 2 * time.Minute
+	DefaultBatchSize                 = 100
+	DefaultBatchCollectionPeriod     = 100 * time.Millisecond
+	DefaultExecutableRequestTimeout  = 8 * time.Minute
+	DefaultServerMaxParallelRequests = uint32(1000)
 )
 
 type RemoteTriggerConfig struct {
-	RegistrationRefresh             time.Duration
-	RegistrationExpiry              time.Duration
-	MinResponsesToAggregate         uint32
-	MessageExpiry                   time.Duration
-	MaxBatchSize                    uint32
-	BatchCollectionPeriod           time.Duration
-	RegistrationStatusUpdateTimeout time.Duration
+	RegistrationRefresh     time.Duration
+	RegistrationExpiry      time.Duration
+	MinResponsesToAggregate uint32
+	MessageExpiry           time.Duration
+	MaxBatchSize            uint32
+	BatchCollectionPeriod   time.Duration
 }
 
 type RemoteTargetConfig struct { // deprecated - v1 only
@@ -610,10 +608,6 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 	if c.BatchCollectionPeriod == 0 {
 		c.BatchCollectionPeriod = DefaultBatchCollectionPeriod
-	}
-
-	if c.RegistrationStatusUpdateTimeout == 0 {
-		c.RegistrationStatusUpdateTimeout = DefaultRegistrationStatusUpdateTimeout
 	}
 }
 

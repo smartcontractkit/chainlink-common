@@ -14,6 +14,7 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@v5
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Changed modules
@@ -51,7 +52,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           persist-credentials: false
-          fetch-depth: 0
 
       - name: Get golangci-lint version from asdf
         id: get-version

@@ -8,6 +8,7 @@ import (
 	"io"
 	"time"
 
+	ccllogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -187,7 +188,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// This will eventually be removed in favor of chip-ingress emitter
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
-
+	var batchEmitter *ChipIngressBatchEmitter
 	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
@@ -223,18 +224,27 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
+		lggr, lErr := ccllogger.New()
+		if lErr != nil {
+			return nil, fmt.Errorf("failed to create logger for chip ingress batch emitter: %w", lErr)
+		}
+		batchEmitter, err = NewChipIngressBatchEmitter(chipIngressClient, lggr, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+			return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
+		}
+		if err = batchEmitter.Start(context.Background()); err != nil {
+			return nil, fmt.Errorf("failed to start chip ingress batch emitter: %w", err)
 		}
 
-		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
+		emitter, err = NewDualSourceEmitter(batchEmitter, emitter)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
 	}
 
 	onClose := func() (err error) {
+		// batchEmitter is closed via DualSourceEmitter.Close() -> chipIngressEmitter.Close(),
+		// which is called by Client.Close() -> c.Emitter.Close() before OnClose runs.
 		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}

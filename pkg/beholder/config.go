@@ -47,7 +47,7 @@ type Config struct {
 	// Chip Ingress Batch Emitter
 	ChipIngressBufferSize   uint          // Per-worker channel buffer size (default 100)
 	ChipIngressMaxBatchSize uint          // Max events per PublishBatch call (default 50)
-	ChipIngressSendInterval time.Duration // Flush interval per worker (default 500ms). Zero disables batching.
+	ChipIngressSendInterval time.Duration // Flush interval per worker (default 500ms when zero or unset)
 	ChipIngressSendTimeout  time.Duration // Timeout per PublishBatch call (default 10s)
 
 	// OTel Log

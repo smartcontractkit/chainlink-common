@@ -1,6 +1,7 @@
 package beholder_test
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -347,5 +348,116 @@ func TestChipIngressBatchEmitter_CloudEventFormat(t *testing.T) {
 		assert.Equal(t, "my-domain", event.Source)
 		assert.Equal(t, "my-entity", event.Type)
 		assert.NotEmpty(t, event.Id)
+	})
+}
+
+func TestChipIngressBatchEmitter_PublishBatchError(t *testing.T) {
+	t.Run("PublishBatch error is handled gracefully", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		callCount := 0
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(_ mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+			}).
+			Return(nil, assert.AnError)
+
+		cfg := newTestConfig()
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 3; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		assert.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			return callCount > 0
+		}, 2*time.Second, 10*time.Millisecond)
+
+		require.NoError(t, emitter.Close())
+	})
+}
+
+func TestChipIngressBatchEmitter_ContextCancellation(t *testing.T) {
+	t.Run("Emit returns context error when context is cancelled", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		cfg := newTestConfig()
+		cfg.ChipIngressBufferSize = 1
+		cfg.ChipIngressSendInterval = 10 * time.Second
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+		defer emitter.Close() //nolint:errcheck
+
+		// Fill the buffer so the next Emit will block on channel send
+		err = emitter.Emit(t.Context(), []byte("fill"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		cancel()
+
+		err = emitter.Emit(ctx, []byte("should-fail"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		assert.ErrorIs(t, err, context.Canceled)
+	})
+}
+
+func TestChipIngressBatchEmitter_DefaultConfig(t *testing.T) {
+	t.Run("zero config uses sane defaults", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		var receivedBatch *chipingress.CloudEventBatch
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				receivedBatch = args.Get(1).(*chipingress.CloudEventBatch)
+			}).
+			Return(nil, nil)
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), beholder.Config{})
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		// Default send interval is 500ms; wait for flush
+		assert.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			return receivedBatch != nil
+		}, 3*time.Second, 50*time.Millisecond)
+
+		require.NoError(t, emitter.Close())
+
+		mu.Lock()
+		defer mu.Unlock()
+		require.Len(t, receivedBatch.Events, 1)
 	})
 }

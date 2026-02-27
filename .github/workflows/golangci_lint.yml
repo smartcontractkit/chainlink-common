@@ -5,26 +5,41 @@ on: [pull_request, merge_group]
 jobs:
   detect-modules:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
-      modules: ${{ steps.set-modules.outputs.modules }}
+      modules: ${{ steps.changed-modules.outputs.modules-json }}
     steps:
-      - uses: actions/checkout@v5
-      - id: set-modules
-        run: |
-          # Find all go.mod files and extract their directories
-          modules=$(find . -name "go.mod" -not -path "./vendor/*" -exec dirname {} \; | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          echo "modules=${modules}" >> $GITHUB_OUTPUT
-          echo "Found modules: ${modules}"
+      - name: Checkout the repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Changed modules
+        id: changed-modules
+        uses: smartcontractkit/.github/actions/changed-modules-go@changed-modules-go/v1
+        with:
+          # when scheduled/workflow_dispatch, run against all modules
+          no-change-behaviour: all
+          file-patterns: |
+            **/*.go
+            **/go.mod
+            **/go.sum
+          module-patterns: |
+            **
+            !**/vendor/**
 
   lint-module:
     # Avoid running in merge queue since we run in PR's and have an optional
     # label to skip lint issues on a PR which would be ignored in the merge queue.
-    if: ${{ github.event_name != 'merge_group' }}
+    if: ${{ needs.detect-modules.outputs.modules != '[]' && github.event_name != 'merge_group' }}
     needs: detect-modules
     runs-on: ubuntu-latest
-    # Modules are independent
-    continue-on-error: true
     strategy:
+      # Modules are independent
+      fail-fast: false
       matrix:
         module: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
     permissions:

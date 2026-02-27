@@ -38,6 +38,7 @@ func ContextWithDeadlineFn(ctx context.Context, deadlineFn func(orig time.Time) 
 
 func IsZero[C comparable](val C) bool {
 	var zero C
+
 	return zero == val
 }
 

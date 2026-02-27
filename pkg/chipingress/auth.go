@@ -27,6 +27,7 @@ type basicAuthCredentials struct {
 }
 
 func (b basicAuthCredentials) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
+
 	return b.authHeader, nil
 }
 

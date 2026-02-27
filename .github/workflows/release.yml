@@ -1,0 +1,353 @@
+name: Create Release
+run-name: "Release - ${{ inputs.module }} ${{ inputs.dry-run && '(dry-run)' || '' }}"
+
+# General usage
+# ---
+# Using all default settings will:
+#   - Create a draft release for the specified module at the HEAD of the branch.
+#   - The version will be determined from the public API changes between the HEAD of the branch and the last release.
+#   - If the API contains breaking changes, it will error if the module is >=1.0.0.
+#   - For more information on the versioning heuristic, see: https://pkg.go.dev/golang.org/x/exp/cmd/gorelease
+# ---
+# 1. Go to the https://github.com/smartcontractkit/<repo>/actions/workflows/release.yml
+# 2. Click "Run workflow"
+# 3. Choose module
+# 4. Click "Run workflow"
+
+# Initial release usage
+# ---
+# This release workflow is primarily designed around subsequent releases.
+# For the initial release of a module, you must follow the below instructions.
+# ---
+# 1. Commit the module, and add the module path to the below "module" input.
+#   - Merge these changes to the default branch (ideally)
+# 2. Run the workflow with:
+#  - module: the path to the new module
+#  - version-override: the desired version for the initial release (e.g. 0.1.0)
+#  - base-ref-override: set to the default branch (e.g. main), or the commit SHA that added the module.
+
+# Retroactive security patch releases
+# ---
+# In edge cases, you may need to create a retroactive release for non-latest but still in-use versions.
+# ---
+# 1. Create a branch from the version tag that requires patching (if not latest)
+# 2. Make changes + commit + push
+# 3. Run this workflow:
+# - For "Use workflow from" - select the release branch selected (rather than the default branch)
+#    - If the HEAD of the release branch is not the commit to be released, set head-ref-override to the desired release commit.
+# - base-ref-override: set to the version tag that the branch was created from (e.g. module/v1.2.3)
+# - version-override: set the desired version for the retroactive release (e.g. 1.2.4)
+#    - do not include the full tag here, the tag created will be: <tag-prefix><version-override>
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        # This is the path to the go module to release, relative to the repository root.
+        # To add new modules, simply add them as options here.
+        # The workflow will validate that there is a go.mod at the specified path before proceeding.
+        description: |
+          MODULE (required) - the path to the module to release. "." refers to the root module.
+        required: true
+        type: choice
+        # Keep this up-to-date with the modules in the repository.
+        options:
+          - '.'
+          - 'keystore'
+          - 'observability-lib'
+          - 'pkg/values'
+          - 'pkg/workflows/sdk/v2/pb'
+          - 'pkg/chipingress'
+          - 'pkg/monitoring'
+
+      tag-prefix-override:
+        # Tags for go modules have some formatting requirements.
+        # For root modules, the default tag prefix is "v".
+        # For submodules, the tag must be prefixed with the module's path relative to the repository root.
+        #     - For example, if the module is in "path/to/module", the default tag prefix would be "path/to/module/v". The tag prefix must not end with a "/".
+        # For other tagging formats, you can override them here.
+        #     - For example, if you want to use a prefix like `module@v` you can set that here.
+        description: |
+          TAG PREFIX (override) - prefix for the release tag. Root module default = 'v', submodule default = 'path/to/module/v'.
+        required: false
+        type: string
+
+      version-override:
+        # This forces a specific version to be released, regardless of the computed diff and versioning recommendations.
+        # This is intended for edge cases where the heuristic recommendations are incorrect, or blocking a major version release.
+        # Required if base-ref-override is set.
+        description: |
+          VERSION (override) - forces a specific version of the release. Format should be MAJOR.MINOR.PATCH (e.g. 1.2.3), without the tag prefix.
+        required: false
+        type: string
+
+      head-ref-override:
+        # This overrides/forces the tag to point to something other than the HEAD of the branch the workflow is running on.
+        # This is only needed if the commit to be released is not the HEAD of the branch.
+        description: 'HEAD REF (override) - the ref/sha the new release/tag will reference. Defaults to the HEAD of the current branch.'
+        required: false
+        # default: ${{ github.ref_name }} - not possible here
+        type: string
+
+      base-ref-override:
+        # Normally, the workflow determines the latest version/release by comparing the git tags matching the desired format (see tag-prefix-override).
+        # This overrides the latest release/version to be a specific ref. The computed API diff will be between this ref and the head ref (or release-ref-override if specified).
+        # If this is set then version-override is required, as overriding the base ref breaks the normal version recommendation heuristic.
+        description: 'BASE REF (override) - The most recent release/version/ref to compare against. Defaults to the latest (semver) tag with the associated tag prefix. version-override is required if this is set.'
+        required: false
+        type: string
+
+      dry-run:
+        description: 'DRY RUN - Run everything, except for release creation.'
+        required: true
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  process-inputs:
+    name: Process Inputs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      module: ${{ inputs.module }}
+      tag-prefix: ${{ steps.tag-prefix.outputs.tag-prefix }}
+      head-ref: ${{ steps.ref.outputs.head-ref }}
+      dry-run: ${{ inputs.dry-run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Validate module input and existence of go.mod
+        shell: bash
+        env:
+          MODULE: ${{ github.event.inputs.module }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MODULE}" ]; then
+            echo "::error::'module' input is required"
+            exit 1
+          fi
+
+          if [ ! -f "${MODULE}/go.mod" ]; then
+            echo "::error::No go.mod found at '${MODULE}/go.mod' (module input was '${MODULE}')"
+            exit 1
+          fi
+
+      - name: Default head ref
+        id: ref
+        shell: bash
+        env:
+          HEAD_REF_OVERRIDE: ${{ github.event.inputs.head-ref-override }}
+          DEFAULT_HEAD_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          REF="${DEFAULT_HEAD_REF:-}"
+          if [ -n "${HEAD_REF_OVERRIDE}" ]; then
+            echo "Overriding head ref with head-ref-override input: ${HEAD_REF_OVERRIDE}"
+            REF="${HEAD_REF_OVERRIDE}"
+          fi
+          echo "head-ref=${REF}" | tee -a "${GITHUB_OUTPUT}"
+
+      - name: Check base-ref-override and version-override inputs
+        shell: bash
+        env:
+          BASE_REF_OVERRIDE: ${{ github.event.inputs.base-ref-override }}
+          VERSION_OVERRIDE: ${{ github.event.inputs.version-override }}
+        run: |
+          if [ -n "${BASE_REF_OVERRIDE}" ] && [ -z "${VERSION_OVERRIDE}" ]; then
+            echo "::error::base-ref-override input is set, but version-override is not set and is required when using base-ref-override."
+            exit 1
+          fi
+
+      - name: Determine tag prefix (input or default)
+        id: tag-prefix
+        shell: bash
+        env:
+          MODULE: ${{ inputs.module }}
+          TAG_PREFIX_OVERRIDE: ${{ github.event.inputs.tag-prefix-override }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${TAG_PREFIX_OVERRIDE}" ]; then
+            TAG_PREFIX="${TAG_PREFIX_OVERRIDE}"
+          else
+            if [ "${MODULE}" = "." ]; then
+              TAG_PREFIX="v"
+            else
+              TAG_PREFIX="${MODULE}/v"
+            fi
+          fi
+
+          if [[ "${TAG_PREFIX}" == */ ]]; then
+            echo "::error::tag-prefix must not end with '/'. Got: '${TAG_PREFIX}'"
+            exit 1
+          fi
+
+          echo "tag-prefix=${TAG_PREFIX}" | tee -a "${GITHUB_OUTPUT}"
+
+  release:
+    name: Version and Draft Release ${{ inputs.dry-run && '(dry-run)' || '' }}
+    needs: [ process-inputs, approval-gate ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Determine latest version for module
+        if: ${{ inputs.base-ref-override == '' }}
+        id: get-latest-tag
+        uses: smartcontractkit/.github/actions/get-latest-tag@feat/get-latest-release
+        with:
+          tag-prefix: ${{ needs.process-inputs.outputs.tag-prefix }}
+
+      - name: Diff the module (${{ inputs.base-ref-override || steps.get-latest-tag.outputs.latest-tag }}...${{ needs.process-inputs.outputs.head-ref }})
+        id: apidiff-go
+        uses: smartcontractkit/.github/actions/apidiff-go@apidiff-go/v2
+        with:
+          module-directory: ${{ needs.process-inputs.outputs.module }}
+          base-ref-override: ${{ inputs.base-ref-override || steps.get-latest-tag.outputs.latest-tag }}
+          head-ref-override: ${{ needs.process-inputs.outputs.head-ref }}
+          enforce-compatible: "false"
+
+      - name: Determine version (heuristic enforcement)
+        id: determine-version
+        env:
+          VERSION_RECOMMENDATION: ${{ steps.apidiff-go.outputs.version-recommendation }}
+          LATEST_VERSION: ${{ steps.get-latest-tag.outputs.latest-version }}
+          VERSION_OVERRIDE: ${{ inputs.version-override }}
+          TAG_PREFIX: ${{ needs.process-inputs.outputs.tag-prefix }}
+          NEW_PATCH_VERSION_TAG: ${{ fromJson(steps.get-latest-tag.outputs.new-versions-json).patch.tag }}
+          NEW_MINOR_VERSION_TAG: ${{ fromJson(steps.get-latest-tag.outputs.new-versions-json).minor.tag }}
+          NEW_MAJOR_VERSION: ${{ fromJson(steps.get-latest-tag.outputs.new-versions-json).major.version }}
+        shell: bash
+        run: |
+          if [ -n "${VERSION_OVERRIDE}" ]; then
+            echo "version-override is set to '${VERSION_OVERRIDE}', overriding version recommendation."
+            echo "tag=${TAG_PREFIX}${VERSION_OVERRIDE}" | tee -a "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Parse major from "X.Y.Z"
+          CURRENT_MAJOR="${LATEST_VERSION%%.*}"
+          if ! [[ "${CURRENT_MAJOR}" =~ ^[0-9]+$ ]]; then
+            echo "::error::Unable to parse major version from latest-version '${LATEST_VERSION}'"
+            exit 1
+          fi
+
+          echo "Latest version: ${LATEST_VERSION}"
+          echo "Current major version: ${CURRENT_MAJOR}"
+          echo "Version recommendation from API diff: ${VERSION_RECOMMENDATION}"
+
+          if [ "${VERSION_RECOMMENDATION}" = "major" ]; then
+            if [ "${CURRENT_MAJOR}" -ge 1 ]; then
+              # based on gorelease heuristic: https://pkg.go.dev/golang.org/x/exp/cmd/gorelease
+              echo "::error::Incompatible API differences. A major release is not allowed on the same module path for modules versioned >=1.0.0."
+              echo "::error::After 1.0.0, major releases require a new module path. Make necessary changes, and rerun with version-override as ${NEW_MAJOR_VERSION} to override this check."
+              exit 1
+            fi
+
+            echo "::warning::Module is <1.0.0 and version recommendation is major. Changing to minor bump (${MINOR_BUMP_VERSION})."
+            echo "::warning::If you want a major version release, re-run with version-override set to ${NEW_MAJOR_VERSION} to override this check."
+            echo "tag=${NEW_MINOR_VERSION_TAG}" | tee -a "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Non-major recommendations follow normal rules
+          case "${VERSION_RECOMMENDATION}" in
+            patch) echo "tag=${NEW_PATCH_VERSION_TAG}" | tee -a "${GITHUB_OUTPUT}" ;;
+            minor) echo "tag=${NEW_MINOR_VERSION_TAG}" | tee -a "${GITHUB_OUTPUT}" ;;
+            *) echo "::error::Unexpected version recommendation: '${VERSION_RECOMMENDATION}'" ; exit 1 ;;
+          esac
+
+      - name: Create draft release (${{ steps.determine-version.outputs.tag }})
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ steps.determine-version.outputs.tag }}
+          REF: ${{ needs.process-inputs.outputs.head-ref }}
+          API_DIFF_SUMMARY: ${{ steps.apidiff-go.outputs.summary-path }}
+        run: |
+          set -euo pipefail
+
+          # Build args array once
+          release_args=(
+            "${TAG}"
+            --repo "${GITHUB_REPOSITORY}"
+            --target "${REF}"
+            --title "${TAG}"
+            --notes-file "${API_DIFF_SUMMARY}"
+            --draft
+            --prerelease=false
+          )
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "DRY RUN - skipping release creation"
+            echo "Would have run:"
+            echo -n "gh release create "
+            printf '%q ' "${release_args[@]}"
+            echo
+            exit 0
+          fi
+
+          gh release create "${release_args[@]}"
+
+
+  # Used to enforce approvals before kicking off the rest of the jobs.
+  approval-gate:
+    name: Approval Gate ${{ inputs.dry-run && '(dry-run bypass)' || '' }}
+    needs: [ review-context, process-inputs ]
+    runs-on: ubuntu-latest
+    # Only require approval gate if not a dry-run
+    environment: ${{ !inputs.dry-run && 'approval-gate-foundations' || '' }}
+    steps:
+      - name: Exit successfully
+        run: exit 0
+
+  review-context:
+    name: Review Context
+    runs-on: ubuntu-latest
+    steps:
+    - name: Display workflow context for reviewers
+      shell: bash
+      env:
+        WORKFLOW_ACTOR: ${{ github.actor }}
+        WORKFLOW_REF: ${{ github.ref_name }}
+        INPUTS_JSON: ${{ toJson(inputs) }}
+      run: |
+        {
+          echo "## 📋 Workflow Run Context"
+          echo ""
+          echo "### 👤 Initiator"
+          echo "**Triggered by:** $WORKFLOW_ACTOR"
+          echo "**Ref:** $WORKFLOW_REF"
+          echo ""
+          echo ""
+          echo "### 📥 Workflow Inputs"
+          echo "| Input | Value |"
+          echo "|-------|-------|"
+
+          # Dynamically generate input rows from JSON using jq
+          # This is safe because jq properly handles escaping
+          # Using \u0060 for backtick character
+          echo "$INPUTS_JSON" | jq -r '
+            to_entries |
+            sort_by(.key) |
+            .[] |
+            "| **\(.key)** | \u0060\(if .value == null or .value == "" then "(empty)" else .value end)\u0060 |"
+          '
+
+          echo ""
+          echo "---"
+          echo ""
+          echo "✓ Review the information above before approving this workflow run."
+        } >> "$GITHUB_STEP_SUMMARY"

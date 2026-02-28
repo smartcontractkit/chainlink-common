@@ -44,7 +44,7 @@ func ExampleGateLimiter_AllowErr() {
 	// open: true
 	// allow: <nil>
 	// open: false
-	// allow: limited: not allowed
+	// allow: limited: operation not allowed. This action is restricted by current configuration and gate settings
 }
 
 func TestMakeGateLimiter(t *testing.T) {

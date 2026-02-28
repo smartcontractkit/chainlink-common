@@ -17,29 +17,25 @@ func TestTime(t *testing.T) {
 	t.Run("parse RFC3339", func(t *testing.T) {
 		got, err := s.Parse("2025-06-15T12:30:00Z")
 		require.NoError(t, err)
-		assert.Equal(t, time.Date(2025, 6, 15, 12, 30, 0, 0, time.UTC), got)
+		assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 12, 30, 0, 0, time.UTC).Unix()), got)
 	})
 
 	t.Run("parse RFC3339 with nanoseconds", func(t *testing.T) {
 		got, err := s.Parse("2025-06-15T12:30:00.123456789Z")
 		require.NoError(t, err)
-		assert.Equal(t, time.Date(2025, 6, 15, 12, 30, 0, 123456789, time.UTC), got)
+		assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 12, 30, 0, 0, time.UTC).Unix()), got)
 	})
 
 	t.Run("parse Go default format", func(t *testing.T) {
 		got, err := s.Parse("2025-06-15 00:00:00 +0000 UTC")
 		require.NoError(t, err)
-		assert.Equal(t, time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC), got)
+		assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), got)
 	})
 
 	t.Run("parse Go default format with offset", func(t *testing.T) {
-		got, err := s.Parse("2025-06-15 12:30:00 +0530 IST")
+		got, err := s.Parse("2025-06-15 12:30:00.89 +0530 IST")
 		require.NoError(t, err)
-		assert.Equal(t, 2025, got.Year())
-		assert.Equal(t, time.Month(6), got.Month())
-		assert.Equal(t, 15, got.Day())
-		assert.Equal(t, 12, got.Hour())
-		assert.Equal(t, 30, got.Minute())
+		assert.Equal(t, time.Date(2025, 6, 15, 7, 0, 0, 0, time.UTC), time.Unix(int64(got), 0).UTC())
 	})
 
 	t.Run("MarshalText round-trip", func(t *testing.T) {
@@ -57,9 +53,9 @@ func TestTime(t *testing.T) {
 	})
 
 	t.Run("UnmarshalText", func(t *testing.T) {
-		var s2 Setting[time.Time]
+		var s2 Setting[config.Timestamp]
 		s2.Parse = s.Parse
-		require.NoError(t, s2.UnmarshalText([]byte("2100-01-01T00:00:00Z")))
+		require.NoError(t, s2.UnmarshalText([]byte("2100-01-01 00:00:00 +0000 UTC")))
 		assert.Equal(t, s.DefaultValue, s2.DefaultValue)
 	})
 

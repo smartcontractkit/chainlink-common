@@ -138,7 +138,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 5, cfg.PerWorkflow.Secrets.CallLimit.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
-	assert.Equal(t, time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
+	assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
 }
 
 func TestDefaultGetter(t *testing.T) {

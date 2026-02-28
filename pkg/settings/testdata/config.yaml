@@ -1,0 +1,32 @@
+# File generated from source files. DO NOT EDIT.
+global:
+  Bar:
+    Baz: "10"
+  Foo: "5"
+org:
+  "123":
+    Bar:
+      Baz: "99"
+    Foo: "42"
+  "456":
+    Bar:
+      Baz: "500"
+    Foo: "99"
+owner:
+  00026b4aa7e57ca7b68ae1bf45653f56b656fd3a:
+    Bar:
+      Baz: "200"
+    Foo: "75"
+  8bd112d3f8f92e41c861939545ad387307af9703:
+    Bar:
+      Baz: "43"
+    Foo: "13"
+workflow:
+  15c631d295ef5e32deb99a10ee6804bc4af13855687559d7ff6552ac6dbb2ce0:
+    Bar:
+      Baz: "13"
+    Foo: "17"
+  15c631d295ef5e32deb99a10ee6804bc4af1385568f9b3363f6552ac6dbb2cef:
+    Bar:
+      Baz: "50"
+    Foo: "20"

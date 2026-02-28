@@ -230,7 +230,7 @@ type Workflows struct {
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 
-	FeatureMultiTriggerExecutionIDsActiveAt Setting[time.Time]
+	FeatureMultiTriggerExecutionIDsActiveAt Setting[config.Timestamp]
 }
 
 type cronTrigger struct {

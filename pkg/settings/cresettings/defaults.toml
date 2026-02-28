@@ -9,12 +9,21 @@ VaultIdentifierNamespaceSizeLimit = '64b'
 VaultPluginBatchSizeLimit = '20'
 VaultRequestBatchSizeLimit = '10'
 
+[FeatureFlags]
+Flags = []
+
 [PerOrg]
 ZeroBalancePruningTimeout = '24h0m0s'
+
+[PerOrg.FeatureFlags]
+Flags = []
 
 [PerOwner]
 WorkflowExecutionConcurrencyLimit = '5'
 VaultSecretsLimit = '100'
+
+[PerOwner.FeatureFlags]
+Flags = []
 
 [PerWorkflow]
 TriggerRegistrationsTimeout = '10s'
@@ -37,6 +46,9 @@ WASMSecretsSizeLimit = '1mb'
 LogLineLimit = '1kb'
 LogEventLimit = '1000'
 FeatureMultiTriggerExecutionIDsActiveAt = '2100-01-01 00:00:00 +0000 UTC'
+
+[PerWorkflow.FeatureFlags]
+Flags = []
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'

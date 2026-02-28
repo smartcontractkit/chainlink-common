@@ -178,20 +178,25 @@ type Schema struct {
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
 
+	FeatureFlags FeatureFlags
+
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
+	FeatureFlags              FeatureFlags
 	ZeroBalancePruningTimeout Setting[time.Duration]
 }
 
 type Owners struct {
+	FeatureFlags                      FeatureFlags
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 }
 
 type Workflows struct {
+	FeatureFlags                FeatureFlags
 	TriggerRegistrationsTimeout Setting[time.Duration]
 	TriggerSubscriptionTimeout  Setting[time.Duration]
 	TriggerSubscriptionLimit    Setting[int] `unit:"{subscription}"`

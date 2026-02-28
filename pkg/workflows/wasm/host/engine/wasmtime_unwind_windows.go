@@ -1,9 +1,9 @@
 //go:build windows
 
-package host
+package engine
 
 import "github.com/bytecodealliance/wasmtime-go/v28"
 
-func SetUnwinding(cfg *wasmtime.Config) {
+func setUnwinding(_ *wasmtime.Config) {
 	// Unwinding cannot be disabled on Windows.
 }

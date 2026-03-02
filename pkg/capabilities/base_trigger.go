@@ -41,8 +41,8 @@ type BaseTriggerMetrics interface {
 }
 
 type undeliveredState struct {
-	emitted1 bool
-	emitted2 bool
+	emittedWarning  bool
+	emittedCritical bool
 }
 
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until
@@ -275,14 +275,14 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 				b.undeliveredAlertStates[triggerID][eventID] = state
 			}
 
-			if b.undeliveredWarning > 0 && !state.emitted1 && age >= b.undeliveredWarning {
+			if b.undeliveredWarning > 0 && !state.emittedWarning && age >= b.undeliveredWarning {
 				b.metrics.EmitUndeliveredWarning(triggerID, eventID)
-				state.emitted1 = true
+				state.emittedWarning = true
 			}
 
-			if b.undeliveredCritical > 0 && !state.emitted2 && age >= b.undeliveredCritical {
+			if b.undeliveredCritical > 0 && !state.emittedCritical && age >= b.undeliveredCritical {
 				b.metrics.EmitUndeliveredCritical(triggerID, eventID)
-				state.emitted2 = true
+				state.emittedCritical = true
 			}
 		}
 	}

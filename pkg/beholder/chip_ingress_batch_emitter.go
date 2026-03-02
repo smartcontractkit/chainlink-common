@@ -65,16 +65,12 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	}
 
 	e.Service, e.eng = services.Config{
-		Name:  "ChipIngressBatchEmitter",
-		Start: e.start,
+		Name: "ChipIngressBatchEmitter",
 	}.NewServiceEngine(lggr)
 
 	return e, nil
 }
 
-func (e *ChipIngressBatchEmitter) start(_ context.Context) error {
-	return nil
-}
 
 // Emit extracts (domain, entity) from the attributes, routes the event to the
 // appropriate per-(domain, entity) worker, and returns immediately.

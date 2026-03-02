@@ -209,12 +209,39 @@ jobs:
         with:
           tag-prefix: ${{ needs.process-inputs.outputs.tag-prefix }}
 
-      - name: Diff the module (${{ inputs.base-ref-override || steps.get-latest-tag.outputs.latest-tag }}...${{ needs.process-inputs.outputs.head-ref }})
+      - name: Fallbacks
+        # This step exists to ensure there are always outputs that can always be referenced, even if they are unused.
+        #   - `get-latest-tag` step is skipped if `base-ref-override` is set, which also requires `version-override` to be set.
+        #   - So the fallback values here are never used, however they ensure no runtime errors from referencing non-existent outputs..
+        id: fallbacks
+        env:
+          LATEST_VERSION: ${{ steps.get-latest-tag.outputs.latest-version || 'unknown' }}
+          NEW_VERSIONS_JSON: ${{ steps.get-latest-tag.outputs.new-versions-json || '{}' }}
+          BASE_REF: ${{ inputs.base-ref-override || steps.get-latest-tag.outputs.latest-tag }}
+        run: |
+          if [ -z "${BASE_REF}" ]; then
+            # This should not happen.
+            echo "::error::Failed to determine a base ref. Failing."
+            exit 1
+          fi
+
+          echo "latest-version=${LATEST_VERSION}" | tee -a "${GITHUB_OUTPUT}"
+          echo "base-ref=${BASE_REF}" | tee -a "${GITHUB_OUTPUT}"
+
+          PATCH_VERSION_TAG=$(echo "${NEW_VERSIONS_JSON}" | jq -r '.patch.tag // "unknown"')
+          MINOR_VERSION_TAG=$(echo "${NEW_VERSIONS_JSON}" | jq -r '.minor.tag // "unknown"')
+          MAJOR_VERSION=$(echo "${NEW_VERSIONS_JSON}" | jq -r '.major.version // "unknown"')
+
+          echo "patch-version-tag=${PATCH_VERSION_TAG}" | tee -a "${GITHUB_OUTPUT}"
+          echo "minor-version-tag=${MINOR_VERSION_TAG}" | tee -a "${GITHUB_OUTPUT}"
+          echo "major-version=${MAJOR_VERSION}" | tee -a "${GITHUB_OUTPUT}"
+
+      - name: Diff the module (${{ steps.fallbacks.outputs.base-ref }}...${{ needs.process-inputs.outputs.head-ref }})
         id: apidiff-go
         uses: smartcontractkit/.github/actions/apidiff-go@apidiff-go/v2
         with:
           module-directory: ${{ needs.process-inputs.outputs.module }}
-          base-ref-override: ${{ inputs.base-ref-override || steps.get-latest-tag.outputs.latest-tag }}
+          base-ref-override: ${{ steps.fallbacks.outputs.base-ref }}
           head-ref-override: ${{ needs.process-inputs.outputs.head-ref }}
           enforce-compatible: "false"
 
@@ -222,18 +249,24 @@ jobs:
         id: determine-version
         env:
           VERSION_RECOMMENDATION: ${{ steps.apidiff-go.outputs.version-recommendation }}
-          LATEST_VERSION: ${{ steps.get-latest-tag.outputs.latest-version }}
+          LATEST_VERSION: ${{ steps.fallbacks.outputs.latest-version }}
           VERSION_OVERRIDE: ${{ inputs.version-override }}
           TAG_PREFIX: ${{ needs.process-inputs.outputs.tag-prefix }}
-          NEW_PATCH_VERSION_TAG: ${{ fromJson(steps.get-latest-tag.outputs.new-versions-json).patch.tag }}
-          NEW_MINOR_VERSION_TAG: ${{ fromJson(steps.get-latest-tag.outputs.new-versions-json).minor.tag }}
-          NEW_MAJOR_VERSION: ${{ fromJson(steps.get-latest-tag.outputs.new-versions-json).major.version }}
+          NEW_PATCH_VERSION_TAG: ${{ steps.fallbacks.outputs.patch-version-tag }}
+          NEW_MINOR_VERSION_TAG: ${{ steps.fallbacks.outputs.minor-version-tag }}
+          NEW_MAJOR_VERSION: ${{ steps.fallbacks.outputs.major-version }}
         shell: bash
         run: |
           if [ -n "${VERSION_OVERRIDE}" ]; then
             echo "version-override is set to '${VERSION_OVERRIDE}', overriding version recommendation."
             echo "tag=${TAG_PREFIX}${VERSION_OVERRIDE}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
+          fi
+
+          if [ "${NEW_PATCH_VERSION_TAG}" = "unknown" ] || [ "${NEW_MINOR_VERSION_TAG}" = "unknown" ] || [ "${VERSION_RECOMMENDATION}" = "unknown" ]; then
+            # This should not happen. These fallback values should only exist if base-ref-override/version-override is set.
+            echo "::error::Failed to determine new version tags or version recommendation. Failing."
+            exit 1
           fi
 
           # Parse major from "X.Y.Z"
@@ -255,7 +288,7 @@ jobs:
               exit 1
             fi
 
-            echo "::warning::Module is <1.0.0 and version recommendation is major. Changing to minor bump (${MINOR_BUMP_VERSION})."
+            echo "::warning::Module is <1.0.0 and version recommendation is major. Changing to minor bump (${NEW_MINOR_VERSION_TAG})."
             echo "::warning::If you want a major version release, re-run with version-override set to ${NEW_MAJOR_VERSION} to override this check."
             echo "tag=${NEW_MINOR_VERSION_TAG}" | tee -a "${GITHUB_OUTPUT}"
             exit 0
@@ -270,7 +303,7 @@ jobs:
 
       - name: Create draft release (${{ steps.determine-version.outputs.tag }})
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry-run }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           TAG: ${{ steps.determine-version.outputs.tag }}
@@ -317,37 +350,37 @@ jobs:
     name: Review Context
     runs-on: ubuntu-latest
     steps:
-    - name: Display workflow context for reviewers
-      shell: bash
-      env:
-        WORKFLOW_ACTOR: ${{ github.actor }}
-        WORKFLOW_REF: ${{ github.ref_name }}
-        INPUTS_JSON: ${{ toJson(inputs) }}
-      run: |
-        {
-          echo "## 📋 Workflow Run Context"
-          echo ""
-          echo "### 👤 Initiator"
-          echo "**Triggered by:** $WORKFLOW_ACTOR"
-          echo "**Ref:** $WORKFLOW_REF"
-          echo ""
-          echo ""
-          echo "### 📥 Workflow Inputs"
-          echo "| Input | Value |"
-          echo "|-------|-------|"
+      - name: Display workflow context for reviewers
+        shell: bash
+        env:
+          WORKFLOW_ACTOR: ${{ github.actor }}
+          WORKFLOW_REF: ${{ github.ref_name }}
+          INPUTS_JSON: ${{ toJson(inputs) }}
+        run: |
+          {
+            echo "## 📋 Workflow Run Context"
+            echo ""
+            echo "### 👤 Initiator"
+            echo "**Triggered by:** $WORKFLOW_ACTOR"
+            echo "**Ref:** $WORKFLOW_REF"
+            echo ""
+            echo ""
+            echo "### 📥 Workflow Inputs"
+            echo "| Input | Value |"
+            echo "|-------|-------|"
 
-          # Dynamically generate input rows from JSON using jq
-          # This is safe because jq properly handles escaping
-          # Using \u0060 for backtick character
-          echo "$INPUTS_JSON" | jq -r '
-            to_entries |
-            sort_by(.key) |
-            .[] |
-            "| **\(.key)** | \u0060\(if .value == null or .value == "" then "(empty)" else .value end)\u0060 |"
-          '
+            # Dynamically generate input rows from JSON using jq
+            # This is safe because jq properly handles escaping
+            # Using \u0060 for backtick character
+            echo "$INPUTS_JSON" | jq -r '
+              to_entries |
+              sort_by(.key) |
+              .[] |
+              "| **\(.key)** | \u0060\(if .value == null or .value == "" then "(empty)" else .value end)\u0060 |"
+            '
 
-          echo ""
-          echo "---"
-          echo ""
-          echo "✓ Review the information above before approving this workflow run."
-        } >> "$GITHUB_STEP_SUMMARY"
+            echo ""
+            echo "---"
+            echo ""
+            echo "✓ Review the information above before approving this workflow run."
+          } >> "$GITHUB_STEP_SUMMARY"

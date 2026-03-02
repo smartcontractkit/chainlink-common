@@ -248,7 +248,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	select {
 	case sendCh <- wrapped:
 		b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
-			b.capabilityId, event.TriggerId, event.EventId, rec.Attempts)
+			b.capabilityId, event.TriggerId, event.EventId, attempts)
 	default:
 		b.lggr.Warnf("inbox full for trigger %s", event.TriggerId)
 	}

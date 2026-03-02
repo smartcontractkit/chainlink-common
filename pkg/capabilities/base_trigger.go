@@ -70,7 +70,6 @@ func NewBaseTriggerCapability[T proto.Message](
 
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	b.lggr.Info("starting base trigger")
-	b.ctx, b.cancel = context.WithCancel(ctx)
 
 	recs, err := b.store.List(ctx)
 	if err != nil {
@@ -79,7 +78,7 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	}
 
 	// Initialize in-memory persistence
-	b.pending = make(map[string]map[string]*PendingEvent)
+	b.mu.Lock()
 	for i := range recs {
 		r := &recs[i]
 		if _, ok := b.pending[r.TriggerId]; !ok {
@@ -87,6 +86,7 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 		}
 		b.pending[r.TriggerId][r.EventId] = r
 	}
+	b.mu.Unlock()
 
 	b.wg.Add(1)
 	go func() {
@@ -204,11 +204,13 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	eventsForTrigger, ok := b.pending[event.TriggerId]
 	if !ok || eventsForTrigger == nil {
 		b.mu.Unlock()
+		return
 	}
 
 	rec, ok := eventsForTrigger[event.EventId]
 	if !ok || rec == nil {
 		b.mu.Unlock()
+		return
 	}
 
 	rec.Attempts++
@@ -227,6 +229,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 
 	if !inboxOk {
 		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
+		return
 	}
 
 	msg := b.newMsg()
@@ -243,7 +246,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	select {
 	case sendCh <- wrapped:
 		b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
-			b.capabilityId, event.TriggerId, event.EventId, rec.Attempts)
+			b.capabilityId, event.TriggerId, event.EventId, attempts)
 	default:
 		b.lggr.Warnf("inbox full for trigger %s", event.TriggerId)
 	}

@@ -77,13 +77,27 @@ func MakeResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (Re
 	return newScopedResourcePoolLimiterFromFactory(f, limit)
 }
 
-// MakeBoundLimiter returns a BoundLimiter for the given bound and configured by the Factory.
+// Deprecated: use MakeUpperBoundLimiter
+func MakeBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
+	return MakeUpperBoundLimiter(f, bound)
+}
+
+// MakeUpperBoundLimiter returns a BoundLimiter for the given upper bound and configured by the Factory.
 // If Meter is set, the following metrics will be emitted
 //   - bound.*.limit - gauge
 //   - bound.*.usage - histogram
 //   - bound.*.denied - histogram
-func MakeBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
-	return newBoundLimiter(f, bound.GetSpec())
+func MakeUpperBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
+	return newBoundLimiter(f, bound.GetSpec(), false)
+}
+
+// MakeLowerBoundLimiter returns a BoundLimiter for the given lower bound and configured by the Factory.
+// If Meter is set, the following metrics will be emitted
+//   - bound.*.limit - gauge
+//   - bound.*.usage - histogram
+//   - bound.*.denied - histogram
+func MakeLowerBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
+	return newBoundLimiter(f, bound.GetSpec(), true)
 }
 
 // MakeQueueLimiter returns a QueueLimiter for the given limit and configured by the Factory.

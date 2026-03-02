@@ -224,7 +224,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 		limit := settings.Size(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
 		var err error
-		modCfg.MemoryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MemoryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make memory limiter: %w", err)
 		}
@@ -232,7 +232,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	if modCfg.MaxCompressedBinaryLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxCompressedBinarySize))
 		var err error
-		modCfg.MaxCompressedBinaryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MaxCompressedBinaryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make compressed binary size limiter: %w", err)
 		}
@@ -240,7 +240,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	if modCfg.MaxDecompressedBinaryLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxDecompressedBinarySize))
 		var err error
-		modCfg.MaxDecompressedBinaryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MaxDecompressedBinaryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make  decompressed binary size limiter: %w", err)
 		}
@@ -248,7 +248,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	if modCfg.MaxResponseSizeLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxResponseSizeBytes))
 		var err error
-		modCfg.MaxResponseSizeLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MaxResponseSizeLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
 		}

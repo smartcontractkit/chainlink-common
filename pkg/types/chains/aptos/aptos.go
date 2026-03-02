@@ -14,10 +14,10 @@ type Client interface {
 	AccountAPTBalance(ctx context.Context, req AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
 	// View executes a Move view function (read-only) and returns the raw result.
 	View(ctx context.Context, req ViewRequest) (*ViewReply, error)
-	// EventsByHandle retrieves events emitted by a specific event handle on an account.
-	EventsByHandle(ctx context.Context, req EventsByHandleRequest) (*EventsByHandleReply, error)
 	// TransactionByHash looks up a transaction (pending or committed) by its hash.
 	TransactionByHash(ctx context.Context, req TransactionByHashRequest) (*TransactionByHashReply, error)
+	// AccountTransactions returns committed transactions associated with an account.
+	AccountTransactions(ctx context.Context, req AccountTransactionsRequest) (*AccountTransactionsReply, error)
 }
 
 // ========== AccountAPTBalance ==========
@@ -37,7 +37,7 @@ type ViewRequest struct {
 }
 
 type ViewReply struct {
-	Data []byte
+	Data []byte // this is marshaled JSON because the aptos rpc client returns JSON
 }
 
 // ViewPayload represents the payload for a view function call.
@@ -63,15 +63,15 @@ type TypeTag struct {
 // TypeTagImpl is the interface for all type tag implementations.
 // Different type tags represent different Move types.
 type TypeTagImpl interface {
-	// TypeTagType returns the type discriminator for this type tag.
-	TypeTagType() TypeTagType
+	// TypeTagKind returns the type discriminator for this type tag.
+	TypeTagKind() TypeTagKind
 }
 
-// TypeTagType is an enum for different type tag variants.
-type TypeTagType uint8
+// TypeTagKind is an enum for different type tag variants.
+type TypeTagKind uint8
 
 const (
-	TypeTagBool TypeTagType = iota
+	TypeTagBool TypeTagKind = iota
 	TypeTagU8
 	TypeTagU16
 	TypeTagU32
@@ -90,54 +90,54 @@ const (
 // BoolTag represents a boolean type.
 type BoolTag struct{}
 
-func (BoolTag) TypeTagType() TypeTagType { return TypeTagBool }
+func (BoolTag) TypeTagKind() TypeTagKind { return TypeTagBool }
 
 // U8Tag represents an unsigned 8-bit integer type.
 type U8Tag struct{}
 
-func (U8Tag) TypeTagType() TypeTagType { return TypeTagU8 }
+func (U8Tag) TypeTagKind() TypeTagKind { return TypeTagU8 }
 
 // U16Tag represents an unsigned 16-bit integer type.
 type U16Tag struct{}
 
-func (U16Tag) TypeTagType() TypeTagType { return TypeTagU16 }
+func (U16Tag) TypeTagKind() TypeTagKind { return TypeTagU16 }
 
 // U32Tag represents an unsigned 32-bit integer type.
 type U32Tag struct{}
 
-func (U32Tag) TypeTagType() TypeTagType { return TypeTagU32 }
+func (U32Tag) TypeTagKind() TypeTagKind { return TypeTagU32 }
 
 // U64Tag represents an unsigned 64-bit integer type.
 type U64Tag struct{}
 
-func (U64Tag) TypeTagType() TypeTagType { return TypeTagU64 }
+func (U64Tag) TypeTagKind() TypeTagKind { return TypeTagU64 }
 
 // U128Tag represents an unsigned 128-bit integer type.
 type U128Tag struct{}
 
-func (U128Tag) TypeTagType() TypeTagType { return TypeTagU128 }
+func (U128Tag) TypeTagKind() TypeTagKind { return TypeTagU128 }
 
 // U256Tag represents an unsigned 256-bit integer type.
 type U256Tag struct{}
 
-func (U256Tag) TypeTagType() TypeTagType { return TypeTagU256 }
+func (U256Tag) TypeTagKind() TypeTagKind { return TypeTagU256 }
 
 // AddressTag represents an account address type.
 type AddressTag struct{}
 
-func (AddressTag) TypeTagType() TypeTagType { return TypeTagAddress }
+func (AddressTag) TypeTagKind() TypeTagKind { return TypeTagAddress }
 
 // SignerTag represents a signer type.
 type SignerTag struct{}
 
-func (SignerTag) TypeTagType() TypeTagType { return TypeTagSigner }
+func (SignerTag) TypeTagKind() TypeTagKind { return TypeTagSigner }
 
 // VectorTag represents a vector type with an element type.
 type VectorTag struct {
 	ElementType TypeTag
 }
 
-func (VectorTag) TypeTagType() TypeTagType { return TypeTagVector }
+func (VectorTag) TypeTagKind() TypeTagKind { return TypeTagVector }
 
 // StructTag represents a struct type with full type information.
 type StructTag struct {
@@ -147,46 +147,14 @@ type StructTag struct {
 	TypeParams []TypeTag
 }
 
-func (StructTag) TypeTagType() TypeTagType { return TypeTagStruct }
+func (StructTag) TypeTagKind() TypeTagKind { return TypeTagStruct }
 
 // GenericTag represents a generic type parameter (e.g., T in a generic function).
 type GenericTag struct {
 	Index uint16
 }
 
-func (GenericTag) TypeTagType() TypeTagType { return TypeTagGeneric }
-
-// ========== EventsByHandle ==========
-
-type EventsByHandleRequest struct {
-	Account     AccountAddress
-	EventHandle string
-	FieldName   string
-	Start       *uint64 // optional, nil for most recent events
-	Limit       *uint64 // optional, 100 by default
-}
-
-type EventsByHandleReply struct {
-	Events []*Event
-}
-
-// Event represents an on-chain event from Move.
-// There are two types of events:
-// - Handle events (V1): have a GUID and SequenceNumber
-// - Module events: do not have a GUID and SequenceNumber
-type Event struct {
-	Version        uint64 // Block version of the event
-	Type           string // Fully qualified name e.g. 0x1::coin::WithdrawEvent
-	Guid           *GUID  // Unique identifier (only for V1 events)
-	SequenceNumber uint64 // Sequence number (only for V1 events)
-	Data           []byte // Event data as raw bytes
-}
-
-// GUID describes a GUID associated with V1 events
-type GUID struct {
-	CreationNumber uint64         // Number of the GUID
-	AccountAddress AccountAddress // Account address of the creator
-}
+func (GenericTag) TypeTagKind() TypeTagKind { return TypeTagGeneric }
 
 // TransactionByHashRequest represents a request to get a transaction by hash
 type TransactionByHashRequest struct {
@@ -221,31 +189,45 @@ type Transaction struct {
 	Data    []byte  // Raw transaction data
 }
 
+// ========== AccountTransactions ==========
+
+type AccountTransactionsRequest struct {
+	Address AccountAddress
+	Start   *uint64 // Starting version number; nil for most recent
+	Limit   *uint64 // Number of transactions to return; nil for default (~100)
+}
+
+type AccountTransactionsReply struct {
+	Transactions []*Transaction
+}
+
+// ========== SubmitTransaction ==========
+
 type SubmitTransactionRequest struct {
-	ReceiverModuleID ModuleID
+	ReceiverModuleID ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
 	EncodedPayload   []byte
 	GasConfig        *GasConfig
 }
 
+type TransactionStatus int
+
+const (
+	// Transaction processing failed due to a network issue, RPC issue, or other fatal error
+	TxFatal TransactionStatus = iota
+	// Transaction was sent successfully to the chain but the smart contract execution reverted
+	TxReverted
+	// Transaction was sent successfully to the chain, smart contract executed successfully and mined into a block.
+	TxSuccess
+)
+
 type SubmitTransactionReply struct {
-	PendingTransaction *PendingTransaction
+	TxStatus         TransactionStatus
+	TxHash           string
+	TxIdempotencyKey string
 }
 
 // GasConfig represents gas configuration for a transaction
 type GasConfig struct {
 	MaxGasAmount uint64 // Maximum gas units willing to pay
 	GasUnitPrice uint64 // Price per gas unit in octas
-}
-
-// PendingTransaction represents a transaction that has been submitted but not yet committed
-type PendingTransaction struct {
-	Hash                    string         // Transaction hash (hex string with 0x prefix)
-	Sender                  AccountAddress // Sender's account address
-	SequenceNumber          uint64         // Sequence number of the transaction
-	ReplayProtectionNonce   *uint64        // Optional nonce for replay protection
-	MaxGasAmount            uint64         // Maximum gas amount
-	GasUnitPrice            uint64         // Gas unit price
-	ExpirationTimestampSecs uint64         // Expiration timestamp in seconds
-	Payload                 []byte         // Transaction payload as raw bytes
-	Signature               []byte         // Signature as raw bytes
 }

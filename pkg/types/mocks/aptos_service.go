@@ -82,28 +82,28 @@ func (_c *AptosService_AccountAPTBalance_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// EventsByHandle provides a mock function with given fields: ctx, req
-func (_m *AptosService) EventsByHandle(ctx context.Context, req aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error) {
+// AccountTransactions provides a mock function with given fields: ctx, req
+func (_m *AptosService) AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error) {
 	ret := _m.Called(ctx, req)
 
 	if len(ret) == 0 {
-		panic("no return value specified for EventsByHandle")
+		panic("no return value specified for AccountTransactions")
 	}
 
-	var r0 *aptos.EventsByHandleReply
+	var r0 *aptos.AccountTransactionsReply
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error)); ok {
 		return rf(ctx, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, aptos.EventsByHandleRequest) *aptos.EventsByHandleReply); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, aptos.AccountTransactionsRequest) *aptos.AccountTransactionsReply); ok {
 		r0 = rf(ctx, req)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*aptos.EventsByHandleReply)
+			r0 = ret.Get(0).(*aptos.AccountTransactionsReply)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, aptos.EventsByHandleRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, aptos.AccountTransactionsRequest) error); ok {
 		r1 = rf(ctx, req)
 	} else {
 		r1 = ret.Error(1)
@@ -112,31 +112,31 @@ func (_m *AptosService) EventsByHandle(ctx context.Context, req aptos.EventsByHa
 	return r0, r1
 }
 
-// AptosService_EventsByHandle_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EventsByHandle'
-type AptosService_EventsByHandle_Call struct {
+// AptosService_AccountTransactions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AccountTransactions'
+type AptosService_AccountTransactions_Call struct {
 	*mock.Call
 }
 
-// EventsByHandle is a helper method to define mock.On call
+// AccountTransactions is a helper method to define mock.On call
 //   - ctx context.Context
-//   - req aptos.EventsByHandleRequest
-func (_e *AptosService_Expecter) EventsByHandle(ctx interface{}, req interface{}) *AptosService_EventsByHandle_Call {
-	return &AptosService_EventsByHandle_Call{Call: _e.mock.On("EventsByHandle", ctx, req)}
+//   - req aptos.AccountTransactionsRequest
+func (_e *AptosService_Expecter) AccountTransactions(ctx interface{}, req interface{}) *AptosService_AccountTransactions_Call {
+	return &AptosService_AccountTransactions_Call{Call: _e.mock.On("AccountTransactions", ctx, req)}
 }
 
-func (_c *AptosService_EventsByHandle_Call) Run(run func(ctx context.Context, req aptos.EventsByHandleRequest)) *AptosService_EventsByHandle_Call {
+func (_c *AptosService_AccountTransactions_Call) Run(run func(ctx context.Context, req aptos.AccountTransactionsRequest)) *AptosService_AccountTransactions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(aptos.EventsByHandleRequest))
+		run(args[0].(context.Context), args[1].(aptos.AccountTransactionsRequest))
 	})
 	return _c
 }
 
-func (_c *AptosService_EventsByHandle_Call) Return(_a0 *aptos.EventsByHandleReply, _a1 error) *AptosService_EventsByHandle_Call {
+func (_c *AptosService_AccountTransactions_Call) Return(_a0 *aptos.AccountTransactionsReply, _a1 error) *AptosService_AccountTransactions_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *AptosService_EventsByHandle_Call) RunAndReturn(run func(context.Context, aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error)) *AptosService_EventsByHandle_Call {
+func (_c *AptosService_AccountTransactions_Call) RunAndReturn(run func(context.Context, aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error)) *AptosService_AccountTransactions_Call {
 	_c.Call.Return(run)
 	return _c
 }

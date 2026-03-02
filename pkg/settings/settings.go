@@ -31,7 +31,7 @@ type Registry interface {
 	SubscribeScoped(ctx context.Context, scope Scope, key string) (updates <-chan Update[string], stop func())
 }
 
-//TODO use this everywhere
+// TODO use this everywhere
 type IsSetting[T any] interface {
 	GetSpec() SettingSpec[T]
 }
@@ -114,6 +114,15 @@ func Duration(defaultValue time.Duration) Setting[time.Duration] {
 	s := NewSetting(defaultValue, time.ParseDuration)
 	s.Unit = "s"
 	return s
+}
+
+func Time(defaultValue time.Time) Setting[time.Time] {
+	return NewSetting(defaultValue, func(s string) (time.Time, error) {
+		if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+			return t, nil
+		}
+		return time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", s) // Go default format
+	})
 }
 
 func URL(defaultValue *url.URL) Setting[*url.URL] {

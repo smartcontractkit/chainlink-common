@@ -572,12 +572,12 @@ func (ua *UnimplementedAptosService) View(ctx context.Context, req aptos.ViewReq
 	return nil, status.Errorf(codes.Unimplemented, "method View not implemented")
 }
 
-func (ua *UnimplementedAptosService) EventsByHandle(ctx context.Context, req aptos.EventsByHandleRequest) (*aptos.EventsByHandleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method EventsByHandle not implemented")
-}
-
 func (ua *UnimplementedAptosService) TransactionByHash(ctx context.Context, req aptos.TransactionByHashRequest) (*aptos.TransactionByHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TransactionByHash not implemented")
+}
+
+func (ua *UnimplementedAptosService) AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountTransactions not implemented")
 }
 
 func (ua *UnimplementedAptosService) SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error) {

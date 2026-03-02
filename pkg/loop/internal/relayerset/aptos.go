@@ -29,12 +29,12 @@ func (ac *aptosClient) View(ctx context.Context, in *aptospb.ViewRequest, opts .
 	return ac.client.View(appendRelayID(ctx, ac.relayID), in, opts...)
 }
 
-func (ac *aptosClient) EventsByHandle(ctx context.Context, in *aptospb.EventsByHandleRequest, opts ...grpc.CallOption) (*aptospb.EventsByHandleReply, error) {
-	return ac.client.EventsByHandle(appendRelayID(ctx, ac.relayID), in, opts...)
-}
-
 func (ac *aptosClient) TransactionByHash(ctx context.Context, in *aptospb.TransactionByHashRequest, opts ...grpc.CallOption) (*aptospb.TransactionByHashReply, error) {
 	return ac.client.TransactionByHash(appendRelayID(ctx, ac.relayID), in, opts...)
+}
+
+func (ac *aptosClient) AccountTransactions(ctx context.Context, in *aptospb.AccountTransactionsRequest, opts ...grpc.CallOption) (*aptospb.AccountTransactionsReply, error) {
+	return ac.client.AccountTransactions(appendRelayID(ctx, ac.relayID), in, opts...)
 }
 
 func (ac *aptosClient) SubmitTransaction(ctx context.Context, in *aptospb.SubmitTransactionRequest, opts ...grpc.CallOption) (*aptospb.SubmitTransactionReply, error) {
@@ -90,32 +90,6 @@ func (as *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*apt
 	return aptospb.ConvertViewReplyToProto(reply)
 }
 
-func (as *aptosServer) EventsByHandle(ctx context.Context, req *aptospb.EventsByHandleRequest) (*aptospb.EventsByHandleReply, error) {
-	aptosService, err := as.parent.getAptosService(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert proto types to Go types
-	goReq, err := aptospb.ConvertEventsByHandleRequestFromProto(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert request: %w", err)
-	}
-
-	reply, err := aptosService.EventsByHandle(ctx, *goReq)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert Go types back to proto types
-	protoReply, err := aptospb.ConvertEventsByHandleReplyToProto(reply)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert reply: %w", err)
-	}
-
-	return protoReply, nil
-}
-
 func (as *aptosServer) TransactionByHash(ctx context.Context, req *aptospb.TransactionByHashRequest) (*aptospb.TransactionByHashReply, error) {
 	aptosService, err := as.parent.getAptosService(ctx)
 	if err != nil {
@@ -132,6 +106,25 @@ func (as *aptosServer) TransactionByHash(ctx context.Context, req *aptospb.Trans
 
 	// Convert Go types back to proto types
 	return aptospb.ConvertTransactionByHashReplyToProto(reply), nil
+}
+
+func (as *aptosServer) AccountTransactions(ctx context.Context, req *aptospb.AccountTransactionsRequest) (*aptospb.AccountTransactionsReply, error) {
+	aptosService, err := as.parent.getAptosService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	goReq, err := aptospb.ConvertAccountTransactionsRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert request: %w", err)
+	}
+
+	reply, err := aptosService.AccountTransactions(ctx, goReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return aptospb.ConvertAccountTransactionsReplyToProto(reply), nil
 }
 
 func (as *aptosServer) SubmitTransaction(ctx context.Context, req *aptospb.SubmitTransactionRequest) (*aptospb.SubmitTransactionReply, error) {

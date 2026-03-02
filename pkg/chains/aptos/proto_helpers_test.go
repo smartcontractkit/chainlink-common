@@ -87,7 +87,7 @@ func TestTypeTagConverters(t *testing.T) {
 
 			roundtrip, err := conv.ConvertTypeTagFromProto(proto)
 			require.NoError(t, err, "failed to convert back tag %d", i)
-			require.Equal(t, tag.Value.TypeTagType(), roundtrip.Value.TypeTagType())
+			require.Equal(t, tag.Value.TypeTagKind(), roundtrip.Value.TypeTagKind())
 		}
 	})
 
@@ -106,7 +106,7 @@ func TestTypeTagConverters(t *testing.T) {
 		require.NoError(t, err)
 		vec, ok := roundtrip.Value.(typeaptos.VectorTag)
 		require.True(t, ok)
-		require.Equal(t, typeaptos.TypeTagU64, vec.ElementType.Value.TypeTagType())
+		require.Equal(t, typeaptos.TypeTagU64, vec.ElementType.Value.TypeTagKind())
 	})
 
 	t.Run("StructTag roundtrip", func(t *testing.T) {
@@ -166,7 +166,7 @@ func TestTypeTagConverters(t *testing.T) {
 
 	t.Run("Invalid struct address length", func(t *testing.T) {
 		protoTag := &conv.TypeTag{
-			Type: conv.TypeTagType_TYPE_TAG_STRUCT,
+			Kind: conv.TypeTagKind_TYPE_TAG_KIND_STRUCT,
 			Value: &conv.TypeTag_Struct{
 				Struct: &conv.StructTag{
 					Address:    mkBytes(typeaptos.AccountAddressLength-1, 0x01),
@@ -180,67 +180,6 @@ func TestTypeTagConverters(t *testing.T) {
 		_, err := conv.ConvertTypeTagFromProto(protoTag)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "invalid struct address length")
-	})
-}
-
-func TestEventConverters(t *testing.T) {
-	t.Run("Event roundtrip without GUID", func(t *testing.T) {
-		event := &typeaptos.Event{
-			Version:        100,
-			Type:           "0x1::coin::WithdrawEvent",
-			Guid:           nil,
-			SequenceNumber: 5,
-			Data:           []byte(`{"amount":"1000"}`),
-		}
-
-		protoEvent, err := conv.ConvertEventToProto(event)
-		require.NoError(t, err)
-		require.Equal(t, uint64(100), protoEvent.Version)
-		require.Equal(t, "0x1::coin::WithdrawEvent", protoEvent.Type)
-		require.Nil(t, protoEvent.Guid)
-
-		roundtrip, err := conv.ConvertEventFromProto(protoEvent)
-		require.NoError(t, err)
-		require.Equal(t, event.Version, roundtrip.Version)
-		require.Equal(t, event.Type, roundtrip.Type)
-		require.Nil(t, roundtrip.Guid)
-		require.True(t, bytes.Equal(event.Data, roundtrip.Data))
-	})
-
-	t.Run("Event roundtrip with GUID", func(t *testing.T) {
-		addr := mkBytes(typeaptos.AccountAddressLength, 0xAB)
-		event := &typeaptos.Event{
-			Version: 200,
-			Type:    "0x1::account::KeyRotationEvent",
-			Guid: &typeaptos.GUID{
-				CreationNumber: 42,
-				AccountAddress: [32]byte(addr),
-			},
-			SequenceNumber: 10,
-			Data:           []byte(`{"old_key":"0x123"}`),
-		}
-
-		protoEvent, err := conv.ConvertEventToProto(event)
-		require.NoError(t, err)
-		require.NotNil(t, protoEvent.Guid)
-		require.Equal(t, uint64(42), protoEvent.Guid.CreationNumber)
-
-		roundtrip, err := conv.ConvertEventFromProto(protoEvent)
-		require.NoError(t, err)
-		require.NotNil(t, roundtrip.Guid)
-		require.Equal(t, uint64(42), roundtrip.Guid.CreationNumber)
-		require.True(t, bytes.Equal(addr, roundtrip.Guid.AccountAddress[:]))
-	})
-
-	t.Run("GUID invalid address length", func(t *testing.T) {
-		protoGuid := &conv.GUID{
-			CreationNumber: 1,
-			AccountAddress: mkBytes(typeaptos.AccountAddressLength+1, 0x01),
-		}
-
-		_, err := conv.ConvertGUIDFromProto(protoGuid)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid account address length")
 	})
 }
 
@@ -364,35 +303,24 @@ func TestSubmitTransactionConverters(t *testing.T) {
 		require.Nil(t, roundtrip.GasConfig)
 	})
 
-	t.Run("PendingTransaction roundtrip", func(t *testing.T) {
-		senderAddr := mkBytes(typeaptos.AccountAddressLength, 0xAA)
-		nonce := uint64(999)
-		tx := &typeaptos.PendingTransaction{
-			Hash:                    "0xpending123",
-			Sender:                  [32]byte(senderAddr),
-			SequenceNumber:          42,
-			ReplayProtectionNonce:   &nonce,
-			MaxGasAmount:            10000,
-			GasUnitPrice:            200,
-			ExpirationTimestampSecs: 1234567890,
-			Payload:                 []byte{0x11, 0x22, 0x33},
-			Signature:               []byte{0xAA, 0xBB, 0xCC},
+	t.Run("SubmitTransactionReply roundtrip", func(t *testing.T) {
+		reply := &typeaptos.SubmitTransactionReply{
+			TxStatus:         typeaptos.TxSuccess,
+			TxHash:           "0xabc123",
+			TxIdempotencyKey: "key-456",
 		}
 
-		protoTx, err := conv.ConvertPendingTransactionToProto(tx)
+		protoReply, err := conv.ConvertSubmitTransactionReplyToProto(reply)
 		require.NoError(t, err)
-		require.Equal(t, "0xpending123", protoTx.Hash)
-		require.Equal(t, uint64(42), protoTx.SequenceNumber)
-		require.NotNil(t, protoTx.ReplayProtectionNonce)
-		require.Equal(t, uint64(999), *protoTx.ReplayProtectionNonce)
+		require.Equal(t, conv.TxStatus(typeaptos.TxSuccess), protoReply.TxStatus)
+		require.Equal(t, "0xabc123", protoReply.TxHash)
+		require.Equal(t, "key-456", protoReply.TxIdempotencyKey)
 
-		roundtrip, err := conv.ConvertPendingTransactionFromProto(protoTx)
+		roundtrip, err := conv.ConvertSubmitTransactionReplyFromProto(protoReply)
 		require.NoError(t, err)
-		require.Equal(t, tx.Hash, roundtrip.Hash)
-		require.True(t, bytes.Equal(senderAddr, roundtrip.Sender[:]))
-		require.Equal(t, tx.SequenceNumber, roundtrip.SequenceNumber)
-		require.NotNil(t, roundtrip.ReplayProtectionNonce)
-		require.Equal(t, nonce, *roundtrip.ReplayProtectionNonce)
+		require.Equal(t, reply.TxStatus, roundtrip.TxStatus)
+		require.Equal(t, reply.TxHash, roundtrip.TxHash)
+		require.Equal(t, reply.TxIdempotencyKey, roundtrip.TxIdempotencyKey)
 	})
 
 	t.Run("Invalid request errors", func(t *testing.T) {
@@ -417,62 +345,6 @@ func TestSubmitTransactionConverters(t *testing.T) {
 	})
 }
 
-func TestEventsByHandleConverters(t *testing.T) {
-	t.Run("EventsByHandleRequest roundtrip with optionals", func(t *testing.T) {
-		addr := mkBytes(typeaptos.AccountAddressLength, 0x03)
-		start := uint64(10)
-		limit := uint64(50)
-		req := &typeaptos.EventsByHandleRequest{
-			Account:     [32]byte(addr),
-			EventHandle: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
-			FieldName:   "withdraw_events",
-			Start:       &start,
-			Limit:       &limit,
-		}
-
-		protoReq, err := conv.ConvertEventsByHandleRequestToProto(req)
-		require.NoError(t, err)
-		require.Equal(t, "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>", protoReq.EventHandle)
-		require.Equal(t, "withdraw_events", protoReq.FieldName)
-		require.NotNil(t, protoReq.Start)
-		require.Equal(t, uint64(10), *protoReq.Start)
-
-		roundtrip, err := conv.ConvertEventsByHandleRequestFromProto(protoReq)
-		require.NoError(t, err)
-		require.Equal(t, req.EventHandle, roundtrip.EventHandle)
-		require.NotNil(t, roundtrip.Start)
-		require.Equal(t, start, *roundtrip.Start)
-	})
-
-	t.Run("EventsByHandleReply roundtrip", func(t *testing.T) {
-		events := []*typeaptos.Event{
-			{
-				Version:        100,
-				Type:           "0x1::coin::DepositEvent",
-				SequenceNumber: 1,
-				Data:           []byte(`{"amount":"500"}`),
-			},
-			{
-				Version:        101,
-				Type:           "0x1::coin::WithdrawEvent",
-				SequenceNumber: 2,
-				Data:           []byte(`{"amount":"300"}`),
-			},
-		}
-		reply := &typeaptos.EventsByHandleReply{Events: events}
-
-		protoReply, err := conv.ConvertEventsByHandleReplyToProto(reply)
-		require.NoError(t, err)
-		require.Len(t, protoReply.Events, 2)
-
-		roundtrip, err := conv.ConvertEventsByHandleReplyFromProto(protoReply)
-		require.NoError(t, err)
-		require.Len(t, roundtrip.Events, 2)
-		require.Equal(t, uint64(100), roundtrip.Events[0].Version)
-		require.Equal(t, "0x1::coin::DepositEvent", roundtrip.Events[0].Type)
-	})
-}
-
 func TestErrorJoinBehavior(t *testing.T) {
 	t.Run("Aggregates multiple conversion errors", func(t *testing.T) {
 		// Test that error wrapping works as expected
@@ -488,6 +360,127 @@ func TestErrorJoinBehavior(t *testing.T) {
 	})
 }
 
+func TestAccountTransactionsConverters(t *testing.T) {
+	t.Run("Request roundtrip with start and limit", func(t *testing.T) {
+		addr := mkBytes(typeaptos.AccountAddressLength, 0xAA)
+		start := uint64(100)
+		limit := uint64(25)
+		req := typeaptos.AccountTransactionsRequest{
+			Address: [32]byte(addr),
+			Start:   &start,
+			Limit:   &limit,
+		}
+
+		protoReq := conv.ConvertAccountTransactionsRequestToProto(req)
+		require.Equal(t, addr, protoReq.Address)
+		require.NotNil(t, protoReq.Start)
+		require.Equal(t, uint64(100), *protoReq.Start)
+		require.NotNil(t, protoReq.Limit)
+		require.Equal(t, uint64(25), *protoReq.Limit)
+
+		roundtrip, err := conv.ConvertAccountTransactionsRequestFromProto(protoReq)
+		require.NoError(t, err)
+		require.Equal(t, req.Address, roundtrip.Address)
+		require.Equal(t, *req.Start, *roundtrip.Start)
+		require.Equal(t, *req.Limit, *roundtrip.Limit)
+	})
+
+	t.Run("Request roundtrip without start and limit", func(t *testing.T) {
+		addr := mkBytes(typeaptos.AccountAddressLength, 0xBB)
+		req := typeaptos.AccountTransactionsRequest{
+			Address: [32]byte(addr),
+			Start:   nil,
+			Limit:   nil,
+		}
+
+		protoReq := conv.ConvertAccountTransactionsRequestToProto(req)
+		require.Nil(t, protoReq.Start)
+		require.Nil(t, protoReq.Limit)
+
+		roundtrip, err := conv.ConvertAccountTransactionsRequestFromProto(protoReq)
+		require.NoError(t, err)
+		require.Nil(t, roundtrip.Start)
+		require.Nil(t, roundtrip.Limit)
+	})
+
+	t.Run("Request from proto nil error", func(t *testing.T) {
+		_, err := conv.ConvertAccountTransactionsRequestFromProto(nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "proto request is nil")
+	})
+
+	t.Run("Request from proto invalid address length", func(t *testing.T) {
+		protoReq := &conv.AccountTransactionsRequest{
+			Address: mkBytes(10, 0x01),
+		}
+		_, err := conv.ConvertAccountTransactionsRequestFromProto(protoReq)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid address length")
+	})
+
+	t.Run("Reply roundtrip with multiple transactions", func(t *testing.T) {
+		version1 := uint64(100)
+		success1 := true
+		version2 := uint64(200)
+		success2 := false
+		reply := &typeaptos.AccountTransactionsReply{
+			Transactions: []*typeaptos.Transaction{
+				{
+					Type:    typeaptos.TransactionVariantUser,
+					Hash:    "0xaaa",
+					Version: &version1,
+					Success: &success1,
+					Data:    []byte(`{"tx":1}`),
+				},
+				{
+					Type:    typeaptos.TransactionVariantUser,
+					Hash:    "0xbbb",
+					Version: &version2,
+					Success: &success2,
+					Data:    []byte(`{"tx":2}`),
+				},
+			},
+		}
+
+		protoReply := conv.ConvertAccountTransactionsReplyToProto(reply)
+		require.Len(t, protoReply.Transactions, 2)
+		require.Equal(t, "0xaaa", protoReply.Transactions[0].Hash)
+		require.Equal(t, "0xbbb", protoReply.Transactions[1].Hash)
+
+		roundtrip, err := conv.ConvertAccountTransactionsReplyFromProto(protoReply)
+		require.NoError(t, err)
+		require.Len(t, roundtrip.Transactions, 2)
+		require.Equal(t, "0xaaa", roundtrip.Transactions[0].Hash)
+		require.Equal(t, uint64(100), *roundtrip.Transactions[0].Version)
+		require.True(t, *roundtrip.Transactions[0].Success)
+		require.Equal(t, "0xbbb", roundtrip.Transactions[1].Hash)
+		require.Equal(t, uint64(200), *roundtrip.Transactions[1].Version)
+		require.False(t, *roundtrip.Transactions[1].Success)
+	})
+
+	t.Run("Reply roundtrip with empty transactions", func(t *testing.T) {
+		reply := &typeaptos.AccountTransactionsReply{
+			Transactions: []*typeaptos.Transaction{},
+		}
+
+		protoReply := conv.ConvertAccountTransactionsReplyToProto(reply)
+		require.Len(t, protoReply.Transactions, 0)
+
+		roundtrip, err := conv.ConvertAccountTransactionsReplyFromProto(protoReply)
+		require.NoError(t, err)
+		require.Len(t, roundtrip.Transactions, 0)
+	})
+
+	t.Run("Reply nil handling", func(t *testing.T) {
+		result := conv.ConvertAccountTransactionsReplyToProto(nil)
+		require.Nil(t, result)
+
+		roundtrip, err := conv.ConvertAccountTransactionsReplyFromProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, roundtrip)
+	})
+}
+
 func TestNilHandling(t *testing.T) {
 	t.Run("ConvertTransactionToProto with nil", func(t *testing.T) {
 		result := conv.ConvertTransactionToProto(nil)
@@ -498,17 +491,5 @@ func TestNilHandling(t *testing.T) {
 		result, err := conv.ConvertTransactionFromProto(nil)
 		require.NoError(t, err)
 		require.Nil(t, result)
-	})
-
-	t.Run("ConvertPendingTransactionToProto with nil", func(t *testing.T) {
-		_, err := conv.ConvertPendingTransactionToProto(nil)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "pending transaction is nil")
-	})
-
-	t.Run("ConvertPendingTransactionFromProto with nil", func(t *testing.T) {
-		_, err := conv.ConvertPendingTransactionFromProto(nil)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "proto pending transaction is nil")
 	})
 }

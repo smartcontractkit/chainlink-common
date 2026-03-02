@@ -1,6 +1,10 @@
 name: golangci-lint
 
-on: [pull_request, merge_group]
+on:
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: '0 0 * * 1-5' # every week-day at midnight
 
 jobs:
   detect-modules:

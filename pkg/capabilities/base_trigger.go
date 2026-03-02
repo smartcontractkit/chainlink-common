@@ -79,6 +79,7 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	}
 
 	// Initialize in-memory persistence
+	b.mu.Lock()
 	b.pending = make(map[string]map[string]*PendingEvent)
 	for i := range recs {
 		r := &recs[i]
@@ -87,6 +88,7 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 		}
 		b.pending[r.TriggerId][r.EventId] = r
 	}
+	b.mu.Unlock()
 
 	b.wg.Add(1)
 	go func() {
@@ -204,11 +206,13 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	eventsForTrigger, ok := b.pending[event.TriggerId]
 	if !ok || eventsForTrigger == nil {
 		b.mu.Unlock()
+		return
 	}
 
 	rec, ok := eventsForTrigger[event.EventId]
 	if !ok || rec == nil {
 		b.mu.Unlock()
+		return
 	}
 
 	rec.Attempts++
@@ -227,6 +231,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 
 	if !inboxOk {
 		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
+		return
 	}
 
 	msg := b.newMsg()

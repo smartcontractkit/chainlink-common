@@ -190,6 +190,16 @@ jobs:
 
           echo "tag-prefix=${TAG_PREFIX}" | tee -a "${GITHUB_OUTPUT}"
 
+      - name: Validate version-override format
+        shell: bash
+        env:
+          VERSION_OVERRIDE: ${{ github.event.inputs.version-override }}
+        run: |
+          if [ -n "${VERSION_OVERRIDE}" ] && ! [[ "${VERSION_OVERRIDE}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version-override must be in format MAJOR.MINOR.PATCH (e.g. 1.2.3). Got: '${VERSION_OVERRIDE}'"
+            exit 1
+          fi
+
   release:
     name: Version and Draft Release ${{ inputs.dry-run && '(dry-run)' || '' }}
     needs: [ process-inputs, approval-gate ]

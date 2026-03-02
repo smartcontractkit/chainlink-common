@@ -11,6 +11,64 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
 
+func TestTime(t *testing.T) {
+	s := Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC))
+
+	t.Run("parse RFC3339", func(t *testing.T) {
+		got, err := s.Parse("2025-06-15T12:30:00Z")
+		require.NoError(t, err)
+		assert.Equal(t, time.Date(2025, 6, 15, 12, 30, 0, 0, time.UTC), got)
+	})
+
+	t.Run("parse RFC3339 with nanoseconds", func(t *testing.T) {
+		got, err := s.Parse("2025-06-15T12:30:00.123456789Z")
+		require.NoError(t, err)
+		assert.Equal(t, time.Date(2025, 6, 15, 12, 30, 0, 123456789, time.UTC), got)
+	})
+
+	t.Run("parse Go default format", func(t *testing.T) {
+		got, err := s.Parse("2025-06-15 00:00:00 +0000 UTC")
+		require.NoError(t, err)
+		assert.Equal(t, time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC), got)
+	})
+
+	t.Run("parse Go default format with offset", func(t *testing.T) {
+		got, err := s.Parse("2025-06-15 12:30:00 +0530 IST")
+		require.NoError(t, err)
+		assert.Equal(t, 2025, got.Year())
+		assert.Equal(t, time.Month(6), got.Month())
+		assert.Equal(t, 15, got.Day())
+		assert.Equal(t, 12, got.Hour())
+		assert.Equal(t, 30, got.Minute())
+	})
+
+	t.Run("MarshalText round-trip", func(t *testing.T) {
+		b, err := s.MarshalText()
+		require.NoError(t, err)
+		got, err := s.Parse(string(b))
+		require.NoError(t, err)
+		assert.Equal(t, s.DefaultValue, got)
+	})
+
+	t.Run("MarshalText", func(t *testing.T) {
+		b, err := s.MarshalText()
+		require.NoError(t, err)
+		assert.Equal(t, "2100-01-01 00:00:00 +0000 UTC", string(b))
+	})
+
+	t.Run("UnmarshalText", func(t *testing.T) {
+		var s2 Setting[time.Time]
+		s2.Parse = s.Parse
+		require.NoError(t, s2.UnmarshalText([]byte("2100-01-01T00:00:00Z")))
+		assert.Equal(t, s.DefaultValue, s2.DefaultValue)
+	})
+
+	t.Run("invalid input", func(t *testing.T) {
+		_, err := s.Parse("not-a-date")
+		assert.Error(t, err)
+	})
+}
+
 func TestInitConfig(t *testing.T) {
 	require.Error(t, InitConfig(&struct{ Field int }{Field: 10})) // fields must be type Setting
 

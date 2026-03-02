@@ -33,7 +33,7 @@ type ChipIngressBatchEmitter struct {
 
 // NewChipIngressBatchEmitter creates a batch emitter backed by the given chipingress client.
 // Call Start() to begin health monitoring, and Close() to stop all workers.
-func NewChipIngressBatchEmitter(client chipingress.Client, lggr logger.Logger, cfg Config) (*ChipIngressBatchEmitter, error) {
+func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitter, error) {
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
 	}

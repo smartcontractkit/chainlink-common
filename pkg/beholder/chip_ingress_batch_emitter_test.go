@@ -35,13 +35,13 @@ func newTestLogger(t *testing.T) logger.Logger {
 func TestNewChipIngressBatchEmitter(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), newTestConfig())
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 		assert.NotNil(t, emitter)
 	})
 
 	t.Run("returns error when client is nil", func(t *testing.T) {
-		emitter, err := beholder.NewChipIngressBatchEmitter(nil, newTestLogger(t), newTestConfig())
+		emitter, err := beholder.NewChipIngressBatchEmitter(nil, newTestConfig(), newTestLogger(t))
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
 	})
@@ -50,7 +50,7 @@ func TestNewChipIngressBatchEmitter(t *testing.T) {
 func TestChipIngressBatchEmitter_Emit(t *testing.T) {
 	t.Run("returns error when domain/entity missing", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), newTestConfig())
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 		defer emitter.Close() //nolint:errcheck
@@ -61,7 +61,7 @@ func TestChipIngressBatchEmitter_Emit(t *testing.T) {
 
 	t.Run("enqueues and does not call PublishBatch immediately", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), newTestConfig())
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 		defer emitter.Close() //nolint:errcheck
@@ -96,7 +96,7 @@ func TestChipIngressBatchEmitter_BatchAssembly(t *testing.T) {
 		cfg := newTestConfig()
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
@@ -149,7 +149,7 @@ func TestChipIngressBatchEmitter_MaxBatchSize(t *testing.T) {
 		cfg.ChipIngressMaxBatchSize = 3
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
@@ -204,7 +204,7 @@ func TestChipIngressBatchEmitter_PerDomainEntityIsolation(t *testing.T) {
 		cfg := newTestConfig()
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
@@ -254,7 +254,7 @@ func TestChipIngressBatchEmitter_BufferFull(t *testing.T) {
 		cfg.ChipIngressBufferSize = 3
 		cfg.ChipIngressSendInterval = 10 * time.Second // very long interval to prevent flushing
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 		defer emitter.Close() //nolint:errcheck
@@ -285,7 +285,7 @@ func TestChipIngressBatchEmitter_Lifecycle(t *testing.T) {
 			Return(nil, nil).
 			Maybe()
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), newTestConfig())
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 
 		require.NoError(t, emitter.Start(t.Context()))
@@ -322,7 +322,7 @@ func TestChipIngressBatchEmitter_CloudEventFormat(t *testing.T) {
 		cfg := newTestConfig()
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
@@ -369,7 +369,7 @@ func TestChipIngressBatchEmitter_PublishBatchError(t *testing.T) {
 		cfg := newTestConfig()
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
@@ -399,7 +399,7 @@ func TestChipIngressBatchEmitter_ContextCancellation(t *testing.T) {
 		cfg.ChipIngressBufferSize = 1
 		cfg.ChipIngressSendInterval = 10 * time.Second
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), cfg)
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 		defer emitter.Close() //nolint:errcheck
@@ -437,7 +437,7 @@ func TestChipIngressBatchEmitter_DefaultConfig(t *testing.T) {
 			}).
 			Return(nil, nil)
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestLogger(t), beholder.Config{})
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, beholder.Config{}, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 

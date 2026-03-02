@@ -230,7 +230,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			if lErr != nil {
 				return nil, fmt.Errorf("failed to create logger for chip ingress batch emitter: %w", lErr)
 			}
-			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, lggr, cfg)
+			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, cfg, lggr)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
 			}

@@ -224,19 +224,28 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		lggr, lErr := ccllogger.New()
-		if lErr != nil {
-			return nil, fmt.Errorf("failed to create logger for chip ingress batch emitter: %w", lErr)
-		}
-		batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, lggr, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
-		}
-		if err = batchEmitterService.Start(context.Background()); err != nil {
-			return nil, fmt.Errorf("failed to start chip ingress batch emitter: %w", err)
+		var chipIngressEmitter Emitter
+		if cfg.ChipIngressBatchEmitterEnabled {
+			lggr, lErr := ccllogger.New()
+			if lErr != nil {
+				return nil, fmt.Errorf("failed to create logger for chip ingress batch emitter: %w", lErr)
+			}
+			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, lggr, cfg)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
+			}
+			if err = batchEmitterService.Start(context.Background()); err != nil {
+				return nil, fmt.Errorf("failed to start chip ingress batch emitter: %w", err)
+			}
+			chipIngressEmitter = batchEmitterService
+		} else {
+			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+			}
 		}
 
-		emitter, err = NewDualSourceEmitter(batchEmitterService, emitter)
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}

@@ -11,21 +11,16 @@ import (
 )
 
 type BaseTriggerBeholderMetrics struct {
-	capabilityID string
-	// Counters
+	capabilityID             string
 	retryCount               metric.Int64Counter
 	ackCount                 metric.Int64Counter
 	inboxMissingCount        metric.Int64Counter
 	inboxFullCount           metric.Int64Counter
 	undeliveredWarningCount  metric.Int64Counter
 	undeliveredCriticalCount metric.Int64Counter
-
-	// Histograms
-	timeToAckMs metric.Int64Histogram
-	ackAttempts metric.Int64Histogram // attempts distribution at ACK time
-
-	// "Gauge" via UpDownCounter (active registrations)
-	activeRegistrations metric.Int64UpDownCounter
+	timeToAckMs              metric.Int64Histogram
+	ackAttempts              metric.Int64Histogram // attempts distribution at ACK time
+	activeRegistrations      metric.Int64UpDownCounter
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}

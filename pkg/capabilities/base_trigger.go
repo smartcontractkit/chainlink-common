@@ -36,15 +36,8 @@ type BaseTriggerMetrics interface {
 	ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int)
 	IncInboxMissing(triggerID string)
 	IncInboxFull(triggerID string)
-	EmitUndeliveredWarning(triggerID, eventID string)  // after T
-	EmitUndeliveredCritical(triggerID, eventID string) // after T2
-}
-
-type BaseTriggerOpts struct {
-	// Emit UndeliveredWarning metric after this duration since FirstAt. If 0, disabled.
-	UndeliveredWarning time.Duration
-	// Emit UndeliveredCritical metric after this duration since FirstAt. If 0, disabled.
-	UndeliveredCritical time.Duration
+	EmitUndeliveredWarning(triggerID, eventID string)
+	EmitUndeliveredCritical(triggerID, eventID string)
 }
 
 type undeliveredState struct {

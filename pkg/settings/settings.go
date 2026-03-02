@@ -31,7 +31,7 @@ type Registry interface {
 	SubscribeScoped(ctx context.Context, scope Scope, key string) (updates <-chan Update[string], stop func())
 }
 
-//TODO use this everywhere
+// TODO use this everywhere
 type IsSetting[T any] interface {
 	GetSpec() SettingSpec[T]
 }
@@ -114,6 +114,10 @@ func Duration(defaultValue time.Duration) Setting[time.Duration] {
 	s := NewSetting(defaultValue, time.ParseDuration)
 	s.Unit = "s"
 	return s
+}
+
+func Time(defaultValue time.Time) Setting[config.Timestamp] {
+	return NewSetting(config.Timestamp(defaultValue.Unix()), config.ParseTimestamp)
 }
 
 func URL(defaultValue *url.URL) Setting[*url.URL] {

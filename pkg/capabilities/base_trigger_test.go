@@ -231,10 +231,10 @@ func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
 				}
 
 				if tc.expectCritical {
-					return state.emitted2
+					return state.emittedCritical
 				}
 				if tc.expectWarning {
-					return state.emitted1
+					return state.emittedWarning
 				}
 				return true
 			}, 3*time.Second, 10*time.Millisecond)

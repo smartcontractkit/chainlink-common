@@ -29,6 +29,8 @@ type EventStore interface {
 }
 
 type BaseTriggerMetrics interface {
+	IncActiveTriggers(capabilityID string)
+	DecActiveTriggers(capabilityID string)
 	IncRetry(triggerID, eventID string)
 	IncAck(triggerID, eventID string, attempts int)
 	ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int)
@@ -40,6 +42,8 @@ type BaseTriggerMetrics interface {
 
 type noopBaseTriggerMetrics struct{}
 
+func (noopBaseTriggerMetrics) IncActiveTriggers(string)                            {}
+func (noopBaseTriggerMetrics) DecActiveTriggers(string)                            {}
 func (noopBaseTriggerMetrics) IncRetry(string, string)                             {}
 func (noopBaseTriggerMetrics) IncAck(string, string, int)                          {}
 func (noopBaseTriggerMetrics) ObserveTimeToAck(string, string, time.Duration, int) {}
@@ -156,16 +160,27 @@ func (b *BaseTriggerCapability[T]) Stop() {
 
 func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan<- TriggerAndId[T]) {
 	b.mu.Lock()
+	_, existed := b.inboxes[triggerID]
 	b.inboxes[triggerID] = sendCh
 	b.mu.Unlock()
+
+	if !existed {
+		b.metrics.IncActiveTriggers(b.capabilityId)
+	}
 }
 
 func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	b.mu.Lock()
+	_, existed := b.inboxes[triggerID]
 	delete(b.inboxes, triggerID)
 	delete(b.pending, triggerID)
 	delete(b.undeliveredAlertStates, triggerID)
 	b.mu.Unlock()
+
+	if existed {
+		b.metrics.DecActiveTriggers(b.capabilityId)
+	}
+
 	if err := b.store.DeleteEventsForTrigger(b.ctx, triggerID); err != nil {
 		b.lggr.Errorf("Failed to delete events for trigger (TriggerID=%s): %v", triggerID, err)
 	}

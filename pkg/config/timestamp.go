@@ -13,8 +13,10 @@ import (
 // - Integer Unix timestamp (seconds)
 type Timestamp int64
 
+const defaultFormat = "2006-01-02 15:04:05 -0700 MST"
+
 func (t Timestamp) String() string {
-	return time.Unix(int64(t), 0).UTC().Format("2006-01-02 15:04:05 -0700 MST")
+	return time.Unix(int64(t), 0).UTC().Format(defaultFormat)
 }
 
 func (t Timestamp) MarshalText() ([]byte, error) {
@@ -22,24 +24,25 @@ func (t Timestamp) MarshalText() ([]byte, error) {
 }
 
 func (t *Timestamp) UnmarshalText(b []byte) error {
-	v, err := ParseTimestamp(string(b))
-	if err != nil {
-		return err
+	s := string(b)
+	if parsed, err := time.Parse(defaultFormat, s); err == nil {
+		*t = Timestamp(parsed.Unix())
+		return nil
 	}
-	*t = v
+	if parsed, err := time.Parse(time.RFC3339, s); err == nil {
+		*t = Timestamp(parsed.Unix())
+		return nil
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse timestamp %q: %w", s, err)
+	}
+	*t = Timestamp(v)
 	return nil
 }
 
 func ParseTimestamp(s string) (Timestamp, error) {
-	if t, err := time.Parse("2006-01-02 15:04:05 -0700 MST", s); err == nil {
-		return Timestamp(t.Unix()), nil
-	}
-	if t, err := time.Parse(time.RFC3339, s); err == nil {
-		return Timestamp(t.Unix()), nil
-	}
-	v, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse timestamp %q: %w", s, err)
-	}
-	return Timestamp(v), nil
+	var t Timestamp
+	err := t.UnmarshalText([]byte(s))
+	return t, err
 }

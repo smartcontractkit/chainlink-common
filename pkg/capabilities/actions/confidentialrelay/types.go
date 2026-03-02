@@ -1,11 +1,11 @@
-package enclaverelay
+package confidentialrelay
 
 const (
-	MethodSecretsGet     = "enclave.secrets.get"
-	MethodCapabilityExec = "enclave.capability.execute"
+	MethodSecretsGet     = "confidential.secrets.get"
+	MethodCapabilityExec = "confidential.capability.execute"
 
-	DomainSecretsGet     = "EnclaveSecretsGet"
-	DomainCapabilityExec = "EnclaveCapabilityExecute"
+	DomainSecretsGet     = "ConfidentialSecretsGet"
+	DomainCapabilityExec = "ConfidentialCapabilityExecute"
 )
 
 // SecretIdentifier identifies a secret by key and namespace.
@@ -14,7 +14,7 @@ type SecretIdentifier struct {
 	Namespace string `json:"namespace"`
 }
 
-// SecretsRequestParams is the JSON-RPC params for "enclave.secrets.get".
+// SecretsRequestParams is the JSON-RPC params for "confidential.secrets.get".
 type SecretsRequestParams struct {
 	WorkflowID       string             `json:"workflow_id"`
 	Secrets          []SecretIdentifier `json:"secrets"`
@@ -29,14 +29,14 @@ type SecretEntry struct {
 	EncryptedShares []string         `json:"encrypted_shares"`
 }
 
-// SecretsResponseResult is the JSON-RPC result for "enclave.secrets.get".
+// SecretsResponseResult is the JSON-RPC result for "confidential.secrets.get".
 type SecretsResponseResult struct {
 	Secrets         []SecretEntry `json:"secrets"`
 	MasterPublicKey string        `json:"master_public_key"`
 	Threshold       int           `json:"threshold"`
 }
 
-// CapabilityRequestParams is the JSON-RPC params for "enclave.capability.execute".
+// CapabilityRequestParams is the JSON-RPC params for "confidential.capability.execute".
 type CapabilityRequestParams struct {
 	WorkflowID   string `json:"workflow_id"`
 	CapabilityID string `json:"capability_id"`
@@ -44,7 +44,7 @@ type CapabilityRequestParams struct {
 	Attestation  string `json:"attestation,omitempty"`
 }
 
-// CapabilityResponseResult is the JSON-RPC result for "enclave.capability.execute".
+// CapabilityResponseResult is the JSON-RPC result for "confidential.capability.execute".
 type CapabilityResponseResult struct {
 	Payload string `json:"payload,omitempty"`
 	Error   string `json:"error,omitempty"`

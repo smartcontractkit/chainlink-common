@@ -70,7 +70,6 @@ func NewBaseTriggerCapability[T proto.Message](
 
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	b.lggr.Info("starting base trigger")
-	b.ctx, b.cancel = context.WithCancel(ctx)
 
 	recs, err := b.store.List(ctx)
 	if err != nil {
@@ -80,7 +79,6 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 
 	// Initialize in-memory persistence
 	b.mu.Lock()
-	b.pending = make(map[string]map[string]*PendingEvent)
 	for i := range recs {
 		r := &recs[i]
 		if _, ok := b.pending[r.TriggerId]; !ok {

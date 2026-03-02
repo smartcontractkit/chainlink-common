@@ -29,35 +29,22 @@ type EventStore interface {
 }
 
 type BaseTriggerMetrics interface {
-	IncActiveTriggers(capabilityID string)
-	DecActiveTriggers(capabilityID string)
+	IncActiveTriggers()
+	DecActiveTriggers()
 	IncRetry(triggerID, eventID string)
-	IncAck(triggerID, eventID string, attempts int)
+	IncAck(triggerID, eventID string)
 	ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int)
 	IncInboxMissing(triggerID string)
 	IncInboxFull(triggerID string)
-	EmitUndelivered(triggerID, eventID string, age time.Duration, attempts int)  // after T
-	EmitUndelivered2(triggerID, eventID string, age time.Duration, attempts int) // after T2
+	EmitUndeliveredWarning(triggerID, eventID string)  // after T
+	EmitUndeliveredCritical(triggerID, eventID string) // after T2
 }
 
-type noopBaseTriggerMetrics struct{}
-
-func (noopBaseTriggerMetrics) IncActiveTriggers(string)                            {}
-func (noopBaseTriggerMetrics) DecActiveTriggers(string)                            {}
-func (noopBaseTriggerMetrics) IncRetry(string, string)                             {}
-func (noopBaseTriggerMetrics) IncAck(string, string, int)                          {}
-func (noopBaseTriggerMetrics) ObserveTimeToAck(string, string, time.Duration, int) {}
-func (noopBaseTriggerMetrics) IncInboxMissing(string)                              {}
-func (noopBaseTriggerMetrics) IncInboxFull(string)                                 {}
-func (noopBaseTriggerMetrics) EmitUndelivered(string, string, time.Duration, int)  {}
-func (noopBaseTriggerMetrics) EmitUndelivered2(string, string, time.Duration, int) {}
-
 type BaseTriggerOpts struct {
-	Metrics BaseTriggerMetrics
-	// Emit undelivered metric after this duration since FirstAt. If 0, disabled.
-	UndeliveredAfter time.Duration
-	// Emit undelivered_2 metric after this duration since FirstAt. If 0, disabled.
-	UndeliveredAfter2 time.Duration
+	// Emit UndeliveredWarning metric after this duration since FirstAt. If 0, disabled.
+	UndeliveredWarning time.Duration
+	// Emit UndeliveredCritical metric after this duration since FirstAt. If 0, disabled.
+	UndeliveredCritical time.Duration
 }
 
 type undeliveredState struct {
@@ -84,8 +71,8 @@ type BaseTriggerCapability[T proto.Message] struct {
 
 	metrics BaseTriggerMetrics
 	// emit undelivered metrics after these thresholds
-	undeliveredAfter       time.Duration
-	undeliveredAfter2      time.Duration
+	undeliveredWarning     time.Duration
+	undeliveredCritical    time.Duration
 	undeliveredAlertStates map[string]map[string]*undeliveredState // triggerID -> eventID -> flags
 }
 
@@ -95,16 +82,14 @@ func NewBaseTriggerCapability[T proto.Message](
 	lggr logger.Logger,
 	capabilityId string,
 	tRetransmit time.Duration,
-	opts *BaseTriggerOpts,
+	undeliveredWarning time.Duration,
+	undeliveredCritical time.Duration,
 ) *BaseTriggerCapability[T] {
 	ctx, cancel := context.WithCancel(context.Background())
-
-	var metrics BaseTriggerMetrics = noopBaseTriggerMetrics{}
-	var undeliveredAfter, undeliveredAfter2 time.Duration
-	if opts != nil && opts.Metrics != nil {
-		metrics = opts.Metrics
-		undeliveredAfter = opts.UndeliveredAfter
-		undeliveredAfter2 = opts.UndeliveredAfter2
+	metrics, err := NewBaseTriggerBeholderMetrics(capabilityId)
+	if err != nil {
+		lggr.Warnw("failed to initialize base trigger beholder metrics; continuing with metrics disabled", "err", err)
+		metrics = &noopBaseTriggerMetrics{}
 	}
 
 	return &BaseTriggerCapability[T]{
@@ -114,8 +99,8 @@ func NewBaseTriggerCapability[T proto.Message](
 		capabilityId:           capabilityId,
 		tRetransmit:            tRetransmit,
 		metrics:                metrics,
-		undeliveredAfter:       undeliveredAfter,
-		undeliveredAfter2:      undeliveredAfter2,
+		undeliveredWarning:     undeliveredWarning,
+		undeliveredCritical:    undeliveredCritical,
 		undeliveredAlertStates: make(map[string]map[string]*undeliveredState),
 		mu:                     sync.Mutex{},
 		inboxes:                make(map[string]chan<- TriggerAndId[T]),
@@ -165,7 +150,7 @@ func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan
 	b.mu.Unlock()
 
 	if !existed {
-		b.metrics.IncActiveTriggers(b.capabilityId)
+		b.metrics.IncActiveTriggers()
 	}
 }
 
@@ -178,7 +163,7 @@ func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	b.mu.Unlock()
 
 	if existed {
-		b.metrics.DecActiveTriggers(b.capabilityId)
+		b.metrics.DecActiveTriggers()
 	}
 
 	if err := b.store.DeleteEventsForTrigger(b.ctx, triggerID); err != nil {
@@ -246,7 +231,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	b.mu.Unlock()
 
 	if found {
-		b.metrics.IncAck(triggerId, eventId, attempts)
+		b.metrics.IncAck(triggerId, eventId)
 		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
 	}
 
@@ -282,7 +267,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 				})
 			}
 
-			if b.undeliveredAfter == 0 && b.undeliveredAfter2 == 0 {
+			if b.undeliveredWarning == 0 && b.undeliveredCritical == 0 {
 				continue
 			}
 			age := now.Sub(rec.FirstAt)
@@ -297,13 +282,13 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 				b.undeliveredAlertStates[triggerID][eventID] = state
 			}
 
-			if b.undeliveredAfter > 0 && !state.emitted1 && age >= b.undeliveredAfter {
-				b.metrics.EmitUndelivered(triggerID, eventID, age, rec.Attempts)
+			if b.undeliveredWarning > 0 && !state.emitted1 && age >= b.undeliveredWarning {
+				b.metrics.EmitUndeliveredWarning(triggerID, eventID)
 				state.emitted1 = true
 			}
 
-			if b.undeliveredAfter2 > 0 && !state.emitted2 && age >= b.undeliveredAfter2 {
-				b.metrics.EmitUndelivered2(triggerID, eventID, age, rec.Attempts)
+			if b.undeliveredCritical > 0 && !state.emitted2 && age >= b.undeliveredCritical {
+				b.metrics.EmitUndeliveredCritical(triggerID, eventID)
 				state.emitted2 = true
 			}
 		}

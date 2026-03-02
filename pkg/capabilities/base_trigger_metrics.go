@@ -1,0 +1,170 @@
+package capabilities
+
+import (
+	"context"
+	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+)
+
+type BaseTriggerBeholderMetrics struct {
+	capabilityID string
+	// Counters
+	retryCount               metric.Int64Counter
+	ackCount                 metric.Int64Counter
+	inboxMissingCount        metric.Int64Counter
+	inboxFullCount           metric.Int64Counter
+	undeliveredWarningCount  metric.Int64Counter
+	undeliveredCriticalCount metric.Int64Counter
+
+	// Histograms
+	timeToAckMs metric.Int64Histogram
+	ackAttempts metric.Int64Histogram // attempts distribution at ACK time
+
+	// "Gauge" via UpDownCounter (active registrations)
+	activeRegistrations metric.Int64UpDownCounter
+}
+
+var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
+
+func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, error) {
+	retryCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_retry_total")
+	if err != nil {
+		return nil, err
+	}
+	ackCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_ack_total")
+	if err != nil {
+		return nil, err
+	}
+	inboxMissingCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_inbox_missing_total")
+	if err != nil {
+		return nil, err
+	}
+	inboxFullCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_inbox_full_total")
+	if err != nil {
+		return nil, err
+	}
+	undeliveredWarningCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_undelivered_total")
+	if err != nil {
+		return nil, err
+	}
+	undeliveredCriticalCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_undelivered2_total")
+	if err != nil {
+		return nil, err
+	}
+
+	timeToAckMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_time_to_ack_ms")
+	if err != nil {
+		return nil, err
+	}
+	ackAttempts, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_ack_attempts")
+	if err != nil {
+		return nil, err
+	}
+
+	activeRegistrations, err := beholder.GetMeter().Int64UpDownCounter("capabilities_base_trigger_active_registrations")
+	if err != nil {
+		return nil, err
+	}
+
+	return &BaseTriggerBeholderMetrics{
+		capabilityID:             capabilityID,
+		retryCount:               retryCount,
+		ackCount:                 ackCount,
+		inboxMissingCount:        inboxMissingCount,
+		inboxFullCount:           inboxFullCount,
+		undeliveredWarningCount:  undeliveredWarningCount,
+		undeliveredCriticalCount: undeliveredCriticalCount,
+		timeToAckMs:              timeToAckMs,
+		ackAttempts:              ackAttempts,
+		activeRegistrations:      activeRegistrations,
+	}, nil
+}
+
+func (m *BaseTriggerBeholderMetrics) attrs(triggerID, eventID string) []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("capability_id", m.capabilityID),
+		attribute.String("trigger_id", triggerID),
+		attribute.String("event_id", eventID),
+	}
+}
+
+func (m *BaseTriggerBeholderMetrics) IncActiveTriggers() {
+	m.activeRegistrations.Add(context.Background(), 1,
+		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) DecActiveTriggers() {
+	m.activeRegistrations.Add(context.Background(), -1,
+		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncRetry(triggerID, eventID string) {
+	m.retryCount.Add(context.Background(), 1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncAck(triggerID, eventID string) {
+	m.ackCount.Add(context.Background(), 1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int) {
+	m.timeToAckMs.Record(context.Background(), d.Milliseconds(),
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+	m.ackAttempts.Record(context.Background(), int64(attempts),
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncInboxMissing(triggerID string) {
+	m.inboxMissingCount.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("trigger_id", triggerID),
+		),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncInboxFull(triggerID string) {
+	m.inboxFullCount.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("trigger_id", triggerID),
+		),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) EmitUndeliveredWarning(triggerID, eventID string) {
+	m.undeliveredWarningCount.Add(context.Background(), 1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) EmitUndeliveredCritical(triggerID, eventID string) {
+	m.undeliveredCriticalCount.Add(context.Background(), 1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+type noopBaseTriggerMetrics struct{}
+
+var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
+
+func (noopBaseTriggerMetrics) IncActiveTriggers()                                  {}
+func (noopBaseTriggerMetrics) DecActiveTriggers()                                  {}
+func (noopBaseTriggerMetrics) IncRetry(string, string)                             {}
+func (noopBaseTriggerMetrics) IncAck(string, string)                               {}
+func (noopBaseTriggerMetrics) ObserveTimeToAck(string, string, time.Duration, int) {}
+func (noopBaseTriggerMetrics) IncInboxMissing(string)                              {}
+func (noopBaseTriggerMetrics) IncInboxFull(string)                                 {}
+func (noopBaseTriggerMetrics) EmitUndeliveredWarning(string, string)               {}
+func (noopBaseTriggerMetrics) EmitUndeliveredCritical(string, string)              {}

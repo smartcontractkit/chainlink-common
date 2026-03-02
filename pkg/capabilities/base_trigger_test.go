@@ -2,7 +2,6 @@ package capabilities
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -16,25 +15,8 @@ import (
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr, "testCap", 100*time.Millisecond, nil)
-}
-
-func newBaseWithMetrics(t *testing.T, store EventStore, metrics BaseTriggerMetrics, t1, t2 time.Duration) *BaseTriggerCapability[*wrapperspb.BytesValue] {
-	lggr, err := logger.New()
-	require.NoError(t, err)
-
-	return NewBaseTriggerCapability(
-		store,
-		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
-		lggr,
-		"testCap",
-		100*time.Millisecond,
-		&BaseTriggerOpts{
-			Metrics:           metrics,
-			UndeliveredAfter:  t1,
-			UndeliveredAfter2: t2,
-		},
-	)
+	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
+		"testCap", 100*time.Millisecond, 0, 0)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -179,211 +161,94 @@ drain:
 	}
 }
 
-type mockMetrics struct {
-	mu sync.Mutex
-
-	retries           []string
-	acks              []string
-	timeToAckObserved []string
-	undelivered1      []string
-	undelivered2      []string
-	inboxMissing      []string
-	inboxFull         []string
-}
-
-func (m *mockMetrics) IncRetry(triggerID, eventID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.retries = append(m.retries, triggerID+":"+eventID)
-}
-
-func (m *mockMetrics) IncAck(triggerID, eventID string, attempts int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.acks = append(m.acks, triggerID+":"+eventID)
-}
-
-func (m *mockMetrics) ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.timeToAckObserved = append(m.timeToAckObserved, triggerID+":"+eventID)
-}
-
-func (m *mockMetrics) IncInboxMissing(triggerID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.inboxMissing = append(m.inboxMissing, triggerID)
-}
-
-func (m *mockMetrics) IncInboxFull(triggerID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.inboxFull = append(m.inboxFull, triggerID)
-}
-
-func (m *mockMetrics) EmitUndelivered(triggerID, eventID string, age time.Duration, attempts int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.undelivered1 = append(m.undelivered1, triggerID+":"+eventID)
-}
-
-func (m *mockMetrics) EmitUndelivered2(triggerID, eventID string, age time.Duration, attempts int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.undelivered2 = append(m.undelivered2, triggerID+":"+eventID)
-}
-
-func TestBaseTrigger_Metrics(t *testing.T) {
+func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
 	type testCase struct {
-		name string
-		t1   time.Duration
-		t2   time.Duration
-		run  func(t *testing.T,
-			b *BaseTriggerCapability[*wrapperspb.BytesValue],
-			mock *mockMetrics,
-			sendCh chan TriggerAndId[*wrapperspb.BytesValue],
-		)
+		name               string
+		warnAfter          time.Duration
+		criticalAfter      time.Duration
+		expectWarning      bool
+		expectCritical     bool
+		expectClearedOnAck bool
 	}
 
 	tests := []testCase{
 		{
-			name: "retry increments metric",
-			run: func(t *testing.T, b *BaseTriggerCapability[*wrapperspb.BytesValue], mock *mockMetrics, sendCh chan TriggerAndId[*wrapperspb.BytesValue]) {
-				ctx := t.Context()
-
-				b.RegisterTrigger("trig", sendCh)
-				require.NoError(t, b.Start(ctx))
-				t.Cleanup(func() { b.Stop() })
-
-				te := makeTE(t, "trig", "e1", []byte("x"))
-				require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
-
-				require.Eventually(t, func() bool {
-					mock.mu.Lock()
-					defer mock.mu.Unlock()
-					return len(mock.retries) > 0
-				}, 1*time.Second, 10*time.Millisecond)
-			},
+			name:          "warning fires",
+			warnAfter:     200 * time.Millisecond,
+			expectWarning: true,
 		},
 		{
-			name: "ack metrics fire",
-			run: func(t *testing.T, b *BaseTriggerCapability[*wrapperspb.BytesValue], mock *mockMetrics, sendCh chan TriggerAndId[*wrapperspb.BytesValue]) {
-				ctx := t.Context()
-
-				b.RegisterTrigger("trig", sendCh)
-				require.NoError(t, b.Start(ctx))
-				t.Cleanup(func() { b.Stop() })
-
-				te := makeTE(t, "trig", "e2", []byte("x"))
-				require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
-
-				require.Eventually(t, func() bool {
-					select {
-					case <-sendCh:
-						return true
-					default:
-						return false
-					}
-				}, 1*time.Second, 10*time.Millisecond)
-
-				require.NoError(t, b.AckEvent(ctx, "trig", "e2"))
-
-				require.Eventually(t, func() bool {
-					mock.mu.Lock()
-					defer mock.mu.Unlock()
-					return len(mock.acks) == 1 &&
-						len(mock.timeToAckObserved) == 1
-				}, 1*time.Second, 10*time.Millisecond)
-			},
+			name:           "critical fires",
+			warnAfter:      100 * time.Millisecond,
+			criticalAfter:  300 * time.Millisecond,
+			expectWarning:  true,
+			expectCritical: true,
 		},
 		{
-			name: "undelivered threshold fires once",
-			t1:   200 * time.Millisecond,
-			run: func(t *testing.T, b *BaseTriggerCapability[*wrapperspb.BytesValue], mock *mockMetrics, sendCh chan TriggerAndId[*wrapperspb.BytesValue]) {
-				ctx := t.Context()
-
-				b.RegisterTrigger("trig", sendCh)
-				require.NoError(t, b.Start(ctx))
-				t.Cleanup(func() { b.Stop() })
-
-				te := makeTE(t, "trig", "e3", []byte("x"))
-				require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
-
-				require.Eventually(t, func() bool {
-					mock.mu.Lock()
-					defer mock.mu.Unlock()
-					return len(mock.undelivered1) == 1
-				}, 2*time.Second, 10*time.Millisecond)
-
-				// Ensure it doesn't fire again
-				time.Sleep(500 * time.Millisecond)
-
-				mock.mu.Lock()
-				defer mock.mu.Unlock()
-				require.Len(t, mock.undelivered1, 1)
-			},
-		},
-		{
-			name: "undelivered2 fires after larger threshold",
-			t1:   100 * time.Millisecond,
-			t2:   300 * time.Millisecond,
-			run: func(t *testing.T, b *BaseTriggerCapability[*wrapperspb.BytesValue], mock *mockMetrics, sendCh chan TriggerAndId[*wrapperspb.BytesValue]) {
-				ctx := t.Context()
-
-				b.RegisterTrigger("trig", sendCh)
-				require.NoError(t, b.Start(ctx))
-				t.Cleanup(func() { b.Stop() })
-
-				te := makeTE(t, "trig", "e4", []byte("x"))
-				require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
-
-				require.Eventually(t, func() bool {
-					mock.mu.Lock()
-					defer mock.mu.Unlock()
-					return len(mock.undelivered2) == 1
-				}, 3*time.Second, 10*time.Millisecond)
-			},
-		},
-		{
-			name: "undelivered cleared on ack",
-			t1:   200 * time.Millisecond,
-			run: func(t *testing.T, b *BaseTriggerCapability[*wrapperspb.BytesValue], mock *mockMetrics, sendCh chan TriggerAndId[*wrapperspb.BytesValue]) {
-				ctx := t.Context()
-
-				b.RegisterTrigger("trig", sendCh)
-				require.NoError(t, b.Start(ctx))
-				t.Cleanup(func() { b.Stop() })
-
-				te := makeTE(t, "trig", "e5", []byte("x"))
-				require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
-
-				require.Eventually(t, func() bool {
-					mock.mu.Lock()
-					defer mock.mu.Unlock()
-					return len(mock.undelivered1) == 1
-				}, 2*time.Second, 10*time.Millisecond)
-
-				require.NoError(t, b.AckEvent(ctx, "trig", "e5"))
-
-				// Give some time to ensure no re-fire
-				time.Sleep(500 * time.Millisecond)
-
-				mock.mu.Lock()
-				defer mock.mu.Unlock()
-				require.Len(t, mock.undelivered1, 1)
-			},
+			name:               "cleared on ack",
+			warnAfter:          200 * time.Millisecond,
+			expectWarning:      true,
+			expectClearedOnAck: true,
 		},
 	}
 
 	for _, tc := range tests {
-		tc := tc // capture loop variable
 		t.Run(tc.name, func(t *testing.T) {
-			store := NewMemEventStore()                                   // <-- moved inside
-			sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10) // <-- moved inside
-			mock := &mockMetrics{}
+			store := NewMemEventStore()
+			sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
 
-			b := newBaseWithMetrics(t, store, mock, tc.t1, tc.t2)
-			tc.run(t, b, mock, sendCh)
+			lggr, err := logger.New()
+			require.NoError(t, err)
+
+			b := NewBaseTriggerCapability(
+				store,
+				func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+				lggr,
+				"testCap",
+				50*time.Millisecond,
+				tc.warnAfter,
+				tc.criticalAfter,
+			)
+
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+
+			b.RegisterTrigger("trig", sendCh)
+			require.NoError(t, b.Start(ctx))
+			t.Cleanup(func() { b.Stop() })
+
+			te := makeTE(t, "trig", "e1", []byte("x"))
+			require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
+
+			// Wait for expected thresholds
+			require.Eventually(t, func() bool {
+				b.mu.Lock()
+				defer b.mu.Unlock()
+
+				state := b.undeliveredAlertStates["trig"]["e1"]
+				if state == nil {
+					return false
+				}
+
+				if tc.expectCritical {
+					return state.emitted2
+				}
+				if tc.expectWarning {
+					return state.emitted1
+				}
+				return true
+			}, 3*time.Second, 10*time.Millisecond)
+
+			if tc.expectClearedOnAck {
+				require.NoError(t, b.AckEvent(ctx, "trig", "e1"))
+
+				require.Eventually(t, func() bool {
+					b.mu.Lock()
+					defer b.mu.Unlock()
+					_, exists := b.undeliveredAlertStates["trig"]
+					return !exists
+				}, 1*time.Second, 10*time.Millisecond)
+			}
 		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -259,6 +260,41 @@ func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig 
 	}
 }
 
+func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
+	raw := []byte(account)
+	s := strings.TrimSpace(string(account))
+	if s == "" {
+		return raw, nil
+	}
+
+	trimmed := strings.TrimPrefix(strings.TrimPrefix(s, "0x"), "0X")
+	if looksHexAccount(trimmed) {
+		decoded, err := hex.DecodeString(trimmed)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode transmitter: %w", err)
+		}
+		return decoded, nil
+	}
+
+	// Backward compatibility: some registry paths provide raw bytes directly.
+	return raw, nil
+}
+
+func looksHexAccount(s string) bool {
+	if s == "" || len(s)%2 != 0 {
+		return false
+	}
+	for _, c := range s {
+		isDigit := c >= '0' && c <= '9'
+		isLower := c >= 'a' && c <= 'f'
+		isUpper := c >= 'A' && c <= 'F'
+		if !isDigit && !isLower && !isUpper {
+			return false
+		}
+	}
+	return true
+}
+
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
 	req := &pb.GetRequest{
 		Id: ID,
@@ -512,9 +548,9 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			}
 			transmitters := make([][]byte, len(cfg.Transmitters))
 			for i, t := range cfg.Transmitters {
-				transmitters[i], err = hex.DecodeString(string(t))
+				transmitters[i], err = transmitterAccountToBytes(t)
 				if err != nil {
-					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
+					return nil, err
 				}
 			}
 			ccp.Ocr3Configs[key] = &capabilitiespb.OCR3Config{

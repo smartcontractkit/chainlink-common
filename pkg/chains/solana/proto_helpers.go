@@ -1541,6 +1541,11 @@ func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*typesolana.LPFilterQuery,
 		}
 	}
 
+	cpiFilterConfig, err := ConvertCPIFilterConfigToProto(p.CpiFilterConfig)
+	if err != nil {
+		return nil, fmt.Errorf("convert cpi filter config err: %w", err)
+	}
+
 	return &typesolana.LPFilterQuery{
 		Name:            p.Name,
 		Address:         addr,
@@ -1552,6 +1557,21 @@ func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*typesolana.LPFilterQuery,
 		Retention:       time.Duration(p.Retention),
 		MaxLogsKept:     p.MaxLogsKept,
 		IncludeReverted: p.IncludeReverted,
+		CPIFilterConfig: cpiFilterConfig,
+	}, nil
+}
+
+func ConvertCPIFilterConfigToProto(c *CPIFilterConfig) (*typesolana.CPIFilterConfig, error) {
+	if c == nil {
+		return nil, nil
+	}
+	addr, err := ConvertPublicKeyFromProto(c.DestAddress)
+	if err != nil {
+		return nil, fmt.Errorf("convert address err: %w", err)
+	}
+	return &typesolana.CPIFilterConfig{
+		DestAddress:    addr,
+		MethodName: string(c.MethodName),
 	}, nil
 }
 

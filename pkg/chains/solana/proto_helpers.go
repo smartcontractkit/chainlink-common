@@ -1617,6 +1617,17 @@ func ConvertLPFilterQueryToProto(f *typesolana.LPFilterQuery) *LPFilterQuery {
 		Retention:       int64(f.Retention),
 		MaxLogsKept:     f.MaxLogsKept,
 		IncludeReverted: f.IncludeReverted,
+		CpiFilterConfig: convertCPIFilterConfigGoToProto(f.CPIFilterConfig),
+	}
+}
+
+func convertCPIFilterConfigGoToProto(c *typesolana.CPIFilterConfig) *CPIFilterConfig {
+	if c == nil {
+		return nil
+	}
+	return &CPIFilterConfig{
+		DestAddress: c.DestAddress[:],
+		MethodName:  []byte(c.MethodName),
 	}
 }
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772481943824,
+  "lastUpdate": 1772500210337,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -39840,6 +39840,66 @@ window.BENCHMARK_DATA = {
             "value": 138759,
             "unit": "ns/op",
             "extra": "8388 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2879e49d71bdcdd2aff3867d685a76ee77ed845a",
+          "message": "Add confidential-workflows capability codegen (#1851)\n\n* Add confidential-workflows capability codegen\n\nGenerated Go types and server from the new confidential-workflows\nproto in chainlink-protos. Types: SecretIdentifier, WorkflowExecution,\nConfidentialWorkflowRequest, ConfidentialWorkflowResponse. Server\nimplements ClientCapability interface with Execute method.\n\n* Bump chainlink-protos to v1alpha.22, regen confidential-workflows\n\nRemoves owner field from SecretIdentifier per reviewer feedback.\n\n* Run make gomodtidy\n\n* Add enclaverelay package with relay DON protocol types\n\nShared JSON-RPC wire types for the enclave <-> relay DON protocol,\nenabling both confidential-compute and chainlink to use the same\nstruct definitions.\n\n* Rename enclaverelay to confidentialrelay\n\nAvoid exposing \"enclave\" as an implementation detail in\nthe public API surface. Also update method/domain prefixes\nfrom \"enclave.\" to \"confidential.\".",
+          "timestamp": "2026-03-03T01:01:51Z",
+          "tree_id": "deba021acf798e7ecf8c5261c9259583c3ebf7e2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2879e49d71bdcdd2aff3867d685a76ee77ed845a"
+        },
+        "date": 1772500208169,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 424,
+            "unit": "ns/op",
+            "extra": "2362372 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91925,
+            "unit": "ns/op",
+            "extra": "13028 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408,
+            "unit": "ns/op",
+            "extra": "2930701 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92386,
+            "unit": "ns/op",
+            "extra": "12963 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26764,
+            "unit": "ns/op",
+            "extra": "43935 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141212,
+            "unit": "ns/op",
+            "extra": "8215 times\n4 procs"
           }
         ]
       }

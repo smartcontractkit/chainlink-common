@@ -301,10 +301,13 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
 
+	start := time.Now()
 	mod, err := wasmtime.NewModule(engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
+	engineCreationDuration := time.Since(start)
+	fmt.Printf("wasm module creation took %s\n", engineCreationDuration)
 
 	v2ImportName := ""
 	for _, modImport := range mod.Imports() {

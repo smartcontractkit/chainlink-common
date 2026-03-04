@@ -15,7 +15,8 @@ import (
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr, "testCap", 100*time.Millisecond)
+	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
+		"testCap", 100*time.Millisecond, 0, 0)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -157,5 +158,97 @@ drain:
 	case got := <-sendCh:
 		t.Fatalf("unexpected retransmit after ACK: %+v", got)
 	default:
+	}
+}
+
+func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
+	type testCase struct {
+		name               string
+		warnAfter          time.Duration
+		criticalAfter      time.Duration
+		expectWarning      bool
+		expectCritical     bool
+		expectClearedOnAck bool
+	}
+
+	tests := []testCase{
+		{
+			name:          "warning fires",
+			warnAfter:     200 * time.Millisecond,
+			expectWarning: true,
+		},
+		{
+			name:           "critical fires",
+			warnAfter:      100 * time.Millisecond,
+			criticalAfter:  300 * time.Millisecond,
+			expectWarning:  true,
+			expectCritical: true,
+		},
+		{
+			name:               "cleared on ack",
+			warnAfter:          200 * time.Millisecond,
+			expectWarning:      true,
+			expectClearedOnAck: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := NewMemEventStore()
+			sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+
+			lggr, err := logger.New()
+			require.NoError(t, err)
+
+			b := NewBaseTriggerCapability(
+				store,
+				func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+				lggr,
+				"testCap",
+				50*time.Millisecond,
+				tc.warnAfter,
+				tc.criticalAfter,
+			)
+
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+
+			b.RegisterTrigger("trig", sendCh)
+			require.NoError(t, b.Start(ctx))
+			t.Cleanup(func() { b.Stop() })
+
+			te := makeTE(t, "trig", "e1", []byte("x"))
+			require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
+
+			// Wait for expected thresholds
+			require.Eventually(t, func() bool {
+				b.mu.Lock()
+				defer b.mu.Unlock()
+
+				state := b.undeliveredAlertStates["trig"]["e1"]
+				if state == nil {
+					return false
+				}
+
+				if tc.expectCritical {
+					return state.emittedCritical
+				}
+				if tc.expectWarning {
+					return state.emittedWarning
+				}
+				return true
+			}, 3*time.Second, 10*time.Millisecond)
+
+			if tc.expectClearedOnAck {
+				require.NoError(t, b.AckEvent(ctx, "trig", "e1"))
+
+				require.Eventually(t, func() bool {
+					b.mu.Lock()
+					defer b.mu.Unlock()
+					_, exists := b.undeliveredAlertStates["trig"]
+					return !exists
+				}, 1*time.Second, 10*time.Millisecond)
+			}
+		})
 	}
 }

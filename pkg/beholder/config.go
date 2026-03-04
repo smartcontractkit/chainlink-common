@@ -50,7 +50,7 @@ type Config struct {
 	ChipIngressMaxBatchSize         uint          // Max events per PublishBatch call (default 50)
 	ChipIngressSendInterval         time.Duration // Flush interval per worker (default 500ms when zero or unset)
 	ChipIngressSendTimeout          time.Duration // Timeout per PublishBatch call (default 10s)
-	ChipIngressRetryConfig          *RetryConfig  // Retry config for failed PublishBatch calls (defaults match OTel SDK: 5s/30s/1m)
+	ChipIngressRetryConfig          *RetryConfig  // Retry config for failed PublishBatch calls (defaults: 500ms/5s/30s)
 	ChipIngressDrainTimeout         time.Duration // Max time to flush remaining events on shutdown (default 5s)
 
 	// OTel Log
@@ -97,6 +97,14 @@ var defaultRetryConfig = RetryConfig{
 	InitialInterval: 5 * time.Second,
 	MaxInterval:     30 * time.Second,
 	MaxElapsedTime:  1 * time.Minute, // Retry is enabled
+}
+
+// Retry defaults for the chip ingress batch emitter: faster backoff than OTel
+// to avoid buffer pressure on the small per-worker channel.
+var defaultChipIngressRetryConfig = RetryConfig{
+	InitialInterval: 500 * time.Millisecond,
+	MaxInterval:     5 * time.Second,
+	MaxElapsedTime:  5 * time.Second,
 }
 
 const (
@@ -148,7 +156,7 @@ func DefaultConfig() Config {
 		ChipIngressMaxBatchSize:        50,
 		ChipIngressSendInterval:        500 * time.Millisecond,
 		ChipIngressSendTimeout:         10 * time.Second,
-		ChipIngressRetryConfig:         defaultRetryConfig.Copy(),
+		ChipIngressRetryConfig:         defaultChipIngressRetryConfig.Copy(),
 		ChipIngressDrainTimeout:        5 * time.Second,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,

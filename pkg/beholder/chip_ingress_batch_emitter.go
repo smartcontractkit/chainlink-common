@@ -101,33 +101,37 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 // Emit extracts (domain, entity) from the attributes, routes the event to the
 // appropriate per-(domain, entity) worker, and returns immediately.
 // If the worker's buffer is full, the event is dropped and a warning is logged.
+// Returns an error if the emitter has been closed.
 func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	domain, entity, err := ExtractSourceAndType(attrKVs...)
-	if err != nil {
-		return err
-	}
+	return e.eng.IfNotStopped(func() error {
+		domain, entity, err := ExtractSourceAndType(attrKVs...)
+		if err != nil {
+			return err
+		}
 
-	attributes := newAttributes(attrKVs...)
+		attributes := newAttributes(attrKVs...)
 
-	worker := e.findOrCreateWorker(domain, entity)
+		worker := e.findOrCreateWorker(domain, entity)
 
-	payload := emitterPayload{
-		body:       body,
-		attributes: attributes,
-		domain:     domain,
-		entity:     entity,
-	}
+		payload := emitterPayload{
+			body:       body,
+			attributes: attributes,
+			domain:     domain,
+			entity:     entity,
+		}
 
-	select {
-	case worker.ch <- payload:
-		worker.dropCount.Store(0)
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		worker.logBufferFullWithExpBackoff(payload)
-	}
+		select {
+		case worker.ch <- payload:
+			// Intentionally racy with logBufferFullWithExpBackoff — only affects log frequency, not correctness.
+			worker.dropCount.Store(0)
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			worker.logBufferFullWithExpBackoff(payload)
+		}
 
-	return nil
+		return nil
+	})
 }
 
 // findOrCreateWorker returns the worker for the given (domain, entity) pair,

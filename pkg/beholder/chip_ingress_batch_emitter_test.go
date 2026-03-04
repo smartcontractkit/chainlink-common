@@ -29,6 +29,7 @@ func newTestLogger(t *testing.T) logger.Logger {
 	t.Helper()
 	lggr, err := logger.New()
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = lggr.Sync() })
 	return lggr
 }
 
@@ -863,5 +864,26 @@ func TestChipIngressBatchEmitter_RetryShutdownDuringBackoff(t *testing.T) {
 		case <-time.After(3 * time.Second):
 			t.Fatal("Close() did not return within 3s; timer.Stop() during retry backoff is not working")
 		}
+	})
+}
+
+func TestChipIngressBatchEmitter_EmitAfterClose(t *testing.T) {
+	t.Run("Emit after Close returns error", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil).
+			Maybe()
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+		require.NoError(t, emitter.Close())
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		assert.Error(t, err, "Emit after Close should return an error")
 	})
 }

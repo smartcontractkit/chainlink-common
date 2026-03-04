@@ -45,7 +45,7 @@ type Config struct {
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
 
 	// Chip Ingress Batch Emitter
-	ChipIngressBatchEmitterEnabled  bool          // When true (default), use batch emitter; when false, use legacy per-event emitter
+	ChipIngressBatchEmitterEnabled  bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
 	ChipIngressBufferSize           uint          // Per-worker channel buffer size (default 100)
 	ChipIngressMaxBatchSize         uint          // Max events per PublishBatch call (default 50)
 	ChipIngressSendInterval         time.Duration // Flush interval per worker (default 500ms when zero or unset)

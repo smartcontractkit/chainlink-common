@@ -226,6 +226,8 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		var chipIngressEmitter Emitter
 		if cfg.ChipIngressBatchEmitterEnabled {
+			// TODO: accept a logger from the caller instead of creating a new root logger,
+			// so batch emitter logs respect the node's logging configuration.
 			lggr, lErr := ccllogger.New()
 			if lErr != nil {
 				return nil, fmt.Errorf("failed to create logger for chip ingress batch emitter: %w", lErr)
@@ -247,13 +249,17 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
 		if err != nil {
+			if batchEmitterService != nil {
+				_ = batchEmitterService.Close()
+			}
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
 	}
 
 	onClose := func() (err error) {
-		// batchEmitterService is closed via DualSourceEmitter.Close() -> chipIngressEmitter.Close(),
-		// which is called by Client.Close() -> c.Emitter.Close() before OnClose runs.
+		if batchEmitterService != nil {
+			err = errors.Join(err, batchEmitterService.Close())
+		}
 		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}

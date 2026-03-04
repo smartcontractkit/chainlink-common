@@ -38,7 +38,8 @@ type chipIngressEmitterWorker struct {
 	retryMaxInterval     time.Duration
 	retryMaxElapsed      time.Duration
 
-	metrics batchEmitterMetrics
+	metrics     batchEmitterMetrics
+	metricAttrs otelmetric.MeasurementOption
 }
 
 func newChipIngressEmitterWorker(
@@ -61,6 +62,10 @@ func newChipIngressEmitterWorker(
 		sendTimeout:  sendTimeout,
 		lggr:         logger.Named(lggr, "ChipIngressEmitterWorker"),
 		metrics:      metrics,
+		metricAttrs: otelmetric.WithAttributeSet(attribute.NewSet(
+			attribute.String("domain", domain),
+			attribute.String("entity", entity),
+		)),
 	}
 	if retryCfg != nil && retryCfg.Enabled() {
 		w.retryInitialInterval = retryCfg.InitialInterval
@@ -91,27 +96,25 @@ func (w *chipIngressEmitterWorker) Send(ctx context.Context) {
 	deadline := time.Now().Add(w.retryMaxElapsed)
 
 	batchSize := int64(len(batch.Events))
-	metricAttrs := otelmetric.WithAttributeSet(w.metricAttributes())
-
 	for attempt := 0; ; attempt++ {
 		sendCtx, cancel := context.WithTimeout(ctx, w.sendTimeout)
 		_, err := w.client.PublishBatch(sendCtx, batch)
 		cancel()
 
 		if err == nil {
-			w.metrics.eventsSent.Add(context.Background(), batchSize, metricAttrs)
+			w.metrics.eventsSent.Add(context.Background(), batchSize, w.metricAttrs)
 			return
 		}
 
 		w.lggr.Warnf("PublishBatch failed (attempt %d, domain=%s, entity=%s): %v",
 			attempt+1, w.domain, w.entity, err)
-		w.metrics.batchRetries.Add(context.Background(), 1, metricAttrs)
+		w.metrics.batchRetries.Add(context.Background(), 1, w.metricAttrs)
 
 		if time.Now().Add(backoff).After(deadline) {
 			w.lggr.Warnf("PublishBatch retries exhausted, dropping %d events (domain=%s, entity=%s)",
 				len(batch.Events), w.domain, w.entity)
-			w.metrics.batchFailures.Add(context.Background(), 1, metricAttrs)
-			w.metrics.eventsDropped.Add(context.Background(), batchSize, metricAttrs)
+			w.metrics.batchFailures.Add(context.Background(), 1, w.metricAttrs)
+			w.metrics.eventsDropped.Add(context.Background(), batchSize, w.metricAttrs)
 			return
 		}
 
@@ -121,14 +124,14 @@ func (w *chipIngressEmitterWorker) Send(ctx context.Context) {
 			timer.Stop()
 			w.lggr.Warnf("context cancelled during retry, dropping %d events (domain=%s, entity=%s)",
 				len(batch.Events), w.domain, w.entity)
-			w.metrics.eventsDropped.Add(context.Background(), batchSize, metricAttrs)
+			w.metrics.eventsDropped.Add(context.Background(), batchSize, w.metricAttrs)
 			return
 		case <-timer.C:
 		}
 
-		backoff = min(backoff*2, w.retryMaxInterval)
-		jitter := time.Duration(rand.Int64N(int64(backoff) / 5)) //nolint:gosec
-		backoff += jitter
+		next := backoff * 2
+		jitter := time.Duration(rand.Int64N(int64(next)/5 + 1)) //nolint:gosec
+		backoff = min(next+jitter, w.retryMaxInterval)
 	}
 }
 
@@ -137,22 +140,20 @@ func (w *chipIngressEmitterWorker) publishOnce(ctx context.Context, batch *chipi
 	defer cancel()
 
 	batchSize := int64(len(batch.Events))
-	metricAttrs := otelmetric.WithAttributeSet(w.metricAttributes())
 	_, err := w.client.PublishBatch(sendCtx, batch)
 	if err != nil {
 		w.lggr.Warnf("could not send batch via chip ingress (domain=%s, entity=%s): %v",
 			w.domain, w.entity, err)
-		w.metrics.batchFailures.Add(context.Background(), 1, metricAttrs)
-		w.metrics.eventsDropped.Add(context.Background(), batchSize, metricAttrs)
+		w.metrics.batchFailures.Add(context.Background(), 1, w.metricAttrs)
+		w.metrics.eventsDropped.Add(context.Background(), batchSize, w.metricAttrs)
 		return
 	}
-	w.metrics.eventsSent.Add(context.Background(), batchSize, metricAttrs)
+	w.metrics.eventsSent.Add(context.Background(), batchSize, w.metricAttrs)
 }
 
 // buildBatch drains the channel up to maxBatchSize and converts payloads to a CloudEventBatch.
 func (w *chipIngressEmitterWorker) buildBatch() *chipingress.CloudEventBatch {
 	var events []chipingress.CloudEvent
-	metricAttrs := otelmetric.WithAttributeSet(w.metricAttributes())
 
 	max := int(w.maxBatchSize) // #nosec G115
 drain:
@@ -162,7 +163,7 @@ drain:
 			event, err := w.payloadToEvent(payload)
 			if err != nil {
 				w.lggr.Warnf("failed to build CloudEvent, dropping: %v", err)
-				w.metrics.eventsDropped.Add(context.Background(), 1, metricAttrs)
+				w.metrics.eventsDropped.Add(context.Background(), 1, w.metricAttrs)
 				continue
 			}
 			events = append(events, event)
@@ -178,7 +179,7 @@ drain:
 	batch, err := chipingress.EventsToBatch(events)
 	if err != nil {
 		w.lggr.Warnf("failed to convert events to batch: %v", err)
-		w.metrics.eventsDropped.Add(context.Background(), int64(len(events)), metricAttrs)
+		w.metrics.eventsDropped.Add(context.Background(), int64(len(events)), w.metricAttrs)
 		return nil
 	}
 
@@ -204,7 +205,6 @@ func (w *chipIngressEmitterWorker) drain(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	metricAttrs := otelmetric.WithAttributeSet(w.metricAttributes())
 	w.lggr.Infof("draining %d buffered events (domain=%s, entity=%s)", len(w.ch), w.domain, w.entity)
 
 	for len(w.ch) > 0 {
@@ -213,7 +213,7 @@ func (w *chipIngressEmitterWorker) drain(timeout time.Duration) {
 			if remaining > 0 {
 				w.lggr.Warnf("drain timeout exceeded, dropping %d remaining events (domain=%s, entity=%s)",
 					remaining, w.domain, w.entity)
-				w.metrics.eventsDropped.Add(context.Background(), int64(remaining), metricAttrs)
+				w.metrics.eventsDropped.Add(context.Background(), int64(remaining), w.metricAttrs)
 			}
 			return
 		}
@@ -231,28 +231,22 @@ func (w *chipIngressEmitterWorker) drain(timeout time.Duration) {
 		if err != nil {
 			w.lggr.Warnf("drain PublishBatch failed, dropping %d events (domain=%s, entity=%s): %v",
 				len(batch.Events), w.domain, w.entity, err)
-			w.metrics.eventsDropped.Add(context.Background(), batchSize, metricAttrs)
+			w.metrics.eventsDropped.Add(context.Background(), batchSize, w.metricAttrs)
 			continue
 		}
 
-		w.metrics.eventsDrained.Add(context.Background(), batchSize, metricAttrs)
+		w.metrics.eventsDrained.Add(context.Background(), batchSize, w.metricAttrs)
 	}
 }
 
 // logBufferFullWithExpBackoff logs at 1, 2, 4, 8, 16, 32, 64, 100, 200, 300, ...
 // to avoid flooding logs when the buffer is persistently full.
+// dropCount is intentionally racy with Emit's Store(0) — this only affects log frequency, not correctness.
 func (w *chipIngressEmitterWorker) logBufferFullWithExpBackoff(payload emitterPayload) {
-	w.metrics.eventsDropped.Add(context.Background(), 1, otelmetric.WithAttributeSet(w.metricAttributes()))
+	w.metrics.eventsDropped.Add(context.Background(), 1, w.metricAttrs)
 	count := w.dropCount.Add(1)
 	if count > 0 && (count%100 == 0 || count&(count-1) == 0) {
 		w.lggr.Warnf("chip ingress emitter buffer full, dropping event (domain=%s, entity=%s, droppedCount=%d)",
 			payload.domain, payload.entity, count)
 	}
-}
-
-func (w *chipIngressEmitterWorker) metricAttributes() attribute.Set {
-	return attribute.NewSet(
-		attribute.String("domain", w.domain),
-		attribute.String("entity", w.entity),
-	)
 }

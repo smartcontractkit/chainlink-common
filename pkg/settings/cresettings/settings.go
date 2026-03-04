@@ -65,8 +65,20 @@ var Default = Schema{
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
-	VaultPluginBatchSizeLimit:         Int(20),
+	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
+
+	VaultLimitsMaxQueryLength:                                  Int(102400),
+	VaultLimitsMaxObservationLength:                            Int(500000000),
+	VaultLimitsMaxReportsPlusPrecursorLength:                   Int(500000000),
+	VaultLimitsMaxReportLength:                                 Int(500000000),
+	VaultLimitsMaxReportCount:                                  Int(10),
+	VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength:         Int(1468006),
+	VaultLimitsMaxKeyValueModifiedKeys:                         Int(300),
+	VaultLimitsMaxBlobPayloadLength:                            Int(25600),
+	VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes: Int(31457280),
+	VaultLimitsMaxPerOracleUnexpiredBlobCount:                  Int(1000),
+	VaultEnableDeterministicPendingQueue:                       Bool(true),
 
 	PerOrg: Orgs{
 		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
@@ -177,6 +189,18 @@ type Schema struct {
 	VaultIdentifierNamespaceSizeLimit Setting[config.Size]
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
+
+	VaultLimitsMaxQueryLength                                  Setting[int]
+	VaultLimitsMaxObservationLength                            Setting[int]
+	VaultLimitsMaxReportsPlusPrecursorLength                   Setting[int]
+	VaultLimitsMaxReportLength                                 Setting[int]
+	VaultLimitsMaxReportCount                                  Setting[int]
+	VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength         Setting[int]
+	VaultLimitsMaxKeyValueModifiedKeys                         Setting[int]
+	VaultLimitsMaxBlobPayloadLength                            Setting[int]
+	VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes Setting[int]
+	VaultLimitsMaxPerOracleUnexpiredBlobCount                  Setting[int]
+	VaultEnableDeterministicPendingQueue                       Setting[bool]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`

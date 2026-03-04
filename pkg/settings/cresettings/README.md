@@ -174,6 +174,17 @@ flowchart
         VaultIdentifierNamespaceSizeLimit{{VaultIdentifierNamespaceSizeLimit}}:::bound
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
+        VaultLimitsMaxQueryLength{{VaultLimitsMaxQueryLength}}:::bound
+        VaultLimitsMaxObservationLength{{VaultLimitsMaxObservationLength}}:::bound
+        VaultLimitsMaxReportsPlusPrecursorLength{{VaultLimitsMaxReportsPlusPrecursorLength}}:::bound
+        VaultLimitsMaxReportLength{{VaultLimitsMaxReportLength}}:::bound
+        VaultLimitsMaxReportCount{{VaultLimitsMaxReportCount}}:::bound
+        VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength{{VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength}}:::bound
+        VaultLimitsMaxKeyValueModifiedKeys{{VaultLimitsMaxKeyValueModifiedKeys}}:::bound
+        VaultLimitsMaxBlobPayloadLength{{VaultLimitsMaxBlobPayloadLength}}:::bound
+        VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes{{VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes}}:::bound
+        VaultLimitsMaxPerOracleUnexpiredBlobCount{{VaultLimitsMaxPerOracleUnexpiredBlobCount}}:::bound
+        VaultEnableDeterministicPendingQueue[/VaultEnableDeterministicPendingQueue\]:::gate
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 

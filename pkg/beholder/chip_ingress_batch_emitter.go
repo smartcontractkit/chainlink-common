@@ -66,7 +66,7 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	}
 	sendTimeout := cfg.ChipIngressSendTimeout
 	if sendTimeout == 0 {
-		sendTimeout = 10 * time.Second
+		sendTimeout = 5 * time.Second
 	}
 	drainTimeout := cfg.ChipIngressDrainTimeout
 	if drainTimeout == 0 {

@@ -49,7 +49,7 @@ type Config struct {
 	ChipIngressBufferSize           uint          // Per-worker channel buffer size (default 100)
 	ChipIngressMaxBatchSize         uint          // Max events per PublishBatch call (default 50)
 	ChipIngressSendInterval         time.Duration // Flush interval per worker (default 500ms when zero or unset)
-	ChipIngressSendTimeout          time.Duration // Timeout per PublishBatch call (default 10s)
+	ChipIngressSendTimeout          time.Duration // Timeout per PublishBatch call (default 5s)
 	ChipIngressRetryConfig          *RetryConfig  // Retry config for failed PublishBatch calls (defaults: 500ms/5s/30s)
 	ChipIngressDrainTimeout         time.Duration // Max time to flush remaining events on shutdown (default 5s)
 
@@ -155,7 +155,7 @@ func DefaultConfig() Config {
 		ChipIngressBufferSize:          100,
 		ChipIngressMaxBatchSize:        50,
 		ChipIngressSendInterval:        500 * time.Millisecond,
-		ChipIngressSendTimeout:         10 * time.Second,
+		ChipIngressSendTimeout:         5 * time.Second,
 		ChipIngressRetryConfig:         defaultChipIngressRetryConfig.Copy(),
 		ChipIngressDrainTimeout:        5 * time.Second,
 		// Auth (defaults to static auth mode with TTL=0)

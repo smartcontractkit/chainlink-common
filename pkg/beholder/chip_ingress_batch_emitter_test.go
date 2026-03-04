@@ -61,6 +61,11 @@ func TestChipIngressBatchEmitter_Emit(t *testing.T) {
 
 	t.Run("enqueues and does not call PublishBatch immediately", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil).
+			Maybe()
+
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
@@ -394,6 +399,10 @@ func TestChipIngressBatchEmitter_PublishBatchError(t *testing.T) {
 func TestChipIngressBatchEmitter_ContextCancellation(t *testing.T) {
 	t.Run("Emit returns context error when context is cancelled", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil).
+			Maybe()
 
 		cfg := newTestConfig()
 		cfg.ChipIngressBufferSize = 1
@@ -459,5 +468,400 @@ func TestChipIngressBatchEmitter_DefaultConfig(t *testing.T) {
 		mu.Lock()
 		defer mu.Unlock()
 		require.Len(t, receivedBatch.Events, 1)
+	})
+}
+
+func newRetryTestConfig() beholder.Config {
+	return beholder.Config{
+		ChipIngressBufferSize:   10,
+		ChipIngressMaxBatchSize: 5,
+		ChipIngressSendInterval: 50 * time.Millisecond,
+		ChipIngressSendTimeout:  1 * time.Second,
+		ChipIngressRetryConfig: &beholder.RetryConfig{
+			InitialInterval: 10 * time.Millisecond,
+			MaxInterval:     50 * time.Millisecond,
+			MaxElapsedTime:  500 * time.Millisecond,
+		},
+		ChipIngressDrainTimeout: 5 * time.Second,
+	}
+}
+
+func TestChipIngressBatchEmitter_RetrySuccess(t *testing.T) {
+	t.Run("succeeds after transient failure", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		callCount := 0
+		totalEventsSent := 0
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				if callCount <= 2 {
+					return // first 2 calls fail
+				}
+				totalEventsSent += len(batch.Events)
+			}).
+			Return(nil, assert.AnError).Times(2)
+
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				totalEventsSent += len(batch.Events)
+			}).
+			Return(nil, nil)
+
+		cfg := newRetryTestConfig()
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 3; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		assert.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			return totalEventsSent >= 3
+		}, 5*time.Second, 10*time.Millisecond)
+
+		require.NoError(t, emitter.Close())
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.GreaterOrEqual(t, callCount, 3, "should have retried at least twice before succeeding")
+		assert.Equal(t, 3, totalEventsSent)
+	})
+}
+
+func TestChipIngressBatchEmitter_RetryExhaustion(t *testing.T) {
+	t.Run("drops events after retries exhausted", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		callCount := 0
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(_ mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+			}).
+			Return(nil, assert.AnError)
+
+		cfg := newRetryTestConfig()
+		cfg.ChipIngressRetryConfig = &beholder.RetryConfig{
+			InitialInterval: 10 * time.Millisecond,
+			MaxInterval:     20 * time.Millisecond,
+			MaxElapsedTime:  100 * time.Millisecond,
+		}
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 3; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		// Wait long enough for retries to exhaust
+		assert.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			return callCount >= 2
+		}, 3*time.Second, 10*time.Millisecond)
+
+		require.NoError(t, emitter.Close())
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.GreaterOrEqual(t, callCount, 2, "should have attempted at least 2 times before exhausting retries")
+	})
+}
+
+func TestChipIngressBatchEmitter_GracefulDrain(t *testing.T) {
+	t.Run("flushes buffered events on close", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		totalEventsSent := 0
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				totalEventsSent += len(batch.Events)
+			}).
+			Return(nil, nil)
+
+		cfg := beholder.Config{
+			ChipIngressBufferSize:   20,
+			ChipIngressMaxBatchSize: 10,
+			ChipIngressSendInterval: 1 * time.Hour, // very long interval — events won't flush via tick
+			ChipIngressSendTimeout:  5 * time.Second,
+			ChipIngressDrainTimeout: 5 * time.Second,
+		}
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 5; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		// Events are buffered but no tick has fired. Close should drain them.
+		require.NoError(t, emitter.Close())
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Equal(t, 5, totalEventsSent, "all buffered events should be drained on close")
+	})
+}
+
+func TestChipIngressBatchEmitter_DrainMultipleDomains(t *testing.T) {
+	t.Run("drains events from all workers on close", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		domainEntitySent := make(map[string]int)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				for _, event := range batch.Events {
+					key := event.Source + "/" + event.Type
+					domainEntitySent[key] += 1
+				}
+			}).
+			Return(nil, nil)
+
+		cfg := beholder.Config{
+			ChipIngressBufferSize:   20,
+			ChipIngressMaxBatchSize: 10,
+			ChipIngressSendInterval: 1 * time.Hour,
+			ChipIngressSendTimeout:  5 * time.Second,
+			ChipIngressDrainTimeout: 5 * time.Second,
+		}
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 3; i++ {
+			err = emitter.Emit(t.Context(), []byte("workflow"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "WorkflowEvent",
+			)
+			require.NoError(t, err)
+		}
+		for i := 0; i < 2; i++ {
+			err = emitter.Emit(t.Context(), []byte("bridge"),
+				beholder.AttrKeyDomain, "data-feeds",
+				beholder.AttrKeyEntity, "BridgeStatus",
+			)
+			require.NoError(t, err)
+		}
+
+		require.NoError(t, emitter.Close())
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Equal(t, 3, domainEntitySent["platform/WorkflowEvent"])
+		assert.Equal(t, 2, domainEntitySent["data-feeds/BridgeStatus"])
+	})
+}
+
+func TestChipIngressBatchEmitter_DrainPublishBatchFailure(t *testing.T) {
+	t.Run("drain continues attempting batches after failure", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		callCount := 0
+		totalEventsSent := 0
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				if callCount == 1 {
+					return // first call fails
+				}
+				totalEventsSent += len(batch.Events)
+			}).
+			Return(nil, assert.AnError).Once()
+
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				totalEventsSent += len(batch.Events)
+			}).
+			Return(nil, nil)
+
+		cfg := beholder.Config{
+			ChipIngressBufferSize:   20,
+			ChipIngressMaxBatchSize: 3,
+			ChipIngressSendInterval: 1 * time.Hour,
+			ChipIngressSendTimeout:  5 * time.Second,
+			ChipIngressDrainTimeout: 5 * time.Second,
+		}
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		// Emit 6 events with maxBatchSize=3 => 2 batches during drain
+		for i := 0; i < 6; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		require.NoError(t, emitter.Close())
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.GreaterOrEqual(t, callCount, 2, "drain should have attempted at least 2 batches")
+		assert.Equal(t, 3, totalEventsSent, "second batch should have succeeded despite first batch failure")
+	})
+}
+
+func TestChipIngressBatchEmitter_DrainTimeout(t *testing.T) {
+	t.Run("close returns promptly when drain timeout expires", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				ctx := args.Get(0).(context.Context)
+				<-ctx.Done() // simulate a slow server that only returns on context cancellation
+			}).
+			Return(nil, context.DeadlineExceeded).
+			Maybe()
+
+		cfg := beholder.Config{
+			ChipIngressBufferSize:   20,
+			ChipIngressMaxBatchSize: 10,
+			ChipIngressSendInterval: 1 * time.Hour,
+			ChipIngressSendTimeout:  10 * time.Second,
+			ChipIngressDrainTimeout: 200 * time.Millisecond,
+		}
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 5; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		closeDone := make(chan error, 1)
+		go func() {
+			closeDone <- emitter.Close()
+		}()
+
+		select {
+		case err := <-closeDone:
+			assert.NoError(t, err, "close should not error")
+		case <-time.After(5 * time.Second):
+			t.Fatal("Close() did not return within 5s; drain timeout is not working")
+		}
+	})
+}
+
+func TestChipIngressBatchEmitter_RetryShutdownDuringBackoff(t *testing.T) {
+	t.Run("shutdown during retry backoff completes promptly", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var mu sync.Mutex
+		callCount := 0
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(_ mock.Arguments) {
+				mu.Lock()
+				defer mu.Unlock()
+				callCount++
+			}).
+			Return(nil, assert.AnError)
+
+		cfg := beholder.Config{
+			ChipIngressBufferSize:   10,
+			ChipIngressMaxBatchSize: 5,
+			ChipIngressSendInterval: 50 * time.Millisecond,
+			ChipIngressSendTimeout:  1 * time.Second,
+			ChipIngressRetryConfig: &beholder.RetryConfig{
+				InitialInterval: 10 * time.Second, // very long backoff
+				MaxInterval:     30 * time.Second,
+				MaxElapsedTime:  1 * time.Minute,
+			},
+			ChipIngressDrainTimeout: 5 * time.Second,
+		}
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		for i := 0; i < 3; i++ {
+			err = emitter.Emit(t.Context(), []byte("body"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			require.NoError(t, err)
+		}
+
+		// Wait for at least one PublishBatch attempt (which will fail and enter 10s backoff)
+		assert.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			return callCount >= 1
+		}, 2*time.Second, 10*time.Millisecond)
+
+		// Close while the worker is sleeping in the 10s retry backoff
+		closeDone := make(chan error, 1)
+		go func() {
+			closeDone <- emitter.Close()
+		}()
+
+		select {
+		case err := <-closeDone:
+			assert.NoError(t, err, "close should not error")
+		case <-time.After(3 * time.Second):
+			t.Fatal("Close() did not return within 3s; timer.Stop() during retry backoff is not working")
+		}
 	})
 }

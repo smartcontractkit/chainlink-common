@@ -45,11 +45,13 @@ type Config struct {
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
 
 	// Chip Ingress Batch Emitter
-	ChipIngressBatchEmitterEnabled bool          // When true (default), use batch emitter; when false, use legacy per-event emitter
-	ChipIngressBufferSize          uint          // Per-worker channel buffer size (default 100)
-	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 50)
-	ChipIngressSendInterval        time.Duration // Flush interval per worker (default 500ms when zero or unset)
-	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 10s)
+	ChipIngressBatchEmitterEnabled  bool          // When true (default), use batch emitter; when false, use legacy per-event emitter
+	ChipIngressBufferSize           uint          // Per-worker channel buffer size (default 100)
+	ChipIngressMaxBatchSize         uint          // Max events per PublishBatch call (default 50)
+	ChipIngressSendInterval         time.Duration // Flush interval per worker (default 500ms when zero or unset)
+	ChipIngressSendTimeout          time.Duration // Timeout per PublishBatch call (default 10s)
+	ChipIngressRetryConfig          *RetryConfig  // Retry config for failed PublishBatch calls (defaults match OTel SDK: 5s/30s/1m)
+	ChipIngressDrainTimeout         time.Duration // Max time to flush remaining events on shutdown (default 5s)
 
 	// OTel Log
 	LogExportTimeout      time.Duration
@@ -143,9 +145,11 @@ func DefaultConfig() Config {
 		// Chip Ingress Batch Emitter
 		ChipIngressBatchEmitterEnabled: false,
 		ChipIngressBufferSize:          100,
-		ChipIngressMaxBatchSize: 50,
-		ChipIngressSendInterval: 500 * time.Millisecond,
-		ChipIngressSendTimeout:  10 * time.Second,
+		ChipIngressMaxBatchSize:        50,
+		ChipIngressSendInterval:        500 * time.Millisecond,
+		ChipIngressSendTimeout:         10 * time.Second,
+		ChipIngressRetryConfig:         defaultRetryConfig.Copy(),
+		ChipIngressDrainTimeout:        5 * time.Second,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}
@@ -157,9 +161,10 @@ func TestDefaultConfig() Config {
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
-	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
-	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
-	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	config.LogRetryConfig.MaxElapsedTime = 0          // Retry is disabled
+	config.TraceRetryConfig.MaxElapsedTime = 0        // Retry is disabled
+	config.MetricRetryConfig.MaxElapsedTime = 0       // Retry is disabled
+	config.ChipIngressRetryConfig.MaxElapsedTime = 0  // Retry is disabled
 	// Auth disabled for testing (TTL=0 means static auth mode)
 	config.AuthHeadersTTL = 0
 	return config

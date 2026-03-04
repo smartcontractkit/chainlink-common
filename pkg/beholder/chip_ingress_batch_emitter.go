@@ -6,10 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	otelmetric "go.opentelemetry.io/otel/metric"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/timeutil"
 )
 
 // ChipIngressBatchEmitter buffers events per (domain, entity) and flushes them
@@ -29,6 +31,18 @@ type ChipIngressBatchEmitter struct {
 	maxBatchSize uint
 	sendInterval time.Duration
 	sendTimeout  time.Duration
+	retryCfg     *RetryConfig
+	drainTimeout time.Duration
+
+	metrics batchEmitterMetrics
+}
+
+type batchEmitterMetrics struct {
+	eventsSent      otelmetric.Int64Counter
+	eventsDropped   otelmetric.Int64Counter
+	batchRetries    otelmetric.Int64Counter
+	batchFailures   otelmetric.Int64Counter
+	eventsDrained   otelmetric.Int64Counter
 }
 
 // NewChipIngressBatchEmitter creates a batch emitter backed by the given chipingress client.
@@ -54,6 +68,16 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	if sendTimeout == 0 {
 		sendTimeout = 10 * time.Second
 	}
+	drainTimeout := cfg.ChipIngressDrainTimeout
+	if drainTimeout == 0 {
+		drainTimeout = 5 * time.Second
+	}
+
+	meter := otel.Meter("beholder/chip_ingress_batch_emitter")
+	metrics, err := newBatchEmitterMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create batch emitter metrics: %w", err)
+	}
 
 	e := &ChipIngressBatchEmitter{
 		client:       client,
@@ -62,6 +86,9 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 		maxBatchSize: maxBatchSize,
 		sendInterval: sendInterval,
 		sendTimeout:  sendTimeout,
+		retryCfg:     cfg.ChipIngressRetryConfig,
+		drainTimeout: drainTimeout,
+		metrics:      metrics,
 	}
 
 	e.Service, e.eng = services.Config{
@@ -70,7 +97,6 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 
 	return e, nil
 }
-
 
 // Emit extracts (domain, entity) from the attributes, routes the event to the
 // appropriate per-(domain, entity) worker, and returns immediately.
@@ -105,7 +131,7 @@ func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs
 }
 
 // findOrCreateWorker returns the worker for the given (domain, entity) pair,
-// creating one with a new buffered channel and GoTick flush loop if it doesn't exist.
+// creating one with a new buffered channel and flush goroutine if it doesn't exist.
 func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chipIngressEmitterWorker {
 	workerKey := fmt.Sprintf("%s_%s", domain, entity)
 
@@ -132,13 +158,73 @@ func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chi
 		entity,
 		e.maxBatchSize,
 		e.sendTimeout,
+		e.retryCfg,
+		e.metrics,
 		e.eng,
 	)
 
-	e.eng.GoTick(timeutil.NewTicker(func() time.Duration {
-		return e.sendInterval
-	}), worker.Send)
+	sendInterval := e.sendInterval
+	drainTimeout := e.drainTimeout
+	e.eng.Go(func(ctx context.Context) {
+		ticker := time.NewTicker(sendInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				worker.Send(ctx)
+			case <-ctx.Done():
+				worker.drain(drainTimeout)
+				return
+			}
+		}
+	})
 
 	e.workers[workerKey] = worker
 	return worker
+}
+
+func newBatchEmitterMetrics(meter otelmetric.Meter) (batchEmitterMetrics, error) {
+	eventsSent, err := meter.Int64Counter("chip_ingress.events_sent",
+		otelmetric.WithDescription("Total events successfully sent via PublishBatch"),
+		otelmetric.WithUnit("{event}"))
+	if err != nil {
+		return batchEmitterMetrics{}, err
+	}
+
+	eventsDropped, err := meter.Int64Counter("chip_ingress.events_dropped",
+		otelmetric.WithDescription("Total events dropped (buffer full or retries exhausted)"),
+		otelmetric.WithUnit("{event}"))
+	if err != nil {
+		return batchEmitterMetrics{}, err
+	}
+
+	batchRetries, err := meter.Int64Counter("chip_ingress.batch_retries",
+		otelmetric.WithDescription("Total PublishBatch retry attempts"),
+		otelmetric.WithUnit("{attempt}"))
+	if err != nil {
+		return batchEmitterMetrics{}, err
+	}
+
+	batchFailures, err := meter.Int64Counter("chip_ingress.batch_failures",
+		otelmetric.WithDescription("Total batches that failed after all retries"),
+		otelmetric.WithUnit("{batch}"))
+	if err != nil {
+		return batchEmitterMetrics{}, err
+	}
+
+	eventsDrained, err := meter.Int64Counter("chip_ingress.events_drained",
+		otelmetric.WithDescription("Total events flushed during graceful shutdown"),
+		otelmetric.WithUnit("{event}"))
+	if err != nil {
+		return batchEmitterMetrics{}, err
+	}
+
+	return batchEmitterMetrics{
+		eventsSent:    eventsSent,
+		eventsDropped: eventsDropped,
+		batchRetries:  batchRetries,
+		batchFailures: batchFailures,
+		eventsDrained: eventsDrained,
+	}, nil
 }

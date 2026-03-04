@@ -154,15 +154,21 @@ func (w *chipIngressEmitterWorker) buildBatch() *chipingress.CloudEventBatch {
 	var events []chipingress.CloudEvent
 	metricAttrs := otelmetric.WithAttributeSet(w.metricAttributes())
 
-	for len(w.ch) > 0 && len(events) < int(w.maxBatchSize) { // #nosec G115
-		payload := <-w.ch
-		event, err := w.payloadToEvent(payload)
-		if err != nil {
-			w.lggr.Warnf("failed to build CloudEvent, dropping: %v", err)
-			w.metrics.eventsDropped.Add(context.Background(), 1, metricAttrs)
-			continue
+	max := int(w.maxBatchSize) // #nosec G115
+drain:
+	for len(events) < max {
+		select {
+		case payload := <-w.ch:
+			event, err := w.payloadToEvent(payload)
+			if err != nil {
+				w.lggr.Warnf("failed to build CloudEvent, dropping: %v", err)
+				w.metrics.eventsDropped.Add(context.Background(), 1, metricAttrs)
+				continue
+			}
+			events = append(events, event)
+		default:
+			break drain
 		}
-		events = append(events, event)
 	}
 
 	if len(events) == 0 {

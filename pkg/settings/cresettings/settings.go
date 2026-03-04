@@ -78,7 +78,6 @@ var Default = Schema{
 	VaultLimitsMaxBlobPayloadLength:                            Int(25600),
 	VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes: Int(31457280),
 	VaultLimitsMaxPerOracleUnexpiredBlobCount:                  Int(1000),
-	VaultEnableDeterministicPendingQueue:                       Bool(true),
 
 	PerOrg: Orgs{
 		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
@@ -200,7 +199,6 @@ type Schema struct {
 	VaultLimitsMaxBlobPayloadLength                            Setting[int]
 	VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes Setting[int]
 	VaultLimitsMaxPerOracleUnexpiredBlobCount                  Setting[int]
-	VaultEnableDeterministicPendingQueue                       Setting[bool]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`

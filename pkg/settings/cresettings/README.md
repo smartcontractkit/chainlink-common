@@ -184,7 +184,6 @@ flowchart
         VaultLimitsMaxBlobPayloadLength{{VaultLimitsMaxBlobPayloadLength}}:::bound
         VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes{{VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes}}:::bound
         VaultLimitsMaxPerOracleUnexpiredBlobCount{{VaultLimitsMaxPerOracleUnexpiredBlobCount}}:::bound
-        VaultEnableDeterministicPendingQueue[/VaultEnableDeterministicPendingQueue\]:::gate
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 

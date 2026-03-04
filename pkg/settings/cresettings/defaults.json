@@ -19,7 +19,6 @@
 	"VaultLimitsMaxBlobPayloadLength": "25600",
 	"VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes": "31457280",
 	"VaultLimitsMaxPerOracleUnexpiredBlobCount": "1000",
-	"VaultEnableDeterministicPendingQueue": "true",
 	"PerOrg": {
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},

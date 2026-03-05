@@ -12,6 +12,7 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -568,6 +569,18 @@ func runWasm[I, O proto.Message](
 	wasi.InheritStdout()
 	defer wasi.Close()
 
+	// Capture WASM stderr to detect "fatal error: out of memory". The Go runtime writes
+	// this literal string to stderr before exit(2), regardless of debug symbols.
+	var stderrCapturePath string
+	if f, tempErr := os.CreateTemp("", "wasm-stderr-*"); tempErr == nil {
+		stderrCapturePath = f.Name()
+		f.Close()
+		defer os.Remove(stderrCapturePath)
+		if setErr := wasi.SetStderrFile(stderrCapturePath); setErr != nil {
+			stderrCapturePath = ""
+		}
+	}
+
 	wasi.SetArgv([]string{"wasi", reqstr})
 
 	store.SetWasi(wasi)
@@ -649,6 +662,17 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("invariant violation: host errored during sendResponse")
 	}
 
+	// Exit status 2 is produced by the Go WASM runtime on any fatal error (runtime.throw or
+	// runtime.fatalpanic), including unrecovered panics and out-of-memory.
+	// The Go runtime writes its diagnostic to WASM stderr, which we capture to tell them apart.
+	if containsCode(err, 2) {
+		memLimitMBs, limErr := m.cfg.MemoryLimiter.Limit(ctx)
+		if limErr == nil && isOOMStderr(stderrCapturePath) {
+			return o, fmt.Errorf("WASM module ran out of memory (limit is %d MB): %w", memLimitMBs/config.MByte, err)
+		}
+		return o, fmt.Errorf("WASM module crashed with a Go runtime fatal error: %w", err)
+	}
+
 	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
@@ -666,6 +690,21 @@ func containsCode(err error, code int) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
+}
+
+// isOOMStderr reports whether the Go runtime fatal error message captured from WASM stderr
+// indicates an out-of-memory failure. The Go runtime always writes "fatal error: out of memory"
+// to stderr before calling exit(2). This string is a literal in the Go runtime and does not
+// depend on whether the binary was built with or without debug symbols.
+func isOOMStderr(path string) bool {
+	if path == "" {
+		return false
+	}
+	data, err := os.ReadFile(path)
+	if err != nil || len(data) == 0 {
+		return false
+	}
+	return bytes.Contains(data, []byte("out of memory"))
 }
 
 // createSendResponseFn injects the dependency required by a WASM guest to

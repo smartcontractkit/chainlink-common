@@ -59,13 +59,12 @@ flowchart
     end
     
     subgraph Engine.runTriggerSubscriptionPhase
-
+        TriggerRegistrationStatusUpdateTimeout>PerWorkflow.TriggerRegistrationStatusUpdateTimeout]:::time
         PerWorkflow.TriggerSubscriptionTimeout>PerWorkflow.TriggerSubscriptionTimeout]:::time
         PerWorkflow.WASMMemoryLimit{{PerWorkflow.WASMMemoryLimit}}:::bound
         PerWorkflow.TriggerRegistrationsTimeout>PerWorkflow.TriggerRegistrationsTimeout]:::time
         PerWorkflow.TriggerSubscriptionLimit{{PerWorkflow.TriggerSubscriptionLimit}}:::bound
-        PerWorkflow.TriggerRegistrationStatusUpdateTimeout>PerWorkflow.TriggerRegistrationStatusUpdateTimeout]:::time
-
+        
         PerWorkflow.TriggerSubscriptionTimeout-->PerWorkflow.WASMMemoryLimit-->PerWorkflow.TriggerSubscriptionLimit-->PerWorkflow.TriggerRegistrationsTimeout
     end
 

@@ -79,6 +79,10 @@ type ModuleConfig struct {
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
 
+	// SdkLabeler is called with the discovered v2 import name after module creation.
+	// If nil, it defaults to a no-op. Used to add metrics labels (e.g. sdk=name).
+	SdkLabeler func(string)
+
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
@@ -174,6 +178,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.Labeler = &unimplementedMessageEmitter{}
 	}
 
+	if modCfg.SdkLabeler == nil {
+		modCfg.SdkLabeler = func(string) {}
+	}
+
 	if modCfg.TickInterval == 0 {
 		modCfg.TickInterval = defaultTickInterval
 	}
@@ -216,7 +224,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 		limit := settings.Size(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
 		var err error
-		modCfg.MemoryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MemoryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make memory limiter: %w", err)
 		}
@@ -224,7 +232,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	if modCfg.MaxCompressedBinaryLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxCompressedBinarySize))
 		var err error
-		modCfg.MaxCompressedBinaryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MaxCompressedBinaryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make compressed binary size limiter: %w", err)
 		}
@@ -232,7 +240,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	if modCfg.MaxDecompressedBinaryLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxDecompressedBinarySize))
 		var err error
-		modCfg.MaxDecompressedBinaryLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MaxDecompressedBinaryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make  decompressed binary size limiter: %w", err)
 		}
@@ -240,7 +248,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	if modCfg.MaxResponseSizeLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxResponseSizeBytes))
 		var err error
-		modCfg.MaxResponseSizeLimiter, err = limits.MakeBoundLimiter(lf, limit)
+		modCfg.MaxResponseSizeLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
 		}
@@ -306,6 +314,8 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 			break
 		}
 	}
+
+	modCfg.SdkLabeler(v2ImportName)
 
 	return &module{
 		engine:       engine,
@@ -1066,7 +1076,9 @@ func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int3
 		src = src[:size]
 	}
 
-	return write(memory, src, ptr, size)
+	// truncateWasmWrite is only called for returning error strings
+	// Therefore, we need to return the negated bytes written to indicate the failure to the guest.
+	return -write(memory, src, ptr, size)
 }
 
 // write copies the given src byte slice into the memory at the given pointer and max size.

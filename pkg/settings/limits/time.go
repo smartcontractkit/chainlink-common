@@ -93,8 +93,7 @@ func (f Factory) newTimeLimiter(timeout settings.Setting[time.Duration]) (TimeLi
 	}
 
 	if timeout.Scope == settings.ScopeGlobal {
-		l.updateCRE(contexts.CRE{})
-		go l.updateLoop(contexts.CRE{})
+		go l.updateLoop(context.Background())
 	}
 
 	return l, nil
@@ -223,13 +222,12 @@ func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Dura
 
 		u := newUpdater(l.lggr, l.getLimitFn, l.subFn)
 		actual, loaded := l.updaters.LoadOrStore(tenant, u)
-		cre := l.scope.RoundCRE(contexts.CREValue(ctx))
+		creCtx := contexts.WithCRE(ctx, l.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			u.cre.Store(cre)
-			go u.updateLoop(cre)
+			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[time.Duration])
-			u.updateCRE(cre)
+			u.updateCtx(creCtx)
 		}
 	}
 

@@ -9,11 +9,14 @@ import (
 	"strings"
 	"time"
 
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 )
@@ -117,10 +120,11 @@ type RequestMetadata struct {
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
-	return contexts.WithCRE(ctx, contexts.CRE{
-		Owner:    m.WorkflowOwner,
-		Workflow: m.WorkflowID,
-	})
+	val := contexts.CREValue(ctx)
+	// preserve org, if set
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
+	return contexts.WithCRE(ctx, val)
 }
 
 type RegistrationMetadata struct {
@@ -131,10 +135,11 @@ type RegistrationMetadata struct {
 }
 
 func (m *RegistrationMetadata) ContextWithCRE(ctx context.Context) context.Context {
-	return contexts.WithCRE(ctx, contexts.CRE{
-		Owner:    m.WorkflowOwner,
-		Workflow: m.WorkflowID,
-	})
+	val := contexts.CREValue(ctx)
+	// preserve org, if set
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
+	return contexts.WithCRE(ctx, val)
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -338,6 +343,7 @@ type OCRAttributedOnchainSignature struct {
 type TriggerExecutable interface {
 	RegisterTrigger(ctx context.Context, request TriggerRegistrationRequest) (<-chan TriggerResponse, error)
 	UnregisterTrigger(ctx context.Context, request TriggerRegistrationRequest) error
+	AckEvent(ctx context.Context, triggerId string, eventId string, method string) error
 }
 
 // TriggerCapability interface needs to be implemented by all trigger capabilities.
@@ -656,8 +662,22 @@ type CapabilityConfiguration struct {
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig
 
-	// v2 / "NoDAG" capabilities
+	// v2 / "NoDAG" capabilities - config for Don2Don framework.
 	CapabilityMethodConfig map[string]CapabilityMethodConfig
 	// if true, the capability won't be callable via don2don
 	LocalOnly bool
+
+	// OCR3 configurations for OCR-based capabilities.
+	// Map key is an OCR instance name:
+	//   - "__default__" for single-instance capabilities
+	//   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
+	// When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
+	Ocr3Configs map[string]ocrtypes.ContractConfig
+
+	// Oracle factory configs for OCR-based capabilities (moved from job specs).
+	// Map key is an OCR instance name (same as above).
+	OracleFactoryConfigs map[string]values.Map
+
+	// Config moved from job specs.
+	SpecConfig *values.Map
 }

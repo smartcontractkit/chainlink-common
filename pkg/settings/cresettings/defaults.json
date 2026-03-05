@@ -2,6 +2,7 @@
 	"WorkflowLimit": "200",
 	"WorkflowExecutionConcurrencyLimit": "200",
 	"GatewayIncomingPayloadSizeLimit": "1mb",
+	"GatewayVaultManagementEnabled": "true",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultIdentifierKeySizeLimit": "64b",
 	"VaultIdentifierOwnerSizeLimit": "64b",
@@ -19,14 +20,15 @@
 		"TriggerRegistrationsTimeout": "10s",
 		"TriggerSubscriptionTimeout": "15s",
 		"TriggerSubscriptionLimit": "10",
-		"TriggerEventQueueLimit": "1000",
+		"TriggerEventQueueLimit": "50",
 		"TriggerEventQueueTimeout": "10m0s",
-		"CapabilityConcurrencyLimit": "3",
+		"CapabilityConcurrencyLimit": "30",
 		"CapabilityCallTimeout": "3m0s",
 		"SecretsConcurrencyLimit": "5",
 		"ExecutionConcurrencyLimit": "5",
 		"ExecutionTimeout": "5m0s",
 		"ExecutionResponseLimit": "100kb",
+		"ExecutionTimestampsEnabled": "false",
 		"WASMMemoryLimit": "100mb",
 		"WASMBinarySizeLimit": "100mb",
 		"WASMCompressedBinarySizeLimit": "20mb",
@@ -37,6 +39,7 @@
 		"ChainAllowed": {
 			"Default": "false",
 			"Values": {
+				"12463857294658392847": "true",
 				"12922642891491394802": "true",
 				"3379446385462418246": "true"
 			}
@@ -57,17 +60,24 @@
 			"TargetsLimit": "10",
 			"ReportSizeLimit": "5kb",
 			"EVM": {
-				"TransactionGasLimit": "5000000"
+				"TransactionGasLimit": "5000000",
+				"GasLimit": {
+					"Default": "5000000",
+					"Values": {
+						"12922642891491394802": "50000000",
+						"3379446385462418246": "10000000"
+					}
+				}
 			}
 		},
 		"ChainRead": {
-			"CallLimit": "10",
+			"CallLimit": "15",
 			"LogQueryBlockLimit": "100",
 			"PayloadSizeLimit": "5kb"
 		},
 		"Consensus": {
 			"ObservationSizeLimit": "100kb",
-			"CallLimit": "2000"
+			"CallLimit": "20"
 		},
 		"HTTPAction": {
 			"CallLimit": "5",
@@ -75,6 +85,16 @@
 			"ConnectionTimeout": "10s",
 			"RequestSizeLimit": "10kb",
 			"ResponseSizeLimit": "100kb"
-		}
+		},
+		"ConfidentialHTTP": {
+			"CallLimit": "5",
+			"ConnectionTimeout": "10s",
+			"RequestSizeLimit": "10kb",
+			"ResponseSizeLimit": "100kb"
+		},
+		"Secrets": {
+			"CallLimit": "5"
+		},
+		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC"
 	}
 }

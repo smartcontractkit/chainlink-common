@@ -291,17 +291,17 @@ func TestExpressions_Roundtrip_SolanaPrimitives(t *testing.T) {
 		{Value: typesolana.IndexedValue{1, 2, 3}, Operator: 0},
 	})
 
-	root := query.Or(query.And(a, e), evBy)
-
+	expressions := []query.Expression{a, e, evBy}
 	// to proto
-	pb, err := conv.ConvertExpressionsToProto([]query.Expression{root})
+	pb, err := conv.ConvertExpressionsToProto(expressions)
 	require.NoError(t, err)
-	require.Len(t, pb, 1)
+	require.Len(t, pb, 3)
 
 	// from proto
 	round, err := conv.ConvertExpressionsFromProto(pb)
 	require.NoError(t, err)
-	require.Len(t, round, 1)
+	require.Len(t, round, 3)
+	require.Equal(t, expressions, round)
 }
 
 func TestLPFilterAndSubkeysConverters(t *testing.T) {
@@ -311,7 +311,7 @@ func TestLPFilterAndSubkeysConverters(t *testing.T) {
 		EventName:       "Evt",
 		EventSig:        mkBytes(typesolana.EventSignatureLength, 0xBB),
 		StartingBlock:   10,
-		EventIdlJson:    []byte(`{"idl":1}`),
+		ContractIdlJson: []byte(`{"idl":1}`),
 		SubkeyPaths:     []*conv.Subkeys{{Subkeys: []string{"a", "b"}}, {Subkeys: []string{"c"}}},
 		Retention:       int64(time.Hour),
 		MaxLogsKept:     100,

@@ -23,6 +23,8 @@ func TestRaw_nonprintable(t *testing.T) {
 
 	assert.Equal(t, exp, fmt.Sprintf("%#v", r))
 
+	assert.Equal(t, exp, fmt.Sprintf("%x", r))
+
 	assert.Equal(t, exp, fmt.Sprintf("%s", r)) //nolint:gosimple // S1025 deliberately testing formatting verbs
 
 	got, err := json.Marshal(r) //nolint:staticcheck // SA9005 deliberately testing marshalling

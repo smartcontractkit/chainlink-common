@@ -36,17 +36,33 @@ func TestJoinKeySegments(t *testing.T) {
 		segments []string
 		expected string
 	}{
-		{segments: []string{"EVM", "TX", "my-key"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "/TX", "my-key"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX/", "my-key"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX", "/my-key"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX", "my-key", ""}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX", "my-key", "/"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX", "my-key", "//"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX", "my-key", "///"}, expected: "EVM/TX/my-key"},
-		{segments: []string{"EVM", "TX", "my-key", "////"}, expected: "EVM/TX/my-key"},
+		{segments: []string{"evm", "tx", "my-key"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "/tx", "my-key"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx/", "my-key"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx", "/my-key"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx", "my-key", ""}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx", "my-key", "/"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx", "my-key", "//"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx", "my-key", "///"}, expected: "evm/tx/my-key"},
+		{segments: []string{"evm", "tx", "my-key", "////"}, expected: "evm/tx/my-key"},
 	}
 	for _, tt := range tests {
 		require.Equal(t, tt.expected, joinKeySegments(tt.segments...))
+	}
+}
+
+func TestKeyPathHasPrefix(t *testing.T) {
+	tests := []struct {
+		path     KeyPath
+		prefix   KeyPath
+		expected bool
+	}{
+		{path: KeyPath{"evm", "tx", "my-key"}, prefix: KeyPath{"evm", "tx"}, expected: true},
+		{path: KeyPath{"evm", "tx", "my-key"}, prefix: KeyPath{"evm"}, expected: true},
+		{path: KeyPath{"evm", "tx", "my-key"}, prefix: KeyPath{"evm", "tx", "my-key"}, expected: true},
+		{path: KeyPath{"evm", "tx", "my-key"}, prefix: KeyPath{"evm", "tx", "my-key", "extra"}, expected: false},
+	}
+	for _, tt := range tests {
+		require.Equal(t, tt.expected, tt.path.HasPrefix(tt.prefix))
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/natefinch/atomic"
+	"github.com/smartcontractkit/chainlink-common/keystore/internal/atomicfile"
 )
 
 var _ Storage = &FileStorage{}
@@ -26,5 +26,5 @@ func (f *FileStorage) GetEncryptedKeystore(ctx context.Context) ([]byte, error) 
 }
 
 func (f *FileStorage) PutEncryptedKeystore(ctx context.Context, encryptedKeystore []byte) error {
-	return atomic.WriteFile(f.name, bytes.NewReader(encryptedKeystore))
+	return atomicfile.WriteFile(f.name, bytes.NewReader(encryptedKeystore), 0600)
 }

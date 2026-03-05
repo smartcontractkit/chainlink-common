@@ -27,7 +27,7 @@ if [[ -n "${GOLANGCI_LINT_CONFIG:-}" ]]; then
     echo "Using user-provided config: $CONFIG_FILE"
 else
     # NOTE: Keep this version in sync with the action tag in /.github/workflows/golangci_lint.yml
-    ACTION_CI_LINT_GO_GIT_TAG="${CI_LINT_GO_VERSION:-ci-lint-go/3.0.0}"
+    ACTION_CI_LINT_GO_GIT_TAG="${CI_LINT_GO_VERSION:-ci-lint-go/v4}"
     # Download remote golangci-lint config to gitignored directory
     REMOTE_CONFIG_URL="https://raw.githubusercontent.com/smartcontractkit/.github/refs/tags/${ACTION_CI_LINT_GO_GIT_TAG}/actions/ci-lint-go/files/golangci-default.yml"
     CONFIG_FILE="$DIRECTORY/golangci.remote.yml"

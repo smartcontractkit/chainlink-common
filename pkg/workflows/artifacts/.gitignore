@@ -1,0 +1,4 @@
+.env
+testdata/*.wasm.br.b64
+testdata/workflow.yaml
+project.yaml

@@ -91,6 +91,10 @@ func (o *MercuryTriggerService) ProcessReport(reports []datastreams.FeedReport) 
 	return nil
 }
 
+func (o *MercuryTriggerService) AckEvent(ctx context.Context, triggerID string, eventID string, method string) error {
+	return nil
+}
+
 func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	wid := req.Metadata.WorkflowID
 

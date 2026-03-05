@@ -55,6 +55,8 @@ type LegendOptions struct {
 	Placement   common.LegendPlacement
 	DisplayMode common.LegendDisplayMode
 	Calcs       []string
+	SortBy      string // Sort legend by this field (e.g., "Last *", "Max", "Mean")
+	SortDesc    bool   // Sort in descending order
 }
 
 func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
@@ -76,6 +78,13 @@ func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
 	}
 
 	builder.DisplayMode(options.DisplayMode)
+
+	if options.SortBy != "" {
+		builder.SortBy(options.SortBy)
+		if options.SortDesc {
+			builder.SortDesc(true)
+		}
+	}
 
 	return builder
 }
@@ -447,6 +456,9 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 			// if name is provided use it, otherwise use panel title
 			if alert.Title == "" {
 				alert.Title = *options.Title
+			}
+			if alert.RuleGroupTitle == "" {
+				alert.RuleGroupTitle = *options.Title
 			}
 			alertBuilders = append(alertBuilders, NewAlertRule(&alert))
 		}

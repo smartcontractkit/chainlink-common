@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	envNameSettings        = "CL_CRE_SETTINGS"
-	envNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
+	EnvNameSettings        = "CL_CRE_SETTINGS"
+	EnvNameSettingsDefault = "CL_CRE_SETTINGS_DEFAULT"
 )
 
 func init() { reinit() }
 func reinit() {
-	if v, ok := os.LookupEnv(envNameSettingsDefault); ok {
+	if v, ok := os.LookupEnv(EnvNameSettingsDefault); ok {
 		err := json.Unmarshal([]byte(v), &Default)
 		if err != nil {
 			log.Fatalf("failed to initialize defaults: %v", err)
@@ -35,7 +35,7 @@ func reinit() {
 	}
 	Config = Default
 
-	if v, ok := os.LookupEnv(envNameSettings); ok {
+	if v, ok := os.LookupEnv(EnvNameSettings); ok {
 		DefaultGetter, err = NewJSONGetter([]byte(v))
 		if err != nil {
 			log.Fatalf("failed to initialize settings: %v", err)
@@ -55,6 +55,7 @@ var Default = Schema{
 	WorkflowLimit:                     Int(200),
 	WorkflowExecutionConcurrencyLimit: Int(200),
 	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:     Bool(true),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -81,16 +82,17 @@ var Default = Schema{
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
-		TriggerEventQueueLimit:        Int(1_000),
+		TriggerEventQueueLimit:        Int(50),
 		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
 		TriggerSubscriptionTimeout:    Duration(15 * time.Second),
 		TriggerSubscriptionLimit:      Int(10),
-		CapabilityConcurrencyLimit:    Int(3),
+		CapabilityConcurrencyLimit:    Int(30), // we should rely on per-capability execution limits instead of concurrency limit
 		CapabilityCallTimeout:         Duration(3 * time.Minute),
 		SecretsConcurrencyLimit:       Int(5),
 		ExecutionConcurrencyLimit:     Int(5),
 		ExecutionTimeout:              Duration(5 * time.Minute),
 		ExecutionResponseLimit:        Size(100 * config.KByte),
+		ExecutionTimestampsEnabled:    Bool(false),
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
@@ -99,10 +101,12 @@ var Default = Schema{
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
-			// geth-testnet
-			"3379446385462418246": true,
 			// geth-devnet2
 			"12922642891491394802": true,
+			// geth-testnet
+			"3379446385462418246": true,
+			// solana-testnet
+			"12463857294658392847": true,
 		}),
 
 		CRONTrigger: cronTrigger{
@@ -123,16 +127,22 @@ var Default = Schema{
 			ReportSizeLimit: Size(5 * config.KByte),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
+				GasLimit: PerChainSelector(Uint64(5_000_000), map[string]uint64{
+					// geth-testnet
+					"3379446385462418246": 10_000_000,
+					// geth-devnet2
+					"12922642891491394802": 50_000_000,
+				}),
 			},
 		},
 		ChainRead: chainRead{
-			CallLimit:          Int(10),
+			CallLimit:          Int(15),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
 		},
 		Consensus: consensus{
 			ObservationSizeLimit: Size(100 * config.KByte),
-			CallLimit:            Int(2000),
+			CallLimit:            Int(20),
 		},
 		HTTPAction: httpAction{
 			CallLimit:         Int(5),
@@ -141,13 +151,25 @@ var Default = Schema{
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
+		ConfidentialHTTP: confidentialHTTP{
+			CallLimit:         Int(5),
+			ConnectionTimeout: Duration(10 * time.Second),
+			RequestSizeLimit:  Size(10 * config.KByte),
+			ResponseSizeLimit: Size(100 * config.KByte),
+		},
+		Secrets: secrets{
+			CallLimit: Int(5),
+		},
+
+		FeatureMultiTriggerExecutionIDsActiveAt: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
 type Schema struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"` // Deprecated
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
+	GatewayVaultManagementEnabled     Setting[bool]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
@@ -181,9 +203,10 @@ type Workflows struct {
 
 	SecretsConcurrencyLimit Setting[int] `unit:"{secret}"`
 
-	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	ExecutionTimeout          Setting[time.Duration]
-	ExecutionResponseLimit    Setting[config.Size]
+	ExecutionConcurrencyLimit  Setting[int] `unit:"{workflow}"`
+	ExecutionTimeout           Setting[time.Duration]
+	ExecutionResponseLimit     Setting[config.Size]
+	ExecutionTimestampsEnabled Setting[bool]
 
 	WASMMemoryLimit               Setting[config.Size]
 	WASMBinarySizeLimit           Setting[config.Size]
@@ -200,10 +223,14 @@ type Workflows struct {
 	HTTPTrigger httpTrigger
 	LogTrigger  logTrigger
 
-	ChainWrite chainWrite
-	ChainRead  chainRead
-	Consensus  consensus
-	HTTPAction httpAction
+	ChainWrite       chainWrite
+	ChainRead        chainRead
+	Consensus        consensus
+	HTTPAction       httpAction
+	ConfidentialHTTP confidentialHTTP
+	Secrets          secrets
+
+	FeatureMultiTriggerExecutionIDsActiveAt Setting[config.Timestamp]
 }
 
 type cronTrigger struct {
@@ -225,7 +252,8 @@ type chainWrite struct {
 	EVM evmChainWrite
 }
 type evmChainWrite struct {
-	TransactionGasLimit Setting[uint64] `unit:"{gas}"`
+	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
+	GasLimit            SettingMap[uint64] `unit:"{gas}"`
 }
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`
@@ -238,6 +266,15 @@ type httpAction struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+type confidentialHTTP struct {
+	CallLimit         Setting[int] `unit:"{call}"`
+	ConnectionTimeout Setting[time.Duration]
+	RequestSizeLimit  Setting[config.Size]
+	ResponseSizeLimit Setting[config.Size]
+}
+type secrets struct {
+	CallLimit Setting[int] `unit:"{call}"`
 }
 type consensus struct {
 	ObservationSizeLimit Setting[config.Size]

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	log "github.com/smartcontractkit/chainlink-common/pkg/logger"
+	nodeauthgrpc "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/grpc"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	linkingclient "github.com/smartcontractkit/chainlink-protos/linking-service/go/v1"
 )
@@ -100,7 +101,7 @@ func (o *orgResolver) addJWTAuth(ctx context.Context, req any) (context.Context,
 	}
 
 	// Add JWT to Authorization header
-	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
+	return metadata.AppendToOutgoingContext(ctx, nodeauthgrpc.AuthorizationHeader, nodeauthgrpc.BearerPrefix+jwtToken), nil
 }
 
 func (o *orgResolver) Get(ctx context.Context, owner string) (string, error) {

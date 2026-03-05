@@ -40,6 +40,8 @@ func TestEnvConfig_parse(t *testing.T) {
 
 				envFeatureLogPoller: "true",
 
+				envGRPCServerMaxRecvMsgSize: "42",
+
 				envMercuryCacheLatestReportDeadline: "1ms",
 				envMercuryCacheLatestReportTTL:      "1µs",
 				envMercuryCacheMaxStaleAge:          "1ns",
@@ -78,6 +80,9 @@ func TestEnvConfig_parse(t *testing.T) {
 
 				envChipIngressEndpoint:           "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection: "true",
+
+				envCRESettings:        `{"global":{}}`,
+				envCRESettingsDefault: `{"foo":"bar"}`,
 			},
 			expectError:  false,
 			expectConfig: envCfgFull,
@@ -140,6 +145,8 @@ var envCfgFull = EnvConfig{
 
 	FeatureLogPoller: true,
 
+	GRPCServerMaxRecvMsgSize: 42,
+
 	MercuryCacheLatestReportDeadline: time.Millisecond,
 	MercuryCacheLatestReportTTL:      time.Microsecond,
 	MercuryCacheMaxStaleAge:          time.Nanosecond,
@@ -177,6 +184,9 @@ var envCfgFull = EnvConfig{
 
 	ChipIngressEndpoint:           "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection: true,
+
+	CRESettings:        `{"global":{}}`,
+	CRESettingsDefault: `{"foo":"bar"}`,
 }
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
@@ -190,6 +200,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
 	assert.Equal(t, "true", got["CL_DATABASE_TRACING_ENABLED"])
 
+	assert.Equal(t, "42", got[envGRPCServerMaxRecvMsgSize])
 	assert.Equal(t, "1ms", got[envMercuryCacheLatestReportDeadline])
 	assert.Equal(t, "1µs", got[envMercuryCacheLatestReportTTL])
 	assert.Equal(t, "1ns", got[envMercuryCacheMaxStaleAge])
@@ -228,6 +239,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
 	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
+
+	assert.Equal(t, `{"global":{}}`, got[envCRESettings])
+	assert.Equal(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
 }
 
 func TestGetMap(t *testing.T) {

@@ -31,7 +31,7 @@ func Test_updater(t *testing.T) {
 				u := newUpdater[int](logger.Test(t), func(ctx context.Context) (int, error) { return 13, nil }, nil)
 				u.recordLimit = func(ctx context.Context, i int) { got = append(got, i) }
 
-				go u.updateLoop(tt.cre)
+				go u.updateLoop(contexts.WithCRE(t.Context(), tt.cre))
 				time.Sleep(2 * pollPeriod)
 				require.NoError(t, u.Close())
 
@@ -48,11 +48,12 @@ func Test_updater(t *testing.T) {
 				u := newUpdater[int](logger.Test(t), func(ctx context.Context) (int, error) { return int(limit.Load()), nil }, nil)
 				u.recordLimit = func(ctx context.Context, i int) { got = append(got, i) }
 
-				go u.updateLoop(tt.cre)
+				go u.updateLoop(contexts.WithCRE(t.Context(), tt.cre))
 				time.Sleep(2 * pollPeriod)
 				limit.Store(42)
-				cre2 := contexts.CRE{Org: "org-id"}
-				u.updateCRE(cre2)
+				ctx2, cancel := context.WithCancel(contexts.WithCRE(t.Context(), contexts.CRE{Org: "org-id"}))
+				t.Cleanup(cancel)
+				u.updateCtx(ctx2)
 				time.Sleep(2 * pollPeriod)
 				require.NoError(t, u.Close())
 
@@ -60,7 +61,13 @@ func Test_updater(t *testing.T) {
 				assert.Equal(t, got[0], 13)
 				assert.Equal(t, got[len(got)-1], 42)
 
-				assert.Equal(t, cre2, u.cre.Load())
+				cancel()
+				select {
+				case <-time.After(5 * time.Second):
+					t.Error("timed out waiting for updater to close")
+				case <-u.done:
+					// success
+				}
 			})
 			t.Run("sub", func(t *testing.T) {
 				t.Parallel()
@@ -70,18 +77,25 @@ func Test_updater(t *testing.T) {
 					func(ctx context.Context) (<-chan settings.Update[int], func()) { return updates, func() {} })
 				u.recordLimit = func(ctx context.Context, i int) { got = append(got, i) }
 
-				go u.updateLoop(tt.cre)
+				go u.updateLoop(contexts.WithCRE(t.Context(), tt.cre))
 				updates <- settings.Update[int]{Value: 42}
 				updates <- settings.Update[int]{Value: 100}
-				cre2 := contexts.CRE{Org: "org-id"}
-				u.updateCRE(cre2)
+				ctx2, cancel := context.WithCancel(contexts.WithCRE(t.Context(), contexts.CRE{Org: "org-id"}))
+				t.Cleanup(cancel)
+				u.updateCtx(ctx2)
 				require.NoError(t, u.Close())
 
 				assert.GreaterOrEqual(t, len(got), 2)
 				assert.Equal(t, got[0], 42)
 				assert.Equal(t, got[len(got)-1], 100)
 
-				assert.Equal(t, cre2, u.cre.Load())
+				cancel()
+				select {
+				case <-time.After(5 * time.Second):
+					t.Error("timed out waiting for updater to close")
+				case <-u.done:
+					// success
+				}
 			})
 		})
 	}

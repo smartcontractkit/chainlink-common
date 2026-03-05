@@ -44,14 +44,13 @@ func (s *simpleGateLimiter) AllowErr(ctx context.Context) error {
 	return nil
 }
 
-// OPT: interface satisfied by Setting[bool] & SettingMap[bool]
-func newGateLimiter(f Factory, limit settings.SettingMap[bool]) (GateLimiter, error) {
+func newGateLimiter(f Factory, limit settings.SettingSpec[bool]) (GateLimiter, error) {
 	g := &gateLimiter{
 		updater: newUpdater[bool](nil, func(ctx context.Context) (bool, error) {
 			return limit.GetOrDefault(ctx, f.Settings)
 		}, nil),
-		key:   limit.Default.Key,
-		scope: limit.Default.Scope,
+		key:   limit.GetKey(),
+		scope: limit.GetScope(),
 	}
 	g.updater.recordLimit = func(ctx context.Context, b bool) { g.recordStatus(ctx, b) }
 
@@ -59,7 +58,8 @@ func newGateLimiter(f Factory, limit settings.SettingMap[bool]) (GateLimiter, er
 		if g.key == "" {
 			return nil, errors.New("metrics require Key to be set")
 		}
-		limitGauge, err := f.Meter.Int64Gauge("gate."+g.key+".limit", metric.WithUnit(limit.Default.Unit))
+		unit := limit.GetUnit()
+		limitGauge, err := f.Meter.Int64Gauge("gate."+g.key+".limit", metric.WithUnit(unit))
 		if err != nil {
 			return nil, err
 		}
@@ -70,14 +70,14 @@ func newGateLimiter(f Factory, limit settings.SettingMap[bool]) (GateLimiter, er
 			}
 			limitGauge.Record(ctx, val, options...)
 		}
-		usageCounter, err := f.Meter.Int64Counter("gate."+g.key+".usage", metric.WithUnit(limit.Default.Unit))
+		usageCounter, err := f.Meter.Int64Counter("gate."+g.key+".usage", metric.WithUnit(unit))
 		if err != nil {
 			return nil, err
 		}
 		g.recordUsage = func(ctx context.Context, options ...metric.AddOption) {
 			usageCounter.Add(ctx, 1, options...)
 		}
-		deniedCounter, err := f.Meter.Int64Counter("gate."+g.key+".denied", metric.WithUnit(limit.Default.Unit))
+		deniedCounter, err := f.Meter.Int64Counter("gate."+g.key+".denied", metric.WithUnit(unit))
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +91,7 @@ func newGateLimiter(f Factory, limit settings.SettingMap[bool]) (GateLimiter, er
 	}
 
 	if f.Logger != nil {
-		g.lggr = logger.Sugared(f.Logger).Named("GateLimiter").With("key", limit.Default.Key)
+		g.lggr = logger.Sugared(f.Logger).Named("GateLimiter").With("key", limit.GetKey())
 	}
 
 	// OPT: support settings.Registry subscriptions
@@ -105,7 +105,7 @@ func newGateLimiter(f Factory, limit settings.SettingMap[bool]) (GateLimiter, er
 
 	// OPT: restore with support for SettingMap
 	//if limit.Default.Scope == settings.ScopeGlobal {
-	//	g.updateCRE(contexts.CRE{})
+	//	g.updateCtx(contexts.CRE{})
 	//	go g.updateLoop(contexts.CRE{})
 	//}
 	close(g.done)
@@ -190,15 +190,12 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 
 		u := newUpdater(g.lggr, g.getLimitFn, g.subFn)
 		actual, loaded := g.updaters.LoadOrStore(tenant, u)
-		cre := g.scope.RoundCRE(contexts.CREValue(ctx))
+		creCtx := contexts.WithCRE(ctx, g.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			// OPT: restore with support for SettingMap
-			//u.cre.Store(cre)
-			//go u.updateLoop(cre)
-			close(u.done)
+			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[bool])
-			u.updateCRE(cre)
+			u.updateCtx(creCtx)
 		}
 	}
 

@@ -1419,7 +1419,7 @@ func ConvertValueComparatorsToProto(comparators []solprimitives.IndexedValueComp
 		return nil
 	}
 
-	out := make([]*IndexedValueComparator, len(comparators))
+	out := make([]*IndexedValueComparator, 0, len(comparators))
 	for _, c := range comparators {
 		out = append(out, &IndexedValueComparator{
 			Value:    c.Value,
@@ -1427,7 +1427,7 @@ func ConvertValueComparatorsToProto(comparators []solprimitives.IndexedValueComp
 		})
 	}
 
-	return nil
+	return out
 }
 
 func ConvertValueCompraratorsFromProto(comparators []*IndexedValueComparator) []solprimitives.IndexedValueComparator {
@@ -1547,7 +1547,7 @@ func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*typesolana.LPFilterQuery,
 		EventName:       p.EventName,
 		EventSig:        eventSig,
 		StartingBlock:   p.StartingBlock,
-		EventIdlJSON:    p.EventIdlJson,
+		ContractIdlJSON: p.ContractIdlJson,
 		SubkeyPaths:     ConvertSubkeyPathsFromProto(p.SubkeyPaths),
 		Retention:       time.Duration(p.Retention),
 		MaxLogsKept:     p.MaxLogsKept,
@@ -1592,7 +1592,7 @@ func ConvertLPFilterQueryToProto(f *typesolana.LPFilterQuery) *LPFilterQuery {
 		EventName:       f.EventName,
 		EventSig:        f.EventSig[:],
 		StartingBlock:   f.StartingBlock,
-		EventIdlJson:    f.EventIdlJSON,
+		ContractIdlJson: f.ContractIdlJSON,
 		SubkeyPaths:     ConvertSubkeyPathsToProto(f.SubkeyPaths),
 		Retention:       int64(f.Retention),
 		MaxLogsKept:     f.MaxLogsKept,

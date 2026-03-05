@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"slices"
 	"time"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
@@ -19,6 +20,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 	"github.com/smartcontractkit/chainlink-common/keystore/serialization"
+)
+
+const (
+	MaxKeyNameLength  = 1000
+	MaxMetadataLength = 1024 * 1024 // 1mb
 )
 
 var (
@@ -165,8 +171,8 @@ func ValidKeyName(name string) error {
 		return fmt.Errorf("key name cannot be empty")
 	}
 	// Just a sanity bound.
-	if len(name) > 1_000 {
-		return fmt.Errorf("key name cannot be longer than 1000 characters")
+	if len(name) > MaxKeyNameLength {
+		return fmt.Errorf("key name cannot be longer than %d characters", MaxKeyNameLength)
 	}
 	return nil
 }
@@ -202,9 +208,8 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to generate ECDSA_S256 key: %w", err)
 			}
-			// Must copy the private key into 32 byte slice because leading zeros are stripped.
 			privateKeyBytes := make([]byte, 32)
-			copy(privateKeyBytes, privateKey.D.Bytes())
+			privateKey.D.FillBytes(privateKeyBytes)
 			publicKey, err := publicKeyFromPrivateKey(internal.NewRaw(privateKeyBytes), keyReq.KeyType)
 			if err != nil {
 				return CreateKeysResponse{}, fmt.Errorf("failed to get public key from private key: %w", err)
@@ -238,7 +243,7 @@ func (ks *keystore) CreateKeys(ctx context.Context, req CreateKeysRequest) (Crea
 		created := ksCopy[keyReq.KeyName].createdAt
 		k := ksCopy[keyReq.KeyName]
 		responses = append(responses, CreateKeyResponse{
-			KeyInfo: newKeyInfo(keyReq.KeyName, keyReq.KeyType, created, k.publicKey, k.metadata),
+			KeyInfo: NewKeyInfo(keyReq.KeyName, keyReq.KeyType, created, k.publicKey, k.metadata),
 		})
 	}
 
@@ -291,6 +296,9 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 		}
 		pkRaw := internal.NewRaw(keypb.PrivateKey)
 		keyType := KeyType(keypb.KeyType)
+		if !slices.Contains(AllKeyTypes, keyType) {
+			return ImportKeysResponse{}, fmt.Errorf("%w: %s, available key types: %s", ErrUnsupportedKeyType, keyType, AllKeyTypes.String())
+		}
 		publicKey, err := publicKeyFromPrivateKey(pkRaw, keyType)
 		if err != nil {
 			return ImportKeysResponse{}, fmt.Errorf("key num = %d, failed to get public key from private key: %w", i, err)
@@ -300,6 +308,9 @@ func (ks *keystore) ImportKeys(ctx context.Context, req ImportKeysRequest) (Impo
 		// We set metadata back to empty slice to be consistent with the Create method which initializes it as such.
 		if metadata == nil {
 			metadata = []byte{}
+		}
+		if len(metadata) > MaxMetadataLength {
+			return ImportKeysResponse{}, fmt.Errorf("key num = %d, metadata of length %d exceeds maximum length of %d bytes", i, len(metadata), MaxMetadataLength)
 		}
 
 		keyName := keyReq.NewKeyName
@@ -366,6 +377,9 @@ func (ks *keystore) SetMetadata(ctx context.Context, req SetMetadataRequest) (Se
 
 	ksCopy := maps.Clone(ks.keystore)
 	for _, metReq := range req.Updates {
+		if len(metReq.Metadata) > MaxMetadataLength {
+			return SetMetadataResponse{}, fmt.Errorf("metadata for key %s exceeds maximum length of %d bytes", metReq.KeyName, MaxMetadataLength)
+		}
 		key, ok := ksCopy[metReq.KeyName]
 		if !ok {
 			return SetMetadataResponse{}, fmt.Errorf("%w: %s", ErrKeyNotFound, metReq.KeyName)

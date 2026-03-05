@@ -3,7 +3,9 @@ package gateway
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"sort"
+	"hash"
+	"maps"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -23,12 +25,16 @@ type CacheSettings struct {
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.
 type OutboundHTTPRequest struct {
-	URL           string            `json:"url"`                 // URL to query, only http and https protocols are supported.
-	Method        string            `json:"method,omitempty"`    // HTTP verb, defaults to GET.
-	Headers       map[string]string `json:"headers,omitempty"`   // HTTP headers, defaults to empty.
-	Body          []byte            `json:"body,omitempty"`      // HTTP request body
-	TimeoutMs     uint32            `json:"timeoutMs,omitempty"` // Timeout in milliseconds
-	CacheSettings CacheSettings     `json:"cacheSettings"`       // Best-effort cache control for the request
+	URL    string `json:"url"`              // URL to query, only http and https protocols are supported.
+	Method string `json:"method,omitempty"` // HTTP verb, defaults to GET.
+
+	// Deprecated: Use MultiHeaders instead. Headers is a comma joined string of all values for a given header for backwards
+	// compatibility.
+	Headers       map[string]string   `json:"headers,omitempty"`      // HTTP headers, defaults to empty.
+	MultiHeaders  map[string][]string `json:"multiHeaders,omitempty"` // HTTP headers with all values preserved
+	Body          []byte              `json:"body,omitempty"`         // HTTP request body
+	TimeoutMs     uint32              `json:"timeoutMs,omitempty"`    // Timeout in milliseconds
+	CacheSettings CacheSettings       `json:"cacheSettings"`          // Best-effort cache control for the request
 
 	// Maximum number of bytes to read from the response body.  If the gateway max response size is smaller than this value, the gateway max response size will be used.
 	MaxResponseBytes uint32 `json:"maxBytes,omitempty"`
@@ -36,8 +42,9 @@ type OutboundHTTPRequest struct {
 	WorkflowOwner    string `json:"workflowOwner"`
 }
 
-// Hash generates a hash of the request for caching purposes.
-// WorkflowID is not included in the hash because cached responses can be used across workflows
+// Hash generates a deterministic hash of the request for caching purposes.
+// Every field that is present is included; map and slice order is normalized by sorting.
+// WorkflowID is not included so cached responses can be shared across workflows.
 func (req OutboundHTTPRequest) Hash() string {
 	s := sha256.New()
 	sep := []byte("/")
@@ -51,22 +58,37 @@ func (req OutboundHTTPRequest) Hash() string {
 	s.Write(req.Body)
 	s.Write(sep)
 
-	// To ensure deterministic order, iterate headers in sorted order
-	keys := make([]string, 0, len(req.Headers))
-	for k := range req.Headers {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		s.Write([]byte(key))
-		s.Write(sep)
-		s.Write([]byte(req.Headers[key]))
-		s.Write(sep)
-	}
+	writeHeadersToHash(s, sep, req.Headers, req.MultiHeaders)
 
 	s.Write([]byte(strconv.FormatUint(uint64(req.MaxResponseBytes), 10)))
 
 	return hex.EncodeToString(s.Sum(nil))
+}
+
+// writeHeadersToHash writes all present header data in a deterministic order:
+// Headers (sorted keys) then MultiHeaders (sorted keys, sorted values per key).
+func writeHeadersToHash(s hash.Hash, sep []byte, headers map[string]string, multiHeaders map[string][]string) {
+	keys := slices.Collect(maps.Keys(headers))
+	slices.Sort(keys)
+	for _, key := range keys {
+		s.Write([]byte(key))
+		s.Write(sep)
+		s.Write([]byte(headers[key]))
+		s.Write(sep)
+	}
+	keys = slices.Collect(maps.Keys(multiHeaders))
+	slices.Sort(keys)
+	for _, key := range keys {
+		vals := multiHeaders[key]
+		valsCopy := slices.Clone(vals)
+		slices.Sort(valsCopy)
+		s.Write([]byte(key))
+		s.Write(sep)
+		for _, v := range valsCopy {
+			s.Write([]byte(v))
+			s.Write(sep)
+		}
+	}
 }
 
 // OutboundHTTPResponse represents the response from gateway to workflow node.
@@ -88,7 +110,10 @@ type OutboundHTTPResponse struct {
 	// This field is only populated when the request successfully reaches the customer's endpoint and the response is received.
 	StatusCode int `json:"statusCode,omitempty"`
 
-	Headers                 map[string]string `json:"headers,omitempty"`                 // HTTP headers returned by the customer's endpoint
-	Body                    []byte            `json:"body,omitempty"`                    // HTTP response body returned by the customer's endpoint
-	ExternalEndpointLatency time.Duration     `json:"externalEndpointLatency,omitempty"` // Time taken by the customer's endpoint to respond
+	// Deprecated: Use MultiHeaders instead. Headers is a comma joined string of all values for a given header for backwards
+	// compatibility.
+	Headers                 map[string]string   `json:"headers,omitempty"`                 // HTTP headers returned by the customer's endpoint
+	MultiHeaders            map[string][]string `json:"multiHeaders,omitempty"`            // HTTP headers with all values preserved
+	Body                    []byte              `json:"body,omitempty"`                    // HTTP response body returned by the customer's endpoint
+	ExternalEndpointLatency time.Duration       `json:"externalEndpointLatency,omitempty"` // Time taken by the customer's endpoint to respond
 }

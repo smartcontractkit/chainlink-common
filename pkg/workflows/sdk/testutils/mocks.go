@@ -157,6 +157,10 @@ func (t *TriggerMock[O]) UnregisterTrigger(ctx context.Context, request capabili
 	return nil
 }
 
+func (t *TriggerMock[O]) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return nil
+}
+
 func (t *TriggerMock[O]) GetStep() TriggerResults[O] {
 	step := t.mockBase.GetStep("trigger")
 	return TriggerResults[O]{Output: step.Output, Error: step.Error}

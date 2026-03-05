@@ -22,16 +22,27 @@ type BoundLimiter[N Number] interface {
 	Check(context.Context, N) error
 }
 
-// NewBoundLimiter returns a BoundLimiter with the given bound.
+// Deprecated: use NewUpperBoundLimiter
 func NewBoundLimiter[N Number](bound N) BoundLimiter[N] {
-	return &simpleBoundLimiter[N]{bound: bound}
+	return NewUpperBoundLimiter(bound)
+}
+
+// NewUpperBoundLimiter returns a BoundLimiter with the given upper bound.
+func NewUpperBoundLimiter[N Number](bound N) BoundLimiter[N] {
+	return &simpleBoundLimiter[N]{bound: bound, isLowerBound: false}
+}
+
+// NewLowerBoundLimiter returns a BoundLimiter with the given lower bound.
+func NewLowerBoundLimiter[N Number](bound N) BoundLimiter[N] {
+	return &simpleBoundLimiter[N]{bound: bound, isLowerBound: true}
 }
 
 var _ BoundLimiter[int64] = &simpleBoundLimiter[int64]{}
 
 type simpleBoundLimiter[N Number] struct {
-	bound  N
-	closed atomic.Bool
+	bound        N
+	isLowerBound bool
+	closed       atomic.Bool
 }
 
 func (s *simpleBoundLimiter[N]) Close() error { s.closed.Store(true); return nil }
@@ -40,7 +51,7 @@ func (s *simpleBoundLimiter[N]) Check(ctx context.Context, n N) error {
 	if s.closed.Load() {
 		return errors.New("closed")
 	}
-	if n > s.bound {
+	if !s.isLowerBound && n > s.bound || s.isLowerBound && n < s.bound {
 		return ErrorBoundLimited[N]{Limit: s.bound, Amount: n}
 	}
 	return nil
@@ -49,13 +60,14 @@ func (s *simpleBoundLimiter[N]) Limit(ctx context.Context) (N, error) {
 	return s.bound, nil
 }
 
-func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimiter[N], error) {
+func newBoundLimiter[N Number](f Factory, bound settings.SettingSpec[N], isLowerBound bool) (BoundLimiter[N], error) {
 	b := &boundLimiter[N]{
 		updater: newUpdater[N](nil, func(ctx context.Context) (N, error) {
 			return bound.GetOrDefault(ctx, f.Settings)
 		}, nil),
-		key:   bound.Key,
-		scope: bound.Scope,
+		key:          bound.GetKey(),
+		scope:        bound.GetScope(),
+		isLowerBound: isLowerBound,
 	}
 	b.updater.recordLimit = func(ctx context.Context, n N) { b.recordBound(ctx, n) }
 
@@ -63,23 +75,24 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 		if b.key == "" {
 			return nil, errors.New("metrics require Key to be set")
 		}
-		newGauge, newHist := metricConstructors[N](f.Meter, bound.Unit)
+		newGauge, newHist := metricConstructors[N](f.Meter, bound.GetUnit())
 
-		limitGauge, err := newGauge("bound." + bound.Key + ".limit")
+		key := bound.GetKey()
+		limitGauge, err := newGauge("bound." + key + ".limit")
 		if err != nil {
 			return nil, err
 		}
 		b.recordBound = func(ctx context.Context, value N, options ...metric.RecordOption) {
 			limitGauge.Record(ctx, value, options...)
 		}
-		usageHist, err := newHist("bound." + bound.Key + ".usage")
+		usageHist, err := newHist("bound." + key + ".usage")
 		if err != nil {
 			return nil, err
 		}
 		b.recordUsage = func(ctx context.Context, value N, options ...metric.RecordOption) {
 			usageHist.Record(ctx, value, options...)
 		}
-		deniedHist, err := newHist("bound." + bound.Key + ".denied")
+		deniedHist, err := newHist("bound." + key + ".denied")
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +106,7 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 	}
 
 	if f.Logger != nil {
-		b.lggr = logger.Sugared(f.Logger).Named("BoundLimiter").With("key", bound.Key)
+		b.lggr = logger.Sugared(f.Logger).Named("BoundLimiter").With("key", bound.GetKey())
 	}
 
 	if f.Settings != nil {
@@ -104,9 +117,8 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 		}
 	}
 
-	if bound.Scope == settings.ScopeGlobal {
-		b.updateCRE(contexts.CRE{})
-		go b.updateLoop(contexts.CRE{})
+	if bound.GetScope() == settings.ScopeGlobal {
+		go b.updateLoop(context.Background())
 	}
 
 	return b, nil
@@ -115,8 +127,9 @@ func newBoundLimiter[N Number](f Factory, bound settings.Setting[N]) (BoundLimit
 type boundLimiter[N Number] struct {
 	*updater[N]
 
-	key   string // optional
-	scope settings.Scope
+	key          string // optional
+	scope        settings.Scope
+	isLowerBound bool
 
 	recordBound  func(ctx context.Context, value N, options ...metric.RecordOption)
 	recordUsage  func(ctx context.Context, value N, options ...metric.RecordOption)
@@ -157,7 +170,7 @@ func (b *boundLimiter[N]) Check(ctx context.Context, amount N) error {
 		return nil // fail open
 	}
 
-	if amount > bound {
+	if !b.isLowerBound && amount > bound || b.isLowerBound && amount < bound {
 		b.recordDenied(ctx, amount, withScope(ctx, b.scope))
 		return ErrorBoundLimited[N]{Key: b.key, Scope: b.scope, Tenant: tenant, Limit: bound, Amount: amount}
 	}
@@ -199,13 +212,12 @@ func (b *boundLimiter[N]) get(ctx context.Context) (tenant string, bound N, err 
 
 		u := newUpdater(b.lggr, b.getLimitFn, b.subFn)
 		actual, loaded := b.updaters.LoadOrStore(tenant, u)
-		cre := b.scope.RoundCRE(contexts.CREValue(ctx))
+		creCtx := contexts.WithCRE(ctx, b.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			u.cre.Store(cre)
-			go u.updateLoop(cre)
+			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[N])
-			u.updateCRE(cre)
+			u.updateCtx(creCtx)
 		}
 	}
 

@@ -1,28 +1,49 @@
 name: golangci-lint
 
-on: [pull_request, merge_group]
+on:
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: '0 0 * * 1-5' # every week-day at midnight
 
 jobs:
   detect-modules:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
-      modules: ${{ steps.set-modules.outputs.modules }}
+      modules: ${{ steps.changed-modules.outputs.modules-json }}
     steps:
-      - uses: actions/checkout@v5
-      - id: set-modules
-        run: |
-          # Find all go.mod files and extract their directories
-          modules=$(find . -name "go.mod" -not -path "./vendor/*" -exec dirname {} \; | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          echo "modules=${modules}" >> $GITHUB_OUTPUT
-          echo "Found modules: ${modules}"
+      - name: Checkout the repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Changed modules
+        id: changed-modules
+        uses: smartcontractkit/.github/actions/changed-modules-go@changed-modules-go/v1
+        with:
+          # when scheduled/workflow_dispatch, run against all modules
+          no-change-behaviour: all
+          file-patterns: |
+            **/*.go
+            **/go.mod
+            **/go.sum
+          module-patterns: |
+            **
+            !**/vendor/**
 
   lint-module:
     # Avoid running in merge queue since we run in PR's and have an optional
     # label to skip lint issues on a PR which would be ignored in the merge queue.
-    if: ${{ github.event_name != 'merge_group' }}
+    if: ${{ needs.detect-modules.outputs.modules != '[]' && github.event_name != 'merge_group' }}
     needs: detect-modules
     runs-on: ubuntu-latest
     strategy:
+      # Modules are independent
+      fail-fast: false
       matrix:
         module: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
     permissions:
@@ -42,14 +63,29 @@ jobs:
           version=$(grep '^golangci-lint ' .tool-versions | awk '{print $2}')
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
+      - name: Sanitize artifact name
+        id: artifact-name
+        env:
+          MODULE: ${{ matrix.module }}
+        run: |
+          safe_name="${MODULE#./}"
+          safe_name="${safe_name#/}"
+          safe_name="${safe_name//\//-}"
+          if [[ -z "$safe_name" || "$safe_name" = "." ]]; then
+            safe_name="root"
+          fi
+          echo "value=golangci-lint-report-${safe_name}" | tee -a "$GITHUB_OUTPUT"
+
       - name: golangci-lint ${{ matrix.module }}
         if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
         # NOTE: Keep this version in sync with ACTION_CI_LINT_GO_GIT_TAG in ./script/lint.sh
-        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/3.0.0
+        uses: smartcontractkit/.github/actions/ci-lint-go@ci-lint-go/v4
         with:
           checkout-repo: false
+          artifact-name: ${{ steps.artifact-name.outputs.value }}
           golangci-lint-version: v${{ steps.get-version.outputs.version }}
           go-directory: ${{ matrix.module }}
+          golangci-lint-args: "--output.text.path=stdout --output.checkstyle.path=${{ github.workspace }}/${{ matrix.module }}/golangci-lint-report.xml"
 
   golangci-lint:
     # Required sink job that waits for all lint jobs to complete

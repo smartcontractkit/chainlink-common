@@ -202,8 +202,7 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 		l.recordLimit(ctx, float64(r.Limit))
 		l.recordBurst(ctx, int64(r.Burst))
 	}
-	l.cre.Store(contexts.CRE{})
-	go l.updateLoop(contexts.CRE{})
+	go l.updateLoop(context.Background())
 
 	return l, nil
 }
@@ -321,6 +320,7 @@ func (l *rateLimiter) WaitN(ctx context.Context, n int) error {
 
 func (f Factory) newScopedRateLimiter(limit settings.Setting[config.Rate]) (RateLimiter, error) {
 	l := &scopedRateLimiter{
+		key:         limit.Key,
 		scope:       limit.Scope,
 		defaultRate: limit.DefaultValue,
 	}
@@ -373,6 +373,7 @@ func (f Factory) newScopedRateLimiter(limit settings.Setting[config.Rate]) (Rate
 
 type scopedRateLimiter struct {
 	lggr        logger.Logger
+	key         string
 	scope       settings.Scope
 	defaultRate config.Rate
 
@@ -419,19 +420,19 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 
 	limiter := s.newRateLimiter(tenant)
 	actual, loaded := s.limiters.LoadOrStore(tenant, limiter)
-	cre := s.scope.RoundCRE(contexts.CREValue(ctx))
+	creCtx := contexts.WithCRE(ctx, s.scope.RoundCRE(contexts.CREValue(ctx)))
 	if !loaded {
-		limiter.cre.Store(cre)
-		go limiter.updateLoop(cre)
+		go limiter.updateLoop(creCtx)
 	} else {
 		limiter = actual.(*rateLimiter)
-		limiter.updateCRE(cre)
+		limiter.updateCtx(creCtx)
 	}
 	return limiter, s.wg.Done, nil
 }
 
 func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
 	l := &rateLimiter{
+		key:     s.key,
 		scope:   s.scope,
 		tenant:  tenant,
 		updater: newUpdater[config.Rate](logger.With(s.lggr, s.scope.String(), tenant), s.rateFn, s.subFn),

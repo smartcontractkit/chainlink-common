@@ -18,6 +18,11 @@ const (
 	CapabilityTypeConsensus = CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	CapabilityTypeTarget    = CapabilityType_CAPABILITY_TYPE_TARGET
 	CapabilityTypeCombined  = CapabilityType_CAPABILITY_TYPE_COMBINED
+
+	// OCR3ConfigDefaultKey is the default key used in the ocr3_configs map
+	// for single-instance OCR capabilities. Multi-instance capabilities
+	// (e.g., blue/green deployments) use custom keys.
+	OCR3ConfigDefaultKey = "__default__"
 )
 
 func MarshalCapabilityRequest(req capabilities.CapabilityRequest) ([]byte, error) {

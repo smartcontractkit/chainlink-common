@@ -14,6 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
+// Deprecated: Use WebServer which includes pprof routes
 type PromServer struct {
 	port        int
 	srvrDone    chan struct{} // closed when the http server is done
@@ -24,10 +25,12 @@ type PromServer struct {
 	handler http.Handler
 }
 
+// Deprecated: Use WebServerOpts which includes pprof routes
 type PromServerOpts struct {
 	Handler http.Handler
 }
 
+// Deprecated: Use NewWebServer which includes pprof routes
 func NewPromServer(port int, lggr logger.Logger) *PromServer {
 	return PromServerOpts{}.New(port, lggr)
 }

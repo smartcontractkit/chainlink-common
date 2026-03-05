@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -30,6 +31,21 @@ type Registry interface {
 	SubscribeScoped(ctx context.Context, scope Scope, key string) (updates <-chan Update[string], stop func())
 }
 
+// TODO use this everywhere
+type IsSetting[T any] interface {
+	GetSpec() SettingSpec[T]
+}
+
+type SettingSpec[T any] interface {
+	GetKey() string
+	GetScope() Scope
+	GetUnit() string
+	GetOrDefault(context.Context, Getter) (T, error)
+	Subscribe(context.Context, Registry) (<-chan Update[T], func())
+}
+
+var _ IsSetting[int] = Setting[int]{}
+
 // Setting holds a key, default value, and parsing function for a particular setting.
 // Use Setting.GetOrDefault with a Getter to look up settings.
 // Use Setting.Subscribe with a Registry to have updates pushed over a channel.
@@ -40,6 +56,14 @@ type Setting[T any] struct {
 	Parse        func(string) (T, error) `json:"-" toml:"-"`
 	Unit         string
 }
+
+func (s Setting[T]) GetSpec() SettingSpec[T] { return &s }
+
+func (s *Setting[T]) GetKey() string { return s.Key }
+
+func (s *Setting[T]) GetScope() Scope { return s.Scope }
+
+func (s *Setting[T]) GetUnit() string { return s.Unit }
 
 func (s Setting[T]) MarshalText() ([]byte, error) {
 	return fmt.Appendf(nil, "%v", s.DefaultValue), nil
@@ -90,6 +114,10 @@ func Duration(defaultValue time.Duration) Setting[time.Duration] {
 	s := NewSetting(defaultValue, time.ParseDuration)
 	s.Unit = "s"
 	return s
+}
+
+func Time(defaultValue time.Time) Setting[config.Timestamp] {
+	return NewSetting(config.Timestamp(defaultValue.Unix()), config.ParseTimestamp)
 }
 
 func URL(defaultValue *url.URL) Setting[*url.URL] {
@@ -213,10 +241,10 @@ func (s *Setting[T]) Subscribe(ctx context.Context, r Registry) (<-chan Update[T
 			}
 		}
 	}()
-	return values, func() {
+	return values, sync.OnceFunc(func() {
 		stop()
 		close(stopped)
-	}
+	})
 }
 
 // InitConfig accepts a pointer to a config struct and iterates over all the fields, initializing any Setting fields

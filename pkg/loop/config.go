@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
 
 const (
@@ -28,6 +29,8 @@ const (
 	envDatabaseTracingEnabled               = "CL_DATABASE_TRACING_ENABLED"
 
 	envFeatureLogPoller = "CL_FEATURE_LOG_POLLER"
+
+	envGRPCServerMaxRecvMsgSize = "CL_GRPC_SERVER_MAX_RECV_MSG_SIZE"
 
 	envMercuryCacheLatestReportDeadline = "CL_MERCURY_CACHE_LATEST_REPORT_DEADLINE"
 	envMercuryCacheLatestReportTTL      = "CL_MERCURY_CACHE_LATEST_REPORT_TTL"
@@ -76,6 +79,9 @@ const (
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+
+	envCRESettings        = cresettings.EnvNameSettings
+	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -95,6 +101,8 @@ type EnvConfig struct {
 
 	FeatureLogPoller bool
 
+	GRPCServerMaxRecvMsgSize int
+
 	MercuryCacheLatestReportDeadline time.Duration
 	MercuryCacheLatestReportTTL      time.Duration
 	MercuryCacheMaxStaleAge          time.Duration
@@ -107,7 +115,7 @@ type EnvConfig struct {
 	MercuryTransmitterReaperMaxAge         time.Duration
 	MercuryVerboseLogging                  bool
 
-	PrometheusPort int
+	PrometheusPort int //TODO more than just prom
 
 	TracingEnabled         bool
 	TracingCollectorTarget string
@@ -142,6 +150,9 @@ type EnvConfig struct {
 
 	ChipIngressEndpoint           string
 	ChipIngressInsecureConnection bool
+
+	CRESettings        string
+	CRESettingsDefault string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -165,6 +176,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	}
 
 	add(envFeatureLogPoller, strconv.FormatBool(e.FeatureLogPoller))
+
+	add(envGRPCServerMaxRecvMsgSize, strconv.Itoa(e.GRPCServerMaxRecvMsgSize))
 
 	add(envMercuryCacheLatestReportDeadline, e.MercuryCacheLatestReportDeadline.String())
 	add(envMercuryCacheLatestReportTTL, e.MercuryCacheLatestReportTTL.String())
@@ -222,6 +235,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 
+	if e.CRESettings != "" {
+		add(envCRESettings, e.CRESettings)
+	}
+	if e.CRESettingsDefault != "" {
+		add(envCRESettingsDefault, e.CRESettingsDefault)
+	}
+
 	return
 }
 
@@ -278,6 +298,11 @@ func (e *EnvConfig) parse() error {
 	}
 
 	e.FeatureLogPoller, err = getBool(envFeatureLogPoller)
+	if err != nil {
+		return err
+	}
+
+	e.GRPCServerMaxRecvMsgSize, err = getInt(envGRPCServerMaxRecvMsgSize)
 	if err != nil {
 		return err
 	}
@@ -425,6 +450,9 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressInsecureConnection, err)
 		}
 	}
+
+	e.CRESettings = os.Getenv(envCRESettings)
+	e.CRESettingsDefault = os.Getenv(envCRESettingsDefault)
 
 	return nil
 }

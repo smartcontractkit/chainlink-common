@@ -1,6 +1,9 @@
 package core
 
-import "github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
+import (
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
+)
 
 // StandardCapabilitiesDependencies contains all the dependencies injected for capability initialization.
 // We use a struct to evolve the interface without requiring updates to all implementors.
@@ -18,4 +21,5 @@ type StandardCapabilitiesDependencies struct {
 	P2PKeystore        Keystore
 	OrgResolver        orgresolver.OrgResolver
 	CRESettings        SettingsBroadcaster
+	TriggerEventStore  capabilities.EventStore
 }

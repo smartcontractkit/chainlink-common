@@ -15,12 +15,14 @@ type SubKeyPaths [][]string
 // this filter defines what logs should be cached
 // cached logs can be retrieved with [types.SolanaService.QueryTrackedLogs]
 type LPFilterQuery struct {
-	Name            string
-	Address         PublicKey
-	EventName       string
-	EventSig        EventSignature
-	StartingBlock   int64
+	Name          string
+	Address       PublicKey
+	EventName     string
+	EventSig      EventSignature
+	StartingBlock int64
+	// Deprecated: Use ContractIdlJSON instead
 	EventIdlJSON    []byte
+	ContractIdlJSON []byte
 	SubkeyPaths     SubKeyPaths
 	Retention       time.Duration
 	MaxLogsKept     int64

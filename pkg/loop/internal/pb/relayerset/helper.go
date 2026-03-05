@@ -3,6 +3,7 @@ package relayerset
 import (
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
@@ -13,6 +14,7 @@ type HasChainServers interface {
 	SolanaServer() solana.SolanaServer
 	EVMServer() evm.EVMServer
 	TONServer() ton.TONServer
+	AptosServer() aptos.AptosServer
 	ContractReaderServer() pb.ContractReaderServer
 }
 
@@ -27,6 +29,7 @@ func RegisterRelayerSetServerWithDependants(s grpc.ServiceRegistrar, srv Relayer
 		solana.RegisterSolanaServer(s, h.SolanaServer())
 		evm.RegisterEVMServer(s, h.EVMServer())
 		ton.RegisterTONServer(s, h.TONServer())
+		aptos.RegisterAptosServer(s, h.AptosServer())
 		pb.RegisterContractReaderServer(s, h.ContractReaderServer())
 	}
 }

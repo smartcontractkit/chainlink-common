@@ -9,6 +9,7 @@
 
 /keystore @smartcontractkit/prodsec-public @smartcontractkit/foundations
 /pkg/beholder/ @smartcontractkit/data-tooling
+/pkg/capabilities/v2/actions/confidentialhttp @smartcontractkit/privacy
 /pkg/capabilities/v2/chain-capabilities @smartcontractkit/keystone @smartcontractkit/capabilities-team @smartcontractkit/bix-framework
 /pkg/chains/evm @smartcontractkit/bix-framework
 /pkg/chipingress/ @smartcontractkit/data-tooling

@@ -457,7 +457,7 @@ func TestChipIngressBatchEmitter_DefaultConfig(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Default send interval is 500ms; wait for flush
+		// Default send interval is 100ms; wait for flush
 		assert.Eventually(t, func() bool {
 			mu.Lock()
 			defer mu.Unlock()

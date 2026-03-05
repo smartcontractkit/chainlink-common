@@ -145,12 +145,12 @@ func DefaultConfig() Config {
 		LogCompressor: "gzip",
 		// Chip Ingress Batch Emitter
 		ChipIngressBatchEmitterEnabled: false,
-		ChipIngressBufferSize:          100,
-		ChipIngressMaxBatchSize:        50,
+		ChipIngressBufferSize:          1000,
+		ChipIngressMaxBatchSize:        500,
 		ChipIngressMaxWorkers:          defaultMaxWorkers,
-		ChipIngressSendInterval:        500 * time.Millisecond,
-		ChipIngressSendTimeout:         5 * time.Second,
-		ChipIngressDrainTimeout:        5 * time.Second,
+		ChipIngressSendInterval:        100 * time.Millisecond,
+		ChipIngressSendTimeout:         3 * time.Second,
+		ChipIngressDrainTimeout:        10 * time.Second,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

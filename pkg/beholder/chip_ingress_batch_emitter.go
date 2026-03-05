@@ -53,11 +53,11 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 
 	bufferSize := cfg.ChipIngressBufferSize
 	if bufferSize == 0 {
-		bufferSize = 100
+		bufferSize = 1000
 	}
 	maxBatchSize := cfg.ChipIngressMaxBatchSize
 	if maxBatchSize == 0 {
-		maxBatchSize = 50
+		maxBatchSize = 500
 	}
 	maxWorkers := cfg.ChipIngressMaxWorkers
 	if maxWorkers == 0 {
@@ -65,15 +65,15 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	}
 	sendInterval := cfg.ChipIngressSendInterval
 	if sendInterval == 0 {
-		sendInterval = 500 * time.Millisecond
+		sendInterval = 100 * time.Millisecond
 	}
 	sendTimeout := cfg.ChipIngressSendTimeout
 	if sendTimeout == 0 {
-		sendTimeout = 5 * time.Second
+		sendTimeout = 3 * time.Second
 	}
 	drainTimeout := cfg.ChipIngressDrainTimeout
 	if drainTimeout == 0 {
-		drainTimeout = 5 * time.Second
+		drainTimeout = 10 * time.Second
 	}
 
 	meter := otel.Meter("beholder/chip_ingress_batch_emitter")

@@ -257,9 +257,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 
 	onClose := func() (err error) {
-		if batchEmitterService != nil {
-			err = errors.Join(err, batchEmitterService.Close())
-		}
 		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
@@ -268,16 +265,18 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	return &Client{cfg, logger, tracer, meter, emitter, chipIngressClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
 }
 
-// Closes all providers, flushes all data and stops all background processes
+// Closes all providers, flushes all data and stops all background processes.
+// Order matters: emitter is closed first so the batch emitter can drain
+// buffered events while the gRPC connection is still alive.
 func (c Client) Close() (err error) {
-	if c.Chip != nil {
-		err = errors.Join(err, c.Chip.Close())
-	}
 	if c.Emitter != nil {
 		err = errors.Join(err, c.Emitter.Close())
 	}
 	if c.OnClose != nil {
 		err = errors.Join(err, c.OnClose())
+	}
+	if c.Chip != nil {
+		err = errors.Join(err, c.Chip.Close())
 	}
 	return
 }

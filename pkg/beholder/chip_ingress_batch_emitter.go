@@ -29,20 +29,19 @@ type ChipIngressBatchEmitter struct {
 
 	bufferSize   uint
 	maxBatchSize uint
+	maxWorkers   int
 	sendInterval time.Duration
 	sendTimeout  time.Duration
-	retryCfg     *RetryConfig
 	drainTimeout time.Duration
 
 	metrics batchEmitterMetrics
 }
 
 type batchEmitterMetrics struct {
-	eventsSent      otelmetric.Int64Counter
-	eventsDropped   otelmetric.Int64Counter
-	batchRetries    otelmetric.Int64Counter
-	batchFailures   otelmetric.Int64Counter
-	eventsDrained   otelmetric.Int64Counter
+	eventsSent    otelmetric.Int64Counter
+	eventsDropped otelmetric.Int64Counter
+	batchFailures otelmetric.Int64Counter
+	eventsDrained otelmetric.Int64Counter
 }
 
 // NewChipIngressBatchEmitter creates a batch emitter backed by the given chipingress client.
@@ -59,6 +58,10 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	maxBatchSize := cfg.ChipIngressMaxBatchSize
 	if maxBatchSize == 0 {
 		maxBatchSize = 50
+	}
+	maxWorkers := cfg.ChipIngressMaxWorkers
+	if maxWorkers == 0 {
+		maxWorkers = defaultMaxWorkers
 	}
 	sendInterval := cfg.ChipIngressSendInterval
 	if sendInterval == 0 {
@@ -84,9 +87,9 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 		workers:      make(map[string]*chipIngressEmitterWorker),
 		bufferSize:   bufferSize,
 		maxBatchSize: maxBatchSize,
+		maxWorkers:   maxWorkers,
 		sendInterval: sendInterval,
 		sendTimeout:  sendTimeout,
-		retryCfg:     cfg.ChipIngressRetryConfig,
 		drainTimeout: drainTimeout,
 		metrics:      metrics,
 	}
@@ -112,6 +115,9 @@ func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs
 		attributes := newAttributes(attrKVs...)
 
 		worker := e.findOrCreateWorker(domain, entity)
+		if worker == nil {
+			return nil
+		}
 
 		payload := emitterPayload{
 			body:       body,
@@ -137,7 +143,7 @@ func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs
 // findOrCreateWorker returns the worker for the given (domain, entity) pair,
 // creating one with a new buffered channel and flush goroutine if it doesn't exist.
 func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chipIngressEmitterWorker {
-	workerKey := fmt.Sprintf("%s_%s", domain, entity)
+	workerKey := domain + "/" + entity
 
 	e.workersMutex.RLock()
 	worker, found := e.workers[workerKey]
@@ -150,9 +156,14 @@ func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chi
 	e.workersMutex.Lock()
 	defer e.workersMutex.Unlock()
 
-	// Double-check after acquiring write lock
 	if worker, found = e.workers[workerKey]; found {
 		return worker
+	}
+
+	if len(e.workers) >= e.maxWorkers {
+		e.eng.Warnf("chip ingress batch emitter: max workers (%d) reached, dropping event for %s", e.maxWorkers, workerKey)
+		e.metrics.eventsDropped.Add(context.Background(), 1)
+		return nil
 	}
 
 	worker = newChipIngressEmitterWorker(
@@ -162,7 +173,6 @@ func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chi
 		entity,
 		e.maxBatchSize,
 		e.sendTimeout,
-		e.retryCfg,
 		e.metrics,
 		e.eng,
 	)
@@ -197,21 +207,14 @@ func newBatchEmitterMetrics(meter otelmetric.Meter) (batchEmitterMetrics, error)
 	}
 
 	eventsDropped, err := meter.Int64Counter("chip_ingress.events_dropped",
-		otelmetric.WithDescription("Total events dropped (buffer full or retries exhausted)"),
+		otelmetric.WithDescription("Total events dropped (buffer full or send failure)"),
 		otelmetric.WithUnit("{event}"))
 	if err != nil {
 		return batchEmitterMetrics{}, err
 	}
 
-	batchRetries, err := meter.Int64Counter("chip_ingress.batch_retries",
-		otelmetric.WithDescription("Total PublishBatch retry attempts"),
-		otelmetric.WithUnit("{attempt}"))
-	if err != nil {
-		return batchEmitterMetrics{}, err
-	}
-
 	batchFailures, err := meter.Int64Counter("chip_ingress.batch_failures",
-		otelmetric.WithDescription("Total batches that failed after all retries"),
+		otelmetric.WithDescription("Total PublishBatch calls that failed"),
 		otelmetric.WithUnit("{batch}"))
 	if err != nil {
 		return batchEmitterMetrics{}, err
@@ -227,7 +230,6 @@ func newBatchEmitterMetrics(meter otelmetric.Meter) (batchEmitterMetrics, error)
 	return batchEmitterMetrics{
 		eventsSent:    eventsSent,
 		eventsDropped: eventsDropped,
-		batchRetries:  batchRetries,
 		batchFailures: batchFailures,
 		eventsDrained: eventsDrained,
 	}, nil

@@ -3,7 +3,6 @@ package beholder
 import (
 	"context"
 	"fmt"
-	"math/rand/v2"
 	"sync/atomic"
 	"time"
 
@@ -24,6 +23,8 @@ type emitterPayload struct {
 
 // chipIngressEmitterWorker buffers events for a single (domain, entity) pair
 // and flushes them via PublishBatch on a periodic interval.
+// Transport-level retries (UNAVAILABLE, RESOURCE_EXHAUSTED) are handled by the
+// gRPC client's built-in retry policy; no application-level retry is needed.
 type chipIngressEmitterWorker struct {
 	client       chipingress.Client
 	ch           chan emitterPayload
@@ -33,10 +34,6 @@ type chipIngressEmitterWorker struct {
 	sendTimeout  time.Duration
 	lggr         logger.Logger
 	dropCount    atomic.Uint32
-
-	retryInitialInterval time.Duration
-	retryMaxInterval     time.Duration
-	retryMaxElapsed      time.Duration
 
 	metrics     batchEmitterMetrics
 	metricAttrs otelmetric.MeasurementOption
@@ -49,11 +46,10 @@ func newChipIngressEmitterWorker(
 	entity string,
 	maxBatchSize uint,
 	sendTimeout time.Duration,
-	retryCfg *RetryConfig,
 	metrics batchEmitterMetrics,
 	lggr logger.Logger,
 ) *chipIngressEmitterWorker {
-	w := &chipIngressEmitterWorker{
+	return &chipIngressEmitterWorker{
 		client:       client,
 		ch:           ch,
 		domain:       domain,
@@ -67,15 +63,9 @@ func newChipIngressEmitterWorker(
 			attribute.String("entity", entity),
 		)),
 	}
-	if retryCfg != nil && retryCfg.Enabled() {
-		w.retryInitialInterval = retryCfg.InitialInterval
-		w.retryMaxInterval = retryCfg.MaxInterval
-		w.retryMaxElapsed = retryCfg.MaxElapsedTime
-	}
-	return w
 }
 
-// Send drains the channel and sends a batch with retry on failure.
+// Send drains the channel and sends a batch.
 // Called periodically by the tick loop.
 func (w *chipIngressEmitterWorker) Send(ctx context.Context) {
 	if len(w.ch) == 0 {
@@ -87,52 +77,7 @@ func (w *chipIngressEmitterWorker) Send(ctx context.Context) {
 		return
 	}
 
-	if w.retryMaxElapsed == 0 {
-		w.publishOnce(ctx, batch)
-		return
-	}
-
-	backoff := w.retryInitialInterval
-	deadline := time.Now().Add(w.retryMaxElapsed)
-
-	batchSize := int64(len(batch.Events))
-	for attempt := 0; ; attempt++ {
-		sendCtx, cancel := context.WithTimeout(ctx, w.sendTimeout)
-		_, err := w.client.PublishBatch(sendCtx, batch)
-		cancel()
-
-		if err == nil {
-			w.metrics.eventsSent.Add(context.Background(), batchSize, w.metricAttrs)
-			return
-		}
-
-		w.lggr.Warnf("PublishBatch failed (attempt %d, domain=%s, entity=%s): %v",
-			attempt+1, w.domain, w.entity, err)
-		w.metrics.batchRetries.Add(context.Background(), 1, w.metricAttrs)
-
-		if time.Now().Add(backoff).After(deadline) {
-			w.lggr.Warnf("PublishBatch retries exhausted, dropping %d events (domain=%s, entity=%s)",
-				len(batch.Events), w.domain, w.entity)
-			w.metrics.batchFailures.Add(context.Background(), 1, w.metricAttrs)
-			w.metrics.eventsDropped.Add(context.Background(), batchSize, w.metricAttrs)
-			return
-		}
-
-		timer := time.NewTimer(backoff)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			w.lggr.Warnf("context cancelled during retry, dropping %d events (domain=%s, entity=%s)",
-				len(batch.Events), w.domain, w.entity)
-			w.metrics.eventsDropped.Add(context.Background(), batchSize, w.metricAttrs)
-			return
-		case <-timer.C:
-		}
-
-		next := backoff * 2
-		jitter := time.Duration(rand.Int64N(int64(next)/5 + 1)) //nolint:gosec
-		backoff = min(next+jitter, w.retryMaxInterval)
-	}
+	w.publishOnce(ctx, batch)
 }
 
 func (w *chipIngressEmitterWorker) publishOnce(ctx context.Context, batch *chipingress.CloudEventBatch) {

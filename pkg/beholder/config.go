@@ -45,13 +45,13 @@ type Config struct {
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
 
 	// Chip Ingress Batch Emitter
-	ChipIngressBatchEmitterEnabled  bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
-	ChipIngressBufferSize           uint          // Per-worker channel buffer size (default 100)
-	ChipIngressMaxBatchSize         uint          // Max events per PublishBatch call (default 50)
-	ChipIngressSendInterval         time.Duration // Flush interval per worker (default 500ms when zero or unset)
-	ChipIngressSendTimeout          time.Duration // Timeout per PublishBatch call (default 5s)
-	ChipIngressRetryConfig          *RetryConfig  // Retry config for failed PublishBatch calls (defaults: 500ms/5s/30s)
-	ChipIngressDrainTimeout         time.Duration // Max time to flush remaining events on shutdown (default 5s)
+	ChipIngressBatchEmitterEnabled bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
+	ChipIngressBufferSize          uint          // Per-worker channel buffer size (default 100)
+	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 50)
+	ChipIngressMaxWorkers          int           // Max concurrent (domain, entity) workers (default 100)
+	ChipIngressSendInterval        time.Duration // Flush interval per worker (default 500ms when zero or unset)
+	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 5s)
+	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 5s)
 
 	// OTel Log
 	LogExportTimeout      time.Duration
@@ -99,16 +99,9 @@ var defaultRetryConfig = RetryConfig{
 	MaxElapsedTime:  1 * time.Minute, // Retry is enabled
 }
 
-// Retry defaults for the chip ingress batch emitter: faster backoff than OTel
-// to avoid buffer pressure on the small per-worker channel.
-var defaultChipIngressRetryConfig = RetryConfig{
-	InitialInterval: 500 * time.Millisecond,
-	MaxInterval:     5 * time.Second,
-	MaxElapsedTime:  5 * time.Second,
-}
-
 const (
 	defaultPackageName = "beholder"
+	defaultMaxWorkers  = 100
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{
@@ -154,9 +147,9 @@ func DefaultConfig() Config {
 		ChipIngressBatchEmitterEnabled: false,
 		ChipIngressBufferSize:          100,
 		ChipIngressMaxBatchSize:        50,
+		ChipIngressMaxWorkers:          defaultMaxWorkers,
 		ChipIngressSendInterval:        500 * time.Millisecond,
 		ChipIngressSendTimeout:         5 * time.Second,
-		ChipIngressRetryConfig:         defaultChipIngressRetryConfig.Copy(),
 		ChipIngressDrainTimeout:        5 * time.Second,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
@@ -169,10 +162,9 @@ func TestDefaultConfig() Config {
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
-	config.LogRetryConfig.MaxElapsedTime = 0          // Retry is disabled
-	config.TraceRetryConfig.MaxElapsedTime = 0        // Retry is disabled
-	config.MetricRetryConfig.MaxElapsedTime = 0       // Retry is disabled
-	config.ChipIngressRetryConfig.MaxElapsedTime = 0  // Retry is disabled
+	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
+	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
+	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
 	// Auth disabled for testing (TTL=0 means static auth mode)
 	config.AuthHeadersTTL = 0
 	return config

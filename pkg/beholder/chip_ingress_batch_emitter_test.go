@@ -472,130 +472,6 @@ func TestChipIngressBatchEmitter_DefaultConfig(t *testing.T) {
 	})
 }
 
-func newRetryTestConfig() beholder.Config {
-	return beholder.Config{
-		ChipIngressBufferSize:   10,
-		ChipIngressMaxBatchSize: 5,
-		ChipIngressSendInterval: 50 * time.Millisecond,
-		ChipIngressSendTimeout:  1 * time.Second,
-		ChipIngressRetryConfig: &beholder.RetryConfig{
-			InitialInterval: 10 * time.Millisecond,
-			MaxInterval:     50 * time.Millisecond,
-			MaxElapsedTime:  500 * time.Millisecond,
-		},
-		ChipIngressDrainTimeout: 5 * time.Second,
-	}
-}
-
-func TestChipIngressBatchEmitter_RetrySuccess(t *testing.T) {
-	t.Run("succeeds after transient failure", func(t *testing.T) {
-		clientMock := mocks.NewClient(t)
-
-		var mu sync.Mutex
-		callCount := 0
-		totalEventsSent := 0
-		clientMock.
-			On("PublishBatch", mock.Anything, mock.Anything).
-			Run(func(args mock.Arguments) {
-				mu.Lock()
-				defer mu.Unlock()
-				callCount++
-				batch := args.Get(1).(*chipingress.CloudEventBatch)
-				if callCount <= 2 {
-					return // first 2 calls fail
-				}
-				totalEventsSent += len(batch.Events)
-			}).
-			Return(nil, assert.AnError).Times(2)
-
-		clientMock.
-			On("PublishBatch", mock.Anything, mock.Anything).
-			Run(func(args mock.Arguments) {
-				mu.Lock()
-				defer mu.Unlock()
-				callCount++
-				batch := args.Get(1).(*chipingress.CloudEventBatch)
-				totalEventsSent += len(batch.Events)
-			}).
-			Return(nil, nil)
-
-		cfg := newRetryTestConfig()
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
-		require.NoError(t, err)
-		require.NoError(t, emitter.Start(t.Context()))
-
-		for i := 0; i < 3; i++ {
-			err = emitter.Emit(t.Context(), []byte("body"),
-				beholder.AttrKeyDomain, "platform",
-				beholder.AttrKeyEntity, "TestEvent",
-			)
-			require.NoError(t, err)
-		}
-
-		assert.Eventually(t, func() bool {
-			mu.Lock()
-			defer mu.Unlock()
-			return totalEventsSent >= 3
-		}, 5*time.Second, 10*time.Millisecond)
-
-		require.NoError(t, emitter.Close())
-
-		mu.Lock()
-		defer mu.Unlock()
-		assert.GreaterOrEqual(t, callCount, 3, "should have retried at least twice before succeeding")
-		assert.Equal(t, 3, totalEventsSent)
-	})
-}
-
-func TestChipIngressBatchEmitter_RetryExhaustion(t *testing.T) {
-	t.Run("drops events after retries exhausted", func(t *testing.T) {
-		clientMock := mocks.NewClient(t)
-
-		var mu sync.Mutex
-		callCount := 0
-		clientMock.
-			On("PublishBatch", mock.Anything, mock.Anything).
-			Run(func(_ mock.Arguments) {
-				mu.Lock()
-				defer mu.Unlock()
-				callCount++
-			}).
-			Return(nil, assert.AnError)
-
-		cfg := newRetryTestConfig()
-		cfg.ChipIngressRetryConfig = &beholder.RetryConfig{
-			InitialInterval: 10 * time.Millisecond,
-			MaxInterval:     20 * time.Millisecond,
-			MaxElapsedTime:  100 * time.Millisecond,
-		}
-
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
-		require.NoError(t, err)
-		require.NoError(t, emitter.Start(t.Context()))
-
-		for i := 0; i < 3; i++ {
-			err = emitter.Emit(t.Context(), []byte("body"),
-				beholder.AttrKeyDomain, "platform",
-				beholder.AttrKeyEntity, "TestEvent",
-			)
-			require.NoError(t, err)
-		}
-
-		// Wait long enough for retries to exhaust
-		assert.Eventually(t, func() bool {
-			mu.Lock()
-			defer mu.Unlock()
-			return callCount >= 2
-		}, 3*time.Second, 10*time.Millisecond)
-
-		require.NoError(t, emitter.Close())
-
-		mu.Lock()
-		defer mu.Unlock()
-		assert.GreaterOrEqual(t, callCount, 2, "should have attempted at least 2 times before exhausting retries")
-	})
-}
-
 func TestChipIngressBatchEmitter_GracefulDrain(t *testing.T) {
 	t.Run("flushes buffered events on close", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
@@ -805,65 +681,49 @@ func TestChipIngressBatchEmitter_DrainTimeout(t *testing.T) {
 	})
 }
 
-func TestChipIngressBatchEmitter_RetryShutdownDuringBackoff(t *testing.T) {
-	t.Run("shutdown during retry backoff completes promptly", func(t *testing.T) {
+func TestChipIngressBatchEmitter_MaxWorkersCap(t *testing.T) {
+	t.Run("drops events when max workers reached", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-
-		var mu sync.Mutex
-		callCount := 0
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
-			Run(func(_ mock.Arguments) {
-				mu.Lock()
-				defer mu.Unlock()
-				callCount++
-			}).
-			Return(nil, assert.AnError)
+			Return(nil, nil).
+			Maybe()
 
-		cfg := beholder.Config{
-			ChipIngressBufferSize:   10,
-			ChipIngressMaxBatchSize: 5,
-			ChipIngressSendInterval: 50 * time.Millisecond,
-			ChipIngressSendTimeout:  1 * time.Second,
-			ChipIngressRetryConfig: &beholder.RetryConfig{
-				InitialInterval: 10 * time.Second, // very long backoff
-				MaxInterval:     30 * time.Second,
-				MaxElapsedTime:  1 * time.Minute,
-			},
-			ChipIngressDrainTimeout: 5 * time.Second,
-		}
+		cfg := newTestConfig()
+		cfg.ChipIngressMaxWorkers = 2
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
+		defer emitter.Close() //nolint:errcheck
 
-		for i := 0; i < 3; i++ {
-			err = emitter.Emit(t.Context(), []byte("body"),
-				beholder.AttrKeyDomain, "platform",
-				beholder.AttrKeyEntity, "TestEvent",
-			)
-			require.NoError(t, err)
-		}
+		// Create 2 workers (at the cap)
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "domain-1",
+			beholder.AttrKeyEntity, "entity-1",
+		)
+		require.NoError(t, err)
 
-		// Wait for at least one PublishBatch attempt (which will fail and enter 10s backoff)
-		assert.Eventually(t, func() bool {
-			mu.Lock()
-			defer mu.Unlock()
-			return callCount >= 1
-		}, 2*time.Second, 10*time.Millisecond)
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "domain-2",
+			beholder.AttrKeyEntity, "entity-2",
+		)
+		require.NoError(t, err)
 
-		// Close while the worker is sleeping in the 10s retry backoff
-		closeDone := make(chan error, 1)
-		go func() {
-			closeDone <- emitter.Close()
-		}()
+		// 3rd unique pair should be silently dropped (no error, no worker created)
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "domain-3",
+			beholder.AttrKeyEntity, "entity-3",
+		)
+		assert.NoError(t, err, "Emit should not error when max workers is reached")
 
-		select {
-		case err := <-closeDone:
-			assert.NoError(t, err, "close should not error")
-		case <-time.After(3 * time.Second):
-			t.Fatal("Close() did not return within 3s; timer.Stop() during retry backoff is not working")
-		}
+		// Existing workers should still accept events
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "domain-1",
+			beholder.AttrKeyEntity, "entity-1",
+		)
+		assert.NoError(t, err, "Emit to existing worker should still work")
 	})
 }
 

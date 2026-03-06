@@ -52,10 +52,11 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(200),
-	WorkflowExecutionConcurrencyLimit: Int(200),
-	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:     Bool(true),
+	WorkflowLimit:                          Int(200),
+	WorkflowExecutionConcurrencyLimit:      Int(200),
+	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:          Bool(true),
+	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -166,10 +167,11 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"` // Deprecated
-	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
-	GatewayVaultManagementEnabled     Setting[bool]
+	WorkflowLimit                          Setting[int] `unit:"{workflow}"` // Deprecated
+	WorkflowExecutionConcurrencyLimit      Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
+	GatewayVaultManagementEnabled          Setting[bool]
+	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]

@@ -7,8 +7,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 )
 
-// chipIngressEmitterWorker wraps a batch.Client for a single (domain, entity) pair.
-// The batch.Client handles buffering, periodic flushing, concurrent sends, and graceful shutdown.
 type chipIngressEmitterWorker struct {
 	batchClient *batch.Client
 	metricAttrs otelmetric.MeasurementOption

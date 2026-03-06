@@ -103,7 +103,7 @@ var defaultRetryConfig = RetryConfig{
 const (
 	defaultPackageName        = "beholder"
 	defaultMaxWorkers         = 100
-	defaultMaxConcurrentSends = 3
+	defaultMaxConcurrentSends = 10
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{

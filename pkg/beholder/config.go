@@ -7,6 +7,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 type Config struct {
@@ -43,6 +45,17 @@ type Config struct {
 	ChipIngressEmitterEnabled      bool
 	ChipIngressEmitterGRPCEndpoint string
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
+
+	// Chip Ingress Batch Emitter
+	ChipIngressBatchEmitterEnabled bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
+	ChipIngressBufferSize          uint          // Per-worker message buffer size (default 1000)
+	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 500)
+	ChipIngressMaxWorkers          int           // Max concurrent (domain, entity) workers (default 100)
+	ChipIngressSendInterval        time.Duration // Flush interval per worker (default 100ms)
+	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 3s)
+	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 10s)
+	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls per worker (default 10)
+	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
 	LogExportTimeout      time.Duration
@@ -91,7 +104,9 @@ var defaultRetryConfig = RetryConfig{
 }
 
 const (
-	defaultPackageName = "beholder"
+	defaultPackageName        = "beholder"
+	defaultMaxWorkers         = 100
+	defaultMaxConcurrentSends = 10
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{
@@ -131,8 +146,17 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
-		LogLevel:              zapcore.InfoLevel,
-		LogCompressor:         "gzip",
+		LogLevel:      zapcore.InfoLevel,
+		LogCompressor: "gzip",
+		// Chip Ingress Batch Emitter
+		ChipIngressBatchEmitterEnabled: false,
+		ChipIngressBufferSize:          1000,
+		ChipIngressMaxBatchSize:        500,
+		ChipIngressMaxWorkers:          defaultMaxWorkers,
+		ChipIngressSendInterval:        100 * time.Millisecond,
+		ChipIngressSendTimeout:         3 * time.Second,
+		ChipIngressDrainTimeout:        10 * time.Second,
+		ChipIngressMaxConcurrentSends:  defaultMaxConcurrentSends,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

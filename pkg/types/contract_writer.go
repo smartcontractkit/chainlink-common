@@ -54,6 +54,7 @@ const (
 	Finalized
 	Failed
 	Fatal
+	Skipped
 )
 
 // ChainFeeComponents contains the different cost components of executing a transaction.

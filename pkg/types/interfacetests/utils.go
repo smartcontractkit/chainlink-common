@@ -148,6 +148,11 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 
 			if current == types.Failed || current == types.Fatal {
 				return fmt.Errorf("transaction %s has failed or is fatal", txID)
+			} else if current == types.Skipped {
+				if status == types.Skipped {
+					return nil
+				}
+				return fmt.Errorf("transaction %s was skipped", txID)
 			} else if current >= status {
 				return nil
 			} else {

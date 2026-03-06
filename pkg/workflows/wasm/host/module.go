@@ -571,6 +571,10 @@ func runWasm[I, O proto.Message](
 
 	// Capture WASM stderr to detect "fatal error: out of memory". The Go runtime writes
 	// this literal string to stderr before exit(2), regardless of debug symbols.
+	// A workflow can write to stderr in a loop and grow this file beyond WASMMemoryLimit;
+	// the file is deleted by defer os.Remove as soon as runWasm returns (bounded by Timeout).
+	// We only read the tail of the file because the Go runtime fatal message is always
+	// written last, right before exit(2).
 	var stderrCapturePath string
 	if f, tempErr := os.CreateTemp("", "wasm-stderr-*"); tempErr == nil {
 		stderrCapturePath = f.Name()
@@ -696,11 +700,28 @@ func containsCode(err error, code int) bool {
 // indicates an out-of-memory failure. The Go runtime always writes "fatal error: out of memory"
 // to stderr before calling exit(2). This string is a literal in the Go runtime and does not
 // depend on whether the binary was built with or without debug symbols.
+//
+// "fatal error: out of memory" is the first output the Go runtime writes; a goroutine dump
+// follows. We therefore read from the beginning of the file. A workflow that writes > 1 MB
+// to stderr before OOM will fall back to the generic "fatal error" message, which is still
+// accurate but less specific.
+//
+// Note: the write side is not bounded by this function. A workflow writing to stderr in a loop
+// can grow the file during execution. The file is deleted by defer os.Remove when runWasm
+// returns, so disk exposure is bounded by the execution timeout.
+const stderrReadLimit = 1 * 1024 * 1024 // 1 MB
+
 func isOOMStderr(path string) bool {
 	if path == "" {
 		return false
 	}
-	data, err := os.ReadFile(path)
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(io.LimitReader(f, stderrReadLimit))
 	if err != nil || len(data) == 0 {
 		return false
 	}

@@ -132,6 +132,14 @@ func (l *timeLimiter) Close() (err error) {
 	return
 }
 
+func (l *timeLimiter) EvictTenant(tenant string) error {
+	v, loaded := l.updaters.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*updater[time.Duration]).Close()
+}
+
 func (l *timeLimiter) recordTimeout(ctx context.Context, to time.Duration) {
 	if l.limitGauge == nil {
 		return

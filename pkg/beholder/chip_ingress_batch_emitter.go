@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -210,8 +211,11 @@ func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chi
 	}
 
 	if len(e.workers) >= e.maxWorkers {
-		e.eng.Warnf("chip ingress batch emitter: max workers (%d) reached, dropping event for %s", e.maxWorkers, workerKey)
-		e.metrics.eventsDropped.Add(context.Background(), 1)
+		e.eng.Warnf("chip ingress batch emitter: max workers (%d) reached, dropping event for %s/%s", e.maxWorkers, domain, entity)
+		e.metrics.eventsDropped.Add(context.Background(), 1, otelmetric.WithAttributeSet(attribute.NewSet(
+			attribute.String("domain", domain),
+			attribute.String("entity", entity),
+		)))
 		return nil
 	}
 

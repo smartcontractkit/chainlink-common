@@ -276,6 +276,14 @@ func (s *scopedQueue[T]) Close() (err error) {
 	return
 }
 
+func (s *scopedQueue[T]) EvictTenant(tenant string) error {
+	v, loaded := s.queues.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*queue[T]).Close()
+}
+
 func (s *scopedQueue[T]) Limit(ctx context.Context) (int, error) {
 	l, done, err := s.getOrCreate(ctx)
 	if err != nil {

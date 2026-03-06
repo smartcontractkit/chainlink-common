@@ -109,10 +109,9 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	return e, nil
 }
 
-// Emit extracts (domain, entity) from the attributes, routes the event to the
-// appropriate per-(domain, entity) worker's batch.Client, and returns immediately.
-// If the worker's buffer is full, the event is dropped and a metric is bumped.
-// Returns an error if the emitter has been closed or the caller's context is cancelled.
+// Emit queues an event for batched delivery. It returns immediately without blocking.
+// If the worker's buffer is full, the event is silently dropped (metric bumped).
+// Returns an error only if the emitter is closed or the context is cancelled.
 func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return e.emitInternal(ctx, body, nil, attrKVs...)
 }

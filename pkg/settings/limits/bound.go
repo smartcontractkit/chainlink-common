@@ -156,6 +156,14 @@ func (b *boundLimiter[N]) Close() (err error) {
 	return
 }
 
+func (b *boundLimiter[N]) EvictTenant(tenant string) error {
+	v, loaded := b.updaters.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*updater[N]).Close()
+}
+
 func (b *boundLimiter[N]) Check(ctx context.Context, amount N) error {
 	if err := b.wg.TryAdd(1); err != nil {
 		return err

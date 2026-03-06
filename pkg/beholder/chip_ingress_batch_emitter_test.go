@@ -18,10 +18,12 @@ import (
 
 func newTestConfig() beholder.Config {
 	return beholder.Config{
-		ChipIngressBufferSize:   10,
-		ChipIngressMaxBatchSize: 5,
-		ChipIngressSendInterval: 50 * time.Millisecond,
-		ChipIngressSendTimeout:  5 * time.Second,
+		ChipIngressBufferSize:         10,
+		ChipIngressMaxBatchSize:       5,
+		ChipIngressMaxConcurrentSends: 3,
+		ChipIngressSendInterval:       50 * time.Millisecond,
+		ChipIngressSendTimeout:        5 * time.Second,
+		ChipIngressDrainTimeout:       5 * time.Second,
 	}
 }
 
@@ -67,7 +69,11 @@ func TestChipIngressBatchEmitter_Emit(t *testing.T) {
 			Return(nil, nil).
 			Maybe()
 
-		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, newTestConfig(), newTestLogger(t))
+		cfg := newTestConfig()
+		cfg.ChipIngressSendInterval = 10 * time.Second
+		cfg.ChipIngressMaxBatchSize = 100
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 		defer emitter.Close() //nolint:errcheck
@@ -78,7 +84,8 @@ func TestChipIngressBatchEmitter_Emit(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// PublishBatch should NOT have been called yet (event is just buffered)
+		// With a large batch size and long interval, PublishBatch should not fire yet
+		time.Sleep(100 * time.Millisecond)
 		clientMock.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
 	})
 }
@@ -250,36 +257,56 @@ func TestChipIngressBatchEmitter_PerDomainEntityIsolation(t *testing.T) {
 func TestChipIngressBatchEmitter_BufferFull(t *testing.T) {
 	t.Run("events are dropped when buffer is full", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-		// Block PublishBatch so the buffer fills up
+
+		// Block PublishBatch so the batcher's send pipeline backs up,
+		// eventually filling the message buffer channel.
+		sendBlocked := make(chan struct{})
+		firstCallSignal := make(chan struct{}, 1)
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(_ mock.Arguments) {
+				select {
+				case firstCallSignal <- struct{}{}:
+				default:
+				}
+				<-sendBlocked
+			}).
 			Return(nil, nil).
 			Maybe()
 
 		cfg := newTestConfig()
-		cfg.ChipIngressBufferSize = 3
-		cfg.ChipIngressSendInterval = 10 * time.Second // very long interval to prevent flushing
+		cfg.ChipIngressBufferSize = 2
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressMaxConcurrentSends = 1
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+		cfg.ChipIngressDrainTimeout = 200 * time.Millisecond
 
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
+		defer close(sendBlocked)
 		defer emitter.Close() //nolint:errcheck
 
-		// Fill the buffer (3 events)
-		for i := 0; i < 3; i++ {
-			err = emitter.Emit(t.Context(), []byte("body"),
-				beholder.AttrKeyDomain, "platform",
-				beholder.AttrKeyEntity, "TestEvent",
-			)
-			require.NoError(t, err)
-		}
-
-		// This should not error (it drops silently), but the event won't be delivered
-		err = emitter.Emit(t.Context(), []byte("dropped"),
+		// First event triggers a send that blocks, exhausting the semaphore
+		err = emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
 			beholder.AttrKeyEntity, "TestEvent",
 		)
-		assert.NoError(t, err)
+		require.NoError(t, err)
+
+		// Wait for the batcher to process the event and block on PublishBatch
+		<-firstCallSignal
+		// Give batcher time to read the next event and block on the semaphore
+		time.Sleep(100 * time.Millisecond)
+
+		// Flood the buffer — Emit should never return an error
+		for i := 0; i < 10; i++ {
+			err = emitter.Emit(t.Context(), []byte("overflow"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+			assert.NoError(t, err, "Emit should not return error even when dropping events")
+		}
 	})
 }
 
@@ -414,13 +441,6 @@ func TestChipIngressBatchEmitter_ContextCancellation(t *testing.T) {
 		require.NoError(t, emitter.Start(t.Context()))
 		defer emitter.Close() //nolint:errcheck
 
-		// Fill the buffer so the next Emit will block on channel send
-		err = emitter.Emit(t.Context(), []byte("fill"),
-			beholder.AttrKeyDomain, "platform",
-			beholder.AttrKeyEntity, "TestEvent",
-		)
-		require.NoError(t, err)
-
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
@@ -489,11 +509,12 @@ func TestChipIngressBatchEmitter_GracefulDrain(t *testing.T) {
 			Return(nil, nil)
 
 		cfg := beholder.Config{
-			ChipIngressBufferSize:   20,
-			ChipIngressMaxBatchSize: 10,
-			ChipIngressSendInterval: 1 * time.Hour, // very long interval — events won't flush via tick
-			ChipIngressSendTimeout:  5 * time.Second,
-			ChipIngressDrainTimeout: 5 * time.Second,
+			ChipIngressBufferSize:         20,
+			ChipIngressMaxBatchSize:       10,
+			ChipIngressMaxConcurrentSends: 3,
+			ChipIngressSendInterval:       1 * time.Hour,
+			ChipIngressSendTimeout:        5 * time.Second,
+			ChipIngressDrainTimeout:       5 * time.Second,
 		}
 
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
@@ -507,6 +528,9 @@ func TestChipIngressBatchEmitter_GracefulDrain(t *testing.T) {
 			)
 			require.NoError(t, err)
 		}
+
+		// Give the batcher time to read events from the channel into its internal batch
+		time.Sleep(50 * time.Millisecond)
 
 		// Events are buffered but no tick has fired. Close should drain them.
 		require.NoError(t, emitter.Close())
@@ -537,11 +561,12 @@ func TestChipIngressBatchEmitter_DrainMultipleDomains(t *testing.T) {
 			Return(nil, nil)
 
 		cfg := beholder.Config{
-			ChipIngressBufferSize:   20,
-			ChipIngressMaxBatchSize: 10,
-			ChipIngressSendInterval: 1 * time.Hour,
-			ChipIngressSendTimeout:  5 * time.Second,
-			ChipIngressDrainTimeout: 5 * time.Second,
+			ChipIngressBufferSize:         20,
+			ChipIngressMaxBatchSize:       10,
+			ChipIngressMaxConcurrentSends: 3,
+			ChipIngressSendInterval:       1 * time.Hour,
+			ChipIngressSendTimeout:        5 * time.Second,
+			ChipIngressDrainTimeout:       5 * time.Second,
 		}
 
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
@@ -563,6 +588,9 @@ func TestChipIngressBatchEmitter_DrainMultipleDomains(t *testing.T) {
 			require.NoError(t, err)
 		}
 
+		// Give batchers time to read events from their channels
+		time.Sleep(50 * time.Millisecond)
+
 		require.NoError(t, emitter.Close())
 
 		mu.Lock()
@@ -573,7 +601,7 @@ func TestChipIngressBatchEmitter_DrainMultipleDomains(t *testing.T) {
 }
 
 func TestChipIngressBatchEmitter_DrainPublishBatchFailure(t *testing.T) {
-	t.Run("drain continues attempting batches after failure", func(t *testing.T) {
+	t.Run("handles batch failure and continues sending", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		var mu sync.Mutex
@@ -605,18 +633,19 @@ func TestChipIngressBatchEmitter_DrainPublishBatchFailure(t *testing.T) {
 			Return(nil, nil)
 
 		cfg := beholder.Config{
-			ChipIngressBufferSize:   20,
-			ChipIngressMaxBatchSize: 3,
-			ChipIngressSendInterval: 1 * time.Hour,
-			ChipIngressSendTimeout:  5 * time.Second,
-			ChipIngressDrainTimeout: 5 * time.Second,
+			ChipIngressBufferSize:         20,
+			ChipIngressMaxBatchSize:       3,
+			ChipIngressMaxConcurrentSends: 3,
+			ChipIngressSendInterval:       1 * time.Hour,
+			ChipIngressSendTimeout:        5 * time.Second,
+			ChipIngressDrainTimeout:       5 * time.Second,
 		}
 
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
-		// Emit 6 events with maxBatchSize=3 => 2 batches during drain
+		// Emit 6 events with maxBatchSize=3 => 2 batches via size trigger
 		for i := 0; i < 6; i++ {
 			err = emitter.Emit(t.Context(), []byte("body"),
 				beholder.AttrKeyDomain, "platform",
@@ -625,11 +654,14 @@ func TestChipIngressBatchEmitter_DrainPublishBatchFailure(t *testing.T) {
 			require.NoError(t, err)
 		}
 
+		// Give the batcher time to read events and trigger size-based sends
+		time.Sleep(100 * time.Millisecond)
+
 		require.NoError(t, emitter.Close())
 
 		mu.Lock()
 		defer mu.Unlock()
-		assert.GreaterOrEqual(t, callCount, 2, "drain should have attempted at least 2 batches")
+		assert.GreaterOrEqual(t, callCount, 2, "should have attempted at least 2 batches")
 		assert.Equal(t, 3, totalEventsSent, "second batch should have succeeded despite first batch failure")
 	})
 }
@@ -648,11 +680,12 @@ func TestChipIngressBatchEmitter_DrainTimeout(t *testing.T) {
 			Maybe()
 
 		cfg := beholder.Config{
-			ChipIngressBufferSize:   20,
-			ChipIngressMaxBatchSize: 10,
-			ChipIngressSendInterval: 1 * time.Hour,
-			ChipIngressSendTimeout:  10 * time.Second,
-			ChipIngressDrainTimeout: 200 * time.Millisecond,
+			ChipIngressBufferSize:         20,
+			ChipIngressMaxBatchSize:       10,
+			ChipIngressMaxConcurrentSends: 3,
+			ChipIngressSendInterval:       1 * time.Hour,
+			ChipIngressSendTimeout:        10 * time.Second,
+			ChipIngressDrainTimeout:       200 * time.Millisecond,
 		}
 
 		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
@@ -666,6 +699,9 @@ func TestChipIngressBatchEmitter_DrainTimeout(t *testing.T) {
 			)
 			require.NoError(t, err)
 		}
+
+		// Give the batcher time to read events
+		time.Sleep(50 * time.Millisecond)
 
 		closeDone := make(chan error, 1)
 		go func() {
@@ -745,5 +781,195 @@ func TestChipIngressBatchEmitter_EmitAfterClose(t *testing.T) {
 			beholder.AttrKeyEntity, "TestEvent",
 		)
 		assert.Error(t, err, "Emit after Close should return an error")
+	})
+}
+
+func TestChipIngressBatchEmitter_EmitWithCallback(t *testing.T) {
+	t.Run("callback receives nil on successful send", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil)
+
+		cfg := newTestConfig()
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		done := make(chan error, 1)
+		err = emitter.EmitWithCallback(t.Context(), []byte("body"), func(sendErr error) {
+			done <- sendErr
+		},
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case sendErr := <-done:
+			assert.NoError(t, sendErr, "callback should receive nil on success")
+		case <-time.After(3 * time.Second):
+			t.Fatal("callback was not invoked within timeout")
+		}
+
+		require.NoError(t, emitter.Close())
+	})
+
+	t.Run("callback receives error on PublishBatch failure", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, assert.AnError)
+
+		cfg := newTestConfig()
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		done := make(chan error, 1)
+		err = emitter.EmitWithCallback(t.Context(), []byte("body"), func(sendErr error) {
+			done <- sendErr
+		},
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case sendErr := <-done:
+			assert.Error(t, sendErr, "callback should receive error on failure")
+		case <-time.After(3 * time.Second):
+			t.Fatal("callback was not invoked within timeout")
+		}
+
+		require.NoError(t, emitter.Close())
+	})
+
+	t.Run("callback receives error when buffer is full", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		sendBlocked := make(chan struct{})
+		firstCallSignal := make(chan struct{}, 1)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(_ mock.Arguments) {
+				select {
+				case firstCallSignal <- struct{}{}:
+				default:
+				}
+				<-sendBlocked
+			}).
+			Return(nil, nil).
+			Maybe()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressBufferSize = 2
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressMaxConcurrentSends = 1
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+		cfg.ChipIngressDrainTimeout = 200 * time.Millisecond
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+		defer close(sendBlocked)
+		defer emitter.Close() //nolint:errcheck
+
+		// First event triggers a send that blocks, exhausting the semaphore
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		// Wait for PublishBatch to be called and blocked
+		<-firstCallSignal
+		// Give batcher time to read the next event and block on the semaphore
+		time.Sleep(100 * time.Millisecond)
+
+		// Flood the buffer (size 2) so it becomes full
+		for i := 0; i < 10; i++ {
+			_ = emitter.Emit(t.Context(), []byte("filler"),
+				beholder.AttrKeyDomain, "platform",
+				beholder.AttrKeyEntity, "TestEvent",
+			)
+		}
+
+		// Buffer is full — callback should be invoked synchronously with an error
+		dropped := make(chan error, 1)
+		err = emitter.EmitWithCallback(t.Context(), []byte("overflow"), func(sendErr error) {
+			dropped <- sendErr
+		},
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		assert.NoError(t, err, "Emit should not return an error even when dropping")
+
+		select {
+		case dropErr := <-dropped:
+			assert.Error(t, dropErr, "callback should receive an error when buffer is full")
+		case <-time.After(time.Second):
+			t.Fatal("callback was not invoked for dropped event")
+		}
+	})
+
+	t.Run("synchronous emit pattern works end-to-end", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil)
+
+		cfg := newTestConfig()
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		done := make(chan error, 1)
+		err = emitter.EmitWithCallback(t.Context(), []byte("sync-body"), func(sendErr error) {
+			done <- sendErr
+		},
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		// Block until the event is actually sent — the "synchronous" pattern
+		select {
+		case sendErr := <-done:
+			assert.NoError(t, sendErr)
+		case <-time.After(3 * time.Second):
+			t.Fatal("synchronous emit did not complete within timeout")
+		}
+
+		require.NoError(t, emitter.Close())
+	})
+
+	t.Run("nil callback behaves like Emit", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil).
+			Maybe()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressSendInterval = 50 * time.Millisecond
+
+		emitter, err := beholder.NewChipIngressBatchEmitter(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.EmitWithCallback(t.Context(), []byte("body"), nil,
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		assert.NoError(t, err)
+
+		require.NoError(t, emitter.Close())
 	})
 }

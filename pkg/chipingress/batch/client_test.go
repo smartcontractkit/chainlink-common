@@ -837,6 +837,11 @@ func TestStop(t *testing.T) {
 
 	t.Run("QueueMessage returns error after Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Maybe()
+
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -853,7 +858,7 @@ func TestStop(t *testing.T) {
 		}, nil)
 		require.NoError(t, err)
 
-		// Stop the client
+		// Stop the client — drains any buffered messages
 		client.Stop()
 
 		// Queue message after stop - should fail

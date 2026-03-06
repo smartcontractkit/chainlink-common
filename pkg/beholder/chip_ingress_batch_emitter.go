@@ -10,12 +10,15 @@ import (
 	otelmetric "go.opentelemetry.io/otel/metric"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // ChipIngressBatchEmitter buffers events per (domain, entity) and flushes them
 // via chipingress.Client.PublishBatch on a periodic interval.
+// Each (domain, entity) pair gets its own batch.Client, providing per-entity
+// isolation and independent concurrency scaling.
 // It satisfies the Emitter interface so it can be used as a drop-in replacement
 // for ChipIngressEmitter.
 type ChipIngressBatchEmitter struct {
@@ -27,12 +30,13 @@ type ChipIngressBatchEmitter struct {
 	workers      map[string]*chipIngressEmitterWorker
 	workersMutex sync.RWMutex
 
-	bufferSize   uint
-	maxBatchSize uint
-	maxWorkers   int
-	sendInterval time.Duration
-	sendTimeout  time.Duration
-	drainTimeout time.Duration
+	bufferSize         int
+	maxBatchSize       int
+	maxWorkers         int
+	maxConcurrentSends int
+	sendInterval       time.Duration
+	sendTimeout        time.Duration
+	drainTimeout       time.Duration
 
 	metrics batchEmitterMetrics
 }
@@ -40,8 +44,6 @@ type ChipIngressBatchEmitter struct {
 type batchEmitterMetrics struct {
 	eventsSent    otelmetric.Int64Counter
 	eventsDropped otelmetric.Int64Counter
-	batchFailures otelmetric.Int64Counter
-	eventsDrained otelmetric.Int64Counter
 }
 
 // NewChipIngressBatchEmitter creates a batch emitter backed by the given chipingress client.
@@ -51,17 +53,21 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 		return nil, fmt.Errorf("chip ingress client is nil")
 	}
 
-	bufferSize := cfg.ChipIngressBufferSize
+	bufferSize := int(cfg.ChipIngressBufferSize)
 	if bufferSize == 0 {
 		bufferSize = 1000
 	}
-	maxBatchSize := cfg.ChipIngressMaxBatchSize
+	maxBatchSize := int(cfg.ChipIngressMaxBatchSize)
 	if maxBatchSize == 0 {
 		maxBatchSize = 500
 	}
 	maxWorkers := cfg.ChipIngressMaxWorkers
 	if maxWorkers == 0 {
 		maxWorkers = defaultMaxWorkers
+	}
+	maxConcurrentSends := cfg.ChipIngressMaxConcurrentSends
+	if maxConcurrentSends == 0 {
+		maxConcurrentSends = defaultMaxConcurrentSends
 	}
 	sendInterval := cfg.ChipIngressSendInterval
 	if sendInterval == 0 {
@@ -83,15 +89,16 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 	}
 
 	e := &ChipIngressBatchEmitter{
-		client:       client,
-		workers:      make(map[string]*chipIngressEmitterWorker),
-		bufferSize:   bufferSize,
-		maxBatchSize: maxBatchSize,
-		maxWorkers:   maxWorkers,
-		sendInterval: sendInterval,
-		sendTimeout:  sendTimeout,
-		drainTimeout: drainTimeout,
-		metrics:      metrics,
+		client:             client,
+		workers:            make(map[string]*chipIngressEmitterWorker),
+		bufferSize:         bufferSize,
+		maxBatchSize:       maxBatchSize,
+		maxWorkers:         maxWorkers,
+		maxConcurrentSends: maxConcurrentSends,
+		sendInterval:       sendInterval,
+		sendTimeout:        sendTimeout,
+		drainTimeout:       drainTimeout,
+		metrics:            metrics,
 	}
 
 	e.Service, e.eng = services.Config{
@@ -102,10 +109,36 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 }
 
 // Emit extracts (domain, entity) from the attributes, routes the event to the
-// appropriate per-(domain, entity) worker, and returns immediately.
-// If the worker's buffer is full, the event is dropped and a warning is logged.
-// Returns an error if the emitter has been closed.
+// appropriate per-(domain, entity) worker's batch.Client, and returns immediately.
+// If the worker's buffer is full, the event is dropped and a metric is bumped.
+// Returns an error if the emitter has been closed or the caller's context is cancelled.
 func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	return e.emitInternal(ctx, body, nil, attrKVs...)
+}
+
+// EmitWithCallback works like Emit but accepts a callback that is invoked once
+// the event's fate is determined: nil on successful PublishBatch delivery, or a
+// non-nil error on send failure or buffer-full drop.
+//
+// Contract:
+//   - If EmitWithCallback returns a non-nil error, the callback will NOT be invoked.
+//     The caller should handle the error from the return value.
+//   - If EmitWithCallback returns nil, the callback is guaranteed to be invoked
+//     exactly once — either asynchronously (after the batch is sent) or
+//     synchronously (if the event was dropped at enqueue time).
+//
+// Callers can use this for "synchronous" emission:
+//
+//	done := make(chan error, 1)
+//	if err := emitter.EmitWithCallback(ctx, body, func(err error) { done <- err }, attrKVs...); err != nil {
+//	    return err // callback will not fire
+//	}
+//	err := <-done // safe — callback will fire exactly once
+func (e *ChipIngressBatchEmitter) EmitWithCallback(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
+	return e.emitInternal(ctx, body, callback, attrKVs...)
+}
+
+func (e *ChipIngressBatchEmitter) emitInternal(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
 	return e.eng.IfNotStopped(func() error {
 		domain, entity, err := ExtractSourceAndType(attrKVs...)
 		if err != nil {
@@ -116,24 +149,40 @@ func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs
 
 		worker := e.findOrCreateWorker(domain, entity)
 		if worker == nil {
+			if callback != nil {
+				callback(fmt.Errorf("max workers reached, event dropped"))
+			}
 			return nil
 		}
 
-		payload := emitterPayload{
-			body:       body,
-			attributes: attributes,
-			domain:     domain,
-			entity:     entity,
+		event, err := chipingress.NewEvent(domain, entity, body, attributes)
+		if err != nil {
+			return fmt.Errorf("failed to create CloudEvent: %w", err)
+		}
+		eventPb, err := chipingress.EventToProto(event)
+		if err != nil {
+			return fmt.Errorf("failed to convert to proto: %w", err)
 		}
 
-		select {
-		case worker.ch <- payload:
-			// Intentionally racy with logBufferFullWithExpBackoff — only affects log frequency, not correctness.
-			worker.dropCount.Store(0)
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			worker.logBufferFullWithExpBackoff(payload)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		queueErr := worker.batchClient.QueueMessage(eventPb, func(sendErr error) {
+			if sendErr != nil {
+				e.metrics.eventsDropped.Add(context.Background(), 1, worker.metricAttrs)
+			} else {
+				e.metrics.eventsSent.Add(context.Background(), 1, worker.metricAttrs)
+			}
+			if callback != nil {
+				callback(sendErr)
+			}
+		})
+		if queueErr != nil {
+			e.metrics.eventsDropped.Add(context.Background(), 1, worker.metricAttrs)
+			if callback != nil {
+				callback(queueErr)
+			}
 		}
 
 		return nil
@@ -141,9 +190,9 @@ func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs
 }
 
 // findOrCreateWorker returns the worker for the given (domain, entity) pair,
-// creating one with a new buffered channel and flush goroutine if it doesn't exist.
+// creating one backed by a new batch.Client if it doesn't exist.
 func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chipIngressEmitterWorker {
-	workerKey := domain + "/" + entity
+	workerKey := domain + "\x00" + entity
 
 	e.workersMutex.RLock()
 	worker, found := e.workers[workerKey]
@@ -166,32 +215,26 @@ func (e *ChipIngressBatchEmitter) findOrCreateWorker(domain, entity string) *chi
 		return nil
 	}
 
-	worker = newChipIngressEmitterWorker(
-		e.client,
-		make(chan emitterPayload, e.bufferSize),
-		domain,
-		entity,
-		e.maxBatchSize,
-		e.sendTimeout,
-		e.metrics,
-		e.eng,
+	batchClient, err := batch.NewBatchClient(e.client,
+		batch.WithBatchSize(e.maxBatchSize),
+		batch.WithMessageBuffer(e.bufferSize),
+		batch.WithBatchInterval(e.sendInterval),
+		batch.WithMaxPublishTimeout(e.sendTimeout),
+		batch.WithShutdownTimeout(e.drainTimeout),
+		batch.WithMaxConcurrentSends(e.maxConcurrentSends),
+		batch.WithEventClone(false),
 	)
+	if err != nil {
+		e.eng.Errorf("chip ingress batch emitter: failed to create batch client for %s: %v", workerKey, err)
+		return nil
+	}
 
-	sendInterval := e.sendInterval
-	drainTimeout := e.drainTimeout
+	worker = newChipIngressEmitterWorker(batchClient, domain, entity)
+
 	e.eng.Go(func(ctx context.Context) {
-		ticker := time.NewTicker(sendInterval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				worker.Send(ctx)
-			case <-ctx.Done():
-				worker.drain(drainTimeout)
-				return
-			}
-		}
+		worker.batchClient.Start(ctx)
+		<-ctx.Done()
+		worker.batchClient.Stop()
 	})
 
 	e.workers[workerKey] = worker
@@ -213,24 +256,8 @@ func newBatchEmitterMetrics(meter otelmetric.Meter) (batchEmitterMetrics, error)
 		return batchEmitterMetrics{}, err
 	}
 
-	batchFailures, err := meter.Int64Counter("chip_ingress.batch_failures",
-		otelmetric.WithDescription("Total PublishBatch calls that failed"),
-		otelmetric.WithUnit("{batch}"))
-	if err != nil {
-		return batchEmitterMetrics{}, err
-	}
-
-	eventsDrained, err := meter.Int64Counter("chip_ingress.events_drained",
-		otelmetric.WithDescription("Total events flushed during graceful shutdown"),
-		otelmetric.WithUnit("{event}"))
-	if err != nil {
-		return batchEmitterMetrics{}, err
-	}
-
 	return batchEmitterMetrics{
 		eventsSent:    eventsSent,
 		eventsDropped: eventsDropped,
-		batchFailures: batchFailures,
-		eventsDrained: eventsDrained,
 	}, nil
 }

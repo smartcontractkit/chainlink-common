@@ -8,7 +8,7 @@ import (
 	"io"
 	"time"
 
-	ccllogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
+
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -226,13 +226,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		var chipIngressEmitter Emitter
 		if cfg.ChipIngressBatchEmitterEnabled {
-			// TODO: accept a logger from the caller instead of creating a new root logger,
-			// so batch emitter logs respect the node's logging configuration.
-			lggr, lErr := ccllogger.New()
-			if lErr != nil {
-				return nil, fmt.Errorf("failed to create logger for chip ingress batch emitter: %w", lErr)
+			if cfg.ChipIngressLogger == nil {
+				return nil, fmt.Errorf("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
 			}
-			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, cfg, lggr)
+			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, cfg, cfg.ChipIngressLogger)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
 			}

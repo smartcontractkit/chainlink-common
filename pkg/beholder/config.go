@@ -7,6 +7,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 type Config struct {
@@ -52,7 +54,8 @@ type Config struct {
 	ChipIngressSendInterval        time.Duration // Flush interval per worker (default 100ms)
 	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 3s)
 	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 10s)
-	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls per worker (default 3)
+	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls per worker (default 10)
+	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
 	LogExportTimeout      time.Duration

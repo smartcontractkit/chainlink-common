@@ -68,6 +68,7 @@ var Default = Schema{
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
 	VaultPluginBatchSizeLimit:         Int(20),
 	VaultRequestBatchSizeLimit:        Int(10),
+	VaultShareSizeLimit:               Size(600 * config.Byte),
 
 	PerOrg: Orgs{
 		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
@@ -174,6 +175,7 @@ type Schema struct {
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
+	VaultShareSizeLimit               Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
 	VaultIdentifierOwnerSizeLimit     Setting[config.Size]
 	VaultIdentifierNamespaceSizeLimit Setting[config.Size]

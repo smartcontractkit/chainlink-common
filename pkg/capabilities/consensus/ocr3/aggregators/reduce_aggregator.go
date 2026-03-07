@@ -468,16 +468,19 @@ func mode(items []values.Value) (values.Value, int, error) {
 		}
 	}
 
-	var modes []values.Value
-	for _, ctr := range counts {
+	// Collect all SHA keys that have the max count, then sort them to ensure
+	// deterministic tie-breaking regardless of map iteration order.
+	var modeKeys [][32]byte
+	for sha, ctr := range counts {
 		if ctr.count == maxCount {
-			modes = append(modes, ctr.fullObservation)
+			modeKeys = append(modeKeys, sha)
 		}
 	}
+	sort.Slice(modeKeys, func(i, j int) bool {
+		return bytes.Compare(modeKeys[i][:], modeKeys[j][:]) < 0
+	})
 
-	// If more than one mode found, choose first
-
-	return modes[0], maxCount, nil
+	return counts[modeKeys[0]].fullObservation, maxCount, nil
 }
 
 func modeHasQuorum(quorumType string, count int, f int) error {

@@ -39,7 +39,11 @@ flowchart
     end
 %%    WorkflowLimit - Deprecated
 %%    TODO unused
+%%    FeatureFlags
+%%    PerOrg.FeatureFlags
 %%    PerOrg.ZeroBalancePruningTimeout
+%%    PerOwner.FeatureFlags
+%%    PerWorkflow.FeatureFlags
 
     subgraph Store.FetchWorkflowArtifacts
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound

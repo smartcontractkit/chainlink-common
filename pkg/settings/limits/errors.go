@@ -34,7 +34,7 @@ func (e ErrorRateLimited) Is(target error) bool {
 
 func (e ErrorRateLimited) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	msg := fmt.Sprintf("%srate limited%s", which, who)
+	msg := fmt.Sprintf("%srate limited%s: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying", which, who)
 	if e.Err == nil {
 		return msg
 	}
@@ -61,7 +61,7 @@ func (e ErrorResourceLimited[N]) Is(target error) bool {
 
 func (e ErrorResourceLimited[N]) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%sresource limited%s: cannot use %v, already using %v/%v", which, who, e.Amount, e.Used, e.Limit)
+	return fmt.Sprintf("%sresource limited%s: cannot allocate %v, already using %v of %v maximum. Free existing resources or request a limit increase", which, who, e.Amount, e.Used, e.Limit)
 }
 
 type ErrorTimeLimited struct {
@@ -84,7 +84,7 @@ func (e ErrorTimeLimited) Is(target error) bool {
 
 func (e ErrorTimeLimited) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%stime limited%s to %s", which, who, e.Timeout)
+	return fmt.Sprintf("%stime limited%s: operation exceeded the maximum allowed duration of %s. Consider simplifying the operation or requesting a timeout increase", which, who, e.Timeout)
 }
 
 func errArgs(key string, scope settings.Scope, tenant string) (which, who string) {
@@ -117,7 +117,7 @@ func (e ErrorBoundLimited[N]) Is(target error) bool {
 
 func (e ErrorBoundLimited[N]) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%slimited%s: cannot use %v, limit is %v", which, who, e.Amount, e.Limit)
+	return fmt.Sprintf("%slimited%s: cannot use %v, maximum allowed is %v. Reduce usage or request a limit increase", which, who, e.Amount, e.Limit)
 }
 
 type ErrorQueueFull struct {
@@ -140,7 +140,7 @@ func (e ErrorQueueFull) Is(target error) bool {
 
 func (e ErrorQueueFull) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%slimited%s: queue of %d is full", which, who, e.Limit)
+	return fmt.Sprintf("%slimited%s: queue is full (capacity: %d). New items are being rejected (failed to enqueue). Consider reducing submission rate or requesting a capacity increase", which, who, e.Limit)
 }
 
 var ErrQueueEmpty = fmt.Errorf("queue is empty")
@@ -163,5 +163,5 @@ func (e ErrorNotAllowed) Is(target error) bool {
 
 func (e ErrorNotAllowed) Error() string {
 	which, who := errArgs(e.Key, e.Scope, e.Tenant)
-	return fmt.Sprintf("%slimited%s: not allowed", which, who)
+	return fmt.Sprintf("%slimited%s: operation not allowed. This action is restricted by current configuration and gate settings", which, who)
 }

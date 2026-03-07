@@ -687,7 +687,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				observationsFactory: func() map[commontypes.OracleID][]values.Value {
 					return map[commontypes.OracleID][]values.Value{}
 				},
-				errString: "not enough observations, have 0 want 3",
+				errString: "consensus failed: insufficient observations, received 0 but need at least 3 (2f+1, f=1). Not enough DON nodes responded in time",
 			},
 			{
 				name: "invalid previous outcome not pb",
@@ -725,7 +725,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					mockValueEmpty := values.EmptyMap()
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValueEmpty}}
 				},
-				errString: "not enough observations provided Price, have 2 want 3",
+				errString: "consensus failed: insufficient observations for field \"Price\", received 2 but need at least 3 (2f+1, f=1). Not enough DON nodes provided data for this field",
 			},
 			{
 				name:            "reduce error median",
@@ -764,7 +764,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					require.NoError(t, err)
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}, 3: {mockValue3}}
 				},
-				errString: "unable to reduce on method mode, err: mode quorum not reached. have: 1, want: 2",
+				errString: "unable to reduce on method mode, err: consensus failed: mode quorum not reached, 1 nodes agreed but need at least 2 (f+1, f=1). DON nodes disagree too much on the value",
 			},
 			{
 				name:            "reduce error mode with mode quorum of: all",
@@ -784,7 +784,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					require.NoError(t, err)
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}, 3: {mockValue2}}
 				},
-				errString: "unable to reduce on method mode, err: mode quorum not reached. have: 2, want: 3",
+				errString: "unable to reduce on method mode, err: consensus failed: mode quorum not reached, 2 nodes agreed but need at least 3 (2f+1, f=1). DON nodes disagree too much on the value",
 			},
 		}
 		for _, tt := range cases {

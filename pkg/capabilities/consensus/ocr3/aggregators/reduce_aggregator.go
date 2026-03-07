@@ -98,7 +98,7 @@ var _ types.Aggregator = (*reduceAggregator)(nil)
 // Condenses multiple observations into a single encodable outcome
 func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	if len(observations) < 2*f+1 {
-		return nil, fmt.Errorf("not enough observations, have %d want %d", len(observations), 2*f+1)
+		return nil, fmt.Errorf("consensus failed: insufficient observations, received %d but need at least %d (2f+1, f=%d). Not enough DON nodes responded in time", len(observations), 2*f+1, f)
 	}
 
 	currentState, err := a.initializeCurrentState(lggr, previousOutcome)
@@ -114,7 +114,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 
 		// only proceed if every field has reached the minimum number of observations
 		if len(vals) < 2*f+1 {
-			return nil, fmt.Errorf("not enough observations provided %s, have %d want %d", field.InputKey, len(vals), 2*f+1)
+			return nil, fmt.Errorf("consensus failed: insufficient observations for field %q, received %d but need at least %d (2f+1, f=%d). Not enough DON nodes provided data for this field", field.InputKey, len(vals), 2*f+1, f)
 		}
 
 		singleValue, err := reduce(field.Method, vals, f, field.ModeQuorum)
@@ -486,12 +486,12 @@ func modeHasQuorum(quorumType string, count int, f int) error {
 		return nil
 	case MODE_QUORUM_OCR:
 		if count < f+1 {
-			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, f+1)
+			return fmt.Errorf("consensus failed: mode quorum not reached, %d nodes agreed but need at least %d (f+1, f=%d). DON nodes disagree too much on the value", count, f+1, f)
 		}
 		return nil
 	case MODE_QUORUM_ALL:
 		if count < 2*f+1 {
-			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, 2*f+1)
+			return fmt.Errorf("consensus failed: mode quorum not reached, %d nodes agreed but need at least %d (2f+1, f=%d). DON nodes disagree too much on the value", count, 2*f+1, f)
 		}
 		return nil
 	default:

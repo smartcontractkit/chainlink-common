@@ -31,7 +31,7 @@ func TestErrorRateLimited(t *testing.T) {
 				N:      42,
 				Err:    wrapped,
 			},
-			exp: "foo rate limited for workflow[wf]: wrapper",
+			exp: "foo rate limited for workflow[wf]: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying: wrapper",
 		},
 		{
 			name: "no-err",
@@ -41,7 +41,7 @@ func TestErrorRateLimited(t *testing.T) {
 				Tenant: "wf",
 				N:      42,
 			},
-			exp: "foo rate limited for workflow[wf]",
+			exp: "foo rate limited for workflow[wf]: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying",
 		},
 		{
 			name: "no-err-tenant",
@@ -49,14 +49,14 @@ func TestErrorRateLimited(t *testing.T) {
 				Key: "foo",
 				N:   42,
 			},
-			exp: "foo rate limited",
+			exp: "foo rate limited: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying",
 		},
 		{
 			name: "no-err-tenant-key",
 			err: ErrorRateLimited{
 				N: 42,
 			},
-			exp: "rate limited",
+			exp: "rate limited: request rate has exceeded the allowed limit. Please reduce request frequency or wait before retrying",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -88,7 +88,7 @@ func TestErrorResourceLimited(t *testing.T) {
 				Used:   42,
 				Amount: 13,
 			},
-			exp: "foo resource limited for workflow[wf]: cannot use 13, already using 42/100",
+			exp: "foo resource limited for workflow[wf]: cannot allocate 13, already using 42 of 100 maximum. Free existing resources or request a limit increase",
 		},
 		{
 			name: "no-tenant",
@@ -99,7 +99,7 @@ func TestErrorResourceLimited(t *testing.T) {
 				Used:   42,
 				Amount: 13,
 			},
-			exp: "foo resource limited: cannot use 13, already using 42/100",
+			exp: "foo resource limited: cannot allocate 13, already using 42 of 100 maximum. Free existing resources or request a limit increase",
 		},
 		{
 			name: "no-tenant-key",
@@ -108,7 +108,7 @@ func TestErrorResourceLimited(t *testing.T) {
 				Used:   42,
 				Amount: 13,
 			},
-			exp: "resource limited: cannot use 13, already using 42/100",
+			exp: "resource limited: cannot allocate 13, already using 42 of 100 maximum. Free existing resources or request a limit increase",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestErrorTimeLimited(t *testing.T) {
 				Tenant:  "wf",
 				Timeout: time.Minute,
 			},
-			exp: "foo time limited for workflow[wf] to 1m0s",
+			exp: "foo time limited for workflow[wf]: operation exceeded the maximum allowed duration of 1m0s. Consider simplifying the operation or requesting a timeout increase",
 		},
 		{
 			name: "no-tenant",
@@ -147,14 +147,14 @@ func TestErrorTimeLimited(t *testing.T) {
 				Scope:   settings.ScopeWorkflow,
 				Timeout: time.Minute,
 			},
-			exp: "foo time limited to 1m0s",
+			exp: "foo time limited: operation exceeded the maximum allowed duration of 1m0s. Consider simplifying the operation or requesting a timeout increase",
 		},
 		{
 			name: "no-tenant-key",
 			err: ErrorTimeLimited{
 				Timeout: time.Minute,
 			},
-			exp: "time limited to 1m0s",
+			exp: "time limited: operation exceeded the maximum allowed duration of 1m0s. Consider simplifying the operation or requesting a timeout increase",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestErrorBoundLimited(t *testing.T) {
 				Limit:  13,
 				Amount: 100,
 			},
-			exp: "foo limited for workflow[wf]: cannot use 100, limit is 13",
+			exp: "foo limited for workflow[wf]: cannot use 100, maximum allowed is 13. Reduce usage or request a limit increase",
 		},
 		{
 			name: "no-tenant",
@@ -195,7 +195,7 @@ func TestErrorBoundLimited(t *testing.T) {
 				Limit:  13,
 				Amount: 100,
 			},
-			exp: "foo limited: cannot use 100, limit is 13",
+			exp: "foo limited: cannot use 100, maximum allowed is 13. Reduce usage or request a limit increase",
 		},
 		{
 			name: "no-tenant-key",
@@ -203,7 +203,7 @@ func TestErrorBoundLimited(t *testing.T) {
 				Limit:  13,
 				Amount: 100,
 			},
-			exp: "limited: cannot use 100, limit is 13",
+			exp: "limited: cannot use 100, maximum allowed is 13. Reduce usage or request a limit increase",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

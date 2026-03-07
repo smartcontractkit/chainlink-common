@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-var ErrPluginUnavailable = errors.New("plugin unavailable")
+var ErrPluginUnavailable = errors.New("plugin unavailable: the capability plugin is not running or has become unresponsive. This is typically a node operator issue - the plugin may need to be restarted")
 
 var (
 	_ services.Service = (*ServiceClient)(nil)

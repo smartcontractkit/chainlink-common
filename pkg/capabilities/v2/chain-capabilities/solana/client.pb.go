@@ -2963,14 +2963,14 @@ func (x *SubkeyConfig) GetComparers() []*ValueComparator {
 }
 
 type FilterLogTriggerRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Address       []byte                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"` // Solana PublicKey (32 bytes)
-	EventName     string                 `protobuf:"bytes,3,opt,name=event_name,json=eventName,proto3" json:"event_name,omitempty"`
-	EventIdlJson  []byte                 `protobuf:"bytes,4,opt,name=event_idl_json,json=eventIdlJson,proto3" json:"event_idl_json,omitempty"`
-	Subkeys       []*SubkeyConfig        `protobuf:"bytes,5,rep,name=subkeys,proto3" json:"subkeys,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Address         []byte                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"` // Solana PublicKey (32 bytes)
+	EventName       string                 `protobuf:"bytes,3,opt,name=event_name,json=eventName,proto3" json:"event_name,omitempty"`
+	ContractIdlJson []byte                 `protobuf:"bytes,4,opt,name=contract_idl_json,json=contractIdlJson,proto3" json:"contract_idl_json,omitempty"`
+	Subkeys         []*SubkeyConfig        `protobuf:"bytes,5,rep,name=subkeys,proto3" json:"subkeys,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *FilterLogTriggerRequest) Reset() {
@@ -3024,9 +3024,9 @@ func (x *FilterLogTriggerRequest) GetEventName() string {
 	return ""
 }
 
-func (x *FilterLogTriggerRequest) GetEventIdlJson() []byte {
+func (x *FilterLogTriggerRequest) GetContractIdlJson() []byte {
 	if x != nil {
-		return x.EventIdlJson
+		return x.ContractIdlJson
 	}
 	return nil
 }
@@ -3570,13 +3570,13 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\boperator\x18\x02 \x01(\x0e2:.capabilities.blockchain.solana.v1alpha.ComparisonOperatorR\boperator\"y\n" +
 	"\fSubkeyConfig\x12\x12\n" +
 	"\x04path\x18\x01 \x03(\tR\x04path\x12U\n" +
-	"\tcomparers\x18\x02 \x03(\v27.capabilities.blockchain.solana.v1alpha.ValueComparatorR\tcomparers\"\xdc\x01\n" +
+	"\tcomparers\x18\x02 \x03(\v27.capabilities.blockchain.solana.v1alpha.ValueComparatorR\tcomparers\"\xe2\x01\n" +
 	"\x17FilterLogTriggerRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\fR\aaddress\x12\x1d\n" +
 	"\n" +
-	"event_name\x18\x03 \x01(\tR\teventName\x12$\n" +
-	"\x0eevent_idl_json\x18\x04 \x01(\fR\feventIdlJson\x12N\n" +
+	"event_name\x18\x03 \x01(\tR\teventName\x12*\n" +
+	"\x11contract_idl_json\x18\x04 \x01(\fR\x0fcontractIdlJson\x12N\n" +
 	"\asubkeys\x18\x05 \x03(\v24.capabilities.blockchain.solana.v1alpha.SubkeyConfigR\asubkeys\"\xd4\x02\n" +
 	"\x03Log\x12\x19\n" +
 	"\bchain_id\x18\x01 \x01(\tR\achainId\x12\x1b\n" +

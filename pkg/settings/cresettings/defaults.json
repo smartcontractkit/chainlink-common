@@ -7,6 +7,7 @@
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"VaultCiphertextSizeLimit": "2kb",
+	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",
 	"VaultIdentifierOwnerSizeLimit": "64b",
 	"VaultIdentifierNamespaceSizeLimit": "64b",

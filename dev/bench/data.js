@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772813793573,
+  "lastUpdate": 1773047008366,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -40320,6 +40320,66 @@ window.BENCHMARK_DATA = {
             "value": 118266,
             "unit": "ns/op",
             "extra": "9943 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "12d6180b51ffcc03e1a75381bef0408478c2aa8d",
+          "message": "introduce to gateway node rate limits in limits package (#1879)\n\n* introduce to gateway node rate limits in limits package\n\n* fix merge conflict",
+          "timestamp": "2026-03-09T08:56:05Z",
+          "tree_id": "9e039dbe9cd9d47f97272f93ba04e08c091e1555",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/12d6180b51ffcc03e1a75381bef0408478c2aa8d"
+        },
+        "date": 1773047006059,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.4,
+            "unit": "ns/op",
+            "extra": "3244843 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 66300,
+            "unit": "ns/op",
+            "extra": "17707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.5,
+            "unit": "ns/op",
+            "extra": "2902482 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 73741,
+            "unit": "ns/op",
+            "extra": "16946 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24760,
+            "unit": "ns/op",
+            "extra": "48440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 115602,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

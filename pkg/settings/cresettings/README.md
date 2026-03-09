@@ -174,16 +174,16 @@ flowchart
         VaultIdentifierNamespaceSizeLimit{{VaultIdentifierNamespaceSizeLimit}}:::bound
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
-        VaultLimitsMaxQueryLength{{VaultLimitsMaxQueryLength}}:::bound
-        VaultLimitsMaxObservationLength{{VaultLimitsMaxObservationLength}}:::bound
-        VaultLimitsMaxReportsPlusPrecursorLength{{VaultLimitsMaxReportsPlusPrecursorLength}}:::bound
-        VaultLimitsMaxReportLength{{VaultLimitsMaxReportLength}}:::bound
-        VaultLimitsMaxReportCount{{VaultLimitsMaxReportCount}}:::bound
-        VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength{{VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength}}:::bound
-        VaultLimitsMaxKeyValueModifiedKeys{{VaultLimitsMaxKeyValueModifiedKeys}}:::bound
-        VaultLimitsMaxBlobPayloadLength{{VaultLimitsMaxBlobPayloadLength}}:::bound
-        VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes{{VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes}}:::bound
-        VaultLimitsMaxPerOracleUnexpiredBlobCount{{VaultLimitsMaxPerOracleUnexpiredBlobCount}}:::bound
+        VaultMaxQuerySizeLimit{{VaultMaxQuerySizeLimit}}:::bound
+        VaultMaxObservationSizeLimit{{VaultMaxObservationSizeLimit}}:::bound
+        VaultMaxReportsPlusPrecursorSizeLimit{{VaultMaxReportsPlusPrecursorSizeLimit}}:::bound
+        VaultMaxReportSizeLimit{{VaultMaxReportSizeLimit}}:::bound
+        VaultMaxReportCount{{VaultMaxReportCount}}:::bound
+        VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit{{VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit}}:::bound
+        VaultMaxKeyValueModifiedKeys{{VaultMaxKeyValueModifiedKeys}}:::bound
+        VaultMaxBlobPayloadSizeLimit{{VaultMaxBlobPayloadSizeLimit}}:::bound
+        VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit{{VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit}}:::bound
+        VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 

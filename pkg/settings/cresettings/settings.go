@@ -68,16 +68,16 @@ var Default = Schema{
 	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
 
-	VaultLimitsMaxQueryLength: Int(102400),
+	VaultMaxQuerySizeLimit: Size(102400 * config.Byte),
 	// Back of the envelope calculation:
 	// - An item can contain 2KB of ciphertext, 192 bytes of metadata (key, owner, namespace),
 	// a UUID (16 bytes) plus some overhead = ~2.5KB per item
 	// There can be 10 such items in a request, and 20 per batch, so 2.5KB * 10 * 20 = 500KB
-	// However as a buffer, multiplying by 10, to get ~5mb, for all 3 fields below.
-	VaultLimitsMaxObservationLength:          Int(500000000),
-	VaultLimitsMaxReportsPlusPrecursorLength: Int(500000000),
-	VaultLimitsMaxReportLength:               Int(500000000),
-	VaultLimitsMaxReportCount:                Int(10),
+	// However as a buffer, setting the next 3 fields to 2 mb.
+	VaultMaxObservationSizeLimit:          Size(2 * config.MByte),
+	VaultMaxReportsPlusPrecursorSizeLimit: Size(2 * config.MByte),
+	VaultMaxReportSizeLimit:               Size(2 * config.MByte),
+	VaultMaxReportCount:                   Int(10),
 	// assumption for largest item:
 	// create request with the maximum ciphertext length:
 	// - 192 bytes (sum of MaxIdentifierKeyLengthBytes + MaxIdentifierOwnerLengthBytes + MaxIdentifierNamespaceLengthBytes)
@@ -96,17 +96,17 @@ var Default = Schema{
 	//   - an index record =  8bytes
 	// - total = ~224 KB + ~19.2 KB + ~224 KB + 8 bytes = ~467.2 KB
 	// Setting to 1.4MB to allow for some buffer.
-	VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength: Int(1468006),
+	VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit: Size(1468006 * config.Byte),
 	// 10 batch size * 10 items per batch * 2 records modified per item (secret + metadata record)
 	// plus 10 batchsize items in the pending queue + 1 index record
 	// = 211 total.
 	// plus some buffer.
-	VaultLimitsMaxKeyValueModifiedKeys: Int(300),
+	VaultMaxKeyValueModifiedKeys: Int(300),
 	// Assuming a request is max 25KB, we add a bit of buffer to allow some room.
-	VaultLimitsMaxBlobPayloadLength: Int(25600),
+	VaultMaxBlobPayloadSizeLimit: Size(25600 * config.Byte),
 	// Per docs, this should allow some additional buffer to allow for reaping time.
-	VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes: Int(31457280), // 30 mb
-	VaultLimitsMaxPerOracleUnexpiredBlobCount:                  Int(1000),
+	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
+	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
 		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
@@ -218,16 +218,16 @@ type Schema struct {
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
 
-	VaultLimitsMaxQueryLength                                  Setting[int]
-	VaultLimitsMaxObservationLength                            Setting[int]
-	VaultLimitsMaxReportsPlusPrecursorLength                   Setting[int]
-	VaultLimitsMaxReportLength                                 Setting[int]
-	VaultLimitsMaxReportCount                                  Setting[int]
-	VaultLimitsMaxKeyValueModifiedKeysPlusValuesLength         Setting[int]
-	VaultLimitsMaxKeyValueModifiedKeys                         Setting[int]
-	VaultLimitsMaxBlobPayloadLength                            Setting[int]
-	VaultLimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes Setting[int]
-	VaultLimitsMaxPerOracleUnexpiredBlobCount                  Setting[int]
+	VaultMaxQuerySizeLimit                                   Setting[config.Size]
+	VaultMaxObservationSizeLimit                             Setting[config.Size]
+	VaultMaxReportsPlusPrecursorSizeLimit                    Setting[config.Size]
+	VaultMaxReportSizeLimit                                  Setting[config.Size]
+	VaultMaxReportCount                                      Setting[int]
+	VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit          Setting[config.Size]
+	VaultMaxKeyValueModifiedKeys                             Setting[int]
+	VaultMaxBlobPayloadSizeLimit                             Setting[config.Size]
+	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
+	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`

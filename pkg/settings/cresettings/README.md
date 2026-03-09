@@ -37,6 +37,12 @@ flowchart
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
     end
+
+    subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
+%%      DON nodes → gateway (separate from the inbound trigger flow)
+        GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
+        GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
+    end
 %%    WorkflowLimit - Deprecated
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -181,6 +187,9 @@ flowchart
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault
+
+%%  DON nodes → gateway is a separate entry point, not connected to the trigger/execution chain above
+    HandleNodeMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

@@ -181,6 +181,16 @@ flowchart
         VaultIdentifierNamespaceSizeLimit{{VaultIdentifierNamespaceSizeLimit}}:::bound
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
+        VaultMaxQuerySizeLimit{{VaultMaxQuerySizeLimit}}:::bound
+        VaultMaxObservationSizeLimit{{VaultMaxObservationSizeLimit}}:::bound
+        VaultMaxReportsPlusPrecursorSizeLimit{{VaultMaxReportsPlusPrecursorSizeLimit}}:::bound
+        VaultMaxReportSizeLimit{{VaultMaxReportSizeLimit}}:::bound
+        VaultMaxReportCount{{VaultMaxReportCount}}:::bound
+        VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit{{VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit}}:::bound
+        VaultMaxKeyValueModifiedKeys{{VaultMaxKeyValueModifiedKeys}}:::bound
+        VaultMaxBlobPayloadSizeLimit{{VaultMaxBlobPayloadSizeLimit}}:::bound
+        VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit{{VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit}}:::bound
+        VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 

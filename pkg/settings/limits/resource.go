@@ -563,6 +563,14 @@ func (s *scopedResourcePoolLimiter[N]) Close() (err error) {
 	return
 }
 
+func (s *scopedResourcePoolLimiter[N]) EvictTenant(tenant string) error {
+	v, loaded := s.used.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*resourcePoolUsage[N]).Close()
+}
+
 func (s *scopedResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
 	usage, done, err := s.getOrCreate(ctx)
 	if err != nil {

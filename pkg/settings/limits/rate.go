@@ -402,6 +402,14 @@ func (s *scopedRateLimiter) Close() (err error) {
 	return
 }
 
+func (s *scopedRateLimiter) EvictTenant(tenant string) error {
+	v, loaded := s.limiters.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*rateLimiter).Close()
+}
+
 func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(), error) {
 	if err := s.wg.TryAdd(1); err != nil {
 		return nil, nil, err

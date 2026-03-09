@@ -33,6 +33,21 @@ type Limiter[N any] interface {
 	Limit(context.Context) (N, error)
 }
 
+// TenantEvictor is optionally implemented by scoped limiters to allow removal
+// of per-tenant state (background goroutines, maps, queues) when a tenant is
+// no longer active (e.g. a workflow is deleted).
+type TenantEvictor interface {
+	EvictTenant(tenant string) error
+}
+
+// TryEvictTenant calls EvictTenant on v if it implements TenantEvictor.
+func TryEvictTenant(v any, tenant string) error {
+	if e, ok := v.(TenantEvictor); ok {
+		return e.EvictTenant(tenant)
+	}
+	return nil
+}
+
 // pollPeriod is how often settings are refreshed via [settings.Getter.GetScoped]
 var pollPeriod = 5 * time.Second // reduced for tests
 

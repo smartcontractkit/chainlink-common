@@ -144,6 +144,14 @@ func (g *gateLimiter) Close() (err error) {
 	return
 }
 
+func (g *gateLimiter) EvictTenant(tenant string) error {
+	v, loaded := g.updaters.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*updater[bool]).Close()
+}
+
 func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {
 	if err := g.wg.TryAdd(1); err != nil {
 		return false, err

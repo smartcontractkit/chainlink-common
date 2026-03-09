@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773056719452,
+  "lastUpdate": 1773084458775,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -40500,6 +40500,66 @@ window.BENCHMARK_DATA = {
             "value": 146447,
             "unit": "ns/op",
             "extra": "7933 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52eea801855c5b0cdefb7c417ced24d8a44bf556",
+          "message": "Introduce new Vault limits for all ocr3.1 config fields (#1877)\n\n* Introduce new Vault limitsfor all ocr3.1 config fields\n\n* delete VaultEnableDeterministicPendingQueue\n\n* Commentas\n\n* respond to comments",
+          "timestamp": "2026-03-09T19:20:08Z",
+          "tree_id": "294598944cdb76752aaf0633c3aee9f6f3ec8dd8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/52eea801855c5b0cdefb7c417ced24d8a44bf556"
+        },
+        "date": 1773084456387,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.3,
+            "unit": "ns/op",
+            "extra": "3293685 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93189,
+            "unit": "ns/op",
+            "extra": "12931 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.6,
+            "unit": "ns/op",
+            "extra": "2859762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91422,
+            "unit": "ns/op",
+            "extra": "13104 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26913,
+            "unit": "ns/op",
+            "extra": "44610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 137379,
+            "unit": "ns/op",
+            "extra": "8647 times\n4 procs"
           }
         ]
       }

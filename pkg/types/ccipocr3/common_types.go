@@ -21,6 +21,15 @@ func NewUnknownAddressFromHex(s string) (UnknownAddress, error) {
 	return UnknownAddress(b), nil
 }
 
+func IsZeroOrEmptyOrInvalidHexAddress(s string) bool {
+	addr, err := NewUnknownAddressFromHex(s)
+	if err != nil {
+		return false
+	}
+
+	return addr.IsZeroOrEmpty()
+}
+
 // String returns the hex representation of the unknown address.
 func (a UnknownAddress) String() string {
 	return Bytes(a).String()

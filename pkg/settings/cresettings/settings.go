@@ -71,13 +71,13 @@ var Default = Schema{
 	VaultRequestBatchSizeLimit:        Int(10),
 	VaultShareSizeLimit:               Size(600 * config.Byte),
 
-	VaultMaxQuerySizeLimit: Size(102400 * config.Byte),
+	VaultMaxQuerySizeLimit:       Size(102400 * config.Byte),
+	VaultMaxObservationSizeLimit: Size(512 * config.KByte),
 	// Back of the envelope calculation:
 	// - An item can contain 2KB of ciphertext, 192 bytes of metadata (key, owner, namespace),
 	// a UUID (16 bytes) plus some overhead = ~2.5KB per item
 	// There can be 10 such items in a request, and 20 per batch, so 2.5KB * 10 * 20 = 500KB
-	// However as a buffer, setting the next 3 fields to 2 mb.
-	VaultMaxObservationSizeLimit:          Size(2 * config.MByte),
+	// However as a buffer for reports, which have additional data, setting the next 2 fields to 2 mb.
 	VaultMaxReportsPlusPrecursorSizeLimit: Size(2 * config.MByte),
 	VaultMaxReportSizeLimit:               Size(2 * config.MByte),
 	VaultMaxReportCount:                   Int(10),

@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/eventstore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/gateway"
 	keystoreservice "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
@@ -196,19 +197,34 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 		resources = append(resources, creSettingsRes)
 	}
 
+	triggerEventStore := dependencies.TriggerEventStore
+	var triggerEventStoreID uint32
+	if triggerEventStore != nil {
+		var triggerEventStoreRes net.Resource
+		triggerEventStoreID, triggerEventStoreRes, err = c.ServeNew("TriggerEventStore", func(s *grpc.Server) {
+			pb.RegisterEventStoreServer(s, eventstore.NewServer(triggerEventStore))
+		})
+		if err != nil {
+			c.CloseAll(resources...)
+			return fmt.Errorf("failed to serve trigger event store: %w", err)
+		}
+		resources = append(resources, triggerEventStoreRes)
+	}
+
 	_, err = c.StandardCapabilitiesClient.Initialise(ctx, &capabilitiespb.InitialiseRequest{
-		Config:             config,
-		ErrorLogId:         errorLogID,
-		PipelineRunnerId:   pipelineRunnerID,
-		TelemetryId:        telemetryID,
-		CapRegistryId:      capabilitiesRegistryID,
-		KeyValueStoreId:    keyValueStoreID,
-		RelayerSetId:       relayerSetID,
-		OracleFactoryId:    oracleFactoryID,
-		GatewayConnectorId: gatewayConnectorID,
-		KeystoreId:         keyStoreID,
-		OrgResolverId:      orgResolverID,
-		CreSettingsId:      creSettingsID,
+		Config:               config,
+		ErrorLogId:           errorLogID,
+		PipelineRunnerId:     pipelineRunnerID,
+		TelemetryId:          telemetryID,
+		CapRegistryId:        capabilitiesRegistryID,
+		KeyValueStoreId:      keyValueStoreID,
+		RelayerSetId:         relayerSetID,
+		OracleFactoryId:      oracleFactoryID,
+		GatewayConnectorId:   gatewayConnectorID,
+		KeystoreId:           keyStoreID,
+		OrgResolverId:        orgResolverID,
+		CreSettingsId:        creSettingsID,
+		TriggerEventStoreId: triggerEventStoreID,
 	})
 
 	if err != nil {
@@ -375,6 +391,17 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		creSettings = settings.NewClient(s.Logger, creSettingsConn)
 	}
 
+	var triggerEventStoreClient capabilities.EventStore
+	if request.TriggerEventStoreId > 0 {
+		triggerEventStoreConn, err := s.Dial(request.TriggerEventStoreId)
+		if err != nil {
+			s.CloseAll(resources...)
+			return nil, net.ErrConnDial{Name: "TriggerEventStore", ID: request.TriggerEventStoreId, Err: err}
+		}
+		resources = append(resources, net.Resource{Closer: triggerEventStoreConn, Name: "TriggerEventStore"})
+		triggerEventStoreClient = eventstore.NewClient(triggerEventStoreConn)
+	}
+
 	dependencies := core.StandardCapabilitiesDependencies{
 		Config:             request.Config,
 		TelemetryService:   telemetry,
@@ -388,6 +415,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		P2PKeystore:        keyStore,
 		OrgResolver:        orgResolver,
 		CRESettings:        creSettings,
+		TriggerEventStore:  triggerEventStoreClient,
 	}
 
 	if err = s.impl.Initialise(ctx, dependencies); err != nil {

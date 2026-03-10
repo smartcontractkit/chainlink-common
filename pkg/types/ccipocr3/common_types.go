@@ -24,7 +24,7 @@ func NewUnknownAddressFromHex(s string) (UnknownAddress, error) {
 func IsZeroOrEmptyOrInvalidHexAddress(s string) bool {
 	addr, err := NewUnknownAddressFromHex(s)
 	if err != nil {
-		return false
+		return true
 	}
 
 	return addr.IsZeroOrEmpty()

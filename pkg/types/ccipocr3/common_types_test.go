@@ -308,7 +308,7 @@ func Test_IsZeroOrEmptyOrInvalidHexAddress(t *testing.T) {
 		{
 			name:     "empty string",
 			input:    "",
-			expected: false,
+			expected: true,
 		},
 		{
 			name:     "zero string",
@@ -316,14 +316,14 @@ func Test_IsZeroOrEmptyOrInvalidHexAddress(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "non-zero string",
+			name:     "good string",
 			input:    "0x200000",
 			expected: false,
 		},
 		{
 			name:     "invalid hex format",
 			input:    "200000",
-			expected: false,
+			expected: true,
 		},
 	}
 

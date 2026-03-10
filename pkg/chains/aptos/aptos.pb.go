@@ -911,254 +911,6 @@ func (x *GenericTag) GetIndex() uint32 {
 	return 0
 }
 
-type EventsByHandleRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Account       []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`                            // 32-byte address
-	EventHandle   string                 `protobuf:"bytes,2,opt,name=event_handle,json=eventHandle,proto3" json:"event_handle,omitempty"` // Event handle struct tag
-	FieldName     string                 `protobuf:"bytes,3,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`       // Field in the event handle struct
-	Start         *uint64                `protobuf:"varint,4,opt,name=start,proto3,oneof" json:"start,omitempty"`                         // Starting sequence number
-	Limit         *uint64                `protobuf:"varint,5,opt,name=limit,proto3,oneof" json:"limit,omitempty"`                         // Number of events to return (default 100)
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EventsByHandleRequest) Reset() {
-	*x = EventsByHandleRequest{}
-	mi := &file_aptos_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EventsByHandleRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventsByHandleRequest) ProtoMessage() {}
-
-func (x *EventsByHandleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EventsByHandleRequest.ProtoReflect.Descriptor instead.
-func (*EventsByHandleRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *EventsByHandleRequest) GetAccount() []byte {
-	if x != nil {
-		return x.Account
-	}
-	return nil
-}
-
-func (x *EventsByHandleRequest) GetEventHandle() string {
-	if x != nil {
-		return x.EventHandle
-	}
-	return ""
-}
-
-func (x *EventsByHandleRequest) GetFieldName() string {
-	if x != nil {
-		return x.FieldName
-	}
-	return ""
-}
-
-func (x *EventsByHandleRequest) GetStart() uint64 {
-	if x != nil && x.Start != nil {
-		return *x.Start
-	}
-	return 0
-}
-
-func (x *EventsByHandleRequest) GetLimit() uint64 {
-	if x != nil && x.Limit != nil {
-		return *x.Limit
-	}
-	return 0
-}
-
-type EventsByHandleReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Events        []*Event               `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EventsByHandleReply) Reset() {
-	*x = EventsByHandleReply{}
-	mi := &file_aptos_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EventsByHandleReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventsByHandleReply) ProtoMessage() {}
-
-func (x *EventsByHandleReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EventsByHandleReply.ProtoReflect.Descriptor instead.
-func (*EventsByHandleReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *EventsByHandleReply) GetEvents() []*Event {
-	if x != nil {
-		return x.Events
-	}
-	return nil
-}
-
-type Event struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Version        uint64                 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`                                     // Block version of the event
-	Type           string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`                                            // Fully qualified name e.g. 0x1::coin::WithdrawEvent
-	Guid           *GUID                  `protobuf:"bytes,3,opt,name=guid,proto3,oneof" json:"guid,omitempty"`                                      // Unique identifier (V1 events only)
-	SequenceNumber uint64                 `protobuf:"varint,4,opt,name=sequence_number,json=sequenceNumber,proto3" json:"sequence_number,omitempty"` // Sequence number (V1 events only)
-	Data           []byte                 `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`                                            // Event data as raw bytes
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *Event) Reset() {
-	*x = Event{}
-	mi := &file_aptos_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Event) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Event) ProtoMessage() {}
-
-func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Event.ProtoReflect.Descriptor instead.
-func (*Event) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *Event) GetVersion() uint64 {
-	if x != nil {
-		return x.Version
-	}
-	return 0
-}
-
-func (x *Event) GetType() string {
-	if x != nil {
-		return x.Type
-	}
-	return ""
-}
-
-func (x *Event) GetGuid() *GUID {
-	if x != nil {
-		return x.Guid
-	}
-	return nil
-}
-
-func (x *Event) GetSequenceNumber() uint64 {
-	if x != nil {
-		return x.SequenceNumber
-	}
-	return 0
-}
-
-func (x *Event) GetData() []byte {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-type GUID struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CreationNumber uint64                 `protobuf:"varint,1,opt,name=creation_number,json=creationNumber,proto3" json:"creation_number,omitempty"` // Number of the GUID
-	AccountAddress []byte                 `protobuf:"bytes,2,opt,name=account_address,json=accountAddress,proto3" json:"account_address,omitempty"`  // 32-byte account address of creator
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *GUID) Reset() {
-	*x = GUID{}
-	mi := &file_aptos_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GUID) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GUID) ProtoMessage() {}
-
-func (x *GUID) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GUID.ProtoReflect.Descriptor instead.
-func (*GUID) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *GUID) GetCreationNumber() uint64 {
-	if x != nil {
-		return x.CreationNumber
-	}
-	return 0
-}
-
-func (x *GUID) GetAccountAddress() []byte {
-	if x != nil {
-		return x.AccountAddress
-	}
-	return nil
-}
-
 type TransactionByHashRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Hash          string                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"` // Transaction hash (hex string with 0x prefix)
@@ -1168,7 +920,7 @@ type TransactionByHashRequest struct {
 
 func (x *TransactionByHashRequest) Reset() {
 	*x = TransactionByHashRequest{}
-	mi := &file_aptos_proto_msgTypes[18]
+	mi := &file_aptos_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1180,7 +932,7 @@ func (x *TransactionByHashRequest) String() string {
 func (*TransactionByHashRequest) ProtoMessage() {}
 
 func (x *TransactionByHashRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[18]
+	mi := &file_aptos_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1193,7 +945,7 @@ func (x *TransactionByHashRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionByHashRequest.ProtoReflect.Descriptor instead.
 func (*TransactionByHashRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{18}
+	return file_aptos_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *TransactionByHashRequest) GetHash() string {
@@ -1212,7 +964,7 @@ type TransactionByHashReply struct {
 
 func (x *TransactionByHashReply) Reset() {
 	*x = TransactionByHashReply{}
-	mi := &file_aptos_proto_msgTypes[19]
+	mi := &file_aptos_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1224,7 +976,7 @@ func (x *TransactionByHashReply) String() string {
 func (*TransactionByHashReply) ProtoMessage() {}
 
 func (x *TransactionByHashReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[19]
+	mi := &file_aptos_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1237,7 +989,7 @@ func (x *TransactionByHashReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionByHashReply.ProtoReflect.Descriptor instead.
 func (*TransactionByHashReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{19}
+	return file_aptos_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *TransactionByHashReply) GetTransaction() *Transaction {
@@ -1260,7 +1012,7 @@ type Transaction struct {
 
 func (x *Transaction) Reset() {
 	*x = Transaction{}
-	mi := &file_aptos_proto_msgTypes[20]
+	mi := &file_aptos_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1272,7 +1024,7 @@ func (x *Transaction) String() string {
 func (*Transaction) ProtoMessage() {}
 
 func (x *Transaction) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[20]
+	mi := &file_aptos_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1285,7 +1037,7 @@ func (x *Transaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{20}
+	return file_aptos_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Transaction) GetType() TransactionVariant {
@@ -1334,7 +1086,7 @@ type SubmitTransactionRequest struct {
 
 func (x *SubmitTransactionRequest) Reset() {
 	*x = SubmitTransactionRequest{}
-	mi := &file_aptos_proto_msgTypes[21]
+	mi := &file_aptos_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1346,7 +1098,7 @@ func (x *SubmitTransactionRequest) String() string {
 func (*SubmitTransactionRequest) ProtoMessage() {}
 
 func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[21]
+	mi := &file_aptos_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1359,7 +1111,7 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{21}
+	return file_aptos_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SubmitTransactionRequest) GetReceiverModuleId() *ModuleID {
@@ -1392,7 +1144,7 @@ type SubmitTransactionReply struct {
 
 func (x *SubmitTransactionReply) Reset() {
 	*x = SubmitTransactionReply{}
-	mi := &file_aptos_proto_msgTypes[22]
+	mi := &file_aptos_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1404,7 +1156,7 @@ func (x *SubmitTransactionReply) String() string {
 func (*SubmitTransactionReply) ProtoMessage() {}
 
 func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[22]
+	mi := &file_aptos_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1417,7 +1169,7 @@ func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionReply.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReply) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{22}
+	return file_aptos_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SubmitTransactionReply) GetPendingTransaction() *PendingTransaction {
@@ -1437,7 +1189,7 @@ type GasConfig struct {
 
 func (x *GasConfig) Reset() {
 	*x = GasConfig{}
-	mi := &file_aptos_proto_msgTypes[23]
+	mi := &file_aptos_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1449,7 +1201,7 @@ func (x *GasConfig) String() string {
 func (*GasConfig) ProtoMessage() {}
 
 func (x *GasConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[23]
+	mi := &file_aptos_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1462,7 +1214,7 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
 func (*GasConfig) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{23}
+	return file_aptos_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GasConfig) GetMaxGasAmount() uint64 {
@@ -1496,7 +1248,7 @@ type PendingTransaction struct {
 
 func (x *PendingTransaction) Reset() {
 	*x = PendingTransaction{}
-	mi := &file_aptos_proto_msgTypes[24]
+	mi := &file_aptos_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1508,7 +1260,7 @@ func (x *PendingTransaction) String() string {
 func (*PendingTransaction) ProtoMessage() {}
 
 func (x *PendingTransaction) ProtoReflect() protoreflect.Message {
-	mi := &file_aptos_proto_msgTypes[24]
+	mi := &file_aptos_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1521,7 +1273,7 @@ func (x *PendingTransaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingTransaction.ProtoReflect.Descriptor instead.
 func (*PendingTransaction) Descriptor() ([]byte, []int) {
-	return file_aptos_proto_rawDescGZIP(), []int{24}
+	return file_aptos_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PendingTransaction) GetHash() string {
@@ -1638,28 +1390,7 @@ const file_aptos_proto_rawDesc = "" +
 	"typeParams\"\"\n" +
 	"\n" +
 	"GenericTag\x12\x14\n" +
-	"\x05index\x18\x01 \x01(\rR\x05index\"\xbd\x01\n" +
-	"\x15EventsByHandleRequest\x12\x18\n" +
-	"\aaccount\x18\x01 \x01(\fR\aaccount\x12!\n" +
-	"\fevent_handle\x18\x02 \x01(\tR\veventHandle\x12\x1d\n" +
-	"\n" +
-	"field_name\x18\x03 \x01(\tR\tfieldName\x12\x19\n" +
-	"\x05start\x18\x04 \x01(\x04H\x00R\x05start\x88\x01\x01\x12\x19\n" +
-	"\x05limit\x18\x05 \x01(\x04H\x01R\x05limit\x88\x01\x01B\b\n" +
-	"\x06_startB\b\n" +
-	"\x06_limit\"@\n" +
-	"\x13EventsByHandleReply\x12)\n" +
-	"\x06events\x18\x01 \x03(\v2\x11.loop.aptos.EventR\x06events\"\xa6\x01\n" +
-	"\x05Event\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\x04R\aversion\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\tR\x04type\x12)\n" +
-	"\x04guid\x18\x03 \x01(\v2\x10.loop.aptos.GUIDH\x00R\x04guid\x88\x01\x01\x12'\n" +
-	"\x0fsequence_number\x18\x04 \x01(\x04R\x0esequenceNumber\x12\x12\n" +
-	"\x04data\x18\x05 \x01(\fR\x04dataB\a\n" +
-	"\x05_guid\"X\n" +
-	"\x04GUID\x12'\n" +
-	"\x0fcreation_number\x18\x01 \x01(\x04R\x0ecreationNumber\x12'\n" +
-	"\x0faccount_address\x18\x02 \x01(\fR\x0eaccountAddress\".\n" +
+	"\x05index\x18\x01 \x01(\rR\x05index\".\n" +
 	"\x18TransactionByHashRequest\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\tR\x04hash\"h\n" +
 	"\x16TransactionByHashReply\x12>\n" +
@@ -1720,13 +1451,12 @@ const file_aptos_proto_rawDesc = "" +
 	"\"TRANSACTION_VARIANT_BLOCK_EPILOGUE\x10\x04\x12(\n" +
 	"$TRANSACTION_VARIANT_STATE_CHECKPOINT\x10\x05\x12!\n" +
 	"\x1dTRANSACTION_VARIANT_VALIDATOR\x10\x06\x12\x1f\n" +
-	"\x1bTRANSACTION_VARIANT_UNKNOWN\x10\a2\xea\x04\n" +
+	"\x1bTRANSACTION_VARIANT_UNKNOWN\x10\a2\x94\x04\n" +
 	"\x05Aptos\x12Q\n" +
 	"\rLedgerVersion\x12 .loop.aptos.LedgerVersionRequest\x1a\x1e.loop.aptos.LedgerVersionReply\x12]\n" +
 	"\x11AccountAPTBalance\x12$.loop.aptos.AccountAPTBalanceRequest\x1a\".loop.aptos.AccountAPTBalanceReply\x12c\n" +
 	"\x13AccountTransactions\x12&.loop.aptos.AccountTransactionsRequest\x1a$.loop.aptos.AccountTransactionsReply\x126\n" +
-	"\x04View\x12\x17.loop.aptos.ViewRequest\x1a\x15.loop.aptos.ViewReply\x12T\n" +
-	"\x0eEventsByHandle\x12!.loop.aptos.EventsByHandleRequest\x1a\x1f.loop.aptos.EventsByHandleReply\x12]\n" +
+	"\x04View\x12\x17.loop.aptos.ViewRequest\x1a\x15.loop.aptos.ViewReply\x12]\n" +
 	"\x11TransactionByHash\x12$.loop.aptos.TransactionByHashRequest\x1a\".loop.aptos.TransactionByHashReply\x12]\n" +
 	"\x11SubmitTransaction\x12$.loop.aptos.SubmitTransactionRequest\x1a\".loop.aptos.SubmitTransactionReplyB?Z=github.com/smartcontractkit/chainlink-common/pkg/chains/aptosb\x06proto3"
 
@@ -1743,7 +1473,7 @@ func file_aptos_proto_rawDescGZIP() []byte {
 }
 
 var file_aptos_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_aptos_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_aptos_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_aptos_proto_goTypes = []any{
 	(TypeTagType)(0),                   // 0: loop.aptos.TypeTagType
 	(TransactionVariant)(0),            // 1: loop.aptos.TransactionVariant
@@ -1761,20 +1491,16 @@ var file_aptos_proto_goTypes = []any{
 	(*VectorTag)(nil),                  // 13: loop.aptos.VectorTag
 	(*StructTag)(nil),                  // 14: loop.aptos.StructTag
 	(*GenericTag)(nil),                 // 15: loop.aptos.GenericTag
-	(*EventsByHandleRequest)(nil),      // 16: loop.aptos.EventsByHandleRequest
-	(*EventsByHandleReply)(nil),        // 17: loop.aptos.EventsByHandleReply
-	(*Event)(nil),                      // 18: loop.aptos.Event
-	(*GUID)(nil),                       // 19: loop.aptos.GUID
-	(*TransactionByHashRequest)(nil),   // 20: loop.aptos.TransactionByHashRequest
-	(*TransactionByHashReply)(nil),     // 21: loop.aptos.TransactionByHashReply
-	(*Transaction)(nil),                // 22: loop.aptos.Transaction
-	(*SubmitTransactionRequest)(nil),   // 23: loop.aptos.SubmitTransactionRequest
-	(*SubmitTransactionReply)(nil),     // 24: loop.aptos.SubmitTransactionReply
-	(*GasConfig)(nil),                  // 25: loop.aptos.GasConfig
-	(*PendingTransaction)(nil),         // 26: loop.aptos.PendingTransaction
+	(*TransactionByHashRequest)(nil),   // 16: loop.aptos.TransactionByHashRequest
+	(*TransactionByHashReply)(nil),     // 17: loop.aptos.TransactionByHashReply
+	(*Transaction)(nil),                // 18: loop.aptos.Transaction
+	(*SubmitTransactionRequest)(nil),   // 19: loop.aptos.SubmitTransactionRequest
+	(*SubmitTransactionReply)(nil),     // 20: loop.aptos.SubmitTransactionReply
+	(*GasConfig)(nil),                  // 21: loop.aptos.GasConfig
+	(*PendingTransaction)(nil),         // 22: loop.aptos.PendingTransaction
 }
 var file_aptos_proto_depIdxs = []int32{
-	22, // 0: loop.aptos.AccountTransactionsReply.transactions:type_name -> loop.aptos.Transaction
+	18, // 0: loop.aptos.AccountTransactionsReply.transactions:type_name -> loop.aptos.Transaction
 	10, // 1: loop.aptos.ViewRequest.payload:type_name -> loop.aptos.ViewPayload
 	11, // 2: loop.aptos.ViewPayload.module:type_name -> loop.aptos.ModuleID
 	12, // 3: loop.aptos.ViewPayload.arg_types:type_name -> loop.aptos.TypeTag
@@ -1784,32 +1510,28 @@ var file_aptos_proto_depIdxs = []int32{
 	15, // 7: loop.aptos.TypeTag.generic:type_name -> loop.aptos.GenericTag
 	12, // 8: loop.aptos.VectorTag.element_type:type_name -> loop.aptos.TypeTag
 	12, // 9: loop.aptos.StructTag.type_params:type_name -> loop.aptos.TypeTag
-	18, // 10: loop.aptos.EventsByHandleReply.events:type_name -> loop.aptos.Event
-	19, // 11: loop.aptos.Event.guid:type_name -> loop.aptos.GUID
-	22, // 12: loop.aptos.TransactionByHashReply.transaction:type_name -> loop.aptos.Transaction
-	1,  // 13: loop.aptos.Transaction.type:type_name -> loop.aptos.TransactionVariant
-	11, // 14: loop.aptos.SubmitTransactionRequest.receiver_module_id:type_name -> loop.aptos.ModuleID
-	25, // 15: loop.aptos.SubmitTransactionRequest.gas_config:type_name -> loop.aptos.GasConfig
-	26, // 16: loop.aptos.SubmitTransactionReply.pending_transaction:type_name -> loop.aptos.PendingTransaction
-	2,  // 17: loop.aptos.Aptos.LedgerVersion:input_type -> loop.aptos.LedgerVersionRequest
-	4,  // 18: loop.aptos.Aptos.AccountAPTBalance:input_type -> loop.aptos.AccountAPTBalanceRequest
-	6,  // 19: loop.aptos.Aptos.AccountTransactions:input_type -> loop.aptos.AccountTransactionsRequest
-	8,  // 20: loop.aptos.Aptos.View:input_type -> loop.aptos.ViewRequest
-	16, // 21: loop.aptos.Aptos.EventsByHandle:input_type -> loop.aptos.EventsByHandleRequest
-	20, // 22: loop.aptos.Aptos.TransactionByHash:input_type -> loop.aptos.TransactionByHashRequest
-	23, // 23: loop.aptos.Aptos.SubmitTransaction:input_type -> loop.aptos.SubmitTransactionRequest
-	3,  // 24: loop.aptos.Aptos.LedgerVersion:output_type -> loop.aptos.LedgerVersionReply
-	5,  // 25: loop.aptos.Aptos.AccountAPTBalance:output_type -> loop.aptos.AccountAPTBalanceReply
-	7,  // 26: loop.aptos.Aptos.AccountTransactions:output_type -> loop.aptos.AccountTransactionsReply
-	9,  // 27: loop.aptos.Aptos.View:output_type -> loop.aptos.ViewReply
-	17, // 28: loop.aptos.Aptos.EventsByHandle:output_type -> loop.aptos.EventsByHandleReply
-	21, // 29: loop.aptos.Aptos.TransactionByHash:output_type -> loop.aptos.TransactionByHashReply
-	24, // 30: loop.aptos.Aptos.SubmitTransaction:output_type -> loop.aptos.SubmitTransactionReply
-	24, // [24:31] is the sub-list for method output_type
-	17, // [17:24] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	18, // 10: loop.aptos.TransactionByHashReply.transaction:type_name -> loop.aptos.Transaction
+	1,  // 11: loop.aptos.Transaction.type:type_name -> loop.aptos.TransactionVariant
+	11, // 12: loop.aptos.SubmitTransactionRequest.receiver_module_id:type_name -> loop.aptos.ModuleID
+	21, // 13: loop.aptos.SubmitTransactionRequest.gas_config:type_name -> loop.aptos.GasConfig
+	22, // 14: loop.aptos.SubmitTransactionReply.pending_transaction:type_name -> loop.aptos.PendingTransaction
+	2,  // 15: loop.aptos.Aptos.LedgerVersion:input_type -> loop.aptos.LedgerVersionRequest
+	4,  // 16: loop.aptos.Aptos.AccountAPTBalance:input_type -> loop.aptos.AccountAPTBalanceRequest
+	6,  // 17: loop.aptos.Aptos.AccountTransactions:input_type -> loop.aptos.AccountTransactionsRequest
+	8,  // 18: loop.aptos.Aptos.View:input_type -> loop.aptos.ViewRequest
+	16, // 19: loop.aptos.Aptos.TransactionByHash:input_type -> loop.aptos.TransactionByHashRequest
+	19, // 20: loop.aptos.Aptos.SubmitTransaction:input_type -> loop.aptos.SubmitTransactionRequest
+	3,  // 21: loop.aptos.Aptos.LedgerVersion:output_type -> loop.aptos.LedgerVersionReply
+	5,  // 22: loop.aptos.Aptos.AccountAPTBalance:output_type -> loop.aptos.AccountAPTBalanceReply
+	7,  // 23: loop.aptos.Aptos.AccountTransactions:output_type -> loop.aptos.AccountTransactionsReply
+	9,  // 24: loop.aptos.Aptos.View:output_type -> loop.aptos.ViewReply
+	17, // 25: loop.aptos.Aptos.TransactionByHash:output_type -> loop.aptos.TransactionByHashReply
+	20, // 26: loop.aptos.Aptos.SubmitTransaction:output_type -> loop.aptos.SubmitTransactionReply
+	21, // [21:27] is the sub-list for method output_type
+	15, // [15:21] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_aptos_proto_init() }
@@ -1824,20 +1546,18 @@ func file_aptos_proto_init() {
 		(*TypeTag_Struct)(nil),
 		(*TypeTag_Generic)(nil),
 	}
-	file_aptos_proto_msgTypes[14].OneofWrappers = []any{}
+	file_aptos_proto_msgTypes[15].OneofWrappers = []any{}
 	file_aptos_proto_msgTypes[16].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[19].OneofWrappers = []any{}
+	file_aptos_proto_msgTypes[17].OneofWrappers = []any{}
+	file_aptos_proto_msgTypes[18].OneofWrappers = []any{}
 	file_aptos_proto_msgTypes[20].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[21].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[22].OneofWrappers = []any{}
-	file_aptos_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aptos_proto_rawDesc), len(file_aptos_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   25,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

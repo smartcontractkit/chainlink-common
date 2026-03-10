@@ -16,8 +16,6 @@ type Client interface {
 	AccountAPTBalance(ctx context.Context, req AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
 	// View executes a Move view function (read-only) and returns the raw result.
 	View(ctx context.Context, req ViewRequest) (*ViewReply, error)
-	// EventsByHandle retrieves events emitted by a specific event handle on an account.
-	EventsByHandle(ctx context.Context, req EventsByHandleRequest) (*EventsByHandleReply, error)
 	// TransactionByHash looks up a transaction (pending or committed) by its hash.
 	TransactionByHash(ctx context.Context, req TransactionByHashRequest) (*TransactionByHashReply, error)
 }
@@ -170,38 +168,6 @@ type GenericTag struct {
 }
 
 func (GenericTag) TypeTagType() TypeTagType { return TypeTagGeneric }
-
-// ========== EventsByHandle ==========
-
-type EventsByHandleRequest struct {
-	Account     AccountAddress
-	EventHandle string
-	FieldName   string
-	Start       *uint64 // optional, nil for most recent events
-	Limit       *uint64 // optional, 100 by default
-}
-
-type EventsByHandleReply struct {
-	Events []*Event
-}
-
-// Event represents an on-chain event from Move.
-// There are two types of events:
-// - Handle events (V1): have a GUID and SequenceNumber
-// - Module events: do not have a GUID and SequenceNumber
-type Event struct {
-	Version        uint64 // Block version of the event
-	Type           string // Fully qualified name e.g. 0x1::coin::WithdrawEvent
-	Guid           *GUID  // Unique identifier (only for V1 events)
-	SequenceNumber uint64 // Sequence number (only for V1 events)
-	Data           []byte // Event data as raw bytes
-}
-
-// GUID describes a GUID associated with V1 events
-type GUID struct {
-	CreationNumber uint64         // Number of the GUID
-	AccountAddress AccountAddress // Account address of the creator
-}
 
 // TransactionByHashRequest represents a request to get a transaction by hash
 type TransactionByHashRequest struct {

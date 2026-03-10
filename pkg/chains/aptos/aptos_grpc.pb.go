@@ -23,7 +23,6 @@ const (
 	Aptos_AccountAPTBalance_FullMethodName   = "/loop.aptos.Aptos/AccountAPTBalance"
 	Aptos_AccountTransactions_FullMethodName = "/loop.aptos.Aptos/AccountTransactions"
 	Aptos_View_FullMethodName                = "/loop.aptos.Aptos/View"
-	Aptos_EventsByHandle_FullMethodName      = "/loop.aptos.Aptos/EventsByHandle"
 	Aptos_TransactionByHash_FullMethodName   = "/loop.aptos.Aptos/TransactionByHash"
 	Aptos_SubmitTransaction_FullMethodName   = "/loop.aptos.Aptos/SubmitTransaction"
 )
@@ -36,7 +35,6 @@ type AptosClient interface {
 	AccountAPTBalance(ctx context.Context, in *AccountAPTBalanceRequest, opts ...grpc.CallOption) (*AccountAPTBalanceReply, error)
 	AccountTransactions(ctx context.Context, in *AccountTransactionsRequest, opts ...grpc.CallOption) (*AccountTransactionsReply, error)
 	View(ctx context.Context, in *ViewRequest, opts ...grpc.CallOption) (*ViewReply, error)
-	EventsByHandle(ctx context.Context, in *EventsByHandleRequest, opts ...grpc.CallOption) (*EventsByHandleReply, error)
 	TransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error)
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error)
 }
@@ -89,16 +87,6 @@ func (c *aptosClient) View(ctx context.Context, in *ViewRequest, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *aptosClient) EventsByHandle(ctx context.Context, in *EventsByHandleRequest, opts ...grpc.CallOption) (*EventsByHandleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EventsByHandleReply)
-	err := c.cc.Invoke(ctx, Aptos_EventsByHandle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *aptosClient) TransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TransactionByHashReply)
@@ -127,7 +115,6 @@ type AptosServer interface {
 	AccountAPTBalance(context.Context, *AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
 	AccountTransactions(context.Context, *AccountTransactionsRequest) (*AccountTransactionsReply, error)
 	View(context.Context, *ViewRequest) (*ViewReply, error)
-	EventsByHandle(context.Context, *EventsByHandleRequest) (*EventsByHandleReply, error)
 	TransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error)
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error)
 	mustEmbedUnimplementedAptosServer()
@@ -151,9 +138,6 @@ func (UnimplementedAptosServer) AccountTransactions(context.Context, *AccountTra
 }
 func (UnimplementedAptosServer) View(context.Context, *ViewRequest) (*ViewReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method View not implemented")
-}
-func (UnimplementedAptosServer) EventsByHandle(context.Context, *EventsByHandleRequest) (*EventsByHandleReply, error) {
-	return nil, status.Error(codes.Unimplemented, "method EventsByHandle not implemented")
 }
 func (UnimplementedAptosServer) TransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method TransactionByHash not implemented")
@@ -254,24 +238,6 @@ func _Aptos_View_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Aptos_EventsByHandle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EventsByHandleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AptosServer).EventsByHandle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Aptos_EventsByHandle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AptosServer).EventsByHandle(ctx, req.(*EventsByHandleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Aptos_TransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TransactionByHashRequest)
 	if err := dec(in); err != nil {
@@ -330,10 +296,6 @@ var Aptos_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "View",
 			Handler:    _Aptos_View_Handler,
-		},
-		{
-			MethodName: "EventsByHandle",
-			Handler:    _Aptos_EventsByHandle_Handler,
 		},
 		{
 			MethodName: "TransactionByHash",

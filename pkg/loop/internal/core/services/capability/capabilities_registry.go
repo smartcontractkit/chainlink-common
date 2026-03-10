@@ -267,9 +267,20 @@ func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 		return raw, nil
 	}
 
-	trimmed := strings.TrimPrefix(strings.TrimPrefix(s, "0x"), "0X")
-	if looksHexAccount(trimmed) {
+	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
+		trimmed := s[2:]
+		if !looksHexAccount(trimmed) {
+			return nil, fmt.Errorf("failed to decode transmitter: invalid hex account %q", s)
+		}
 		decoded, err := hex.DecodeString(trimmed)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode transmitter: %w", err)
+		}
+		return decoded, nil
+	}
+
+	if looksHexAccount(s) {
+		decoded, err := hex.DecodeString(s)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode transmitter: %w", err)
 		}

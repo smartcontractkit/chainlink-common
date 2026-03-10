@@ -586,6 +586,31 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 	assert.Equal(t, expectedCapConfig, capConf)
 }
 
+func TestTransmitterAccountToBytes(t *testing.T) {
+	t.Run("decodes_0x_and_0X_prefixed_hex", func(t *testing.T) {
+		gotLower, err := transmitterAccountToBytes(ocrtypes.Account("0xABcd"))
+		require.NoError(t, err)
+		require.Equal(t, []byte{0xab, 0xcd}, gotLower)
+
+		gotUpper, err := transmitterAccountToBytes(ocrtypes.Account("0X00ff"))
+		require.NoError(t, err)
+		require.Equal(t, []byte{0x00, 0xff}, gotUpper)
+	})
+
+	t.Run("returns_error_for_invalid_prefixed_hex", func(t *testing.T) {
+		_, err := transmitterAccountToBytes(ocrtypes.Account("0x123"))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to decode transmitter")
+	})
+
+	t.Run("falls_back_to_raw_bytes_for_non_hex_account", func(t *testing.T) {
+		raw := []byte{0x00, 0x7f, 0xff, 0x41}
+		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
+		require.NoError(t, err)
+		require.Equal(t, raw, got)
+	})
+}
+
 func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)

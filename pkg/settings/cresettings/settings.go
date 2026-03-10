@@ -67,9 +67,49 @@ var Default = Schema{
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
-	VaultPluginBatchSizeLimit:         Int(20),
+	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
 	VaultShareSizeLimit:               Size(600 * config.Byte),
+
+	VaultMaxQuerySizeLimit: Size(102400 * config.Byte),
+	// Back of the envelope calculation:
+	// - An item can contain 2KB of ciphertext, 192 bytes of metadata (key, owner, namespace),
+	// a UUID (16 bytes) plus some overhead = ~2.5KB per item
+	// There can be 10 such items in a request, and 20 per batch, so 2.5KB * 10 * 20 = 500KB
+	// However as a buffer, setting the next 3 fields to 2 mb.
+	VaultMaxObservationSizeLimit:          Size(2 * config.MByte),
+	VaultMaxReportsPlusPrecursorSizeLimit: Size(2 * config.MByte),
+	VaultMaxReportSizeLimit:               Size(2 * config.MByte),
+	VaultMaxReportCount:                   Int(10),
+	// assumption for largest item:
+	// create request with the maximum ciphertext length:
+	// - 192 bytes (sum of MaxIdentifierKeyLengthBytes + MaxIdentifierOwnerLengthBytes + MaxIdentifierNamespaceLengthBytes)
+	// - 2048 bytes (MaxCiphertextLengthBytes)
+	// = ~2240 bytes for an item
+	// There are 10 items per request (separate vault setting), 10 request per batch (BatchSize)
+	// i.e. ~224 KB per batch
+	// For a batch we will write:
+	// - a secret + metadata record per item
+	//   - the secrets are 224 KB total
+	//   - the metadata is a list of secret identifiers,
+	//     there are a maximum of 100 secrets per owner (MaxSecretsPerOwner)
+	//     i.e. 192 bytes * 100 = ~19.2 KB
+	// - the pending queue
+	//   - 10 requests in the pending queue, each request is ~22.4Kb = ~22.4 KB
+	//   - an index record =  8bytes
+	// - total = ~224 KB + ~19.2 KB + ~224 KB + 8 bytes = ~467.2 KB
+	// Setting to 1.4MB to allow for some buffer.
+	VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit: Size(1468006 * config.Byte),
+	// 10 batch size * 10 items per batch * 2 records modified per item (secret + metadata record)
+	// plus 10 batchsize items in the pending queue + 1 index record
+	// = 211 total.
+	// plus some buffer.
+	VaultMaxKeyValueModifiedKeys: Int(300),
+	// Assuming a request is max 25KB, we add a bit of buffer to allow some room.
+	VaultMaxBlobPayloadSizeLimit: Size(25600 * config.Byte),
+	// Per docs, this should allow some additional buffer to allow for reaping time.
+	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
+	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
 		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
@@ -184,6 +224,17 @@ type Schema struct {
 	VaultIdentifierNamespaceSizeLimit Setting[config.Size]
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
+
+	VaultMaxQuerySizeLimit                                   Setting[config.Size]
+	VaultMaxObservationSizeLimit                             Setting[config.Size]
+	VaultMaxReportsPlusPrecursorSizeLimit                    Setting[config.Size]
+	VaultMaxReportSizeLimit                                  Setting[config.Size]
+	VaultMaxReportCount                                      Setting[int]
+	VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit          Setting[config.Size]
+	VaultMaxKeyValueModifiedKeys                             Setting[int]
+	VaultMaxBlobPayloadSizeLimit                             Setting[config.Size]
+	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
+	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`

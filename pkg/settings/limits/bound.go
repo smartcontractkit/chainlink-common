@@ -156,12 +156,27 @@ func (b *boundLimiter[N]) Close() (err error) {
 	return
 }
 
+// Deprecated: use TryCleanup
 func (b *boundLimiter[N]) EvictTenant(tenant string) error {
 	v, loaded := b.updaters.LoadAndDelete(tenant)
 	if !loaded {
 		return nil
 	}
 	return v.(*updater[N]).Close()
+}
+
+func (b *boundLimiter[N]) cleanup(ctx context.Context) {
+	tenant := b.scope.Value(ctx)
+	if tenant == "" {
+		return
+	}
+	v, loaded := b.updaters.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*updater[N]).Close(); err != nil {
+		b.lggr.Errorw("Failed to close bound limiter", "tenant", tenant, "err", err)
+	}
 }
 
 func (b *boundLimiter[N]) Check(ctx context.Context, amount N) error {

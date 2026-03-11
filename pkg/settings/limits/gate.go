@@ -144,12 +144,27 @@ func (g *gateLimiter) Close() (err error) {
 	return
 }
 
+// Deprecated: use TryCleanup
 func (g *gateLimiter) EvictTenant(tenant string) error {
 	v, loaded := g.updaters.LoadAndDelete(tenant)
 	if !loaded {
 		return nil
 	}
 	return v.(*updater[bool]).Close()
+}
+
+func (g *gateLimiter) cleanup(ctx context.Context) {
+	tenant := g.scope.Value(ctx)
+	if tenant == "" {
+		return
+	}
+	v, loaded := g.updaters.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*updater[bool]).Close(); err != nil {
+		g.lggr.Errorw("Failed to close bound limiter", "tenant", tenant, "err", err)
+	}
 }
 
 func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {

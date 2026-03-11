@@ -563,12 +563,27 @@ func (s *scopedResourcePoolLimiter[N]) Close() (err error) {
 	return
 }
 
+// Deprecated: use TryCleanup
 func (s *scopedResourcePoolLimiter[N]) EvictTenant(tenant string) error {
 	v, loaded := s.used.LoadAndDelete(tenant)
 	if !loaded {
 		return nil
 	}
 	return v.(*resourcePoolUsage[N]).Close()
+}
+
+func (s *scopedResourcePoolLimiter[N]) cleanup(ctx context.Context) {
+	tenant := s.scope.Value(ctx)
+	if tenant == "" {
+		return
+	}
+	v, loaded := s.used.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*resourcePoolUsage[N]).Close(); err != nil {
+		s.lggr.Errorw("Failed to close resource limiter", "tenant", tenant, "err", err)
+	}
 }
 
 func (s *scopedResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {

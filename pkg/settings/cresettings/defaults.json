@@ -14,7 +14,7 @@
 	"VaultPluginBatchSizeLimit": "10",
 	"VaultRequestBatchSizeLimit": "10",
 	"VaultMaxQuerySizeLimit": "102.4kb",
-	"VaultMaxObservationSizeLimit": "2mb",
+	"VaultMaxObservationSizeLimit": "512kb",
 	"VaultMaxReportsPlusPrecursorSizeLimit": "2mb",
 	"VaultMaxReportSizeLimit": "2mb",
 	"VaultMaxReportCount": "10",

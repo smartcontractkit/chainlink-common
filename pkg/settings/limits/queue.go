@@ -288,6 +288,7 @@ func (s *scopedQueue[T]) EvictTenant(tenant string) error {
 func (s *scopedQueue[T]) cleanup(ctx context.Context) {
 	tenant := s.scope.Value(ctx)
 	if tenant == "" {
+		s.lggr.Warnw("Unable to cleanup scoped queue limiter due to missing tenant", "scope", s.scope)
 		return
 	}
 	v, loaded := s.queues.LoadAndDelete(tenant)

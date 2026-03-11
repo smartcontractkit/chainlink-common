@@ -117,7 +117,18 @@ func Duration(defaultValue time.Duration) Setting[time.Duration] {
 }
 
 func Time(defaultValue time.Time) Setting[config.Timestamp] {
-	return NewSetting(config.Timestamp(defaultValue.Unix()), config.ParseTimestamp)
+	s := NewSetting(config.Timestamp(defaultValue.Unix()), config.ParseTimestamp)
+	s.Unit = "s"
+	return s
+}
+
+func TimeRange(lower, upper time.Time) Setting[Range[config.Timestamp]] {
+	s := NewSetting(Range[config.Timestamp]{
+		Lower: config.Timestamp(lower.Unix()),
+		Upper: config.Timestamp(upper.Unix()),
+	}, ParseRangeFn(config.ParseTimestamp))
+	s.Unit = "s"
+	return s
 }
 
 func URL(defaultValue *url.URL) Setting[*url.URL] {

@@ -402,12 +402,27 @@ func (s *scopedRateLimiter) Close() (err error) {
 	return
 }
 
+// Deprecated: TODO
 func (s *scopedRateLimiter) EvictTenant(tenant string) error {
 	v, loaded := s.limiters.LoadAndDelete(tenant)
 	if !loaded {
 		return nil
 	}
 	return v.(*rateLimiter).Close()
+}
+
+func (s *scopedRateLimiter) cleanup(ctx context.Context) {
+	tenant := s.scope.Value(ctx)
+	if tenant == "" {
+		return
+	}
+	v, loaded := s.limiters.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*rateLimiter).Close(); err != nil {
+		s.lggr.Errorw("Failed to close rate limiter", "tenant", tenant, "err", err)
+	}
 }
 
 func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(), error) {

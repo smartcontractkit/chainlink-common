@@ -132,12 +132,27 @@ func (l *timeLimiter) Close() (err error) {
 	return
 }
 
+// Deprecated: use TryCleanup
 func (l *timeLimiter) EvictTenant(tenant string) error {
 	v, loaded := l.updaters.LoadAndDelete(tenant)
 	if !loaded {
 		return nil
 	}
 	return v.(*updater[time.Duration]).Close()
+}
+
+func (l *timeLimiter) cleanup(ctx context.Context) {
+	tenant := l.scope.Value(ctx)
+	if tenant == "" {
+		return
+	}
+	v, loaded := l.updaters.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*updater[time.Duration]).Close(); err != nil {
+		l.lggr.Errorw("Failed to close bound limiter", "tenant", tenant, "err", err)
+	}
 }
 
 func (l *timeLimiter) recordTimeout(ctx context.Context, to time.Duration) {

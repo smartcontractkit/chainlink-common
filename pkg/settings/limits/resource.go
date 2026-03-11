@@ -421,6 +421,12 @@ func (m MultiResourcePoolLimiter[N]) Close() (errs error) {
 	return
 }
 
+func (m MultiResourcePoolLimiter[N]) cleanup(ctx context.Context) {
+	for _, l := range m {
+		TryCleanup(ctx, l)
+	}
+}
+
 func (m MultiResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
 	if len(m) == 0 {
 		var zero N

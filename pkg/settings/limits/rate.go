@@ -402,7 +402,7 @@ func (s *scopedRateLimiter) Close() (err error) {
 	return
 }
 
-// Deprecated: TODO
+// Deprecated: use TryCleanup
 func (s *scopedRateLimiter) EvictTenant(tenant string) error {
 	v, loaded := s.limiters.LoadAndDelete(tenant)
 	if !loaded {
@@ -414,6 +414,7 @@ func (s *scopedRateLimiter) EvictTenant(tenant string) error {
 func (s *scopedRateLimiter) cleanup(ctx context.Context) {
 	tenant := s.scope.Value(ctx)
 	if tenant == "" {
+		s.lggr.Warnw("Unable to cleanup scoped rate limiter due to missing tenant", "scope", s.scope)
 		return
 	}
 	v, loaded := s.limiters.LoadAndDelete(tenant)

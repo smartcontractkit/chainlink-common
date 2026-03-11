@@ -156,6 +156,7 @@ func (g *gateLimiter) EvictTenant(tenant string) error {
 func (g *gateLimiter) cleanup(ctx context.Context) {
 	tenant := g.scope.Value(ctx)
 	if tenant == "" {
+		g.lggr.Warnw("Unable to cleanup scoped gate limiter due to missing tenant", "scope", g.scope)
 		return
 	}
 	v, loaded := g.updaters.LoadAndDelete(tenant)

@@ -168,6 +168,7 @@ func (b *boundLimiter[N]) EvictTenant(tenant string) error {
 func (b *boundLimiter[N]) cleanup(ctx context.Context) {
 	tenant := b.scope.Value(ctx)
 	if tenant == "" {
+		b.lggr.Warnw("Unable to cleanup scoped bound limiter due to missing tenant", "scope", b.scope)
 		return
 	}
 	v, loaded := b.updaters.LoadAndDelete(tenant)

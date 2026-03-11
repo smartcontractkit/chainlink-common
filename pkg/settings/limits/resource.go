@@ -575,6 +575,7 @@ func (s *scopedResourcePoolLimiter[N]) EvictTenant(tenant string) error {
 func (s *scopedResourcePoolLimiter[N]) cleanup(ctx context.Context) {
 	tenant := s.scope.Value(ctx)
 	if tenant == "" {
+		s.lggr.Warnw("Unable to cleanup scoped resource limiter due to missing tenant", "scope", s.scope)
 		return
 	}
 	v, loaded := s.used.LoadAndDelete(tenant)

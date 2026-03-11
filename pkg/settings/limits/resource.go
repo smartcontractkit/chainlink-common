@@ -421,6 +421,12 @@ func (m MultiResourcePoolLimiter[N]) Close() (errs error) {
 	return
 }
 
+func (m MultiResourcePoolLimiter[N]) cleanup(ctx context.Context) {
+	for _, l := range m {
+		TryCleanup(ctx, l)
+	}
+}
+
 func (m MultiResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
 	if len(m) == 0 {
 		var zero N
@@ -575,6 +581,7 @@ func (s *scopedResourcePoolLimiter[N]) EvictTenant(tenant string) error {
 func (s *scopedResourcePoolLimiter[N]) cleanup(ctx context.Context) {
 	tenant := s.scope.Value(ctx)
 	if tenant == "" {
+		s.lggr.Warnw("Unable to cleanup scoped resource limiter due to missing tenant", "scope", s.scope)
 		return
 	}
 	v, loaded := s.used.LoadAndDelete(tenant)

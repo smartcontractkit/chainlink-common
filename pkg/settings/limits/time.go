@@ -144,6 +144,7 @@ func (l *timeLimiter) EvictTenant(tenant string) error {
 func (l *timeLimiter) cleanup(ctx context.Context) {
 	tenant := l.scope.Value(ctx)
 	if tenant == "" {
+		l.lggr.Warnw("Unable to cleanup scoped time limiter due to missing tenant", "scope", l.scope)
 		return
 	}
 	v, loaded := l.updaters.LoadAndDelete(tenant)

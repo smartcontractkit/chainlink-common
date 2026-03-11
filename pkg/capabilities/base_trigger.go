@@ -343,12 +343,30 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 		Id:      event.EventId,
 	}
 
-	select {
-	case sendCh <- wrapped:
-		b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
-			b.capabilityId, event.TriggerId, event.EventId, attempts)
-	default:
+	if !safeSend(sendCh, wrapped) {
 		b.metrics.IncInboxFull(event.TriggerId)
-		b.lggr.Warnf("inbox full for trigger %s", event.TriggerId)
+		b.lggr.Warnf("inbox full or closed for trigger %s", event.TriggerId)
+		return
+	}
+
+	b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
+		b.capabilityId, event.TriggerId, event.EventId, attempts)
+}
+
+// safeSend attempts a non-blocking send on ch, returning true on success.
+// It recovers from panics caused by sending on a closed channel, which can
+// happen when a trigger is unregistered concurrently with a retransmit attempt.
+func safeSend[T any](ch chan<- T, val T) (sent bool) {
+	defer func() {
+		if recover() != nil {
+			sent = false
+		}
+	}()
+
+	select {
+	case ch <- val:
+		return true
+	default:
+		return false
 	}
 }

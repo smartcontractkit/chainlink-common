@@ -276,12 +276,28 @@ func (s *scopedQueue[T]) Close() (err error) {
 	return
 }
 
+// Deprecated: use TryCleanup
 func (s *scopedQueue[T]) EvictTenant(tenant string) error {
 	v, loaded := s.queues.LoadAndDelete(tenant)
 	if !loaded {
 		return nil
 	}
 	return v.(*queue[T]).Close()
+}
+
+func (s *scopedQueue[T]) cleanup(ctx context.Context) {
+	tenant := s.scope.Value(ctx)
+	if tenant == "" {
+		s.lggr.Warnw("Unable to cleanup scoped queue limiter due to missing tenant", "scope", s.scope)
+		return
+	}
+	v, loaded := s.queues.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*queue[T]).Close(); err != nil {
+		s.lggr.Errorw("Failed to close queue limiter", "tenant", tenant, "err", err)
+	}
 }
 
 func (s *scopedQueue[T]) Limit(ctx context.Context) (int, error) {

@@ -584,6 +584,12 @@ func (m MultiRateLimiter) Close() (err error) {
 	return
 }
 
+func (m MultiRateLimiter) cleanup(ctx context.Context) {
+	for _, l := range m {
+		TryCleanup(ctx, l)
+	}
+}
+
 func (m MultiRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
 	if len(m) == 0 {
 		return config.Rate{}, fmt.Errorf("empty")

@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // DualSourceEmitter emits both to chip ingress and to the otel collector
@@ -17,10 +18,13 @@ type DualSourceEmitter struct {
 	chipIngressEmitter   Emitter
 	otelCollectorEmitter Emitter
 	log                  logger.Logger
+	nonBlockingEmitter   bool
+	stopCh               services.StopChan
+	wg                   services.WaitGroup
 	closed               atomic.Bool
 }
 
-func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
+func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter, nonBlockingChipIngress bool) (Emitter, error) {
 
 	if chipIngressEmitter == nil {
 		return nil, fmt.Errorf("chip ingress emitter is nil")
@@ -39,6 +43,8 @@ func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitt
 		chipIngressEmitter:   chipIngressEmitter,
 		otelCollectorEmitter: otelCollectorEmitter,
 		log:                  logger,
+		nonBlockingEmitter:   nonBlockingChipIngress,
+		stopCh:               make(services.StopChan),
 	}, nil
 }
 
@@ -46,20 +52,36 @@ func (d *DualSourceEmitter) Close() error {
 	if wasClosed := d.closed.Swap(true); wasClosed {
 		return errors.New("already closed")
 	}
+	close(d.stopCh)
+	d.wg.Wait()
 	return errors.Join(d.chipIngressEmitter.Close(), d.otelCollectorEmitter.Close())
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-
-	// Emit via OTLP first
 	if err := d.otelCollectorEmitter.Emit(ctx, body, attrKVs...); err != nil {
 		return err
 	}
 
-	// Emit via chip ingress. When backed by ChipIngressBatchEmitter this is
-	// non-blocking (just a channel send), so no goroutine wrapper is needed.
-	if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
-		d.log.Infof("failed to emit to chip ingress: %v", err)
+	if d.nonBlockingEmitter {
+		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+			d.log.Infof("failed to emit to chip ingress: %v", err)
+		}
+	} else {
+		// Legacy ChipIngressEmitter.Emit is a synchronous gRPC call;
+		// fire-and-forget via goroutine to avoid blocking the caller.
+		if err := d.wg.TryAdd(1); err != nil {
+			return err
+		}
+		go func(ctx context.Context) {
+			defer d.wg.Done()
+			var cancel context.CancelFunc
+			ctx, cancel = d.stopCh.Ctx(ctx)
+			defer cancel()
+
+			if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+				d.log.Infof("failed to emit to chip ingress: %v", err)
+			}
+		}(context.WithoutCancel(ctx))
 	}
 
 	return nil

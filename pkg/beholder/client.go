@@ -243,7 +243,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			}
 		}
 
-		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter, cfg.ChipIngressBatchEmitterEnabled)
 		if err != nil {
 			if batchEmitterService != nil {
 				_ = batchEmitterService.Close()

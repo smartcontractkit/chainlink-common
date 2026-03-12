@@ -187,7 +187,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// This will eventually be removed in favor of chip-ingress emitter
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
-
+	var batchEmitterService *ChipIngressBatchEmitter
 	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
@@ -223,13 +223,31 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+		var chipIngressEmitter Emitter
+		if cfg.ChipIngressBatchEmitterEnabled {
+			if cfg.ChipIngressLogger == nil {
+				return nil, fmt.Errorf("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
+			}
+			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, cfg, cfg.ChipIngressLogger)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
+			}
+			if err = batchEmitterService.Start(context.Background()); err != nil {
+				return nil, fmt.Errorf("failed to start chip ingress batch emitter: %w", err)
+			}
+			chipIngressEmitter = batchEmitterService
+		} else {
+			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+			}
 		}
 
-		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter, cfg.ChipIngressBatchEmitterEnabled)
 		if err != nil {
+			if batchEmitterService != nil {
+				_ = batchEmitterService.Close()
+			}
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
 	}
@@ -243,16 +261,18 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	return &Client{cfg, logger, tracer, meter, emitter, chipIngressClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
 }
 
-// Closes all providers, flushes all data and stops all background processes
+// Closes all providers, flushes all data and stops all background processes.
+// Order matters: emitter is closed first so the batch emitter can drain
+// buffered events while the gRPC connection is still alive.
 func (c Client) Close() (err error) {
-	if c.Chip != nil {
-		err = errors.Join(err, c.Chip.Close())
-	}
 	if c.Emitter != nil {
 		err = errors.Join(err, c.Emitter.Close())
 	}
 	if c.OnClose != nil {
 		err = errors.Join(err, c.OnClose())
+	}
+	if c.Chip != nil {
+		err = errors.Join(err, c.Chip.Close())
 	}
 	return
 }

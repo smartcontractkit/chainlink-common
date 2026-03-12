@@ -173,6 +173,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 		}
 

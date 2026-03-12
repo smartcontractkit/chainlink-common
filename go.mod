@@ -157,3 +157,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20251029180050-ab9386a59fda // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress

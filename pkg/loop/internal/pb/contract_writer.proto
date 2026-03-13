@@ -24,11 +24,21 @@ message SubmitTransactionRequest {
     string to_address = 5;
     TransactionMeta meta = 6;
     BigInt value = 7;
+    SimulationOptions simulation_options = 8;
 }
 
 message TransactionMeta {
     string workflow_execution_id = 1;
     BigInt gas_limit = 2;
+}
+
+message SimulationOptions {
+    bool simulate_transaction = 1;
+    repeated ExpectedSimulationFailureError expected_simulation_failure_errors = 2;
+}
+
+message ExpectedSimulationFailureError {
+    string error_string = 1;
 }
 
 // GetEstimateFeeReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].

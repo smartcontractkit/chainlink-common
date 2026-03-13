@@ -1037,12 +1037,13 @@ func (x *AccountTransactionsReply) GetTransactions() []*Transaction {
 }
 
 type SubmitTransactionRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	ReceiverModuleId *ModuleID              `protobuf:"bytes,1,opt,name=receiver_module_id,json=receiverModuleId,proto3" json:"receiver_module_id,omitempty"`
-	EncodedPayload   []byte                 `protobuf:"bytes,2,opt,name=encoded_payload,json=encodedPayload,proto3" json:"encoded_payload,omitempty"`
-	GasConfig        *GasConfig             `protobuf:"bytes,3,opt,name=gas_config,json=gasConfig,proto3,oneof" json:"gas_config,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ReceiverModuleId  *ModuleID              `protobuf:"bytes,1,opt,name=receiver_module_id,json=receiverModuleId,proto3" json:"receiver_module_id,omitempty"`
+	EncodedPayload    []byte                 `protobuf:"bytes,2,opt,name=encoded_payload,json=encodedPayload,proto3" json:"encoded_payload,omitempty"`
+	GasConfig         *GasConfig             `protobuf:"bytes,3,opt,name=gas_config,json=gasConfig,proto3,oneof" json:"gas_config,omitempty"`
+	SimulationOptions *SimulationOptions     `protobuf:"bytes,4,opt,name=simulation_options,json=simulationOptions,proto3" json:"simulation_options,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SubmitTransactionRequest) Reset() {
@@ -1092,6 +1093,13 @@ func (x *SubmitTransactionRequest) GetEncodedPayload() []byte {
 func (x *SubmitTransactionRequest) GetGasConfig() *GasConfig {
 	if x != nil {
 		return x.GasConfig
+	}
+	return nil
+}
+
+func (x *SubmitTransactionRequest) GetSimulationOptions() *SimulationOptions {
+	if x != nil {
+		return x.SimulationOptions
 	}
 	return nil
 }
@@ -1208,6 +1216,102 @@ func (x *GasConfig) GetGasUnitPrice() uint64 {
 	return 0
 }
 
+type SimulationOptions struct {
+	state                           protoimpl.MessageState            `protogen:"open.v1"`
+	SimulateTransaction             bool                              `protobuf:"varint,1,opt,name=simulate_transaction,json=simulateTransaction,proto3" json:"simulate_transaction,omitempty"`
+	ExpectedSimulationFailureErrors []*ExpectedSimulationFailureError `protobuf:"bytes,2,rep,name=expected_simulation_failure_errors,json=expectedSimulationFailureErrors,proto3" json:"expected_simulation_failure_errors,omitempty"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
+}
+
+func (x *SimulationOptions) Reset() {
+	*x = SimulationOptions{}
+	mi := &file_aptos_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SimulationOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SimulationOptions) ProtoMessage() {}
+
+func (x *SimulationOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_aptos_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SimulationOptions.ProtoReflect.Descriptor instead.
+func (*SimulationOptions) Descriptor() ([]byte, []int) {
+	return file_aptos_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SimulationOptions) GetSimulateTransaction() bool {
+	if x != nil {
+		return x.SimulateTransaction
+	}
+	return false
+}
+
+func (x *SimulationOptions) GetExpectedSimulationFailureErrors() []*ExpectedSimulationFailureError {
+	if x != nil {
+		return x.ExpectedSimulationFailureErrors
+	}
+	return nil
+}
+
+type ExpectedSimulationFailureError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorString   string                 `protobuf:"bytes,1,opt,name=error_string,json=errorString,proto3" json:"error_string,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExpectedSimulationFailureError) Reset() {
+	*x = ExpectedSimulationFailureError{}
+	mi := &file_aptos_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExpectedSimulationFailureError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExpectedSimulationFailureError) ProtoMessage() {}
+
+func (x *ExpectedSimulationFailureError) ProtoReflect() protoreflect.Message {
+	mi := &file_aptos_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExpectedSimulationFailureError.ProtoReflect.Descriptor instead.
+func (*ExpectedSimulationFailureError) Descriptor() ([]byte, []int) {
+	return file_aptos_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ExpectedSimulationFailureError) GetErrorString() string {
+	if x != nil {
+		return x.ErrorString
+	}
+	return ""
+}
+
 var File_aptos_proto protoreflect.FileDescriptor
 
 const file_aptos_proto_rawDesc = "" +
@@ -1269,12 +1373,13 @@ const file_aptos_proto_rawDesc = "" +
 	"\x06_startB\b\n" +
 	"\x06_limit\"W\n" +
 	"\x18AccountTransactionsReply\x12;\n" +
-	"\ftransactions\x18\x01 \x03(\v2\x17.loop.aptos.TransactionR\ftransactions\"\xd1\x01\n" +
+	"\ftransactions\x18\x01 \x03(\v2\x17.loop.aptos.TransactionR\ftransactions\"\x9f\x02\n" +
 	"\x18SubmitTransactionRequest\x12B\n" +
 	"\x12receiver_module_id\x18\x01 \x01(\v2\x14.loop.aptos.ModuleIDR\x10receiverModuleId\x12'\n" +
 	"\x0fencoded_payload\x18\x02 \x01(\fR\x0eencodedPayload\x129\n" +
 	"\n" +
-	"gas_config\x18\x03 \x01(\v2\x15.loop.aptos.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
+	"gas_config\x18\x03 \x01(\v2\x15.loop.aptos.GasConfigH\x00R\tgasConfig\x88\x01\x01\x12L\n" +
+	"\x12simulation_options\x18\x04 \x01(\v2\x1d.loop.aptos.SimulationOptionsR\x11simulationOptionsB\r\n" +
 	"\v_gas_config\"\x92\x01\n" +
 	"\x16SubmitTransactionReply\x121\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x14.loop.aptos.TxStatusR\btxStatus\x12\x17\n" +
@@ -1282,7 +1387,12 @@ const file_aptos_proto_rawDesc = "" +
 	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\"W\n" +
 	"\tGasConfig\x12$\n" +
 	"\x0emax_gas_amount\x18\x01 \x01(\x04R\fmaxGasAmount\x12$\n" +
-	"\x0egas_unit_price\x18\x02 \x01(\x04R\fgasUnitPrice*\xb4\x02\n" +
+	"\x0egas_unit_price\x18\x02 \x01(\x04R\fgasUnitPrice\"\xbf\x01\n" +
+	"\x11SimulationOptions\x121\n" +
+	"\x14simulate_transaction\x18\x01 \x01(\bR\x13simulateTransaction\x12w\n" +
+	"\"expected_simulation_failure_errors\x18\x02 \x03(\v2*.loop.aptos.ExpectedSimulationFailureErrorR\x1fexpectedSimulationFailureErrors\"C\n" +
+	"\x1eExpectedSimulationFailureError\x12!\n" +
+	"\ferror_string\x18\x01 \x01(\tR\verrorString*\xb4\x02\n" +
 	"\vTypeTagKind\x12\x16\n" +
 	"\x12TYPE_TAG_KIND_BOOL\x10\x00\x12\x14\n" +
 	"\x10TYPE_TAG_KIND_U8\x10\x01\x12\x15\n" +
@@ -1330,29 +1440,31 @@ func file_aptos_proto_rawDescGZIP() []byte {
 }
 
 var file_aptos_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_aptos_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_aptos_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_aptos_proto_goTypes = []any{
-	(TypeTagKind)(0),                   // 0: loop.aptos.TypeTagKind
-	(TransactionVariant)(0),            // 1: loop.aptos.TransactionVariant
-	(TxStatus)(0),                      // 2: loop.aptos.TxStatus
-	(*AccountAPTBalanceRequest)(nil),   // 3: loop.aptos.AccountAPTBalanceRequest
-	(*AccountAPTBalanceReply)(nil),     // 4: loop.aptos.AccountAPTBalanceReply
-	(*ViewRequest)(nil),                // 5: loop.aptos.ViewRequest
-	(*ViewReply)(nil),                  // 6: loop.aptos.ViewReply
-	(*ViewPayload)(nil),                // 7: loop.aptos.ViewPayload
-	(*ModuleID)(nil),                   // 8: loop.aptos.ModuleID
-	(*TypeTag)(nil),                    // 9: loop.aptos.TypeTag
-	(*VectorTag)(nil),                  // 10: loop.aptos.VectorTag
-	(*StructTag)(nil),                  // 11: loop.aptos.StructTag
-	(*GenericTag)(nil),                 // 12: loop.aptos.GenericTag
-	(*TransactionByHashRequest)(nil),   // 13: loop.aptos.TransactionByHashRequest
-	(*TransactionByHashReply)(nil),     // 14: loop.aptos.TransactionByHashReply
-	(*Transaction)(nil),                // 15: loop.aptos.Transaction
-	(*AccountTransactionsRequest)(nil), // 16: loop.aptos.AccountTransactionsRequest
-	(*AccountTransactionsReply)(nil),   // 17: loop.aptos.AccountTransactionsReply
-	(*SubmitTransactionRequest)(nil),   // 18: loop.aptos.SubmitTransactionRequest
-	(*SubmitTransactionReply)(nil),     // 19: loop.aptos.SubmitTransactionReply
-	(*GasConfig)(nil),                  // 20: loop.aptos.GasConfig
+	(TypeTagKind)(0),                       // 0: loop.aptos.TypeTagKind
+	(TransactionVariant)(0),                // 1: loop.aptos.TransactionVariant
+	(TxStatus)(0),                          // 2: loop.aptos.TxStatus
+	(*AccountAPTBalanceRequest)(nil),       // 3: loop.aptos.AccountAPTBalanceRequest
+	(*AccountAPTBalanceReply)(nil),         // 4: loop.aptos.AccountAPTBalanceReply
+	(*ViewRequest)(nil),                    // 5: loop.aptos.ViewRequest
+	(*ViewReply)(nil),                      // 6: loop.aptos.ViewReply
+	(*ViewPayload)(nil),                    // 7: loop.aptos.ViewPayload
+	(*ModuleID)(nil),                       // 8: loop.aptos.ModuleID
+	(*TypeTag)(nil),                        // 9: loop.aptos.TypeTag
+	(*VectorTag)(nil),                      // 10: loop.aptos.VectorTag
+	(*StructTag)(nil),                      // 11: loop.aptos.StructTag
+	(*GenericTag)(nil),                     // 12: loop.aptos.GenericTag
+	(*TransactionByHashRequest)(nil),       // 13: loop.aptos.TransactionByHashRequest
+	(*TransactionByHashReply)(nil),         // 14: loop.aptos.TransactionByHashReply
+	(*Transaction)(nil),                    // 15: loop.aptos.Transaction
+	(*AccountTransactionsRequest)(nil),     // 16: loop.aptos.AccountTransactionsRequest
+	(*AccountTransactionsReply)(nil),       // 17: loop.aptos.AccountTransactionsReply
+	(*SubmitTransactionRequest)(nil),       // 18: loop.aptos.SubmitTransactionRequest
+	(*SubmitTransactionReply)(nil),         // 19: loop.aptos.SubmitTransactionReply
+	(*GasConfig)(nil),                      // 20: loop.aptos.GasConfig
+	(*SimulationOptions)(nil),              // 21: loop.aptos.SimulationOptions
+	(*ExpectedSimulationFailureError)(nil), // 22: loop.aptos.ExpectedSimulationFailureError
 }
 var file_aptos_proto_depIdxs = []int32{
 	7,  // 0: loop.aptos.ViewRequest.payload:type_name -> loop.aptos.ViewPayload
@@ -1369,22 +1481,24 @@ var file_aptos_proto_depIdxs = []int32{
 	15, // 11: loop.aptos.AccountTransactionsReply.transactions:type_name -> loop.aptos.Transaction
 	8,  // 12: loop.aptos.SubmitTransactionRequest.receiver_module_id:type_name -> loop.aptos.ModuleID
 	20, // 13: loop.aptos.SubmitTransactionRequest.gas_config:type_name -> loop.aptos.GasConfig
-	2,  // 14: loop.aptos.SubmitTransactionReply.tx_status:type_name -> loop.aptos.TxStatus
-	3,  // 15: loop.aptos.Aptos.AccountAPTBalance:input_type -> loop.aptos.AccountAPTBalanceRequest
-	5,  // 16: loop.aptos.Aptos.View:input_type -> loop.aptos.ViewRequest
-	13, // 17: loop.aptos.Aptos.TransactionByHash:input_type -> loop.aptos.TransactionByHashRequest
-	16, // 18: loop.aptos.Aptos.AccountTransactions:input_type -> loop.aptos.AccountTransactionsRequest
-	18, // 19: loop.aptos.Aptos.SubmitTransaction:input_type -> loop.aptos.SubmitTransactionRequest
-	4,  // 20: loop.aptos.Aptos.AccountAPTBalance:output_type -> loop.aptos.AccountAPTBalanceReply
-	6,  // 21: loop.aptos.Aptos.View:output_type -> loop.aptos.ViewReply
-	14, // 22: loop.aptos.Aptos.TransactionByHash:output_type -> loop.aptos.TransactionByHashReply
-	17, // 23: loop.aptos.Aptos.AccountTransactions:output_type -> loop.aptos.AccountTransactionsReply
-	19, // 24: loop.aptos.Aptos.SubmitTransaction:output_type -> loop.aptos.SubmitTransactionReply
-	20, // [20:25] is the sub-list for method output_type
-	15, // [15:20] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	21, // 14: loop.aptos.SubmitTransactionRequest.simulation_options:type_name -> loop.aptos.SimulationOptions
+	2,  // 15: loop.aptos.SubmitTransactionReply.tx_status:type_name -> loop.aptos.TxStatus
+	22, // 16: loop.aptos.SimulationOptions.expected_simulation_failure_errors:type_name -> loop.aptos.ExpectedSimulationFailureError
+	3,  // 17: loop.aptos.Aptos.AccountAPTBalance:input_type -> loop.aptos.AccountAPTBalanceRequest
+	5,  // 18: loop.aptos.Aptos.View:input_type -> loop.aptos.ViewRequest
+	13, // 19: loop.aptos.Aptos.TransactionByHash:input_type -> loop.aptos.TransactionByHashRequest
+	16, // 20: loop.aptos.Aptos.AccountTransactions:input_type -> loop.aptos.AccountTransactionsRequest
+	18, // 21: loop.aptos.Aptos.SubmitTransaction:input_type -> loop.aptos.SubmitTransactionRequest
+	4,  // 22: loop.aptos.Aptos.AccountAPTBalance:output_type -> loop.aptos.AccountAPTBalanceReply
+	6,  // 23: loop.aptos.Aptos.View:output_type -> loop.aptos.ViewReply
+	14, // 24: loop.aptos.Aptos.TransactionByHash:output_type -> loop.aptos.TransactionByHashReply
+	17, // 25: loop.aptos.Aptos.AccountTransactions:output_type -> loop.aptos.AccountTransactionsReply
+	19, // 26: loop.aptos.Aptos.SubmitTransaction:output_type -> loop.aptos.SubmitTransactionReply
+	22, // [22:27] is the sub-list for method output_type
+	17, // [17:22] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_aptos_proto_init() }
@@ -1407,7 +1521,7 @@ func file_aptos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aptos_proto_rawDesc), len(file_aptos_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

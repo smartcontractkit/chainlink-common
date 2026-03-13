@@ -203,10 +203,27 @@ type AccountTransactionsReply struct {
 
 // ========== SubmitTransaction ==========
 
+// SimulationOptions controls transaction simulation behavior for Aptos transactions.
+// When nil, the implementation uses its default simulation behavior.
+type SimulationOptions struct {
+	// SimulateTransaction controls whether the transaction should be simulated before submission.
+	SimulateTransaction bool
+	// ExpectedSimulationFailureErrors defines rules for expected simulation failures.
+	// Only meaningful when SimulateTransaction is true.
+	ExpectedSimulationFailureErrors []ExpectedSimulationFailureError
+}
+
+// ExpectedSimulationFailureError defines a rule for expected simulation failures.
+type ExpectedSimulationFailureError struct {
+	// ErrorString is the error message string to match against simulation failures.
+	ErrorString string
+}
+
 type SubmitTransactionRequest struct {
-	ReceiverModuleID ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
-	EncodedPayload   []byte
-	GasConfig        *GasConfig
+	ReceiverModuleID  ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
+	EncodedPayload    []byte
+	GasConfig         *GasConfig
+	SimulationOptions *SimulationOptions
 }
 
 type TransactionStatus int

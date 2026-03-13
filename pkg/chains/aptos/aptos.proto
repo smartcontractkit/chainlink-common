@@ -130,6 +130,7 @@ message SubmitTransactionRequest {
   ModuleID receiver_module_id = 1;
   bytes encoded_payload = 2;
   optional GasConfig gas_config = 3;
+  SimulationOptions simulation_options = 4;
 }
 
 enum TxStatus {
@@ -147,5 +148,14 @@ message SubmitTransactionReply {
 message GasConfig {
   uint64 max_gas_amount = 1;  // Maximum gas units willing to pay
   uint64 gas_unit_price = 2;  // Price per gas unit in octas
+}
+
+message SimulationOptions {
+  bool simulate_transaction = 1;
+  repeated ExpectedSimulationFailureError expected_simulation_failure_errors = 2;
+}
+
+message ExpectedSimulationFailureError {
+  string error_string = 1;
 }
 

@@ -11,11 +11,21 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/engine"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+type testRuntimeOverride struct {
+	engine.Runtime
+	v2ImportNameOverride string
+}
+
+func (t *testRuntimeOverride) V2ImportName() string {
+	return t.v2ImportNameOverride
+}
 
 const (
 	nodagRandomBinaryCmd        = "standard_tests/multiple_triggers"
@@ -35,7 +45,7 @@ func Test_Sleep_Timeout(t *testing.T) {
 	m, err := NewModule(t.Context(), mc, binary)
 	require.NoError(t, err)
 
-	m.v2ImportName = "test"
+	m.runtime = &testRuntimeOverride{Runtime: m.runtime, v2ImportNameOverride: "test"}
 	m.Start()
 	defer m.Close()
 

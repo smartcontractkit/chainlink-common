@@ -20,15 +20,9 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	AccountAPTBalance(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountAPTBalanceRequest) (*capabilities.ResponseAndMetadata[*aptos.AccountAPTBalanceReply], caperrors.Error)
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.WriteReportRequest) (*capabilities.ResponseAndMetadata[*aptos.WriteReportReply], caperrors.Error)
 
 	View(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.ViewRequest) (*capabilities.ResponseAndMetadata[*aptos.ViewReply], caperrors.Error)
-
-	TransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.TransactionByHashRequest) (*capabilities.ResponseAndMetadata[*aptos.TransactionByHashReply], caperrors.Error)
-
-	AccountTransactions(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountTransactionsRequest) (*capabilities.ResponseAndMetadata[*aptos.AccountTransactionsReply], caperrors.Error)
-
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.WriteReportRequest) (*capabilities.ResponseAndMetadata[*aptos.WriteReportReply], caperrors.Error)
 
 	ChainSelector() uint64
 
@@ -118,10 +112,6 @@ func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabi
 	return fmt.Errorf("trigger %s not found", request.Method)
 }
 
-func (c *clientCapability) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
-	return fmt.Errorf("trigger %s not found", method)
-}
-
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	return nil
 }
@@ -133,16 +123,16 @@ func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request c
 func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
-	case "AccountAPTBalance":
-		input := &aptos.AccountAPTBalanceRequest{}
+	case "WriteReport":
+		input := &aptos.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountAPTBalanceRequest, _ *emptypb.Empty) (*aptos.AccountAPTBalanceReply, capabilities.ResponseMetadata, error) {
-			output, err := c.ClientCapability.AccountAPTBalance(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.WriteReportRequest, _ *emptypb.Empty) (*aptos.WriteReportReply, capabilities.ResponseMetadata, error) {
+			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
 			if err != nil {
 				return nil, capabilities.ResponseMetadata{}, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method AccountAPTBalance(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err
 		}
@@ -157,48 +147,6 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method View(..) (if output is nil error must be present)")
-			}
-			return output.Response, output.ResponseMetadata, err
-		}
-		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "TransactionByHash":
-		input := &aptos.TransactionByHashRequest{}
-		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.TransactionByHashRequest, _ *emptypb.Empty) (*aptos.TransactionByHashReply, capabilities.ResponseMetadata, error) {
-			output, err := c.ClientCapability.TransactionByHash(ctx, metadata, input)
-			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
-			}
-			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method TransactionByHash(..) (if output is nil error must be present)")
-			}
-			return output.Response, output.ResponseMetadata, err
-		}
-		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "AccountTransactions":
-		input := &aptos.AccountTransactionsRequest{}
-		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountTransactionsRequest, _ *emptypb.Empty) (*aptos.AccountTransactionsReply, capabilities.ResponseMetadata, error) {
-			output, err := c.ClientCapability.AccountTransactions(ctx, metadata, input)
-			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
-			}
-			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method AccountTransactions(..) (if output is nil error must be present)")
-			}
-			return output.Response, output.ResponseMetadata, err
-		}
-		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "WriteReport":
-		input := &aptos.WriteReportRequest{}
-		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.WriteReportRequest, _ *emptypb.Empty) (*aptos.WriteReportReply, capabilities.ResponseMetadata, error) {
-			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
-			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
-			}
-			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, err
 		}

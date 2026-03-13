@@ -83,28 +83,3 @@ type EstimateFee struct {
 	Decimals uint32
 }
 
-type UnimplementedContractWriter struct{}
-
-var _ ContractWriter = UnimplementedContractWriter{}
-
-func (UnimplementedContractWriter) SubmitTransaction(ctx context.Context, contractName, method string, args any, transactionID IdempotencyKey, toAddress string, meta *TxMeta, value *big.Int, simulationOpts *SimulationOptions) error {
-	return UnimplementedError("ContractWriter.SubmitTransaction unimplemented")
-}
-
-func (UnimplementedContractWriter) GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error) {
-	return Unknown, UnimplementedError("ContractWriter.GetTransactionStatus unimplemented")
-}
-
-func (UnimplementedContractWriter) GetFeeComponents(ctx context.Context) (*ChainFeeComponents, error) {
-	return nil, UnimplementedError("ContractWriter.GetFeeComponents unimplemented")
-}
-
-func (UnimplementedContractWriter) GetEstimateFee(ctx context.Context, contract, method string, args any, toAddress string, meta *TxMeta, val *big.Int) (EstimateFee, error) {
-	return EstimateFee{}, UnimplementedError("ContractWriter.GetEstimateFee unimplemented")
-}
-
-func (UnimplementedContractWriter) Start(context.Context) error         { return nil }
-func (UnimplementedContractWriter) Close() error                        { return nil }
-func (UnimplementedContractWriter) HealthReport() map[string]error      { return nil }
-func (UnimplementedContractWriter) Name() string                        { return "UnimplementedContractWriter" }
-func (UnimplementedContractWriter) Ready() error                        { return nil }

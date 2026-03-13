@@ -120,6 +120,13 @@ func Time(defaultValue time.Time) Setting[config.Timestamp] {
 	return NewSetting(config.Timestamp(defaultValue.Unix()), config.ParseTimestamp)
 }
 
+func TimeRange(lower, upper time.Time) Setting[Range[config.Timestamp]] {
+	return NewSetting(Range[config.Timestamp]{
+		Lower: config.Timestamp(lower.Unix()),
+		Upper: config.Timestamp(upper.Unix()),
+	}, ParseRangeFn(config.ParseTimestamp))
+}
+
 func URL(defaultValue *url.URL) Setting[*url.URL] {
 	return NewSetting(defaultValue, url.Parse)
 }

@@ -73,3 +73,72 @@ func TestTxMetaToProto(t *testing.T) {
 		require.Equal(t, big.NewInt(10), proto.GasLimit.Int())
 	})
 }
+
+func TestSimulationOptionsToProto(t *testing.T) {
+	t.Run("nil input", func(t *testing.T) {
+		result := contractwriter.SimulationOptionsToProto(nil)
+		require.Nil(t, result)
+	})
+
+	t.Run("simulate with no rules", func(t *testing.T) {
+		opts := &types.SimulationOptions{SimulateTransaction: true}
+		result := contractwriter.SimulationOptionsToProto(opts)
+		require.NotNil(t, result)
+		require.True(t, result.SimulateTransaction)
+		require.Empty(t, result.ExpectedSimulationFailureErrors)
+	})
+
+	t.Run("simulate with rules", func(t *testing.T) {
+		opts := &types.SimulationOptions{
+			SimulateTransaction: true,
+			ExpectedSimulationFailureErrors: []types.ExpectedSimulationFailureError{
+				{ErrorString: "execution reverted"},
+				{ErrorString: "insufficient funds"},
+			},
+		}
+		result := contractwriter.SimulationOptionsToProto(opts)
+		require.NotNil(t, result)
+		require.True(t, result.SimulateTransaction)
+		require.Len(t, result.ExpectedSimulationFailureErrors, 2)
+		require.Equal(t, "execution reverted", result.ExpectedSimulationFailureErrors[0].ErrorString)
+		require.Equal(t, "insufficient funds", result.ExpectedSimulationFailureErrors[1].ErrorString)
+	})
+
+	t.Run("no simulate", func(t *testing.T) {
+		opts := &types.SimulationOptions{SimulateTransaction: false}
+		result := contractwriter.SimulationOptionsToProto(opts)
+		require.NotNil(t, result)
+		require.False(t, result.SimulateTransaction)
+	})
+}
+
+func TestSimulationOptionsFromProto(t *testing.T) {
+	t.Run("nil input", func(t *testing.T) {
+		result := contractwriter.SimulationOptionsFromProto(nil)
+		require.Nil(t, result)
+	})
+
+	t.Run("simulate with no rules", func(t *testing.T) {
+		proto := &pb.SimulationOptions{SimulateTransaction: true}
+		result := contractwriter.SimulationOptionsFromProto(proto)
+		require.NotNil(t, result)
+		require.True(t, result.SimulateTransaction)
+		require.Empty(t, result.ExpectedSimulationFailureErrors)
+	})
+
+	t.Run("simulate with rules", func(t *testing.T) {
+		proto := &pb.SimulationOptions{
+			SimulateTransaction: true,
+			ExpectedSimulationFailureErrors: []*pb.ExpectedSimulationFailureError{
+				{ErrorString: "execution reverted"},
+				{ErrorString: "insufficient funds"},
+			},
+		}
+		result := contractwriter.SimulationOptionsFromProto(proto)
+		require.NotNil(t, result)
+		require.True(t, result.SimulateTransaction)
+		require.Len(t, result.ExpectedSimulationFailureErrors, 2)
+		require.Equal(t, "execution reverted", result.ExpectedSimulationFailureErrors[0].ErrorString)
+		require.Equal(t, "insufficient funds", result.ExpectedSimulationFailureErrors[1].ErrorString)
+	})
+}

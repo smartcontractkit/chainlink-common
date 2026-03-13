@@ -203,10 +203,22 @@ type AccountTransactionsReply struct {
 
 // ========== SubmitTransaction ==========
 
+// SimulationOptions controls transaction simulation behavior. Nil means use implementation defaults.
+type SimulationOptions struct {
+	SimulateTransaction             bool
+	ExpectedSimulationFailureErrors []ExpectedSimulationFailureError
+}
+
+// ExpectedSimulationFailureError defines an expected simulation failure to match against.
+type ExpectedSimulationFailureError struct {
+	ErrorString string
+}
+
 type SubmitTransactionRequest struct {
-	ReceiverModuleID ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
-	EncodedPayload   []byte
-	GasConfig        *GasConfig
+	ReceiverModuleID  ModuleID // This can potentially be removed if the EncodedPayload is of type EntryFunction which has all the details
+	EncodedPayload    []byte
+	GasConfig         *GasConfig
+	SimulationOptions *SimulationOptions
 }
 
 type TransactionStatus int

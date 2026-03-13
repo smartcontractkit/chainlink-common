@@ -203,19 +203,14 @@ type AccountTransactionsReply struct {
 
 // ========== SubmitTransaction ==========
 
-// SimulationOptions controls transaction simulation behavior for Aptos transactions.
-// When nil, the implementation uses its default simulation behavior.
+// SimulationOptions controls transaction simulation behavior. Nil means use implementation defaults.
 type SimulationOptions struct {
-	// SimulateTransaction controls whether the transaction should be simulated before submission.
-	SimulateTransaction bool
-	// ExpectedSimulationFailureErrors defines rules for expected simulation failures.
-	// Only meaningful when SimulateTransaction is true.
+	SimulateTransaction             bool
 	ExpectedSimulationFailureErrors []ExpectedSimulationFailureError
 }
 
-// ExpectedSimulationFailureError defines a rule for expected simulation failures.
+// ExpectedSimulationFailureError defines an expected simulation failure to match against.
 type ExpectedSimulationFailureError struct {
-	// ErrorString is the error message string to match against simulation failures.
 	ErrorString string
 }
 

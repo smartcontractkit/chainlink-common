@@ -22,6 +22,14 @@ func NewAptosClient(client aptospb.AptosClient) *AptosClient {
 	}
 }
 
+func (ac *AptosClient) LedgerVersion(ctx context.Context) (uint64, error) {
+	reply, err := ac.grpcClient.LedgerVersion(ctx, &aptospb.LedgerVersionRequest{})
+	if err != nil {
+		return 0, net.WrapRPCErr(err)
+	}
+	return reply.LedgerVersion, nil
+}
+
 func (ac *AptosClient) AccountAPTBalance(ctx context.Context, req aptos.AccountAPTBalanceRequest) (*aptos.AccountAPTBalanceReply, error) {
 	reply, err := ac.grpcClient.AccountAPTBalance(ctx, &aptospb.AccountAPTBalanceRequest{
 		Address: req.Address[:],
@@ -43,6 +51,9 @@ func (ac *AptosClient) View(ctx context.Context, req aptos.ViewRequest) (*aptos.
 
 	protoReq := &aptospb.ViewRequest{
 		Payload: protoPayload,
+	}
+	if req.LedgerVersion != nil {
+		protoReq.LedgerVersion = req.LedgerVersion
 	}
 
 	reply, err := ac.grpcClient.View(ctx, protoReq)
@@ -112,6 +123,14 @@ func (s *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.Accoun
 	}, nil
 }
 
+func (s *aptosServer) LedgerVersion(ctx context.Context, _ *aptospb.LedgerVersionRequest) (*aptospb.LedgerVersionReply, error) {
+	ledgerVersion, err := s.impl.LedgerVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &aptospb.LedgerVersionReply{LedgerVersion: ledgerVersion}, nil
+}
+
 func (s *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*aptospb.ViewReply, error) {
 	// Convert proto types to Go types
 	goPayload, err := aptospb.ConvertViewPayloadFromProto(req.Payload)
@@ -121,6 +140,10 @@ func (s *aptosServer) View(ctx context.Context, req *aptospb.ViewRequest) (*apto
 
 	goReq := aptos.ViewRequest{
 		Payload: goPayload,
+	}
+	if req.LedgerVersion != nil {
+		ledgerVersion := req.GetLedgerVersion()
+		goReq.LedgerVersion = &ledgerVersion
 	}
 
 	reply, err := s.impl.View(ctx, goReq)

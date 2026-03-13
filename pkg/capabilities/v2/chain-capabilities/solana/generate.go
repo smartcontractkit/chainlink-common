@@ -1,2 +1,4 @@
-//go:generate go run ../../gen --pkg=github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/solana --file=capabilities/blockchain/solana/v1alpha/client.proto
+// TODO(CRE-): Re-enable Solana proto regeneration once chainlink-protos/cre/go
+// embeds capabilities/blockchain/solana/v1alpha/client.proto again.
+//go:generate echo "skipping solana proto regen: source proto not available in chainlink-protos/cre/go"
 package solana

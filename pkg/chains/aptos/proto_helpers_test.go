@@ -304,10 +304,12 @@ func TestSubmitTransactionConverters(t *testing.T) {
 	})
 
 	t.Run("SubmitTransactionReply roundtrip", func(t *testing.T) {
+		fee := uint64(1234)
 		reply := &typeaptos.SubmitTransactionReply{
 			TxStatus:         typeaptos.TxSuccess,
 			TxHash:           "0xabc123",
 			TxIdempotencyKey: "key-456",
+			TransactionFee:   &fee,
 		}
 
 		protoReply, err := conv.ConvertSubmitTransactionReplyToProto(reply)
@@ -315,12 +317,15 @@ func TestSubmitTransactionConverters(t *testing.T) {
 		require.Equal(t, conv.TxStatus(typeaptos.TxSuccess), protoReply.TxStatus)
 		require.Equal(t, "0xabc123", protoReply.TxHash)
 		require.Equal(t, "key-456", protoReply.TxIdempotencyKey)
+		require.Equal(t, fee, protoReply.GetTransactionFee())
 
 		roundtrip, err := conv.ConvertSubmitTransactionReplyFromProto(protoReply)
 		require.NoError(t, err)
 		require.Equal(t, reply.TxStatus, roundtrip.TxStatus)
 		require.Equal(t, reply.TxHash, roundtrip.TxHash)
 		require.Equal(t, reply.TxIdempotencyKey, roundtrip.TxIdempotencyKey)
+		require.NotNil(t, roundtrip.TransactionFee)
+		require.Equal(t, fee, *roundtrip.TransactionFee)
 	})
 
 	t.Run("Invalid request errors", func(t *testing.T) {

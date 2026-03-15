@@ -227,6 +227,7 @@ type SubmitTransactionReply struct {
 	TxStatus         TransactionStatus
 	TxHash           string
 	TxIdempotencyKey string
+	TransactionFee   *uint64
 }
 
 // GasConfig represents gas configuration for a transaction

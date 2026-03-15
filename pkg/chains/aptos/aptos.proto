@@ -152,6 +152,7 @@ message SubmitTransactionReply {
   TxStatus tx_status = 1;
   string tx_hash = 2;
   string tx_idempotency_key = 3;
+  optional uint64 transaction_fee = 4;
 }
 
 message GasConfig {

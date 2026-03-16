@@ -171,6 +171,7 @@ type PanelOptions struct {
 	NoValue       string
 	Min           *float64
 	Max           *float64
+	FieldMinMax   bool
 	MaxDataPoints *float64
 	Query         []Query
 	Threshold     *ThresholdOptions
@@ -259,6 +260,7 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		Height(options.Height).
 		Unit(options.Unit).
 		NoValue(options.NoValue).
+		FieldMinMax(options.FieldMinMax).
 		Text(common.NewVizTextDisplayOptionsBuilder().TitleSize(10).ValueSize(18)).
 		ColorMode(options.ColorMode).
 		GraphMode(options.GraphMode).
@@ -376,6 +378,7 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		Height(options.Height).
 		Unit(options.Unit).
 		NoValue(options.NoValue).
+		FieldMinMax(options.FieldMinMax).
 		LineWidth(*options.LineWidth).
 		FillOpacity(options.FillOpacity).
 		Legend(newLegend(options.LegendOptions)).
@@ -489,6 +492,7 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 		NoValue(options.NoValue).
 		Height(options.Height).
 		Unit(options.Unit).
+		FieldMinMax(options.FieldMinMax).
 		ReduceOptions(
 			common.NewReduceDataOptionsBuilder().
 				Calcs([]string{"lastNotNull"}).Values(options.ShowAllValues),
@@ -564,6 +568,7 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		NoValue(options.NoValue).
 		Height(options.Height).
 		Unit(options.Unit).
+		FieldMinMax(options.FieldMinMax).
 		ReduceOptions(
 			common.NewReduceDataOptionsBuilder().
 				Calcs([]string{"lastNotNull"}).Values(options.ShowAllValues),
@@ -651,6 +656,7 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		Height(options.Height).
 		Unit(options.Unit).
 		NoValue(options.NoValue).
+		FieldMinMax(options.FieldMinMax).
 		Filterable(options.Filterable)
 
 	if options.Interval != "" {
@@ -763,6 +769,7 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		Span(options.Span).
 		Height(options.Height).
 		NoValue(options.NoValue).
+		FieldMinMax(options.FieldMinMax).
 		ShowTime(options.ShowTime).
 		PrettifyLogMessage(options.PrettifyJSON).
 		EnableLogDetails(*options.EnableLogDetails).
@@ -833,7 +840,8 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 		Span(options.Span).
 		Height(options.Height).
 		Unit(options.Unit).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		FieldMinMax(options.FieldMinMax)
 
 	if options.Interval != "" {
 		newPanel.Interval(options.Interval)
@@ -969,6 +977,7 @@ func NewHistogramPanel(options *HistogramPanelOptions) *Panel {
 		Height(options.Height).
 		Unit(options.Unit).
 		NoValue(options.NoValue).
+		FieldMinMax(options.FieldMinMax).
 		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
 			Type(options.ScaleDistribution),
 		).

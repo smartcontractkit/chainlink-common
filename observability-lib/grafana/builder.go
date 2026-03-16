@@ -34,6 +34,10 @@ type BuilderOptions struct {
 	AlertsTags   map[string]string
 }
 
+type RowOptions struct {
+	Collapsed bool
+}
+
 func NewBuilder(options *BuilderOptions) *Builder {
 	plugins.RegisterDefaultPlugins()
 	cog.NewRuntime().RegisterPanelcfgVariant(businessvariable.VariantConfig())
@@ -73,8 +77,14 @@ func (b *Builder) AddVars(items ...cog.Builder[dashboard.VariableModel]) {
 	}
 }
 
-func (b *Builder) AddRow(title string) {
-	b.dashboardBuilder.WithRow(dashboard.NewRowBuilder(title))
+func (b *Builder) AddRow(title string, options ...RowOptions) {
+	row := dashboard.NewRowBuilder(title)
+	for _, o := range options {
+		if o.Collapsed {
+			row.Collapsed(true)
+		}
+	}
+	b.dashboardBuilder.WithRow(row)
 }
 
 func (b *Builder) getPanelCounter() uint32 {

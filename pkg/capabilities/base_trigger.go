@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -103,8 +104,17 @@ func NewBaseTriggerCapability[T proto.Message](
 	}
 }
 
+func (b *BaseTriggerCapability[T]) retransmitEnabled() bool {
+	return b.tRetransmit > 0
+}
+
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	b.lggr.Info("starting base trigger")
+
+	if !b.retransmitEnabled() {
+		b.lggr.Warn("retransmits disabled (tRetransmit <= 0), events will be delivered once without persistence or ACK tracking")
+		return nil
+	}
 
 	recs, err := b.store.List(ctx)
 	if err != nil {
@@ -169,6 +179,10 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	te TriggerEvent,
 	triggerID string,
 ) error {
+	if !b.retransmitEnabled() {
+		return b.directSend(te, triggerID)
+	}
+
 	rec := PendingEvent{
 		TriggerId:  triggerID,
 		EventId:    te.ID,
@@ -192,7 +206,38 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	return nil
 }
 
+// directSend delivers an event to the inbox channel without persistence or tracking.
+func (b *BaseTriggerCapability[T]) directSend(te TriggerEvent, triggerID string) error {
+	b.mu.Lock()
+	sendCh, ok := b.inboxes[triggerID]
+	b.mu.Unlock()
+
+	if !ok {
+		b.metrics.IncInboxMissing(triggerID)
+		return fmt.Errorf("no inbox registered for trigger %s", triggerID)
+	}
+
+	msg := b.newMsg()
+	if err := proto.Unmarshal(te.Payload.GetValue(), msg); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	wrapped := TriggerAndId[T]{Trigger: msg, Id: te.ID}
+	if !safeSend(sendCh, wrapped) {
+		b.metrics.IncInboxFull(triggerID)
+		return fmt.Errorf("inbox full or closed for trigger %s", triggerID)
+	}
+
+	b.lggr.Infof("event dispatched (no-retransmit): capability=%s trigger=%s event=%s",
+		b.capabilityId, triggerID, te.ID)
+	return nil
+}
+
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	if !b.retransmitEnabled() {
+		return nil
+	}
+
 	b.lggr.Infof("Event ACK (triggerID: %s, eventID %s)", triggerId, eventId)
 
 	var (

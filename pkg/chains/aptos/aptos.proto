@@ -4,11 +4,20 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/apt
 package loop.aptos;
 
 service Aptos {
+  rpc LedgerVersion(LedgerVersionRequest) returns (LedgerVersionReply);
   rpc AccountAPTBalance(AccountAPTBalanceRequest) returns (AccountAPTBalanceReply);
   rpc View(ViewRequest) returns (ViewReply);
   rpc TransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
   rpc AccountTransactions(AccountTransactionsRequest) returns (AccountTransactionsReply);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
+}
+
+// ========== LedgerVersion ==========
+
+message LedgerVersionRequest {}
+
+message LedgerVersionReply {
+  uint64 ledger_version = 1;
 }
 
 // ========== AccountAPTBalance ==========
@@ -25,6 +34,7 @@ message AccountAPTBalanceReply {
 
 message ViewRequest {
   ViewPayload payload = 1;
+  optional uint64 ledger_version = 2;
 }
 
 message ViewReply {
@@ -142,10 +152,10 @@ message SubmitTransactionReply {
   TxStatus tx_status = 1;
   string tx_hash = 2;
   string tx_idempotency_key = 3;
+  optional uint64 transaction_fee = 4;
 }
 
 message GasConfig {
   uint64 max_gas_amount = 1;  // Maximum gas units willing to pay
   uint64 gas_unit_price = 2;  // Price per gas unit in octas
 }
-

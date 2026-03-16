@@ -228,6 +228,8 @@ func (b *BaseTriggerCapability[T]) sendToInbox(triggerID, eventID string, payloa
 		return fmt.Errorf("inbox full or closed for trigger %s", triggerID)
 	}
 
+	b.lggr.Infof("event dispatched: capability=%s trigger=%s event=%s",
+		b.capabilityId, triggerID, eventID)
 	return nil
 }
 
@@ -369,9 +371,6 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 		b.lggr.Errorf("trySend failed: %v", err)
 		return
 	}
-
-	b.lggr.Infof("event dispatched: capability=%s trigger=%s event=%s attempt=%d",
-		b.capabilityId, event.TriggerId, event.EventId, attempts)
 }
 
 func safeSend[T any](ch chan<- T, val T) (sent bool) {

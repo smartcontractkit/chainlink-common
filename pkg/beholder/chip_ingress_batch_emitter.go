@@ -143,16 +143,16 @@ func (e *ChipIngressBatchEmitter) emitInternal(ctx context.Context, body []byte,
 
 		queueErr := e.batchClient.QueueMessage(eventPb, func(sendErr error) {
 			if sendErr != nil {
-				e.metrics.eventsDropped.Add(context.Background(), 1, metricAttrs)
+				e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
 			} else {
-				e.metrics.eventsSent.Add(context.Background(), 1, metricAttrs)
+				e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
 			}
 			if callback != nil {
 				callback(sendErr)
 			}
 		})
 		if queueErr != nil {
-			e.metrics.eventsDropped.Add(context.Background(), 1, metricAttrs)
+			e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
 			if callback != nil {
 				callback(queueErr)
 			}

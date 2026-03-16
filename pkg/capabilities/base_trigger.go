@@ -180,7 +180,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	triggerID string,
 ) error {
 	if !b.retransmitEnabled() {
-		return b.directSend(te, triggerID)
+		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
 
 	rec := PendingEvent{
@@ -206,8 +206,8 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	return nil
 }
 
-// directSend delivers an event to the inbox channel without persistence or tracking.
-func (b *BaseTriggerCapability[T]) directSend(te TriggerEvent, triggerID string) error {
+// sendToInbox unmarshals the payload and delivers it to the registered inbox channel.
+func (b *BaseTriggerCapability[T]) sendToInbox(triggerID, eventID string, payload []byte) error {
 	b.mu.Lock()
 	sendCh, ok := b.inboxes[triggerID]
 	b.mu.Unlock()
@@ -218,18 +218,16 @@ func (b *BaseTriggerCapability[T]) directSend(te TriggerEvent, triggerID string)
 	}
 
 	msg := b.newMsg()
-	if err := proto.Unmarshal(te.Payload.GetValue(), msg); err != nil {
+	if err := proto.Unmarshal(payload, msg); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	wrapped := TriggerAndId[T]{Trigger: msg, Id: te.ID}
+	wrapped := TriggerAndId[T]{Trigger: msg, Id: eventID}
 	if !safeSend(sendCh, wrapped) {
 		b.metrics.IncInboxFull(triggerID)
 		return fmt.Errorf("inbox full or closed for trigger %s", triggerID)
 	}
 
-	b.lggr.Infof("event dispatched (no-retransmit): capability=%s trigger=%s event=%s",
-		b.capabilityId, triggerID, te.ID)
 	return nil
 }
 
@@ -342,7 +340,6 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 // It updates Attempts and LastSentAt on every attempt locally. Success is determined
 // later by an AckEvent call.
 func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
-	b.lggr.Infof("resending event (triggerID: %s, eventID: %s)", event.TriggerId, event.EventId)
 	b.mu.Lock()
 	eventsForTrigger, ok := b.pending[event.TriggerId]
 	if !ok || eventsForTrigger == nil {
@@ -359,9 +356,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	rec.Attempts++
 	rec.LastSentAt = time.Now()
 
-	typeURL := rec.AnyTypeURL
 	payloadCopy := append([]byte(nil), rec.Payload...)
-	sendCh, inboxOk := b.inboxes[event.TriggerId]
 	attempts := rec.Attempts
 	lastSent := rec.LastSentAt
 	b.mu.Unlock()
@@ -371,30 +366,12 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 		b.lggr.Errorf("failed to persist delivery update for trigger=%s event=%s: %v", event.TriggerId, event.EventId, err)
 	}
 
-	if !inboxOk {
-		b.metrics.IncInboxMissing(event.TriggerId)
-		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
+	if err := b.sendToInbox(event.TriggerId, event.EventId, payloadCopy); err != nil {
+		b.lggr.Errorf("trySend failed: %v", err)
 		return
 	}
 
-	msg := b.newMsg()
-	if err := proto.Unmarshal(payloadCopy, msg); err != nil {
-		b.lggr.Errorf("failed to unmarshal payload to message type (typeURL=%s): %v", typeURL, err)
-		return
-	}
-
-	wrapped := TriggerAndId[T]{
-		Trigger: msg,
-		Id:      event.EventId,
-	}
-
-	if !safeSend(sendCh, wrapped) {
-		b.metrics.IncInboxFull(event.TriggerId)
-		b.lggr.Warnf("inbox full or closed for trigger %s", event.TriggerId)
-		return
-	}
-
-	b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
+	b.lggr.Infof("event dispatched: capability=%s trigger=%s event=%s attempt=%d",
 		b.capabilityId, event.TriggerId, event.EventId, attempts)
 }
 

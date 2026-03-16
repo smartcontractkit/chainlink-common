@@ -280,11 +280,16 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
+		store.setDonTimes("workflow-123", []int64{time.Now().UnixMilli()})
+
 		r := ocr3types.ReportWithInfo[[]byte]{}
 		r.Report, err = proto.Marshal(outcomeProto)
 		require.NoError(t, err)
 		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
 		require.NoError(t, err)
+
+		_, err = store.GetDonTimes("workflow-123")
+		require.ErrorContains(t, err, "no don time for executionID workflow-123")
 	})
 }
 

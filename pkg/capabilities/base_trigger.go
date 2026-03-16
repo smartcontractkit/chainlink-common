@@ -232,11 +232,10 @@ func (b *BaseTriggerCapability[T]) sendToInbox(triggerID, eventID string, payloa
 }
 
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
+	b.lggr.Infow("Event ACK", "triggerID", triggerId, "eventID", eventId)
 	if !b.retransmitEnabled() {
 		return nil
 	}
-
-	b.lggr.Infof("Event ACK (triggerID: %s, eventID %s)", triggerId, eventId)
 
 	var (
 		attempts int

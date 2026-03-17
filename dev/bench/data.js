@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773757275052,
+  "lastUpdate": 1773770615842,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -41160,6 +41160,66 @@ window.BENCHMARK_DATA = {
             "value": 141290,
             "unit": "ns/op",
             "extra": "7972 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "90713c6d222d271b1bcd1fb265811854500ded93",
+          "message": "DON Time: clean ObservedDonTimes (#1904)\n\n* Prune dontime store properly\n\n* Update plugin.go\n\n* Log state size\n\n* Add tests\n\n---------\n\nCo-authored-by: Prashant Yadav <prashant.yadav@smartcontract.com>",
+          "timestamp": "2026-03-17T17:56:17Z",
+          "tree_id": "03bdf02287557ccce28cf0f951b012542799f8bc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/90713c6d222d271b1bcd1fb265811854500ded93"
+        },
+        "date": 1773770613054,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.7,
+            "unit": "ns/op",
+            "extra": "2480054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93774,
+            "unit": "ns/op",
+            "extra": "12724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.1,
+            "unit": "ns/op",
+            "extra": "2975656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93946,
+            "unit": "ns/op",
+            "extra": "12752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26520,
+            "unit": "ns/op",
+            "extra": "45174 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140176,
+            "unit": "ns/op",
+            "extra": "8662 times\n4 procs"
           }
         ]
       }

@@ -90,6 +90,16 @@ message LatestHeadResponse {
   uint64 timestamp = 3;
 }
 
+message FinalizedHeadRequest {
+  RelayerId relayerId = 1;
+}
+
+message FinalizedHeadResponse {
+  string height = 1;
+  bytes hash = 2;
+  uint64 timestamp = 3;
+}
+
 message GetChainInfoRequest {
   RelayerId relayerId = 1;
 }
@@ -115,6 +125,7 @@ service RelayerSet {
   rpc RelayerHealthReport(RelayerId) returns (RelayerHealthReportResponse) {}
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
   rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
+  rpc RelayerFinalizedHead(FinalizedHeadRequest) returns (FinalizedHeadResponse) {}
   rpc RelayerGetChainInfo(GetChainInfoRequest) returns (GetChainInfoReply) {}
 
   rpc ContractReaderStart(google.protobuf.Empty) returns (google.protobuf.Empty) {}

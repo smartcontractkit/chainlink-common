@@ -101,6 +101,9 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// FinalizedHead returns the latest finalized head for the underlying chain.
+	// Chains that do not support finality semantics may return codes.Unimplemented.
+	FinalizedHead(ctx context.Context) (Head, error)
 	// GetChainInfo returns the ChainInfo for this Relayer.
 	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
@@ -305,6 +308,40 @@ type Relayer interface {
 
 var _ Relayer = &UnimplementedRelayer{}
 
+// UnimplementedChainService provides default stub implementations for ChainService methods.
+// Embed this in chain-level structs that implement ChainService so that new methods added to the interface
+// don't immediately break downstream packages on dependency bumps.
+// Explicit method implementations on the embedding struct take precedence over these stubs.
+type UnimplementedChainService struct{}
+
+func (u *UnimplementedChainService) LatestHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedChainService) FinalizedHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method FinalizedHead not implemented")
+}
+
+func (u *UnimplementedChainService) GetChainInfo(ctx context.Context) (ChainInfo, error) {
+	return ChainInfo{}, status.Errorf(codes.Unimplemented, "method GetChainInfo not implemented")
+}
+
+func (u *UnimplementedChainService) GetChainStatus(ctx context.Context) (ChainStatus, error) {
+	return ChainStatus{}, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
+}
+
+func (u *UnimplementedChainService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error) {
+	return []NodeStatus{}, "", -1, status.Errorf(codes.Unimplemented, "method ListNodeStatuses not implemented")
+}
+
+func (u *UnimplementedChainService) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
+	return status.Errorf(codes.Unimplemented, "method Transact not implemented")
+}
+
+func (u *UnimplementedChainService) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	return status.Errorf(codes.Unimplemented, "method Replay not implemented")
+}
+
 // UnimplementedRelayer implements the Relayer interface with stubbed methods that return codes.Unimplemented errors or panic.
 // It is meant to be embedded in real Relayer implementations in order to get default behavior for new methods without having
 // to react to each change.
@@ -333,6 +370,10 @@ func (u *UnimplementedRelayer) HealthReport() map[string]error {
 
 func (u *UnimplementedRelayer) LatestHead(ctx context.Context) (Head, error) {
 	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedRelayer) FinalizedHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method FinalizedHead not implemented")
 }
 
 func (u *UnimplementedRelayer) GetChainInfo(ctx context.Context) (ChainInfo, error) {

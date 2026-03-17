@@ -6,7 +6,7 @@ toolchain go1.24.10
 
 require (
 	github.com/go-resty/resty/v2 v2.17.1
-	github.com/grafana/grafana-foundation-sdk/go v0.0.0-20251008104447-4b342c01ab41
+	github.com/grafana/grafana-foundation-sdk/go v0.0.12
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1

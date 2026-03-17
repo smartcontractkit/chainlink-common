@@ -260,6 +260,11 @@ type ChannelDefinition struct {
 	// Streams is the list of streams to be observed and aggregated
 	// by the protocol.
 	Streams []Stream `json:"streams"`
+	// AllowNilStreamValues controls whether channels with nil stream values
+	// are considered reportable.
+	// When true, nil stream values are allowed
+	// and the report codec needs to handle them accordingly.
+	AllowNilStreamValues bool `json:"allowNilStreamValues"`
 	// Opts contains configuration data for use in report generation
 	// for this channel, e.g. feed ID, expiry window, USD base fee etc
 	//
@@ -290,14 +295,21 @@ func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
 	if a.ReportFormat != b.ReportFormat {
 		return false
 	}
+
+	if a.AllowNilStreamValues != b.AllowNilStreamValues {
+		return false
+	}
+
 	if len(a.Streams) != len(b.Streams) {
 		return false
 	}
+
 	for i, strm := range a.Streams {
 		if strm != b.Streams[i] {
 			return false
 		}
 	}
+
 	return bytes.Equal(a.Opts, b.Opts)
 }
 

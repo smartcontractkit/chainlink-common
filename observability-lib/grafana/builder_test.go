@@ -209,6 +209,20 @@ func TestBuilder_AddRow(t *testing.T) {
 		}
 		require.IsType(t, dashboard.RowPanel{}, *o.Dashboard.Panels[0].RowPanel)
 	})
+
+	t.Run("AddRow adds a collapsed row to the dashboard", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		builder.AddRow("Row Title", grafana.RowOptions{Collapsed: true})
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error building dashboard: %v", err)
+		}
+		require.IsType(t, dashboard.RowPanel{}, *o.Dashboard.Panels[0].RowPanel)
+		require.True(t, o.Dashboard.Panels[0].RowPanel.Collapsed)
+	})
 }
 
 func TestBuilder_AddPanel(t *testing.T) {

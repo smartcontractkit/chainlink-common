@@ -235,6 +235,13 @@ func newTriggerRegistrationManager(lggr logger.Logger) *triggerRegistrationManag
 func (m *triggerRegistrationManager) register(ctx context.Context, underlying capabilities.TriggerExecutable, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	in, err := underlying.RegisterTrigger(ctx, req)
 	if err != nil {
+		// During migration of the nodes to support trigger registration messages it is possible that the registration status
+		// cannot be determined as the remote node may not yet support registration messages.  In this case, to be backwards
+		// compatible, we optimistically assume the registration succeeded and return a channel, this matches legacy behaviour.
+		if errors.Is(err, capabilities.ErrUnableToDetermineRegistrationStatus) {
+			return m.upsertRegistration(req, nil, in), err
+		}
+
 		return nil, err
 	}
 	return m.upsertRegistration(req, nil, in), nil

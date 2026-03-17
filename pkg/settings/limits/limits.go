@@ -1,9 +1,9 @@
 // Package limits helps enforce request-scoped, multi-tenant limits with three kinds of [Limiter]:
-//  - [RateLimiter]: for throttling usage
-//  - [ResourceLimiter]/[ResourcePoolLimiter]: for allocating resources
-//  - [TimeLimiter]: for enforcing timeouts
-//  - [BoundLimiter]: for enforcing bounds
-//  - [QueueLimiter]: for limited capacity queues
+//   - [RateLimiter]: for throttling usage
+//   - [ResourceLimiter]/[ResourcePoolLimiter]: for allocating resources
+//   - [TimeLimiter]: for enforcing timeouts
+//   - [BoundLimiter]: for enforcing bounds
+//   - [QueueLimiter]: for limited capacity queues
 //
 // Every limit requires a default value. Additional features like Otel metrics and dynamic updates are available by
 // using the [settings.Setting] variants.
@@ -31,6 +31,35 @@ type Limiter[N any] interface {
 	io.Closer // Limiters spawn background goroutines and must be closed.
 	// Limit returns the current limit.
 	Limit(context.Context) (N, error)
+}
+
+// TryCleanup releases scoped resources (e.g. goroutines and data structures) if supported by the Limiter.
+// Be sure to pass only the context values that you want cleaned up.
+// Example: contexts.WithCRE(ctx, contexts.CRE{Workflow: contexts.CREValue(ctx).Workflow})
+func TryCleanup[N any](ctx context.Context, limiter Limiter[N]) {
+	if c, ok := limiter.(interface {
+		cleanup(ctx context.Context)
+	}); ok {
+		c.cleanup(ctx)
+	}
+	return
+}
+
+// TenantEvictor is optionally implemented by scoped limiters to allow removal
+// of per-tenant state (background goroutines, maps, queues) when a tenant is
+// no longer active (e.g. a workflow is deleted).
+// Deprecated: use TryCleanup
+type TenantEvictor interface {
+	EvictTenant(tenant string) error
+}
+
+// TryEvictTenant calls EvictTenant on v if it implements TenantEvictor.
+// Deprecated: use TryCleanup
+func TryEvictTenant(v any, tenant string) error {
+	if e, ok := v.(TenantEvictor); ok {
+		return e.EvictTenant(tenant)
+	}
+	return nil
 }
 
 // pollPeriod is how often settings are refreshed via [settings.Getter.GetScoped]

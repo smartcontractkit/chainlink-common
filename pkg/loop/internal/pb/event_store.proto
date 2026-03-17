@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+message PendingEventProto {
+  string trigger_id = 1;
+  string event_id = 2;
+  bytes payload = 3;
+  google.protobuf.Timestamp first_at = 4;
+  google.protobuf.Timestamp last_sent_at = 5;
+  int32 attempts = 6;
+}
+
+message InsertEventRequest {
+  PendingEventProto event = 1;
+}
+
+message UpdateDeliveryRequest {
+  string trigger_id = 1;
+  string event_id = 2;
+  google.protobuf.Timestamp last_sent_at = 3;
+  int32 attempts = 4;
+}
+
+message ListEventsResponse {
+  repeated PendingEventProto events = 1;
+}
+
+message DeleteEventRequest {
+  string trigger_id = 1;
+  string event_id = 2;
+}
+
+message DeleteEventsForTriggerRequest {
+  string trigger_id = 1;
+}
+
+service EventStore {
+  rpc Insert(InsertEventRequest) returns (google.protobuf.Empty);
+  rpc UpdateDelivery(UpdateDeliveryRequest) returns (google.protobuf.Empty);
+  rpc List(google.protobuf.Empty) returns (ListEventsResponse);
+  rpc DeleteEvent(DeleteEventRequest) returns (google.protobuf.Empty);
+  rpc DeleteEventsForTrigger(DeleteEventsForTriggerRequest) returns (google.protobuf.Empty);
+}

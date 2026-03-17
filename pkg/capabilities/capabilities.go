@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"regexp"
@@ -246,6 +247,9 @@ type Validatable interface {
 type BaseCapability interface {
 	Info(ctx context.Context) (CapabilityInfo, error)
 }
+
+// ErrUnableToDetermineRegistrationStatus is returned when the call terminates before registration status can be determined.
+var ErrUnableToDetermineRegistrationStatus = errors.New("unable to determine registration status")
 
 type TriggerRegistrationRequest struct {
 	// TriggerID uniquely identifies the trigger by concatenating

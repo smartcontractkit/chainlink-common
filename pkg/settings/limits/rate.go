@@ -402,6 +402,30 @@ func (s *scopedRateLimiter) Close() (err error) {
 	return
 }
 
+// Deprecated: use TryCleanup
+func (s *scopedRateLimiter) EvictTenant(tenant string) error {
+	v, loaded := s.limiters.LoadAndDelete(tenant)
+	if !loaded {
+		return nil
+	}
+	return v.(*rateLimiter).Close()
+}
+
+func (s *scopedRateLimiter) cleanup(ctx context.Context) {
+	tenant := s.scope.Value(ctx)
+	if tenant == "" {
+		s.lggr.Warnw("Unable to cleanup scoped rate limiter due to missing tenant", "scope", s.scope)
+		return
+	}
+	v, loaded := s.limiters.LoadAndDelete(tenant)
+	if !loaded {
+		return
+	}
+	if err := v.(*rateLimiter).Close(); err != nil {
+		s.lggr.Errorw("Failed to close rate limiter", "tenant", tenant, "err", err)
+	}
+}
+
 func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(), error) {
 	if err := s.wg.TryAdd(1); err != nil {
 		return nil, nil, err
@@ -558,6 +582,12 @@ func (m MultiRateLimiter) Close() (err error) {
 		err = errors.Join(err, l.Close())
 	}
 	return
+}
+
+func (m MultiRateLimiter) cleanup(ctx context.Context) {
+	for _, l := range m {
+		TryCleanup(ctx, l)
+	}
 }
 
 func (m MultiRateLimiter) Limit(ctx context.Context) (config.Rate, error) {

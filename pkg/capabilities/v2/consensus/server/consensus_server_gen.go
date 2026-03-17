@@ -124,6 +124,7 @@ func (c *consensusCapability) UnregisterFromWorkflow(ctx context.Context, reques
 
 func (c *consensusCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Simple":
 		input := &sdk.SimpleConsensusInputs{}

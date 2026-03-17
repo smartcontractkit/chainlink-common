@@ -115,13 +115,15 @@ func TestSchema_Unmarshal(t *testing.T) {
 		"ChainRead": {
 			"CallLimit": "3"
 		},
-		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC"
+		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC",
+		"FeatureOCRQueueEnabled": "true"
 	}
 }`), &cfg))
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
 	assert.Equal(t, true, cfg.GatewayVaultManagementEnabled.DefaultValue)
+	assert.Equal(t, true, cfg.PerWorkflow.FeatureOCRQueueEnabled.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
@@ -139,6 +141,14 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 	assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
+}
+
+func TestFeatureOCRQueueEnabled(t *testing.T) {
+	assert.False(t, Default.PerWorkflow.FeatureOCRQueueEnabled.DefaultValue, "default should be false")
+
+	got, err := Default.PerWorkflow.FeatureOCRQueueEnabled.GetOrDefault(t.Context(), nil)
+	require.NoError(t, err)
+	assert.False(t, got, "GetOrDefault with nil getter should return default false")
 }
 
 func TestDefaultGetter(t *testing.T) {

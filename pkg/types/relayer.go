@@ -314,28 +314,6 @@ var _ Relayer = &UnimplementedRelayer{}
 // Explicit method implementations on the embedding struct take precedence over these stubs.
 type UnimplementedChainService struct{}
 
-var _ ChainService = &UnimplementedChainService{}
-
-func (u *UnimplementedChainService) Name() string {
-	panic("method Name not implemented")
-}
-
-func (u *UnimplementedChainService) Start(ctx context.Context) error {
-	return status.Errorf(codes.Unimplemented, "method Start not implemented")
-}
-
-func (u *UnimplementedChainService) Close() error {
-	return status.Errorf(codes.Unimplemented, "method Close not implemented")
-}
-
-func (u *UnimplementedChainService) Ready() error {
-	return status.Errorf(codes.Unimplemented, "method Ready not implemented")
-}
-
-func (u *UnimplementedChainService) HealthReport() map[string]error {
-	panic("method HealthReport not implemented")
-}
-
 func (u *UnimplementedChainService) LatestHead(ctx context.Context) (Head, error) {
 	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
 }

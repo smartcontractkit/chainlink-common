@@ -140,11 +140,11 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 
 		for id, requestSeqNum := range observation.Requests {
-			if _, ok := prevOutcome.ObservedDonTimes[id]; !ok {
-				prevOutcome.ObservedDonTimes[id] = &pb.ObservedDonTimes{}
+			var currSeqNum int64
+			if times, ok := prevOutcome.ObservedDonTimes[id]; ok {
+				currSeqNum = int64(len(times.Timestamps))
 			}
 			// We only count requests for the next sequence number and ignore all other ones.
-			currSeqNum := int64(len(prevOutcome.ObservedDonTimes[id].Timestamps))
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
 			} else if requestSeqNum > currSeqNum {
@@ -197,17 +197,25 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	// Remove expired workflow executions
+	// Remove expired and empty workflow executions
 	for id, observedTimes := range outcome.ObservedDonTimes {
-		if observedTimes != nil && len(observedTimes.Timestamps) > 0 {
-			if donTime >= observedTimes.Timestamps[0]+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
-				delete(outcome.ObservedDonTimes, id)
-				p.store.deleteExecutionID(id)
-			}
+		if observedTimes == nil || len(observedTimes.Timestamps) == 0 {
+			delete(outcome.ObservedDonTimes, id)
+			p.store.deleteExecutionID(id)
+			continue
+		}
+		if donTime >= observedTimes.Timestamps[0]+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
+			delete(outcome.ObservedDonTimes, id)
+			p.store.deleteExecutionID(id)
 		}
 	}
 
-	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+	outcomeBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+	p.lggr.Infow("Outcome computed",
+		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
+		"outcomeSizeBytes", len(outcomeBytes),
+	)
+	return outcomeBytes, err
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {

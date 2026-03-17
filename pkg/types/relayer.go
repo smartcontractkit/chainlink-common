@@ -101,6 +101,9 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// FinalizedHead returns the latest finalized head for the underlying chain.
+	// Chains that do not support finality semantics may return codes.Unimplemented.
+	FinalizedHead(ctx context.Context) (Head, error)
 	// GetChainInfo returns the ChainInfo for this Relayer.
 	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
@@ -333,6 +336,10 @@ func (u *UnimplementedRelayer) HealthReport() map[string]error {
 
 func (u *UnimplementedRelayer) LatestHead(ctx context.Context) (Head, error) {
 	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedRelayer) FinalizedHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method FinalizedHead not implemented")
 }
 
 func (u *UnimplementedRelayer) GetChainInfo(ctx context.Context) (ChainInfo, error) {

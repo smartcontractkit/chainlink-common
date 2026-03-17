@@ -95,6 +95,10 @@ func (r *relayer) LatestHead(ctx context.Context) (types.Head, error) {
 	return types.Head{}, errors.New("unimplemented")
 }
 
+func (r *relayer) FinalizedHead(ctx context.Context) (types.Head, error) {
+	return types.Head{}, errors.New("unimplemented")
+}
+
 func (r *relayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	return types.ChainStatus{}, errors.New("unimplemented")
 }

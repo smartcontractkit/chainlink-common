@@ -210,7 +210,12 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+	outcomeBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+	p.lggr.Infow("Outcome computed",
+		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
+		"outcomeSizeBytes", len(outcomeBytes),
+	)
+	return outcomeBytes, err
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {

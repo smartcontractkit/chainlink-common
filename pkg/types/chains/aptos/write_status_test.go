@@ -130,3 +130,44 @@ func TestClassifyWriteVmStatus(t *testing.T) {
 		}
 	})
 }
+
+func TestWriteFailureClassificationHelpers(t *testing.T) {
+	t.Run("retryable and empty message", func(t *testing.T) {
+		classification := WriteFailureClassification{
+			Decision: WriteFailureDecisionRetryable,
+		}
+
+		if !classification.Retryable() {
+			t.Fatal("expected retryable")
+		}
+		if classification.Terminal() {
+			t.Fatal("did not expect terminal")
+		}
+		if classification.AlreadyProcessed() {
+			t.Fatal("did not expect already processed")
+		}
+		if classification.MessagePtr() != nil {
+			t.Fatal("expected nil message ptr")
+		}
+	})
+
+	t.Run("already processed is terminal and exposes message pointer", func(t *testing.T) {
+		classification := WriteFailureClassification{
+			Decision: WriteFailureDecisionAlreadyProcessed,
+			Message:  "already processed",
+		}
+
+		if classification.Retryable() {
+			t.Fatal("did not expect retryable")
+		}
+		if !classification.Terminal() {
+			t.Fatal("expected terminal")
+		}
+		if !classification.AlreadyProcessed() {
+			t.Fatal("expected already processed")
+		}
+		if ptr := classification.MessagePtr(); ptr == nil || *ptr != classification.Message {
+			t.Fatalf("expected message ptr %q, got %v", classification.Message, ptr)
+		}
+	})
+}

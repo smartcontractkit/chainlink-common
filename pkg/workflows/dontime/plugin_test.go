@@ -156,6 +156,7 @@ func TestPlugin_Outcome(t *testing.T) {
 	_ = store.RequestDonTime(executionID, 0)
 
 	timestamp := time.Now().UnixMilli()
+	secondMillis := time.Second.Milliseconds()
 	observations := []*pb.Observation{
 		{
 			Timestamp: timestamp,
@@ -164,13 +165,13 @@ func TestPlugin_Outcome(t *testing.T) {
 			},
 		},
 		{
-			Timestamp: timestamp - int64(time.Second),
+			Timestamp: timestamp - secondMillis,
 			Requests: map[string]int64{
 				executionID: 0,
 			},
 		},
 		{
-			Timestamp: timestamp + int64(time.Second),
+			Timestamp: timestamp + secondMillis,
 			Requests: map[string]int64{
 				executionID: 0,
 			},
@@ -227,10 +228,11 @@ func TestPlugin_OutcomeInitializesMissingObservedDonTimesEntry(t *testing.T) {
 
 	const executionID = "workflow-missing-prev-entry"
 	timestamp := time.Now().UnixMilli()
+	secondMillis := time.Second.Milliseconds()
 	observations := []*pb.Observation{
 		{Timestamp: timestamp, Requests: map[string]int64{executionID: 0}},
-		{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{executionID: 0}},
-		{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{executionID: 0}},
+		{Timestamp: timestamp - secondMillis, Requests: map[string]int64{executionID: 0}},
+		{Timestamp: timestamp + secondMillis, Requests: map[string]int64{executionID: 0}},
 		{Timestamp: timestamp, Requests: map[string]int64{executionID: 0}},
 	}
 
@@ -273,10 +275,11 @@ func TestPlugin_OutcomeKeepsEmptyObservedDonTimesEntries(t *testing.T) {
 	require.NoError(t, err)
 
 	timestamp := time.Now().UnixMilli()
+	secondMillis := time.Second.Milliseconds()
 	observations := []*pb.Observation{
 		{Timestamp: timestamp, Requests: map[string]int64{}},
-		{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}},
-		{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}},
+		{Timestamp: timestamp - secondMillis, Requests: map[string]int64{}},
+		{Timestamp: timestamp + secondMillis, Requests: map[string]int64{}},
 		{Timestamp: timestamp, Requests: map[string]int64{}},
 	}
 
@@ -291,7 +294,7 @@ func TestPlugin_OutcomeKeepsEmptyObservedDonTimesEntries(t *testing.T) {
 	}
 
 	prevOutcome := &pb.Outcome{
-		Timestamp: timestamp - int64(time.Second),
+		Timestamp: timestamp - secondMillis,
 		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
 			"workflow-empty": {},
 		},
@@ -323,17 +326,18 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 	t.Run("Outcome: remove expired workflow executions", func(t *testing.T) {
 		timestamp := time.Now().UnixMilli()
+		secondMillis := time.Second.Milliseconds()
 		observations := []*pb.Observation{
 			{
 				Timestamp: timestamp,
 				Requests:  map[string]int64{},
 			},
 			{
-				Timestamp: timestamp - int64(time.Second),
+				Timestamp: timestamp - secondMillis,
 				Requests:  map[string]int64{},
 			},
 			{
-				Timestamp: timestamp + int64(time.Second),
+				Timestamp: timestamp + secondMillis,
 				Requests:  map[string]int64{},
 			},
 			{
@@ -353,7 +357,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		}
 
 		// Set workflow-123 as expired
-		prevDonTime := timestamp - int64(time.Second)
+		prevDonTime := timestamp - secondMillis
 		prevOutcome := &pb.Outcome{
 			Timestamp: prevDonTime,
 			ObservedDonTimes: map[string]*pb.ObservedDonTimes{

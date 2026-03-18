@@ -205,6 +205,7 @@ var Default = Schema{
 		},
 
 		FeatureMultiTriggerExecutionIDsActiveAt: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureOCRQueueEnabled:                  Bool(false),
 	},
 }
 
@@ -240,6 +241,7 @@ type Schema struct {
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
 }
+
 type Orgs struct {
 	ZeroBalancePruningTimeout Setting[time.Duration]
 }
@@ -289,6 +291,7 @@ type Workflows struct {
 	Secrets          secrets
 
 	FeatureMultiTriggerExecutionIDsActiveAt Setting[config.Timestamp]
+	FeatureOCRQueueEnabled                  Setting[bool]
 }
 
 type cronTrigger struct {

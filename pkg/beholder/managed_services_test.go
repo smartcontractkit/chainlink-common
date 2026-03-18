@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
@@ -64,10 +66,11 @@ func TestManagedServices_BatchEnabled(t *testing.T) {
 	err = managed[0].Close()
 	require.NoError(t, err)
 
-	// Client.Close may return OTel flush errors (no real endpoint) — that's fine.
-	// The key assertion is that closing the client does NOT close the batch emitter
-	// (emitOnlyAdapter.Close is a no-op).
-	_ = client.Close()
+	// Client.Close calls DualSourceEmitter.Close which calls the batch emitter's
+	// Close a second time. StopOnce returns "already stopped" — harmless.
+	err = client.Close()
+	require.Error(t, err)
+	assert.ErrorIs(t, err, services.ErrAlreadyStopped)
 }
 
 func TestManagedServices_BatchEmitterNotAutoStarted(t *testing.T) {

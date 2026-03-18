@@ -236,7 +236,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
 			}
-			chipIngressEmitter = &emitOnlyAdapter{batchEmitterService}
+			chipIngressEmitter = batchEmitterService
 		} else {
 			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
 			if err != nil {
@@ -274,7 +274,8 @@ func (c *Client) ManagedServices() []services.Service {
 }
 
 // Close shuts down OTel providers and the chip ingress connection.
-// It does NOT close managed services — those are closed by the application.
+// The batch emitter service may already have been closed by the application;
+// the duplicate Close returns an "already stopped" error which is harmless.
 func (c Client) Close() (err error) {
 	if c.Emitter != nil {
 		err = errors.Join(err, c.Emitter.Close())

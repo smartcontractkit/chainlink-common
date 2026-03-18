@@ -94,6 +94,7 @@ type Server struct {
 	webServer       *webServer
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
+	managedServices []services.Service
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -214,6 +215,13 @@ func (s *Server) start(opts ...ServerOpt) error {
 		beholder.SetClient(beholderClient)
 		beholder.SetGlobalOtelProviders()
 
+		for _, svc := range beholderClient.ManagedServices() {
+			if err := svc.Start(ctx); err != nil {
+				return fmt.Errorf("failed to start beholder managed service %s: %w", svc.Name(), err)
+			}
+			s.managedServices = append(s.managedServices, svc)
+		}
+
 		if beholderCfg.LogStreamingEnabled {
 			otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
 			if err != nil {
@@ -285,6 +293,9 @@ func (s *Server) Register(c services.HealthReporter) error { return s.checker.Re
 
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
+	for i := len(s.managedServices) - 1; i >= 0; i-- {
+		s.Logger.ErrorIfFn(s.managedServices[i].Close, "Failed to close managed service")
+	}
 	if s.dbStatsReporter != nil {
 		s.dbStatsReporter.Stop()
 	}

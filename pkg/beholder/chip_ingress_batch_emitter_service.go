@@ -16,9 +16,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// ChipIngressBatchEmitter batches events and sends them via chipingress.Client.PublishBatch.
+// ChipIngressBatchEmitterService batches events and sends them via chipingress.Client.PublishBatch.
 // It implements the Emitter interface.
-type ChipIngressBatchEmitter struct {
+type ChipIngressBatchEmitterService struct {
 	services.Service
 	eng *services.Engine
 
@@ -33,8 +33,8 @@ type batchEmitterMetrics struct {
 	eventsDropped otelmetric.Int64Counter
 }
 
-// NewChipIngressBatchEmitter creates a batch emitter backed by the given chipingress client.
-func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitter, error) {
+// NewChipIngressBatchEmitterService creates a batch emitter service backed by the given chipingress client.
+func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitterService, error) {
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
 	}
@@ -83,13 +83,13 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 		return nil, fmt.Errorf("failed to create batch client: %w", err)
 	}
 
-	e := &ChipIngressBatchEmitter{
+	e := &ChipIngressBatchEmitterService{
 		batchClient: batchClient,
 		metrics:     metrics,
 	}
 
 	e.Service, e.eng = services.Config{
-		Name: "ChipIngressBatchEmitter",
+		Name: "ChipIngressBatchEmitterService",
 	}.NewServiceEngine(lggr)
 
 	e.eng.Go(func(ctx context.Context) {
@@ -104,7 +104,7 @@ func NewChipIngressBatchEmitter(client chipingress.Client, cfg Config, lggr logg
 // Emit queues an event for batched delivery without blocking.
 // Returns an error if the emitter is stopped or the context is cancelled.
 // If the buffer is full, the event is silently dropped.
-func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+func (e *ChipIngressBatchEmitterService) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return e.emitInternal(ctx, body, nil, attrKVs...)
 }
 
@@ -113,11 +113,11 @@ func (e *ChipIngressBatchEmitter) Emit(ctx context.Context, body []byte, attrKVs
 //
 // If EmitWithCallback returns a non-nil error, the callback will NOT be invoked.
 // If it returns nil, the callback is guaranteed to fire exactly once.
-func (e *ChipIngressBatchEmitter) EmitWithCallback(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
+func (e *ChipIngressBatchEmitterService) EmitWithCallback(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
 	return e.emitInternal(ctx, body, callback, attrKVs...)
 }
 
-func (e *ChipIngressBatchEmitter) emitInternal(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
+func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
 	return e.eng.IfNotStopped(func() error {
 		domain, entity, err := ExtractSourceAndType(attrKVs...)
 		if err != nil {
@@ -162,7 +162,7 @@ func (e *ChipIngressBatchEmitter) emitInternal(ctx context.Context, body []byte,
 	})
 }
 
-func (e *ChipIngressBatchEmitter) metricAttrsFor(domain, entity string) otelmetric.MeasurementOption {
+func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) otelmetric.MeasurementOption {
 	key := domain + "\x00" + entity
 	if v, ok := e.metricAttrsCache.Load(key); ok {
 		return v.(otelmetric.MeasurementOption)

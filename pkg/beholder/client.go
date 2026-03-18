@@ -191,7 +191,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// This will eventually be removed in favor of chip-ingress emitter
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
-	var batchEmitterService *ChipIngressBatchEmitter
+	var batchEmitterService *ChipIngressBatchEmitterService
 	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
@@ -232,7 +232,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			if cfg.ChipIngressLogger == nil {
 				return nil, fmt.Errorf("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
 			}
-			batchEmitterService, err = NewChipIngressBatchEmitter(chipIngressClient, cfg, cfg.ChipIngressLogger)
+			batchEmitterService, err = NewChipIngressBatchEmitterService(chipIngressClient, cfg, cfg.ChipIngressLogger)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
 			}

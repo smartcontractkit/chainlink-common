@@ -55,7 +55,7 @@ func TestManagedServices_BatchEnabled(t *testing.T) {
 
 	managed := client.ManagedServices()
 	require.Len(t, managed, 1)
-	assert.Equal(t, "ChipIngressBatchEmitter", managed[0].Name())
+	assert.Equal(t, "ChipIngressBatchEmitterService", managed[0].Name())
 
 	// Service should be startable (not already started)
 	err = managed[0].Start(context.Background())

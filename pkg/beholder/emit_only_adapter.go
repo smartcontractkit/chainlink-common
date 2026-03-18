@@ -2,11 +2,11 @@ package beholder
 
 import "context"
 
-// emitOnlyAdapter wraps a ChipIngressBatchEmitter as an Emitter but with a
+// emitOnlyAdapter wraps a ChipIngressBatchEmitterService as an Emitter but with a
 // no-op Close. This decouples emission (used by DualSourceEmitter) from
 // lifecycle management (owned by the application's service list).
 type emitOnlyAdapter struct {
-	e *ChipIngressBatchEmitter
+	e *ChipIngressBatchEmitterService
 }
 
 func (a *emitOnlyAdapter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {

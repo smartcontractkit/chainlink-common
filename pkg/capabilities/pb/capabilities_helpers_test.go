@@ -1,10 +1,14 @@
 package pb_test
 
 import (
+	"crypto/rand"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -81,6 +85,51 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 	resp, err := pb.CapabilityResponseFromProto(&pr)
 	require.NoError(t, err)
 	assert.Equal(t, capabilities.CapabilityResponse{Value: values.EmptyMap()}, resp)
+
+	t.Run("invalid config digest length", func(t *testing.T) {
+		pr := &pb.CapabilityResponse{
+			Value: values.ProtoMap(values.EmptyMap()),
+			Metadata: &pb.ResponseMetadata{
+				CapdonN: 1,
+				OcrAttestation: &pb.ResponseOCRAttestation{
+					ConfigDigest:   []byte("too-short"),
+					SequenceNumber: 0,
+				},
+			},
+		}
+		_, err := pb.CapabilityResponseFromProto(pr)
+		require.ErrorContains(t, err, "invalid config digest length")
+	})
+	t.Run("Round-trip", func(t *testing.T) {
+		configDigest := ocrtypes.ConfigDigest{}
+		_, err := rand.Read(configDigest[:])
+		require.NoError(t, err)
+		original := capabilities.CapabilityResponse{
+			Value: values.EmptyMap(),
+			Metadata: capabilities.ResponseMetadata{
+				Metering: []capabilities.MeteringNodeDetail{
+					{
+						Peer2PeerID: "peer_id",
+						SpendUnit:   "spend_unit",
+						SpendValue:  "spend_value",
+					},
+				},
+				OCRAttestation: &capabilities.ResponseOCRAttestation{
+					ConfigDigest:   configDigest,
+					SequenceNumber: 12345,
+					Sigs: []capabilities.AttributedSignature{
+						{Signer: 0, Signature: []byte("sig0bytes")},
+						{Signer: 1, Signature: []byte("sig1bytes")},
+						{Signer: 99, Signature: []byte{}},
+					},
+				},
+			},
+		}
+		protoResp := pb.CapabilityResponseToProto(original)
+		roundTripped, err := pb.CapabilityResponseFromProto(protoResp)
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(original, roundTripped, protocmp.Transform()), "Expected capability response to be identical after round trip")
+	})
 }
 
 func TestMarshalUnmarshalRequest(t *testing.T) {

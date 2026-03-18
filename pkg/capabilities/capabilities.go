@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"iter"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -37,6 +39,21 @@ func (e errStopExecution) Error() string {
 
 func (e errStopExecution) Is(err error) bool {
 	return strings.Contains(err.Error(), errStopExecutionMsg)
+}
+
+// ErrResponsePayloadNotAvailable is returned when a capability's Execute method cannot provide a response payload and engine should wait for another response instead of treating it as an error.
+var ErrResponsePayloadNotAvailable = &errResponsePayloadNotAvailable{}
+
+type errResponsePayloadNotAvailable struct{}
+
+const errResponsePayloadNotAvailableMsg = "__response_payload_not_available"
+
+func (e errResponsePayloadNotAvailable) Error() string {
+	return errResponsePayloadNotAvailableMsg
+}
+
+func (e errResponsePayloadNotAvailable) Is(err error) bool {
+	return strings.Contains(err.Error(), errResponsePayloadNotAvailableMsg)
 }
 
 // CapabilityType enum values.
@@ -80,8 +97,41 @@ type CapabilityResponse struct {
 }
 
 type ResponseMetadata struct {
-	Metering []MeteringNodeDetail
-	CapDON_N uint32
+	Metering       []MeteringNodeDetail
+	CapDON_N       uint32
+	OCRAttestation *ResponseOCRAttestation
+}
+
+type ResponseOCRAttestation struct {
+	ConfigDigest   ocrtypes.ConfigDigest
+	SequenceNumber uint64
+	Sigs           []AttributedSignature
+}
+
+type AttributedSignature struct {
+	Signature []byte
+	Signer    uint32
+}
+
+func ResponseToReportData(workflowExecutionID, referenceID string, responsePayload []byte, spendUnit, spendValue string) [32]byte {
+	hash := sha3.New256()
+	const domainSeparator = "CapabilityResponseReportData:v1"
+	hash.Write([]byte(domainSeparator))
+	// Helper to write a length-prefixed byte slice.
+	writeField := func(b []byte) {
+		// Use a fixed-width length prefix to make encoding unambiguous.
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(b)))
+		_, _ = hash.Write(b)
+	}
+	writeField([]byte(workflowExecutionID))
+	writeField([]byte(referenceID))
+	writeField(responsePayload)
+	writeField([]byte(spendUnit))
+	writeField([]byte(spendValue))
+
+	var result [32]byte
+	copy(result[:], hash.Sum(nil))
+	return result
 }
 
 type MeteringNodeDetail struct {

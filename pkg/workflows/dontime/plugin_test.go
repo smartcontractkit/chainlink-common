@@ -213,6 +213,101 @@ func TestPlugin_Outcome(t *testing.T) {
 	require.Equal(t, []int64{timestamp}, outcomeProto.ObservedDonTimes[executionID].Timestamps)
 }
 
+func TestPlugin_OutcomeInitializesMissingObservedDonTimesEntry(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	ctx := t.Context()
+
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+	require.NoError(t, err)
+
+	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
+
+	const executionID = "workflow-missing-prev-entry"
+	timestamp := time.Now().UnixMilli()
+	observations := []*pb.Observation{
+		{Timestamp: timestamp, Requests: map[string]int64{executionID: 0}},
+		{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{executionID: 0}},
+		{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{executionID: 0}},
+		{Timestamp: timestamp, Requests: map[string]int64{executionID: 0}},
+	}
+
+	aos := make([]types.AttributedObservation, len(observations))
+	for i, observation := range observations {
+		rawObs, marshalErr := proto.Marshal(observation)
+		require.NoError(t, marshalErr)
+		aos[i] = types.AttributedObservation{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(1),
+		}
+	}
+
+	prevOutcome := &pb.Outcome{
+		Timestamp:        0,
+		ObservedDonTimes: map[string]*pb.ObservedDonTimes{},
+	}
+	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+	require.NoError(t, err)
+
+	outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+	require.NoError(t, err)
+
+	outcomeProto := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(outcome, outcomeProto))
+	require.Contains(t, outcomeProto.ObservedDonTimes, executionID)
+	require.Equal(t, []int64{timestamp}, outcomeProto.ObservedDonTimes[executionID].Timestamps)
+}
+
+func TestPlugin_OutcomeKeepsEmptyObservedDonTimesEntries(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	ctx := t.Context()
+
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+	require.NoError(t, err)
+
+	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
+
+	timestamp := time.Now().UnixMilli()
+	observations := []*pb.Observation{
+		{Timestamp: timestamp, Requests: map[string]int64{}},
+		{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}},
+		{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}},
+		{Timestamp: timestamp, Requests: map[string]int64{}},
+	}
+
+	aos := make([]types.AttributedObservation, len(observations))
+	for i, observation := range observations {
+		rawObs, marshalErr := proto.Marshal(observation)
+		require.NoError(t, marshalErr)
+		aos[i] = types.AttributedObservation{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(1),
+		}
+	}
+
+	prevOutcome := &pb.Outcome{
+		Timestamp: timestamp - int64(time.Second),
+		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+			"workflow-empty": {},
+		},
+	}
+	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+	require.NoError(t, err)
+
+	outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+	require.NoError(t, err)
+
+	outcomeProto := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(outcome, outcomeProto))
+	require.Contains(t, outcomeProto.ObservedDonTimes, "workflow-empty")
+	require.Empty(t, outcomeProto.ObservedDonTimes["workflow-empty"].Timestamps)
+}
+
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)

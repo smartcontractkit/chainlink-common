@@ -115,8 +115,8 @@ type ChainService interface {
 }
 
 // FinalizedHeadService is implemented by relayers that can distinguish finalized
-// heads from the latest observed head. Callers should fall back to LatestHead
-// when a chain does not implement this interface.
+// heads from the latest observed head. Callers should probe for this interface
+// when they need finalized-head semantics on top of the baseline ChainService API.
 type FinalizedHeadService interface {
 	FinalizedHead(ctx context.Context) (Head, error)
 }

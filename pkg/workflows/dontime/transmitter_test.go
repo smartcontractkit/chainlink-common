@@ -51,3 +51,37 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 
 	require.Empty(t, store.GetRequest(executionID))
 }
+
+func TestTransmitter_TransmitPreservesCachedDonTimesForOmittedExecutionIDs(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	ctx := t.Context()
+
+	transmitter := NewTransmitter(lggr, store, "")
+
+	store.setDonTimes("workflow-stale", []int64{11, 22})
+
+	timestamp := time.Now().UnixMilli()
+	outcome := &pb.Outcome{
+		Timestamp: timestamp,
+		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+			"workflow-fresh": {Timestamps: []int64{timestamp}},
+		},
+	}
+
+	r := ocr3types.ReportWithInfo[[]byte]{}
+	var err error
+	r.Report, err = proto.Marshal(outcome)
+	require.NoError(t, err)
+
+	err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
+	require.NoError(t, err)
+
+	staleDonTimes, err := store.GetDonTimes("workflow-stale")
+	require.NoError(t, err)
+	require.Equal(t, []int64{11, 22}, staleDonTimes)
+
+	freshDonTimes, err := store.GetDonTimes("workflow-fresh")
+	require.NoError(t, err)
+	require.Equal(t, []int64{timestamp}, freshDonTimes)
+}

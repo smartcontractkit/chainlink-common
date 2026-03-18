@@ -100,6 +100,16 @@ func MakeLowerBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (Bo
 	return newBoundLimiter(f, bound.GetSpec(), true)
 }
 
+// MakeRangeLimiter returns a RangeLimiter for the given bound and configured by the Factory.
+// If Meter is set, the following metrics will be emitted
+//   - range.*.lower.limit - gauge
+//   - range.*.upper.limit - gauge
+//   - range.*.usage - histogram
+//   - range.*.denied - histogram
+func MakeRangeLimiter[N Number](f Factory, bound settings.IsSetting[settings.Range[N]]) (RangeLimiter[N], error) {
+	return newRangeLimiter(f, bound.GetSpec())
+}
+
 // MakeQueueLimiter returns a QueueLimiter for the given limit and configured by the Factory.
 // If Meter is set, the following metrics will be emitted
 //   - queue.*.limit - int gauge

@@ -101,9 +101,6 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
-	// FinalizedHead returns the latest finalized head for the underlying chain.
-	// Chains that do not support finality semantics may return codes.Unimplemented.
-	FinalizedHead(ctx context.Context) (Head, error)
 	// GetChainInfo returns the ChainInfo for this Relayer.
 	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
@@ -115,6 +112,13 @@ type ChainService interface {
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 	// Replay is an emergency recovery tool to re-process blocks starting at the provided fromBlock
 	Replay(ctx context.Context, fromBlock string, args map[string]any) error
+}
+
+// FinalizedHeadService is implemented by relayers that can distinguish finalized
+// heads from the latest observed head. Callers should fall back to LatestHead
+// when a chain does not implement this interface.
+type FinalizedHeadService interface {
+	FinalizedHead(ctx context.Context) (Head, error)
 }
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
@@ -308,45 +312,15 @@ type Relayer interface {
 
 var _ Relayer = &UnimplementedRelayer{}
 
-// UnimplementedChainService provides default stub implementations for ChainService methods.
-// Embed this in chain-level structs that implement ChainService so that new methods added to the interface
-// don't immediately break downstream packages on dependency bumps.
-// Explicit method implementations on the embedding struct take precedence over these stubs.
-type UnimplementedChainService struct{}
-
-func (u *UnimplementedChainService) LatestHead(ctx context.Context) (Head, error) {
-	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
-}
-
-func (u *UnimplementedChainService) FinalizedHead(ctx context.Context) (Head, error) {
-	return Head{}, status.Errorf(codes.Unimplemented, "method FinalizedHead not implemented")
-}
-
-func (u *UnimplementedChainService) GetChainInfo(ctx context.Context) (ChainInfo, error) {
-	return ChainInfo{}, status.Errorf(codes.Unimplemented, "method GetChainInfo not implemented")
-}
-
-func (u *UnimplementedChainService) GetChainStatus(ctx context.Context) (ChainStatus, error) {
-	return ChainStatus{}, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
-}
-
-func (u *UnimplementedChainService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error) {
-	return []NodeStatus{}, "", -1, status.Errorf(codes.Unimplemented, "method ListNodeStatuses not implemented")
-}
-
-func (u *UnimplementedChainService) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
-	return status.Errorf(codes.Unimplemented, "method Transact not implemented")
-}
-
-func (u *UnimplementedChainService) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
-	return status.Errorf(codes.Unimplemented, "method Replay not implemented")
-}
-
 // UnimplementedRelayer implements the Relayer interface with stubbed methods that return codes.Unimplemented errors or panic.
 // It is meant to be embedded in real Relayer implementations in order to get default behavior for new methods without having
 // to react to each change.
 // In the future, embedding this type may be required to implement Relayer (through use of an unexported method).
 type UnimplementedRelayer struct{}
+
+// UnimplementedChainService is kept as a compatibility alias for chain-specific
+// services that only embed the ChainService subset.
+type UnimplementedChainService = UnimplementedRelayer
 
 func (u *UnimplementedRelayer) Name() string {
 	panic("method Name not implemented")
@@ -604,6 +578,10 @@ var _ AptosService = &UnimplementedAptosService{}
 // to react to each change.
 // In the future, embedding this type may be required to implement AptosService (through use of an unexported method).
 type UnimplementedAptosService struct{}
+
+func (ua *UnimplementedAptosService) LedgerVersion(ctx context.Context) (uint64, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method LedgerVersion not implemented")
+}
 
 func (ua *UnimplementedAptosService) AccountAPTBalance(ctx context.Context, req aptos.AccountAPTBalanceRequest) (*aptos.AccountAPTBalanceReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountAPTBalance not implemented")

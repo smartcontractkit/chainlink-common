@@ -118,10 +118,5 @@ func (r *relayer) LatestHead(ctx context.Context) (types.Head, error) {
 }
 
 func (r *relayer) FinalizedHead(ctx context.Context) (types.Head, error) {
-	head, err := r.relayerSetClient.RelayerFinalizedHead(ctx, r.relayerID)
-	if err != nil {
-		r.log.Error("error getting finalizedHead", "error", err)
-		return types.Head{}, err
-	}
-	return head, err
+	return r.LatestHead(ctx)
 }

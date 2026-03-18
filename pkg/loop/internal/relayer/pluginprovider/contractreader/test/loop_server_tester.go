@@ -22,11 +22,10 @@ func (lst *loopServerTester) Setup(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	lst.lis = lis
 	s := grpc.NewServer()
+	lst.server = s
 	lst.registerHook(s)
 	go func() {
-		if err := s.Serve(lis); err != nil {
-			require.NoError(t, err)
-		}
+		_ = s.Serve(lis)
 	}()
 
 	t.Cleanup(func() {

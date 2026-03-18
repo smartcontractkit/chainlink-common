@@ -41,7 +41,6 @@ type Relayer interface {
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
 	LatestHead(context.Context) (types.Head, error)
-	FinalizedHead(context.Context) (types.Head, error)
 	GetChainInfo(ctx context.Context) (types.ChainInfo, error)
 }
 

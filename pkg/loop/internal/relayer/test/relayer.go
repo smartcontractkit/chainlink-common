@@ -368,7 +368,7 @@ func (s staticRelayer) LatestHead(ctx context.Context) (types.Head, error) {
 }
 
 func (s staticRelayer) FinalizedHead(ctx context.Context) (types.Head, error) {
-	return types.Head{}, errors.New("not implemented")
+	return s.LatestHead(ctx)
 }
 
 func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {

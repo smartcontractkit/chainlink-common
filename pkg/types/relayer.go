@@ -101,6 +101,9 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// FinalizedHead returns the finalized head for the underlying chain. Implementations
+	// that do not distinguish finalized heads may return the latest observed head.
+	FinalizedHead(ctx context.Context) (Head, error)
 	// GetChainInfo returns the ChainInfo for this Relayer.
 	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
@@ -115,8 +118,8 @@ type ChainService interface {
 }
 
 // FinalizedHeadService is implemented by relayers that can distinguish finalized
-// heads from the latest observed head. Callers should probe for this interface
-// when they need finalized-head semantics on top of the baseline ChainService API.
+// heads from the latest observed head. This remains useful for callers operating
+// on generic service values rather than the full ChainService interface.
 type FinalizedHeadService interface {
 	FinalizedHead(ctx context.Context) (Head, error)
 }

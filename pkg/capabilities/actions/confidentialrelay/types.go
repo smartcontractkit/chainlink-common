@@ -17,7 +17,7 @@ type SecretIdentifier struct {
 // SecretsRequestParams is the JSON-RPC params for "confidential.secrets.get".
 type SecretsRequestParams struct {
 	WorkflowID          string             `json:"workflow_id"`
-	WorkflowOwner       string             `json:"workflow_owner"`                // Ethereum address (hex, 0x-prefixed)
+	Owner               string             `json:"owner"`                         // Ethereum address (hex, 0x-prefixed)
 	WorkflowExecutionID string             `json:"workflow_execution_id"`         // 32 bytes, hex-encoded
 	Secrets             []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey    string             `json:"enclave_public_key"`

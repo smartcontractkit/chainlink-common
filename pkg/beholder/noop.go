@@ -39,7 +39,7 @@ func NewNoopClient() *Client {
 	// ChipIngress
 	chipClient := &chipingress.NoopClient{}
 
-	return &Client{cfg, logger, tracer, meter, messageEmitter, chipClient, loggerProvider, tracerProvider, meterProvider, loggerProvider, nil, noopOnClose}
+	return &Client{cfg, logger, tracer, meter, messageEmitter, chipClient, loggerProvider, tracerProvider, meterProvider, loggerProvider, nil, noopOnClose, nil}
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output

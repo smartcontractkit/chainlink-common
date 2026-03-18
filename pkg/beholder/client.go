@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 const defaultGRPCCompressor = "gzip"
@@ -60,6 +61,9 @@ type Client struct {
 
 	// OnClose
 	OnClose func() error
+
+	// managedServices holds services started/stopped by the application, not by the Client.
+	managedServices []services.Service
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
@@ -232,10 +236,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
 			}
-			if err = batchEmitterService.Start(context.Background()); err != nil {
-				return nil, fmt.Errorf("failed to start chip ingress batch emitter: %w", err)
-			}
-			chipIngressEmitter = batchEmitterService
+			chipIngressEmitter = &emitOnlyAdapter{batchEmitterService}
 		} else {
 			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
 			if err != nil {
@@ -245,9 +246,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter, cfg.ChipIngressBatchEmitterEnabled)
 		if err != nil {
-			if batchEmitterService != nil {
-				_ = batchEmitterService.Close()
-			}
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
 	}
@@ -258,12 +256,25 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chipIngressClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
+	var managed []services.Service
+	if batchEmitterService != nil {
+		managed = append(managed, batchEmitterService)
+	}
+
+	return &Client{cfg, logger, tracer, meter, emitter, chipIngressClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose, managed}, nil
 }
 
-// Closes all providers, flushes all data and stops all background processes.
-// Order matters: emitter is closed first so the batch emitter can drain
-// buffered events while the gRPC connection is still alive.
+// ManagedServices returns services whose lifecycle is owned by the application
+// (start, stop, health). Returns nil when the receiver is nil or has none.
+func (c *Client) ManagedServices() []services.Service {
+	if c == nil {
+		return nil
+	}
+	return c.managedServices
+}
+
+// Close shuts down OTel providers and the chip ingress connection.
+// It does NOT close managed services — those are closed by the application.
 func (c Client) Close() (err error) {
 	if c.Emitter != nil {
 		err = errors.Join(err, c.Emitter.Close())

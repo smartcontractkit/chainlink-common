@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"iter"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -80,8 +82,39 @@ type CapabilityResponse struct {
 }
 
 type ResponseMetadata struct {
-	Metering []MeteringNodeDetail
-	CapDON_N uint32
+	Metering       []MeteringNodeDetail
+	CapDON_N       uint32
+	OCRAttestation *ResponseOCRAttestation
+}
+
+type ResponseOCRAttestation struct {
+	ConfigDigest   ocrtypes.ConfigDigest
+	SequenceNumber uint64
+	Sigs           []AttributedSignature
+}
+
+type AttributedSignature struct {
+	Signature []byte
+	Signer    uint32
+}
+
+func ResponseToReportData(workflowExecutionID, referenceID string, responsePayload []byte, spendUnit, spendValue string) []byte {
+	hash := sha3.New256()
+	const domainSeparator = "CapabilityResponseReportData:v1"
+	hash.Write([]byte(domainSeparator))
+	// Helper to write a length-prefixed byte slice.
+	writeField := func(b []byte) {
+		// Use a fixed-width length prefix to make encoding unambiguous.
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(b)))
+		_, _ = hash.Write(b)
+	}
+	writeField([]byte(workflowExecutionID))
+	writeField([]byte(referenceID))
+	writeField(responsePayload)
+	writeField([]byte(spendUnit))
+	writeField([]byte(spendValue))
+
+	return hash.Sum(nil)
 }
 
 type MeteringNodeDetail struct {

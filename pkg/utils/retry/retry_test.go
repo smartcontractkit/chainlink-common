@@ -3,6 +3,7 @@ package retry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ type testCase struct {
 	name     string
 	fn       exampleFunc
 	expected string
-	errMsg   string
+	errMsg   []string
 	timeout  time.Duration
 	strategy *Strategy[string]
 }
@@ -39,7 +40,7 @@ func TestWithRetry(t *testing.T) {
 			fn: func(ctx context.Context) (string, error) {
 				return "", errors.New("permanent error")
 			},
-			errMsg:  "context done while executing function",
+			errMsg:  []string{"context done while executing function", "permanent error"},
 			timeout: 100 * time.Millisecond,
 		},
 		{
@@ -69,7 +70,7 @@ func TestWithRetry(t *testing.T) {
 					return "eventual success", nil
 				}
 			}(),
-			errMsg:  "context done while executing function",
+			errMsg:  []string{"context done while executing function", "temporary error"},
 			timeout: 100 * time.Millisecond,
 		},
 		{
@@ -101,7 +102,7 @@ func TestWithRetry(t *testing.T) {
 					return "eventual success", nil
 				}
 			}(),
-			errMsg:  "context done while executing function",
+			errMsg:  []string{"context done while executing function", "temporary error"},
 			timeout: 1 * time.Second,
 		},
 		{
@@ -136,8 +137,35 @@ func TestWithRetry(t *testing.T) {
 			strategy: &Strategy[string]{
 				MaxRetries: 1,
 			},
-			errMsg:  "max retry attempts reached",
+			errMsg:  []string{"max retry attempts reached", "numRetries=2", "temporary error"},
 			timeout: 1 * time.Second,
+		},
+		{
+			name: "context timeout surfaces the last callback error, not earlier ones",
+			fn: func() exampleFunc {
+				attempt := 0
+				return func(ctx context.Context) (string, error) {
+					attempt++
+					return "", fmt.Errorf("error on attempt %d", attempt)
+				}
+			}(),
+			errMsg:  []string{"context done while executing function", "error on attempt 2"},
+			timeout: 300 * time.Millisecond,
+		},
+		{
+			name: "max retries surfaces the last callback error, not earlier ones",
+			fn: func() exampleFunc {
+				attempt := 0
+				return func(ctx context.Context) (string, error) {
+					attempt++
+					return "", fmt.Errorf("error on attempt %d", attempt)
+				}
+			}(),
+			strategy: &Strategy[string]{
+				MaxRetries: 3,
+			},
+			errMsg:  []string{"max retry attempts reached", "error on attempt 4"},
+			timeout: 5 * time.Second,
 		},
 	}
 
@@ -157,9 +185,11 @@ func TestWithRetry(t *testing.T) {
 				result, err = tt.strategy.Do(ctx, lggr, tt.fn)
 			}
 
-			if tt.errMsg != "" {
+			if len(tt.errMsg) > 0 {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.errMsg)
+				for _, msg := range tt.errMsg {
+					require.Contains(t, err.Error(), msg)
+				}
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.expected, result)

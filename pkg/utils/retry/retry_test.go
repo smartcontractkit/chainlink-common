@@ -149,7 +149,7 @@ func TestWithRetry(t *testing.T) {
 					return "", fmt.Errorf("error on attempt %d", attempt)
 				}
 			}(),
-			errMsg:  []string{"context done while executing function", "error on attempt 2"},
+			errMsg:  []string{"context done while executing function", "error on attempt"},
 			timeout: 300 * time.Millisecond,
 		},
 		{

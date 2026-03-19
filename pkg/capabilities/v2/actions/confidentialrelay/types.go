@@ -18,7 +18,7 @@ type SecretIdentifier struct {
 type SecretsRequestParams struct {
 	WorkflowID          string             `json:"workflow_id"`
 	Owner               string             `json:"owner"`                         // Ethereum address (hex, 0x-prefixed)
-	WorkflowExecutionID string             `json:"workflow_execution_id"`         // 32 bytes, hex-encoded
+	ExecutionID         string             `json:"execution_id"`                  // 32 bytes, hex-encoded
 	Secrets             []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey    string             `json:"enclave_public_key"`
 	Attestation         string             `json:"attestation,omitempty"`

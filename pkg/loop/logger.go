@@ -24,7 +24,7 @@ func HCLogLogger(l logger.Logger) hclog.Logger {
 		Output: io.Discard, // only write through p.Logger Sink
 		Level:  hclog.Debug,
 	})
-	hcl.RegisterSink(&hclSinkAdapter{l: logger.Sugared(l)})
+	hcl.RegisterSink(&hclSinkAdapter{l: logger.Sugared(l).WithOptions(zap.WithCaller(false))})
 	return hcl
 }
 

@@ -20,7 +20,7 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
     "opts": null,
     "tombstone": false,
 	"source": 1,
-	"allowNilStreamValues": false
+	"disableNilStreamValues": true
   },
   "1": {
     "reportFormat": "evm_premium_legacy",
@@ -37,7 +37,7 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
     },
     "tombstone": false,
 	"source": 2,
-	"allowNilStreamValues": true
+	"disableNilStreamValues": false
   }
 }`
 	var channelDefinitions ChannelDefinitions
@@ -134,18 +134,18 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 		assert.False(t, a.Equals(b))
 	})
 
-	t.Run("different AllowNilStreamValues", func(t *testing.T) {
+	t.Run("different DisableNilStreamValues", func(t *testing.T) {
 		a := ChannelDefinition{
-			ReportFormat:         ReportFormatJSON,
-			Streams:              []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
-			Opts:                 nil,
-			AllowNilStreamValues: false,
+			ReportFormat:          ReportFormatJSON,
+			Streams:               []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:                  nil,
+			DisableNilStreamValues: true,
 		}
 		b := ChannelDefinition{
-			ReportFormat:         ReportFormatJSON,
-			Streams:              []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
-			Opts:                 nil,
-			AllowNilStreamValues: true,
+			ReportFormat:          ReportFormatJSON,
+			Streams:               []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:                  nil,
+			DisableNilStreamValues: false,
 		}
 		assert.False(t, a.Equals(b))
 	})
@@ -208,18 +208,18 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		c := ChannelDefinitions{
 			0: {
-				ReportFormat:         ReportFormatJSON,
-				Streams:              []Stream{{1, AggregatorMedian}, {2, AggregatorMode}},
-				Opts:                 nil,
-				Source:               1,
-				AllowNilStreamValues: false,
+				ReportFormat:          ReportFormatJSON,
+				Streams:               []Stream{{1, AggregatorMedian}, {2, AggregatorMode}},
+				Opts:                  nil,
+				Source:                1,
+				DisableNilStreamValues: true,
 			},
 			1: {
-				ReportFormat:         ReportFormatEVMPremiumLegacy,
-				Streams:              []Stream{{1, AggregatorMedian}, {2, AggregatorMedian}, {3, AggregatorQuote}},
-				Opts:                 []byte(`{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}`),
-				Source:               2,
-				AllowNilStreamValues: true,
+				ReportFormat:          ReportFormatEVMPremiumLegacy,
+				Streams:                []Stream{{1, AggregatorMedian}, {2, AggregatorMedian}, {3, AggregatorQuote}},
+				Opts:                   []byte(`{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}`),
+				Source:                 2,
+				DisableNilStreamValues: false,
 			},
 		}
 		v, err := c.Value()
@@ -234,7 +234,7 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
     "opts": null,
     "tombstone": false,
 	"source": 1,
-	"allowNilStreamValues": false
+	"disableNilStreamValues": true
   },
   "1": {
     "reportFormat": "evm_premium_legacy",
@@ -251,7 +251,7 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
     },
     "tombstone": false,
 	"source": 2,
-	"allowNilStreamValues": true
+	"disableNilStreamValues": false
   }
 }`
 		assert.JSONEq(t, expectedJSON, string(v.([]byte)))

@@ -3,10 +3,10 @@ package vrfkey
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 
 	commonkeystore "github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
@@ -35,12 +35,12 @@ func FromEncryptedJSON(keyJSON []byte, password string) (KeyV2, error) {
 		Id:      uuid.New().String(),
 	})
 	if err != nil {
-		return KeyV2{}, errors.Wrapf(err, "while marshaling key for decryption")
+		return KeyV2{}, fmt.Errorf("while marshaling key for decryption: %w", err)
 	}
 
 	gethKey, err := keystore.DecryptKey(keyJSON, adulteratedPassword(password))
 	if err != nil {
-		return KeyV2{}, errors.Wrapf(err, "could not decrypt VRF key %s", export.PublicKey.String())
+		return KeyV2{}, fmt.Errorf("could not decrypt VRF key %s: %w", export.PublicKey.String(), err)
 	}
 
 	key := KeyFor(internal.NewRaw(gethKey.PrivateKey.D.Bytes()))
@@ -55,12 +55,12 @@ type EncryptedVRFKeyExport struct {
 func (key KeyV2) ToEncryptedJSON(password string, scryptParams commonkeystore.ScryptParams) (export []byte, err error) {
 	cryptoJSON, err := keystore.EncryptKey(key.toGethKey(), adulteratedPassword(password), scryptParams.N, scryptParams.P)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to encrypt key %s", key.ID())
+		return nil, fmt.Errorf("failed to encrypt key %s: %w", key.ID(), err)
 	}
 	var gethKey gethKeyStruct
 	err = json.Unmarshal(cryptoJSON, &gethKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal key %s", key.ID())
+		return nil, fmt.Errorf("failed to unmarshal key %s: %w", key.ID(), err)
 	}
 	encryptedOCRKExport := EncryptedVRFKeyExport{
 		PublicKey: key.PublicKey,

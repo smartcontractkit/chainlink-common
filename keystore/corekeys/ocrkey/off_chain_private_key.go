@@ -2,8 +2,7 @@ package ocrkey
 
 import (
 	"crypto/ed25519"
-
-	"github.com/pkg/errors"
+	"errors"
 )
 
 type offChainPrivateKey struct {
@@ -13,7 +12,7 @@ type offChainPrivateKey struct {
 // Sign returns the signature on msgHash with k
 func (k *offChainPrivateKey) Sign(msg []byte) ([]byte, error) {
 	if k == nil {
-		return nil, errors.Errorf("attempt to sign with nil key")
+		return nil, errors.New("attempt to sign with nil key")
 	}
 	return ed25519.Sign(k.pk(), msg), nil
 }

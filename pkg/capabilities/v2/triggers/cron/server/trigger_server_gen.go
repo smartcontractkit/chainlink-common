@@ -105,6 +105,7 @@ var _ capabilities.ExecutableAndTriggerCapability = (*cronCapability)(nil)
 const CronID = "cron-trigger@1.0.0"
 
 func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}
@@ -118,6 +119,7 @@ func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabiliti
 }
 
 func (c *cronCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}

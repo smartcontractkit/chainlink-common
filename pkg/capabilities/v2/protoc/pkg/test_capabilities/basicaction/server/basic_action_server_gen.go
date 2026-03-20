@@ -121,6 +121,7 @@ func (c *basicActionCapability) UnregisterFromWorkflow(ctx context.Context, requ
 
 func (c *basicActionCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "PerformAction":
 		input := &basicaction.Inputs{}

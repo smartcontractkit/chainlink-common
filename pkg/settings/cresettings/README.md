@@ -37,6 +37,12 @@ flowchart
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
     end
+
+    subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
+%%      DON nodes → gateway (separate from the inbound trigger flow)
+        GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
+        GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
+    end
 %%    WorkflowLimit - Deprecated
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -59,12 +65,12 @@ flowchart
     end
     
     subgraph Engine.runTriggerSubscriptionPhase
-
+        TriggerRegistrationStatusUpdateTimeout([TriggerRegistrationStatusUpdateTimeout]):::time
         PerWorkflow.TriggerSubscriptionTimeout>PerWorkflow.TriggerSubscriptionTimeout]:::time
         PerWorkflow.WASMMemoryLimit{{PerWorkflow.WASMMemoryLimit}}:::bound
         PerWorkflow.TriggerRegistrationsTimeout>PerWorkflow.TriggerRegistrationsTimeout]:::time
         PerWorkflow.TriggerSubscriptionLimit{{PerWorkflow.TriggerSubscriptionLimit}}:::bound
-
+        
         PerWorkflow.TriggerSubscriptionTimeout-->PerWorkflow.WASMMemoryLimit-->PerWorkflow.TriggerSubscriptionLimit-->PerWorkflow.TriggerRegistrationsTimeout
     end
 
@@ -107,8 +113,9 @@ flowchart
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
+        PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
 
-        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
+        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
         
     subgraph ExecutionHelper.GetSecrets
@@ -169,17 +176,31 @@ flowchart
     end
     subgraph vault
         VaultCiphertextSizeLimit{{VaultCiphertextSizeLimit}}:::bound
+        VaultShareSizeLimit{{VaultShareSizeLimit}}:::bound
         VaultIdentifierKeySizeLimit{{VaultIdentifierKeySizeLimit}}:::bound
         VaultIdentifierOwnerSizeLimit{{VaultIdentifierOwnerSizeLimit}}:::bound
         VaultIdentifierNamespaceSizeLimit{{VaultIdentifierNamespaceSizeLimit}}:::bound
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
+        VaultMaxQuerySizeLimit{{VaultMaxQuerySizeLimit}}:::bound
+        VaultMaxObservationSizeLimit{{VaultMaxObservationSizeLimit}}:::bound
+        VaultMaxReportsPlusPrecursorSizeLimit{{VaultMaxReportsPlusPrecursorSizeLimit}}:::bound
+        VaultMaxReportSizeLimit{{VaultMaxReportSizeLimit}}:::bound
+        VaultMaxReportCount{{VaultMaxReportCount}}:::bound
+        VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit{{VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit}}:::bound
+        VaultMaxKeyValueModifiedKeys{{VaultMaxKeyValueModifiedKeys}}:::bound
+        VaultMaxBlobPayloadSizeLimit{{VaultMaxBlobPayloadSizeLimit}}:::bound
+        VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit{{VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit}}:::bound
+        VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault
+
+%%  DON nodes → gateway is a separate entry point, not connected to the trigger/execution chain above
+    HandleNodeMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

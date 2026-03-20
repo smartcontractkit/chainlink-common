@@ -1096,21 +1096,22 @@ func (x *UnregisterFromWorkflowRequest) GetConfig() *pb.Map {
 }
 
 type InitialiseRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Config             string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	ErrorLogId         uint32                 `protobuf:"varint,2,opt,name=error_log_id,json=errorLogId,proto3" json:"error_log_id,omitempty"`
-	PipelineRunnerId   uint32                 `protobuf:"varint,3,opt,name=pipeline_runner_id,json=pipelineRunnerId,proto3" json:"pipeline_runner_id,omitempty"`
-	TelemetryId        uint32                 `protobuf:"varint,4,opt,name=telemetry_id,json=telemetryId,proto3" json:"telemetry_id,omitempty"`
-	CapRegistryId      uint32                 `protobuf:"varint,5,opt,name=capRegistry_id,json=capRegistryId,proto3" json:"capRegistry_id,omitempty"`
-	KeyValueStoreId    uint32                 `protobuf:"varint,6,opt,name=keyValueStore_id,json=keyValueStoreId,proto3" json:"keyValueStore_id,omitempty"`
-	RelayerSetId       uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
-	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
-	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
-	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
-	OrgResolverId      uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
-	CreSettingsId      uint32                 `protobuf:"varint,12,opt,name=cre_settings_id,json=creSettingsId,proto3" json:"cre_settings_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Config              string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	ErrorLogId          uint32                 `protobuf:"varint,2,opt,name=error_log_id,json=errorLogId,proto3" json:"error_log_id,omitempty"`
+	PipelineRunnerId    uint32                 `protobuf:"varint,3,opt,name=pipeline_runner_id,json=pipelineRunnerId,proto3" json:"pipeline_runner_id,omitempty"`
+	TelemetryId         uint32                 `protobuf:"varint,4,opt,name=telemetry_id,json=telemetryId,proto3" json:"telemetry_id,omitempty"`
+	CapRegistryId       uint32                 `protobuf:"varint,5,opt,name=capRegistry_id,json=capRegistryId,proto3" json:"capRegistry_id,omitempty"`
+	KeyValueStoreId     uint32                 `protobuf:"varint,6,opt,name=keyValueStore_id,json=keyValueStoreId,proto3" json:"keyValueStore_id,omitempty"`
+	RelayerSetId        uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
+	OracleFactoryId     uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
+	GatewayConnectorId  uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
+	KeystoreId          uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
+	OrgResolverId       uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
+	CreSettingsId       uint32                 `protobuf:"varint,12,opt,name=cre_settings_id,json=creSettingsId,proto3" json:"cre_settings_id,omitempty"`
+	TriggerEventStoreId uint32                 `protobuf:"varint,13,opt,name=trigger_event_store_id,json=triggerEventStoreId,proto3" json:"trigger_event_store_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *InitialiseRequest) Reset() {
@@ -1223,6 +1224,13 @@ func (x *InitialiseRequest) GetOrgResolverId() uint32 {
 func (x *InitialiseRequest) GetCreSettingsId() uint32 {
 	if x != nil {
 		return x.CreSettingsId
+	}
+	return 0
+}
+
+func (x *InitialiseRequest) GetTriggerEventStoreId() uint32 {
+	if x != nil {
+		return x.TriggerEventStoreId
 	}
 	return 0
 }
@@ -1406,7 +1414,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xe5\x03\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x9a\x04\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1422,7 +1430,8 @@ const file_capabilities_proto_rawDesc = "" +
 	" \x01(\rR\n" +
 	"keystoreId\x12&\n" +
 	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\x12&\n" +
-	"\x0fcre_settings_id\x18\f \x01(\rR\rcreSettingsId\"O\n" +
+	"\x0fcre_settings_id\x18\f \x01(\rR\rcreSettingsId\x123\n" +
+	"\x16trigger_event_store_id\x18\r \x01(\rR\x13triggerEventStoreId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos\"@\n" +
 	"\x0eSettingsUpdate\x12\x1a\n" +

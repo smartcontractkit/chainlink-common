@@ -52,11 +52,13 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(200),
-	WorkflowExecutionConcurrencyLimit: Int(200),
-	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:     Bool(true),
-
+	WorkflowLimit:                          Int(200),
+	WorkflowExecutionConcurrencyLimit:      Int(200),
+	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:          Bool(true),
+	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
+	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
+	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
@@ -65,8 +67,49 @@ var Default = Schema{
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
-	VaultPluginBatchSizeLimit:         Int(20),
+	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
+	VaultShareSizeLimit:               Size(600 * config.Byte),
+
+	VaultMaxQuerySizeLimit:       Size(102400 * config.Byte),
+	VaultMaxObservationSizeLimit: Size(512 * config.KByte),
+	// Back of the envelope calculation:
+	// - An item can contain 2KB of ciphertext, 192 bytes of metadata (key, owner, namespace),
+	// a UUID (16 bytes) plus some overhead = ~2.5KB per item
+	// There can be 10 such items in a request, and 20 per batch, so 2.5KB * 10 * 20 = 500KB
+	// However as a buffer for reports, which have additional data, setting the next 2 fields to 2 mb.
+	VaultMaxReportsPlusPrecursorSizeLimit: Size(2 * config.MByte),
+	VaultMaxReportSizeLimit:               Size(2 * config.MByte),
+	VaultMaxReportCount:                   Int(10),
+	// assumption for largest item:
+	// create request with the maximum ciphertext length:
+	// - 192 bytes (sum of MaxIdentifierKeyLengthBytes + MaxIdentifierOwnerLengthBytes + MaxIdentifierNamespaceLengthBytes)
+	// - 2048 bytes (MaxCiphertextLengthBytes)
+	// = ~2240 bytes for an item
+	// There are 10 items per request (separate vault setting), 10 request per batch (BatchSize)
+	// i.e. ~224 KB per batch
+	// For a batch we will write:
+	// - a secret + metadata record per item
+	//   - the secrets are 224 KB total
+	//   - the metadata is a list of secret identifiers,
+	//     there are a maximum of 100 secrets per owner (MaxSecretsPerOwner)
+	//     i.e. 192 bytes * 100 = ~19.2 KB
+	// - the pending queue
+	//   - 10 requests in the pending queue, each request is ~22.4Kb = ~22.4 KB
+	//   - an index record =  8bytes
+	// - total = ~224 KB + ~19.2 KB + ~224 KB + 8 bytes = ~467.2 KB
+	// Setting to 1.4MB to allow for some buffer.
+	VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit: Size(1468006 * config.Byte),
+	// 10 batch size * 10 items per batch * 2 records modified per item (secret + metadata record)
+	// plus 10 batchsize items in the pending queue + 1 index record
+	// = 211 total.
+	// plus some buffer.
+	VaultMaxKeyValueModifiedKeys: Int(300),
+	// Assuming a request is max 25KB, we add a bit of buffer to allow some room.
+	VaultMaxBlobPayloadSizeLimit: Size(25600 * config.Byte),
+	// Per docs, this should allow some additional buffer to allow for reaping time.
+	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
+	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
 		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
@@ -162,21 +205,39 @@ var Default = Schema{
 		},
 
 		FeatureMultiTriggerExecutionIDsActiveAt: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
 type Schema struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"` // Deprecated
-	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
-	GatewayVaultManagementEnabled     Setting[bool]
+	WorkflowLimit                          Setting[int] `unit:"{workflow}"` // Deprecated
+	WorkflowExecutionConcurrencyLimit      Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
+	GatewayVaultManagementEnabled          Setting[bool]
+	GatewayHTTPGlobalRate                  Setting[config.Rate]
+	GatewayHTTPPerNodeRate                 Setting[config.Rate]
+	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
+	VaultShareSizeLimit               Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
 	VaultIdentifierOwnerSizeLimit     Setting[config.Size]
 	VaultIdentifierNamespaceSizeLimit Setting[config.Size]
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
+
+	VaultMaxQuerySizeLimit                                   Setting[config.Size]
+	VaultMaxObservationSizeLimit                             Setting[config.Size]
+	VaultMaxReportsPlusPrecursorSizeLimit                    Setting[config.Size]
+	VaultMaxReportSizeLimit                                  Setting[config.Size]
+	VaultMaxReportCount                                      Setting[int]
+	VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit          Setting[config.Size]
+	VaultMaxKeyValueModifiedKeys                             Setting[int]
+	VaultMaxBlobPayloadSizeLimit                             Setting[config.Size]
+	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
+	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
@@ -230,7 +291,8 @@ type Workflows struct {
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 
-	FeatureMultiTriggerExecutionIDsActiveAt Setting[config.Timestamp]
+	FeatureMultiTriggerExecutionIDsActiveAt     Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

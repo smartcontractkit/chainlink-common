@@ -46,3 +46,7 @@ func ParseTimestamp(s string) (Timestamp, error) {
 	err := t.UnmarshalText([]byte(s))
 	return t, err
 }
+
+func NewTimestamp(t time.Time) Timestamp {
+	return Timestamp(t.Unix())
+}

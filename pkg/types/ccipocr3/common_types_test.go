@@ -298,3 +298,39 @@ func TestUnknownAddress_IsZeroOrEmpty(t *testing.T) {
 		})
 	}
 }
+
+func Test_IsZeroOrEmptyOrInvalidHexAddress(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: true,
+		},
+		{
+			name:     "zero string",
+			input:    "0x000000",
+			expected: true,
+		},
+		{
+			name:     "good string",
+			input:    "0x200000",
+			expected: false,
+		},
+		{
+			name:     "invalid hex format",
+			input:    "200000",
+			expected: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := IsZeroOrEmptyOrInvalidHexAddress(tc.input)
+			assert.Equal(t, tc.expected, result, "IsZeroOrEmptyAddressFromHex(%q) = %v, want %v", tc.input, result, tc.expected)
+		})
+	}
+}

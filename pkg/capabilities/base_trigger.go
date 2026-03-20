@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -103,8 +104,17 @@ func NewBaseTriggerCapability[T proto.Message](
 	}
 }
 
+func (b *BaseTriggerCapability[T]) retransmitEnabled() bool {
+	return b.tRetransmit > 0
+}
+
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	b.lggr.Info("starting base trigger")
+
+	if !b.retransmitEnabled() {
+		b.lggr.Warn("retransmits disabled (tRetransmit <= 0), events will be delivered once without persistence or ACK tracking")
+		return nil
+	}
 
 	recs, err := b.store.List(ctx)
 	if err != nil {
@@ -169,6 +179,10 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	te TriggerEvent,
 	triggerID string,
 ) error {
+	if !b.retransmitEnabled() {
+		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
+	}
+
 	rec := PendingEvent{
 		TriggerId:  triggerID,
 		EventId:    te.ID,
@@ -192,8 +206,38 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	return nil
 }
 
+// sendToInbox unmarshals the payload and delivers it to the registered inbox channel.
+func (b *BaseTriggerCapability[T]) sendToInbox(triggerID, eventID string, payload []byte) error {
+	b.mu.Lock()
+	sendCh, ok := b.inboxes[triggerID]
+	b.mu.Unlock()
+
+	if !ok {
+		b.metrics.IncInboxMissing(triggerID)
+		return fmt.Errorf("no inbox registered for trigger %s", triggerID)
+	}
+
+	msg := b.newMsg()
+	if err := proto.Unmarshal(payload, msg); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	wrapped := TriggerAndId[T]{Trigger: msg, Id: eventID}
+	if !safeSend(sendCh, wrapped) {
+		b.metrics.IncInboxFull(triggerID)
+		return fmt.Errorf("inbox full or closed for trigger %s", triggerID)
+	}
+
+	b.lggr.Infof("event dispatched: capability=%s trigger=%s event=%s",
+		b.capabilityId, triggerID, eventID)
+	return nil
+}
+
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
-	b.lggr.Infof("Event ACK (triggerID: %s, eventID %s)", triggerId, eventId)
+	b.lggr.Infow("Event ACK", "triggerID", triggerId, "eventID", eventId)
+	if !b.retransmitEnabled() {
+		return nil
+	}
 
 	var (
 		attempts int
@@ -297,7 +341,6 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 // It updates Attempts and LastSentAt on every attempt locally. Success is determined
 // later by an AckEvent call.
 func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
-	b.lggr.Infof("resending event (triggerID: %s, eventID: %s)", event.TriggerId, event.EventId)
 	b.mu.Lock()
 	eventsForTrigger, ok := b.pending[event.TriggerId]
 	if !ok || eventsForTrigger == nil {
@@ -314,9 +357,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	rec.Attempts++
 	rec.LastSentAt = time.Now()
 
-	typeURL := rec.AnyTypeURL
 	payloadCopy := append([]byte(nil), rec.Payload...)
-	sendCh, inboxOk := b.inboxes[event.TriggerId]
 	attempts := rec.Attempts
 	lastSent := rec.LastSentAt
 	b.mu.Unlock()
@@ -326,29 +367,23 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 		b.lggr.Errorf("failed to persist delivery update for trigger=%s event=%s: %v", event.TriggerId, event.EventId, err)
 	}
 
-	if !inboxOk {
-		b.metrics.IncInboxMissing(event.TriggerId)
-		b.lggr.Errorf("no inbox registered for trigger %s", event.TriggerId)
+	if err := b.sendToInbox(event.TriggerId, event.EventId, payloadCopy); err != nil {
+		b.lggr.Errorf("trySend failed: %v", err)
 		return
 	}
+}
 
-	msg := b.newMsg()
-	if err := proto.Unmarshal(payloadCopy, msg); err != nil {
-		b.lggr.Errorf("failed to unmarshal payload to message type (typeURL=%s): %v", typeURL, err)
-		return
-	}
-
-	wrapped := TriggerAndId[T]{
-		Trigger: msg,
-		Id:      event.EventId,
-	}
+func safeSend[T any](ch chan<- T, val T) (sent bool) {
+	defer func() {
+		if recover() != nil {
+			sent = false
+		}
+	}()
 
 	select {
-	case sendCh <- wrapped:
-		b.lggr.Infof("event dispatched: capability =%s trigger=%s event=%s attempt=%d",
-			b.capabilityId, event.TriggerId, event.EventId, attempts)
+	case ch <- val:
+		return true
 	default:
-		b.metrics.IncInboxFull(event.TriggerId)
-		b.lggr.Warnf("inbox full for trigger %s", event.TriggerId)
+		return false
 	}
 }

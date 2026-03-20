@@ -135,6 +135,7 @@ const {{.GoName}}ID = "{{CapabilityId $service}}"
 
 func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 {{- if $hasTriggers }}
+    ctx = request.Metadata.ContextWithCRE(ctx)
     switch request.Method {
         {{- range .Methods}}
         {{- if (isTrigger .) }}
@@ -153,6 +154,7 @@ func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, 
 
 func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 {{- if $hasTriggers	  }}
+        ctx = request.Metadata.ContextWithCRE(ctx)
 	    switch request.Method {
             {{- range .Methods}}
             {{- if (isTrigger .) }}
@@ -201,6 +203,7 @@ func (c *{{.GoName|LowerFirst}}Capability) UnregisterFromWorkflow(ctx context.Co
 func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 {{- if $hasActions }}
     response := capabilities.CapabilityResponse{}
+    ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
     {{- range .Methods}}
     {{- if  not (isTrigger .) }}

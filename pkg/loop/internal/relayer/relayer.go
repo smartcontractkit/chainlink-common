@@ -366,6 +366,19 @@ func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
 	}, nil
 }
 
+func (r *relayerClient) FinalizedHead(ctx context.Context) (types.Head, error) {
+	reply, err := r.relayer.FinalizedHead(ctx, &pb.FinalizedHeadRequest{})
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	return types.Head{
+		Height:    reply.Head.Height,
+		Hash:      reply.Head.Hash,
+		Timestamp: reply.Head.Timestamp,
+	}, nil
+}
+
 func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	reply, err := r.relayer.GetChainStatus(ctx, &pb.GetChainStatusRequest{})
 	if err != nil {
@@ -845,6 +858,21 @@ func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest)
 	}
 
 	return &pb.LatestHeadReply{
+		Head: &pb.Head{
+			Height:    head.Height,
+			Hash:      head.Hash,
+			Timestamp: head.Timestamp,
+		},
+	}, nil
+}
+
+func (r *relayerServer) FinalizedHead(ctx context.Context, _ *pb.FinalizedHeadRequest) (*pb.FinalizedHeadReply, error) {
+	head, err := r.impl.FinalizedHead(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.FinalizedHeadReply{
 		Head: &pb.Head{
 			Height:    head.Height,
 			Hash:      head.Hash,

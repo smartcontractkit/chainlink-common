@@ -13,10 +13,14 @@ import (
 )
 
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
+	return newBaseWithRetransmit(t, store, 100*time.Millisecond)
+}
+
+func newBaseWithRetransmit(t *testing.T, store EventStore, tRetransmit time.Duration) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
-		"testCap", 100*time.Millisecond, 0, 0)
+		"testCap", tRetransmit, 0, 0)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -251,4 +255,54 @@ func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRetransmitDisabled_DeliversOnceWithoutPersistence(t *testing.T) {
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+
+	b := newBaseWithRetransmit(t, store, 0)
+	ctx := t.Context()
+
+	b.RegisterTrigger("trigA", sendCh)
+
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() {
+		b.Stop()
+		b.UnregisterTrigger("trigA")
+	})
+
+	te := makeTE(t, "trigA", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trigA"))
+
+	// Should receive the event once
+	select {
+	case got := <-sendCh:
+		require.Equal(t, "e1", got.Id)
+	case <-time.After(time.Second):
+		t.Fatal("expected event delivery")
+	}
+
+	// Store should be empty (no persistence)
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Empty(t, recs)
+
+	// Wait a bit and confirm no retransmits
+	time.Sleep(200 * time.Millisecond)
+	select {
+	case got := <-sendCh:
+		t.Fatalf("unexpected retransmit: %+v", got)
+	default:
+	}
+}
+
+func TestRetransmitDisabled_AckIsNoop(t *testing.T) {
+	store := NewMemEventStore()
+	b := newBaseWithRetransmit(t, store, 0)
+
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	require.NoError(t, b.AckEvent(t.Context(), "anyTrigger", "anyEvent"))
 }

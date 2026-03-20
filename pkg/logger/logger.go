@@ -186,7 +186,11 @@ func (l *logger) helper(skip int) Logger {
 }
 
 func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
-	return l.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))
+	return l.withOptions(zap.AddCallerSkip(skip))
+}
+
+func (l *logger) withOptions(opts ...zap.Option) *zap.SugaredLogger {
+	return l.SugaredLogger.WithOptions(opts...)
 }
 
 // With returns a Logger with keyvals, if 'l' has a method `With(...any) L`, where L implements Logger, otherwise it returns l.
@@ -201,6 +205,25 @@ func With(l Logger, keyvals ...any) Logger {
 		return l // not available
 	}
 	if ret := method.CallSlice([]reflect.Value{reflect.ValueOf(keyvals)}); len(ret) == 1 {
+		nl, ok := ret[0].Interface().(Logger)
+		if ok {
+			return nl
+		}
+	}
+	return l
+}
+
+func WithOptions(l Logger, opts ...zap.Option) Logger {
+	switch t := l.(type) {
+	case *logger:
+		return &logger{t.withOptions(opts...)}
+	}
+
+	method := reflect.ValueOf(l).MethodByName("WithOptions")
+	if method == (reflect.Value{}) {
+		return l // not available
+	}
+	if ret := method.CallSlice([]reflect.Value{reflect.ValueOf(opts)}); len(ret) == 1 {
 		nl, ok := ret[0].Interface().(Logger)
 		if ok {
 			return nl

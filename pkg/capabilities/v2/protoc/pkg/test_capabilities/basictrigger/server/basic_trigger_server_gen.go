@@ -102,6 +102,7 @@ var _ capabilities.ExecutableAndTriggerCapability = (*basicCapability)(nil)
 const BasicID = "basic-test-trigger@1.0.0"
 
 func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Trigger":
 		input := &basictrigger.Config{}
@@ -112,6 +113,7 @@ func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilit
 }
 
 func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Trigger":
 		input := &basictrigger.Config{}

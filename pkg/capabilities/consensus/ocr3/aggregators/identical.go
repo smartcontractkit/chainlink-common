@@ -1,6 +1,7 @@
 package aggregators
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 
@@ -75,10 +76,13 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 	outcome := make(map[string]any)
 	for idx, shaToCounter := range counters {
 		highestCount := 0
+		var highestSHA [32]byte
 		var highestObservation values.Value
-		for _, counter := range shaToCounter {
-			if counter.count > highestCount {
+		for sha, counter := range shaToCounter {
+			if counter.count > highestCount ||
+				(counter.count == highestCount && bytes.Compare(sha[:], highestSHA[:]) < 0) {
 				highestCount = counter.count
+				highestSHA = sha
 				highestObservation = counter.fullObservation
 			}
 		}

@@ -116,6 +116,24 @@ func TestRelayerService_HealthReport(t *testing.T) {
 
 }
 
+func TestRelayerService_FinalizedHead(t *testing.T) {
+	t.Parallel()
+
+	capRegistry := mocks.NewCapabilitiesRegistry(t)
+	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+		return NewHelperProcessCommand(loop.PluginRelayerName, false, 0)
+	}, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, capRegistry)
+
+	servicetest.Run(t, relayer)
+
+	ctx := tests.Context(t)
+	latestHead, latestErr := relayer.LatestHead(ctx)
+	finalizedHead, finalizedErr := relayer.FinalizedHead(ctx)
+
+	require.Equal(t, latestHead, finalizedHead)
+	require.Equal(t, latestErr, finalizedErr)
+}
+
 // AssertLogsObserved records an error for each name which does not have any corresponding log lines.
 func AssertLogsObserved(t *testing.T, obsLogs *observer.ObservedLogs, names []string) func() {
 	return func() {

@@ -151,21 +151,6 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 	}, nil
 }
 
-func (k *Client) RelayerFinalizedHead(ctx context.Context, relayID types.RelayID) (types.Head, error) {
-	req := &relayerset.FinalizedHeadRequest{
-		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
-	}
-	resp, err := k.relayerSetClient.RelayerFinalizedHead(ctx, req)
-	if err != nil {
-		return types.Head{}, fmt.Errorf("error getting finalized head from relayerset client for relayer: %w", err)
-	}
-	return types.Head{
-		Height:    resp.Height,
-		Hash:      resp.Hash,
-		Timestamp: resp.Timestamp,
-	}, nil
-}
-
 // EVM creates an EVM Relayer Set client which is a wrapper over the regular EVM client that attaches the Relayer ID to every request.
 // This wrapper is then returned as a regular EVMClient .
 func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {

@@ -962,6 +962,17 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 		run  func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService)
 	}{
 		{
+			name: "LedgerVersion",
+			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
+				expected := uint64(12345)
+				mockApt.EXPECT().LedgerVersion(mock.Anything).Return(expected, nil)
+
+				version, err := apt.LedgerVersion(ctx)
+				require.NoError(t, err)
+				require.Equal(t, expected, version)
+			},
+		},
+		{
 			name: "AccountAPTBalance",
 			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
 				address := aptos.AccountAddress{
@@ -1003,6 +1014,39 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 					},
 				}
 				expectedData := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64} // 100
+				mockApt.EXPECT().View(mock.Anything, req).
+					Return(&aptos.ViewReply{Data: expectedData}, nil)
+
+				reply, err := apt.View(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expectedData, reply.Data)
+			},
+		},
+		{
+			name: "View with LedgerVersion",
+			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
+				moduleAddr := aptos.AccountAddress{
+					0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				}
+				ledgerVersion := uint64(987654)
+				req := aptos.ViewRequest{
+					Payload: &aptos.ViewPayload{
+						Module: aptos.ModuleID{
+							Address: moduleAddr,
+							Name:    "coin",
+						},
+						Function: "balance",
+						ArgTypes: []aptos.TypeTag{
+							{Value: aptos.AddressTag{}},
+						},
+						Args: [][]byte{{0x01, 0x02}},
+					},
+					LedgerVersion: &ledgerVersion,
+				}
+				expectedData := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64}
 				mockApt.EXPECT().View(mock.Anything, req).
 					Return(&aptos.ViewReply{Data: expectedData}, nil)
 

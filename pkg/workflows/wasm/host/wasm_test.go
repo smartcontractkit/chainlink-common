@@ -25,6 +25,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
@@ -909,20 +910,51 @@ func TestModule_Errors(t *testing.T) {
 }
 
 func TestModule_Sandbox_Memory(t *testing.T) {
-	ctx := t.Context()
+	t.Parallel()
+
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
-	require.NoError(t, err)
+	t.Run("Run (legacy DAG) path returns descriptive OOM error", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+		require.NoError(t, err)
 
-	m.Start()
+		m.Start()
+		defer m.Close()
 
-	req := &wasmpb.Request{
-		Id:      uuid.New().String(),
-		Message: &wasmpb.Request_SpecRequest{},
-	}
-	_, err = m.Run(ctx, req)
-	assert.ErrorContains(t, err, "exit status 2")
+		req := &wasmpb.Request{
+			Id:      uuid.New().String(),
+			Message: &wasmpb.Request_SpecRequest{},
+		}
+		_, err = m.Run(ctx, req)
+		assert.ErrorContains(t, err, "WASM module ran out of memory")
+		assert.ErrorContains(t, err, "exit status 2")
+	})
+
+	t.Run("Execute (v2) path returns descriptive OOM error", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+		require.NoError(t, err)
+
+		// OOM binary has no CRE SDK v2 import; set v2ImportName directly so Execute does not
+		// reject it as a legacy DAG module before attempting to run.
+		m.v2ImportName = "test"
+		m.Start()
+		defer m.Close()
+
+		mockHelper := NewMockExecutionHelper(t)
+		mockHelper.EXPECT().GetWorkflowExecutionID().Return("test-exec-id")
+		mockHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+
+		req := &sdkpb.ExecuteRequest{
+			Request: &sdkpb.ExecuteRequest_Trigger{},
+		}
+		_, err = m.Execute(ctx, req, mockHelper)
+		assert.ErrorContains(t, err, "WASM module ran out of memory")
+		assert.ErrorContains(t, err, "exit status 2")
+	})
 }
 
 func TestModule_CompressedBinarySize(t *testing.T) {

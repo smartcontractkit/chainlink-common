@@ -91,11 +91,29 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		}
 	}
 
+	var attestation *ResponseOCRAttestation
+	if resp.Metadata.OCRAttestation != nil {
+		respAtt := resp.Metadata.OCRAttestation
+		attestation = &ResponseOCRAttestation{
+			ConfigDigest:   respAtt.ConfigDigest[:],
+			SequenceNumber: respAtt.SequenceNumber,
+		}
+
+		attestation.Signatures = make([]*AttributedSignature, len(respAtt.Sigs))
+		for idx, sig := range respAtt.Sigs {
+			attestation.Signatures[idx] = &AttributedSignature{
+				Signer:    sig.Signer,
+				Signature: sig.Signature,
+			}
+		}
+	}
+
 	return &CapabilityResponse{
 		Value: values.ProtoMap(resp.Value),
 		Metadata: &ResponseMetadata{
-			Metering: metering,
-			CapdonN:  resp.Metadata.CapDON_N,
+			Metering:       metering,
+			CapdonN:        resp.Metadata.CapDON_N,
+			OcrAttestation: attestation,
 		},
 		Payload: resp.Payload,
 	}
@@ -155,7 +173,7 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 	}
 
 	var metering []capabilities.MeteringNodeDetail
-
+	var attestation *capabilities.ResponseOCRAttestation
 	if pr.Metadata != nil {
 		metering = make([]capabilities.MeteringNodeDetail, len(pr.Metadata.Metering))
 
@@ -166,13 +184,33 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 				SpendValue:  detail.SpendValue,
 			}
 		}
+
+		if pr.Metadata.OcrAttestation != nil {
+			if len(pr.Metadata.OcrAttestation.ConfigDigest) != 32 {
+				return capabilities.CapabilityResponse{}, fmt.Errorf("invalid config digest length: expected 32 bytes, got %d", len(pr.Metadata.OcrAttestation.ConfigDigest))
+			}
+
+			attestation = &capabilities.ResponseOCRAttestation{
+				ConfigDigest:   [32]byte(pr.Metadata.OcrAttestation.ConfigDigest),
+				SequenceNumber: pr.Metadata.OcrAttestation.SequenceNumber,
+				Sigs:           make([]capabilities.AttributedSignature, len(pr.Metadata.OcrAttestation.Signatures)),
+			}
+
+			for idx, sig := range pr.Metadata.OcrAttestation.Signatures {
+				attestation.Sigs[idx] = capabilities.AttributedSignature{
+					Signer:    sig.Signer,
+					Signature: sig.Signature,
+				}
+			}
+		}
 	}
 
 	resp := capabilities.CapabilityResponse{
 		Value: val,
 		Metadata: capabilities.ResponseMetadata{
-			Metering: metering,
-			CapDON_N: pr.Metadata.GetCapdonN(),
+			Metering:       metering,
+			CapDON_N:       pr.Metadata.GetCapdonN(),
+			OCRAttestation: attestation,
 		},
 		Payload: pr.Payload,
 	}

@@ -140,6 +140,18 @@ message ResponseMetadata {
   repeated metering.MeteringReportNodeDetail metering = 1;
   // capdon_n represents the total number of nodes in a capability don.
   uint32 capdon_n = 2;
+  optional ResponseOCRAttestation ocr_attestation = 3;
+}
+
+message ResponseOCRAttestation {
+  bytes config_digest = 1;
+  uint64 sequence_number = 2;
+  repeated AttributedSignature signatures = 3;
+}
+
+message AttributedSignature {
+  bytes signature = 1;
+  uint32 signer = 2;
 }
 
 message RegistrationMetadata {

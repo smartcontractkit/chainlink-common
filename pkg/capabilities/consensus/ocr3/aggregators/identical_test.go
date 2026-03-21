@@ -78,7 +78,7 @@ func TestDataFeedsAggregator_Aggregate_NoConsensus(t *testing.T) {
 	}
 	outcome, err := agg.Aggregate(logger.Nop(), nil, observations, 1)
 	require.Nil(t, outcome)
-	require.ErrorContains(t, err, "can't reach consensus on observations with index 0")
+	require.ErrorContains(t, err, "consensus failed: cannot reach agreement on observation at index 0")
 }
 
 func getConfigIdenticalAggregator(t *testing.T, overrideKeys []string) *values.Map {

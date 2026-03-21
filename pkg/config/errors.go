@@ -47,7 +47,7 @@ type KeyNotFoundError struct {
 }
 
 func (e KeyNotFoundError) Error() string {
-	return fmt.Sprintf("unable to find %s key with id %s", e.KeyType, e.ID)
+	return fmt.Sprintf("key not found: no %s key exists with ID %q. Verify the key ID is correct and that the key has been created", e.KeyType, e.ID)
 }
 
 // UniqueStrings is a helper for tracking unique values in string form.

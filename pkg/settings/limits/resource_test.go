@@ -67,7 +67,7 @@ func ExampleResourceLimiter_Use() {
 	defer limiter.Free(ctx, 1)
 
 	// Output:
-	// Try failed: resource limited: cannot use 1, already using 5/5
+	// Try failed: resource limited: cannot allocate 1, already using 5 of 5 maximum. Free existing resources or request a limit increase
 }
 
 func ExampleMultiResourcePoolLimiter() {
@@ -118,10 +118,10 @@ func ExampleMultiResourcePoolLimiter() {
 	}
 	free()
 	// Output:
-	// resource limited: cannot use 10, already using 95/100
-	// resource limited for org[org-id]: cannot use 10, already using 45/50
-	// resource limited for owner[owner-id]: cannot use 10, already using 15/20
-	// resource limited for workflow[workflow-id]: cannot use 10, already using 5/10
+	// resource limited: cannot allocate 10, already using 95 of 100 maximum. Free existing resources or request a limit increase
+	// resource limited for org[org-id]: cannot allocate 10, already using 45 of 50 maximum. Free existing resources or request a limit increase
+	// resource limited for owner[owner-id]: cannot allocate 10, already using 15 of 20 maximum. Free existing resources or request a limit increase
+	// resource limited for workflow[workflow-id]: cannot allocate 10, already using 5 of 10 maximum. Free existing resources or request a limit increase
 	// <nil>
 }
 

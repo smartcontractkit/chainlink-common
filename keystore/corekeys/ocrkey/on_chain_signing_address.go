@@ -3,12 +3,12 @@ package ocrkey
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/pkg/errors"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting/types"
 )
 
@@ -64,6 +64,6 @@ func (ocsa *OnChainSigningAddress) Scan(value any) error {
 		copy(ocsa[:], typed)
 		return nil
 	default:
-		return errors.Errorf(`unable to convert %v of %T to OnChainSigningAddress`, value, value)
+		return fmt.Errorf(`unable to convert %v of %T to OnChainSigningAddress`, value, value)
 	}
 }

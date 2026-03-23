@@ -19,6 +19,8 @@ flowchart LR
 	chainlink-common/keystore --> smdkg
 	chainlink-common/keystore --> wsrpc
 	click chainlink-common/keystore href "https://github.com/smartcontractkit/chainlink-common"
+	chainlink-common/pkg/capabilities/v2/gen --> chainlink-protos/cre/go
+	click chainlink-common/pkg/capabilities/v2/gen href "https://github.com/smartcontractkit/chainlink-common"
 	chainlink-common/pkg/chipingress
 	click chainlink-common/pkg/chipingress href "https://github.com/smartcontractkit/chainlink-common"
 	chainlink-common/pkg/monitoring --> chainlink-common
@@ -56,6 +58,7 @@ flowchart LR
 	subgraph chainlink-common-repo[chainlink-common]
 		 chainlink-common
 		 chainlink-common/keystore
+		 chainlink-common/pkg/capabilities/v2/gen
 		 chainlink-common/pkg/chipingress
 		 chainlink-common/pkg/monitoring
 		 chainlink-common/pkg/values

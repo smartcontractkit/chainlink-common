@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/installer/pkg"
@@ -16,7 +17,19 @@ func main() {
 	file := flag.String("file", "", "the go file to generate from")
 	defaultPathToV2 := filepath.Join("..", "..")
 	pathToV2 := flag.String("pathToV2", defaultPathToV2, "How to get to the ")
+	workdir := flag.String("workdir", "", "chdir here before generate; path relative to pkg/capabilities/v2/gen")
 	flag.Parse()
+
+	if *workdir != "" {
+		_, thisFile, _, ok := runtime.Caller(0)
+		if !ok {
+			log.Fatal("runtime.Caller failed")
+		}
+		abs := filepath.Join(filepath.Dir(thisFile), *workdir)
+		if err := os.Chdir(abs); err != nil {
+			log.Fatal("chdir workdir:", err)
+		}
+	}
 
 	gen.Plugins = []pkg.Plugin{pkg.GoPlugin, {Name: "cre", Path: filepath.Join(*pathToV2, "protoc")}}
 

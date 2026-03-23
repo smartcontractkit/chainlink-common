@@ -227,7 +227,7 @@ This replaces the global beholder emitter, covering **all** emission paths:
 | chainlink-common | `pkg/beholder/durable_emitter_integration_test.go` | Integration tests (mock gRPC server) |
 | chainlink | `core/services/beholder/durable_event_store_orm.go` | `PgDurableEventStore` (Postgres ORM) |
 | chainlink | `core/services/beholder/durable_event_store_orm_test.go` | ORM tests + Postgres benchmarks + load tests |
-| chainlink | `core/services/beholder/durable_emitter_load_test.go` | Full-stack load tests (Postgres + mock gRPC) |
+| chainlink | `core/services/beholder/durable_emitter_load_test.go` | TPS ramp/sustained/payload tests (Postgres + mock or external Chip via `CHIP_INGRESS_TEST_ADDR`) |
 | chainlink | `core/store/migrate/migrations/0295_chip_durable_events.sql` | Postgres migration |
 | chainlink | `core/config/telemetry_config.go` | `DurableEmitterEnabled()` on Telemetry interface |
 | chainlink | `core/config/toml/types.go` | TOML field + setFrom merge |
@@ -286,6 +286,65 @@ Real gRPC server with controllable failure injection:
 | `TestFullStack_SlowChip` | 50ms gRPC latency. Proves Emit() stays fast while server is slow |
 | `Benchmark_FullStack_EmitThroughput` | Upper bound events/sec through full pipeline |
 | `Benchmark_FullStack_EmitPayloadSizes` | Full emit at 64B, 256B, 1KB, 4KB |
+
+### Durable emitter TPS load tests (`chainlink/core/services/beholder/durable_emitter_load_test.go`)
+
+These tests exercise **Postgres + `DurableEmitter` + Chip Ingress** (in-process mock **or** a real gateway). They are heavier than the ORM benchmarks and require a **real Postgres** (not `txdb`).
+
+#### Prerequisites
+
+- **`CL_DATABASE_URL`** — must point at a Postgres instance where migration **`0295_chip_durable_events`** has been applied (`cre.chip_durable_events` exists). Same URL pattern as other chainlink DB tests.
+- **Short tests skipped** — if your test runner uses `-short`, these tests are skipped (`SkipShortDB`); run **without** `-short`.
+
+#### Mock Chip vs real Chip Ingress
+
+| Mode | How | Notes |
+|------|-----|--------|
+| **Mock** (default) | Do **not** set `CHIP_INGRESS_TEST_ADDR` | In-process gRPC server; tests can count **Server recv** events and inject failures (outage, slow Chip). |
+| **Real Chip** | Set `CHIP_INGRESS_TEST_ADDR=host:port` | Dials external Chip Ingress. Optional: `CHIP_INGRESS_TEST_TLS`, `CHIP_INGRESS_TEST_BASIC_AUTH_*`, `CHIP_INGRESS_TEST_SKIP_BASIC_AUTH`, `CHIP_INGRESS_TEST_SKIP_SCHEMA_REGISTRATION`. You need Kafka/Redpanda, topic **`chip-demo`**, and schema subject **`chip-demo-pb.DemoClientPayload`** (e.g. Atlas `make create-topic-and-schema` under `atlas/chip-ingress`). |
+
+Tests that **inject** Chip failures or rely on **in-process** receive counts are **skipped** when `CHIP_INGRESS_TEST_ADDR` is set.
+
+#### How to run
+
+From the `chainlink` repo root (examples):
+
+```bash
+# All beholder tests including TPS (requires CL_DATABASE_URL)
+export CL_DATABASE_URL='postgres://...'
+go test -v -count=1 ./core/services/beholder/ -run 'TestTPS_|TestChipIngressExternalPing'
+
+# Ramp-up only (100 → 500 → 1k → 2k TPS levels)
+go test -v -count=1 ./core/services/beholder/ -run TestTPS_RampUp
+
+# Sustained 1k TPS for 60s + drain check
+go test -v -count=1 ./core/services/beholder/ -run TestTPS_Sustained1k
+
+# Payload size scaling (fixed duration per size)
+go test -v -count=1 ./core/services/beholder/ -run TestTPS_PayloadSizeScaling
+
+# External Chip smoke (with addr set)
+export CHIP_INGRESS_TEST_ADDR='localhost:50051'
+go test -v -count=1 ./core/services/beholder/ -run TestChipIngressExternalPing
+```
+
+After a full package run, **`TestMain`** prints a **TPS LOAD TEST SUMMARY** block aggregating result blocks from **`TestTPS_RampUp`**, **`TestTPS_Sustained1k`**, **`TestTPS_1k_WithChipOutage`** (mock only; skipped with external Chip), and **`TestTPS_PayloadSizeScaling`**.
+
+#### Reading the tables (column glossary)
+
+| Column | Meaning |
+|--------|---------|
+| **Target TPS** | Requested emit rate (token-bucket style scheduling across workers). |
+| **Achieved TPS** | `Total emits ÷ window duration` — realized successful `Emit()` throughput. |
+| **Total emits** | Count of **`Emit()` calls that returned `nil`** in the measurement window (successful Postgres insert path). Does not count failures. |
+| **Emit p50 / p99** | Latency of successful `Emit()` calls (dominated by DB insert). |
+| **Failures** | `Emit()` calls that returned an error (e.g. DB failure). |
+| **Server recv** | **Mock only:** number of events observed by the in-process gRPC server (`Publish` / `PublishBatch`). |
+| **Queue depth** | Rows remaining in `cre.chip_durable_events` after the emit phase (+ short settle), i.e. backlog not yet deleted after successful publish. |
+
+#### Why **Server recv** shows **N/A** with real Chip
+
+The **Server recv** column is implemented by counting events on the **in-process mock** `ChipIngress` server. When you use **`CHIP_INGRESS_TEST_ADDR`**, there is no mock — the client talks to a **real** gateway — so the test **cannot** count server-side receives in-process. Use **Kafka / Chip / gateway metrics** (or consumer verification) to validate end-to-end delivery instead. **Total emits** and **Achieved TPS** still reflect client-side durable insert success; they are not replaced by N/A.
 
 ### CRE Smoke Tests (live Docker environment)
 

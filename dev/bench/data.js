@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774016740158,
+  "lastUpdate": 1774284492301,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -41640,6 +41640,66 @@ window.BENCHMARK_DATA = {
             "value": 148127,
             "unit": "ns/op",
             "extra": "7233 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c5b95089478239740b990ef83403b0a02706f65",
+          "message": "Confidential relay types, WorkflowExecution proto fields, and package move (#1903)\n\n* Add WorkflowOwner/ExecutionID to SecretsRequestParams, remove MasterPublicKey/Threshold from response\n\nSecretsRequestParams: added WorkflowOwner and WorkflowExecutionID.\nThe relay DON handler needs these to build a valid vault secrets.get\nrequest (owner matching, execution ID validation).\n\nSecretsResponseResult: removed MasterPublicKey and Threshold.\nThe enclave uses its own config for both (EnclaveConfig.MasterPublicKey\nand EnclaveConfig.T from on-chain DON config, populated after DKG).\nThe relay handler is a pass-through for encrypted shares only.\n\n* Bump chainlink-protos and regenerate confidential workflow types\n\nAdds Owner and ExecutionId fields to WorkflowExecution proto.\nThese carry workflow-level context in the app-specific proto\nrather than the generic ComputeRequest type.\n\nchainlink-protos: cre/go/v1alpha.23\n\n* Rename WorkflowOwner to Owner in SecretsRequestParams\n\nPer Prashant's review: will transition to org_id as owner going\nforward, so use the generic \"owner\" name.\n\n* Move confidentialrelay types to v2/actions/ for consistency\n\nAligns with confidentialworkflow which is already under v2/actions/.\nDownstream consumers (CC remote_dispatcher, chainlink relay handler)\nneed to update their import paths.\n\n* Rename WorkflowExecutionID to ExecutionID in SecretsRequestParams\n\n* Bump chainlink-protos to cre/go/v1alpha.25, regenerate\n\n* Verify: SSH commit signing via PPC YubiKey\n\n* Bump chainlink-protos to cre/go/v1alpha.26, remove dead solana chain-capability\n\nSolana protos were removed from chainlink-protos in #300. The generated\ncode and generate.go in chain-capabilities/solana referenced protos that\nno longer exist, breaking make generate for anyone using current protos.\n\n* Restore solana chain-capability (chainlink core imports it), remove generate.go (proto removed from chainlink-protos)",
+          "timestamp": "2026-03-23T16:38:26Z",
+          "tree_id": "891e921ad31d6052ef64e861211c91c80487ee69",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2c5b95089478239740b990ef83403b0a02706f65"
+        },
+        "date": 1774284490674,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.2,
+            "unit": "ns/op",
+            "extra": "3149215 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 76980,
+            "unit": "ns/op",
+            "extra": "15536 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 377.9,
+            "unit": "ns/op",
+            "extra": "3164024 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 76666,
+            "unit": "ns/op",
+            "extra": "15552 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29163,
+            "unit": "ns/op",
+            "extra": "41157 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 128076,
+            "unit": "ns/op",
+            "extra": "8768 times\n4 procs"
           }
         ]
       }

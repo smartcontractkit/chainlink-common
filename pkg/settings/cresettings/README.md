@@ -36,6 +36,7 @@ flowchart
     subgraph handleRequest[httpServer/websocketServer.handleRequest]
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
+        VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]

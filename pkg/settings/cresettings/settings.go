@@ -56,6 +56,7 @@ var Default = Schema{
 	WorkflowExecutionConcurrencyLimit:      Int(200),
 	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:          Bool(true),
+	VaultJWTAuthEnabled:                    Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
@@ -216,6 +217,7 @@ type Schema struct {
 	WorkflowExecutionConcurrencyLimit      Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
 	GatewayVaultManagementEnabled          Setting[bool]
+	VaultJWTAuthEnabled                    Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]

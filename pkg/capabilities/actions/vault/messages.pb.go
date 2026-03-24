@@ -579,6 +579,8 @@ type CreateSecretsRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RequestId        string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	EncryptedSecrets []*EncryptedSecret     `protobuf:"bytes,2,rep,name=encrypted_secrets,json=encryptedSecrets,proto3" json:"encrypted_secrets,omitempty"`
+	OrgId            string                 `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	WorkflowOwner    string                 `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -625,6 +627,20 @@ func (x *CreateSecretsRequest) GetEncryptedSecrets() []*EncryptedSecret {
 		return x.EncryptedSecrets
 	}
 	return nil
+}
+
+func (x *CreateSecretsRequest) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
+}
+
+func (x *CreateSecretsRequest) GetWorkflowOwner() string {
+	if x != nil {
+		return x.WorkflowOwner
+	}
+	return ""
 }
 
 type CreateSecretResponse struct {
@@ -735,6 +751,8 @@ type UpdateSecretsRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RequestId        string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	EncryptedSecrets []*EncryptedSecret     `protobuf:"bytes,2,rep,name=encrypted_secrets,json=encryptedSecrets,proto3" json:"encrypted_secrets,omitempty"`
+	OrgId            string                 `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	WorkflowOwner    string                 `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -781,6 +799,20 @@ func (x *UpdateSecretsRequest) GetEncryptedSecrets() []*EncryptedSecret {
 		return x.EncryptedSecrets
 	}
 	return nil
+}
+
+func (x *UpdateSecretsRequest) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
+}
+
+func (x *UpdateSecretsRequest) GetWorkflowOwner() string {
+	if x != nil {
+		return x.WorkflowOwner
+	}
+	return ""
 }
 
 type UpdateSecretResponse struct {
@@ -891,6 +923,8 @@ type DeleteSecretsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	Ids           []*SecretIdentifier    `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`
+	OrgId         string                 `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	WorkflowOwner string                 `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -937,6 +971,20 @@ func (x *DeleteSecretsRequest) GetIds() []*SecretIdentifier {
 		return x.Ids
 	}
 	return nil
+}
+
+func (x *DeleteSecretsRequest) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
+}
+
+func (x *DeleteSecretsRequest) GetWorkflowOwner() string {
+	if x != nil {
+		return x.WorkflowOwner
+	}
+	return ""
 }
 
 type DeleteSecretResponse struct {
@@ -1048,6 +1096,8 @@ type ListSecretIdentifiersRequest struct {
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	Owner         string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	Namespace     string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	OrgId         string                 `protobuf:"bytes,4,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	WorkflowOwner string                 `protobuf:"bytes,5,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1099,6 +1149,20 @@ func (x *ListSecretIdentifiersRequest) GetOwner() string {
 func (x *ListSecretIdentifiersRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
+	}
+	return ""
+}
+
+func (x *ListSecretIdentifiersRequest) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
+}
+
+func (x *ListSecretIdentifiersRequest) GetWorkflowOwner() string {
+	if x != nil {
+		return x.WorkflowOwner
 	}
 	return ""
 }
@@ -2203,42 +2267,50 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\"c\n" +
 	"\x0fEncryptedSecret\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"z\n" +
+	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"\xb8\x01\n" +
 	"\x14CreateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
-	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\"o\n" +
+	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\x12\x15\n" +
+	"\x06org_id\x18\x03 \x01(\tR\x05orgId\x12%\n" +
+	"\x0eworkflow_owner\x18\x04 \x01(\tR\rworkflowOwner\"o\n" +
 	"\x14CreateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15CreateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"z\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"\xb8\x01\n" +
 	"\x14UpdateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
-	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\"o\n" +
+	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\x12\x15\n" +
+	"\x06org_id\x18\x03 \x01(\tR\x05orgId\x12%\n" +
+	"\x0eworkflow_owner\x18\x04 \x01(\tR\rworkflowOwner\"o\n" +
 	"\x14UpdateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15UpdateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"`\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"\x9e\x01\n" +
 	"\x14DeleteSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12)\n" +
-	"\x03ids\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x03ids\"o\n" +
+	"\x03ids\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x03ids\x12\x15\n" +
+	"\x06org_id\x18\x03 \x01(\tR\x05orgId\x12%\n" +
+	"\x0eworkflow_owner\x18\x04 \x01(\tR\rworkflowOwner\"o\n" +
 	"\x14DeleteSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15DeleteSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"q\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"\xaf\x01\n" +
 	"\x1cListSecretIdentifiersRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x1c\n" +
-	"\tnamespace\x18\x03 \x01(\tR\tnamespace\"\x8a\x01\n" +
+	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x15\n" +
+	"\x06org_id\x18\x04 \x01(\tR\x05orgId\x12%\n" +
+	"\x0eworkflow_owner\x18\x05 \x01(\tR\rworkflowOwner\"\x8a\x01\n" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
 	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +

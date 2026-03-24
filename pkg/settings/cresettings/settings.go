@@ -151,6 +151,11 @@ var Default = Schema{
 		WASMSecretsSizeLimit:          Size(config.MByte),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
+		MetricEnabled:                 Bool(false),
+		MetricPayloadLimit:            Size(4 * config.KByte),
+		MetricNameLengthLimit:         Int(128),
+		MetricLabelsPerMetric:         Int(10),
+		MetricLabelValueLength:        Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
@@ -302,6 +307,12 @@ type Workflows struct {
 
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
+
+	MetricEnabled          Setting[bool]
+	MetricPayloadLimit     Setting[config.Size]
+	MetricNameLengthLimit  Setting[int] `unit:"{char}"`
+	MetricLabelsPerMetric  Setting[int] `unit:"{label}"`
+	MetricLabelValueLength Setting[int] `unit:"{char}"`
 
 	ChainAllowed SettingMap[bool]
 

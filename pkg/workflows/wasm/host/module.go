@@ -31,6 +31,7 @@ import (
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 const v2ImportPrefix = "version_v2"
@@ -48,6 +49,11 @@ var (
 	defaultMaxLogCountDONMode        = 10_000
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
+
+	defaultMaxMetricPayloadBytes = uint32(4096) // 4 KB
+	defaultMaxMetricNameLength   = uint32(128)
+	defaultMaxLabelsPerMetric    = uint32(10)
+	defaultMaxLabelValueLength   = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -75,6 +81,16 @@ type ModuleConfig struct {
 	MaxLogLenBytes      uint32
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
+
+	EnableUserMetrics              bool
+	MaxMetricPayloadBytes          uint32
+	MaxMetricPayloadLimiter        limits.BoundLimiter[config.Size] // supersedes MaxMetricPayloadBytes if set
+	MaxMetricNameLength            uint32
+	MaxMetricNameLengthLimiter     limits.BoundLimiter[int] // supersedes MaxMetricNameLength if set
+	MaxLabelsPerMetric             uint32
+	MaxLabelsPerMetricLimiter      limits.BoundLimiter[int] // supersedes MaxLabelsPerMetric if set
+	MaxLabelValueLength            uint32
+	MaxLabelValueLengthLimiter     limits.BoundLimiter[int] // supersedes MaxLabelValueLength if set
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -121,6 +137,8 @@ type ExecutionHelper interface {
 	GetDONTime() (time.Time, error)
 
 	EmitUserLog(log string) error
+
+	EmitUserMetric(metric *wfpb.WorkflowUserMetric) error
 }
 
 type module struct {
@@ -215,7 +233,53 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxLogCountNodeMode = uint32(defaultMaxLogCountNodeMode)
 	}
 
+	if modCfg.MaxMetricPayloadBytes == 0 {
+		modCfg.MaxMetricPayloadBytes = defaultMaxMetricPayloadBytes
+	}
+	if modCfg.MaxMetricNameLength == 0 {
+		modCfg.MaxMetricNameLength = defaultMaxMetricNameLength
+	}
+	if modCfg.MaxLabelsPerMetric == 0 {
+		modCfg.MaxLabelsPerMetric = defaultMaxLabelsPerMetric
+	}
+	if modCfg.MaxLabelValueLength == 0 {
+		modCfg.MaxLabelValueLength = defaultMaxLabelValueLength
+	}
+
 	lf := limits.Factory{Logger: modCfg.Logger}
+
+	if modCfg.MaxMetricPayloadLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxMetricPayloadBytes))
+		var err error
+		modCfg.MaxMetricPayloadLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make metric payload size limiter: %w", err)
+		}
+	}
+	if modCfg.MaxMetricNameLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxMetricNameLength))
+		var err error
+		modCfg.MaxMetricNameLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make metric name length limiter: %w", err)
+		}
+	}
+	if modCfg.MaxLabelsPerMetricLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxLabelsPerMetric))
+		var err error
+		modCfg.MaxLabelsPerMetricLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make labels per metric limiter: %w", err)
+		}
+	}
+	if modCfg.MaxLabelValueLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxLabelValueLength))
+		var err error
+		modCfg.MaxLabelValueLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make label value length limiter: %w", err)
+		}
+	}
 	if modCfg.MemoryLimiter == nil {
 		// Take the max of the min and the configured max memory mbs.
 		// We do this because Go requires a minimum of 16 megabytes to run,
@@ -389,6 +453,14 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		exec.log,
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
+	if err := linker.FuncWrap(
+		"env",
+		"emit_metric",
+		exec.emitMetric,
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping emit_metric func: %w", err)
 	}
 
 	if err = linker.FuncWrap(

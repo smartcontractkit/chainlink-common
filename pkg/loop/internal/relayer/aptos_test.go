@@ -119,9 +119,15 @@ type staticAptosService struct {
 }
 
 func (s *staticAptosService) LedgerVersion(ctx context.Context) (uint64, error) {
+	if s.ledgerVersion == nil {
+		return s.UnimplementedAptosService.LedgerVersion(ctx)
+	}
 	return s.ledgerVersion(ctx)
 }
 
 func (s *staticAptosService) View(ctx context.Context, req aptostypes.ViewRequest) (*aptostypes.ViewReply, error) {
+	if s.view == nil {
+		return s.UnimplementedAptosService.View(ctx, req)
+	}
 	return s.view(ctx, req)
 }

@@ -62,7 +62,7 @@ func newGlobalResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]
 	}
 
 	if f.Settings != nil {
-		l.getLimitFn = func(ctx context.Context) (N, error) {
+		l.resourcePoolUsage.getLimitFn = func(ctx context.Context) (N, error) {
 			return limit.GetOrDefault(ctx, f.Settings)
 		}
 		if registry, ok := f.Settings.(settings.Registry); ok {

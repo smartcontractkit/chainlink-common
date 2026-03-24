@@ -224,10 +224,17 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 	if err != nil {
 		// the first message sent to the client will be an ack or error message, this is done in order to syncronize the client and server and avoid
 		// errors to unregister not found triggers. If the error is not nil, we send an error message to the client and return the error
+
+		// If it's a capability error, serialize it and send it to the client for proper deserialization and handling on the client side.
+		errorString := err.Error()
+		var capErr caperrors.Error
+		if errors.As(err, &capErr) {
+			errorString = capErr.SerializeToString()
+		}
 		msg := &capabilitiespb.TriggerResponseMessage{
 			Message: &capabilitiespb.TriggerResponseMessage_Response{
 				Response: &capabilitiespb.TriggerResponse{
-					Error: err.Error(),
+					Error: errorString,
 				},
 			},
 		}
@@ -346,7 +353,7 @@ func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capab
 	}
 
 	if ackMsg.GetAck() == nil {
-		return nil, cancel, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
+		return nil, cancel, caperrors.DeserializeErrorFromString(ackMsg.GetResponse().GetError())
 	}
 
 	ch, err := forwardTriggerResponsesToChannel(ctx, responseStream.Recv)

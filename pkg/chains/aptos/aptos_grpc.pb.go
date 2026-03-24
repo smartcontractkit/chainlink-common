@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	Aptos_LedgerVersion_FullMethodName       = "/loop.aptos.Aptos/LedgerVersion"
 	Aptos_AccountAPTBalance_FullMethodName   = "/loop.aptos.Aptos/AccountAPTBalance"
 	Aptos_View_FullMethodName                = "/loop.aptos.Aptos/View"
 	Aptos_TransactionByHash_FullMethodName   = "/loop.aptos.Aptos/TransactionByHash"
@@ -30,6 +31,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AptosClient interface {
+	LedgerVersion(ctx context.Context, in *LedgerVersionRequest, opts ...grpc.CallOption) (*LedgerVersionReply, error)
 	AccountAPTBalance(ctx context.Context, in *AccountAPTBalanceRequest, opts ...grpc.CallOption) (*AccountAPTBalanceReply, error)
 	View(ctx context.Context, in *ViewRequest, opts ...grpc.CallOption) (*ViewReply, error)
 	TransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error)
@@ -43,6 +45,16 @@ type aptosClient struct {
 
 func NewAptosClient(cc grpc.ClientConnInterface) AptosClient {
 	return &aptosClient{cc}
+}
+
+func (c *aptosClient) LedgerVersion(ctx context.Context, in *LedgerVersionRequest, opts ...grpc.CallOption) (*LedgerVersionReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LedgerVersionReply)
+	err := c.cc.Invoke(ctx, Aptos_LedgerVersion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *aptosClient) AccountAPTBalance(ctx context.Context, in *AccountAPTBalanceRequest, opts ...grpc.CallOption) (*AccountAPTBalanceReply, error) {
@@ -99,6 +111,7 @@ func (c *aptosClient) SubmitTransaction(ctx context.Context, in *SubmitTransacti
 // All implementations must embed UnimplementedAptosServer
 // for forward compatibility.
 type AptosServer interface {
+	LedgerVersion(context.Context, *LedgerVersionRequest) (*LedgerVersionReply, error)
 	AccountAPTBalance(context.Context, *AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error)
 	View(context.Context, *ViewRequest) (*ViewReply, error)
 	TransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error)
@@ -114,6 +127,9 @@ type AptosServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAptosServer struct{}
 
+func (UnimplementedAptosServer) LedgerVersion(context.Context, *LedgerVersionRequest) (*LedgerVersionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LedgerVersion not implemented")
+}
 func (UnimplementedAptosServer) AccountAPTBalance(context.Context, *AccountAPTBalanceRequest) (*AccountAPTBalanceReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountAPTBalance not implemented")
 }
@@ -148,6 +164,24 @@ func RegisterAptosServer(s grpc.ServiceRegistrar, srv AptosServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Aptos_ServiceDesc, srv)
+}
+
+func _Aptos_LedgerVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LedgerVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AptosServer).LedgerVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Aptos_LedgerVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AptosServer).LedgerVersion(ctx, req.(*LedgerVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Aptos_AccountAPTBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -247,6 +281,10 @@ var Aptos_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.aptos.Aptos",
 	HandlerType: (*AptosServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "LedgerVersion",
+			Handler:    _Aptos_LedgerVersion_Handler,
+		},
 		{
 			MethodName: "AccountAPTBalance",
 			Handler:    _Aptos_AccountAPTBalance_Handler,

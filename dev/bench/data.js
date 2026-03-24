@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774348402952,
+  "lastUpdate": 1774356925527,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -41820,6 +41820,66 @@ window.BENCHMARK_DATA = {
             "value": 116660,
             "unit": "ns/op",
             "extra": "9500 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cawthornegd@gmail.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e12ff95068b0a638bf8333be97f441e980b09d0",
+          "message": "Aptos: add ledger-version support to common client (#1919)\n\n* aptos: add ledger version to common client\n\n* chore: refresh generated files\n\n* test: guard nil aptos relayer stubs",
+          "timestamp": "2026-03-24T12:47:18Z",
+          "tree_id": "c601117e04c071a6ab30362948de4c38792d5d07",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1e12ff95068b0a638bf8333be97f441e980b09d0"
+        },
+        "date": 1774356923219,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.3,
+            "unit": "ns/op",
+            "extra": "3376962 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 99618,
+            "unit": "ns/op",
+            "extra": "12031 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411,
+            "unit": "ns/op",
+            "extra": "2915586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 100379,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26574,
+            "unit": "ns/op",
+            "extra": "45162 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147595,
+            "unit": "ns/op",
+            "extra": "8042 times\n4 procs"
           }
         ]
       }

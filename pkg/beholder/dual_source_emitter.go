@@ -56,9 +56,12 @@ func (d *DualSourceEmitter) Close() error {
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	return d.BatchEmit(ctx, NewMessage(body, attrKVs...))
+}
 
+func (d *DualSourceEmitter) BatchEmit(ctx context.Context, messages ...Message) error {
 	// Emit via OTLP first
-	if err := d.otelCollectorEmitter.Emit(ctx, body, attrKVs...); err != nil {
+	if err := d.otelCollectorEmitter.BatchEmit(ctx, messages...); err != nil {
 		return err
 	}
 
@@ -72,7 +75,7 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 		ctx, cancel = d.stopCh.Ctx(ctx)
 		defer cancel()
 
-		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+		if err := d.chipIngressEmitter.BatchEmit(ctx, messages...); err != nil {
 			// If the chip ingress emitter fails, we ONLY log the error
 			// because we still want to send the data to the OTLP collector and not cause disruption
 			d.log.Infof("failed to emit to chip ingress: %v", err)

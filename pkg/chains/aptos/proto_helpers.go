@@ -434,6 +434,18 @@ func ConvertSubmitTransactionRequestToProto(req typeaptos.SubmitTransactionReque
 		}
 	}
 
+	if req.SimulationOptions != nil {
+		protoOpts := &SimulationOptions{
+			SimulateTransaction: req.SimulationOptions.SimulateTransaction,
+		}
+		for _, rule := range req.SimulationOptions.ExpectedSimulationFailureErrors {
+			protoOpts.ExpectedSimulationFailureErrors = append(protoOpts.ExpectedSimulationFailureErrors, &ExpectedSimulationFailureError{
+				ErrorString: rule.ErrorString,
+			})
+		}
+		protoReq.SimulationOptions = protoOpts
+	}
+
 	return protoReq, nil
 }
 
@@ -466,6 +478,18 @@ func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (
 			MaxGasAmount: proto.GasConfig.MaxGasAmount,
 			GasUnitPrice: proto.GasConfig.GasUnitPrice,
 		}
+	}
+
+	if proto.SimulationOptions != nil {
+		opts := &typeaptos.SimulationOptions{
+			SimulateTransaction: proto.SimulationOptions.SimulateTransaction,
+		}
+		for _, rule := range proto.SimulationOptions.ExpectedSimulationFailureErrors {
+			opts.ExpectedSimulationFailureErrors = append(opts.ExpectedSimulationFailureErrors, typeaptos.ExpectedSimulationFailureError{
+				ErrorString: rule.GetErrorString(),
+			})
+		}
+		req.SimulationOptions = opts
 	}
 
 	return req, nil

@@ -450,7 +450,7 @@ type fakeContractWriter struct {
 	cr *fakeContractReader
 }
 
-func (f *fakeContractWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+func (f *fakeContractWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int, _ *types.SimulationOptions) error {
 	contractID := toAddress + "-" + contractName
 	switch method {
 	case MethodSettingStruct:

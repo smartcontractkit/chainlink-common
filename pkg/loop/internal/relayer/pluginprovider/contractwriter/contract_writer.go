@@ -45,20 +45,21 @@ func WithClientEncoding(version codecpb.EncodingVersion) ClientOpt {
 	}
 }
 
-func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int) error {
+func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int, simulationOpts *types.SimulationOptions) error {
 	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
 	}
 
 	req := pb.SubmitTransactionRequest{
-		ContractName:  contractName,
-		Method:        method,
-		Params:        versionedParams,
-		TransactionId: transactionID,
-		ToAddress:     toAddress,
-		Meta:          TxMetaToProto(meta),
-		Value:         pb.NewBigIntFromInt(value),
+		ContractName:      contractName,
+		Method:            method,
+		Params:            versionedParams,
+		TransactionId:     transactionID,
+		ToAddress:         toAddress,
+		Meta:              TxMetaToProto(meta),
+		Value:             pb.NewBigIntFromInt(value),
+		SimulationOptions: SimulationOptionsToProto(simulationOpts),
 	}
 
 	_, err = c.grpc.SubmitTransaction(ctx, &req)
@@ -153,7 +154,7 @@ func (s *Server) SubmitTransaction(ctx context.Context, req *pb.SubmitTransactio
 		return nil, err
 	}
 
-	err := s.impl.SubmitTransaction(ctx, req.ContractName, req.Method, params, req.TransactionId, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int())
+	err := s.impl.SubmitTransaction(ctx, req.ContractName, req.Method, params, req.TransactionId, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int(), SimulationOptionsFromProto(req.SimulationOptions))
 	if err != nil {
 		return nil, err
 	}

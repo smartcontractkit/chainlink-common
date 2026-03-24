@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
@@ -123,6 +125,31 @@ func ExampleMultiResourcePoolLimiter() {
 	// resource limited for owner[owner-id]: cannot use 10, already using 15/20
 	// resource limited for workflow[workflow-id]: cannot use 10, already using 5/10
 	// <nil>
+}
+
+func TestMakeResourcePoolLimiter_Update(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	getter := NewGetter(t)
+	getter.On("GetScoped", mock.Anything, settings.ScopeGlobal, "foo").Return("10", nil).Twice()
+	f := Factory{Settings: getter}
+	s := settings.Size(1)
+	s.Key = "foo"
+	rl, err := MakeResourcePoolLimiter(f, s)
+	require.NoError(t, err)
+
+	// validate
+	a, err := rl.Available(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, config.Size(10), a)
+	assert.Error(t, rl.Use(ctx, 11))
+	// update
+	getter.On("GetScoped", mock.Anything, settings.ScopeGlobal, "foo").Return("20", nil).Twice()
+	// re-validate
+	a, err = rl.Available(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, config.Size(20), a)
+	assert.NoError(t, rl.Use(ctx, 11))
 }
 
 func TestMakeResourcePoolLimiter(t *testing.T) {

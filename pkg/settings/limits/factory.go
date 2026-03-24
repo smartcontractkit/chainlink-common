@@ -12,7 +12,7 @@ import (
 
 // Factory holds optional configuration for constructing [Limit]s.
 type Factory struct {
-	// Settings is a source of dynamic limit and burst updates.
+	// Settings is a source of dynamic limit updates.
 	// [settings.Getter.GetScoped] will be polled for updates, unless Settings is also a settings.Registry, in which case
 	// the channel based [settings.Registry.SubscribeScoped] will be used instead.
 	Settings settings.Getter // optional

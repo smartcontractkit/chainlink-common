@@ -26,23 +26,34 @@ func (c *ChipIngressEmitter) Close() error {
 }
 
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	return c.BatchEmit(ctx, Message{
+		Body:  body,
+		Attrs: ExtractAttributes(attrKVs...),
+	})
+}
 
-	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)
-	if err != nil {
-		return err
+func (c *ChipIngressEmitter) BatchEmit(ctx context.Context, messages ...Message) error {
+	events := make([]chipingress.CloudEvent, len(messages))
+	for i, msg := range messages {
+		sourceDomain, entityType, err := ExtractSourceAndType(msg.Attrs)
+		if err != nil {
+			return err
+		}
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, msg.Body, msg.Attrs)
+		if err != nil {
+			return err
+		}
+
+		events[i] = event
 	}
 
-	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
-	if err != nil {
-		return err
-	}
-
-	eventPb, err := chipingress.EventToProto(event)
+	eventPb, err := chipingress.EventsToBatch(events)
 	if err != nil {
 		return fmt.Errorf("failed to convert event to proto: %w", err)
 	}
 
-	_, err = c.client.Publish(ctx, eventPb)
+	_, err = c.client.PublishBatch(ctx, eventPb)
 	if err != nil {
 		return err
 	}
@@ -51,10 +62,7 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 }
 
 // ExtractSourceAndType extracts source domain and entity from the attributes
-func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
-
-	attributes := newAttributes(attrKVs...)
-
+func ExtractSourceAndType(attributes Attributes) (string, string, error) {
 	var sourceDomain string
 	var entityType string
 

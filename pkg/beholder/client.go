@@ -31,8 +31,9 @@ import (
 const defaultGRPCCompressor = "gzip"
 
 type Emitter interface {
-	// Sends message with bytes and attributes to OTel Collector
+	// Emit Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
+	BatchEmit(ctx context.Context, messages ...Message) error
 	io.Closer
 }
 

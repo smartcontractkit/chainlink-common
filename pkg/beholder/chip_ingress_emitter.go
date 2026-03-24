@@ -26,10 +26,7 @@ func (c *ChipIngressEmitter) Close() error {
 }
 
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	return c.BatchEmit(ctx, Message{
-		Body:  body,
-		Attrs: ExtractAttributes(attrKVs...),
-	})
+	return c.BatchEmit(ctx, NewMessage(body, attrKVs...))
 }
 
 func (c *ChipIngressEmitter) BatchEmit(ctx context.Context, messages ...Message) error {

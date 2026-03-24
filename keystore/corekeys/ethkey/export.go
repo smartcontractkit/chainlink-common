@@ -1,9 +1,10 @@
 package ethkey
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 
 	commonkeystore "github.com/smartcontractkit/chainlink-common/keystore"
 )
@@ -12,7 +13,7 @@ func (key KeyV2) ToEncryptedJSON(password string, scryptParams commonkeystore.Sc
 	// DEV: uuid is derived directly from the address, since it is not stored internally
 	id, err := uuid.FromBytes(key.Address.Bytes()[:16])
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not generate ethkey UUID")
+		return nil, fmt.Errorf("could not generate ethkey UUID: %w", err)
 	}
 	dKey := &keystore.Key{
 		Id:         id,

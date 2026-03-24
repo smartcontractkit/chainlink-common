@@ -2,11 +2,11 @@ package vrfkey
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/pkg/errors"
 	"go.dedis.ch/kyber/v3"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
@@ -68,7 +68,7 @@ func (key KeyV2) GenerateProofWithNonce(seed, nonce *big.Int) (Proof, error) {
 	publicKey := Secp256k1Curve.Point().Mul(skAsScalar, nil)
 	h, err := HashToCurve(publicKey, seed, func(*big.Int) {})
 	if err != nil {
-		return Proof{}, errors.Wrap(err, "vrf.makeProof#HashToCurve")
+		return Proof{}, fmt.Errorf("vrf.makeProof#HashToCurve: %w", err)
 	}
 	gamma := Secp256k1Curve.Point().Mul(skAsScalar, h)
 	sm := secp256k1.IntToScalar(nonce)
@@ -135,7 +135,7 @@ func (key KeyV2) GoString() string {
 func keyFromScalar(k kyber.Scalar) (KeyV2, error) {
 	rawPublicKey, err := secp256k1.ScalarToPublicPoint(k).MarshalBinary()
 	if err != nil {
-		return KeyV2{}, errors.Wrapf(err, "could not marshal public key")
+		return KeyV2{}, fmt.Errorf("could not marshal public key: %w", err)
 	}
 	if len(rawPublicKey) != secp256k1.CompressedPublicKeyLength {
 		return KeyV2{}, fmt.Errorf("public key %x has wrong length", rawPublicKey)

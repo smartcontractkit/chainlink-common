@@ -2,9 +2,8 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"slices"
-
-	"github.com/pkg/errors"
 )
 
 type rawLegacyKey []string

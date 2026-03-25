@@ -166,8 +166,7 @@ var Default = Schema{
 		},
 
 		ChainWrite: chainWrite{
-			TargetsLimit:    Int(10),
-			ReportSizeLimit: Size(5 * config.KByte),
+			TargetsLimit: Int(10),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
 				GasLimit: PerChainSelector(Uint64(5_000_000), map[string]uint64{
@@ -176,13 +175,15 @@ var Default = Schema{
 					// geth-devnet2
 					"12922642891491394802": 50_000_000,
 				}),
+				ReportSizeLimit: Size(5 * config.KByte),
 			},
 			Solana: solanaChainWrite{
 				ReportSizeLimit: Size(265 * config.Byte),
-				GasLimit:        Uint64(300_000),
+				GasLimit:        Uint32(300_000),
 			},
 			Aptos: aptosChainWrite{
-				GasLimit: Uint64(2_000_000),
+				ReportSizeLimit: Size(5 * config.KByte),
+				GasLimit:        Uint64(2_000_000),
 			},
 		},
 		ChainRead: chainRead{
@@ -315,8 +316,7 @@ type logTrigger struct {
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
 type chainWrite struct {
-	TargetsLimit    Setting[int] `unit:"{target}"`
-	ReportSizeLimit Setting[config.Size]
+	TargetsLimit Setting[int] `unit:"{target}"`
 
 	EVM    evmChainWrite
 	Solana solanaChainWrite
@@ -327,11 +327,13 @@ type solanaChainWrite struct {
 	GasLimit        Setting[uint32] `unit:"{gas}"`
 }
 type aptosChainWrite struct {
-	GasLimit Setting[uint64] `unit:"{gas}"`
+	ReportSizeLimit Setting[config.Size]
+	GasLimit        Setting[uint64] `unit:"{gas}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
 	GasLimit            SettingMap[uint64] `unit:"{gas}"`
+	ReportSizeLimit     Setting[config.Size]
 }
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`

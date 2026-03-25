@@ -126,6 +126,29 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, testProto.Message, resultProto.Message)
 }
 
+func TestNewEventBeholderDataSchema(t *testing.T) {
+	testProto := pb.PingResponse{Message: "x"}
+	protoBytes, err := proto.Marshal(&testProto)
+	require.NoError(t, err)
+
+	t.Run("beholder_data_schema sets CloudEvent dataschema", func(t *testing.T) {
+		event, err := NewEvent("platform", "workflows.v2.WorkflowUserLog", protoBytes, map[string]any{
+			"beholder_data_schema": "/cre-events-user-logs/v2",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "/cre-events-user-logs/v2", event.DataSchema())
+	})
+
+	t.Run("dataschema takes precedence over beholder_data_schema", func(t *testing.T) {
+		event, err := NewEvent("platform", "workflows.v2.WorkflowUserLog", protoBytes, map[string]any{
+			"dataschema":           "https://explicit.example/schema",
+			"beholder_data_schema": "/ignored",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "https://explicit.example/schema", event.DataSchema())
+	})
+}
+
 func TestEventToProto(t *testing.T) {
 	// Create a test protobuf message
 	testProto := pb.PingResponse{Message: "test message"}

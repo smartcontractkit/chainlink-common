@@ -210,8 +210,9 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		}
 	}
 	if err != nil {
+		ceID, ceSource, ceType := cloudEventDbg(eventPb)
 		d.log.Debugw("immediate publish failed, retransmit loop will retry",
-			"id", id, "error", err)
+			"id", id, "ce_id", ceID, "ce_source", ceSource, "ce_type", ceType, "error", err)
 		return
 	}
 
@@ -288,7 +289,9 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 			if d.metrics != nil {
 				d.metrics.publishBatchEvErr.Add(ctx, 1)
 			}
-			d.log.Debugw("retransmit publish failed", "id", ids[i], "error", pubErr)
+			ceID, ceSource, ceType := cloudEventDbg(events[i])
+			d.log.Debugw("retransmit publish failed",
+				"id", ids[i], "ce_id", ceID, "ce_source", ceSource, "ce_type", ceType, "error", pubErr)
 			continue
 		}
 		if d.metrics != nil {
@@ -371,4 +374,11 @@ func (d *DurableEmitter) metricsLoop(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func cloudEventDbg(ev *chipingress.CloudEventPb) (ceID, ceSource, ceType string) {
+	if ev == nil {
+		return "", "", ""
+	}
+	return ev.GetId(), ev.GetSource(), ev.GetType()
 }

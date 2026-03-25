@@ -227,6 +227,13 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		return
 	}
 
+	pubOKKVs := append([]any{}, detailKVs...)
+	pubOKKVs = append(pubOKKVs,
+		"publish_rpc_elapsed", elapsed.String(),
+		"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
+	)
+	d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (immediate)", pubOKKVs...)
+
 	t1 := time.Now()
 	delErr := d.store.Delete(context.Background(), id)
 	if h := d.cfg.Hooks; h != nil && h.OnImmediateDelete != nil {
@@ -235,9 +242,18 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	if delErr == nil && d.metrics != nil {
 		d.metrics.deliverComplete.Add(mctx, 1)
 	}
+	delElapsed := time.Since(t1)
 	if delErr != nil {
 		d.log.Errorw("failed to delete delivered event", "id", id, "error", delErr)
+		return
 	}
+	delOKKVs := append([]any{}, detailKVs...)
+	delOKKVs = append(delOKKVs,
+		"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
+		"store_delete_elapsed", delElapsed.String(),
+		"store_delete_elapsed_ms", delElapsed.Milliseconds(),
+	)
+	d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (immediate)", delOKKVs...)
 }
 
 func (d *DurableEmitter) retransmitLoop(ctx context.Context) {
@@ -313,9 +329,16 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 			d.log.Infow("DurableEmitter: Chip Ingress publish failed (retransmit)", failKVs...)
 			continue
 		}
+		pubOKKVs := append([]any{}, detailKVs...)
+		pubOKKVs = append(pubOKKVs,
+			"publish_rpc_elapsed", elapsed.String(),
+			"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
+		)
+		d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (retransmit)", pubOKKVs...)
 		if d.metrics != nil {
 			d.metrics.publishBatchEvOK.Add(ctx, 1)
 		}
+		tDelOne := time.Now()
 		if delErr := d.store.Delete(ctx, ids[i]); delErr != nil {
 			d.log.Errorw("failed to delete retransmitted event", "id", ids[i], "error", delErr)
 			continue
@@ -324,6 +347,14 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(ctx, 1)
 		}
+		delElapsed := time.Since(tDelOne)
+		delOKKVs := append([]any{}, detailKVs...)
+		delOKKVs = append(delOKKVs,
+			"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
+			"store_delete_elapsed", delElapsed.String(),
+			"store_delete_elapsed_ms", delElapsed.Milliseconds(),
+		)
+		d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (retransmit)", delOKKVs...)
 	}
 	if deleted > 0 {
 		d.log.Debugw("retransmitted events", "deleted", deleted, "attempted", len(events))

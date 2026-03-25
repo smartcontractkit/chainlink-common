@@ -68,6 +68,52 @@ func newTestDurableEmitter(t *testing.T, store DurableEventStore, client chiping
 	return em
 }
 
+func TestDurableEmitter_HooksImmediatePath(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	var pubCalls, delCalls atomic.Int32
+	cfg := DefaultDurableEmitterConfig()
+	cfg.Hooks = &DurableEmitterHooks{
+		OnImmediatePublish: func(time.Duration, error) { pubCalls.Add(1) },
+		OnImmediateDelete:  func(time.Duration, error) { delCalls.Add(1) },
+	}
+	em, err := NewDurableEmitter(store, client, cfg, logger.Test(t))
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
+	assert.Equal(t, int32(1), pubCalls.Load())
+	assert.Equal(t, int32(1), delCalls.Load())
+}
+
+func TestDurableEmitter_HooksPublishFailureSkipsDeleteHook(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	client.setPublishErr(errors.New("down"))
+	var pubCalls, delCalls atomic.Int32
+	cfg := DefaultDurableEmitterConfig()
+	cfg.Hooks = &DurableEmitterHooks{
+		OnImmediatePublish: func(time.Duration, error) { pubCalls.Add(1) },
+		OnImmediateDelete:  func(time.Duration, error) { delCalls.Add(1) },
+	}
+	em, err := NewDurableEmitter(store, client, cfg, logger.Test(t))
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return pubCalls.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+	assert.Equal(t, int32(0), delCalls.Load())
+}
+
 func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}

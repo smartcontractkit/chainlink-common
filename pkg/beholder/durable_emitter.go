@@ -27,6 +27,21 @@ type DurableEmitterConfig struct {
 	EventTTL time.Duration
 	// PublishTimeout is the per-RPC deadline for Publish / PublishBatch calls.
 	PublishTimeout time.Duration
+	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
+	// Callbacks may run from many goroutines; implementations must be thread-safe.
+	Hooks *DurableEmitterHooks
+}
+
+// DurableEmitterHooks records Publish vs Delete latency to locate pipeline bottlenecks.
+type DurableEmitterHooks struct {
+	// OnImmediatePublish is called after each async Publish in publishAndDelete (every attempt).
+	OnImmediatePublish func(elapsed time.Duration, err error)
+	// OnImmediateDelete is called after Delete following a successful immediate Publish.
+	OnImmediateDelete func(elapsed time.Duration, err error)
+	// OnRetransmitBatchPublish is called after each retransmit PublishBatch.
+	OnRetransmitBatchPublish func(elapsed time.Duration, eventCount int, err error)
+	// OnRetransmitBatchDeletes is called once per successful batch with total time for the delete loop.
+	OnRetransmitBatchDeletes func(elapsed time.Duration, deleteCount int)
 }
 
 func DefaultDurableEmitterConfig() DurableEmitterConfig {
@@ -140,14 +155,24 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 	defer cancel()
 
-	if _, err := d.client.Publish(ctx, eventPb); err != nil {
+	t0 := time.Now()
+	_, err := d.client.Publish(ctx, eventPb)
+	if h := d.cfg.Hooks; h != nil && h.OnImmediatePublish != nil {
+		h.OnImmediatePublish(time.Since(t0), err)
+	}
+	if err != nil {
 		d.log.Debugw("immediate publish failed, retransmit loop will retry",
 			"id", id, "error", err)
 		return
 	}
 
-	if err := d.store.Delete(context.Background(), id); err != nil {
-		d.log.Errorw("failed to delete delivered event", "id", id, "error", err)
+	t1 := time.Now()
+	delErr := d.store.Delete(context.Background(), id)
+	if h := d.cfg.Hooks; h != nil && h.OnImmediateDelete != nil {
+		h.OnImmediateDelete(time.Since(t1), delErr)
+	}
+	if delErr != nil {
+		d.log.Errorw("failed to delete delivered event", "id", id, "error", delErr)
 	}
 }
 
@@ -199,15 +224,24 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	publishCtx, cancel := context.WithTimeout(ctx, d.cfg.PublishTimeout)
 	defer cancel()
 
-	if _, err := d.client.PublishBatch(publishCtx, &chipingress.CloudEventBatch{Events: events}); err != nil {
+	tPub := time.Now()
+	_, err := d.client.PublishBatch(publishCtx, &chipingress.CloudEventBatch{Events: events})
+	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchPublish != nil {
+		h.OnRetransmitBatchPublish(time.Since(tPub), len(events), err)
+	}
+	if err != nil {
 		d.log.Warnw("retransmit batch failed", "count", len(events), "error", err)
 		return
 	}
 
+	tDel := time.Now()
 	for _, id := range ids {
 		if err := d.store.Delete(ctx, id); err != nil {
 			d.log.Errorw("failed to delete retransmitted event", "id", id, "error", err)
 		}
+	}
+	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil {
+		h.OnRetransmitBatchDeletes(time.Since(tDel), len(ids))
 	}
 	d.log.Debugw("retransmitted events", "count", len(ids))
 }

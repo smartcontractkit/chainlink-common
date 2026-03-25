@@ -75,10 +75,10 @@ FilterTopicsPerSlotLimit = '10'
 
 [PerWorkflow.ChainWrite]
 TargetsLimit = '10'
-ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM]
 TransactionGasLimit = '5000000'
+ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM.GasLimit]
 Default = '5000000'
@@ -86,6 +86,14 @@ Default = '5000000'
 [PerWorkflow.ChainWrite.EVM.GasLimit.Values]
 12922642891491394802 = '50000000'
 3379446385462418246 = '10000000'
+
+[PerWorkflow.ChainWrite.Solana]
+ReportSizeLimit = '265b'
+GasLimit = '300000'
+
+[PerWorkflow.ChainWrite.Aptos]
+ReportSizeLimit = '5kb'
+GasLimit = '2000000'
 
 [PerWorkflow.ChainRead]
 CallLimit = '15'

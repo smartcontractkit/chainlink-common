@@ -324,7 +324,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ccipocr3pb.RegisterExtraDataCodecBundleServer(s, ccipocr3loop.NewExtraDataCodecBundleServer(cargs.ExtraDataCodecBundle))
 			})
 			if err != nil {
-				return 0, nil, fmt.Errorf("failed to serve ExtraDataCodecBundle: %w", err)
+				return 0, deps, fmt.Errorf("failed to serve ExtraDataCodecBundle: %w", err)
 			}
 			deps.Add(edcRes)
 			extraDataCodecBundleID = edcID

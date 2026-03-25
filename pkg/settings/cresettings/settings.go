@@ -324,7 +324,7 @@ type chainWrite struct {
 }
 type solanaChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
-	GasLimit        Setting[uint64] `unit:"{gas}"`
+	GasLimit        Setting[uint32] `unit:"{gas}"`
 }
 type aptosChainWrite struct {
 	GasLimit Setting[uint64] `unit:"{gas}"`

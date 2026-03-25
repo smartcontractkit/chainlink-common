@@ -89,9 +89,9 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			CapabilityRegistryID: capabilityRegistryID,
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
+			return 0, deps, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
 		}
-		return reply.RelayerID, nil, nil
+		return reply.RelayerID, deps, nil
 	})
 	return newRelayerClient(p.BrokerExt, cc), nil
 }
@@ -127,7 +127,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		p.CloseAll(ksRes)
 		return nil, net.ErrConnDial{Name: "CSAKeystore", ID: request.KeystoreCSAID, Err: err}
 	}
-	ksCSARes := net.Resource{Closer: ksConn, Name: "CSAKeystore"}
+	ksCSARes := net.Resource{Closer: ksCSAConn, Name: "CSAKeystore"}
 
 	capRegistryConn, err := p.Dial(request.CapabilityRegistryID)
 	if err != nil {
@@ -344,7 +344,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 			},
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return reply.CcipProviderID, deps, nil
 	})

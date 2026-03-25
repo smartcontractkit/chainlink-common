@@ -3,9 +3,12 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -196,10 +199,14 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 	defer cancel()
 
+	detailKVs := cloudEventPublishKVs(id, "immediate", d.cfg.PublishTimeout, eventPb)
+	d.log.Infow("DurableEmitter: Chip Ingress publish attempt (immediate)", detailKVs...)
+
 	t0 := time.Now()
 	_, err := d.client.Publish(ctx, eventPb)
+	elapsed := time.Since(t0)
 	if h := d.cfg.Hooks; h != nil && h.OnImmediatePublish != nil {
-		h.OnImmediatePublish(time.Since(t0), err)
+		h.OnImmediatePublish(elapsed, err)
 	}
 	mctx := context.Background()
 	if d.metrics != nil {
@@ -210,9 +217,13 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		}
 	}
 	if err != nil {
-		ceID, ceSource, ceType := cloudEventDbg(eventPb)
-		d.log.Debugw("immediate publish failed, retransmit loop will retry",
-			"id", id, "ce_id", ceID, "ce_source", ceSource, "ce_type", ceType, "error", err)
+		failKVs := append([]any{}, detailKVs...)
+		failKVs = append(failKVs,
+			"error", err,
+			"elapsed", elapsed.String(),
+			"elapsed_ms", elapsed.Milliseconds(),
+		)
+		d.log.Infow("DurableEmitter: Chip Ingress publish failed (immediate), retransmit loop will retry", failKVs...)
 		return
 	}
 
@@ -278,20 +289,28 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	tDel := time.Now()
 	var deleted int
 	for i := range events {
+		detailKVs := cloudEventPublishKVs(ids[i], "retransmit", d.cfg.PublishTimeout, events[i])
+		d.log.Infow("DurableEmitter: Chip Ingress publish attempt (retransmit)", detailKVs...)
+
 		tPub := time.Now()
 		pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 		_, pubErr := d.client.Publish(pubCtx, events[i])
 		cancel()
+		elapsed := time.Since(tPub)
 		if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchPublish != nil {
-			h.OnRetransmitBatchPublish(time.Since(tPub), 1, pubErr)
+			h.OnRetransmitBatchPublish(elapsed, 1, pubErr)
 		}
 		if pubErr != nil {
 			if d.metrics != nil {
 				d.metrics.publishBatchEvErr.Add(ctx, 1)
 			}
-			ceID, ceSource, ceType := cloudEventDbg(events[i])
-			d.log.Debugw("retransmit publish failed",
-				"id", ids[i], "ce_id", ceID, "ce_source", ceSource, "ce_type", ceType, "error", pubErr)
+			failKVs := append([]any{}, detailKVs...)
+			failKVs = append(failKVs,
+				"error", pubErr,
+				"elapsed", elapsed.String(),
+				"elapsed_ms", elapsed.Milliseconds(),
+			)
+			d.log.Infow("DurableEmitter: Chip Ingress publish failed (retransmit)", failKVs...)
 			continue
 		}
 		if d.metrics != nil {
@@ -376,9 +395,65 @@ func (d *DurableEmitter) metricsLoop(ctx context.Context) {
 	}
 }
 
-func cloudEventDbg(ev *chipingress.CloudEventPb) (ceID, ceSource, ceType string) {
+// cloudEventPublishKVs returns structured fields for logging a Chip Ingress Publish RPC.
+func cloudEventPublishKVs(durableRowID int64, phase string, timeout time.Duration, ev *chipingress.CloudEventPb) []any {
 	if ev == nil {
-		return "", "", ""
+		return []any{
+			"durable_row_id", durableRowID,
+			"publish_phase", phase,
+			"publish_timeout", timeout.String(),
+			"ce_nil", true,
+		}
 	}
-	return ev.GetId(), ev.GetSource(), ev.GetType()
+
+	attrs := ev.GetAttributes()
+	bin := ev.GetBinaryData()
+	text := ev.GetTextData()
+	pd := ev.GetProtoData()
+	var protoTypeURL string
+	if pd != nil {
+		protoTypeURL = pd.GetTypeUrl()
+	}
+
+	attrKeys := make([]string, 0, len(attrs))
+	for k := range attrs {
+		attrKeys = append(attrKeys, k)
+	}
+	slices.Sort(attrKeys)
+
+	kvs := []any{
+		"durable_row_id", durableRowID,
+		"publish_phase", phase,
+		"publish_timeout", timeout.String(),
+		"ce_id", ev.GetId(),
+		"ce_source", ev.GetSource(),
+		"ce_type", ev.GetType(),
+		"ce_spec_version", ev.GetSpecVersion(),
+		"ce_data_binary_bytes", len(bin),
+		"ce_data_text_bytes", len(text),
+		"ce_proto_data_type_url", protoTypeURL,
+		"ce_attribute_count", len(attrs),
+		"ce_attribute_keys", strings.Join(attrKeys, ","),
+		"ce_attr_datacontenttype", cloudEventAttrString(attrs, "datacontenttype"),
+		"ce_attr_dataschema", cloudEventAttrString(attrs, "dataschema"),
+		"ce_attr_subject", cloudEventAttrString(attrs, "subject"),
+	}
+	return kvs
+}
+
+func cloudEventAttrString(attrs map[string]*cepb.CloudEventAttributeValue, key string) string {
+	if attrs == nil {
+		return ""
+	}
+	v := attrs[key]
+	if v == nil {
+		return ""
+	}
+	if s := v.GetCeString(); s != "" {
+		return s
+	}
+	if s := v.GetCeUri(); s != "" {
+		return s
+	}
+	return ""
 }

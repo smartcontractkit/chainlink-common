@@ -37,6 +37,12 @@ type DurableEmitterConfig struct {
 	// Metrics enables OpenTelemetry instruments on beholder.GetMeter() (queue, publish, store, optional process stats).
 	// Nil disables.
 	Metrics *DurableEmitterMetricsConfig
+	// PersistCloudEventSources limits durable persistence to these CloudEvent Source values
+	// (the beholder_domain / ce_source). If nil, every source is persisted (library default).
+	// If non-nil, only matching sources are inserted and retried; others get a single best-effort
+	// Publish with no store insert. An empty slice persists nothing (all best-effort only).
+	// A one-element slice containing only "*" is treated like nil (persist all).
+	PersistCloudEventSources []string
 }
 
 // DurableEmitterHooks records Publish vs Delete latency to locate pipeline bottlenecks.
@@ -78,10 +84,39 @@ type DurableEmitter struct {
 	cfg    DurableEmitterConfig
 	log    logger.Logger
 
-	metrics *durableEmitterMetrics
+	metrics       *durableEmitterMetrics
+	persistFilter persistSourceFilter
 
 	stopCh chan struct{}
 	wg     sync.WaitGroup
+}
+
+// persistSourceFilter decides whether a CloudEvent source may be written to the durable store.
+type persistSourceFilter struct {
+	allowAll bool
+	allowed  map[string]struct{}
+}
+
+func newPersistSourceFilter(sources []string) persistSourceFilter {
+	if sources == nil {
+		return persistSourceFilter{allowAll: true}
+	}
+	if len(sources) == 1 && strings.TrimSpace(sources[0]) == "*" {
+		return persistSourceFilter{allowAll: true}
+	}
+	m := make(map[string]struct{}, len(sources))
+	for _, s := range sources {
+		m[strings.TrimSpace(s)] = struct{}{}
+	}
+	return persistSourceFilter{allowed: m}
+}
+
+func (f persistSourceFilter) allows(source string) bool {
+	if f.allowAll {
+		return true
+	}
+	_, ok := f.allowed[source]
+	return ok
 }
 
 var _ Emitter = (*DurableEmitter)(nil)
@@ -111,12 +146,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	return &DurableEmitter{
-		store:   store,
-		client:  client,
-		cfg:     cfg,
-		log:     log,
-		metrics: m,
-		stopCh:  make(chan struct{}),
+		store:         store,
+		client:        client,
+		cfg:           cfg,
+		log:           log,
+		metrics:       m,
+		persistFilter: newPersistSourceFilter(cfg.PersistCloudEventSources),
+		stopCh:        make(chan struct{}),
 	}, nil
 }
 
@@ -135,8 +171,9 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 	}
 }
 
-// Emit persists the event then attempts async delivery.
-// Returns nil once the store insert succeeds.
+// Emit persists the event then attempts async delivery when the CloudEvent source is allowed
+// by PersistCloudEventSources; otherwise it performs a single best-effort Publish with no
+// persistence. Returns nil once processing is accepted (insert succeeded, or non-persist path started).
 func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	emitFail := func() {
 		if d.metrics != nil {
@@ -159,6 +196,11 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 	if err != nil {
 		emitFail()
 		return fmt.Errorf("failed to convert event to proto: %w", err)
+	}
+
+	if !d.persistFilter.allows(sourceDomain) {
+		go d.publishBestEffortNoStore(proto.Clone(eventPb))
+		return nil
 	}
 
 	payload, err := proto.Marshal(eventPb)
@@ -185,6 +227,43 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 	go d.publishAndDelete(id, eventPb)
 
 	return nil
+}
+
+// publishBestEffortNoStore performs one Publish without persisting or retries.
+func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEventPb) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer cancel()
+
+	detailKVs := cloudEventPublishKVs(0, "best_effort_no_store", d.cfg.PublishTimeout, eventPb)
+	d.log.Infow("DurableEmitter: Chip Ingress publish attempt (best-effort, not persisted)", detailKVs...)
+
+	t0 := time.Now()
+	_, err := d.client.Publish(ctx, eventPb)
+	elapsed := time.Since(t0)
+	if h := d.cfg.Hooks; h != nil && h.OnImmediatePublish != nil {
+		h.OnImmediatePublish(elapsed, err)
+	}
+	mctx := context.Background()
+	if d.metrics != nil {
+		if err != nil {
+			d.metrics.publishImmErr.Add(mctx, 1)
+		} else {
+			d.metrics.publishImmOK.Add(mctx, 1)
+		}
+	}
+	if err != nil {
+		failKVs := append([]any{}, detailKVs...)
+		failKVs = append(failKVs,
+			"error", err,
+			"elapsed", elapsed.String(),
+			"elapsed_ms", elapsed.Milliseconds(),
+		)
+		d.log.Infow("DurableEmitter: best-effort Chip publish failed (not persisted, no retry)", failKVs...)
+		return
+	}
+	okKVs := append([]any{}, detailKVs...)
+	okKVs = append(okKVs, "publish_rpc_elapsed_ms", elapsed.Milliseconds())
+	d.log.Infow("DurableEmitter: best-effort Chip publish succeeded (not persisted)", okKVs...)
 }
 
 // Close signals background loops to stop and waits for them to finish.
@@ -291,6 +370,12 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		ev := new(chipingress.CloudEventPb)
 		if err := proto.Unmarshal(pe.Payload, ev); err != nil {
 			d.log.Errorw("corrupt pending event, deleting", "id", pe.ID, "error", err)
+			_ = d.store.Delete(ctx, pe.ID)
+			continue
+		}
+		if !d.persistFilter.allows(ev.GetSource()) {
+			d.log.Infow("DurableEmitter: dropping queued event (ce_source not in PersistCloudEventSources)",
+				"id", pe.ID, "ce_source", ev.GetSource(), "ce_type", ev.GetType())
 			_ = d.store.Delete(ctx, pe.ID)
 			continue
 		}

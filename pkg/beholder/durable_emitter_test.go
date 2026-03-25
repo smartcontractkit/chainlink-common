@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -266,6 +267,87 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond, "expiry loop should purge the event")
+}
+
+func TestDurableEmitter_PersistSourceFilter_skipsStoreBestEffortPublish(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	cfg := DefaultDurableEmitterConfig()
+	cfg.PersistCloudEventSources = []string{"only-this"}
+	em := newTestDurableEmitter(t, store, client, &cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return client.publishCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+	assert.Equal(t, 0, store.Len())
+}
+
+func TestDurableEmitter_PersistSourceFilter_persistsAllowedSource(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	cfg := DefaultDurableEmitterConfig()
+	cfg.PersistCloudEventSources = []string{"test-source"}
+	em := newTestDurableEmitter(t, store, client, &cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return client.publishCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
+}
+
+func TestDurableEmitter_PersistSourceWildcardStarAllowsAll(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	cfg := DefaultDurableEmitterConfig()
+	cfg.PersistCloudEventSources = []string{"*"}
+	em := newTestDurableEmitter(t, store, client, &cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
+}
+
+func TestDurableEmitter_RetransmitDropsDisallowedSource(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+
+	ev, err := chipingress.NewEvent("unknown-domain", "t", []byte("b"), nil)
+	require.NoError(t, err)
+	evPb, err := chipingress.EventToProto(ev)
+	require.NoError(t, err)
+	payload, err := proto.Marshal(evPb)
+	require.NoError(t, err)
+
+	_, err = store.Insert(context.Background(), payload)
+	require.NoError(t, err)
+
+	cfg := DefaultDurableEmitterConfig()
+	cfg.PersistCloudEventSources = []string{"test-source"}
+	cfg.RetransmitInterval = 50 * time.Millisecond
+	cfg.RetransmitAfter = 30 * time.Millisecond
+
+	em := newTestDurableEmitter(t, store, client, &cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.Eventually(t, func() bool {
+		return store.Len() == 0 && client.publishCount.Load() == 0
+	}, 3*time.Second, 20*time.Millisecond, "disallowed row should be deleted without Publish")
 }
 
 func TestDurableEmitter_EmitRejectsInvalidAttributes(t *testing.T) {

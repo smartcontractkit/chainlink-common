@@ -61,7 +61,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			pb.RegisterKeystoreServer(s, ks.NewServer(keystore))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve keystore: %w", err)
+			return 0, deps, fmt.Errorf("Failed to create relayer client: failed to serve keystore: %w", err)
 		}
 		deps.Add(ksRes)
 
@@ -70,7 +70,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			pb.RegisterKeystoreServer(s, ks.NewServer(csaKeystore))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
+			return 0, deps, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
 		}
 		deps.Add(ksCSARes)
 
@@ -78,7 +78,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new capability registry: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new capability registry: %w", err)
 		}
 		deps.Add(capabilityRegistryResource)
 

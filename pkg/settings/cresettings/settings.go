@@ -57,6 +57,7 @@ var Default = Schema{
 	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:          Bool(true),
 	VaultJWTAuthEnabled:                    Bool(false),
+	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
@@ -218,6 +219,7 @@ type Schema struct {
 	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
 	GatewayVaultManagementEnabled          Setting[bool]
 	VaultJWTAuthEnabled                    Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]

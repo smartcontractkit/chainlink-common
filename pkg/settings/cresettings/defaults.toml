@@ -75,6 +75,7 @@ FilterTopicsPerSlotLimit = '10'
 
 [PerWorkflow.ChainWrite]
 TargetsLimit = '10'
+ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM]
 TransactionGasLimit = '5000000'

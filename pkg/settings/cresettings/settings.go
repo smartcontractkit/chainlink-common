@@ -166,7 +166,8 @@ var Default = Schema{
 		},
 
 		ChainWrite: chainWrite{
-			TargetsLimit: Int(10),
+			TargetsLimit:    Int(10),
+			ReportSizeLimit: Size(5 * config.KByte),
 			EVM: evmChainWrite{
 				TransactionGasLimit: Uint64(5_000_000),
 				GasLimit: PerChainSelector(Uint64(5_000_000), map[string]uint64{
@@ -316,7 +317,8 @@ type logTrigger struct {
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
 type chainWrite struct {
-	TargetsLimit Setting[int] `unit:"{target}"`
+	TargetsLimit    Setting[int]         `unit:"{target}"`
+	ReportSizeLimit Setting[config.Size] // Deprecated
 
 	EVM    evmChainWrite
 	Solana solanaChainWrite

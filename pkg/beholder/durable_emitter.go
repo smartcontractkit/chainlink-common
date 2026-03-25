@@ -199,7 +199,13 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 	}
 
 	if !d.persistFilter.allows(sourceDomain) {
-		go d.publishBestEffortNoStore(proto.Clone(eventPb))
+		cl := proto.Clone(eventPb)
+		evCopy, ok := cl.(*chipingress.CloudEventPb)
+		if !ok {
+			emitFail()
+			return fmt.Errorf("proto.Clone event: got %T, want *chipingress.CloudEventPb", cl)
+		}
+		go d.publishBestEffortNoStore(evCopy)
 		return nil
 	}
 

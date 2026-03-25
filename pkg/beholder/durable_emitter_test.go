@@ -14,7 +14,26 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
+
+// withTestBeholderMeter swaps the global beholder client meter for t's lifetime (for metrics assertions).
+func withTestBeholderMeter(t *testing.T) *sdkmetric.ManualReader {
+	t.Helper()
+	prev := GetClient()
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	c := NewNoopClient()
+	c.MeterProvider = mp
+	c.Meter = mp.Meter(defaultPackageName)
+	SetClient(c)
+	t.Cleanup(func() {
+		SetClient(prev)
+		_ = mp.Shutdown(context.Background())
+	})
+	return reader
+}
 
 // testChipClient is a minimal chipingress.Client for tests.
 type testChipClient struct {
@@ -265,4 +284,39 @@ func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 
 	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, cfg, nil)
 	assert.ErrorContains(t, err, "logger")
+}
+
+func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
+	reader := withTestBeholderMeter(t)
+
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	cfg := DefaultDurableEmitterConfig()
+	cfg.RetransmitInterval = time.Hour
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
+
+	em, err := NewDurableEmitter(store, client, cfg, logger.Test(t))
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer func() { _ = em.Close() }()
+
+	require.NoError(t, em.Emit(ctx, []byte("m"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(ctx, &rm))
+
+	var found bool
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == "beholder.durable_emitter.emit.success" {
+				found = true
+			}
+		}
+	}
+	assert.True(t, found, "expected beholder.durable_emitter.emit.success in exported metrics")
 }

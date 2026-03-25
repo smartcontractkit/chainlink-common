@@ -300,7 +300,7 @@ These tests exercise **Postgres + `DurableEmitter` + Chip Ingress** (in-process 
 
 | Mode | How | Notes |
 |------|-----|--------|
-| **Mock** (default) | Do **not** set `CHIP_INGRESS_TEST_ADDR` | In-process gRPC server; tests can count **Server recv** events and inject failures (outage, slow Chip). |
+| **Mock** (default) | Do **not** set `CHIP_INGRESS_TEST_ADDR` | In-process gRPC server; tests can inject failures (outage, slow Chip). |
 | **Real Chip** | Set `CHIP_INGRESS_TEST_ADDR=host:port` | Dials external Chip Ingress. Optional: `CHIP_INGRESS_TEST_TLS`, `CHIP_INGRESS_TEST_BASIC_AUTH_*`, `CHIP_INGRESS_TEST_SKIP_BASIC_AUTH`, `CHIP_INGRESS_TEST_SKIP_SCHEMA_REGISTRATION`. You need Kafka/Redpanda, topic **`chip-demo`**, and schema subject **`chip-demo-pb.DemoClientPayload`** (e.g. Atlas `make create-topic-and-schema` under `atlas/chip-ingress`). |
 
 Tests that **inject** Chip failures or rely on **in-process** receive counts are **skipped** when `CHIP_INGRESS_TEST_ADDR` is set.
@@ -338,13 +338,12 @@ After a full package run, **`TestMain`** prints a **TPS LOAD TEST SUMMARY** bloc
 | **Achieved TPS** | `Total emits ÷ window duration` — realized successful `Emit()` throughput. |
 | **Total emits** | Count of **`Emit()` calls that returned `nil`** in the measurement window (successful Postgres insert path). Does not count failures. |
 | **Emit p50 / p99** | Latency of successful `Emit()` calls (dominated by DB insert). |
-| **Failures** | `Emit()` calls that returned an error (e.g. DB failure). |
-| **Server recv** | **Mock only:** number of events observed by the in-process gRPC server (`Publish` / `PublishBatch`). |
-| **Queue depth** | Rows remaining in `cre.chip_durable_events` after the emit phase (+ short settle), i.e. backlog not yet deleted after successful publish. |
+| **Pub fail (retry)*** | Failed `Publish` / `PublishBatch` RPCs during the window: immediate failures (one row each, need retransmit) plus, when shown as `a+b`, `b` = total event count in failed `PublishBatch` calls. `Emit()` insert failures are logged separately if non-zero. |
+| **Q max (rows)** | Peak row count in `cre.chip_durable_events` sampled during the emit window (~50ms polls). |
+| **Q end (rows)** | Row count after a short settle (async publish / retransmit). |
+| **Q max (KB)*** | For the peak queue sample: `sum(octet_length(payload))/1024` over queued rows (payload bytes only). **Q end** payload size is omitted from the printed table to keep it narrow. |
 
-#### Why **Server recv** shows **N/A** with real Chip
-
-The **Server recv** column is implemented by counting events on the **in-process mock** `ChipIngress` server. When you use **`CHIP_INGRESS_TEST_ADDR`**, there is no mock — the client talks to a **real** gateway — so the test **cannot** count server-side receives in-process. Use **Kafka / Chip / gateway metrics** (or consumer verification) to validate end-to-end delivery instead. **Total emits** and **Achieved TPS** still reflect client-side durable insert success; they are not replaced by N/A.
+With **`CHIP_INGRESS_TEST_ADDR`** set, there is no in-process mock — validate end-to-end delivery with **Kafka / Chip / gateway metrics** (or consumer checks). **Total emits** and **Achieved TPS** still reflect successful durable inserts on the node.
 
 ### CRE Smoke Tests (live Docker environment)
 

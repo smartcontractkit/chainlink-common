@@ -30,6 +30,9 @@ type DurableEmitterConfig struct {
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
 	Hooks *DurableEmitterHooks
+	// Metrics enables OpenTelemetry instruments on beholder.GetMeter() (queue, publish, store, optional process stats).
+	// Nil disables.
+	Metrics *DurableEmitterMetricsConfig
 }
 
 // DurableEmitterHooks records Publish vs Delete latency to locate pipeline bottlenecks.
@@ -71,6 +74,8 @@ type DurableEmitter struct {
 	cfg    DurableEmitterConfig
 	log    logger.Logger
 
+	metrics *durableEmitterMetrics
+
 	stopCh chan struct{}
 	wg     sync.WaitGroup
 }
@@ -92,47 +97,82 @@ func NewDurableEmitter(
 	if log == nil {
 		return nil, fmt.Errorf("logger is nil")
 	}
+	var m *durableEmitterMetrics
+	if cfg.Metrics != nil {
+		var err error
+		m, err = newDurableEmitterMetrics()
+		if err != nil {
+			return nil, fmt.Errorf("durable emitter metrics: %w", err)
+		}
+		store = newMetricsInstrumentedStore(store, m)
+	}
 	return &DurableEmitter{
-		store:  store,
-		client: client,
-		cfg:    cfg,
-		log:    log,
-		stopCh: make(chan struct{}),
+		store:   store,
+		client:  client,
+		cfg:     cfg,
+		log:     log,
+		metrics: m,
+		stopCh:  make(chan struct{}),
 	}, nil
 }
 
 // Start launches the retransmit and expiry background loops.
 // Cancel the supplied context or call Close to stop them.
 func (d *DurableEmitter) Start(ctx context.Context) {
-	d.wg.Add(2)
+	n := 2
+	if d.metrics != nil && d.cfg.Metrics != nil {
+		n++
+	}
+	d.wg.Add(n)
 	go d.retransmitLoop(ctx)
 	go d.expiryLoop(ctx)
+	if d.metrics != nil && d.cfg.Metrics != nil {
+		go d.metricsLoop(ctx)
+	}
 }
 
 // Emit persists the event then attempts async delivery.
 // Returns nil once the store insert succeeds.
 func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	emitFail := func() {
+		if d.metrics != nil {
+			d.metrics.emitFail.Add(ctx, 1)
+		}
+	}
 	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)
 	if err != nil {
+		emitFail()
 		return err
 	}
 
 	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
 	if err != nil {
+		emitFail()
 		return err
 	}
 
 	eventPb, err := chipingress.EventToProto(event)
 	if err != nil {
+		emitFail()
 		return fmt.Errorf("failed to convert event to proto: %w", err)
 	}
 
 	payload, err := proto.Marshal(eventPb)
 	if err != nil {
+		emitFail()
 		return fmt.Errorf("failed to marshal event proto: %w", err)
 	}
 
+	tIns := time.Now()
 	id, err := d.store.Insert(ctx, payload)
+	if d.metrics != nil {
+		d.metrics.emitDuration.Record(ctx, time.Since(tIns).Seconds())
+		if err != nil {
+			d.metrics.emitFail.Add(ctx, 1)
+		} else {
+			d.metrics.emitSuccess.Add(ctx, 1)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
@@ -160,6 +200,14 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	if h := d.cfg.Hooks; h != nil && h.OnImmediatePublish != nil {
 		h.OnImmediatePublish(time.Since(t0), err)
 	}
+	mctx := context.Background()
+	if d.metrics != nil {
+		if err != nil {
+			d.metrics.publishImmErr.Add(mctx, 1)
+		} else {
+			d.metrics.publishImmOK.Add(mctx, 1)
+		}
+	}
 	if err != nil {
 		d.log.Debugw("immediate publish failed, retransmit loop will retry",
 			"id", id, "error", err)
@@ -170,6 +218,9 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	delErr := d.store.Delete(context.Background(), id)
 	if h := d.cfg.Hooks; h != nil && h.OnImmediateDelete != nil {
 		h.OnImmediateDelete(time.Since(t1), delErr)
+	}
+	if delErr == nil && d.metrics != nil {
+		d.metrics.deliverComplete.Add(mctx, 1)
 	}
 	if delErr != nil {
 		d.log.Errorw("failed to delete delivered event", "id", id, "error", delErr)
@@ -230,8 +281,16 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		h.OnRetransmitBatchPublish(time.Since(tPub), len(events), err)
 	}
 	if err != nil {
+		if d.metrics != nil {
+			d.metrics.publishBatchErr.Add(ctx, 1)
+			d.metrics.publishBatchEvErr.Add(ctx, int64(len(events)))
+		}
 		d.log.Warnw("retransmit batch failed", "count", len(events), "error", err)
 		return
+	}
+	if d.metrics != nil {
+		d.metrics.publishBatchOK.Add(ctx, 1)
+		d.metrics.publishBatchEvOK.Add(ctx, int64(len(events)))
 	}
 
 	tDel := time.Now()
@@ -242,6 +301,9 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	}
 	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil {
 		h.OnRetransmitBatchDeletes(time.Since(tDel), len(ids))
+	}
+	if d.metrics != nil {
+		d.metrics.deliverComplete.Add(ctx, int64(len(ids)))
 	}
 	d.log.Debugw("retransmitted events", "count", len(ids))
 }
@@ -264,7 +326,45 @@ func (d *DurableEmitter) expiryLoop(ctx context.Context) {
 				continue
 			}
 			if deleted > 0 {
+				if d.metrics != nil {
+					d.metrics.expiredPurged.Add(context.Background(), deleted)
+				}
 				d.log.Infow("purged expired events", "count", deleted)
+			}
+		}
+	}
+}
+
+func (d *DurableEmitter) metricsLoop(ctx context.Context) {
+	defer d.wg.Done()
+	mc := d.cfg.Metrics
+	poll := mc.PollInterval
+	if poll <= 0 {
+		poll = 10 * time.Second
+	}
+	lead := mc.NearExpiryLead
+	if lead <= 0 {
+		lead = 5 * time.Minute
+	}
+	ticker := time.NewTicker(poll)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-d.stopCh:
+			return
+		case <-ticker.C:
+			if d.metrics == nil {
+				return
+			}
+			bctx := context.Background()
+			if obs, ok := d.store.(DurableQueueObserver); ok {
+				d.metrics.pollQueueGauges(bctx, obs, d.cfg.EventTTL, lead, mc.MaxQueuePayloadBytes)
+			}
+			if mc.RecordProcessStats {
+				d.metrics.recordProcessMem(bctx)
+				d.metrics.recordProcessCPU(bctx)
 			}
 		}
 	}

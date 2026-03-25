@@ -15,6 +15,25 @@ type DurableEvent struct {
 	CreatedAt time.Time
 }
 
+// DurableQueueStats is a point-in-time snapshot of the pending queue for metrics.
+type DurableQueueStats struct {
+	Depth            int64
+	PayloadBytes     int64
+	OldestPendingAge time.Duration // 0 if the queue is empty
+	// NearTTLCount is the number of rows within nearExpiryLead of EventTTL (still
+	// pending, not yet removed by expiry). Serves as a DLQ-pressure proxy; there is
+	// no separate dead-letter table in the default design.
+	NearTTLCount int64
+}
+
+// DurableQueueObserver is optionally implemented by DurableEventStore implementations
+// so DurableEmitter can export queue depth and age gauges when metrics are enabled.
+type DurableQueueObserver interface {
+	// ObserveDurableQueue returns live queue statistics. eventTTL and nearExpiryLead
+	// match DurableEmitterConfig (nearExpiryLead should be << eventTTL).
+	ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error)
+}
+
 // DurableEventStore abstracts the persistence layer for durable chip events.
 // Implementations must be safe for concurrent use.
 type DurableEventStore interface {
@@ -36,7 +55,10 @@ type MemDurableEventStore struct {
 	nextID atomic.Int64
 }
 
-var _ DurableEventStore = (*MemDurableEventStore)(nil)
+var (
+	_ DurableEventStore     = (*MemDurableEventStore)(nil)
+	_ DurableQueueObserver  = (*MemDurableEventStore)(nil)
+)
 
 func NewMemDurableEventStore() *MemDurableEventStore {
 	return &MemDurableEventStore{
@@ -102,4 +124,34 @@ func (m *MemDurableEventStore) Len() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return len(m.events)
+}
+
+// ObserveDurableQueue implements DurableQueueObserver.
+func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	now := time.Now()
+	var st DurableQueueStats
+	if len(m.events) == 0 {
+		return st, nil
+	}
+	var oldest time.Time
+	first := true
+	for _, e := range m.events {
+		st.Depth++
+		st.PayloadBytes += int64(len(e.Payload))
+		if first || e.CreatedAt.Before(oldest) {
+			oldest = e.CreatedAt
+			first = false
+		}
+		age := now.Sub(e.CreatedAt)
+		if eventTTL > 0 && nearExpiryLead > 0 && nearExpiryLead < eventTTL {
+			threshold := eventTTL - nearExpiryLead
+			if age >= threshold && age < eventTTL {
+				st.NearTTLCount++
+			}
+		}
+	}
+	st.OldestPendingAge = now.Sub(oldest)
+	return st, nil
 }

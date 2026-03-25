@@ -39,25 +39,25 @@ func withTestBeholderMeter(t *testing.T) *sdkmetric.ManualReader {
 type testChipClient struct {
 	chipingress.NoopClient
 
-	mu           sync.Mutex
-	publishErr   error
-	batchErr     error
-	publishCount atomic.Int64
-	batchCount   atomic.Int64
+	mu            sync.Mutex
+	publishErr    error
+	publishCount  atomic.Int64
+	publishedIDs  []string
 }
 
-func (c *testChipClient) Publish(_ context.Context, _ *chipingress.CloudEventPb, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+func (c *testChipClient) Publish(_ context.Context, ev *chipingress.CloudEventPb, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
 	c.publishCount.Add(1)
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return &chipingress.PublishResponse{}, c.publishErr
+	if ev != nil {
+		c.publishedIDs = append(c.publishedIDs, ev.Id)
+	}
+	err := c.publishErr
+	c.mu.Unlock()
+	return &chipingress.PublishResponse{}, err
 }
 
 func (c *testChipClient) PublishBatch(_ context.Context, _ *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
-	c.batchCount.Add(1)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return &chipingress.PublishResponse{}, c.batchErr
+	return &chipingress.PublishResponse{}, nil
 }
 
 func (c *testChipClient) setPublishErr(err error) {
@@ -66,10 +66,12 @@ func (c *testChipClient) setPublishErr(err error) {
 	c.publishErr = err
 }
 
-func (c *testChipClient) setBatchErr(err error) {
+func (c *testChipClient) getPublishedIDs() []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.batchErr = err
+	out := make([]string, len(c.publishedIDs))
+	copy(out, c.publishedIDs)
+	return out
 }
 
 func testEmitAttrs() []any {
@@ -184,7 +186,6 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 	client.setPublishErr(errors.New("connection refused"))
-	client.setBatchErr(errors.New("connection refused"))
 
 	cfg := DefaultDurableEmitterConfig()
 	cfg.RetransmitInterval = 100 * time.Millisecond
@@ -201,14 +202,44 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, store.Len())
 
-	// Fix the batch client so retransmit succeeds.
-	client.setBatchErr(nil)
+	client.setPublishErr(nil)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond, "retransmit loop should eventually deliver and delete the event")
 
-	assert.GreaterOrEqual(t, client.batchCount.Load(), int64(1))
+	assert.GreaterOrEqual(t, client.publishCount.Load(), int64(2))
+}
+
+func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
+	store := NewMemDurableEventStore()
+	client := &testChipClient{}
+	client.setPublishErr(errors.New("immediate fail"))
+
+	cfg := DefaultDurableEmitterConfig()
+	cfg.RetransmitInterval = 100 * time.Millisecond
+	cfg.RetransmitAfter = 50 * time.Millisecond
+
+	em := newTestDurableEmitter(t, store, client, &cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	em.Start(ctx)
+	defer em.Close()
+
+	require.NoError(t, em.Emit(ctx, []byte("first"), testEmitAttrs()...))
+	require.NoError(t, em.Emit(ctx, []byte("second"), testEmitAttrs()...))
+
+	client.setPublishErr(nil)
+
+	require.Eventually(t, func() bool { return store.Len() == 0 }, 5*time.Second, 50*time.Millisecond)
+
+	ids := client.getPublishedIDs()
+	require.GreaterOrEqual(t, len(ids), 4, "two immediate fails then two retransmit publishes")
+	a, b := ids[len(ids)-2], ids[len(ids)-1]
+	assert.NotEmpty(t, a)
+	assert.NotEmpty(t, b)
+	assert.NotEqualf(t, a, b, "retransmit must publish two distinct CloudEvents, not one pointer reused for every row")
 }
 
 func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {

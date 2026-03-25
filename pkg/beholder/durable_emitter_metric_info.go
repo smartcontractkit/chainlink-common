@@ -17,7 +17,7 @@ var (
 	durableEmitterMetricEmitDuration = MetricInfo{
 		Name:        "beholder.durable_emitter.emit.duration",
 		Unit:        "s",
-		Description: "Emit insert path duration",
+		Description: "Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds)",
 	}
 	durableEmitterMetricPublishImmSuccess = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.immediate.success",
@@ -32,27 +32,27 @@ var (
 	durableEmitterMetricPublishBatchSuccess = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.retransmit.batch.success",
 		Unit:        "{call}",
-		Description: "Successful retransmit PublishBatch calls",
+		Description: "Unused; retransmit uses serial Publish (see retransmit.events.*)",
 	}
 	durableEmitterMetricPublishBatchFailure = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.retransmit.batch.failure",
 		Unit:        "{call}",
-		Description: "Failed retransmit PublishBatch calls",
+		Description: "Unused; retransmit uses serial Publish (see retransmit.events.*)",
 	}
 	durableEmitterMetricPublishBatchEvSuccess = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.retransmit.events.success",
 		Unit:        "{event}",
-		Description: "Events delivered via successful PublishBatch",
+		Description: "Retransmit Publish RPC successes (one RPC per queued event)",
 	}
 	durableEmitterMetricPublishBatchEvFailure = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.retransmit.events.failure",
 		Unit:        "{event}",
-		Description: "Events in failed PublishBatch attempts",
+		Description: "Retransmit Publish RPC failures (event stays queued)",
 	}
 	durableEmitterMetricDeliveryCompleted = MetricInfo{
 		Name:        "beholder.durable_emitter.delivery.completed",
 		Unit:        "{event}",
-		Description: "Events removed from store after successful publish (immediate or batch)",
+		Description: "Events removed from store after successful publish (immediate or retransmit)",
 	}
 	durableEmitterMetricExpiredPurged = MetricInfo{
 		Name:        "beholder.durable_emitter.expired_purged",
@@ -67,7 +67,7 @@ var (
 	durableEmitterMetricStoreOpDuration = MetricInfo{
 		Name:        "beholder.durable_emitter.store.operation.duration",
 		Unit:        "s",
-		Description: "Durable store operation latency",
+		Description: "Durable store operation latency (seconds, fractional)",
 	}
 	durableEmitterMetricQueueDepth = MetricInfo{
 		Name:        "beholder.durable_emitter.queue.depth",

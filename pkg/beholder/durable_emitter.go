@@ -19,13 +19,14 @@ type DurableEmitterConfig struct {
 	// RetransmitAfter is the minimum age of an event before the retransmit
 	// loop considers it. This gives the immediate-publish path time to succeed.
 	RetransmitAfter time.Duration
-	// RetransmitBatchSize caps the number of events sent per retransmit cycle.
+	// RetransmitBatchSize caps how many pending rows are listed per retransmit tick
+	// (each row is sent with its own Publish RPC).
 	RetransmitBatchSize int
 	// ExpiryInterval controls how often the expiry loop ticks.
 	ExpiryInterval time.Duration
 	// EventTTL is the maximum age of an event before it is expired.
 	EventTTL time.Duration
-	// PublishTimeout is the per-RPC deadline for Publish / PublishBatch calls.
+	// PublishTimeout is the per-RPC deadline for each Publish call.
 	PublishTimeout time.Duration
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
@@ -41,9 +42,9 @@ type DurableEmitterHooks struct {
 	OnImmediatePublish func(elapsed time.Duration, err error)
 	// OnImmediateDelete is called after Delete following a successful immediate Publish.
 	OnImmediateDelete func(elapsed time.Duration, err error)
-	// OnRetransmitBatchPublish is called after each retransmit PublishBatch.
+	// OnRetransmitBatchPublish is called after each retransmit Publish (one RPC per queued event).
 	OnRetransmitBatchPublish func(elapsed time.Duration, eventCount int, err error)
-	// OnRetransmitBatchDeletes is called once per successful batch with total time for the delete loop.
+	// OnRetransmitBatchDeletes is called after a retransmit tick with total time and successful delete count.
 	OnRetransmitBatchDeletes func(elapsed time.Duration, deleteCount int)
 }
 
@@ -64,7 +65,7 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 // insert succeeds Emit returns nil — the caller has a durable guarantee. An
 // immediate async Publish is attempted; on success the record is deleted. If
 // that fails a background retransmit loop will pick the event up and retry via
-// PublishBatch.
+// Publish (one RPC per pending row per tick, up to RetransmitBatchSize).
 //
 // A separate expiry loop garbage-collects events older than EventTTL to bound
 // table growth.
@@ -259,53 +260,55 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	ids := make([]int64, 0, len(pending))
 
 	for _, pe := range pending {
-		var eventPb chipingress.CloudEventPb
-		if err := proto.Unmarshal(pe.Payload, &eventPb); err != nil {
+		ev := new(chipingress.CloudEventPb)
+		if err := proto.Unmarshal(pe.Payload, ev); err != nil {
 			d.log.Errorw("corrupt pending event, deleting", "id", pe.ID, "error", err)
 			_ = d.store.Delete(ctx, pe.ID)
 			continue
 		}
-		events = append(events, &eventPb)
+		events = append(events, ev)
 		ids = append(ids, pe.ID)
 	}
 	if len(events) == 0 {
 		return
 	}
 
-	publishCtx, cancel := context.WithTimeout(ctx, d.cfg.PublishTimeout)
-	defer cancel()
-
-	tPub := time.Now()
-	_, err = d.client.PublishBatch(publishCtx, &chipingress.CloudEventBatch{Events: events})
-	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchPublish != nil {
-		h.OnRetransmitBatchPublish(time.Since(tPub), len(events), err)
-	}
-	if err != nil {
-		if d.metrics != nil {
-			d.metrics.publishBatchErr.Add(ctx, 1)
-			d.metrics.publishBatchEvErr.Add(ctx, int64(len(events)))
-		}
-		d.log.Warnw("retransmit batch failed", "count", len(events), "error", err)
-		return
-	}
-	if d.metrics != nil {
-		d.metrics.publishBatchOK.Add(ctx, 1)
-		d.metrics.publishBatchEvOK.Add(ctx, int64(len(events)))
-	}
-
+	// One Publish per row so a single bad or rejected event does not block the rest of the slice.
 	tDel := time.Now()
-	for _, id := range ids {
-		if err := d.store.Delete(ctx, id); err != nil {
-			d.log.Errorw("failed to delete retransmitted event", "id", id, "error", err)
+	var deleted int
+	for i := range events {
+		tPub := time.Now()
+		pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		_, pubErr := d.client.Publish(pubCtx, events[i])
+		cancel()
+		if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchPublish != nil {
+			h.OnRetransmitBatchPublish(time.Since(tPub), 1, pubErr)
+		}
+		if pubErr != nil {
+			if d.metrics != nil {
+				d.metrics.publishBatchEvErr.Add(ctx, 1)
+			}
+			d.log.Debugw("retransmit publish failed", "id", ids[i], "error", pubErr)
+			continue
+		}
+		if d.metrics != nil {
+			d.metrics.publishBatchEvOK.Add(ctx, 1)
+		}
+		if delErr := d.store.Delete(ctx, ids[i]); delErr != nil {
+			d.log.Errorw("failed to delete retransmitted event", "id", ids[i], "error", delErr)
+			continue
+		}
+		deleted++
+		if d.metrics != nil {
+			d.metrics.deliverComplete.Add(ctx, 1)
 		}
 	}
-	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil {
-		h.OnRetransmitBatchDeletes(time.Since(tDel), len(ids))
+	if deleted > 0 {
+		d.log.Debugw("retransmitted events", "deleted", deleted, "attempted", len(events))
 	}
-	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(ctx, int64(len(ids)))
+	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil && deleted > 0 {
+		h.OnRetransmitBatchDeletes(time.Since(tDel), deleted)
 	}
-	d.log.Debugw("retransmitted events", "count", len(ids))
 }
 
 func (d *DurableEmitter) expiryLoop(ctx context.Context) {

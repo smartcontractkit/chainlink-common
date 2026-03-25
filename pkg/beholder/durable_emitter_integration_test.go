@@ -165,7 +165,6 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 	// Start with server returning UNAVAILABLE.
 	srv := &mockChipServer{}
 	srv.setPublishErr(status.Error(codes.Unavailable, "chip down"))
-	srv.setBatchErr(status.Error(codes.Unavailable, "chip down"))
 	_, addr := startMockServer(t, srv)
 	client := newChipClient(t, addr)
 	store := beholder.NewMemDurableEventStore()
@@ -186,14 +185,14 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 
 	// "Recover" the server.
 	srv.setPublishErr(nil)
-	srv.setBatchErr(nil)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond, "retransmit loop should deliver after recovery")
 
-	assert.GreaterOrEqual(t, srv.batchCount.Load(), int64(1),
-		"retransmit should use PublishBatch")
+	assert.GreaterOrEqual(t, srv.publishCount.Load(), int64(2),
+		"one failed immediate Publish then one retransmit Publish")
+	assert.Equal(t, int64(0), srv.batchCount.Load(), "retransmit should not use PublishBatch")
 }
 
 func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
@@ -286,7 +285,6 @@ func TestIntegration_EventExpiry(t *testing.T) {
 	// Server always rejects — events can never be delivered.
 	srv := &mockChipServer{}
 	srv.setPublishErr(status.Error(codes.Internal, "permanent failure"))
-	srv.setBatchErr(status.Error(codes.Internal, "permanent failure"))
 	_, addr := startMockServer(t, srv)
 	client := newChipClient(t, addr)
 	store := beholder.NewMemDurableEventStore()
@@ -311,10 +309,10 @@ func TestIntegration_EventExpiry(t *testing.T) {
 		"expiry loop should purge undeliverable events after TTL")
 }
 
-func TestIntegration_RetransmitUsesBatch(t *testing.T) {
-	// Immediate publishes fail, only batch succeeds.
+func TestIntegration_RetransmitUsesSerialPublish(t *testing.T) {
+	// Immediate Publish fails; retransmit uses one Publish per queued row.
 	srv := &mockChipServer{}
-	srv.setPublishErr(status.Error(codes.Unavailable, "reject single"))
+	srv.setPublishErr(status.Error(codes.Unavailable, "reject immediate"))
 	_, addr := startMockServer(t, srv)
 	client := newChipClient(t, addr)
 	store := beholder.NewMemDurableEventStore()
@@ -328,16 +326,19 @@ func TestIntegration_RetransmitUsesBatch(t *testing.T) {
 	defer em.Close()
 
 	for i := 0; i < 5; i++ {
-		require.NoError(t, em.Emit(ctx, []byte("batch-me"), emitAttrs()...))
+		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
 	}
+
+	srv.setPublishErr(nil)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond,
-		"retransmit via PublishBatch should deliver all events")
+		"retransmit should deliver each event with its own Publish RPC")
 
-	assert.GreaterOrEqual(t, srv.batchCallCount(), 1,
-		"at least one PublishBatch call should have been made")
+	assert.Equal(t, 0, srv.batchCallCount(), "retransmit should not call PublishBatch")
+	assert.GreaterOrEqual(t, srv.publishCount.Load(), int64(10),
+		"five failed immediate attempts plus five retransmit publishes")
 }
 
 // TestIntegration_GRPCConnection verifies the emitter works over a real gRPC

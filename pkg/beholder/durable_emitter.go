@@ -225,7 +225,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	defer cancel()
 
 	tPub := time.Now()
-	_, err := d.client.PublishBatch(publishCtx, &chipingress.CloudEventBatch{Events: events})
+	_, err = d.client.PublishBatch(publishCtx, &chipingress.CloudEventBatch{Events: events})
 	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchPublish != nil {
 		h.OnRetransmitBatchPublish(time.Since(tPub), len(events), err)
 	}

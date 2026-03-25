@@ -177,6 +177,13 @@ var Default = Schema{
 					"12922642891491394802": 50_000_000,
 				}),
 			},
+			Solana: solanaChainWrite{
+				ReportSizeLimit: Size(265 * config.Byte),
+				GasLimit:        Uint64(300_000),
+			},
+			Aptos: aptosChainWrite{
+				GasLimit: Uint64(2_000_000),
+			},
 		},
 		ChainRead: chainRead{
 			CallLimit:          Int(15),
@@ -311,7 +318,16 @@ type chainWrite struct {
 	TargetsLimit    Setting[int] `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size]
 
-	EVM evmChainWrite
+	EVM    evmChainWrite
+	Solana solanaChainWrite
+	Aptos  aptosChainWrite
+}
+type solanaChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	GasLimit        Setting[uint64] `unit:"{gas}"`
+}
+type aptosChainWrite struct {
+	GasLimit Setting[uint64] `unit:"{gas}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated

@@ -180,11 +180,11 @@ var Default = Schema{
 			},
 			Solana: solanaChainWrite{
 				ReportSizeLimit: Size(265 * config.Byte),
-				GasLimit:        Uint32(300_000),
+				GasLimit:        PerChainSelector(Uint32(300_000), map[string]uint32{}),
 			},
 			Aptos: aptosChainWrite{
 				ReportSizeLimit: Size(5 * config.KByte),
-				GasLimit:        Uint64(2_000_000),
+				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
 		},
 		ChainRead: chainRead{
@@ -326,11 +326,11 @@ type chainWrite struct {
 }
 type solanaChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
-	GasLimit        Setting[uint32] `unit:"{gas}"`
+	GasLimit        SettingMap[uint32] `unit:"{gas}"`
 }
 type aptosChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
-	GasLimit        Setting[uint64] `unit:"{gas}"`
+	GasLimit        SettingMap[uint64] `unit:"{gas}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated

@@ -38,6 +38,8 @@ message SecretResponse {
 
 message GetSecretsRequest {
   repeated SecretRequest requests = 1;
+  string org_id = 2;
+  string workflow_owner = 3;
 }
 
 message GetSecretsResponse {

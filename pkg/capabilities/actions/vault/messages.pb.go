@@ -438,6 +438,8 @@ func (*SecretResponse_Error) isSecretResponse_Result() {}
 type GetSecretsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Requests      []*SecretRequest       `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	OrgId         string                 `protobuf:"bytes,2,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	WorkflowOwner string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -477,6 +479,20 @@ func (x *GetSecretsRequest) GetRequests() []*SecretRequest {
 		return x.Requests
 	}
 	return nil
+}
+
+func (x *GetSecretsRequest) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
+}
+
+func (x *GetSecretsRequest) GetWorkflowOwner() string {
+	if x != nil {
+		return x.WorkflowOwner
+	}
+	return ""
 }
 
 type GetSecretsResponse struct {
@@ -2260,9 +2276,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x04data\x18\x02 \x01(\v2\x11.vault.SecretDataH\x00R\x04data\x12\x16\n" +
 	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
-	"\x06result\"E\n" +
+	"\x06result\"\x83\x01\n" +
 	"\x11GetSecretsRequest\x120\n" +
-	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\"I\n" +
+	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\x12\x15\n" +
+	"\x06org_id\x18\x02 \x01(\tR\x05orgId\x12%\n" +
+	"\x0eworkflow_owner\x18\x03 \x01(\tR\rworkflowOwner\"I\n" +
 	"\x12GetSecretsResponse\x123\n" +
 	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\"c\n" +
 	"\x0fEncryptedSecret\x12'\n" +

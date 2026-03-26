@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -262,11 +263,16 @@ func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig 
 
 func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 	raw := []byte(account)
-	s := strings.TrimSpace(string(account))
-	if s == "" {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 {
 		return raw, nil
 	}
 
+	if !isPrintableASCII(trimmed) {
+		return raw, nil
+	}
+
+	s := string(trimmed)
 	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
 		trimmed := s[2:]
 		if !looksHexAccount(trimmed) {
@@ -289,6 +295,15 @@ func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 
 	// Backward compatibility: some registry paths provide raw bytes directly.
 	return raw, nil
+}
+
+func isPrintableASCII(b []byte) bool {
+	for _, c := range b {
+		if c < 0x20 || c > 0x7e {
+			return false
+		}
+	}
+	return true
 }
 
 func looksHexAccount(s string) bool {

@@ -603,12 +603,68 @@ func TestTransmitterAccountToBytes(t *testing.T) {
 		require.Contains(t, err.Error(), "failed to decode transmitter")
 	})
 
-	t.Run("falls_back_to_raw_bytes_for_non_hex_account", func(t *testing.T) {
-		raw := []byte{0x00, 0x7f, 0xff, 0x41}
+	t.Run("falls_back_to_raw_bytes_for_non_printable_account_even_with_0x_prefix", func(t *testing.T) {
+		raw := []byte{'0', 'x', 0xff, 'A'}
 		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
 		require.NoError(t, err)
 		require.Equal(t, raw, got)
 	})
+}
+
+func TestCapabilitiesRegistry_ConfigForCapability_NormalizesPrefixedAndRawTransmitters(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "ocr-cap@1.0.0"
+	donID := uint32(1)
+	rawTransmitter := []byte{'0', 'x', 0xff, 'A'}
+
+	serverCapConfig := capabilities.CapabilityConfiguration{
+		Ocr3Configs: map[string]ocrtypes.ContractConfig{
+			"__default__": {
+				ConfigCount:           5,
+				Signers:               []ocrtypes.OnchainPublicKey{{0x01, 0x02}},
+				Transmitters:          []ocrtypes.Account{"0xABcd", ocrtypes.Account(string(rawTransmitter)), "123e"},
+				F:                     1,
+				OnchainConfig:         []byte{0x10, 0x20},
+				OffchainConfigVersion: 2,
+				OffchainConfig:        []byte{0x30, 0x40},
+			},
+		},
+	}
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(serverCapConfig, nil)
+
+	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
+	require.NoError(t, err)
+	require.Contains(t, capConf.Ocr3Configs, "__default__")
+	assert.Equal(t, []ocrtypes.Account{"abcd", "3078ff41", "123e"}, capConf.Ocr3Configs["__default__"].Transmitters)
 }
 
 func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {

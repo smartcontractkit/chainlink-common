@@ -81,6 +81,21 @@
 						"12922642891491394802": "50000000",
 						"3379446385462418246": "10000000"
 					}
+				},
+				"ReportSizeLimit": "5kb"
+			},
+			"Solana": {
+				"ReportSizeLimit": "265b",
+				"GasLimit": {
+					"Default": "300000",
+					"Values": {}
+				}
+			},
+			"Aptos": {
+				"ReportSizeLimit": "5kb",
+				"GasLimit": {
+					"Default": "2000000",
+					"Values": {}
 				}
 			}
 		},

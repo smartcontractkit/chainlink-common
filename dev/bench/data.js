@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774538113546,
+  "lastUpdate": 1774539893007,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -42180,6 +42180,66 @@ window.BENCHMARK_DATA = {
             "value": 141944,
             "unit": "ns/op",
             "extra": "8150 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c46591d0a4a3bd89abd6fd76d14f0fa17fc5121d",
+          "message": "feat: add VaultJWTAuthEnabled and VaultOrgIdAsSecretOwnerEnabled feature gates and vault proto fields for JWT auth (#1921)\n\n* feat: add VaultJWTAuthEnabled feature gate and vault proto fields for JWT auth\n\nAdd org_id and workflow_owner fields to CreateSecretsRequest,\nUpdateSecretsRequest, DeleteSecretsRequest, and\nListSecretIdentifiersRequest proto messages. Add VaultJWTAuthEnabled\nboolean setting (default: false) to cresettings. No behavior change —\nnew proto fields default to empty strings and the gate is off.\n\nMade-with: Cursor\n\n* feat: add VaultOrgIdAsSecretOwnerEnabled feature gate\n\nAdd VaultOrgIdAsSecretOwnerEnabled boolean setting (default: false) to\ncresettings, gating the upcoming org-id-as-secret-owner behavior for\nVault requests. No behavior change — the gate defaults to off.\n\nUpdated golden files (defaults.json, defaults.toml), README flowchart,\nand test assertions.\n\nMade-with: Cursor\n\n* vault: add org and workflow owner to get secrets",
+          "timestamp": "2026-03-26T15:37:37Z",
+          "tree_id": "2a50bdf8f4927a7627cb8a1706b9d34570bcb792",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c46591d0a4a3bd89abd6fd76d14f0fa17fc5121d"
+        },
+        "date": 1774539890696,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.5,
+            "unit": "ns/op",
+            "extra": "3391816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94429,
+            "unit": "ns/op",
+            "extra": "12667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.3,
+            "unit": "ns/op",
+            "extra": "2960178 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95293,
+            "unit": "ns/op",
+            "extra": "12561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26640,
+            "unit": "ns/op",
+            "extra": "45091 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140868,
+            "unit": "ns/op",
+            "extra": "7999 times\n4 procs"
           }
         ]
       }

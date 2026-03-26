@@ -90,11 +90,19 @@ Default = '5000000'
 
 [PerWorkflow.ChainWrite.Solana]
 ReportSizeLimit = '265b'
-GasLimit = '300000'
+
+[PerWorkflow.ChainWrite.Solana.GasLimit]
+Default = '300000'
+
+[PerWorkflow.ChainWrite.Solana.GasLimit.Values]
 
 [PerWorkflow.ChainWrite.Aptos]
 ReportSizeLimit = '5kb'
-GasLimit = '2000000'
+
+[PerWorkflow.ChainWrite.Aptos.GasLimit]
+Default = '2000000'
+
+[PerWorkflow.ChainWrite.Aptos.GasLimit.Values]
 
 [PerWorkflow.ChainRead]
 CallLimit = '15'

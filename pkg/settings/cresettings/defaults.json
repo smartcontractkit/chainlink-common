@@ -86,11 +86,17 @@
 			},
 			"Solana": {
 				"ReportSizeLimit": "265b",
-				"GasLimit": "300000"
+				"GasLimit": {
+					"Default": "300000",
+					"Values": {}
+				}
 			},
 			"Aptos": {
 				"ReportSizeLimit": "5kb",
-				"GasLimit": "2000000"
+				"GasLimit": {
+					"Default": "2000000",
+					"Values": {}
+				}
 			}
 		},
 		"ChainRead": {

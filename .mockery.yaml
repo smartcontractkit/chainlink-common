@@ -57,3 +57,10 @@ packages:
       JWTGenerator:
       JWTAuthenticator:
       NodeAuthProvider:
+  github.com/smartcontractkit/chainlink-common/pkg/settings:
+    config:
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+      dir: "{{.InterfaceDir}}/limits"
+      outpkg: limits
+    interfaces:
+      Getter:

@@ -193,7 +193,7 @@ func Test_RegisterTrigger(t *testing.T) {
 		_, err = ctr.RegisterTrigger(
 			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
-		require.ErrorContains(t, err, fmt.Sprintf("failed registering trigger: %s", errMsg))
+		require.ErrorContains(t, err, errMsg)
 	})
 }
 

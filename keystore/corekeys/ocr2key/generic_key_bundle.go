@@ -6,9 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
-
-	"github.com/pkg/errors"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
@@ -53,7 +52,7 @@ func newKeyBundleRand[K keyring](chain corekeys.ChainType, newKeyring func(mater
 func mustNewKeyBundleInsecure[K keyring](chain corekeys.ChainType, newKeyring func(material io.Reader) (K, error), reader io.Reader) *keyBundle[K] {
 	key, err := newKeyBundleFrom(chain, newKeyring, reader, reader, reader)
 	if err != nil {
-		panic(errors.Wrapf(err, "failed to generate new OCR2-%s Key", chain))
+		panic(fmt.Errorf("failed to generate new OCR2-%s Key: %w", chain, err))
 	}
 	return key
 }

@@ -261,11 +261,9 @@ func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig 
 
 func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 	raw := []byte(account)
-	if len(raw) > 0 && len(raw)%2 == 0 {
-		decoded, err := hex.DecodeString(string(raw))
-		if err == nil {
-			return decoded, nil
-		}
+	decoded, err := hex.DecodeString(string(raw))
+	if err == nil {
+		return decoded, nil
 	}
 
 	// Backward compatibility: some registry paths provide raw bytes directly.

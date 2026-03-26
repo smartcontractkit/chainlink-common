@@ -48,18 +48,25 @@ type PCRs struct {
 const DefaultCARoots = "-----BEGIN CERTIFICATE-----\nMIICETCCAZagAwIBAgIRAPkxdWgbkK/hHUbMtOTn+FYwCgYIKoZIzj0EAwMwSTEL\nMAkGA1UEBhMCVVMxDzANBgNVBAoMBkFtYXpvbjEMMAoGA1UECwwDQVdTMRswGQYD\nVQQDDBJhd3Mubml0cm8tZW5jbGF2ZXMwHhcNMTkxMDI4MTMyODA1WhcNNDkxMDI4\nMTQyODA1WjBJMQswCQYDVQQGEwJVUzEPMA0GA1UECgwGQW1hem9uMQwwCgYDVQQL\nDANBV1MxGzAZBgNVBAMMEmF3cy5uaXRyby1lbmNsYXZlczB2MBAGByqGSM49AgEG\nBSuBBAAiA2IABPwCVOumCMHzaHDimtqQvkY4MpJzbolL//Zy2YlES1BR5TSksfbb\n48C8WBoyt7F2Bw7eEtaaP+ohG2bnUs990d0JX28TcPQXCEPZ3BABIeTPYwEoCWZE\nh8l5YoQwTcU/9KNCMEAwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUkCW1DdkF\nR+eWw5b6cp3PmanfS5YwDgYDVR0PAQH/BAQDAgGGMAoGCCqGSM49BAMDA2kAMGYC\nMQCjfy+Rocm9Xue4YnwWmNJVA44fA0P5W2OpYow9OYCVRaEevL8uO1XYru5xtMPW\nrfMCMQCi85sWBbJwKKXdS6BptQFuZbT73o/gBh1qUxl/nNr12UO8Yfwr6wPLb+6N\nIwLz3/Y=\n-----END CERTIFICATE-----\n"
 
 // ValidateAttestation verifies an AWS Nitro attestation document against
-// expected user data and trusted PCR measurements.
-func ValidateAttestation(attestation, expectedUserData, trustedMeasurements []byte, caRootsPEM string) error {
+// expected user data and trusted PCR measurements. Always validates against
+// the AWS Nitro Enclaves root certificate.
+//
+// For testing with fake enclaves, use ValidateAttestationWithRoots or inject
+// a custom validator function.
+func ValidateAttestation(attestation, expectedUserData, trustedMeasurements []byte) error {
+	return ValidateAttestationWithRoots(attestation, expectedUserData, trustedMeasurements, DefaultCARoots)
+}
+
+// ValidateAttestationWithRoots verifies an AWS Nitro attestation document
+// using a custom CA root certificate. This is primarily for testing with
+// fake enclaves that use self-signed CA roots.
+func ValidateAttestationWithRoots(attestation, expectedUserData, trustedMeasurements []byte, caRootsPEM string) error {
 	if attestation == nil {
 		return fmt.Errorf("attestation is nil")
 	}
 
-	roots := DefaultCARoots
-	if caRootsPEM != "" {
-		roots = caRootsPEM
-	}
 	pool := x509.NewCertPool()
-	ok := pool.AppendCertsFromPEM([]byte(roots))
+	ok := pool.AppendCertsFromPEM([]byte(caRootsPEM))
 	if !ok {
 		return fmt.Errorf("failed to parse CA roots")
 	}

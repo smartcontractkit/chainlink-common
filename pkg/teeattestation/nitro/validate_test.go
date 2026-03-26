@@ -17,7 +17,7 @@ func TestValidateAttestation_FakeAttestor(t *testing.T) {
 	doc, err := fa.CreateAttestation(userData)
 	require.NoError(t, err)
 
-	err = ValidateAttestation(doc, userData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
+	err = ValidateAttestationWithRoots(doc, userData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
 	require.NoError(t, err)
 }
 
@@ -30,7 +30,7 @@ func TestValidateAttestation_WrongUserData(t *testing.T) {
 	require.NoError(t, err)
 
 	wrongData := teeattestation.DomainHash("wrong-tag", []byte(`{"key":"value"}`))
-	err = ValidateAttestation(doc, wrongData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
+	err = ValidateAttestationWithRoots(doc, wrongData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "expected user data")
 }
@@ -44,7 +44,7 @@ func TestValidateAttestation_WrongPCRs(t *testing.T) {
 	require.NoError(t, err)
 
 	wrongPCRs := []byte(`{"pcr0":"aa","pcr1":"bb","pcr2":"cc"}`)
-	err = ValidateAttestation(doc, userData, wrongPCRs, fa.CARootsPEM())
+	err = ValidateAttestationWithRoots(doc, userData, wrongPCRs, fa.CARootsPEM())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "PCR0 mismatch")
 }

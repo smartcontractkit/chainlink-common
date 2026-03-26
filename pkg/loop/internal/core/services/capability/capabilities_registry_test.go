@@ -587,20 +587,17 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 }
 
 func TestTransmitterAccountToBytes(t *testing.T) {
-	t.Run("decodes_0x_and_0X_prefixed_hex", func(t *testing.T) {
-		gotLower, err := transmitterAccountToBytes(ocrtypes.Account("0xABcd"))
-		require.NoError(t, err)
-		require.Equal(t, []byte{0xab, 0xcd}, gotLower)
-
-		gotUpper, err := transmitterAccountToBytes(ocrtypes.Account("0X00ff"))
+	t.Run("decodes_plain_hex", func(t *testing.T) {
+		gotUpper, err := transmitterAccountToBytes(ocrtypes.Account("00ff"))
 		require.NoError(t, err)
 		require.Equal(t, []byte{0x00, 0xff}, gotUpper)
 	})
 
-	t.Run("returns_error_for_invalid_prefixed_hex", func(t *testing.T) {
-		_, err := transmitterAccountToBytes(ocrtypes.Account("0x123"))
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to decode transmitter")
+	t.Run("falls_back_to_raw_bytes_for_prefixed_printable_account", func(t *testing.T) {
+		raw := []byte("0xABcd")
+		got, err := transmitterAccountToBytes(ocrtypes.Account(raw))
+		require.NoError(t, err)
+		require.Equal(t, raw, got)
 	})
 
 	t.Run("falls_back_to_raw_bytes_for_non_printable_account_even_with_0x_prefix", func(t *testing.T) {
@@ -611,7 +608,7 @@ func TestTransmitterAccountToBytes(t *testing.T) {
 	})
 }
 
-func TestCapabilitiesRegistry_ConfigForCapability_NormalizesPrefixedAndRawTransmitters(t *testing.T) {
+func TestCapabilitiesRegistry_ConfigForCapability_NormalizesRawAndHexTransmitters(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
 	reg := mocks.NewCapabilitiesRegistry(t)
@@ -651,7 +648,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_NormalizesPrefixedAndRawTransm
 			"__default__": {
 				ConfigCount:           5,
 				Signers:               []ocrtypes.OnchainPublicKey{{0x01, 0x02}},
-				Transmitters:          []ocrtypes.Account{"0xABcd", ocrtypes.Account(string(rawTransmitter)), "123e"},
+				Transmitters:          []ocrtypes.Account{"abcd", ocrtypes.Account(string(rawTransmitter)), "123e"},
 				F:                     1,
 				OnchainConfig:         []byte{0x10, 0x20},
 				OffchainConfigVersion: 2,

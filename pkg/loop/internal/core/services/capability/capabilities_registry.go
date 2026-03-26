@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -272,25 +271,11 @@ func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 		return raw, nil
 	}
 
-	s := string(trimmed)
-	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
-		trimmed := s[2:]
-		if !looksHexAccount(trimmed) {
-			return nil, fmt.Errorf("failed to decode transmitter: invalid hex account %q", s)
+	if len(trimmed) > 0 && len(trimmed)%2 == 0 {
+		decoded, err := hex.DecodeString(string(trimmed))
+		if err == nil {
+			return decoded, nil
 		}
-		decoded, err := hex.DecodeString(trimmed)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode transmitter: %w", err)
-		}
-		return decoded, nil
-	}
-
-	if looksHexAccount(s) {
-		decoded, err := hex.DecodeString(s)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode transmitter: %w", err)
-		}
-		return decoded, nil
 	}
 
 	// Backward compatibility: some registry paths provide raw bytes directly.
@@ -300,21 +285,6 @@ func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 func isPrintableASCII(b []byte) bool {
 	for _, c := range b {
 		if c < 0x20 || c > 0x7e {
-			return false
-		}
-	}
-	return true
-}
-
-func looksHexAccount(s string) bool {
-	if s == "" || len(s)%2 != 0 {
-		return false
-	}
-	for _, c := range s {
-		isDigit := c >= '0' && c <= '9'
-		isLower := c >= 'a' && c <= 'f'
-		isUpper := c >= 'A' && c <= 'F'
-		if !isDigit && !isLower && !isUpper {
 			return false
 		}
 	}

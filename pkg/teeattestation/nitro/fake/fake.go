@@ -206,7 +206,7 @@ type coseHeader struct {
 }
 
 type cosePayload struct {
-	_ struct{} `cbor:",toarray"` //nolint:revive // idiomatic CBOR array encoding
+	_           struct{} `cbor:",toarray"` //nolint:revive // idiomatic CBOR array encoding
 	Protected   []byte
 	Unprotected cbor.RawMessage
 	Payload     []byte
@@ -214,7 +214,7 @@ type cosePayload struct {
 }
 
 type coseSignature struct {
-	_ struct{} `cbor:",toarray"` //nolint:revive // idiomatic CBOR array encoding
+	_           struct{} `cbor:",toarray"` //nolint:revive // idiomatic CBOR array encoding
 	Context     string
 	Protected   []byte
 	ExternalAAD []byte

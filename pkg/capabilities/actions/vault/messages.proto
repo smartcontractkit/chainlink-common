@@ -38,6 +38,8 @@ message SecretResponse {
 
 message GetSecretsRequest {
   repeated SecretRequest requests = 1;
+  string org_id = 2;
+  string workflow_owner = 3;
 }
 
 message GetSecretsResponse {
@@ -52,6 +54,8 @@ message EncryptedSecret {
 message CreateSecretsRequest {
   string request_id = 1;
   repeated EncryptedSecret encrypted_secrets = 2;
+  string org_id = 3;
+  string workflow_owner = 4;
 }
 
 message CreateSecretResponse {
@@ -67,6 +71,8 @@ message CreateSecretsResponse {
 message UpdateSecretsRequest {
   string request_id = 1;
   repeated EncryptedSecret encrypted_secrets = 2;
+  string org_id = 3;
+  string workflow_owner = 4;
 }
 
 message UpdateSecretResponse {
@@ -82,6 +88,8 @@ message UpdateSecretsResponse {
 message DeleteSecretsRequest {
   string request_id = 1;
   repeated SecretIdentifier ids = 2;
+  string org_id = 3;
+  string workflow_owner = 4;
 }
 
 message DeleteSecretResponse {
@@ -98,6 +106,8 @@ message ListSecretIdentifiersRequest {
   string request_id = 1;
   string owner = 2;
   string namespace = 3;
+  string org_id = 4;
+  string workflow_owner = 5;
 }
 
 message ListSecretIdentifiersResponse {

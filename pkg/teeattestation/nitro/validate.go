@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -62,13 +63,13 @@ func ValidateAttestation(attestation, expectedUserData, trustedMeasurements []by
 // fake enclaves that use self-signed CA roots.
 func ValidateAttestationWithRoots(attestation, expectedUserData, trustedMeasurements []byte, caRootsPEM string) error {
 	if attestation == nil {
-		return fmt.Errorf("attestation is nil")
+		return errors.New("attestation is nil")
 	}
 
 	pool := x509.NewCertPool()
 	ok := pool.AppendCertsFromPEM([]byte(caRootsPEM))
 	if !ok {
-		return fmt.Errorf("failed to parse CA roots")
+		return errors.New("failed to parse CA roots")
 	}
 	result, err := nitrite.Verify(attestation, nitrite.VerifyOptions{
 		CurrentTime: time.Now(),
@@ -78,7 +79,7 @@ func ValidateAttestationWithRoots(attestation, expectedUserData, trustedMeasurem
 		return fmt.Errorf("failed to verify nitro attestation: %w", err)
 	}
 	if !result.SignatureOK {
-		return fmt.Errorf("signature verification failed")
+		return errors.New("signature verification failed")
 	}
 
 	if !bytes.Equal(expectedUserData, result.Document.UserData) {

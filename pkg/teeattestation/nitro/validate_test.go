@@ -9,8 +9,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation/nitro/fake"
 )
 
-func TestValidateAttestation_FakeAttestor(t *testing.T) {
-	fa, err := fake.NewFakeAttestor()
+func TestValidateAttestation_Attestor(t *testing.T) {
+	fa, err := fake.NewAttestor()
 	require.NoError(t, err)
 
 	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
@@ -22,7 +22,7 @@ func TestValidateAttestation_FakeAttestor(t *testing.T) {
 }
 
 func TestValidateAttestation_WrongUserData(t *testing.T) {
-	fa, err := fake.NewFakeAttestor()
+	fa, err := fake.NewAttestor()
 	require.NoError(t, err)
 
 	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
@@ -36,7 +36,7 @@ func TestValidateAttestation_WrongUserData(t *testing.T) {
 }
 
 func TestValidateAttestation_WrongPCRs(t *testing.T) {
-	fa, err := fake.NewFakeAttestor()
+	fa, err := fake.NewAttestor()
 	require.NoError(t, err)
 
 	userData := []byte("test-data")

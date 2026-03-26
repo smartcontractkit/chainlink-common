@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFakeAttestor_RoundTrip(t *testing.T) {
-	fa, err := NewFakeAttestor()
+func TestAttestor_RoundTrip(t *testing.T) {
+	fa, err := NewAttestor()
 	require.NoError(t, err)
 
 	userData := []byte("test-user-data-12345")
@@ -32,8 +32,8 @@ func TestFakeAttestor_RoundTrip(t *testing.T) {
 	require.Len(t, result.Document.PCRs[2], 48)
 }
 
-func TestFakeAttestor_TrustedPCRsJSON(t *testing.T) {
-	fa, err := NewFakeAttestor()
+func TestAttestor_TrustedPCRsJSON(t *testing.T) {
+	fa, err := NewAttestor()
 	require.NoError(t, err)
 
 	pcrsJSON := fa.TrustedPCRsJSON()
@@ -43,8 +43,8 @@ func TestFakeAttestor_TrustedPCRsJSON(t *testing.T) {
 	require.Contains(t, string(pcrsJSON), `"pcr2"`)
 }
 
-func TestFakeAttestor_CARootsPEM(t *testing.T) {
-	fa, err := NewFakeAttestor()
+func TestAttestor_CARootsPEM(t *testing.T) {
+	fa, err := NewAttestor()
 	require.NoError(t, err)
 
 	pemStr := fa.CARootsPEM()

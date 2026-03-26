@@ -1,4 +1,4 @@
-// Package fake provides a FakeAttestor that produces structurally valid
+// Package fake provides an Attestor that produces structurally valid
 // COSE Sign1 attestation documents. These documents pass nitrite.Verify's
 // full validation chain (CBOR parsing, cert chain, ECDSA signature, UserData,
 // PCRs) without requiring real Nitro hardware.
@@ -21,9 +21,9 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-// FakeAttestor produces structurally valid COSE Sign1 attestation documents
+// Attestor produces structurally valid COSE Sign1 attestation documents
 // that pass nitrite.Verify with a custom CA root.
-type FakeAttestor struct {
+type Attestor struct {
 	rootKey     *ecdsa.PrivateKey
 	rootCert    *x509.Certificate
 	rootCertDER []byte
@@ -33,9 +33,9 @@ type FakeAttestor struct {
 	pcrs        map[uint][]byte
 }
 
-// NewFakeAttestor generates a self-signed P-384 root CA, a leaf cert signed
+// NewAttestor generates a self-signed P-384 root CA, a leaf cert signed
 // by that root, and deterministic 48-byte fake PCR values.
-func NewFakeAttestor() (*FakeAttestor, error) {
+func NewAttestor() (*Attestor, error) {
 	rootKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("generate root key: %w", err)
@@ -86,7 +86,7 @@ func NewFakeAttestor() (*FakeAttestor, error) {
 		2: sha384Sum([]byte("fake-pcr-2")),
 	}
 
-	return &FakeAttestor{
+	return &Attestor{
 		rootKey:     rootKey,
 		rootCert:    rootCert,
 		rootCertDER: rootCertDER,
@@ -99,10 +99,10 @@ func NewFakeAttestor() (*FakeAttestor, error) {
 
 // CreateAttestation builds a COSE Sign1 document encoding a Nitro-like
 // attestation with the given userData.
-func (f *FakeAttestor) CreateAttestation(userData []byte) ([]byte, error) {
+func (f *Attestor) CreateAttestation(userData []byte) ([]byte, error) {
 	doc := attestationDocument{
 		ModuleID:    "fake-enclave-module",
-		Timestamp:   uint64(time.Now().UnixMilli()),
+		Timestamp:   uint64(time.Now().UnixMilli()), //nolint:gosec // timestamp is always positive
 		Digest:      "SHA384",
 		PCRs:        f.pcrs,
 		Certificate: f.leafCertDER,
@@ -157,14 +157,14 @@ func (f *FakeAttestor) CreateAttestation(userData []byte) ([]byte, error) {
 }
 
 // CARoots returns an x509.CertPool containing the fake root CA certificate.
-func (f *FakeAttestor) CARoots() *x509.CertPool {
+func (f *Attestor) CARoots() *x509.CertPool {
 	pool := x509.NewCertPool()
 	pool.AddCert(f.rootCert)
 	return pool
 }
 
 // CARootsPEM returns the root CA certificate in PEM format.
-func (f *FakeAttestor) CARootsPEM() string {
+func (f *Attestor) CARootsPEM() string {
 	return string(pem.EncodeToMemory(&pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: f.rootCertDER,
@@ -173,7 +173,7 @@ func (f *FakeAttestor) CARootsPEM() string {
 
 // TrustedPCRsJSON returns the PCR values as a JSON object matching the
 // format expected by the attestation validator.
-func (f *FakeAttestor) TrustedPCRsJSON() []byte {
+func (f *Attestor) TrustedPCRsJSON() []byte {
 	m := map[string]string{
 		"pcr0": hex.EncodeToString(f.pcrs[0]),
 		"pcr1": hex.EncodeToString(f.pcrs[1]),
@@ -206,7 +206,7 @@ type coseHeader struct {
 }
 
 type cosePayload struct {
-	_           struct{} `cbor:",toarray"`
+	_ struct{} `cbor:",toarray"` //nolint:revive // idiomatic CBOR array encoding
 	Protected   []byte
 	Unprotected cbor.RawMessage
 	Payload     []byte
@@ -214,7 +214,7 @@ type cosePayload struct {
 }
 
 type coseSignature struct {
-	_           struct{} `cbor:",toarray"`
+	_ struct{} `cbor:",toarray"` //nolint:revive // idiomatic CBOR array encoding
 	Context     string
 	Protected   []byte
 	ExternalAAD []byte

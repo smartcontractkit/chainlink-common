@@ -1,8 +1,8 @@
-// Package fake provides an Attestor that produces structurally valid
+// Package nitrofake provides an Attestor that produces structurally valid
 // COSE Sign1 attestation documents. These documents pass nitrite.Verify's
 // full validation chain (CBOR parsing, cert chain, ECDSA signature, UserData,
 // PCRs) without requiring real Nitro hardware.
-package fake
+package nitrofake
 
 import (
 	"crypto/ecdsa"

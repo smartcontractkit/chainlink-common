@@ -10,7 +10,7 @@ import (
 )
 
 func TestValidateAttestation_Attestor(t *testing.T) {
-	fa, err := fake.NewAttestor()
+	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
 	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
@@ -22,7 +22,7 @@ func TestValidateAttestation_Attestor(t *testing.T) {
 }
 
 func TestValidateAttestation_WrongUserData(t *testing.T) {
-	fa, err := fake.NewAttestor()
+	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
 	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
@@ -36,7 +36,7 @@ func TestValidateAttestation_WrongUserData(t *testing.T) {
 }
 
 func TestValidateAttestation_WrongPCRs(t *testing.T) {
-	fa, err := fake.NewAttestor()
+	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
 	userData := []byte("test-data")

@@ -175,11 +175,12 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
 	require.NoError(t, err)
 
-	// The test binary emits 5 metrics:
-	// 1. "valid_counter" (name=13 chars) - ALLOWED
-	// 2. "this_name_is_way_too_long" (name=25 chars > 15 limit) - REJECTED (name too long)
-	// 3. "valid_gauge" (name=11 chars) - ALLOWED
-	// 4. "third_one" (name=9 chars) - ALLOWED (emission count = 3, at limit)
+	// The test binary emits 5 metrics (MaxMetricNameLength=15):
+	// 1. "valid_counter"             (13 chars) - ALLOWED
+	// 2. "this_name_is_way_too_long" (24 chars > 15) - REJECTED (name too long)
+	// 3. "valid_gauge"               (11 chars) - ALLOWED
+	// 4. "third_one"                 ( 9 chars) - ALLOWED
+	// 5. "fourth_one"                (10 chars) - ALLOWED
 	require.Equal(t, 4, len(emittedMetrics))
 }
 

@@ -141,7 +141,7 @@ func (s *sugared) Criticalw(msg string, keysAndValues ...any) {
 }
 
 func (s *sugared) Named(n string) SugaredLogger {
-	return Sugared(Named(s.Logger, n))
+	return Sugared(namedSkip(s.Logger, n, 2))
 }
 
 func (s *sugared) With(keyvals ...any) SugaredLogger {

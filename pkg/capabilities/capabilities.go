@@ -113,7 +113,23 @@ type AttributedSignature struct {
 	Signer    uint32
 }
 
-func ResponseToReportData(workflowExecutionID, referenceID string, responsePayload []byte, spendUnit, spendValue string) [32]byte {
+func ExtractMeteringFromMetadata(sender p2ptypes.PeerID, metadata ResponseMetadata) (MeteringNodeDetail, error) {
+	if len(metadata.Metering) != 1 {
+		return MeteringNodeDetail{}, fmt.Errorf("unexpected number of metering records received from peer %s: got %d, want 1", sender, len(metadata.Metering))
+	}
+
+	rpt := metadata.Metering[0]
+	rpt.Peer2PeerID = sender.String()
+	return rpt, nil
+}
+
+func ResponseToReportData(workflowExecutionID, referenceID string, responsePayload []byte, metadata ResponseMetadata) ([32]byte, error) {
+	// use empty PeerID since the sender must not be included in the hash
+	metering, err := ExtractMeteringFromMetadata(p2ptypes.PeerID{}, metadata)
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("failed to extract metering from metadata: %w", err)
+	}
+
 	hash := sha3.New256()
 	const domainSeparator = "CapabilityResponseReportData:v1"
 	hash.Write([]byte(domainSeparator))
@@ -126,12 +142,12 @@ func ResponseToReportData(workflowExecutionID, referenceID string, responsePaylo
 	writeField([]byte(workflowExecutionID))
 	writeField([]byte(referenceID))
 	writeField(responsePayload)
-	writeField([]byte(spendUnit))
-	writeField([]byte(spendValue))
+	writeField([]byte(metering.SpendUnit))
+	writeField([]byte(metering.SpendValue))
 
 	var result [32]byte
 	copy(result[:], hash.Sum(nil))
-	return result
+	return result, nil
 }
 
 type MeteringNodeDetail struct {
@@ -168,6 +184,7 @@ type RequestMetadata struct {
 	WorkflowRegistryChainSelector string
 	WorkflowRegistryAddress       string
 	EngineVersion                 string
+	ExecutionTimestamp            int64
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774530421634,
+  "lastUpdate": 1774533398473,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -42060,6 +42060,66 @@ window.BENCHMARK_DATA = {
             "value": 136865,
             "unit": "ns/op",
             "extra": "8539 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yashvardhan.nevatia@smartcontract.com",
+            "name": "Yashvardhan Nevatia",
+            "username": "yashnevatia"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b725f95b1826a791c97e4b48b5e1e2f8fcb804f0",
+          "message": "Cre cap limit update (#1926)\n\n* Adding solana/aptos cre settings\n\n* uint32 for solana gas limit\n\n* make report size limit specific\n\n* make gen\n\n* make gen\n\n* map\n\n* make gen",
+          "timestamp": "2026-03-26T13:48:53Z",
+          "tree_id": "27f474d3206be2aaa67ecdf04e7d9e188df6ed32",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b725f95b1826a791c97e4b48b5e1e2f8fcb804f0"
+        },
+        "date": 1774533396412,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 737.3,
+            "unit": "ns/op",
+            "extra": "1367407 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 70400,
+            "unit": "ns/op",
+            "extra": "16786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.4,
+            "unit": "ns/op",
+            "extra": "2960664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 64083,
+            "unit": "ns/op",
+            "extra": "18752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25471,
+            "unit": "ns/op",
+            "extra": "47074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 111415,
+            "unit": "ns/op",
+            "extra": "9955 times\n4 procs"
           }
         ]
       }

@@ -48,6 +48,7 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 				Response: &sdkpb.CapabilityResponse_Error{
 					Error: err.Error(),
 				},
+				CapabilityId: req.Id,
 			}
 		}
 

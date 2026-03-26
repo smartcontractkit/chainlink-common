@@ -142,6 +142,10 @@ flowchart
                 PerWorkflow.ChainWrite.EVM.GasLimit{{GasLimit}}:::bound
 %%                PerWorkflow.ChainWrite.EVM.TransactionGasLimit - Deprecated
             end
+            subgraph Aptos
+                PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Aptos.MaxGasAmountLimit{{MaxGasAmountLimit}}:::bound
+            end
         end
         subgraph PerWorkflow.ChainRead
             direction LR

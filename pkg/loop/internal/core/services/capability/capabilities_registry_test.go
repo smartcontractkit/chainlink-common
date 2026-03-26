@@ -609,16 +609,13 @@ func TestTransmitterAccountToBytes(t *testing.T) {
 	})
 
 	t.Run("falls_back_to_raw_bytes_for_realistic_aptos_account_bytes_without_0x_prefix", func(t *testing.T) {
-		// This is an Aptos-style 32-byte account address taken from the Aptos config tests.
 		raw, err := hex.DecodeString("26c93635e9af3ce8ba977ba6c3e4bc84b1cbfbeffe850a603ef0a7251aecbd55")
 		require.NoError(t, err)
 		require.Len(t, raw, 32)
 
-		// The review suggestion of hex.DecodeString(string(account)) would error here
-		// because these are raw account bytes, not printable ASCII hex.
-		_, err = hex.DecodeString(string(raw))
-		require.Error(t, err)
-
+		// Aptos account bytes are raw binary here, not printable ASCII hex. The
+		// helper must preserve them unchanged rather than attempting to decode the
+		// string form as hex.
 		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
 		require.NoError(t, err)
 		require.Equal(t, raw, got)

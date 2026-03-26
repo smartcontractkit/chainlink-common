@@ -32,9 +32,6 @@ func emitMetric(name string, value float64, metricType wfpb.UserMetricType, labe
 		Type:   metricType,
 		Labels: labels,
 	}
-	b, err := proto.Marshal(m)
-	if err != nil {
-		return
-	}
+	b := rawsdk.Must(proto.Marshal(m))
 	rawsdk.EmitMetric(rawsdk.BufferToPointerLen(b))
 }

@@ -190,6 +190,10 @@ func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int
 		return -1
 	}
 
+	if ptrlen <= 0 {
+		return -1
+	}
+
 	if err := e.module.cfg.MaxMetricPayloadLimiter.Check(e.ctx, config.Size(ptrlen)); err != nil {
 		e.module.cfg.Logger.Warnf("metric payload too large: %d bytes - dropping: %s", ptrlen, err)
 		return -1

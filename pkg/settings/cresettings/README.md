@@ -108,6 +108,16 @@ flowchart
             PerWorkflow.LogLineLimit{{PerWorkflow.LogLineLimit}}:::bound
             PerWorkflow.LogEventLimit{{PerWorkflow.LogEventLimit}}:::bound
         end
+
+        subgraph metrics
+            PerWorkflow.MetricEnabled[/PerWorkflow.MetricEnabled\]:::gate
+            PerWorkflow.MetricPayloadLimit{{PerWorkflow.MetricPayloadLimit}}:::bound
+            PerWorkflow.MetricNameLengthLimit{{PerWorkflow.MetricNameLengthLimit}}:::bound
+            PerWorkflow.MetricLabelsPerMetric{{PerWorkflow.MetricLabelsPerMetric}}:::bound
+            PerWorkflow.MetricLabelValueLength{{PerWorkflow.MetricLabelValueLength}}:::bound
+
+            PerWorkflow.MetricEnabled-->PerWorkflow.MetricPayloadLimit-->PerWorkflow.MetricNameLengthLimit-->PerWorkflow.MetricLabelsPerMetric-->PerWorkflow.MetricLabelValueLength
+        end
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound

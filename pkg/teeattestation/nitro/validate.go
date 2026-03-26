@@ -90,6 +90,9 @@ func ValidateAttestationWithRoots(attestation, expectedUserData, trustedMeasurem
 	if err := json.Unmarshal(trustedMeasurements, &trustedPCRs); err != nil {
 		return fmt.Errorf("failed to unmarshal trusted PCRs: %w", err)
 	}
+	if len(result.Document.PCRs) < 3 {
+		return fmt.Errorf("attestation document has %d PCRs, need at least 3", len(result.Document.PCRs))
+	}
 	if !bytes.Equal(result.Document.PCRs[0], trustedPCRs.PCR0) {
 		return fmt.Errorf("PCR0 mismatch: expected %x", trustedPCRs.PCR0)
 	}

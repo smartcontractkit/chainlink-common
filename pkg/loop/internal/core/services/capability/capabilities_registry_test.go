@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"sync"
 	"testing"
@@ -607,8 +608,17 @@ func TestTransmitterAccountToBytes(t *testing.T) {
 		require.Equal(t, raw, got)
 	})
 
-	t.Run("falls_back_to_raw_bytes_for_non_printable_account_without_0x_prefix", func(t *testing.T) {
-		raw := []byte{0xff, 'A', 0x00, 'B'}
+	t.Run("falls_back_to_raw_bytes_for_realistic_aptos_account_bytes_without_0x_prefix", func(t *testing.T) {
+		// This is an Aptos-style 32-byte account address taken from the Aptos config tests.
+		raw, err := hex.DecodeString("26c93635e9af3ce8ba977ba6c3e4bc84b1cbfbeffe850a603ef0a7251aecbd55")
+		require.NoError(t, err)
+		require.Len(t, raw, 32)
+
+		// The review suggestion of hex.DecodeString(string(account)) would error here
+		// because these are raw account bytes, not printable ASCII hex.
+		_, err = hex.DecodeString(string(raw))
+		require.Error(t, err)
+
 		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
 		require.NoError(t, err)
 		require.Equal(t, raw, got)

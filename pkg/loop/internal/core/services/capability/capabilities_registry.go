@@ -1,7 +1,6 @@
 package capability
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -262,17 +261,8 @@ func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig 
 
 func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 	raw := []byte(account)
-	trimmed := bytes.TrimSpace(raw)
-	if len(trimmed) == 0 {
-		return raw, nil
-	}
-
-	if !isPrintableASCII(trimmed) {
-		return raw, nil
-	}
-
-	if len(trimmed) > 0 && len(trimmed)%2 == 0 {
-		decoded, err := hex.DecodeString(string(trimmed))
+	if len(raw) > 0 && len(raw)%2 == 0 {
+		decoded, err := hex.DecodeString(string(raw))
 		if err == nil {
 			return decoded, nil
 		}
@@ -280,15 +270,6 @@ func transmitterAccountToBytes(account ocrtypes.Account) ([]byte, error) {
 
 	// Backward compatibility: some registry paths provide raw bytes directly.
 	return raw, nil
-}
-
-func isPrintableASCII(b []byte) bool {
-	for _, c := range b {
-		if c < 0x20 || c > 0x7e {
-			return false
-		}
-	}
-	return true
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {

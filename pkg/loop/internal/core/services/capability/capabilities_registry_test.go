@@ -595,13 +595,20 @@ func TestTransmitterAccountToBytes(t *testing.T) {
 
 	t.Run("falls_back_to_raw_bytes_for_prefixed_printable_account", func(t *testing.T) {
 		raw := []byte("0xABcd")
-		got, err := transmitterAccountToBytes(ocrtypes.Account(raw))
+		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
 		require.NoError(t, err)
 		require.Equal(t, raw, got)
 	})
 
 	t.Run("falls_back_to_raw_bytes_for_non_printable_account_even_with_0x_prefix", func(t *testing.T) {
 		raw := []byte{'0', 'x', 0xff, 'A'}
+		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
+		require.NoError(t, err)
+		require.Equal(t, raw, got)
+	})
+
+	t.Run("falls_back_to_raw_bytes_for_non_printable_account_without_0x_prefix", func(t *testing.T) {
+		raw := []byte{0xff, 'A', 0x00, 'B'}
 		got, err := transmitterAccountToBytes(ocrtypes.Account(string(raw)))
 		require.NoError(t, err)
 		require.Equal(t, raw, got)

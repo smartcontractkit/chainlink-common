@@ -72,7 +72,7 @@ var Default = Schema{
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
-	VaultPluginBatchSizeLimit:         Int(10),
+	VaultPluginBatchSizeLimit:         Int(1),
 	VaultRequestBatchSizeLimit:        Int(10),
 	VaultShareSizeLimit:               Size(600 * config.Byte),
 

@@ -8,8 +8,11 @@ import (
 	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
+	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 type execution[T any] struct {
@@ -180,6 +183,62 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 		e.module.cfg.Logger.Errorf("error emitting user log: %s", innerErr)
 		return
 	}
+}
+
+func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	if !e.module.cfg.EnableUserMetrics {
+		return -1
+	}
+
+	if ptrlen <= 0 {
+		return -1
+	}
+
+	if err := e.module.cfg.MaxMetricPayloadLimiter.Check(e.ctx, config.Size(ptrlen)); err != nil {
+		e.module.cfg.Logger.Warnf("metric payload too large: %d bytes - dropping: %s", ptrlen, err)
+		return -1
+	}
+
+	b, err := wasmRead(caller, ptr, ptrlen)
+	if err != nil {
+		e.module.cfg.Logger.Errorf("error reading metric payload: %s", err)
+		return -1
+	}
+
+	metric := &wfpb.WorkflowUserMetric{}
+	if err := proto.Unmarshal(b, metric); err != nil {
+		e.module.cfg.Logger.Errorf("error unmarshaling metric: %s", err)
+		return -1
+	}
+
+	if metric.Name == "" {
+		e.module.cfg.Logger.Warnf("metric name cannot be empty - dropping")
+		return -1
+	}
+
+	if err := e.module.cfg.MaxMetricNameLengthLimiter.Check(e.ctx, len(metric.Name)); err != nil {
+		e.module.cfg.Logger.Warnf("metric name too long: %d chars - dropping: %s", len(metric.Name), err)
+		return -1
+	}
+
+	if err := e.module.cfg.MaxLabelsPerMetricLimiter.Check(e.ctx, len(metric.Labels)); err != nil {
+		e.module.cfg.Logger.Warnf("too many labels on metric %q: %d - dropping: %s", metric.Name, len(metric.Labels), err)
+		return -1
+	}
+
+	for k, v := range metric.Labels {
+		if err := e.module.cfg.MaxLabelValueLengthLimiter.Check(e.ctx, len(v)); err != nil {
+			e.module.cfg.Logger.Warnf("label value too long for key %q on metric %q: %d chars - dropping: %s", k, metric.Name, len(v), err)
+			return -1
+		}
+	}
+
+	if err := e.executor.EmitUserMetric(metric); err != nil {
+		e.module.cfg.Logger.Errorf("error emitting user metric: %s", err)
+		return -1
+	}
+
+	return 0
 }
 
 func (e *execution[T]) getSeed(mode int32) int64 {

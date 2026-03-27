@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,8 @@ const (
 	nodagRandomBinaryLocation   = nodagRandomBinaryCmd + "/testmodule.wasm"
 	loggingLimitsBinaryCmd      = "test/logging_limits/cmd"
 	loggingLimitsBinaryLocation = loggingLimitsBinaryCmd + "/testmodule.wasm"
+	metricLimitsBinaryCmd       = "test/metric_limits/cmd"
+	metricLimitsBinaryLocation  = metricLimitsBinaryCmd + "/testmodule.wasm"
 )
 
 func Test_Sleep_Timeout(t *testing.T) {
@@ -133,6 +136,81 @@ func Test_NoDAG_LoggingWithLimits(t *testing.T) {
 	require.Equal(t, 2, len(logs))
 	require.Equal(t, "short log 1", logs[0])
 	require.Equal(t, "short log 3", logs[1])
+}
+
+func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+
+	var emittedMetrics []*wfpb.WorkflowUserMetric
+	mockExecutionHelper.EXPECT().EmitUserMetric(mock.Anything).RunAndReturn(func(m *wfpb.WorkflowUserMetric) error {
+		emittedMetrics = append(emittedMetrics, m)
+		return nil
+	})
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	executeRequest := triggerExecuteRequest(t, 0, trigger)
+	cfg := &ModuleConfig{
+		Logger:                logger.Test(t),
+		IsUncompressed:        true,
+		EnableUserMetrics:     true,
+		MaxMetricPayloadBytes: 4096,
+		MaxMetricNameLength:   15,
+		MaxLabelsPerMetric:    10,
+		MaxLabelValueLength:   256,
+	}
+
+	binary := createTestBinary(metricLimitsBinaryCmd, metricLimitsBinaryLocation, true, t)
+
+	m, err := NewModule(t.Context(), cfg, binary)
+	require.NoError(t, err)
+
+	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
+	require.NoError(t, err)
+
+	// The test binary emits 5 metrics (MaxMetricNameLength=15):
+	// 1. "valid_counter"             (13 chars) - ALLOWED
+	// 2. "this_name_is_way_too_long" (24 chars > 15) - REJECTED (name too long)
+	// 3. "valid_gauge"               (11 chars) - ALLOWED
+	// 4. "third_one"                 ( 9 chars) - ALLOWED
+	// 5. "fourth_one"                (10 chars) - ALLOWED
+	require.Equal(t, 4, len(emittedMetrics))
+}
+
+func Test_NoDAG_EmitMetricDisabled(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	executeRequest := triggerExecuteRequest(t, 0, trigger)
+	cfg := &ModuleConfig{
+		Logger:            logger.Test(t),
+		IsUncompressed:    true,
+		EnableUserMetrics: false,
+	}
+
+	binary := createTestBinary(metricLimitsBinaryCmd, metricLimitsBinaryLocation, true, t)
+
+	m, err := NewModule(t.Context(), cfg, binary)
+	require.NoError(t, err)
+
+	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
+	require.NoError(t, err)
+	// EmitUserMetric should never be called when disabled - no mock expectation set
 }
 
 func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {

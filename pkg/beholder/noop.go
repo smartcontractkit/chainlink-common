@@ -109,8 +109,8 @@ func (noopMessageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any)
 	return nil
 }
 
-func (noopMessageEmitter) BatchEmit(ctx context.Context, messages ...Message) error {
-	return nil
+func (noopMessageEmitter) BatchEmit(ctx context.Context, messages []Message, options ...BatchEmitOption) ([]*chipingress.PublishResult, error) {
+	return nil, nil
 }
 
 func (noopMessageEmitter) EmitMessage(ctx context.Context, message Message) error {

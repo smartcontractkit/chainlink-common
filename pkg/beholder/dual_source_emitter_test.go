@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 func TestNewDualSourceEmitter(t *testing.T) {
@@ -89,3 +90,15 @@ func (m *mockEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) err
 	}
 	return nil
 }
+
+func (m *mockEmitter) BatchEmit(ctx context.Context, messages []beholder.Message, _ ...beholder.BatchEmitOption) ([]*chipingress.PublishResult, error) {
+	if m.emitFunc != nil {
+		for _, msg := range messages {
+			if err := m.emitFunc(ctx, msg.Body); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return nil, nil
+}
+

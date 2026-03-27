@@ -110,7 +110,9 @@ func (b *Client) Start(ctx context.Context) {
 // Forcibly shutdowns down after timeout if not completed.
 func (b *Client) Stop() {
 	b.shutdownOnce.Do(func() {
-		ctx, cancel := b.stopCh.CtxWithTimeout(b.shutdownTimeout)
+		// Use a standalone timeout context so the shutdown wait isn't cancelled
+		// by close(b.stopCh) below.
+		ctx, cancel := context.WithTimeout(context.Background(), b.shutdownTimeout)
 		defer cancel()
 
 		if b.cancelBatcher != nil {

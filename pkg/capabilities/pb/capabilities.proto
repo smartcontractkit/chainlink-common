@@ -125,6 +125,7 @@ message CapabilityResponse {
   ResponseMetadata metadata = 3;
   // Used for no DAG SDK
   google.protobuf.Any payload = 4;
+  optional OCRAttestation ocr_attestation = 5;
 }
 
 message ResponseMetadata {
@@ -140,10 +141,9 @@ message ResponseMetadata {
   repeated metering.MeteringReportNodeDetail metering = 1;
   // capdon_n represents the total number of nodes in a capability don.
   uint32 capdon_n = 2;
-  optional ResponseOCRAttestation ocr_attestation = 3;
 }
 
-message ResponseOCRAttestation {
+message OCRAttestation {
   bytes config_digest = 1;
   uint64 sequence_number = 2;
   repeated AttributedSignature signatures = 3;

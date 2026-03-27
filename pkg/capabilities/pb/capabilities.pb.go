@@ -806,9 +806,10 @@ type CapabilityResponse struct {
 	Error    string            `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	Metadata *ResponseMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Used for no DAG SDK
-	Payload       *anypb.Any `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Payload        *anypb.Any      `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
+	OcrAttestation *OCRAttestation `protobuf:"bytes,5,opt,name=ocr_attestation,json=ocrAttestation,proto3,oneof" json:"ocr_attestation,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CapabilityResponse) Reset() {
@@ -869,6 +870,13 @@ func (x *CapabilityResponse) GetPayload() *anypb.Any {
 	return nil
 }
 
+func (x *CapabilityResponse) GetOcrAttestation() *OCRAttestation {
+	if x != nil {
+		return x.OcrAttestation
+	}
+	return nil
+}
+
 type ResponseMetadata struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// MeteringReportNodeDetail is repeated here due to
@@ -882,10 +890,9 @@ type ResponseMetadata struct {
 	// more than one metering report per node.
 	Metering []*pb1.MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
 	// capdon_n represents the total number of nodes in a capability don.
-	CapdonN        uint32                  `protobuf:"varint,2,opt,name=capdon_n,json=capdonN,proto3" json:"capdon_n,omitempty"`
-	OcrAttestation *ResponseOCRAttestation `protobuf:"bytes,3,opt,name=ocr_attestation,json=ocrAttestation,proto3,oneof" json:"ocr_attestation,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	CapdonN       uint32 `protobuf:"varint,2,opt,name=capdon_n,json=capdonN,proto3" json:"capdon_n,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResponseMetadata) Reset() {
@@ -932,14 +939,7 @@ func (x *ResponseMetadata) GetCapdonN() uint32 {
 	return 0
 }
 
-func (x *ResponseMetadata) GetOcrAttestation() *ResponseOCRAttestation {
-	if x != nil {
-		return x.OcrAttestation
-	}
-	return nil
-}
-
-type ResponseOCRAttestation struct {
+type OCRAttestation struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConfigDigest   []byte                 `protobuf:"bytes,1,opt,name=config_digest,json=configDigest,proto3" json:"config_digest,omitempty"`
 	SequenceNumber uint64                 `protobuf:"varint,2,opt,name=sequence_number,json=sequenceNumber,proto3" json:"sequence_number,omitempty"`
@@ -948,20 +948,20 @@ type ResponseOCRAttestation struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *ResponseOCRAttestation) Reset() {
-	*x = ResponseOCRAttestation{}
+func (x *OCRAttestation) Reset() {
+	*x = OCRAttestation{}
 	mi := &file_capabilities_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResponseOCRAttestation) String() string {
+func (x *OCRAttestation) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResponseOCRAttestation) ProtoMessage() {}
+func (*OCRAttestation) ProtoMessage() {}
 
-func (x *ResponseOCRAttestation) ProtoReflect() protoreflect.Message {
+func (x *OCRAttestation) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -973,26 +973,26 @@ func (x *ResponseOCRAttestation) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResponseOCRAttestation.ProtoReflect.Descriptor instead.
-func (*ResponseOCRAttestation) Descriptor() ([]byte, []int) {
+// Deprecated: Use OCRAttestation.ProtoReflect.Descriptor instead.
+func (*OCRAttestation) Descriptor() ([]byte, []int) {
 	return file_capabilities_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ResponseOCRAttestation) GetConfigDigest() []byte {
+func (x *OCRAttestation) GetConfigDigest() []byte {
 	if x != nil {
 		return x.ConfigDigest
 	}
 	return nil
 }
 
-func (x *ResponseOCRAttestation) GetSequenceNumber() uint64 {
+func (x *OCRAttestation) GetSequenceNumber() uint64 {
 	if x != nil {
 		return x.SequenceNumber
 	}
 	return 0
 }
 
-func (x *ResponseOCRAttestation) GetSignatures() []*AttributedSignature {
+func (x *OCRAttestation) GetSignatures() []*AttributedSignature {
 	if x != nil {
 		return x.Signatures
 	}
@@ -1515,18 +1515,18 @@ const file_capabilities_proto_rawDesc = "" +
 	"\n" +
 	"trigger_id\x18\x01 \x01(\tR\ttriggerId\x12\x19\n" +
 	"\bevent_id\x18\x02 \x01(\tR\aeventId\x12\x16\n" +
-	"\x06method\x18\x03 \x01(\tR\x06method\"\xbc\x01\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\"\x9c\x02\n" +
 	"\x12CapabilityResponse\x12$\n" +
 	"\x05value\x18\x01 \x01(\v2\x0e.values.v1.MapR\x05value\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12:\n" +
 	"\bmetadata\x18\x03 \x01(\v2\x1e.capabilities.ResponseMetadataR\bmetadata\x12.\n" +
-	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\"\xd5\x01\n" +
+	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12J\n" +
+	"\x0focr_attestation\x18\x05 \x01(\v2\x1c.capabilities.OCRAttestationH\x00R\x0eocrAttestation\x88\x01\x01B\x12\n" +
+	"\x10_ocr_attestation\"m\n" +
 	"\x10ResponseMetadata\x12>\n" +
 	"\bmetering\x18\x01 \x03(\v2\".metering.MeteringReportNodeDetailR\bmetering\x12\x19\n" +
-	"\bcapdon_n\x18\x02 \x01(\rR\acapdonN\x12R\n" +
-	"\x0focr_attestation\x18\x03 \x01(\v2$.capabilities.ResponseOCRAttestationH\x00R\x0eocrAttestation\x88\x01\x01B\x12\n" +
-	"\x10_ocr_attestation\"\xa9\x01\n" +
-	"\x16ResponseOCRAttestation\x12#\n" +
+	"\bcapdon_n\x18\x02 \x01(\rR\acapdonN\"\xa1\x01\n" +
+	"\x0eOCRAttestation\x12#\n" +
 	"\rconfig_digest\x18\x01 \x01(\fR\fconfigDigest\x12'\n" +
 	"\x0fsequence_number\x18\x02 \x01(\x04R\x0esequenceNumber\x12A\n" +
 	"\n" +
@@ -1620,7 +1620,7 @@ var file_capabilities_proto_goTypes = []any{
 	(*AckEventRequest)(nil),               // 9: capabilities.AckEventRequest
 	(*CapabilityResponse)(nil),            // 10: capabilities.CapabilityResponse
 	(*ResponseMetadata)(nil),              // 11: capabilities.ResponseMetadata
-	(*ResponseOCRAttestation)(nil),        // 12: capabilities.ResponseOCRAttestation
+	(*OCRAttestation)(nil),                // 12: capabilities.OCRAttestation
 	(*AttributedSignature)(nil),           // 13: capabilities.AttributedSignature
 	(*RegistrationMetadata)(nil),          // 14: capabilities.RegistrationMetadata
 	(*RegisterToWorkflowRequest)(nil),     // 15: capabilities.RegisterToWorkflowRequest
@@ -1652,9 +1652,9 @@ var file_capabilities_proto_depIdxs = []int32{
 	20, // 15: capabilities.CapabilityResponse.value:type_name -> values.v1.Map
 	11, // 16: capabilities.CapabilityResponse.metadata:type_name -> capabilities.ResponseMetadata
 	21, // 17: capabilities.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	23, // 18: capabilities.ResponseMetadata.metering:type_name -> metering.MeteringReportNodeDetail
-	12, // 19: capabilities.ResponseMetadata.ocr_attestation:type_name -> capabilities.ResponseOCRAttestation
-	13, // 20: capabilities.ResponseOCRAttestation.signatures:type_name -> capabilities.AttributedSignature
+	12, // 18: capabilities.CapabilityResponse.ocr_attestation:type_name -> capabilities.OCRAttestation
+	23, // 19: capabilities.ResponseMetadata.metering:type_name -> metering.MeteringReportNodeDetail
+	13, // 20: capabilities.OCRAttestation.signatures:type_name -> capabilities.AttributedSignature
 	14, // 21: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
 	20, // 22: capabilities.RegisterToWorkflowRequest.config:type_name -> values.v1.Map
 	14, // 23: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
@@ -1696,7 +1696,7 @@ func file_capabilities_proto_init() {
 		(*TriggerResponseMessage_Ack)(nil),
 		(*TriggerResponseMessage_Response)(nil),
 	}
-	file_capabilities_proto_msgTypes[10].OneofWrappers = []any{}
+	file_capabilities_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -91,10 +91,10 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		}
 	}
 
-	var attestation *ResponseOCRAttestation
-	if resp.Metadata.OCRAttestation != nil {
-		respAtt := resp.Metadata.OCRAttestation
-		attestation = &ResponseOCRAttestation{
+	var attestation *OCRAttestation
+	if resp.OCRAttestation != nil {
+		respAtt := resp.OCRAttestation
+		attestation = &OCRAttestation{
 			ConfigDigest:   respAtt.ConfigDigest[:],
 			SequenceNumber: respAtt.SequenceNumber,
 		}
@@ -111,11 +111,11 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 	return &CapabilityResponse{
 		Value: values.ProtoMap(resp.Value),
 		Metadata: &ResponseMetadata{
-			Metering:       metering,
-			CapdonN:        resp.Metadata.CapDON_N,
-			OcrAttestation: attestation,
+			Metering: metering,
+			CapdonN:  resp.Metadata.CapDON_N,
 		},
-		Payload: resp.Payload,
+		Payload:        resp.Payload,
+		OcrAttestation: attestation,
 	}
 }
 
@@ -173,7 +173,7 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 	}
 
 	var metering []capabilities.MeteringNodeDetail
-	var attestation *capabilities.ResponseOCRAttestation
+	var attestation *capabilities.OCRAttestation
 	if pr.Metadata != nil {
 		metering = make([]capabilities.MeteringNodeDetail, len(pr.Metadata.Metering))
 
@@ -185,18 +185,18 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 			}
 		}
 
-		if pr.Metadata.OcrAttestation != nil {
-			if len(pr.Metadata.OcrAttestation.ConfigDigest) != 32 {
-				return capabilities.CapabilityResponse{}, fmt.Errorf("invalid config digest length: expected 32 bytes, got %d", len(pr.Metadata.OcrAttestation.ConfigDigest))
+		if pr.OcrAttestation != nil {
+			if len(pr.OcrAttestation.ConfigDigest) != 32 {
+				return capabilities.CapabilityResponse{}, fmt.Errorf("invalid config digest length: expected 32 bytes, got %d", len(pr.OcrAttestation.ConfigDigest))
 			}
 
-			attestation = &capabilities.ResponseOCRAttestation{
-				ConfigDigest:   [32]byte(pr.Metadata.OcrAttestation.ConfigDigest),
-				SequenceNumber: pr.Metadata.OcrAttestation.SequenceNumber,
-				Sigs:           make([]capabilities.AttributedSignature, len(pr.Metadata.OcrAttestation.Signatures)),
+			attestation = &capabilities.OCRAttestation{
+				ConfigDigest:   [32]byte(pr.OcrAttestation.ConfigDigest),
+				SequenceNumber: pr.OcrAttestation.SequenceNumber,
+				Sigs:           make([]capabilities.AttributedSignature, len(pr.OcrAttestation.Signatures)),
 			}
 
-			for idx, sig := range pr.Metadata.OcrAttestation.Signatures {
+			for idx, sig := range pr.OcrAttestation.Signatures {
 				attestation.Sigs[idx] = capabilities.AttributedSignature{
 					Signer:    sig.Signer,
 					Signature: sig.Signature,
@@ -208,11 +208,11 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 	resp := capabilities.CapabilityResponse{
 		Value: val,
 		Metadata: capabilities.ResponseMetadata{
-			Metering:       metering,
-			CapDON_N:       pr.Metadata.GetCapdonN(),
-			OCRAttestation: attestation,
+			Metering: metering,
+			CapDON_N: pr.Metadata.GetCapdonN(),
 		},
-		Payload: pr.Payload,
+		Payload:        pr.Payload,
+		OCRAttestation: attestation,
 	}
 
 	return resp, err

@@ -114,7 +114,7 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 						SpendValue:  "spend_value",
 					},
 				},
-				OCRAttestation: &capabilities.ResponseOCRAttestation{
+				OCRAttestation: &capabilities.OCRAttestation{
 					ConfigDigest:   configDigest,
 					SequenceNumber: 12345,
 					Sigs: []capabilities.AttributedSignature{

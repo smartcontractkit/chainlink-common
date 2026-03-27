@@ -460,7 +460,7 @@ func TestResponseToReportData(t *testing.T) {
 
 	t.Run("metering must contain exactly one entry", func(t *testing.T) {
 		_, err := ResponseToReportData("w", "r", nil, ResponseMetadata{})
-		require.ErrorContains(t, err, "metadata.Metering must contain exactly one")
+		require.ErrorContains(t, err, "failed to extract metering from metadata: unexpected number of metering records received from peer 12D3KooW9pNAk8aiBuGVQtWRdbkLmo5qVL3e2h5UxbN2Nz9ttwiw: got 0, want 1")
 
 		_, err = ResponseToReportData("w", "r", nil, ResponseMetadata{
 			Metering: []MeteringNodeDetail{
@@ -468,6 +468,6 @@ func TestResponseToReportData(t *testing.T) {
 				{SpendUnit: "b", SpendValue: "2"},
 			},
 		})
-		require.ErrorContains(t, err, "metadata.Metering must contain exactly one")
+		require.ErrorContains(t, err, "failed to extract metering from metadata: unexpected number of metering records received from peer 12D3KooW9pNAk8aiBuGVQtWRdbkLmo5qVL3e2h5UxbN2Nz9ttwiw: got 2, want 1")
 	})
 }

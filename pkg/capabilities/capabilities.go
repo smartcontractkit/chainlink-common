@@ -93,16 +93,16 @@ type CapabilityResponse struct {
 	Metadata ResponseMetadata
 
 	// Payload is used for no DAG workflows
-	Payload *anypb.Any
+	Payload        *anypb.Any
+	OCRAttestation *OCRAttestation
 }
 
 type ResponseMetadata struct {
-	Metering       []MeteringNodeDetail
-	CapDON_N       uint32
-	OCRAttestation *ResponseOCRAttestation
+	Metering []MeteringNodeDetail
+	CapDON_N uint32
 }
 
-type ResponseOCRAttestation struct {
+type OCRAttestation struct {
 	ConfigDigest   ocrtypes.ConfigDigest
 	SequenceNumber uint64
 	Sigs           []AttributedSignature

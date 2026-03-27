@@ -30,10 +30,26 @@ import (
 
 const defaultGRPCCompressor = "gzip"
 
+type BatchEmitOptions struct {
+	AllOrNothing bool
+}
+
+var DefaultBatchEmitOptions = BatchEmitOptions{
+	AllOrNothing: true,
+}
+
+type BatchEmitOption = func(*BatchEmitOptions)
+
+func WithAllOrNothing(v bool) BatchEmitOption {
+	return func(o *BatchEmitOptions) {
+		o.AllOrNothing = v
+	}
+}
+
 type Emitter interface {
 	// Emit Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
-	BatchEmit(ctx context.Context, messages ...Message) error
+	BatchEmit(ctx context.Context, messages []Message, options ...BatchEmitOption) ([]*chipingress.PublishResult, error)
 	io.Closer
 }
 

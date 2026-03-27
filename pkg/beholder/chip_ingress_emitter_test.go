@@ -43,7 +43,7 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
-			On("Publish", mock.Anything, mock.Anything).
+			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, nil)
 
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
@@ -69,7 +69,7 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
-			On("Publish", mock.Anything, mock.Anything).
+			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, assert.AnError)
 
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)

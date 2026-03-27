@@ -99,6 +99,11 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 	}
 
+	p.lggr.Infow("Observation built",
+		"requestsIncluded", len(requests),
+		"pendingRequestsInStore", len(p.store.GetRequests()),
+	)
+
 	observation := &pb.Observation{
 		Timestamp: time.Now().UTC().UnixMilli(),
 		Requests:  requests,
@@ -214,6 +219,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	p.lggr.Infow("Outcome computed",
 		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
 		"outcomeSizeBytes", len(outcomeBytes),
+		"pendingRequestsInStore", len(p.store.GetRequests()),
 	)
 	return outcomeBytes, err
 }

@@ -42,17 +42,17 @@ func (e errStopExecution) Is(err error) bool {
 }
 
 // ErrResponsePayloadNotAvailable is returned when a capability's Execute method cannot provide a response payload and engine should wait for another response instead of treating it as an error.
-var ErrResponsePayloadNotAvailable = &errResponsePayloadNotAvailable{}
+var ErrResponsePayloadNotAvailable = &responsePayloadNotAvailableError{}
 
-type errResponsePayloadNotAvailable struct{}
+type responsePayloadNotAvailableError struct{}
 
 const errResponsePayloadNotAvailableMsg = "__response_payload_not_available"
 
-func (e errResponsePayloadNotAvailable) Error() string {
+func (e responsePayloadNotAvailableError) Error() string {
 	return errResponsePayloadNotAvailableMsg
 }
 
-func (e errResponsePayloadNotAvailable) Is(err error) bool {
+func (e responsePayloadNotAvailableError) Is(err error) bool {
 	return strings.Contains(err.Error(), errResponsePayloadNotAvailableMsg)
 }
 
@@ -184,7 +184,9 @@ type RequestMetadata struct {
 	WorkflowRegistryChainSelector string
 	WorkflowRegistryAddress       string
 	EngineVersion                 string
-	ExecutionTimestamp            int64
+	// ExecutionTimestamp is the DonTime-derived execution timestamp.
+	// Propagated to capability DONs so they can evaluate feature flags atomically with the workflow DON.
+	ExecutionTimestamp time.Time
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {

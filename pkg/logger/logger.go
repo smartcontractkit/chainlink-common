@@ -234,9 +234,12 @@ func WithOptions(l Logger, opts ...zap.Option) Logger {
 
 // Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
 func Named(l Logger, n string) Logger {
+	return namedSkip(l, n, 2)
+}
+func namedSkip(l Logger, n string, skip int) Logger {
 	l = named(l, n)
 	if testing.Testing() {
-		l.Debugf("New logger: %s", n)
+		Helper(l, skip).Debugf("New logger: %s", n)
 	}
 	return l
 }

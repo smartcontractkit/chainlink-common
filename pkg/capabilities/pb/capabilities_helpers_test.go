@@ -3,6 +3,7 @@ package pb_test
 import (
 	"crypto/rand"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -91,10 +92,10 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 			Value: values.ProtoMap(values.EmptyMap()),
 			Metadata: &pb.ResponseMetadata{
 				CapdonN: 1,
-				OcrAttestation: &pb.ResponseOCRAttestation{
-					ConfigDigest:   []byte("too-short"),
-					SequenceNumber: 0,
-				},
+			},
+			OcrAttestation: &pb.OCRAttestation{
+				ConfigDigest:   []byte("too-short"),
+				SequenceNumber: 0,
 			},
 		}
 		_, err := pb.CapabilityResponseFromProto(pr)
@@ -114,14 +115,14 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 						SpendValue:  "spend_value",
 					},
 				},
-				OCRAttestation: &capabilities.OCRAttestation{
-					ConfigDigest:   configDigest,
-					SequenceNumber: 12345,
-					Sigs: []capabilities.AttributedSignature{
-						{Signer: 0, Signature: []byte("sig0bytes")},
-						{Signer: 1, Signature: []byte("sig1bytes")},
-						{Signer: 99, Signature: []byte{}},
-					},
+			},
+			OCRAttestation: &capabilities.OCRAttestation{
+				ConfigDigest:   configDigest,
+				SequenceNumber: 12345,
+				Sigs: []capabilities.AttributedSignature{
+					{Signer: 0, Signature: []byte("sig0bytes")},
+					{Signer: 1, Signature: []byte("sig1bytes")},
+					{Signer: 99, Signature: []byte{}},
 				},
 			},
 		}
@@ -147,7 +148,8 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 				{SpendType: "COMPUTE", Limit: "1000"},
 				{SpendType: "GAS_12345", Limit: "1000000"},
 			},
-			WorkflowTag: "test-workflow-tag",
+			WorkflowTag:        "test-workflow-tag",
+			ExecutionTimestamp: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -242,7 +244,8 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 			SpendLimits: []capabilities.SpendLimit{
 				{SpendType: "GAS", Limit: "5000"},
 			},
-			WorkflowTag: "workflow-tag",
+			WorkflowTag:        "workflow-tag",
+			ExecutionTimestamp: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

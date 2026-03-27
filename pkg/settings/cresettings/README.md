@@ -36,6 +36,8 @@ flowchart
     subgraph handleRequest[httpServer/websocketServer.handleRequest]
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
+        VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
+        VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -139,8 +141,17 @@ flowchart
             PerWorkflow.ChainWrite.ReportSizeLimit{{ReportSizeLimit}}:::bound
 
             subgraph EVM
+                PerWorkflow.ChainWrite.EVM.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.EVM.GasLimit{{GasLimit}}:::bound
 %%                PerWorkflow.ChainWrite.EVM.TransactionGasLimit - Deprecated
+            end
+            subgraph Solana
+                PerWorkflow.ChainWrite.Solana.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Solana.GasLimit{{GasLimit}}:::bound
+            end
+            subgraph Aptos
+                PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Aptos.GasLimit{{GasLimit}}:::bound
             end
         end
         subgraph PerWorkflow.ChainRead

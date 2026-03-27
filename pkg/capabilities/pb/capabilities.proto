@@ -8,6 +8,7 @@ import "values/v1/values.proto";
 import "metering/pb/meteringdetail.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service BaseCapability {
   rpc Info (google.protobuf.Empty) returns (CapabilityInfoReply) {}
@@ -51,6 +52,7 @@ message RequestMetadata {
   string workflow_registry_chain_selector = 12;
   string workflow_registry_address = 13;
   string engine_version = 14;
+  google.protobuf.Timestamp execution_timestamp = 15;
 }
 
 message CapabilityRequest {

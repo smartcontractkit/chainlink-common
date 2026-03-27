@@ -56,6 +56,8 @@ var Default = Schema{
 	WorkflowExecutionConcurrencyLimit:      Int(200),
 	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:          Bool(true),
+	VaultJWTAuthEnabled:                    Bool(false),
+	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
@@ -176,6 +178,15 @@ var Default = Schema{
 					// geth-devnet2
 					"12922642891491394802": 50_000_000,
 				}),
+				ReportSizeLimit: Size(5 * config.KByte),
+			},
+			Solana: solanaChainWrite{
+				ReportSizeLimit: Size(265 * config.Byte),
+				GasLimit:        PerChainSelector(Uint32(300_000), map[string]uint32{}),
+			},
+			Aptos: aptosChainWrite{
+				ReportSizeLimit: Size(5 * config.KByte),
+				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
 		},
 		ChainRead: chainRead{
@@ -216,6 +227,8 @@ type Schema struct {
 	WorkflowExecutionConcurrencyLimit      Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
 	GatewayVaultManagementEnabled          Setting[bool]
+	VaultJWTAuthEnabled                    Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
@@ -308,14 +321,25 @@ type logTrigger struct {
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
 type chainWrite struct {
-	TargetsLimit    Setting[int] `unit:"{target}"`
-	ReportSizeLimit Setting[config.Size]
+	TargetsLimit    Setting[int]         `unit:"{target}"`
+	ReportSizeLimit Setting[config.Size] // Deprecated
 
-	EVM evmChainWrite
+	EVM    evmChainWrite
+	Solana solanaChainWrite
+	Aptos  aptosChainWrite
+}
+type solanaChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	GasLimit        SettingMap[uint32] `unit:"{gas}"`
+}
+type aptosChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	GasLimit        SettingMap[uint64] `unit:"{gas}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
 	GasLimit            SettingMap[uint64] `unit:"{gas}"`
+	ReportSizeLimit     Setting[config.Size]
 }
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`

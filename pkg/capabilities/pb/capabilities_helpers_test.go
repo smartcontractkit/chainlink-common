@@ -2,6 +2,7 @@ package pb_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -98,7 +99,8 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 				{SpendType: "COMPUTE", Limit: "1000"},
 				{SpendType: "GAS_12345", Limit: "1000000"},
 			},
-			WorkflowTag: "test-workflow-tag",
+			WorkflowTag:        "test-workflow-tag",
+			ExecutionTimestamp:  time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -193,7 +195,8 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 			SpendLimits: []capabilities.SpendLimit{
 				{SpendType: "GAS", Limit: "5000"},
 			},
-			WorkflowTag: "workflow-tag",
+			WorkflowTag:        "workflow-tag",
+			ExecutionTimestamp:  time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

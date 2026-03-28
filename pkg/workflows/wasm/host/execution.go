@@ -7,8 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v28"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/engine"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
@@ -140,7 +139,7 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 	}, nil
 }
 
-func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+func (e *execution[T]) log(caller engine.MemoryAccessor, ptr int32, ptrlen int32) {
 	switch e.mode {
 	case sdkpb.Mode_MODE_DON:
 		e.donLogCount++
@@ -193,14 +192,14 @@ func (e *execution[T]) getSeed(mode int32) int64 {
 	return -1
 }
 
-func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
+func (e *execution[T]) switchModes(_ engine.MemoryAccessor, mode int32) {
 	e.hasRun = true
 	e.mode = sdkpb.Mode(mode)
 }
 
 // clockTimeGet is the default time.Now() which is also called by Go many times.
 // This implementation uses Node Mode to not have to wait for OCR rounds.
-func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
+func (e *execution[T]) clockTimeGet(caller engine.MemoryAccessor, id int32, precision int64, resultTimestamp int32) int32 {
 	donTime, err := e.timeFetcher.GetTime(sdkpb.Mode_MODE_NODE)
 	if err != nil {
 		return ErrnoInval
@@ -230,7 +229,7 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 }
 
 // now is used by rawsdk for Workflows and should be called instead of Go's time.Now().
-func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+func (e *execution[T]) now(caller engine.MemoryAccessor, resultTimestamp int32) int32 {
 	donTime, err := e.timeFetcher.GetTime(e.mode)
 	if err != nil {
 		return ErrnoInval
@@ -250,7 +249,7 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 // https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It sleeps based on the largest timeout
-func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
+func (e *execution[T]) pollOneoff(caller engine.MemoryAccessor, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	if nsubscriptions == 0 {
 		return ErrnoInval
 	}

@@ -89,7 +89,12 @@ func RunTestsInParallel[T TestingT[T]](t T, tester BasicTester[T], tests []Testc
 func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, boundContracts []types.BoundContract, batchCallEntry BatchCallEntry, mockRun bool) {
 	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
 	if mockRun {
-		err := cw.SubmitTransaction(t.Context(), AnyContractName, "batchContractWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		err := cw.SubmitTransaction(t.Context(), types.SubmitTransactionRequest{
+			ContractName: AnyContractName,
+			Method:       "batchContractWrite",
+			Args:         batchCallEntry,
+			Value:        big.NewInt(0),
+		})
 		require.NoError(t, err)
 		return
 	}
@@ -115,7 +120,14 @@ func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTeste
 func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	tester.DirtyContracts()
 	txID := uuid.New().String()
-	err := cw.SubmitTransaction(t.Context(), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
+	err := cw.SubmitTransaction(t.Context(), types.SubmitTransactionRequest{
+		ContractName:  contract.Name,
+		Method:        method,
+		Args:          args,
+		TransactionID: txID,
+		ToAddress:     contract.Address,
+		Value:         big.NewInt(0),
+	})
 	require.NoError(t, err)
 
 	err = WaitForTransactionStatus(t, tester, cw, txID, status, false)

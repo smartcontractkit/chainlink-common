@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -47,25 +48,29 @@ func TestValidateBaseTriggerRetryInterval(t *testing.T) {
 	})
 }
 
-// flippingJSONGetter supports mutating CRE JSON for dynamic-settings tests.
-type flippingJSONGetter struct {
-	mu  sync.Mutex
-	raw []byte
+// atomicJSONGetter swaps a whole settings.Getter under a mutex for dynamic-settings tests.
+type atomicJSONGetter struct {
+	mu sync.Mutex
+	g  settings.Getter
 }
 
-func (f *flippingJSONGetter) setJSON(js string) {
+func (f *atomicJSONGetter) setJSON(js string) error {
+	g, err := settings.NewJSONGetter([]byte(js))
+	if err != nil {
+		return err
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.raw = []byte(js)
+	f.g = g
+	return nil
 }
 
-func (f *flippingJSONGetter) GetScoped(ctx context.Context, scope settings.Scope, key string) (string, error) {
+func (f *atomicJSONGetter) GetScoped(ctx context.Context, scope settings.Scope, key string) (string, error) {
 	f.mu.Lock()
-	raw := append([]byte(nil), f.raw...)
+	g := f.g
 	f.mu.Unlock()
-	g, err := settings.NewJSONGetter(raw)
-	if err != nil {
-		return "", err
+	if g == nil {
+		return "", errors.New("atomicJSONGetter: no JSON set")
 	}
 	return g.GetScoped(ctx, scope, key)
 }
@@ -75,13 +80,13 @@ func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	getter := &flippingJSONGetter{}
-	getter.setJSON(`{
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
 		"global": {
 			"BaseTriggerRetransmitEnabled": "true",
 			"BaseTriggerRetryInterval": "20ms"
 		}
-	}`)
+	}`))
 
 	store := NewMemEventStore()
 	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
@@ -99,12 +104,12 @@ func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 
 	<-sendCh
 
-	getter.setJSON(`{
+	require.NoError(t, getter.setJSON(`{
 		"global": {
 			"BaseTriggerRetransmitEnabled": "false",
 			"BaseTriggerRetryInterval": "20ms"
 		}
-	}`)
+	}`))
 
 	select {
 	case extra := <-sendCh:

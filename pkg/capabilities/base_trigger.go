@@ -55,7 +55,7 @@ type undeliveredState struct {
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until
 // they are ACKd. Events are persisted to be resilient to node restarts.
 type BaseTriggerCapability[T proto.Message] struct {
-	tRetransmit  time.Duration
+	tRetransmit  time.Duration // time window for an event being ACKd before we retransmit
 	store        EventStore
 	newMsg       func() T // factory to allocate a new T for unmarshalling
 	lggr         logger.Logger

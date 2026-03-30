@@ -147,19 +147,18 @@ func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
 	if b.settings != nil {
 		iv := b.retryInterval(b.ctx)
 		if iv <= 0 {
-			b.lggr.Warnw("BaseTriggerRetryInterval in settings is <= 0; defaulting to 1 second", "interval", iv)
 			return time.Second
 		}
 		d := iv / 2
-		if d < time.Second {
-			return time.Second
+		if d < time.Millisecond {
+			return time.Millisecond
 		}
 		return d
 	}
 	if b.tRetransmit > 0 {
 		d := b.tRetransmit / 2
-		if d < time.Second {
-			return time.Second
+		if d < time.Millisecond {
+			return time.Millisecond
 		}
 		return d
 	}

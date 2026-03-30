@@ -27,6 +27,7 @@ type Plugin struct {
 	config         ocr3types.ReportingPluginConfig
 	offChainConfig *pb.Config
 	lggr           logger.Logger
+	metrics        *BeholderMetrics
 
 	batchSize       int
 	minTimeIncrease int64
@@ -45,11 +46,13 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, offchainCfg
 		return nil, errors.New("execution removal time must be positive")
 	}
 
+	namedLggr := logger.Named(lggr, "DONTimePlugin")
 	return &Plugin{
 		store:           store,
 		config:          config,
 		offChainConfig:  offchainCfg,
-		lggr:            logger.Named(lggr, "DONTimePlugin"),
+		lggr:            namedLggr,
+		metrics:         sharedBeholderMetrics(namedLggr),
 		batchSize:       int(offchainCfg.MaxBatchSize),
 		minTimeIncrease: offchainCfg.MinTimeIncrease / int64(time.Millisecond),
 	}, nil
@@ -59,7 +62,7 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 	return nil, nil
 }
 
-func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
+func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
 	previousOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, previousOutcome); err != nil {
 		p.lggr.Errorf("failed to unmarshal previous outcome in Observation phase")
@@ -99,10 +102,8 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 	}
 
-	p.lggr.Infow("Observation built",
-		"requestsIncluded", len(requests),
-		"pendingRequestsInStore", len(p.store.GetRequests()),
-	)
+	p.lggr.Infow("Observation built", "requestsIncluded", len(requests))
+	p.metrics.SetPendingRequestsInStore(ctx, int64(len(p.store.GetRequests())))
 
 	observation := &pb.Observation{
 		Timestamp: time.Now().UTC().UnixMilli(),
@@ -120,7 +121,7 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
-func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	type timestampNodePair struct {
 		Timestamp        int64
@@ -219,8 +220,8 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	p.lggr.Infow("Outcome computed",
 		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
 		"outcomeSizeBytes", len(outcomeBytes),
-		"pendingRequestsInStore", len(p.store.GetRequests()),
 	)
+	p.metrics.SetPendingRequestsInStore(ctx, int64(len(p.store.GetRequests())))
 	return outcomeBytes, err
 }
 

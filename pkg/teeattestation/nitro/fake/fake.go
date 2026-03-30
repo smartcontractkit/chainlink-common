@@ -12,7 +12,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/hex"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"math/big"
@@ -174,14 +173,11 @@ func (f *Attestor) CARootsPEM() string {
 // TrustedPCRsJSON returns the PCR values as a JSON object matching the
 // format expected by the attestation validator.
 func (f *Attestor) TrustedPCRsJSON() []byte {
-	m := map[string]string{
-		"pcr0": hex.EncodeToString(f.pcrs[0]),
-		"pcr1": hex.EncodeToString(f.pcrs[1]),
-		"pcr2": hex.EncodeToString(f.pcrs[2]),
-	}
-	// json.Marshal on map[string]string cannot fail.
-	b, _ := json.Marshal(m)
-	return b
+	return []byte(fmt.Sprintf(`{"pcr0":"%s","pcr1":"%s","pcr2":"%s"}`,
+		hex.EncodeToString(f.pcrs[0]),
+		hex.EncodeToString(f.pcrs[1]),
+		hex.EncodeToString(f.pcrs[2]),
+	))
 }
 
 func sha384Sum(data []byte) []byte {

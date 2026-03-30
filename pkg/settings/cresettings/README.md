@@ -45,7 +45,6 @@ flowchart
         GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
     end
-%%    WorkflowLimit - Deprecated
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
@@ -60,10 +59,11 @@ flowchart
     end
     
     subgraph Engine.init
-        WorkflowExecutionConcurrencyLimit([WorkflowExecutionConcurrencyLimit]):::resource
-        PerOwner.WorkflowExecutionConcurrencyLimit([PerOwner.WorkflowExecutionConcurrencyLimit]):::resource
+%%        TODO move and replace with WorkflowLimit
+        WorkflowLimit([WorkflowLimit]):::resource
+        PerOwner.WorkflowLimit([PerOwner.WorkflowLimit]):::resource
 
-        WorkflowExecutionConcurrencyLimit-->PerOwner.WorkflowExecutionConcurrencyLimit
+        WorkflowLimit-->PerOwner.WorkflowLimit
     end
     
     subgraph Engine.runTriggerSubscriptionPhase
@@ -98,9 +98,16 @@ flowchart
     subgraph Engine.handleAllTriggerEvents
         PerWorkflow.TriggerEventQueueLimit[[PerWorkflow.TriggerEventQueueLimit]]:::queue
         PerWorkflow.TriggerEventQueueTimeout>PerWorkflow.TriggerEventQueueTimeout]:::time
-        PerWorkflow.ExecutionConcurrencyLimit([PerWorkflow.ExecutionConcurrencyLimit]):::resource
+        
+        subgraph multiExecutionConcurrencyLimiter
+            WorkflowExecutionConcurrencyLimit([WorkflowExecutionConcurrencyLimit]):::resource
+            PerOrg.WorkflowExecutionConcurrencyLimit([PerOrg.WorkflowExecutionConcurrencyLimit]):::resource
+            PerOwner.WorkflowExecutionConcurrencyLimit([PerOwner.WorkflowExecutionConcurrencyLimit]):::resource
+            PerWorkflow.ExecutionConcurrencyLimit([PerWorkflow.ExecutionConcurrencyLimit]):::resource
+            WorkflowExecutionConcurrencyLimit-->PerOrg.WorkflowExecutionConcurrencyLimit-->PerOwner.WorkflowExecutionConcurrencyLimit-->PerWorkflow.ExecutionConcurrencyLimit
+        end
 
-        PerWorkflow.TriggerEventQueueLimit-->PerWorkflow.TriggerEventQueueTimeout-->PerWorkflow.ExecutionConcurrencyLimit
+        PerWorkflow.TriggerEventQueueLimit-->PerWorkflow.TriggerEventQueueTimeout-->multiExecutionConcurrencyLimiter
     end
 
     subgraph Engine.startExecution

@@ -21,7 +21,7 @@ func TestResolveBaseTriggerRetryInterval(t *testing.T) {
 	t.Run("nil getter uses defaults", func(t *testing.T) {
 		d, err := ResolveBaseTriggerRetryInterval(ctx, nil, lggr)
 		require.NoError(t, err)
-		require.Equal(t, 30*time.Second, d)
+		require.Zero(t, d, "default BaseTriggerRetransmitEnabled is false, so retry interval is disabled")
 	})
 
 	t.Run("global JSON enables interval", func(t *testing.T) {

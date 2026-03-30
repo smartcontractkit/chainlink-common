@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 var (
@@ -18,16 +19,25 @@ type Client struct {
 	db *pgxpool.Pool
 }
 
+var _ beholder.Emitter = (*Client)(nil)
+
 func NewClient(db *pgxpool.Pool) *Client {
 	return &Client{
 		db: db,
 	}
 }
 
-func (client *Client) Emit(ctx context.Context, messages []beholder.Message, options ...beholder.BatchEmitOption) error {
+func (client *Client) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	_, err := client.BatchEmit(ctx, []beholder.Message{
+		beholder.NewMessage(body, attrKVs...),
+	})
+	return err
+}
+
+func (client *Client) BatchEmit(ctx context.Context, messages []beholder.Message, options ...beholder.BatchEmitOption) ([]*chipingress.PublishResult, error) {
 	tx, err := client.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("beginning transaction: %w", err)
+		return nil, fmt.Errorf("beginning transaction: %w", err)
 	}
 	defer tx.Rollback(ctx) // no-op if transaction has been commited
 
@@ -42,16 +52,16 @@ func (client *Client) Emit(ctx context.Context, messages []beholder.Message, opt
 
 	n, err := tx.CopyFrom(ctx, queueTable, queueInsertColumns, pgx.CopyFromRows(rows))
 	if err != nil {
-		return fmt.Errorf("copying batch: %w", err)
+		return nil, fmt.Errorf("copying batch: %w", err)
 	}
 	if n != int64(len(rows)) {
-		return fmt.Errorf("copied %d rows, expected %d", n, len(rows))
+		return nil, fmt.Errorf("copied %d rows, expected %d", n, len(rows))
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("committing transaction: %w", err)
+		return nil, fmt.Errorf("committing transaction: %w", err)
 	}
-	return nil
+	return nil, nil
 }
 
 func (client *Client) Close() error {

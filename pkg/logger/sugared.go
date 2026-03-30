@@ -1,8 +1,12 @@
 package logger
 
-import "go.uber.org/zap"
+import (
+	"context"
 
-// SugaredLogger extends the base Logger interface with syntactic sugar, similar to zap.SugaredLogger, include two new levels.
+	"go.uber.org/zap"
+)
+
+// SugaredLogger extends the base Logger interface with syntactic sugar, similar to [zap.SugaredLogger], include two new levels.
 //   - Critical: Requires quick action from the node op, obviously these should happen extremely rarely. Example: failed to listen on TCP port
 //   - Trace: Only included if compiled with the trace tag. For example: go test -tags trace ...
 type SugaredLogger interface {
@@ -42,6 +46,10 @@ type SugaredLogger interface {
 	// With returns a new Logger with the given arguments.
 	With(keyvals ...any) SugaredLogger
 	WithOptions(opts ...zap.Option) SugaredLogger
+	// WithCtx returns a new Logger with keyvals from the given context.
+	// Example: l.WithCtx(ctx, "keyFoo", ctxKeyFoo, "keyBar", ctxKeyBar)
+	// See [CtxKeyVals].
+	WithCtx(context.Context, ...any) SugaredLogger
 	// Helper returns a new logger with the number of callers skipped by caller annotation increased by skip.
 	// This allows wrappers and helpers to point higher up the stack (like testing.T.Helper()).
 	Helper(skip int) SugaredLogger
@@ -154,4 +162,8 @@ func (s *sugared) WithOptions(opts ...zap.Option) SugaredLogger {
 
 func (s *sugared) Helper(skip int) SugaredLogger {
 	return Sugared(Helper(s.Logger, skip))
+}
+
+func (s *sugared) WithCtx(ctx context.Context, keyvals ...any) SugaredLogger {
+	return s.With(CtxKeyVals(ctx, keyvals...)...)
 }

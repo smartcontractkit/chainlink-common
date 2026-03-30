@@ -15,7 +15,7 @@
 	"VaultIdentifierKeySizeLimit": "64b",
 	"VaultIdentifierOwnerSizeLimit": "64b",
 	"VaultIdentifierNamespaceSizeLimit": "64b",
-	"VaultPluginBatchSizeLimit": "1",
+	"VaultPluginBatchSizeLimit": "10",
 	"VaultRequestBatchSizeLimit": "10",
 	"VaultMaxQuerySizeLimit": "102.4kb",
 	"VaultMaxObservationSizeLimit": "512kb",

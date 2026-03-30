@@ -5,6 +5,7 @@
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
+	"VaultForceEmptyOCRRounds": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",

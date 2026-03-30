@@ -115,7 +115,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 		"ChainRead": {
 			"CallLimit": "3"
 		},
-		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC"
+		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC",
+		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2025-07-15 00:00:00 +0000 UTC,2025-08-15 00:00:00 +0000 UTC]"
 	}
 }`), &cfg))
 
@@ -141,6 +142,10 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 	assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2025, 7, 15, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2025, 8, 15, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod.DefaultValue)
 }
 
 func TestDefaultGetter(t *testing.T) {

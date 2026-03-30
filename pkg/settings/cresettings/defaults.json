@@ -8,6 +8,8 @@
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
+	"BaseTriggerRetransmitEnabled": "false",
+	"BaseTriggerRetryInterval": "30s",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",

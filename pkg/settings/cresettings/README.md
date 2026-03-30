@@ -93,6 +93,10 @@ flowchart
             PerWorkflow.LogTrigger.FilterAddressLimit{{FilterAddressLimit}}:::bound
             PerWorkflow.LogTrigger.FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
         end
+        subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
+            BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
+            BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
+        end
     end
 
     subgraph Engine.handleAllTriggerEvents

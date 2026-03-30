@@ -39,6 +39,10 @@ type BaseTriggerMetrics interface {
 	IncInboxFull(triggerID string)
 	EmitUndeliveredWarning(triggerID, eventID string)
 	EmitUndeliveredCritical(triggerID, eventID string)
+	// IncAckError counts ACK paths that return an error (e.g. store delete failure). reason is a stable identifier for dashboards.
+	IncAckError(reason string)
+	// IncAckMemoryOutcome records how an ACK related to the in-memory pending map: hit, miss_no_trigger_bucket, miss_no_event, miss_nil_record.
+	IncAckMemoryOutcome(outcome string)
 }
 
 type undeliveredState struct {
@@ -192,8 +196,12 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	}
 
 	if err := b.store.Insert(ctx, rec); err != nil {
+		b.lggr.Errorw("base trigger failed to persist pending event",
+			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
 		return err
 	}
+	b.lggr.Infow("base trigger persisted pending event for ACK tracking",
+		"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
 
 	b.mu.Lock()
 	if b.pending[triggerID] == nil {
@@ -236,27 +244,45 @@ func (b *BaseTriggerCapability[T]) sendToInbox(triggerID, eventID string, payloa
 func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId string, eventId string) error {
 	b.lggr.Infow("Event ACK", "triggerID", triggerId, "eventID", eventId)
 	if !b.retransmitEnabled() {
+		b.lggr.Debugw("base trigger ACK skipped (retransmit disabled, no persistence/ACK tracking)",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
+		b.metrics.IncAckMemoryOutcome("skipped_retransmit_disabled")
 		return nil
 	}
 
 	var (
-		attempts int
-		firstAt  time.Time
-		found    bool
+		attempts            int
+		firstAt             time.Time
+		found               bool
+		hadTriggerBucket    bool
+		hadEventKey         bool
+		hadNilPendingRecord bool
 	)
 
 	b.mu.Lock()
-	if eventsForTrigger, ok := b.pending[triggerId]; ok && eventsForTrigger != nil {
-		if rec, recOk := eventsForTrigger[eventId]; recOk && rec != nil {
+	eventsForTrigger, ok := b.pending[triggerId]
+	hadTriggerBucket = ok && eventsForTrigger != nil
+	if hadTriggerBucket {
+		rec, recOk := eventsForTrigger[eventId]
+		hadEventKey = recOk
+		switch {
+		case recOk && rec != nil:
 			attempts = rec.Attempts
 			firstAt = rec.FirstAt
 			found = true
+		case recOk && rec == nil:
+			hadNilPendingRecord = true
+			b.metrics.IncAckMemoryOutcome("miss_nil_record")
+		default:
+			b.metrics.IncAckMemoryOutcome("miss_no_event")
 		}
 
 		delete(eventsForTrigger, eventId)
 		if len(eventsForTrigger) == 0 {
 			delete(b.pending, triggerId)
 		}
+	} else {
+		b.metrics.IncAckMemoryOutcome("miss_no_trigger_bucket")
 	}
 
 	if m, ok := b.undeliveredAlertStates[triggerId]; ok {
@@ -267,12 +293,40 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	}
 	b.mu.Unlock()
 
-	if found {
+	switch {
+	case found:
+		b.lggr.Infow("base trigger ACK matched in-memory pending event",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
+			"attempts", attempts, "firstAt", firstAt)
+		b.metrics.IncAckMemoryOutcome("hit")
 		b.metrics.IncAck(triggerId, eventId)
 		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
+	case hadNilPendingRecord:
+		b.lggr.Warnw("base trigger ACK: pending map had nil record for event (treating as miss; reconciling store)",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
+	case hadTriggerBucket && !hadEventKey:
+		b.lggr.Infow("base trigger ACK: event id not in in-memory pending map for trigger (may exist only in store; reconciling)",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
+	case !hadTriggerBucket:
+		b.lggr.Infow("base trigger ACK: no in-memory pending bucket for trigger (not pending here; still deleting from store if row exists)",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
 	}
 
-	return b.store.DeleteEvent(ctx, triggerId, eventId)
+	if err := b.store.DeleteEvent(ctx, triggerId, eventId); err != nil {
+		b.lggr.Errorw("base trigger ACK failed to delete event from store",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
+			"foundInMemory", found, "err", err)
+		b.metrics.IncAckError("store_delete_failed")
+		return err
+	}
+	if found {
+		b.lggr.Debugw("base trigger ACK store delete succeeded",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
+	} else {
+		b.lggr.Infow("base trigger ACK store delete succeeded (memory miss path; store row removed if present)",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
+	}
+	return nil
 }
 
 func (b *BaseTriggerCapability[T]) retransmitLoop() {

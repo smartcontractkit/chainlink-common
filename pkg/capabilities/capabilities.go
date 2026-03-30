@@ -160,6 +160,7 @@ type MeteringNodeDetail struct {
 type ResponseAndMetadata[T proto.Message] struct {
 	Response         T
 	ResponseMetadata ResponseMetadata
+	OCRAttestation   *OCRAttestation
 }
 
 type SpendLimit struct {

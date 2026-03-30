@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,31 +14,15 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
-func TestResolveBaseTriggerRetryInterval(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+func TestValidateBaseTriggerRetryInterval(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("nil getter uses defaults", func(t *testing.T) {
-		d, err := ResolveBaseTriggerRetryInterval(ctx, nil, lggr)
-		require.NoError(t, err)
-		require.Zero(t, d, "default BaseTriggerRetransmitEnabled is false, so retry interval is disabled")
+	t.Run("nil getter errors", func(t *testing.T) {
+		err := ValidateBaseTriggerRetryInterval(ctx, nil)
+		require.Error(t, err)
 	})
 
-	t.Run("global JSON enables interval", func(t *testing.T) {
-		getter, err := settings.NewJSONGetter([]byte(`{
-			"global": {
-				"BaseTriggerRetransmitEnabled": "true",
-				"BaseTriggerRetryInterval": "7s"
-			}
-		}`))
-		require.NoError(t, err)
-		d, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
-		require.NoError(t, err)
-		require.Equal(t, 7*time.Second, d)
-	})
-
-	t.Run("disabled returns zero", func(t *testing.T) {
+	t.Run("positive interval succeeds even when retransmit disabled", func(t *testing.T) {
 		getter, err := settings.NewJSONGetter([]byte(`{
 			"global": {
 				"BaseTriggerRetransmitEnabled": "false",
@@ -45,12 +30,10 @@ func TestResolveBaseTriggerRetryInterval(t *testing.T) {
 			}
 		}`))
 		require.NoError(t, err)
-		d, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
-		require.NoError(t, err)
-		require.Zero(t, d)
+		require.NoError(t, ValidateBaseTriggerRetryInterval(ctx, getter))
 	})
 
-	t.Run("enabled with zero interval errors", func(t *testing.T) {
+	t.Run("zero interval errors", func(t *testing.T) {
 		getter, err := settings.NewJSONGetter([]byte(`{
 			"global": {
 				"BaseTriggerRetransmitEnabled": "true",
@@ -58,10 +41,76 @@ func TestResolveBaseTriggerRetryInterval(t *testing.T) {
 			}
 		}`))
 		require.NoError(t, err)
-		_, err = ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		err = ValidateBaseTriggerRetryInterval(ctx, getter)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "BaseTriggerRetryInterval must be positive")
 	})
+}
+
+// flippingJSONGetter supports mutating CRE JSON for dynamic-settings tests.
+type flippingJSONGetter struct {
+	mu  sync.Mutex
+	raw []byte
+}
+
+func (f *flippingJSONGetter) setJSON(js string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.raw = []byte(js)
+}
+
+func (f *flippingJSONGetter) GetScoped(ctx context.Context, scope settings.Scope, key string) (string, error) {
+	f.mu.Lock()
+	raw := append([]byte(nil), f.raw...)
+	f.mu.Unlock()
+	g, err := settings.NewJSONGetter(raw)
+	if err != nil {
+		return "", err
+	}
+	return g.GetScoped(ctx, scope, key)
+}
+
+func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	getter := &flippingJSONGetter{}
+	getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval": "20ms"
+		}
+	}`)
+
+	store := NewMemEventStore()
+	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
+
+	<-sendCh
+
+	getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "false",
+			"BaseTriggerRetryInterval": "20ms"
+		}
+	}`)
+
+	select {
+	case extra := <-sendCh:
+		t.Fatalf("unexpected send after disable: %+v", extra)
+	case <-time.After(3 * time.Second):
+	}
 }
 
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
@@ -72,7 +121,7 @@ func newBaseWithRetransmit(t *testing.T, store EventStore, tRetransmit time.Dura
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
-		"testCap", tRetransmit, 0, 0)
+		"testCap", tRetransmit, 0, 0, nil)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -264,6 +313,7 @@ func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
 				50*time.Millisecond,
 				tc.warnAfter,
 				tc.criticalAfter,
+				nil,
 			)
 
 			ctx, cancel := context.WithCancel(t.Context())
@@ -349,7 +399,7 @@ func TestRetransmitDisabled_DeliversOnceWithoutPersistence(t *testing.T) {
 	}
 }
 
-func TestRetransmitDisabled_AckIsNoop(t *testing.T) {
+func TestRetransmitDisabled_AckReconcilesStore(t *testing.T) {
 	store := NewMemEventStore()
 	b := newBaseWithRetransmit(t, store, 0)
 

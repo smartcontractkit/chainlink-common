@@ -142,8 +142,7 @@ func (b *BaseTriggerCapability[T]) retryInterval(ctx context.Context) time.Durat
 }
 
 // loopTickDuration is recomputed before each loop wait so BaseTriggerRetryInterval and enablement
-// changes take effect without restarting. Uses half the retry interval (same idea as the legacy
-// Ticker period). When the interval is large, setting flips are noticed on that slower cadence.
+// changes take effect without restarting. Uses half the retry interval.
 func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
 	if b.settings != nil {
 		iv := b.retryInterval(b.ctx)

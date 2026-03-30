@@ -10,7 +10,59 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
+
+func TestResolveBaseTriggerRetryInterval(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	t.Run("nil getter uses defaults", func(t *testing.T) {
+		d, err := ResolveBaseTriggerRetryInterval(ctx, nil, lggr)
+		require.NoError(t, err)
+		require.Equal(t, 30*time.Second, d)
+	})
+
+	t.Run("global JSON enables interval", func(t *testing.T) {
+		getter, err := settings.NewJSONGetter([]byte(`{
+			"global": {
+				"BaseTriggerRetransmitEnabled": "true",
+				"BaseTriggerRetryInterval": "7s"
+			}
+		}`))
+		require.NoError(t, err)
+		d, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		require.NoError(t, err)
+		require.Equal(t, 7*time.Second, d)
+	})
+
+	t.Run("disabled returns zero", func(t *testing.T) {
+		getter, err := settings.NewJSONGetter([]byte(`{
+			"global": {
+				"BaseTriggerRetransmitEnabled": "false",
+				"BaseTriggerRetryInterval": "7s"
+			}
+		}`))
+		require.NoError(t, err)
+		d, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		require.NoError(t, err)
+		require.Zero(t, d)
+	})
+
+	t.Run("enabled with zero interval errors", func(t *testing.T) {
+		getter, err := settings.NewJSONGetter([]byte(`{
+			"global": {
+				"BaseTriggerRetransmitEnabled": "true",
+				"BaseTriggerRetryInterval": "0s"
+			}
+		}`))
+		require.NoError(t, err)
+		_, err = ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "BaseTriggerRetryInterval must be positive")
+	})
+}
 
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	return newBaseWithRetransmit(t, store, 100*time.Millisecond)

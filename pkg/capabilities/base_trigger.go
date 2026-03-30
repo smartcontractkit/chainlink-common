@@ -152,15 +152,15 @@ func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
 			return time.Second
 		}
 		d := iv / 2
-		if d < time.Millisecond {
-			return time.Millisecond
+		if d < time.Second {
+			return time.Second
 		}
 		return d
 	}
 	if b.tRetransmit > 0 {
 		d := b.tRetransmit / 2
-		if d < time.Millisecond {
-			return time.Millisecond
+		if d < time.Second {
+			return time.Second
 		}
 		return d
 	}

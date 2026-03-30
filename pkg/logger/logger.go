@@ -1,11 +1,13 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"reflect"
 	"testing"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
@@ -186,7 +188,11 @@ func (l *logger) helper(skip int) Logger {
 }
 
 func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
-	return l.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))
+	return l.withOptions(zap.AddCallerSkip(skip))
+}
+
+func (l *logger) withOptions(opts ...zap.Option) *zap.SugaredLogger {
+	return l.SugaredLogger.WithOptions(opts...)
 }
 
 // With returns a Logger with keyvals, if 'l' has a method `With(...any) L`, where L implements Logger, otherwise it returns l.
@@ -209,11 +215,33 @@ func With(l Logger, keyvals ...any) Logger {
 	return l
 }
 
+func WithOptions(l Logger, opts ...zap.Option) Logger {
+	switch t := l.(type) {
+	case *logger:
+		return &logger{t.withOptions(opts...)}
+	}
+
+	method := reflect.ValueOf(l).MethodByName("WithOptions")
+	if method == (reflect.Value{}) {
+		return l // not available
+	}
+	if ret := method.CallSlice([]reflect.Value{reflect.ValueOf(opts)}); len(ret) == 1 {
+		nl, ok := ret[0].Interface().(Logger)
+		if ok {
+			return nl
+		}
+	}
+	return l
+}
+
 // Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
 func Named(l Logger, n string) Logger {
+	return namedSkip(l, n, 2)
+}
+func namedSkip(l Logger, n string, skip int) Logger {
 	l = named(l, n)
 	if testing.Testing() {
-		l.Debugf("New logger: %s", n)
+		Helper(l, skip).Debugf("New logger: %s", n)
 	}
 	return l
 }
@@ -279,4 +307,27 @@ func Criticalf(l Logger, format string, values ...any) {
 func Criticalw(l Logger, msg string, keysAndValues ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalw(msg, keysAndValues...)
+}
+
+// CtxKeyVals returns a slice of logger keyvals derived from the context. Values are looked up and passed along with the
+// given keys, and if an otel span is present then the trace_id, trace_flags, and trace_flags will be included as well.
+// Example: l.With(CtxKeyVals(ctx, "keyFoo", ctxKeyFoo, "keyBar", ctxKeyBar)...)
+// See: [SugaredLogger.WithCtx]
+func CtxKeyVals(ctx context.Context, keyvals ...any) []any {
+	var kvs []any
+	spanCtx := trace.SpanFromContext(ctx).SpanContext()
+	if spanCtx.HasTraceID() {
+		kvs = append(kvs, "trace_id", spanCtx.TraceID().String())
+		kvs = append(kvs, "trace_flags", spanCtx.TraceFlags().String())
+	}
+	if spanCtx.HasSpanID() {
+		kvs = append(kvs, "span_id", spanCtx.SpanID().String())
+	}
+	for i := 0; i < len(keyvals); i += 2 {
+		kvs = append(kvs, keyvals[i])
+		if i+1 < len(keyvals) { // avoid panic on odd length
+			kvs = append(kvs, ctx.Value(keyvals[i+1]))
+		}
+	}
+	return kvs
 }

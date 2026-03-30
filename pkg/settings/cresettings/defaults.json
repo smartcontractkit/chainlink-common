@@ -3,12 +3,30 @@
 	"WorkflowExecutionConcurrencyLimit": "200",
 	"GatewayIncomingPayloadSizeLimit": "1mb",
 	"GatewayVaultManagementEnabled": "true",
+	"VaultJWTAuthEnabled": "false",
+	"VaultOrgIdAsSecretOwnerEnabled": "false",
+	"GatewayHTTPGlobalRate": "500rps:500",
+	"GatewayHTTPPerNodeRate": "100rps:100",
+	"TriggerRegistrationStatusUpdateTimeout": "0s",
+	"BaseTriggerRetransmitEnabled": "false",
+	"BaseTriggerRetryInterval": "30s",
 	"VaultCiphertextSizeLimit": "2kb",
+	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",
 	"VaultIdentifierOwnerSizeLimit": "64b",
 	"VaultIdentifierNamespaceSizeLimit": "64b",
-	"VaultPluginBatchSizeLimit": "20",
+	"VaultPluginBatchSizeLimit": "1",
 	"VaultRequestBatchSizeLimit": "10",
+	"VaultMaxQuerySizeLimit": "102.4kb",
+	"VaultMaxObservationSizeLimit": "512kb",
+	"VaultMaxReportsPlusPrecursorSizeLimit": "2mb",
+	"VaultMaxReportSizeLimit": "2mb",
+	"VaultMaxReportCount": "10",
+	"VaultMaxKeyValueModifiedKeysPlusValuesSizeLimit": "1.468006mb",
+	"VaultMaxKeyValueModifiedKeys": "300",
+	"VaultMaxBlobPayloadSizeLimit": "25.6kb",
+	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
+	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
 	"PerOrg": {
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
@@ -67,6 +85,21 @@
 						"12922642891491394802": "50000000",
 						"3379446385462418246": "10000000"
 					}
+				},
+				"ReportSizeLimit": "5kb"
+			},
+			"Solana": {
+				"ReportSizeLimit": "265b",
+				"GasLimit": {
+					"Default": "300000",
+					"Values": {}
+				}
+			},
+			"Aptos": {
+				"ReportSizeLimit": "5kb",
+				"GasLimit": {
+					"Default": "2000000",
+					"Values": {}
 				}
 			}
 		},
@@ -95,6 +128,7 @@
 		"Secrets": {
 			"CallLimit": "5"
 		},
-		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC"
+		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC",
+		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

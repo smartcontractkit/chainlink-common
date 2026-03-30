@@ -121,6 +121,7 @@ func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request c
 
 func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Execute":
 		input := &confidentialworkflow.ConfidentialWorkflowRequest{}

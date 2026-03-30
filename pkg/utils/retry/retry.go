@@ -52,11 +52,12 @@ func (s *Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx co
 	}
 
 	// Track the number of retries
+	var lastKnownErr error
 	for numRetries := int(s.Backoff.Attempt()); ; numRetries++ {
 		if s.MaxRetries > 0 {
 			if numRetries > int(s.MaxRetries) {
 				var empty R
-				return empty, fmt.Errorf("max retry attempts reached")
+				return empty, fmt.Errorf("max retry attempts reached {retryID=%s, numRetries=%d}, last known err: %w", retryID, numRetries, lastKnownErr)
 			}
 		}
 
@@ -64,6 +65,7 @@ func (s *Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx co
 		if err == nil {
 			return result, nil
 		}
+		lastKnownErr = err
 
 		wait := s.Backoff.Duration()
 		message := fmt.Sprintf("Failed to execute function, retrying in %s ...", wait)
@@ -71,7 +73,7 @@ func (s *Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx co
 
 		select {
 		case <-ctx.Done():
-			return result, fmt.Errorf("context done while executing function {retryID=%s, numRetries=%d}: %w", retryID, numRetries, ctx.Err())
+			return result, fmt.Errorf("context done while executing function {retryID=%s, numRetries=%d}, last known err: %w: %w", retryID, numRetries, lastKnownErr, ctx.Err())
 		case <-time.After(wait):
 			// Continue with the next retry
 		}

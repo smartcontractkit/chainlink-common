@@ -120,6 +120,30 @@ func (e ErrorBoundLimited[N]) Error() string {
 	return fmt.Sprintf("%slimited%s: cannot use %v, limit is %v", which, who, e.Amount, e.Limit)
 }
 
+type ErrorRangeLimited[N Number] struct {
+	Key string
+
+	Scope  settings.Scope
+	Tenant string
+
+	Limit  settings.Range[N]
+	Amount N
+}
+
+func (e ErrorRangeLimited[N]) GRPCStatus() *status.Status {
+	return status.New(codes.ResourceExhausted, e.Error())
+}
+
+func (e ErrorRangeLimited[N]) Is(target error) bool {
+	_, ok := target.(ErrorRangeLimited[N]) //nolint:errcheck // implementing errors.Is
+	return ok
+}
+
+func (e ErrorRangeLimited[N]) Error() string {
+	which, who := errArgs(e.Key, e.Scope, e.Tenant)
+	return fmt.Sprintf("%slimited%s: cannot use %v, limited to range %v", which, who, e.Amount, e.Limit)
+}
+
 type ErrorQueueFull struct {
 	Key string
 

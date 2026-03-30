@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"regexp"
@@ -117,6 +118,9 @@ type RequestMetadata struct {
 	WorkflowRegistryChainSelector string
 	WorkflowRegistryAddress       string
 	EngineVersion                 string
+	// ExecutionTimestamp is the DonTime-derived execution timestamp.
+	// Propagated to capability DONs so they can evaluate feature flags atomically with the workflow DON.
+	ExecutionTimestamp time.Time
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
@@ -246,6 +250,9 @@ type Validatable interface {
 type BaseCapability interface {
 	Info(ctx context.Context) (CapabilityInfo, error)
 }
+
+// ErrUnableToDetermineRegistrationStatus is returned when the call terminates before registration status can be determined.
+var ErrUnableToDetermineRegistrationStatus = errors.New("unable to determine registration status")
 
 type TriggerRegistrationRequest struct {
 	// TriggerID uniquely identifies the trigger by concatenating

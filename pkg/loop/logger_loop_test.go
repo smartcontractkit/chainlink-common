@@ -91,6 +91,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 			require.Equal(t, len(logs), 1, fmt.Sprintf("could not find expected log %q", tt.expectedMessage))
 			require.Equal(t, tt.expectedMessage, logs[0].Message)
 			require.Equal(t, tt.expectedLogLevel, logs[0].Level)
+			require.Equal(t, zapcore.EntryCaller{}, logs[0].Caller)
 			if tt.expectedCustomKey != "" {
 				found := false
 				for _, e := range logs[0].Context {

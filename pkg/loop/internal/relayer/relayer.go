@@ -61,7 +61,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			pb.RegisterKeystoreServer(s, ks.NewServer(keystore))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve keystore: %w", err)
+			return 0, deps, fmt.Errorf("Failed to create relayer client: failed to serve keystore: %w", err)
 		}
 		deps.Add(ksRes)
 
@@ -70,7 +70,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			pb.RegisterKeystoreServer(s, ks.NewServer(csaKeystore))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
+			return 0, deps, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
 		}
 		deps.Add(ksCSARes)
 
@@ -78,7 +78,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new capability registry: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new capability registry: %w", err)
 		}
 		deps.Add(capabilityRegistryResource)
 
@@ -89,9 +89,9 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 			CapabilityRegistryID: capabilityRegistryID,
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
+			return 0, deps, fmt.Errorf("Failed to create relayer client: failed request: %w", err)
 		}
-		return reply.RelayerID, nil, nil
+		return reply.RelayerID, deps, nil
 	})
 	return newRelayerClient(p.BrokerExt, cc), nil
 }
@@ -127,7 +127,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		p.CloseAll(ksRes)
 		return nil, net.ErrConnDial{Name: "CSAKeystore", ID: request.KeystoreCSAID, Err: err}
 	}
-	ksCSARes := net.Resource{Closer: ksConn, Name: "CSAKeystore"}
+	ksCSARes := net.Resource{Closer: ksCSAConn, Name: "CSAKeystore"}
 
 	capRegistryConn, err := p.Dial(request.CapabilityRegistryID)
 	if err != nil {
@@ -324,7 +324,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 				ccipocr3pb.RegisterExtraDataCodecBundleServer(s, ccipocr3loop.NewExtraDataCodecBundleServer(cargs.ExtraDataCodecBundle))
 			})
 			if err != nil {
-				return 0, nil, fmt.Errorf("failed to serve ExtraDataCodecBundle: %w", err)
+				return 0, deps, fmt.Errorf("failed to serve ExtraDataCodecBundle: %w", err)
 			}
 			deps.Add(edcRes)
 			extraDataCodecBundleID = edcID
@@ -344,7 +344,7 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 			},
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return reply.CcipProviderID, deps, nil
 	})
@@ -355,6 +355,19 @@ func (r *relayerClient) NewCCIPProvider(ctx context.Context, cargs types.CCIPPro
 
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
 	reply, err := r.relayer.LatestHead(ctx, &pb.LatestHeadRequest{})
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	return types.Head{
+		Height:    reply.Head.Height,
+		Hash:      reply.Head.Hash,
+		Timestamp: reply.Head.Timestamp,
+	}, nil
+}
+
+func (r *relayerClient) FinalizedHead(ctx context.Context) (types.Head, error) {
+	reply, err := r.relayer.FinalizedHead(ctx, &pb.FinalizedHeadRequest{})
 	if err != nil {
 		return types.Head{}, err
 	}
@@ -845,6 +858,21 @@ func (r *relayerServer) LatestHead(ctx context.Context, _ *pb.LatestHeadRequest)
 	}
 
 	return &pb.LatestHeadReply{
+		Head: &pb.Head{
+			Height:    head.Height,
+			Hash:      head.Hash,
+			Timestamp: head.Timestamp,
+		},
+	}, nil
+}
+
+func (r *relayerServer) FinalizedHead(ctx context.Context, _ *pb.FinalizedHeadRequest) (*pb.FinalizedHeadReply, error) {
+	head, err := r.impl.FinalizedHead(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.FinalizedHeadReply{
 		Head: &pb.Head{
 			Height:    head.Height,
 			Hash:      head.Hash,

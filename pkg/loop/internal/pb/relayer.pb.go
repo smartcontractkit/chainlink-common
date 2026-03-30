@@ -913,6 +913,87 @@ func (x *LatestHeadReply) GetHead() *Head {
 	return nil
 }
 
+type FinalizedHeadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinalizedHeadRequest) Reset() {
+	*x = FinalizedHeadRequest{}
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinalizedHeadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinalizedHeadRequest) ProtoMessage() {}
+
+func (x *FinalizedHeadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinalizedHeadRequest.ProtoReflect.Descriptor instead.
+func (*FinalizedHeadRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{17}
+}
+
+// FinalizedHeadReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.FinalizedHead].
+type FinalizedHeadReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Head          *Head                  `protobuf:"bytes,1,opt,name=head,proto3" json:"head,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinalizedHeadReply) Reset() {
+	*x = FinalizedHeadReply{}
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinalizedHeadReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinalizedHeadReply) ProtoMessage() {}
+
+func (x *FinalizedHeadReply) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinalizedHeadReply.ProtoReflect.Descriptor instead.
+func (*FinalizedHeadReply) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *FinalizedHeadReply) GetHead() *Head {
+	if x != nil {
+		return x.Head
+	}
+	return nil
+}
+
 type GetChainStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -921,7 +1002,7 @@ type GetChainStatusRequest struct {
 
 func (x *GetChainStatusRequest) Reset() {
 	*x = GetChainStatusRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -933,7 +1014,7 @@ func (x *GetChainStatusRequest) String() string {
 func (*GetChainStatusRequest) ProtoMessage() {}
 
 func (x *GetChainStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -946,7 +1027,7 @@ func (x *GetChainStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetChainStatusRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{19}
 }
 
 // ChainStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.ChainStatus].
@@ -959,7 +1040,7 @@ type GetChainStatusReply struct {
 
 func (x *GetChainStatusReply) Reset() {
 	*x = GetChainStatusReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -971,7 +1052,7 @@ func (x *GetChainStatusReply) String() string {
 func (*GetChainStatusReply) ProtoMessage() {}
 
 func (x *GetChainStatusReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -984,7 +1065,7 @@ func (x *GetChainStatusReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainStatusReply.ProtoReflect.Descriptor instead.
 func (*GetChainStatusReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetChainStatusReply) GetChain() *ChainStatus {
@@ -1002,7 +1083,7 @@ type GetChainInfoRequest struct {
 
 func (x *GetChainInfoRequest) Reset() {
 	*x = GetChainInfoRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1014,7 +1095,7 @@ func (x *GetChainInfoRequest) String() string {
 func (*GetChainInfoRequest) ProtoMessage() {}
 
 func (x *GetChainInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1027,7 +1108,7 @@ func (x *GetChainInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetChainInfoRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{21}
 }
 
 // GetChainInfoReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.GetChainInfo].
@@ -1040,7 +1121,7 @@ type GetChainInfoReply struct {
 
 func (x *GetChainInfoReply) Reset() {
 	*x = GetChainInfoReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1052,7 +1133,7 @@ func (x *GetChainInfoReply) String() string {
 func (*GetChainInfoReply) ProtoMessage() {}
 
 func (x *GetChainInfoReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1065,7 +1146,7 @@ func (x *GetChainInfoReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainInfoReply.ProtoReflect.Descriptor instead.
 func (*GetChainInfoReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetChainInfoReply) GetChainInfo() *ChainInfo {
@@ -1087,7 +1168,7 @@ type ChainStatus struct {
 
 func (x *ChainStatus) Reset() {
 	*x = ChainStatus{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1099,7 +1180,7 @@ func (x *ChainStatus) String() string {
 func (*ChainStatus) ProtoMessage() {}
 
 func (x *ChainStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1112,7 +1193,7 @@ func (x *ChainStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainStatus.ProtoReflect.Descriptor instead.
 func (*ChainStatus) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ChainStatus) GetId() string {
@@ -1149,7 +1230,7 @@ type ChainInfo struct {
 
 func (x *ChainInfo) Reset() {
 	*x = ChainInfo{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1161,7 +1242,7 @@ func (x *ChainInfo) String() string {
 func (*ChainInfo) ProtoMessage() {}
 
 func (x *ChainInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1174,7 +1255,7 @@ func (x *ChainInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainInfo.ProtoReflect.Descriptor instead.
 func (*ChainInfo) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{22}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ChainInfo) GetFamilyName() string {
@@ -1216,7 +1297,7 @@ type ListNodeStatusesRequest struct {
 
 func (x *ListNodeStatusesRequest) Reset() {
 	*x = ListNodeStatusesRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1228,7 +1309,7 @@ func (x *ListNodeStatusesRequest) String() string {
 func (*ListNodeStatusesRequest) ProtoMessage() {}
 
 func (x *ListNodeStatusesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1241,7 +1322,7 @@ func (x *ListNodeStatusesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeStatusesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodeStatusesRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{23}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListNodeStatusesRequest) GetPageSize() int32 {
@@ -1270,7 +1351,7 @@ type ListNodeStatusesReply struct {
 
 func (x *ListNodeStatusesReply) Reset() {
 	*x = ListNodeStatusesReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1282,7 +1363,7 @@ func (x *ListNodeStatusesReply) String() string {
 func (*ListNodeStatusesReply) ProtoMessage() {}
 
 func (x *ListNodeStatusesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1295,7 +1376,7 @@ func (x *ListNodeStatusesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeStatusesReply.ProtoReflect.Descriptor instead.
 func (*ListNodeStatusesReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{24}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListNodeStatusesReply) GetNodes() []*NodeStatus {
@@ -1332,7 +1413,7 @@ type NodeStatus struct {
 
 func (x *NodeStatus) Reset() {
 	*x = NodeStatus{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1344,7 +1425,7 @@ func (x *NodeStatus) String() string {
 func (*NodeStatus) ProtoMessage() {}
 
 func (x *NodeStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1357,7 +1438,7 @@ func (x *NodeStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeStatus.ProtoReflect.Descriptor instead.
 func (*NodeStatus) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{25}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *NodeStatus) GetChainID() string {
@@ -1398,7 +1479,7 @@ type ReplayRequest struct {
 
 func (x *ReplayRequest) Reset() {
 	*x = ReplayRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1410,7 +1491,7 @@ func (x *ReplayRequest) String() string {
 func (*ReplayRequest) ProtoMessage() {}
 
 func (x *ReplayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1423,7 +1504,7 @@ func (x *ReplayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplayRequest.ProtoReflect.Descriptor instead.
 func (*ReplayRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{26}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ReplayRequest) GetFromBlock() string {
@@ -1453,7 +1534,7 @@ type TransactionRequest struct {
 
 func (x *TransactionRequest) Reset() {
 	*x = TransactionRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1465,7 +1546,7 @@ func (x *TransactionRequest) String() string {
 func (*TransactionRequest) ProtoMessage() {}
 
 func (x *TransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1478,7 +1559,7 @@ func (x *TransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionRequest.ProtoReflect.Descriptor instead.
 func (*TransactionRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{27}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *TransactionRequest) GetFrom() string {
@@ -1526,7 +1607,7 @@ type ContractConfig struct {
 
 func (x *ContractConfig) Reset() {
 	*x = ContractConfig{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[28]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1538,7 +1619,7 @@ func (x *ContractConfig) String() string {
 func (*ContractConfig) ProtoMessage() {}
 
 func (x *ContractConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[28]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1551,7 +1632,7 @@ func (x *ContractConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractConfig.ProtoReflect.Descriptor instead.
 func (*ContractConfig) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{28}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ContractConfig) GetConfigDigest() []byte {
@@ -1620,7 +1701,7 @@ type ConfigDigestRequest struct {
 
 func (x *ConfigDigestRequest) Reset() {
 	*x = ConfigDigestRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[29]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1632,7 +1713,7 @@ func (x *ConfigDigestRequest) String() string {
 func (*ConfigDigestRequest) ProtoMessage() {}
 
 func (x *ConfigDigestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[29]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1645,7 +1726,7 @@ func (x *ConfigDigestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestRequest.ProtoReflect.Descriptor instead.
 func (*ConfigDigestRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{29}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ConfigDigestRequest) GetContractConfig() *ContractConfig {
@@ -1665,7 +1746,7 @@ type ConfigDigestReply struct {
 
 func (x *ConfigDigestReply) Reset() {
 	*x = ConfigDigestReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[30]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1677,7 +1758,7 @@ func (x *ConfigDigestReply) String() string {
 func (*ConfigDigestReply) ProtoMessage() {}
 
 func (x *ConfigDigestReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[30]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1690,7 +1771,7 @@ func (x *ConfigDigestReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestReply.ProtoReflect.Descriptor instead.
 func (*ConfigDigestReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{30}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ConfigDigestReply) GetConfigDigest() []byte {
@@ -1708,7 +1789,7 @@ type ConfigDigestPrefixRequest struct {
 
 func (x *ConfigDigestPrefixRequest) Reset() {
 	*x = ConfigDigestPrefixRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[31]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1720,7 +1801,7 @@ func (x *ConfigDigestPrefixRequest) String() string {
 func (*ConfigDigestPrefixRequest) ProtoMessage() {}
 
 func (x *ConfigDigestPrefixRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[31]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1733,7 +1814,7 @@ func (x *ConfigDigestPrefixRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestPrefixRequest.ProtoReflect.Descriptor instead.
 func (*ConfigDigestPrefixRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{31}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{33}
 }
 
 // ConfigDigestPrefixReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.OffchainConfigDigester.ConfigDigestPrefix].
@@ -1746,7 +1827,7 @@ type ConfigDigestPrefixReply struct {
 
 func (x *ConfigDigestPrefixReply) Reset() {
 	*x = ConfigDigestPrefixReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[32]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1758,7 +1839,7 @@ func (x *ConfigDigestPrefixReply) String() string {
 func (*ConfigDigestPrefixReply) ProtoMessage() {}
 
 func (x *ConfigDigestPrefixReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[32]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1771,7 +1852,7 @@ func (x *ConfigDigestPrefixReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestPrefixReply.ProtoReflect.Descriptor instead.
 func (*ConfigDigestPrefixReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{32}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ConfigDigestPrefixReply) GetConfigDigestPrefix() uint32 {
@@ -1789,7 +1870,7 @@ type LatestConfigDetailsRequest struct {
 
 func (x *LatestConfigDetailsRequest) Reset() {
 	*x = LatestConfigDetailsRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[33]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1801,7 +1882,7 @@ func (x *LatestConfigDetailsRequest) String() string {
 func (*LatestConfigDetailsRequest) ProtoMessage() {}
 
 func (x *LatestConfigDetailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[33]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1814,7 +1895,7 @@ func (x *LatestConfigDetailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigDetailsRequest.ProtoReflect.Descriptor instead.
 func (*LatestConfigDetailsRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{33}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{35}
 }
 
 // LatestConfigDetailsReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ContractConfigTracker.LatestConfigDetails].
@@ -1828,7 +1909,7 @@ type LatestConfigDetailsReply struct {
 
 func (x *LatestConfigDetailsReply) Reset() {
 	*x = LatestConfigDetailsReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[34]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1840,7 +1921,7 @@ func (x *LatestConfigDetailsReply) String() string {
 func (*LatestConfigDetailsReply) ProtoMessage() {}
 
 func (x *LatestConfigDetailsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[34]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1853,7 +1934,7 @@ func (x *LatestConfigDetailsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigDetailsReply.ProtoReflect.Descriptor instead.
 func (*LatestConfigDetailsReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{34}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *LatestConfigDetailsReply) GetChangedInBlock() uint64 {
@@ -1880,7 +1961,7 @@ type LatestConfigRequest struct {
 
 func (x *LatestConfigRequest) Reset() {
 	*x = LatestConfigRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[35]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1892,7 +1973,7 @@ func (x *LatestConfigRequest) String() string {
 func (*LatestConfigRequest) ProtoMessage() {}
 
 func (x *LatestConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[35]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1905,7 +1986,7 @@ func (x *LatestConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigRequest.ProtoReflect.Descriptor instead.
 func (*LatestConfigRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{35}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *LatestConfigRequest) GetChangedInBlock() uint64 {
@@ -1925,7 +2006,7 @@ type LatestConfigReply struct {
 
 func (x *LatestConfigReply) Reset() {
 	*x = LatestConfigReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[36]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1937,7 +2018,7 @@ func (x *LatestConfigReply) String() string {
 func (*LatestConfigReply) ProtoMessage() {}
 
 func (x *LatestConfigReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[36]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1950,7 +2031,7 @@ func (x *LatestConfigReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigReply.ProtoReflect.Descriptor instead.
 func (*LatestConfigReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{36}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *LatestConfigReply) GetContractConfig() *ContractConfig {
@@ -1968,7 +2049,7 @@ type LatestBlockHeightRequest struct {
 
 func (x *LatestBlockHeightRequest) Reset() {
 	*x = LatestBlockHeightRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[37]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1980,7 +2061,7 @@ func (x *LatestBlockHeightRequest) String() string {
 func (*LatestBlockHeightRequest) ProtoMessage() {}
 
 func (x *LatestBlockHeightRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[37]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1993,7 +2074,7 @@ func (x *LatestBlockHeightRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestBlockHeightRequest.ProtoReflect.Descriptor instead.
 func (*LatestBlockHeightRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{37}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{39}
 }
 
 // LatestBlockHeightReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ContractConfigTracker.LatestBlockHeightReply].
@@ -2006,7 +2087,7 @@ type LatestBlockHeightReply struct {
 
 func (x *LatestBlockHeightReply) Reset() {
 	*x = LatestBlockHeightReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[38]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2018,7 +2099,7 @@ func (x *LatestBlockHeightReply) String() string {
 func (*LatestBlockHeightReply) ProtoMessage() {}
 
 func (x *LatestBlockHeightReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[38]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2031,7 +2112,7 @@ func (x *LatestBlockHeightReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestBlockHeightReply.ProtoReflect.Descriptor instead.
 func (*LatestBlockHeightReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{38}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *LatestBlockHeightReply) GetBlockHeight() uint64 {
@@ -2053,7 +2134,7 @@ type ReportTimestamp struct {
 
 func (x *ReportTimestamp) Reset() {
 	*x = ReportTimestamp{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[39]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2065,7 +2146,7 @@ func (x *ReportTimestamp) String() string {
 func (*ReportTimestamp) ProtoMessage() {}
 
 func (x *ReportTimestamp) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[39]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2078,7 +2159,7 @@ func (x *ReportTimestamp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportTimestamp.ProtoReflect.Descriptor instead.
 func (*ReportTimestamp) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{39}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ReportTimestamp) GetConfigDigest() []byte {
@@ -2113,7 +2194,7 @@ type ReportContext struct {
 
 func (x *ReportContext) Reset() {
 	*x = ReportContext{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[40]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2125,7 +2206,7 @@ func (x *ReportContext) String() string {
 func (*ReportContext) ProtoMessage() {}
 
 func (x *ReportContext) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[40]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2138,7 +2219,7 @@ func (x *ReportContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportContext.ProtoReflect.Descriptor instead.
 func (*ReportContext) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{40}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ReportContext) GetReportTimestamp() *ReportTimestamp {
@@ -2166,7 +2247,7 @@ type AttributedOnchainSignature struct {
 
 func (x *AttributedOnchainSignature) Reset() {
 	*x = AttributedOnchainSignature{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[41]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2178,7 +2259,7 @@ func (x *AttributedOnchainSignature) String() string {
 func (*AttributedOnchainSignature) ProtoMessage() {}
 
 func (x *AttributedOnchainSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[41]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2191,7 +2272,7 @@ func (x *AttributedOnchainSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributedOnchainSignature.ProtoReflect.Descriptor instead.
 func (*AttributedOnchainSignature) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{41}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *AttributedOnchainSignature) GetSignature() []byte {
@@ -2220,7 +2301,7 @@ type TransmitRequest struct {
 
 func (x *TransmitRequest) Reset() {
 	*x = TransmitRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[42]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2232,7 +2313,7 @@ func (x *TransmitRequest) String() string {
 func (*TransmitRequest) ProtoMessage() {}
 
 func (x *TransmitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[42]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2245,7 +2326,7 @@ func (x *TransmitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransmitRequest.ProtoReflect.Descriptor instead.
 func (*TransmitRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{42}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *TransmitRequest) GetReportContext() *ReportContext {
@@ -2277,7 +2358,7 @@ type TransmitReply struct {
 
 func (x *TransmitReply) Reset() {
 	*x = TransmitReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[43]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2289,7 +2370,7 @@ func (x *TransmitReply) String() string {
 func (*TransmitReply) ProtoMessage() {}
 
 func (x *TransmitReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[43]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2302,7 +2383,7 @@ func (x *TransmitReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransmitReply.ProtoReflect.Descriptor instead.
 func (*TransmitReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{43}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{45}
 }
 
 type LatestConfigDigestAndEpochRequest struct {
@@ -2313,7 +2394,7 @@ type LatestConfigDigestAndEpochRequest struct {
 
 func (x *LatestConfigDigestAndEpochRequest) Reset() {
 	*x = LatestConfigDigestAndEpochRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[44]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2325,7 +2406,7 @@ func (x *LatestConfigDigestAndEpochRequest) String() string {
 func (*LatestConfigDigestAndEpochRequest) ProtoMessage() {}
 
 func (x *LatestConfigDigestAndEpochRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[44]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2338,7 +2419,7 @@ func (x *LatestConfigDigestAndEpochRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use LatestConfigDigestAndEpochRequest.ProtoReflect.Descriptor instead.
 func (*LatestConfigDigestAndEpochRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{44}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{46}
 }
 
 // LatestConfigDigestAndEpochReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ContractTransmitter.LatestConfigDigestAndEpoch].
@@ -2352,7 +2433,7 @@ type LatestConfigDigestAndEpochReply struct {
 
 func (x *LatestConfigDigestAndEpochReply) Reset() {
 	*x = LatestConfigDigestAndEpochReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[45]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2364,7 +2445,7 @@ func (x *LatestConfigDigestAndEpochReply) String() string {
 func (*LatestConfigDigestAndEpochReply) ProtoMessage() {}
 
 func (x *LatestConfigDigestAndEpochReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[45]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2377,7 +2458,7 @@ func (x *LatestConfigDigestAndEpochReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigDigestAndEpochReply.ProtoReflect.Descriptor instead.
 func (*LatestConfigDigestAndEpochReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{45}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *LatestConfigDigestAndEpochReply) GetConfigDigest() []byte {
@@ -2402,7 +2483,7 @@ type FromAccountRequest struct {
 
 func (x *FromAccountRequest) Reset() {
 	*x = FromAccountRequest{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[46]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2414,7 +2495,7 @@ func (x *FromAccountRequest) String() string {
 func (*FromAccountRequest) ProtoMessage() {}
 
 func (x *FromAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[46]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2427,7 +2508,7 @@ func (x *FromAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FromAccountRequest.ProtoReflect.Descriptor instead.
 func (*FromAccountRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{46}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{48}
 }
 
 // FromAccountReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.Service.FromAccount].
@@ -2440,7 +2521,7 @@ type FromAccountReply struct {
 
 func (x *FromAccountReply) Reset() {
 	*x = FromAccountReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[47]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2452,7 +2533,7 @@ func (x *FromAccountReply) String() string {
 func (*FromAccountReply) ProtoMessage() {}
 
 func (x *FromAccountReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[47]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2465,7 +2546,7 @@ func (x *FromAccountReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FromAccountReply.ProtoReflect.Descriptor instead.
 func (*FromAccountReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{47}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *FromAccountReply) GetAccount() string {
@@ -2485,7 +2566,7 @@ type NameReply struct {
 
 func (x *NameReply) Reset() {
 	*x = NameReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[48]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2497,7 +2578,7 @@ func (x *NameReply) String() string {
 func (*NameReply) ProtoMessage() {}
 
 func (x *NameReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[48]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2510,7 +2591,7 @@ func (x *NameReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NameReply.ProtoReflect.Descriptor instead.
 func (*NameReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{48}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *NameReply) GetName() string {
@@ -2530,7 +2611,7 @@ type HealthReportReply struct {
 
 func (x *HealthReportReply) Reset() {
 	*x = HealthReportReply{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[49]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2542,7 +2623,7 @@ func (x *HealthReportReply) String() string {
 func (*HealthReportReply) ProtoMessage() {}
 
 func (x *HealthReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[49]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2555,7 +2636,7 @@ func (x *HealthReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthReportReply.ProtoReflect.Descriptor instead.
 func (*HealthReportReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{49}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *HealthReportReply) GetHealthReport() map[string]string {
@@ -2576,7 +2657,7 @@ type BigInt struct {
 
 func (x *BigInt) Reset() {
 	*x = BigInt{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[50]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2588,7 +2669,7 @@ func (x *BigInt) String() string {
 func (*BigInt) ProtoMessage() {}
 
 func (x *BigInt) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[50]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2601,7 +2682,7 @@ func (x *BigInt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BigInt.ProtoReflect.Descriptor instead.
 func (*BigInt) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{50}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *BigInt) GetNegative() bool {
@@ -2628,7 +2709,7 @@ type StarknetSignature struct {
 
 func (x *StarknetSignature) Reset() {
 	*x = StarknetSignature{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[51]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2640,7 +2721,7 @@ func (x *StarknetSignature) String() string {
 func (*StarknetSignature) ProtoMessage() {}
 
 func (x *StarknetSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[51]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2653,7 +2734,7 @@ func (x *StarknetSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarknetSignature.ProtoReflect.Descriptor instead.
 func (*StarknetSignature) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{51}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *StarknetSignature) GetX() *BigInt {
@@ -2679,7 +2760,7 @@ type StarknetMessageHash struct {
 
 func (x *StarknetMessageHash) Reset() {
 	*x = StarknetMessageHash{}
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[52]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2691,7 +2772,7 @@ func (x *StarknetMessageHash) String() string {
 func (*StarknetMessageHash) ProtoMessage() {}
 
 func (x *StarknetMessageHash) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayer_proto_msgTypes[52]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2704,7 +2785,7 @@ func (x *StarknetMessageHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarknetMessageHash.ProtoReflect.Descriptor instead.
 func (*StarknetMessageHash) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{52}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *StarknetMessageHash) GetHash() *BigInt {
@@ -2780,6 +2861,10 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\x0eccipProviderID\x18\x01 \x01(\rR\x0eccipProviderID\"\x13\n" +
 	"\x11LatestHeadRequest\"1\n" +
 	"\x0fLatestHeadReply\x12\x1e\n" +
+	"\x04head\x18\x01 \x01(\v2\n" +
+	".loop.HeadR\x04head\"\x16\n" +
+	"\x14FinalizedHeadRequest\"4\n" +
+	"\x12FinalizedHeadReply\x12\x1e\n" +
 	"\x04head\x18\x01 \x01(\v2\n" +
 	".loop.HeadR\x04head\"\x17\n" +
 	"\x15GetChainStatusRequest\">\n" +
@@ -2887,7 +2972,7 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\x04hash\x18\x01 \x01(\v2\f.loop.BigIntR\x04hash2O\n" +
 	"\rPluginRelayer\x12>\n" +
 	"\n" +
-	"NewRelayer\x12\x17.loop.NewRelayerRequest\x1a\x15.loop.NewRelayerReply\"\x002\xc9\x06\n" +
+	"NewRelayer\x12\x17.loop.NewRelayerRequest\x1a\x15.loop.NewRelayerReply\"\x002\x92\a\n" +
 	"\aRelayer\x12S\n" +
 	"\x11NewContractWriter\x12\x1e.loop.NewContractWriterRequest\x1a\x1c.loop.NewContractWriterReply\"\x00\x12S\n" +
 	"\x11NewContractReader\x12\x1e.loop.NewContractReaderRequest\x1a\x1c.loop.NewContractReaderReply\"\x00\x12S\n" +
@@ -2895,7 +2980,8 @@ const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\x11NewPluginProvider\x12\x1e.loop.NewPluginProviderRequest\x1a\x1c.loop.NewPluginProviderReply\"\x00\x12M\n" +
 	"\x0fNewCCIPProvider\x12\x1c.loop.NewCCIPProviderRequest\x1a\x1a.loop.NewCCIPProviderReply\"\x00\x12>\n" +
 	"\n" +
-	"LatestHead\x12\x17.loop.LatestHeadRequest\x1a\x15.loop.LatestHeadReply\"\x00\x12J\n" +
+	"LatestHead\x12\x17.loop.LatestHeadRequest\x1a\x15.loop.LatestHeadReply\"\x00\x12G\n" +
+	"\rFinalizedHead\x12\x1a.loop.FinalizedHeadRequest\x1a\x18.loop.FinalizedHeadReply\"\x00\x12J\n" +
 	"\x0eGetChainStatus\x12\x1b.loop.GetChainStatusRequest\x1a\x19.loop.GetChainStatusReply\"\x00\x12D\n" +
 	"\fGetChainInfo\x12\x19.loop.GetChainInfoRequest\x1a\x17.loop.GetChainInfoReply\"\x00\x12P\n" +
 	"\x10ListNodeStatuses\x12\x1d.loop.ListNodeStatusesRequest\x1a\x1b.loop.ListNodeStatusesReply\"\x00\x12>\n" +
@@ -2930,7 +3016,7 @@ func file_loop_internal_pb_relayer_proto_rawDescGZIP() []byte {
 	return file_loop_internal_pb_relayer_proto_rawDescData
 }
 
-var file_loop_internal_pb_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
+var file_loop_internal_pb_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 57)
 var file_loop_internal_pb_relayer_proto_goTypes = []any{
 	(*NewRelayerRequest)(nil),                 // 0: loop.NewRelayerRequest
 	(*NewRelayerReply)(nil),                   // 1: loop.NewRelayerReply
@@ -2949,122 +3035,127 @@ var file_loop_internal_pb_relayer_proto_goTypes = []any{
 	(*NewCCIPProviderReply)(nil),              // 14: loop.NewCCIPProviderReply
 	(*LatestHeadRequest)(nil),                 // 15: loop.LatestHeadRequest
 	(*LatestHeadReply)(nil),                   // 16: loop.LatestHeadReply
-	(*GetChainStatusRequest)(nil),             // 17: loop.GetChainStatusRequest
-	(*GetChainStatusReply)(nil),               // 18: loop.GetChainStatusReply
-	(*GetChainInfoRequest)(nil),               // 19: loop.GetChainInfoRequest
-	(*GetChainInfoReply)(nil),                 // 20: loop.GetChainInfoReply
-	(*ChainStatus)(nil),                       // 21: loop.ChainStatus
-	(*ChainInfo)(nil),                         // 22: loop.ChainInfo
-	(*ListNodeStatusesRequest)(nil),           // 23: loop.ListNodeStatusesRequest
-	(*ListNodeStatusesReply)(nil),             // 24: loop.ListNodeStatusesReply
-	(*NodeStatus)(nil),                        // 25: loop.NodeStatus
-	(*ReplayRequest)(nil),                     // 26: loop.ReplayRequest
-	(*TransactionRequest)(nil),                // 27: loop.TransactionRequest
-	(*ContractConfig)(nil),                    // 28: loop.ContractConfig
-	(*ConfigDigestRequest)(nil),               // 29: loop.ConfigDigestRequest
-	(*ConfigDigestReply)(nil),                 // 30: loop.ConfigDigestReply
-	(*ConfigDigestPrefixRequest)(nil),         // 31: loop.ConfigDigestPrefixRequest
-	(*ConfigDigestPrefixReply)(nil),           // 32: loop.ConfigDigestPrefixReply
-	(*LatestConfigDetailsRequest)(nil),        // 33: loop.LatestConfigDetailsRequest
-	(*LatestConfigDetailsReply)(nil),          // 34: loop.LatestConfigDetailsReply
-	(*LatestConfigRequest)(nil),               // 35: loop.LatestConfigRequest
-	(*LatestConfigReply)(nil),                 // 36: loop.LatestConfigReply
-	(*LatestBlockHeightRequest)(nil),          // 37: loop.LatestBlockHeightRequest
-	(*LatestBlockHeightReply)(nil),            // 38: loop.LatestBlockHeightReply
-	(*ReportTimestamp)(nil),                   // 39: loop.ReportTimestamp
-	(*ReportContext)(nil),                     // 40: loop.ReportContext
-	(*AttributedOnchainSignature)(nil),        // 41: loop.AttributedOnchainSignature
-	(*TransmitRequest)(nil),                   // 42: loop.TransmitRequest
-	(*TransmitReply)(nil),                     // 43: loop.TransmitReply
-	(*LatestConfigDigestAndEpochRequest)(nil), // 44: loop.LatestConfigDigestAndEpochRequest
-	(*LatestConfigDigestAndEpochReply)(nil),   // 45: loop.LatestConfigDigestAndEpochReply
-	(*FromAccountRequest)(nil),                // 46: loop.FromAccountRequest
-	(*FromAccountReply)(nil),                  // 47: loop.FromAccountReply
-	(*NameReply)(nil),                         // 48: loop.NameReply
-	(*HealthReportReply)(nil),                 // 49: loop.HealthReportReply
-	(*BigInt)(nil),                            // 50: loop.BigInt
-	(*StarknetSignature)(nil),                 // 51: loop.StarknetSignature
-	(*StarknetMessageHash)(nil),               // 52: loop.StarknetMessageHash
-	nil,                                       // 53: loop.CCIPProviderArgs.SyncedAddressesEntry
-	nil,                                       // 54: loop.HealthReportReply.HealthReportEntry
-	(*Head)(nil),                              // 55: loop.Head
-	(*structpb.Struct)(nil),                   // 56: google.protobuf.Struct
-	(*emptypb.Empty)(nil),                     // 57: google.protobuf.Empty
+	(*FinalizedHeadRequest)(nil),              // 17: loop.FinalizedHeadRequest
+	(*FinalizedHeadReply)(nil),                // 18: loop.FinalizedHeadReply
+	(*GetChainStatusRequest)(nil),             // 19: loop.GetChainStatusRequest
+	(*GetChainStatusReply)(nil),               // 20: loop.GetChainStatusReply
+	(*GetChainInfoRequest)(nil),               // 21: loop.GetChainInfoRequest
+	(*GetChainInfoReply)(nil),                 // 22: loop.GetChainInfoReply
+	(*ChainStatus)(nil),                       // 23: loop.ChainStatus
+	(*ChainInfo)(nil),                         // 24: loop.ChainInfo
+	(*ListNodeStatusesRequest)(nil),           // 25: loop.ListNodeStatusesRequest
+	(*ListNodeStatusesReply)(nil),             // 26: loop.ListNodeStatusesReply
+	(*NodeStatus)(nil),                        // 27: loop.NodeStatus
+	(*ReplayRequest)(nil),                     // 28: loop.ReplayRequest
+	(*TransactionRequest)(nil),                // 29: loop.TransactionRequest
+	(*ContractConfig)(nil),                    // 30: loop.ContractConfig
+	(*ConfigDigestRequest)(nil),               // 31: loop.ConfigDigestRequest
+	(*ConfigDigestReply)(nil),                 // 32: loop.ConfigDigestReply
+	(*ConfigDigestPrefixRequest)(nil),         // 33: loop.ConfigDigestPrefixRequest
+	(*ConfigDigestPrefixReply)(nil),           // 34: loop.ConfigDigestPrefixReply
+	(*LatestConfigDetailsRequest)(nil),        // 35: loop.LatestConfigDetailsRequest
+	(*LatestConfigDetailsReply)(nil),          // 36: loop.LatestConfigDetailsReply
+	(*LatestConfigRequest)(nil),               // 37: loop.LatestConfigRequest
+	(*LatestConfigReply)(nil),                 // 38: loop.LatestConfigReply
+	(*LatestBlockHeightRequest)(nil),          // 39: loop.LatestBlockHeightRequest
+	(*LatestBlockHeightReply)(nil),            // 40: loop.LatestBlockHeightReply
+	(*ReportTimestamp)(nil),                   // 41: loop.ReportTimestamp
+	(*ReportContext)(nil),                     // 42: loop.ReportContext
+	(*AttributedOnchainSignature)(nil),        // 43: loop.AttributedOnchainSignature
+	(*TransmitRequest)(nil),                   // 44: loop.TransmitRequest
+	(*TransmitReply)(nil),                     // 45: loop.TransmitReply
+	(*LatestConfigDigestAndEpochRequest)(nil), // 46: loop.LatestConfigDigestAndEpochRequest
+	(*LatestConfigDigestAndEpochReply)(nil),   // 47: loop.LatestConfigDigestAndEpochReply
+	(*FromAccountRequest)(nil),                // 48: loop.FromAccountRequest
+	(*FromAccountReply)(nil),                  // 49: loop.FromAccountReply
+	(*NameReply)(nil),                         // 50: loop.NameReply
+	(*HealthReportReply)(nil),                 // 51: loop.HealthReportReply
+	(*BigInt)(nil),                            // 52: loop.BigInt
+	(*StarknetSignature)(nil),                 // 53: loop.StarknetSignature
+	(*StarknetMessageHash)(nil),               // 54: loop.StarknetMessageHash
+	nil,                                       // 55: loop.CCIPProviderArgs.SyncedAddressesEntry
+	nil,                                       // 56: loop.HealthReportReply.HealthReportEntry
+	(*Head)(nil),                              // 57: loop.Head
+	(*structpb.Struct)(nil),                   // 58: google.protobuf.Struct
+	(*emptypb.Empty)(nil),                     // 59: google.protobuf.Empty
 }
 var file_loop_internal_pb_relayer_proto_depIdxs = []int32{
-	53, // 0: loop.CCIPProviderArgs.synced_addresses:type_name -> loop.CCIPProviderArgs.SyncedAddressesEntry
+	55, // 0: loop.CCIPProviderArgs.synced_addresses:type_name -> loop.CCIPProviderArgs.SyncedAddressesEntry
 	2,  // 1: loop.NewPluginProviderRequest.relayArgs:type_name -> loop.RelayArgs
 	3,  // 2: loop.NewPluginProviderRequest.pluginArgs:type_name -> loop.PluginArgs
 	2,  // 3: loop.NewConfigProviderRequest.relayArgs:type_name -> loop.RelayArgs
 	4,  // 4: loop.NewCCIPProviderRequest.ccipProviderArgs:type_name -> loop.CCIPProviderArgs
-	55, // 5: loop.LatestHeadReply.head:type_name -> loop.Head
-	21, // 6: loop.GetChainStatusReply.chain:type_name -> loop.ChainStatus
-	22, // 7: loop.GetChainInfoReply.chain_info:type_name -> loop.ChainInfo
-	25, // 8: loop.ListNodeStatusesReply.nodes:type_name -> loop.NodeStatus
-	56, // 9: loop.ReplayRequest.args:type_name -> google.protobuf.Struct
-	50, // 10: loop.TransactionRequest.amount:type_name -> loop.BigInt
-	28, // 11: loop.ConfigDigestRequest.contractConfig:type_name -> loop.ContractConfig
-	28, // 12: loop.LatestConfigReply.contractConfig:type_name -> loop.ContractConfig
-	39, // 13: loop.ReportContext.reportTimestamp:type_name -> loop.ReportTimestamp
-	40, // 14: loop.TransmitRequest.reportContext:type_name -> loop.ReportContext
-	41, // 15: loop.TransmitRequest.attributedOnchainSignatures:type_name -> loop.AttributedOnchainSignature
-	54, // 16: loop.HealthReportReply.healthReport:type_name -> loop.HealthReportReply.HealthReportEntry
-	50, // 17: loop.StarknetSignature.x:type_name -> loop.BigInt
-	50, // 18: loop.StarknetSignature.y:type_name -> loop.BigInt
-	50, // 19: loop.StarknetMessageHash.hash:type_name -> loop.BigInt
-	0,  // 20: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
-	5,  // 21: loop.Relayer.NewContractWriter:input_type -> loop.NewContractWriterRequest
-	7,  // 22: loop.Relayer.NewContractReader:input_type -> loop.NewContractReaderRequest
-	11, // 23: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
-	9,  // 24: loop.Relayer.NewPluginProvider:input_type -> loop.NewPluginProviderRequest
-	13, // 25: loop.Relayer.NewCCIPProvider:input_type -> loop.NewCCIPProviderRequest
-	15, // 26: loop.Relayer.LatestHead:input_type -> loop.LatestHeadRequest
-	17, // 27: loop.Relayer.GetChainStatus:input_type -> loop.GetChainStatusRequest
-	19, // 28: loop.Relayer.GetChainInfo:input_type -> loop.GetChainInfoRequest
-	23, // 29: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
-	27, // 30: loop.Relayer.Transact:input_type -> loop.TransactionRequest
-	26, // 31: loop.Relayer.Replay:input_type -> loop.ReplayRequest
-	29, // 32: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
-	31, // 33: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
-	33, // 34: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
-	35, // 35: loop.ContractConfigTracker.LatestConfig:input_type -> loop.LatestConfigRequest
-	37, // 36: loop.ContractConfigTracker.LatestBlockHeight:input_type -> loop.LatestBlockHeightRequest
-	42, // 37: loop.ContractTransmitter.Transmit:input_type -> loop.TransmitRequest
-	44, // 38: loop.ContractTransmitter.LatestConfigDigestAndEpoch:input_type -> loop.LatestConfigDigestAndEpochRequest
-	46, // 39: loop.ContractTransmitter.FromAccount:input_type -> loop.FromAccountRequest
-	57, // 40: loop.Service.Name:input_type -> google.protobuf.Empty
-	57, // 41: loop.Service.Close:input_type -> google.protobuf.Empty
-	57, // 42: loop.Service.Ready:input_type -> google.protobuf.Empty
-	57, // 43: loop.Service.HealthReport:input_type -> google.protobuf.Empty
-	1,  // 44: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
-	6,  // 45: loop.Relayer.NewContractWriter:output_type -> loop.NewContractWriterReply
-	8,  // 46: loop.Relayer.NewContractReader:output_type -> loop.NewContractReaderReply
-	12, // 47: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply
-	10, // 48: loop.Relayer.NewPluginProvider:output_type -> loop.NewPluginProviderReply
-	14, // 49: loop.Relayer.NewCCIPProvider:output_type -> loop.NewCCIPProviderReply
-	16, // 50: loop.Relayer.LatestHead:output_type -> loop.LatestHeadReply
-	18, // 51: loop.Relayer.GetChainStatus:output_type -> loop.GetChainStatusReply
-	20, // 52: loop.Relayer.GetChainInfo:output_type -> loop.GetChainInfoReply
-	24, // 53: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
-	57, // 54: loop.Relayer.Transact:output_type -> google.protobuf.Empty
-	57, // 55: loop.Relayer.Replay:output_type -> google.protobuf.Empty
-	30, // 56: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
-	32, // 57: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
-	34, // 58: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply
-	36, // 59: loop.ContractConfigTracker.LatestConfig:output_type -> loop.LatestConfigReply
-	38, // 60: loop.ContractConfigTracker.LatestBlockHeight:output_type -> loop.LatestBlockHeightReply
-	43, // 61: loop.ContractTransmitter.Transmit:output_type -> loop.TransmitReply
-	45, // 62: loop.ContractTransmitter.LatestConfigDigestAndEpoch:output_type -> loop.LatestConfigDigestAndEpochReply
-	47, // 63: loop.ContractTransmitter.FromAccount:output_type -> loop.FromAccountReply
-	48, // 64: loop.Service.Name:output_type -> loop.NameReply
-	57, // 65: loop.Service.Close:output_type -> google.protobuf.Empty
-	57, // 66: loop.Service.Ready:output_type -> google.protobuf.Empty
-	49, // 67: loop.Service.HealthReport:output_type -> loop.HealthReportReply
-	44, // [44:68] is the sub-list for method output_type
-	20, // [20:44] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	57, // 5: loop.LatestHeadReply.head:type_name -> loop.Head
+	57, // 6: loop.FinalizedHeadReply.head:type_name -> loop.Head
+	23, // 7: loop.GetChainStatusReply.chain:type_name -> loop.ChainStatus
+	24, // 8: loop.GetChainInfoReply.chain_info:type_name -> loop.ChainInfo
+	27, // 9: loop.ListNodeStatusesReply.nodes:type_name -> loop.NodeStatus
+	58, // 10: loop.ReplayRequest.args:type_name -> google.protobuf.Struct
+	52, // 11: loop.TransactionRequest.amount:type_name -> loop.BigInt
+	30, // 12: loop.ConfigDigestRequest.contractConfig:type_name -> loop.ContractConfig
+	30, // 13: loop.LatestConfigReply.contractConfig:type_name -> loop.ContractConfig
+	41, // 14: loop.ReportContext.reportTimestamp:type_name -> loop.ReportTimestamp
+	42, // 15: loop.TransmitRequest.reportContext:type_name -> loop.ReportContext
+	43, // 16: loop.TransmitRequest.attributedOnchainSignatures:type_name -> loop.AttributedOnchainSignature
+	56, // 17: loop.HealthReportReply.healthReport:type_name -> loop.HealthReportReply.HealthReportEntry
+	52, // 18: loop.StarknetSignature.x:type_name -> loop.BigInt
+	52, // 19: loop.StarknetSignature.y:type_name -> loop.BigInt
+	52, // 20: loop.StarknetMessageHash.hash:type_name -> loop.BigInt
+	0,  // 21: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
+	5,  // 22: loop.Relayer.NewContractWriter:input_type -> loop.NewContractWriterRequest
+	7,  // 23: loop.Relayer.NewContractReader:input_type -> loop.NewContractReaderRequest
+	11, // 24: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
+	9,  // 25: loop.Relayer.NewPluginProvider:input_type -> loop.NewPluginProviderRequest
+	13, // 26: loop.Relayer.NewCCIPProvider:input_type -> loop.NewCCIPProviderRequest
+	15, // 27: loop.Relayer.LatestHead:input_type -> loop.LatestHeadRequest
+	17, // 28: loop.Relayer.FinalizedHead:input_type -> loop.FinalizedHeadRequest
+	19, // 29: loop.Relayer.GetChainStatus:input_type -> loop.GetChainStatusRequest
+	21, // 30: loop.Relayer.GetChainInfo:input_type -> loop.GetChainInfoRequest
+	25, // 31: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
+	29, // 32: loop.Relayer.Transact:input_type -> loop.TransactionRequest
+	28, // 33: loop.Relayer.Replay:input_type -> loop.ReplayRequest
+	31, // 34: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
+	33, // 35: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
+	35, // 36: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
+	37, // 37: loop.ContractConfigTracker.LatestConfig:input_type -> loop.LatestConfigRequest
+	39, // 38: loop.ContractConfigTracker.LatestBlockHeight:input_type -> loop.LatestBlockHeightRequest
+	44, // 39: loop.ContractTransmitter.Transmit:input_type -> loop.TransmitRequest
+	46, // 40: loop.ContractTransmitter.LatestConfigDigestAndEpoch:input_type -> loop.LatestConfigDigestAndEpochRequest
+	48, // 41: loop.ContractTransmitter.FromAccount:input_type -> loop.FromAccountRequest
+	59, // 42: loop.Service.Name:input_type -> google.protobuf.Empty
+	59, // 43: loop.Service.Close:input_type -> google.protobuf.Empty
+	59, // 44: loop.Service.Ready:input_type -> google.protobuf.Empty
+	59, // 45: loop.Service.HealthReport:input_type -> google.protobuf.Empty
+	1,  // 46: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
+	6,  // 47: loop.Relayer.NewContractWriter:output_type -> loop.NewContractWriterReply
+	8,  // 48: loop.Relayer.NewContractReader:output_type -> loop.NewContractReaderReply
+	12, // 49: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply
+	10, // 50: loop.Relayer.NewPluginProvider:output_type -> loop.NewPluginProviderReply
+	14, // 51: loop.Relayer.NewCCIPProvider:output_type -> loop.NewCCIPProviderReply
+	16, // 52: loop.Relayer.LatestHead:output_type -> loop.LatestHeadReply
+	18, // 53: loop.Relayer.FinalizedHead:output_type -> loop.FinalizedHeadReply
+	20, // 54: loop.Relayer.GetChainStatus:output_type -> loop.GetChainStatusReply
+	22, // 55: loop.Relayer.GetChainInfo:output_type -> loop.GetChainInfoReply
+	26, // 56: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
+	59, // 57: loop.Relayer.Transact:output_type -> google.protobuf.Empty
+	59, // 58: loop.Relayer.Replay:output_type -> google.protobuf.Empty
+	32, // 59: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
+	34, // 60: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
+	36, // 61: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply
+	38, // 62: loop.ContractConfigTracker.LatestConfig:output_type -> loop.LatestConfigReply
+	40, // 63: loop.ContractConfigTracker.LatestBlockHeight:output_type -> loop.LatestBlockHeightReply
+	45, // 64: loop.ContractTransmitter.Transmit:output_type -> loop.TransmitReply
+	47, // 65: loop.ContractTransmitter.LatestConfigDigestAndEpoch:output_type -> loop.LatestConfigDigestAndEpochReply
+	49, // 66: loop.ContractTransmitter.FromAccount:output_type -> loop.FromAccountReply
+	50, // 67: loop.Service.Name:output_type -> loop.NameReply
+	59, // 68: loop.Service.Close:output_type -> google.protobuf.Empty
+	59, // 69: loop.Service.Ready:output_type -> google.protobuf.Empty
+	51, // 70: loop.Service.HealthReport:output_type -> loop.HealthReportReply
+	46, // [46:71] is the sub-list for method output_type
+	21, // [21:46] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_loop_internal_pb_relayer_proto_init() }
@@ -3079,7 +3170,7 @@ func file_loop_internal_pb_relayer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayer_proto_rawDesc), len(file_loop_internal_pb_relayer_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   55,
+			NumMessages:   57,
 			NumExtensions: 0,
 			NumServices:   6,
 		},

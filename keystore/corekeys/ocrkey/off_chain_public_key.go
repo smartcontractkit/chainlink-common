@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -58,7 +56,7 @@ func (ocpk *OffChainPublicKey) Scan(value any) error {
 		*ocpk = v
 		return nil
 	default:
-		return errors.Errorf("invalid public key bytes got %T wanted []byte", v)
+		return fmt.Errorf("invalid public key bytes got %T wanted []byte", v)
 	}
 }
 

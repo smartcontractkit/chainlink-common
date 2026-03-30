@@ -121,6 +121,7 @@ var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 const ClientID = "evm@1.0.0"
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
@@ -131,6 +132,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 }
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
@@ -163,6 +165,7 @@ func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request c
 
 func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "CallContract":
 		input := &evm.CallContractRequest{}

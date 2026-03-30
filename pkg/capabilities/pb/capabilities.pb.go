@@ -13,6 +13,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -234,6 +235,7 @@ type RequestMetadata struct {
 	WorkflowRegistryChainSelector string                 `protobuf:"bytes,12,opt,name=workflow_registry_chain_selector,json=workflowRegistryChainSelector,proto3" json:"workflow_registry_chain_selector,omitempty"`
 	WorkflowRegistryAddress       string                 `protobuf:"bytes,13,opt,name=workflow_registry_address,json=workflowRegistryAddress,proto3" json:"workflow_registry_address,omitempty"`
 	EngineVersion                 string                 `protobuf:"bytes,14,opt,name=engine_version,json=engineVersion,proto3" json:"engine_version,omitempty"`
+	ExecutionTimestamp            *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=execution_timestamp,json=executionTimestamp,proto3" json:"execution_timestamp,omitempty"`
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
@@ -357,6 +359,13 @@ func (x *RequestMetadata) GetEngineVersion() string {
 		return x.EngineVersion
 	}
 	return ""
+}
+
+func (x *RequestMetadata) GetExecutionTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExecutionTimestamp
+	}
+	return nil
 }
 
 type CapabilityRequest struct {
@@ -1096,21 +1105,22 @@ func (x *UnregisterFromWorkflowRequest) GetConfig() *pb.Map {
 }
 
 type InitialiseRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Config             string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	ErrorLogId         uint32                 `protobuf:"varint,2,opt,name=error_log_id,json=errorLogId,proto3" json:"error_log_id,omitempty"`
-	PipelineRunnerId   uint32                 `protobuf:"varint,3,opt,name=pipeline_runner_id,json=pipelineRunnerId,proto3" json:"pipeline_runner_id,omitempty"`
-	TelemetryId        uint32                 `protobuf:"varint,4,opt,name=telemetry_id,json=telemetryId,proto3" json:"telemetry_id,omitempty"`
-	CapRegistryId      uint32                 `protobuf:"varint,5,opt,name=capRegistry_id,json=capRegistryId,proto3" json:"capRegistry_id,omitempty"`
-	KeyValueStoreId    uint32                 `protobuf:"varint,6,opt,name=keyValueStore_id,json=keyValueStoreId,proto3" json:"keyValueStore_id,omitempty"`
-	RelayerSetId       uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
-	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
-	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
-	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
-	OrgResolverId      uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
-	CreSettingsId      uint32                 `protobuf:"varint,12,opt,name=cre_settings_id,json=creSettingsId,proto3" json:"cre_settings_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Config              string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	ErrorLogId          uint32                 `protobuf:"varint,2,opt,name=error_log_id,json=errorLogId,proto3" json:"error_log_id,omitempty"`
+	PipelineRunnerId    uint32                 `protobuf:"varint,3,opt,name=pipeline_runner_id,json=pipelineRunnerId,proto3" json:"pipeline_runner_id,omitempty"`
+	TelemetryId         uint32                 `protobuf:"varint,4,opt,name=telemetry_id,json=telemetryId,proto3" json:"telemetry_id,omitempty"`
+	CapRegistryId       uint32                 `protobuf:"varint,5,opt,name=capRegistry_id,json=capRegistryId,proto3" json:"capRegistry_id,omitempty"`
+	KeyValueStoreId     uint32                 `protobuf:"varint,6,opt,name=keyValueStore_id,json=keyValueStoreId,proto3" json:"keyValueStore_id,omitempty"`
+	RelayerSetId        uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
+	OracleFactoryId     uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
+	GatewayConnectorId  uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
+	KeystoreId          uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
+	OrgResolverId       uint32                 `protobuf:"varint,11,opt,name=org_resolver_id,json=orgResolverId,proto3" json:"org_resolver_id,omitempty"`
+	CreSettingsId       uint32                 `protobuf:"varint,12,opt,name=cre_settings_id,json=creSettingsId,proto3" json:"cre_settings_id,omitempty"`
+	TriggerEventStoreId uint32                 `protobuf:"varint,13,opt,name=trigger_event_store_id,json=triggerEventStoreId,proto3" json:"trigger_event_store_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *InitialiseRequest) Reset() {
@@ -1227,6 +1237,13 @@ func (x *InitialiseRequest) GetCreSettingsId() uint32 {
 	return 0
 }
 
+func (x *InitialiseRequest) GetTriggerEventStoreId() uint32 {
+	if x != nil {
+		return x.TriggerEventStoreId
+	}
+	return 0
+}
+
 type CapabilityInfosReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Infos         []*CapabilityInfoReply `protobuf:"bytes,1,rep,name=infos,proto3" json:"infos,omitempty"`
@@ -1327,7 +1344,7 @@ var File_capabilities_proto protoreflect.FileDescriptor
 
 const file_capabilities_proto_rawDesc = "" +
 	"\n" +
-	"\x12capabilities.proto\x12\fcapabilities\x1a\x16values/v1/values.proto\x1a metering/pb/meteringdetail.proto\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe3\x01\n" +
+	"\x12capabilities.proto\x12\fcapabilities\x1a\x16values/v1/values.proto\x1a metering/pb/meteringdetail.proto\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe3\x01\n" +
 	"\x13CapabilityInfoReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12E\n" +
 	"\x0fcapability_type\x18\x02 \x01(\x0e2\x1c.capabilities.CapabilityTypeR\x0ecapabilityType\x12 \n" +
@@ -1340,7 +1357,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"SpendLimit\x12\x1d\n" +
 	"\n" +
 	"spend_type\x18\x01 \x01(\tR\tspendType\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\tR\x05limit\"\x82\x05\n" +
+	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xcf\x05\n" +
 	"\x0fRequestMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x122\n" +
@@ -1356,7 +1373,8 @@ const file_capabilities_proto_rawDesc = "" +
 	"\fworkflow_tag\x18\v \x01(\tR\vworkflowTag\x12G\n" +
 	" workflow_registry_chain_selector\x18\f \x01(\tR\x1dworkflowRegistryChainSelector\x12:\n" +
 	"\x19workflow_registry_address\x18\r \x01(\tR\x17workflowRegistryAddress\x12%\n" +
-	"\x0eengine_version\x18\x0e \x01(\tR\rengineVersionJ\x04\b\x05\x10\x06\"\xc6\x02\n" +
+	"\x0eengine_version\x18\x0e \x01(\tR\rengineVersion\x12K\n" +
+	"\x13execution_timestamp\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\x12executionTimestampJ\x04\b\x05\x10\x06\"\xc6\x02\n" +
 	"\x11CapabilityRequest\x129\n" +
 	"\bmetadata\x18\x01 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12&\n" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\x12&\n" +
@@ -1406,7 +1424,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xe5\x03\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x9a\x04\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1422,7 +1440,8 @@ const file_capabilities_proto_rawDesc = "" +
 	" \x01(\rR\n" +
 	"keystoreId\x12&\n" +
 	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\x12&\n" +
-	"\x0fcre_settings_id\x18\f \x01(\rR\rcreSettingsId\"O\n" +
+	"\x0fcre_settings_id\x18\f \x01(\rR\rcreSettingsId\x123\n" +
+	"\x16trigger_event_store_id\x18\r \x01(\rR\x13triggerEventStoreId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos\"@\n" +
 	"\x0eSettingsUpdate\x12\x1a\n" +
@@ -1486,61 +1505,63 @@ var file_capabilities_proto_goTypes = []any{
 	(*InitialiseRequest)(nil),             // 15: capabilities.InitialiseRequest
 	(*CapabilityInfosReply)(nil),          // 16: capabilities.CapabilityInfosReply
 	(*SettingsUpdate)(nil),                // 17: capabilities.SettingsUpdate
-	(*pb.Map)(nil),                        // 18: values.v1.Map
-	(*anypb.Any)(nil),                     // 19: google.protobuf.Any
-	(*emptypb.Empty)(nil),                 // 20: google.protobuf.Empty
-	(*pb1.MeteringReportNodeDetail)(nil),  // 21: metering.MeteringReportNodeDetail
+	(*timestamppb.Timestamp)(nil),         // 18: google.protobuf.Timestamp
+	(*pb.Map)(nil),                        // 19: values.v1.Map
+	(*anypb.Any)(nil),                     // 20: google.protobuf.Any
+	(*emptypb.Empty)(nil),                 // 21: google.protobuf.Empty
+	(*pb1.MeteringReportNodeDetail)(nil),  // 22: metering.MeteringReportNodeDetail
 }
 var file_capabilities_proto_depIdxs = []int32{
 	0,  // 0: capabilities.CapabilityInfoReply.capability_type:type_name -> capabilities.CapabilityType
 	2,  // 1: capabilities.RequestMetadata.spend_limits:type_name -> capabilities.SpendLimit
-	3,  // 2: capabilities.CapabilityRequest.metadata:type_name -> capabilities.RequestMetadata
-	18, // 3: capabilities.CapabilityRequest.config:type_name -> values.v1.Map
-	18, // 4: capabilities.CapabilityRequest.inputs:type_name -> values.v1.Map
-	19, // 5: capabilities.CapabilityRequest.payload:type_name -> google.protobuf.Any
-	19, // 6: capabilities.CapabilityRequest.configPayload:type_name -> google.protobuf.Any
-	3,  // 7: capabilities.TriggerRegistrationRequest.metadata:type_name -> capabilities.RequestMetadata
-	18, // 8: capabilities.TriggerRegistrationRequest.config:type_name -> values.v1.Map
-	19, // 9: capabilities.TriggerRegistrationRequest.payload:type_name -> google.protobuf.Any
-	18, // 10: capabilities.TriggerEvent.outputs:type_name -> values.v1.Map
-	19, // 11: capabilities.TriggerEvent.payload:type_name -> google.protobuf.Any
-	6,  // 12: capabilities.TriggerResponse.event:type_name -> capabilities.TriggerEvent
-	20, // 13: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
-	7,  // 14: capabilities.TriggerResponseMessage.response:type_name -> capabilities.TriggerResponse
-	18, // 15: capabilities.CapabilityResponse.value:type_name -> values.v1.Map
-	11, // 16: capabilities.CapabilityResponse.metadata:type_name -> capabilities.ResponseMetadata
-	19, // 17: capabilities.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	21, // 18: capabilities.ResponseMetadata.metering:type_name -> metering.MeteringReportNodeDetail
-	12, // 19: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
-	18, // 20: capabilities.RegisterToWorkflowRequest.config:type_name -> values.v1.Map
-	12, // 21: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
-	18, // 22: capabilities.UnregisterFromWorkflowRequest.config:type_name -> values.v1.Map
-	1,  // 23: capabilities.CapabilityInfosReply.infos:type_name -> capabilities.CapabilityInfoReply
-	20, // 24: capabilities.BaseCapability.Info:input_type -> google.protobuf.Empty
-	5,  // 25: capabilities.TriggerExecutable.RegisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
-	5,  // 26: capabilities.TriggerExecutable.UnregisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
-	9,  // 27: capabilities.TriggerExecutable.AckEvent:input_type -> capabilities.AckEventRequest
-	13, // 28: capabilities.Executable.RegisterToWorkflow:input_type -> capabilities.RegisterToWorkflowRequest
-	14, // 29: capabilities.Executable.UnregisterFromWorkflow:input_type -> capabilities.UnregisterFromWorkflowRequest
-	4,  // 30: capabilities.Executable.Execute:input_type -> capabilities.CapabilityRequest
-	15, // 31: capabilities.StandardCapabilities.Initialise:input_type -> capabilities.InitialiseRequest
-	20, // 32: capabilities.StandardCapabilities.Infos:input_type -> google.protobuf.Empty
-	20, // 33: capabilities.Settings.Subscribe:input_type -> google.protobuf.Empty
-	1,  // 34: capabilities.BaseCapability.Info:output_type -> capabilities.CapabilityInfoReply
-	8,  // 35: capabilities.TriggerExecutable.RegisterTrigger:output_type -> capabilities.TriggerResponseMessage
-	20, // 36: capabilities.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
-	20, // 37: capabilities.TriggerExecutable.AckEvent:output_type -> google.protobuf.Empty
-	20, // 38: capabilities.Executable.RegisterToWorkflow:output_type -> google.protobuf.Empty
-	20, // 39: capabilities.Executable.UnregisterFromWorkflow:output_type -> google.protobuf.Empty
-	10, // 40: capabilities.Executable.Execute:output_type -> capabilities.CapabilityResponse
-	20, // 41: capabilities.StandardCapabilities.Initialise:output_type -> google.protobuf.Empty
-	16, // 42: capabilities.StandardCapabilities.Infos:output_type -> capabilities.CapabilityInfosReply
-	17, // 43: capabilities.Settings.Subscribe:output_type -> capabilities.SettingsUpdate
-	34, // [34:44] is the sub-list for method output_type
-	24, // [24:34] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	18, // 2: capabilities.RequestMetadata.execution_timestamp:type_name -> google.protobuf.Timestamp
+	3,  // 3: capabilities.CapabilityRequest.metadata:type_name -> capabilities.RequestMetadata
+	19, // 4: capabilities.CapabilityRequest.config:type_name -> values.v1.Map
+	19, // 5: capabilities.CapabilityRequest.inputs:type_name -> values.v1.Map
+	20, // 6: capabilities.CapabilityRequest.payload:type_name -> google.protobuf.Any
+	20, // 7: capabilities.CapabilityRequest.configPayload:type_name -> google.protobuf.Any
+	3,  // 8: capabilities.TriggerRegistrationRequest.metadata:type_name -> capabilities.RequestMetadata
+	19, // 9: capabilities.TriggerRegistrationRequest.config:type_name -> values.v1.Map
+	20, // 10: capabilities.TriggerRegistrationRequest.payload:type_name -> google.protobuf.Any
+	19, // 11: capabilities.TriggerEvent.outputs:type_name -> values.v1.Map
+	20, // 12: capabilities.TriggerEvent.payload:type_name -> google.protobuf.Any
+	6,  // 13: capabilities.TriggerResponse.event:type_name -> capabilities.TriggerEvent
+	21, // 14: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
+	7,  // 15: capabilities.TriggerResponseMessage.response:type_name -> capabilities.TriggerResponse
+	19, // 16: capabilities.CapabilityResponse.value:type_name -> values.v1.Map
+	11, // 17: capabilities.CapabilityResponse.metadata:type_name -> capabilities.ResponseMetadata
+	20, // 18: capabilities.CapabilityResponse.payload:type_name -> google.protobuf.Any
+	22, // 19: capabilities.ResponseMetadata.metering:type_name -> metering.MeteringReportNodeDetail
+	12, // 20: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
+	19, // 21: capabilities.RegisterToWorkflowRequest.config:type_name -> values.v1.Map
+	12, // 22: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
+	19, // 23: capabilities.UnregisterFromWorkflowRequest.config:type_name -> values.v1.Map
+	1,  // 24: capabilities.CapabilityInfosReply.infos:type_name -> capabilities.CapabilityInfoReply
+	21, // 25: capabilities.BaseCapability.Info:input_type -> google.protobuf.Empty
+	5,  // 26: capabilities.TriggerExecutable.RegisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
+	5,  // 27: capabilities.TriggerExecutable.UnregisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
+	9,  // 28: capabilities.TriggerExecutable.AckEvent:input_type -> capabilities.AckEventRequest
+	13, // 29: capabilities.Executable.RegisterToWorkflow:input_type -> capabilities.RegisterToWorkflowRequest
+	14, // 30: capabilities.Executable.UnregisterFromWorkflow:input_type -> capabilities.UnregisterFromWorkflowRequest
+	4,  // 31: capabilities.Executable.Execute:input_type -> capabilities.CapabilityRequest
+	15, // 32: capabilities.StandardCapabilities.Initialise:input_type -> capabilities.InitialiseRequest
+	21, // 33: capabilities.StandardCapabilities.Infos:input_type -> google.protobuf.Empty
+	21, // 34: capabilities.Settings.Subscribe:input_type -> google.protobuf.Empty
+	1,  // 35: capabilities.BaseCapability.Info:output_type -> capabilities.CapabilityInfoReply
+	8,  // 36: capabilities.TriggerExecutable.RegisterTrigger:output_type -> capabilities.TriggerResponseMessage
+	21, // 37: capabilities.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
+	21, // 38: capabilities.TriggerExecutable.AckEvent:output_type -> google.protobuf.Empty
+	21, // 39: capabilities.Executable.RegisterToWorkflow:output_type -> google.protobuf.Empty
+	21, // 40: capabilities.Executable.UnregisterFromWorkflow:output_type -> google.protobuf.Empty
+	10, // 41: capabilities.Executable.Execute:output_type -> capabilities.CapabilityResponse
+	21, // 42: capabilities.StandardCapabilities.Initialise:output_type -> google.protobuf.Empty
+	16, // 43: capabilities.StandardCapabilities.Infos:output_type -> capabilities.CapabilityInfosReply
+	17, // 44: capabilities.Settings.Subscribe:output_type -> capabilities.SettingsUpdate
+	35, // [35:45] is the sub-list for method output_type
+	25, // [25:35] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_proto_init() }

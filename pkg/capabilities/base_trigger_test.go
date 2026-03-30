@@ -10,13 +10,69 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
+func TestResolveBaseTriggerRetryInterval(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	t.Run("nil getter uses defaults", func(t *testing.T) {
+		d, err := ResolveBaseTriggerRetryInterval(ctx, nil, lggr)
+		require.NoError(t, err)
+		require.Zero(t, d, "default BaseTriggerRetransmitEnabled is false, so retry interval is disabled")
+	})
+
+	t.Run("global JSON enables interval", func(t *testing.T) {
+		getter, err := settings.NewJSONGetter([]byte(`{
+			"global": {
+				"BaseTriggerRetransmitEnabled": "true",
+				"BaseTriggerRetryInterval": "7s"
+			}
+		}`))
+		require.NoError(t, err)
+		d, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		require.NoError(t, err)
+		require.Equal(t, 7*time.Second, d)
+	})
+
+	t.Run("disabled returns zero", func(t *testing.T) {
+		getter, err := settings.NewJSONGetter([]byte(`{
+			"global": {
+				"BaseTriggerRetransmitEnabled": "false",
+				"BaseTriggerRetryInterval": "7s"
+			}
+		}`))
+		require.NoError(t, err)
+		d, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		require.NoError(t, err)
+		require.Zero(t, d)
+	})
+
+	t.Run("enabled with zero interval errors", func(t *testing.T) {
+		getter, err := settings.NewJSONGetter([]byte(`{
+			"global": {
+				"BaseTriggerRetransmitEnabled": "true",
+				"BaseTriggerRetryInterval": "0s"
+			}
+		}`))
+		require.NoError(t, err)
+		_, err = ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "BaseTriggerRetryInterval must be positive")
+	})
+}
+
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
+	return newBaseWithRetransmit(t, store, 100*time.Millisecond)
+}
+
+func newBaseWithRetransmit(t *testing.T, store EventStore, tRetransmit time.Duration) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
-		"testCap", 100*time.Millisecond, 0, 0)
+		"testCap", tRetransmit, 0, 0)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -251,4 +307,54 @@ func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRetransmitDisabled_DeliversOnceWithoutPersistence(t *testing.T) {
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+
+	b := newBaseWithRetransmit(t, store, 0)
+	ctx := t.Context()
+
+	b.RegisterTrigger("trigA", sendCh)
+
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() {
+		b.Stop()
+		b.UnregisterTrigger("trigA")
+	})
+
+	te := makeTE(t, "trigA", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trigA"))
+
+	// Should receive the event once
+	select {
+	case got := <-sendCh:
+		require.Equal(t, "e1", got.Id)
+	case <-time.After(time.Second):
+		t.Fatal("expected event delivery")
+	}
+
+	// Store should be empty (no persistence)
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Empty(t, recs)
+
+	// Wait a bit and confirm no retransmits
+	time.Sleep(200 * time.Millisecond)
+	select {
+	case got := <-sendCh:
+		t.Fatalf("unexpected retransmit: %+v", got)
+	default:
+	}
+}
+
+func TestRetransmitDisabled_AckIsNoop(t *testing.T) {
+	store := NewMemEventStore()
+	b := newBaseWithRetransmit(t, store, 0)
+
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	require.NoError(t, b.AckEvent(t.Context(), "anyTrigger", "anyEvent"))
 }

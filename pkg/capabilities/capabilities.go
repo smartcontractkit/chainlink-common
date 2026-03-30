@@ -118,6 +118,9 @@ type RequestMetadata struct {
 	WorkflowRegistryChainSelector string
 	WorkflowRegistryAddress       string
 	EngineVersion                 string
+	// ExecutionTimestamp is the DonTime-derived execution timestamp.
+	// Propagated to capability DONs so they can evaluate feature flags atomically with the workflow DON.
+	ExecutionTimestamp time.Time
 }
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {

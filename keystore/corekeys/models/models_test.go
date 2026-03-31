@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/aptoskey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/cosmoskey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/csakey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/ethkey"
@@ -45,6 +46,12 @@ func TestKeyRing_Encrypt_Decrypt(t *testing.T) {
 	tk1, tk2 := cosmoskey.MustNewInsecure(rand.Reader), cosmoskey.MustNewInsecure(rand.Reader)
 	uk1, uk2 := tronkey.MustNewInsecure(rand.Reader), tronkey.MustNewInsecure(rand.Reader)
 	ton1, ton2 := tonkey.MustNewInsecure(rand.Reader), tonkey.MustNewInsecure(rand.Reader)
+	aptos1, err := aptoskey.New()
+	require.NoError(t, err)
+	aptos2, err := aptoskey.New()
+	require.NoError(t, err)
+	// Override one address to simulate a rotated key
+	aptos2 = aptos2.WithAccountAddress("000000000000000000000000000000000000000000000000000000000000cafe")
 	originalKeyRingRaw := rawKeyRing{
 		CSA:    [][]byte{internal.RawBytes(csa1), internal.RawBytes(csa2)},
 		Eth:    [][]byte{internal.RawBytes(eth1), internal.RawBytes(eth2)},
@@ -56,9 +63,12 @@ func TestKeyRing_Encrypt_Decrypt(t *testing.T) {
 		Cosmos: [][]byte{internal.RawBytes(tk1), internal.RawBytes(tk2)},
 		Tron:   [][]byte{internal.RawBytes(uk1), internal.RawBytes(uk2)},
 		TON:    [][]byte{internal.RawBytes(ton1), internal.RawBytes(ton2)},
+		Aptos:  [][]byte{internal.RawBytes(aptos1), internal.RawBytes(aptos2)},
 	}
 	originalKeyRing, kerr := originalKeyRingRaw.keys()
 	require.NoError(t, kerr)
+	// Override aptos2's address to simulate a rotated key
+	originalKeyRing.Aptos[aptos2.ID()] = originalKeyRing.Aptos[aptos2.ID()].WithAccountAddress(aptos2.Account())
 
 	t.Run("test encrypt/decrypt", func(t *testing.T) {
 		encryptedKr, err := originalKeyRing.Encrypt(password, keystore.FastScryptParams)
@@ -112,6 +122,13 @@ func TestKeyRing_Encrypt_Decrypt(t *testing.T) {
 		require.Len(t, decryptedKeyRing.VRF, 2)
 		require.Equal(t, originalKeyRing.VRF[vrf1.ID()].PublicKey, decryptedKeyRing.VRF[vrf1.ID()].PublicKey)
 		require.Equal(t, originalKeyRing.VRF[vrf2.ID()].PublicKey, decryptedKeyRing.VRF[vrf2.ID()].PublicKey)
+		// compare aptos keys
+		require.Len(t, decryptedKeyRing.Aptos, 2)
+		require.Equal(t, originalKeyRing.Aptos[aptos1.ID()].PublicKeyStr(), decryptedKeyRing.Aptos[aptos1.ID()].PublicKeyStr())
+		require.Equal(t, originalKeyRing.Aptos[aptos1.ID()].Account(), decryptedKeyRing.Aptos[aptos1.ID()].Account())
+		require.Equal(t, originalKeyRing.Aptos[aptos2.ID()].PublicKeyStr(), decryptedKeyRing.Aptos[aptos2.ID()].PublicKeyStr())
+		// Verify the overridden (rotated) account address survives the round-trip
+		require.Equal(t, "000000000000000000000000000000000000000000000000000000000000cafe", decryptedKeyRing.Aptos[aptos2.ID()].Account())
 	})
 
 	t.Run("test legacy system", func(t *testing.T) {

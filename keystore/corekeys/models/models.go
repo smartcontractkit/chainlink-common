@@ -244,8 +244,8 @@ func (kr *KeyRing) raw() (rawKeys rawKeyRing) {
 	for _, starkkey := range kr.StarkNet {
 		rawKeys.StarkNet = append(rawKeys.StarkNet, internal.RawBytes(starkkey))
 	}
-	for _, aptoskey := range kr.Aptos {
-		rawKeys.Aptos = append(rawKeys.Aptos, internal.RawBytes(aptoskey))
+	for _, key := range kr.Aptos {
+		rawKeys.Aptos = append(rawKeys.Aptos, key.Marshal())
 	}
 	for _, tronkey := range kr.Tron {
 		rawKeys.Tron = append(rawKeys.Tron, internal.RawBytes(tronkey))
@@ -326,7 +326,10 @@ func (rawKeys rawKeyRing) keys() (*KeyRing, error) {
 		keyRing.StarkNet[starkKey.ID()] = starkKey
 	}
 	for _, rawAptosKey := range rawKeys.Aptos {
-		aptosKey := aptoskey.KeyFor(internal.NewRaw(rawAptosKey))
+		aptosKey, err := aptoskey.Unmarshal(rawAptosKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal aptos key: %w", err)
+		}
 		keyRing.Aptos[aptosKey.ID()] = aptosKey
 	}
 	for _, rawTronKey := range rawKeys.Tron {

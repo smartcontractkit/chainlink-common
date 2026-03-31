@@ -38,6 +38,7 @@ flowchart
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -92,6 +93,10 @@ flowchart
             PerWorkflow.LogTrigger.EventSizeLimit{{EventSizeLimit}}:::bound
             PerWorkflow.LogTrigger.FilterAddressLimit{{FilterAddressLimit}}:::bound
             PerWorkflow.LogTrigger.FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
+        end
+        subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
+            BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
+            BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
         end
     end
 

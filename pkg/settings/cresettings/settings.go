@@ -58,9 +58,13 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:          Bool(true),
 	VaultJWTAuthEnabled:                    Bool(false),
 	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
+	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
+	BaseTriggerRetransmitEnabled:           Bool(false),
+	BaseTriggerRetryInterval:               Duration(30 * time.Second),
+
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
@@ -69,7 +73,7 @@ var Default = Schema{
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
-	VaultPluginBatchSizeLimit:         Int(1),
+	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
 	VaultShareSizeLimit:               Size(600 * config.Byte),
 
@@ -229,9 +233,13 @@ type Schema struct {
 	GatewayVaultManagementEnabled          Setting[bool]
 	VaultJWTAuthEnabled                    Setting[bool]
 	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
+	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
+
+	BaseTriggerRetransmitEnabled Setting[bool]
+	BaseTriggerRetryInterval     Setting[time.Duration]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]

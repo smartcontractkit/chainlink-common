@@ -2,26 +2,21 @@ package dbclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jmoiron/sqlx"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
-var (
-	queueTable         = pgx.Identifier{"queue"}
-	queueInsertColumns = []string{"payload", "attributes"}
-)
-
 type Client struct {
-	db *pgxpool.Pool
+	db *sqlx.DB
 }
 
 var _ beholder.Emitter = (*Client)(nil)
 
-func NewClient(db *pgxpool.Pool) *Client {
+func NewClient(db *sqlx.DB) *Client {
 	return &Client{
 		db: db,
 	}
@@ -35,30 +30,24 @@ func (client *Client) Emit(ctx context.Context, body []byte, attrKVs ...any) err
 }
 
 func (client *Client) BatchEmit(ctx context.Context, messages []beholder.Message, options ...beholder.BatchEmitOption) ([]*chipingress.PublishResult, error) {
-	tx, err := client.db.Begin(ctx)
+	tx, err := client.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("beginning transaction: %w", err)
 	}
-	defer tx.Rollback(ctx) // no-op if transaction has been commited
+	defer tx.Rollback() // no-op if transaction has been committed
 
-	rows := make([][]any, len(messages))
-	for i, msg := range messages {
-		attrs := make([]any, 0, len(msg.Attrs)*2)
-		for k, v := range msg.Attrs {
-			attrs = append(attrs, k, v)
+	for _, msg := range messages {
+		attrs, err := json.Marshal(msg.Attrs)
+		if err != nil {
+			return nil, fmt.Errorf("marshaling attributes: %w", err)
 		}
-		rows[i] = []any{msg.Body, msg.Attrs}
+		_, err = tx.ExecContext(ctx, "INSERT INTO queue (payload, attributes) VALUES ($1, $2)", msg.Body, attrs)
+		if err != nil {
+			return nil, fmt.Errorf("inserting message: %w", err)
+		}
 	}
 
-	n, err := tx.CopyFrom(ctx, queueTable, queueInsertColumns, pgx.CopyFromRows(rows))
-	if err != nil {
-		return nil, fmt.Errorf("copying batch: %w", err)
-	}
-	if n != int64(len(rows)) {
-		return nil, fmt.Errorf("copied %d rows, expected %d", n, len(rows))
-	}
-
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("committing transaction: %w", err)
 	}
 	return nil, nil

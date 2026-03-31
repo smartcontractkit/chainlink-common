@@ -397,7 +397,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	var deleted int
 	for i := range events {
 		detailKVs := cloudEventPublishKVs(ids[i], "retransmit", d.cfg.PublishTimeout, events[i])
-		d.log.Infow("DurableEmitter: Chip Ingress publish attempt (retransmit)", detailKVs...)
+		//d.log.Infow("DurableEmitter: Chip Ingress publish attempt (retransmit)", detailKVs...)
 
 		tPub := time.Now()
 		pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)

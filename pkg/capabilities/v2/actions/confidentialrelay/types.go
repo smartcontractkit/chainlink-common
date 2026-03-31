@@ -41,6 +41,9 @@ type SecretsResponseResult struct {
 // CapabilityRequestParams is the JSON-RPC params for "confidential.capability.execute".
 type CapabilityRequestParams struct {
 	WorkflowID   string `json:"workflow_id"`
+	Owner        string `json:"owner,omitempty"`
+	ExecutionID  string `json:"execution_id,omitempty"`
+	ReferenceID  string `json:"reference_id,omitempty"`
 	CapabilityID string `json:"capability_id"`
 	Payload      string `json:"payload"`
 	Attestation  string `json:"attestation,omitempty"`

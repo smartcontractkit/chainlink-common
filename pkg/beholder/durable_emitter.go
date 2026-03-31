@@ -425,7 +425,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 			"publish_rpc_elapsed", elapsed.String(),
 			"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
 		)
-		d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (retransmit)", pubOKKVs...)
+		//d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (retransmit)", pubOKKVs...)
 		if d.metrics != nil {
 			d.metrics.publishBatchEvOK.Add(ctx, 1)
 		}
@@ -445,7 +445,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 			"store_delete_elapsed", delElapsed.String(),
 			"store_delete_elapsed_ms", delElapsed.Milliseconds(),
 		)
-		d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (retransmit)", delOKKVs...)
+		//d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (retransmit)", delOKKVs...)
 	}
 	if deleted > 0 {
 		d.log.Debugw("retransmitted events", "deleted", deleted, "attempted", len(events))

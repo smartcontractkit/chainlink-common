@@ -1,11 +1,13 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"reflect"
 	"testing"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
@@ -305,4 +307,27 @@ func Criticalf(l Logger, format string, values ...any) {
 func Criticalw(l Logger, msg string, keysAndValues ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalw(msg, keysAndValues...)
+}
+
+// CtxKeyVals returns a slice of logger keyvals derived from the context. Values are looked up and passed along with the
+// given keys, and if an otel span is present then the trace_id, trace_flags, and trace_flags will be included as well.
+// Example: l.With(CtxKeyVals(ctx, "keyFoo", ctxKeyFoo, "keyBar", ctxKeyBar)...)
+// See: [SugaredLogger.WithCtx]
+func CtxKeyVals(ctx context.Context, keyvals ...any) []any {
+	var kvs []any
+	spanCtx := trace.SpanFromContext(ctx).SpanContext()
+	if spanCtx.HasTraceID() {
+		kvs = append(kvs, "trace_id", spanCtx.TraceID().String())
+		kvs = append(kvs, "trace_flags", spanCtx.TraceFlags().String())
+	}
+	if spanCtx.HasSpanID() {
+		kvs = append(kvs, "span_id", spanCtx.SpanID().String())
+	}
+	for i := 0; i < len(keyvals); i += 2 {
+		kvs = append(kvs, keyvals[i])
+		if i+1 < len(keyvals) { // avoid panic on odd length
+			kvs = append(kvs, ctx.Value(keyvals[i+1]))
+		}
+	}
+	return kvs
 }

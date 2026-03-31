@@ -1,5 +1,5 @@
-WorkflowLimit = '200'
-WorkflowExecutionConcurrencyLimit = '200'
+WorkflowLimit = '1000'
+WorkflowExecutionConcurrencyLimit = '1000'
 GatewayIncomingPayloadSizeLimit = '1mb'
 GatewayVaultManagementEnabled = 'true'
 VaultJWTAuthEnabled = 'false'
@@ -29,9 +29,11 @@ VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit = '31.45728mb'
 VaultMaxPerOracleUnexpiredBlobCount = '1000'
 
 [PerOrg]
+WorkflowExecutionConcurrencyLimit = '100'
 ZeroBalancePruningTimeout = '24h0m0s'
 
 [PerOwner]
+WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'
 VaultSecretsLimit = '100'
 

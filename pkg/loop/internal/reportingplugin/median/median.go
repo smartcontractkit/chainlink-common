@@ -108,7 +108,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		return reply.ReportingPluginFactoryID, nil, nil
 	})
-	return ocr2.NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
+	return ocr2.NewReportingPluginFactoryClient(m.BrokerExt, cc), nil
 }
 
 var _ pb.PluginMedianServer = (*pluginMedianServer)(nil)

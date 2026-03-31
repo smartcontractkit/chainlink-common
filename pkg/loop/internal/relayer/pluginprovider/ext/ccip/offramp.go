@@ -613,7 +613,7 @@ func executionStateChangedWithTxMetaToPB(in cciptypes.ExecutionStateChangedWithT
 	return &ccippb.ExecutionStateChangeWithTxMeta{
 		TxMeta: txMetaToPB(in.TxMeta),
 		ExecutionStateChange: &ccippb.ExecutionStateChange{
-			SeqNum: in.ExecutionStateChanged.SequenceNumber,
+			SeqNum: in.SequenceNumber,
 		},
 	}
 }

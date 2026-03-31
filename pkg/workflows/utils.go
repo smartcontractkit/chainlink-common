@@ -141,7 +141,7 @@ func HashTruncateName(name string) string {
 	hash := sha256.Sum256([]byte(name))
 
 	// Encode as hex to ensure UTF8
-	var hashBytes []byte = hash[:]
+	var hashBytes = hash[:]
 	resultHex := hex.EncodeToString(hashBytes)
 
 	// Truncate to 10 bytes

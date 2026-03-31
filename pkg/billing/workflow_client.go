@@ -43,7 +43,6 @@ type workflowClient struct {
 }
 
 type workflowConfig struct {
-	log                  logger.Logger
 	transportCredentials credentials.TransportCredentials
 	tlsCert              string
 	serverName           string

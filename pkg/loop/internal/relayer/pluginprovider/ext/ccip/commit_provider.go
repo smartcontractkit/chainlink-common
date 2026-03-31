@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
 func RegisterCommitProviderServices(s *grpc.Server, provider types.CCIPCommitProvider, brokerExt *net.BrokerExt) {
@@ -46,7 +45,7 @@ func NewCommitProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *C
 }
 
 // NewCommitStoreReader implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) NewCommitStoreReader(ctx context.Context, addr cciptypes.Address) (cciptypes.CommitStoreReader, error) {
+func (e *CommitProviderClient) NewCommitStoreReader(ctx context.Context, addr ccip.Address) (ccip.CommitStoreReader, error) {
 	req := ccippb.NewCommitStoreReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpcClient.NewCommitStoreReader(ctx, &req)
@@ -54,7 +53,7 @@ func (e *CommitProviderClient) NewCommitStoreReader(ctx context.Context, addr cc
 		return nil, err
 	}
 	// TODO BCF-3061: this works because the broker is shared and the id refers to a resource served by the broker
-	commitStoreConn, err := e.BrokerExt.Dial(uint32(resp.CommitStoreReaderServiceId))
+	commitStoreConn, err := e.Dial(uint32(resp.CommitStoreReaderServiceId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.CommitStoreReaderServiceId, err)
 	}
@@ -63,7 +62,7 @@ func (e *CommitProviderClient) NewCommitStoreReader(ctx context.Context, addr cc
 }
 
 // NewOffRampReader implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) NewOffRampReader(ctx context.Context, addr cciptypes.Address) (cciptypes.OffRampReader, error) {
+func (e *CommitProviderClient) NewOffRampReader(ctx context.Context, addr ccip.Address) (ccip.OffRampReader, error) {
 	req := ccippb.NewOffRampReaderRequest{Address: string(addr)}
 
 	resp, err := e.grpcClient.NewOffRampReader(ctx, &req)
@@ -71,7 +70,7 @@ func (e *CommitProviderClient) NewOffRampReader(ctx context.Context, addr ccipty
 		return nil, err
 	}
 	// TODO BCF-3061: this works because the broker is shared and the id refers to a resource served by the broker
-	offRampConn, err := e.BrokerExt.Dial(uint32(resp.OfframpReaderServiceId))
+	offRampConn, err := e.Dial(uint32(resp.OfframpReaderServiceId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup off ramp reader service at %d: %w", resp.OfframpReaderServiceId, err)
 	}
@@ -80,7 +79,7 @@ func (e *CommitProviderClient) NewOffRampReader(ctx context.Context, addr ccipty
 }
 
 // NewOnRampReader implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) NewOnRampReader(ctx context.Context, addr cciptypes.Address, sourceChainSelector uint64, destChainSelector uint64) (cciptypes.OnRampReader, error) {
+func (e *CommitProviderClient) NewOnRampReader(ctx context.Context, addr ccip.Address, sourceChainSelector uint64, destChainSelector uint64) (ccip.OnRampReader, error) {
 	req := ccippb.NewOnRampReaderRequest{Address: string(addr), SourceChainSelector: sourceChainSelector, DestChainSelector: destChainSelector}
 
 	resp, err := e.grpcClient.NewOnRampReader(ctx, &req)
@@ -92,7 +91,7 @@ func (e *CommitProviderClient) NewOnRampReader(ctx context.Context, addr cciptyp
 	// because the broker is shared  between the core node and relayer
 	// this effectively let us proxy connects to resources spawn by the embedded relay
 	// by hijacking the shared broker. id refers to a resource served by the shared broker
-	onRampConn, err := e.BrokerExt.Dial(uint32(resp.OnrampReaderServiceId))
+	onRampConn, err := e.Dial(uint32(resp.OnrampReaderServiceId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup on ramp reader service at %d: %w", resp.OnrampReaderServiceId, err)
 	}
@@ -101,13 +100,13 @@ func (e *CommitProviderClient) NewOnRampReader(ctx context.Context, addr cciptyp
 }
 
 // NewPriceGetter implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) NewPriceGetter(ctx context.Context) (cciptypes.PriceGetter, error) {
+func (e *CommitProviderClient) NewPriceGetter(ctx context.Context) (ccip.PriceGetter, error) {
 	resp, err := e.grpcClient.NewPriceGetter(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
 	}
 	// TODO BCF-3061: make this work for proxied relayer
-	priceGetterConn, err := e.BrokerExt.Dial(uint32(resp.PriceGetterServiceId))
+	priceGetterConn, err := e.Dial(uint32(resp.PriceGetterServiceId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup price getter service at %d: %w", resp.PriceGetterServiceId, err)
 	}
@@ -115,14 +114,14 @@ func (e *CommitProviderClient) NewPriceGetter(ctx context.Context) (cciptypes.Pr
 }
 
 // NewPriceRegistryReader implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) NewPriceRegistryReader(ctx context.Context, addr cciptypes.Address) (cciptypes.PriceRegistryReader, error) {
+func (e *CommitProviderClient) NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error) {
 	req := ccippb.NewPriceRegistryReaderRequest{Address: string(addr)}
 	resp, err := e.grpcClient.NewPriceRegistryReader(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
 	// TODO BCF-3061: make this work for proxied relayer
-	priceReaderConn, err := e.BrokerExt.Dial(uint32(resp.PriceRegistryReaderServiceId))
+	priceReaderConn, err := e.Dial(uint32(resp.PriceRegistryReaderServiceId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup price registry reader service at %d: %w", resp.PriceRegistryReaderServiceId, err)
 	}
@@ -131,7 +130,7 @@ func (e *CommitProviderClient) NewPriceRegistryReader(ctx context.Context, addr 
 }
 
 // SourceNativeToken implements types.CCIPCommitProvider.
-func (e *CommitProviderClient) SourceNativeToken(ctx context.Context, addr cciptypes.Address) (cciptypes.Address, error) {
+func (e *CommitProviderClient) SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not
 	// need the broker to serve it. we can just call the grpc method directly.
 	resp, err := e.grpcClient.SourceNativeToken(ctx, &ccippb.SourceNativeTokenRequest{
@@ -140,7 +139,7 @@ func (e *CommitProviderClient) SourceNativeToken(ctx context.Context, addr ccipt
 	if err != nil {
 		return "", err
 	}
-	return cciptypes.Address(resp.NativeTokenAddress), nil
+	return ccip.Address(resp.NativeTokenAddress), nil
 }
 
 func (e *CommitProviderClient) Close() error {
@@ -193,7 +192,7 @@ func NewCommitProviderServer(impl types.CCIPCommitProvider, brokerExt *net.Broke
 }
 
 func (e *CommitProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.NewOffRampReaderRequest) (*ccippb.NewOffRampReaderResponse, error) {
-	reader, err := e.impl.NewOffRampReader(ctx, cciptypes.Address(req.Address))
+	reader, err := e.impl.NewOffRampReader(ctx, ccip.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +214,7 @@ func (e *CommitProviderServer) NewOffRampReader(ctx context.Context, req *ccippb
 }
 
 func (e *CommitProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.NewOnRampReaderRequest) (*ccippb.NewOnRampReaderResponse, error) {
-	reader, err := e.impl.NewOnRampReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector, req.DestChainSelector)
+	reader, err := e.impl.NewOnRampReader(ctx, ccip.Address(req.Address), req.SourceChainSelector, req.DestChainSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +255,7 @@ func (e *CommitProviderServer) NewPriceGetter(ctx context.Context, _ *emptypb.Em
 }
 
 func (e *CommitProviderServer) NewPriceRegistryReader(ctx context.Context, req *ccippb.NewPriceRegistryReaderRequest) (*ccippb.NewPriceRegistryReaderResponse, error) {
-	reader, err := e.impl.NewPriceRegistryReader(ctx, cciptypes.Address(req.Address))
+	reader, err := e.impl.NewPriceRegistryReader(ctx, ccip.Address(req.Address))
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +277,7 @@ func (e *CommitProviderServer) NewPriceRegistryReader(ctx context.Context, req *
 }
 
 func (e *CommitProviderServer) SourceNativeToken(ctx context.Context, req *ccippb.SourceNativeTokenRequest) (*ccippb.SourceNativeTokenResponse, error) {
-	addr, err := e.impl.SourceNativeToken(ctx, cciptypes.Address(req.SourceRouterAddress))
+	addr, err := e.impl.SourceNativeToken(ctx, ccip.Address(req.SourceRouterAddress))
 	if err != nil {
 		return nil, err
 	}

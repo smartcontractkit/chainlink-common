@@ -55,7 +55,6 @@ func TestNoopClient(t *testing.T) {
 
 	// Chip - verify noop chip client is initialized and functional
 	assert.NotNil(t, noopClient.Chip)
-	var _ chipingress.Client = noopClient.Chip
 	assert.IsType(t, &chipingress.NoopClient{}, noopClient.Chip)
 
 	// Test Chip methods return no errors

@@ -470,7 +470,7 @@ type NoSliceUnderFieldPathError struct {
 }
 
 func (e *NoSliceUnderFieldPathError) Error() string {
-	return fmt.Sprintf("field path did not resolve to a slice")
+	return "field path did not resolve to a slice"
 }
 
 func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Value, error) {

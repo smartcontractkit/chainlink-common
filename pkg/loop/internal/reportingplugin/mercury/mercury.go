@@ -91,7 +91,7 @@ func (c *AdapterClient) NewMercuryV1Factory(ctx context.Context,
 	}
 
 	cc := c.NewClientConn("MercuryV3Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
@@ -139,7 +139,7 @@ func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
 	}
 
 	cc := c.NewClientConn("MercuryV2Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
@@ -189,7 +189,7 @@ func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
 	}
 
 	cc := c.NewClientConn("MercuryV3Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 func (c *AdapterClient) NewMercuryV4Factory(ctx context.Context,
@@ -239,7 +239,7 @@ func (c *AdapterClient) NewMercuryV4Factory(ctx context.Context,
 	}
 
 	cc := c.NewClientConn("MercuryV4Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 var _ mercurypb.MercuryAdapterServer = (*AdapterServer)(nil)

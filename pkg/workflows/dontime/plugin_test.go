@@ -150,6 +150,7 @@ func TestPlugin_Outcome(t *testing.T) {
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
 
 	// Add single request to queue
 	executionID := "workflow-123"

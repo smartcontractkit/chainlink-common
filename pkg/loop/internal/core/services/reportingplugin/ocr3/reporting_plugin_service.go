@@ -129,7 +129,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		return reply.ID, nil, nil
 	})
-	return NewReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
+	return NewReportingPluginFactoryClient(o.BrokerExt, cc), nil
 }
 
 func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -140,7 +140,7 @@ func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context)
 		}
 		return reply.ID, nil, nil
 	})
-	return validation.NewValidationServiceClient(o.PluginClient.BrokerExt, cc), nil
+	return validation.NewValidationServiceClient(o.BrokerExt, cc), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)

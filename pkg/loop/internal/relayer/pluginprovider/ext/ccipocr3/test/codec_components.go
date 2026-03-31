@@ -49,7 +49,6 @@ type staticChainSpecificAddressCodec struct {
 }
 
 func newStaticChainSpecificAddressCodec(lggr logger.Logger, cfg staticChainSpecificAddressCodecConfig) staticChainSpecificAddressCodec {
-	lggr = logger.Named(lggr, "staticChainSpecificAddressCodec")
 	return staticChainSpecificAddressCodec{
 		staticChainSpecificAddressCodecConfig: cfg,
 	}
@@ -165,7 +164,6 @@ type staticCommitPluginCodec struct {
 }
 
 func newStaticCommitPluginCodec(lggr logger.Logger, cfg staticCommitPluginCodecConfig) staticCommitPluginCodec {
-	lggr = logger.Named(lggr, "staticCommitPluginCodec")
 	return staticCommitPluginCodec{
 		staticCommitPluginCodecConfig: cfg,
 	}

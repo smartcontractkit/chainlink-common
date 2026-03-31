@@ -241,7 +241,7 @@ func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEven
 	defer cancel()
 
 	detailKVs := cloudEventPublishKVs(0, "best_effort_no_store", d.cfg.PublishTimeout, eventPb)
-	d.log.Infow("DurableEmitter: Chip Ingress publish attempt (best-effort, not persisted)", detailKVs...)
+	//d.log.Infow("DurableEmitter: Chip Ingress publish attempt (best-effort, not persisted)", detailKVs...)
 
 	t0 := time.Now()
 	_, err := d.client.Publish(ctx, eventPb)
@@ -264,12 +264,12 @@ func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEven
 			"elapsed", elapsed.String(),
 			"elapsed_ms", elapsed.Milliseconds(),
 		)
-		d.log.Infow("DurableEmitter: best-effort Chip publish failed (not persisted, no retry)", failKVs...)
+		//d.log.Infow("DurableEmitter: best-effort Chip publish failed (not persisted, no retry)", failKVs...)
 		return
 	}
 	okKVs := append([]any{}, detailKVs...)
 	okKVs = append(okKVs, "publish_rpc_elapsed_ms", elapsed.Milliseconds())
-	d.log.Infow("DurableEmitter: best-effort Chip publish succeeded (not persisted)", okKVs...)
+	//d.log.Infow("DurableEmitter: best-effort Chip publish succeeded (not persisted)", okKVs...)
 }
 
 // Close signals background loops to stop and waits for them to finish.
@@ -285,7 +285,7 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	defer cancel()
 
 	detailKVs := cloudEventPublishKVs(id, "immediate", d.cfg.PublishTimeout, eventPb)
-	d.log.Infow("DurableEmitter: Chip Ingress publish attempt (immediate)", detailKVs...)
+	//d.log.Infow("DurableEmitter: Chip Ingress publish attempt (immediate)", detailKVs...)
 
 	t0 := time.Now()
 	_, err := d.client.Publish(ctx, eventPb)
@@ -317,7 +317,7 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		"publish_rpc_elapsed", elapsed.String(),
 		"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
 	)
-	d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (immediate)", pubOKKVs...)
+	//d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (immediate)", pubOKKVs...)
 
 	t1 := time.Now()
 	delErr := d.store.Delete(context.Background(), id)
@@ -338,7 +338,7 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		"store_delete_elapsed", delElapsed.String(),
 		"store_delete_elapsed_ms", delElapsed.Milliseconds(),
 	)
-	d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (immediate)", delOKKVs...)
+	//d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (immediate)", delOKKVs...)
 }
 
 func (d *DurableEmitter) retransmitLoop(ctx context.Context) {

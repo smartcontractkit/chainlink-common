@@ -194,7 +194,7 @@ func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int
 		return -1
 	}
 
-	if err := e.module.cfg.MaxMetricPayloadLimiter.Check(e.ctx, config.Size(ptrlen)); err != nil {
+	if err := e.module.cfg.MaxUserMetricPayloadLimiter.Check(e.ctx, config.Size(ptrlen)); err != nil {
 		e.module.cfg.Logger.Warnf("metric payload too large: %d bytes - dropping: %s", ptrlen, err)
 		return -1
 	}
@@ -216,18 +216,18 @@ func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int
 		return -1
 	}
 
-	if err := e.module.cfg.MaxMetricNameLengthLimiter.Check(e.ctx, len(metric.Name)); err != nil {
+	if err := e.module.cfg.MaxUserMetricNameLengthLimiter.Check(e.ctx, len(metric.Name)); err != nil {
 		e.module.cfg.Logger.Warnf("metric name too long: %d chars - dropping: %s", len(metric.Name), err)
 		return -1
 	}
 
-	if err := e.module.cfg.MaxLabelsPerMetricLimiter.Check(e.ctx, len(metric.Labels)); err != nil {
+	if err := e.module.cfg.MaxUserMetricLabelsPerMetricLimiter.Check(e.ctx, len(metric.Labels)); err != nil {
 		e.module.cfg.Logger.Warnf("too many labels on metric %q: %d - dropping: %s", metric.Name, len(metric.Labels), err)
 		return -1
 	}
 
 	for k, v := range metric.Labels {
-		if err := e.module.cfg.MaxLabelValueLengthLimiter.Check(e.ctx, len(v)); err != nil {
+		if err := e.module.cfg.MaxUserMetricLabelValueLengthLimiter.Check(e.ctx, len(v)); err != nil {
 			e.module.cfg.Logger.Warnf("label value too long for key %q on metric %q: %d chars - dropping: %s", k, metric.Name, len(v), err)
 			return -1
 		}

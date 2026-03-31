@@ -50,10 +50,10 @@ var (
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 
-	defaultMaxMetricPayloadBytes = uint32(4096) // 4 KB
-	defaultMaxMetricNameLength   = uint32(128)
-	defaultMaxLabelsPerMetric    = uint32(10)
-	defaultMaxLabelValueLength   = uint32(256)
+	defaultMaxUserMetricPayloadBytes      = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength        = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric   = uint32(10)
+	defaultMaxUserMetricLabelValueLength  = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -82,15 +82,15 @@ type ModuleConfig struct {
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
 
-	EnableUserMetrics              bool
-	MaxMetricPayloadBytes          uint32
-	MaxMetricPayloadLimiter        limits.BoundLimiter[config.Size] // supersedes MaxMetricPayloadBytes if set
-	MaxMetricNameLength            uint32
-	MaxMetricNameLengthLimiter     limits.BoundLimiter[int] // supersedes MaxMetricNameLength if set
-	MaxLabelsPerMetric             uint32
-	MaxLabelsPerMetricLimiter      limits.BoundLimiter[int] // supersedes MaxLabelsPerMetric if set
-	MaxLabelValueLength            uint32
-	MaxLabelValueLengthLimiter     limits.BoundLimiter[int] // supersedes MaxLabelValueLength if set
+	EnableUserMetrics                    bool
+	MaxUserMetricPayloadBytes            uint32
+	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
+	MaxUserMetricNameLength              uint32
+	MaxUserMetricNameLengthLimiter       limits.BoundLimiter[int] // supersedes MaxUserMetricNameLength if set
+	MaxUserMetricLabelsPerMetric         uint32
+	MaxUserMetricLabelsPerMetricLimiter  limits.BoundLimiter[int] // supersedes MaxUserMetricLabelsPerMetric if set
+	MaxUserMetricLabelValueLength        uint32
+	MaxUserMetricLabelValueLengthLimiter limits.BoundLimiter[int] // supersedes MaxUserMetricLabelValueLength if set
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -233,49 +233,49 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxLogCountNodeMode = uint32(defaultMaxLogCountNodeMode)
 	}
 
-	if modCfg.MaxMetricPayloadBytes == 0 {
-		modCfg.MaxMetricPayloadBytes = defaultMaxMetricPayloadBytes
+	if modCfg.MaxUserMetricPayloadBytes == 0 {
+		modCfg.MaxUserMetricPayloadBytes = defaultMaxUserMetricPayloadBytes
 	}
-	if modCfg.MaxMetricNameLength == 0 {
-		modCfg.MaxMetricNameLength = defaultMaxMetricNameLength
+	if modCfg.MaxUserMetricNameLength == 0 {
+		modCfg.MaxUserMetricNameLength = defaultMaxUserMetricNameLength
 	}
-	if modCfg.MaxLabelsPerMetric == 0 {
-		modCfg.MaxLabelsPerMetric = defaultMaxLabelsPerMetric
+	if modCfg.MaxUserMetricLabelsPerMetric == 0 {
+		modCfg.MaxUserMetricLabelsPerMetric = defaultMaxUserMetricLabelsPerMetric
 	}
-	if modCfg.MaxLabelValueLength == 0 {
-		modCfg.MaxLabelValueLength = defaultMaxLabelValueLength
+	if modCfg.MaxUserMetricLabelValueLength == 0 {
+		modCfg.MaxUserMetricLabelValueLength = defaultMaxUserMetricLabelValueLength
 	}
 
 	lf := limits.Factory{Logger: modCfg.Logger}
 
-	if modCfg.MaxMetricPayloadLimiter == nil {
-		limit := settings.Size(config.Size(modCfg.MaxMetricPayloadBytes))
+	if modCfg.MaxUserMetricPayloadLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxUserMetricPayloadBytes))
 		var err error
-		modCfg.MaxMetricPayloadLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		modCfg.MaxUserMetricPayloadLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make metric payload size limiter: %w", err)
 		}
 	}
-	if modCfg.MaxMetricNameLengthLimiter == nil {
-		limit := settings.Int(int(modCfg.MaxMetricNameLength))
+	if modCfg.MaxUserMetricNameLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricNameLength))
 		var err error
-		modCfg.MaxMetricNameLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		modCfg.MaxUserMetricNameLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make metric name length limiter: %w", err)
 		}
 	}
-	if modCfg.MaxLabelsPerMetricLimiter == nil {
-		limit := settings.Int(int(modCfg.MaxLabelsPerMetric))
+	if modCfg.MaxUserMetricLabelsPerMetricLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricLabelsPerMetric))
 		var err error
-		modCfg.MaxLabelsPerMetricLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		modCfg.MaxUserMetricLabelsPerMetricLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make labels per metric limiter: %w", err)
 		}
 	}
-	if modCfg.MaxLabelValueLengthLimiter == nil {
-		limit := settings.Int(int(modCfg.MaxLabelValueLength))
+	if modCfg.MaxUserMetricLabelValueLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricLabelValueLength))
 		var err error
-		modCfg.MaxLabelValueLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		modCfg.MaxUserMetricLabelValueLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make label value length limiter: %w", err)
 		}

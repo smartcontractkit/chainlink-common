@@ -151,11 +151,11 @@ var Default = Schema{
 		WASMSecretsSizeLimit:          Size(config.MByte),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
-		MetricEnabled:                 Bool(false),
-		MetricPayloadLimit:            Size(4 * config.KByte),
-		MetricNameLengthLimit:         Int(128),
-		MetricLabelsPerMetric:         Int(10),
-		MetricLabelValueLength:        Int(256),
+		UserMetricEnabled:             Bool(false),
+		UserMetricPayloadLimit:        Size(4 * config.KByte),
+		UserMetricNameLengthLimit:     Int(128),
+		UserMetricLabelsPerMetric:     Int(10),
+		UserMetricLabelValueLength:    Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
@@ -308,11 +308,11 @@ type Workflows struct {
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
 
-	MetricEnabled          Setting[bool]
-	MetricPayloadLimit     Setting[config.Size]
-	MetricNameLengthLimit  Setting[int] `unit:"{char}"`
-	MetricLabelsPerMetric  Setting[int] `unit:"{label}"`
-	MetricLabelValueLength Setting[int] `unit:"{char}"`
+	UserMetricEnabled          Setting[bool]
+	UserMetricPayloadLimit     Setting[config.Size]
+	UserMetricNameLengthLimit  Setting[int] `unit:"{char}"`
+	UserMetricLabelsPerMetric  Setting[int] `unit:"{label}"`
+	UserMetricLabelValueLength Setting[int] `unit:"{char}"`
 
 	ChainAllowed SettingMap[bool]
 

@@ -160,11 +160,11 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	cfg := &ModuleConfig{
 		Logger:                logger.Test(t),
 		IsUncompressed:        true,
-		EnableUserMetrics:     true,
-		MaxMetricPayloadBytes: 4096,
-		MaxMetricNameLength:   15,
-		MaxLabelsPerMetric:    10,
-		MaxLabelValueLength:   256,
+		EnableUserMetrics:             true,
+		MaxUserMetricPayloadBytes:     4096,
+		MaxUserMetricNameLength:       15,
+		MaxUserMetricLabelsPerMetric:  10,
+		MaxUserMetricLabelValueLength: 256,
 	}
 
 	binary := createTestBinary(metricLimitsBinaryCmd, metricLimitsBinaryLocation, true, t)
@@ -175,7 +175,7 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
 	require.NoError(t, err)
 
-	// The test binary emits 5 metrics (MaxMetricNameLength=15):
+	// The test binary emits 5 metrics (MaxUserMetricNameLength=15):
 	// 1. "valid_counter"             (13 chars) - ALLOWED
 	// 2. "this_name_is_way_too_long" (24 chars > 15) - REJECTED (name too long)
 	// 3. "valid_gauge"               (11 chars) - ALLOWED

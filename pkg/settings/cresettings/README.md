@@ -124,13 +124,13 @@ flowchart
         end
 
         subgraph metrics
-            PerWorkflow.MetricEnabled[/PerWorkflow.MetricEnabled\]:::gate
-            PerWorkflow.MetricPayloadLimit{{PerWorkflow.MetricPayloadLimit}}:::bound
-            PerWorkflow.MetricNameLengthLimit{{PerWorkflow.MetricNameLengthLimit}}:::bound
-            PerWorkflow.MetricLabelsPerMetric{{PerWorkflow.MetricLabelsPerMetric}}:::bound
-            PerWorkflow.MetricLabelValueLength{{PerWorkflow.MetricLabelValueLength}}:::bound
+            PerWorkflow.UserMetricEnabled[/PerWorkflow.UserMetricEnabled\]:::gate
+            PerWorkflow.UserMetricPayloadLimit{{PerWorkflow.UserMetricPayloadLimit}}:::bound
+            PerWorkflow.UserMetricNameLengthLimit{{PerWorkflow.UserMetricNameLengthLimit}}:::bound
+            PerWorkflow.UserMetricLabelsPerMetric{{PerWorkflow.UserMetricLabelsPerMetric}}:::bound
+            PerWorkflow.UserMetricLabelValueLength{{PerWorkflow.UserMetricLabelValueLength}}:::bound
 
-            PerWorkflow.MetricEnabled-->PerWorkflow.MetricPayloadLimit-->PerWorkflow.MetricNameLengthLimit-->PerWorkflow.MetricLabelsPerMetric-->PerWorkflow.MetricLabelValueLength
+            PerWorkflow.UserMetricEnabled-->PerWorkflow.UserMetricPayloadLimit-->PerWorkflow.UserMetricNameLengthLimit-->PerWorkflow.UserMetricLabelsPerMetric-->PerWorkflow.UserMetricLabelValueLength
         end
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time

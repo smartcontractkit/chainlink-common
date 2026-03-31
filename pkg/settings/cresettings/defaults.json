@@ -57,11 +57,11 @@
 		"WASMSecretsSizeLimit": "1mb",
 		"LogLineLimit": "1kb",
 		"LogEventLimit": "1000",
-		"MetricEnabled": "false",
-		"MetricPayloadLimit": "4kb",
-		"MetricNameLengthLimit": "128",
-		"MetricLabelsPerMetric": "10",
-		"MetricLabelValueLength": "256",
+		"UserMetricEnabled": "false",
+		"UserMetricPayloadLimit": "4kb",
+		"UserMetricNameLengthLimit": "128",
+		"UserMetricLabelsPerMetric": "10",
+		"UserMetricLabelValueLength": "256",
 		"ChainAllowed": {
 			"Default": "false",
 			"Values": {

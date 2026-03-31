@@ -391,25 +391,19 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	now := time.Now()
 	ctx := b.ctx
 
-	allowed := b.retransmitAllowed(ctx)
 	interval := b.retryInterval(ctx)
-
-	var warnThreshold, critThreshold time.Duration
-	if b.settings != nil {
-		if interval > 0 {
-			warnThreshold = 5 * interval
-			critThreshold = 20 * interval
-		}
-	} else {
-		warnThreshold = b.undeliveredWarning
-		critThreshold = b.undeliveredCritical
+	if !b.retransmitAllowed(ctx) || interval <= 0 {
+		return
 	}
+
+	warnThreshold := 5 * interval
+	critThreshold := 20 * interval
 
 	b.mu.Lock()
 	toResend := make([]PendingEvent, 0, len(b.pending))
 	for triggerID, pendingForTrigger := range b.pending {
 		for eventID, rec := range pendingForTrigger {
-			if allowed && interval > 0 && (rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval) {
+			if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
 				toResend = append(toResend, PendingEvent{
 					TriggerId: rec.TriggerId,
 					EventId:   rec.EventId,
@@ -431,6 +425,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 				b.undeliveredAlertStates[triggerID][eventID] = state
 			}
 
+			// TODO: consider meters (in addition to logs) for warn/crit so the data is easy to chart.
 			if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
 				b.metrics.EmitUndeliveredWarning(triggerID, eventID)
 				state.emittedWarning = true

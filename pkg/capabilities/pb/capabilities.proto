@@ -42,6 +42,7 @@ message RequestMetadata {
   string workflow_id = 1;
   string workflow_execution_id = 2;
   string workflow_owner = 3;
+  string org_id = 16;
   string workflow_name = 4;
   uint32 workflow_don_id = 6;
   uint32 workflow_don_config_version = 7;

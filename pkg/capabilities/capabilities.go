@@ -171,6 +171,7 @@ type SpendLimit struct {
 type RequestMetadata struct {
 	WorkflowID               string
 	WorkflowOwner            string
+	OrgID                    string
 	WorkflowExecutionID      string
 	WorkflowName             string
 	WorkflowDonID            uint32
@@ -192,7 +193,9 @@ type RequestMetadata struct {
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
 	val := contexts.CREValue(ctx)
-	// preserve org, if set
+	if m.OrgID != "" {
+		val.Org = m.OrgID
+	}
 	val.Owner = m.WorkflowOwner
 	val.Workflow = m.WorkflowID
 	return contexts.WithCRE(ctx, val)

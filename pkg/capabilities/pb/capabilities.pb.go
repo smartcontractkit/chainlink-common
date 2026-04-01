@@ -225,6 +225,7 @@ type RequestMetadata struct {
 	WorkflowId                    string                 `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
 	WorkflowExecutionId           string                 `protobuf:"bytes,2,opt,name=workflow_execution_id,json=workflowExecutionId,proto3" json:"workflow_execution_id,omitempty"`
 	WorkflowOwner                 string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	OrgId                         string                 `protobuf:"bytes,16,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
 	WorkflowName                  string                 `protobuf:"bytes,4,opt,name=workflow_name,json=workflowName,proto3" json:"workflow_name,omitempty"`
 	WorkflowDonId                 uint32                 `protobuf:"varint,6,opt,name=workflow_don_id,json=workflowDonId,proto3" json:"workflow_don_id,omitempty"`
 	WorkflowDonConfigVersion      uint32                 `protobuf:"varint,7,opt,name=workflow_don_config_version,json=workflowDonConfigVersion,proto3" json:"workflow_don_config_version,omitempty"`
@@ -287,6 +288,13 @@ func (x *RequestMetadata) GetWorkflowExecutionId() string {
 func (x *RequestMetadata) GetWorkflowOwner() string {
 	if x != nil {
 		return x.WorkflowOwner
+	}
+	return ""
+}
+
+func (x *RequestMetadata) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
 	}
 	return ""
 }
@@ -1477,12 +1485,13 @@ const file_capabilities_proto_rawDesc = "" +
 	"SpendLimit\x12\x1d\n" +
 	"\n" +
 	"spend_type\x18\x01 \x01(\tR\tspendType\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xcf\x05\n" +
+	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xe6\x05\n" +
 	"\x0fRequestMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x122\n" +
 	"\x15workflow_execution_id\x18\x02 \x01(\tR\x13workflowExecutionId\x12%\n" +
-	"\x0eworkflow_owner\x18\x03 \x01(\tR\rworkflowOwner\x12#\n" +
+	"\x0eworkflow_owner\x18\x03 \x01(\tR\rworkflowOwner\x12\x15\n" +
+	"\x06org_id\x18\x10 \x01(\tR\x05orgId\x12#\n" +
 	"\rworkflow_name\x18\x04 \x01(\tR\fworkflowName\x12&\n" +
 	"\x0fworkflow_don_id\x18\x06 \x01(\rR\rworkflowDonId\x12=\n" +
 	"\x1bworkflow_don_config_version\x18\a \x01(\rR\x18workflowDonConfigVersion\x12!\n" +

@@ -45,6 +45,8 @@ flowchart
 %%      DON nodes → gateway (separate from the inbound trigger flow)
         GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
+        GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
+        GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout

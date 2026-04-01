@@ -125,6 +125,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, true, cfg.GatewayVaultManagementEnabled.DefaultValue)
 	assert.Equal(t, false, cfg.VaultJWTAuthEnabled.DefaultValue)
 	assert.Equal(t, false, cfg.VaultOrgIdAsSecretOwnerEnabled.DefaultValue)
+	assert.Equal(t, false, cfg.VaultForceEmptyOCRRounds.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)

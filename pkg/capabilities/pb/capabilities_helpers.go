@@ -73,7 +73,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
 			SpendLimits:              spendLimitsToProto(req.Metadata.SpendLimits),
 			WorkflowTag:              req.Metadata.WorkflowTag,
-			ExecutionTimestamp:        timeToProto(req.Metadata.ExecutionTimestamp),
+			ExecutionTimestamp:       timeToProto(req.Metadata.ExecutionTimestamp),
 		},
 		Inputs:        values.ProtoMap(inputs),
 		Config:        values.ProtoMap(config),
@@ -94,13 +94,31 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		}
 	}
 
+	var attestation *OCRAttestation
+	if resp.OCRAttestation != nil {
+		respAtt := resp.OCRAttestation
+		attestation = &OCRAttestation{
+			ConfigDigest:   respAtt.ConfigDigest[:],
+			SequenceNumber: respAtt.SequenceNumber,
+		}
+
+		attestation.Signatures = make([]*AttributedSignature, len(respAtt.Sigs))
+		for idx, sig := range respAtt.Sigs {
+			attestation.Signatures[idx] = &AttributedSignature{
+				Signer:    sig.Signer,
+				Signature: sig.Signature,
+			}
+		}
+	}
+
 	return &CapabilityResponse{
 		Value: values.ProtoMap(resp.Value),
 		Metadata: &ResponseMetadata{
 			Metering: metering,
 			CapdonN:  resp.Metadata.CapDON_N,
 		},
-		Payload: resp.Payload,
+		Payload:        resp.Payload,
+		OcrAttestation: attestation,
 	}
 }
 
@@ -136,7 +154,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			DecodedWorkflowName:      md.DecodedWorkflowName,
 			SpendLimits:              spendLimitsFromProto(md.SpendLimits),
 			WorkflowTag:              md.WorkflowTag,
-			ExecutionTimestamp:        timeFromProto(md.ExecutionTimestamp),
+			ExecutionTimestamp:       timeFromProto(md.ExecutionTimestamp),
 		},
 		Config:        config,
 		Inputs:        inputs,
@@ -159,7 +177,6 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 	}
 
 	var metering []capabilities.MeteringNodeDetail
-
 	if pr.Metadata != nil {
 		metering = make([]capabilities.MeteringNodeDetail, len(pr.Metadata.Metering))
 
@@ -172,13 +189,34 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		}
 	}
 
+	var attestation *capabilities.OCRAttestation
+	if pr.OcrAttestation != nil {
+		if len(pr.OcrAttestation.ConfigDigest) != 32 {
+			return capabilities.CapabilityResponse{}, fmt.Errorf("invalid config digest length: expected 32 bytes, got %d", len(pr.OcrAttestation.ConfigDigest))
+		}
+
+		attestation = &capabilities.OCRAttestation{
+			ConfigDigest:   [32]byte(pr.OcrAttestation.ConfigDigest),
+			SequenceNumber: pr.OcrAttestation.SequenceNumber,
+			Sigs:           make([]capabilities.AttributedSignature, len(pr.OcrAttestation.Signatures)),
+		}
+
+		for idx, sig := range pr.OcrAttestation.Signatures {
+			attestation.Sigs[idx] = capabilities.AttributedSignature{
+				Signer:    sig.Signer,
+				Signature: sig.Signature,
+			}
+		}
+	}
+
 	resp := capabilities.CapabilityResponse{
 		Value: val,
 		Metadata: capabilities.ResponseMetadata{
 			Metering: metering,
 			CapDON_N: pr.Metadata.GetCapdonN(),
 		},
-		Payload: pr.Payload,
+		Payload:        pr.Payload,
+		OCRAttestation: attestation,
 	}
 
 	return resp, err
@@ -336,7 +374,7 @@ func TriggerRegistrationRequestToProto(req capabilities.TriggerRegistrationReque
 			WorkflowRegistryChainSelector: md.WorkflowRegistryChainSelector,
 			WorkflowRegistryAddress:       md.WorkflowRegistryAddress,
 			EngineVersion:                 md.EngineVersion,
-			ExecutionTimestamp:             timeToProto(md.ExecutionTimestamp),
+			ExecutionTimestamp:            timeToProto(md.ExecutionTimestamp),
 		},
 		Config:  values.ProtoMap(config),
 		Payload: req.Payload,
@@ -401,7 +439,7 @@ func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capab
 			WorkflowRegistryChainSelector: md.WorkflowRegistryChainSelector,
 			WorkflowRegistryAddress:       md.WorkflowRegistryAddress,
 			EngineVersion:                 md.EngineVersion,
-			ExecutionTimestamp:             timeFromProto(md.ExecutionTimestamp),
+			ExecutionTimestamp:            timeFromProto(md.ExecutionTimestamp),
 		},
 		Config:  config,
 		Payload: req.Payload,

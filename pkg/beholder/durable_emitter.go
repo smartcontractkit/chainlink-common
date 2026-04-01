@@ -31,6 +31,11 @@ type DurableEmitterConfig struct {
 	EventTTL time.Duration
 	// PublishTimeout is the per-RPC deadline for each Publish call.
 	PublishTimeout time.Duration
+	// PurgeInterval is how often the purge loop runs to batch-delete rows that
+	// were marked delivered (Postgres). Zero defaults to 250ms.
+	PurgeInterval time.Duration
+	// PurgeBatchSize is the maximum rows removed per PurgeDelivered call. Zero defaults to 500.
+	PurgeBatchSize int
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
 	Hooks *DurableEmitterHooks
@@ -49,12 +54,13 @@ type DurableEmitterConfig struct {
 type DurableEmitterHooks struct {
 	// OnImmediatePublish is called after each async Publish in publishAndDelete (every attempt).
 	OnImmediatePublish func(elapsed time.Duration, err error)
-	// OnImmediateDelete is called after Delete following a successful immediate Publish.
+	// OnImmediateDelete is called after MarkDelivered following a successful immediate Publish.
 	OnImmediateDelete func(elapsed time.Duration, err error)
 	// OnRetransmitBatchPublish is called after each retransmit Publish (one RPC per queued event).
 	OnRetransmitBatchPublish func(elapsed time.Duration, eventCount int, err error)
-	// OnRetransmitBatchDeletes is called after a retransmit tick with total time and successful delete count.
-	OnRetransmitBatchDeletes func(elapsed time.Duration, deleteCount int)
+	// OnRetransmitBatchDeletes is called after a retransmit tick with total time and count of
+	// successful MarkDelivered calls (mem store may delete rows; Postgres sets delivered_at).
+	OnRetransmitBatchDeletes func(elapsed time.Duration, markedDeliveredCount int)
 }
 
 func DefaultDurableEmitterConfig() DurableEmitterConfig {
@@ -65,6 +71,8 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		ExpiryInterval:      1 * time.Minute,
 		EventTTL:            24 * time.Hour,
 		PublishTimeout:      5 * time.Second,
+		PurgeInterval:       250 * time.Millisecond,
+		PurgeBatchSize:      500,
 	}
 }
 
@@ -72,9 +80,11 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 //
 // On Emit the event is serialized and written to a DurableEventStore. Once the
 // insert succeeds Emit returns nil — the caller has a durable guarantee. An
-// immediate async Publish is attempted; on success the record is deleted. If
-// that fails a background retransmit loop will pick the event up and retry via
-// Publish (one RPC per pending row per tick, up to RetransmitBatchSize).
+// immediate async Publish is attempted; on success the record is MarkDelivered
+// (excluded from retries). Postgres stores then purge physical rows in batches;
+// in-memory stores remove the row immediately. If Publish fails, a background
+// retransmit loop retries via Publish (one RPC per pending row per tick, up to
+// RetransmitBatchSize).
 //
 // A separate expiry loop garbage-collects events older than EventTTL to bound
 // table growth.
@@ -156,16 +166,17 @@ func NewDurableEmitter(
 	}, nil
 }
 
-// Start launches the retransmit and expiry background loops.
+// Start launches the retransmit, expiry, and purge background loops.
 // Cancel the supplied context or call Close to stop them.
 func (d *DurableEmitter) Start(ctx context.Context) {
-	n := 2
+	n := 3
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		n++
 	}
 	d.wg.Add(n)
 	go d.retransmitLoop(ctx)
 	go d.expiryLoop(ctx)
+	go d.purgeLoop(ctx)
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		go d.metricsLoop(ctx)
 	}
@@ -320,25 +331,25 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	//d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (immediate)", pubOKKVs...)
 
 	t1 := time.Now()
-	delErr := d.store.Delete(context.Background(), id)
+	markErr := d.store.MarkDelivered(context.Background(), id)
 	if h := d.cfg.Hooks; h != nil && h.OnImmediateDelete != nil {
-		h.OnImmediateDelete(time.Since(t1), delErr)
+		h.OnImmediateDelete(time.Since(t1), markErr)
 	}
-	if delErr == nil && d.metrics != nil {
+	if markErr == nil && d.metrics != nil {
 		d.metrics.deliverComplete.Add(mctx, 1)
 	}
-	delElapsed := time.Since(t1)
-	if delErr != nil {
-		d.log.Errorw("failed to delete delivered event", "id", id, "error", delErr)
+	markElapsed := time.Since(t1)
+	if markErr != nil {
+		d.log.Errorw("failed to mark delivered event", "id", id, "error", markErr)
 		return
 	}
 	delOKKVs := append([]any{}, detailKVs...)
 	delOKKVs = append(delOKKVs,
 		"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
-		"store_delete_elapsed", delElapsed.String(),
-		"store_delete_elapsed_ms", delElapsed.Milliseconds(),
+		"store_mark_delivered_elapsed", markElapsed.String(),
+		"store_mark_delivered_elapsed_ms", markElapsed.Milliseconds(),
 	)
-	//d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (immediate)", delOKKVs...)
+	//d.log.Infow("DurableEmitter: durable row marked delivered after successful Chip publish (immediate)", delOKKVs...)
 }
 
 func (d *DurableEmitter) retransmitLoop(ctx context.Context) {
@@ -365,6 +376,24 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		d.log.Errorw("failed to list pending events", "error", err)
 		return
 	}
+
+	if obs, ok := d.store.(DurableQueueObserver); ok {
+		st, obsErr := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
+		if obsErr != nil {
+			d.log.Warnw("DurableEmitter: retransmit scan ObserveDurableQueue failed", "error", obsErr)
+		} else {
+			d.log.Infow("DurableEmitter: retransmit pending scan",
+				"pending_rows", st.Depth,
+				"pending_payload_bytes", st.PayloadBytes,
+				"oldest_pending_age", st.OldestPendingAge.String(),
+				"near_ttl_rows", st.NearTTLCount,
+				"retransmit_list_batch", len(pending),
+				"retransmit_after", d.cfg.RetransmitAfter.String(),
+				"list_limit", d.cfg.RetransmitBatchSize,
+			)
+		}
+	}
+
 	if len(pending) == 0 {
 		return
 	}
@@ -394,7 +423,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 
 	// One Publish per row so a single bad or rejected event does not block the rest of the slice.
 	tDel := time.Now()
-	var deleted int
+	var markedDelivered int
 	for i := range events {
 		detailKVs := cloudEventPublishKVs(ids[i], "retransmit", d.cfg.PublishTimeout, events[i])
 		//d.log.Infow("DurableEmitter: Chip Ingress publish attempt (retransmit)", detailKVs...)
@@ -429,29 +458,65 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		if d.metrics != nil {
 			d.metrics.publishBatchEvOK.Add(ctx, 1)
 		}
-		tDelOne := time.Now()
-		if delErr := d.store.Delete(ctx, ids[i]); delErr != nil {
-			d.log.Errorw("failed to delete retransmitted event", "id", ids[i], "error", delErr)
+		tMarkOne := time.Now()
+		if markErr := d.store.MarkDelivered(ctx, ids[i]); markErr != nil {
+			d.log.Errorw("failed to mark retransmitted event delivered", "id", ids[i], "error", markErr)
 			continue
 		}
-		deleted++
+		markedDelivered++
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(ctx, 1)
 		}
-		delElapsed := time.Since(tDelOne)
+		markElapsed := time.Since(tMarkOne)
 		delOKKVs := append([]any{}, detailKVs...)
 		delOKKVs = append(delOKKVs,
 			"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
-			"store_delete_elapsed", delElapsed.String(),
-			"store_delete_elapsed_ms", delElapsed.Milliseconds(),
+			"store_mark_delivered_elapsed", markElapsed.String(),
+			"store_mark_delivered_elapsed_ms", markElapsed.Milliseconds(),
 		)
 		//d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (retransmit)", delOKKVs...)
 	}
-	if deleted > 0 {
-		d.log.Debugw("retransmitted events", "deleted", deleted, "attempted", len(events))
+	if markedDelivered > 0 {
+		d.log.Infow("retransmitted events",
+			"marked_delivered", markedDelivered,
+			"attempted", len(events),
+		)
 	}
-	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil && deleted > 0 {
-		h.OnRetransmitBatchDeletes(time.Since(tDel), deleted)
+	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil && markedDelivered > 0 {
+		h.OnRetransmitBatchDeletes(time.Since(tDel), markedDelivered)
+	}
+}
+
+func (d *DurableEmitter) purgeLoop(ctx context.Context) {
+	defer d.wg.Done()
+	interval := d.cfg.PurgeInterval
+	if interval <= 0 {
+		interval = 250 * time.Millisecond
+	}
+	batch := d.cfg.PurgeBatchSize
+	if batch <= 0 {
+		batch = 500
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-d.stopCh:
+			return
+		case <-ticker.C:
+			for {
+				n, err := d.store.PurgeDelivered(ctx, batch)
+				if err != nil {
+					d.log.Errorw("failed to purge delivered chip durable events", "error", err)
+					break
+				}
+				if n == 0 {
+					break
+				}
+			}
+		}
 	}
 }
 
@@ -482,16 +547,20 @@ func (d *DurableEmitter) expiryLoop(ctx context.Context) {
 	}
 }
 
+func (d *DurableEmitter) queueStatsNearExpiryLead() time.Duration {
+	lead := 5 * time.Minute
+	if d.cfg.Metrics != nil && d.cfg.Metrics.NearExpiryLead > 0 {
+		lead = d.cfg.Metrics.NearExpiryLead
+	}
+	return lead
+}
+
 func (d *DurableEmitter) metricsLoop(ctx context.Context) {
 	defer d.wg.Done()
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
 		poll = 10 * time.Second
-	}
-	lead := mc.NearExpiryLead
-	if lead <= 0 {
-		lead = 5 * time.Minute
 	}
 	ticker := time.NewTicker(poll)
 	defer ticker.Stop()
@@ -507,7 +576,7 @@ func (d *DurableEmitter) metricsLoop(ctx context.Context) {
 			}
 			bctx := context.Background()
 			if obs, ok := d.store.(DurableQueueObserver); ok {
-				d.metrics.pollQueueGauges(bctx, obs, d.cfg.EventTTL, lead, mc.MaxQueuePayloadBytes)
+				d.metrics.pollQueueGauges(bctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}
 			if mc.RecordProcessStats {
 				d.metrics.recordProcessMem(bctx)

@@ -39,8 +39,16 @@ type DurableQueueObserver interface {
 type DurableEventStore interface {
 	// Insert persists a serialized event and returns its assigned ID.
 	Insert(ctx context.Context, payload []byte) (int64, error)
-	// Delete removes a successfully delivered event.
+	// Delete physically removes a row (corrupt payloads, policy drops, tests).
 	Delete(ctx context.Context, id int64) error
+	// MarkDelivered records successful delivery to Chip. The row must no longer
+	// appear in ListPending. Postgres implementations typically set delivered_at;
+	// a background PurgeDelivered removes rows later. MemDurableEventStore removes
+	// the row immediately (same as Delete).
+	MarkDelivered(ctx context.Context, id int64) error
+	// PurgeDelivered deletes up to batchLimit rows already marked delivered.
+	// Implementations that remove rows in MarkDelivered may return 0, nil always.
+	PurgeDelivered(ctx context.Context, batchLimit int) (deleted int64, err error)
 	// ListPending returns events created before the given cutoff, ordered by
 	// creation time ascending, up to limit rows.
 	ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error)
@@ -83,6 +91,14 @@ func (m *MemDurableEventStore) Delete(_ context.Context, id int64) error {
 	defer m.mu.Unlock()
 	delete(m.events, id)
 	return nil
+}
+
+func (m *MemDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
+	return m.Delete(ctx, id)
+}
+
+func (m *MemDurableEventStore) PurgeDelivered(_ context.Context, _ int) (int64, error) {
+	return 0, nil
 }
 
 func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -35,6 +36,20 @@ func (s *metricsInstrumentedStore) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
+func (s *metricsInstrumentedStore) MarkDelivered(ctx context.Context, id int64) error {
+	t0 := time.Now()
+	err := s.inner.MarkDelivered(ctx, id)
+	s.m.recordStoreOp(ctx, "mark_delivered", time.Since(t0), err)
+	return err
+}
+
+func (s *metricsInstrumentedStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
+	t0 := time.Now()
+	n, err := s.inner.PurgeDelivered(ctx, batchLimit)
+	s.m.recordStoreOp(ctx, "purge_delivered", time.Since(t0), err)
+	return n, err
+}
+
 func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
 	t0 := time.Now()
 	evs, err := s.inner.ListPending(ctx, createdBefore, limit)
@@ -52,7 +67,7 @@ func (s *metricsInstrumentedStore) DeleteExpired(ctx context.Context, ttl time.D
 func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
 	o, ok := s.inner.(DurableQueueObserver)
 	if !ok {
-		return DurableQueueStats{}, nil
+		return DurableQueueStats{}, errors.New("inner DurableEventStore does not implement DurableQueueObserver")
 	}
 	return o.ObserveDurableQueue(ctx, eventTTL, nearExpiryLead)
 }

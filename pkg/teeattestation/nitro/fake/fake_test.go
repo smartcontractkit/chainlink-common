@@ -2,10 +2,10 @@ package nitrofake
 
 import (
 	"testing"
-	"time"
 
-	"github.com/hf/nitrite"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation/nitro"
 )
 
 func TestAttestor_RoundTrip(t *testing.T) {
@@ -17,19 +17,8 @@ func TestAttestor_RoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, attestation)
 
-	result, err := nitrite.Verify(attestation, nitrite.VerifyOptions{
-		CurrentTime: time.Now(),
-		Roots:       fa.CARoots(),
-	})
+	err = nitro.ValidateAttestationWithRoots(attestation, userData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
 	require.NoError(t, err)
-	require.True(t, result.SignatureOK, "ECDSA signature should be valid")
-	require.Equal(t, userData, result.Document.UserData)
-	require.Equal(t, "SHA384", result.Document.Digest)
-	require.Equal(t, "fake-enclave-module", result.Document.ModuleID)
-	require.Len(t, result.Document.PCRs, 3)
-	require.Len(t, result.Document.PCRs[0], 48)
-	require.Len(t, result.Document.PCRs[1], 48)
-	require.Len(t, result.Document.PCRs[2], 48)
 }
 
 func TestAttestor_TrustedPCRsJSON(t *testing.T) {

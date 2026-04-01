@@ -1,7 +1,7 @@
 // Package nitrofake provides an Attestor that produces structurally valid
-// COSE Sign1 attestation documents. These documents pass nitrite.Verify's
-// full validation chain (CBOR parsing, cert chain, ECDSA signature, UserData,
-// PCRs) without requiring real Nitro hardware.
+// COSE Sign1 attestation documents. These documents pass the local Nitro
+// attestation validator's full validation chain (CBOR parsing, cert chain,
+// ECDSA signature, UserData, PCRs) without requiring real Nitro hardware.
 package nitrofake
 
 import (
@@ -21,7 +21,7 @@ import (
 )
 
 // Attestor produces structurally valid COSE Sign1 attestation documents
-// that pass nitrite.Verify with a custom CA root.
+// that pass the local Nitro validator with a custom CA root.
 type Attestor struct {
 	rootKey     *ecdsa.PrivateKey
 	rootCert    *x509.Certificate

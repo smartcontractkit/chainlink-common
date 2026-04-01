@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/hf/nitrite"
 )
 
 // HexBytes is a custom type that unmarshals hex strings into a byte slice
@@ -71,35 +69,32 @@ func ValidateAttestationWithRoots(attestation, expectedUserData, trustedMeasurem
 	if !ok {
 		return errors.New("failed to parse CA roots")
 	}
-	result, err := nitrite.Verify(attestation, nitrite.VerifyOptions{
-		CurrentTime: time.Now(),
-		Roots:       pool,
-	})
+	result, err := verifyAttestationDocument(attestation, pool, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to verify nitro attestation: %w", err)
 	}
-	if !result.SignatureOK {
+	if !result.signatureOK {
 		return errors.New("signature verification failed")
 	}
 
-	if !bytes.Equal(expectedUserData, result.Document.UserData) {
-		return fmt.Errorf("expected user data %x, got %x", expectedUserData, result.Document.UserData)
+	if !bytes.Equal(expectedUserData, result.document.UserData) {
+		return fmt.Errorf("expected user data %x, got %x", expectedUserData, result.document.UserData)
 	}
 
 	var trustedPCRs PCRs
 	if err := json.Unmarshal(trustedMeasurements, &trustedPCRs); err != nil {
 		return fmt.Errorf("failed to unmarshal trusted PCRs: %w", err)
 	}
-	if len(result.Document.PCRs) < 3 {
-		return fmt.Errorf("attestation document has %d PCRs, need at least 3", len(result.Document.PCRs))
+	if len(result.document.PCRs) < 3 {
+		return fmt.Errorf("attestation document has %d PCRs, need at least 3", len(result.document.PCRs))
 	}
-	if !bytes.Equal(result.Document.PCRs[0], trustedPCRs.PCR0) {
+	if !bytes.Equal(result.document.PCRs[0], trustedPCRs.PCR0) {
 		return fmt.Errorf("PCR0 mismatch: expected %x", trustedPCRs.PCR0)
 	}
-	if !bytes.Equal(result.Document.PCRs[1], trustedPCRs.PCR1) {
+	if !bytes.Equal(result.document.PCRs[1], trustedPCRs.PCR1) {
 		return fmt.Errorf("PCR1 mismatch: expected %x", trustedPCRs.PCR1)
 	}
-	if !bytes.Equal(result.Document.PCRs[2], trustedPCRs.PCR2) {
+	if !bytes.Equal(result.document.PCRs[2], trustedPCRs.PCR2) {
 		return fmt.Errorf("PCR2 mismatch: expected %x", trustedPCRs.PCR2)
 	}
 	return nil

@@ -435,8 +435,8 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
-	warnThreshold := 5 * interval
-	critThreshold := 20 * interval
+	warnThreshold := 1 * interval
+	critThreshold := 3 * interval
 
 	b.mu.Lock()
 	toResend := make([]PendingEvent, 0, len(b.pending))

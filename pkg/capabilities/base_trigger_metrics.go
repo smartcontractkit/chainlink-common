@@ -23,6 +23,7 @@ type BaseTriggerBeholderMetrics struct {
 	timeToAckMs              metric.Int64Histogram
 	ackAttempts              metric.Int64Histogram // attempts distribution at ACK time
 	activeRegistrations      metric.Int64UpDownCounter
+	pendingEvents            metric.Int64UpDownCounter
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
@@ -75,6 +76,11 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
+	pendingEvents, err := beholder.GetMeter().Int64UpDownCounter("capabilities_base_trigger_pending_events")
+	if err != nil {
+		return nil, err
+	}
+
 	return &BaseTriggerBeholderMetrics{
 		capabilityID:             capabilityID,
 		retryCount:               retryCount,
@@ -88,6 +94,7 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		timeToAckMs:              timeToAckMs,
 		ackAttempts:              ackAttempts,
 		activeRegistrations:      activeRegistrations,
+		pendingEvents:            pendingEvents,
 	}, nil
 }
 
@@ -180,6 +187,12 @@ func (m *BaseTriggerBeholderMetrics) EmitUndeliveredCritical(triggerID, eventID 
 	)
 }
 
+func (m *BaseTriggerBeholderMetrics) AddPendingEvents(delta int64) {
+	m.pendingEvents.Add(context.Background(), delta,
+		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
+	)
+}
+
 type noopBaseTriggerMetrics struct{}
 
 var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
@@ -195,3 +208,4 @@ func (noopBaseTriggerMetrics) EmitUndeliveredWarning(string, string)            
 func (noopBaseTriggerMetrics) EmitUndeliveredCritical(string, string)              {}
 func (noopBaseTriggerMetrics) IncAckError(string)                                  {}
 func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                          {}
+func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}

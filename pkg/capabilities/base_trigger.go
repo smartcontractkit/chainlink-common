@@ -45,6 +45,8 @@ type BaseTriggerMetrics interface {
 	IncAckError(reason string)
 	// IncAckMemoryOutcome records how an ACK related to the in-memory pending map: hit, miss_no_trigger_bucket, miss_no_event, miss_nil_record.
 	IncAckMemoryOutcome(outcome string)
+	// AddPendingEvents adjusts the live gauge of events awaiting ACK. Positive on insert, negative on ACK/unregister.
+	AddPendingEvents(delta int64)
 }
 
 type undeliveredState struct {
@@ -185,6 +187,10 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	}
 	b.mu.Unlock()
 
+	if n := int64(len(recs)); n > 0 {
+		b.metrics.AddPendingEvents(n)
+	}
+
 	b.wg.Add(1)
 	go func() {
 		defer b.wg.Done()
@@ -212,6 +218,7 @@ func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan
 func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	b.mu.Lock()
 	_, existed := b.inboxes[triggerID]
+	pendingCount := int64(len(b.pending[triggerID]))
 	delete(b.inboxes, triggerID)
 	delete(b.pending, triggerID)
 	delete(b.undeliveredAlertStates, triggerID)
@@ -219,6 +226,9 @@ func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 
 	if existed {
 		b.metrics.DecActiveTriggers()
+	}
+	if pendingCount > 0 {
+		b.metrics.AddPendingEvents(-pendingCount)
 	}
 
 	if err := b.store.DeleteEventsForTrigger(b.ctx, triggerID); err != nil {
@@ -258,6 +268,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.pending[triggerID][te.ID] = &rec
 	b.mu.Unlock()
 
+	b.metrics.AddPendingEvents(1)
 	b.trySend(rec)
 	return nil
 }
@@ -343,6 +354,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAckMemoryOutcome("hit")
 		b.metrics.IncAck(triggerId, eventId)
 		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
+		b.metrics.AddPendingEvents(-1)
 	case hadNilPendingRecord:
 		b.lggr.Warnw("base trigger ACK: pending map had nil record for event (treating as miss; reconciling store)",
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)

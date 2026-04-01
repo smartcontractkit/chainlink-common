@@ -32,6 +32,7 @@ message CallMsg {
   bytes from = 1; // sender address in evm address [20]byte fix-sized array format
   bytes to = 2; // contract address in evm address [20]byte fix-sized array format
   bytes data = 3; // solidity-spec abi encoded bytes
+  uint64 gas = 4; // gas limit, 0 is unbounded
 }
 
 message Topics {

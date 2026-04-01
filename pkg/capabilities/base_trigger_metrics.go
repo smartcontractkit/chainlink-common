@@ -24,6 +24,7 @@ type BaseTriggerBeholderMetrics struct {
 	ackAttempts              metric.Int64Histogram // attempts distribution at ACK time
 	activeRegistrations      metric.Int64UpDownCounter
 	pendingEvents            metric.Int64UpDownCounter
+	stuckEvents              metric.Int64UpDownCounter
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
@@ -81,6 +82,11 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
+	stuckEvents, err := beholder.GetMeter().Int64UpDownCounter("capabilities_base_trigger_stuck_events")
+	if err != nil {
+		return nil, err
+	}
+
 	return &BaseTriggerBeholderMetrics{
 		capabilityID:             capabilityID,
 		retryCount:               retryCount,
@@ -95,6 +101,7 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		ackAttempts:              ackAttempts,
 		activeRegistrations:      activeRegistrations,
 		pendingEvents:            pendingEvents,
+		stuckEvents:              stuckEvents,
 	}, nil
 }
 
@@ -193,6 +200,18 @@ func (m *BaseTriggerBeholderMetrics) AddPendingEvents(delta int64) {
 	)
 }
 
+func (m *BaseTriggerBeholderMetrics) IncStuckEvent(triggerID, eventID string) {
+	m.stuckEvents.Add(context.Background(), 1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) DecStuckEvent(triggerID, eventID string) {
+	m.stuckEvents.Add(context.Background(), -1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
 type noopBaseTriggerMetrics struct{}
 
 var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
@@ -209,3 +228,5 @@ func (noopBaseTriggerMetrics) EmitUndeliveredCritical(string, string)           
 func (noopBaseTriggerMetrics) IncAckError(string)                                  {}
 func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                          {}
 func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}
+func (noopBaseTriggerMetrics) IncStuckEvent(string, string)                        {}
+func (noopBaseTriggerMetrics) DecStuckEvent(string, string)                        {}

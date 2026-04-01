@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775057917509,
+  "lastUpdate": 1775065137741,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -43020,6 +43020,66 @@ window.BENCHMARK_DATA = {
             "value": 143800,
             "unit": "ns/op",
             "extra": "8289 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c6f706795ce51cdda606be793488def573842bbf",
+          "message": "Allow capability DONs to include OCR attestation of the responses (#1907)\n\n* Allow capability DONs to include OCR attestation of the responses\n\n* Added tests for ResponseToReportData\n\n* Move OCR attestation to response\n\n* Set OCRAttestation to the response\n\n* Hash based OCR feature flag",
+          "timestamp": "2026-04-01T17:29:07Z",
+          "tree_id": "81a23c113241283cbbd47c43647e85192feacf75",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c6f706795ce51cdda606be793488def573842bbf"
+        },
+        "date": 1775065135754,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 702.4,
+            "unit": "ns/op",
+            "extra": "1521219 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97198,
+            "unit": "ns/op",
+            "extra": "12337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.5,
+            "unit": "ns/op",
+            "extra": "2986333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98063,
+            "unit": "ns/op",
+            "extra": "12205 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26568,
+            "unit": "ns/op",
+            "extra": "45132 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 146979,
+            "unit": "ns/op",
+            "extra": "8048 times\n4 procs"
           }
         ]
       }

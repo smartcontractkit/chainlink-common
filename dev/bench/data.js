@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775071497942,
+  "lastUpdate": 1775129570466,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -43200,6 +43200,66 @@ window.BENCHMARK_DATA = {
             "value": 147798,
             "unit": "ns/op",
             "extra": "8065 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f3b4624fd79a764734f40b91ef73907498cc929",
+          "message": "Add teeattestation package for TEE attestation validation (#1899)\n\n* Add teeattestation package for TEE attestation validation\n\n* Remove caRootsPEM param from ValidateAttestation\n\nValidateAttestation now always uses the hardcoded AWS Nitro root cert.\nValidateAttestationWithRoots is available for testing with fake enclaves\nthat use self-signed CA roots.\n\n* Fix lint: errors.New, rename FakeAttestor, nolint for CBOR tags\n\n* Fix goimports alignment in CBOR struct tags\n\n* Check PCR count before accessing indices\n\n* Rename package fake to nitrofake\n\n* Merge teeattestation into root module\n\n* Use fmt.Sprintf for fixed-format PCR JSON in nitrofake\n\n* add relay metadata fields for remote capability execution (#1948)\n\n* Remove nitrite from Nitro attestation validation\n\n* Run gomodtidy after cbor upgrade\n\n---------\n\nCo-authored-by: mchain0 <maciej.wisniewski@smartcontract.com>",
+          "timestamp": "2026-04-02T11:23:09Z",
+          "tree_id": "0d5ff30e908d81ca3822d684ca7c1ca3df227d77",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0f3b4624fd79a764734f40b91ef73907498cc929"
+        },
+        "date": 1775129568553,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 379.7,
+            "unit": "ns/op",
+            "extra": "2786295 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93199,
+            "unit": "ns/op",
+            "extra": "12829 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.1,
+            "unit": "ns/op",
+            "extra": "3009438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92763,
+            "unit": "ns/op",
+            "extra": "12908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26548,
+            "unit": "ns/op",
+            "extra": "45156 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 137294,
+            "unit": "ns/op",
+            "extra": "8155 times\n4 procs"
           }
         ]
       }

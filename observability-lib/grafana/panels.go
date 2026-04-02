@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"time"
+
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
@@ -29,6 +31,7 @@ const (
 type Query struct {
 	Expr      string
 	Legend    string
+	Interval  string // i.e. 30s, 2m, a lower limit for the interval that will be sent to datasource and used by $__interval/range variables
 	Instant   bool
 	Min       float64
 	Format    prometheus.PromQueryFormat
@@ -41,6 +44,10 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 		LegendFormat(query.Legend).
 		Format(query.Format)
 
+	if isValidDuration(query.Interval) {
+		res.Interval(query.Interval)
+	}
+
 	if query.Instant {
 		res.Instant()
 	}
@@ -49,6 +56,11 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 	}
 
 	return res
+}
+
+func isValidDuration(s string) bool {
+	_, err := time.ParseDuration(s)
+	return err == nil
 }
 
 type LegendOptions struct {

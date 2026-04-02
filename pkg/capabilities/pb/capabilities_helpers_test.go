@@ -1,10 +1,15 @@
 package pb_test
 
 import (
+	"crypto/rand"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -81,6 +86,51 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 	resp, err := pb.CapabilityResponseFromProto(&pr)
 	require.NoError(t, err)
 	assert.Equal(t, capabilities.CapabilityResponse{Value: values.EmptyMap()}, resp)
+
+	t.Run("invalid config digest length", func(t *testing.T) {
+		pr := &pb.CapabilityResponse{
+			Value: values.ProtoMap(values.EmptyMap()),
+			Metadata: &pb.ResponseMetadata{
+				CapdonN: 1,
+			},
+			OcrAttestation: &pb.OCRAttestation{
+				ConfigDigest:   []byte("too-short"),
+				SequenceNumber: 0,
+			},
+		}
+		_, err := pb.CapabilityResponseFromProto(pr)
+		require.ErrorContains(t, err, "invalid config digest length")
+	})
+	t.Run("Round-trip", func(t *testing.T) {
+		configDigest := ocrtypes.ConfigDigest{}
+		_, err := rand.Read(configDigest[:])
+		require.NoError(t, err)
+		original := capabilities.CapabilityResponse{
+			Value: values.EmptyMap(),
+			Metadata: capabilities.ResponseMetadata{
+				Metering: []capabilities.MeteringNodeDetail{
+					{
+						Peer2PeerID: "peer_id",
+						SpendUnit:   "spend_unit",
+						SpendValue:  "spend_value",
+					},
+				},
+			},
+			OCRAttestation: &capabilities.OCRAttestation{
+				ConfigDigest:   configDigest,
+				SequenceNumber: 12345,
+				Sigs: []capabilities.AttributedSignature{
+					{Signer: 0, Signature: []byte("sig0bytes")},
+					{Signer: 1, Signature: []byte("sig1bytes")},
+					{Signer: 99, Signature: []byte{}},
+				},
+			},
+		}
+		protoResp := pb.CapabilityResponseToProto(original)
+		roundTripped, err := pb.CapabilityResponseFromProto(protoResp)
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(original, roundTripped, protocmp.Transform()), "Expected capability response to be identical after round trip")
+	})
 }
 
 func TestMarshalUnmarshalRequest(t *testing.T) {
@@ -89,6 +139,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowID:               "test-workflow-id",
 			WorkflowExecutionID:      testWorkflowID,
 			WorkflowOwner:            "0xaa",
+			OrgID:                    "org-123",
 			WorkflowName:             testWorkflowName,
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
@@ -98,7 +149,8 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 				{SpendType: "COMPUTE", Limit: "1000"},
 				{SpendType: "GAS_12345", Limit: "1000000"},
 			},
-			WorkflowTag: "test-workflow-tag",
+			WorkflowTag:        "test-workflow-tag",
+			ExecutionTimestamp: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -185,6 +237,7 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 			WorkflowID:               "test-workflow-id",
 			WorkflowExecutionID:      testWorkflowID,
 			WorkflowOwner:            testWorkflowOwner,
+			OrgID:                    "org-456",
 			WorkflowName:             testWorkflowName,
 			WorkflowDonID:            2,
 			WorkflowDonConfigVersion: 3,
@@ -193,7 +246,8 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 			SpendLimits: []capabilities.SpendLimit{
 				{SpendType: "GAS", Limit: "5000"},
 			},
-			WorkflowTag: "workflow-tag",
+			WorkflowTag:        "workflow-tag",
+			ExecutionTimestamp: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

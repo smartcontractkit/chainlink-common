@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775132198727,
+  "lastUpdate": 1775140704887,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -43320,6 +43320,66 @@ window.BENCHMARK_DATA = {
             "value": 140424,
             "unit": "ns/op",
             "extra": "8256 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yepishevsanya@gmail.com",
+            "name": "chudilka1",
+            "username": "chudilka1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "55813cb39867f2ed4f62b3e9c00b6e03252f4129",
+          "message": "Add queryOptions.Inreval that may be used by interval/range vars (#1957)\n\n* Add query options Inreval to that may be used by interval/range vars\n\n* Extend grafana interval validation; fix row.Collapsed option usage",
+          "timestamp": "2026-04-02T14:31:23Z",
+          "tree_id": "decbedb658834128d2fd466c803b5c1c5acf7014",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/55813cb39867f2ed4f62b3e9c00b6e03252f4129"
+        },
+        "date": 1775140702583,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.9,
+            "unit": "ns/op",
+            "extra": "3379437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92186,
+            "unit": "ns/op",
+            "extra": "12999 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.3,
+            "unit": "ns/op",
+            "extra": "3011314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92975,
+            "unit": "ns/op",
+            "extra": "12896 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26678,
+            "unit": "ns/op",
+            "extra": "45044 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139768,
+            "unit": "ns/op",
+            "extra": "8407 times\n4 procs"
           }
         ]
       }

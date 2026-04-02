@@ -1,7 +1,8 @@
 package grafana
 
 import (
-	"time"
+	"regexp"
+	"strconv"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
@@ -58,9 +59,14 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 	return res
 }
 
-func isValidDuration(s string) bool {
-	_, err := time.ParseDuration(s)
-	return err == nil
+func isValidDuration(interval string) bool {
+	var grafanaDurationRegexp = regexp.MustCompile(`^(\d+)(ms|[smhdwMy])$`) // ms, s, m, h, d, w, M, y
+	m := grafanaDurationRegexp.FindStringSubmatch(interval)
+	if m == nil {
+		return false
+	}
+	n, _ := strconv.ParseInt(m[1], 10, 64)
+	return n > 0
 }
 
 type LegendOptions struct {

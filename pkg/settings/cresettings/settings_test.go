@@ -71,6 +71,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:100",
 	"GatewayIncomingPayloadSizeLimit": "14kb",
     "GatewayVaultManagementEnabled": "true",
+	"GatewayConfidentialRelayGlobalRate": "20rps:7",
+	"GatewayConfidentialRelayPerNodeRate": "4rps:2",
 	"PerOrg": {
 		"ZeroBalancePruningTimeout": "48h"
 	},
@@ -126,6 +128,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, false, cfg.VaultJWTAuthEnabled.DefaultValue)
 	assert.Equal(t, false, cfg.VaultOrgIdAsSecretOwnerEnabled.DefaultValue)
 	assert.Equal(t, false, cfg.VaultForceEmptyOCRRounds.DefaultValue)
+	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
+	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)

@@ -61,6 +61,8 @@ var Default = Schema{
 	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetransmitEnabled:           Bool(false),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
@@ -230,6 +232,9 @@ var Default = Schema{
 		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -243,6 +248,8 @@ type Schema struct {
 	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetransmitEnabled Setting[bool]
@@ -329,6 +336,7 @@ type Workflows struct {
 
 	FeatureMultiTriggerExecutionIDsActiveAt     Setting[config.Timestamp] // Deprecated
 	FeatureMultiTriggerExecutionIDsActivePeriod Setting[Range[config.Timestamp]]
+	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

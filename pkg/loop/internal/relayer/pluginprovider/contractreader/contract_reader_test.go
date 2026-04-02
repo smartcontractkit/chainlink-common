@@ -357,15 +357,6 @@ type valConfidencePair struct {
 	confidenceLevel primitives.ConfidenceLevel
 }
 
-type eventConfidencePair struct {
-	testStruct      TestStruct
-	confidenceLevel primitives.ConfidenceLevel
-}
-
-type dynamicTopicEventConfidencePair struct {
-	someDynamicTopicEvent SomeDynamicTopicEvent
-	confidenceLevel       primitives.ConfidenceLevel
-}
 type event struct {
 	contractID      string
 	event           any
@@ -676,17 +667,18 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 
 			req := requestContractBatch[i]
 
-			if req.ReadName == MethodReturningUint64 {
+			switch req.ReadName {
+			case MethodReturningUint64:
 				returnVal = req.ReturnVal.(*uint64)
 				if requestContract.Name == AnyContractName {
 					*returnVal.(*uint64) = AnyValueToReadWithoutAnArgument
 				} else {
 					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
 				}
-			} else if req.ReadName == MethodReturningUint64Slice {
+			case MethodReturningUint64Slice:
 				returnVal = req.ReturnVal.(*[]uint64)
 				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
-			} else if req.ReadName == MethodReturningSeenStruct {
+			case MethodReturningSeenStruct:
 				ts := *req.Params.(*TestStruct)
 				ts.AccountStruct = AccountStruct{
 					Account:    anyAccountBytes,
@@ -697,7 +689,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 					TestStruct: ts,
 					ExtraField: AnyExtraValue,
 				}
-			} else if req.ReadName == MethodTakingLatestParamsReturningTestStruct {
+			case MethodTakingLatestParamsReturningTestStruct:
 				latestParams := requestContractBatch[i].Params.(*LatestParams)
 				if latestParams.I <= 0 {
 					returnVal = &LatestParams{}
@@ -705,7 +697,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 				} else {
 					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
 				}
-			} else {
+			default:
 				return nil, errors.New("unknown read " + req.ReadName)
 			}
 

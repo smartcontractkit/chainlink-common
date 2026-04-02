@@ -60,10 +60,10 @@ func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
 	})
 
 	t.Run("GetSendRequestsBetweenSeqNums", func(t *testing.T) {
-		got, err := client.GetSendRequestsBetweenSeqNums(t.Context(), OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMin, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMax, OnRampReader.getSendRequestsBetweenSeqNums.Finalized)
+		got, err := client.GetSendRequestsBetweenSeqNums(t.Context(), OnRampReader.SeqNumMin, OnRampReader.SeqNumMax, OnRampReader.Finalized)
 		require.NoError(t, err)
-		if !reflect.DeepEqual(OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got) {
-			t.Errorf("expected %v, got %v", OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got)
+		if !reflect.DeepEqual(OnRampReader.EVM2EVMMessageWithTxMeta, got) {
+			t.Errorf("expected %v, got %v", OnRampReader.EVM2EVMMessageWithTxMeta, got)
 		}
 	})
 

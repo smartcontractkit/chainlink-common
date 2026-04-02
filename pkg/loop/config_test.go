@@ -1,7 +1,6 @@
 package loop
 
 import (
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -245,15 +244,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 }
 
 func TestGetMap(t *testing.T) {
-	os.Setenv("TEST_PREFIX_KEY1", "value1")
-	os.Setenv("TEST_PREFIX_KEY2", "value2")
-	os.Setenv("OTHER_KEY", "othervalue")
-
-	defer func() {
-		os.Unsetenv("TEST_PREFIX_KEY1")
-		os.Unsetenv("TEST_PREFIX_KEY2")
-		os.Unsetenv("OTHER_KEY")
-	}()
+	t.Setenv("TEST_PREFIX_KEY1", "value1")
+	t.Setenv("TEST_PREFIX_KEY2", "value2")
+	t.Setenv("OTHER_KEY", "othervalue")
 
 	result := getMap("TEST_PREFIX_")
 
@@ -292,7 +285,7 @@ func TestManagedGRPCClientConfig(t *testing.T) {
 
 		assert.NotNil(t, clientConfig.Logger)
 		assert.Equal(t, []plugin.Protocol{plugin.ProtocolGRPC}, clientConfig.AllowedProtocols)
-		assert.Equal(t, brokerConfig.GRPCOpts.DialOpts, clientConfig.GRPCDialOptions)
+		assert.Equal(t, brokerConfig.DialOpts, clientConfig.GRPCDialOptions)
 		assert.True(t, clientConfig.Managed)
 	})
 }

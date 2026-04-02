@@ -46,7 +46,7 @@ type timeToUnixModifier struct {
 }
 
 func (m *timeToUnixModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
-	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	offChainValue, itemType, err := m.selectType(offChainValue, m.offChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (m *timeToUnixModifier) TransformToOnChain(offChainValue any, itemType stri
 }
 
 func (m *timeToUnixModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
-	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	onChainValue, itemType, err := m.selectType(onChainValue, m.onChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}

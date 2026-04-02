@@ -45,6 +45,8 @@ flowchart
 %%      DON nodes → gateway (separate from the inbound trigger flow)
         GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
+        GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
+        GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -138,6 +140,7 @@ flowchart
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
+        PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end

@@ -34,9 +34,7 @@ func ConvertViewPayloadFromProto(proto *ViewPayload) (*typeaptos.ViewPayload, er
 	}
 
 	args := make([][]byte, len(proto.Args))
-	for i, protoArg := range proto.Args {
-		args[i] = protoArg
-	}
+	copy(args, proto.Args)
 
 	return &typeaptos.ViewPayload{
 		Module:   module,
@@ -67,9 +65,7 @@ func ConvertViewPayloadToProto(payload *typeaptos.ViewPayload) (*ViewPayload, er
 	}
 
 	protoArgs := make([][]byte, len(payload.Args))
-	for i, arg := range payload.Args {
-		protoArgs[i] = arg
-	}
+	copy(protoArgs, payload.Args)
 
 	return &ViewPayload{
 		Module:   protoModule,

@@ -63,13 +63,13 @@ func TestFactory_NewTimeLimiter(t *testing.T) {
 			ctx = contexts.WithCRE(ctx, tt.cre)
 
 			func(ctx context.Context) {
-				ctx, done, err := tl.WithTimeout(ctx)
+				_, done, err := tl.WithTimeout(ctx)
 				require.NoError(t, err)
 				defer done()
 				time.Sleep(10 * time.Millisecond)
 			}(ctx)
 			func(ctx context.Context) {
-				ctx, done, err := tl.WithTimeout(ctx)
+				_, done, err := tl.WithTimeout(ctx)
 				require.NoError(t, err)
 				defer done()
 				time.Sleep(2 * time.Second)

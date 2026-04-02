@@ -29,7 +29,7 @@ func TestExecService(t *testing.T) {
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
 	}, cciptest.ExecutionProvider(lggr), cciptest.ExecutionProvider(lggr), 0, 0, "")
-	hook := exec.PluginService.XXXTestHook()
+	hook := exec.XXXTestHook()
 	servicetest.Run(t, exec)
 
 	t.Run("control", func(t *testing.T) {

@@ -3,6 +3,7 @@ package capabilities
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"maps"
 	"strings"
@@ -359,4 +360,114 @@ func TestRegistrationMetadata_ContextWithCRE(t *testing.T) {
 	md := RegistrationMetadata{WorkflowOwner: "owner-id", WorkflowID: "workflow-id"}
 	ctx = md.ContextWithCRE(ctx)
 	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+}
+
+func testResponseMetadata(spendUnit, spendValue string) ResponseMetadata {
+	return ResponseMetadata{
+		Metering: []MeteringNodeDetail{{SpendUnit: spendUnit, SpendValue: spendValue}},
+	}
+}
+
+func TestResponseToReportData(t *testing.T) {
+	t.Run("deterministic golden digest", func(t *testing.T) {
+		// SHA3-256 over domain "CapabilityResponseReportData:v1" plus length-prefixed fields.
+		want, err := hex.DecodeString("5d39c100ecf57f83b095cc9e129e0be24809e208af97a40e6447932749272a50")
+		require.NoError(t, err)
+		require.Len(t, want, 32)
+
+		got, err := ResponseToReportData(
+			"wf-exec",
+			"ref-1",
+			[]byte("payload"),
+			testResponseMetadata("unit", "42"),
+		)
+		require.NoError(t, err)
+		assert.Equal(t, want, got[:])
+	})
+
+	t.Run("same inputs yield same hash", func(t *testing.T) {
+		md := testResponseMetadata("u", "1")
+		a, err := ResponseToReportData("wf", "ref", []byte("p"), md)
+		require.NoError(t, err)
+		b, err := ResponseToReportData("wf", "ref", []byte("p"), md)
+		require.NoError(t, err)
+		assert.Equal(t, a, b)
+	})
+
+	t.Run("nil payload matches empty payload", func(t *testing.T) {
+		md := testResponseMetadata("u", "v")
+		a, err := ResponseToReportData("w", "r", nil, md)
+		require.NoError(t, err)
+		b, err := ResponseToReportData("w", "r", []byte{}, md)
+		require.NoError(t, err)
+		assert.Equal(t, a, b)
+	})
+
+	t.Run("each field affects the digest", func(t *testing.T) {
+		base, err := ResponseToReportData(
+			"workflow-exec-id",
+			"reference-id",
+			[]byte{0x01, 0x02},
+			testResponseMetadata("spend-unit", "spend-value"),
+		)
+		require.NoError(t, err)
+
+		other, err := ResponseToReportData(
+			"other-workflow",
+			"reference-id",
+			[]byte{0x01, 0x02},
+			testResponseMetadata("spend-unit", "spend-value"),
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, base, other)
+
+		other, err = ResponseToReportData(
+			"workflow-exec-id",
+			"other-ref",
+			[]byte{0x01, 0x02},
+			testResponseMetadata("spend-unit", "spend-value"),
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, base, other)
+
+		other, err = ResponseToReportData(
+			"workflow-exec-id",
+			"reference-id",
+			[]byte{0x01},
+			testResponseMetadata("spend-unit", "spend-value"),
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, base, other)
+
+		other, err = ResponseToReportData(
+			"workflow-exec-id",
+			"reference-id",
+			[]byte{0x01, 0x02},
+			testResponseMetadata("other-unit", "spend-value"),
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, base, other)
+
+		other, err = ResponseToReportData(
+			"workflow-exec-id",
+			"reference-id",
+			[]byte{0x01, 0x02},
+			testResponseMetadata("spend-unit", "other-value"),
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, base, other)
+	})
+
+	t.Run("metering must contain exactly one entry", func(t *testing.T) {
+		_, err := ResponseToReportData("w", "r", nil, ResponseMetadata{})
+		require.ErrorContains(t, err, "failed to extract metering from metadata: unexpected number of metering records received from peer 12D3KooW9pNAk8aiBuGVQtWRdbkLmo5qVL3e2h5UxbN2Nz9ttwiw: got 0, want 1")
+
+		_, err = ResponseToReportData("w", "r", nil, ResponseMetadata{
+			Metering: []MeteringNodeDetail{
+				{SpendUnit: "a", SpendValue: "1"},
+				{SpendUnit: "b", SpendValue: "2"},
+			},
+		})
+		require.ErrorContains(t, err, "failed to extract metering from metadata: unexpected number of metering records received from peer 12D3KooW9pNAk8aiBuGVQtWRdbkLmo5qVL3e2h5UxbN2Nz9ttwiw: got 2, want 1")
+	})
 }

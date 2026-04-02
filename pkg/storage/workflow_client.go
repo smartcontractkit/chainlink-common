@@ -66,7 +66,6 @@ func (wc *workflowClient) Close() error {
 }
 
 type workflowConfig struct {
-	log                  logger.Logger
 	transportCredentials credentials.TransportCredentials
 	tlsCert              string
 	serverName           string

@@ -80,9 +80,7 @@ func (b *Builder) AddVars(items ...cog.Builder[dashboard.VariableModel]) {
 func (b *Builder) AddRow(title string, options ...RowOptions) {
 	row := dashboard.NewRowBuilder(title)
 	for _, o := range options {
-		if o.Collapsed {
-			row.Collapsed(true)
-		}
+		row.Collapsed(o.Collapsed)
 	}
 	b.dashboardBuilder.WithRow(row)
 }

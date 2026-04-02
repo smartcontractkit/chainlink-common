@@ -8,6 +8,8 @@
 	"VaultForceEmptyOCRRounds": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
+	"GatewayConfidentialRelayGlobalRate": "50rps:10",
+	"GatewayConfidentialRelayPerNodeRate": "10rps:10",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetransmitEnabled": "false",
 	"BaseTriggerRetryInterval": "30s",
@@ -137,6 +139,7 @@
 			"CallLimit": "5"
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC",
-		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
+		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

@@ -295,7 +295,9 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	if modCfg.InitialFuel > 0 {
 		cfg.SetConsumeFuel(true)
 	}
-	cfg.CacheConfigLoadDefault()
+	if err := cfg.CacheConfigLoadDefault(); err != nil {
+		return nil, fmt.Errorf("failed to load cache config: %w", err)
+	}
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	SetUnwinding(cfg) // Handled differenty based on host OS.
 

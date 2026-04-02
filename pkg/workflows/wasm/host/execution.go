@@ -233,7 +233,7 @@ func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int
 		}
 	}
 
-	if err := e.executor.EmitUserMetric(metric); err != nil {
+	if err := e.executor.EmitUserMetric(e.ctx, metric); err != nil {
 		e.module.cfg.Logger.Errorf("error emitting user metric: %s", err)
 		return -1
 	}

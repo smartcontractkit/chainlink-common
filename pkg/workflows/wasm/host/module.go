@@ -138,7 +138,7 @@ type ExecutionHelper interface {
 
 	EmitUserLog(log string) error
 
-	EmitUserMetric(metric *wfpb.WorkflowUserMetric) error
+	EmitUserMetric(ctx context.Context, metric *wfpb.WorkflowUserMetric) error
 }
 
 type module struct {

@@ -150,7 +150,7 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	}).Maybe()
 
 	var emittedMetrics []*wfpb.WorkflowUserMetric
-	mockExecutionHelper.EXPECT().EmitUserMetric(mock.Anything).RunAndReturn(func(m *wfpb.WorkflowUserMetric) error {
+	mockExecutionHelper.EXPECT().EmitUserMetric(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, m *wfpb.WorkflowUserMetric) error {
 		emittedMetrics = append(emittedMetrics, m)
 		return nil
 	})

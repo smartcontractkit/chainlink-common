@@ -131,17 +131,17 @@ func (_c *MockExecutionHelper_EmitUserLog_Call) RunAndReturn(run func(string) er
 	return _c
 }
 
-// EmitUserMetric provides a mock function with given fields: metric
-func (_m *MockExecutionHelper) EmitUserMetric(metric *v2.WorkflowUserMetric) error {
-	ret := _m.Called(metric)
+// EmitUserMetric provides a mock function with given fields: ctx, metric
+func (_m *MockExecutionHelper) EmitUserMetric(ctx context.Context, metric *v2.WorkflowUserMetric) error {
+	ret := _m.Called(ctx, metric)
 
 	if len(ret) == 0 {
 		panic("no return value specified for EmitUserMetric")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*v2.WorkflowUserMetric) error); ok {
-		r0 = rf(metric)
+	if rf, ok := ret.Get(0).(func(context.Context, *v2.WorkflowUserMetric) error); ok {
+		r0 = rf(ctx, metric)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -155,14 +155,15 @@ type MockExecutionHelper_EmitUserMetric_Call struct {
 }
 
 // EmitUserMetric is a helper method to define mock.On call
+//   - ctx context.Context
 //   - metric *v2.WorkflowUserMetric
-func (_e *MockExecutionHelper_Expecter) EmitUserMetric(metric interface{}) *MockExecutionHelper_EmitUserMetric_Call {
-	return &MockExecutionHelper_EmitUserMetric_Call{Call: _e.mock.On("EmitUserMetric", metric)}
+func (_e *MockExecutionHelper_Expecter) EmitUserMetric(ctx interface{}, metric interface{}) *MockExecutionHelper_EmitUserMetric_Call {
+	return &MockExecutionHelper_EmitUserMetric_Call{Call: _e.mock.On("EmitUserMetric", ctx, metric)}
 }
 
-func (_c *MockExecutionHelper_EmitUserMetric_Call) Run(run func(metric *v2.WorkflowUserMetric)) *MockExecutionHelper_EmitUserMetric_Call {
+func (_c *MockExecutionHelper_EmitUserMetric_Call) Run(run func(ctx context.Context, metric *v2.WorkflowUserMetric)) *MockExecutionHelper_EmitUserMetric_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*v2.WorkflowUserMetric))
+		run(args[0].(context.Context), args[1].(*v2.WorkflowUserMetric))
 	})
 	return _c
 }
@@ -172,7 +173,7 @@ func (_c *MockExecutionHelper_EmitUserMetric_Call) Return(_a0 error) *MockExecut
 	return _c
 }
 
-func (_c *MockExecutionHelper_EmitUserMetric_Call) RunAndReturn(run func(*v2.WorkflowUserMetric) error) *MockExecutionHelper_EmitUserMetric_Call {
+func (_c *MockExecutionHelper_EmitUserMetric_Call) RunAndReturn(run func(context.Context, *v2.WorkflowUserMetric) error) *MockExecutionHelper_EmitUserMetric_Call {
 	_c.Call.Return(run)
 	return _c
 }

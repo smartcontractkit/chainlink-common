@@ -57,7 +57,7 @@ func newRangeLimiter[N Number](f Factory, bound settings.SettingSpec[settings.Ra
 		key:   bound.GetKey(),
 		scope: bound.GetScope(),
 	}
-	b.updater.recordLimit = func(ctx context.Context, n settings.Range[N]) { b.recordBound(ctx, n) }
+	b.recordLimit = func(ctx context.Context, n settings.Range[N]) { b.recordBound(ctx, n) }
 
 	if f.Meter != nil {
 		if b.key == "" {

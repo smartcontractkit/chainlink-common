@@ -129,7 +129,7 @@ func TestMessageProtobufFlattening(t *testing.T) {
 			if tc.message.FeeTokenAmount.Int == nil && convertedMessage.FeeTokenAmount.Int == nil {
 				assert.True(t, true, "Both FeeTokenAmount.Int are nil")
 			} else if tc.message.FeeTokenAmount.Int != nil && convertedMessage.FeeTokenAmount.Int != nil {
-				assert.Equal(t, tc.message.FeeTokenAmount.Int.String(), convertedMessage.FeeTokenAmount.Int.String())
+				assert.Equal(t, tc.message.FeeTokenAmount.String(), convertedMessage.FeeTokenAmount.String())
 			} else {
 				assert.Equal(t, tc.message.FeeTokenAmount.Int, convertedMessage.FeeTokenAmount.Int, "FeeTokenAmount.Int nil mismatch")
 			}
@@ -137,7 +137,7 @@ func TestMessageProtobufFlattening(t *testing.T) {
 			if tc.message.FeeValueJuels.Int == nil && convertedMessage.FeeValueJuels.Int == nil {
 				assert.True(t, true, "Both FeeValueJuels.Int are nil")
 			} else if tc.message.FeeValueJuels.Int != nil && convertedMessage.FeeValueJuels.Int != nil {
-				assert.Equal(t, tc.message.FeeValueJuels.Int.String(), convertedMessage.FeeValueJuels.Int.String())
+				assert.Equal(t, tc.message.FeeValueJuels.String(), convertedMessage.FeeValueJuels.String())
 			} else {
 				assert.Equal(t, tc.message.FeeValueJuels.Int, convertedMessage.FeeValueJuels.Int, "FeeValueJuels.Int nil mismatch")
 			}
@@ -149,7 +149,7 @@ func TestMessageProtobufFlattening(t *testing.T) {
 				assert.Equal(t, []byte(original.SourcePoolAddress), []byte(converted.SourcePoolAddress))
 				assert.Equal(t, []byte(original.DestTokenAddress), []byte(converted.DestTokenAddress))
 				assert.Equal(t, []byte(original.ExtraData), []byte(converted.ExtraData))
-				assert.Equal(t, original.Amount.Int.String(), converted.Amount.Int.String())
+				assert.Equal(t, original.Amount.String(), converted.Amount.String())
 			}
 		})
 	}
@@ -209,7 +209,7 @@ func TestRMNTypesConversion(t *testing.T) {
 
 			// Verify round-trip conversion
 			assert.Equal(t, tc.rmnReport.ReportVersionDigest, convertedReport.ReportVersionDigest)
-			assert.Equal(t, tc.rmnReport.DestChainID.Int.String(), convertedReport.DestChainID.Int.String())
+			assert.Equal(t, tc.rmnReport.DestChainID.String(), convertedReport.DestChainID.String())
 			assert.Equal(t, tc.rmnReport.DestChainSelector, convertedReport.DestChainSelector)
 			assert.Equal(t, []byte(tc.rmnReport.RmnRemoteContractAddress), []byte(convertedReport.RmnRemoteContractAddress))
 			assert.Equal(t, []byte(tc.rmnReport.OfframpAddress), []byte(convertedReport.OfframpAddress))
@@ -262,7 +262,7 @@ func TestProtobufFlatteningRegressionTest(t *testing.T) {
 		assert.Equal(t, []byte(msg.Receiver), []byte(convertedMsg.Receiver), "Receiver corruption indicates protobuf flattening regression")
 		assert.Equal(t, []byte(msg.ExtraArgs), []byte(convertedMsg.ExtraArgs), "ExtraArgs corruption indicates protobuf flattening regression")
 		assert.Equal(t, []byte(msg.FeeToken), []byte(convertedMsg.FeeToken), "FeeToken corruption indicates protobuf flattening regression")
-		assert.Equal(t, msg.FeeValueJuels.Int.String(), convertedMsg.FeeValueJuels.Int.String(), "FeeValueJuels missing indicates missing field regression")
+		assert.Equal(t, msg.FeeValueJuels.String(), convertedMsg.FeeValueJuels.String(), "FeeValueJuels missing indicates missing field regression")
 	})
 }
 
@@ -727,7 +727,7 @@ func TestTokenPriceMapConversion(t *testing.T) {
 			for token, originalPrice := range tc.priceMap {
 				convertedPrice, exists := convertedMap[token]
 				require.True(t, exists, "token %s should exist in converted map", string(token))
-				assert.Equal(t, originalPrice.Int.String(), convertedPrice.Int.String(), "price should survive round-trip for token %s", string(token))
+				assert.Equal(t, originalPrice.String(), convertedPrice.String(), "price should survive round-trip for token %s", string(token))
 			}
 		})
 	}
@@ -843,7 +843,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 				assert.Equal(t, []byte(originalAmount.SourcePoolAddress), []byte(convertedAmount.SourcePoolAddress))
 				assert.Equal(t, []byte(originalAmount.DestTokenAddress), []byte(convertedAmount.DestTokenAddress))
 				assert.Equal(t, []byte(originalAmount.ExtraData), []byte(convertedAmount.ExtraData))
-				assert.Equal(t, originalAmount.Amount.Int.String(), convertedAmount.Amount.Int.String())
+				assert.Equal(t, originalAmount.Amount.String(), convertedAmount.Amount.String())
 				assert.Equal(t, []byte(originalAmount.DestExecData), []byte(convertedAmount.DestExecData))
 			}
 		})
@@ -1493,8 +1493,8 @@ func TestPbToBigInt(t *testing.T) {
 				assert.Nil(t, result.Int, "result.Int should be nil when expected is nil")
 			} else {
 				assert.NotNil(t, result.Int, "result.Int should not be nil when expected is not nil")
-				assert.Equal(t, tc.expected.Int.String(), result.Int.String(), "converted BigInt should match expected value")
-				assert.Equal(t, tc.expected.Int.Cmp(result.Int), 0, "BigInt comparison should be equal")
+				assert.Equal(t, tc.expected.String(), result.String(), "converted BigInt should match expected value")
+				assert.Equal(t, tc.expected.Cmp(result.Int), 0, "BigInt comparison should be equal")
 			}
 		})
 	}
@@ -1620,8 +1620,8 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 				assert.Nil(t, convertedValue.Int, "nil should round-trip to nil")
 			} else {
 				assert.NotNil(t, convertedValue.Int, "converted value should not be nil for non-nil input")
-				assert.Equal(t, originalValue.Int.String(), convertedValue.Int.String(), "round-trip conversion should preserve value")
-				assert.Equal(t, originalValue.Int.Cmp(convertedValue.Int), 0, "round-trip BigInt comparison should be equal")
+				assert.Equal(t, originalValue.String(), convertedValue.String(), "round-trip conversion should preserve value")
+				assert.Equal(t, originalValue.Cmp(convertedValue.Int), 0, "round-trip BigInt comparison should be equal")
 			}
 		})
 	}
@@ -1637,7 +1637,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 		result2 := pbToBigInt(input)
 
 		assert.Equal(t, big.NewInt(0).String(), result1.String())
-		assert.Equal(t, big.NewInt(0).String(), result2.Int.String())
+		assert.Equal(t, big.NewInt(0).String(), result2.String())
 	})
 
 	t.Run("single zero byte should equal zero", func(t *testing.T) {
@@ -1647,7 +1647,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 		result2 := pbToBigInt(input)
 
 		assert.Equal(t, big.NewInt(0).String(), result1.String())
-		assert.Equal(t, big.NewInt(0).String(), result2.Int.String())
+		assert.Equal(t, big.NewInt(0).String(), result2.String())
 	})
 
 	t.Run("multiple zero bytes should equal zero", func(t *testing.T) {
@@ -1657,7 +1657,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 		result2 := pbToBigInt(input)
 
 		assert.Equal(t, big.NewInt(0).String(), result1.String())
-		assert.Equal(t, big.NewInt(0).String(), result2.Int.String())
+		assert.Equal(t, big.NewInt(0).String(), result2.String())
 	})
 
 	t.Run("large byte array should work correctly", func(t *testing.T) {
@@ -1673,7 +1673,7 @@ func TestPbBigIntEdgeCases(t *testing.T) {
 		expected := new(big.Int).SetBytes(bytes)
 
 		assert.Equal(t, expected.String(), result1.String())
-		assert.Equal(t, expected.String(), result2.Int.String())
+		assert.Equal(t, expected.String(), result2.String())
 	})
 }
 
@@ -1701,7 +1701,7 @@ func TestPbBigIntConsistency(t *testing.T) {
 			// (except pbToBigInt may preserve nil differently)
 			if input != nil {
 				if result2.Int != nil {
-					assert.Equal(t, result1.String(), result2.Int.String(),
+					assert.Equal(t, result1.String(), result2.String(),
 						"pbBigIntToInt and pbToBigInt should produce equivalent numeric results")
 				}
 			}

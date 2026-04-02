@@ -309,7 +309,6 @@ type staticChainAccessor struct {
 }
 
 func newStaticChainAccessor(lggr logger.Logger, cfg staticChainAccessorConfig) staticChainAccessor {
-	lggr = logger.Named(lggr, "staticChainAccessor")
 	return staticChainAccessor{
 		staticChainAccessorConfig: cfg,
 	}

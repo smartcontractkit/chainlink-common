@@ -100,7 +100,6 @@ func (r *Runner) ExitWithError(err error) {
 	}
 
 	r.sendResponse(errorResponse(r.req.Id, err))
-	return
 }
 
 func errorResponse(id string, err error) *wasmpb.Response {

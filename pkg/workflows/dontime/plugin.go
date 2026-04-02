@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sync"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -21,8 +20,6 @@ import (
 )
 
 type Plugin struct {
-	mu sync.RWMutex
-
 	store          *Store
 	config         ocr3types.ReportingPluginConfig
 	offChainConfig *pb.Config

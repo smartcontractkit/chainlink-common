@@ -91,7 +91,7 @@ func (s staticGasPriceEstimatorExec) Evaluate(ctx context.Context, other cciptyp
 	}
 
 	// Median test case
-	gotMedian, err := other.Median(ctx, s.medianRequest.gasPrices)
+	gotMedian, err := other.Median(ctx, s.gasPrices)
 	if err != nil {
 		return fmt.Errorf("failed to other.Median: %w", err)
 	}
@@ -126,12 +126,12 @@ func (s staticGasPriceEstimatorExec) GetGasPrice(ctx context.Context) (*big.Int,
 
 // Median implements GasPriceEstimatorExecEvaluator.
 func (s staticGasPriceEstimatorExec) Median(ctx context.Context, gasPrices []*big.Int) (*big.Int, error) {
-	if len(gasPrices) != len(s.medianRequest.gasPrices) {
-		return nil, fmt.Errorf("expected gas prices len %d, got %d", len(s.medianRequest.gasPrices), len(gasPrices))
+	if len(gasPrices) != len(s.gasPrices) {
+		return nil, fmt.Errorf("expected gas prices len %d, got %d", len(s.gasPrices), len(gasPrices))
 	}
 	for i, p := range gasPrices {
 		if s.medianRequest.gasPrices[i].Cmp(p) != 0 {
-			return nil, fmt.Errorf("expected gas price %d %v, got %v", i, s.medianRequest.gasPrices[i], p)
+			return nil, fmt.Errorf("expected gas price %d %v, got %v", i, s.gasPrices[i], p)
 		}
 	}
 	return s.medianResponse, nil

@@ -56,7 +56,7 @@ func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, c
 			MaxReportCount:       int(reply.ReportingPluginInfo.ReportingPluginLimits.MaxReportCount),
 		},
 	}
-	cc, err := r.BrokerExt.Dial(reply.ReportingPluginID)
+	cc, err := r.Dial(reply.ReportingPluginID)
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}

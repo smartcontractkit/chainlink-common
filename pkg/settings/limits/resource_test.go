@@ -325,7 +325,7 @@ func TestResourcePoolLimiter_WaitOrderPreserved(t *testing.T) {
 
 	// Channel to signal when each waiter has been enqueued
 	enqueued := make(chan struct{}, numWaiters)
-	limiter.resourcePoolUsage.setOnEnqueue(func() {
+	limiter.setOnEnqueue(func() {
 		enqueued <- struct{}{}
 	})
 
@@ -380,7 +380,7 @@ func TestResourcePoolLimiter_ContextCancellation(t *testing.T) {
 
 	// Channel to signal when each waiter has been enqueued
 	enqueued := make(chan struct{}, 5)
-	limiter.resourcePoolUsage.setOnEnqueue(func() {
+	limiter.setOnEnqueue(func() {
 		enqueued <- struct{}{}
 	})
 
@@ -503,7 +503,7 @@ func TestResourcePoolLimiter_LimitFlapToZeroDoesNotDeadlock(t *testing.T) {
 	require.NoError(t, err)
 
 	enqueued := make(chan struct{}, 1)
-	limiter.resourcePoolUsage.setOnEnqueue(func() { enqueued <- struct{}{} })
+	limiter.setOnEnqueue(func() { enqueued <- struct{}{} })
 
 	waitErr := make(chan error, 1)
 	go func() {

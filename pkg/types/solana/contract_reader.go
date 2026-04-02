@@ -138,7 +138,7 @@ func (c *ChainContractReader) UnmarshalJSON(bytes []byte) error {
 		return fmt.Errorf("anchorIDL field is neither a valid JSON string nor a valid IDL object: %w", err)
 	}
 
-	if len(c.IDL.Accounts) == 0 && len(c.IDL.Events) == 0 {
+	if len(c.Accounts) == 0 && len(c.Events) == 0 {
 		return fmt.Errorf("namespace idl must have at least one account or event: %w", commontypes.ErrInvalidConfig)
 	}
 

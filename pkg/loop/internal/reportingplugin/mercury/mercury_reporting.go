@@ -48,7 +48,7 @@ func (r *PluginFactoryClient) NewMercuryPlugin(ctx context.Context, config ocr3t
 			MaxReportLength:      int(response.MercuryPluginInfo.MercuryPluginLimits.MaxReportLength),
 		},
 	}
-	cc, err := r.BrokerExt.Dial(response.MercuryPluginID)
+	cc, err := r.Dial(response.MercuryPluginID)
 	if err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}

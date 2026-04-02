@@ -261,6 +261,7 @@ func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEven
 		h.OnImmediatePublish(elapsed, err)
 	}
 	mctx := context.Background()
+	d.metrics.recordPublish(mctx, elapsed, "best_effort", err)
 	if d.metrics != nil {
 		if err != nil {
 			d.metrics.publishImmErr.Add(mctx, 1)
@@ -305,6 +306,7 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		h.OnImmediatePublish(elapsed, err)
 	}
 	mctx := context.Background()
+	d.metrics.recordPublish(mctx, elapsed, "immediate", err)
 	if d.metrics != nil {
 		if err != nil {
 			d.metrics.publishImmErr.Add(mctx, 1)
@@ -436,6 +438,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchPublish != nil {
 			h.OnRetransmitBatchPublish(elapsed, 1, pubErr)
 		}
+		d.metrics.recordPublish(context.Background(), elapsed, "retransmit", pubErr)
 		if pubErr != nil {
 			if d.metrics != nil {
 				d.metrics.publishBatchEvErr.Add(ctx, 1)

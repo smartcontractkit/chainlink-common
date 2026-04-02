@@ -29,6 +29,11 @@ var (
 		Unit:        "{call}",
 		Description: "Immediate Publish RPC failures (events await retransmit)",
 	}
+	durableEmitterMetricPublishDuration = MetricInfo{
+		Name:        "beholder.durable_emitter.publish.duration",
+		Unit:        "s",
+		Description: "Chip Ingress Publish RPC duration (seconds); labels: phase={immediate,retransmit,best_effort}, error={true,false}",
+	}
 	durableEmitterMetricPublishBatchSuccess = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.retransmit.batch.success",
 		Unit:        "{call}",

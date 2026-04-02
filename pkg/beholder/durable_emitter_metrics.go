@@ -27,28 +27,29 @@ type DurableEmitterMetricsConfig struct {
 }
 
 type durableEmitterMetrics struct {
-	emitSuccess       metric.Int64Counter
-	emitFail          metric.Int64Counter
-	emitDuration      metric.Float64Histogram
-	publishImmOK      metric.Int64Counter
-	publishImmErr     metric.Int64Counter
-	publishBatchOK    metric.Int64Counter
-	publishBatchErr   metric.Int64Counter
-	publishBatchEvOK  metric.Int64Counter
-	publishBatchEvErr metric.Int64Counter
-	deliverComplete   metric.Int64Counter
-	expiredPurged     metric.Int64Counter
-	storeOps          metric.Int64Counter
-	storeOpDuration   metric.Float64Histogram
-	queueDepth        metric.Int64Gauge
-	queuePayloadBytes metric.Int64Gauge
-	queueOldestAgeSec metric.Float64Gauge
-	queueNearTTL      metric.Int64Gauge
+	emitSuccess        metric.Int64Counter
+	emitFail           metric.Int64Counter
+	emitDuration       metric.Float64Histogram
+	publishImmOK       metric.Int64Counter
+	publishImmErr      metric.Int64Counter
+	publishDuration    metric.Float64Histogram
+	publishBatchOK     metric.Int64Counter
+	publishBatchErr    metric.Int64Counter
+	publishBatchEvOK   metric.Int64Counter
+	publishBatchEvErr  metric.Int64Counter
+	deliverComplete    metric.Int64Counter
+	expiredPurged      metric.Int64Counter
+	storeOps           metric.Int64Counter
+	storeOpDuration    metric.Float64Histogram
+	queueDepth         metric.Int64Gauge
+	queuePayloadBytes  metric.Int64Gauge
+	queueOldestAgeSec  metric.Float64Gauge
+	queueNearTTL       metric.Int64Gauge
 	queueCapacityRatio metric.Float64Gauge
-	procHeapInuse     metric.Int64Gauge
-	procHeapSys       metric.Int64Gauge
-	procCPUUser       metric.Float64Gauge
-	procCPUSys        metric.Float64Gauge
+	procHeapInuse      metric.Int64Gauge
+	procHeapSys        metric.Int64Gauge
+	procCPUUser        metric.Float64Gauge
+	procCPUSys         metric.Float64Gauge
 }
 
 func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
@@ -68,6 +69,9 @@ func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 		return nil, err
 	}
 	if m.publishImmErr, err = durableEmitterMetricPublishImmFailure.NewInt64Counter(meter); err != nil {
+		return nil, err
+	}
+	if m.publishDuration, err = durableEmitterMetricPublishDuration.NewFloat64Histogram(meter); err != nil {
 		return nil, err
 	}
 	if m.publishBatchOK, err = durableEmitterMetricPublishBatchSuccess.NewInt64Counter(meter); err != nil {
@@ -165,4 +169,16 @@ func (m *durableEmitterMetrics) recordProcessMem(ctx context.Context) {
 	runtime.ReadMemStats(&ms)
 	m.procHeapInuse.Record(ctx, int64(ms.HeapInuse))
 	m.procHeapSys.Record(ctx, int64(ms.HeapSys))
+}
+
+func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase string, err error) {
+	if m == nil {
+		return
+	}
+	m.publishDuration.Record(ctx, elapsed.Seconds(),
+		metric.WithAttributes(
+			attribute.String("phase", phase),
+			attribute.Bool("error", err != nil),
+		),
+	)
 }

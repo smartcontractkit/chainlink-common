@@ -23,7 +23,7 @@ func coseSign(t *testing.T, key *ecdsa.PrivateKey, hash []byte) []byte {
 	r, s, err := ecdsa.Sign(rand.Reader, key, hash)
 	require.NoError(t, err)
 
-	keySize := (key.Curve.Params().BitSize + 7) / 8
+	keySize := curveKeySize(&key.PublicKey)
 	sig := make([]byte, 2*keySize)
 	rBytes := r.Bytes()
 	sBytes := s.Bytes()
@@ -218,29 +218,11 @@ func TestVerifyECDSASignature_DERSignatureRejected(t *testing.T) {
 	payload := []byte("payload")
 	hash, _ := hashForCurve(&key.PublicKey, payload)
 
-	r, s, err := ecdsa.Sign(rand.Reader, key, hash)
+	derSig, err := ecdsa.SignASN1(rand.Reader, key, hash)
 	require.NoError(t, err)
-
-	// Build a DER-encoded signature (ASN.1 SEQUENCE of two INTEGERs).
-	derSig := marshalDER(r, s)
 
 	assert.False(t, verifyECDSASignature(&key.PublicKey, payload, derSig),
 		"DER-encoded signature must be rejected; COSE uses raw r||s")
-}
-
-// marshalDER produces a minimal ASN.1 DER encoding of an ECDSA signature.
-func marshalDER(r, s *big.Int) []byte {
-	encodeInt := func(v *big.Int) []byte {
-		b := v.Bytes()
-		if len(b) > 0 && b[0]&0x80 != 0 {
-			b = append([]byte{0x00}, b...)
-		}
-		return append([]byte{0x02, byte(len(b))}, b...)
-	}
-	rEnc := encodeInt(r)
-	sEnc := encodeInt(s)
-	seq := append(rEnc, sEnc...)
-	return append([]byte{0x30, byte(len(seq))}, seq...)
 }
 
 // --- RFC / cose-wg test vectors ---

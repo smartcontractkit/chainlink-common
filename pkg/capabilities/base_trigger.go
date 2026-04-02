@@ -45,6 +45,13 @@ type BaseTriggerMetrics interface {
 	IncAckError(reason string)
 	// IncAckMemoryOutcome records how an ACK related to the in-memory pending map: hit, miss_no_trigger_bucket, miss_no_event, miss_nil_record.
 	IncAckMemoryOutcome(outcome string)
+	// AddPendingEvents adjusts the live gauge of events awaiting ACK. Positive on insert, negative on ACK/unregister.
+	AddPendingEvents(delta int64)
+	// IncStuckEvent increments the live gauge of events stuck past the critical undelivered threshold.
+	// Keyed by (capability_id, trigger_id, event_id) so you can see exactly which events are stuck.
+	IncStuckEvent(triggerID, eventID string)
+	// DecStuckEvent decrements the stuck-event gauge when a previously-critical event is ACKed or unregistered.
+	DecStuckEvent(triggerID, eventID string)
 }
 
 type undeliveredState struct {
@@ -185,6 +192,10 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	}
 	b.mu.Unlock()
 
+	if n := int64(len(recs)); n > 0 {
+		b.metrics.AddPendingEvents(n)
+	}
+
 	b.wg.Add(1)
 	go func() {
 		defer b.wg.Done()
@@ -212,13 +223,31 @@ func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan
 func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	b.mu.Lock()
 	_, existed := b.inboxes[triggerID]
+	pendingCount := int64(len(b.pending[triggerID]))
+
+	var criticalEvents []string
+	if m, ok := b.undeliveredAlertStates[triggerID]; ok {
+		for eventID, s := range m {
+			if s != nil && s.emittedCritical {
+				criticalEvents = append(criticalEvents, eventID)
+			}
+		}
+	}
+
 	delete(b.inboxes, triggerID)
 	delete(b.pending, triggerID)
 	delete(b.undeliveredAlertStates, triggerID)
 	b.mu.Unlock()
 
+	for _, eventID := range criticalEvents {
+		b.metrics.DecStuckEvent(triggerID, eventID)
+	}
+
 	if existed {
 		b.metrics.DecActiveTriggers()
+	}
+	if pendingCount > 0 {
+		b.metrics.AddPendingEvents(-pendingCount)
 	}
 
 	if err := b.store.DeleteEventsForTrigger(b.ctx, triggerID); err != nil {
@@ -258,6 +287,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.pending[triggerID][te.ID] = &rec
 	b.mu.Unlock()
 
+	b.metrics.AddPendingEvents(1)
 	b.trySend(rec)
 	return nil
 }
@@ -327,13 +357,21 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAckMemoryOutcome("miss_no_trigger_bucket")
 	}
 
+	var wasCritical bool
 	if m, ok := b.undeliveredAlertStates[triggerId]; ok {
+		if s, exists := m[eventId]; exists && s != nil && s.emittedCritical {
+			wasCritical = true
+		}
 		delete(m, eventId)
 		if len(m) == 0 {
 			delete(b.undeliveredAlertStates, triggerId)
 		}
 	}
 	b.mu.Unlock()
+
+	if wasCritical {
+		b.metrics.DecStuckEvent(triggerId, eventId)
+	}
 
 	switch {
 	case found:
@@ -343,6 +381,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAckMemoryOutcome("hit")
 		b.metrics.IncAck(triggerId, eventId)
 		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
+		b.metrics.AddPendingEvents(-1)
 	case hadNilPendingRecord:
 		b.lggr.Warnw("base trigger ACK: pending map had nil record for event (treating as miss; reconciling store)",
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
@@ -396,8 +435,8 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
-	warnThreshold := 5 * interval
-	critThreshold := 20 * interval
+	warnThreshold := 1 * interval
+	critThreshold := 3 * interval
 
 	b.mu.Lock()
 	toResend := make([]PendingEvent, 0, len(b.pending))
@@ -433,6 +472,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 
 			if critThreshold > 0 && !state.emittedCritical && age >= critThreshold {
 				b.metrics.EmitUndeliveredCritical(triggerID, eventID)
+				b.metrics.IncStuckEvent(triggerID, eventID)
 				state.emittedCritical = true
 			}
 		}

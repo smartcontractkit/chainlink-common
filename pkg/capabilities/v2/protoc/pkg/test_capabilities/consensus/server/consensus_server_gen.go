@@ -129,29 +129,29 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	case "Simple":
 		input := &sdk.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ConsensusCapability.Simple(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Simple(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method Simple(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "Report":
 		input := &sdk.ReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest, _ *emptypb.Empty) (*sdk.ReportResponse, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *sdk.ReportRequest, _ *emptypb.Empty) (*sdk.ReportResponse, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ConsensusCapability.Report(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method Report(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method Report(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

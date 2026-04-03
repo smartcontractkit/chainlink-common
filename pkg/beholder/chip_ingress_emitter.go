@@ -6,11 +6,14 @@ import (
 	"maps"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"google.golang.org/protobuf/proto"
 )
 
 type ChipIngressEmitter struct {
 	client chipingress.Client
 }
+
+var _ Emitter = (*ChipIngressEmitter)(nil)
 
 func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 
@@ -26,35 +29,56 @@ func (c *ChipIngressEmitter) Close() error {
 }
 
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	_, err := c.BatchEmit(ctx, []Message{
+		NewMessage(body, attrKVs...),
+	})
+	return err
+}
 
-	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)
-	if err != nil {
-		return err
+func (c *ChipIngressEmitter) BatchEmit(ctx context.Context, messages []Message, options ...BatchEmitOption) ([]*chipingress.PublishResult, error) {
+	emitOpts := DefaultBatchEmitOptions
+	for _, opt := range options {
+		opt(&emitOpts)
 	}
 
-	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
-	if err != nil {
-		return err
+	events := make([]chipingress.CloudEvent, len(messages))
+	for i, msg := range messages {
+		sourceDomain, entityType, err := ExtractSourceAndType(msg.Attrs)
+		if err != nil {
+			return nil, err
+		}
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, msg.Body, msg.Attrs)
+		if err != nil {
+			return nil, err
+		}
+
+		events[i] = event
 	}
 
-	eventPb, err := chipingress.EventToProto(event)
+	eventPb, err := chipingress.EventsToBatch(events)
 	if err != nil {
-		return fmt.Errorf("failed to convert event to proto: %w", err)
+		return nil, fmt.Errorf("failed to convert event to proto: %w", err)
 	}
 
-	_, err = c.client.Publish(ctx, eventPb)
-	if err != nil {
-		return err
+	eventPb.Options = &chipingress.PublishOptions{
+		AllOrNothing: proto.Bool(emitOpts.AllOrNothing),
 	}
 
-	return nil
+	response, err := c.client.PublishBatch(ctx, eventPb)
+	if err != nil {
+		return nil, err
+	}
+
+	if response == nil {
+		return nil, nil
+	}
+
+	return response.Results, nil
 }
 
 // ExtractSourceAndType extracts source domain and entity from the attributes
-func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
-
-	attributes := newAttributes(attrKVs...)
-
+func ExtractSourceAndType(attributes Attributes) (string, string, error) {
 	var sourceDomain string
 	var entityType string
 

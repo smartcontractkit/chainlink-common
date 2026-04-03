@@ -26,7 +26,6 @@ type ComputeConfig struct {
 }
 
 type SubmitTransactionReply struct {
-	Signature      Signature
 	IdempotencyKey string
 	Status         TransactionStatus
 }

@@ -55,6 +55,13 @@ func TestEnvConfig_parse(t *testing.T) {
 
 				envPromPort: "8080",
 
+				envPyroscopeAuthToken:                 "token",
+				envPyroscopeServerAddress:             "http://pyroscope:4040",
+				envPyroscopeEnvironment:               "pyroscope-env",
+				envPyroscopeLinkTracesToProfiles:      "true",
+				envPyroscopePPROFBlockProfileRate:     "42",
+				envPyroscopePPROFMutexProfileFraction: "99",
+
 				envTracingEnabled:           "true",
 				envTracingCollectorTarget:   "some:target",
 				envTracingSamplingRatio:     "1.0",
@@ -160,6 +167,13 @@ var envCfgFull = EnvConfig{
 
 	PrometheusPort: 8080,
 
+	PyroscopeAuthToken:                 "token",
+	PyroscopeServerAddress:             "http://pyroscope:4040",
+	PyroscopeEnvironment:               "pyroscope-env",
+	PyroscopeLinkTracesToProfiles:      true,
+	PyroscopePPROFBlockProfileRate:     42,
+	PyroscopePPROFMutexProfileFraction: 99,
+
 	TracingEnabled:         true,
 	TracingAttributes:      map[string]string{"XYZ": "value"},
 	TracingCollectorTarget: "some:target",
@@ -212,6 +226,13 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "true", got[envMercuryVerboseLogging])
 
 	assert.Equal(t, strconv.Itoa(8080), got[envPromPort])
+
+	assert.Equal(t, "token", got[envPyroscopeAuthToken])
+	assert.Equal(t, "http://pyroscope:4040", got[envPyroscopeServerAddress])
+	assert.Equal(t, "pyroscope-env", got[envPyroscopeEnvironment])
+	assert.Equal(t, "true", got[envPyroscopeLinkTracesToProfiles])
+	assert.Equal(t, "42", got[envPyroscopePPROFBlockProfileRate])
+	assert.Equal(t, "99", got[envPyroscopePPROFMutexProfileFraction])
 
 	assert.Equal(t, "true", got[envTracingEnabled])
 	assert.Equal(t, "some:target", got[envTracingCollectorTarget])

@@ -604,6 +604,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 						"BenchmarkPrice": uint64(100),
 						"Timestamp":      12341414929,
 					})
+					require.NoError(t, err)
 					mockValueWithNil.Underlying["BenchmarkPrice"] = nil // simulate failed wraping of uint64
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}, 4: {mockValueWithNil}}
 				},

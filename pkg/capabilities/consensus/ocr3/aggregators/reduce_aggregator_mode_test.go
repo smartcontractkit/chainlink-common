@@ -30,6 +30,7 @@ func TestMode_twoWayTieIsDeterministicAcrossRepeatedCalls(t *testing.T) {
 		require.Equal(t, 3, maxCount)
 
 		gotProto := values.Proto(got)
+        // set baseline for comparison on first iteration, all subsequent must match
 		if i == 0 {
 			baseline = proto.Clone(gotProto).(*pb.Value)
 			continue

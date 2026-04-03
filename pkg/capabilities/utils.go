@@ -42,7 +42,7 @@ func UnwrapResponse(response CapabilityResponse, value proto.Message) (bool, err
 // SetResponse sets the response payload based on whether it was migrated to use pbany.Any values.
 func SetResponse(response *CapabilityResponse, migrated bool, value proto.Message, ocrAttestation *OCRAttestation) error {
 	if migrated {
-		wrapped, err := anypb.New(value)
+		wrapped, err := marshalAnyDeterministic(value)
 		if err != nil {
 			return err
 		}
@@ -113,6 +113,18 @@ func Execute[I, C, O proto.Message](
 	return response, nil
 }
 
+// marshalAnyDeterministic wraps a proto.Message into an anypb.Any using
+// deterministic marshalling. This is critical for ensuring that all nodes in a
+// DON produce byte-identical serializations of proto messages containing map
+// fields, which is required for quorum-based systems that compare request hashes.
+func marshalAnyDeterministic(msg proto.Message) (*anypb.Any, error) {
+	dst := &anypb.Any{}
+	if err := anypb.MarshalFrom(dst, msg, proto.MarshalOptions{Deterministic: true}); err != nil {
+		return nil, err
+	}
+	return dst, nil
+}
+
 type TriggerAndId[T proto.Message] struct {
 	Trigger T
 	Id      string
@@ -155,7 +167,7 @@ func RegisterTrigger[I, O proto.Message](
 					},
 				}
 				if migrated {
-					wrapped, err := anypb.New(resp.Trigger)
+					wrapped, err := marshalAnyDeterministic(resp.Trigger)
 					tr.Err = err
 					tr.Event.Payload = wrapped
 				} else {

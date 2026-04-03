@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775209335117,
+  "lastUpdate": 1775227884598,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -43500,6 +43500,66 @@ window.BENCHMARK_DATA = {
             "value": 148125,
             "unit": "ns/op",
             "extra": "7832 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "maciej.wisniewski@smartcontract.com",
+            "name": "mchain0",
+            "username": "mchain0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9f76f0c7a425f9fcf4251fdb960f8bd921c237ba",
+          "message": "fix/non-determinism-in-aggregator-order (#1961)\n\n* fix/non-determinism-in-aggregator-order\n\n* Apply suggestions from code review\n\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>",
+          "timestamp": "2026-04-03T14:44:43Z",
+          "tree_id": "496a02b3c1b42e83451bf95c7b33f1b4aebe290a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9f76f0c7a425f9fcf4251fdb960f8bd921c237ba"
+        },
+        "date": 1775227882949,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.2,
+            "unit": "ns/op",
+            "extra": "3374784 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100966,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.6,
+            "unit": "ns/op",
+            "extra": "2961099 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99363,
+            "unit": "ns/op",
+            "extra": "11798 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26598,
+            "unit": "ns/op",
+            "extra": "45091 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 154427,
+            "unit": "ns/op",
+            "extra": "8580 times\n4 procs"
           }
         ]
       }

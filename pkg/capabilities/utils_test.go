@@ -9,6 +9,7 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -167,6 +168,39 @@ func TestSetResponse(t *testing.T) {
 		assert.NotNil(t, resp.Value)
 		assert.Nil(t, resp.Payload)
 		assert.Nil(t, resp.OCRAttestation)
+	})
+
+	t.Run("deterministic marshalling with map fields", func(t *testing.T) {
+		// Proto messages with map fields can serialize in different orders
+		// because Go map iteration order is randomized. SetResponse must
+		// produce identical bytes across calls so that distributed nodes
+		// reach quorum on the same hash.
+		msg := &pb.CapabilityConfig{
+			MethodConfigs: map[string]*pb.CapabilityMethodConfig{
+				"alpha": {},
+				"bravo": {},
+				"charlie": {},
+				"delta": {},
+				"echo": {},
+			},
+		}
+
+		var firstBytes []byte
+		for i := 0; i < 100; i++ {
+			resp := capabilities.CapabilityResponse{}
+			err := capabilities.SetResponse(&resp, true, msg, nil)
+			require.NoError(t, err)
+			require.NotNil(t, resp.Payload)
+
+			b, err := proto.Marshal(resp.Payload)
+			require.NoError(t, err)
+
+			if firstBytes == nil {
+				firstBytes = b
+			} else {
+				assert.Equal(t, firstBytes, b, "SetResponse produced non-deterministic bytes on iteration %d", i)
+			}
+		}
 	})
 }
 

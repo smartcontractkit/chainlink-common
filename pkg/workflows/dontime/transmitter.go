@@ -20,13 +20,19 @@ type Transmitter struct {
 	lggr        logger.Logger
 	store       *Store
 	fromAccount types.Account
+	metrics     *BeholderMetrics
 }
 
 func NewTransmitter(lggr logger.Logger, store *Store, fromAccount types.Account) *Transmitter {
-	return &Transmitter{lggr: lggr, store: store, fromAccount: fromAccount}
+	return &Transmitter{
+		lggr:        lggr,
+		store:       store,
+		fromAccount: fromAccount,
+		metrics:     sharedBeholderMetrics(lggr),
+	}
 }
 
-func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
+func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
 		t.lggr.Errorf("failed to unmarshal report")
@@ -40,8 +46,7 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 	t.store.replaceDonTimes(currentDonTimes)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
 
-	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp)
-
+	var responsesDelivered int64
 	for executionID, donTimes := range outcome.ObservedDonTimes {
 		request := t.store.GetRequest(executionID)
 		if request == nil {
@@ -59,8 +64,17 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 				Timestamp:           donTime,
 				Err:                 nil,
 			})
+			responsesDelivered++
 		}
 	}
+
+	t.metrics.AddResponsesDelivered(ctx, responsesDelivered)
+	t.metrics.SetPendingRequestsInStore(ctx, int64(len(t.store.GetRequests())))
+
+	t.lggr.Infow("Transmitting timestamps",
+		"lastObservedDonTime", outcome.Timestamp,
+		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
+	)
 
 	return nil
 }

@@ -441,37 +441,37 @@ type fakeContractWriter struct {
 	cr *fakeContractReader
 }
 
-func (f *fakeContractWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
-	contractID := toAddress + "-" + contractName
-	switch method {
+func (f *fakeContractWriter) SubmitTransaction(_ context.Context, req types.SubmitTransactionRequest) error {
+	contractID := req.ToAddress + "-" + req.ContractName
+	switch req.Method {
 	case MethodSettingStruct:
-		v, ok := args.(TestStruct)
+		v, ok := req.Args.(TestStruct)
 		if !ok {
-			return fmt.Errorf("unexpected type %T", args)
+			return fmt.Errorf("unexpected type %T", req.Args)
 		}
 		f.cr.SetTestStructLatestValue(contractID, &v)
 	case MethodSettingUint64:
-		v, ok := args.(PrimitiveArgs)
+		v, ok := req.Args.(PrimitiveArgs)
 		if !ok {
-			return fmt.Errorf("unexpected type %T", args)
+			return fmt.Errorf("unexpected type %T", req.Args)
 		}
 		f.cr.SetUintLatestValue(contractID, v.Value, ExpectedGetLatestValueArgs{})
 	case MethodTriggeringEvent:
-		if err := f.cr.triggers.RecordEvent(contractID, args, primitives.Unconfirmed, EventName); err != nil {
+		if err := f.cr.triggers.RecordEvent(contractID, req.Args, primitives.Unconfirmed, EventName); err != nil {
 			return fmt.Errorf("failed to record event: %w", err)
 		}
 	case MethodTriggeringEventWithDynamicTopic:
-		if err := f.cr.triggers.RecordEvent(contractID, args, primitives.Unconfirmed, DynamicTopicEventName); err != nil {
+		if err := f.cr.triggers.RecordEvent(contractID, req.Args, primitives.Unconfirmed, DynamicTopicEventName); err != nil {
 			return fmt.Errorf("failed to record event: %w", err)
 		}
 	case "batchContractWrite":
-		v, ok := args.(BatchCallEntry)
+		v, ok := req.Args.(BatchCallEntry)
 		if !ok {
-			return fmt.Errorf("unexpected type %T", args)
+			return fmt.Errorf("unexpected type %T", req.Args)
 		}
 		f.cr.SetBatchLatestValues(v)
 	default:
-		return fmt.Errorf("unsupported method: %s", method)
+		return fmt.Errorf("unsupported method: %s", req.Method)
 	}
 
 	return nil

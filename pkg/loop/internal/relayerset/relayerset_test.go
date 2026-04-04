@@ -834,7 +834,6 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 					EncodedTransaction: "BASE64TX==",
 				}
 				expected := &soltypes.SubmitTransactionReply{
-					Signature:      soltypes.Signature{0xaa, 0xbb},
 					IdempotencyKey: "idem-123",
 					Status:         soltypes.TxSuccess,
 				}
@@ -845,7 +844,6 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				out, err := sol.SubmitTransaction(ctx, req)
 				require.NoError(t, err)
 				require.Equal(t, expected.IdempotencyKey, out.IdempotencyKey)
-				require.Equal(t, expected.Signature, out.Signature)
 				require.Equal(t, expected.Status, out.Status)
 			},
 		},

@@ -139,6 +139,7 @@ type CallMsg struct {
 	From          []byte                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"` // sender address in evm address [20]byte fix-sized array format
 	To            []byte                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`     // contract address in evm address [20]byte fix-sized array format
 	Data          []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"` // solidity-spec abi encoded bytes
+	Gas           uint64                 `protobuf:"varint,4,opt,name=gas,proto3" json:"gas,omitempty"`  // gas limit, 0 is unbounded
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -192,6 +193,13 @@ func (x *CallMsg) GetData() []byte {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *CallMsg) GetGas() uint64 {
+	if x != nil {
+		return x.Gas
+	}
+	return 0
 }
 
 type Topics struct {
@@ -2999,11 +3007,12 @@ var File_evm_proto protoreflect.FileDescriptor
 
 const file_evm_proto_rawDesc = "" +
 	"\n" +
-	"\tevm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/v1/values.proto\"A\n" +
+	"\tevm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/v1/values.proto\"S\n" +
 	"\aCallMsg\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\fR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\fR\x02to\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data\"\x1e\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x12\x10\n" +
+	"\x03gas\x18\x04 \x01(\x04R\x03gas\"\x1e\n" +
 	"\x06Topics\x12\x14\n" +
 	"\x05topic\x18\x01 \x03(\fR\x05topic\"\xa0\x02\n" +
 	"\x03Log\x12\x18\n" +

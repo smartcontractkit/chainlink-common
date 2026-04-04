@@ -84,6 +84,7 @@ type CallMsg struct {
 	To   Address
 	From Address // from field is needed if contract read depends on msg.sender
 	Data ABIPayload
+	Gas  uint64 // max gas allowed for the call (0 means no limit)
 }
 
 // matches evm-style transaction

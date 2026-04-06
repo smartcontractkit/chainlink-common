@@ -1535,7 +1535,7 @@ func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*solana.LPFilterQuery, err
 	var eventSig solana.EventSignature
 	if len(p.EventSig) > 0 {
 		eventSig, err2 = ConvertEventSigFromProto(p.EventSig)
-		if err != nil {
+		if err2 != nil {
 			return nil, fmt.Errorf("filter.event_sig: %w", err2)
 		}
 	}

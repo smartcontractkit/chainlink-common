@@ -46,6 +46,13 @@ const (
 
 	envPromPort = "CL_PROMETHEUS_PORT"
 
+	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
+	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
+	envPyroscopeEnvironment               = "CL_PYROSCOPE_ENVIRONMENT"
+	envPyroscopeLinkTracesToProfiles      = "CL_PYROSCOPE_LINK_TRACES_TO_PROFILES"
+	envPyroscopePPROFBlockProfileRate     = "CL_PYROSCOPE_PPROF_BLOCK_PROFILE_RATE"
+	envPyroscopePPROFMutexProfileFraction = "CL_PYROSCOPE_PPROF_MUTEX_PROFILE_FRACTION"
+
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
 	envTracingSamplingRatio   = "CL_TRACING_SAMPLING_RATIO"
@@ -89,6 +96,12 @@ const (
 type EnvConfig struct {
 	AppID string
 
+	ChipIngressEndpoint           string
+	ChipIngressInsecureConnection bool
+
+	CRESettings        string
+	CRESettingsDefault string
+
 	DatabaseURL                          *config.SecretURL
 	DatabaseIdleInTxSessionTimeout       time.Duration
 	DatabaseLockTimeout                  time.Duration
@@ -115,13 +128,14 @@ type EnvConfig struct {
 	MercuryTransmitterReaperMaxAge         time.Duration
 	MercuryVerboseLogging                  bool
 
-	PrometheusPort int //TODO more than just prom
+	PrometheusPort int // also serves pprof routes
 
-	TracingEnabled         bool
-	TracingCollectorTarget string
-	TracingSamplingRatio   float64
-	TracingTLSCertPath     string
-	TracingAttributes      map[string]string
+	PyroscopeAuthToken                 string
+	PyroscopeServerAddress             string
+	PyroscopeEnvironment               string
+	PyroscopeLinkTracesToProfiles      bool
+	PyroscopePPROFBlockProfileRate     int
+	PyroscopePPROFMutexProfileFraction int
 
 	TelemetryEnabled                   bool
 	TelemetryEndpoint                  string
@@ -148,11 +162,11 @@ type EnvConfig struct {
 	TelemetryMetricCompressor          string
 	TelemetryLogCompressor             string
 
-	ChipIngressEndpoint           string
-	ChipIngressInsecureConnection bool
-
-	CRESettings        string
-	CRESettingsDefault string
+	TracingEnabled         bool
+	TracingCollectorTarget string
+	TracingSamplingRatio   float64
+	TracingTLSCertPath     string
+	TracingAttributes      map[string]string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -192,6 +206,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMercuryVerboseLogging, strconv.FormatBool(e.MercuryVerboseLogging))
 
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
+
+	add(envPyroscopeAuthToken, e.PyroscopeAuthToken)
+	add(envPyroscopeServerAddress, e.PyroscopeServerAddress)
+	add(envPyroscopeEnvironment, e.PyroscopeEnvironment)
+	add(envPyroscopeLinkTracesToProfiles, strconv.FormatBool(e.PyroscopeLinkTracesToProfiles))
+	add(envPyroscopePPROFBlockProfileRate, strconv.Itoa(e.PyroscopePPROFBlockProfileRate))
+	add(envPyroscopePPROFMutexProfileFraction, strconv.Itoa(e.PyroscopePPROFMutexProfileFraction))
 
 	add(envTracingEnabled, strconv.FormatBool(e.TracingEnabled))
 	add(envTracingCollectorTarget, e.TracingCollectorTarget)
@@ -350,6 +371,22 @@ func (e *EnvConfig) parse() error {
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
+	}
+
+	e.PyroscopeAuthToken = os.Getenv(envPyroscopeAuthToken)
+	e.PyroscopeServerAddress = os.Getenv(envPyroscopeServerAddress)
+	e.PyroscopeEnvironment = os.Getenv(envPyroscopeEnvironment)
+	e.PyroscopeLinkTracesToProfiles, err = getBool(envPyroscopeLinkTracesToProfiles)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envPyroscopeLinkTracesToProfiles, err)
+	}
+	e.PyroscopePPROFBlockProfileRate, err = getInt(envPyroscopePPROFBlockProfileRate)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFBlockProfileRate, err)
+	}
+	e.PyroscopePPROFMutexProfileFraction, err = getInt(envPyroscopePPROFMutexProfileFraction)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFMutexProfileFraction, err)
 	}
 
 	e.TracingEnabled, err = getBool(envTracingEnabled)

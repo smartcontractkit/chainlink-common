@@ -259,24 +259,9 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 			return ErrnoInval
 		}
 
-		var (
-			// Fix the random source with a hardcoded seed
-			seed       = cfg.Determinism.Seed
-			randSource = rand.New(rand.NewSource(seed)) //nolint:gosec
-			randOutput = make([]byte, bufLen)
-		)
-
-		// Generate random bytes from the source
-		if _, err := io.ReadAtLeast(randSource, randOutput, int(bufLen)); err != nil {
-			return ErrnoFault
-		}
-
-		// Copy the random bytes into the wasm module memory
-		if n := wasmWrite(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
-			return ErrnoFault
-		}
-
-		return ErrnoSuccess
+		seed := cfg.Determinism.Seed
+		randSource := rand.New(rand.NewSource(seed)) //nolint:gosec
+		return fillWasmMemRand(caller, randSource, buf, bufLen)
 	}
 }
 
@@ -287,17 +272,32 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 func createSeedRandomGet(seed int64) func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
 	randSource := rand.New(rand.NewSource(seed)) //nolint:gosec
 	return func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
-		randOutput := make([]byte, bufLen)
-		if _, err := io.ReadAtLeast(randSource, randOutput, int(bufLen)); err != nil {
-			return ErrnoFault
-		}
-
-		if n := wasmWrite(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
-			return ErrnoFault
-		}
-
-		return ErrnoSuccess
+		return fillWasmMemRand(caller, randSource, buf, bufLen)
 	}
+}
+
+// fillWasmMemRand writes deterministic random bytes from src directly into
+// WASM linear memory at [buf, buf+bufLen). It validates bufLen and
+// bounds-checks against the actual memory size, avoiding any host-side
+// allocation proportional to bufLen.
+func fillWasmMemRand(caller *wasmtime.Caller, src *rand.Rand, buf, bufLen int32) int32 {
+	if bufLen <= 0 {
+		if bufLen == 0 {
+			return ErrnoSuccess
+		}
+		return ErrnoInval
+	}
+
+	memory := wasmMemoryAccessor(caller)
+	if buf < 0 || int64(buf)+int64(bufLen) > int64(len(memory)) {
+		return ErrnoFault
+	}
+
+	slice := memory[buf : buf+bufLen]
+	if _, err := io.ReadFull(src, slice); err != nil {
+		return ErrnoFault
+	}
+	return ErrnoSuccess
 }
 
 func getSlot(events []byte, i int32) ([]byte, error) {

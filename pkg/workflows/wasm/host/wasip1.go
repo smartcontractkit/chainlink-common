@@ -47,6 +47,21 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 		return nil, err
 	}
 
+	// Override random_get with a deterministic PRNG seeded from the workflow
+	// execution ID (via exec.donSeed). All nodes in the DON share the same
+	// execution ID, so they get the same seed and therefore the same random
+	// output. This ensures Go map iteration order — which is randomized via
+	// runtime.fastrand seeded from WASI random_get — is identical across nodes,
+	// preventing quorum failures from non-deterministic map ranging in WASM.
+	err = linker.FuncWrap(
+		"wasi_snapshot_preview1",
+		"random_get",
+		createSeedRandomGet(exec.donSeed),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return linker, nil
 }
 
@@ -257,6 +272,26 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 		}
 
 		// Copy the random bytes into the wasm module memory
+		if n := wasmWrite(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
+			return ErrnoFault
+		}
+
+		return ErrnoSuccess
+	}
+}
+
+// createSeedRandomGet overrides random_get with a PRNG seeded from the given
+// seed value. Unlike createRandomGet (which reads the seed from ModuleConfig),
+// this accepts the seed directly — intended for the NoDAG path where the seed
+// is derived from the workflow execution ID.
+func createSeedRandomGet(seed int64) func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
+	randSource := rand.New(rand.NewSource(seed)) //nolint:gosec
+	return func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
+		randOutput := make([]byte, bufLen)
+		if _, err := io.ReadAtLeast(randSource, randOutput, int(bufLen)); err != nil {
+			return ErrnoFault
+		}
+
 		if n := wasmWrite(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
 			return ErrnoFault
 		}

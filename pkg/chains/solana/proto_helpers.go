@@ -684,6 +684,11 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*solana.TransactionMet
 	}
 	la := ConvertLoadedAddressesFromProto(p.LoadedAddresses)
 
+	var r solana.ReturnData
+	if ret != nil {
+		r = *ret
+	}
+
 	meta := &solana.TransactionMeta{
 		Err:                  p.ErrJson,
 		Fee:                  p.Fee,
@@ -694,7 +699,7 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*solana.TransactionMet
 		PostTokenBalances:    postTB,
 		LogMessages:          p.LogMessages,
 		LoadedAddresses:      la,
-		ReturnData:           *ret,
+		ReturnData:           r,
 		ComputeUnitsConsumed: p.ComputeUnitsConsumed,
 	}
 	return meta, nil

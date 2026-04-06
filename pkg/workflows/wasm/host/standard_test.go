@@ -702,3 +702,43 @@ func executeWithError(t *testing.T, m *module, req *sdk.ExecuteRequest, executor
 		return ""
 	}
 }
+
+// TestStandardMapIteration verifies that the WASI random_get override
+// makes Go map iteration order deterministic across executions that
+// share the same workflow execution ID. This is a regression test for
+// the NoDAG path where random_get was not overridden, causing map
+// iteration (and therefore proto serialisation of map fields) to
+// diverge across DON nodes and break quorum.
+func TestStandardMapIteration(t *testing.T) {
+	t.Parallel()
+	m := makeTestModule(t)
+	m.Start()
+	defer m.Close()
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	request := triggerExecuteRequest(t, 0, trigger)
+
+	newHelper := func(executionID string) *MockExecutionHelper {
+		h := NewMockExecutionHelper(t)
+		h.EXPECT().GetWorkflowExecutionID().Return(executionID)
+		h.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
+		return h
+	}
+
+	// First execution with a fixed ID.
+	order1 := executeWithResult[string](t, m, request, newHelper("deterministic-test-id"))
+
+	t.Run("same execution ID produces identical map iteration order", func(t *testing.T) {
+		order2 := executeWithResult[string](t, m, request, newHelper("deterministic-test-id"))
+		require.Equal(t, order1, order2,
+			"map iteration order must be identical for the same execution ID")
+	})
+
+	t.Run("different execution ID produces different map iteration order", func(t *testing.T) {
+		order3 := executeWithResult[string](t, m, request, newHelper("other-execution-id"))
+		require.NotEqual(t, order1, order3,
+			"map iteration order should differ for different execution IDs")
+	})
+}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 
@@ -158,9 +159,9 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
 	executeRequest := triggerExecuteRequest(t, 0, trigger)
 	cfg := &ModuleConfig{
-		Logger:                logger.Test(t),
-		IsUncompressed:        true,
-		EnableUserMetrics:             true,
+		Logger:                        logger.Test(t),
+		IsUncompressed:                true,
+		EnableUserMetricsLimiter:      limits.NewGateLimiter(true),
 		MaxUserMetricPayloadBytes:     4096,
 		MaxUserMetricNameLength:       15,
 		MaxUserMetricLabelsPerMetric:  10,
@@ -198,9 +199,8 @@ func Test_NoDAG_EmitMetricDisabled(t *testing.T) {
 	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
 	executeRequest := triggerExecuteRequest(t, 0, trigger)
 	cfg := &ModuleConfig{
-		Logger:            logger.Test(t),
-		IsUncompressed:    true,
-		EnableUserMetrics: false,
+		Logger:         logger.Test(t),
+		IsUncompressed: true,
 	}
 
 	binary := createTestBinary(metricLimitsBinaryCmd, metricLimitsBinaryLocation, true, t)

@@ -186,7 +186,7 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 }
 
 func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
-	if !e.module.cfg.EnableUserMetrics {
+	if err := e.module.cfg.EnableUserMetricsLimiter.AllowErr(e.ctx); err != nil {
 		return -1
 	}
 

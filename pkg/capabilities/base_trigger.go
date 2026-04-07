@@ -52,6 +52,8 @@ type BaseTriggerMetrics interface {
 	IncStuckEvent(triggerID, eventID string)
 	// DecStuckEvent decrements the stuck-event gauge when a previously-critical event is ACKed or unregistered.
 	DecStuckEvent(triggerID, eventID string)
+	// IncGaveUp increments the counter of events where the node exhausted max retries and stopped resending.
+	IncGaveUp(triggerID, eventID string, attempts int)
 }
 
 type undeliveredState struct {
@@ -148,6 +150,33 @@ func (b *BaseTriggerCapability[T]) retryInterval(ctx context.Context) time.Durat
 	return interval
 }
 
+// maxRetries returns the configured maximum number of send attempts. 0 means unlimited.
+func (b *BaseTriggerCapability[T]) maxRetries(ctx context.Context) int {
+	defaultMaxRetries := 20
+	if b.settings == nil {
+		return defaultMaxRetries
+	}
+	v, err := cresettings.Default.BaseTriggerMaxRetries.GetOrDefault(ctx, b.settings)
+	if err != nil {
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxRetries; using default (20)", "err", err)
+		return defaultMaxRetries
+	}
+	return v
+}
+
+// pruneAge returns how long a pending row must exist before the pruning loop may remove it.
+func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
+	if b.settings == nil {
+		return 0
+	}
+	v, err := cresettings.Default.BaseTriggerPruneAge.GetOrDefault(ctx, b.settings)
+	if err != nil {
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerPruneAge; treating as disabled", "err", err)
+		return 0
+	}
+	return v
+}
+
 // loopTickDuration is recomputed before each loop wait so BaseTriggerRetryInterval and enablement
 // changes take effect without restarting. Uses half the retry interval.
 func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
@@ -196,10 +225,14 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 		b.metrics.AddPendingEvents(n)
 	}
 
-	b.wg.Add(1)
+	b.wg.Add(2)
 	go func() {
 		defer b.wg.Done()
 		b.retransmitLoop()
+	}()
+	go func() {
+		defer b.wg.Done()
+		b.pruneLoop()
 	}()
 	return nil
 }
@@ -426,6 +459,13 @@ func (b *BaseTriggerCapability[T]) retransmitLoop() {
 	}
 }
 
+type gaveUpEvent struct {
+	triggerID   string
+	eventID     string
+	attempts    int
+	wasCritical bool
+}
+
 func (b *BaseTriggerCapability[T]) scanPending() {
 	now := time.Now()
 	ctx := b.ctx
@@ -435,13 +475,39 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
+	maxAttempts := b.maxRetries(ctx)
 	warnThreshold := 1 * interval
 	critThreshold := 3 * interval
 
 	b.mu.Lock()
 	toResend := make([]PendingEvent, 0, len(b.pending))
+	var toGiveUp []gaveUpEvent
 	for triggerID, pendingForTrigger := range b.pending {
 		for eventID, rec := range pendingForTrigger {
+			if maxAttempts > 0 && rec.Attempts >= maxAttempts {
+				wasCritical := false
+				if m, ok := b.undeliveredAlertStates[triggerID]; ok {
+					if s, exists := m[eventID]; exists && s != nil && s.emittedCritical {
+						wasCritical = true
+					}
+					delete(m, eventID)
+					if len(m) == 0 {
+						delete(b.undeliveredAlertStates, triggerID)
+					}
+				}
+				delete(pendingForTrigger, eventID)
+				if len(pendingForTrigger) == 0 {
+					delete(b.pending, triggerID)
+				}
+				toGiveUp = append(toGiveUp, gaveUpEvent{
+					triggerID:   triggerID,
+					eventID:     eventID,
+					attempts:    rec.Attempts,
+					wasCritical: wasCritical,
+				})
+				continue
+			}
+
 			if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
 				toResend = append(toResend, PendingEvent{
 					TriggerId: rec.TriggerId,
@@ -464,7 +530,6 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 				b.undeliveredAlertStates[triggerID][eventID] = state
 			}
 
-			// TODO: consider meters (in addition to logs) for warn/crit so the data is easy to chart.
 			if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
 				b.metrics.EmitUndeliveredWarning(triggerID, eventID)
 				state.emittedWarning = true
@@ -479,8 +544,93 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	}
 	b.mu.Unlock()
 
+	for _, ev := range toGiveUp {
+		b.lggr.Errorw("base trigger giving up on event after max retries",
+			"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
+			"attempts", ev.attempts, "maxRetries", maxAttempts,
+			"reason", "max_retries_exhausted")
+		b.metrics.IncGaveUp(ev.triggerID, ev.eventID, ev.attempts)
+		b.metrics.AddPendingEvents(-1)
+		if ev.wasCritical {
+			b.metrics.DecStuckEvent(ev.triggerID, ev.eventID)
+		}
+		if err := b.store.DeleteEvent(ctx, ev.triggerID, ev.eventID); err != nil {
+			b.lggr.Errorw("failed to delete gave-up event from store",
+				"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID, "err", err)
+		}
+	}
+
 	for _, event := range toResend {
 		b.trySend(event)
+	}
+}
+
+// pruneLoop periodically removes old rows from the event store that are no longer tracked in memory.
+// This catches rows orphaned by crashes, missed deletes, or events that were given up on before
+// this code was deployed. It uses store.List + age comparison + store.DeleteEvent,
+// avoiding any new EventStore interface methods.
+func (b *BaseTriggerCapability[T]) pruneLoop() {
+	const minPruneInterval = time.Minute
+	for {
+		age := b.pruneAge(b.ctx)
+		if age <= 0 {
+			age = 24 * time.Hour
+		}
+		tick := age / 4
+		if tick < minPruneInterval {
+			tick = minPruneInterval
+		}
+
+		timer := time.NewTimer(tick)
+		select {
+		case <-b.ctx.Done():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return
+		case <-timer.C:
+			b.pruneStaleEvents()
+		}
+	}
+}
+
+func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
+	age := b.pruneAge(b.ctx)
+	if age <= 0 {
+		return
+	}
+	cutoff := time.Now().Add(-age)
+
+	recs, err := b.store.List(b.ctx)
+	if err != nil {
+		b.lggr.Errorw("prune: failed to list events from store", "capabilityID", b.capabilityId, "err", err)
+		return
+	}
+
+	for _, rec := range recs {
+		if rec.FirstAt.After(cutoff) {
+			continue
+		}
+
+		b.mu.Lock()
+		inMemory := false
+		if evts, ok := b.pending[rec.TriggerId]; ok {
+			_, inMemory = evts[rec.EventId]
+		}
+		b.mu.Unlock()
+
+		if inMemory {
+			// Still actively tracked — scanPending will handle it (gave-up or ACK).
+			continue
+		}
+
+		b.lggr.Infow("prune: removing stale event from store",
+			"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,
+			"firstAt", rec.FirstAt, "attempts", rec.Attempts, "pruneAge", age)
+		if err := b.store.DeleteEvent(b.ctx, rec.TriggerId, rec.EventId); err != nil {
+			b.lggr.Errorw("prune: failed to delete stale event",
+				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId, "err", err)
+		}
 	}
 }
 

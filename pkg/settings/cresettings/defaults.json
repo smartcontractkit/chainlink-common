@@ -13,6 +13,8 @@
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetransmitEnabled": "false",
 	"BaseTriggerRetryInterval": "30s",
+	"BaseTriggerMaxRetries": "20",
+	"BaseTriggerPruneAge": "24h0m0s",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",

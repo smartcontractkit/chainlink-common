@@ -413,3 +413,173 @@ func TestRetransmitDisabled_AckReconcilesStore(t *testing.T) {
 
 	require.NoError(t, b.AckEvent(t.Context(), "anyTrigger", "anyEvent"))
 }
+
+func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval": "20ms",
+			"BaseTriggerMaxRetries": "3"
+		}
+	}`))
+
+	store := NewMemEventStore()
+	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 50)
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
+
+	// Drain initial + retries. After max retries the event should be removed.
+	require.Eventually(t, func() bool {
+		b.mu.Lock()
+		defer b.mu.Unlock()
+		_, hasTrig := b.pending["trig"]
+		return !hasTrig
+	}, 5*time.Second, 10*time.Millisecond, "event should be removed from pending after max retries")
+
+	// Store should also be cleaned up.
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Empty(t, recs, "store should be empty after gave-up event is deleted")
+}
+
+func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval": "20ms",
+			"BaseTriggerMaxRetries": "100"
+		}
+	}`))
+
+	store := NewMemEventStore()
+	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 50)
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
+
+	// Wait for at least one send then ACK.
+	<-sendCh
+	require.NoError(t, b.AckEvent(ctx, "trig", "e1"))
+
+	// Verify cleared.
+	b.mu.Lock()
+	_, hasTrig := b.pending["trig"]
+	b.mu.Unlock()
+	require.False(t, hasTrig)
+}
+
+func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	store := NewMemEventStore()
+
+	// Pre-populate store with an old event not tracked in memory.
+	oldRec := PendingEvent{
+		TriggerId: "orphanTrig",
+		EventId:   "orphanEvent",
+		Payload:   []byte("data"),
+		FirstAt:   time.Now().Add(-48 * time.Hour),
+		Attempts:  50,
+	}
+	require.NoError(t, store.Insert(ctx, oldRec))
+
+	// Also add a recent event that should NOT be pruned.
+	recentRec := PendingEvent{
+		TriggerId: "recentTrig",
+		EventId:   "recentEvent",
+		Payload:   []byte("fresh"),
+		FirstAt:   time.Now(),
+		Attempts:  1,
+	}
+	require.NoError(t, store.Insert(ctx, recentRec))
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "false",
+			"BaseTriggerRetryInterval": "30s",
+			"BaseTriggerPruneAge": "1h"
+		}
+	}`))
+
+	b := NewBaseTriggerCapability(store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", 0, 0, 0, getter)
+
+	// Don't Start the full loop — just call pruneStaleEvents directly.
+	b.pruneStaleEvents()
+
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Len(t, recs, 1, "only the recent event should remain")
+	require.Equal(t, "recentEvent", recs[0].EventId)
+}
+
+func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	store := NewMemEventStore()
+
+	// Old event that IS tracked in memory.
+	oldRec := PendingEvent{
+		TriggerId: "trig",
+		EventId:   "inMemory",
+		Payload:   []byte("data"),
+		FirstAt:   time.Now().Add(-48 * time.Hour),
+		Attempts:  50,
+	}
+	require.NoError(t, store.Insert(ctx, oldRec))
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "false",
+			"BaseTriggerRetryInterval": "30s",
+			"BaseTriggerPruneAge": "1h"
+		}
+	}`))
+
+	b := NewBaseTriggerCapability(store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", 0, 0, 0, getter)
+
+	// Manually put event in memory to simulate it being actively tracked.
+	b.pending["trig"] = map[string]*PendingEvent{"inMemory": &oldRec}
+
+	b.pruneStaleEvents()
+
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Len(t, recs, 1, "in-memory event should not be pruned even if old")
+}

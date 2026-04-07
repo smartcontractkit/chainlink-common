@@ -99,6 +99,8 @@ flowchart
         subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
             BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
             BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
+            BaseTriggerMaxRetries{{BaseTriggerMaxRetries}}:::bound
+            BaseTriggerPruneAge>BaseTriggerPruneAge]:::time
         end
     end
 

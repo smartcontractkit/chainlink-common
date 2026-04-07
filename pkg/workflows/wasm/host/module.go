@@ -82,7 +82,7 @@ type ModuleConfig struct {
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
 
-	EnableUserMetrics                    bool
+	EnableUserMetricsLimiter limits.GateLimiter
 	MaxUserMetricPayloadBytes            uint32
 	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
 	MaxUserMetricNameLength              uint32
@@ -247,6 +247,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	}
 
 	lf := limits.Factory{Logger: modCfg.Logger}
+
+	if modCfg.EnableUserMetricsLimiter == nil {
+		modCfg.EnableUserMetricsLimiter = limits.NewGateLimiter(false)
+	}
 
 	if modCfg.MaxUserMetricPayloadLimiter == nil {
 		limit := settings.Size(config.Size(modCfg.MaxUserMetricPayloadBytes))

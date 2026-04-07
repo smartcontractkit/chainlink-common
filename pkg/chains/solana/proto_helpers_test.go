@@ -276,7 +276,8 @@ func TestConvertExpressionsFromProto_Errors(t *testing.T) {
 }
 
 func TestExpressions_Roundtrip_SolanaPrimitives(t *testing.T) {
-	// Build (Address AND EventSig) OR EventBySubkey
+	// Flat list of three individual Solana primitives (no boolean nesting).
+	// Exercises the primitive serialization path for Address, EventSig, and EventBySubkey.
 	addrBytes := mkBytes(typesolana.PublicKeyLength, 0x01)
 	evBytes := mkBytes(typesolana.EventSignatureLength, 0x02)
 
@@ -302,6 +303,64 @@ func TestExpressions_Roundtrip_SolanaPrimitives(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, round, 3)
 	require.Equal(t, expressions, round)
+}
+
+func TestExpressions_Roundtrip_BooleanNesting(t *testing.T) {
+	addrBytes := mkBytes(typesolana.PublicKeyLength, 0x01)
+	evBytes := mkBytes(typesolana.EventSignatureLength, 0x02)
+
+	addr, err := conv.ConvertPublicKeyFromProto(addrBytes)
+	require.NoError(t, err)
+	ev, err := conv.ConvertEventSigFromProto(evBytes)
+	require.NoError(t, err)
+
+	address := solprimitives.NewAddressFilter(addr)
+	eventSig := solprimitives.NewEventSigFilter(ev)
+	eventBySubkey := solprimitives.NewEventBySubkeyFilter(1, []solprimitives.IndexedValueComparator{
+		{Value: typesolana.IndexedValue{1, 2, 3}, Operator: 0},
+	})
+
+	t.Run("Or(And(address, eventSig), eventBySubkey)", func(t *testing.T) {
+		nested := query.Or(query.And(address, eventSig), eventBySubkey)
+		expressions := []query.Expression{nested}
+
+		pb, err := conv.ConvertExpressionsToProto(expressions)
+		require.NoError(t, err)
+		require.Len(t, pb, 1)
+
+		round, err := conv.ConvertExpressionsFromProto(pb)
+		require.NoError(t, err)
+		require.Len(t, round, 1)
+		require.Equal(t, expressions, round)
+	})
+
+	t.Run("And(address, Or(eventSig, eventBySubkey))", func(t *testing.T) {
+		nested := query.And(address, query.Or(eventSig, eventBySubkey))
+		expressions := []query.Expression{nested}
+
+		pb, err := conv.ConvertExpressionsToProto(expressions)
+		require.NoError(t, err)
+		require.Len(t, pb, 1)
+
+		round, err := conv.ConvertExpressionsFromProto(pb)
+		require.NoError(t, err)
+		require.Len(t, round, 1)
+		require.Equal(t, expressions, round)
+	})
+
+	t.Run("multiple top-level with nested boolean", func(t *testing.T) {
+		nested := query.Or(query.And(address, eventSig), eventBySubkey)
+		expressions := []query.Expression{address, nested, eventBySubkey}
+
+		pb, err := conv.ConvertExpressionsToProto(expressions)
+		require.NoError(t, err)
+		require.Len(t, pb, 3)
+
+		round, err := conv.ConvertExpressionsFromProto(pb)
+		require.NoError(t, err)
+		require.Len(t, round, 3)
+		require.Equal(t, expressions, round)
+	})
 }
 
 func TestLPFilterAndSubkeysConverters(t *testing.T) {

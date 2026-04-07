@@ -77,6 +77,14 @@ type BaseTriggerCapability[T proto.Message] struct {
 	inboxes map[string]chan<- TriggerAndId[T]   // triggerID --> registered send channel
 	pending map[string]map[string]*PendingEvent // triggerID --> eventID --> PendingEvent
 
+	// preAcked remembers ACKs that arrived before DeliverEvent was called on this node.
+	// In a multi-node capability DON, other nodes may deliver the event first, causing
+	// the workflow engine to ACK before the slower node has even persisted the event.
+	// Without this cache, the late node would persist and retransmit forever since no
+	// new ACK will arrive (other nodes already stopped retransmitting, so the subscriber
+	// can't reach aggregation quorum).
+	preAcked map[string]map[string]time.Time // triggerID -> eventID -> ackedAt
+
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
@@ -119,6 +127,7 @@ func NewBaseTriggerCapability[T proto.Message](
 		mu:                     sync.Mutex{},
 		inboxes:                make(map[string]chan<- TriggerAndId[T]),
 		pending:                make(map[string]map[string]*PendingEvent),
+		preAcked:               make(map[string]map[string]time.Time),
 		ctx:                    ctx,
 		cancel:                 cancel,
 	}
@@ -269,6 +278,7 @@ func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 
 	delete(b.inboxes, triggerID)
 	delete(b.pending, triggerID)
+	delete(b.preAcked, triggerID)
 	delete(b.undeliveredAlertStates, triggerID)
 	b.mu.Unlock()
 
@@ -296,6 +306,25 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	if !b.retransmitAllowed(ctx) {
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
+
+	// Check if this event was already ACKed before we received it (pre-ACK).
+	// This happens when other capability DON nodes deliver the event faster,
+	// causing the workflow engine to ACK before this node calls DeliverEvent.
+	b.mu.Lock()
+	if pa, ok := b.preAcked[triggerID]; ok {
+		if _, wasAcked := pa[te.ID]; wasAcked {
+			delete(pa, te.ID)
+			if len(pa) == 0 {
+				delete(b.preAcked, triggerID)
+			}
+			b.mu.Unlock()
+			b.lggr.Infow("base trigger DeliverEvent skipped: event was already ACKed (pre-ACK)",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			b.metrics.IncAckMemoryOutcome("pre_ack_delivery_skipped")
+			return nil
+		}
+	}
+	b.mu.Unlock()
 
 	rec := PendingEvent{
 		TriggerId:  triggerID,
@@ -390,6 +419,16 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAckMemoryOutcome("miss_no_trigger_bucket")
 	}
 
+	// Record a pre-ACK so that a later DeliverEvent for this event is skipped.
+	// This handles the case where other capability DON nodes delivered the event
+	// first, causing the ACK to arrive at this node before DeliverEvent is called.
+	if !found {
+		if b.preAcked[triggerId] == nil {
+			b.preAcked[triggerId] = make(map[string]time.Time)
+		}
+		b.preAcked[triggerId][eventId] = time.Now()
+	}
+
 	var wasCritical bool
 	if m, ok := b.undeliveredAlertStates[triggerId]; ok {
 		if s, exists := m[eventId]; exists && s != nil && s.emittedCritical {
@@ -480,6 +519,25 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	critThreshold := 3 * interval
 
 	b.mu.Lock()
+
+	// Expire old preAcked entries so the cache doesn't grow unbounded.
+	// Use the full retry window as TTL — a DeliverEvent arriving later than
+	// that would have been given up on anyway.
+	preAckTTL := time.Duration(maxAttempts) * interval
+	if maxAttempts == 0 || preAckTTL <= 0 {
+		preAckTTL = 10 * time.Minute
+	}
+	for triggerID, events := range b.preAcked {
+		for eventID, ackedAt := range events {
+			if now.Sub(ackedAt) > preAckTTL {
+				delete(events, eventID)
+			}
+		}
+		if len(events) == 0 {
+			delete(b.preAcked, triggerID)
+		}
+	}
+
 	toResend := make([]PendingEvent, 0, len(b.pending))
 	var toGiveUp []gaveUpEvent
 	for triggerID, pendingForTrigger := range b.pending {

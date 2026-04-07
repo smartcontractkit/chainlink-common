@@ -496,6 +496,153 @@ func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {
 	require.False(t, hasTrig)
 }
 
+func TestBaseTrigger_PreAck_DeliverAfterAck(t *testing.T) {
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+
+	b := newBase(t, store)
+	ctx, cancel := ctxWithCancel(t)
+	defer cancel()
+
+	b.RegisterTrigger("trigA", sendCh)
+
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() {
+		b.Stop()
+		b.UnregisterTrigger("trigA")
+	})
+
+	// ACK arrives BEFORE the event is delivered (pre-ACK).
+	// This simulates the scenario where other capability DON nodes delivered
+	// the event first, the workflow engine executed and ACKed, and the ACK
+	// reaches this node before its own DeliverEvent is called.
+	require.NoError(t, b.AckEvent(ctx, "trigA", "e1"))
+
+	// Now deliver the event — it should be silently skipped.
+	te := makeTE(t, "trigA", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trigA"))
+
+	// Event should NOT be in the pending map.
+	b.mu.Lock()
+	_, hasTrig := b.pending["trigA"]
+	b.mu.Unlock()
+	require.False(t, hasTrig, "event should not be pending after pre-ACK")
+
+	// Event should NOT be in the store.
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Empty(t, recs, "event should not be persisted after pre-ACK")
+
+	// No retransmissions should occur.
+	time.Sleep(3 * b.tRetransmit)
+	select {
+	case got := <-sendCh:
+		t.Fatalf("unexpected send after pre-ACKed delivery: %+v", got)
+	default:
+	}
+}
+
+func TestBaseTrigger_PreAck_SecondEventStillDelivers(t *testing.T) {
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+
+	b := newBase(t, store)
+	ctx, cancel := ctxWithCancel(t)
+	defer cancel()
+
+	b.RegisterTrigger("trigA", sendCh)
+
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() {
+		b.Stop()
+		b.UnregisterTrigger("trigA")
+	})
+
+	// Pre-ACK only event e1.
+	require.NoError(t, b.AckEvent(ctx, "trigA", "e1"))
+
+	// Deliver e1 (should be skipped) and e2 (should go through normally).
+	te1 := makeTE(t, "trigA", "e1", []byte("payload1"))
+	require.NoError(t, b.DeliverEvent(ctx, te1, "trigA"))
+
+	te2 := makeTE(t, "trigA", "e2", []byte("payload2"))
+	require.NoError(t, b.DeliverEvent(ctx, te2, "trigA"))
+
+	// e2 should be in the store.
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Len(t, recs, 1)
+	require.Equal(t, "e2", recs[0].EventId)
+
+	// e2 should be received on the channel.
+	select {
+	case got := <-sendCh:
+		require.Equal(t, "e2", got.Id)
+	case <-time.After(time.Second):
+		t.Fatal("expected e2 delivery")
+	}
+}
+
+func TestBaseTrigger_PreAck_ExpiresFromCache(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+
+	// Use a very short retransmit interval so the preAcked TTL is short.
+	b := NewBaseTriggerCapability(store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", 20*time.Millisecond, 0, 0, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	b.RegisterTrigger("trigA", sendCh)
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	// Pre-ACK e1.
+	require.NoError(t, b.AckEvent(ctx, "trigA", "e1"))
+
+	b.mu.Lock()
+	require.Contains(t, b.preAcked["trigA"], "e1")
+	b.mu.Unlock()
+
+	// Wait for scanPending to expire the preAcked entry.
+	// TTL = maxRetries(20) * interval(20ms) = 400ms; scanPending runs every 10ms.
+	require.Eventually(t, func() bool {
+		b.mu.Lock()
+		defer b.mu.Unlock()
+		_, exists := b.preAcked["trigA"]["e1"]
+		return !exists
+	}, 2*time.Second, 10*time.Millisecond, "preAcked entry should expire")
+}
+
+func TestBaseTrigger_PreAck_UnregisterClearsCache(t *testing.T) {
+	store := NewMemEventStore()
+	b := newBase(t, store)
+
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b.RegisterTrigger("trigA", sendCh)
+
+	require.NoError(t, b.AckEvent(t.Context(), "trigA", "e1"))
+
+	b.mu.Lock()
+	require.Contains(t, b.preAcked, "trigA")
+	b.mu.Unlock()
+
+	b.UnregisterTrigger("trigA")
+
+	b.mu.Lock()
+	_, exists := b.preAcked["trigA"]
+	b.mu.Unlock()
+	require.False(t, exists, "preAcked should be cleared on unregister")
+}
+
 func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)

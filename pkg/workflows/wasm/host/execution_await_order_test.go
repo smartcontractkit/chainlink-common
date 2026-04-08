@@ -55,9 +55,10 @@ func (a *awaitOrderStub) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetri
 
 var _ ExecutionHelper = (*awaitOrderStub)(nil)
 
-// TestAwaitCapabilities_headOfLineBlocksOnEarlierID proves awaitCapabilities receives from
-// callback channels in acr.Ids order: it cannot finish until an earlier ID completes, even when
-// a later callback finishes first.
+// TestAwaitCapabilities_headOfLineBlocksOnEarlierID proves awaitCapabilities reads from
+// callback channels in acr.Ids order (head-of-line): it cannot finish until an earlier ID
+// completes, even when a later callback finishes first. AwaitCapabilitiesResponse.Responses is a
+// map keyed by CallbackId, not a slice ordered by completion time.
 func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 	t.Parallel()
 
@@ -100,6 +101,6 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 		"awaitCapabilities did not complete after unblocking callback 1")
 	require.NoError(t, awaitErr)
 	require.Len(t, awaitResp.Responses, 2)
-	require.Contains(t, awaitResp.Responses, int32(1))
-	require.Contains(t, awaitResp.Responses, int32(2))
+	require.NotNil(t, awaitResp.Responses[1], "expected entry keyed by CallbackId 1 (map is by id, not completion order)")
+	require.NotNil(t, awaitResp.Responses[2], "expected entry keyed by CallbackId 2")
 }

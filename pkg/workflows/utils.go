@@ -4,11 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/sha3"
 )
 
+// Deprecated: Use GenerateExecutionIDWithTriggerIndex instead.
 func EncodeExecutionID(workflowID, eventID string) (string, error) {
 	s := sha256.New()
 	_, err := s.Write([]byte(workflowID))
@@ -22,6 +25,34 @@ func EncodeExecutionID(workflowID, eventID string) (string, error) {
 	}
 
 	return hex.EncodeToString(s.Sum(nil)), nil
+}
+
+func GenerateExecutionIDWithTriggerIndex(workflowID, triggerEventID string, triggerIndex int) (string, error) {
+	s := sha256.New()
+	_, err := s.Write([]byte(workflowID))
+	if err != nil {
+		return "", err
+	}
+
+	_, err = s.Write([]byte(triggerEventID))
+	if err != nil {
+		return "", err
+	}
+
+	_, err = s.Write([]byte(strconv.Itoa(triggerIndex)))
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(s.Sum(nil)), nil
+}
+
+func GetTriggerReferenceID(triggerIndex int) string {
+	return fmt.Sprintf("trigger_%d", triggerIndex)
+}
+
+func GetTriggerIndexFromReferenceID(referenceID string) (int, error) {
+	return strconv.Atoi(strings.TrimPrefix(referenceID, "trigger_"))
 }
 
 func GenerateWorkflowIDFromStrings(owner string, name string, workflow []byte, config []byte, secretsURL string) (string, error) {

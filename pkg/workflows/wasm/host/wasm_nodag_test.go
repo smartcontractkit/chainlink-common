@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -20,12 +22,18 @@ import (
 )
 
 const (
-	nodagRandomBinaryCmd        = "standard_tests/multiple_triggers"
-	nodagRandomBinaryLocation   = nodagRandomBinaryCmd + "/testmodule.wasm"
-	loggingLimitsBinaryCmd      = "test/logging_limits/cmd"
-	loggingLimitsBinaryLocation = loggingLimitsBinaryCmd + "/testmodule.wasm"
-	metricLimitsBinaryCmd       = "test/metric_limits/cmd"
-	metricLimitsBinaryLocation  = metricLimitsBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd                       = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation                  = nodagRandomBinaryCmd + "/testmodule.wasm"
+	loggingLimitsBinaryCmd                     = "test/logging_limits/cmd"
+	loggingLimitsBinaryLocation                = loggingLimitsBinaryCmd + "/testmodule.wasm"
+	metricLimitsBinaryCmd                      = "test/metric_limits/cmd"
+	metricLimitsBinaryLocation                 = metricLimitsBinaryCmd + "/testmodule.wasm"
+	standardTeeRuntimeBinaryCmd                = "standard_tests/tee_runtime"
+	standardTeeRuntimeBinaryLocation           = standardTeeRuntimeBinaryCmd + "/testmodule.wasm"
+	invalidMemoryForRequirementsCmd            = "test/requirements/invalid_memory"
+	invalidMemoryForRequirementsBinaryLocation = invalidMemoryForRequirementsCmd + "/testmodule.wasm"
+	invalidProtoForRequirementsCmd             = "test/requirements/invalid_proto"
+	invalidProtoForRequirementsBinaryLocation  = invalidProtoForRequirementsCmd + "/testmodule.wasm"
 )
 
 func Test_Sleep_Timeout(t *testing.T) {
@@ -211,6 +219,64 @@ func Test_NoDAG_EmitMetricDisabled(t *testing.T) {
 	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
 	require.NoError(t, err)
 	// EmitUserMetric should never be called when disabled - no mock expectation set
+}
+
+func Test_NoDAG_UnparseableRequirements(t *testing.T) {
+	t.Parallel()
+	binary := createTestBinary(invalidProtoForRequirementsCmd, invalidProtoForRequirementsBinaryLocation, true, t)
+
+	err := runTeeFailureTest(t, sdk.TeeType_TEE_TYPE_AWS_NITRO, binary)
+
+	assert.Error(t, err)
+	rerunErr := &RequirementsRerun{}
+	assert.False(t, errors.As(err, &rerunErr))
+}
+
+func Test_NoDAG_InvalidMemoryAddressForRequirements(t *testing.T) {
+	t.Parallel()
+	binary := createTestBinary(invalidMemoryForRequirementsCmd, invalidMemoryForRequirementsBinaryLocation, true, t)
+
+	err := runTeeFailureTest(t, sdk.TeeType_TEE_TYPE_AWS_NITRO, binary)
+
+	assert.Error(t, err)
+	rerunErr := &RequirementsRerun{}
+	assert.False(t, errors.As(err, &rerunErr))
+}
+
+func Test_NoDAG_RequirementsNotMet(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(standardTeeRuntimeBinaryCmd, standardTeeRuntimeBinaryLocation, true, t)
+
+	// Different (non-existent) TEE
+	err := runTeeFailureTest(t, 999, binary)
+
+	rerunErr := &RequirementsRerun{}
+	require.True(t, errors.As(err, &rerunErr))
+
+	expected := &sdk.Requirements{
+		Tee: &sdk.Tee{Type: &sdk.Tee_TypeSelection{
+			TypeSelection: &sdk.TeeTypeSelection{Types: []sdk.TeeType{sdk.TeeType_TEE_TYPE_AWS_NITRO}}},
+		},
+	}
+	assert.True(t, proto.Equal(expected, (*sdk.Requirements)(rerunErr)))
+}
+
+func runTeeFailureTest(t *testing.T, teeType sdk.TeeType, binary []byte) error {
+	cfg := defaultNoDAGModCfg(t)
+	cfg.RequirementsHandler.Tee = TeeProvider(teeType).Provides
+	m, err := NewModule(t.Context(), cfg, binary)
+	require.NoError(t, err)
+
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+
+	_, err = m.Execute(t.Context(), subscribe, mockExecutionHelper)
+	return err
 }
 
 func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {

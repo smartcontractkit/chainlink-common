@@ -523,6 +523,47 @@ func TestStandardTimeInterpretation(t *testing.T) {
 	require.Equal(t, "2020-01-02T03:04:05Z", result)
 }
 
+func TestStandardTeeRuntime(t *testing.T) {
+	t.Parallel()
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+
+	cfg := defaultNoDAGModCfg(t)
+	var seenTeeRequirement *sdk.Tee
+	cfg.RequirementsHandler.Tee = func(tee *sdk.Tee) bool {
+		seenTeeRequirement = tee
+		return true
+	}
+
+	m := makeTestModuleWithConfig(t, cfg)
+
+	for _, test := range []struct {
+		name string
+		req  *sdk.ExecuteRequest
+	}{
+		{
+			name: "subscribe",
+			req:  &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}},
+		},
+		{
+			name: "execute",
+			req:  triggerExecuteRequest(t, 0, trigger),
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockExecutionHelper := NewMockExecutionHelper(t)
+			mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+			mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+				return time.Now()
+			}).Maybe()
+
+			_, err := m.Execute(t.Context(), test.req, mockExecutionHelper)
+			require.NoError(t, err)
+			require.True(t, proto.Equal(seenTeeRequirement, &sdk.Tee{Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{Types: []sdk.TeeType{sdk.TeeType_TEE_TYPE_AWS_NITRO}}}}))
+		})
+	}
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)
@@ -549,8 +590,12 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionR
 // To re-use a binary, an outer test can create the module and use t.Run to run subtests using that module.
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
+	return makeTestModuleWithConfig(t, nil)
+}
+
+func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, nil)
+	return makeTestModuleByName(t, testName, cfg)
 }
 
 func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
@@ -559,6 +604,7 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
 	cmd.Dir = absPath
+	fmt.Printf("Compiling test module from %s with command %s\n:", cmd.Dir, cmd.String())
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))

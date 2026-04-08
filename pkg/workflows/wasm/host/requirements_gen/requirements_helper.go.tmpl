@@ -1,0 +1,29 @@
+package host
+
+// RequirementsHandler contains a callback for each public field in sdk.Requirements.
+// Each callback receives the field value and returns a list of strings or an error.
+type RequirementsHandler struct {
+{{- range .Fields}}
+	{{.Name}} func({{.Type}}) bool
+{{- end}}
+}
+
+// CheckRequirements calls each non-nil callback in handler for the corresponding
+// non-nil field in req, returning false if any are false, or if the handler is nil.
+// Unknown fields on the proto also result in a false return value.
+func CheckRequirements(handler RequirementsHandler, req *sdk.Requirements) bool {
+	if len(req.ProtoReflect().GetUnknown()) != 0 {
+		return false
+	}
+
+{{range .Fields}}
+	if req.{{.Name}} != nil {
+		if handler.{{.Name}} == nil || !handler.{{.Name}}(req.{{.Name}})  {
+			return false
+		}
+
+	}
+{{end}}
+
+	return true
+}

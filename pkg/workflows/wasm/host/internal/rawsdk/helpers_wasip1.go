@@ -58,6 +58,7 @@ func SendError(err error) {
 func SendSubscription(subscriptions *sdk.TriggerSubscriptionRequest) {
 	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
+	os.Exit(0)
 }
 
 func Now() time.Time {
@@ -251,3 +252,6 @@ func getSecrets(req unsafe.Pointer, reqLen int32, responseBuffer unsafe.Pointer,
 
 //go:wasmimport env await_secrets
 func awaitSecrets(req unsafe.Pointer, reqLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64
+
+//go:wasmimport env requirements
+func Requirements(req unsafe.Pointer, reqLen int32)

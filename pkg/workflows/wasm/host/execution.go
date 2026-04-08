@@ -32,6 +32,7 @@ type execution[T any] struct {
 	nodeSeed             int64
 	donLogCount          uint32
 	nodeLogCount         uint32
+	requirementsRerunErr error
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -380,4 +381,29 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 	}
 
 	return ErrnoSuccess
+}
+
+// A trap return will cause the execution to halt.
+// This function fails safe and prefers to kill the program than to return an error to the user.
+// It does this because a failure here could lead to code running in an environment it's not allowed in
+// Although the runtime could protect from this instead, it's safer to fail as early as possible
+func (e *execution[T]) requirements(caller *wasmtime.Caller, ptr int32, ptrlen int32) *wasmtime.Trap {
+	requirements := &sdkpb.Requirements{}
+	payload, err := wasmRead(caller, ptr, ptrlen)
+	if err != nil {
+		e.requirementsRerunErr = fmt.Errorf("error reading requirements: %s", err)
+		return wasmtime.NewTrap(e.requirementsRerunErr.Error())
+	}
+
+	if err = proto.Unmarshal(payload, requirements); err != nil {
+		e.requirementsRerunErr = fmt.Errorf("error unmarshalling requirements: %s", err)
+		return wasmtime.NewTrap(e.requirementsRerunErr.Error())
+	}
+
+	if !CheckRequirements(e.module.cfg.RequirementsHandler, requirements) {
+		e.requirementsRerunErr = (*RequirementsRerun)(requirements)
+		return wasmtime.NewTrap(e.requirementsRerunErr.Error())
+	}
+
+	return nil
 }

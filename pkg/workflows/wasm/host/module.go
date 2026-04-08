@@ -50,10 +50,10 @@ var (
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 
-	defaultMaxUserMetricPayloadBytes      = uint32(4096) // 4 KB
-	defaultMaxUserMetricNameLength        = uint32(128)
-	defaultMaxUserMetricLabelsPerMetric   = uint32(10)
-	defaultMaxUserMetricLabelValueLength  = uint32(256)
+	defaultMaxUserMetricPayloadBytes     = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength       = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric  = uint32(10)
+	defaultMaxUserMetricLabelValueLength = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -82,7 +82,7 @@ type ModuleConfig struct {
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
 
-	EnableUserMetricsLimiter limits.GateLimiter
+	EnableUserMetricsLimiter             limits.GateLimiter
 	MaxUserMetricPayloadBytes            uint32
 	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
 	MaxUserMetricNameLength              uint32
@@ -101,7 +101,8 @@ type ModuleConfig struct {
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
-	Determinism *DeterminismConfig
+	Determinism         *DeterminismConfig
+	RequirementsHandler RequirementsHandler
 }
 
 type ModuleBase interface {
@@ -490,6 +491,13 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
+	if err = linker.FuncWrap(
+		"env",
+		"requirements",
+		exec.requirements); err != nil {
+		return nil, fmt.Errorf("error wrapping requirements func: %w", err)
+	}
+
 	return linker.Instantiate(store, m.module)
 }
 
@@ -725,6 +733,10 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error executing runner")
 	case containsCode(err, wasm.CodeHostErr):
 		return o, fmt.Errorf("invariant violation: host errored during sendResponse")
+	}
+
+	if exec.requirementsRerunErr != nil {
+		return o, exec.requirementsRerunErr
 	}
 
 	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.

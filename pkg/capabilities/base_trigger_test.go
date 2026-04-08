@@ -725,6 +725,55 @@ func TestBaseTrigger_PreAck_UnregisterClearsCache(t *testing.T) {
 	require.False(t, exists, "preAcked should be cleared on unregister")
 }
 
+func TestBaseTrigger_RedeliveryAfterAck_Skipped(t *testing.T) {
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 50)
+
+	b := newBase(t, store)
+	ctx, cancel := ctxWithCancel(t)
+	defer cancel()
+
+	b.RegisterTrigger("trigA", sendCh)
+
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() {
+		b.Stop()
+		b.UnregisterTrigger("trigA")
+	})
+
+	// Normal flow: deliver → send → ACK.
+	te := makeTE(t, "trigA", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trigA"))
+
+	<-sendCh
+	require.NoError(t, b.AckEvent(ctx, "trigA", "e1"))
+
+	// After a successful ACK, the event should be recorded in preAcked
+	// so that re-deliveries (e.g. from EVM trigger after block finalization)
+	// are skipped.
+	b.mu.Lock()
+	_, inPreAcked := b.preAcked["trigA"]["e1"]
+	_, inPending := b.pending["trigA"]
+	b.mu.Unlock()
+	require.True(t, inPreAcked, "ACKed event should be in preAcked cache")
+	require.False(t, inPending, "ACKed event should not be in pending")
+
+	// Re-deliver the same event (simulates EVM trigger re-delivery after
+	// block finalization prunes its unfinalizedSentEventIDs).
+	te2 := makeTE(t, "trigA", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te2, "trigA"))
+
+	// Should NOT be in pending or store.
+	b.mu.Lock()
+	_, hasTrig := b.pending["trigA"]
+	b.mu.Unlock()
+	require.False(t, hasTrig, "re-delivered event should not be pending")
+
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Empty(t, recs, "re-delivered event should not be persisted")
+}
+
 func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)

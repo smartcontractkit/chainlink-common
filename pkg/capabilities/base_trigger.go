@@ -440,15 +440,17 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAckMemoryOutcome("miss_no_trigger_bucket")
 	}
 
-	// Record a pre-ACK so that a later DeliverEvent for this event is skipped.
-	// This handles the case where other capability DON nodes delivered the event
-	// first, causing the ACK to arrive at this node before DeliverEvent is called.
-	if !found {
-		if b.preAcked[triggerId] == nil {
-			b.preAcked[triggerId] = make(map[string]time.Time)
-		}
-		b.preAcked[triggerId][eventId] = time.Now()
+	// Always record the ACK so that a later DeliverEvent for this event is
+	// skipped. This covers two scenarios:
+	//   1. (pre-ACK) Other DON nodes delivered the event first, so the ACK
+	//      arrives at this node before DeliverEvent is called.
+	//   2. (re-delivery) The upstream trigger re-delivers the same event
+	//      (e.g. EVM trigger after block finalization prunes its sent-set),
+	//      even though the event was already ACKed during a prior delivery.
+	if b.preAcked[triggerId] == nil {
+		b.preAcked[triggerId] = make(map[string]time.Time)
 	}
+	b.preAcked[triggerId][eventId] = time.Now()
 
 	var wasCritical bool
 	if m, ok := b.undeliveredAlertStates[triggerId]; ok {

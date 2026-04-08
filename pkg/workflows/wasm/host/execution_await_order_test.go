@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 // awaitOrderStub implements ExecutionHelper for testing awaitCapabilities ordering.
@@ -45,6 +47,8 @@ func (a *awaitOrderStub) GetDONTime() (time.Time, error) { return time.Time{}, n
 
 func (a *awaitOrderStub) EmitUserLog(string) error { return nil }
 
+func (a *awaitOrderStub) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetric) error { return nil }
+
 var _ ExecutionHelper = (*awaitOrderStub)(nil)
 
 // TestAwaitCapabilities_headOfLineBlocksOnEarlierID proves awaitCapabilities receives from
@@ -69,28 +73,22 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 	require.NoError(t, exec.callCapAsync(t.Context(), req(1)))
 	require.NoError(t, exec.callCapAsync(t.Context(), req(2)))
 
-	awaitDone := make(chan struct{})
+	var awaitFinished atomic.Bool
 	var awaitResp *sdkpb.AwaitCapabilitiesResponse
 	var awaitErr error
 	go func() {
 		awaitResp, awaitErr = exec.awaitCapabilities(t.Context(), &sdkpb.AwaitCapabilitiesRequest{Ids: []int32{1, 2}})
-		close(awaitDone)
+		awaitFinished.Store(true)
 	}()
 
-	select {
-	case <-awaitDone:
-		t.Fatal("awaitCapabilities returned before callback 1 was unblocked; head-of-line invariant violated")
-	case <-time.After(200 * time.Millisecond):
-	}
+	time.Sleep(200 * time.Millisecond)
+	require.False(t, awaitFinished.Load(), "awaitCapabilities returned before callback 1 was unblocked; head-of-line invariant violated")
 
 	// Unblock callback 1 so the first channel receive in awaitCapabilities can complete.
 	close(unblock)
 
-	select {
-	case <-awaitDone:
-	case <-time.After(2 * time.Second):
-		t.Fatal("awaitCapabilities did not complete after unblocking callback 1")
-	}
+	require.Eventually(t, func() bool { return awaitFinished.Load() }, 2*time.Second, 10*time.Millisecond,
+		"awaitCapabilities did not complete after unblocking callback 1")
 	require.NoError(t, awaitErr)
 	require.Len(t, awaitResp.Responses, 2)
 	require.Contains(t, awaitResp.Responses, int32(1))

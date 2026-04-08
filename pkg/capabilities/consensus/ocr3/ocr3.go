@@ -2,6 +2,7 @@ package ocr3
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jonboulle/clockwork"
@@ -101,15 +102,11 @@ func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationS
 }
 
 func (o *Capability) Close() error {
-	o.Plugin.Close()
+	err := o.Plugin.Close()
 
-	if o.capabilityRegistry == nil {
-		return nil
+	if o.capabilityRegistry != nil {
+		err = errors.Join(err, o.capabilityRegistry.Remove(context.TODO(), o.config.capability.ID))
 	}
 
-	if err := o.capabilityRegistry.Remove(context.TODO(), o.config.capability.ID); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

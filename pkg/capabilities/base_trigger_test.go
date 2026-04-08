@@ -619,6 +619,88 @@ func TestBaseTrigger_PreAck_ExpiresFromCache(t *testing.T) {
 	}, 2*time.Second, 10*time.Millisecond, "preAcked entry should expire")
 }
 
+func TestBaseTrigger_PreAck_DoubleCheckCatchesRace(t *testing.T) {
+	// Simulates the exact race from production: DeliverEvent's first preAcked
+	// check passes (no pre-ACK yet), then during store.Insert an ACK arrives.
+	// The double-check after Insert must catch it.
+	insertStarted := make(chan struct{})
+	proceedInsert := make(chan struct{})
+	store := &blockingInsertStore{
+		MemEventStore:  NewMemEventStore(),
+		insertStarted:  insertStarted,
+		proceedInsert:  proceedInsert,
+		blockNextCount: 1,
+	}
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b := newBase(t, store)
+	ctx, cancel := ctxWithCancel(t)
+	defer cancel()
+
+	b.RegisterTrigger("trigA", sendCh)
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trigA", "e1", []byte("payload"))
+
+	// Start DeliverEvent in background — it will block during store.Insert.
+	deliverDone := make(chan error, 1)
+	go func() {
+		deliverDone <- b.DeliverEvent(ctx, te, "trigA")
+	}()
+
+	// Wait for Insert to start (first preAcked check has already passed).
+	<-insertStarted
+
+	// Simulate the ACK arriving while Insert is blocked.
+	require.NoError(t, b.AckEvent(ctx, "trigA", "e1"))
+
+	// Unblock the Insert.
+	close(proceedInsert)
+
+	// DeliverEvent should succeed (no error) but skip adding to pending.
+	require.NoError(t, <-deliverDone)
+
+	// Event should NOT be in pending (double-check removed it).
+	b.mu.Lock()
+	_, hasTrig := b.pending["trigA"]
+	b.mu.Unlock()
+	require.False(t, hasTrig, "event should not be pending after double-check caught pre-ACK")
+
+	// No retransmissions should occur.
+	time.Sleep(3 * b.tRetransmit)
+	select {
+	case got := <-sendCh:
+		t.Fatalf("unexpected send after double-check pre-ACK: %+v", got)
+	default:
+	}
+}
+
+// blockingInsertStore wraps MemEventStore and blocks during Insert to simulate
+// slow database writes, allowing ACKs to arrive during the write.
+type blockingInsertStore struct {
+	*MemEventStore
+	insertStarted  chan struct{}
+	proceedInsert  chan struct{}
+	mu2            sync.Mutex
+	blockNextCount int
+}
+
+func (s *blockingInsertStore) Insert(ctx context.Context, r PendingEvent) error {
+	s.mu2.Lock()
+	shouldBlock := s.blockNextCount > 0
+	if shouldBlock {
+		s.blockNextCount--
+	}
+	s.mu2.Unlock()
+
+	if shouldBlock {
+		s.insertStarted <- struct{}{}
+		<-s.proceedInsert
+	}
+	return s.MemEventStore.Insert(ctx, r)
+}
+
 func TestBaseTrigger_PreAck_UnregisterClearsCache(t *testing.T) {
 	store := NewMemEventStore()
 	b := newBase(t, store)

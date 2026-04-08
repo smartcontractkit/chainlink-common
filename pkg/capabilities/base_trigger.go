@@ -342,7 +342,28 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.lggr.Infow("base trigger persisted pending event for ACK tracking",
 		"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
 
+	// Double-check preAcked under the same lock as adding to pending.
+	// An ACK may have arrived during the store.Insert call above. Without
+	// this second check, the event would be retransmitted forever because
+	// the first preAcked check (before Insert) narrowly missed the ACK.
 	b.mu.Lock()
+	if pa, ok := b.preAcked[triggerID]; ok {
+		if _, wasAcked := pa[te.ID]; wasAcked {
+			delete(pa, te.ID)
+			if len(pa) == 0 {
+				delete(b.preAcked, triggerID)
+			}
+			b.mu.Unlock()
+			b.lggr.Infow("base trigger DeliverEvent skipped after persist: event was ACKed during store write (pre-ACK double-check)",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			b.metrics.IncAckMemoryOutcome("pre_ack_delivery_skipped")
+			if err := b.store.DeleteEvent(ctx, triggerID, te.ID); err != nil {
+				b.lggr.Errorw("base trigger failed to delete pre-ACKed event from store",
+					"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
+			}
+			return nil
+		}
+	}
 	if b.pending[triggerID] == nil {
 		b.pending[triggerID] = map[string]*PendingEvent{}
 	}

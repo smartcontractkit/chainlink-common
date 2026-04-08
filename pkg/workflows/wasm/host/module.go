@@ -31,6 +31,7 @@ import (
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 const v2ImportPrefix = "version_v2"
@@ -48,6 +49,11 @@ var (
 	defaultMaxLogCountDONMode        = 10_000
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
+
+	defaultMaxUserMetricPayloadBytes      = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength        = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric   = uint32(10)
+	defaultMaxUserMetricLabelValueLength  = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -75,6 +81,16 @@ type ModuleConfig struct {
 	MaxLogLenBytes      uint32
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
+
+	EnableUserMetricsLimiter limits.GateLimiter
+	MaxUserMetricPayloadBytes            uint32
+	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
+	MaxUserMetricNameLength              uint32
+	MaxUserMetricNameLengthLimiter       limits.BoundLimiter[int] // supersedes MaxUserMetricNameLength if set
+	MaxUserMetricLabelsPerMetric         uint32
+	MaxUserMetricLabelsPerMetricLimiter  limits.BoundLimiter[int] // supersedes MaxUserMetricLabelsPerMetric if set
+	MaxUserMetricLabelValueLength        uint32
+	MaxUserMetricLabelValueLengthLimiter limits.BoundLimiter[int] // supersedes MaxUserMetricLabelValueLength if set
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -121,6 +137,8 @@ type ExecutionHelper interface {
 	GetDONTime() (time.Time, error)
 
 	EmitUserLog(log string) error
+
+	EmitUserMetric(ctx context.Context, metric *wfpb.WorkflowUserMetric) error
 }
 
 type module struct {
@@ -215,7 +233,57 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxLogCountNodeMode = uint32(defaultMaxLogCountNodeMode)
 	}
 
+	if modCfg.MaxUserMetricPayloadBytes == 0 {
+		modCfg.MaxUserMetricPayloadBytes = defaultMaxUserMetricPayloadBytes
+	}
+	if modCfg.MaxUserMetricNameLength == 0 {
+		modCfg.MaxUserMetricNameLength = defaultMaxUserMetricNameLength
+	}
+	if modCfg.MaxUserMetricLabelsPerMetric == 0 {
+		modCfg.MaxUserMetricLabelsPerMetric = defaultMaxUserMetricLabelsPerMetric
+	}
+	if modCfg.MaxUserMetricLabelValueLength == 0 {
+		modCfg.MaxUserMetricLabelValueLength = defaultMaxUserMetricLabelValueLength
+	}
+
 	lf := limits.Factory{Logger: modCfg.Logger}
+
+	if modCfg.EnableUserMetricsLimiter == nil {
+		modCfg.EnableUserMetricsLimiter = limits.NewGateLimiter(false)
+	}
+
+	if modCfg.MaxUserMetricPayloadLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxUserMetricPayloadBytes))
+		var err error
+		modCfg.MaxUserMetricPayloadLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make metric payload size limiter: %w", err)
+		}
+	}
+	if modCfg.MaxUserMetricNameLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricNameLength))
+		var err error
+		modCfg.MaxUserMetricNameLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make metric name length limiter: %w", err)
+		}
+	}
+	if modCfg.MaxUserMetricLabelsPerMetricLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricLabelsPerMetric))
+		var err error
+		modCfg.MaxUserMetricLabelsPerMetricLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make labels per metric limiter: %w", err)
+		}
+	}
+	if modCfg.MaxUserMetricLabelValueLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricLabelValueLength))
+		var err error
+		modCfg.MaxUserMetricLabelValueLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make label value length limiter: %w", err)
+		}
+	}
 	if modCfg.MemoryLimiter == nil {
 		// Take the max of the min and the configured max memory mbs.
 		// We do this because Go requires a minimum of 16 megabytes to run,
@@ -389,6 +457,14 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		exec.log,
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
+	if err := linker.FuncWrap(
+		"env",
+		"emit_metric",
+		exec.emitMetric,
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping emit_metric func: %w", err)
 	}
 
 	if err = linker.FuncWrap(

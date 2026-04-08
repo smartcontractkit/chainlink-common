@@ -12,15 +12,14 @@ import (
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
-	typesolana "github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	solprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/solana"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
-func ConvertPublicKeysFromProto(pubKeys [][]byte) ([]typesolana.PublicKey, error) {
-	out := make([]typesolana.PublicKey, 0, len(pubKeys))
+func ConvertPublicKeysFromProto(pubKeys [][]byte) ([]solana.PublicKey, error) {
+	out := make([]solana.PublicKey, 0, len(pubKeys))
 	var errs []error
 	for i, b := range pubKeys {
 		pk, err := ConvertPublicKeyFromProto(b)
@@ -36,35 +35,35 @@ func ConvertPublicKeysFromProto(pubKeys [][]byte) ([]typesolana.PublicKey, error
 	return out, nil
 }
 
-func ConvertPublicKeyFromProto(b []byte) (typesolana.PublicKey, error) {
+func ConvertPublicKeyFromProto(b []byte) (solana.PublicKey, error) {
 	if err := ValidatePublicKeyBytes(b); err != nil {
-		return typesolana.PublicKey{}, err
+		return solana.PublicKey{}, err
 	}
-	return typesolana.PublicKey(b), nil
+	return solana.PublicKey(b), nil
 }
 
 func ValidatePublicKeyBytes(b []byte) error {
 	if b == nil {
 		return fmt.Errorf("address can't be nil")
 	}
-	if len(b) != typesolana.PublicKeyLength {
+	if len(b) != solana.PublicKeyLength {
 		return fmt.Errorf("invalid public key: got %d bytes, expected %d, value=%s",
-			len(b), typesolana.PublicKeyLength, base58.Encode(b))
+			len(b), solana.PublicKeyLength, base58.Encode(b))
 	}
 	return nil
 }
 
-func ConvertSignatureFromProto(b []byte) (typesolana.Signature, error) {
+func ConvertSignatureFromProto(b []byte) (solana.Signature, error) {
 	if err := ValidateSignatureBytes(b); err != nil {
-		return typesolana.Signature{}, err
+		return solana.Signature{}, err
 	}
-	var s typesolana.Signature
-	copy(s[:], b[:typesolana.SignatureLength])
+	var s solana.Signature
+	copy(s[:], b[:solana.SignatureLength])
 	return s, nil
 }
 
-func ConvertSignaturesFromProto(arr [][]byte) ([]typesolana.Signature, error) {
-	out := make([]typesolana.Signature, 0, len(arr))
+func ConvertSignaturesFromProto(arr [][]byte) ([]solana.Signature, error) {
+	out := make([]solana.Signature, 0, len(arr))
 	var errs []error
 	for i, b := range arr {
 		s, err := ConvertSignatureFromProto(b)
@@ -80,7 +79,7 @@ func ConvertSignaturesFromProto(arr [][]byte) ([]typesolana.Signature, error) {
 	return out, nil
 }
 
-func ConvertSignaturesToProto(sigs []typesolana.Signature) [][]byte {
+func ConvertSignaturesToProto(sigs []solana.Signature) [][]byte {
 	out := make([][]byte, 0, len(sigs))
 	for _, s := range sigs {
 		out = append(out, s[:])
@@ -92,136 +91,136 @@ func ValidateSignatureBytes(b []byte) error {
 	if b == nil {
 		return fmt.Errorf("signature can't be nil")
 	}
-	if len(b) != typesolana.SignatureLength {
+	if len(b) != solana.SignatureLength {
 		return fmt.Errorf("invalid signature: got %d bytes, expected %d, value=%s",
-			len(b), typesolana.SignatureLength, base58.Encode(b))
+			len(b), solana.SignatureLength, base58.Encode(b))
 	}
 	return nil
 }
 
-func ConvertHashFromProto(b []byte) (typesolana.Hash, error) {
+func ConvertHashFromProto(b []byte) (solana.Hash, error) {
 	if b == nil {
-		return typesolana.Hash{}, fmt.Errorf("hash can't be nil")
+		return solana.Hash{}, fmt.Errorf("hash can't be nil")
 	}
 
 	if len(b) != solana.HashLength {
-		return typesolana.Hash{}, fmt.Errorf("invalid hash: got %d bytes, expected %d, value=%s",
+		return solana.Hash{}, fmt.Errorf("invalid hash: got %d bytes, expected %d, value=%s",
 			len(b), solana.HashLength, base58.Encode(b))
 	}
-	return typesolana.Hash(typesolana.PublicKey(b)), nil
+	return solana.Hash(solana.PublicKey(b)), nil
 }
 
-func ConvertEventSigFromProto(b []byte) (typesolana.EventSignature, error) {
+func ConvertEventSigFromProto(b []byte) (solana.EventSignature, error) {
 	if b == nil {
-		return typesolana.EventSignature{}, fmt.Errorf("hash can't be nil")
+		return solana.EventSignature{}, fmt.Errorf("hash can't be nil")
 	}
 
 	if len(b) != solana.EventSignatureLength {
-		return typesolana.EventSignature{}, fmt.Errorf("invalid event signature: got %d bytes, expected %d, value=%x",
+		return solana.EventSignature{}, fmt.Errorf("invalid event signature: got %d bytes, expected %d, value=%x",
 			len(b), solana.EventSignatureLength, b)
 	}
 
-	return typesolana.EventSignature(b), nil
+	return solana.EventSignature(b), nil
 
 }
 
-func ConvertEncodingTypeFromProto(e EncodingType) typesolana.EncodingType {
+func ConvertEncodingTypeFromProto(e EncodingType) solana.EncodingType {
 	switch e {
 	case EncodingType_ENCODING_TYPE_BASE58:
-		return typesolana.EncodingBase58
+		return solana.EncodingBase58
 	case EncodingType_ENCODING_TYPE_BASE64:
-		return typesolana.EncodingBase64
+		return solana.EncodingBase64
 	case EncodingType_ENCODING_TYPE_BASE64_ZSTD:
-		return typesolana.EncodingBase64Zstd
+		return solana.EncodingBase64Zstd
 	case EncodingType_ENCODING_TYPE_JSON:
-		return typesolana.EncodingJSON
+		return solana.EncodingJSON
 	case EncodingType_ENCODING_TYPE_JSON_PARSED:
-		return typesolana.EncodingJSONParsed
+		return solana.EncodingJSONParsed
 	default:
-		return typesolana.EncodingType("")
+		return solana.EncodingType("")
 	}
 }
 
-func ConvertEncodingTypeToProto(e typesolana.EncodingType) EncodingType {
+func ConvertEncodingTypeToProto(e solana.EncodingType) EncodingType {
 	switch e {
-	case typesolana.EncodingBase64:
+	case solana.EncodingBase64:
 		return EncodingType_ENCODING_TYPE_BASE64
-	case typesolana.EncodingBase58:
+	case solana.EncodingBase58:
 		return EncodingType_ENCODING_TYPE_BASE58
-	case typesolana.EncodingBase64Zstd:
+	case solana.EncodingBase64Zstd:
 		return EncodingType_ENCODING_TYPE_BASE64_ZSTD
-	case typesolana.EncodingJSONParsed:
+	case solana.EncodingJSONParsed:
 		return EncodingType_ENCODING_TYPE_JSON_PARSED
-	case typesolana.EncodingJSON:
+	case solana.EncodingJSON:
 		return EncodingType_ENCODING_TYPE_JSON
 	default:
 		return EncodingType_ENCODING_TYPE_NONE
 	}
 }
 
-func ConvertCommitmentFromProto(c CommitmentType) typesolana.CommitmentType {
+func ConvertCommitmentFromProto(c CommitmentType) solana.CommitmentType {
 	switch c {
 	case CommitmentType_COMMITMENT_TYPE_CONFIRMED:
-		return typesolana.CommitmentConfirmed
+		return solana.CommitmentConfirmed
 	case CommitmentType_COMMITMENT_TYPE_FINALIZED:
-		return typesolana.CommitmentFinalized
+		return solana.CommitmentFinalized
 	case CommitmentType_COMMITMENT_TYPE_PROCESSED:
-		return typesolana.CommitmentProcessed
+		return solana.CommitmentProcessed
 	default:
-		return typesolana.CommitmentType("")
+		return solana.CommitmentType("")
 	}
 }
 
-func ConvertCommitmentToProto(c typesolana.CommitmentType) CommitmentType {
+func ConvertCommitmentToProto(c solana.CommitmentType) CommitmentType {
 	switch c {
-	case typesolana.CommitmentFinalized:
+	case solana.CommitmentFinalized:
 		return CommitmentType_COMMITMENT_TYPE_FINALIZED
-	case typesolana.CommitmentConfirmed:
+	case solana.CommitmentConfirmed:
 		return CommitmentType_COMMITMENT_TYPE_CONFIRMED
-	case typesolana.CommitmentProcessed:
+	case solana.CommitmentProcessed:
 		return CommitmentType_COMMITMENT_TYPE_PROCESSED
 	default:
 		return CommitmentType_COMMITMENT_TYPE_NONE
 	}
 }
 
-func ConvertConfirmationStatusToProto(c typesolana.ConfirmationStatusType) ConfirmationStatusType {
+func ConvertConfirmationStatusToProto(c solana.ConfirmationStatusType) ConfirmationStatusType {
 	switch c {
-	case typesolana.ConfirmationStatusFinalized:
+	case solana.ConfirmationStatusFinalized:
 		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_FINALIZED
-	case typesolana.ConfirmationStatusConfirmed:
+	case solana.ConfirmationStatusConfirmed:
 		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED
-	case typesolana.ConfirmationStatusProcessed:
+	case solana.ConfirmationStatusProcessed:
 		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_PROCESSED
 	default:
 		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_NONE
 	}
 }
 
-func ConvertConfirmationStatusFromProto(c ConfirmationStatusType) typesolana.ConfirmationStatusType {
+func ConvertConfirmationStatusFromProto(c ConfirmationStatusType) solana.ConfirmationStatusType {
 	switch c {
 	case ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED:
-		return typesolana.ConfirmationStatusConfirmed
+		return solana.ConfirmationStatusConfirmed
 	case ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_FINALIZED:
-		return typesolana.ConfirmationStatusFinalized
+		return solana.ConfirmationStatusFinalized
 	case ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_PROCESSED:
-		return typesolana.ConfirmationStatusProcessed
+		return solana.ConfirmationStatusProcessed
 	default:
-		return typesolana.ConfirmationStatusType("")
+		return solana.ConfirmationStatusType("")
 	}
 }
 
-func ConvertDataSliceFromProto(p *DataSlice) *typesolana.DataSlice {
+func ConvertDataSliceFromProto(p *DataSlice) *solana.DataSlice {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.DataSlice{
+	return &solana.DataSlice{
 		Offset: ptrUint64(p.Offset),
 		Length: ptrUint64(p.Length),
 	}
 }
 
-func ConvertDataSliceToProto(d *typesolana.DataSlice) *DataSlice {
+func ConvertDataSliceToProto(d *solana.DataSlice) *DataSlice {
 	if d == nil {
 		return nil
 	}
@@ -238,18 +237,18 @@ func ConvertDataSliceToProto(d *typesolana.DataSlice) *DataSlice {
 	}
 }
 
-func ConvertUiTokenAmountFromProto(p *UiTokenAmount) *typesolana.UiTokenAmount {
+func ConvertUiTokenAmountFromProto(p *UiTokenAmount) *solana.UiTokenAmount {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.UiTokenAmount{
+	return &solana.UiTokenAmount{
 		Amount:         p.Amount,
 		Decimals:       uint8(p.Decimals),
 		UiAmountString: p.UiAmountString,
 	}
 }
 
-func ConvertUiTokenAmountToProto(u *typesolana.UiTokenAmount) *UiTokenAmount {
+func ConvertUiTokenAmountToProto(u *solana.UiTokenAmount) *UiTokenAmount {
 	if u == nil {
 		return nil
 	}
@@ -260,7 +259,7 @@ func ConvertUiTokenAmountToProto(u *typesolana.UiTokenAmount) *UiTokenAmount {
 	}
 }
 
-func ConvertAccountFromProto(p *Account) (*typesolana.Account, error) {
+func ConvertAccountFromProto(p *Account) (*solana.Account, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -270,7 +269,7 @@ func ConvertAccountFromProto(p *Account) (*typesolana.Account, error) {
 	}
 	data := ConvertDataBytesOrJSONFromProto(p.Data)
 
-	return &typesolana.Account{
+	return &solana.Account{
 		Lamports:   p.Lamports,
 		Owner:      owner,
 		Data:       data,
@@ -280,7 +279,7 @@ func ConvertAccountFromProto(p *Account) (*typesolana.Account, error) {
 	}, nil
 }
 
-func ConvertAccountToProto(a *typesolana.Account) *Account {
+func ConvertAccountToProto(a *solana.Account) *Account {
 	if a == nil {
 		return nil
 	}
@@ -294,18 +293,18 @@ func ConvertAccountToProto(a *typesolana.Account) *Account {
 	}
 }
 
-func ConvertDataBytesOrJSONFromProto(p *DataBytesOrJSON) *typesolana.DataBytesOrJSON {
+func ConvertDataBytesOrJSONFromProto(p *DataBytesOrJSON) *solana.DataBytesOrJSON {
 	if p == nil {
 		return nil
 	}
 	switch t := p.GetBody().(type) {
 	case *DataBytesOrJSON_Raw:
-		return &typesolana.DataBytesOrJSON{
+		return &solana.DataBytesOrJSON{
 			AsDecodedBinary: t.Raw,
 			RawDataEncoding: ConvertEncodingTypeFromProto(p.Encoding),
 		}
 	case *DataBytesOrJSON_Json:
-		return &typesolana.DataBytesOrJSON{
+		return &solana.DataBytesOrJSON{
 			AsJSON:          t.Json,
 			RawDataEncoding: ConvertEncodingTypeFromProto(p.Encoding),
 		}
@@ -314,7 +313,7 @@ func ConvertDataBytesOrJSONFromProto(p *DataBytesOrJSON) *typesolana.DataBytesOr
 	return nil
 }
 
-func ConvertDataBytesOrJSONToProto(d *typesolana.DataBytesOrJSON) *DataBytesOrJSON {
+func ConvertDataBytesOrJSONToProto(d *solana.DataBytesOrJSON) *DataBytesOrJSON {
 	if d == nil {
 		return nil
 	}
@@ -332,11 +331,11 @@ func ConvertDataBytesOrJSONToProto(d *typesolana.DataBytesOrJSON) *DataBytesOrJS
 	return ret
 }
 
-func ConvertGetAccountInfoOptsFromProto(p *GetAccountInfoOpts) *typesolana.GetAccountInfoOpts {
+func ConvertGetAccountInfoOptsFromProto(p *GetAccountInfoOpts) *solana.GetAccountInfoOpts {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetAccountInfoOpts{
+	return &solana.GetAccountInfoOpts{
 		Encoding:       ConvertEncodingTypeFromProto(p.Encoding),
 		Commitment:     ConvertCommitmentFromProto(p.Commitment),
 		DataSlice:      ConvertDataSliceFromProto(p.DataSlice),
@@ -344,7 +343,7 @@ func ConvertGetAccountInfoOptsFromProto(p *GetAccountInfoOpts) *typesolana.GetAc
 	}
 }
 
-func ConvertGetAccountInfoOptsToProto(o *typesolana.GetAccountInfoOpts) *GetAccountInfoOpts {
+func ConvertGetAccountInfoOptsToProto(o *solana.GetAccountInfoOpts) *GetAccountInfoOpts {
 	if o == nil {
 		return nil
 	}
@@ -360,11 +359,11 @@ func ConvertGetAccountInfoOptsToProto(o *typesolana.GetAccountInfoOpts) *GetAcco
 	}
 }
 
-func ConvertGetMultipleAccountsOptsFromProto(p *GetMultipleAccountsOpts) *typesolana.GetMultipleAccountsOpts {
+func ConvertGetMultipleAccountsOptsFromProto(p *GetMultipleAccountsOpts) *solana.GetMultipleAccountsOpts {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetMultipleAccountsOpts{
+	return &solana.GetMultipleAccountsOpts{
 		Encoding:       ConvertEncodingTypeFromProto(p.Encoding),
 		Commitment:     ConvertCommitmentFromProto(p.Commitment),
 		DataSlice:      ConvertDataSliceFromProto(p.DataSlice),
@@ -372,7 +371,7 @@ func ConvertGetMultipleAccountsOptsFromProto(p *GetMultipleAccountsOpts) *typeso
 	}
 }
 
-func ConvertGetMultipleAccountsOptsToProto(o *typesolana.GetMultipleAccountsOpts) *GetMultipleAccountsOpts {
+func ConvertGetMultipleAccountsOptsToProto(o *solana.GetMultipleAccountsOpts) *GetMultipleAccountsOpts {
 	if o == nil {
 		return nil
 	}
@@ -388,16 +387,16 @@ func ConvertGetMultipleAccountsOptsToProto(o *typesolana.GetMultipleAccountsOpts
 	}
 }
 
-func ConvertGetBlockOptsFromProto(p *GetBlockOpts) *typesolana.GetBlockOpts {
+func ConvertGetBlockOptsFromProto(p *GetBlockOpts) *solana.GetBlockOpts {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetBlockOpts{
+	return &solana.GetBlockOpts{
 		Commitment: ConvertCommitmentFromProto(p.Commitment),
 	}
 }
 
-func ConvertGetBlockOptsToProto(o *typesolana.GetBlockOpts) *GetBlockOpts {
+func ConvertGetBlockOptsToProto(o *solana.GetBlockOpts) *GetBlockOpts {
 	if o == nil {
 		return nil
 	}
@@ -406,18 +405,18 @@ func ConvertGetBlockOptsToProto(o *typesolana.GetBlockOpts) *GetBlockOpts {
 	}
 }
 
-func ConvertMessageHeaderFromProto(p *MessageHeader) typesolana.MessageHeader {
+func ConvertMessageHeaderFromProto(p *MessageHeader) solana.MessageHeader {
 	if p == nil {
-		return typesolana.MessageHeader{}
+		return solana.MessageHeader{}
 	}
-	return typesolana.MessageHeader{
+	return solana.MessageHeader{
 		NumRequiredSignatures:       uint8(p.NumRequiredSignatures),
 		NumReadonlySignedAccounts:   uint8(p.NumReadonlySignedAccounts),
 		NumReadonlyUnsignedAccounts: uint8(p.NumReadonlyUnsignedAccounts),
 	}
 }
 
-func ConvertMessageHeaderToProto(h typesolana.MessageHeader) *MessageHeader {
+func ConvertMessageHeaderToProto(h solana.MessageHeader) *MessageHeader {
 	return &MessageHeader{
 		NumRequiredSignatures:       uint32(h.NumRequiredSignatures),
 		NumReadonlySignedAccounts:   uint32(h.NumReadonlySignedAccounts),
@@ -425,16 +424,16 @@ func ConvertMessageHeaderToProto(h typesolana.MessageHeader) *MessageHeader {
 	}
 }
 
-func ConvertCompiledInstructionFromProto(p *CompiledInstruction) typesolana.CompiledInstruction {
+func ConvertCompiledInstructionFromProto(p *CompiledInstruction) solana.CompiledInstruction {
 	if p == nil {
-		return typesolana.CompiledInstruction{}
+		return solana.CompiledInstruction{}
 	}
 	accts := make([]uint16, len(p.Accounts))
 	for i, a := range p.Accounts {
 		accts[i] = uint16(a)
 	}
 
-	return typesolana.CompiledInstruction{
+	return solana.CompiledInstruction{
 		ProgramIDIndex: uint16(p.ProgramIdIndex),
 		Accounts:       accts,
 		Data:           p.Data,
@@ -442,7 +441,7 @@ func ConvertCompiledInstructionFromProto(p *CompiledInstruction) typesolana.Comp
 	}
 }
 
-func ConvertCompiledInstructionToProto(ci typesolana.CompiledInstruction) *CompiledInstruction {
+func ConvertCompiledInstructionToProto(ci solana.CompiledInstruction) *CompiledInstruction {
 	accts := make([]uint32, len(ci.Accounts))
 	for i, a := range ci.Accounts {
 		accts[i] = uint32(a)
@@ -455,13 +454,13 @@ func ConvertCompiledInstructionToProto(ci typesolana.CompiledInstruction) *Compi
 	}
 }
 
-func ConvertInnerInstructionFromProto(p *InnerInstruction) typesolana.InnerInstruction {
+func ConvertInnerInstructionFromProto(p *InnerInstruction) solana.InnerInstruction {
 	if p == nil {
-		return typesolana.InnerInstruction{}
+		return solana.InnerInstruction{}
 	}
-	out := typesolana.InnerInstruction{
+	out := solana.InnerInstruction{
 		Index:        uint16(p.Index),
-		Instructions: make([]typesolana.CompiledInstruction, 0, len(p.Instructions)),
+		Instructions: make([]solana.CompiledInstruction, 0, len(p.Instructions)),
 	}
 	for _, in := range p.Instructions {
 		out.Instructions = append(out.Instructions, ConvertCompiledInstructionFromProto(in))
@@ -469,7 +468,7 @@ func ConvertInnerInstructionFromProto(p *InnerInstruction) typesolana.InnerInstr
 	return out
 }
 
-func ConvertInnerInstructionToProto(ii typesolana.InnerInstruction) *InnerInstruction {
+func ConvertInnerInstructionToProto(ii solana.InnerInstruction) *InnerInstruction {
 	out := &InnerInstruction{
 		Index:        uint32(ii.Index),
 		Instructions: make([]*CompiledInstruction, 0, len(ii.Instructions)),
@@ -480,26 +479,26 @@ func ConvertInnerInstructionToProto(ii typesolana.InnerInstruction) *InnerInstru
 	return out
 }
 
-func ConvertLoadedAddressesFromProto(p *LoadedAddresses) typesolana.LoadedAddresses {
+func ConvertLoadedAddressesFromProto(p *LoadedAddresses) solana.LoadedAddresses {
 	if p == nil {
-		return typesolana.LoadedAddresses{}
+		return solana.LoadedAddresses{}
 	}
 	ro, _ := ConvertPublicKeysFromProto(p.Readonly)
 	wr, _ := ConvertPublicKeysFromProto(p.Writable)
-	return typesolana.LoadedAddresses{
+	return solana.LoadedAddresses{
 		ReadOnly: ro,
 		Writable: wr,
 	}
 }
 
-func ConvertLoadedAddressesToProto(l typesolana.LoadedAddresses) *LoadedAddresses {
+func ConvertLoadedAddressesToProto(l solana.LoadedAddresses) *LoadedAddresses {
 	return &LoadedAddresses{
 		Readonly: ConvertPublicKeysToProto(l.ReadOnly),
 		Writable: ConvertPublicKeysToProto(l.Writable),
 	}
 }
 
-func ConvertPublicKeysToProto(keys []typesolana.PublicKey) [][]byte {
+func ConvertPublicKeysToProto(keys []solana.PublicKey) [][]byte {
 	out := make([][]byte, 0, len(keys))
 	for _, k := range keys {
 		out = append(out, k[:])
@@ -507,23 +506,23 @@ func ConvertPublicKeysToProto(keys []typesolana.PublicKey) [][]byte {
 	return out
 }
 
-func ConvertParsedMessageFromProto(p *ParsedMessage) (typesolana.Message, error) {
+func ConvertParsedMessageFromProto(p *ParsedMessage) (solana.Message, error) {
 	if p == nil {
-		return typesolana.Message{}, nil
+		return solana.Message{}, nil
 	}
 	rb, err := ConvertHashFromProto(p.RecentBlockhash)
 	if err != nil {
-		return typesolana.Message{}, fmt.Errorf("recent blockhash: %w", err)
+		return solana.Message{}, fmt.Errorf("recent blockhash: %w", err)
 	}
 	keys, err := ConvertPublicKeysFromProto(p.AccountKeys)
 	if err != nil {
-		return typesolana.Message{}, fmt.Errorf("account keys: %w", err)
+		return solana.Message{}, fmt.Errorf("account keys: %w", err)
 	}
-	msg := typesolana.Message{
+	msg := solana.Message{
 		AccountKeys:     keys,
 		Header:          ConvertMessageHeaderFromProto(p.Header),
 		RecentBlockhash: rb,
-		Instructions:    make([]typesolana.CompiledInstruction, 0, len(p.Instructions)),
+		Instructions:    make([]solana.CompiledInstruction, 0, len(p.Instructions)),
 	}
 	for _, ins := range p.Instructions {
 		msg.Instructions = append(msg.Instructions, ConvertCompiledInstructionFromProto(ins))
@@ -531,7 +530,7 @@ func ConvertParsedMessageFromProto(p *ParsedMessage) (typesolana.Message, error)
 	return msg, nil
 }
 
-func ConvertParsedMessageToProto(m typesolana.Message) *ParsedMessage {
+func ConvertParsedMessageToProto(m solana.Message) *ParsedMessage {
 	out := &ParsedMessage{
 		RecentBlockhash: m.RecentBlockhash[:],
 		AccountKeys:     ConvertPublicKeysToProto(m.AccountKeys),
@@ -544,32 +543,32 @@ func ConvertParsedMessageToProto(m typesolana.Message) *ParsedMessage {
 	return out
 }
 
-func ConvertParsedTransactionFromProto(p *ParsedTransaction) (typesolana.Transaction, error) {
+func ConvertParsedTransactionFromProto(p *ParsedTransaction) (solana.Transaction, error) {
 	if p == nil {
-		return typesolana.Transaction{}, nil
+		return solana.Transaction{}, nil
 	}
 	sigs, err := ConvertSignaturesFromProto(p.Signatures)
 	if err != nil {
-		return typesolana.Transaction{}, fmt.Errorf("signatures: %w", err)
+		return solana.Transaction{}, fmt.Errorf("signatures: %w", err)
 	}
 	msg, err := ConvertParsedMessageFromProto(p.Message)
 	if err != nil {
-		return typesolana.Transaction{}, fmt.Errorf("message: %w", err)
+		return solana.Transaction{}, fmt.Errorf("message: %w", err)
 	}
-	return typesolana.Transaction{
+	return solana.Transaction{
 		Signatures: sigs,
 		Message:    msg,
 	}, nil
 }
 
-func ConvertParsedTransactionToProto(t typesolana.Transaction) *ParsedTransaction {
+func ConvertParsedTransactionToProto(t solana.Transaction) *ParsedTransaction {
 	return &ParsedTransaction{
 		Signatures: ConvertSignaturesToProto(t.Signatures),
 		Message:    ConvertParsedMessageToProto(t.Message),
 	}
 }
 
-func ConvertTokenBalanceFromProto(p *TokenBalance) (*typesolana.TokenBalance, error) {
+func ConvertTokenBalanceFromProto(p *TokenBalance) (*solana.TokenBalance, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -577,7 +576,7 @@ func ConvertTokenBalanceFromProto(p *TokenBalance) (*typesolana.TokenBalance, er
 	if err != nil {
 		return nil, fmt.Errorf("mint: %w", err)
 	}
-	var owner *typesolana.PublicKey
+	var owner *solana.PublicKey
 	if len(p.Owner) > 0 {
 		o, err := ConvertPublicKeyFromProto(p.Owner)
 		if err != nil {
@@ -585,7 +584,7 @@ func ConvertTokenBalanceFromProto(p *TokenBalance) (*typesolana.TokenBalance, er
 		}
 		owner = &o
 	}
-	var program *typesolana.PublicKey
+	var program *solana.PublicKey
 	if len(p.ProgramId) > 0 {
 		prog, err := ConvertPublicKeyFromProto(p.ProgramId)
 		if err != nil {
@@ -593,7 +592,7 @@ func ConvertTokenBalanceFromProto(p *TokenBalance) (*typesolana.TokenBalance, er
 		}
 		program = &prog
 	}
-	return &typesolana.TokenBalance{
+	return &solana.TokenBalance{
 		AccountIndex:  uint16(p.AccountIndex),
 		Owner:         owner,
 		ProgramId:     program,
@@ -602,7 +601,7 @@ func ConvertTokenBalanceFromProto(p *TokenBalance) (*typesolana.TokenBalance, er
 	}, nil
 }
 
-func ConvertTokenBalanceToProto(tb *typesolana.TokenBalance) *TokenBalance {
+func ConvertTokenBalanceToProto(tb *solana.TokenBalance) *TokenBalance {
 	if tb == nil {
 		return nil
 	}
@@ -624,7 +623,7 @@ func ConvertTokenBalanceToProto(tb *typesolana.TokenBalance) *TokenBalance {
 	}
 }
 
-func ConvertReturnDataFromProto(p *ReturnData) (*typesolana.ReturnData, error) {
+func ConvertReturnDataFromProto(p *ReturnData) (*solana.ReturnData, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -632,16 +631,16 @@ func ConvertReturnDataFromProto(p *ReturnData) (*typesolana.ReturnData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("programId: %w", err)
 	}
-	return &typesolana.ReturnData{
+	return &solana.ReturnData{
 		ProgramId: prog,
-		Data: typesolana.Data{
+		Data: solana.Data{
 			Content:  p.Data.GetContent(),
 			Encoding: ConvertEncodingTypeFromProto(p.Data.GetEncoding()),
 		},
 	}, nil
 }
 
-func ConvertReturnDataToProto(r *typesolana.ReturnData) *ReturnData {
+func ConvertReturnDataToProto(r *solana.ReturnData) *ReturnData {
 	if r == nil {
 		return nil
 	}
@@ -655,11 +654,11 @@ func ConvertReturnDataToProto(r *typesolana.ReturnData) *ReturnData {
 	}
 }
 
-func ConvertTransactionMetaFromProto(p *TransactionMeta) (*typesolana.TransactionMeta, error) {
+func ConvertTransactionMetaFromProto(p *TransactionMeta) (*solana.TransactionMeta, error) {
 	if p == nil {
 		return nil, nil
 	}
-	preTB := make([]typesolana.TokenBalance, 0, len(p.PreTokenBalances))
+	preTB := make([]solana.TokenBalance, 0, len(p.PreTokenBalances))
 	for _, x := range p.PreTokenBalances {
 		tb, err := ConvertTokenBalanceFromProto(x)
 		if err != nil {
@@ -667,7 +666,7 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*typesolana.Transactio
 		}
 		preTB = append(preTB, *tb)
 	}
-	postTB := make([]typesolana.TokenBalance, 0, len(p.PostTokenBalances))
+	postTB := make([]solana.TokenBalance, 0, len(p.PostTokenBalances))
 	for _, x := range p.PostTokenBalances {
 		tb, err := ConvertTokenBalanceFromProto(x)
 		if err != nil {
@@ -675,7 +674,7 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*typesolana.Transactio
 		}
 		postTB = append(postTB, *tb)
 	}
-	inner := make([]typesolana.InnerInstruction, 0, len(p.InnerInstructions))
+	inner := make([]solana.InnerInstruction, 0, len(p.InnerInstructions))
 	for _, in := range p.InnerInstructions {
 		inner = append(inner, ConvertInnerInstructionFromProto(in))
 	}
@@ -685,7 +684,7 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*typesolana.Transactio
 	}
 	la := ConvertLoadedAddressesFromProto(p.LoadedAddresses)
 
-	meta := &typesolana.TransactionMeta{
+	meta := &solana.TransactionMeta{
 		Err:                  p.ErrJson,
 		Fee:                  p.Fee,
 		PreBalances:          p.PreBalances,
@@ -701,7 +700,7 @@ func ConvertTransactionMetaFromProto(p *TransactionMeta) (*typesolana.Transactio
 	return meta, nil
 }
 
-func ConvertTransactionMetaToProto(m *typesolana.TransactionMeta) *TransactionMeta {
+func ConvertTransactionMetaToProto(m *solana.TransactionMeta) *TransactionMeta {
 	if m == nil {
 		return nil
 	}
@@ -736,21 +735,21 @@ func ConvertTransactionMetaToProto(m *typesolana.TransactionMeta) *TransactionMe
 	}
 }
 
-func ConvertTransactionEnvelopeFromProto(p *TransactionEnvelope) (typesolana.TransactionResultEnvelope, error) {
+func ConvertTransactionEnvelopeFromProto(p *TransactionEnvelope) (solana.TransactionResultEnvelope, error) {
 	if p == nil {
-		return typesolana.TransactionResultEnvelope{}, nil
+		return solana.TransactionResultEnvelope{}, nil
 	}
-	var out typesolana.TransactionResultEnvelope
+	var out solana.TransactionResultEnvelope
 	switch t := p.GetTransaction().(type) {
 	case *TransactionEnvelope_Raw:
-		out.AsDecodedBinary = typesolana.Data{
+		out.AsDecodedBinary = solana.Data{
 			Content:  t.Raw,
-			Encoding: typesolana.EncodingBase64,
+			Encoding: solana.EncodingBase64,
 		}
 	case *TransactionEnvelope_Parsed:
 		ptx, err := ConvertParsedTransactionFromProto(t.Parsed)
 		if err != nil {
-			return typesolana.TransactionResultEnvelope{}, err
+			return solana.TransactionResultEnvelope{}, err
 		}
 		out.AsParsedTransaction = &ptx
 	default:
@@ -758,7 +757,7 @@ func ConvertTransactionEnvelopeFromProto(p *TransactionEnvelope) (typesolana.Tra
 	return out, nil
 }
 
-func ConvertTransactionEnvelopeToProto(e typesolana.TransactionResultEnvelope) *TransactionEnvelope {
+func ConvertTransactionEnvelopeToProto(e solana.TransactionResultEnvelope) *TransactionEnvelope {
 	switch {
 	case e.AsParsedTransaction != nil:
 		return &TransactionEnvelope{
@@ -777,7 +776,7 @@ func ConvertTransactionEnvelopeToProto(e typesolana.TransactionResultEnvelope) *
 	}
 }
 
-func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*typesolana.GetTransactionReply, error) {
+func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*solana.GetTransactionReply, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -789,12 +788,12 @@ func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*typesolana.Ge
 	if err != nil {
 		return nil, err
 	}
-	var bt *typesolana.UnixTimeSeconds
+	var bt *solana.UnixTimeSeconds
 	if p.BlockTime != nil {
-		bt = ptrUnix(typesolana.UnixTimeSeconds(*p.BlockTime))
+		bt = ptrUnix(solana.UnixTimeSeconds(*p.BlockTime))
 	}
 
-	return &typesolana.GetTransactionReply{
+	return &solana.GetTransactionReply{
 		Slot:        p.Slot,
 		BlockTime:   bt,
 		Transaction: &env,
@@ -802,7 +801,7 @@ func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*typesolana.Ge
 	}, nil
 }
 
-func ConvertGetTransactionReplyToProto(r *typesolana.GetTransactionReply) *GetTransactionReply {
+func ConvertGetTransactionReplyToProto(r *solana.GetTransactionReply) *GetTransactionReply {
 	if r == nil {
 		return nil
 	}
@@ -822,73 +821,73 @@ func ConvertGetTransactionReplyToProto(r *typesolana.GetTransactionReply) *GetTr
 	}
 }
 
-func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (typesolana.GetTransactionRequest, error) {
+func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (solana.GetTransactionRequest, error) {
 	sig, err := ConvertSignatureFromProto(p.Signature)
 	if err != nil {
-		return typesolana.GetTransactionRequest{}, err
+		return solana.GetTransactionRequest{}, err
 	}
-	return typesolana.GetTransactionRequest{Signature: sig}, nil
+	return solana.GetTransactionRequest{Signature: sig}, nil
 }
 
-func ConvertGetTransactionRequestToProto(r typesolana.GetTransactionRequest) *GetTransactionRequest {
+func ConvertGetTransactionRequestToProto(r solana.GetTransactionRequest) *GetTransactionRequest {
 	return &GetTransactionRequest{Signature: r.Signature[:]}
 }
 
-func ConvertGetBalanceReplyFromProto(p *GetBalanceReply) *typesolana.GetBalanceReply {
+func ConvertGetBalanceReplyFromProto(p *GetBalanceReply) *solana.GetBalanceReply {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetBalanceReply{Value: p.Value}
+	return &solana.GetBalanceReply{Value: p.Value}
 }
 
-func ConvertGetBalanceReplyToProto(r *typesolana.GetBalanceReply) *GetBalanceReply {
+func ConvertGetBalanceReplyToProto(r *solana.GetBalanceReply) *GetBalanceReply {
 	if r == nil {
 		return nil
 	}
 	return &GetBalanceReply{Value: r.Value}
 }
 
-func ConvertGetBalanceRequestFromProto(p *GetBalanceRequest) (typesolana.GetBalanceRequest, error) {
+func ConvertGetBalanceRequestFromProto(p *GetBalanceRequest) (solana.GetBalanceRequest, error) {
 	pk, err := ConvertPublicKeyFromProto(p.Addr)
 	if err != nil {
-		return typesolana.GetBalanceRequest{}, err
+		return solana.GetBalanceRequest{}, err
 	}
-	return typesolana.GetBalanceRequest{
+	return solana.GetBalanceRequest{
 		Addr:       pk,
 		Commitment: ConvertCommitmentFromProto(p.Commitment),
 	}, nil
 }
 
-func ConvertGetBalanceRequestToProto(r typesolana.GetBalanceRequest) *GetBalanceRequest {
+func ConvertGetBalanceRequestToProto(r solana.GetBalanceRequest) *GetBalanceRequest {
 	return &GetBalanceRequest{
 		Addr:       r.Addr[:],
 		Commitment: ConvertCommitmentToProto(r.Commitment),
 	}
 }
 
-func ConvertGetSlotHeightReplyFromProto(p *GetSlotHeightReply) *typesolana.GetSlotHeightReply {
+func ConvertGetSlotHeightReplyFromProto(p *GetSlotHeightReply) *solana.GetSlotHeightReply {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetSlotHeightReply{Height: p.Height}
+	return &solana.GetSlotHeightReply{Height: p.Height}
 }
 
-func ConvertGetSlotHeightReplyToProto(r *typesolana.GetSlotHeightReply) *GetSlotHeightReply {
+func ConvertGetSlotHeightReplyToProto(r *solana.GetSlotHeightReply) *GetSlotHeightReply {
 	if r == nil {
 		return nil
 	}
 	return &GetSlotHeightReply{Height: r.Height}
 }
 
-func ConvertGetSlotHeightRequestFromProto(p *GetSlotHeightRequest) typesolana.GetSlotHeightRequest {
-	return typesolana.GetSlotHeightRequest{Commitment: ConvertCommitmentFromProto(p.Commitment)}
+func ConvertGetSlotHeightRequestFromProto(p *GetSlotHeightRequest) solana.GetSlotHeightRequest {
+	return solana.GetSlotHeightRequest{Commitment: ConvertCommitmentFromProto(p.Commitment)}
 }
 
-func ConvertGetSlotHeightRequestToProto(r typesolana.GetSlotHeightRequest) *GetSlotHeightRequest {
+func ConvertGetSlotHeightRequestToProto(r solana.GetSlotHeightRequest) *GetSlotHeightRequest {
 	return &GetSlotHeightRequest{Commitment: ConvertCommitmentToProto(r.Commitment)}
 }
 
-func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*typesolana.GetBlockReply, error) {
+func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*solana.GetBlockReply, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -903,10 +902,10 @@ func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*typesolana.GetBlockRe
 
 	var bt *solana.UnixTimeSeconds
 	if p.BlockTime != nil {
-		bt = ptrUnix(typesolana.UnixTimeSeconds(*p.BlockTime))
+		bt = ptrUnix(solana.UnixTimeSeconds(*p.BlockTime))
 	}
 
-	return &typesolana.GetBlockReply{
+	return &solana.GetBlockReply{
 		Blockhash:         hash,
 		PreviousBlockhash: prev,
 		ParentSlot:        p.ParentSlot,
@@ -915,7 +914,7 @@ func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*typesolana.GetBlockRe
 	}, nil
 }
 
-func ConvertGetBlockReplyToProto(r *typesolana.GetBlockReply) *GetBlockReply {
+func ConvertGetBlockReplyToProto(r *solana.GetBlockReply) *GetBlockReply {
 	if r == nil {
 		return nil
 	}
@@ -938,17 +937,17 @@ func ConvertGetBlockReplyToProto(r *typesolana.GetBlockReply) *GetBlockReply {
 	}
 }
 
-func ConvertGetBlockRequestFromProto(p *GetBlockRequest) *typesolana.GetBlockRequest {
+func ConvertGetBlockRequestFromProto(p *GetBlockRequest) *solana.GetBlockRequest {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetBlockRequest{
+	return &solana.GetBlockRequest{
 		Slot: p.Slot,
 		Opts: ConvertGetBlockOptsFromProto(p.Opts),
 	}
 }
 
-func ConvertGetBlockRequestToProto(r *typesolana.GetBlockRequest) *GetBlockRequest {
+func ConvertGetBlockRequestToProto(r *solana.GetBlockRequest) *GetBlockRequest {
 	if r == nil {
 		return nil
 	}
@@ -958,17 +957,17 @@ func ConvertGetBlockRequestToProto(r *typesolana.GetBlockRequest) *GetBlockReque
 	}
 }
 
-func ConvertGetFeeForMessageRequestFromProto(p *GetFeeForMessageRequest) *typesolana.GetFeeForMessageRequest {
+func ConvertGetFeeForMessageRequestFromProto(p *GetFeeForMessageRequest) *solana.GetFeeForMessageRequest {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetFeeForMessageRequest{
+	return &solana.GetFeeForMessageRequest{
 		Message:    p.Message,
 		Commitment: ConvertCommitmentFromProto(p.Commitment),
 	}
 }
 
-func ConvertGetFeeForMessageRequestToProto(r *typesolana.GetFeeForMessageRequest) *GetFeeForMessageRequest {
+func ConvertGetFeeForMessageRequestToProto(r *solana.GetFeeForMessageRequest) *GetFeeForMessageRequest {
 	if r == nil {
 		return nil
 	}
@@ -978,32 +977,32 @@ func ConvertGetFeeForMessageRequestToProto(r *typesolana.GetFeeForMessageRequest
 	}
 }
 
-func ConvertGetFeeForMessageReplyFromProto(p *GetFeeForMessageReply) *typesolana.GetFeeForMessageReply {
+func ConvertGetFeeForMessageReplyFromProto(p *GetFeeForMessageReply) *solana.GetFeeForMessageReply {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.GetFeeForMessageReply{Fee: p.Fee}
+	return &solana.GetFeeForMessageReply{Fee: p.Fee}
 }
 
-func ConvertGetFeeForMessageReplyToProto(r *typesolana.GetFeeForMessageReply) *GetFeeForMessageReply {
+func ConvertGetFeeForMessageReplyToProto(r *solana.GetFeeForMessageReply) *GetFeeForMessageReply {
 	if r == nil {
 		return nil
 	}
 	return &GetFeeForMessageReply{Fee: r.Fee}
 }
 
-func ConvertGetMultipleAccountsRequestFromProto(p *GetMultipleAccountsWithOptsRequest) *typesolana.GetMultipleAccountsRequest {
+func ConvertGetMultipleAccountsRequestFromProto(p *GetMultipleAccountsWithOptsRequest) *solana.GetMultipleAccountsRequest {
 	if p == nil {
 		return nil
 	}
 	accts, _ := ConvertPublicKeysFromProto(p.Accounts)
-	return &typesolana.GetMultipleAccountsRequest{
+	return &solana.GetMultipleAccountsRequest{
 		Accounts: accts,
 		Opts:     ConvertGetMultipleAccountsOptsFromProto(p.Opts),
 	}
 }
 
-func ConvertGetMultipleAccountsRequestToProto(r *typesolana.GetMultipleAccountsRequest) *GetMultipleAccountsWithOptsRequest {
+func ConvertGetMultipleAccountsRequestToProto(r *solana.GetMultipleAccountsRequest) *GetMultipleAccountsWithOptsRequest {
 	if r == nil {
 		return nil
 	}
@@ -1013,11 +1012,11 @@ func ConvertGetMultipleAccountsRequestToProto(r *typesolana.GetMultipleAccountsR
 	}
 }
 
-func ConvertGetMultipleAccountsReplyFromProto(p *GetMultipleAccountsWithOptsReply) (*typesolana.GetMultipleAccountsReply, error) {
+func ConvertGetMultipleAccountsReplyFromProto(p *GetMultipleAccountsWithOptsReply) (*solana.GetMultipleAccountsReply, error) {
 	if p == nil {
 		return nil, nil
 	}
-	val := make([]*typesolana.Account, 0, len(p.Value))
+	val := make([]*solana.Account, 0, len(p.Value))
 	for _, a := range p.Value {
 		acc, err := ConvertAccountFromProto(a.Account)
 		if err != nil {
@@ -1025,12 +1024,12 @@ func ConvertGetMultipleAccountsReplyFromProto(p *GetMultipleAccountsWithOptsRepl
 		}
 		val = append(val, acc)
 	}
-	return &typesolana.GetMultipleAccountsReply{
+	return &solana.GetMultipleAccountsReply{
 		Value: val,
 	}, nil
 }
 
-func ConvertGetMultipleAccountsReplyToProto(r *typesolana.GetMultipleAccountsReply) *GetMultipleAccountsWithOptsReply {
+func ConvertGetMultipleAccountsReplyToProto(r *solana.GetMultipleAccountsReply) *GetMultipleAccountsWithOptsReply {
 	if r == nil {
 		return nil
 	}
@@ -1044,7 +1043,7 @@ func ConvertGetMultipleAccountsReplyToProto(r *typesolana.GetMultipleAccountsRep
 	}
 }
 
-func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest) (*typesolana.GetSignatureStatusesRequest, error) {
+func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest) (*solana.GetSignatureStatusesRequest, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -1052,23 +1051,23 @@ func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest)
 	if err != nil {
 		return nil, err
 	}
-	return &typesolana.GetSignatureStatusesRequest{Sigs: sigs}, nil
+	return &solana.GetSignatureStatusesRequest{Sigs: sigs}, nil
 }
 
-func ConvertGetSignatureStatusesRequestToProto(r *typesolana.GetSignatureStatusesRequest) *GetSignatureStatusesRequest {
+func ConvertGetSignatureStatusesRequestToProto(r *solana.GetSignatureStatusesRequest) *GetSignatureStatusesRequest {
 	if r == nil {
 		return nil
 	}
 	return &GetSignatureStatusesRequest{Sigs: ConvertSignaturesToProto(r.Sigs)}
 }
 
-func ConvertGetSignatureStatusesReplyFromProto(p *GetSignatureStatusesReply) *typesolana.GetSignatureStatusesReply {
+func ConvertGetSignatureStatusesReplyFromProto(p *GetSignatureStatusesReply) *solana.GetSignatureStatusesReply {
 	if p == nil {
 		return nil
 	}
-	out := &typesolana.GetSignatureStatusesReply{Results: make([]typesolana.GetSignatureStatusesResult, 0, len(p.Results))}
+	out := &solana.GetSignatureStatusesReply{Results: make([]solana.GetSignatureStatusesResult, 0, len(p.Results))}
 	for _, r := range p.Results {
-		out.Results = append(out.Results, typesolana.GetSignatureStatusesResult{
+		out.Results = append(out.Results, solana.GetSignatureStatusesResult{
 			Slot:               r.Slot,
 			Confirmations:      r.Confirmations,
 			Err:                r.Err,
@@ -1078,7 +1077,7 @@ func ConvertGetSignatureStatusesReplyFromProto(p *GetSignatureStatusesReply) *ty
 	return out
 }
 
-func ConvertGetSignatureStatusesReplyToProto(r *typesolana.GetSignatureStatusesReply) *GetSignatureStatusesReply {
+func ConvertGetSignatureStatusesReplyToProto(r *solana.GetSignatureStatusesReply) *GetSignatureStatusesReply {
 	if r == nil {
 		return nil
 	}
@@ -1098,18 +1097,18 @@ func ConvertGetSignatureStatusesReplyToProto(r *typesolana.GetSignatureStatusesR
 	return out
 }
 
-func ConvertSimulateTransactionAccountsOptsFromProto(p *SimulateTransactionAccountsOpts) *typesolana.SimulateTransactionAccountsOpts {
+func ConvertSimulateTransactionAccountsOptsFromProto(p *SimulateTransactionAccountsOpts) *solana.SimulateTransactionAccountsOpts {
 	if p == nil {
 		return nil
 	}
 	addrs, _ := ConvertPublicKeysFromProto(p.Addresses)
-	return &typesolana.SimulateTransactionAccountsOpts{
+	return &solana.SimulateTransactionAccountsOpts{
 		Encoding:  ConvertEncodingTypeFromProto(p.Encoding),
 		Addresses: addrs,
 	}
 }
 
-func ConvertSimulateTransactionAccountsOptsToProto(o *typesolana.SimulateTransactionAccountsOpts) *SimulateTransactionAccountsOpts {
+func ConvertSimulateTransactionAccountsOptsToProto(o *solana.SimulateTransactionAccountsOpts) *SimulateTransactionAccountsOpts {
 	if o == nil {
 		return nil
 	}
@@ -1119,11 +1118,11 @@ func ConvertSimulateTransactionAccountsOptsToProto(o *typesolana.SimulateTransac
 	}
 }
 
-func ConvertSimulateTXOptsFromProto(p *SimulateTXOpts) *typesolana.SimulateTXOpts {
+func ConvertSimulateTXOptsFromProto(p *SimulateTXOpts) *solana.SimulateTXOpts {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.SimulateTXOpts{
+	return &solana.SimulateTXOpts{
 		SigVerify:              p.SigVerify,
 		Commitment:             ConvertCommitmentFromProto(p.Commitment),
 		ReplaceRecentBlockhash: p.ReplaceRecentBlockhash,
@@ -1131,7 +1130,7 @@ func ConvertSimulateTXOptsFromProto(p *SimulateTXOpts) *typesolana.SimulateTXOpt
 	}
 }
 
-func ConvertSimulateTXOptsToProto(o *typesolana.SimulateTXOpts) *SimulateTXOpts {
+func ConvertSimulateTXOptsToProto(o *solana.SimulateTXOpts) *SimulateTXOpts {
 	if o == nil {
 		return nil
 	}
@@ -1143,19 +1142,19 @@ func ConvertSimulateTXOptsToProto(o *typesolana.SimulateTXOpts) *SimulateTXOpts 
 	}
 }
 
-func ConvertSimulateTXRequestFromProto(p *SimulateTXRequest) (typesolana.SimulateTXRequest, error) {
+func ConvertSimulateTXRequestFromProto(p *SimulateTXRequest) (solana.SimulateTXRequest, error) {
 	recv, err := ConvertPublicKeyFromProto(p.Receiver)
 	if err != nil {
-		return typesolana.SimulateTXRequest{}, fmt.Errorf("receiver: %w", err)
+		return solana.SimulateTXRequest{}, fmt.Errorf("receiver: %w", err)
 	}
-	return typesolana.SimulateTXRequest{
+	return solana.SimulateTXRequest{
 		Receiver:           recv,
 		EncodedTransaction: p.EncodedTransaction,
 		Opts:               ConvertSimulateTXOptsFromProto(p.Opts),
 	}, nil
 }
 
-func ConvertSimulateTXRequestToProto(r typesolana.SimulateTXRequest) *SimulateTXRequest {
+func ConvertSimulateTXRequestToProto(r solana.SimulateTXRequest) *SimulateTXRequest {
 	return &SimulateTXRequest{
 		Receiver:           r.Receiver[:],
 		EncodedTransaction: r.EncodedTransaction,
@@ -1163,11 +1162,11 @@ func ConvertSimulateTXRequestToProto(r typesolana.SimulateTXRequest) *SimulateTX
 	}
 }
 
-func ConvertSimulateTXReplyFromProto(p *SimulateTXReply) (*typesolana.SimulateTXReply, error) {
+func ConvertSimulateTXReplyFromProto(p *SimulateTXReply) (*solana.SimulateTXReply, error) {
 	if p == nil {
 		return nil, nil
 	}
-	accs := make([]*typesolana.Account, 0, len(p.Accounts))
+	accs := make([]*solana.Account, 0, len(p.Accounts))
 	for _, a := range p.Accounts {
 		acc, err := ConvertAccountFromProto(a)
 		if err != nil {
@@ -1175,7 +1174,7 @@ func ConvertSimulateTXReplyFromProto(p *SimulateTXReply) (*typesolana.SimulateTX
 		}
 		accs = append(accs, acc)
 	}
-	return &typesolana.SimulateTXReply{
+	return &solana.SimulateTXReply{
 		Err:           p.Err,
 		Logs:          p.Logs,
 		Accounts:      accs,
@@ -1183,7 +1182,7 @@ func ConvertSimulateTXReplyFromProto(p *SimulateTXReply) (*typesolana.SimulateTX
 	}, nil
 }
 
-func ConvertSimulateTXReplyToProto(r *typesolana.SimulateTXReply) *SimulateTXReply {
+func ConvertSimulateTXReplyToProto(r *solana.SimulateTXReply) *SimulateTXReply {
 	if r == nil {
 		return nil
 	}
@@ -1202,17 +1201,17 @@ func ConvertSimulateTXReplyToProto(r *typesolana.SimulateTXReply) *SimulateTXRep
 	return out
 }
 
-func ConvertComputeConfigFromProto(p *ComputeConfig) *typesolana.ComputeConfig {
+func ConvertComputeConfigFromProto(p *ComputeConfig) *solana.ComputeConfig {
 	if p == nil {
 		return nil
 	}
-	return &typesolana.ComputeConfig{
+	return &solana.ComputeConfig{
 		ComputeLimit:    &p.ComputeLimit,
 		ComputeMaxPrice: &p.ComputeMaxPrice,
 	}
 }
 
-func ConvertComputeConfigToProto(c *typesolana.ComputeConfig) *ComputeConfig {
+func ConvertComputeConfigToProto(c *solana.ComputeConfig) *ComputeConfig {
 	if c == nil {
 		return nil
 	}
@@ -1231,22 +1230,22 @@ func ConvertComputeConfigToProto(c *typesolana.ComputeConfig) *ComputeConfig {
 	}
 }
 
-func ConvertSubmitTransactionRequestFromProto(p *SubmitTransactionRequest) (typesolana.SubmitTransactionRequest, error) {
+func ConvertSubmitTransactionRequestFromProto(p *SubmitTransactionRequest) (solana.SubmitTransactionRequest, error) {
 	if p == nil {
-		return typesolana.SubmitTransactionRequest{}, nil
+		return solana.SubmitTransactionRequest{}, nil
 	}
 	rcv, err := ConvertPublicKeyFromProto(p.Receiver)
 	if err != nil {
-		return typesolana.SubmitTransactionRequest{}, fmt.Errorf("receiver: %w", err)
+		return solana.SubmitTransactionRequest{}, fmt.Errorf("receiver: %w", err)
 	}
-	return typesolana.SubmitTransactionRequest{
+	return solana.SubmitTransactionRequest{
 		Cfg:                ConvertComputeConfigFromProto(p.Cfg),
 		Receiver:           rcv,
 		EncodedTransaction: p.EncodedTransaction,
 	}, nil
 }
 
-func ConvertSubmitTransactionRequestToProto(r typesolana.SubmitTransactionRequest) *SubmitTransactionRequest {
+func ConvertSubmitTransactionRequestToProto(r solana.SubmitTransactionRequest) *SubmitTransactionRequest {
 	return &SubmitTransactionRequest{
 		Cfg:                ConvertComputeConfigToProto(r.Cfg),
 		Receiver:           r.Receiver[:],
@@ -1254,7 +1253,7 @@ func ConvertSubmitTransactionRequestToProto(r typesolana.SubmitTransactionReques
 	}
 }
 
-func ConvertSubmitTransactionReplyFromProto(p *SubmitTransactionReply) (*typesolana.SubmitTransactionReply, error) {
+func ConvertSubmitTransactionReplyFromProto(p *SubmitTransactionReply) (*solana.SubmitTransactionReply, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -1262,14 +1261,14 @@ func ConvertSubmitTransactionReplyFromProto(p *SubmitTransactionReply) (*typesol
 	if err != nil {
 		return nil, err
 	}
-	return &typesolana.SubmitTransactionReply{
+	return &solana.SubmitTransactionReply{
 		Signature:      sig,
 		IdempotencyKey: p.IdempotencyKey,
-		Status:         typesolana.TransactionStatus(p.Status),
+		Status:         solana.TransactionStatus(p.Status),
 	}, nil
 }
 
-func ConvertSubmitTransactionReplyToProto(r *typesolana.SubmitTransactionReply) *SubmitTransactionReply {
+func ConvertSubmitTransactionReplyToProto(r *solana.SubmitTransactionReply) *SubmitTransactionReply {
 	if r == nil {
 		return nil
 	}
@@ -1280,18 +1279,18 @@ func ConvertSubmitTransactionReplyToProto(r *typesolana.SubmitTransactionReply) 
 	}
 }
 
-func ConvertRPCContextFromProto(p *RPCContext) typesolana.RPCContext {
+func ConvertRPCContextFromProto(p *RPCContext) solana.RPCContext {
 	if p == nil {
-		return typesolana.RPCContext{}
+		return solana.RPCContext{}
 	}
-	return typesolana.RPCContext{Slot: p.Slot}
+	return solana.RPCContext{Slot: p.Slot}
 }
 
-func ConvertRPCContextToProto(r typesolana.RPCContext) *RPCContext {
+func ConvertRPCContextToProto(r solana.RPCContext) *RPCContext {
 	return &RPCContext{Slot: r.Slot}
 }
 
-func ConvertLogFromProto(p *Log) (*typesolana.Log, error) {
+func ConvertLogFromProto(p *Log) (*solana.Log, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -1310,7 +1309,7 @@ func ConvertLogFromProto(p *Log) (*typesolana.Log, error) {
 		lErr = &p.Error
 	}
 
-	return &typesolana.Log{
+	return &solana.Log{
 		ChainID:        p.ChainId,
 		LogIndex:       p.LogIndex,
 		BlockHash:      bh,
@@ -1325,7 +1324,7 @@ func ConvertLogFromProto(p *Log) (*typesolana.Log, error) {
 	}, nil
 }
 
-func ConvertLogToProto(l *typesolana.Log) *Log {
+func ConvertLogToProto(l *solana.Log) *Log {
 	if l == nil {
 		return nil
 	}
@@ -1520,11 +1519,11 @@ func convertSolPrimitiveFromProto(protoPrimitive *Primitive) (query.Expression, 
 	}
 }
 
-func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*typesolana.LPFilterQuery, error) {
+func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*solana.LPFilterQuery, error) {
 	if p == nil {
 		return nil, nil
 	}
-	var addr typesolana.PublicKey
+	var addr solana.PublicKey
 	var err error
 	if len(p.Address) > 0 {
 		addr, err = ConvertPublicKeyFromProto(p.Address)
@@ -1533,7 +1532,7 @@ func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*typesolana.LPFilterQuery,
 		}
 	}
 	var err2 error
-	var eventSig typesolana.EventSignature
+	var eventSig solana.EventSignature
 	if len(p.EventSig) > 0 {
 		eventSig, err2 = ConvertEventSigFromProto(p.EventSig)
 		if err != nil {
@@ -1541,7 +1540,7 @@ func ConvertLPFilterQueryFromProto(p *LPFilterQuery) (*typesolana.LPFilterQuery,
 		}
 	}
 
-	return &typesolana.LPFilterQuery{
+	return &solana.LPFilterQuery{
 		Name:            p.Name,
 		Address:         addr,
 		EventName:       p.EventName,
@@ -1581,7 +1580,7 @@ func ConvertSubkeyPathsToProto(keys [][]string) []*Subkeys {
 	return out
 }
 
-func ConvertLPFilterQueryToProto(f *typesolana.LPFilterQuery) *LPFilterQuery {
+func ConvertLPFilterQueryToProto(f *solana.LPFilterQuery) *LPFilterQuery {
 	if f == nil {
 		return nil
 	}
@@ -1611,5 +1610,5 @@ func ptrUint64(v uint64) *uint64 {
 	return &v
 
 }
-func ptrBool(v bool) *bool                                             { return &v }
-func ptrUnix(v typesolana.UnixTimeSeconds) *typesolana.UnixTimeSeconds { return &v }
+
+func ptrUnix(v solana.UnixTimeSeconds) *solana.UnixTimeSeconds { return &v }

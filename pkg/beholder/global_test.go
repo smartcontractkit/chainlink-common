@@ -33,13 +33,12 @@ func TestGlobal(t *testing.T) {
 	expectedMessageEmitter := beholder.NewNoopClient().Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
-	var noopClientPtr *beholder.Client = noopClient
-	assert.IsType(t, noopClientPtr, beholder.GetClient())
-	assert.NotSame(t, noopClientPtr, beholder.GetClient())
+	assert.IsType(t, noopClient, beholder.GetClient())
+	assert.NotSame(t, noopClient, beholder.GetClient())
 
 	// Set beholder client so it will be accessible from anywhere through beholder functions
-	beholder.SetClient(noopClientPtr)
-	assert.Same(t, noopClientPtr, beholder.GetClient())
+	beholder.SetClient(noopClient)
+	assert.Same(t, noopClient, beholder.GetClient())
 
 	// After that use beholder functions to get logger, tracer, meter, messageEmitter
 	logger, tracer, meter, messageEmitter = beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()

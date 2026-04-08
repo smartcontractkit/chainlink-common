@@ -93,7 +93,7 @@ type singleCapList[O any] struct {
 }
 
 func (s singleCapList[O]) Index(i int) CapDefinition[O] {
-	listRef, ok := s.CapDefinition.Ref().(string)
+	listRef, ok := s.Ref().(string)
 
 	// There are two cases to indexing:
 	// It's a ref, in which case we just want to index the ref, i.e. ref -> ref.i

@@ -23,12 +23,6 @@ type stringerMock struct{}
 
 func (s stringerMock) String() string { return "stringer-value" }
 
-type customError struct{}
-
-func (e *customError) Error() string {
-	return "custom error"
-}
-
 // panicError will panic if Error() is called on a nil receiver
 type panicError struct {
 	msg string

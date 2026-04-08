@@ -67,7 +67,7 @@ type Engine struct {
 //	})
 func (e *Engine) Go(fn func(context.Context)) {
 	e.wg.Go(func() {
-		ctx, cancel := e.StopChan.NewCtx()
+		ctx, cancel := e.NewCtx()
 		defer cancel()
 		fn(ctx)
 	})
@@ -77,7 +77,7 @@ func (e *Engine) Go(fn func(context.Context)) {
 // Use context.WithoutCancel if the function should continue running.
 func (e *Engine) GoCtx(ctx context.Context, fn func(context.Context)) {
 	e.wg.Go(func() {
-		ctx, cancel := e.StopChan.Ctx(ctx)
+		ctx, cancel := e.Ctx(ctx)
 		defer cancel()
 		fn(ctx)
 	})
@@ -249,7 +249,7 @@ func (s *service) HealthReport() map[string]error {
 	return m
 }
 
-func (s *service) Name() string { return s.eng.SugaredLogger.Name() }
+func (s *service) Name() string { return s.eng.Name() }
 
 func (s *service) Start(ctx context.Context) error {
 	return s.StartOnce(s.cfg.Name, func() error {
@@ -299,7 +299,7 @@ func (s *service) Close() error {
 	})
 }
 
-func (s *service) emitHealthErr(err error) { s.StateMachine.SvcErrBuffer.Append(err) }
+func (s *service) emitHealthErr(err error) { s.SvcErrBuffer.Append(err) }
 
 func (s *service) ifStarted(fn func() error) (err error) {
 	if !s.IfStarted(func() { err = fn() }) {

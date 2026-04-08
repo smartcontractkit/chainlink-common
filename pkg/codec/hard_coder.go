@@ -103,7 +103,7 @@ func verifyHardCodeKeys(values map[string]any) error {
 // intended to be the result of the transformation, itemType must be A.B.C even though the off-chain type does not have
 // field 'C'.
 func (m *onChainHardCoder) TransformToOnChain(offChainValue any, itemType string) (any, error) {
-	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	offChainValue, itemType, err := m.selectType(offChainValue, m.offChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (m *onChainHardCoder) TransformToOnChain(offChainValue any, itemType string
 // intended to be the result of the transformation, itemType must be A.B.C even though the on-chain type does not have
 // field 'C'.
 func (m *onChainHardCoder) TransformToOffChain(onChainValue any, itemType string) (any, error) {
-	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	onChainValue, itemType, err := m.selectType(onChainValue, m.onChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}

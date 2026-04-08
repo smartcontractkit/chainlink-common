@@ -63,7 +63,7 @@ func (r *relayer) NewContractWriter(_ context.Context, contractWriterConfig []by
 		}
 		return contractWriterID, nil, nil
 	})
-	return contractwriter.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractWriterClient"), cwc), nil
+	return contractwriter.NewClient(r.relayerSetClient.WithName("ContractWriterClient"), cwc), nil
 }
 
 func (r *relayer) Start(ctx context.Context) error {

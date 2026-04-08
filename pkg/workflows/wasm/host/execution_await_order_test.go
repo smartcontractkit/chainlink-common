@@ -17,6 +17,7 @@ import (
 // awaitOrderStub implements ExecutionHelper for testing awaitCapabilities ordering.
 type awaitOrderStub struct {
 	unblock chan struct{}
+	id2Done chan struct{}
 }
 
 func (a *awaitOrderStub) CallCapability(_ context.Context, req *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
@@ -31,6 +32,9 @@ func (a *awaitOrderStub) CallCapability(_ context.Context, req *sdkpb.Capability
 	}
 	if req.CallbackId == 1 {
 		<-a.unblock
+	}
+	if req.CallbackId == 2 && a.id2Done != nil {
+		close(a.id2Done)
 	}
 	return ok, nil
 }
@@ -58,7 +62,8 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 	t.Parallel()
 
 	unblock := make(chan struct{})
-	stub := &awaitOrderStub{unblock: unblock}
+	id2Done := make(chan struct{})
+	stub := &awaitOrderStub{unblock: unblock, id2Done: id2Done}
 
 	exec := &execution[*sdkpb.ExecutionResult]{
 		ctx:                 t.Context(),
@@ -81,7 +86,11 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 		awaitFinished.Store(true)
 	}()
 
-	time.Sleep(200 * time.Millisecond)
+	select {
+	case <-id2Done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("CallCapability for callback 2 did not return while callback 1 was still blocked")
+	}
 	require.False(t, awaitFinished.Load(), "awaitCapabilities returned before callback 1 was unblocked; head-of-line invariant violated")
 
 	// Unblock callback 1 so the first channel receive in awaitCapabilities can complete.

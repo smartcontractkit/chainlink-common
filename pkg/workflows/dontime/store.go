@@ -117,6 +117,22 @@ func (s *Store) setDonTimes(executionID string, donTimes []int64) {
 	s.donTimes[executionID] = donTimes
 }
 
+func (s *Store) replaceDonTimes(donTimes map[string][]int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for executionID, timestamps := range donTimes {
+		s.donTimes[executionID] = timestamps
+	}
+
+	for executionID := range s.donTimes {
+		if _, ok := donTimes[executionID]; !ok {
+			delete(s.donTimes, executionID)
+			delete(s.requests, executionID)
+		}
+	}
+}
+
 func (s *Store) GetLastObservedDonTime() int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -134,13 +150,4 @@ func (s *Store) deleteExecutionID(executionID string) {
 	defer s.mu.Unlock()
 	delete(s.donTimes, executionID)
 	delete(s.requests, executionID)
-}
-
-func (s *Store) deleteExecutionIDs(executionIDs []string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, id := range executionIDs {
-		delete(s.donTimes, id)
-		delete(s.requests, id)
-	}
 }

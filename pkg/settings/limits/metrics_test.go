@@ -34,7 +34,7 @@ func newMetricsChecker(t *testing.T) *metricsChecker {
 }
 
 func (mc *metricsChecker) lastResourceFirstScopeMetric(t *testing.T) metrics {
-	require.NoError(t, mc.MeterProvider.ForceFlush(t.Context()))
+	require.NoError(t, mc.ForceFlush(t.Context()))
 	return mc.exp.lastResourceFirstScopeMetric(t)
 }
 

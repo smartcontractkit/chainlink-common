@@ -12,7 +12,7 @@ import (
 
 // Factory holds optional configuration for constructing [Limit]s.
 type Factory struct {
-	// Settings is a source of dynamic limit and burst updates.
+	// Settings is a source of dynamic limit updates.
 	// [settings.Getter.GetScoped] will be polled for updates, unless Settings is also a settings.Registry, in which case
 	// the channel based [settings.Registry.SubscribeScoped] will be used instead.
 	Settings settings.Getter // optional
@@ -98,6 +98,16 @@ func MakeUpperBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (Bo
 //   - bound.*.denied - histogram
 func MakeLowerBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
 	return newBoundLimiter(f, bound.GetSpec(), true)
+}
+
+// MakeRangeLimiter returns a RangeLimiter for the given bound and configured by the Factory.
+// If Meter is set, the following metrics will be emitted
+//   - range.*.lower.limit - gauge
+//   - range.*.upper.limit - gauge
+//   - range.*.usage - histogram
+//   - range.*.denied - histogram
+func MakeRangeLimiter[N Number](f Factory, bound settings.IsSetting[settings.Range[N]]) (RangeLimiter[N], error) {
+	return newRangeLimiter(f, bound.GetSpec())
 }
 
 // MakeQueueLimiter returns a QueueLimiter for the given limit and configured by the Factory.

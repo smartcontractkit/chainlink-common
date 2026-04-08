@@ -169,7 +169,7 @@ func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 
 // TransformToOnChain uses the AddressModifier for string-to-address conversion.
 func (m *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
-	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	offChainValue, itemType, err := m.selectType(offChainValue, m.offChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (m *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType s
 
 // TransformToOffChain uses the AddressModifier for address-to-string conversion.
 func (m *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
-	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	onChainValue, itemType, err := m.selectType(onChainValue, m.onChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}

@@ -62,7 +62,7 @@ func newGlobalResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]
 	}
 
 	if f.Settings != nil {
-		l.getLimitFn = func(ctx context.Context) (N, error) {
+		l.resourcePoolUsage.getLimitFn = func(ctx context.Context) (N, error) {
 			return limit.GetOrDefault(ctx, f.Settings)
 		}
 		if registry, ok := f.Settings.(settings.Registry); ok {
@@ -90,7 +90,7 @@ type resourcePoolLimiter[N Number] struct {
 }
 
 func (l *resourcePoolLimiter[N]) setOnLimitUpdate(fn func(ctx context.Context)) {
-	l.updater.onLimitUpdate = fn
+	l.onLimitUpdate = fn
 }
 
 func (l *resourcePoolLimiter[N]) createGauges(meter metric.Meter, unit string) error {
@@ -169,10 +169,8 @@ type resourcePoolUsage[N Number] struct {
 	recordAmount    func(context.Context, N)
 	recordDenied    func(context.Context, N)
 
-	stopOnce  sync.Once
-	stopCh    services.StopChan
-	done      chan struct{}
-	cancelSub func() // optional
+	stopCh services.StopChan
+	done   chan struct{}
 }
 
 // onLimitUpdate is invoked when the configured limit changes. It attempts to
@@ -216,7 +214,7 @@ func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *res
 	}
 	// copy but replace updater
 	u.resourcePoolLimiter = *l
-	u.resourcePoolLimiter.updater = newUpdater(l.lggr, l.getLimitFn, l.subFn)
+	u.updater = newUpdater(l.lggr, l.getLimitFn, l.subFn)
 	return &u
 }
 
@@ -381,7 +379,7 @@ func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourceP
 	}
 	l.resourcePoolUsage = l.newLimitUsage()
 	l.setOnLimitUpdate(func(context.Context) {
-		l.resourcePoolUsage.onLimitUpdate()
+		l.onLimitUpdate()
 	})
 	return l
 }

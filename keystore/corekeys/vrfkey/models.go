@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/pkg/errors"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/vrfkey/secp256k1"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal/atomicfile"
@@ -31,7 +30,7 @@ type EncryptedVRFKey struct {
 func (e *EncryptedVRFKey) JSON() ([]byte, error) {
 	keyJSON, err := json.Marshal(e)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not marshal encrypted key to JSON")
+		return nil, fmt.Errorf("could not marshal encrypted key to JSON: %w", err)
 	}
 	return keyJSON, nil
 }
@@ -41,7 +40,7 @@ func (e *EncryptedVRFKey) JSON() ([]byte, error) {
 func (e *EncryptedVRFKey) WriteToDisk(path string) error {
 	keyJSON, err := e.JSON()
 	if err != nil {
-		return errors.Wrapf(err, "while marshaling key to save to %s", path)
+		return fmt.Errorf("while marshaling key to save to %s: %w", path, err)
 	}
 	userReadWriteOtherNoAccess := os.FileMode(0600)
 	return atomicfile.WriteFile(path, bytes.NewReader(keyJSON), userReadWriteOtherNoAccess)
@@ -66,9 +65,7 @@ func (k *gethKeyStruct) Scan(value any) error {
 	case string:
 		toUnmarshal = []byte(s)
 	default:
-		return errors.Wrap(
-			fmt.Errorf("unable to convert %+v of type %T to gethKeyStruct",
-				value, value), "scan failure")
+		return fmt.Errorf("scan failure: unable to convert %+v of type %T to gethKeyStruct", value, value)
 	}
 	return json.Unmarshal(toUnmarshal, k)
 }

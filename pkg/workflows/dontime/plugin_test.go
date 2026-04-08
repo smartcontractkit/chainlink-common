@@ -150,6 +150,7 @@ func TestPlugin_Outcome(t *testing.T) {
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
 
 	// Add single request to queue
 	executionID := "workflow-123"
@@ -158,28 +159,24 @@ func TestPlugin_Outcome(t *testing.T) {
 	timestamp := time.Now().UnixMilli()
 	observations := []*pb.Observation{
 		{
-			Timestamp: timestamp,
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Timestamp:       timestamp,
+			Requests:        map[string]int64{executionID: 0},
+			PruneExecutions: true,
 		},
 		{
-			Timestamp: timestamp - int64(time.Second),
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Timestamp:       timestamp - int64(time.Second),
+			Requests:        map[string]int64{executionID: 0},
+			PruneExecutions: true,
 		},
 		{
-			Timestamp: timestamp + int64(time.Second),
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Timestamp:       timestamp + int64(time.Second),
+			Requests:        map[string]int64{executionID: 0},
+			PruneExecutions: true,
 		},
 		{
-			Timestamp: timestamp,
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Timestamp:       timestamp,
+			Requests:        map[string]int64{executionID: 0},
+			PruneExecutions: true,
 		},
 	}
 
@@ -213,6 +210,211 @@ func TestPlugin_Outcome(t *testing.T) {
 	require.Equal(t, []int64{timestamp}, outcomeProto.ObservedDonTimes[executionID].Timestamps)
 }
 
+func TestPlugin_Outcome_SequenceNumberHandling(t *testing.T) {
+	lggr := logger.Test(t)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	ctx := t.Context()
+
+	makeObservations := func(t *testing.T, timestamp int64, requests map[string]int64, numNodes int) []types.AttributedObservation {
+		t.Helper()
+		aos := make([]types.AttributedObservation, numNodes)
+		for i := 0; i < numNodes; i++ {
+			obs := &pb.Observation{
+				Timestamp:       timestamp + int64(i),
+				Requests:        requests,
+				PruneExecutions: true,
+			}
+			rawObs, err := proto.Marshal(obs)
+			require.NoError(t, err)
+			aos[i] = types.AttributedObservation{
+				Observation: rawObs,
+				Observer:    commontypes.OracleID(i),
+			}
+		}
+		return aos
+	}
+
+	t.Run("new execution ID not in previous outcome defaults currSeqNum to 0", func(t *testing.T) {
+		store := NewStore(DefaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+		require.NoError(t, err)
+
+		executionID := "new-workflow"
+		_ = store.RequestDonTime(executionID, 0)
+
+		timestamp := time.Now().UnixMilli()
+		aos := makeObservations(t, timestamp, map[string]int64{executionID: 0}, 4)
+
+		prevOutcome := &pb.Outcome{
+			Timestamp:        0,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{},
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes})
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+
+		require.Contains(t, outcomeProto.ObservedDonTimes, executionID)
+		require.Len(t, outcomeProto.ObservedDonTimes[executionID].Timestamps, 1)
+	})
+
+	t.Run("nil ObservedDonTimes in previous outcome does not panic", func(t *testing.T) {
+		store := NewStore(DefaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+		require.NoError(t, err)
+
+		executionID := "nil-map-workflow"
+		_ = store.RequestDonTime(executionID, 0)
+
+		timestamp := time.Now().UnixMilli()
+		aos := makeObservations(t, timestamp, map[string]int64{executionID: 0}, 4)
+
+		prevOutcome := &pb.Outcome{
+			Timestamp:        0,
+			ObservedDonTimes: nil,
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes})
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+
+		require.Contains(t, outcomeProto.ObservedDonTimes, executionID)
+		require.Len(t, outcomeProto.ObservedDonTimes[executionID].Timestamps, 1)
+	})
+
+	t.Run("existing execution ID uses len(Timestamps) as currSeqNum", func(t *testing.T) {
+		store := NewStore(DefaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+		require.NoError(t, err)
+
+		executionID := "existing-workflow"
+		_ = store.RequestDonTime(executionID, 1)
+
+		timestamp := time.Now().UnixMilli()
+		aos := makeObservations(t, timestamp, map[string]int64{executionID: 1}, 4)
+
+		prevTimestamp := timestamp - 1000 // 1 second ago in millis
+		prevOutcome := &pb.Outcome{
+			Timestamp: prevTimestamp,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+				executionID: {Timestamps: []int64{prevTimestamp}},
+			},
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes})
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+
+		require.Contains(t, outcomeProto.ObservedDonTimes, executionID)
+		require.Len(t, outcomeProto.ObservedDonTimes[executionID].Timestamps, 2)
+	})
+
+	t.Run("stale sequence number is ignored", func(t *testing.T) {
+		store := NewStore(DefaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+		require.NoError(t, err)
+
+		executionID := "stale-workflow"
+
+		timestamp := time.Now().UnixMilli()
+		// Observations report seqNum 0, but prevOutcome already has 2 timestamps (currSeqNum=2)
+		aos := makeObservations(t, timestamp, map[string]int64{executionID: 0}, 4)
+
+		prevTimestamp := timestamp - 1000 // 1 second ago in millis
+		prevOutcome := &pb.Outcome{
+			Timestamp: prevTimestamp,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+				executionID: {Timestamps: []int64{
+					prevTimestamp - 1000,
+					prevTimestamp,
+				}},
+			},
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes})
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+
+		// Stale seqNum 0 should be ignored, so timestamps should remain unchanged at 2
+		require.Len(t, outcomeProto.ObservedDonTimes[executionID].Timestamps, 2)
+	})
+
+	t.Run("mix of new and existing execution IDs", func(t *testing.T) {
+		store := NewStore(DefaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+		require.NoError(t, err)
+
+		existingID := "existing-workflow"
+		newID := "new-workflow"
+		_ = store.RequestDonTime(existingID, 1)
+		_ = store.RequestDonTime(newID, 0)
+
+		timestamp := time.Now().UnixMilli()
+		requests := map[string]int64{
+			existingID: 1,
+			newID:      0,
+		}
+		aos := makeObservations(t, timestamp, requests, 4)
+
+		prevTimestamp := timestamp - 1000 // 1 second ago in millis
+		prevOutcome := &pb.Outcome{
+			Timestamp: prevTimestamp,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+				existingID: {Timestamps: []int64{prevTimestamp}},
+			},
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes})
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+
+		require.Contains(t, outcomeProto.ObservedDonTimes, existingID)
+		require.Len(t, outcomeProto.ObservedDonTimes[existingID].Timestamps, 2)
+		require.Contains(t, outcomeProto.ObservedDonTimes, newID)
+		require.Len(t, outcomeProto.ObservedDonTimes[newID].Timestamps, 1)
+	})
+}
+
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)
@@ -229,22 +431,10 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	t.Run("Outcome: remove expired workflow executions", func(t *testing.T) {
 		timestamp := time.Now().UnixMilli()
 		observations := []*pb.Observation{
-			{
-				Timestamp: timestamp,
-				Requests:  map[string]int64{},
-			},
-			{
-				Timestamp: timestamp - int64(time.Second),
-				Requests:  map[string]int64{},
-			},
-			{
-				Timestamp: timestamp + int64(time.Second),
-				Requests:  map[string]int64{},
-			},
-			{
-				Timestamp: timestamp,
-				Requests:  map[string]int64{},
-			},
+			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: true},
+			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}, PruneExecutions: true},
+			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}, PruneExecutions: true},
+			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: true},
 		}
 
 		aos := make([]types.AttributedObservation, 4)
@@ -279,12 +469,58 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-123")
 	})
 
+	t.Run("Outcome: legacy path when only half nodes have PruneExecutions set", func(t *testing.T) {
+		timestamp := time.Now().UnixMilli()
+		emptyID := "empty-workflow"
+
+		// Only 2 of 4 nodes have PruneExecutions=true → pruneExecutions stays false → legacy path.
+		observations := []*pb.Observation{
+			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: true},
+			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}, PruneExecutions: true},
+			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}, PruneExecutions: false},
+			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: false},
+		}
+
+		aos := make([]types.AttributedObservation, len(observations))
+		for i, obs := range observations {
+			rawObs, err := proto.Marshal(obs)
+			require.NoError(t, err)
+			aos[i] = types.AttributedObservation{Observation: rawObs, Observer: commontypes.OracleID(i)}
+		}
+
+		// prevOutcome contains an entry for emptyID with no timestamps.
+		prevOutcome := &pb.Outcome{
+			Timestamp: timestamp - 1000,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+				emptyID: {Timestamps: []int64{}},
+			},
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		legacyOutcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, legacyOutcomeProto)
+		require.NoError(t, err)
+
+		// Legacy behavior: empty-timestamps entry is NOT pruned.
+		require.Contains(t, legacyOutcomeProto.ObservedDonTimes, emptyID)
+		require.Empty(t, legacyOutcomeProto.ObservedDonTimes[emptyID].Timestamps)
+	})
+
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
+		store.setDonTimes("workflow-123", []int64{time.Now().UnixMilli()})
+
 		r := ocr3types.ReportWithInfo[[]byte]{}
 		r.Report, err = proto.Marshal(outcomeProto)
 		require.NoError(t, err)
 		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
 		require.NoError(t, err)
+
+		_, err = store.GetDonTimes("workflow-123")
+		require.ErrorContains(t, err, "no don time for executionID workflow-123")
 	})
 }
 

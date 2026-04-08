@@ -179,7 +179,7 @@ func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 			SchemaOutputFile: outputName,
 		}
 
-		configInfo.Config.SchemaMappings = append(configInfo.Config.SchemaMappings, generator.SchemaMapping{
+		configInfo.SchemaMappings = append(configInfo.SchemaMappings, generator.SchemaMapping{
 			SchemaID:    jsonSchema.ID,
 			PackageName: path.Dir(jsonSchema.ID[8:]),
 			RootType:    rootType,

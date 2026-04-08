@@ -14,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
@@ -67,8 +66,8 @@ func RegisterExecutableCapabilityServer(server *grpc.Server, broker net.Broker, 
 		BrokerConfig: brokerCfg,
 		Broker:       broker,
 	}
-	capabilitiespb.RegisterExecutableServer(server, newExecutableServer(bext, impl))
-	capabilitiespb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
+	pb.RegisterExecutableServer(server, newExecutableServer(bext, impl))
+	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
 	return nil
 }
 
@@ -77,13 +76,13 @@ func RegisterTriggerCapabilityServer(server *grpc.Server, broker net.Broker, bro
 		BrokerConfig: brokerCfg,
 		Broker:       broker,
 	}
-	capabilitiespb.RegisterTriggerExecutableServer(server, newTriggerExecutableServer(bext, impl))
-	capabilitiespb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
+	pb.RegisterTriggerExecutableServer(server, newTriggerExecutableServer(bext, impl))
+	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
 	return nil
 }
 
 type baseCapabilityServer struct {
-	capabilitiespb.UnimplementedBaseCapabilityServer
+	pb.UnimplementedBaseCapabilityServer
 
 	impl capabilities.BaseCapability
 }
@@ -92,9 +91,9 @@ func newBaseCapabilityServer(impl capabilities.BaseCapability) *baseCapabilitySe
 	return &baseCapabilityServer{impl: impl}
 }
 
-var _ capabilitiespb.BaseCapabilityServer = (*baseCapabilityServer)(nil)
+var _ pb.BaseCapabilityServer = (*baseCapabilityServer)(nil)
 
-func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty) (*capabilitiespb.CapabilityInfoReply, error) {
+func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty) (*pb.CapabilityInfoReply, error) {
 	info, err := c.impl.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -103,23 +102,23 @@ func (c *baseCapabilityServer) Info(ctx context.Context, request *emptypb.Empty)
 	return InfoToReply(info), nil
 }
 
-func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInfoReply {
-	var ct capabilitiespb.CapabilityType
+func InfoToReply(info capabilities.CapabilityInfo) *pb.CapabilityInfoReply {
+	var ct pb.CapabilityType
 	switch info.CapabilityType {
 	case capabilities.CapabilityTypeTrigger:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_TRIGGER
+		ct = pb.CapabilityType_CAPABILITY_TYPE_TRIGGER
 	case capabilities.CapabilityTypeAction:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_ACTION
+		ct = pb.CapabilityType_CAPABILITY_TYPE_ACTION
 	case capabilities.CapabilityTypeConsensus:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_CONSENSUS
+		ct = pb.CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	case capabilities.CapabilityTypeTarget:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_TARGET
+		ct = pb.CapabilityType_CAPABILITY_TYPE_TARGET
 	case capabilities.CapabilityTypeCombined:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_COMBINED
+		ct = pb.CapabilityType_CAPABILITY_TYPE_COMBINED
 	case capabilities.CapabilityTypeUnknown:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
+		ct = pb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
 	default:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
+		ct = pb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
 	}
 
 	types := make([]string, len(info.SpendTypes))
@@ -127,7 +126,7 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		types[idx] = string(sType)
 	}
 
-	return &capabilitiespb.CapabilityInfoReply{
+	return &pb.CapabilityInfoReply{
 		Id:             info.ID,
 		CapabilityType: ct,
 		Description:    info.Description,
@@ -138,14 +137,14 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 
 type baseCapabilityClient struct {
 	c    net.ClientConnInterface
-	grpc capabilitiespb.BaseCapabilityClient
+	grpc pb.BaseCapabilityClient
 	*net.BrokerExt
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
 func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) *baseCapabilityClient {
-	return &baseCapabilityClient{c: conn, grpc: capabilitiespb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+	return &baseCapabilityClient{c: conn, grpc: pb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
 }
 func (c *baseCapabilityClient) GetState() connectivity.State {
 	return c.c.GetState()
@@ -160,20 +159,20 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 	return InfoReplyToInfo(reply)
 }
 
-func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
+func InfoReplyToInfo(resp *pb.CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
 	var ct capabilities.CapabilityType
 	switch resp.CapabilityType {
-	case capabilitiespb.CapabilityTypeTrigger:
+	case pb.CapabilityTypeTrigger:
 		ct = capabilities.CapabilityTypeTrigger
-	case capabilitiespb.CapabilityTypeAction:
+	case pb.CapabilityTypeAction:
 		ct = capabilities.CapabilityTypeAction
-	case capabilitiespb.CapabilityTypeConsensus:
+	case pb.CapabilityTypeConsensus:
 		ct = capabilities.CapabilityTypeConsensus
-	case capabilitiespb.CapabilityTypeTarget:
+	case pb.CapabilityTypeTarget:
 		ct = capabilities.CapabilityTypeTarget
-	case capabilitiespb.CapabilityTypeCombined:
+	case pb.CapabilityTypeCombined:
 		ct = capabilities.CapabilityTypeCombined
-	case capabilitiespb.CapabilityTypeUnknown:
+	case pb.CapabilityTypeUnknown:
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}
 
@@ -192,7 +191,7 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 }
 
 type triggerExecutableServer struct {
-	capabilitiespb.UnimplementedTriggerExecutableServer
+	pb.UnimplementedTriggerExecutableServer
 	*net.BrokerExt
 
 	impl capabilities.TriggerExecutable
@@ -205,17 +204,17 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 	}
 }
 
-var _ capabilitiespb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
+var _ pb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
-func (t *triggerExecutableServer) AckEvent(ctx context.Context, req *capabilitiespb.AckEventRequest) (*emptypb.Empty, error) {
+func (t *triggerExecutableServer) AckEvent(ctx context.Context, req *pb.AckEventRequest) (*emptypb.Empty, error) {
 	if err := t.impl.AckEvent(ctx, req.TriggerId, req.EventId, req.Method); err != nil {
 		return nil, fmt.Errorf("error acking event: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
 
-func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.TriggerRegistrationRequest,
-	server capabilitiespb.TriggerExecutable_RegisterTriggerServer) error {
+func (t *triggerExecutableServer) RegisterTrigger(request *pb.TriggerRegistrationRequest,
+	server pb.TriggerExecutable_RegisterTriggerServer) error {
 	req, err := pb.TriggerRegistrationRequestFromProto(request)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal capability request: %w", err)
@@ -224,10 +223,17 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 	if err != nil {
 		// the first message sent to the client will be an ack or error message, this is done in order to syncronize the client and server and avoid
 		// errors to unregister not found triggers. If the error is not nil, we send an error message to the client and return the error
-		msg := &capabilitiespb.TriggerResponseMessage{
-			Message: &capabilitiespb.TriggerResponseMessage_Response{
-				Response: &capabilitiespb.TriggerResponse{
-					Error: err.Error(),
+
+		// If it's a capability error, serialize it and send it to the client for proper deserialization and handling on the client side.
+		errorString := err.Error()
+		var capErr caperrors.Error
+		if errors.As(err, &capErr) {
+			errorString = capErr.SerializeToString()
+		}
+		msg := &pb.TriggerResponseMessage{
+			Message: &pb.TriggerResponseMessage_Response{
+				Response: &pb.TriggerResponse{
+					Error: errorString,
 				},
 			},
 		}
@@ -235,8 +241,8 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 	}
 
 	// Send ACK response to client
-	msg := &capabilitiespb.TriggerResponseMessage{
-		Message: &capabilitiespb.TriggerResponseMessage_Ack{
+	msg := &pb.TriggerResponseMessage{
+		Message: &pb.TriggerResponseMessage_Ack{
 			Ack: &emptypb.Empty{},
 		},
 	}
@@ -261,8 +267,8 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 				return nil
 			}
 
-			msg := &capabilitiespb.TriggerResponseMessage{
-				Message: &capabilitiespb.TriggerResponseMessage_Response{
+			msg := &pb.TriggerResponseMessage{
+				Message: &pb.TriggerResponseMessage_Response{
 					Response: pb.TriggerResponseToProto(resp),
 				},
 			}
@@ -273,7 +279,7 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 	}
 }
 
-func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *capabilitiespb.TriggerRegistrationRequest) (*emptypb.Empty, error) {
+func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request *pb.TriggerRegistrationRequest) (*emptypb.Empty, error) {
 	req, err := pb.TriggerRegistrationRequestFromProto(request)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal capability request: %w", err)
@@ -286,7 +292,7 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 }
 
 type triggerExecutableClient struct {
-	grpc capabilitiespb.TriggerExecutableClient
+	grpc pb.TriggerExecutableClient
 	*net.BrokerExt
 
 	// manage cancelation of gRPC client stream by trigger ID
@@ -295,7 +301,7 @@ type triggerExecutableClient struct {
 }
 
 func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
-	req := &capabilitiespb.AckEventRequest{
+	req := &pb.AckEventRequest{
 		TriggerId: triggerId,
 		EventId:   eventId,
 		Method:    method,
@@ -346,7 +352,7 @@ func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capab
 	}
 
 	if ackMsg.GetAck() == nil {
-		return nil, cancel, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
+		return nil, cancel, caperrors.DeserializeErrorFromString(ackMsg.GetResponse().GetError())
 	}
 
 	ch, err := forwardTriggerResponsesToChannel(ctx, responseStream.Recv)
@@ -376,14 +382,14 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 
 func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *triggerExecutableClient {
 	return &triggerExecutableClient{
-		grpc:        capabilitiespb.NewTriggerExecutableClient(conn),
+		grpc:        pb.NewTriggerExecutableClient(conn),
 		BrokerExt:   brokerExt,
 		cancelFuncs: make(map[string]func()),
 	}
 }
 
 type executableServer struct {
-	capabilitiespb.UnimplementedExecutableServer
+	pb.UnimplementedExecutableServer
 	*net.BrokerExt
 
 	impl capabilities.Executable
@@ -399,9 +405,9 @@ func newExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Executable)
 	}
 }
 
-var _ capabilitiespb.ExecutableServer = (*executableServer)(nil)
+var _ pb.ExecutableServer = (*executableServer)(nil)
 
-func (c *executableServer) RegisterToWorkflow(ctx context.Context, req *capabilitiespb.RegisterToWorkflowRequest) (*emptypb.Empty, error) {
+func (c *executableServer) RegisterToWorkflow(ctx context.Context, req *pb.RegisterToWorkflowRequest) (*emptypb.Empty, error) {
 	config, err := values.FromMapValueProto(req.Config)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal config into map: %w", err)
@@ -417,7 +423,7 @@ func (c *executableServer) RegisterToWorkflow(ctx context.Context, req *capabili
 	return &emptypb.Empty{}, err
 }
 
-func (c *executableServer) UnregisterFromWorkflow(ctx context.Context, req *capabilitiespb.UnregisterFromWorkflowRequest) (*emptypb.Empty, error) {
+func (c *executableServer) UnregisterFromWorkflow(ctx context.Context, req *pb.UnregisterFromWorkflowRequest) (*emptypb.Empty, error) {
 	config, err := values.FromMapValueProto(req.Config)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal config into map: %w", err)
@@ -433,22 +439,22 @@ func (c *executableServer) UnregisterFromWorkflow(ctx context.Context, req *capa
 	return &emptypb.Empty{}, err
 }
 
-func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, server capabilitiespb.Executable_ExecuteServer) error {
+func (c *executableServer) Execute(reqpb *pb.CapabilityRequest, server pb.Executable_ExecuteServer) error {
 	req, err := pb.CapabilityRequestFromProto(reqpb)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal capability request: %w", err)
 	}
 
-	var responseMessage *capabilitiespb.CapabilityResponse
+	var responseMessage *pb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
 		var capabilityError caperrors.Error
 		if errors.As(err, &capabilityError) {
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilityError.SerializeToString()}
+			responseMessage = &pb.CapabilityResponse{Error: capabilityError.SerializeToString()}
 		} else {
 			// All other errors are treated as private visibility and are marked as such to prevent accidental or malicious
 			// reporting of sensitive information by prefixing the error message with the remote reportable identifier.
-			responseMessage = &capabilitiespb.CapabilityResponse{Error: caperrors.PrePendPrivateVisibilityIdentifier(err.Error())}
+			responseMessage = &pb.CapabilityResponse{Error: caperrors.PrePendPrivateVisibilityIdentifier(err.Error())}
 		}
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
@@ -462,13 +468,13 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 }
 
 type executableClient struct {
-	grpc capabilitiespb.ExecutableClient
+	grpc pb.ExecutableClient
 	*net.BrokerExt
 }
 
 func newExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *executableClient {
 	return &executableClient{
-		grpc:      capabilitiespb.NewExecutableClient(conn),
+		grpc:      pb.NewExecutableClient(conn),
 		BrokerExt: brokerExt,
 	}
 }
@@ -504,9 +510,9 @@ func (c *executableClient) UnregisterFromWorkflow(ctx context.Context, req capab
 		config = req.Config
 	}
 
-	r := &capabilitiespb.UnregisterFromWorkflowRequest{
+	r := &pb.UnregisterFromWorkflowRequest{
 		Config: values.ProtoMap(config),
-		Metadata: &capabilitiespb.RegistrationMetadata{
+		Metadata: &pb.RegistrationMetadata{
 			WorkflowId:  req.Metadata.WorkflowID,
 			ReferenceId: req.Metadata.ReferenceID,
 		},
@@ -522,9 +528,9 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 		config = req.Config
 	}
 
-	r := &capabilitiespb.RegisterToWorkflowRequest{
+	r := &pb.RegisterToWorkflowRequest{
 		Config: values.ProtoMap(config),
-		Metadata: &capabilitiespb.RegistrationMetadata{
+		Metadata: &pb.RegistrationMetadata{
 			WorkflowId:  req.Metadata.WorkflowID,
 			ReferenceId: req.Metadata.ReferenceID,
 		},
@@ -536,7 +542,7 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 
 func forwardTriggerResponsesToChannel(
 	ctx context.Context,
-	receive func() (*capabilitiespb.TriggerResponseMessage, error),
+	receive func() (*pb.TriggerResponseMessage, error),
 ) (<-chan capabilities.TriggerResponse, error) {
 	responseCh := make(chan capabilities.TriggerResponse)
 

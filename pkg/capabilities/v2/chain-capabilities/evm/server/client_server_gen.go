@@ -121,6 +121,7 @@ var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 const ClientID = "evm@1.0.0"
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
@@ -131,6 +132,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 }
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
@@ -163,117 +165,118 @@ func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request c
 
 func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "CallContract":
 		input := &evm.CallContractRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.CallContract(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method CallContract(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method CallContract(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "FilterLogs":
 		input := &evm.FilterLogsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.FilterLogs(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method FilterLogs(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method FilterLogs(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "BalanceAt":
 		input := &evm.BalanceAtRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.BalanceAt(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method BalanceAt(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method BalanceAt(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "EstimateGas":
 		input := &evm.EstimateGasRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.EstimateGas(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method EstimateGas(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method EstimateGas(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionByHash":
 		input := &evm.GetTransactionByHashRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetTransactionByHash(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetTransactionByHash(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransactionByHash(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionReceipt":
 		input := &evm.GetTransactionReceiptRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*evm.GetTransactionReceiptReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*evm.GetTransactionReceiptReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetTransactionReceipt(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetTransactionReceipt(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransactionReceipt(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "HeaderByNumber":
 		input := &evm.HeaderByNumberRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.HeaderByNumber(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method HeaderByNumber(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method HeaderByNumber(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":
 		input := &evm.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

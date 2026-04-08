@@ -242,9 +242,10 @@ func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) 
 		return convertToEpoch(to, time.Unix(unixTime, 0)), nil
 	default:
 		// value to time.Time
-		if to == timeType {
+		switch to {
+		case timeType:
 			return convertToTime(from, data), nil
-		} else if to == timePtrType {
+		case timePtrType:
 			if t, ok := convertToTime(from, data).(time.Time); ok {
 				return &t, nil
 			}

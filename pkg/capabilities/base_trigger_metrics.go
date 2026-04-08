@@ -14,6 +14,8 @@ type BaseTriggerBeholderMetrics struct {
 	capabilityID             string
 	retryCount               metric.Int64Counter
 	ackCount                 metric.Int64Counter
+	ackErrorCount            metric.Int64Counter
+	ackMemoryOutcomeCount    metric.Int64Counter
 	inboxMissingCount        metric.Int64Counter
 	inboxFullCount           metric.Int64Counter
 	undeliveredWarningCount  metric.Int64Counter
@@ -21,6 +23,8 @@ type BaseTriggerBeholderMetrics struct {
 	timeToAckMs              metric.Int64Histogram
 	ackAttempts              metric.Int64Histogram // attempts distribution at ACK time
 	activeRegistrations      metric.Int64UpDownCounter
+	pendingEvents            metric.Int64UpDownCounter
+	stuckEvents              metric.Int64UpDownCounter
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
@@ -31,6 +35,14 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 	ackCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_ack_total")
+	if err != nil {
+		return nil, err
+	}
+	ackErrorCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_ack_error_total")
+	if err != nil {
+		return nil, err
+	}
+	ackMemoryOutcomeCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_ack_memory_outcome_total")
 	if err != nil {
 		return nil, err
 	}
@@ -65,10 +77,22 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
+	pendingEvents, err := beholder.GetMeter().Int64UpDownCounter("capabilities_base_trigger_pending_events")
+	if err != nil {
+		return nil, err
+	}
+
+	stuckEvents, err := beholder.GetMeter().Int64UpDownCounter("capabilities_base_trigger_stuck_events")
+	if err != nil {
+		return nil, err
+	}
+
 	return &BaseTriggerBeholderMetrics{
 		capabilityID:             capabilityID,
 		retryCount:               retryCount,
 		ackCount:                 ackCount,
+		ackErrorCount:            ackErrorCount,
+		ackMemoryOutcomeCount:    ackMemoryOutcomeCount,
 		inboxMissingCount:        inboxMissingCount,
 		inboxFullCount:           inboxFullCount,
 		undeliveredWarningCount:  undeliveredWarningCount,
@@ -76,6 +100,8 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		timeToAckMs:              timeToAckMs,
 		ackAttempts:              ackAttempts,
 		activeRegistrations:      activeRegistrations,
+		pendingEvents:            pendingEvents,
+		stuckEvents:              stuckEvents,
 	}, nil
 }
 
@@ -108,6 +134,24 @@ func (m *BaseTriggerBeholderMetrics) IncRetry(triggerID, eventID string) {
 func (m *BaseTriggerBeholderMetrics) IncAck(triggerID, eventID string) {
 	m.ackCount.Add(context.Background(), 1,
 		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncAckError(reason string) {
+	m.ackErrorCount.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("reason", reason),
+		),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncAckMemoryOutcome(outcome string) {
+	m.ackMemoryOutcomeCount.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("outcome", outcome),
+		),
 	)
 }
 
@@ -150,6 +194,24 @@ func (m *BaseTriggerBeholderMetrics) EmitUndeliveredCritical(triggerID, eventID 
 	)
 }
 
+func (m *BaseTriggerBeholderMetrics) AddPendingEvents(delta int64) {
+	m.pendingEvents.Add(context.Background(), delta,
+		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) IncStuckEvent(triggerID, eventID string) {
+	m.stuckEvents.Add(context.Background(), 1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) DecStuckEvent(triggerID, eventID string) {
+	m.stuckEvents.Add(context.Background(), -1,
+		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+	)
+}
+
 type noopBaseTriggerMetrics struct{}
 
 var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
@@ -163,3 +225,8 @@ func (noopBaseTriggerMetrics) IncInboxMissing(string)                           
 func (noopBaseTriggerMetrics) IncInboxFull(string)                                 {}
 func (noopBaseTriggerMetrics) EmitUndeliveredWarning(string, string)               {}
 func (noopBaseTriggerMetrics) EmitUndeliveredCritical(string, string)              {}
+func (noopBaseTriggerMetrics) IncAckError(string)                                  {}
+func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                          {}
+func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}
+func (noopBaseTriggerMetrics) IncStuckEvent(string, string)                        {}
+func (noopBaseTriggerMetrics) DecStuckEvent(string, string)                        {}

@@ -36,14 +36,18 @@ flowchart
     subgraph handleRequest[httpServer/websocketServer.handleRequest]
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
+        VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
+        VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
 %%      DON nodes → gateway (separate from the inbound trigger flow)
         GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
+        GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
+        GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
     end
-%%    WorkflowLimit - Deprecated
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
@@ -58,10 +62,11 @@ flowchart
     end
     
     subgraph Engine.init
-        WorkflowExecutionConcurrencyLimit([WorkflowExecutionConcurrencyLimit]):::resource
-        PerOwner.WorkflowExecutionConcurrencyLimit([PerOwner.WorkflowExecutionConcurrencyLimit]):::resource
+%%        TODO move and replace with WorkflowLimit
+        WorkflowLimit([WorkflowLimit]):::resource
+        PerOwner.WorkflowLimit([PerOwner.WorkflowLimit]):::resource
 
-        WorkflowExecutionConcurrencyLimit-->PerOwner.WorkflowExecutionConcurrencyLimit
+        WorkflowLimit-->PerOwner.WorkflowLimit
     end
     
     subgraph Engine.runTriggerSubscriptionPhase
@@ -91,14 +96,25 @@ flowchart
             PerWorkflow.LogTrigger.FilterAddressLimit{{FilterAddressLimit}}:::bound
             PerWorkflow.LogTrigger.FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
         end
+        subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
+            BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
+            BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
+        end
     end
 
     subgraph Engine.handleAllTriggerEvents
         PerWorkflow.TriggerEventQueueLimit[[PerWorkflow.TriggerEventQueueLimit]]:::queue
         PerWorkflow.TriggerEventQueueTimeout>PerWorkflow.TriggerEventQueueTimeout]:::time
-        PerWorkflow.ExecutionConcurrencyLimit([PerWorkflow.ExecutionConcurrencyLimit]):::resource
+        
+        subgraph multiExecutionConcurrencyLimiter
+            WorkflowExecutionConcurrencyLimit([WorkflowExecutionConcurrencyLimit]):::resource
+            PerOrg.WorkflowExecutionConcurrencyLimit([PerOrg.WorkflowExecutionConcurrencyLimit]):::resource
+            PerOwner.WorkflowExecutionConcurrencyLimit([PerOwner.WorkflowExecutionConcurrencyLimit]):::resource
+            PerWorkflow.ExecutionConcurrencyLimit([PerWorkflow.ExecutionConcurrencyLimit]):::resource
+            WorkflowExecutionConcurrencyLimit-->PerOrg.WorkflowExecutionConcurrencyLimit-->PerOwner.WorkflowExecutionConcurrencyLimit-->PerWorkflow.ExecutionConcurrencyLimit
+        end
 
-        PerWorkflow.TriggerEventQueueLimit-->PerWorkflow.TriggerEventQueueTimeout-->PerWorkflow.ExecutionConcurrencyLimit
+        PerWorkflow.TriggerEventQueueLimit-->PerWorkflow.TriggerEventQueueTimeout-->multiExecutionConcurrencyLimiter
     end
 
     subgraph Engine.startExecution
@@ -108,13 +124,25 @@ flowchart
             PerWorkflow.LogLineLimit{{PerWorkflow.LogLineLimit}}:::bound
             PerWorkflow.LogEventLimit{{PerWorkflow.LogEventLimit}}:::bound
         end
+
+        subgraph metrics
+            PerWorkflow.UserMetricEnabled[/PerWorkflow.UserMetricEnabled\]:::gate
+            PerWorkflow.UserMetricPayloadLimit{{PerWorkflow.UserMetricPayloadLimit}}:::bound
+            PerWorkflow.UserMetricNameLengthLimit{{PerWorkflow.UserMetricNameLengthLimit}}:::bound
+            PerWorkflow.UserMetricLabelsPerMetric{{PerWorkflow.UserMetricLabelsPerMetric}}:::bound
+            PerWorkflow.UserMetricLabelValueLength{{PerWorkflow.UserMetricLabelValueLength}}:::bound
+
+            PerWorkflow.UserMetricEnabled-->PerWorkflow.UserMetricPayloadLimit-->PerWorkflow.UserMetricNameLengthLimit-->PerWorkflow.UserMetricLabelsPerMetric-->PerWorkflow.UserMetricLabelValueLength
+        end
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
+        PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
+        PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
 
-        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
+        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
         
     subgraph ExecutionHelper.GetSecrets
@@ -138,8 +166,17 @@ flowchart
             PerWorkflow.ChainWrite.ReportSizeLimit{{ReportSizeLimit}}:::bound
 
             subgraph EVM
+                PerWorkflow.ChainWrite.EVM.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.EVM.GasLimit{{GasLimit}}:::bound
 %%                PerWorkflow.ChainWrite.EVM.TransactionGasLimit - Deprecated
+            end
+            subgraph Solana
+                PerWorkflow.ChainWrite.Solana.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Solana.GasLimit{{GasLimit}}:::bound
+            end
+            subgraph Aptos
+                PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Aptos.GasLimit{{GasLimit}}:::bound
             end
         end
         subgraph PerWorkflow.ChainRead

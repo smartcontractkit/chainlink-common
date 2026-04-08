@@ -102,6 +102,7 @@ var _ capabilities.ExecutableAndTriggerCapability = (*hTTPCapability)(nil)
 const HTTPID = "http-trigger@1.0.0-alpha"
 
 func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Trigger":
 		input := &http.Config{}
@@ -112,6 +113,7 @@ func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabiliti
 }
 
 func (c *hTTPCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "Trigger":
 		input := &http.Config{}

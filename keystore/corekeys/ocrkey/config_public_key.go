@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/curve25519"
 )
 
@@ -41,10 +40,10 @@ func (cpk *ConfigPublicKey) UnmarshalJSON(input []byte) error {
 func (cpk *ConfigPublicKey) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
-		return errors.Errorf("unable to convert %v of type %T to ConfigPublicKey", value, value)
+		return fmt.Errorf("unable to convert %v of type %T to ConfigPublicKey", value, value)
 	}
 	if len(b) != curve25519.PointSize {
-		return errors.Errorf("unable to convert blob 0x%x of length %v to ConfigPublicKey", b, len(b))
+		return fmt.Errorf("unable to convert blob 0x%x of length %v to ConfigPublicKey", b, len(b))
 	}
 	copy(cpk[:], b)
 	return nil

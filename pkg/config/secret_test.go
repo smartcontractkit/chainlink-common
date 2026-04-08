@@ -25,7 +25,7 @@ func TestSecrets_redacted(t *testing.T) {
 				assert.Equal(t, redacted, string(got))
 			}
 			assert.Equal(t, redacted, fmt.Sprint(v))
-			assert.Equal(t, redacted, fmt.Sprintf("%s", v)) //nolint:gosimple
+			assert.Equal(t, redacted, v.String()) //nolint:gosimple
 			assert.Equal(t, redacted, fmt.Sprintf("%v", v))
 			assert.Equal(t, redacted, fmt.Sprintf("%#v", v))
 			got, err = json.Marshal(v)

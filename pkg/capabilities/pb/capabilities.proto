@@ -8,6 +8,7 @@ import "values/v1/values.proto";
 import "metering/pb/meteringdetail.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service BaseCapability {
   rpc Info (google.protobuf.Empty) returns (CapabilityInfoReply) {}
@@ -41,6 +42,7 @@ message RequestMetadata {
   string workflow_id = 1;
   string workflow_execution_id = 2;
   string workflow_owner = 3;
+  string org_id = 16;
   string workflow_name = 4;
   uint32 workflow_don_id = 6;
   uint32 workflow_don_config_version = 7;
@@ -51,6 +53,7 @@ message RequestMetadata {
   string workflow_registry_chain_selector = 12;
   string workflow_registry_address = 13;
   string engine_version = 14;
+  google.protobuf.Timestamp execution_timestamp = 15;
 }
 
 message CapabilityRequest {
@@ -125,6 +128,7 @@ message CapabilityResponse {
   ResponseMetadata metadata = 3;
   // Used for no DAG SDK
   google.protobuf.Any payload = 4;
+  optional OCRAttestation ocr_attestation = 5;
 }
 
 message ResponseMetadata {
@@ -140,6 +144,17 @@ message ResponseMetadata {
   repeated metering.MeteringReportNodeDetail metering = 1;
   // capdon_n represents the total number of nodes in a capability don.
   uint32 capdon_n = 2;
+}
+
+message OCRAttestation {
+  bytes config_digest = 1;
+  uint64 sequence_number = 2;
+  repeated AttributedSignature signatures = 3;
+}
+
+message AttributedSignature {
+  bytes signature = 1;
+  uint32 signer = 2;
 }
 
 message RegistrationMetadata {

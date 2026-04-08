@@ -321,7 +321,6 @@ type staticExecutePluginCodec struct {
 }
 
 func newStaticExecutePluginCodec(lggr logger.Logger, cfg staticExecutePluginCodecConfig) staticExecutePluginCodec {
-	lggr = logger.Named(lggr, "staticExecutePluginCodec")
 	return staticExecutePluginCodec{
 		staticExecutePluginCodecConfig: cfg,
 	}

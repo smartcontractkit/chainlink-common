@@ -48,12 +48,6 @@ type DurableEmitterConfig struct {
 	// Publish with no store insert. An empty slice persists nothing (all best-effort only).
 	// A one-element slice containing only "*" is treated like nil (persist all).
 	PersistCloudEventSources []string
-	// PublishWorkers is the number of long-lived goroutines that process immediate
-	// Publish+MarkDelivered after each Emit. When all workers are busy, the event
-	// stays in the DB and the retransmit loop delivers it on the next tick — this
-	// provides natural back-pressure without unbounded goroutine growth.
-	// Zero defaults to DefaultPublishWorkers (64).
-	PublishWorkers int
 	// QuietMode suppresses high-volume INFO-level logs (retransmit scan stats,
 	// retransmit results, publish failures, expired event purges, etc.).
 	// Error-level logs are never suppressed. Useful for load tests where the
@@ -74,8 +68,6 @@ type DurableEmitterHooks struct {
 	OnRetransmitBatchDeletes func(elapsed time.Duration, markedDeliveredCount int)
 }
 
-const DefaultPublishWorkers = 64
-
 func DefaultDurableEmitterConfig() DurableEmitterConfig {
 	return DurableEmitterConfig{
 		RetransmitInterval:  5 * time.Second,
@@ -86,7 +78,6 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		PublishTimeout:      5 * time.Second,
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,
-		PublishWorkers:      DefaultPublishWorkers,
 	}
 }
 
@@ -111,14 +102,8 @@ type DurableEmitter struct {
 	metrics       *durableEmitterMetrics
 	persistFilter persistSourceFilter
 
-	publishCh chan publishWork
-	stopCh    chan struct{}
-	wg        sync.WaitGroup
-}
-
-type publishWork struct {
-	id      int64
-	eventPb *chipingress.CloudEventPb
+	stopCh chan struct{}
+	wg     sync.WaitGroup
 }
 
 // persistSourceFilter decides whether a CloudEvent source may be written to the durable store.
@@ -175,10 +160,6 @@ func NewDurableEmitter(
 		}
 		store = newMetricsInstrumentedStore(store, m)
 	}
-	workers := cfg.PublishWorkers
-	if workers <= 0 {
-		workers = DefaultPublishWorkers
-	}
 	return &DurableEmitter{
 		store:         store,
 		client:        client,
@@ -186,26 +167,18 @@ func NewDurableEmitter(
 		log:           log,
 		metrics:       m,
 		persistFilter: newPersistSourceFilter(cfg.PersistCloudEventSources),
-		publishCh:     make(chan publishWork, workers),
 		stopCh:        make(chan struct{}),
 	}, nil
 }
 
-// Start launches the publish worker pool, retransmit, expiry, and purge background loops.
+// Start launches the retransmit, expiry, and purge background loops.
 // Cancel the supplied context or call Close to stop them.
 func (d *DurableEmitter) Start(ctx context.Context) {
-	workers := d.cfg.PublishWorkers
-	if workers <= 0 {
-		workers = DefaultPublishWorkers
-	}
-	n := 3 + workers // retransmit + expiry + purge + N publish workers
+	n := 3
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		n++
 	}
 	d.wg.Add(n)
-	for i := 0; i < workers; i++ {
-		go d.publishWorker()
-	}
 	go d.retransmitLoop(ctx)
 	go d.expiryLoop(ctx)
 	go d.purgeLoop(ctx)
@@ -272,18 +245,8 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
-	// Try to dispatch to a publish worker; if all workers are busy the event
-	// stays in the DB and will be picked up by the retransmit loop.
-	select {
-	case d.publishCh <- publishWork{id: id, eventPb: eventPb}:
-	default:
-		if d.metrics != nil {
-			d.metrics.publishPoolFull.Add(ctx, 1)
-		}
-		if !d.cfg.QuietMode {
-			d.log.Debugw("DurableEmitter: publish worker pool full, deferring to retransmit loop", "event_id", id)
-		}
-	}
+	// Fire-and-forget immediate delivery attempt.
+	go d.publishAndDelete(id, eventPb)
 
 	return nil
 }
@@ -326,23 +289,11 @@ func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEven
 	//d.log.Infow("DurableEmitter: best-effort Chip publish succeeded (not persisted)", okKVs...)
 }
 
-// Close signals background loops and publish workers to stop and waits for
-// them to finish. Workers drain any buffered work before exiting.
+// Close signals background loops to stop and waits for them to finish.
 func (d *DurableEmitter) Close() error {
-	close(d.publishCh) // workers drain remaining items then exit
-	close(d.stopCh)    // background loops exit
+	close(d.stopCh)
 	d.wg.Wait()
 	return nil
-}
-
-// publishWorker is a long-lived goroutine that pulls work items from publishCh.
-// Each worker processes one Publish+MarkDelivered at a time, providing bounded
-// concurrency over the gRPC and DB connections.
-func (d *DurableEmitter) publishWorker() {
-	defer d.wg.Done()
-	for w := range d.publishCh {
-		d.publishAndDelete(w.id, w.eventPb)
-	}
 }
 
 // publishAndDelete attempts a single Publish and deletes the record on success.

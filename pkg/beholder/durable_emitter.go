@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
@@ -57,6 +58,9 @@ type DurableEmitterConfig struct {
 
 // DurableEmitterHooks records Publish vs Delete latency to locate pipeline bottlenecks.
 type DurableEmitterHooks struct {
+	// OnEmitInsert is called after each store.Insert in Emit (the DB write that
+	// blocks the caller). elapsed covers only the INSERT; err is nil on success.
+	OnEmitInsert func(elapsed time.Duration, err error)
 	// OnImmediatePublish is called after each async Publish in publishAndDelete (every attempt).
 	OnImmediatePublish func(elapsed time.Duration, err error)
 	// OnImmediateDelete is called after MarkDelivered following a successful immediate Publish.
@@ -101,6 +105,12 @@ type DurableEmitter struct {
 
 	metrics       *durableEmitterMetrics
 	persistFilter persistSourceFilter
+
+	// pendingCount is an exact, atomic count of rows inserted but not yet
+	// delivered/deleted. Incremented on successful Insert, decremented on
+	// MarkDelivered, Delete, or DeleteExpired. No polling required.
+	pendingCount atomic.Int64
+	pendingMax   atomic.Int64
 
 	stopCh chan struct{}
 	wg     sync.WaitGroup
@@ -233,8 +243,12 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 
 	tIns := time.Now()
 	id, err := d.store.Insert(ctx, payload)
+	insElapsed := time.Since(tIns)
+	if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
+		h.OnEmitInsert(insElapsed, err)
+	}
 	if d.metrics != nil {
-		d.metrics.emitDuration.Record(ctx, time.Since(tIns).Seconds())
+		d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
 		if err != nil {
 			d.metrics.emitFail.Add(ctx, 1)
 		} else {
@@ -244,6 +258,8 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 	if err != nil {
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
+
+	d.incPending(1)
 
 	// Fire-and-forget immediate delivery attempt.
 	go d.publishAndDelete(id, eventPb)
@@ -296,6 +312,33 @@ func (d *DurableEmitter) Close() error {
 	return nil
 }
 
+// PendingDepth returns the current exact pending queue depth (inserted but not
+// yet delivered/deleted). Thread-safe; no DB query required.
+func (d *DurableEmitter) PendingDepth() int64 { return d.pendingCount.Load() }
+
+// PendingMax returns the highest pending queue depth observed since Start.
+func (d *DurableEmitter) PendingMax() int64 { return d.pendingMax.Load() }
+
+func (d *DurableEmitter) incPending(n int64) {
+	cur := d.pendingCount.Add(n)
+	for {
+		old := d.pendingMax.Load()
+		if cur <= old || d.pendingMax.CompareAndSwap(old, cur) {
+			break
+		}
+	}
+	if d.metrics != nil {
+		d.metrics.queueDepth.Record(context.Background(), cur)
+	}
+}
+
+func (d *DurableEmitter) decPending(n int64) {
+	cur := d.pendingCount.Add(-n)
+	if d.metrics != nil {
+		d.metrics.queueDepth.Record(context.Background(), cur)
+	}
+}
+
 // publishAndDelete attempts a single Publish and deletes the record on success.
 func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEventPb) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
@@ -344,8 +387,11 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	if h := d.cfg.Hooks; h != nil && h.OnImmediateDelete != nil {
 		h.OnImmediateDelete(time.Since(t1), markErr)
 	}
-	if markErr == nil && d.metrics != nil {
-		d.metrics.deliverComplete.Add(mctx, 1)
+	if markErr == nil {
+		d.decPending(1)
+		if d.metrics != nil {
+			d.metrics.deliverComplete.Add(mctx, 1)
+		}
 	}
 	markElapsed := time.Since(t1)
 	if markErr != nil {
@@ -414,7 +460,9 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		ev := new(chipingress.CloudEventPb)
 		if err := proto.Unmarshal(pe.Payload, ev); err != nil {
 			d.log.Errorw("corrupt pending event, deleting", "id", pe.ID, "error", err)
-			_ = d.store.Delete(ctx, pe.ID)
+			if delErr := d.store.Delete(ctx, pe.ID); delErr == nil {
+				d.decPending(1)
+			}
 			continue
 		}
 		if !d.persistFilter.allows(ev.GetSource()) {
@@ -422,7 +470,9 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 				d.log.Infow("DurableEmitter: dropping queued event (ce_source not in PersistCloudEventSources)",
 					"id", pe.ID, "ce_source", ev.GetSource(), "ce_type", ev.GetType())
 			}
-			_ = d.store.Delete(ctx, pe.ID)
+			if delErr := d.store.Delete(ctx, pe.ID); delErr == nil {
+				d.decPending(1)
+			}
 			continue
 		}
 		events = append(events, ev)
@@ -477,6 +527,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 			d.log.Errorw("failed to mark retransmitted event delivered", "id", ids[i], "error", markErr)
 			continue
 		}
+		d.decPending(1)
 		markedDelivered++
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(ctx, 1)
@@ -552,6 +603,7 @@ func (d *DurableEmitter) expiryLoop(ctx context.Context) {
 				continue
 			}
 			if deleted > 0 {
+				d.decPending(deleted)
 				if d.metrics != nil {
 					d.metrics.expiredPurged.Add(context.Background(), deleted)
 				}

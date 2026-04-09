@@ -140,6 +140,9 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 	m.storeOpDuration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("operation", op)))
 }
 
+// pollQueueGauges refreshes DB-derived queue statistics (payload bytes, oldest
+// pending age, near-TTL count). Queue depth itself is tracked atomically by
+// DurableEmitter.incPending/decPending and recorded there.
 func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs DurableQueueObserver, ttl, lead time.Duration, maxBytes int64) {
 	if m == nil || obs == nil {
 		return
@@ -148,7 +151,6 @@ func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs Durable
 	if err != nil {
 		return
 	}
-	m.queueDepth.Record(ctx, st.Depth)
 	m.queuePayloadBytes.Record(ctx, st.PayloadBytes)
 	if st.Depth == 0 {
 		m.queueOldestAgeSec.Record(ctx, 0)

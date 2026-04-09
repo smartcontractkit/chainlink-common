@@ -119,4 +119,9 @@ var (
 		Unit:        "s",
 		Description: "Cumulative system CPU seconds (getrusage; Unix only)",
 	}
+	durableEmitterMetricPublishPoolFull = MetricInfo{
+		Name:        "beholder.durable_emitter.publish.pool_full",
+		Unit:        "{event}",
+		Description: "Events where the publish worker pool was full; deferred to retransmit loop",
+	}
 )

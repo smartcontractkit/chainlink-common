@@ -50,6 +50,7 @@ type durableEmitterMetrics struct {
 	procHeapSys        metric.Int64Gauge
 	procCPUUser        metric.Float64Gauge
 	procCPUSys         metric.Float64Gauge
+	publishPoolFull    metric.Int64Counter
 }
 
 func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
@@ -123,6 +124,9 @@ func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 		return nil, err
 	}
 	if m.procCPUSys, err = durableEmitterMetricProcCPUSys.NewFloat64Gauge(meter); err != nil {
+		return nil, err
+	}
+	if m.publishPoolFull, err = durableEmitterMetricPublishPoolFull.NewInt64Counter(meter); err != nil {
 		return nil, err
 	}
 	return m, nil

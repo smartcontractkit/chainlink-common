@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/scylladb/go-reflectx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,14 +75,17 @@ func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) ur
 	}
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName))
+	quotedName := pq.QuoteIdentifier(dbName)
+	// WITH (FORCE) requires PostgreSQL 13+; terminates backends and avoids "being accessed by other users".
+	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH (FORCE)", quotedName))
 	if err != nil {
 		t.Fatalf("unable to drop postgres migrations test database: %v", err)
 	}
 	if template != "" {
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s", dbName, template))
+		quotedTemplate := pq.QuoteIdentifier(template)
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s", quotedName, quotedTemplate))
 	} else {
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", quotedName))
 	}
 	if err != nil {
 		t.Fatalf("unable to create postgres test database with name '%s': %v", dbName, err)
@@ -96,7 +100,7 @@ func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) ur
 			if err == nil {
 				return
 			}
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 		t.Logf("unable to drop postgres test database with name '%s': %v", dbName, err)
 	})
@@ -120,7 +124,8 @@ func drop(dbURL url.URL) error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbname))
+	quoted := pq.QuoteIdentifier(dbname)
+	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH (FORCE)", quoted))
 	if err != nil {
 		return fmt.Errorf("unable to drop postgres migrations test database: %v", err)
 	}

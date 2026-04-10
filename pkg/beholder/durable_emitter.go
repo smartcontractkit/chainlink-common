@@ -37,6 +37,24 @@ type DurableEmitterConfig struct {
 	PurgeInterval time.Duration
 	// PurgeBatchSize is the maximum rows removed per PurgeDelivered call. Zero defaults to 500.
 	PurgeBatchSize int
+	// PublishBatchSize enables batched publishing via PublishBatch RPC when > 0.
+	// Events are collected into batches of this size before a single PublishBatch
+	// call is made. Zero disables batching (each Emit spawns its own goroutine
+	// with an individual Publish RPC — the legacy behaviour).
+	PublishBatchSize int
+	// PublishBatchWorkers is the number of concurrent goroutines that read from
+	// the batch channel and call PublishBatch. More workers means higher
+	// throughput (each worker handles one in-flight batch at a time). Only used
+	// when PublishBatchSize > 0. Zero defaults to 1.
+	PublishBatchWorkers int
+	// PublishBatchFlushInterval is the maximum time to wait for a full batch
+	// before flushing a partial one. Only used when PublishBatchSize > 0.
+	// Zero defaults to 50ms.
+	PublishBatchFlushInterval time.Duration
+	// DisablePruning disables the background purge (PurgeDelivered) and expiry
+	// (DeleteExpired) loops. Events remain in the DB after delivery. Useful for
+	// post-test analysis of created_at / delivered_at timestamps.
+	DisablePruning bool
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
 	Hooks *DurableEmitterHooks
@@ -62,9 +80,16 @@ type DurableEmitterHooks struct {
 	// blocks the caller). elapsed covers only the INSERT; err is nil on success.
 	OnEmitInsert func(elapsed time.Duration, err error)
 	// OnImmediatePublish is called after each async Publish in publishAndDelete (every attempt).
+	// Only fires when PublishBatchSize == 0 (legacy per-event goroutine path).
 	OnImmediatePublish func(elapsed time.Duration, err error)
 	// OnImmediateDelete is called after MarkDelivered following a successful immediate Publish.
+	// Only fires when PublishBatchSize == 0.
 	OnImmediateDelete func(elapsed time.Duration, err error)
+	// OnBatchPublish is called after each PublishBatch RPC in the batch publish loop.
+	// batchSize is the number of events in the batch; err is nil on success.
+	OnBatchPublish func(elapsed time.Duration, batchSize int, err error)
+	// OnBatchMarkDelivered is called after MarkDeliveredBatch following a successful batch publish.
+	OnBatchMarkDelivered func(elapsed time.Duration, count int)
 	// OnRetransmitBatchPublish is called after each retransmit Publish (one RPC per queued event).
 	OnRetransmitBatchPublish func(elapsed time.Duration, eventCount int, err error)
 	// OnRetransmitBatchDeletes is called after a retransmit tick with total time and count of
@@ -97,6 +122,12 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 //
 // A separate expiry loop garbage-collects events older than EventTTL to bound
 // table growth.
+// publishWork is a unit of work for the batch publish channel.
+type publishWork struct {
+	id    int64
+	event *chipingress.CloudEventPb
+}
+
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
@@ -111,6 +142,10 @@ type DurableEmitter struct {
 	// MarkDelivered, Delete, or DeleteExpired. No polling required.
 	pendingCount atomic.Int64
 	pendingMax   atomic.Int64
+
+	// publishCh buffers events for the batch publish loop. Nil when
+	// PublishBatchSize == 0 (legacy per-goroutine mode).
+	publishCh chan publishWork
 
 	stopCh chan struct{}
 	wg     sync.WaitGroup
@@ -170,7 +205,7 @@ func NewDurableEmitter(
 		}
 		store = newMetricsInstrumentedStore(store, m)
 	}
-	return &DurableEmitter{
+	d := &DurableEmitter{
 		store:         store,
 		client:        client,
 		cfg:           cfg,
@@ -178,20 +213,45 @@ func NewDurableEmitter(
 		metrics:       m,
 		persistFilter: newPersistSourceFilter(cfg.PersistCloudEventSources),
 		stopCh:        make(chan struct{}),
-	}, nil
+	}
+	if cfg.PublishBatchSize > 0 {
+		bufSize := cfg.PublishBatchSize * 2000
+		if bufSize < 200_000 {
+			bufSize = 200_000
+		}
+		d.publishCh = make(chan publishWork, bufSize)
+	}
+	return d, nil
 }
 
-// Start launches the retransmit, expiry, and purge background loops.
-// Cancel the supplied context or call Close to stop them.
+// Start launches the retransmit, expiry, purge, and (optionally) batch publish
+// background loops. Cancel the supplied context or call Close to stop them.
 func (d *DurableEmitter) Start(ctx context.Context) {
-	n := 3
+	n := 1 // retransmit always runs
+	if !d.cfg.DisablePruning {
+		n += 2 // expiry + purge
+	}
+	batchWorkers := d.cfg.PublishBatchWorkers
+	if batchWorkers <= 0 {
+		batchWorkers = 1
+	}
+	if d.publishCh != nil {
+		n += batchWorkers
+	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		n++
 	}
 	d.wg.Add(n)
 	go d.retransmitLoop(ctx)
-	go d.expiryLoop(ctx)
-	go d.purgeLoop(ctx)
+	if !d.cfg.DisablePruning {
+		go d.expiryLoop(ctx)
+		go d.purgeLoop(ctx)
+	}
+	if d.publishCh != nil {
+		for i := 0; i < batchWorkers; i++ {
+			go d.batchPublishLoop(ctx)
+		}
+	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		go d.metricsLoop(ctx)
 	}
@@ -261,8 +321,21 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 
 	d.incPending(1)
 
-	// Fire-and-forget immediate delivery attempt.
-	go d.publishAndDelete(id, eventPb)
+	if d.publishCh != nil {
+		// Batch mode: enqueue for batch publish loop.
+		select {
+		case d.publishCh <- publishWork{id: id, event: eventPb}:
+		default:
+			// Channel full — event is safely in the DB; retransmit loop will deliver it.
+			if !d.cfg.QuietMode {
+				d.log.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
+					"id", id, "ch_len", len(d.publishCh), "ch_cap", cap(d.publishCh))
+			}
+		}
+	} else {
+		// Legacy mode: fire-and-forget immediate delivery attempt.
+		go d.publishAndDelete(id, eventPb)
+	}
 
 	return nil
 }
@@ -306,8 +379,13 @@ func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEven
 }
 
 // Close signals background loops to stop and waits for them to finish.
+// When batch publishing is enabled the channel is closed so the batch loop
+// can drain remaining events before returning.
 func (d *DurableEmitter) Close() error {
 	close(d.stopCh)
+	if d.publishCh != nil {
+		close(d.publishCh)
+	}
 	d.wg.Wait()
 	return nil
 }
@@ -321,14 +399,22 @@ func (d *DurableEmitter) PendingMax() int64 { return d.pendingMax.Load() }
 
 func (d *DurableEmitter) incPending(n int64) {
 	cur := d.pendingCount.Add(n)
+	updated := false
 	for {
 		old := d.pendingMax.Load()
-		if cur <= old || d.pendingMax.CompareAndSwap(old, cur) {
+		if cur <= old {
+			break
+		}
+		if d.pendingMax.CompareAndSwap(old, cur) {
+			updated = true
 			break
 		}
 	}
 	if d.metrics != nil {
 		d.metrics.queueDepth.Record(context.Background(), cur)
+		if updated {
+			d.metrics.queueDepthMax.Record(context.Background(), cur)
+		}
 	}
 }
 
@@ -405,6 +491,113 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		"store_mark_delivered_elapsed_ms", markElapsed.Milliseconds(),
 	)
 	//d.log.Infow("DurableEmitter: durable row marked delivered after successful Chip publish (immediate)", delOKKVs...)
+}
+
+// batchPublishLoop reads events from publishCh, collects them into batches of
+// PublishBatchSize, and sends each batch via PublishBatch RPC. A partial batch
+// is flushed when PublishBatchFlushInterval elapses. On channel close (during
+// Close), remaining items are drained and published.
+func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
+	defer d.wg.Done()
+
+	batchSize := d.cfg.PublishBatchSize
+	flushInterval := d.cfg.PublishBatchFlushInterval
+	if flushInterval <= 0 {
+		flushInterval = 50 * time.Millisecond
+	}
+
+	batch := make([]publishWork, 0, batchSize)
+	flush := time.NewTicker(flushInterval)
+	defer flush.Stop()
+
+	for {
+		select {
+		case w, ok := <-d.publishCh:
+			if !ok {
+				// Channel closed — drain remaining items.
+				if len(batch) > 0 {
+					d.flushBatch(batch)
+				}
+				return
+			}
+			batch = append(batch, w)
+			if len(batch) >= batchSize {
+				d.flushBatch(batch)
+				batch = batch[:0]
+			}
+		case <-flush.C:
+			if len(batch) > 0 {
+				d.flushBatch(batch)
+				batch = batch[:0]
+			}
+		case <-ctx.Done():
+			// Drain channel on context cancellation.
+			for w := range d.publishCh {
+				batch = append(batch, w)
+				if len(batch) >= batchSize {
+					d.flushBatch(batch)
+					batch = batch[:0]
+				}
+			}
+			if len(batch) > 0 {
+				d.flushBatch(batch)
+			}
+			return
+		}
+	}
+}
+
+// flushBatch publishes a collected batch via PublishBatch and marks all events
+// as delivered in a single MarkDeliveredBatch call.
+func (d *DurableEmitter) flushBatch(batch []publishWork) {
+	events := make([]*chipingress.CloudEventPb, len(batch))
+	ids := make([]int64, len(batch))
+	for i, w := range batch {
+		events[i] = w.event
+		ids[i] = w.id
+	}
+
+	batchPb := &chipingress.CloudEventBatch{Events: events}
+	pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer cancel()
+
+	t0 := time.Now()
+	_, err := d.client.PublishBatch(pubCtx, batchPb)
+	elapsed := time.Since(t0)
+
+	if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
+		h.OnBatchPublish(elapsed, len(batch), err)
+	}
+	d.metrics.recordPublish(context.Background(), elapsed, "batch", err)
+
+	if err != nil {
+		if d.metrics != nil {
+			d.metrics.publishBatchEvErr.Add(context.Background(), int64(len(batch)))
+		}
+		d.log.Warnw("DurableEmitter: PublishBatch failed, events will be retransmitted",
+			"batch_size", len(batch), "error", err,
+			"elapsed_ms", elapsed.Milliseconds())
+		return
+	}
+
+	if d.metrics != nil {
+		d.metrics.publishBatchEvOK.Add(context.Background(), int64(len(batch)))
+	}
+
+	tMark := time.Now()
+	marked, markErr := d.store.MarkDeliveredBatch(context.Background(), ids)
+	markElapsed := time.Since(tMark)
+	if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
+		h.OnBatchMarkDelivered(markElapsed, int(marked))
+	}
+	if markErr != nil {
+		d.log.Errorw("failed to batch-mark events delivered", "batch_size", len(ids), "error", markErr)
+		return
+	}
+	d.decPending(marked)
+	if d.metrics != nil {
+		d.metrics.deliverComplete.Add(context.Background(), marked)
+	}
 }
 
 func (d *DurableEmitter) retransmitLoop(ctx context.Context) {
@@ -643,6 +836,8 @@ func (d *DurableEmitter) metricsLoop(ctx context.Context) {
 				return
 			}
 			bctx := context.Background()
+			d.metrics.queueDepth.Record(bctx, d.pendingCount.Load())
+			d.metrics.queueDepthMax.Record(bctx, d.pendingMax.Load())
 			if obs, ok := d.store.(DurableQueueObserver); ok {
 				d.metrics.pollQueueGauges(bctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}

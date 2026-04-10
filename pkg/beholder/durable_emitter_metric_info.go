@@ -79,6 +79,11 @@ var (
 		Unit:        "{row}",
 		Description: "Pending rows in durable queue",
 	}
+	durableEmitterMetricQueueDepthMax = MetricInfo{
+		Name:        "beholder.durable_emitter.queue.depth_max",
+		Unit:        "{row}",
+		Description: "High-water mark of pending queue depth since start",
+	}
 	durableEmitterMetricQueuePayloadBytes = MetricInfo{
 		Name:        "beholder.durable_emitter.queue.payload_bytes",
 		Unit:        "By",

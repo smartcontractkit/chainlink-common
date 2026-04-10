@@ -43,6 +43,13 @@ func (s *metricsInstrumentedStore) MarkDelivered(ctx context.Context, id int64) 
 	return err
 }
 
+func (s *metricsInstrumentedStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+	t0 := time.Now()
+	n, err := s.inner.MarkDeliveredBatch(ctx, ids)
+	s.m.recordStoreOp(ctx, "mark_delivered_batch", time.Since(t0), err)
+	return n, err
+}
+
 func (s *metricsInstrumentedStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
 	t0 := time.Now()
 	n, err := s.inner.PurgeDelivered(ctx, batchLimit)

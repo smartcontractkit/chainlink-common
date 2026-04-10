@@ -46,6 +46,9 @@ type DurableEventStore interface {
 	// a background PurgeDelivered removes rows later. MemDurableEventStore removes
 	// the row immediately (same as Delete).
 	MarkDelivered(ctx context.Context, id int64) error
+	// MarkDeliveredBatch marks multiple events as delivered in a single operation.
+	// Semantically equivalent to calling MarkDelivered for each id.
+	MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error)
 	// PurgeDelivered deletes up to batchLimit rows already marked delivered.
 	// Implementations that remove rows in MarkDelivered may return 0, nil always.
 	PurgeDelivered(ctx context.Context, batchLimit int) (deleted int64, err error)
@@ -95,6 +98,19 @@ func (m *MemDurableEventStore) Delete(_ context.Context, id int64) error {
 
 func (m *MemDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
 	return m.Delete(ctx, id)
+}
+
+func (m *MemDurableEventStore) MarkDeliveredBatch(_ context.Context, ids []int64) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var n int64
+	for _, id := range ids {
+		if _, ok := m.events[id]; ok {
+			delete(m.events, id)
+			n++
+		}
+	}
+	return n, nil
 }
 
 func (m *MemDurableEventStore) PurgeDelivered(_ context.Context, _ int) (int64, error) {

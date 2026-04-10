@@ -42,6 +42,7 @@ type durableEmitterMetrics struct {
 	storeOps           metric.Int64Counter
 	storeOpDuration    metric.Float64Histogram
 	queueDepth         metric.Int64Gauge
+	queueDepthMax      metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
 	queueNearTTL       metric.Int64Gauge
@@ -51,6 +52,15 @@ type durableEmitterMetrics struct {
 	procCPUUser        metric.Float64Gauge
 	procCPUSys         metric.Float64Gauge
 }
+
+// durationBuckets provides histogram boundaries (in seconds) tuned for
+// sub-millisecond through multi-second latencies. The OTel SDK defaults are
+// designed for millisecond-scale integer values and produce wildly wrong
+// quantile estimates when values are recorded in fractional seconds.
+var durationBuckets = metric.WithExplicitBucketBoundaries(
+	0.0001, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05,
+	0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+)
 
 func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 	meter := GetMeter()
@@ -62,7 +72,12 @@ func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 	if m.emitFail, err = durableEmitterMetricEmitFailure.NewInt64Counter(meter); err != nil {
 		return nil, err
 	}
-	if m.emitDuration, err = durableEmitterMetricEmitDuration.NewFloat64Histogram(meter); err != nil {
+	if m.emitDuration, err = meter.Float64Histogram(
+		durableEmitterMetricEmitDuration.Name,
+		metric.WithUnit(durableEmitterMetricEmitDuration.Unit),
+		metric.WithDescription(durableEmitterMetricEmitDuration.Description),
+		durationBuckets,
+	); err != nil {
 		return nil, err
 	}
 	if m.publishImmOK, err = durableEmitterMetricPublishImmSuccess.NewInt64Counter(meter); err != nil {
@@ -71,7 +86,12 @@ func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 	if m.publishImmErr, err = durableEmitterMetricPublishImmFailure.NewInt64Counter(meter); err != nil {
 		return nil, err
 	}
-	if m.publishDuration, err = durableEmitterMetricPublishDuration.NewFloat64Histogram(meter); err != nil {
+	if m.publishDuration, err = meter.Float64Histogram(
+		durableEmitterMetricPublishDuration.Name,
+		metric.WithUnit(durableEmitterMetricPublishDuration.Unit),
+		metric.WithDescription(durableEmitterMetricPublishDuration.Description),
+		durationBuckets,
+	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchOK, err = durableEmitterMetricPublishBatchSuccess.NewInt64Counter(meter); err != nil {
@@ -95,10 +115,18 @@ func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 	if m.storeOps, err = durableEmitterMetricStoreOperations.NewInt64Counter(meter); err != nil {
 		return nil, err
 	}
-	if m.storeOpDuration, err = durableEmitterMetricStoreOpDuration.NewFloat64Histogram(meter); err != nil {
+	if m.storeOpDuration, err = meter.Float64Histogram(
+		durableEmitterMetricStoreOpDuration.Name,
+		metric.WithUnit(durableEmitterMetricStoreOpDuration.Unit),
+		metric.WithDescription(durableEmitterMetricStoreOpDuration.Description),
+		durationBuckets,
+	); err != nil {
 		return nil, err
 	}
 	if m.queueDepth, err = durableEmitterMetricQueueDepth.NewInt64Gauge(meter); err != nil {
+		return nil, err
+	}
+	if m.queueDepthMax, err = durableEmitterMetricQueueDepthMax.NewInt64Gauge(meter); err != nil {
 		return nil, err
 	}
 	if m.queuePayloadBytes, err = durableEmitterMetricQueuePayloadBytes.NewInt64Gauge(meter); err != nil {

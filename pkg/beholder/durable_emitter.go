@@ -51,6 +51,9 @@ type DurableEmitterConfig struct {
 	// before flushing a partial one. Only used when PublishBatchSize > 0.
 	// Zero defaults to 50ms.
 	PublishBatchFlushInterval time.Duration
+	// PublishBatchChannelSize overrides the publishCh buffer capacity. Only
+	// used when PublishBatchSize > 0. Zero defaults to max(PublishBatchSize*2000, 200_000).
+	PublishBatchChannelSize int
 	// DisablePruning disables the background purge (PurgeDelivered) and expiry
 	// (DeleteExpired) loops. Events remain in the DB after delivery. Useful for
 	// post-test analysis of created_at / delivered_at timestamps.
@@ -149,6 +152,7 @@ type DurableEmitter struct {
 
 	stopCh chan struct{}
 	wg     sync.WaitGroup
+	markWg sync.WaitGroup // tracks in-flight async MarkDelivered goroutines
 }
 
 // persistSourceFilter decides whether a CloudEvent source may be written to the durable store.
@@ -215,9 +219,12 @@ func NewDurableEmitter(
 		stopCh:        make(chan struct{}),
 	}
 	if cfg.PublishBatchSize > 0 {
-		bufSize := cfg.PublishBatchSize * 2000
-		if bufSize < 200_000 {
-			bufSize = 200_000
+		bufSize := cfg.PublishBatchChannelSize
+		if bufSize <= 0 {
+			bufSize = cfg.PublishBatchSize * 2000
+			if bufSize < 200_000 {
+				bufSize = 200_000
+			}
 		}
 		d.publishCh = make(chan publishWork, bufSize)
 	}
@@ -387,6 +394,7 @@ func (d *DurableEmitter) Close() error {
 		close(d.publishCh)
 	}
 	d.wg.Wait()
+	d.markWg.Wait()
 	return nil
 }
 
@@ -584,20 +592,28 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 		d.metrics.publishBatchEvOK.Add(context.Background(), int64(len(batch)))
 	}
 
-	tMark := time.Now()
-	marked, markErr := d.store.MarkDeliveredBatch(context.Background(), ids)
-	markElapsed := time.Since(tMark)
-	if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
-		h.OnBatchMarkDelivered(markElapsed, int(marked))
-	}
-	if markErr != nil {
-		d.log.Errorw("failed to batch-mark events delivered", "batch_size", len(ids), "error", markErr)
-		return
-	}
-	d.decPending(marked)
-	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(context.Background(), marked)
-	}
+	// Async MarkDelivered: the DB UPDATE runs in a background goroutine so
+	// the batch worker can immediately start collecting the next batch.
+	// If MarkDelivered fails, events stay pending and the retransmit loop
+	// delivers them (at-least-once semantics are unchanged).
+	d.markWg.Add(1)
+	go func() {
+		defer d.markWg.Done()
+		tMark := time.Now()
+		marked, markErr := d.store.MarkDeliveredBatch(context.Background(), ids)
+		markElapsed := time.Since(tMark)
+		if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
+			h.OnBatchMarkDelivered(markElapsed, int(marked))
+		}
+		if markErr != nil {
+			d.log.Errorw("failed to batch-mark events delivered", "batch_size", len(ids), "error", markErr)
+			return
+		}
+		d.decPending(marked)
+		if d.metrics != nil {
+			d.metrics.deliverComplete.Add(context.Background(), marked)
+		}
+	}()
 }
 
 func (d *DurableEmitter) retransmitLoop(ctx context.Context) {

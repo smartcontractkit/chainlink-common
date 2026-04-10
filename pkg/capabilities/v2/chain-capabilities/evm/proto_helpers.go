@@ -157,6 +157,7 @@ func ConvertCallMsgToProto(msg *evmtypes.CallMsg) (*CallMsg, error) {
 		From: msg.From[:],
 		To:   msg.To[:],
 		Data: msg.Data,
+		Gas:  msg.Gas,
 	}, nil
 }
 
@@ -173,6 +174,7 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 	callMsg := &evmtypes.CallMsg{
 		Data: protoMsg.GetData(),
 		To:   toAddress,
+		Gas:  protoMsg.Gas,
 	}
 
 	// fromAddress is optional

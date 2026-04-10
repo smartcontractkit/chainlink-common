@@ -591,6 +591,7 @@ type CallMsg struct {
 	From          []byte                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"` // sender address in evm address [20]byte fix-sized array format
 	To            []byte                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`     // contract address in evm address [20]byte fix-sized array format
 	Data          []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"` // solidity-spec abi encoded bytes
+	Gas           uint64                 `protobuf:"varint,4,opt,name=gas,proto3" json:"gas,omitempty"`  // gas limit, 0 is unbounded
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -644,6 +645,13 @@ func (x *CallMsg) GetData() []byte {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *CallMsg) GetGas() uint64 {
+	if x != nil {
+		return x.Gas
+	}
+	return 0
 }
 
 // represents evm-style filter query
@@ -1700,11 +1708,12 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\btx_index\x18\b \x01(\rR\atxIndex\x12\x14\n" +
 	"\x05index\x18\t \x01(\rR\x05index\x12\x18\n" +
 	"\aremoved\x18\n" +
-	" \x01(\bR\aremoved\"A\n" +
+	" \x01(\bR\aremoved\"S\n" +
 	"\aCallMsg\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\fR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\fR\x02to\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data\"\xef\x01\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x12\x10\n" +
+	"\x03gas\x18\x04 \x01(\x04R\x03gas\"\xef\x01\n" +
 	"\vFilterQuery\x12\x1d\n" +
 	"\n" +
 	"block_hash\x18\x01 \x01(\fR\tblockHash\x120\n" +

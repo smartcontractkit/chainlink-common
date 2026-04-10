@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775745086246,
+  "lastUpdate": 1775837448513,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -44040,6 +44040,66 @@ window.BENCHMARK_DATA = {
             "value": 129154,
             "unit": "ns/op",
             "extra": "8506 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7371d7bd86edf9981dee13b177de801ea3d70715",
+          "message": "add OrgId to WorkflowExecution and SecretsRequestParams (#1975)\n\nBump chainlink-protos to cre-sdk/v1alpha.20 which adds org_id\nto the WorkflowExecution proto. Add OrgID to the confidential\nrelay SecretsRequestParams so the enclave can forward it to\nVaultDON for org-based secret ownership.",
+          "timestamp": "2026-04-10T15:59:36Z",
+          "tree_id": "ad2e59a7da932381b5850b743ec1712e0131bd3d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7371d7bd86edf9981dee13b177de801ea3d70715"
+        },
+        "date": 1775837446644,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 387.1,
+            "unit": "ns/op",
+            "extra": "2706928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97555,
+            "unit": "ns/op",
+            "extra": "12272 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.3,
+            "unit": "ns/op",
+            "extra": "2907363 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97621,
+            "unit": "ns/op",
+            "extra": "12261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26553,
+            "unit": "ns/op",
+            "extra": "45200 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148631,
+            "unit": "ns/op",
+            "extra": "7460 times\n4 procs"
           }
         ]
       }

@@ -502,9 +502,9 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 }
 
 // batchPublishLoop reads events from publishCh, collects them into batches of
-// PublishBatchSize, and sends each batch via PublishBatch RPC. A partial batch
-// is flushed when PublishBatchFlushInterval elapses. On channel close (during
-// Close), remaining items are drained and published.
+// PublishBatchSize, and sends each batch via PublishBatch RPC. It blocks until
+// the batch is full or PublishBatchFlushInterval elapses after the first event
+// arrives (linger pattern), guaranteeing full batches at high throughput.
 func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
 	defer d.wg.Done()
 
@@ -515,43 +515,62 @@ func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
 	}
 
 	batch := make([]publishWork, 0, batchSize)
-	flush := time.NewTicker(flushInterval)
-	defer flush.Stop()
 
 	for {
+		// Stage 1: block until at least one event arrives (or shutdown).
 		select {
 		case w, ok := <-d.publishCh:
 			if !ok {
-				// Channel closed — drain remaining items.
-				if len(batch) > 0 {
-					d.flushBatch(batch)
-				}
 				return
 			}
 			batch = append(batch, w)
-			if len(batch) >= batchSize {
-				d.flushBatch(batch)
-				batch = batch[:0]
-			}
-		case <-flush.C:
-			if len(batch) > 0 {
-				d.flushBatch(batch)
-				batch = batch[:0]
-			}
 		case <-ctx.Done():
-			// Drain channel on context cancellation.
-			for w := range d.publishCh {
-				batch = append(batch, w)
-				if len(batch) >= batchSize {
-					d.flushBatch(batch)
-					batch = batch[:0]
-				}
-			}
-			if len(batch) > 0 {
-				d.flushBatch(batch)
-			}
+			d.drainPublishCh(batch)
 			return
 		}
+
+		// Stage 2: linger — keep reading until batch is full or deadline.
+		linger := time.NewTimer(flushInterval)
+	fill:
+		for len(batch) < batchSize {
+			select {
+			case w, ok := <-d.publishCh:
+				if !ok {
+					linger.Stop()
+					if len(batch) > 0 {
+						d.flushBatch(batch)
+					}
+					return
+				}
+				batch = append(batch, w)
+			case <-linger.C:
+				break fill
+			case <-ctx.Done():
+				linger.Stop()
+				d.drainPublishCh(batch)
+				return
+			}
+		}
+		linger.Stop()
+
+		d.flushBatch(batch)
+		batch = batch[:0]
+	}
+}
+
+// drainPublishCh flushes the given partial batch plus any remaining items on
+// publishCh in batchSize chunks. Called during shutdown (ctx cancelled or
+// channel closed).
+func (d *DurableEmitter) drainPublishCh(batch []publishWork) {
+	for w := range d.publishCh {
+		batch = append(batch, w)
+		if len(batch) >= d.cfg.PublishBatchSize {
+			d.flushBatch(batch)
+			batch = batch[:0]
+		}
+	}
+	if len(batch) > 0 {
+		d.flushBatch(batch)
 	}
 }
 

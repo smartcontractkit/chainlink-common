@@ -1,0 +1,80 @@
+name: dependabump
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1-5' # every week-day at midnight
+
+permissions: { }
+
+jobs:
+  dependabump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+      security-events: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+
+      - name: Bump Dependencies
+        run: make dependabot && echo "test" > test.txt # TODO remove
+        continue-on-error: true
+
+      - name: Notify Failure
+        if: failure()
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.QA_SLACK_API_KEY }}
+          payload: |
+            channel: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID}}
+            text: "Failed to run dependabump: <${{ format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) }}|Run>"
+
+      - if: failure()
+        run: exit 1
+
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: bot/dependabump
+          commit-message: "bump dependencies"
+          title: "dependabump"
+          body: "Bumping deps due to critical or high vulnerabilities."
+          sign-commits: true
+        continue-on-error: true
+
+      - name: Notify PR Failure
+        if: failure()
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.QA_SLACK_API_KEY }}
+          payload: |
+            channel: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID}}
+            text: "Changes detected by dependabump, but failed to create PR: <${{ format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) }}|Run>"
+
+      - if: failure()
+        run: exit 1
+
+      - name: Notify PR Created
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.QA_SLACK_API_KEY }}
+          payload: |
+            channel: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID}}
+            text: "Changes detected by dependabump: <${{ format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) }}|Run> - <${steps.pr.outputs.pull-request-url}|PR> :review_time:"

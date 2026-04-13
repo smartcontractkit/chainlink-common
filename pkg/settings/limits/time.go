@@ -58,7 +58,7 @@ func (f Factory) newTimeLimiter(timeout settings.Setting[time.Duration]) (TimeLi
 		defaultTimeout: timeout.DefaultValue,
 		scope:          timeout.Scope,
 	}
-	l.updater.recordLimit = l.recordTimeout
+	l.recordLimit = l.recordTimeout
 
 	if f.Logger != nil {
 		l.lggr = logger.Sugared(f.Logger).Named("TimeLimiter").With("key", timeout.Key)

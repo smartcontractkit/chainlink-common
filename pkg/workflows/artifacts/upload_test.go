@@ -137,12 +137,6 @@ func (t *testArtifactStorage) getBinary(workflowID string) []byte {
 	return t.binaries[workflowID]
 }
 
-func (t *testArtifactStorage) getConfig(workflowID string) []byte {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.configs[workflowID]
-}
-
 // testServer runs on the given port and accepts POST multipart to:
 //   - /artifacts/<workflow-id>/binary.wasm
 //   - /artifacts/<workflow-id>/configs

@@ -61,6 +61,8 @@ var Default = Schema{
 	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetransmitEnabled:           Bool(false),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
@@ -151,6 +153,11 @@ var Default = Schema{
 		WASMSecretsSizeLimit:          Size(config.MByte),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
+		UserMetricEnabled:             Bool(false),
+		UserMetricPayloadLimit:        Size(4 * config.KByte),
+		UserMetricNameLengthLimit:     Int(128),
+		UserMetricLabelsPerMetric:     Int(10),
+		UserMetricLabelValueLength:    Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
@@ -241,6 +248,8 @@ type Schema struct {
 	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetransmitEnabled Setting[bool]
@@ -305,6 +314,12 @@ type Workflows struct {
 
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
+
+	UserMetricEnabled          Setting[bool]
+	UserMetricPayloadLimit     Setting[config.Size]
+	UserMetricNameLengthLimit  Setting[int] `unit:"{char}"`
+	UserMetricLabelsPerMetric  Setting[int] `unit:"{label}"`
+	UserMetricLabelValueLength Setting[int] `unit:"{char}"`
 
 	ChainAllowed SettingMap[bool]
 

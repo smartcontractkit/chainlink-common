@@ -691,12 +691,104 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		return
 	}
 
-	// One Publish per row so a single bad or rejected event does not block the rest of the slice.
+	if d.publishCh != nil {
+		d.retransmitBatch(ctx, events, ids)
+	} else {
+		d.retransmitSerial(ctx, events, ids)
+	}
+}
+
+// retransmitBatch publishes pending events via PublishBatch in chunks,
+// then marks each chunk delivered asynchronously. Used when batch mode
+// is enabled (PublishBatchSize > 0).
+func (d *DurableEmitter) retransmitBatch(ctx context.Context, events []*chipingress.CloudEventPb, ids []int64) {
+	batchSize := d.cfg.PublishBatchSize
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+
+	tAll := time.Now()
+	var totalPublished int
+
+	for i := 0; i < len(events); i += batchSize {
+		end := i + batchSize
+		if end > len(events) {
+			end = len(events)
+		}
+		chunk := events[i:end]
+		chunkIDs := ids[i:end]
+
+		batchPb := &chipingress.CloudEventBatch{Events: chunk}
+		pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		t0 := time.Now()
+		_, err := d.client.PublishBatch(pubCtx, batchPb)
+		elapsed := time.Since(t0)
+		cancel()
+
+		if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
+			h.OnBatchPublish(elapsed, len(chunk), err)
+		}
+		d.metrics.recordPublish(context.Background(), elapsed, "retransmit-batch", err)
+
+		if err != nil {
+			if d.metrics != nil {
+				d.metrics.publishBatchEvErr.Add(ctx, int64(len(chunk)))
+			}
+			if !d.cfg.QuietMode {
+				d.log.Warnw("DurableEmitter: retransmit PublishBatch failed, will retry next tick",
+					"batch_size", len(chunk), "error", err, "elapsed_ms", elapsed.Milliseconds())
+			}
+			continue
+		}
+
+		if d.metrics != nil {
+			d.metrics.publishBatchEvOK.Add(ctx, int64(len(chunk)))
+		}
+		totalPublished += len(chunk)
+
+		// Async MarkDelivered (same pattern as flushBatch).
+		markIDs := make([]int64, len(chunkIDs))
+		copy(markIDs, chunkIDs)
+		d.markWg.Add(1)
+		go func() {
+			defer d.markWg.Done()
+			tMark := time.Now()
+			marked, markErr := d.store.MarkDeliveredBatch(context.Background(), markIDs)
+			markElapsed := time.Since(tMark)
+			if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
+				h.OnBatchMarkDelivered(markElapsed, int(marked))
+			}
+			if markErr != nil {
+				d.log.Errorw("failed to batch-mark retransmitted events delivered",
+					"batch_size", len(markIDs), "error", markErr)
+				return
+			}
+			d.decPending(marked)
+			if d.metrics != nil {
+				d.metrics.deliverComplete.Add(context.Background(), marked)
+			}
+		}()
+	}
+
+	if totalPublished > 0 && !d.cfg.QuietMode {
+		d.log.Infow("retransmitted events (batch)",
+			"published", totalPublished,
+			"attempted", len(events),
+			"elapsed_ms", time.Since(tAll).Milliseconds(),
+		)
+	}
+	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil && totalPublished > 0 {
+		h.OnRetransmitBatchDeletes(time.Since(tAll), totalPublished)
+	}
+}
+
+// retransmitSerial publishes pending events one at a time via individual
+// Publish RPCs. Used in legacy mode (PublishBatchSize == 0).
+func (d *DurableEmitter) retransmitSerial(ctx context.Context, events []*chipingress.CloudEventPb, ids []int64) {
 	tDel := time.Now()
 	var markedDelivered int
 	for i := range events {
 		detailKVs := cloudEventPublishKVs(ids[i], "retransmit", d.cfg.PublishTimeout, events[i])
-		//d.log.Infow("DurableEmitter: Chip Ingress publish attempt (retransmit)", detailKVs...)
 
 		tPub := time.Now()
 		pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
@@ -722,12 +814,6 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 			}
 			continue
 		}
-		pubOKKVs := append([]any{}, detailKVs...)
-		pubOKKVs = append(pubOKKVs,
-			"publish_rpc_elapsed", elapsed.String(),
-			"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
-		)
-		//d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (retransmit)", pubOKKVs...)
 		if d.metrics != nil {
 			d.metrics.publishBatchEvOK.Add(ctx, 1)
 		}
@@ -741,14 +827,7 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(ctx, 1)
 		}
-		markElapsed := time.Since(tMarkOne)
-		delOKKVs := append([]any{}, detailKVs...)
-		delOKKVs = append(delOKKVs,
-			"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
-			"store_mark_delivered_elapsed", markElapsed.String(),
-			"store_mark_delivered_elapsed_ms", markElapsed.Milliseconds(),
-		)
-		//d.log.Infow("DurableEmitter: durable row deleted after successful Chip publish (retransmit)", delOKKVs...)
+		_ = time.Since(tMarkOne)
 	}
 	if markedDelivered > 0 && !d.cfg.QuietMode {
 		d.log.Infow("retransmitted events",

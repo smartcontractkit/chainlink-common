@@ -68,6 +68,7 @@ var Default = Schema{
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
 	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:             Int(20),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -258,6 +259,7 @@ type Schema struct {
 	BaseTriggerRetryInterval     Setting[time.Duration]
 	BaseTriggerMaxRetries        Setting[int]           `unit:"{attempt}"`
 	BaseTriggerPruneAge          Setting[time.Duration]
+	BaseTriggerMaxSendsPerTick   Setting[int]           `unit:"{event}"`
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sort"
 	"sync"
 	"time"
 
@@ -27,7 +28,7 @@ const (
 	// defaultMaxSendsPerTick limits how many events are sent per scanPending
 	// cycle (initial deliveries AND retransmissions). This prevents a large
 	// backlog from flooding P2P.
-	defaultMaxSendsPerTick = 50
+	defaultMaxSendsPerTick = 20
 
 	// maxLoopTick caps how long the retransmit loop sleeps between scans.
 	// With DeliverEvent queueing events instead of sending immediately,
@@ -191,6 +192,23 @@ func (b *BaseTriggerCapability[T]) maxRetries(ctx context.Context) int {
 	if err != nil {
 		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxRetries; using default (20)", "err", err)
 		return defaultMaxRetries
+	}
+	return v
+}
+
+// maxSendsPerTick returns how many events a single scanPending cycle may send.
+// Tunable via CRE settings so operators can balance P2P load without code deploys.
+func (b *BaseTriggerCapability[T]) maxSendsPerTick(ctx context.Context) int {
+	if b.settings == nil {
+		return defaultMaxSendsPerTick
+	}
+	v, err := cresettings.Default.BaseTriggerMaxSendsPerTick.GetOrDefault(ctx, b.settings)
+	if err != nil {
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxSendsPerTick; using default", "err", err)
+		return defaultMaxSendsPerTick
+	}
+	if v <= 0 {
+		return defaultMaxSendsPerTick
 	}
 	return v
 }
@@ -616,11 +634,29 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		b.emitStoppedResending(ctx, ev, maxRetries)
 	}
 
-	if len(toResend) > defaultMaxSendsPerTick {
-		b.lggr.Warnw("base trigger capping resends per tick",
+	// Sort deterministically so all DON nodes select the same events when
+	// the per-tick cap applies. Without this, Go map iteration randomness
+	// causes each node to pick a different subset, preventing the subscriber
+	// from reaching F+1 aggregation quorum. Unsent events (Attempts==0) are
+	// prioritized so fresh events reach quorum on their first tick.
+	sort.Slice(toResend, func(i, j int) bool {
+		iNew := toResend[i].Attempts == 0
+		jNew := toResend[j].Attempts == 0
+		if iNew != jNew {
+			return iNew
+		}
+		if toResend[i].EventId != toResend[j].EventId {
+			return toResend[i].EventId < toResend[j].EventId
+		}
+		return toResend[i].TriggerId < toResend[j].TriggerId
+	})
+
+	cap := b.maxSendsPerTick(ctx)
+	if len(toResend) > cap {
+		b.lggr.Warnw("base trigger capping sends per tick",
 			"capabilityID", b.capabilityId,
-			"eligible", len(toResend), "cap", defaultMaxSendsPerTick)
-		toResend = toResend[:defaultMaxSendsPerTick]
+			"eligible", len(toResend), "cap", cap)
+		toResend = toResend[:cap]
 	}
 
 	for _, event := range toResend {
@@ -690,6 +726,7 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 		*toResend = append(*toResend, PendingEvent{
 			TriggerId: rec.TriggerId,
 			EventId:   rec.EventId,
+			Attempts:  rec.Attempts,
 		})
 	}
 

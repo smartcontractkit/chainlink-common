@@ -15,6 +15,7 @@
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",
 	"BaseTriggerPruneAge": "24h0m0s",
+	"BaseTriggerMaxSendsPerTick": "20",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",

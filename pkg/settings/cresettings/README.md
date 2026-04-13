@@ -101,6 +101,7 @@ flowchart
             BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
             BaseTriggerMaxRetries{{BaseTriggerMaxRetries}}:::bound
             BaseTriggerPruneAge>BaseTriggerPruneAge]:::time
+            BaseTriggerMaxSendsPerTick{{BaseTriggerMaxSendsPerTick}}:::bound
         end
     end
 

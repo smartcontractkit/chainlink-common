@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776077836290,
+  "lastUpdate": 1776104852763,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -44220,6 +44220,66 @@ window.BENCHMARK_DATA = {
             "value": 139303,
             "unit": "ns/op",
             "extra": "8289 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "adam.hamrick@smartcontract.com",
+            "name": "Adam Hamrick",
+            "username": "kalverra"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6dd35999e7304ff10e77fee1a9a4f5a35171f5f6",
+          "message": "[DX-3716] Use FORCE to drop DBs (#1973)\n\n* Use FORCE to drop DBs\n\n* Silent deploys\n\n* Requires\n\n* lessorequal",
+          "timestamp": "2026-04-13T18:20:36Z",
+          "tree_id": "dc433c43f1c9ce3e4fe269475012bbf80eb59ae6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6dd35999e7304ff10e77fee1a9a4f5a35171f5f6"
+        },
+        "date": 1776104850325,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.3,
+            "unit": "ns/op",
+            "extra": "3387285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 99786,
+            "unit": "ns/op",
+            "extra": "12015 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.7,
+            "unit": "ns/op",
+            "extra": "3018938 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 101077,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26839,
+            "unit": "ns/op",
+            "extra": "44415 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147795,
+            "unit": "ns/op",
+            "extra": "7945 times\n4 procs"
           }
         ]
       }

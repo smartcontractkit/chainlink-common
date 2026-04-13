@@ -47,8 +47,8 @@ func CopyHealth(dest, src map[string]error) {
 // HealthChecker is a services.Service which monitors other services and can be probed for system health.
 type HealthChecker struct {
 	StateMachine
-	chStop chan struct{}
-	chDone chan struct{}
+	chStop    chan struct{}
+	chDone    chan struct{}
 
 	cfg HealthCheckerConfig
 
@@ -130,12 +130,12 @@ func (cfg HealthCheckerConfig) New() *HealthChecker {
 	cfg.initVerSha()
 	cfg.setNoopHooks()
 	return &HealthChecker{
-		cfg:      cfg,
-		services: make(map[string]HealthReporter, 10),
-		healthy:  make(map[string]error, 10),
-		ready:    make(map[string]error, 10),
-		chStop:   make(chan struct{}),
-		chDone:   make(chan struct{}),
+		cfg:       cfg,
+		services:  make(map[string]HealthReporter, 10),
+		healthy:   make(map[string]error, 10),
+		ready:     make(map[string]error, 10),
+		chStop:    make(chan struct{}),
+		chDone:    make(chan struct{}),
 	}
 }
 
@@ -219,13 +219,26 @@ func (c *HealthChecker) Register(service HealthReporter) error {
 	}
 
 	c.servicesMu.Lock()
-	defer c.servicesMu.Unlock()
 	if testing.Testing() {
 		if orig, ok := c.services[name]; ok {
 			panic(fmt.Errorf("duplicate name %q: service names must be unique: types %T & %T", name, service, orig))
 		}
 	}
 	c.services[name] = service
+	c.servicesMu.Unlock()
+
+	// Populate health state directly for the new service so it is
+	// visible immediately without waiting for the next polling tick.
+	ready := service.Ready()
+	report := service.HealthReport()
+
+	c.stateMu.Lock()
+	c.ready[name] = ready
+	for n, err := range report {
+		c.healthy[n] = err
+	}
+	c.stateMu.Unlock()
+
 	return nil
 }
 
@@ -237,7 +250,6 @@ func (c *HealthChecker) Unregister(name string) error {
 	ctx := context.Background()
 
 	c.servicesMu.Lock()
-	defer c.servicesMu.Unlock()
 	delete(c.services, name)
 	c.cfg.Delete(ctx, name)
 	return nil

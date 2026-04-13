@@ -220,14 +220,27 @@ func parseCertificateChain(doc *attestationDocument) (*x509.Certificate, *x509.C
 	return leafCert, intermediates, nil
 }
 
+// curveKeySize returns the byte length of one ECDSA signature component
+// (r or s) for the given curve: ceil(bitSize / 8). This is the correct
+// size per RFC 9053 section 2.1, and differs from the hash length for P-521
+// (key component = 66 bytes, hash = 64 bytes).
+func curveKeySize(publicKey *ecdsa.PublicKey) int {
+	return (publicKey.Curve.Params().BitSize + 7) / 8
+}
+
 func verifyECDSASignature(publicKey *ecdsa.PublicKey, sigStructure, signature []byte) bool {
-	hash, ok := hashForCurve(publicKey, sigStructure)
-	if !ok || len(signature) != 2*len(hash) {
+	keySize := curveKeySize(publicKey)
+	if len(signature) != 2*keySize {
 		return false
 	}
 
-	r := new(big.Int).SetBytes(signature[:len(hash)])
-	s := new(big.Int).SetBytes(signature[len(hash):])
+	hash, ok := hashForCurve(publicKey, sigStructure)
+	if !ok {
+		return false
+	}
+
+	r := new(big.Int).SetBytes(signature[:keySize])
+	s := new(big.Int).SetBytes(signature[keySize:])
 	return ecdsa.Verify(publicKey, hash, r, s)
 }
 
@@ -242,7 +255,7 @@ func hashForCurve(publicKey *ecdsa.PublicKey, sigStructure []byte) ([]byte, bool
 	case "P-384":
 		sum := sha512.Sum384(sigStructure)
 		return sum[:], true
-	case "P-512":
+	case "P-521":
 		sum := sha512.Sum512(sigStructure)
 		return sum[:], true
 	default:

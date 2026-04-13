@@ -59,7 +59,7 @@ func SkipInMemory(t *testing.T) {
 // after test completion.
 func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) url.URL {
 	require.NotEmpty(t, u.Path, "path missing from database URL")
-	require.Less(t, len(dbName), 63, "dbName %v too long (%d), max is 63 bytes", dbName, len(dbName))
+	require.LessOrEqual(t, len(dbName), 63, "dbName %v too long (%d), max is 63 bytes", dbName, len(dbName))
 
 	// Cannot drop test database if we are connected to it, so we must connect
 	// to a different one. 'postgres' should be present on all postgres installations

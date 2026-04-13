@@ -47,8 +47,8 @@ func CopyHealth(dest, src map[string]error) {
 // HealthChecker is a services.Service which monitors other services and can be probed for system health.
 type HealthChecker struct {
 	StateMachine
-	chStop    chan struct{}
-	chDone    chan struct{}
+	chStop chan struct{}
+	chDone chan struct{}
 
 	cfg HealthCheckerConfig
 
@@ -130,12 +130,12 @@ func (cfg HealthCheckerConfig) New() *HealthChecker {
 	cfg.initVerSha()
 	cfg.setNoopHooks()
 	return &HealthChecker{
-		cfg:       cfg,
-		services:  make(map[string]HealthReporter, 10),
-		healthy:   make(map[string]error, 10),
-		ready:     make(map[string]error, 10),
-		chStop:    make(chan struct{}),
-		chDone:    make(chan struct{}),
+		cfg:      cfg,
+		services: make(map[string]HealthReporter, 10),
+		healthy:  make(map[string]error, 10),
+		ready:    make(map[string]error, 10),
+		chStop:   make(chan struct{}),
+		chDone:   make(chan struct{}),
 	}
 }
 
@@ -250,6 +250,7 @@ func (c *HealthChecker) Unregister(name string) error {
 	ctx := context.Background()
 
 	c.servicesMu.Lock()
+	defer c.servicesMu.Unlock()
 	delete(c.services, name)
 	c.cfg.Delete(ctx, name)
 	return nil

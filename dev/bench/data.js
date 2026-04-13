@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775839602748,
+  "lastUpdate": 1776077836290,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -44160,6 +44160,66 @@ window.BENCHMARK_DATA = {
             "value": 130645,
             "unit": "ns/op",
             "extra": "8493 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8c592883ed580efbf21afd2c15bc0b40727fb071",
+          "message": "Fix P-521 ECDSA verification and add curve coverage tests (#1956)\n\n* Fix P-521 curve name typo and signature length check in ECDSA verifier\n\nhashForCurve matched \"P-512\" instead of \"P-521\", making the P-521 path\nunreachable. verifyECDSASignature used hash length (64 for SHA-512) to\ndetermine signature component size, but P-521 COSE signatures use 66-byte\ncomponents (ceil(521/8)). Derive component size from the curve order instead.\n\nAdd verify_test.go with sign/verify roundtrips for all four NIST curves,\nrejection tests (wrong key, wrong payload, tampered sig, wrong length,\nDER format), and an explicit test proving P-521 key size != hash size.\n\n* Add COSE Sign1 verification tests against RFC 8152 / cose-wg vectors\n\nVerify the ECDSA signature pipeline (CBOR parse, Sig_structure build,\nverifyECDSASignature) against official test vectors from the COSE Working\nGroup Examples repository (normative suite for RFC 9052/9053):\n\n- ES256: RFC 8152 Appendix C.2.1 (sign-pass-03)\n- ES384: ecdsa-sig-02\n- ES512: ecdsa-sig-03 (exercises the P-521 fix from previous commit)\n- Tampered payload: sign-fail-02\n- Modified protected header: sign-fail-06\n- Wrong key: valid ES256 vector verified with P-384 key\n\n* Address review: reuse curveKeySize in test, use ecdsa.SignASN1 for DER test",
+          "timestamp": "2026-04-13T10:47:37Z",
+          "tree_id": "3228ff453047a7d5f65456962e50ddb84e6cd192",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8c592883ed580efbf21afd2c15bc0b40727fb071"
+        },
+        "date": 1776077834347,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.4,
+            "unit": "ns/op",
+            "extra": "3413067 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92095,
+            "unit": "ns/op",
+            "extra": "13035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401,
+            "unit": "ns/op",
+            "extra": "2977677 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93600,
+            "unit": "ns/op",
+            "extra": "12856 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27031,
+            "unit": "ns/op",
+            "extra": "42085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139303,
+            "unit": "ns/op",
+            "extra": "8289 times\n4 procs"
           }
         ]
       }

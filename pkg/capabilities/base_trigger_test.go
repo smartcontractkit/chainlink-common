@@ -442,19 +442,20 @@ func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
 	te := makeTE(t, "trig", "e1", []byte("payload"))
 	require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
 
-	// After max retries the event should be removed from both memory and store.
-	// The store delete happens asynchronously after the in-memory removal,
-	// so we wait for both with Eventually.
+	// After max retries the event should be removed from in-memory pending.
+	// The store row is intentionally left for the prune loop to clean up later,
+	// giving operators time to investigate unrecoverable payloads.
 	require.Eventually(t, func() bool {
 		b.mu.Lock()
 		_, hasTrig := b.pending["trig"]
 		b.mu.Unlock()
-		if hasTrig {
-			return false
-		}
-		recs, listErr := store.List(ctx)
-		return listErr == nil && len(recs) == 0
-	}, 5*time.Second, 10*time.Millisecond, "event should be removed from pending and store after max retries")
+		return !hasTrig
+	}, 5*time.Second, 10*time.Millisecond, "event should be removed from pending after max retries")
+
+	// Store should still contain the row (prune loop handles cleanup).
+	recs, err := store.List(ctx)
+	require.NoError(t, err)
+	require.Len(t, recs, 1, "store row should remain for prune loop")
 }
 
 func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {

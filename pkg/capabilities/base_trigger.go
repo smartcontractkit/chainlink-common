@@ -52,8 +52,8 @@ type BaseTriggerMetrics interface {
 	IncStuckEvent(triggerID, eventID string)
 	// DecStuckEvent decrements the stuck-event gauge when a previously-critical event is ACKed or unregistered.
 	DecStuckEvent(triggerID, eventID string)
-	// IncGaveUp increments the counter of events where the node exhausted max retries and stopped resending.
-	IncGaveUp(triggerID, eventID string, attempts int)
+	// IncStoppedResending increments the counter of events where the node exhausted max retries and stopped resending.
+	IncStoppedResending(triggerID, eventID string, attempts int)
 }
 
 type undeliveredState struct {
@@ -522,11 +522,16 @@ func (b *BaseTriggerCapability[T]) retransmitLoop() {
 	}
 }
 
-type gaveUpEvent struct {
+type stoppedResendingEvent struct {
 	triggerID   string
 	eventID     string
 	attempts    int
 	wasCritical bool
+}
+
+// reachedMaxRetries returns true when the event has exhausted its allowed send attempts.
+func reachedMaxRetries(attempts, maxRetries int) bool {
+	return maxRetries > 0 && attempts >= maxRetries
 }
 
 func (b *BaseTriggerCapability[T]) scanPending() {
@@ -538,17 +543,42 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
-	maxAttempts := b.maxRetries(ctx)
+	maxRetries := b.maxRetries(ctx)
 	warnThreshold := 1 * interval
 	critThreshold := 3 * interval
 
 	b.mu.Lock()
 
-	// Expire old preAcked entries so the cache doesn't grow unbounded.
-	// Use the full retry window as TTL — a DeliverEvent arriving later than
-	// that would have been given up on anyway.
-	preAckTTL := time.Duration(maxAttempts) * interval
-	if maxAttempts == 0 || preAckTTL <= 0 {
+	b.expirePreAcked(now, maxRetries, interval)
+
+	toResend := make([]PendingEvent, 0, len(b.pending))
+	var toStop []stoppedResendingEvent
+	for triggerID, pendingForTrigger := range b.pending {
+		for eventID, rec := range pendingForTrigger {
+			if reachedMaxRetries(rec.Attempts, maxRetries) {
+				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, pendingForTrigger))
+				continue
+			}
+			b.collectResendCandidate(rec, now, interval, warnThreshold, critThreshold, &toResend)
+		}
+	}
+	b.mu.Unlock()
+
+	for _, ev := range toStop {
+		b.emitStoppedResending(ctx, ev, maxRetries)
+	}
+
+	for _, event := range toResend {
+		b.trySend(event)
+	}
+}
+
+// expirePreAcked removes old preAcked entries so the cache doesn't grow unbounded.
+// Uses the full retry window as TTL — a DeliverEvent arriving later than that would
+// have been stopped anyway. Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) expirePreAcked(now time.Time, maxRetries int, interval time.Duration) {
+	preAckTTL := time.Duration(maxRetries) * interval
+	if maxRetries == 0 || preAckTTL <= 0 {
 		preAckTTL = 10 * time.Minute
 	}
 	for triggerID, events := range b.preAcked {
@@ -561,89 +591,92 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 			delete(b.preAcked, triggerID)
 		}
 	}
+}
 
-	toResend := make([]PendingEvent, 0, len(b.pending))
-	var toGiveUp []gaveUpEvent
-	for triggerID, pendingForTrigger := range b.pending {
-		for eventID, rec := range pendingForTrigger {
-			if maxAttempts > 0 && rec.Attempts >= maxAttempts {
-				wasCritical := false
-				if m, ok := b.undeliveredAlertStates[triggerID]; ok {
-					if s, exists := m[eventID]; exists && s != nil && s.emittedCritical {
-						wasCritical = true
-					}
-					delete(m, eventID)
-					if len(m) == 0 {
-						delete(b.undeliveredAlertStates, triggerID)
-					}
-				}
-				delete(pendingForTrigger, eventID)
-				if len(pendingForTrigger) == 0 {
-					delete(b.pending, triggerID)
-				}
-				toGiveUp = append(toGiveUp, gaveUpEvent{
-					triggerID:   triggerID,
-					eventID:     eventID,
-					attempts:    rec.Attempts,
-					wasCritical: wasCritical,
-				})
-				continue
-			}
-
-			if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
-				toResend = append(toResend, PendingEvent{
-					TriggerId: rec.TriggerId,
-					EventId:   rec.EventId,
-				})
-			}
-
-			if warnThreshold == 0 && critThreshold == 0 {
-				continue
-			}
-			age := now.Sub(rec.FirstAt)
-
-			if b.undeliveredAlertStates[triggerID] == nil {
-				b.undeliveredAlertStates[triggerID] = make(map[string]*undeliveredState)
-			}
-
-			state := b.undeliveredAlertStates[triggerID][eventID]
-			if state == nil {
-				state = &undeliveredState{}
-				b.undeliveredAlertStates[triggerID][eventID] = state
-			}
-
-			if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
-				b.metrics.EmitUndeliveredWarning(triggerID, eventID)
-				state.emittedWarning = true
-			}
-
-			if critThreshold > 0 && !state.emittedCritical && age >= critThreshold {
-				b.metrics.EmitUndeliveredCritical(triggerID, eventID)
-				b.metrics.IncStuckEvent(triggerID, eventID)
-				state.emittedCritical = true
-			}
+// collectStoppedResending removes the event from pending and alert tracking, returning
+// the metadata needed to emit metrics/logs outside the lock. Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) collectStoppedResending(
+	triggerID, eventID string,
+	rec *PendingEvent,
+	pendingForTrigger map[string]*PendingEvent,
+) stoppedResendingEvent {
+	wasCritical := false
+	if m, ok := b.undeliveredAlertStates[triggerID]; ok {
+		if s, exists := m[eventID]; exists && s != nil && s.emittedCritical {
+			wasCritical = true
+		}
+		delete(m, eventID)
+		if len(m) == 0 {
+			delete(b.undeliveredAlertStates, triggerID)
 		}
 	}
-	b.mu.Unlock()
+	delete(pendingForTrigger, eventID)
+	if len(pendingForTrigger) == 0 {
+		delete(b.pending, triggerID)
+	}
+	return stoppedResendingEvent{
+		triggerID:   triggerID,
+		eventID:     eventID,
+		attempts:    rec.Attempts,
+		wasCritical: wasCritical,
+	}
+}
 
-	for _, ev := range toGiveUp {
-		b.lggr.Errorw("base trigger giving up on event after max retries",
-			"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
-			"attempts", ev.attempts, "maxRetries", maxAttempts,
-			"reason", "max_retries_exhausted")
-		b.metrics.IncGaveUp(ev.triggerID, ev.eventID, ev.attempts)
-		b.metrics.AddPendingEvents(-1)
-		if ev.wasCritical {
-			b.metrics.DecStuckEvent(ev.triggerID, ev.eventID)
-		}
-		if err := b.store.DeleteEvent(ctx, ev.triggerID, ev.eventID); err != nil {
-			b.lggr.Errorw("failed to delete gave-up event from store",
-				"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID, "err", err)
-		}
+// collectResendCandidate appends the event to toResend if the retry interval has elapsed,
+// and checks undelivered alert thresholds. Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) collectResendCandidate(
+	rec *PendingEvent,
+	now time.Time,
+	interval, warnThreshold, critThreshold time.Duration,
+	toResend *[]PendingEvent,
+) {
+	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
+		*toResend = append(*toResend, PendingEvent{
+			TriggerId: rec.TriggerId,
+			EventId:   rec.EventId,
+		})
 	}
 
-	for _, event := range toResend {
-		b.trySend(event)
+	if warnThreshold == 0 && critThreshold == 0 {
+		return
+	}
+	age := now.Sub(rec.FirstAt)
+
+	triggerID, eventID := rec.TriggerId, rec.EventId
+	if b.undeliveredAlertStates[triggerID] == nil {
+		b.undeliveredAlertStates[triggerID] = make(map[string]*undeliveredState)
+	}
+
+	state := b.undeliveredAlertStates[triggerID][eventID]
+	if state == nil {
+		state = &undeliveredState{}
+		b.undeliveredAlertStates[triggerID][eventID] = state
+	}
+
+	if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
+		b.metrics.EmitUndeliveredWarning(triggerID, eventID)
+		state.emittedWarning = true
+	}
+
+	if critThreshold > 0 && !state.emittedCritical && age >= critThreshold {
+		b.metrics.EmitUndeliveredCritical(triggerID, eventID)
+		b.metrics.IncStuckEvent(triggerID, eventID)
+		state.emittedCritical = true
+	}
+}
+
+// emitStoppedResending logs and emits metrics for an event that exhausted its retries.
+// The event is NOT deleted from the store here — the prune loop handles cleanup,
+// giving operators time to investigate unrecoverable payloads (e.g. HTTP triggers).
+func (b *BaseTriggerCapability[T]) emitStoppedResending(ctx context.Context, ev stoppedResendingEvent, maxRetries int) {
+	b.lggr.Errorw("base trigger stopped resending event after max retries",
+		"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
+		"attempts", ev.attempts, "maxRetries", maxRetries,
+		"reason", "max_retries_exhausted")
+	b.metrics.IncStoppedResending(ev.triggerID, ev.eventID, ev.attempts)
+	b.metrics.AddPendingEvents(-1)
+	if ev.wasCritical {
+		b.metrics.DecStuckEvent(ev.triggerID, ev.eventID)
 	}
 }
 
@@ -690,7 +723,13 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 	}
 
 	for _, rec := range recs {
-		if rec.FirstAt.After(cutoff) {
+		// Use the most recent activity timestamp so events still being
+		// retried aren't pruned prematurely.
+		lastActivity := rec.FirstAt
+		if rec.LastSentAt.After(lastActivity) {
+			lastActivity = rec.LastSentAt
+		}
+		if lastActivity.After(cutoff) {
 			continue
 		}
 
@@ -702,13 +741,18 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 		b.mu.Unlock()
 
 		if inMemory {
-			// Still actively tracked — scanPending will handle it (gave-up or ACK).
+			// An event old enough to prune should not still be in memory —
+			// scanPending should have stopped resending it or an ACK should
+			// have removed it. Log a warning so we can investigate.
+			b.lggr.Warnw("prune: stale event still tracked in memory (possible inconsistency; skipping)",
+				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,
+				"firstAt", rec.FirstAt, "lastSentAt", rec.LastSentAt, "attempts", rec.Attempts, "pruneAge", age)
 			continue
 		}
 
 		b.lggr.Infow("prune: removing stale event from store",
 			"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,
-			"firstAt", rec.FirstAt, "attempts", rec.Attempts, "pruneAge", age)
+			"firstAt", rec.FirstAt, "lastSentAt", rec.LastSentAt, "attempts", rec.Attempts, "pruneAge", age)
 		if err := b.store.DeleteEvent(b.ctx, rec.TriggerId, rec.EventId); err != nil {
 			b.lggr.Errorw("prune: failed to delete stale event",
 				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId, "err", err)

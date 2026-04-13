@@ -3,6 +3,7 @@ package capabilities
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -773,6 +774,156 @@ func TestBaseTrigger_RedeliveryAfterAck_Skipped(t *testing.T) {
 	recs, err := store.List(ctx)
 	require.NoError(t, err)
 	require.Empty(t, recs, "re-delivered event should not be persisted")
+}
+
+func TestRetryBackoff(t *testing.T) {
+	base := 30 * time.Second
+
+	tests := []struct {
+		attempts   int
+		wantExact  time.Duration
+		wantCapped bool
+	}{
+		{0, base, false},
+		{1, base, false},
+		{2, 2 * base, false},
+		{3, 4 * base, false},
+		{4, 8 * base, false},
+		{5, time.Duration(backoffMultiplierCap) * base, true},
+		{20, time.Duration(backoffMultiplierCap) * base, true},
+	}
+
+	for _, tc := range tests {
+		got := retryBackoff(base, tc.attempts)
+		require.Equal(t, tc.wantExact, got, "attempts=%d", tc.attempts)
+	}
+}
+
+func TestAddJitter_BoundsAndVariation(t *testing.T) {
+	base := 100 * time.Millisecond
+	minAllowed := time.Duration(float64(base) * (1 - jitterFraction))
+	maxAllowed := time.Duration(float64(base) * (1 + jitterFraction))
+
+	sawDifferent := false
+	first := addJitter(base)
+	for i := 0; i < 200; i++ {
+		got := addJitter(base)
+		require.GreaterOrEqual(t, got, minAllowed, "jitter below lower bound")
+		require.LessOrEqual(t, got, maxAllowed, "jitter above upper bound")
+		if got != first {
+			sawDifferent = true
+		}
+	}
+	require.True(t, sawDifferent, "addJitter should produce varied results")
+}
+
+func TestAddJitter_ZeroDuration(t *testing.T) {
+	require.Equal(t, time.Duration(0), addJitter(0))
+	require.Equal(t, time.Duration(-1), addJitter(-1))
+}
+
+func TestBaseTrigger_BackoffDelaysRetransmit(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval": "100ms",
+			"BaseTriggerMaxRetries": "10"
+		}
+	}`))
+
+	store := NewMemEventStore()
+	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 100)
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
+
+	// Drain sends over 500ms. With backoff the gap between retries should
+	// grow: ~100ms for 1st retry, ~200ms for 2nd, ~400ms for 3rd.
+	// Without backoff we'd see 5+ sends; with it we expect fewer.
+	time.Sleep(500 * time.Millisecond)
+	count := 0
+drain:
+	for {
+		select {
+		case <-sendCh:
+			count++
+		default:
+			break drain
+		}
+	}
+	// First send is immediate (from DeliverEvent), then retries back off.
+	// In 500ms with 100ms base, flat retries would yield ~5 sends.
+	// With exponential backoff (100, 200, 400ms) we expect ~3.
+	require.LessOrEqual(t, count, 4, "backoff should reduce number of resends in the window")
+	require.GreaterOrEqual(t, count, 1, "should have at least the initial send")
+}
+
+func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
+	store := NewMemEventStore()
+
+	lggr, err := logger.New()
+	require.NoError(t, err)
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval": "50ms",
+			"BaseTriggerMaxRetries": "1000"
+		}
+	}`))
+
+	b, err := NewBaseTriggerCapabilityWithCRESettings(context.Background(), store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 500)
+	b.RegisterTrigger("trig", sendCh)
+
+	// Inject more events than the per-tick cap directly into pending.
+	b.pending["trig"] = make(map[string]*PendingEvent)
+	n := defaultMaxSendsPerTick + 30
+	for i := 0; i < n; i++ {
+		eid := fmt.Sprintf("e%d", i)
+		rec := &PendingEvent{
+			TriggerId: "trig",
+			EventId:   eid,
+			Payload:   []byte("x"),
+			FirstAt:   time.Now().Add(-time.Minute),
+		}
+		b.pending["trig"][eid] = rec
+	}
+
+	// Manually call scanPending once.
+	b.scanPending()
+
+	// Count how many were actually sent.
+	sent := 0
+drainCap:
+	for {
+		select {
+		case <-sendCh:
+			sent++
+		default:
+			break drainCap
+		}
+	}
+	require.LessOrEqual(t, sent, defaultMaxSendsPerTick,
+		"scanPending should respect the per-tick cap")
 }
 
 func TestBaseTrigger_PruneStaleEvents(t *testing.T) {

@@ -3,6 +3,7 @@ package capabilities
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -11,6 +12,21 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+)
+
+const (
+	// backoffMultiplierCap limits the exponential backoff multiplier so retry
+	// intervals don't grow unbounded. With a 30s base interval, this caps at
+	// 30s * 10 = 5 minutes between retries.
+	backoffMultiplierCap = 10
+
+	// jitterFraction is the ±percentage applied to backoff intervals to
+	// desynchronize retries across DON nodes and prevent P2P burst traffic.
+	jitterFraction = 0.25
+
+	// defaultMaxSendsPerTick limits how many events are retransmitted per
+	// scanPending cycle. This prevents a large backlog from flooding P2P.
+	defaultMaxSendsPerTick = 50
 )
 
 type PendingEvent struct {
@@ -534,6 +550,32 @@ func reachedMaxRetries(attempts, maxRetries int) bool {
 	return maxRetries > 0 && attempts >= maxRetries
 }
 
+// retryBackoff computes an exponential backoff interval: baseInterval * 2^(attempts-1),
+// capped at baseInterval * backoffMultiplierCap. The first retry (attempts=1) uses
+// baseInterval unchanged so well-behaved events see no regression.
+func retryBackoff(baseInterval time.Duration, attempts int) time.Duration {
+	if attempts <= 1 {
+		return baseInterval
+	}
+	shift := uint(attempts - 1)
+	multiplier := int64(1) << shift
+	if multiplier > backoffMultiplierCap || multiplier <= 0 {
+		multiplier = backoffMultiplierCap
+	}
+	return baseInterval * time.Duration(multiplier)
+}
+
+// addJitter applies ±jitterFraction random noise to d so that retries from
+// multiple nodes don't collide on the same P2P window.
+func addJitter(d time.Duration) time.Duration {
+	if d <= 0 {
+		return d
+	}
+	// rand.Float64 is concurrency-safe and auto-seeded since Go 1.20.
+	noise := time.Duration(float64(d) * jitterFraction * (2*rand.Float64() - 1))
+	return d + noise
+}
+
 func (b *BaseTriggerCapability[T]) scanPending() {
 	now := time.Now()
 	ctx := b.ctx
@@ -566,6 +608,13 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 
 	for _, ev := range toStop {
 		b.emitStoppedResending(ctx, ev, maxRetries)
+	}
+
+	if len(toResend) > defaultMaxSendsPerTick {
+		b.lggr.Warnw("base trigger capping resends per tick",
+			"capabilityID", b.capabilityId,
+			"eligible", len(toResend), "cap", defaultMaxSendsPerTick)
+		toResend = toResend[:defaultMaxSendsPerTick]
 	}
 
 	for _, event := range toResend {
@@ -622,7 +671,7 @@ func (b *BaseTriggerCapability[T]) collectStoppedResending(
 	}
 }
 
-// collectResendCandidate appends the event to toResend if the retry interval has elapsed,
+// collectResendCandidate appends the event to toResend if the retry backoff has elapsed,
 // and checks undelivered alert thresholds. Must be called under b.mu.
 func (b *BaseTriggerCapability[T]) collectResendCandidate(
 	rec *PendingEvent,
@@ -630,7 +679,8 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 	interval, warnThreshold, critThreshold time.Duration,
 	toResend *[]PendingEvent,
 ) {
-	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
+	backoff := addJitter(retryBackoff(interval, rec.Attempts))
+	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= backoff {
 		*toResend = append(*toResend, PendingEvent{
 			TriggerId: rec.TriggerId,
 			EventId:   rec.EventId,

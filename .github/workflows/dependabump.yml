@@ -1,0 +1,79 @@
+name: dependabump.yml
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1-5' # every week-day at midnight
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  dependabump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Bump Dependencies
+        run: make dependabot
+
+      - name: Detect Changes
+        id: changes
+        run: |
+          git add --all
+          git diff --cached --exit-code
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Notify Fatal Error
+        if: !contains([0,1],  steps.changes.outputs.exit_code != '0' ) # Fatal exit code
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.QA_SLACK_API_KEY }}
+          payload: |
+            channel: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID}}
+            text: "Failed to run dependabump: <${{ format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) }}|Run>"
+
+#      - if: !contains([0,1],  steps.changes.outputs.exit_code != '0' ) # Fatal exit code
+#        run: exit 1
+
+      - name: Create Pull Request & Notify
+        id: pr
+        if: steps.changes.outputs.exit_code == '1' # Changes detected
+        run: |
+          git switch -c dependabump/${{ GITHUB_EVENT_NAME }}-${{ GITHUB_RUN_ID }}
+        # TODO how to sign verified commit?
+          git commit -m "bump dependencies"
+          git push -u origin dependabump/${{ GITHUB_EVENT_NAME }}-${{ GITHUB_RUN_ID }}
+          gh pr create --base main --title "dependabump" --body "Bumping deps due to critical or high vulnerabilities." | gh variable set url --body -
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        # TODO (close stale dependabump/ branches?)
+        continue-on-error: true # Still notify
+
+      - name: Notify PR Failure
+        if: steps.changes.outputs.exit_code == '1' && steps.pr.outputs.exit_code != '0' # Changes detected but failed to create PR
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.QA_SLACK_API_KEY }}
+          payload: |
+            channel: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID}}
+            text: "Changes detected by dependabump, but failed to create PR: <${{ format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) }}|Run>"
+
+      - if: steps.changes.outputs.exit_code == '1' && steps.pr.outputs.exit_code != '0' # Changes detected but failed to create PR
+        run: exit 1
+
+      - name: Notify PR Created
+        if: steps.changes.outputs.exit_code == '1' && steps.pr.outputs.exit_code == '0' # Changes detected and PR created
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.QA_SLACK_API_KEY }}
+          payload: |
+            channel: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID}}
+            text: "Changes detected by dependabump: <${{ format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) }}|Run> - <${gh.variable.url}|PR> :review_time:"

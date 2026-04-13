@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776108340783,
+  "lastUpdate": 1776117966787,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -44340,6 +44340,66 @@ window.BENCHMARK_DATA = {
             "value": 129111,
             "unit": "ns/op",
             "extra": "9080 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "36506122+Fletch153@users.noreply.github.com",
+            "name": "Michael Fletcher",
+            "username": "Fletch153"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a931c3f2f1624245c75d465889588c399ecefcc3",
+          "message": "fix(services): HealthChecker.Register immediately populates cache when already running (#1976)\n\n* fix(services): populate health state directly in Register\n\nReplace the chRefresh channel mechanism with direct map population in\nRegister(). Instead of signaling the run() goroutine to call update()\n(which re-checks ALL services), Register() now directly populates\nc.ready and c.healthy for just the newly registered service. This is\nsimpler and avoids unnecessary re-polling of all services.\n\n* fix(services): restore Unregister unlock and revert cosmetic changes\n\nFix missing servicesMu.Unlock() in Unregister that would cause a\ndeadlock on every call. Revert unrelated whitespace alignment changes\nto struct definition and New() constructor.",
+          "timestamp": "2026-04-13T21:57:16Z",
+          "tree_id": "d9f5b8a81fd227f98e4bf8f2a9a16e52ff92f93d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a931c3f2f1624245c75d465889588c399ecefcc3"
+        },
+        "date": 1776117964197,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 403.2,
+            "unit": "ns/op",
+            "extra": "2495114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 100164,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 393.4,
+            "unit": "ns/op",
+            "extra": "3036921 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98973,
+            "unit": "ns/op",
+            "extra": "12093 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26528,
+            "unit": "ns/op",
+            "extra": "45177 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 149038,
+            "unit": "ns/op",
+            "extra": "7885 times\n4 procs"
           }
         ]
       }

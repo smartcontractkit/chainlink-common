@@ -24,9 +24,15 @@ const (
 	// desynchronize retries across DON nodes and prevent P2P burst traffic.
 	jitterFraction = 0.25
 
-	// defaultMaxSendsPerTick limits how many events are retransmitted per
-	// scanPending cycle. This prevents a large backlog from flooding P2P.
+	// defaultMaxSendsPerTick limits how many events are sent per scanPending
+	// cycle (initial deliveries AND retransmissions). This prevents a large
+	// backlog from flooding P2P.
 	defaultMaxSendsPerTick = 50
+
+	// maxLoopTick caps how long the retransmit loop sleeps between scans.
+	// With DeliverEvent queueing events instead of sending immediately,
+	// a short tick is needed so first delivery latency stays low (~1s).
+	maxLoopTick = time.Second
 )
 
 type PendingEvent struct {
@@ -203,27 +209,24 @@ func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
 }
 
 // loopTickDuration is recomputed before each loop wait so BaseTriggerRetryInterval and enablement
-// changes take effect without restarting. Uses half the retry interval.
+// changes take effect without restarting. Derived from half the retry interval, clamped to
+// [1ms, maxLoopTick] so that newly queued events are picked up promptly.
 func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
+	d := time.Second
 	if b.settings != nil {
-		iv := b.retryInterval(b.ctx)
-		if iv <= 0 {
-			return time.Second
+		if iv := b.retryInterval(b.ctx); iv > 0 {
+			d = iv / 2
 		}
-		d := iv / 2
-		if d < time.Millisecond {
-			return time.Millisecond
-		}
-		return d
+	} else if b.tRetransmit > 0 {
+		d = b.tRetransmit / 2
 	}
-	if b.tRetransmit > 0 {
-		d := b.tRetransmit / 2
-		if d < time.Millisecond {
-			return time.Millisecond
-		}
-		return d
+	if d < time.Millisecond {
+		d = time.Millisecond
 	}
-	return time.Second
+	if d > maxLoopTick {
+		d = maxLoopTick
+	}
+	return d
 }
 
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
@@ -388,7 +391,10 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.mu.Unlock()
 
 	b.metrics.AddPendingEvents(1)
-	b.trySend(rec)
+	// The event is now queued in pending. scanPending will pick it up on the
+	// next tick (≤1s) and send it, subject to the per-tick cap. This prevents
+	// a burst of 2,500+ P2P sends when many registrations match one on-chain
+	// event. First delivery latency increases by at most maxLoopTick.
 	return nil
 }
 

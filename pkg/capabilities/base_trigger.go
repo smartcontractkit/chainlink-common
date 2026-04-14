@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -345,9 +346,11 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
 
-	// Check if this event was already ACKed before we received it (pre-ACK).
-	// This happens when other capability DON nodes deliver the event faster,
+	// Check if this event was already ACKed or is already pending.
+	// Pre-ACK: other capability DON nodes deliver the event faster,
 	// causing the workflow engine to ACK before this node calls DeliverEvent.
+	// Already pending: the EVM trigger re-delivers after finalization
+	// while the event is still awaiting ACK.
 	b.mu.Lock()
 	if pa, ok := b.preAcked[triggerID]; ok {
 		if _, wasAcked := pa[te.ID]; wasAcked {
@@ -362,6 +365,14 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 			return nil
 		}
 	}
+	if pending, ok := b.pending[triggerID]; ok {
+		if _, exists := pending[te.ID]; exists {
+			b.mu.Unlock()
+			b.lggr.Debugw("base trigger DeliverEvent skipped: event already pending",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			return nil
+		}
+	}
 	b.mu.Unlock()
 
 	rec := PendingEvent{
@@ -373,6 +384,11 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	}
 
 	if err := b.store.Insert(ctx, rec); err != nil {
+		if isDuplicateKeyError(err) {
+			b.lggr.Debugw("base trigger DeliverEvent: event already in store (re-delivery after give-up), skipping",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			return nil
+		}
 		b.lggr.Errorw("base trigger failed to persist pending event",
 			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
 		return err
@@ -576,6 +592,17 @@ func reachedMaxRetries(attempts, maxRetries int) bool {
 
 // retryBackoff computes an exponential backoff interval: baseInterval * 2^(attempts-1),
 // capped at baseInterval * backoffMultiplierCap. The first retry (attempts=1) uses
+// isDuplicateKeyError returns true if err is a PostgreSQL unique constraint
+// violation (SQLSTATE 23505). The store is accessed via gRPC, so we rely on
+// the error message text rather than typed errors.
+func isDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "23505") || strings.Contains(msg, "duplicate key")
+}
+
 // baseInterval unchanged so well-behaved events see no regression.
 func retryBackoff(baseInterval time.Duration, attempts int) time.Duration {
 	if attempts <= 1 {
@@ -620,6 +647,9 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	toResend := make([]PendingEvent, 0, len(b.pending))
 	var toStop []stoppedResendingEvent
 	for triggerID, pendingForTrigger := range b.pending {
+		if _, hasInbox := b.inboxes[triggerID]; !hasInbox {
+			continue // registration hasn't arrived yet — skip to avoid wasting retry attempts
+		}
 		for eventID, rec := range pendingForTrigger {
 			if reachedMaxRetries(rec.Attempts, maxRetries) {
 				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, pendingForTrigger))

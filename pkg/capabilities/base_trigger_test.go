@@ -1014,3 +1014,85 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, recs, 1, "in-memory event should not be pruned even if old")
 }
+
+func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval": "50ms",
+			"BaseTriggerMaxRetries": "5"
+		}
+	}`))
+
+	store := NewMemEventStore()
+
+	// Build a valid protobuf payload for the events.
+	msg := &wrapperspb.BytesValue{Value: []byte("payload")}
+	anyMsg, err := anypb.New(msg)
+	require.NoError(t, err)
+
+	// Pre-populate the store with events (simulates restart loading).
+	for i := 0; i < 5; i++ {
+		require.NoError(t, store.Insert(ctx, PendingEvent{
+			TriggerId:  "trig",
+			EventId:    fmt.Sprintf("e%d", i),
+			AnyTypeURL: anyMsg.GetTypeUrl(),
+			Payload:    anyMsg.GetValue(),
+			FirstAt:    time.Now().Add(-time.Minute),
+		}))
+	}
+
+	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	// Do NOT register a trigger (no inbox) — simulates post-restart state
+	// before workflow registration arrives.
+	require.NoError(t, b.Start(ctx))
+	t.Cleanup(func() { b.Stop() })
+
+	// Let several scanPending ticks fire without an inbox.
+	time.Sleep(300 * time.Millisecond)
+
+	// Verify no attempts were incremented — events should have been skipped.
+	b.mu.Lock()
+	for _, rec := range b.pending["trig"] {
+		require.Equal(t, 0, rec.Attempts,
+			"event %s should have 0 attempts when no inbox is registered", rec.EventId)
+	}
+	b.mu.Unlock()
+
+	// Now register the inbox and let scanPending pick them up.
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 100)
+	b.RegisterTrigger("trig", sendCh)
+
+	time.Sleep(200 * time.Millisecond)
+
+	// Events should now be sent.
+	count := 0
+drain:
+	for {
+		select {
+		case <-sendCh:
+			count++
+		default:
+			break drain
+		}
+	}
+	require.GreaterOrEqual(t, count, 1,
+		"events should be retransmitted once the inbox is registered")
+
+	// Verify attempts were incremented now that inbox exists.
+	b.mu.Lock()
+	for _, rec := range b.pending["trig"] {
+		require.Greater(t, rec.Attempts, 0,
+			"event %s should have attempts > 0 after inbox is registered", rec.EventId)
+	}
+	b.mu.Unlock()
+}

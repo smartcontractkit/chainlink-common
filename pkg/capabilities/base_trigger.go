@@ -425,10 +425,15 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.mu.Unlock()
 
 	b.metrics.AddPendingEvents(1)
-	// The event is now queued in pending. scanPending will pick it up on the
-	// next tick (≤1s) and send it, subject to the per-tick cap. This prevents
-	// a burst of 2,500+ P2P sends when many registrations match one on-chain
-	// event. First delivery latency increases by at most maxLoopTick.
+
+	// Send immediately on first delivery to maximize chances of first-attempt
+	// success across all capability DON nodes (they all fire at roughly the same
+	// time). If the first send succeeds and gets ACKed, no retransmissions are
+	// needed. Retransmissions still go through scanPending with maxSendsPerTick.
+	if err := b.sendToInbox(triggerID, te.ID, te.Payload.GetValue()); err != nil {
+		b.lggr.Debugw("base trigger DeliverEvent: immediate send failed, will retry via scanPending",
+			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
+	}
 	return nil
 }
 

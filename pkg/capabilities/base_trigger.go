@@ -430,10 +430,13 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	// success across all capability DON nodes (they all fire at roughly the same
 	// time). If the first send succeeds and gets ACKed, no retransmissions are
 	// needed. Retransmissions still go through scanPending with maxSendsPerTick.
+	b.trySend(rec)
+	/* TODO try send instead
 	if err := b.sendToInbox(triggerID, te.ID, te.Payload.GetValue()); err != nil {
 		b.lggr.Debugw("base trigger DeliverEvent: immediate send failed, will retry via scanPending",
 			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
 	}
+	*/
 	return nil
 }
 
@@ -641,7 +644,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
-	maxRetries := b.maxRetries(ctx)
+	maxRetries := 10 // TODO: b.maxRetries(ctx)
 	warnThreshold := 1 * interval
 	critThreshold := 3 * interval
 
@@ -703,10 +706,13 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 // Uses the full retry window as TTL — a DeliverEvent arriving later than that would
 // have been stopped anyway. Must be called under b.mu.
 func (b *BaseTriggerCapability[T]) expirePreAcked(now time.Time, maxRetries int, interval time.Duration) {
-	preAckTTL := time.Duration(maxRetries) * interval
-	if maxRetries == 0 || preAckTTL <= 0 {
-		preAckTTL = 10 * time.Minute
-	}
+	// TODO: try not expiring events for now
+	preAckTTL := 24 * time.Hour //time.Duration(maxRetries) * interval
+	/*
+		if maxRetries == 0 || preAckTTL <= 0 {
+			preAckTTL = 10 * time.Minute
+		}
+	*/
 	for triggerID, events := range b.preAcked {
 		for eventID, ackedAt := range events {
 			if now.Sub(ackedAt) > preAckTTL {

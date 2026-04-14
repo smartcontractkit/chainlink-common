@@ -39,6 +39,8 @@ type client struct {
 	conn   *grpc.ClientConn
 }
 
+var _ Client = (*client)(nil)
+
 // Opt defines a function type for configuring the ChipIngressClient.
 type Opt func(*clientConfig)
 
@@ -68,7 +70,7 @@ func newClientConfig(host string) *clientConfig {
 }
 
 // NewClient creates a new client for the Chip Ingress service with optional configuration.
-func NewClient(address string, opts ...Opt) (Client, error) {
+func NewClient(address string, opts ...Opt) (*client, error) {
 	// Validate address
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {

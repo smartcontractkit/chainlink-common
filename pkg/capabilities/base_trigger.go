@@ -430,13 +430,10 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	// success across all capability DON nodes (they all fire at roughly the same
 	// time). If the first send succeeds and gets ACKed, no retransmissions are
 	// needed. Retransmissions still go through scanPending with maxSendsPerTick.
-	b.trySend(rec)
-	/* TODO try send instead
 	if err := b.sendToInbox(triggerID, te.ID, te.Payload.GetValue()); err != nil {
 		b.lggr.Debugw("base trigger DeliverEvent: immediate send failed, will retry via scanPending",
 			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
 	}
-	*/
 	return nil
 }
 
@@ -644,13 +641,13 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
-	maxRetries := 10 // TODO: b.maxRetries(ctx)
+	maxRetries := b.maxRetries(ctx)
 	warnThreshold := 1 * interval
 	critThreshold := 3 * interval
 
 	b.mu.Lock()
 
-	b.expirePreAcked(now, maxRetries, interval)
+	b.expirePreAcked(now)
 
 	toResend := make([]PendingEvent, 0, len(b.pending))
 	var toStop []stoppedResendingEvent
@@ -703,16 +700,12 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 }
 
 // expirePreAcked removes old preAcked entries so the cache doesn't grow unbounded.
-// Uses the full retry window as TTL — a DeliverEvent arriving later than that would
-// have been stopped anyway. Must be called under b.mu.
-func (b *BaseTriggerCapability[T]) expirePreAcked(now time.Time, maxRetries int, interval time.Duration) {
-	// TODO: try not expiring events for now
-	preAckTTL := 24 * time.Hour //time.Duration(maxRetries) * interval
-	/*
-		if maxRetries == 0 || preAckTTL <= 0 {
-			preAckTTL = 10 * time.Minute
-		}
-	*/
+// The TTL is generous (24h) because entries are tiny (two strings + timestamp) and
+// the cost of expiring too early is severe: a slow node would persist and retransmit
+// an already-ACKed event forever. UnregisterTrigger already clears entries per trigger.
+// Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) expirePreAcked(now time.Time) {
+	preAckTTL := 24 * time.Hour
 	for triggerID, events := range b.preAcked {
 		for eventID, ackedAt := range events {
 			if now.Sub(ackedAt) > preAckTTL {

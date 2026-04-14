@@ -54,6 +54,7 @@ type clientConfig struct {
 	meterProvider         metric.MeterProvider
 	tracerProvider        trace.TracerProvider
 	nopInfoHeaderProvider HeaderProvider
+	raw                   bool
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -91,10 +92,17 @@ func NewClient(address string, opts ...Opt) (*client, error) {
 		otelOpts = append(otelOpts, otelgrpc.WithTracerProvider(cfg.tracerProvider))
 	}
 
+	callOptions := []grpc.CallOption{
+		grpc.MaxCallRecvMsgSize(maxMessageSize),
+	}
+	if cfg.raw {
+		callOptions = append(callOptions, grpc.ForceCodec(RawCodec{}))
+	}
+
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)),
+		grpc.WithDefaultCallOptions(callOptions...),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                10 * time.Second,
 			Timeout:             1 * time.Second,
@@ -245,6 +253,12 @@ func WithNOPLookup() Opt {
 				"x-include-nop-info": "true",
 			}, nil
 		})
+	}
+}
+
+func WithRawCodec() Opt {
+	return func(c *clientConfig) {
+		c.raw = true
 	}
 }
 

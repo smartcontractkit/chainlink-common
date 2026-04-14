@@ -101,6 +101,7 @@ type Server struct {
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
 	profiler        *pyroscope.Profiler
+	beholderClient  *beholder.Client
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -180,6 +181,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 		}
 
@@ -216,6 +219,10 @@ func (s *Server) start(opts ...ServerOpt) error {
 		if err != nil {
 			return fmt.Errorf("failed to create beholder client: %w", err)
 		}
+		if err := beholderClient.Start(ctx); err != nil {
+			return fmt.Errorf("failed to start beholder client: %w", err)
+		}
+		s.beholderClient = beholderClient
 		beholder.SetClient(beholderClient)
 		beholder.SetGlobalOtelProviders()
 
@@ -351,6 +358,9 @@ func (s *Server) Register(c services.HealthReporter) error { return s.checker.Re
 
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
+	if s.beholderClient != nil {
+		s.Logger.ErrorIfFn(s.beholderClient.Close, "Failed to close beholder client")
+	}
 	if s.dbStatsReporter != nil {
 		s.dbStatsReporter.Stop()
 	}

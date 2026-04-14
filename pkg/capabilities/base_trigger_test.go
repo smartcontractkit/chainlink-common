@@ -585,19 +585,12 @@ func TestBaseTrigger_PreAck_SecondEventStillDelivers(t *testing.T) {
 	}
 }
 
-func TestBaseTrigger_PreAck_ExpiresFromCache(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
-
+func TestBaseTrigger_PreAck_CleanedUpByUnregister(t *testing.T) {
 	store := NewMemEventStore()
 	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
 
-	// Use a very short retransmit interval so the preAcked TTL is short.
-	b := NewBaseTriggerCapability(store,
-		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
-		lggr, "testCap", 20*time.Millisecond, 0, 0, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
+	b := newBase(t, store)
+	ctx, cancel := ctxWithCancel(t)
 	defer cancel()
 
 	b.RegisterTrigger("trigA", sendCh)
@@ -611,14 +604,19 @@ func TestBaseTrigger_PreAck_ExpiresFromCache(t *testing.T) {
 	require.Contains(t, b.preAcked["trigA"], "e1")
 	b.mu.Unlock()
 
-	// Wait for scanPending to expire the preAcked entry.
-	// TTL = maxRetries(20) * interval(20ms) = 400ms; scanPending runs every 10ms.
-	require.Eventually(t, func() bool {
-		b.mu.Lock()
-		defer b.mu.Unlock()
-		_, exists := b.preAcked["trigA"]["e1"]
-		return !exists
-	}, 2*time.Second, 10*time.Millisecond, "preAcked entry should expire")
+	// preAcked entries have a 24h TTL and should persist across scanPending cycles.
+	time.Sleep(50 * time.Millisecond)
+	b.mu.Lock()
+	require.Contains(t, b.preAcked["trigA"], "e1", "preAcked entry should persist (24h TTL)")
+	b.mu.Unlock()
+
+	// UnregisterTrigger should clean up preAcked entries for that trigger.
+	b.UnregisterTrigger("trigA")
+
+	b.mu.Lock()
+	_, exists := b.preAcked["trigA"]
+	b.mu.Unlock()
+	require.False(t, exists, "preAcked entries should be cleaned up after unregister")
 }
 
 func TestBaseTrigger_PreAck_DoubleCheckCatchesRace(t *testing.T) {

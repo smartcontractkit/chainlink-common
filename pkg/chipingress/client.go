@@ -171,6 +171,10 @@ func (c *client) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (ma
 	return registeredMap, nil
 }
 
+func (c *client) Conn() *grpc.ClientConn {
+	return c.conn
+}
+
 // WithBasicAuth sets the basic-auth credentials for the ChipIngress service.
 // Default is to require TLS for security.
 func WithBasicAuth(user, pass string) Opt {

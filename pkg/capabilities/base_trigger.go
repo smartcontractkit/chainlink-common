@@ -421,15 +421,15 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	if b.pending[triggerID] == nil {
 		b.pending[triggerID] = map[string]*PendingEvent{}
 	}
+	rec.LastSentAt = time.Now()
 	b.pending[triggerID][te.ID] = &rec
 	b.mu.Unlock()
 
 	b.metrics.AddPendingEvents(1)
 
-	// Send immediately on first delivery to maximize chances of first-attempt
-	// success across all capability DON nodes (they all fire at roughly the same
-	// time). If the first send succeeds and gets ACKed, no retransmissions are
-	// needed. Retransmissions still go through scanPending with maxSendsPerTick.
+	// Send immediately on first delivery. Setting LastSentAt above prevents
+	// scanPending from re-sending this event on the very next tick — the first
+	// retransmission won't happen until the full retry interval elapses (~30s).
 	if err := b.sendToInbox(triggerID, te.ID, te.Payload.GetValue()); err != nil {
 		b.lggr.Debugw("base trigger DeliverEvent: immediate send failed, will retry via scanPending",
 			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)

@@ -783,10 +783,10 @@ func TestRetryBackoff(t *testing.T) {
 		wantCapped bool
 	}{
 		{0, base, false},
-		{1, base, false},
-		{2, 2 * base, false},
-		{3, 4 * base, false},
-		{4, 8 * base, false},
+		{1, 2 * base, false},
+		{2, 4 * base, false},
+		{3, 8 * base, false},
+		{4, time.Duration(backoffMultiplierCap) * base, true},
 		{5, time.Duration(backoffMultiplierCap) * base, true},
 		{20, time.Duration(backoffMultiplierCap) * base, true},
 	}

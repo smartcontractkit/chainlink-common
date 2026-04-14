@@ -595,8 +595,6 @@ func reachedMaxRetries(attempts, maxRetries int) bool {
 	return maxRetries > 0 && attempts >= maxRetries
 }
 
-// retryBackoff computes an exponential backoff interval: baseInterval * 2^(attempts-1),
-// capped at baseInterval * backoffMultiplierCap. The first retry (attempts=1) uses
 // isDuplicateKeyError returns true if err is a PostgreSQL unique constraint
 // violation (SQLSTATE 23505). The store is accessed via gRPC, so we rely on
 // the error message text rather than typed errors.
@@ -608,12 +606,15 @@ func isDuplicateKeyError(err error) bool {
 	return strings.Contains(msg, "23505") || strings.Contains(msg, "duplicate key")
 }
 
-// baseInterval unchanged so well-behaved events see no regression.
+// retryBackoff computes an exponential backoff interval: baseInterval * 2^attempts,
+// capped at baseInterval * backoffMultiplierCap. DeliverEvent starts with
+// Attempts=0 (the initial send is not a retry), so the first retransmission
+// waits baseInterval and subsequent ones double each time.
 func retryBackoff(baseInterval time.Duration, attempts int) time.Duration {
-	if attempts <= 1 {
+	if attempts <= 0 {
 		return baseInterval
 	}
-	shift := uint(attempts - 1)
+	shift := uint(attempts)
 	multiplier := int64(1) << shift
 	if multiplier > backoffMultiplierCap || multiplier <= 0 {
 		multiplier = backoffMultiplierCap

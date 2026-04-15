@@ -711,93 +711,29 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 	}
 
 	if d.publishCh != nil {
-		d.retransmitBatch(ctx, events, ids)
+		// Enqueue to the same batch workers used by Emit(). This gives
+		// retransmit automatic parallelism (PublishBatchWorkers) and reuses
+		// all batching/flush/mark-delivered logic with zero duplication.
+		var enqueued int
+		for i := range events {
+			select {
+			case d.publishCh <- publishWork{id: ids[i], event: events[i]}:
+				enqueued++
+			default:
+				// Channel full — event stays pending in DB, will retry next tick.
+			}
+		}
+		if !d.cfg.QuietMode {
+			d.log.Infow("DurableEmitter: retransmit enqueued to batch workers",
+				"enqueued", enqueued,
+				"skipped_ch_full", len(events)-enqueued,
+				"total_pending", len(events),
+				"ch_len", len(d.publishCh),
+				"ch_cap", cap(d.publishCh),
+			)
+		}
 	} else {
 		d.retransmitSerial(ctx, events, ids)
-	}
-}
-
-// retransmitBatch publishes pending events via PublishBatch in chunks,
-// then marks each chunk delivered asynchronously. Used when batch mode
-// is enabled (PublishBatchSize > 0).
-func (d *DurableEmitter) retransmitBatch(ctx context.Context, events []*chipingress.CloudEventPb, ids []int64) {
-	batchSize := d.cfg.PublishBatchSize
-	if batchSize <= 0 {
-		batchSize = 100
-	}
-
-	tAll := time.Now()
-	var totalPublished int
-
-	for i := 0; i < len(events); i += batchSize {
-		end := i + batchSize
-		if end > len(events) {
-			end = len(events)
-		}
-		chunk := events[i:end]
-		chunkIDs := ids[i:end]
-
-		batchPb := &chipingress.CloudEventBatch{Events: chunk}
-		pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-		t0 := time.Now()
-		_, err := d.client.PublishBatch(pubCtx, batchPb)
-		elapsed := time.Since(t0)
-		cancel()
-
-		if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
-			h.OnBatchPublish(elapsed, len(chunk), err)
-		}
-		d.metrics.recordPublish(context.Background(), elapsed, "retransmit-batch", err)
-
-		if err != nil {
-			if d.metrics != nil {
-				d.metrics.publishBatchEvErr.Add(ctx, int64(len(chunk)))
-			}
-			if !d.cfg.QuietMode {
-				d.log.Warnw("DurableEmitter: retransmit PublishBatch failed, will retry next tick",
-					"batch_size", len(chunk), "error", err, "elapsed_ms", elapsed.Milliseconds())
-			}
-			continue
-		}
-
-		if d.metrics != nil {
-			d.metrics.publishBatchEvOK.Add(ctx, int64(len(chunk)))
-		}
-		totalPublished += len(chunk)
-
-		// Async MarkDelivered (same pattern as flushBatch).
-		markIDs := make([]int64, len(chunkIDs))
-		copy(markIDs, chunkIDs)
-		d.markWg.Add(1)
-		go func() {
-			defer d.markWg.Done()
-			tMark := time.Now()
-			marked, markErr := d.store.MarkDeliveredBatch(context.Background(), markIDs)
-			markElapsed := time.Since(tMark)
-			if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
-				h.OnBatchMarkDelivered(markElapsed, int(marked))
-			}
-			if markErr != nil {
-				d.log.Errorw("failed to batch-mark retransmitted events delivered",
-					"batch_size", len(markIDs), "error", markErr)
-				return
-			}
-			d.decPending(marked)
-			if d.metrics != nil {
-				d.metrics.deliverComplete.Add(context.Background(), marked)
-			}
-		}()
-	}
-
-	if totalPublished > 0 && !d.cfg.QuietMode {
-		d.log.Infow("retransmitted events (batch)",
-			"published", totalPublished,
-			"attempted", len(events),
-			"elapsed_ms", time.Since(tAll).Milliseconds(),
-		)
-	}
-	if h := d.cfg.Hooks; h != nil && h.OnRetransmitBatchDeletes != nil && totalPublished > 0 {
-		h.OnRetransmitBatchDeletes(time.Since(tAll), totalPublished)
 	}
 }
 

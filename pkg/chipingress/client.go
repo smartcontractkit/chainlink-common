@@ -154,6 +154,12 @@ func (c *client) Close() error {
 	return c.conn.Close()
 }
 
+// Conn returns the underlying gRPC connection for advanced use cases such as
+// raw-codec PublishBatch calls that bypass protobuf marshal/unmarshal overhead.
+func (c *client) Conn() *grpc.ClientConn {
+	return c.conn
+}
+
 // RegisterSchemas registers one or more schemas with the Chip Ingress service.
 func (c *client) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
 	request := &pb.RegisterSchemaRequest{Schemas: schemas}

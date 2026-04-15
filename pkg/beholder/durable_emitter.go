@@ -10,9 +10,13 @@ import (
 	"time"
 
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
+	"google.golang.org/grpc"
+	grpcEncoding "google.golang.org/grpc/encoding"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -127,8 +131,9 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 // table growth.
 // publishWork is a unit of work for the batch publish channel.
 type publishWork struct {
-	id    int64
-	event *chipingress.CloudEventPb
+	id      int64
+	payload []byte                    // serialized CloudEvent proto (always set)
+	event   *chipingress.CloudEventPb // original struct; set from Emit(), nil from retransmit
 }
 
 type DurableEmitter struct {
@@ -139,6 +144,10 @@ type DurableEmitter struct {
 
 	metrics       *durableEmitterMetrics
 	persistFilter persistSourceFilter
+
+	// rawConn is the underlying gRPC connection when the client exposes it.
+	// Non-nil enables zero-copy batch publishing (protowire + ForceCodec).
+	rawConn *grpc.ClientConn
 
 	// pendingCount is an exact, atomic count of rows inserted but not yet
 	// delivered/deleted. Incremented on successful Insert, decremented on
@@ -153,6 +162,55 @@ type DurableEmitter struct {
 	stopCh chan struct{}
 	wg     sync.WaitGroup
 	markWg sync.WaitGroup // tracks in-flight async MarkDelivered goroutines
+}
+
+// grpcConnProvider is an optional interface for clients that expose the
+// underlying gRPC connection. When satisfied, DurableEmitter uses zero-copy
+// batch publishing to avoid protobuf marshal/unmarshal overhead.
+type grpcConnProvider interface {
+	Conn() *grpc.ClientConn
+}
+
+// rawBytesCodec is a gRPC codec that passes []byte through without
+// marshal/unmarshal. Name returns "proto" so the wire content-type is
+// application/grpc+proto, matching what Chip Ingress expects.
+type rawBytesCodec struct{}
+
+func (rawBytesCodec) Marshal(v any) ([]byte, error) {
+	b, ok := v.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("rawBytesCodec.Marshal: expected []byte, got %T", v)
+	}
+	return b, nil
+}
+
+func (rawBytesCodec) Unmarshal(data []byte, v any) error {
+	bp, ok := v.(*[]byte)
+	if !ok {
+		return fmt.Errorf("rawBytesCodec.Unmarshal: expected *[]byte, got %T", v)
+	}
+	*bp = data
+	return nil
+}
+
+func (rawBytesCodec) Name() string { return "proto" }
+
+var _ grpcEncoding.Codec = rawBytesCodec{}
+
+// buildBatchBytes constructs the protobuf wire format for a CloudEventBatch
+// directly from already-serialized CloudEvent payloads. Each payload is
+// wrapped with the field-1 tag and length prefix — no unmarshal/re-marshal.
+func buildBatchBytes(payloads [][]byte) []byte {
+	size := 0
+	for _, p := range payloads {
+		size += protowire.SizeTag(1) + protowire.SizeBytes(len(p))
+	}
+	buf := make([]byte, 0, size)
+	for _, p := range payloads {
+		buf = protowire.AppendTag(buf, 1, protowire.BytesType)
+		buf = protowire.AppendBytes(buf, p)
+	}
+	return buf
 }
 
 // persistSourceFilter decides whether a CloudEvent source may be written to the durable store.
@@ -217,6 +275,10 @@ func NewDurableEmitter(
 		metrics:       m,
 		persistFilter: newPersistSourceFilter(cfg.PersistCloudEventSources),
 		stopCh:        make(chan struct{}),
+	}
+	if cp, ok := client.(grpcConnProvider); ok {
+		d.rawConn = cp.Conn()
+		log.Infow("DurableEmitter: raw-codec batch publishing enabled (zero-copy protowire)")
 	}
 	if cfg.PublishBatchSize > 0 {
 		bufSize := cfg.PublishBatchChannelSize
@@ -330,8 +392,14 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 
 	if d.publishCh != nil {
 		// Batch mode: enqueue for batch publish loop.
+		// Only carry the struct when needed for the typed fallback path;
+		// the raw path uses payload bytes directly.
+		work := publishWork{id: id, payload: payload}
+		if d.rawConn == nil {
+			work.event = eventPb
+		}
 		select {
-		case d.publishCh <- publishWork{id: id, event: eventPb}:
+		case d.publishCh <- work:
 		default:
 			// Channel full — event is safely in the DB; retransmit loop will deliver it.
 			if !d.cfg.QuietMode {
@@ -576,20 +644,26 @@ func (d *DurableEmitter) drainPublishCh(batch []publishWork) {
 
 // flushBatch publishes a collected batch via PublishBatch and marks all events
 // as delivered in a single MarkDeliveredBatch call.
+//
+// When rawConn is available, batch wire bytes are built directly from the
+// already-serialized payloads using protowire — zero unmarshal/re-marshal.
+// Otherwise, falls back to the typed PublishBatch RPC.
 func (d *DurableEmitter) flushBatch(batch []publishWork) {
-	events := make([]*chipingress.CloudEventPb, len(batch))
 	ids := make([]int64, len(batch))
 	for i, w := range batch {
-		events[i] = w.event
 		ids[i] = w.id
 	}
 
-	batchPb := &chipingress.CloudEventBatch{Events: events}
 	pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 	defer cancel()
 
 	t0 := time.Now()
-	_, err := d.client.PublishBatch(pubCtx, batchPb)
+	var err error
+	if d.rawConn != nil {
+		err = d.flushBatchRaw(pubCtx, batch)
+	} else {
+		err = d.flushBatchTyped(pubCtx, batch)
+	}
 	elapsed := time.Since(t0)
 
 	if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
@@ -633,6 +707,45 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 			d.metrics.deliverComplete.Add(context.Background(), marked)
 		}
 	}()
+}
+
+// flushBatchRaw builds the CloudEventBatch wire format directly from
+// already-serialized payloads and sends it via raw gRPC Invoke — zero
+// protobuf unmarshal/re-marshal overhead.
+func (d *DurableEmitter) flushBatchRaw(ctx context.Context, batch []publishWork) error {
+	payloads := make([][]byte, len(batch))
+	for i, w := range batch {
+		payloads[i] = w.payload
+	}
+	batchBytes := buildBatchBytes(payloads)
+	var respBytes []byte
+	return d.rawConn.Invoke(
+		ctx,
+		pb.ChipIngress_PublishBatch_FullMethodName,
+		batchBytes,
+		&respBytes,
+		grpc.ForceCodec(rawBytesCodec{}),
+	)
+}
+
+// flushBatchTyped builds a typed CloudEventBatch and sends it via the
+// standard gRPC client. Used as fallback when rawConn is not available.
+func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWork) error {
+	events := make([]*chipingress.CloudEventPb, len(batch))
+	for i, w := range batch {
+		if w.event != nil {
+			events[i] = w.event
+		} else {
+			ev := new(chipingress.CloudEventPb)
+			if err := proto.Unmarshal(w.payload, ev); err != nil {
+				return fmt.Errorf("unmarshal event %d for typed publish: %w", i, err)
+			}
+			events[i] = ev
+		}
+	}
+	batchPb := &chipingress.CloudEventBatch{Events: events}
+	_, err := d.client.PublishBatch(ctx, batchPb)
+	return err
 }
 
 func (d *DurableEmitter) retransmitLoop(ctx context.Context) {
@@ -681,6 +794,70 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		return
 	}
 
+	if d.publishCh != nil {
+		d.retransmitViaBatchWorkers(ctx, pending)
+	} else {
+		d.retransmitSerialFromPending(ctx, pending)
+	}
+}
+
+// retransmitViaBatchWorkers enqueues pending DB rows to publishCh so the
+// existing batch workers handle publishing. When rawConn is set and the
+// persist filter accepts all sources, payloads are passed through without
+// any proto.Unmarshal — the batch workers will use buildBatchBytes to
+// construct the wire format directly.
+func (d *DurableEmitter) retransmitViaBatchWorkers(ctx context.Context, pending []DurableEvent) {
+	var enqueued int
+	needsFilter := !d.persistFilter.allowAll
+
+	for _, pe := range pending {
+		var work publishWork
+		work.id = pe.ID
+		work.payload = pe.Payload
+
+		if needsFilter {
+			ev := new(chipingress.CloudEventPb)
+			if err := proto.Unmarshal(pe.Payload, ev); err != nil {
+				d.log.Errorw("corrupt pending event, deleting", "id", pe.ID, "error", err)
+				if delErr := d.store.Delete(ctx, pe.ID); delErr == nil {
+					d.decPending(1)
+				}
+				continue
+			}
+			if !d.persistFilter.allows(ev.GetSource()) {
+				if !d.cfg.QuietMode {
+					d.log.Infow("DurableEmitter: dropping queued event (ce_source not in PersistCloudEventSources)",
+						"id", pe.ID, "ce_source", ev.GetSource(), "ce_type", ev.GetType())
+				}
+				if delErr := d.store.Delete(ctx, pe.ID); delErr == nil {
+					d.decPending(1)
+				}
+				continue
+			}
+			work.event = ev
+		}
+
+		select {
+		case d.publishCh <- work:
+			enqueued++
+		default:
+		}
+	}
+
+	if !d.cfg.QuietMode {
+		d.log.Infow("DurableEmitter: retransmit enqueued to batch workers",
+			"enqueued", enqueued,
+			"skipped_ch_full", len(pending)-enqueued,
+			"total_pending", len(pending),
+			"ch_len", len(d.publishCh),
+			"ch_cap", cap(d.publishCh),
+		)
+	}
+}
+
+// retransmitSerialFromPending unmarshals events and publishes them one at a
+// time. Used in legacy mode (PublishBatchSize == 0).
+func (d *DurableEmitter) retransmitSerialFromPending(ctx context.Context, pending []DurableEvent) {
 	events := make([]*chipingress.CloudEventPb, 0, len(pending))
 	ids := make([]int64, 0, len(pending))
 
@@ -706,33 +883,8 @@ func (d *DurableEmitter) retransmitPending(ctx context.Context) {
 		events = append(events, ev)
 		ids = append(ids, pe.ID)
 	}
-	if len(events) == 0 {
-		return
-	}
 
-	if d.publishCh != nil {
-		// Enqueue to the same batch workers used by Emit(). This gives
-		// retransmit automatic parallelism (PublishBatchWorkers) and reuses
-		// all batching/flush/mark-delivered logic with zero duplication.
-		var enqueued int
-		for i := range events {
-			select {
-			case d.publishCh <- publishWork{id: ids[i], event: events[i]}:
-				enqueued++
-			default:
-				// Channel full — event stays pending in DB, will retry next tick.
-			}
-		}
-		if !d.cfg.QuietMode {
-			d.log.Infow("DurableEmitter: retransmit enqueued to batch workers",
-				"enqueued", enqueued,
-				"skipped_ch_full", len(events)-enqueued,
-				"total_pending", len(events),
-				"ch_len", len(d.publishCh),
-				"ch_cap", cap(d.publishCh),
-			)
-		}
-	} else {
+	if len(events) > 0 {
 		d.retransmitSerial(ctx, events, ids)
 	}
 }

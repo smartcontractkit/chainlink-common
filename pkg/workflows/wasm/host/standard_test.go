@@ -523,22 +523,50 @@ func TestStandardTimeInterpretation(t *testing.T) {
 	require.Equal(t, "2020-01-02T03:04:05Z", result)
 }
 
+func TestStandardRestrictions(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	// Some languages call time during initiation of the executable before the main is called.
+	// This would be in unknown mode, which would call Node mode by default.
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	// subscribe so pre-hooks are known.
+	// subscriptions are always done before the first trigger
+	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+	m := makeTestModule(t)
+	_, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
+	require.NoError(t, err)
+
+	response := runWithBasicTriggerWithModule(t, mockExecutionHelper, m)
+	switch r := response.Result.(type) {
+	case *sdk.ExecutionResult_Error:
+		assert.Contains(t, r.Error, "capability call denied by restrictions: basic-test-action@1.0.0 PerformAction")
+	default:
+		assert.Fail(t, "Expected an error result due to restricted capability call, got %T", response.Result)
+	}
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)
+	wrapped := &sdk.Trigger{Id: id, Payload: wrappedTrigger}
 	return &sdk.ExecuteRequest{
-		Config: anyTestConfig,
-		Request: &sdk.ExecuteRequest_Trigger{
-			Trigger: &sdk.Trigger{Id: id, Payload: wrappedTrigger},
-		},
+		Config:          anyTestConfig,
 		MaxResponseSize: uint64(defaultMaxResponseSizeBytes),
+		Request:         &sdk.ExecuteRequest_Trigger{Trigger: wrapped},
 	}
 }
 
 func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionResult {
+	return runWithBasicTriggerWithModule(t, executor, makeTestModule(t))
+}
+
+func runWithBasicTriggerWithModule(t *testing.T, executor ExecutionHelper, m ModuleV2) *sdk.ExecutionResult {
 	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
 	executeRequest := triggerExecuteRequest(t, 0, trigger)
-	m := makeTestModule(t)
 	response, err := m.Execute(t.Context(), executeRequest, executor)
 	require.NoError(t, err)
 	return response

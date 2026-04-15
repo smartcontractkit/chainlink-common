@@ -48,6 +48,13 @@ func SendResponse(result any) {
 	os.Exit(0)
 }
 
+func SendRestrictions(restrictions *sdk.Restrictions) {
+	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_Restrictions{Restrictions: restrictions}}
+	bytes := Must(proto.Marshal(execResult))
+	sendResponse(BufferToPointerLen(bytes))
+	os.Exit(0)
+}
+
 func SendError(err error) {
 	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_Error{Error: err.Error()}}
 	bytes := Must(proto.Marshal(execResult))

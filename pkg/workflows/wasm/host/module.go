@@ -50,10 +50,10 @@ var (
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 
-	defaultMaxUserMetricPayloadBytes      = uint32(4096) // 4 KB
-	defaultMaxUserMetricNameLength        = uint32(128)
-	defaultMaxUserMetricLabelsPerMetric   = uint32(10)
-	defaultMaxUserMetricLabelValueLength  = uint32(256)
+	defaultMaxUserMetricPayloadBytes     = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength       = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric  = uint32(10)
+	defaultMaxUserMetricLabelValueLength = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -82,7 +82,7 @@ type ModuleConfig struct {
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
 
-	EnableUserMetricsLimiter limits.GateLimiter
+	EnableUserMetricsLimiter             limits.GateLimiter
 	MaxUserMetricPayloadBytes            uint32
 	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
 	MaxUserMetricNameLength              uint32
@@ -152,6 +152,8 @@ type module struct {
 	stopCh chan struct{}
 
 	v2ImportName string
+
+	preHookTriggers map[uint64]bool
 }
 
 var _ ModuleV1 = (*module)(nil)
@@ -397,7 +399,80 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	}, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+type hostBindings interface {
+	callCapability(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64
+	awaitCapabilities(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64
+	getSecrets(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64
+	awaitSecrets(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64
+	emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32
+}
+
+type noDAGBindings struct {
+	logger logger.Logger
+	exec   *execution[*sdkpb.ExecutionResult]
+
+	callCapFn    func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64
+	awaitCapsFn  func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64
+	getSecretsFn func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64
+	awaitSecsFn  func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64
+}
+
+func newNoDAGBindings(l logger.Logger, exec *execution[*sdkpb.ExecutionResult]) *noDAGBindings {
+	return &noDAGBindings{
+		logger:       l,
+		exec:         exec,
+		callCapFn:    createCallCapFn(l, exec),
+		awaitCapsFn:  createAwaitCapsFn(l, exec),
+		getSecretsFn: createGetSecretsFn(l, exec),
+		awaitSecsFn:  createAwaitSecretsFn(l, exec),
+	}
+}
+
+func (b *noDAGBindings) callCapability(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	return b.callCapFn(caller, ptr, ptrlen)
+}
+
+func (b *noDAGBindings) awaitCapabilities(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return b.awaitCapsFn(caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen)
+}
+
+func (b *noDAGBindings) getSecrets(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	return b.getSecretsFn(caller, req, requestLen, responseBuffer, maxResponseLen)
+}
+
+func (b *noDAGBindings) awaitSecrets(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return b.awaitSecsFn(caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen)
+}
+
+func (b *noDAGBindings) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	return b.exec.emitMetric(caller, ptr, ptrlen)
+}
+
+type preHookBindings struct {
+	noDAGBindings
+}
+
+func (b *preHookBindings) callCapability(_ *wasmtime.Caller, _ int32, _ int32) int64 {
+	return 0
+}
+
+func (b *preHookBindings) awaitCapabilities(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return truncateWasmWrite(caller, []byte("capability "+errPreHookForbidden), responseBuffer, maxResponseLen)
+}
+
+func (b *preHookBindings) getSecrets(_ *wasmtime.Caller, _, _, _ int32, _ int32) int64 {
+	return 0
+}
+
+func (b *preHookBindings) awaitSecrets(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return truncateWasmWrite(caller, []byte("secret "+errPreHookForbidden), responseBuffer, maxResponseLen)
+}
+
+func (b *preHookBindings) emitMetric(_ *wasmtime.Caller, _ int32, _ int32) int32 {
+	return -1
+}
+
+func linkWithBindings(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult], bindings hostBindings) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -407,90 +482,61 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		"env",
 		m.v2ImportName,
 		func(caller *wasmtime.Caller) {}); err != nil {
-		return nil, fmt.Errorf("error wrapping log func: %w", err)
+		return nil, fmt.Errorf("error wrapping import func: %w", err)
 	}
 
-	logger := m.cfg.Logger
+	l := m.cfg.Logger
 	if err = linker.FuncWrap(
 		"env",
 		"send_response",
-		createSendResponseFn(logger, exec, func() *sdkpb.ExecutionResult {
+		createSendResponseFn(l, exec, func() *sdkpb.ExecutionResult {
 			return &sdkpb.ExecutionResult{}
 		}),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping sendResponse func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"call_capability",
-		createCallCapFn(logger, exec),
-	); err != nil {
-		return nil, fmt.Errorf("error wrapping callcap func: %w", err)
+	if err = linker.FuncWrap("env", "call_capability", bindings.callCapability); err != nil {
+		return nil, fmt.Errorf("error wrapping call_capability func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"await_capabilities",
-		createAwaitCapsFn(logger, exec),
-	); err != nil {
-		return nil, fmt.Errorf("error wrapping awaitcaps func: %w", err)
+	if err = linker.FuncWrap("env", "await_capabilities", bindings.awaitCapabilities); err != nil {
+		return nil, fmt.Errorf("error wrapping await_capabilities func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"get_secrets",
-		createGetSecretsFn(logger, exec),
-	); err != nil {
+	if err = linker.FuncWrap("env", "get_secrets", bindings.getSecrets); err != nil {
 		return nil, fmt.Errorf("error wrapping get_secrets func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"await_secrets",
-		createAwaitSecretsFn(logger, exec),
-	); err != nil {
+	if err = linker.FuncWrap("env", "await_secrets", bindings.awaitSecrets); err != nil {
 		return nil, fmt.Errorf("error wrapping await_secrets func: %w", err)
 	}
 
-	if err := linker.FuncWrap(
-		"env",
-		"log",
-		exec.log,
-	); err != nil {
+	if err = linker.FuncWrap("env", "log", exec.log); err != nil {
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
-	if err := linker.FuncWrap(
-		"env",
-		"emit_metric",
-		exec.emitMetric,
-	); err != nil {
+	if err = linker.FuncWrap("env", "emit_metric", bindings.emitMetric); err != nil {
 		return nil, fmt.Errorf("error wrapping emit_metric func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"switch_modes",
-		exec.switchModes); err != nil {
-		return nil, fmt.Errorf("error wrapping switchModes func: %w", err)
+	if err = linker.FuncWrap("env", "switch_modes", exec.switchModes); err != nil {
+		return nil, fmt.Errorf("error wrapping switch_modes func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"random_seed",
-		exec.getSeed); err != nil {
-		return nil, fmt.Errorf("error wrapping getSeed func: %w", err)
+	if err = linker.FuncWrap("env", "random_seed", exec.getSeed); err != nil {
+		return nil, fmt.Errorf("error wrapping random_seed func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"now",
-		exec.now); err != nil {
-		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
+	if err = linker.FuncWrap("env", "now", exec.now); err != nil {
+		return nil, fmt.Errorf("error wrapping now func: %w", err)
 	}
 
 	return linker.Instantiate(store, m.module)
+}
+
+func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+	return linkWithBindings(m, store, exec, newNoDAGBindings(m.cfg.Logger, exec))
 }
 
 func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
@@ -567,6 +613,8 @@ func (m *module) IsLegacyDAG() bool {
 	return m.v2ImportName == ""
 }
 
+var errPreHookForbidden = "methods cannot be used during a pre-hook"
+
 func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {
 	if m.IsLegacyDAG() {
 		return nil, errors.New("cannot execute a legacy dag workflow")
@@ -580,11 +628,80 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
+	switch r := req.Request.(type) {
+	case *sdkpb.ExecuteRequest_Subscribe:
+		return m.handleSubscribe(ctx, req, executor)
+	case *sdkpb.ExecuteRequest_Trigger:
+		return m.handleTrigger(ctx, req, r.Trigger, executor)
+	default:
+		return m.executeWasm(ctx, req, linkNoDAG, executor)
+	}
+}
+
+func (m *module) handleSubscribe(ctx context.Context, req *sdkpb.ExecuteRequest, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {
+	result, err := m.executeWasm(ctx, req, linkNoDAG, executor)
+	if err != nil {
+		return result, err
+	}
+
+	if subs, ok := result.Result.(*sdkpb.ExecutionResult_TriggerSubscriptions); ok {
+		m.preHookTriggers = make(map[uint64]bool)
+		for i, sub := range subs.TriggerSubscriptions.Subscriptions {
+			if sub.PreHook {
+				m.preHookTriggers[uint64(i)] = true
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (m *module) handleTrigger(ctx context.Context, req *sdkpb.ExecuteRequest, trigger *sdkpb.Trigger, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {
+	if !m.preHookTriggers[trigger.Id] {
+		return m.executeWasm(ctx, req, linkNoDAG, executor)
+	}
+
+	preHookReq := &sdkpb.ExecuteRequest{
+		Config:          req.Config,
+		Request:         &sdkpb.ExecuteRequest_PreHook{PreHook: trigger},
+		MaxResponseSize: req.MaxResponseSize,
+	}
+
+	preHookResult, err := m.executeWasm(ctx, preHookReq, linkPreHook, executor)
+	if err != nil {
+		return nil, fmt.Errorf("pre-hook execution failed: %w", err)
+	}
+
+	if _, ok := preHookResult.Result.(*sdkpb.ExecutionResult_Error); ok {
+		return preHookResult, nil
+	}
+
+	restrictions, ok := preHookResult.Result.(*sdkpb.ExecutionResult_Restrictions)
+	if !ok {
+		return nil, fmt.Errorf("pre-hook did not return restrictions, got %T", preHookResult.Result)
+	}
+
+	er := newExecutionRestrictions(restrictions.Restrictions)
+	return m.executeWasm(ctx, req, func(mod *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+		exec.restrictions = er
+		return linkNoDAG(mod, store, exec)
+	}, executor)
+}
+
+func (m *module) executeWasm(
+	ctx context.Context,
+	req *sdkpb.ExecuteRequest,
+	link linkFn[*sdkpb.ExecutionResult],
+	executor ExecutionHelper,
+) (*sdkpb.ExecutionResult, error) {
 	setMaxResponseSize := func(r *sdkpb.ExecuteRequest, maxSize uint64) {
 		r.MaxResponseSize = maxSize
 	}
+	return runWasm(ctx, m, req, setMaxResponseSize, link, executor)
+}
 
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor)
+func linkPreHook(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+	return linkWithBindings(m, store, exec, &preHookBindings{*newNoDAGBindings(m.cfg.Logger, exec)})
 }
 
 // Run is deprecated, use execute instead

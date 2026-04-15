@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -20,12 +21,16 @@ import (
 )
 
 const (
-	nodagRandomBinaryCmd        = "standard_tests/multiple_triggers"
-	nodagRandomBinaryLocation   = nodagRandomBinaryCmd + "/testmodule.wasm"
-	loggingLimitsBinaryCmd      = "test/logging_limits/cmd"
-	loggingLimitsBinaryLocation = loggingLimitsBinaryCmd + "/testmodule.wasm"
-	metricLimitsBinaryCmd       = "test/metric_limits/cmd"
-	metricLimitsBinaryLocation  = metricLimitsBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd                       = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation                  = nodagRandomBinaryCmd + "/testmodule.wasm"
+	loggingLimitsBinaryCmd                     = "test/logging_limits/cmd"
+	loggingLimitsBinaryLocation                = loggingLimitsBinaryCmd + "/testmodule.wasm"
+	metricLimitsBinaryCmd                      = "test/metric_limits/cmd"
+	metricLimitsBinaryLocation                 = metricLimitsBinaryCmd + "/testmodule.wasm"
+	nodagSecretsBinaryCmd                      = "standard_tests/secrets"
+	nodagSecretsBinaryLocation                 = nodagSecretsBinaryCmd + "/testmodule.wasm"
+	nodagCapabilityCallsAreAsyncBinaryCmd      = "standard_tests/capability_calls_are_async"
+	nodagCapabilityCallsAreAsyncBinaryLocation = nodagCapabilityCallsAreAsyncBinaryCmd + "/testmodule.wasm"
 )
 
 func Test_Sleep_Timeout(t *testing.T) {
@@ -211,6 +216,55 @@ func Test_NoDAG_EmitMetricDisabled(t *testing.T) {
 	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
 	require.NoError(t, err)
 	// EmitUserMetric should never be called when disabled - no mock expectation set
+}
+
+func Test_NoDAG_PreHook(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name           string
+		binaryCmd      string
+		binaryLocation string
+	}{
+		{
+			name:           "secret",
+			binaryCmd:      nodagSecretsBinaryCmd,
+			binaryLocation: nodagSecretsBinaryLocation,
+		},
+		{
+			name:           "capability",
+			binaryCmd:      nodagCapabilityCallsAreAsyncBinaryCmd,
+			binaryLocation: nodagCapabilityCallsAreAsyncBinaryLocation,
+		},
+	} {
+		t.Run(tc.name+" cannot be called in pre-hook", func(t *testing.T) {
+			t.Parallel()
+
+			binary := createTestBinary(tc.binaryCmd, tc.binaryLocation, true, t)
+			m, err := NewModule(t.Context(), defaultNoDAGModCfg(t), binary)
+			require.NoError(t, err)
+
+			mockExecutionHelper := NewMockExecutionHelper(t)
+			mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+			mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+				return time.Now()
+			}).Maybe()
+
+			trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+			preTrigger := triggerExecuteRequest(t, 0, trigger)
+
+			// simulate the subscription for pre-hook
+			m.preHookTriggers = map[uint64]bool{0: true}
+
+			result, err := m.Execute(t.Context(), preTrigger, mockExecutionHelper)
+			require.NoError(t, err)
+			switch r := result.Result.(type) {
+			case *sdk.ExecutionResult_Error:
+				assert.Contains(t, r.Error, tc.name+" "+errPreHookForbidden)
+			default:
+				require.Fail(t, "expected error result from pre-hook execution")
+			}
+		})
+	}
 }
 
 func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {

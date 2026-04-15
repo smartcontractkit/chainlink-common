@@ -32,6 +32,7 @@ type execution[T any] struct {
 	nodeSeed             int64
 	donLogCount          uint32
 	nodeLogCount         uint32
+	restrictions         *executionRestrictions
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -42,6 +43,15 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.capabilityResponses[req.CallbackId] = ch
+
+	if !e.restrictions.callCapability(req) {
+		ch <- &sdkpb.CapabilityResponse{
+			Response: &sdkpb.CapabilityResponse_Error{
+				Error: fmt.Sprintf("capability call denied by restrictions: %s %s", req.Id, req.Method),
+			},
+		}
+		return nil
+	}
 
 	go func() {
 		resp, err := e.executor.CallCapability(ctx, req)
@@ -99,6 +109,17 @@ func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecret
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.secretsResponses[req.CallbackId] = ch
+
+	if e.restrictions != nil {
+		for _, sr := range req.Requests {
+			if !e.restrictions.getSecret(sr) {
+				ch <- &secretsResponse{
+					err: fmt.Errorf("secret access denied by restrictions: %s/%s", sr.Namespace, sr.Id),
+				}
+				return nil
+			}
+		}
+	}
 
 	go func() {
 		resp, err := e.executor.GetSecrets(ctx, req)

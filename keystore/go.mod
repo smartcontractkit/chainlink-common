@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/keystore
 
-go 1.25.3
+go 1.26.2
 
 require (
 	github.com/NethermindEth/juno v0.12.5

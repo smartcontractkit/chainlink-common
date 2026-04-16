@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	aptos "github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

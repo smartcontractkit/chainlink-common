@@ -1,6 +1,9 @@
 package utils_test
 
 import (
+	"context"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -70,6 +73,43 @@ func TestSleeperTask_WakeupPerformsWork(t *testing.T) {
 	}
 
 	require.NoError(t, sleeper.Stop())
+}
+
+// reflectWorker simulates the race scenario: Work() spawns goroutines that
+// read the context via fmt.Sprintf (like testify's mock.callString), while
+// Stop() concurrently triggers context cancellation.
+type reflectWorker struct {
+	wg sync.WaitGroup
+}
+
+func (w *reflectWorker) Name() string { return "ReflectWorker" }
+
+func (w *reflectWorker) Work(ctx context.Context) {
+	w.wg.Add(10)
+	for range 10 {
+		go func() {
+			defer w.wg.Done()
+			// Simulate testify's callString: fmt.Sprintf("%#v", ctx) reads context
+			// internals via reflect. With the old NewCtx()/CtxCancel pattern, cancel()
+			// fired concurrently, writing to context internals → DATA RACE.
+			_ = fmt.Sprintf("%#v", ctx)
+		}()
+	}
+	w.wg.Wait()
+}
+
+func TestSleeperTask_NoConcurrentContextRace(t *testing.T) {
+	t.Parallel()
+
+	// Run many iterations to increase chance of triggering a race.
+	for range 50 {
+		w := &reflectWorker{}
+		sleeper := utils.NewSleeperTaskCtx(w)
+		sleeper.WakeUp()
+		// Stop concurrently with Work — this closes chStop, which previously
+		// fired cancel() via a CtxCancel goroutine, racing with reflect reads.
+		require.NoError(t, sleeper.Stop())
+	}
 }
 
 type controllableWorker struct {

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -110,8 +111,7 @@ func (s *SleeperTask) WorkDone() <-chan struct{} {
 func (s *SleeperTask) workerLoop() {
 	defer close(s.chDone)
 
-	ctx, cancel := s.chStop.NewCtx()
-	defer cancel()
+	ctx := &stopChanCtx{ch: s.chStop}
 
 	for {
 		select {
@@ -121,6 +121,25 @@ func (s *SleeperTask) workerLoop() {
 		case <-s.chStop:
 			return
 		}
+	}
+}
+
+// stopChanCtx implements [context.Context] backed directly by a stop channel.
+// Unlike [services.StopChan.NewCtx], this does not spawn a goroutine to call
+// cancel(), avoiding a data race between context cancellation and concurrent
+// reflect-based reads (e.g. testify mock argument formatting).
+type stopChanCtx struct{ ch <-chan struct{} }
+
+func (c *stopChanCtx) Deadline() (time.Time, bool) { return time.Time{}, false }
+func (c *stopChanCtx) Done() <-chan struct{}        { return c.ch }
+func (c *stopChanCtx) Value(any) any                { return nil }
+
+func (c *stopChanCtx) Err() error {
+	select {
+	case <-c.ch:
+		return context.Canceled
+	default:
+		return nil
 	}
 }
 

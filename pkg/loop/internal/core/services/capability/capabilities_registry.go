@@ -2,7 +2,6 @@ package capability
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -245,7 +244,7 @@ func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig 
 	}
 	transmitters := make([]ocrtypes.Account, len(pbCfg.Transmitters))
 	for i, t := range pbCfg.Transmitters {
-		transmitters[i] = ocrtypes.Account(hex.EncodeToString(t))
+		transmitters[i] = ocrtypes.Account(t)
 	}
 	return ocrtypes.ContractConfig{
 		ConfigCount:           pbCfg.ConfigCount,
@@ -512,10 +511,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			}
 			transmitters := make([][]byte, len(cfg.Transmitters))
 			for i, t := range cfg.Transmitters {
-				transmitters[i], err = hex.DecodeString(string(t))
-				if err != nil {
-					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
-				}
+				transmitters[i] = []byte(t)
 			}
 			ccp.Ocr3Configs[key] = &capabilitiespb.OCR3Config{
 				ConfigCount:           cfg.ConfigCount,

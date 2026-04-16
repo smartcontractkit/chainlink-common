@@ -226,9 +226,10 @@ func pbContractConfig(cc libocr.ContractConfig) *pb.ContractConfig {
 	return r
 }
 
-// RegisterPluginProviderServices registers the plugin provider services with the given grpc server
-func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvider) {
-	RegisterConfigProviderServices(s, provider)
+// RegisterPluginProviderServices registers the plugin provider services with the given grpc server.
+// grpcSrvRes should point to the net.Resource returned from BrokerExt.ServeNew for this server, or nil.
+func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvider, grpcSrvRes *net.Resource) {
+	RegisterConfigProviderServices(s, provider, grpcSrvRes)
 	pb.RegisterContractTransmitterServer(s, &contractTransmitterServer{impl: provider.ContractTransmitter()})
 	// although these are part of the plugin provider interface, they are not actually implemented by all plugin providers (ie median)
 	// once we transition all plugins to the core node api, we can remove these checks
@@ -241,8 +242,8 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 	}
 }
 
-func RegisterConfigProviderServices(s *grpc.Server, provider types.ConfigProvider) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: provider})
+func RegisterConfigProviderServices(s *grpc.Server, provider types.ConfigProvider, grpcSrvRes *net.Resource) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: provider, GRPCServerResource: grpcSrvRes})
 	pb.RegisterOffchainConfigDigesterServer(s, &offchainConfigDigesterServer{impl: provider.OffchainConfigDigester()})
 	pb.RegisterContractConfigTrackerServer(s, &contractConfigTrackerServer{impl: provider.ContractConfigTracker()})
 }

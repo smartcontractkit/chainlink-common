@@ -200,7 +200,7 @@ func (s *Server) GetEstimateFee(ctx context.Context, req *pb.GetEstimateFeeReque
 	}, nil
 }
 
-func RegisterContractWriterService(s *grpc.Server, contractWriter types.ContractWriter) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractWriter})
+func RegisterContractWriterService(s *grpc.Server, contractWriter types.ContractWriter, grpcSrvRes *net.Resource) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractWriter, GRPCServerResource: grpcSrvRes})
 	pb.RegisterContractWriterServer(s, NewServer(contractWriter))
 }

@@ -155,8 +155,10 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 
 	const name = "Relayer"
 	rRes := net.Resource{Closer: r, Name: name}
-	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
+	var grpcSrvRes net.Resource
+	ss := &goplugin.ServiceServer{Srv: r, GRPCServerResource: &grpcSrvRes}
+	id, grpcSrvRes, err := p.ServeNew(name, func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, ss)
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 		if evmService, ok := r.(types.EVMService); ok {
 			evmpb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
@@ -500,9 +502,11 @@ func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewCo
 	}
 
 	const name = "ContractWriter"
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		contractwriter.RegisterContractWriterService(s, cw)
-	}, net.Resource{Closer: cw, Name: name})
+	cwRes := net.Resource{Closer: cw, Name: name}
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		contractwriter.RegisterContractWriterService(s, cw, &grpcSrvRes)
+	}, cwRes)
 	if err != nil {
 		return nil, err
 	}
@@ -521,9 +525,11 @@ func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewCo
 	}
 
 	const name = "ContractReader"
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		contractreader.RegisterContractReaderService(s, cr)
-	}, net.Resource{Closer: cr, Name: name})
+	crRes := net.Resource{Closer: cr, Name: name}
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		contractreader.RegisterContractReaderService(s, cr, &grpcSrvRes)
+	}, crRes)
 	if err != nil {
 		return nil, err
 	}
@@ -553,9 +559,11 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 	}
 
 	const name = "ConfigProvider"
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterConfigProviderServices(s, cp)
-	}, net.Resource{Closer: cp, Name: name})
+	cpRes := net.Resource{Closer: cp, Name: name}
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ocr2.RegisterConfigProviderServices(s, cp, &grpcSrvRes)
+	}, cpRes)
 	if err != nil {
 		return nil, err
 	}
@@ -642,8 +650,9 @@ func (r *relayerServer) newOCR3CapabilityProvider(ctx context.Context, relayArgs
 	const name = "OCR3CapabilityProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr3capability.RegisterProviderServices(s, provider)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ocr3capability.RegisterProviderServices(s, provider, &grpcSrvRes)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -669,8 +678,9 @@ func (r *relayerServer) newMedianProvider(ctx context.Context, relayArgs types.R
 	const name = "MedianProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		median.RegisterProviderServices(s, provider)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		median.RegisterProviderServices(s, provider, &grpcSrvRes)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -691,8 +701,9 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 	const name = "PluginProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterPluginProviderServices(s, provider)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ocr2.RegisterPluginProviderServices(s, provider, &grpcSrvRes)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -718,8 +729,9 @@ func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.
 	const name = "MercuryProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterPluginProviderServices(s, provider)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ocr2.RegisterPluginProviderServices(s, provider, &grpcSrvRes)
 		mercury.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
@@ -746,9 +758,9 @@ func (r *relayerServer) newExecProvider(ctx context.Context, relayArgs types.Rel
 	const name = "CCIPExecutionProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterPluginProviderServices(s, provider)
-		ccip.RegisterExecutionProviderServices(s, provider, r.BrokerExt)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ccip.RegisterExecutionProviderServices(s, provider, r.BrokerExt, &grpcSrvRes)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -774,9 +786,9 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	const name = "CCIPCommitProvider"
 	providerRes := net.Resource{Name: name, Closer: provider}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterPluginProviderServices(s, provider)
-		ccip.RegisterCommitProviderServices(s, provider, r.BrokerExt)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ccip.RegisterCommitProviderServices(s, provider, r.BrokerExt, &grpcSrvRes)
 	}, providerRes)
 	if err != nil {
 		return 0, err
@@ -841,8 +853,9 @@ func (r *relayerServer) NewCCIPProvider(ctx context.Context, request *pb.NewCCIP
 		resources = append(resources, extraDataCodecRes)
 	}
 
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ccipocr3loop.RegisterProviderServices(s, provider)
+	var grpcSrvRes net.Resource
+	id, grpcSrvRes, err := r.ServeNew(name, func(s *grpc.Server) {
+		ccipocr3loop.RegisterProviderServices(s, provider, &grpcSrvRes)
 	}, resources...)
 	if err != nil {
 		return nil, err
@@ -937,17 +950,17 @@ func (r *relayerServer) Replay(ctx context.Context, request *pb.ReplayRequest) (
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {
-	median.RegisterProviderServices(s, p)
+	median.RegisterProviderServices(s, p, nil)
 }
 
 // RegisterStandAlonePluginProvider register the servers needed for a generic plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAlonePluginProvider(s *grpc.Server, p types.PluginProvider) {
-	ocr2.RegisterPluginProviderServices(s, p)
+	ocr2.RegisterPluginProviderServices(s, p, nil)
 }
 
 // RegisterStandAloneOCR3CapabilityProvider register the servers needed for a generic plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneOCR3CapabilityProvider(s *grpc.Server, p types.OCR3CapabilityProvider) {
-	ocr3capability.RegisterProviderServices(s, p)
+	ocr3capability.RegisterProviderServices(s, p, nil)
 }

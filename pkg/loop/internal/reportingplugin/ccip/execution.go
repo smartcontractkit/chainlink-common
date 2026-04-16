@@ -62,9 +62,11 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 		} else {
 			// loop client runs in the core node. if the provider is not a grpc client conn, then we are in legacy mode
 			// and need to serve all the required services locally.
-			srcProviderID, srcProviderResource, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
-				ccipprovider.RegisterExecutionProviderServices(s, srcProvider, c.BrokerExt)
+			var grpcSrvRes net.Resource
+			srcProviderID, grpcSrvRes, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
+				ccipprovider.RegisterExecutionProviderServices(s, srcProvider, c.BrokerExt, &grpcSrvRes)
 			})
+			srcProviderResource = grpcSrvRes
 		}
 		if err != nil {
 			return 0, nil, err
@@ -78,9 +80,11 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 		} else {
 			// loop client runs in the core node. if the provider is not a grpc client conn, then we are in legacy mode
 			// and need to serve all the required services locally.
-			dstProviderID, dstProviderResource, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
-				ccipprovider.RegisterExecutionProviderServices(s, dstProvider, c.BrokerExt)
+			var grpcSrvRes net.Resource
+			dstProviderID, grpcSrvRes, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
+				ccipprovider.RegisterExecutionProviderServices(s, dstProvider, c.BrokerExt, &grpcSrvRes)
 			})
+			dstProviderResource = grpcSrvRes
 		}
 		if err != nil {
 			return 0, nil, err
@@ -158,8 +162,11 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 		return nil, fmt.Errorf("failed to create new execution factory: %w", err)
 	}
 
-	id, _, err := r.ServeNew("ExecutionFactory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
+	var grpcSrvRes net.Resource
+	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
+	var id uint32
+	id, grpcSrvRes, err = r.ServeNew("ExecutionFactory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, ss)
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, r.BrokerExt))
 	}, deps...)
 	if err != nil {

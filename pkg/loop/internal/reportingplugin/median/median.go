@@ -63,20 +63,20 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		deps.Add(gasPriceSubunitsDataSourceRes)
 
 		var (
-			providerID  uint32
-			providerRes net.Resource
+			providerID uint32
+			grpcSrvRes net.Resource
 		)
 		if grpcProvider, ok := provider.(goplugin.GRPCClientConn); ok {
-			providerID, providerRes, err = m.Serve("MedianProvider", proxy.NewProxy(grpcProvider.ClientConn()))
+			providerID, grpcSrvRes, err = m.Serve("MedianProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
-			providerID, providerRes, err = m.ServeNew("MedianProvider", func(s *grpc.Server) {
-				medianprovider.RegisterProviderServices(s, provider)
+			providerID, grpcSrvRes, err = m.ServeNew("MedianProvider", func(s *grpc.Server) {
+				medianprovider.RegisterProviderServices(s, provider, &grpcSrvRes)
 			})
 		}
 		if err != nil {
 			return 0, nil, err
 		}
-		deps.Add(providerRes)
+		deps.Add(grpcSrvRes)
 
 		errorLogID, errorLogRes, err := m.ServeNew("ErrorLog", func(s *grpc.Server) {
 			pb.RegisterErrorLogServer(s, errorlog.NewServer(errorLog))
@@ -185,8 +185,10 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		return nil, err
 	}
 
-	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
+	var grpcSrvRes net.Resource
+	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
+	id, grpcSrvRes, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, ss)
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 	if err != nil {

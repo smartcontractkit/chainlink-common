@@ -78,10 +78,18 @@ var _ pb.ServiceServer = (*ServiceServer)(nil)
 type ServiceServer struct {
 	pb.UnimplementedServiceServer
 	Srv services.Service
+	// GRPCServerResource is assigned by the caller to the net.Resource returned from
+	// BrokerExt.ServeNew for this gRPC server. Service.Close stops Srv and then closes
+	// the server listener (grpc.Server.Stop), which is otherwise not tied to the client Close RPC.
+	GRPCServerResource *net.Resource
 }
 
 func (s *ServiceServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.Srv.Close()
+	err := s.Srv.Close()
+	if s.GRPCServerResource != nil && s.GRPCServerResource.Closer != nil {
+		err = errors.Join(err, s.GRPCServerResource.Close())
+	}
+	return &emptypb.Empty{}, err
 }
 
 func (s *ServiceServer) Ready(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {

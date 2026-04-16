@@ -60,9 +60,11 @@ func (c *CommitLOOPClient) NewCommitFactory(ctx context.Context, provider types.
 		} else {
 			// loop client runs in the core node. if the provider is not a grpc client conn, then we are in legacy mode
 			// and need to serve all the required services locally.
-			providerID, providerResource, err = c.ServeNew("CommitProvider", func(s *grpc.Server) {
-				ccipprovider.RegisterCommitProviderServices(s, provider, c.BrokerExt)
+			var grpcSrvRes net.Resource
+			providerID, grpcSrvRes, err = c.ServeNew("CommitProvider", func(s *grpc.Server) {
+				ccipprovider.RegisterCommitProviderServices(s, provider, c.BrokerExt, &grpcSrvRes)
 			})
+			providerResource = grpcSrvRes
 		}
 		if err != nil {
 			return 0, nil, err
@@ -121,8 +123,11 @@ func (r *CommitLOOPServer) NewCommitFactory(ctx context.Context, request *ccippb
 		return nil, fmt.Errorf("failed to create new commit factory: %w", err)
 	}
 
-	id, _, err := r.ServeNew("CommitFactory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
+	var grpcSrvRes net.Resource
+	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
+	var id uint32
+	id, grpcSrvRes, err = r.ServeNew("CommitFactory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, ss)
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, r.BrokerExt))
 	}, deps...)
 	if err != nil {

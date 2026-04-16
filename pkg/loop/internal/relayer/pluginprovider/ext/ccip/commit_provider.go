@@ -15,8 +15,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
-func RegisterCommitProviderServices(s *grpc.Server, provider types.CCIPCommitProvider, brokerExt *net.BrokerExt) {
-	ocr2.RegisterPluginProviderServices(s, provider)
+func RegisterCommitProviderServices(s *grpc.Server, provider types.CCIPCommitProvider, brokerExt *net.BrokerExt, grpcSrvRes *net.Resource) {
+	ocr2.RegisterPluginProviderServices(s, provider, grpcSrvRes)
 	// register the handler for the custom methods of the provider eg NewOffRampReader
 	ccippb.RegisterCommitCustomHandlersServer(s, NewCommitProviderServer(provider, brokerExt))
 }

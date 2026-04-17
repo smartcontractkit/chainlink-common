@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -511,7 +512,12 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			}
 			transmitters := make([][]byte, len(cfg.Transmitters))
 			for i, t := range cfg.Transmitters {
-				transmitters[i] = []byte(t)
+				decoded, hexErr := hex.DecodeString(string(t))
+				if hexErr == nil {
+					transmitters[i] = decoded
+				} else {
+					transmitters[i] = []byte(t)
+				}
 			}
 			ccp.Ocr3Configs[key] = &capabilitiespb.OCR3Config{
 				ConfigCount:           cfg.ConfigCount,

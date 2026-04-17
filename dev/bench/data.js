@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776414239195,
+  "lastUpdate": 1776438463381,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -44460,6 +44460,66 @@ window.BENCHMARK_DATA = {
             "value": 147786,
             "unit": "ns/op",
             "extra": "7756 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cd522c53ee6e36baef0fab468ddcee9e1fdb240f",
+          "message": "feat(beholder): add logger field to otel (#1987)",
+          "timestamp": "2026-04-17T14:59:54Z",
+          "tree_id": "a695254da88e2c87fa65d42ce3be7c3f9902f23f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cd522c53ee6e36baef0fab468ddcee9e1fdb240f"
+        },
+        "date": 1776438461673,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 468.2,
+            "unit": "ns/op",
+            "extra": "2459412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93571,
+            "unit": "ns/op",
+            "extra": "12789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 398.3,
+            "unit": "ns/op",
+            "extra": "2978566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94344,
+            "unit": "ns/op",
+            "extra": "12724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26661,
+            "unit": "ns/op",
+            "extra": "45039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142010,
+            "unit": "ns/op",
+            "extra": "8356 times\n4 procs"
           }
         ]
       }

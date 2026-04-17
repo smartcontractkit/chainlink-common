@@ -62,7 +62,7 @@ func (c *CommitLOOPClient) NewCommitFactory(ctx context.Context, provider types.
 			// and need to serve all the required services locally.
 			var grpcSrvRes net.Resource
 			providerID, grpcSrvRes, err = c.ServeNew("CommitProvider", func(s *grpc.Server) {
-				ccipprovider.RegisterCommitProviderServices(s, provider, c.BrokerExt, &grpcSrvRes)
+				ccipprovider.RegisterCommitProviderServices(s, provider, c.BrokerExt)
 			})
 			providerResource = grpcSrvRes
 		}
@@ -123,11 +123,9 @@ func (r *CommitLOOPServer) NewCommitFactory(ctx context.Context, request *ccippb
 		return nil, fmt.Errorf("failed to create new commit factory: %w", err)
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
 	var id uint32
-	id, grpcSrvRes, err = r.ServeNew("CommitFactory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err = r.ServeNew("CommitFactory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, r.BrokerExt))
 	}, deps...)
 	if err != nil {

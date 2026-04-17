@@ -70,7 +70,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			providerID, grpcSrvRes, err = m.Serve("MedianProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, grpcSrvRes, err = m.ServeNew("MedianProvider", func(s *grpc.Server) {
-				medianprovider.RegisterProviderServices(s, provider, &grpcSrvRes)
+				medianprovider.RegisterProviderServices(s, provider)
 			})
 		}
 		if err != nil {
@@ -185,10 +185,8 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 		return nil, err
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 	if err != nil {

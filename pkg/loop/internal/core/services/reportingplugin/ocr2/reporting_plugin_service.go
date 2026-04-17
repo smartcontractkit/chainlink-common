@@ -220,10 +220,8 @@ func (m *reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Con
 		return nil, err
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, keyValueStoreRes, relayerSetRes)
 	if err != nil {
@@ -239,10 +237,8 @@ func (m *reportingPluginServiceServer) NewValidationService(ctx context.Context,
 		return nil, err
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: service, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := m.ServeNew("ValidationService", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := m.ServeNew("ValidationService", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: service})
 		pb.RegisterValidationServiceServer(s, validation.NewValidationServiceServer(service, m.BrokerExt))
 	})
 	if err != nil {

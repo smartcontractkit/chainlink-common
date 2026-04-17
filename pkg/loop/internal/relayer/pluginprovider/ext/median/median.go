@@ -318,8 +318,8 @@ func (m ProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net
 	return pc
 }
 
-func RegisterProviderServices(s *grpc.Server, provider types.MedianProvider, grpcSrvRes *net.Resource) {
-	ocr2.RegisterPluginProviderServices(s, provider, grpcSrvRes)
+func RegisterProviderServices(s *grpc.Server, provider types.MedianProvider) {
+	ocr2.RegisterPluginProviderServices(s, provider)
 	pb.RegisterReportCodecServer(s, &reportCodecServer{impl: provider.ReportCodec()})
 	pb.RegisterMedianContractServer(s, &medianContractServer{impl: provider.MedianContract()})
 	pb.RegisterOnchainConfigCodecServer(s, &onchainConfigCodecServer{impl: provider.OnchainConfigCodec()})

@@ -225,9 +225,8 @@ func (s *Server) NewContractWriter(ctx context.Context, req *relayerset.NewContr
 
 	// Start gRPC service for the ContractWriter service above
 	const name = "ContractWriterInRelayerSet"
-	var grpcSrvRes net.Resource
-	id, grpcSrvRes, err := s.broker.ServeNew(name, func(s *grpc.Server) {
-		contractwriter.RegisterContractWriterService(s, contractWriter, &grpcSrvRes)
+	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
+		contractwriter.RegisterContractWriterService(s, contractWriter)
 	}, net.Resource{Closer: contractWriter, Name: name})
 	if err != nil {
 		return nil, err

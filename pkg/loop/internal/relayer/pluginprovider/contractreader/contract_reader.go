@@ -858,7 +858,7 @@ func convertSequencesWithKeyFromProto(pbSequences []*pb.SequenceWithKey, keyQuer
 	}, nil
 }
 
-func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader, grpcSrvRes *net.Resource) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader, GRPCServerResource: grpcSrvRes})
+func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
 	pb.RegisterContractReaderServer(s, NewServer(contractReader))
 }

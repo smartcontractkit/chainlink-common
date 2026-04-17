@@ -64,7 +64,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			// and need to serve all the required services locally.
 			var grpcSrvRes net.Resource
 			srcProviderID, grpcSrvRes, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
-				ccipprovider.RegisterExecutionProviderServices(s, srcProvider, c.BrokerExt, &grpcSrvRes)
+				ccipprovider.RegisterExecutionProviderServices(s, srcProvider, c.BrokerExt)
 			})
 			srcProviderResource = grpcSrvRes
 		}
@@ -82,7 +82,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			// and need to serve all the required services locally.
 			var grpcSrvRes net.Resource
 			dstProviderID, grpcSrvRes, err = c.ServeNew("ExecProvider", func(s *grpc.Server) {
-				ccipprovider.RegisterExecutionProviderServices(s, dstProvider, c.BrokerExt, &grpcSrvRes)
+				ccipprovider.RegisterExecutionProviderServices(s, dstProvider, c.BrokerExt)
 			})
 			dstProviderResource = grpcSrvRes
 		}
@@ -162,11 +162,9 @@ func (r *ExecutionLOOPServer) NewExecutionFactory(ctx context.Context, request *
 		return nil, fmt.Errorf("failed to create new execution factory: %w", err)
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
 	var id uint32
-	id, grpcSrvRes, err = r.ServeNew("ExecutionFactory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err = r.ServeNew("ExecutionFactory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		pb.RegisterReportingPluginFactoryServer(s, ocr2.NewReportingPluginFactoryServer(factory, r.BrokerExt))
 	}, deps...)
 	if err != nil {

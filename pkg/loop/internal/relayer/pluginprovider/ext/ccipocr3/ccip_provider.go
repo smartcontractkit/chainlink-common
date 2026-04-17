@@ -90,9 +90,9 @@ func (s CCIPProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker
 	return NewCCIPProviderClient(be, conn)
 }
 
-func RegisterProviderServices(s *grpc.Server, provider types.CCIPProvider, grpcSrvRes *net.Resource) {
+func RegisterProviderServices(s *grpc.Server, provider types.CCIPProvider) {
 	// Register base Service for goplugin framework
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: provider, GRPCServerResource: grpcSrvRes})
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: provider})
 
 	// Register ChainAccessor service
 	ccipocr3pb.RegisterChainAccessorServer(s, NewChainAccessorServer(provider.ChainAccessor()))

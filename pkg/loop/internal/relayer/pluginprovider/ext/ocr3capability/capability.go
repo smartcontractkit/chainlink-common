@@ -45,7 +45,7 @@ func (m ProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net
 	return NewProviderClient(be, conn)
 }
 
-func RegisterProviderServices(s *grpc.Server, provider types.OCR3CapabilityProvider, grpcSrvRes *net.Resource) {
-	ocr2.RegisterPluginProviderServices(s, provider, grpcSrvRes)
+func RegisterProviderServices(s *grpc.Server, provider types.OCR3CapabilityProvider) {
+	ocr2.RegisterPluginProviderServices(s, provider)
 	ocr3pb.RegisterContractTransmitterServer(s, ocr3.NewContractTransmitterServer(provider.OCR3ContractTransmitter()))
 }

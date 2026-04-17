@@ -71,7 +71,7 @@ func (c *AdapterClient) NewMercuryV1Factory(ctx context.Context,
 			providerID, grpcSrvRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, grpcSrvRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
-				ocr2.RegisterPluginProviderServices(s, provider, &grpcSrvRes)
+				ocr2.RegisterPluginProviderServices(s, provider)
 				mercuryprovider.RegisterProviderServicesV1(s, provider)
 			})
 		}
@@ -119,7 +119,7 @@ func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
 			providerID, grpcSrvRes, err = c.Serve("MercuryProvider", proxy.NewProxy(grpcProvider.ClientConn()))
 		} else {
 			providerID, grpcSrvRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
-				ocr2.RegisterPluginProviderServices(s, provider, &grpcSrvRes)
+				ocr2.RegisterPluginProviderServices(s, provider)
 				mercuryprovider.RegisterProviderServicesV2(s, provider)
 			})
 		}
@@ -169,7 +169,7 @@ func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
 		} else {
 			// legacy mode; serve the provider locally in the client process (ie the core node)
 			providerID, grpcSrvRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
-				ocr2.RegisterPluginProviderServices(s, provider, &grpcSrvRes)
+				ocr2.RegisterPluginProviderServices(s, provider)
 				mercuryprovider.RegisterProviderServicesV3(s, provider)
 			})
 		}
@@ -219,7 +219,7 @@ func (c *AdapterClient) NewMercuryV4Factory(ctx context.Context,
 		} else {
 			// legacy mode; serve the provider locally in the client process (ie the core node)
 			providerID, grpcSrvRes, err = c.ServeNew("MercuryProvider", func(s *grpc.Server) {
-				ocr2.RegisterPluginProviderServices(s, provider, &grpcSrvRes)
+				ocr2.RegisterPluginProviderServices(s, provider)
 				mercuryprovider.RegisterProviderServicesV4(s, provider)
 			})
 		}
@@ -290,10 +290,8 @@ func (ms *AdapterServer) NewMercuryV1Factory(ctx context.Context, req *mercurypb
 		return nil, fmt.Errorf("failed to create MercuryV1Factory: %w", err)
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := ms.ServeNew("MercuryV1Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := ms.ServeNew("MercuryV1Factory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercurypb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -333,10 +331,8 @@ func (ms *AdapterServer) NewMercuryV2Factory(ctx context.Context, req *mercurypb
 		return nil, fmt.Errorf("failed to create MercuryV2Factory: %w", err)
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := ms.ServeNew("MercuryV2Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := ms.ServeNew("MercuryV2Factory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercurypb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -376,10 +372,8 @@ func (ms *AdapterServer) NewMercuryV3Factory(ctx context.Context, req *mercurypb
 		return nil, fmt.Errorf("failed to create MercuryV3Factory: %w", err)
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := ms.ServeNew("MercuryV3Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := ms.ServeNew("MercuryV3Factory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercurypb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {
@@ -419,10 +413,8 @@ func (ms *AdapterServer) NewMercuryV4Factory(ctx context.Context, req *mercurypb
 		return nil, fmt.Errorf("failed to create MercuryV4Factory: %w", err)
 	}
 
-	var grpcSrvRes net.Resource
-	ss := &goplugin.ServiceServer{Srv: factory, GRPCServerResource: &grpcSrvRes}
-	id, grpcSrvRes, err := ms.ServeNew("MercuryV4Factory", func(s *grpc.Server) {
-		pb.RegisterServiceServer(s, ss)
+	id, _, err := ms.ServeNew("MercuryV4Factory", func(s *grpc.Server) {
+		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
 		mercurypb.RegisterMercuryPluginFactoryServer(s, newMercuryPluginFactoryServer(factory, ms.BrokerExt))
 	}, deps...)
 	if err != nil {

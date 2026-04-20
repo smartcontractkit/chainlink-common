@@ -50,7 +50,11 @@ func (ss *stellarServer) GetLedgerEntries(ctx context.Context, req *stelpb.GetLe
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetLedgerEntriesResponseToProto(dResp), nil
+	pResp, err := stelpb.ConvertGetLedgerEntriesResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLedgerEntries response: %w", err)
+	}
+	return pResp, nil
 }
 
 func (ss *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (*stelpb.GetLatestLedgerResponse, error) {
@@ -62,7 +66,11 @@ func (ss *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) 
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetLatestLedgerResponseToProto(dResp), nil
+	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
 }
 
 // getStellarService extracts the RelayID from context metadata and returns the StellarService

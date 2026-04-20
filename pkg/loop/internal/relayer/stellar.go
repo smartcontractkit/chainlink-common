@@ -25,12 +25,19 @@ func NewStellarClient(client stelpb.StellarClient) *StellarClient {
 }
 
 func (sc *StellarClient) GetLedgerEntries(ctx context.Context, req stellar.GetLedgerEntriesRequest) (stellar.GetLedgerEntriesResponse, error) {
-	pReq := stelpb.ConvertGetLedgerEntriesRequestToProto(req)
+	pReq, err := stelpb.ConvertGetLedgerEntriesRequestToProto(req)
+	if err != nil {
+		return stellar.GetLedgerEntriesResponse{}, fmt.Errorf("invalid GetLedgerEntries request: %w", err)
+	}
 	pResp, err := sc.grpcClient.GetLedgerEntries(ctx, pReq)
 	if err != nil {
 		return stellar.GetLedgerEntriesResponse{}, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetLedgerEntriesResponseFromProto(pResp), nil
+	resp, err := stelpb.ConvertGetLedgerEntriesResponseFromProto(pResp)
+	if err != nil {
+		return stellar.GetLedgerEntriesResponse{}, fmt.Errorf("invalid GetLedgerEntries response: %w", err)
+	}
+	return resp, nil
 }
 
 func (sc *StellarClient) GetLatestLedger(ctx context.Context) (stellar.GetLatestLedgerResponse, error) {
@@ -38,7 +45,11 @@ func (sc *StellarClient) GetLatestLedger(ctx context.Context) (stellar.GetLatest
 	if err != nil {
 		return stellar.GetLatestLedgerResponse{}, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetLatestLedgerResponseFromProto(pResp), nil
+	resp, err := stelpb.ConvertGetLatestLedgerResponseFromProto(pResp)
+	if err != nil {
+		return stellar.GetLatestLedgerResponse{}, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return resp, nil
 }
 
 // stellarServer wraps types.StellarService and exposes it as a stelpb.StellarServer gRPC endpoint.
@@ -65,7 +76,11 @@ func (s *stellarServer) GetLedgerEntries(ctx context.Context, req *stelpb.GetLed
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetLedgerEntriesResponseToProto(dResp), nil
+	pResp, err := stelpb.ConvertGetLedgerEntriesResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLedgerEntries response: %w", err)
+	}
+	return pResp, nil
 }
 
 func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (*stelpb.GetLatestLedgerResponse, error) {
@@ -73,5 +88,9 @@ func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetLatestLedgerResponseToProto(dResp), nil
+	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
 }

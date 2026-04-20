@@ -21,6 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	soltypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
+	stellartypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
@@ -1525,6 +1526,157 @@ func (r *testRelaySetPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	rs, _ := NewRelayerSetServer(r.log, r.impl, r.brokerExt)
 	relayerset.RegisterRelayerSetServerWithDependants(server, rs)
 	return nil
+}
+
+func Test_RelayerSet_StellarService(t *testing.T) {
+	ctx := t.Context()
+	stopCh := make(chan struct{})
+	log := logger.Test(t)
+
+	relayer1 := mocks.NewRelayer(t)
+	relayers := map[types.RelayID]core.Relayer{
+		{Network: "N1", ChainID: "C1"}: relayer1,
+	}
+
+	pluginName := "stellar-relayerset-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRelaySetPlugin{
+				log:  log,
+				impl: &TestRelayerSet{relayers: relayers},
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: log,
+					},
+				},
+			},
+		},
+	)
+	defer client.Close()
+	defer server.Stop()
+
+	relayerSetClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+	rc, ok := relayerSetClient.(*Client)
+	require.True(t, ok)
+
+	retrievedRelayer, err := rc.Get(ctx, types.RelayID{Network: "N1", ChainID: "C1"})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T, svc types.StellarService, mockSvc *staticStellarService)
+	}{
+		{
+			name: "GetLedgerEntries_WithLiveUntil",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *staticStellarService) {
+				liveUntil := uint32(9999)
+				mockSvc.getLedgerEntries = func(_ context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
+					require.Equal(t, []stellartypes.XDR{"a2V5MQ=="}, req.Keys) // base64("key1")
+					return stellartypes.GetLedgerEntriesResponse{
+						LatestLedger: 80,
+						Entries: []stellartypes.LedgerEntryResult{
+							{
+								KeyXDR:             "a2V5MQ==", // base64("key1")
+								DataXDR:            "ZGF0YTE=", // base64("data1")
+								LastModifiedLedger: 70,
+								LiveUntilLedgerSeq: &liveUntil,
+							},
+						},
+					}, nil
+				}
+
+				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"a2V5MQ=="}})
+				require.NoError(t, err)
+				require.Equal(t, uint32(80), resp.LatestLedger)
+				require.Len(t, resp.Entries, 1)
+				require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)
+				require.Equal(t, liveUntil, *resp.Entries[0].LiveUntilLedgerSeq)
+				require.Equal(t, stellartypes.XDR("a2V5MQ=="), resp.Entries[0].KeyXDR)
+			},
+		},
+		{
+			name: "GetLedgerEntries_NoLiveUntil",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *staticStellarService) {
+				mockSvc.getLedgerEntries = func(_ context.Context, _ stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
+					return stellartypes.GetLedgerEntriesResponse{
+						LatestLedger: 90,
+						Entries: []stellartypes.LedgerEntryResult{
+							{
+								KeyXDR:             "a2V5Mg==", // base64("key2")
+								DataXDR:            "data2XDR", // valid 8-char base64
+								LastModifiedLedger: 85,
+								LiveUntilLedgerSeq: nil,
+							},
+						},
+					}, nil
+				}
+
+				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"a2V5Mg=="}})
+				require.NoError(t, err)
+				require.Equal(t, uint32(90), resp.LatestLedger)
+				require.Len(t, resp.Entries, 1)
+				require.Nil(t, resp.Entries[0].LiveUntilLedgerSeq)
+			},
+		},
+		{
+			name: "GetLatestLedger",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *staticStellarService) {
+				mockSvc.getLatestLedger = func(_ context.Context) (stellartypes.GetLatestLedgerResponse, error) {
+					return stellartypes.GetLatestLedgerResponse{
+						Hash:            "deadbeef", // valid 4-byte hex
+						ProtocolVersion: 22,
+						Sequence:        4321,
+						LedgerCloseTime: 9000000,
+					}, nil
+				}
+
+				resp, err := svc.GetLatestLedger(ctx)
+				require.NoError(t, err)
+				require.Equal(t, stellartypes.LedgerHash("deadbeef"), resp.Hash)
+				require.Equal(t, uint32(22), resp.ProtocolVersion)
+				require.Equal(t, uint32(4321), resp.Sequence)
+				require.Equal(t, int64(9000000), resp.LedgerCloseTime)
+			},
+		},
+	}
+
+	fetchedSvc, err := retrievedRelayer.Stellar()
+	require.NoError(t, err)
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mockSvc := &staticStellarService{}
+			relayer1.On("Stellar").Return(mockSvc, nil).Once()
+
+			tc.run(t, fetchedSvc, mockSvc)
+		})
+	}
+}
+
+// staticStellarService is a hand-written test double for types.StellarService.
+// No mockery-generated mock exists for StellarService yet.
+type staticStellarService struct {
+	types.UnimplementedStellarService
+	getLedgerEntries func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
+	getLatestLedger  func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
+}
+
+func (s *staticStellarService) GetLedgerEntries(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
+	if s.getLedgerEntries == nil {
+		return s.UnimplementedStellarService.GetLedgerEntries(ctx, req)
+	}
+	return s.getLedgerEntries(ctx, req)
+}
+
+func (s *staticStellarService) GetLatestLedger(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error) {
+	if s.getLatestLedger == nil {
+		return s.UnimplementedStellarService.GetLatestLedger(ctx)
+	}
+	return s.getLatestLedger(ctx)
 }
 
 func generateFixtureQuery() []query.Expression {

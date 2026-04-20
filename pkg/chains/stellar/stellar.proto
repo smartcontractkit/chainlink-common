@@ -1,0 +1,44 @@
+syntax = "proto3";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar";
+
+import "google/protobuf/empty.proto";
+
+package loop.stellar;
+
+// Stellar exposes the five core Stellar RPC operations over gRPC.
+service Stellar {
+  rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
+  rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
+}
+
+// GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
+message GetLedgerEntriesRequest {
+  repeated bytes keys = 1;  // each key as binary XDR (LedgerKey)
+}
+
+// LedgerEntryResult is a single ledger entry.
+message LedgerEntryResult {
+  bytes  key_xdr = 1;   // LedgerKey binary XDR
+  bytes  data_xdr = 2;  // LedgerEntry binary XDR
+  uint32 last_modified_ledger = 3;
+  // has_live_until_ledger_seq indicates whether live_until_ledger_seq is set.
+  bool   has_live_until_ledger_seq = 4;
+  uint32 live_until_ledger_seq = 5;
+  bytes  extension_xdr = 6;  // LedgerEntry extension binary XDR; empty if absent
+}
+
+// GetLedgerEntriesResponse contains the requested ledger entries.
+message GetLedgerEntriesResponse {
+  repeated LedgerEntryResult entries = 1;
+  uint32 latest_ledger = 2;
+}
+
+// GetLatestLedgerResponse holds current ledger state.
+message GetLatestLedgerResponse {
+  bytes  hash = 1;              // 32-byte raw ledger hash
+  uint32 protocol_version = 2;
+  uint32 sequence = 3;
+  int64  ledger_close_time = 4;
+  bytes  ledger_header_xdr = 5;   // LedgerHeader binary XDR
+  bytes  ledger_metadata_xdr = 6; // LedgerCloseMetaV2 binary XDR
+}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776704888493,
+  "lastUpdate": 1776719654537,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -44580,6 +44580,66 @@ window.BENCHMARK_DATA = {
             "value": 146417,
             "unit": "ns/op",
             "extra": "7803 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32529249+silaslenihan@users.noreply.github.com",
+            "name": "Silas Lenihan",
+            "username": "silaslenihan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "afd603dd8f5c13f59c490dc203ed77fd8b1413ef",
+          "message": "Solana LogTrigger: Support Anchor 0.3 and CPI Events (#1872)\n\n* Solana LogTrigger: Change eventIdlJson to contractIdlJson\n\n* Added CPIFilterConfig to generated code and proto helpers (#1875)\n\n* Added CPIFilterConfig to generated code and proto helpers\n\n* Added CPIFilterConfig to generated code and proto helpers",
+          "timestamp": "2026-04-20T21:04:28Z",
+          "tree_id": "eaba1ff88f23a3b8ec5725df5527cd06b2ee949f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/afd603dd8f5c13f59c490dc203ed77fd8b1413ef"
+        },
+        "date": 1776719652406,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 411.5,
+            "unit": "ns/op",
+            "extra": "2708836 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 54994,
+            "unit": "ns/op",
+            "extra": "21556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 293.2,
+            "unit": "ns/op",
+            "extra": "4088029 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 55455,
+            "unit": "ns/op",
+            "extra": "21351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22742,
+            "unit": "ns/op",
+            "extra": "53026 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 96927,
+            "unit": "ns/op",
+            "extra": "12351 times\n4 procs"
           }
         ]
       }

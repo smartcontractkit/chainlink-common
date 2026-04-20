@@ -7,15 +7,14 @@
 package solana
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	sdk "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	_ "github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 	pb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (

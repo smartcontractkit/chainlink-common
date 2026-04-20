@@ -74,6 +74,17 @@ type DurableEmitterConfig struct {
 	// Publish with no store insert. An empty slice persists nothing (all best-effort only).
 	// A one-element slice containing only "*" is treated like nil (persist all).
 	PersistCloudEventSources []string
+	// InsertBatchSize enables write coalescing when > 0 and the store implements
+	// BatchInserter. Multiple concurrent Emit() calls are grouped into a single
+	// multi-row INSERT, dramatically reducing per-event transaction overhead.
+	// Each coalescer worker collects up to InsertBatchSize payloads before flushing.
+	InsertBatchSize int
+	// InsertBatchFlushInterval is the linger time after the first payload arrives
+	// in a coalescing batch. Zero defaults to 2ms.
+	InsertBatchFlushInterval time.Duration
+	// InsertBatchWorkers is the number of concurrent batch-insert goroutines.
+	// Zero defaults to 4.
+	InsertBatchWorkers int
 	// QuietMode suppresses high-volume INFO-level logs (retransmit scan stats,
 	// retransmit results, publish failures, expired event purges, etc.).
 	// Error-level logs are never suppressed. Useful for load tests where the
@@ -136,6 +147,17 @@ type publishWork struct {
 	event   *chipingress.CloudEventPb // original struct; set from Emit(), nil from retransmit
 }
 
+// insertRequest is a single Emit() caller waiting for a coalesced batch INSERT.
+type insertRequest struct {
+	payload []byte
+	result  chan insertResult
+}
+
+type insertResult struct {
+	id  int64
+	err error
+}
+
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
@@ -148,6 +170,13 @@ type DurableEmitter struct {
 	// rawConn is the underlying gRPC connection when the client exposes it.
 	// Non-nil enables zero-copy batch publishing (protowire + ForceCodec).
 	rawConn *grpc.ClientConn
+
+	// batchInserter is non-nil when the store supports multi-row INSERTs
+	// and InsertBatchSize > 0.
+	batchInserter BatchInserter
+	// insertCh buffers payloads for the write coalescer. Nil when batch
+	// inserting is disabled.
+	insertCh chan *insertRequest
 
 	// pendingCount is an exact, atomic count of rows inserted but not yet
 	// delivered/deleted. Incremented on successful Insert, decremented on
@@ -280,6 +309,20 @@ func NewDurableEmitter(
 		d.rawConn = cp.Conn()
 		log.Infow("DurableEmitter: raw-codec batch publishing enabled (zero-copy protowire)")
 	}
+	if cfg.InsertBatchSize > 0 {
+		if bi, ok := store.(BatchInserter); ok {
+			d.batchInserter = bi
+			chanSize := cfg.InsertBatchSize * 200
+			if chanSize < 10_000 {
+				chanSize = 10_000
+			}
+			d.insertCh = make(chan *insertRequest, chanSize)
+			log.Infow("DurableEmitter: write coalescing enabled",
+				"insertBatchSize", cfg.InsertBatchSize,
+				"insertBatchWorkers", cfg.InsertBatchWorkers,
+				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
+		}
+	}
 	if cfg.PublishBatchSize > 0 {
 		bufSize := cfg.PublishBatchChannelSize
 		if bufSize <= 0 {
@@ -307,6 +350,13 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 	if d.publishCh != nil {
 		n += batchWorkers
 	}
+	insertWorkers := d.cfg.InsertBatchWorkers
+	if insertWorkers <= 0 {
+		insertWorkers = 4
+	}
+	if d.insertCh != nil {
+		n += insertWorkers
+	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		n++
 	}
@@ -315,6 +365,11 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 	if !d.cfg.DisablePruning {
 		go d.expiryLoop(ctx)
 		go d.purgeLoop(ctx)
+	}
+	if d.insertCh != nil {
+		for i := 0; i < insertWorkers; i++ {
+			go d.insertBatchLoop(ctx)
+		}
 	}
 	if d.publishCh != nil {
 		for i := 0; i < batchWorkers; i++ {
@@ -330,6 +385,12 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 // by PersistCloudEventSources; otherwise it performs a single best-effort Publish with no
 // persistence. Returns nil once processing is accepted (insert succeeded, or non-persist path started).
 func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	tEmitTotal := time.Now()
+	defer func() {
+		if d.metrics != nil {
+			d.metrics.emitTotalDuration.Record(ctx, time.Since(tEmitTotal).Seconds())
+		}
+	}()
 	emitFail := func() {
 		if d.metrics != nil {
 			d.metrics.emitFail.Add(ctx, 1)
@@ -370,22 +431,58 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		return fmt.Errorf("failed to marshal event proto: %w", err)
 	}
 
-	tIns := time.Now()
-	id, err := d.store.Insert(ctx, payload)
-	insElapsed := time.Since(tIns)
-	if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
-		h.OnEmitInsert(insElapsed, err)
-	}
-	if d.metrics != nil {
-		d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
-		if err != nil {
-			d.metrics.emitFail.Add(ctx, 1)
-		} else {
-			d.metrics.emitSuccess.Add(ctx, 1)
+	var id int64
+	var insElapsed time.Duration
+
+	if d.insertCh != nil {
+		// Write coalescing: send payload to the batch insert loop and block
+		// until the multi-row INSERT completes.
+		req := &insertRequest{
+			payload: payload,
+			result:  make(chan insertResult, 1),
 		}
-	}
-	if err != nil {
-		return fmt.Errorf("failed to persist event: %w", err)
+		tIns := time.Now()
+		select {
+		case d.insertCh <- req:
+		case <-ctx.Done():
+			emitFail()
+			return ctx.Err()
+		}
+		res := <-req.result
+		insElapsed = time.Since(tIns)
+		if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
+			h.OnEmitInsert(insElapsed, res.err)
+		}
+		if d.metrics != nil {
+			d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+			if res.err != nil {
+				d.metrics.emitFail.Add(ctx, 1)
+			} else {
+				d.metrics.emitSuccess.Add(ctx, 1)
+			}
+		}
+		if res.err != nil {
+			return fmt.Errorf("failed to persist event: %w", res.err)
+		}
+		id = res.id
+	} else {
+		tIns := time.Now()
+		id, err = d.store.Insert(ctx, payload)
+		insElapsed = time.Since(tIns)
+		if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
+			h.OnEmitInsert(insElapsed, err)
+		}
+		if d.metrics != nil {
+			d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+			if err != nil {
+				d.metrics.emitFail.Add(ctx, 1)
+			} else {
+				d.metrics.emitSuccess.Add(ctx, 1)
+			}
+		}
+		if err != nil {
+			return fmt.Errorf("failed to persist event: %w", err)
+		}
 	}
 
 	d.incPending(1)
@@ -458,12 +555,77 @@ func (d *DurableEmitter) publishBestEffortNoStore(eventPb *chipingress.CloudEven
 // can drain remaining events before returning.
 func (d *DurableEmitter) Close() error {
 	close(d.stopCh)
+	if d.insertCh != nil {
+		close(d.insertCh)
+	}
 	if d.publishCh != nil {
 		close(d.publishCh)
 	}
 	d.wg.Wait()
 	d.markWg.Wait()
 	return nil
+}
+
+// insertBatchLoop collects insertRequest items from insertCh and flushes them
+// as multi-row INSERTs via BatchInserter.InsertBatch. Uses a linger pattern:
+// blocks for the first request, then collects more until the batch is full or
+// the flush interval elapses.
+func (d *DurableEmitter) insertBatchLoop(ctx context.Context) {
+	defer d.wg.Done()
+	batchSize := d.cfg.InsertBatchSize
+	linger := d.cfg.InsertBatchFlushInterval
+	if linger <= 0 {
+		linger = 2 * time.Millisecond
+	}
+	batch := make([]*insertRequest, 0, batchSize)
+
+	for {
+		batch = batch[:0]
+
+		// Block until first request or shutdown.
+		select {
+		case req, ok := <-d.insertCh:
+			if !ok {
+				return
+			}
+			batch = append(batch, req)
+		case <-ctx.Done():
+			return
+		case <-d.stopCh:
+			return
+		}
+
+		// Linger to collect more.
+		timer := time.NewTimer(linger)
+	collecting:
+		for len(batch) < batchSize {
+			select {
+			case req, ok := <-d.insertCh:
+				if !ok {
+					timer.Stop()
+					break collecting
+				}
+				batch = append(batch, req)
+			case <-timer.C:
+				break collecting
+			}
+		}
+		timer.Stop()
+
+		// Flush: multi-row INSERT.
+		payloads := make([][]byte, len(batch))
+		for i, r := range batch {
+			payloads[i] = r.payload
+		}
+		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+		for i, r := range batch {
+			if batchErr != nil {
+				r.result <- insertResult{err: batchErr}
+			} else {
+				r.result <- insertResult{id: ids[i]}
+			}
+		}
+	}
 }
 
 // PendingDepth returns the current exact pending queue depth (inserted but not

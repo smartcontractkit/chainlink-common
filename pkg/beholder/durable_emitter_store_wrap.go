@@ -78,3 +78,14 @@ func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, even
 	}
 	return o.ObserveDurableQueue(ctx, eventTTL, nearExpiryLead)
 }
+
+func (s *metricsInstrumentedStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+	bi, ok := s.inner.(BatchInserter)
+	if !ok {
+		return nil, errors.New("inner DurableEventStore does not implement BatchInserter")
+	}
+	t0 := time.Now()
+	ids, err := bi.InsertBatch(ctx, payloads)
+	s.m.recordStoreOp(ctx, "insert_batch", time.Since(t0), err)
+	return ids, err
+}

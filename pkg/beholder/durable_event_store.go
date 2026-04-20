@@ -34,6 +34,14 @@ type DurableQueueObserver interface {
 	ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error)
 }
 
+// BatchInserter is optionally implemented by DurableEventStore implementations
+// to support multi-row inserts for higher throughput. When the store implements
+// this interface and InsertBatchSize > 0, DurableEmitter coalesces Emit() calls
+// into batched INSERTs, dramatically reducing per-event transaction overhead.
+type BatchInserter interface {
+	InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error)
+}
+
 // DurableEventStore abstracts the persistence layer for durable chip events.
 // Implementations must be safe for concurrent use.
 type DurableEventStore interface {
@@ -67,8 +75,9 @@ type MemDurableEventStore struct {
 }
 
 var (
-	_ DurableEventStore     = (*MemDurableEventStore)(nil)
-	_ DurableQueueObserver  = (*MemDurableEventStore)(nil)
+	_ DurableEventStore    = (*MemDurableEventStore)(nil)
+	_ DurableQueueObserver = (*MemDurableEventStore)(nil)
+	_ BatchInserter        = (*MemDurableEventStore)(nil)
 )
 
 func NewMemDurableEventStore() *MemDurableEventStore {
@@ -87,6 +96,23 @@ func (m *MemDurableEventStore) Insert(_ context.Context, payload []byte) (int64,
 		CreatedAt: time.Now(),
 	}
 	return id, nil
+}
+
+func (m *MemDurableEventStore) InsertBatch(_ context.Context, payloads [][]byte) ([]int64, error) {
+	now := time.Now()
+	ids := make([]int64, len(payloads))
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i, p := range payloads {
+		id := m.nextID.Add(1)
+		m.events[id] = &DurableEvent{
+			ID:        id,
+			Payload:   append([]byte(nil), p...),
+			CreatedAt: now,
+		}
+		ids[i] = id
+	}
+	return ids, nil
 }
 
 func (m *MemDurableEventStore) Delete(_ context.Context, id int64) error {

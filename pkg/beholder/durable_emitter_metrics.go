@@ -30,6 +30,7 @@ type durableEmitterMetrics struct {
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
+	emitTotalDuration  metric.Float64Histogram
 	publishImmOK       metric.Int64Counter
 	publishImmErr      metric.Int64Counter
 	publishDuration    metric.Float64Histogram
@@ -76,6 +77,14 @@ func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
 		durableEmitterMetricEmitDuration.Name,
 		metric.WithUnit(durableEmitterMetricEmitDuration.Unit),
 		metric.WithDescription(durableEmitterMetricEmitDuration.Description),
+		durationBuckets,
+	); err != nil {
+		return nil, err
+	}
+	if m.emitTotalDuration, err = meter.Float64Histogram(
+		durableEmitterMetricEmitTotalDuration.Name,
+		metric.WithUnit(durableEmitterMetricEmitTotalDuration.Unit),
+		metric.WithDescription(durableEmitterMetricEmitTotalDuration.Description),
 		durationBuckets,
 	); err != nil {
 		return nil, err

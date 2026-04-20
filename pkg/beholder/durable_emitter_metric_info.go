@@ -19,6 +19,11 @@ var (
 		Unit:        "s",
 		Description: "Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds)",
 	}
+	durableEmitterMetricEmitTotalDuration = MetricInfo{
+		Name:        "beholder.durable_emitter.emit.total_duration",
+		Unit:        "s",
+		Description: "Full Emit() wall time including event construction, DB insert, and channel enqueue (seconds)",
+	}
 	durableEmitterMetricPublishImmSuccess = MetricInfo{
 		Name:        "beholder.durable_emitter.publish.immediate.success",
 		Unit:        "{call}",

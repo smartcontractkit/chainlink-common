@@ -110,6 +110,11 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		attributes = append(attributes, attribute.String("caller", entry.Caller.String()))
 	}
 
+	// Add zap logger name when present
+	if entry.LoggerName != "" {
+		attributes = append(attributes, attribute.String("logger", entry.LoggerName))
+	}
+
 	// Add exception metadata for error levels
 	if entry.Level > zapcore.InfoLevel {
 		if entry.Stack != "" {

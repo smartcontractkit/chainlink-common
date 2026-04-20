@@ -5,7 +5,6 @@ import "google/protobuf/empty.proto";
 
 package loop.stellar;
 
-// Stellar exposes the five core Stellar RPC operations over gRPC.
 service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);

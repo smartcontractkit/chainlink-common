@@ -27,8 +27,6 @@ const (
 // StellarClient is the client API for Stellar service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Stellar exposes the five core Stellar RPC operations over gRPC.
 type StellarClient interface {
 	GetLedgerEntries(ctx context.Context, in *GetLedgerEntriesRequest, opts ...grpc.CallOption) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLedgerResponse, error)
@@ -65,8 +63,6 @@ func (c *stellarClient) GetLatestLedger(ctx context.Context, in *emptypb.Empty, 
 // StellarServer is the server API for Stellar service.
 // All implementations must embed UnimplementedStellarServer
 // for forward compatibility.
-//
-// Stellar exposes the five core Stellar RPC operations over gRPC.
 type StellarServer interface {
 	GetLedgerEntries(context.Context, *GetLedgerEntriesRequest) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error)

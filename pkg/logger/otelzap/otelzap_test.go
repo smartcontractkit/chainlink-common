@@ -189,12 +189,13 @@ func TestOtelZapCore_Write(t *testing.T) {
 	core := NewCore(logger).(*OtelZapCore)
 
 	tests := []struct {
-		name        string
-		entry       zapcore.Entry
-		fields      []zapcore.Field
-		coreFields  []zapcore.Field
-		wantMessage string
-		wantAttrs   map[string]string
+		name          string
+		entry         zapcore.Entry
+		fields        []zapcore.Field
+		coreFields    []zapcore.Field
+		wantMessage   string
+		wantAttrs     map[string]string
+		mustLackAttrs []string
 	}{
 		{
 			name: "basic info log",
@@ -206,8 +207,9 @@ func TestOtelZapCore_Write(t *testing.T) {
 			fields: []zapcore.Field{
 				{Key: "foo", Type: zapcore.StringType, String: "bar"},
 			},
-			wantMessage: "hello world",
-			wantAttrs:   map[string]string{"foo": "bar"},
+			wantMessage:   "hello world",
+			wantAttrs:     map[string]string{"foo": "bar"},
+			mustLackAttrs: []string{"logger"},
 		},
 		{
 			name: "error log with stack and caller",
@@ -227,6 +229,7 @@ func TestOtelZapCore_Write(t *testing.T) {
 				"caller":               "file.go:42",
 				"exception.stacktrace": "stacktrace",
 			},
+			mustLackAttrs: []string{"logger"},
 		},
 		{
 			name: "core fields and span context",
@@ -252,6 +255,18 @@ func TestOtelZapCore_Write(t *testing.T) {
 				"span_id":     "0405060000000000",
 				"trace_flags": "01",
 			},
+			mustLackAttrs: []string{"logger"},
+		},
+		{
+			name: "logger name is emitted",
+			entry: zapcore.Entry{
+				Message:    "named",
+				Level:      zapcore.InfoLevel,
+				Time:       time.Now(),
+				LoggerName: "svc.sub",
+			},
+			wantMessage: "named",
+			wantAttrs:   map[string]string{"logger": "svc.sub"},
 		},
 	}
 
@@ -291,6 +306,9 @@ func TestOtelZapCore_Write(t *testing.T) {
 			for k, v := range tt.wantAttrs {
 				assert.Contains(t, got, k, "expected key %q", k)
 				assert.Equal(t, v, got[k], "mismatch for key %q", k)
+			}
+			for _, k := range tt.mustLackAttrs {
+				assert.NotContains(t, got, k, "unexpected attribute %q", k)
 			}
 		})
 	}

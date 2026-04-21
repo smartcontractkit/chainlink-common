@@ -17,6 +17,9 @@ func ConvertViewPayloadFromProto(payload *ViewPayload) (*typesaptos.ViewPayload,
 	if payload.Module == nil {
 		return nil, fmt.Errorf("viewRequest.Payload.Module is required")
 	}
+	if payload.Module.Name == "" {
+		return nil, fmt.Errorf("viewRequest.Payload.Module.Name is required")
+	}
 	if payload.Function == "" {
 		return nil, fmt.Errorf("viewRequest.Payload.Function is required")
 	}
@@ -78,7 +81,7 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 		}
 		elementType, err := ConvertTypeTagFromProto(vector.ElementType)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid vector element type: %w", err)
 		}
 		return &typesaptos.TypeTag{Value: typesaptos.VectorTag{ElementType: *elementType}}, nil
 	case TypeTagKind_TYPE_TAG_KIND_STRUCT:

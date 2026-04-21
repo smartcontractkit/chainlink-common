@@ -69,6 +69,12 @@ func TestConvertViewPayloadFromProto_RejectsInvalidPayloadInputs(t *testing.T) {
 	require.ErrorContains(t, err, "viewRequest.Payload.Function is required")
 
 	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{
+		Module:   &aptoscap.ModuleID{Address: []byte{0x01}},
+		Function: "name",
+	})
+	require.ErrorContains(t, err, "viewRequest.Payload.Module.Name is required")
+
+	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{
 		Module:   &aptoscap.ModuleID{Address: make([]byte, typesaptos.AccountAddressLength+1), Name: "coin"},
 		Function: "name",
 	})
@@ -91,6 +97,19 @@ func TestConvertTypeTagFromProto_RejectsInvalidInput(t *testing.T) {
 		}},
 	})
 	require.ErrorContains(t, err, "struct address too long")
+
+	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
+		Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_VECTOR,
+		Value: &aptoscap.TypeTag_Vector{Vector: &aptoscap.VectorTag{
+			ElementType: &aptoscap.TypeTag{
+				Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
+				Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
+					Address: make([]byte, typesaptos.AccountAddressLength+1),
+				}},
+			},
+		}},
+	})
+	require.ErrorContains(t, err, "invalid vector element type: struct address too long")
 
 	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
 		Kind:  aptoscap.TypeTagKind_TYPE_TAG_KIND_GENERIC,

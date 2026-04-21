@@ -57,86 +57,119 @@ func TestConvertViewPayloadFromProto_ConvertsNestedVectorStructAndGenericTags(t 
 func TestConvertViewPayloadFromProto_RejectsInvalidPayloadInputs(t *testing.T) {
 	t.Parallel()
 
-	_, err := aptoscap.ConvertViewPayloadFromProto(nil)
-	require.ErrorContains(t, err, "payload is required")
+	testCases := []struct {
+		name    string
+		payload *aptoscap.ViewPayload
+		wantErr string
+	}{
+		{
+			name:    "missing payload",
+			payload: nil,
+			wantErr: "payload is required",
+		},
+		{
+			name:    "missing module",
+			payload: &aptoscap.ViewPayload{Function: "name"},
+			wantErr: "payload.module is required",
+		},
+		{
+			name: "missing module address",
+			payload: &aptoscap.ViewPayload{
+				Module:   &aptoscap.ModuleID{Name: "coin"},
+				Function: "name",
+			},
+			wantErr: "payload.module.address is required",
+		},
+		{
+			name: "missing function",
+			payload: &aptoscap.ViewPayload{
+				Module: &aptoscap.ModuleID{Address: []byte{0x01}, Name: "coin"},
+			},
+			wantErr: "payload.function is required",
+		},
+		{
+			name: "missing module name",
+			payload: &aptoscap.ViewPayload{
+				Module:   &aptoscap.ModuleID{Address: []byte{0x01}},
+				Function: "name",
+			},
+			wantErr: "payload.module.name is required",
+		},
+		{
+			name: "oversized module address",
+			payload: &aptoscap.ViewPayload{
+				Module:   &aptoscap.ModuleID{Address: make([]byte, typesaptos.AccountAddressLength+1), Name: "coin"},
+				Function: "name",
+			},
+			wantErr: "module address too long",
+		},
+	}
 
-	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{Function: "name"})
-	require.ErrorContains(t, err, "payload.module is required")
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{
-		Module:   &aptoscap.ModuleID{Name: "coin"},
-		Function: "name",
-	})
-	require.ErrorContains(t, err, "payload.module.address is required")
-
-	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{
-		Module: &aptoscap.ModuleID{Address: []byte{0x01}, Name: "coin"},
-	})
-	require.ErrorContains(t, err, "payload.function is required")
-
-	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{
-		Module:   &aptoscap.ModuleID{Address: []byte{0x01}},
-		Function: "name",
-	})
-	require.ErrorContains(t, err, "payload.module.name is required")
-
-	_, err = aptoscap.ConvertViewPayloadFromProto(&aptoscap.ViewPayload{
-		Module:   &aptoscap.ModuleID{Address: make([]byte, typesaptos.AccountAddressLength+1), Name: "coin"},
-		Function: "name",
-	})
-	require.ErrorContains(t, err, "module address too long")
+			_, err := aptoscap.ConvertViewPayloadFromProto(tc.payload)
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
 }
 
 func TestConvertTypeTagFromProto_RejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
-	_, err := aptoscap.ConvertTypeTagFromProto(nil)
-	require.ErrorContains(t, err, "type tag is nil")
-
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{Kind: aptoscap.TypeTagKind(255)})
-	require.ErrorContains(t, err, "unsupported type tag kind")
-
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
-		Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
-		Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
-			Module: "coin",
-			Name:   "Coin",
-		}},
-	})
-	require.ErrorContains(t, err, "struct address is required")
-
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
-		Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
-		Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
-			Address: []byte{0x01},
-			Name:    "Coin",
-		}},
-	})
-	require.ErrorContains(t, err, "struct module is required")
-
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
-		Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
-		Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
-			Address: []byte{0x01},
-			Module:  "coin",
-		}},
-	})
-	require.ErrorContains(t, err, "struct name is required")
-
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
-		Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
-		Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
-			Address: make([]byte, typesaptos.AccountAddressLength+1),
-			Module:  "coin",
-			Name:    "Coin",
-		}},
-	})
-	require.ErrorContains(t, err, "struct address too long")
-
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
-		Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_VECTOR,
-		Value: &aptoscap.TypeTag_Vector{Vector: &aptoscap.VectorTag{
-			ElementType: &aptoscap.TypeTag{
+	testCases := []struct {
+		name    string
+		tag     *aptoscap.TypeTag
+		wantErr string
+	}{
+		{
+			name:    "nil type tag",
+			tag:     nil,
+			wantErr: "type tag is nil",
+		},
+		{
+			name:    "unsupported kind",
+			tag:     &aptoscap.TypeTag{Kind: aptoscap.TypeTagKind(255)},
+			wantErr: "unsupported type tag kind",
+		},
+		{
+			name: "missing struct address",
+			tag: &aptoscap.TypeTag{
+				Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
+				Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
+					Module: "coin",
+					Name:   "Coin",
+				}},
+			},
+			wantErr: "struct address is required",
+		},
+		{
+			name: "missing struct module",
+			tag: &aptoscap.TypeTag{
+				Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
+				Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
+					Address: []byte{0x01},
+					Name:    "Coin",
+				}},
+			},
+			wantErr: "struct module is required",
+		},
+		{
+			name: "missing struct name",
+			tag: &aptoscap.TypeTag{
+				Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
+				Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
+					Address: []byte{0x01},
+					Module:  "coin",
+				}},
+			},
+			wantErr: "struct name is required",
+		},
+		{
+			name: "oversized struct address",
+			tag: &aptoscap.TypeTag{
 				Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
 				Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
 					Address: make([]byte, typesaptos.AccountAddressLength+1),
@@ -144,13 +177,42 @@ func TestConvertTypeTagFromProto_RejectsInvalidInput(t *testing.T) {
 					Name:    "Coin",
 				}},
 			},
-		}},
-	})
-	require.ErrorContains(t, err, "invalid vector element type: struct address too long")
+			wantErr: "struct address too long",
+		},
+		{
+			name: "invalid vector element type",
+			tag: &aptoscap.TypeTag{
+				Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_VECTOR,
+				Value: &aptoscap.TypeTag_Vector{Vector: &aptoscap.VectorTag{
+					ElementType: &aptoscap.TypeTag{
+						Kind: aptoscap.TypeTagKind_TYPE_TAG_KIND_STRUCT,
+						Value: &aptoscap.TypeTag_Struct{Struct: &aptoscap.StructTag{
+							Address: make([]byte, typesaptos.AccountAddressLength+1),
+							Module:  "coin",
+							Name:    "Coin",
+						}},
+					},
+				}},
+			},
+			wantErr: "invalid vector element type: struct address too long",
+		},
+		{
+			name: "generic index out of range",
+			tag: &aptoscap.TypeTag{
+				Kind:  aptoscap.TypeTagKind_TYPE_TAG_KIND_GENERIC,
+				Value: &aptoscap.TypeTag_Generic{Generic: &aptoscap.GenericTag{Index: 1 << 16}},
+			},
+			wantErr: "generic type index out of range",
+		},
+	}
 
-	_, err = aptoscap.ConvertTypeTagFromProto(&aptoscap.TypeTag{
-		Kind:  aptoscap.TypeTagKind_TYPE_TAG_KIND_GENERIC,
-		Value: &aptoscap.TypeTag_Generic{Generic: &aptoscap.GenericTag{Index: 1 << 16}},
-	})
-	require.ErrorContains(t, err, "generic type index out of range")
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := aptoscap.ConvertTypeTagFromProto(tc.tag)
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
 }

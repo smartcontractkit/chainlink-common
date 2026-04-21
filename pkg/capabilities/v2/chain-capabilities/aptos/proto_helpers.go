@@ -17,14 +17,14 @@ func ConvertViewPayloadFromProto(payload *ViewPayload) (*typesaptos.ViewPayload,
 	if payload.Module == nil {
 		return nil, fmt.Errorf("payload.module is required")
 	}
-	if len(payload.Module.Address) == 0 {
-		return nil, fmt.Errorf("payload.module.address is required")
+	if err := requireNonEmptyBytes(payload.Module.Address, "payload.module.address"); err != nil {
+		return nil, err
 	}
-	if payload.Module.Name == "" {
-		return nil, fmt.Errorf("payload.module.name is required")
+	if err := requireNonEmptyString(payload.Module.Name, "payload.module.name"); err != nil {
+		return nil, err
 	}
-	if payload.Function == "" {
-		return nil, fmt.Errorf("payload.function is required")
+	if err := requireNonEmptyString(payload.Function, "payload.function"); err != nil {
+		return nil, err
 	}
 
 	moduleAddress, err := convertAccountAddressFromProto(payload.Module.Address, "module")
@@ -92,14 +92,14 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 		if structTag == nil {
 			return nil, fmt.Errorf("struct tag missing struct value")
 		}
-		if len(structTag.Address) == 0 {
-			return nil, fmt.Errorf("struct address is required")
+		if err := requireNonEmptyBytes(structTag.Address, "struct address"); err != nil {
+			return nil, err
 		}
-		if structTag.Module == "" {
-			return nil, fmt.Errorf("struct module is required")
+		if err := requireNonEmptyString(structTag.Module, "struct module"); err != nil {
+			return nil, err
 		}
-		if structTag.Name == "" {
-			return nil, fmt.Errorf("struct name is required")
+		if err := requireNonEmptyString(structTag.Name, "struct name"); err != nil {
+			return nil, err
 		}
 
 		structAddress, err := convertAccountAddressFromProto(structTag.Address, "struct")
@@ -134,6 +134,20 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 	default:
 		return nil, fmt.Errorf("unsupported type tag kind: %v", tag.Kind)
 	}
+}
+
+func requireNonEmptyBytes(value []byte, field string) error {
+	if len(value) == 0 {
+		return fmt.Errorf("%s is required", field)
+	}
+	return nil
+}
+
+func requireNonEmptyString(value string, field string) error {
+	if value == "" {
+		return fmt.Errorf("%s is required", field)
+	}
+	return nil
 }
 
 func convertAccountAddressFromProto(address []byte, field string) (typesaptos.AccountAddress, error) {

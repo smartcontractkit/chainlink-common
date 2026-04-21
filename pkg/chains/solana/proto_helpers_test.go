@@ -401,3 +401,61 @@ func TestErrorJoinBehavior_PublicKeys(t *testing.T) {
 	// Ensure errors.Is behaves reasonably (not super strict here)
 	require.True(t, errors.Is(err, err))
 }
+
+func TestConvertCPIFilterConfigToProto(t *testing.T) {
+	t.Run("nil input returns nil", func(t *testing.T) {
+		got, err := conv.ConvertCPIFilterConfigToProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("valid config converts successfully", func(t *testing.T) {
+		addr := mkBytes(typesolana.PublicKeyLength, 0xAB)
+		methodName := []byte("someMethod")
+		in := &conv.CPIFilterConfig{
+			DestAddress: addr,
+			MethodName:  methodName,
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		require.Equal(t, addr, got.DestAddress[:])
+		require.Equal(t, "someMethod", got.MethodName)
+	})
+
+	t.Run("nil address returns error", func(t *testing.T) {
+		in := &conv.CPIFilterConfig{
+			DestAddress: nil,
+			MethodName:  []byte("method"),
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "convert address err")
+		require.Contains(t, err.Error(), "address can't be nil")
+	})
+
+	t.Run("invalid address length returns error", func(t *testing.T) {
+		in := &conv.CPIFilterConfig{
+			DestAddress: mkBytes(typesolana.PublicKeyLength-1, 0x01),
+			MethodName:  []byte("method"),
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "convert address err")
+		require.Contains(t, err.Error(), "invalid public key")
+	})
+
+	t.Run("empty method name is allowed", func(t *testing.T) {
+		addr := mkBytes(typesolana.PublicKeyLength, 0x11)
+		in := &conv.CPIFilterConfig{
+			DestAddress: addr,
+			MethodName:  nil,
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		require.Equal(t, "", got.MethodName)
+	})
+}

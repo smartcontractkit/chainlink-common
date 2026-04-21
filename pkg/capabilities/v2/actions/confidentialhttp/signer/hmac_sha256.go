@@ -13,7 +13,7 @@ import (
 )
 
 type hmacSha256Signer struct {
-	secretName      string
+	secret          *confhttppb.SecretIdentifier
 	signatureHeader string
 	timestampHeader string
 	includeQuery    bool
@@ -25,8 +25,8 @@ func newHmacSha256Signer(cfg *confhttppb.HmacSha256) (Signer, error) {
 	if cfg == nil {
 		return nil, errors.New("hmac_sha256 config is nil")
 	}
-	if cfg.GetSecretName() == "" {
-		return nil, errors.New("hmac_sha256: secret_name is required")
+	if cfg.GetSecret() == nil {
+		return nil, errors.New("hmac_sha256: secret is required")
 	}
 	sh := cfg.GetSignatureHeader()
 	if sh == "" {
@@ -37,7 +37,7 @@ func newHmacSha256Signer(cfg *confhttppb.HmacSha256) (Signer, error) {
 		th = "X-Timestamp"
 	}
 	return &hmacSha256Signer{
-		secretName:      cfg.GetSecretName(),
+		secret:          cfg.GetSecret(),
 		signatureHeader: sh,
 		timestampHeader: th,
 		includeQuery:    cfg.GetIncludeQuery(),
@@ -47,7 +47,7 @@ func newHmacSha256Signer(cfg *confhttppb.HmacSha256) (Signer, error) {
 }
 
 func (s *hmacSha256Signer) Sign(_ context.Context, req *http.Request, secrets map[string]string) error {
-	secret, err := resolveSecret(secrets, s.secretName)
+	secret, err := resolveSecretID(secrets, s.secret)
 	if err != nil {
 		return err
 	}

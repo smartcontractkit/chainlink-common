@@ -11,14 +11,14 @@ import (
 )
 
 type oauth2RefreshSigner struct {
-	tokenURL               string
-	refreshTokenSecretName string
-	clientIDSecretName     string // optional
-	clientSecretSecretName string // optional
-	scopes                 []string
-	extraParams            map[string]string
-	httpClient             *http.Client
-	cache                  *oauth2Cache
+	tokenURL     string
+	refreshToken *confhttppb.SecretIdentifier
+	clientID     *confhttppb.StringOrSecret   // optional
+	clientSecret *confhttppb.SecretIdentifier // optional
+	scopes       []string
+	extraParams  map[string]string
+	httpClient   *http.Client
+	cache        *oauth2Cache
 }
 
 func newOAuth2RefreshSigner(cfg *confhttppb.OAuth2RefreshToken, httpClient *http.Client, cache *oauth2Cache) (Signer, error) {
@@ -28,36 +28,36 @@ func newOAuth2RefreshSigner(cfg *confhttppb.OAuth2RefreshToken, httpClient *http
 	if cfg.GetTokenUrl() == "" {
 		return nil, errors.New("oauth2 refresh_token: token_url is required")
 	}
-	if cfg.GetRefreshTokenSecretName() == "" {
-		return nil, errors.New("oauth2 refresh_token: refresh_token_secret_name is required")
+	if cfg.GetRefreshToken() == nil {
+		return nil, errors.New("oauth2 refresh_token: refresh_token is required")
 	}
 	return &oauth2RefreshSigner{
-		tokenURL:               cfg.GetTokenUrl(),
-		refreshTokenSecretName: cfg.GetRefreshTokenSecretName(),
-		clientIDSecretName:     cfg.GetClientIdSecretName(),
-		clientSecretSecretName: cfg.GetClientSecretSecretName(),
-		scopes:                 cfg.GetScopes(),
-		extraParams:            cfg.GetExtraParams(),
-		httpClient:             httpClient,
-		cache:                  cache,
+		tokenURL:     cfg.GetTokenUrl(),
+		refreshToken: cfg.GetRefreshToken(),
+		clientID:     cfg.GetClientId(),
+		clientSecret: cfg.GetClientSecret(),
+		scopes:       cfg.GetScopes(),
+		extraParams:  cfg.GetExtraParams(),
+		httpClient:   httpClient,
+		cache:        cache,
 	}, nil
 }
 
 func (s *oauth2RefreshSigner) Sign(ctx context.Context, req *http.Request, secrets map[string]string) error {
-	rt, err := resolveSecret(secrets, s.refreshTokenSecretName)
+	rt, err := resolveSecretID(secrets, s.refreshToken)
 	if err != nil {
 		return err
 	}
 
 	var cid, csec string
-	if s.clientIDSecretName != "" {
-		cid, err = resolveSecret(secrets, s.clientIDSecretName)
+	if s.clientID != nil {
+		cid, err = resolveStringOrSecret(secrets, s.clientID)
 		if err != nil {
 			return err
 		}
 	}
-	if s.clientSecretSecretName != "" {
-		csec, err = resolveSecret(secrets, s.clientSecretSecretName)
+	if s.clientSecret != nil {
+		csec, err = resolveSecretID(secrets, s.clientSecret)
 		if err != nil {
 			return err
 		}

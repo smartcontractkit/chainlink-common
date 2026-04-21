@@ -11,6 +11,11 @@ import "errors"
 // (e.g. missing required fields, secret-name not in vault_don_secrets) are
 // returned from the confidentialhttp validator.
 var (
+	// ErrSecretIdentifierNil means an auth variant referenced a nil
+	// SecretIdentifier. The validator should have rejected the request
+	// before it reached the signer.
+	ErrSecretIdentifierNil = errors.New("confidentialhttp signer: secret identifier is nil")
+
 	// ErrSecretNameEmpty means an auth variant referenced a secret name
 	// that was the empty string. This should never happen if the validator
 	// ran first.
@@ -24,6 +29,12 @@ var (
 	// ErrSecretEmpty means the Vault-DON returned an empty value for a
 	// required secret.
 	ErrSecretEmpty = errors.New("confidentialhttp signer: required secret is empty")
+
+	// ErrStringOrSecretNil means a required StringOrSecret field was nil.
+	ErrStringOrSecretNil = errors.New("confidentialhttp signer: StringOrSecret is nil")
+
+	// ErrStringOrSecretUnset means a StringOrSecret oneof had no variant set.
+	ErrStringOrSecretUnset = errors.New("confidentialhttp signer: StringOrSecret value not set")
 
 	// ErrSigV4Sign indicates the AWS SigV4 signer failed. Wrapped with the
 	// underlying error from aws-sdk-go-v2.

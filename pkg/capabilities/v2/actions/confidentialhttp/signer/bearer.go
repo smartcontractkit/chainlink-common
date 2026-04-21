@@ -9,7 +9,7 @@ import (
 )
 
 type bearerSigner struct {
-	secretName  string
+	token       *confhttppb.SecretIdentifier
 	headerName  string
 	valuePrefix string
 }
@@ -18,8 +18,8 @@ func newBearerSigner(cfg *confhttppb.BearerAuth) (Signer, error) {
 	if cfg == nil {
 		return nil, errors.New("bearer auth config is nil")
 	}
-	if cfg.GetTokenSecretName() == "" {
-		return nil, errors.New("bearer: token_secret_name is required")
+	if cfg.GetToken() == nil {
+		return nil, errors.New("bearer: token is required")
 	}
 	h := cfg.GetHeaderName()
 	if h == "" {
@@ -30,14 +30,14 @@ func newBearerSigner(cfg *confhttppb.BearerAuth) (Signer, error) {
 		p = "Bearer "
 	}
 	return &bearerSigner{
-		secretName:  cfg.GetTokenSecretName(),
+		token:       cfg.GetToken(),
 		headerName:  h,
 		valuePrefix: p,
 	}, nil
 }
 
 func (s *bearerSigner) Sign(_ context.Context, req *http.Request, secrets map[string]string) error {
-	tok, err := resolveSecret(secrets, s.secretName)
+	tok, err := resolveSecretID(secrets, s.token)
 	if err != nil {
 		return err
 	}

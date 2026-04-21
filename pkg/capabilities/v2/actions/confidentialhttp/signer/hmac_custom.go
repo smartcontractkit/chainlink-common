@@ -26,7 +26,7 @@ import (
 const hmacTemplateBudget = 30 * time.Millisecond
 
 type hmacCustomSigner struct {
-	secretName      string
+	secret          *confhttppb.SecretIdentifier
 	tpl             *template.Template
 	hashFactory     func() hash.Hash
 	signatureHeader string
@@ -42,8 +42,8 @@ func newHmacCustomSigner(cfg *confhttppb.HmacCustom) (Signer, error) {
 	if cfg == nil {
 		return nil, errors.New("hmac_custom config is nil")
 	}
-	if cfg.GetSecretName() == "" {
-		return nil, errors.New("hmac_custom: secret_name is required")
+	if cfg.GetSecret() == nil {
+		return nil, errors.New("hmac_custom: secret is required")
 	}
 	if cfg.GetCanonicalTemplate() == "" {
 		return nil, errors.New("hmac_custom: canonical_template is required")
@@ -77,7 +77,7 @@ func newHmacCustomSigner(cfg *confhttppb.HmacCustom) (Signer, error) {
 	}
 
 	return &hmacCustomSigner{
-		secretName:      cfg.GetSecretName(),
+		secret:          cfg.GetSecret(),
 		tpl:             tpl,
 		hashFactory:     factory,
 		signatureHeader: cfg.GetSignatureHeader(),
@@ -91,7 +91,7 @@ func newHmacCustomSigner(cfg *confhttppb.HmacCustom) (Signer, error) {
 }
 
 func (s *hmacCustomSigner) Sign(ctx context.Context, req *http.Request, secrets map[string]string) error {
-	secret, err := resolveSecret(secrets, s.secretName)
+	secret, err := resolveSecretID(secrets, s.secret)
 	if err != nil {
 		return err
 	}

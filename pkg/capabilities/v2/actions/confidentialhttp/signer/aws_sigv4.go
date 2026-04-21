@@ -18,22 +18,22 @@ import (
 const unsignedPayload = "UNSIGNED-PAYLOAD"
 
 type awsSigV4Signer struct {
-	accessKeyIDSecretName     string
-	secretAccessKeySecretName string
-	sessionTokenSecretName    string // optional
-	region                    string
-	service                   string
-	unsignedPayload           bool
-	signer                    *v4.Signer
-	nowFn                     func() time.Time
+	accessKeyID     *confhttppb.StringOrSecret
+	secretAccessKey *confhttppb.SecretIdentifier
+	sessionToken    *confhttppb.SecretIdentifier // optional
+	region          string
+	service         string
+	unsignedPayload bool
+	signer          *v4.Signer
+	nowFn           func() time.Time
 }
 
 func newAwsSigV4Signer(cfg *confhttppb.AwsSigV4) (Signer, error) {
 	if cfg == nil {
 		return nil, errors.New("aws_sig_v4 config is nil")
 	}
-	if cfg.GetAccessKeyIdSecretName() == "" || cfg.GetSecretAccessKeySecretName() == "" {
-		return nil, errors.New("aws_sig_v4: access_key_id_secret_name and secret_access_key_secret_name are required")
+	if cfg.GetAccessKeyId() == nil || cfg.GetSecretAccessKey() == nil {
+		return nil, errors.New("aws_sig_v4: access_key_id and secret_access_key are required")
 	}
 	if cfg.GetRegion() == "" {
 		return nil, errors.New("aws_sig_v4: region is required")
@@ -42,23 +42,23 @@ func newAwsSigV4Signer(cfg *confhttppb.AwsSigV4) (Signer, error) {
 		return nil, errors.New("aws_sig_v4: service is required")
 	}
 	return &awsSigV4Signer{
-		accessKeyIDSecretName:     cfg.GetAccessKeyIdSecretName(),
-		secretAccessKeySecretName: cfg.GetSecretAccessKeySecretName(),
-		sessionTokenSecretName:    cfg.GetSessionTokenSecretName(),
-		region:                    cfg.GetRegion(),
-		service:                   cfg.GetService(),
-		unsignedPayload:           cfg.GetUnsignedPayload(),
-		signer:                    v4.NewSigner(),
-		nowFn:                     time.Now,
+		accessKeyID:     cfg.GetAccessKeyId(),
+		secretAccessKey: cfg.GetSecretAccessKey(),
+		sessionToken:    cfg.GetSessionToken(),
+		region:          cfg.GetRegion(),
+		service:         cfg.GetService(),
+		unsignedPayload: cfg.GetUnsignedPayload(),
+		signer:          v4.NewSigner(),
+		nowFn:           time.Now,
 	}, nil
 }
 
 func (s *awsSigV4Signer) Sign(ctx context.Context, req *http.Request, secrets map[string]string) error {
-	ak, err := resolveSecret(secrets, s.accessKeyIDSecretName)
+	ak, err := resolveStringOrSecret(secrets, s.accessKeyID)
 	if err != nil {
 		return err
 	}
-	sk, err := resolveSecret(secrets, s.secretAccessKeySecretName)
+	sk, err := resolveSecretID(secrets, s.secretAccessKey)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func (s *awsSigV4Signer) Sign(ctx context.Context, req *http.Request, secrets ma
 		AccessKeyID:     ak,
 		SecretAccessKey: sk,
 	}
-	if s.sessionTokenSecretName != "" {
-		st, err := resolveSecret(secrets, s.sessionTokenSecretName)
+	if s.sessionToken != nil {
+		st, err := resolveSecretID(secrets, s.sessionToken)
 		if err != nil {
 			return err
 		}

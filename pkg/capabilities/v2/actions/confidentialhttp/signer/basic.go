@@ -10,29 +10,29 @@ import (
 )
 
 type basicSigner struct {
-	usernameSecretName string
-	passwordSecretName string
+	username *confhttppb.StringOrSecret
+	password *confhttppb.SecretIdentifier
 }
 
 func newBasicSigner(cfg *confhttppb.BasicAuth) (Signer, error) {
 	if cfg == nil {
 		return nil, errors.New("basic auth config is nil")
 	}
-	if cfg.GetUsernameSecretName() == "" || cfg.GetPasswordSecretName() == "" {
-		return nil, errors.New("basic: username_secret_name and password_secret_name are required")
+	if cfg.GetUsername() == nil || cfg.GetPassword() == nil {
+		return nil, errors.New("basic: username and password are required")
 	}
 	return &basicSigner{
-		usernameSecretName: cfg.GetUsernameSecretName(),
-		passwordSecretName: cfg.GetPasswordSecretName(),
+		username: cfg.GetUsername(),
+		password: cfg.GetPassword(),
 	}, nil
 }
 
 func (s *basicSigner) Sign(_ context.Context, req *http.Request, secrets map[string]string) error {
-	u, err := resolveSecret(secrets, s.usernameSecretName)
+	u, err := resolveStringOrSecret(secrets, s.username)
 	if err != nil {
 		return err
 	}
-	p, err := resolveSecret(secrets, s.passwordSecretName)
+	p, err := resolveSecretID(secrets, s.password)
 	if err != nil {
 		return err
 	}

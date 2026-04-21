@@ -78,10 +78,7 @@ func (b *Builder) Build(auth *confhttppb.AuthConfig) (Signer, error) {
 }
 
 // resolveSecret returns the utf8 secret value for name or an error if the
-// workflow did not provide it. The confidentialhttp capability validator
-// enforces that every name referenced by AuthConfig appears in
-// vault_don_secrets, so missing values here should be treated as an
-// internal error in most cases.
+// workflow did not provide it.
 func resolveSecret(secrets map[string]string, name string) (string, error) {
 	if name == "" {
 		return "", ErrSecretNameEmpty
@@ -94,4 +91,30 @@ func resolveSecret(secrets map[string]string, name string) (string, error) {
 		return "", fmt.Errorf("%w: %q", ErrSecretEmpty, name)
 	}
 	return v, nil
+}
+
+// resolveSecretID looks up the decrypted value for a *SecretIdentifier in the
+// secrets map, keyed by id.Key.
+func resolveSecretID(secrets map[string]string, id *confhttppb.SecretIdentifier) (string, error) {
+	if id == nil {
+		return "", ErrSecretIdentifierNil
+	}
+	return resolveSecret(secrets, id.GetKey())
+}
+
+// resolveStringOrSecret resolves a *StringOrSecret oneof:
+//   - StringOrSecret_Plain  → returns the literal string
+//   - StringOrSecret_Secret → looks up the key in the secrets map
+func resolveStringOrSecret(secrets map[string]string, sos *confhttppb.StringOrSecret) (string, error) {
+	if sos == nil {
+		return "", ErrStringOrSecretNil
+	}
+	switch v := sos.GetValue().(type) {
+	case *confhttppb.StringOrSecret_Plain:
+		return v.Plain, nil
+	case *confhttppb.StringOrSecret_Secret:
+		return resolveSecretID(secrets, v.Secret)
+	default:
+		return "", ErrStringOrSecretUnset
+	}
 }

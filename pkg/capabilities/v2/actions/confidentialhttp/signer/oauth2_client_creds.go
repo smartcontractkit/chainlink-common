@@ -11,15 +11,15 @@ import (
 )
 
 type oauth2ClientCredsSigner struct {
-	tokenURL               string
-	clientIDSecretName     string
-	clientSecretSecretName string
-	scopes                 []string
-	audience               string
-	clientAuthMethod       string
-	extraParams            map[string]string
-	httpClient             *http.Client
-	cache                  *oauth2Cache
+	tokenURL         string
+	clientID         *confhttppb.StringOrSecret
+	clientSecret     *confhttppb.SecretIdentifier
+	scopes           []string
+	audience         string
+	clientAuthMethod string
+	extraParams      map[string]string
+	httpClient       *http.Client
+	cache            *oauth2Cache
 }
 
 func newOAuth2ClientCredsSigner(cfg *confhttppb.OAuth2ClientCredentials, httpClient *http.Client, cache *oauth2Cache) (Signer, error) {
@@ -29,8 +29,8 @@ func newOAuth2ClientCredsSigner(cfg *confhttppb.OAuth2ClientCredentials, httpCli
 	if cfg.GetTokenUrl() == "" {
 		return nil, errors.New("oauth2 client_credentials: token_url is required")
 	}
-	if cfg.GetClientIdSecretName() == "" || cfg.GetClientSecretSecretName() == "" {
-		return nil, errors.New("oauth2 client_credentials: client_id_secret_name and client_secret_secret_name are required")
+	if cfg.GetClientId() == nil || cfg.GetClientSecret() == nil {
+		return nil, errors.New("oauth2 client_credentials: client_id and client_secret are required")
 	}
 	method := cfg.GetClientAuthMethod()
 	if method == "" {
@@ -40,24 +40,24 @@ func newOAuth2ClientCredsSigner(cfg *confhttppb.OAuth2ClientCredentials, httpCli
 		return nil, errors.New("oauth2 client_credentials: client_auth_method must be 'basic_auth' or 'request_body'")
 	}
 	return &oauth2ClientCredsSigner{
-		tokenURL:               cfg.GetTokenUrl(),
-		clientIDSecretName:     cfg.GetClientIdSecretName(),
-		clientSecretSecretName: cfg.GetClientSecretSecretName(),
-		scopes:                 cfg.GetScopes(),
-		audience:               cfg.GetAudience(),
-		clientAuthMethod:       method,
-		extraParams:            cfg.GetExtraParams(),
-		httpClient:             httpClient,
-		cache:                  cache,
+		tokenURL:         cfg.GetTokenUrl(),
+		clientID:         cfg.GetClientId(),
+		clientSecret:     cfg.GetClientSecret(),
+		scopes:           cfg.GetScopes(),
+		audience:         cfg.GetAudience(),
+		clientAuthMethod: method,
+		extraParams:      cfg.GetExtraParams(),
+		httpClient:       httpClient,
+		cache:            cache,
 	}, nil
 }
 
 func (s *oauth2ClientCredsSigner) Sign(ctx context.Context, req *http.Request, secrets map[string]string) error {
-	cid, err := resolveSecret(secrets, s.clientIDSecretName)
+	cid, err := resolveStringOrSecret(secrets, s.clientID)
 	if err != nil {
 		return err
 	}
-	csec, err := resolveSecret(secrets, s.clientSecretSecretName)
+	csec, err := resolveSecretID(secrets, s.clientSecret)
 	if err != nil {
 		return err
 	}

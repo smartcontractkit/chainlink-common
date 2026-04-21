@@ -17,6 +17,19 @@ import (
 	confhttppb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 )
 
+// helper constructors to reduce proto verbosity in tests
+func sid(key string) *confhttppb.SecretIdentifier {
+	return &confhttppb.SecretIdentifier{Key: key}
+}
+
+func plainSoS(val string) *confhttppb.StringOrSecret {
+	return &confhttppb.StringOrSecret{Value: &confhttppb.StringOrSecret_Plain{Plain: val}}
+}
+
+func secretSoS(key string) *confhttppb.StringOrSecret {
+	return &confhttppb.StringOrSecret{Value: &confhttppb.StringOrSecret_Secret{Secret: sid(key)}}
+}
+
 // mustReq builds a request with a rewindable body (so HMAC/SigV4 can read
 // and restore it).
 func mustReq(t *testing.T, method, urlStr, body string) *http.Request {
@@ -47,9 +60,8 @@ func TestBuilder_NilAuth_ReturnsNilSigner(t *testing.T) {
 
 func TestAPIKeySigner(t *testing.T) {
 	cfg := &confhttppb.ApiKeyAuth{
-		HeaderName:  "x-api-key",
-		SecretName:  "cg",
-		ValuePrefix: "",
+		HeaderName: "x-api-key",
+		Secret:     sid("cg"),
 	}
 	s, err := newAPIKeySigner(cfg)
 	if err != nil {
@@ -66,7 +78,7 @@ func TestAPIKeySigner(t *testing.T) {
 
 func TestAPIKeySigner_ValuePrefix(t *testing.T) {
 	s, err := newAPIKeySigner(&confhttppb.ApiKeyAuth{
-		HeaderName: "Authorization", SecretName: "tok", ValuePrefix: "ApiKey ",
+		HeaderName: "Authorization", Secret: sid("tok"), ValuePrefix: "ApiKey ",
 	})
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -81,7 +93,7 @@ func TestAPIKeySigner_ValuePrefix(t *testing.T) {
 }
 
 func TestAPIKeySigner_MissingSecret(t *testing.T) {
-	s, _ := newAPIKeySigner(&confhttppb.ApiKeyAuth{HeaderName: "x", SecretName: "absent"})
+	s, _ := newAPIKeySigner(&confhttppb.ApiKeyAuth{HeaderName: "x", Secret: sid("absent")})
 	req := mustReq(t, "GET", "https://example.com/x", "")
 	err := s.Sign(context.Background(), req, map[string]string{})
 	if !errors.Is(err, ErrSecretNotProvided) {
@@ -89,9 +101,9 @@ func TestAPIKeySigner_MissingSecret(t *testing.T) {
 	}
 }
 
-func TestBasicSigner(t *testing.T) {
+func TestBasicSigner_BothSecrets(t *testing.T) {
 	s, err := newBasicSigner(&confhttppb.BasicAuth{
-		UsernameSecretName: "u", PasswordSecretName: "p",
+		Username: secretSoS("u"), Password: sid("p"),
 	})
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -106,8 +118,25 @@ func TestBasicSigner(t *testing.T) {
 	}
 }
 
+func TestBasicSigner_PlainUsername(t *testing.T) {
+	s, err := newBasicSigner(&confhttppb.BasicAuth{
+		Username: plainSoS("admin"), Password: sid("p"),
+	})
+	if err != nil {
+		t.Fatalf("new: %v", err)
+	}
+	req := mustReq(t, "GET", "https://example.com/x", "")
+	if err := s.Sign(context.Background(), req, map[string]string{"p": "hunter2"}); err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	want := "Basic " + base64.StdEncoding.EncodeToString([]byte("admin:hunter2"))
+	if got := req.Header.Get("Authorization"); got != want {
+		t.Fatalf("got=%q want=%q", got, want)
+	}
+}
+
 func TestBearerSigner_Default(t *testing.T) {
-	s, err := newBearerSigner(&confhttppb.BearerAuth{TokenSecretName: "t"})
+	s, err := newBearerSigner(&confhttppb.BearerAuth{Token: sid("t")})
 	if err != nil {
 		t.Fatalf("new: %v", err)
 	}
@@ -120,7 +149,7 @@ func TestBearerSigner_Default(t *testing.T) {
 
 func TestBearerSigner_CustomHeaderAndPrefix(t *testing.T) {
 	s, err := newBearerSigner(&confhttppb.BearerAuth{
-		TokenSecretName: "t", HeaderName: "Authorization", ValuePrefix: "token ",
+		Token: sid("t"), HeaderName: "Authorization", ValuePrefix: "token ",
 	})
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -133,7 +162,7 @@ func TestBearerSigner_CustomHeaderAndPrefix(t *testing.T) {
 }
 
 func TestHmacSha256_BasicCanonical(t *testing.T) {
-	s, err := newHmacSha256Signer(&confhttppb.HmacSha256{SecretName: "hmac"})
+	s, err := newHmacSha256Signer(&confhttppb.HmacSha256{Secret: sid("hmac")})
 	if err != nil {
 		t.Fatalf("new: %v", err)
 	}
@@ -163,7 +192,7 @@ func TestHmacSha256_BasicCanonical(t *testing.T) {
 
 func TestHmacCustom_Template(t *testing.T) {
 	cfg := &confhttppb.HmacCustom{
-		SecretName:        "k",
+		Secret:            sid("k"),
 		CanonicalTemplate: `{{.method}} {{.path}} {{.body_sha256}}`,
 		Hash:              confhttppb.HmacCustom_HASH_SHA256,
 		SignatureHeader:   "X-Sig",
@@ -189,7 +218,7 @@ func TestHmacCustom_Template(t *testing.T) {
 
 func TestHmacCustom_BadTemplateRejectedAtNew(t *testing.T) {
 	_, err := newHmacCustomSigner(&confhttppb.HmacCustom{
-		SecretName:        "k",
+		Secret:            sid("k"),
 		CanonicalTemplate: `{{ oopsNoSuchFunc }}`,
 		Hash:              confhttppb.HmacCustom_HASH_SHA256,
 		SignatureHeader:   "X-Sig",
@@ -201,7 +230,7 @@ func TestHmacCustom_BadTemplateRejectedAtNew(t *testing.T) {
 
 func TestHmacCustom_SignatureWithPrefix(t *testing.T) {
 	s, err := newHmacCustomSigner(&confhttppb.HmacCustom{
-		SecretName:        "k",
+		Secret:            sid("k"),
 		CanonicalTemplate: `{{.method}}`,
 		Hash:              confhttppb.HmacCustom_HASH_SHA512,
 		SignatureHeader:   "X-Vendor-Signature",
@@ -222,10 +251,10 @@ func TestHmacCustom_SignatureWithPrefix(t *testing.T) {
 
 func TestAwsSigV4_AttachesExpectedHeaders(t *testing.T) {
 	s, err := newAwsSigV4Signer(&confhttppb.AwsSigV4{
-		AccessKeyIdSecretName:     "ak",
-		SecretAccessKeySecretName: "sk",
-		Region:                    "us-east-1",
-		Service:                   "execute-api",
+		AccessKeyId:     secretSoS("ak"),
+		SecretAccessKey: sid("sk"),
+		Region:          "us-east-1",
+		Service:         "execute-api",
 	})
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -249,13 +278,36 @@ func TestAwsSigV4_AttachesExpectedHeaders(t *testing.T) {
 	}
 }
 
+func TestAwsSigV4_PlainAccessKeyID(t *testing.T) {
+	s, err := newAwsSigV4Signer(&confhttppb.AwsSigV4{
+		AccessKeyId:     plainSoS("AKIDEXAMPLE"),
+		SecretAccessKey: sid("sk"),
+		Region:          "us-east-1",
+		Service:         "execute-api",
+	})
+	if err != nil {
+		t.Fatalf("new: %v", err)
+	}
+	aw := s.(*awsSigV4Signer)
+	aw.nowFn = func() time.Time { return time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC) }
+
+	req := mustReq(t, "GET", "https://api.execute-api.us-east-1.amazonaws.com/prod/x", "")
+	// Only "sk" is in secrets; "AKIDEXAMPLE" is plain.
+	if err := s.Sign(context.Background(), req, map[string]string{"sk": "secret"}); err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	if !strings.Contains(req.Header.Get("Authorization"), "AKIDEXAMPLE") {
+		t.Fatalf("expected AKIDEXAMPLE in Authorization, got %q", req.Header.Get("Authorization"))
+	}
+}
+
 func TestAwsSigV4_SessionTokenInjected(t *testing.T) {
 	s, err := newAwsSigV4Signer(&confhttppb.AwsSigV4{
-		AccessKeyIdSecretName:     "ak",
-		SecretAccessKeySecretName: "sk",
-		SessionTokenSecretName:    "st",
-		Region:                    "us-east-1",
-		Service:                   "execute-api",
+		AccessKeyId:     secretSoS("ak"),
+		SecretAccessKey: sid("sk"),
+		SessionToken:    sid("st"),
+		Region:          "us-east-1",
+		Service:         "execute-api",
 	})
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -270,11 +322,11 @@ func TestAwsSigV4_SessionTokenInjected(t *testing.T) {
 
 func TestAwsSigV4_UnsignedPayload(t *testing.T) {
 	s, err := newAwsSigV4Signer(&confhttppb.AwsSigV4{
-		AccessKeyIdSecretName:     "ak",
-		SecretAccessKeySecretName: "sk",
-		Region:                    "us-east-1",
-		Service:                   "s3",
-		UnsignedPayload:           true,
+		AccessKeyId:     secretSoS("ak"),
+		SecretAccessKey: sid("sk"),
+		Region:          "us-east-1",
+		Service:         "s3",
+		UnsignedPayload: true,
 	})
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -328,10 +380,10 @@ func TestOAuth2ClientCreds_CacheAndSingleFlight(t *testing.T) {
 
 	cache := newOAuth2Cache()
 	s, err := newOAuth2ClientCredsSigner(&confhttppb.OAuth2ClientCredentials{
-		TokenUrl:               srv.URL,
-		ClientIdSecretName:     "cid",
-		ClientSecretSecretName: "csec",
-		Scopes:                 []string{"read", "write"},
+		TokenUrl:     srv.URL,
+		ClientId:     secretSoS("cid"),
+		ClientSecret: sid("csec"),
+		Scopes:       []string{"read", "write"},
 	}, client, cache)
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -353,14 +405,38 @@ func TestOAuth2ClientCreds_CacheAndSingleFlight(t *testing.T) {
 	}
 }
 
+func TestOAuth2ClientCreds_PlainClientID(t *testing.T) {
+	h := &idpHandler{expires: 3600}
+	srv, client := idpFromHandler(t, h)
+
+	cache := newOAuth2Cache()
+	s, err := newOAuth2ClientCredsSigner(&confhttppb.OAuth2ClientCredentials{
+		TokenUrl:     srv.URL,
+		ClientId:     plainSoS("my-client"),
+		ClientSecret: sid("csec"),
+	}, client, cache)
+	if err != nil {
+		t.Fatalf("new: %v", err)
+	}
+
+	// Only "csec" in secrets; client ID is plain.
+	req := mustReq(t, "GET", "https://api.example.com/x", "")
+	if err := s.Sign(context.Background(), req, map[string]string{"csec": "sec1"}); err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	if !strings.HasPrefix(req.Header.Get("Authorization"), "Bearer ") {
+		t.Fatalf("missing Bearer header, got %q", req.Header.Get("Authorization"))
+	}
+}
+
 func TestOAuth2ClientCreds_IdPFailure_SurfacesTypedError(t *testing.T) {
 	h := &idpHandler{status: 401}
 	srv, client := idpFromHandler(t, h)
 	cache := newOAuth2Cache()
 	s, err := newOAuth2ClientCredsSigner(&confhttppb.OAuth2ClientCredentials{
-		TokenUrl:               srv.URL,
-		ClientIdSecretName:     "cid",
-		ClientSecretSecretName: "csec",
+		TokenUrl:     srv.URL,
+		ClientId:     secretSoS("cid"),
+		ClientSecret: sid("csec"),
 	}, client, cache)
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -375,9 +451,9 @@ func TestOAuth2ClientCreds_IdPFailure_SurfacesTypedError(t *testing.T) {
 func TestOAuth2ClientCreds_NonHTTPSRejected(t *testing.T) {
 	cache := newOAuth2Cache()
 	s, err := newOAuth2ClientCredsSigner(&confhttppb.OAuth2ClientCredentials{
-		TokenUrl:               "http://insecure.example.com/token",
-		ClientIdSecretName:     "cid",
-		ClientSecretSecretName: "csec",
+		TokenUrl:     "http://insecure.example.com/token",
+		ClientId:     secretSoS("cid"),
+		ClientSecret: sid("csec"),
 	}, http.DefaultClient, cache)
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -398,9 +474,9 @@ func TestOAuth2ClientCreds_CacheMiss_OnExpiry(t *testing.T) {
 	cache.nowFn = func() time.Time { return time.Now() }
 
 	s, err := newOAuth2ClientCredsSigner(&confhttppb.OAuth2ClientCredentials{
-		TokenUrl:               srv.URL,
-		ClientIdSecretName:     "cid",
-		ClientSecretSecretName: "csec",
+		TokenUrl:     srv.URL,
+		ClientId:     secretSoS("cid"),
+		ClientSecret: sid("csec"),
 	}, client, cache)
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -436,10 +512,10 @@ func TestOAuth2RefreshToken_UsesRefreshGrant(t *testing.T) {
 	cache := newOAuth2Cache()
 
 	s, err := newOAuth2RefreshSigner(&confhttppb.OAuth2RefreshToken{
-		TokenUrl:               srv.URL,
-		RefreshTokenSecretName: "rt",
-		ClientIdSecretName:     "cid",
-		ClientSecretSecretName: "csec",
+		TokenUrl:     srv.URL,
+		RefreshToken: sid("rt"),
+		ClientId:     secretSoS("cid"),
+		ClientSecret: sid("csec"),
 	}, client, cache)
 	if err != nil {
 		t.Fatalf("new: %v", err)
@@ -465,8 +541,8 @@ func TestOAuth2RefreshToken_CacheKeyDependsOnRefreshFingerprint(t *testing.T) {
 	srv, client := idpFromHandler(t, h)
 	cache := newOAuth2Cache()
 	s, err := newOAuth2RefreshSigner(&confhttppb.OAuth2RefreshToken{
-		TokenUrl:               srv.URL,
-		RefreshTokenSecretName: "rt",
+		TokenUrl:     srv.URL,
+		RefreshToken: sid("rt"),
 	}, client, cache)
 	if err != nil {
 		t.Fatalf("new: %v", err)

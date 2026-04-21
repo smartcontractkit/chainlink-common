@@ -10,7 +10,7 @@ import (
 
 type apiKeySigner struct {
 	headerName  string
-	secretName  string
+	secret      *confhttppb.SecretIdentifier
 	valuePrefix string
 }
 
@@ -21,18 +21,18 @@ func newAPIKeySigner(cfg *confhttppb.ApiKeyAuth) (Signer, error) {
 	if cfg.GetHeaderName() == "" {
 		return nil, errors.New("api_key: header_name is required")
 	}
-	if cfg.GetSecretName() == "" {
-		return nil, errors.New("api_key: secret_name is required")
+	if cfg.GetSecret() == nil {
+		return nil, errors.New("api_key: secret is required")
 	}
 	return &apiKeySigner{
 		headerName:  cfg.GetHeaderName(),
-		secretName:  cfg.GetSecretName(),
+		secret:      cfg.GetSecret(),
 		valuePrefix: cfg.GetValuePrefix(),
 	}, nil
 }
 
 func (s *apiKeySigner) Sign(_ context.Context, req *http.Request, secrets map[string]string) error {
-	val, err := resolveSecret(secrets, s.secretName)
+	val, err := resolveSecretID(secrets, s.secret)
 	if err != nil {
 		return err
 	}

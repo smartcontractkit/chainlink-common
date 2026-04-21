@@ -12,16 +12,19 @@ import (
 // addresses up to 32 bytes instead of requiring exact-length address bytes.
 func ConvertViewPayloadFromProto(payload *ViewPayload) (*typesaptos.ViewPayload, error) {
 	if payload == nil {
-		return nil, fmt.Errorf("viewRequest.Payload is required")
+		return nil, fmt.Errorf("payload is required")
 	}
 	if payload.Module == nil {
-		return nil, fmt.Errorf("viewRequest.Payload.Module is required")
+		return nil, fmt.Errorf("payload.module is required")
+	}
+	if len(payload.Module.Address) == 0 {
+		return nil, fmt.Errorf("payload.module.address is required")
 	}
 	if payload.Module.Name == "" {
-		return nil, fmt.Errorf("viewRequest.Payload.Module.Name is required")
+		return nil, fmt.Errorf("payload.module.name is required")
 	}
 	if payload.Function == "" {
-		return nil, fmt.Errorf("viewRequest.Payload.Function is required")
+		return nil, fmt.Errorf("payload.function is required")
 	}
 
 	moduleAddress, err := convertAccountAddressFromProto(payload.Module.Address, "module")
@@ -88,6 +91,15 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 		structTag := tag.GetStruct()
 		if structTag == nil {
 			return nil, fmt.Errorf("struct tag missing struct value")
+		}
+		if len(structTag.Address) == 0 {
+			return nil, fmt.Errorf("struct address is required")
+		}
+		if structTag.Module == "" {
+			return nil, fmt.Errorf("struct module is required")
+		}
+		if structTag.Name == "" {
+			return nil, fmt.Errorf("struct name is required")
 		}
 
 		structAddress, err := convertAccountAddressFromProto(structTag.Address, "struct")

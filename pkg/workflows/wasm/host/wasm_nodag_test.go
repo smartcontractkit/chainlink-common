@@ -256,15 +256,15 @@ func Test_NoDAG_RequirementsNotMet(t *testing.T) {
 
 	expected := &sdk.Requirements{
 		Tee: &sdk.Tee{Type: &sdk.Tee_TypeSelection{
-			TypeSelection: &sdk.TeeTypeSelection{Types: []sdk.TeeType{sdk.TeeType_TEE_TYPE_AWS_NITRO}}},
-		},
+			TypeSelection: &sdk.TeeTypeSelection{Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO}}},
+		}},
 	}
 	assert.True(t, proto.Equal(expected, (*sdk.Requirements)(rerunErr)))
 }
 
 func runTeeFailureTest(t *testing.T, teeType sdk.TeeType, binary []byte) error {
 	cfg := defaultNoDAGModCfg(t)
-	cfg.RequirementsHandler.Tee = TeeProvider(teeType).Provides
+	cfg.RequirementsHandler.Tee = NewTeeProvider(teeType, nil)
 	m, err := NewModule(t.Context(), cfg, binary)
 	require.NoError(t, err)
 

@@ -11,7 +11,7 @@ import (
 
 func main() {
 	req := rawsdk.GetRequest()
-	requirements := &sdk.Requirements{Tee: &sdk.Tee{Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{Types: []sdk.TeeType{sdk.TeeType_TEE_TYPE_AWS_NITRO}}}}}
+	requirements := &sdk.Requirements{Tee: &sdk.Tee{Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}}}}}}}
 	bytes, err := proto.Marshal(requirements)
 	if err != nil {
 		rawsdk.SendError(err)

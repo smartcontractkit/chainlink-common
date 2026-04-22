@@ -559,7 +559,7 @@ func TestStandardTeeRuntime(t *testing.T) {
 
 			_, err := m.Execute(t.Context(), test.req, mockExecutionHelper)
 			require.NoError(t, err)
-			require.True(t, proto.Equal(seenTeeRequirement, &sdk.Tee{Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{Types: []sdk.TeeType{sdk.TeeType_TEE_TYPE_AWS_NITRO}}}}))
+			require.True(t, proto.Equal(seenTeeRequirement, &sdk.Tee{Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}}}}}}))
 		})
 	}
 }

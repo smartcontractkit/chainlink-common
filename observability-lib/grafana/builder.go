@@ -13,6 +13,20 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/polystat"
 )
 
+type entryKind int
+
+const (
+	entryRow entryKind = iota
+	entryPanel
+	entryPanelToRow
+)
+
+type buildEntry struct {
+	kind     entryKind
+	rowTitle string
+	panel    *Panel
+}
+
 type Builder struct {
 	dashboardBuilder            *dashboard.DashboardBuilder
 	alertsBuilder               []*alerting.RuleBuilder
@@ -21,6 +35,8 @@ type Builder struct {
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
 	alertsTags                  map[string]string
+	rows                        map[string]*dashboard.RowBuilder
+	entries                     []buildEntry
 }
 
 type BuilderOptions struct {
@@ -32,10 +48,6 @@ type BuilderOptions struct {
 	TimeZone     string
 	GraphTooltip dashboard.DashboardCursorSync
 	AlertsTags   map[string]string
-}
-
-type RowOptions struct {
-	Collapsed bool
 }
 
 func NewBuilder(options *BuilderOptions) *Builder {
@@ -77,12 +89,13 @@ func (b *Builder) AddVars(items ...cog.Builder[dashboard.VariableModel]) {
 	}
 }
 
-func (b *Builder) AddRow(title string, options ...RowOptions) {
+func (b *Builder) AddRow(title string) {
 	row := dashboard.NewRowBuilder(title)
-	for _, o := range options {
-		row.Collapsed(o.Collapsed)
+	if b.rows == nil {
+		b.rows = make(map[string]*dashboard.RowBuilder)
 	}
-	b.dashboardBuilder.WithRow(row)
+	b.rows[title] = row
+	b.entries = append(b.entries, buildEntry{kind: entryRow, rowTitle: title})
 }
 
 func (b *Builder) getPanelCounter() uint32 {
@@ -91,43 +104,18 @@ func (b *Builder) getPanelCounter() uint32 {
 	return res
 }
 
+func (b *Builder) AddPanelToRow(rowTitle string, panel ...*Panel) {
+	for _, item := range panel {
+		b.entries = append(b.entries, buildEntry{kind: entryPanelToRow, rowTitle: rowTitle, panel: item})
+		if len(item.alertBuilders) > 0 {
+			b.AddAlert(item.alertBuilders...)
+		}
+	}
+}
+
 func (b *Builder) AddPanel(panel ...*Panel) {
 	for _, item := range panel {
-		panelID := b.getPanelCounter()
-		if item.statPanelBuilder != nil {
-			item.statPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.statPanelBuilder)
-		} else if item.timeSeriesPanelBuilder != nil {
-			item.timeSeriesPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.timeSeriesPanelBuilder)
-		} else if item.barGaugePanelBuilder != nil {
-			item.barGaugePanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.barGaugePanelBuilder)
-		} else if item.gaugePanelBuilder != nil {
-			item.gaugePanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.gaugePanelBuilder)
-		} else if item.tablePanelBuilder != nil {
-			item.tablePanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.tablePanelBuilder)
-		} else if item.logPanelBuilder != nil {
-			item.logPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.logPanelBuilder)
-		} else if item.heatmapBuilder != nil {
-			item.heatmapBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.heatmapBuilder)
-		} else if item.textPanelBuilder != nil {
-			item.textPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.textPanelBuilder)
-		} else if item.histogramPanelBuilder != nil {
-			item.histogramPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.histogramPanelBuilder)
-		} else if item.businessVariablePanelBuilder != nil {
-			item.businessVariablePanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.businessVariablePanelBuilder)
-		} else if item.polystatPanelBuilder != nil {
-			item.polystatPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.polystatPanelBuilder)
-		}
+		b.entries = append(b.entries, buildEntry{kind: entryPanel, panel: item})
 		if len(item.alertBuilders) > 0 {
 			b.AddAlert(item.alertBuilders...)
 		}
@@ -150,10 +138,109 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 	b.notificationPoliciesBuilder = append(b.notificationPoliciesBuilder, notificationPolicies...)
 }
 
+// addPanelToBuilder assigns an ID and adds the panel to the dashboard builder.
+func (b *Builder) addPanelToBuilder(item *Panel) {
+	panelID := b.getPanelCounter()
+	if item.statPanelBuilder != nil {
+		item.statPanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.statPanelBuilder)
+	} else if item.timeSeriesPanelBuilder != nil {
+		item.timeSeriesPanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.timeSeriesPanelBuilder)
+	} else if item.barGaugePanelBuilder != nil {
+		item.barGaugePanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.barGaugePanelBuilder)
+	} else if item.gaugePanelBuilder != nil {
+		item.gaugePanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.gaugePanelBuilder)
+	} else if item.tablePanelBuilder != nil {
+		item.tablePanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.tablePanelBuilder)
+	} else if item.logPanelBuilder != nil {
+		item.logPanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.logPanelBuilder)
+	} else if item.heatmapBuilder != nil {
+		item.heatmapBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.heatmapBuilder)
+	} else if item.textPanelBuilder != nil {
+		item.textPanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.textPanelBuilder)
+	} else if item.histogramPanelBuilder != nil {
+		item.histogramPanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.histogramPanelBuilder)
+	} else if item.businessVariablePanelBuilder != nil {
+		item.businessVariablePanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.businessVariablePanelBuilder)
+	} else if item.polystatPanelBuilder != nil {
+		item.polystatPanelBuilder.Id(panelID)
+		b.dashboardBuilder.WithPanel(item.polystatPanelBuilder)
+	}
+}
+
+// addPanelToRow assigns an ID and adds the panel to a row builder.
+func (b *Builder) addPanelToRow(row *dashboard.RowBuilder, item *Panel) {
+	panelID := b.getPanelCounter()
+	if item.statPanelBuilder != nil {
+		item.statPanelBuilder.Id(panelID)
+		row.WithPanel(item.statPanelBuilder)
+	} else if item.timeSeriesPanelBuilder != nil {
+		item.timeSeriesPanelBuilder.Id(panelID)
+		row.WithPanel(item.timeSeriesPanelBuilder)
+	} else if item.barGaugePanelBuilder != nil {
+		item.barGaugePanelBuilder.Id(panelID)
+		row.WithPanel(item.barGaugePanelBuilder)
+	} else if item.gaugePanelBuilder != nil {
+		item.gaugePanelBuilder.Id(panelID)
+		row.WithPanel(item.gaugePanelBuilder)
+	} else if item.tablePanelBuilder != nil {
+		item.tablePanelBuilder.Id(panelID)
+		row.WithPanel(item.tablePanelBuilder)
+	} else if item.logPanelBuilder != nil {
+		item.logPanelBuilder.Id(panelID)
+		row.WithPanel(item.logPanelBuilder)
+	} else if item.heatmapBuilder != nil {
+		item.heatmapBuilder.Id(panelID)
+		row.WithPanel(item.heatmapBuilder)
+	} else if item.textPanelBuilder != nil {
+		item.textPanelBuilder.Id(panelID)
+		row.WithPanel(item.textPanelBuilder)
+	} else if item.histogramPanelBuilder != nil {
+		item.histogramPanelBuilder.Id(panelID)
+		row.WithPanel(item.histogramPanelBuilder)
+	} else if item.businessVariablePanelBuilder != nil {
+		item.businessVariablePanelBuilder.Id(panelID)
+		row.WithPanel(item.businessVariablePanelBuilder)
+	} else if item.polystatPanelBuilder != nil {
+		item.polystatPanelBuilder.Id(panelID)
+		row.WithPanel(item.polystatPanelBuilder)
+	}
+}
+
 func (b *Builder) Build() (*Observability, error) {
 	observability := Observability{}
 
 	if b.dashboardBuilder != nil {
+		// First pass: attach panels to their row builders (needed before WithRow snapshots them)
+		for _, e := range b.entries {
+			if e.kind == entryPanelToRow {
+				if row, ok := b.rows[e.rowTitle]; ok {
+					b.addPanelToRow(row, e.panel)
+				}
+			}
+		}
+
+		// Second pass: add rows and top-level panels to the dashboard in order
+		for _, e := range b.entries {
+			switch e.kind {
+			case entryRow:
+				if row, ok := b.rows[e.rowTitle]; ok {
+					b.dashboardBuilder.WithRow(row)
+				}
+			case entryPanel:
+				b.addPanelToBuilder(e.panel)
+			}
+		}
+
 		db, errBuildDashboard := b.dashboardBuilder.Build()
 		if errBuildDashboard != nil {
 			return nil, errBuildDashboard

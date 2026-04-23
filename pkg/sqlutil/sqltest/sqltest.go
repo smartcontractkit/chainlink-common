@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/scylladb/go-reflectx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,35 +58,28 @@ func SkipInMemory(t *testing.T) {
 // CreateOrReplace creates a new database with the given name (optionally from template), and schedules it to be dropped
 // after test completion.
 func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) url.URL {
-	if u.Path == "" {
-		t.Fatal("path missing from database URL")
-	}
+	require.NotEmpty(t, u.Path, "path missing from database URL")
+	require.LessOrEqual(t, len(dbName), 63, "dbName %v too long (%d), max is 63 bytes", dbName, len(dbName))
 
-	if l := len(dbName); l > 63 {
-		t.Fatalf("dbName %v too long (%d), max is 63 bytes", dbName, l)
-	}
 	// Cannot drop test database if we are connected to it, so we must connect
 	// to a different one. 'postgres' should be present on all postgres installations
 	u.Path = "/postgres"
 	db, err := sql.Open(pg.DriverPostgres, u.String())
-	if err != nil {
-		t.Fatalf("in order to drop the test database, we need to connect to a separate database"+
-			" called 'postgres'. But we are unable to open 'postgres' database: %+v\n", err)
-	}
+	require.NoError(t, err, "in order to drop the test database, we need to connect to a separate database"+
+		" called 'postgres'. But we are unable to open 'postgres' database")
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName))
-	if err != nil {
-		t.Fatalf("unable to drop postgres migrations test database: %v", err)
-	}
+	quotedName := pq.QuoteIdentifier(dbName)
+	// WITH (FORCE) requires PostgreSQL 13+; terminates backends and avoids "being accessed by other users".
+	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH (FORCE)", quotedName))
+	require.NoError(t, err, "unable to drop postgres migrations test database")
 	if template != "" {
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s", dbName, template))
+		quotedTemplate := pq.QuoteIdentifier(template)
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s", quotedName, quotedTemplate))
 	} else {
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", quotedName))
 	}
-	if err != nil {
-		t.Fatalf("unable to create postgres test database with name '%s': %v", dbName, err)
-	}
+	require.NoError(t, err, "unable to create postgres test database with name '%s'", dbName)
 	u.Path = fmt.Sprintf("/%s", dbName)
 	// simple best effort; some tests seem to hold a db connection and race with this drop
 	t.Cleanup(func() {
@@ -120,7 +114,8 @@ func drop(dbURL url.URL) error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbname))
+	quoted := pq.QuoteIdentifier(dbname)
+	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH (FORCE)", quoted))
 	if err != nil {
 		return fmt.Errorf("unable to drop postgres migrations test database: %v", err)
 	}

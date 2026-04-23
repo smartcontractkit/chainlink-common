@@ -38,10 +38,8 @@ type CRE struct {
 
 // Normalized returns a possibly modified CRE with normalized values.
 func (c CRE) Normalized() CRE {
-	c.Org = strings.TrimPrefix(c.Org, "org_")
-	// not hex like the others, so don't look for 0x or change case
+	// don't manipulate Org
 
-	c.Owner = strings.TrimPrefix(c.Owner, "owner_")
 	c.Owner = strings.TrimPrefix(c.Owner, "0x")
 	c.Owner = strings.ToLower(c.Owner)
 

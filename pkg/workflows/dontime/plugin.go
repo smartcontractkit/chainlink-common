@@ -180,33 +180,14 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		prevOutcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
 	}
 
-	// Unmarshal all observations once and compute pruneExecutions.
-	// Only prune when all nodes are updated. Even if this rolls back, the logic is still correct.
-	parsedAOs := make([]*pb.Observation, len(aos))
-	pruneExecutions := true
 	for idx, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
 			continue
 		}
-		parsedAOs[idx] = observation
-		if !observation.PruneExecutions {
-			pruneExecutions = false // need all nodes to agree
-		}
-	}
-
-	for idx, observation := range parsedAOs {
-		if observation == nil {
-			continue
-		}
 
 		for id, requestSeqNum := range observation.Requests {
-			if !pruneExecutions { // TODO(CRE-2497): legacy behavior, remove after rollout
-				if _, ok := prevOutcome.ObservedDonTimes[id]; !ok {
-					prevOutcome.ObservedDonTimes[id] = &pb.ObservedDonTimes{}
-				}
-			}
 			var currSeqNum int64
 			if times, ok := prevOutcome.ObservedDonTimes[id]; ok {
 				currSeqNum = int64(len(times.Timestamps))
@@ -266,23 +247,14 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 
 	// Remove expired and empty workflow executions
 	for id, observedTimes := range outcome.ObservedDonTimes {
-		if !pruneExecutions { // TODO(CRE-2497): legacy behavior, remove after rollout
-			if observedTimes != nil && len(observedTimes.Timestamps) > 0 {
-				if donTime >= observedTimes.Timestamps[0]+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
-					delete(outcome.ObservedDonTimes, id)
-					p.store.deleteExecutionID(id)
-				}
-			}
-		} else {
-			if observedTimes == nil || len(observedTimes.Timestamps) == 0 {
-				delete(outcome.ObservedDonTimes, id)
-				p.store.deleteExecutionID(id)
-				continue
-			}
-			if donTime >= observedTimes.Timestamps[0]+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
-				delete(outcome.ObservedDonTimes, id)
-				p.store.deleteExecutionID(id)
-			}
+		if observedTimes == nil || len(observedTimes.Timestamps) == 0 {
+			delete(outcome.ObservedDonTimes, id)
+			p.store.deleteExecutionID(id)
+			continue
+		}
+		if donTime >= observedTimes.Timestamps[0]+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
+			delete(outcome.ObservedDonTimes, id)
+			p.store.deleteExecutionID(id)
 		}
 	}
 

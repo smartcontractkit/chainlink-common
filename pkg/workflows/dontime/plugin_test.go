@@ -159,24 +159,20 @@ func TestPlugin_Outcome(t *testing.T) {
 	timestamp := time.Now().UnixMilli()
 	observations := []*pb.Observation{
 		{
-			Timestamp:       timestamp,
-			Requests:        map[string]int64{executionID: 0},
-			PruneExecutions: true,
+			Timestamp: timestamp,
+			Requests:  map[string]int64{executionID: 0},
 		},
 		{
-			Timestamp:       timestamp - int64(time.Second),
-			Requests:        map[string]int64{executionID: 0},
-			PruneExecutions: true,
+			Timestamp: timestamp - int64(time.Second),
+			Requests:  map[string]int64{executionID: 0},
 		},
 		{
-			Timestamp:       timestamp + int64(time.Second),
-			Requests:        map[string]int64{executionID: 0},
-			PruneExecutions: true,
+			Timestamp: timestamp + int64(time.Second),
+			Requests:  map[string]int64{executionID: 0},
 		},
 		{
-			Timestamp:       timestamp,
-			Requests:        map[string]int64{executionID: 0},
-			PruneExecutions: true,
+			Timestamp: timestamp,
+			Requests:  map[string]int64{executionID: 0},
 		},
 	}
 
@@ -220,9 +216,8 @@ func TestPlugin_Outcome_SequenceNumberHandling(t *testing.T) {
 		aos := make([]types.AttributedObservation, numNodes)
 		for i := 0; i < numNodes; i++ {
 			obs := &pb.Observation{
-				Timestamp:       timestamp + int64(i),
-				Requests:        requests,
-				PruneExecutions: true,
+				Timestamp: timestamp + int64(i),
+				Requests:  requests,
 			}
 			rawObs, err := proto.Marshal(obs)
 			require.NoError(t, err)
@@ -431,10 +426,10 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	t.Run("Outcome: remove expired workflow executions", func(t *testing.T) {
 		timestamp := time.Now().UnixMilli()
 		observations := []*pb.Observation{
-			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: true},
-			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}, PruneExecutions: true},
-			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}, PruneExecutions: true},
-			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: true},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
+			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
 		}
 
 		aos := make([]types.AttributedObservation, 4)
@@ -469,16 +464,15 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-123")
 	})
 
-	t.Run("Outcome: legacy path when only half nodes have PruneExecutions set", func(t *testing.T) {
+	t.Run("Outcome: empty-timestamps entries are always pruned", func(t *testing.T) {
 		timestamp := time.Now().UnixMilli()
 		emptyID := "empty-workflow"
 
-		// Only 2 of 4 nodes have PruneExecutions=true → pruneExecutions stays false → legacy path.
 		observations := []*pb.Observation{
-			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: true},
-			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}, PruneExecutions: true},
-			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}, PruneExecutions: false},
-			{Timestamp: timestamp, Requests: map[string]int64{}, PruneExecutions: false},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
+			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
 		}
 
 		aos := make([]types.AttributedObservation, len(observations))
@@ -501,13 +495,12 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
 		require.NoError(t, err)
 
-		legacyOutcomeProto := &pb.Outcome{}
-		err = proto.Unmarshal(outcome, legacyOutcomeProto)
+		newOutcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, newOutcomeProto)
 		require.NoError(t, err)
 
-		// Legacy behavior: empty-timestamps entry is NOT pruned.
-		require.Contains(t, legacyOutcomeProto.ObservedDonTimes, emptyID)
-		require.Empty(t, legacyOutcomeProto.ObservedDonTimes[emptyID].Timestamps)
+		// Empty-timestamps entries are always pruned.
+		require.NotContains(t, newOutcomeProto.ObservedDonTimes, emptyID)
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {

@@ -303,8 +303,16 @@ func (k *keystore) encryptECDHP256Anonymous(data []byte, remotePubKey []byte) ([
 		return nil, fmt.Errorf("ecdh-p256: new gcm: %w", err)
 	}
 
+	// Caution:
 	// Include both nonce and ephemeral public key in AAD for complete authentication
-	// AAD is [12 byte nonce] [65 byte ephemeral public key]
+	// AAD is [12 byte nonce] [65 byte ephemeral public key].
+	// Including nonce in AAD is in line with https://www.ietf.org/rfc/rfc5116:
+	// <<<The nonce is authenticated internally to the algorithm, and it is not
+	// necessary to include it in the AD input.  The nonce MAY be included
+	// in P or A if it is convenient to the application.>>>
+	// However, the second nonce reuse in gcm.Seal(nil, nonce...) is not conventional - this means that we reuse the
+	// same nonce both for the symmetric key and the block cipher counter.
+	// It is not clear why we don't use new nonce here (by just extending nonceSizeECDHP256 size).
 	ciphertext := gcm.Seal(nil, nonce, data, append(nonce[:], ephPriv.PublicKey().Bytes()...))
 
 	// Embed ephemeral public key and nonce in the result

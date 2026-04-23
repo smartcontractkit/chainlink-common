@@ -238,6 +238,8 @@ func (b *Builder) Build() (*Observability, error) {
 				}
 			case entryPanel:
 				b.addPanelToBuilder(e.panel)
+			default:
+				continue
 			}
 		}
 

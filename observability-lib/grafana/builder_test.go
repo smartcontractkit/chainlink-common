@@ -348,6 +348,31 @@ func TestBuilder_BuildOnce(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "already been called")
 	})
+
+	t.Run("Build returns error when panels added without dashboard name", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: grafana.Pointer("Panel Title"),
+			},
+		}))
+
+		_, err := builder.Build()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "cannot add rows or panels without a dashboard")
+	})
+
+	t.Run("Build succeeds for alerts-only without dashboard name", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
+		builder.AddAlert(grafana.NewAlertRule(&grafana.AlertOptions{
+			Title: "Alert Title",
+		}))
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		require.Empty(t, o.Dashboard)
+		require.Len(t, o.Alerts, 1)
+	})
 }
 
 func TestBuilder_AddVars(t *testing.T) {

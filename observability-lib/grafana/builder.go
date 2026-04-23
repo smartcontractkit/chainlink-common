@@ -226,6 +226,10 @@ func (b *Builder) Build() (*Observability, error) {
 
 	observability := Observability{}
 
+	if b.dashboardBuilder == nil && len(b.entries) > 0 {
+		return nil, errors.New("cannot add rows or panels without a dashboard; set BuilderOptions.Name to create one")
+	}
+
 	if b.dashboardBuilder != nil {
 		// First pass: attach panels to their row builders (needed before WithRow snapshots them)
 		for _, e := range b.entries {

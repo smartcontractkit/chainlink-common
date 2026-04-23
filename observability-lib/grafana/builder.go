@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"errors"
+	"fmt"
 	"maps"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
@@ -170,9 +171,11 @@ func (b *Builder) Build() (*Observability, error) {
 		// First pass: attach panels to their row builders (needed before WithRow snapshots them)
 		for _, e := range b.entries {
 			if e.kind == entryPanelToRow {
-				if row, ok := b.rows[e.rowTitle]; ok {
-					b.addPanelToRow(row, e.panel)
+				row, ok := b.rows[e.rowTitle]
+				if !ok {
+					return nil, fmt.Errorf("AddPanelToRow references unknown row %q; call AddRow first", e.rowTitle)
 				}
+				b.addPanelToRow(row, e.panel)
 			}
 		}
 

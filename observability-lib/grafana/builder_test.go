@@ -362,6 +362,21 @@ func TestBuilder_BuildOnce(t *testing.T) {
 		require.Contains(t, err.Error(), "cannot add rows or panels without a dashboard")
 	})
 
+	t.Run("Build returns error when AddPanelToRow references unknown row", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddPanelToRow("NonExistent Row", grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: grafana.Pointer("Panel Title"),
+			},
+		}))
+
+		_, err := builder.Build()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), `unknown row "NonExistent Row"`)
+	})
+
 	t.Run("Build succeeds for alerts-only without dashboard name", func(t *testing.T) {
 		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
 		builder.AddAlert(grafana.NewAlertRule(&grafana.AlertOptions{

@@ -142,79 +142,15 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 
 // addPanelToBuilder assigns an ID and adds the panel to the dashboard builder.
 func (b *Builder) addPanelToBuilder(item *Panel) {
-	panelID := b.getPanelCounter()
-	if item.statPanelBuilder != nil {
-		item.statPanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.statPanelBuilder)
-	} else if item.timeSeriesPanelBuilder != nil {
-		item.timeSeriesPanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.timeSeriesPanelBuilder)
-	} else if item.barGaugePanelBuilder != nil {
-		item.barGaugePanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.barGaugePanelBuilder)
-	} else if item.gaugePanelBuilder != nil {
-		item.gaugePanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.gaugePanelBuilder)
-	} else if item.tablePanelBuilder != nil {
-		item.tablePanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.tablePanelBuilder)
-	} else if item.logPanelBuilder != nil {
-		item.logPanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.logPanelBuilder)
-	} else if item.heatmapBuilder != nil {
-		item.heatmapBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.heatmapBuilder)
-	} else if item.textPanelBuilder != nil {
-		item.textPanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.textPanelBuilder)
-	} else if item.histogramPanelBuilder != nil {
-		item.histogramPanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.histogramPanelBuilder)
-	} else if item.businessVariablePanelBuilder != nil {
-		item.businessVariablePanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.businessVariablePanelBuilder)
-	} else if item.polystatPanelBuilder != nil {
-		item.polystatPanelBuilder.Id(panelID)
-		b.dashboardBuilder.WithPanel(item.polystatPanelBuilder)
+	if pb := item.panelBuilder(b.getPanelCounter()); pb != nil {
+		b.dashboardBuilder.WithPanel(pb)
 	}
 }
 
 // addPanelToRow assigns an ID and adds the panel to a row builder.
 func (b *Builder) addPanelToRow(row *dashboard.RowBuilder, item *Panel) {
-	panelID := b.getPanelCounter()
-	if item.statPanelBuilder != nil {
-		item.statPanelBuilder.Id(panelID)
-		row.WithPanel(item.statPanelBuilder)
-	} else if item.timeSeriesPanelBuilder != nil {
-		item.timeSeriesPanelBuilder.Id(panelID)
-		row.WithPanel(item.timeSeriesPanelBuilder)
-	} else if item.barGaugePanelBuilder != nil {
-		item.barGaugePanelBuilder.Id(panelID)
-		row.WithPanel(item.barGaugePanelBuilder)
-	} else if item.gaugePanelBuilder != nil {
-		item.gaugePanelBuilder.Id(panelID)
-		row.WithPanel(item.gaugePanelBuilder)
-	} else if item.tablePanelBuilder != nil {
-		item.tablePanelBuilder.Id(panelID)
-		row.WithPanel(item.tablePanelBuilder)
-	} else if item.logPanelBuilder != nil {
-		item.logPanelBuilder.Id(panelID)
-		row.WithPanel(item.logPanelBuilder)
-	} else if item.heatmapBuilder != nil {
-		item.heatmapBuilder.Id(panelID)
-		row.WithPanel(item.heatmapBuilder)
-	} else if item.textPanelBuilder != nil {
-		item.textPanelBuilder.Id(panelID)
-		row.WithPanel(item.textPanelBuilder)
-	} else if item.histogramPanelBuilder != nil {
-		item.histogramPanelBuilder.Id(panelID)
-		row.WithPanel(item.histogramPanelBuilder)
-	} else if item.businessVariablePanelBuilder != nil {
-		item.businessVariablePanelBuilder.Id(panelID)
-		row.WithPanel(item.businessVariablePanelBuilder)
-	} else if item.polystatPanelBuilder != nil {
-		item.polystatPanelBuilder.Id(panelID)
-		row.WithPanel(item.polystatPanelBuilder)
+	if pb := item.panelBuilder(b.getPanelCounter()); pb != nil {
+		row.WithPanel(pb)
 	}
 }
 

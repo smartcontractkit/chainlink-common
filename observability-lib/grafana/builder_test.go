@@ -335,6 +335,21 @@ func TestNewBuilder(t *testing.T) {
 	})
 }
 
+func TestBuilder_BuildOnce(t *testing.T) {
+	t.Run("Build returns error on second call", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		_, err := builder.Build()
+		require.NoError(t, err)
+
+		_, err = builder.Build()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "already been called")
+	})
+}
+
 func TestBuilder_AddVars(t *testing.T) {
 	t.Run("AddVars adds variables to the dashboard", func(t *testing.T) {
 		builder := grafana.NewBuilder(&grafana.BuilderOptions{

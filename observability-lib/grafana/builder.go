@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	"errors"
 	"maps"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
@@ -37,6 +38,7 @@ type Builder struct {
 	alertsTags                  map[string]string
 	rows                        map[string]*dashboard.RowBuilder
 	entries                     []buildEntry
+	built                       bool
 }
 
 type BuilderOptions struct {
@@ -217,6 +219,11 @@ func (b *Builder) addPanelToRow(row *dashboard.RowBuilder, item *Panel) {
 }
 
 func (b *Builder) Build() (*Observability, error) {
+	if b.built {
+		return nil, errors.New("Build() has already been called; create a new Builder for a new build")
+	}
+	b.built = true
+
 	observability := Observability{}
 
 	if b.dashboardBuilder != nil {

@@ -154,6 +154,12 @@ func (c *client) Close() error {
 	return c.conn.Close()
 }
 
+// Conn returns the underlying gRPC connection for advanced use cases such as
+// raw-codec PublishBatch calls that bypass protobuf marshal/unmarshal overhead.
+func (c *client) Conn() *grpc.ClientConn {
+	return c.conn
+}
+
 // RegisterSchemas registers one or more schemas with the Chip Ingress service.
 func (c *client) RegisterSchemas(ctx context.Context, schemas ...*pb.Schema) (map[string]int, error) {
 	request := &pb.RegisterSchemaRequest{Schemas: schemas}
@@ -262,6 +268,8 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 }
 
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
+// Recognized optional keys include CloudEvents names (dataschema, subject, time, …) and Beholder's
+// beholder_data_schema, which is mapped to the CloudEvent dataschema when dataschema is not set.
 func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
 
 	event := ce.NewEvent()
@@ -273,6 +281,8 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	if attributes == nil {
 		attributes = make(map[string]any)
 	}
+
+	const beholderDataSchemaKey = "beholder_data_schema"
 
 	recordedTime := time.Now()
 	if val, ok := attributes["recordedtime"].(time.Time); ok && !val.IsZero() {
@@ -288,6 +298,8 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 		event.SetDataContentType(val)
 	}
 	if val, ok := attributes["dataschema"].(string); ok {
+		event.SetDataSchema(val)
+	} else if val, ok := attributes[beholderDataSchemaKey].(string); ok {
 		event.SetDataSchema(val)
 	}
 	if val, ok := attributes["subject"].(string); ok {

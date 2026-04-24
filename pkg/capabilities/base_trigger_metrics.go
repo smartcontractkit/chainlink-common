@@ -25,6 +25,7 @@ type BaseTriggerBeholderMetrics struct {
 	activeRegistrations      metric.Int64UpDownCounter
 	pendingEvents            metric.Int64UpDownCounter
 	stuckEvents              metric.Int64UpDownCounter
+	stoppedResendingCount    metric.Int64Counter
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
@@ -63,11 +64,15 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
-	timeToAckMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_time_to_ack_ms")
+	timeToAckMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_time_to_ack_ms",
+		metric.WithExplicitBucketBoundaries(100, 500, 1_000, 2_000, 5_000, 10_000, 30_000, 60_000, 120_000, 300_000, 600_000),
+	)
 	if err != nil {
 		return nil, err
 	}
-	ackAttempts, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_ack_attempts")
+	ackAttempts, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_ack_attempts",
+		metric.WithExplicitBucketBoundaries(1, 2, 3, 5, 10, 15, 20, 25, 50),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +92,11 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
+	stoppedResendingCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_stopped_resending_total")
+	if err != nil {
+		return nil, err
+	}
+
 	return &BaseTriggerBeholderMetrics{
 		capabilityID:             capabilityID,
 		retryCount:               retryCount,
@@ -102,6 +112,7 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		activeRegistrations:      activeRegistrations,
 		pendingEvents:            pendingEvents,
 		stuckEvents:              stuckEvents,
+		stoppedResendingCount:    stoppedResendingCount,
 	}, nil
 }
 
@@ -212,6 +223,17 @@ func (m *BaseTriggerBeholderMetrics) DecStuckEvent(triggerID, eventID string) {
 	)
 }
 
+func (m *BaseTriggerBeholderMetrics) IncStoppedResending(triggerID, eventID string, attempts int) {
+	m.stoppedResendingCount.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("trigger_id", triggerID),
+			attribute.String("event_id", eventID),
+			attribute.Int("attempts", attempts),
+		),
+	)
+}
+
 type noopBaseTriggerMetrics struct{}
 
 var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
@@ -230,3 +252,4 @@ func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                       
 func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}
 func (noopBaseTriggerMetrics) IncStuckEvent(string, string)                        {}
 func (noopBaseTriggerMetrics) DecStuckEvent(string, string)                        {}
+func (noopBaseTriggerMetrics) IncStoppedResending(string, string, int)              {}

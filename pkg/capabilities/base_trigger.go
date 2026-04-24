@@ -3,6 +3,9 @@ package capabilities
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +14,27 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+)
+
+const (
+	// backoffMultiplierCap limits the exponential backoff multiplier so retry
+	// intervals don't grow unbounded. With a 30s base interval, this caps at
+	// 30s * 10 = 5 minutes between retries.
+	backoffMultiplierCap = 10
+
+	// jitterFraction is the ±percentage applied to backoff intervals to
+	// desynchronize retries across DON nodes and prevent P2P burst traffic.
+	jitterFraction = 0.25
+
+	// defaultMaxSendsPerTick limits how many events are sent per scanPending
+	// cycle (initial deliveries AND retransmissions). This prevents a large
+	// backlog from flooding P2P.
+	defaultMaxSendsPerTick = 20
+
+	// maxLoopTick caps how long the retransmit loop sleeps between scans.
+	// With DeliverEvent queueing events instead of sending immediately,
+	// a short tick is needed so first delivery latency stays low (~1s).
+	maxLoopTick = time.Second
 )
 
 type PendingEvent struct {
@@ -52,6 +76,8 @@ type BaseTriggerMetrics interface {
 	IncStuckEvent(triggerID, eventID string)
 	// DecStuckEvent decrements the stuck-event gauge when a previously-critical event is ACKed or unregistered.
 	DecStuckEvent(triggerID, eventID string)
+	// IncStoppedResending increments the counter of events where the node exhausted max retries and stopped resending.
+	IncStoppedResending(triggerID, eventID string, attempts int)
 }
 
 type undeliveredState struct {
@@ -74,6 +100,14 @@ type BaseTriggerCapability[T proto.Message] struct {
 	mu      sync.Mutex
 	inboxes map[string]chan<- TriggerAndId[T]   // triggerID --> registered send channel
 	pending map[string]map[string]*PendingEvent // triggerID --> eventID --> PendingEvent
+
+	// preAcked remembers ACKs that arrived before DeliverEvent was called on this node.
+	// In a multi-node capability DON, other nodes may deliver the event first, causing
+	// the workflow engine to ACK before the slower node has even persisted the event.
+	// Without this cache, the late node would persist and retransmit forever since no
+	// new ACK will arrive (other nodes already stopped retransmitting, so the subscriber
+	// can't reach aggregation quorum).
+	preAcked map[string]map[string]time.Time // triggerID -> eventID -> ackedAt
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -117,6 +151,7 @@ func NewBaseTriggerCapability[T proto.Message](
 		mu:                     sync.Mutex{},
 		inboxes:                make(map[string]chan<- TriggerAndId[T]),
 		pending:                make(map[string]map[string]*PendingEvent),
+		preAcked:               make(map[string]map[string]time.Time),
 		ctx:                    ctx,
 		cancel:                 cancel,
 	}
@@ -148,28 +183,69 @@ func (b *BaseTriggerCapability[T]) retryInterval(ctx context.Context) time.Durat
 	return interval
 }
 
+// maxRetries returns the configured maximum number of send attempts. 0 means unlimited.
+func (b *BaseTriggerCapability[T]) maxRetries(ctx context.Context) int {
+	defaultMaxRetries := 20
+	if b.settings == nil {
+		return defaultMaxRetries
+	}
+	v, err := cresettings.Default.BaseTriggerMaxRetries.GetOrDefault(ctx, b.settings)
+	if err != nil {
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxRetries; using default (20)", "err", err)
+		return defaultMaxRetries
+	}
+	return v
+}
+
+// maxSendsPerTick returns how many events a single scanPending cycle may send.
+// Tunable via CRE settings so operators can balance P2P load without code deploys.
+func (b *BaseTriggerCapability[T]) maxSendsPerTick(ctx context.Context) int {
+	if b.settings == nil {
+		return defaultMaxSendsPerTick
+	}
+	v, err := cresettings.Default.BaseTriggerMaxSendsPerTick.GetOrDefault(ctx, b.settings)
+	if err != nil {
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxSendsPerTick; using default", "err", err)
+		return defaultMaxSendsPerTick
+	}
+	if v <= 0 {
+		return defaultMaxSendsPerTick
+	}
+	return v
+}
+
+// pruneAge returns how long a pending row must exist before the pruning loop may remove it.
+func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
+	if b.settings == nil {
+		return 0
+	}
+	v, err := cresettings.Default.BaseTriggerPruneAge.GetOrDefault(ctx, b.settings)
+	if err != nil {
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerPruneAge; treating as disabled", "err", err)
+		return 0
+	}
+	return v
+}
+
 // loopTickDuration is recomputed before each loop wait so BaseTriggerRetryInterval and enablement
-// changes take effect without restarting. Uses half the retry interval.
+// changes take effect without restarting. Derived from half the retry interval, clamped to
+// [1ms, maxLoopTick] so that newly queued events are picked up promptly.
 func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
+	d := time.Second
 	if b.settings != nil {
-		iv := b.retryInterval(b.ctx)
-		if iv <= 0 {
-			return time.Second
+		if iv := b.retryInterval(b.ctx); iv > 0 {
+			d = iv / 2
 		}
-		d := iv / 2
-		if d < time.Millisecond {
-			return time.Millisecond
-		}
-		return d
+	} else if b.tRetransmit > 0 {
+		d = b.tRetransmit / 2
 	}
-	if b.tRetransmit > 0 {
-		d := b.tRetransmit / 2
-		if d < time.Millisecond {
-			return time.Millisecond
-		}
-		return d
+	if d < time.Millisecond {
+		d = time.Millisecond
 	}
-	return time.Second
+	if d > maxLoopTick {
+		d = maxLoopTick
+	}
+	return d
 }
 
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
@@ -196,10 +272,14 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 		b.metrics.AddPendingEvents(n)
 	}
 
-	b.wg.Add(1)
+	b.wg.Add(2)
 	go func() {
 		defer b.wg.Done()
 		b.retransmitLoop()
+	}()
+	go func() {
+		defer b.wg.Done()
+		b.pruneLoop()
 	}()
 	return nil
 }
@@ -236,6 +316,7 @@ func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 
 	delete(b.inboxes, triggerID)
 	delete(b.pending, triggerID)
+	delete(b.preAcked, triggerID)
 	delete(b.undeliveredAlertStates, triggerID)
 	b.mu.Unlock()
 
@@ -261,8 +342,38 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	triggerID string,
 ) error {
 	if !b.retransmitAllowed(ctx) {
+		b.lggr.Infow("base trigger retransmit not active")
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
+
+	// Check if this event was already ACKed or is already pending.
+	// Pre-ACK: other capability DON nodes deliver the event faster,
+	// causing the workflow engine to ACK before this node calls DeliverEvent.
+	// Already pending: the EVM trigger re-delivers after finalization
+	// while the event is still awaiting ACK.
+	b.mu.Lock()
+	if pa, ok := b.preAcked[triggerID]; ok {
+		if _, wasAcked := pa[te.ID]; wasAcked {
+			delete(pa, te.ID)
+			if len(pa) == 0 {
+				delete(b.preAcked, triggerID)
+			}
+			b.mu.Unlock()
+			b.lggr.Infow("base trigger DeliverEvent skipped: event was already ACKed (pre-ACK)",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			b.metrics.IncAckMemoryOutcome("pre_ack_delivery_skipped")
+			return nil
+		}
+	}
+	if pending, ok := b.pending[triggerID]; ok {
+		if _, exists := pending[te.ID]; exists {
+			b.mu.Unlock()
+			b.lggr.Debugw("base trigger DeliverEvent skipped: event already pending",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			return nil
+		}
+	}
+	b.mu.Unlock()
 
 	rec := PendingEvent{
 		TriggerId:  triggerID,
@@ -273,6 +384,11 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	}
 
 	if err := b.store.Insert(ctx, rec); err != nil {
+		if isDuplicateKeyError(err) {
+			b.lggr.Debugw("base trigger DeliverEvent: event already in store (re-delivery after give-up), skipping",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			return nil
+		}
 		b.lggr.Errorw("base trigger failed to persist pending event",
 			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
 		return err
@@ -280,15 +396,44 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.lggr.Infow("base trigger persisted pending event for ACK tracking",
 		"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
 
+	// Double-check preAcked under the same lock as adding to pending.
+	// An ACK may have arrived during the store.Insert call above. Without
+	// this second check, the event would be retransmitted forever because
+	// the first preAcked check (before Insert) narrowly missed the ACK.
 	b.mu.Lock()
+	if pa, ok := b.preAcked[triggerID]; ok {
+		if _, wasAcked := pa[te.ID]; wasAcked {
+			delete(pa, te.ID)
+			if len(pa) == 0 {
+				delete(b.preAcked, triggerID)
+			}
+			b.mu.Unlock()
+			b.lggr.Infow("base trigger DeliverEvent skipped after persist: event was ACKed during store write (pre-ACK double-check)",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+			b.metrics.IncAckMemoryOutcome("pre_ack_delivery_skipped")
+			if err := b.store.DeleteEvent(ctx, triggerID, te.ID); err != nil {
+				b.lggr.Errorw("base trigger failed to delete pre-ACKed event from store",
+					"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
+			}
+			return nil
+		}
+	}
 	if b.pending[triggerID] == nil {
 		b.pending[triggerID] = map[string]*PendingEvent{}
 	}
+	rec.LastSentAt = time.Now()
 	b.pending[triggerID][te.ID] = &rec
 	b.mu.Unlock()
 
 	b.metrics.AddPendingEvents(1)
-	b.trySend(rec)
+
+	// Send immediately on first delivery. Setting LastSentAt above prevents
+	// scanPending from re-sending this event on the very next tick — the first
+	// retransmission won't happen until the full retry interval elapses (~30s).
+	if err := b.sendToInbox(triggerID, te.ID, te.Payload.GetValue()); err != nil {
+		b.lggr.Debugw("base trigger DeliverEvent: immediate send failed, will retry via scanPending",
+			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
+	}
 	return nil
 }
 
@@ -356,6 +501,18 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	} else {
 		b.metrics.IncAckMemoryOutcome("miss_no_trigger_bucket")
 	}
+
+	// Always record the ACK so that a later DeliverEvent for this event is
+	// skipped. This covers two scenarios:
+	//   1. (pre-ACK) Other DON nodes delivered the event first, so the ACK
+	//      arrives at this node before DeliverEvent is called.
+	//   2. (re-delivery) The upstream trigger re-delivers the same event
+	//      (e.g. EVM trigger after block finalization prunes its sent-set),
+	//      even though the event was already ACKed during a prior delivery.
+	if b.preAcked[triggerId] == nil {
+		b.preAcked[triggerId] = make(map[string]time.Time)
+	}
+	b.preAcked[triggerId][eventId] = time.Now()
 
 	var wasCritical bool
 	if m, ok := b.undeliveredAlertStates[triggerId]; ok {
@@ -426,6 +583,56 @@ func (b *BaseTriggerCapability[T]) retransmitLoop() {
 	}
 }
 
+type stoppedResendingEvent struct {
+	triggerID   string
+	eventID     string
+	attempts    int
+	wasCritical bool
+}
+
+// reachedMaxRetries returns true when the event has exhausted its allowed send attempts.
+func reachedMaxRetries(attempts, maxRetries int) bool {
+	return maxRetries > 0 && attempts >= maxRetries
+}
+
+// isDuplicateKeyError returns true if err is a PostgreSQL unique constraint
+// violation (SQLSTATE 23505). The store is accessed via gRPC, so we rely on
+// the error message text rather than typed errors.
+func isDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "23505") || strings.Contains(msg, "duplicate key")
+}
+
+// retryBackoff computes an exponential backoff interval: baseInterval * 2^attempts,
+// capped at baseInterval * backoffMultiplierCap. DeliverEvent starts with
+// Attempts=0 (the initial send is not a retry), so the first retransmission
+// waits baseInterval and subsequent ones double each time.
+func retryBackoff(baseInterval time.Duration, attempts int) time.Duration {
+	if attempts <= 0 {
+		return baseInterval
+	}
+	shift := uint(attempts)
+	multiplier := int64(1) << shift
+	if multiplier > backoffMultiplierCap || multiplier <= 0 {
+		multiplier = backoffMultiplierCap
+	}
+	return baseInterval * time.Duration(multiplier)
+}
+
+// addJitter applies ±jitterFraction random noise to d so that retries from
+// multiple nodes don't collide on the same P2P window.
+func addJitter(d time.Duration) time.Duration {
+	if d <= 0 {
+		return d
+	}
+	// rand.Float64 is concurrency-safe and auto-seeded since Go 1.20.
+	noise := time.Duration(float64(d) * jitterFraction * (2*rand.Float64() - 1))
+	return d + noise
+}
+
 func (b *BaseTriggerCapability[T]) scanPending() {
 	now := time.Now()
 	ctx := b.ctx
@@ -435,52 +642,249 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return
 	}
 
+	maxRetries := b.maxRetries(ctx)
 	warnThreshold := 1 * interval
 	critThreshold := 3 * interval
 
 	b.mu.Lock()
-	toResend := make([]PendingEvent, 0, len(b.pending))
-	for triggerID, pendingForTrigger := range b.pending {
-		for eventID, rec := range pendingForTrigger {
-			if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
-				toResend = append(toResend, PendingEvent{
-					TriggerId: rec.TriggerId,
-					EventId:   rec.EventId,
-				})
-			}
 
-			if warnThreshold == 0 && critThreshold == 0 {
+	b.expirePreAcked(now)
+
+	toResend := make([]PendingEvent, 0, len(b.pending))
+	var toStop []stoppedResendingEvent
+	for triggerID, pendingForTrigger := range b.pending {
+		if _, hasInbox := b.inboxes[triggerID]; !hasInbox {
+			continue // registration hasn't arrived yet — skip to avoid wasting retry attempts
+		}
+		for eventID, rec := range pendingForTrigger {
+			if reachedMaxRetries(rec.Attempts, maxRetries) {
+				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, pendingForTrigger))
 				continue
 			}
-			age := now.Sub(rec.FirstAt)
-
-			if b.undeliveredAlertStates[triggerID] == nil {
-				b.undeliveredAlertStates[triggerID] = make(map[string]*undeliveredState)
-			}
-
-			state := b.undeliveredAlertStates[triggerID][eventID]
-			if state == nil {
-				state = &undeliveredState{}
-				b.undeliveredAlertStates[triggerID][eventID] = state
-			}
-
-			// TODO: consider meters (in addition to logs) for warn/crit so the data is easy to chart.
-			if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
-				b.metrics.EmitUndeliveredWarning(triggerID, eventID)
-				state.emittedWarning = true
-			}
-
-			if critThreshold > 0 && !state.emittedCritical && age >= critThreshold {
-				b.metrics.EmitUndeliveredCritical(triggerID, eventID)
-				b.metrics.IncStuckEvent(triggerID, eventID)
-				state.emittedCritical = true
-			}
+			b.collectResendCandidate(rec, now, interval, warnThreshold, critThreshold, &toResend)
 		}
 	}
 	b.mu.Unlock()
 
+	for _, ev := range toStop {
+		b.emitStoppedResending(ctx, ev, maxRetries)
+	}
+
+	// Sort deterministically so all DON nodes select the same events when
+	// the per-tick cap applies. Without this, Go map iteration randomness
+	// causes each node to pick a different subset, preventing the subscriber
+	// from reaching F+1 aggregation quorum. Unsent events (Attempts==0) are
+	// prioritized so fresh events reach quorum on their first tick.
+	sort.Slice(toResend, func(i, j int) bool {
+		iNew := toResend[i].Attempts == 0
+		jNew := toResend[j].Attempts == 0
+		if iNew != jNew {
+			return iNew
+		}
+		if toResend[i].EventId != toResend[j].EventId {
+			return toResend[i].EventId < toResend[j].EventId
+		}
+		return toResend[i].TriggerId < toResend[j].TriggerId
+	})
+
+	cap := b.maxSendsPerTick(ctx)
+	if len(toResend) > cap {
+		b.lggr.Warnw("base trigger capping sends per tick",
+			"capabilityID", b.capabilityId,
+			"eligible", len(toResend), "cap", cap)
+		toResend = toResend[:cap]
+	}
+
 	for _, event := range toResend {
 		b.trySend(event)
+	}
+}
+
+// expirePreAcked removes old preAcked entries so the cache doesn't grow unbounded.
+// The TTL is generous (24h) because entries are tiny (two strings + timestamp) and
+// the cost of expiring too early is severe: a slow node would persist and retransmit
+// an already-ACKed event forever. UnregisterTrigger already clears entries per trigger.
+// Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) expirePreAcked(now time.Time) {
+	preAckTTL := 24 * time.Hour
+	for triggerID, events := range b.preAcked {
+		for eventID, ackedAt := range events {
+			if now.Sub(ackedAt) > preAckTTL {
+				delete(events, eventID)
+			}
+		}
+		if len(events) == 0 {
+			delete(b.preAcked, triggerID)
+		}
+	}
+}
+
+// collectStoppedResending removes the event from pending and alert tracking, returning
+// the metadata needed to emit metrics/logs outside the lock. Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) collectStoppedResending(
+	triggerID, eventID string,
+	rec *PendingEvent,
+	pendingForTrigger map[string]*PendingEvent,
+) stoppedResendingEvent {
+	wasCritical := false
+	if m, ok := b.undeliveredAlertStates[triggerID]; ok {
+		if s, exists := m[eventID]; exists && s != nil && s.emittedCritical {
+			wasCritical = true
+		}
+		delete(m, eventID)
+		if len(m) == 0 {
+			delete(b.undeliveredAlertStates, triggerID)
+		}
+	}
+	delete(pendingForTrigger, eventID)
+	if len(pendingForTrigger) == 0 {
+		delete(b.pending, triggerID)
+	}
+	return stoppedResendingEvent{
+		triggerID:   triggerID,
+		eventID:     eventID,
+		attempts:    rec.Attempts,
+		wasCritical: wasCritical,
+	}
+}
+
+// collectResendCandidate appends the event to toResend if the retry backoff has elapsed,
+// and checks undelivered alert thresholds. Must be called under b.mu.
+func (b *BaseTriggerCapability[T]) collectResendCandidate(
+	rec *PendingEvent,
+	now time.Time,
+	interval, warnThreshold, critThreshold time.Duration,
+	toResend *[]PendingEvent,
+) {
+	backoff := addJitter(retryBackoff(interval, rec.Attempts))
+	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= backoff {
+		*toResend = append(*toResend, PendingEvent{
+			TriggerId: rec.TriggerId,
+			EventId:   rec.EventId,
+			Attempts:  rec.Attempts,
+		})
+	}
+
+	if warnThreshold == 0 && critThreshold == 0 {
+		return
+	}
+	age := now.Sub(rec.FirstAt)
+
+	triggerID, eventID := rec.TriggerId, rec.EventId
+	if b.undeliveredAlertStates[triggerID] == nil {
+		b.undeliveredAlertStates[triggerID] = make(map[string]*undeliveredState)
+	}
+
+	state := b.undeliveredAlertStates[triggerID][eventID]
+	if state == nil {
+		state = &undeliveredState{}
+		b.undeliveredAlertStates[triggerID][eventID] = state
+	}
+
+	if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
+		b.metrics.EmitUndeliveredWarning(triggerID, eventID)
+		state.emittedWarning = true
+	}
+
+	if critThreshold > 0 && !state.emittedCritical && age >= critThreshold {
+		b.metrics.EmitUndeliveredCritical(triggerID, eventID)
+		b.metrics.IncStuckEvent(triggerID, eventID)
+		state.emittedCritical = true
+	}
+}
+
+// emitStoppedResending logs and emits metrics for an event that exhausted its retries.
+// The event is NOT deleted from the store here — the prune loop handles cleanup,
+// giving operators time to investigate unrecoverable payloads (e.g. HTTP triggers).
+func (b *BaseTriggerCapability[T]) emitStoppedResending(ctx context.Context, ev stoppedResendingEvent, maxRetries int) {
+	b.lggr.Errorw("base trigger stopped resending event after max retries",
+		"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
+		"attempts", ev.attempts, "maxRetries", maxRetries,
+		"reason", "max_retries_exhausted")
+	b.metrics.IncStoppedResending(ev.triggerID, ev.eventID, ev.attempts)
+	b.metrics.AddPendingEvents(-1)
+	if ev.wasCritical {
+		b.metrics.DecStuckEvent(ev.triggerID, ev.eventID)
+	}
+}
+
+// pruneLoop periodically removes old rows from the event store that are no longer tracked in memory.
+// This catches rows orphaned by crashes, missed deletes, or events that were given up on before
+// this code was deployed. It uses store.List + age comparison + store.DeleteEvent,
+// avoiding any new EventStore interface methods.
+func (b *BaseTriggerCapability[T]) pruneLoop() {
+	const minPruneInterval = time.Minute
+	for {
+		age := b.pruneAge(b.ctx)
+		if age <= 0 {
+			age = 24 * time.Hour
+		}
+		tick := age / 4
+		if tick < minPruneInterval {
+			tick = minPruneInterval
+		}
+
+		timer := time.NewTimer(tick)
+		select {
+		case <-b.ctx.Done():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return
+		case <-timer.C:
+			b.pruneStaleEvents()
+		}
+	}
+}
+
+func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
+	age := b.pruneAge(b.ctx)
+	if age <= 0 {
+		return
+	}
+	cutoff := time.Now().Add(-age)
+
+	recs, err := b.store.List(b.ctx)
+	if err != nil {
+		b.lggr.Errorw("prune: failed to list events from store", "capabilityID", b.capabilityId, "err", err)
+		return
+	}
+
+	for _, rec := range recs {
+		// Use the most recent activity timestamp so events still being
+		// retried aren't pruned prematurely.
+		lastActivity := rec.FirstAt
+		if rec.LastSentAt.After(lastActivity) {
+			lastActivity = rec.LastSentAt
+		}
+		if lastActivity.After(cutoff) {
+			continue
+		}
+
+		b.mu.Lock()
+		inMemory := false
+		if evts, ok := b.pending[rec.TriggerId]; ok {
+			_, inMemory = evts[rec.EventId]
+		}
+		b.mu.Unlock()
+
+		if inMemory {
+			// An event old enough to prune should not still be in memory —
+			// scanPending should have stopped resending it or an ACK should
+			// have removed it. Log a warning so we can investigate.
+			b.lggr.Warnw("prune: stale event still tracked in memory (possible inconsistency; skipping)",
+				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,
+				"firstAt", rec.FirstAt, "lastSentAt", rec.LastSentAt, "attempts", rec.Attempts, "pruneAge", age)
+			continue
+		}
+
+		b.lggr.Infow("prune: removing stale event from store",
+			"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,
+			"firstAt", rec.FirstAt, "lastSentAt", rec.LastSentAt, "attempts", rec.Attempts, "pruneAge", age)
+		if err := b.store.DeleteEvent(b.ctx, rec.TriggerId, rec.EventId); err != nil {
+			b.lggr.Errorw("prune: failed to delete stale event",
+				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId, "err", err)
+		}
 	}
 }
 

@@ -76,6 +76,9 @@ func TestClient_SetGlobalOtelProviders(t *testing.T) {
 	var b strings.Builder
 	client, err := beholder.NewWriterClient(&b)
 	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, client.Close())
+	}()
 	// Set global Otel Client
 	beholder.SetClient(client)
 

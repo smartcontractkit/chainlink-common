@@ -256,7 +256,7 @@ func Test_NoDAG_RequirementsNotMet(t *testing.T) {
 
 	expected := &sdk.Requirements{
 		Tee: &sdk.Tee{Type: &sdk.Tee_TypeSelection{
-			TypeSelection: &sdk.TeeTypeSelection{Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO}}},
+			TypeSelection: &sdk.TeeTypeSelection{Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}}}},
 		}},
 	}
 	assert.True(t, proto.Equal(expected, (*sdk.Requirements)(rerunErr)))

@@ -264,7 +264,12 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			if err != nil {
 				return false, err
 			}
-			return md.TeeEnabled, nil
+			for _, env := range md.AdditionalEnvironments {
+				if env == generator.AdditionalEnironments_ADDITIONAL_ENVIRONMENTS_TEE {
+					return true, nil
+				}
+			}
+			return false, nil
 		},
 	}).Funcs(t.ExtraFns)
 

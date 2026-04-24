@@ -17,6 +17,7 @@ import (
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
+	stelpb "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
@@ -170,6 +171,9 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		if aptosService, ok := r.(types.AptosService); ok {
 			aptospb.RegisterAptosServer(s, newAptosServer(aptosService, p.BrokerExt))
 		}
+		if stellarService, ok := r.(types.StellarService); ok {
+			stelpb.RegisterStellarServer(s, newStellarServer(stellarService, p.BrokerExt))
+		}
 	}, rRes, ksRes, ksCSARes, crRes)
 	if err != nil {
 		return nil, err
@@ -183,11 +187,12 @@ type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
-	relayer     pb.RelayerClient
-	evmClient   evmpb.EVMClient
-	tonClient   tonpb.TONClient
-	solClient   solpb.SolanaClient
-	aptosClient aptospb.AptosClient
+	relayer       pb.RelayerClient
+	evmClient     evmpb.EVMClient
+	tonClient     tonpb.TONClient
+	solClient     solpb.SolanaClient
+	aptosClient   aptospb.AptosClient
+	stellarClient stelpb.StellarClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
@@ -199,6 +204,7 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 		tonpb.NewTONClient(conn),
 		solpb.NewSolanaClient(conn),
 		aptospb.NewAptosClient(conn),
+		stelpb.NewStellarClient(conn),
 	}
 }
 
@@ -471,6 +477,12 @@ func (r *relayerClient) Solana() (types.SolanaService, error) {
 func (r *relayerClient) Aptos() (types.AptosService, error) {
 	return &AptosClient{
 		r.aptosClient,
+	}, nil
+}
+
+func (r *relayerClient) Stellar() (types.StellarService, error) {
+	return &StellarClient{
+		r.stellarClient,
 	}, nil
 }
 

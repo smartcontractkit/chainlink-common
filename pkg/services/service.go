@@ -107,6 +107,19 @@ func (e *Engine) GoTick(ticker *timeutil.Ticker, fn func(context.Context)) {
 	})
 }
 
+func EngineRecv[C any, CH ~<-chan C](e *Engine, ch CH, fn func(C)) {
+	e.Go(func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case c := <-ch:
+				fn(c)
+			}
+		}
+	})
+}
+
 // Tracer returns the otel tracer with service attributes included.
 func (e *Engine) Tracer() trace.Tracer {
 	return e.tracer

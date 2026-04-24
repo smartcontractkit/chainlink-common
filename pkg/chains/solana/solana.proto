@@ -342,7 +342,6 @@ message SimulateTransactionAccountsOpts {
 
 // Submit transaction result.
 message SubmitTransactionReply {
-  bytes signature = 1;       // 64-byte signature
   string idempotency_key = 2; // echo key
   TxStatus status = 3;
 }

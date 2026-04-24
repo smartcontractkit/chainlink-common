@@ -1257,12 +1257,8 @@ func ConvertSubmitTransactionReplyFromProto(p *SubmitTransactionReply) (*solana.
 	if p == nil {
 		return nil, nil
 	}
-	sig, err := ConvertSignatureFromProto(p.Signature)
-	if err != nil {
-		return nil, err
-	}
+
 	return &solana.SubmitTransactionReply{
-		Signature:      sig,
 		IdempotencyKey: p.IdempotencyKey,
 		Status:         solana.TransactionStatus(p.Status),
 	}, nil
@@ -1273,7 +1269,6 @@ func ConvertSubmitTransactionReplyToProto(r *solana.SubmitTransactionReply) *Sub
 		return nil
 	}
 	return &SubmitTransactionReply{
-		Signature:      r.Signature[:],
 		IdempotencyKey: r.IdempotencyKey,
 		Status:         TxStatus(r.Status),
 	}

@@ -2757,7 +2757,6 @@ func (x *SimulateTransactionAccountsOpts) GetAddresses() [][]byte {
 // Submit transaction result.
 type SubmitTransactionReply struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Signature      []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`                                 // 64-byte signature
 	IdempotencyKey string                 `protobuf:"bytes,2,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"` // echo key
 	Status         TxStatus               `protobuf:"varint,3,opt,name=status,proto3,enum=loop.solana.TxStatus" json:"status,omitempty"`
 	unknownFields  protoimpl.UnknownFields
@@ -2792,13 +2791,6 @@ func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use SubmitTransactionReply.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReply) Descriptor() ([]byte, []int) {
 	return file_solana_proto_rawDescGZIP(), []int{42}
-}
-
-func (x *SubmitTransactionReply) GetSignature() []byte {
-	if x != nil {
-		return x.Signature
-	}
-	return nil
 }
 
 func (x *SubmitTransactionReply) GetIdempotencyKey() string {
@@ -4250,9 +4242,8 @@ const file_solana_proto_rawDesc = "" +
 	"\x04opts\x18\x03 \x01(\v2\x1b.loop.solana.SimulateTXOptsR\x04opts\"v\n" +
 	"\x1fSimulateTransactionAccountsOpts\x125\n" +
 	"\bencoding\x18\x01 \x01(\x0e2\x19.loop.solana.EncodingTypeR\bencoding\x12\x1c\n" +
-	"\taddresses\x18\x02 \x03(\fR\taddresses\"\x8e\x01\n" +
-	"\x16SubmitTransactionReply\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignature\x12'\n" +
+	"\taddresses\x18\x02 \x03(\fR\taddresses\"p\n" +
+	"\x16SubmitTransactionReply\x12'\n" +
 	"\x0fidempotency_key\x18\x02 \x01(\tR\x0eidempotencyKey\x12-\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x15.loop.solana.TxStatusR\x06status\"\x95\x01\n" +
 	"\x18SubmitTransactionRequest\x12,\n" +

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776891029693,
+  "lastUpdate": 1777032798948,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45000,6 +45000,66 @@ window.BENCHMARK_DATA = {
             "value": 139738,
             "unit": "ns/op",
             "extra": "8175 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1fd6cbfea8000121d85902f59fff4bfe0cef26f",
+          "message": "feat(observability-lib): support AddPanelToRow to support collapsed rows (#1997)\n\n* feat(observability-lib): support AddPanelToRow to support collapsed rows\n\n* fix(observability-lib): linting\n\n* fix(observability-lib): prevent replay built\n\n* fix(observability-lib): trigger error when no name is set\n\n* chore(observability-lib): refactor to add new panel type in unique place\n\n* chore(observability-lib): cannot add panel to row on non existent row",
+          "timestamp": "2026-04-24T12:01:36Z",
+          "tree_id": "c40d581f709a10edd9846f78bc4b79adbffae3f3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b1fd6cbfea8000121d85902f59fff4bfe0cef26f"
+        },
+        "date": 1777032797326,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 772,
+            "unit": "ns/op",
+            "extra": "1495509 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92133,
+            "unit": "ns/op",
+            "extra": "12992 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401,
+            "unit": "ns/op",
+            "extra": "2978157 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91935,
+            "unit": "ns/op",
+            "extra": "13084 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26573,
+            "unit": "ns/op",
+            "extra": "45230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 145345,
+            "unit": "ns/op",
+            "extra": "8418 times\n4 procs"
           }
         ]
       }

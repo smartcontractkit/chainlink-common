@@ -43,7 +43,7 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
-			On("Publish", mock.Anything, mock.Anything).
+			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, nil)
 
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
@@ -69,7 +69,7 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
-			On("Publish", mock.Anything, mock.Anything).
+			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, assert.AnError)
 
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
@@ -190,7 +190,7 @@ func TestExtractSourceAndType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			domain, entity, err := beholder.ExtractSourceAndType(tt.attrs...)
+			domain, entity, err := beholder.ExtractSourceAndType(beholder.ExtractAttributes(tt.attrs))
 
 			if tt.wantErr {
 				if err == nil {

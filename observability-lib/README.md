@@ -27,7 +27,16 @@ Godoc generated documentation is available [here](https://pkg.go.dev/github.com/
 
 ### Creating a dashboard
 
-<details><summary>main.go</summary>
+There are two ways to add panels to a dashboard:
+
+- **`AddPanel`**: adds a panel directly to the dashboard as a top-level element. Panels appear in the order they are added.
+- **`AddPanelToRow`**: adds a panel inside a row. Rows with panels are automatically **collapsed** in Grafana, meaning their panels are nested and hidden until the user expands the row.
+
+Rows without any panels added via `AddPanelToRow` remain open (not collapsed).
+
+You can freely interleave `AddRow`, `AddPanel`, and `AddPanelToRow` calls — the dashboard will preserve the insertion order.
+
+#### Basic dashboard with top-level panels
 
 ```go
 package main
@@ -90,7 +99,134 @@ func main() {
 	fmt.Println(string(json))
 }
 ```
-</details>
+
+#### Dashboard with collapsed rows
+
+Use `AddPanelToRow` to nest panels inside a row. The row will be automatically collapsed in Grafana, so users can expand it to see the panels inside.
+
+```go
+builder := grafana.NewBuilder(&grafana.BuilderOptions{
+	Name:    "Dashboard With Collapsed Rows",
+	Tags:    []string{"example"},
+	Refresh: "30s",
+})
+
+// A collapsed row with multiple panels nested inside
+builder.AddRow("Resource Usage")
+builder.AddPanelToRow("Resource Usage",
+	grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: "Prometheus",
+			Title:      grafana.Pointer("CPU Usage"),
+			Span:       12,
+			Height:     8,
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(cpu_usage_seconds_total[5m])`,
+					Legend: `{{ pod }}`,
+				},
+			},
+		},
+	}),
+	grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: "Prometheus",
+			Title:      grafana.Pointer("Memory Usage"),
+			Span:       12,
+			Height:     4,
+			Query: []grafana.Query{
+				{
+					Expr:   `memory_usage_bytes`,
+					Legend: `{{ pod }}`,
+				},
+			},
+		},
+	}),
+)
+
+// Another collapsed row
+builder.AddRow("Network")
+builder.AddPanelToRow("Network",
+	grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: "Prometheus",
+			Title:      grafana.Pointer("Network I/O"),
+			Span:       24,
+			Height:     8,
+			Query: []grafana.Query{
+				{
+					Expr:   `rate(network_bytes_total[5m])`,
+					Legend: `{{ interface }}`,
+				},
+			},
+		},
+	}),
+)
+```
+
+#### Mixing top-level panels, open rows, and collapsed rows
+
+You can combine all three patterns in a single dashboard. The order of calls determines the layout.
+
+```go
+builder := grafana.NewBuilder(&grafana.BuilderOptions{
+	Name:    "Mixed Layout Dashboard",
+	Refresh: "30s",
+})
+
+// Top-level panel (not inside any row)
+builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+	PanelOptions: &grafana.PanelOptions{
+		Title: grafana.Pointer("Health Status"),
+		Span:  24,
+	},
+}))
+
+// Open row (no panels added via AddPanelToRow, so it stays expanded)
+builder.AddRow("Overview")
+
+// Top-level panel after the open row
+builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+	PanelOptions: &grafana.PanelOptions{
+		Title: grafana.Pointer("Request Rate"),
+		Span:  12,
+	},
+}))
+
+// Collapsed row with panels inside
+builder.AddRow("Details")
+builder.AddPanelToRow("Details",
+	grafana.NewTablePanel(&grafana.TablePanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Title: grafana.Pointer("Request Log"),
+			Span:  24,
+		},
+	}),
+	grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Title: grafana.Pointer("Latency Over Time"),
+			Span:  24,
+		},
+	}),
+)
+
+// Another top-level panel after the collapsed row
+builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+	PanelOptions: &grafana.PanelOptions{
+		Title: grafana.Pointer("Error Rate"),
+		Span:  12,
+	},
+}))
+
+// Resulting layout:
+// 1. Health Status       (top-level panel)
+// 2. Overview            (open row, expanded)
+// 3. Request Rate        (top-level panel)
+// 4. Details             (collapsed row, click to expand)
+//    ├─ Request Log      (nested inside row)
+//    └─ Latency Over Time(nested inside row)
+// 5. Error Rate          (top-level panel)
+```
 
 ## Cmd Usage
 

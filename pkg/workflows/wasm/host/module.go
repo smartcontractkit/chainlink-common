@@ -50,10 +50,10 @@ var (
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 
-	defaultMaxUserMetricPayloadBytes      = uint32(4096) // 4 KB
-	defaultMaxUserMetricNameLength        = uint32(128)
-	defaultMaxUserMetricLabelsPerMetric   = uint32(10)
-	defaultMaxUserMetricLabelValueLength  = uint32(256)
+	defaultMaxUserMetricPayloadBytes     = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength       = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric  = uint32(10)
+	defaultMaxUserMetricLabelValueLength = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -82,7 +82,7 @@ type ModuleConfig struct {
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
 
-	EnableUserMetricsLimiter limits.GateLimiter
+	EnableUserMetricsLimiter             limits.GateLimiter
 	MaxUserMetricPayloadBytes            uint32
 	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
 	MaxUserMetricNameLength              uint32
@@ -623,7 +623,16 @@ func runWasm[I, O proto.Message](
 
 	var o O
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
+	// No reason to run the WASM longer if the outer ctx will cancel.
+	ctxDeadline, hasDeadline := ctx.Deadline()
+	var ctxWithTimeout context.Context
+	var cancel func()
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
+		ctxWithTimeout, cancel = context.WithCancel(ctx)
+	} else {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
+	}
+
 	defer cancel()
 
 	store := wasmtime.NewStore(m.engine)
@@ -731,7 +740,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && (executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctxDeadline.Before(time.Now()) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

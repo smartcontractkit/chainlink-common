@@ -60,6 +60,109 @@ func Test_Sleep_Timeout(t *testing.T) {
 	require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
 }
 
+func Test_Execute_CtxTimeout(t *testing.T) {
+	t.Parallel()
+	t.Run("timeout from module is first", func(t *testing.T) {
+		t.Parallel()
+
+		binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
+
+		mc := defaultNoDAGModCfg(t)
+		timeout := time.Second
+		mc.Timeout = &timeout
+		m, err := NewModule(t.Context(), mc, binary)
+		require.NoError(t, err)
+
+		m.v2ImportName = "test"
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
+
+		req := &sdk.ExecuteRequest{
+			Request: &sdk.ExecuteRequest_Trigger{},
+		}
+
+		start := time.Now()
+		timeoutCtx, cancel := context.WithTimeout(t.Context(), time.Minute)
+		defer cancel()
+		_, err = m.Execute(timeoutCtx, req, mockExecutionHelper)
+		duration := time.Since(start)
+		require.ErrorIs(t, err, context.DeadlineExceeded)
+		require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
+	})
+
+	t.Run("no context timeout", func(t *testing.T) {
+		t.Parallel()
+
+		binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
+
+		mc := defaultNoDAGModCfg(t)
+		timeout := time.Second
+		mc.Timeout = &timeout
+		m, err := NewModule(t.Context(), mc, binary)
+		require.NoError(t, err)
+
+		m.v2ImportName = "test"
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
+
+		req := &sdk.ExecuteRequest{
+			Request: &sdk.ExecuteRequest_Trigger{},
+		}
+
+		start := time.Now()
+		_, err = m.Execute(t.Context(), req, mockExecutionHelper)
+		duration := time.Since(start)
+		require.ErrorIs(t, err, context.DeadlineExceeded)
+		require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
+	})
+
+	t.Run("timeout from context is first", func(t *testing.T) {
+		t.Parallel()
+
+		binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
+
+		mc := defaultNoDAGModCfg(t)
+		timeout := time.Minute
+		mc.Timeout = &timeout
+		m, err := NewModule(t.Context(), mc, binary)
+		require.NoError(t, err)
+
+		m.v2ImportName = "test"
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
+
+		req := &sdk.ExecuteRequest{
+			Request: &sdk.ExecuteRequest_Trigger{},
+		}
+
+		start := time.Now()
+		timeoutCtx, cancel := context.WithTimeout(t.Context(), time.Second)
+		defer cancel()
+		_, err = m.Execute(timeoutCtx, req, mockExecutionHelper)
+		duration := time.Since(start)
+		require.ErrorIs(t, err, context.DeadlineExceeded)
+		require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
+	})
+}
+
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 

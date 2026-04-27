@@ -147,8 +147,9 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 	}
 
 	observation := &pb.Observation{
-		Timestamp: time.Now().UTC().UnixMilli(),
-		Requests:  requests,
+		Timestamp:       time.Now().UTC().UnixMilli(),
+		Requests:        requests,
+		PruneExecutions: true,
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)

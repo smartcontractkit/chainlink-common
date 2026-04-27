@@ -22,11 +22,13 @@ const (
 )
 
 type Observation struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timestamp     int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Requests      map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Requests  map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// Flag to roll out execution pruning fix. Can be removed after rollout (once unused in the outcome phase).
+	PruneExecutions bool `protobuf:"varint,3,opt,name=prune_executions,json=pruneExecutions,proto3" json:"prune_executions,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Observation) Reset() {
@@ -71,6 +73,13 @@ func (x *Observation) GetRequests() map[string]int64 {
 		return x.Requests
 	}
 	return nil
+}
+
+func (x *Observation) GetPruneExecutions() bool {
+	if x != nil {
+		return x.PruneExecutions
+	}
+	return false
 }
 
 type ObservedDonTimes struct {
@@ -173,13 +182,14 @@ var File_dontime_proto protoreflect.FileDescriptor
 
 const file_dontime_proto_rawDesc = "" +
 	"\n" +
-	"\rdontime.proto\"\xa6\x01\n" +
+	"\rdontime.proto\"\xcb\x01\n" +
 	"\vObservation\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x126\n" +
-	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x1a;\n" +
+	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x12)\n" +
+	"\x10prune_executions\x18\x03 \x01(\bR\x0fpruneExecutions\x1a;\n" +
 	"\rRequestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01J\x04\b\x03\x10\x04\"2\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"2\n" +
 	"\x10ObservedDonTimes\x12\x1e\n" +
 	"\n" +
 	"timestamps\x18\x01 \x03(\x03R\n" +

@@ -214,6 +214,47 @@ type Panel struct {
 	alertBuilders                []*alerting.RuleBuilder
 }
 
+// panelBuilder sets the panel ID and returns the underlying builder as a cog.Builder[dashboard.Panel].
+func (p *Panel) panelBuilder(id uint32) cog.Builder[dashboard.Panel] {
+	switch {
+	case p.statPanelBuilder != nil:
+		p.statPanelBuilder.Id(id)
+		return p.statPanelBuilder
+	case p.timeSeriesPanelBuilder != nil:
+		p.timeSeriesPanelBuilder.Id(id)
+		return p.timeSeriesPanelBuilder
+	case p.barGaugePanelBuilder != nil:
+		p.barGaugePanelBuilder.Id(id)
+		return p.barGaugePanelBuilder
+	case p.gaugePanelBuilder != nil:
+		p.gaugePanelBuilder.Id(id)
+		return p.gaugePanelBuilder
+	case p.tablePanelBuilder != nil:
+		p.tablePanelBuilder.Id(id)
+		return p.tablePanelBuilder
+	case p.logPanelBuilder != nil:
+		p.logPanelBuilder.Id(id)
+		return p.logPanelBuilder
+	case p.heatmapBuilder != nil:
+		p.heatmapBuilder.Id(id)
+		return p.heatmapBuilder
+	case p.textPanelBuilder != nil:
+		p.textPanelBuilder.Id(id)
+		return p.textPanelBuilder
+	case p.histogramPanelBuilder != nil:
+		p.histogramPanelBuilder.Id(id)
+		return p.histogramPanelBuilder
+	case p.businessVariablePanelBuilder != nil:
+		p.businessVariablePanelBuilder.Id(id)
+		return p.businessVariablePanelBuilder
+	case p.polystatPanelBuilder != nil:
+		p.polystatPanelBuilder.Id(id)
+		return p.polystatPanelBuilder
+	default:
+		return nil
+	}
+}
+
 // panel defaults
 func setDefaults(options *PanelOptions) {
 	if options.Datasource == "" {

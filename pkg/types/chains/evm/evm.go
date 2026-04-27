@@ -100,6 +100,7 @@ type Transaction struct {
 type ReceiptGasInfo struct {
 	GasUsed           uint64   // actual gas used during execution in gas units
 	EffectiveGasPrice *big.Int // actual price in wei paid per gas unit
+	L1Fee             *big.Int // layer 1 fee paid by L2 chains
 }
 
 // matches evm-style receipt

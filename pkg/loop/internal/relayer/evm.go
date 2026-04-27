@@ -574,6 +574,7 @@ func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.
 	txFee, err := e.impl.CalculateTransactionFee(ctx, evmtypes.ReceiptGasInfo{
 		GasUsed:           request.GasInfo.GasUsed,
 		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+		L1Fee:             valuespb.NewIntFromBigInt(request.GasInfo.L1_Fee),
 	})
 	if err != nil {
 		return nil, err

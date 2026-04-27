@@ -62,11 +62,10 @@ func Test_Sleep_Timeout(t *testing.T) {
 
 func Test_Execute_CtxTimeout(t *testing.T) {
 	t.Parallel()
+	// different build location so it doesn't clash with the other test when building
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation+"_2", true, t)
 	t.Run("timeout from module is first", func(t *testing.T) {
 		t.Parallel()
-
-		binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
-
 		mc := defaultNoDAGModCfg(t)
 		timeout := time.Second
 		mc.Timeout = &timeout
@@ -99,8 +98,6 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 	t.Run("no context timeout", func(t *testing.T) {
 		t.Parallel()
 
-		binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
-
 		mc := defaultNoDAGModCfg(t)
 		timeout := time.Second
 		mc.Timeout = &timeout
@@ -130,8 +127,6 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 
 	t.Run("timeout from context is first", func(t *testing.T) {
 		t.Parallel()
-
-		binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 		mc := defaultNoDAGModCfg(t)
 		timeout := time.Minute

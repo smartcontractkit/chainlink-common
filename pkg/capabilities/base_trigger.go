@@ -670,11 +670,8 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		b.emitStoppedResending(ctx, ev, maxRetries)
 	}
 
-	// Sort deterministically so all DON nodes select the same events when
-	// the per-tick cap applies. Without this, Go map iteration randomness
-	// causes each node to pick a different subset, preventing the subscriber
-	// from reaching F+1 aggregation quorum. Unsent events (Attempts==0) are
-	// prioritized so fresh events reach quorum on their first tick.
+	// Sort deterministically so all DON nodes select similar events when
+	// the per-tick cap applies. This helps ACKs get through faster.
 	sort.Slice(toResend, func(i, j int) bool {
 		iNew := toResend[i].Attempts == 0
 		jNew := toResend[j].Attempts == 0
@@ -687,12 +684,12 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		return toResend[i].TriggerId < toResend[j].TriggerId
 	})
 
-	cap := b.maxSendsPerTick(ctx)
-	if len(toResend) > cap {
+	sendCap := b.maxSendsPerTick(ctx)
+	if len(toResend) > sendCap {
 		b.lggr.Warnw("base trigger capping sends per tick",
 			"capabilityID", b.capabilityId,
-			"eligible", len(toResend), "cap", cap)
-		toResend = toResend[:cap]
+			"eligible", len(toResend), "sendCap", sendCap)
+		toResend = toResend[:sendCap]
 	}
 
 	for _, event := range toResend {

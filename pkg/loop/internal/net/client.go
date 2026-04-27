@@ -56,11 +56,12 @@ type clientConn struct {
 	newClient newClientFn
 	name      string
 
-	mu          sync.RWMutex
-	deps        Resources
-	cc          *grpc.ClientConn
-	refreshing  bool
-	refreshDone chan struct{}
+	mu   sync.RWMutex
+	deps Resources
+	cc   *grpc.ClientConn
+
+	refreshing  bool          // indicates whether a refresh operation is currently in progress.
+	refreshDone chan struct{} // closed when the current refresh attempt finishes so waiters can re-check state.
 }
 
 func (c *clientConn) GetState() connectivity.State {
@@ -138,6 +139,8 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 // both the broker-side resources and the new gRPC connection are ready, so observers either see the
 // previous complete generation or the next complete generation, never a partial one.
 func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.ClientConn, error) {
+	// refreshDone is the completion signal for the specific in-flight refresh attempt we either own
+	// or wait on. Waiters snapshot it under lock, then block on it without holding the mutex.
 	var refreshDone chan struct{}
 	for {
 		c.mu.Lock()
@@ -151,17 +154,26 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 		if c.refreshing {
 			// Only one goroutine performs the reconnect work. Everyone else waits without
 			// holding the state lock, which avoids node-wide stalls during backoff.
+			//
+			// refreshDone belongs to the goroutine that already won the refresh race. When that
+			// goroutine closes the channel, it means "this refresh attempt is finished; re-check
+			// the currently published connection and decide again from there."
 			refreshDone = c.refreshDone
 			c.mu.Unlock()
 			select {
 			case <-ctx.Done():
 				return nil, fmt.Errorf("%w", context.Cause(ctx))
 			case <-refreshDone:
+				// Do not assume success here. The refresh goroutine may have published a new
+				// connection, or it may have failed and cleared the in-flight marker. Loop back
+				// under lock and inspect the current state again.
 			}
 			continue
 		}
 
 		c.refreshing = true
+		// This goroutine is now the single owner of the current refresh attempt. Anyone else
+		// that encounters the broken generation will wait on this channel until we finish.
 		refreshDone = make(chan struct{})
 		c.refreshDone = refreshDone
 
@@ -184,6 +196,9 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 	defer func() {
 		c.mu.Lock()
 		c.refreshing = false
+		// Closing refreshDone wakes every waiter that snapped this attempt's completion signal.
+		// They will re-enter the loop, observe either the newly published connection or the lack
+		// of one, and then either use it or start the next refresh attempt.
 		close(refreshDone)
 		c.refreshDone = nil
 		c.mu.Unlock()

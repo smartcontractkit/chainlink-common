@@ -58,8 +58,7 @@ func TestPluginService_Reset_RecreatesLogicalService(t *testing.T) {
 	hook.Reset()
 
 	// After a plugin restart, PluginService is expected to build a fresh logical service and
-	// close the superseded one. The pre-fix bug reused the old service across relaunchs, so the
-	// first assertion below stayed stuck at 1.
+	// close the superseded one.
 	require.Eventually(t, func() bool {
 		return newServiceCalls.Load() == 2
 	}, 3*goplugin.KeepAliveTickDuration, 100*time.Millisecond)

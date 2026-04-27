@@ -55,7 +55,7 @@ type PluginService[P grpcPlugin, S services.Service] struct {
 	testInterrupt chan func(*PluginService[P, S]) // tests only (via TestHook) to enable access to internals without racing
 }
 
-// NewService funcs returns an S and a HeathReporter, which should provide the top level health report for the whole
+// NewService funcs returns an S and a HealthReporter, which should provide the top level health report for the whole
 // plugin, and which may be the same as S.
 type NewService[S services.Service] func(context.Context, any) (S, services.HealthReporter, error)
 
@@ -293,9 +293,7 @@ func (s *PluginService[P, S]) Close() error {
 
 		select {
 		case <-s.serviceCh:
-			s.mu.RLock()
-			service := s.Service
-			s.mu.RUnlock()
+			service := s.CurrentService()
 			if cerr := service.Close(); !isCanceled(cerr) {
 				err = errors.Join(err, cerr)
 			}

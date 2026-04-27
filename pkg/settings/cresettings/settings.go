@@ -334,8 +334,8 @@ type Workflows struct {
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 
-	FeatureMultiTriggerExecutionIDsActiveAt     Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod Setting[Range[config.Timestamp]]
+	FeatureMultiTriggerExecutionIDsActiveAt        Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod    Setting[Range[config.Timestamp]]
 	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
 }
 

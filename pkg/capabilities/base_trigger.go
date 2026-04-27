@@ -548,7 +548,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 
 func (b *BaseTriggerCapability[T]) retransmitLoop() {
 	for {
-		timer := time.NewTimer(500 * time.Millisecond)
+		timer := time.NewTimer(100 * time.Millisecond)
 		select {
 		case <-b.ctx.Done():
 			if !timer.Stop() {

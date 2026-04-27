@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
@@ -44,6 +44,20 @@ func subscribeRequest() *sdk.ExecuteRequest {
 	}
 }
 
+func subscribeResult(subs ...*sdk.TriggerSubscription) *sdk.ExecutionResult {
+	return &sdk.ExecutionResult{
+		Result: &sdk.ExecutionResult_TriggerSubscriptions{
+			TriggerSubscriptions: &sdk.TriggerSubscriptionRequest{
+				Subscriptions: subs,
+			},
+		},
+	}
+}
+
+func subWithReqs(reqs *sdk.Requirements) *sdk.TriggerSubscription {
+	return &sdk.TriggerSubscription{Requirements: reqs}
+}
+
 func TestRequirementSelectingModule_Start(t *testing.T) {
 	t.Run("starts only main module", func(t *testing.T) {
 		var mainStarted, additionalStarted bool
@@ -77,23 +91,20 @@ func TestRequirementSelectingModule_Close(t *testing.T) {
 	})
 
 	t.Run("closes main and all started additional modules", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 
 		var mainClosed, add0Closed, add1Closed bool
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
 			closeFn: func() { mainClosed = true },
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return nil, rerunErr
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 		add0 := ModuleAndHandler{
 			Module: &stubModule{
 				startFn: noop,
 				closeFn: func() { add0Closed = true },
-				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-					return &sdk.ExecutionResult{}, nil
-				},
 			},
 			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
 		}
@@ -108,7 +119,7 @@ func TestRequirementSelectingModule_Close(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add0, add1})
 		m.Start()
 
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
 
 		m.Close()
@@ -126,12 +137,15 @@ func TestRequirementSelectingModule_IsLegacyDAG(t *testing.T) {
 }
 
 func TestRequirementSelectingModule_Execute(t *testing.T) {
-	t.Run("main succeeds — returns result directly", func(t *testing.T) {
+	t.Run("trigger with no cached entry goes to main", func(t *testing.T) {
 		want := &sdk.ExecutionResult{}
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return want, nil
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if req.GetTrigger() != nil {
+					return want, nil
+				}
+				return subscribeResult(), nil
 			},
 		}}
 
@@ -143,7 +157,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		assert.Equal(t, want, got)
 	})
 
-	t.Run("main non-RequirementsRerun error propagates", func(t *testing.T) {
+	t.Run("main error on subscribe propagates", func(t *testing.T) {
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
 			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
@@ -164,18 +178,18 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		assert.ErrorIs(t, err, assert.AnError)
 	})
 
-	t.Run("RequirementsRerun routes to matching additional", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+	t.Run("subscribe with requirements routes trigger to additional", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		want := &sdk.ExecutionResult{}
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return nil, rerunErr
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 		add := ModuleAndHandler{
@@ -192,18 +206,21 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		got, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		got, err := m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
 
-	t.Run("RequirementsRerun with no matching additional returns error", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+	t.Run("subscribe with unmatched requirements returns error", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return nil, rerunErr
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 		add := ModuleAndHandler{
@@ -214,19 +231,19 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot find a runner that can satisfy the requirements")
 	})
 
-	t.Run("RequirementsRerun skips non-matching and selects later match", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+	t.Run("subscribe skips non-matching and selects later additional", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		want := &sdk.ExecutionResult{}
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return nil, rerunErr
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 		add0 := ModuleAndHandler{
@@ -247,49 +264,48 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add0, add1})
 		m.Start()
 
-		got, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		got, err := m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
 
-	t.Run("additional module started lazily", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+	t.Run("additional module started lazily during subscribe", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		var addStartCount int32
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return nil, rerunErr
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 		add := ModuleAndHandler{
 			Module: &stubModule{
 				startFn: func() { atomic.AddInt32(&addStartCount, 1) },
 				closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-					return &sdk.ExecutionResult{}, nil
-				},
 			},
 			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
+		assert.Equal(t, int32(0), atomic.LoadInt32(&addStartCount))
 
-		// First execution starts the additional module.
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
 		assert.Equal(t, int32(1), atomic.LoadInt32(&addStartCount))
 
-		// Second execution with a different trigger still goes through main,
-		// but the additional module is not started again (sync.Once).
-		_, err = m.Execute(t.Context(), triggerRequest(2), nil)
+		// Second subscribe does not start additional again (sync.Once).
+		_, err = m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
 		assert.Equal(t, int32(1), atomic.LoadInt32(&addStartCount))
 	})
 
-	t.Run("subscribe request goes through main directly", func(t *testing.T) {
-		want := &sdk.ExecutionResult{}
+	t.Run("subscribe with no requirements returns main result", func(t *testing.T) {
+		want := subscribeResult()
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
@@ -309,14 +325,16 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 
 func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 	t.Run("cached trigger skips main on subsequent calls", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
-		var mainCalls int32
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+		var mainTriggerCalls int32
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				atomic.AddInt32(&mainCalls, 1)
-				return nil, rerunErr
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if req.GetTrigger() != nil {
+					atomic.AddInt32(&mainTriggerCalls, 1)
+				}
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 		add := ModuleAndHandler{
@@ -333,26 +351,31 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		// First call triggers main.
-		_, err := m.Execute(t.Context(), triggerRequest(42), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&mainCalls))
 
-		// Second call with same trigger ID skips main.
-		_, err = m.Execute(t.Context(), triggerRequest(42), nil)
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&mainCalls))
+		assert.Equal(t, int32(0), atomic.LoadInt32(&mainTriggerCalls), "cached trigger should skip main")
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+		assert.Equal(t, int32(0), atomic.LoadInt32(&mainTriggerCalls), "cached trigger should skip main on repeat")
 	})
 
-	t.Run("different trigger IDs are cached independently", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
-		var mainCalls int32
+	t.Run("trigger not in cache goes to main", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+		var mainTriggerCalls int32
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				atomic.AddInt32(&mainCalls, 1)
-				return nil, rerunErr
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if req.GetTrigger() != nil {
+					atomic.AddInt32(&mainTriggerCalls, 1)
+					return &sdk.ExecutionResult{}, nil
+				}
+				// subscription 0 has requirements; subscription 1 does not
+				return subscribeResult(subWithReqs(teeReqs), subWithReqs(nil)), nil
 			},
 		}}
 		add := ModuleAndHandler{
@@ -369,96 +392,40 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		// Trigger 1 goes through main.
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&mainCalls))
 
-		// Trigger 2 also goes through main (different ID, not cached).
-		_, err = m.Execute(t.Context(), triggerRequest(2), nil)
-		require.NoError(t, err)
-		assert.Equal(t, int32(2), atomic.LoadInt32(&mainCalls))
-
-		// Both are now cached — neither goes through main.
+		// trigger 1 has no requirements → goes to main
 		_, err = m.Execute(t.Context(), triggerRequest(1), nil)
 		require.NoError(t, err)
-		_, err = m.Execute(t.Context(), triggerRequest(2), nil)
-		require.NoError(t, err)
-		assert.Equal(t, int32(2), atomic.LoadInt32(&mainCalls))
+		assert.Equal(t, int32(1), atomic.LoadInt32(&mainTriggerCalls))
 	})
 
-	t.Run("different triggers can route to different additional modules", func(t *testing.T) {
-		teeRerun := &RequirementsRerun{Tee: &sdk.Tee{
+	t.Run("different triggers route to different modules", func(t *testing.T) {
+		// subscription 0: TEE required → additional; subscription 1: no requirements → main
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{
 			Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{
 				Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO}},
 			}},
 		}}
-		noReqRerun := &RequirementsRerun{}
+		var mainTriggerCalls int32
+		wantAdditional := &sdk.ExecutionResult{}
 
-		callCount := 0
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
 			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
-				callCount++
-				if req.GetTrigger().Id == 1 {
-					return nil, teeRerun
+				if req.GetTrigger() != nil {
+					atomic.AddInt32(&mainTriggerCalls, 1)
+					return &sdk.ExecutionResult{}, nil
 				}
-				return nil, noReqRerun
-			},
-		}}
-
-		var addNitroResult, addDefaultResult sdk.ExecutionResult
-		addNitro := ModuleAndHandler{
-			Module: &stubModule{
-				startFn: noop, closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-					return &addNitroResult, nil
-				},
-			},
-			RequirementsHandler: RequirementsHandler{Tee: func(tee *sdk.Tee) bool {
-				return tee.GetTypeSelection() != nil
-			}},
-		}
-		addDefault := ModuleAndHandler{
-			Module: &stubModule{
-				startFn: noop, closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-					return &addDefaultResult, nil
-				},
-			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return false }},
-		}
-
-		m := NewRequirementSelectingModule(main, []ModuleAndHandler{addNitro, addDefault})
-		m.Start()
-
-		got, err := m.Execute(t.Context(), triggerRequest(1), nil)
-		require.NoError(t, err)
-		assert.Equal(t, &addNitroResult, got)
-
-		// Trigger 1 is now cached to addNitro; verify second call skips main.
-		got, err = m.Execute(t.Context(), triggerRequest(1), nil)
-		require.NoError(t, err)
-		assert.Equal(t, &addNitroResult, got)
-		assert.Equal(t, 1, callCount, "main should only be called once for trigger 1")
-	})
-
-	t.Run("RequirementsRerun returned too late is rejected", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
-
-		main := ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				time.Sleep(11 * time.Second)
-				return nil, rerunErr
+				return subscribeResult(subWithReqs(teeReqs), subWithReqs(nil)), nil
 			},
 		}}
 		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
+				startFn: noop, closeFn: noopClose,
 				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-					t.Fatal("additional module should not be called")
-					return nil, nil
+					return wantAdditional, nil
 				},
 			},
 			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
@@ -467,25 +434,35 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "rerun requirement specified too late")
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		// trigger 0 has TEE requirements → additional
+		got, err := m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+		assert.Equal(t, wantAdditional, got)
+		assert.Equal(t, int32(0), atomic.LoadInt32(&mainTriggerCalls))
+
+		// trigger 1 has no requirements → main
+		_, err = m.Execute(t.Context(), triggerRequest(1), nil)
+		require.NoError(t, err)
+		assert.Equal(t, int32(1), atomic.LoadInt32(&mainTriggerCalls))
 	})
 
-	t.Run("RequirementsRerun with no additional modules returns error", func(t *testing.T) {
-		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+	t.Run("no additional modules when subscribe has requirements returns error", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 
 		main := ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
-				return nil, rerunErr
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 
 		m := NewRequirementSelectingModule(main, nil)
 		m.Start()
 
-		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot find a runner")
 	})

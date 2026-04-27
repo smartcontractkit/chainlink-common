@@ -528,42 +528,57 @@ func TestStandardTimeInterpretation(t *testing.T) {
 func TestStandardTeeRuntime(t *testing.T) {
 	t.Parallel()
 
-	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
-
 	cfg := defaultNoDAGModCfg(t)
-	var seenTeeRequirement *sdk.Tee
-	cfg.RequirementsHandler.Tee = func(tee *sdk.Tee) bool {
-		seenTeeRequirement = tee
-		return true
-	}
-
 	m := makeTestModuleWithConfig(t, cfg)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
 
-	for _, test := range []struct {
-		name string
-		req  *sdk.ExecuteRequest
-	}{
-		{
-			name: "subscribe",
-			req:  &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}},
-		},
-		{
-			name: "execute",
-			req:  triggerExecuteRequest(t, 0, trigger),
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			mockExecutionHelper := mocks.NewMockExecutionHelper(t)
-			mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
-			mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
-				return time.Now()
-			}).Maybe()
+	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+	actual, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
+	require.NoError(t, err)
 
-			_, err := m.Execute(t.Context(), test.req, mockExecutionHelper)
-			require.NoError(t, err)
-			require.True(t, proto.Equal(seenTeeRequirement, &sdk.Tee{Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}}}}}}))
-		})
+	payload0, err := anypb.New(&basictrigger.Config{
+		Name:   "first-trigger",
+		Number: 100,
+	})
+	require.NoError(t, err)
+
+	payload1, err := anypb.New(&basictrigger.Config{
+		Name:   "second-trigger",
+		Number: 200,
+	})
+	require.NoError(t, err)
+
+	expected := &sdk.TriggerSubscriptionRequest{
+		Subscriptions: []*sdk.TriggerSubscription{
+			{
+				Id:      "basic-test-trigger@1.0.0",
+				Payload: payload0,
+				Method:  "Trigger",
+				Requirements: &sdk.Requirements{
+					Tee: &sdk.Tee{
+						Type: &sdk.Tee_TypeSelection{
+							TypeSelection: &sdk.TeeTypeSelection{
+								Types: []*sdk.TeeTypeAndRegions{
+									{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Id:      "basic-test-trigger@1.0.0",
+				Payload: payload1,
+				Method:  "Trigger",
+			},
+		},
 	}
+
+	assertProto(t, expected, actual.GetTriggerSubscriptions())
 }
 
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
@@ -685,6 +700,7 @@ func wrapValue(t *testing.T, nodeResponse *nodeaction.NodeOutputs) *valuespb.Val
 
 func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 	t.Helper()
+	require.NotNil(t, actual)
 	diff := cmp.Diff(expected, actual, protocmp.Transform())
 
 	var sb strings.Builder

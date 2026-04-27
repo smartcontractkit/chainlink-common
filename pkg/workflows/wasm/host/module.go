@@ -468,13 +468,6 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"requirements",
-		exec.requirements); err != nil {
-		return nil, fmt.Errorf("error wrapping requirements func: %w", err)
-	}
-
 	return linker.Instantiate(store, m.module)
 }
 
@@ -710,10 +703,6 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error executing runner")
 	case containsCode(err, wasm.CodeHostErr):
 		return o, fmt.Errorf("invariant violation: host errored during sendResponse")
-	}
-
-	if exec.requirementsRerunErr != nil {
-		return o, exec.requirementsRerunErr
 	}
 
 	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.

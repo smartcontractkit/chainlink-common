@@ -2,10 +2,8 @@ package host
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
@@ -65,40 +63,38 @@ func (r *requirementSelectingModule) IsLegacyDAG() bool {
 }
 
 func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
-	triggerID, hasTrigger := extractTriggerID(request)
-
-	if hasTrigger {
-		if idx, ok := r.cache.Load(triggerID); ok {
+	if triggerID, ok := extractTriggerID(request); ok {
+		if idx, cached := r.cache.Load(triggerID); cached {
 			return r.additional[idx.(int)].Execute(ctx, request, handler)
 		}
+		return r.main.Execute(ctx, request, handler)
 	}
 
-	start := time.Now()
+	// Subscribe: run main, then build triggerID→module cache from subscription requirements
 	result, err := r.main.Execute(ctx, request, handler)
-	if err == nil {
-		return result, nil
-	}
-
-	rerun := &RequirementsRerun{}
-	if !errors.As(err, &rerun) {
+	if err != nil {
 		return nil, err
 	}
 
-	if time.Now().Sub(start) > time.Second*10 {
-		return nil, errors.New("rerun requirement specified too late")
-	}
-
-	for i, m := range r.additional {
-		if CheckRequirements(m.RequirementsHandler, (*sdk.Requirements)(rerun)) {
-			m.ensureStarted()
-			if hasTrigger {
-				r.cache.Store(triggerID, i)
+	for i, sub := range result.GetTriggerSubscriptions().GetSubscriptions() {
+		if sub.Requirements == nil {
+			continue
+		}
+		matched := false
+		for j, m := range r.additional {
+			if CheckRequirements(m.RequirementsHandler, sub.Requirements) {
+				m.ensureStarted()
+				r.cache.Store(uint64(i), j)
+				matched = true
+				break
 			}
-			return m.Execute(ctx, request, handler)
+		}
+		if !matched {
+			return nil, fmt.Errorf("cannot find a runner that can satisfy the requirements for trigger %d", i)
 		}
 	}
 
-	return nil, fmt.Errorf("cannot find a runner that can satisfy the requirements %+v", rerun)
+	return result, nil
 }
 
 func extractTriggerID(req *sdk.ExecuteRequest) (uint64, bool) {

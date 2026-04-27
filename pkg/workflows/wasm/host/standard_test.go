@@ -25,6 +25,8 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -47,7 +49,7 @@ func init() {
 
 func TestStandardConfig(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	// Some languages call time during initiation of the executable before the main is called.
 	// This would be in unknown mode, which would call Node mode by default.
@@ -63,7 +65,7 @@ func TestStandardConfig(t *testing.T) {
 
 func TestStandardErrors(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -77,7 +79,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	// To ensure the calls are actually async, the mock will block the first call until the second call is made.
 	// The first call sets InputThing to true, the second to false.
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -120,7 +122,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 
 func TestStandardHostWasmWriteErrorsAreRespected(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
@@ -152,7 +154,7 @@ func TestStandardHostWasmWriteErrorsAreRespected(t *testing.T) {
 func TestStandardModeSwitch(t *testing.T) {
 	t.Parallel()
 	t.Run("successful mode switch", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		// Node calls may occur on initialization depending on the language.
 		var donCall bool
@@ -192,7 +194,7 @@ func TestStandardModeSwitch(t *testing.T) {
 	})
 
 	t.Run("node runtime in don mode", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -217,7 +219,7 @@ func TestStandardModeSwitch(t *testing.T) {
 	})
 
 	t.Run("don runtime in node mode", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -252,7 +254,7 @@ func TestStandardModeSwitch(t *testing.T) {
 
 func TestStandardLogging(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -272,7 +274,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Parallel()
 	m := makeTestModule(t)
 	t.Run("test registration", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -324,7 +326,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	})
 
 	t.Run("first callback", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -338,7 +340,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	})
 
 	t.Run("same trigger as first one but different registration", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -351,7 +353,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	})
 
 	t.Run("different capability callback", func(t *testing.T) {
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -370,7 +372,7 @@ func TestStandardRandom(t *testing.T) {
 
 	// Test binary executes node mode code conditionally based on the value >= 100
 	anyId := "Id"
-	gte100Exec := NewMockExecutionHelper(t)
+	gte100Exec := mocks.NewMockExecutionHelper(t)
 	gte100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
 	gte100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -400,7 +402,7 @@ func TestStandardRandom(t *testing.T) {
 	value1 := executeWithResult[any](t, m, anyRequest, gte100Exec)
 
 	t.Run("Same execution id gives the same randoms even if random is called in node mode", func(t *testing.T) {
-		lt100Exec := NewMockExecutionHelper(t)
+		lt100Exec := mocks.NewMockExecutionHelper(t)
 		lt100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
 		lt100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -424,7 +426,7 @@ func TestStandardRandom(t *testing.T) {
 	t.Run("Different execution id give different randoms", func(t *testing.T) {
 		require.NoError(t, err)
 
-		gte100Exec2 := NewMockExecutionHelper(t)
+		gte100Exec2 := mocks.NewMockExecutionHelper(t)
 		gte100Exec2.EXPECT().GetWorkflowExecutionID().Return("differentId")
 		gte100Exec2.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -470,7 +472,7 @@ func TestStandardSecrets(t *testing.T) {
 }
 
 func TestStandardSecretsFailInNodeMode(t *testing.T) {
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -504,7 +506,7 @@ func TestStandardSecretsFailInNodeMode(t *testing.T) {
 
 func TestStandardTimeInterpretation(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	// Inject fixed timestamp: 1577934245000 milliseconds = 2020-01-02T03:04:05Z
 	fixedTime := time.UnixMilli(1577934245000)
@@ -551,7 +553,7 @@ func TestStandardTeeRuntime(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			mockExecutionHelper := NewMockExecutionHelper(t)
+			mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 			mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 			mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 				return time.Now()
@@ -695,7 +697,7 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 }
 
 func runSecretTest(t *testing.T, m *module, secretResponse *sdk.SecretResponse) *sdk.ExecutionResult {
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()

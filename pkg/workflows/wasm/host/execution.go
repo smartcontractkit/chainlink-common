@@ -10,6 +10,8 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
@@ -400,8 +402,8 @@ func (e *execution[T]) requirements(caller *wasmtime.Caller, ptr int32, ptrlen i
 		return wasmtime.NewTrap(e.requirementsRerunErr.Error())
 	}
 
-	if !CheckRequirements(e.module.cfg.RequirementsHandler, requirements) {
-		e.requirementsRerunErr = (*RequirementsRerun)(requirements)
+	if !host.CheckRequirements(e.module.cfg.RequirementsHandler, requirements) {
+		e.requirementsRerunErr = (*host.RequirementsRerun)(requirements)
 		return wasmtime.NewTrap(e.requirementsRerunErr.Error())
 	}
 

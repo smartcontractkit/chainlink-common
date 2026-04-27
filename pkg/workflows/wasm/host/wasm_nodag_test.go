@@ -14,6 +14,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
+	generichost "github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 
@@ -51,7 +53,7 @@ func Test_Sleep_Timeout(t *testing.T) {
 	m.Start()
 	defer m.Close()
 
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -107,7 +109,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 func Test_NoDAG_LoggingWithLimits(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -149,7 +151,7 @@ func Test_NoDAG_LoggingWithLimits(t *testing.T) {
 
 func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -195,7 +197,7 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 
 func Test_NoDAG_EmitMetricDisabled(t *testing.T) {
 	t.Parallel()
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -228,7 +230,7 @@ func Test_NoDAG_UnparseableRequirements(t *testing.T) {
 	err := runTeeFailureTest(t, sdk.TeeType_TEE_TYPE_AWS_NITRO, binary)
 
 	assert.Error(t, err)
-	rerunErr := &RequirementsRerun{}
+	rerunErr := &generichost.RequirementsRerun{}
 	assert.False(t, errors.As(err, &rerunErr))
 }
 
@@ -239,7 +241,7 @@ func Test_NoDAG_InvalidMemoryAddressForRequirements(t *testing.T) {
 	err := runTeeFailureTest(t, sdk.TeeType_TEE_TYPE_AWS_NITRO, binary)
 
 	assert.Error(t, err)
-	rerunErr := &RequirementsRerun{}
+	rerunErr := &generichost.RequirementsRerun{}
 	assert.False(t, errors.As(err, &rerunErr))
 }
 
@@ -251,7 +253,7 @@ func Test_NoDAG_RequirementsNotMet(t *testing.T) {
 	// Different (non-existent) TEE
 	err := runTeeFailureTest(t, 999, binary)
 
-	rerunErr := &RequirementsRerun{}
+	rerunErr := &generichost.RequirementsRerun{}
 	require.True(t, errors.As(err, &rerunErr))
 
 	expected := &sdk.Requirements{
@@ -264,11 +266,11 @@ func Test_NoDAG_RequirementsNotMet(t *testing.T) {
 
 func runTeeFailureTest(t *testing.T, teeType sdk.TeeType, binary []byte) error {
 	cfg := defaultNoDAGModCfg(t)
-	cfg.RequirementsHandler.Tee = NewTeeProvider(teeType, nil)
+	cfg.RequirementsHandler.Tee = generichost.NewTeeProvider(teeType, nil)
 	m, err := NewModule(t.Context(), cfg, binary)
 	require.NoError(t, err)
 
-	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
@@ -287,7 +289,7 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 }
 
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdk.TriggerSubscriptionRequest, error) {
-	helper := NewMockExecutionHelper(t)
+	helper := mocks.NewMockExecutionHelper(t)
 	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	helper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
 	execResult, err := m.Execute(t.Context(), &sdk.ExecuteRequest{

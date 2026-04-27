@@ -1,7 +1,5 @@
 package host
 
-//go:generate go run ./requirements_gen
-
 import (
 	"context"
 	"errors"

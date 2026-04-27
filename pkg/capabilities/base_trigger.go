@@ -227,27 +227,6 @@ func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
 	return v
 }
 
-// loopTickDuration is recomputed before each loop wait so BaseTriggerRetryInterval and enablement
-// changes take effect without restarting. Derived from half the retry interval, clamped to
-// [1ms, maxLoopTick] so that newly queued events are picked up promptly.
-func (b *BaseTriggerCapability[T]) loopTickDuration() time.Duration {
-	d := time.Second
-	if b.settings != nil {
-		if iv := b.retryInterval(b.ctx); iv > 0 {
-			d = iv / 2
-		}
-	} else if b.tRetransmit > 0 {
-		d = b.tRetransmit / 2
-	}
-	if d < time.Millisecond {
-		d = time.Millisecond
-	}
-	if d > maxLoopTick {
-		d = maxLoopTick
-	}
-	return d
-}
-
 func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	b.lggr.Info("starting base trigger")
 
@@ -569,7 +548,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 
 func (b *BaseTriggerCapability[T]) retransmitLoop() {
 	for {
-		timer := time.NewTimer(b.loopTickDuration())
+		timer := time.NewTimer(500 * time.Millisecond)
 		select {
 		case <-b.ctx.Done():
 			if !timer.Stop() {

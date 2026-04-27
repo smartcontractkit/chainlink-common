@@ -89,7 +89,9 @@ func TestRelayerService_recovery(t *testing.T) {
 	relayertest.Run(t, relayer)
 
 	if hp := relayer.HealthReport(); len(hp) == 2 {
-		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames[:2]...)
+		// During an in-flight recovery window the top-level service and the current logical
+		// relayer client may be all that is ready enough to report health.
+		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames[0], "RelayerService.PluginRelayerClient.RelayerClient")
 	} else {
 		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames...)
 	}

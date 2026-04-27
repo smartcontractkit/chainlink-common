@@ -29,6 +29,7 @@ type grpcPlugin interface {
 // client instance by launching and re-launching as necessary.
 type PluginService[P grpcPlugin, S services.Service] struct {
 	services.StateMachine
+	mu sync.RWMutex
 
 	pluginName string
 
@@ -84,8 +85,10 @@ func (s *PluginService[P, S]) keepAlive() {
 	s.lggr.Debugw("Starting keepAlive", "tick", KeepAliveTickDuration)
 
 	check := func() {
+		s.mu.RLock()
 		c := s.client
 		cp := s.clientProtocol
+		s.mu.RUnlock()
 		if c != nil && !c.Exited() && cp != nil {
 			// launched
 			err := cp.Ping()
@@ -116,22 +119,56 @@ func (s *PluginService[P, S]) keepAlive() {
 }
 
 func (s *PluginService[P, S]) tryLaunch(old plugin.ClientProtocol) (err error) {
-	if old != nil && s.clientProtocol != old {
-		// already replaced by another routine
-		return nil
+	if old != nil {
+		s.mu.RLock()
+		replaced := s.clientProtocol != old
+		s.mu.RUnlock()
+		if replaced {
+			// already replaced by another routine
+			return nil
+		}
 	}
-	if cerr := s.closeClient(); cerr != nil {
-		s.lggr.Errorw("Error closing old client", "err", cerr)
+
+	client, cp, service, healthReporter, err := s.launch()
+	if err != nil {
+		return err
 	}
-	s.client, s.clientProtocol, err = s.launch()
-	return
+
+	hadService := s.hasService()
+
+	// Build the replacement service before mutating shared state so callers never observe a
+	// partially swapped plugin generation.
+	s.mu.Lock()
+	oldService := s.Service
+	oldClient := s.client
+	oldProtocol := s.clientProtocol
+	s.Service = service
+	s.HealthReporter = healthReporter
+	s.client = client
+	s.clientProtocol = cp
+	if !hadService {
+		close(s.serviceCh)
+	}
+	s.mu.Unlock()
+
+	if hadService {
+		// Once the new generation is visible, close the superseded logical service so stale
+		// child clients stop refreshing against the dead plugin generation.
+		if cerr := s.closeService(oldService); cerr != nil {
+			err = errors.Join(err, cerr)
+		}
+	}
+	err = errors.Join(err, closeLaunched(oldClient, oldProtocol))
+	return err
 }
 
-func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, error) {
+func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, S, services.HealthReporter, error) {
 	ctx, cancelFn := utils.ContextFromChan(s.stopCh)
 	defer cancelFn()
 
 	s.lggr.Debug("Launching")
+
+	var zeroService S
 
 	cc := s.grpcPlug.ClientConfig()
 	cc.SkipHostEnv = true
@@ -140,7 +177,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	cp, err := client.Client()
 	if err != nil {
 		client.Kill()
-		return nil, nil, fmt.Errorf("failed to create ClientProtocol: %w", err)
+		return nil, nil, zeroService, nil, fmt.Errorf("failed to create ClientProtocol: %w", err)
 	}
 	abort := func() {
 		if cerr := cp.Close(); cerr != nil {
@@ -151,21 +188,15 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	i, err := cp.Dispense(s.pluginName)
 	if err != nil {
 		abort()
-		return nil, nil, fmt.Errorf("failed to Dispense %q plugin: %w", s.pluginName, err)
+		return nil, nil, zeroService, nil, fmt.Errorf("failed to Dispense %q plugin: %w", s.pluginName, err)
 	}
 
-	select {
-	case <-s.serviceCh:
-		// s.service already set
-	default:
-		s.Service, s.HealthReporter, err = s.newService(ctx, i)
-		if err != nil {
-			abort()
-			return nil, nil, fmt.Errorf("failed to create service: %w", err)
-		}
-		defer close(s.serviceCh)
+	service, healthReporter, err := s.newService(ctx, i)
+	if err != nil {
+		abort()
+		return nil, nil, zeroService, nil, fmt.Errorf("failed to create service: %w", err)
 	}
-	return client, cp, nil
+	return client, cp, service, healthReporter, nil
 }
 
 func (s *PluginService[P, S]) Start(context.Context) error {
@@ -179,7 +210,10 @@ func (s *PluginService[P, S]) Start(context.Context) error {
 func (s *PluginService[P, S]) Ready() error {
 	select {
 	case <-s.serviceCh:
-		return s.Service.Ready()
+		s.mu.RLock()
+		service := s.Service
+		s.mu.RUnlock()
+		return service.Ready()
 	default:
 		return ErrPluginUnavailable
 	}
@@ -199,23 +233,28 @@ func (s *PluginService[P, S]) HealthReport() map[string]error {
 	case <-s.serviceCh:
 	}
 
+	s.mu.RLock()
+	service := s.Service
+	healthReporter := s.HealthReporter
+	s.mu.RUnlock()
+
 	hr := map[string]error{s.Name(): s.Healthy()}
 
 	// wait until service is ready, which also triggers the deferred construction to ensure a complete HealthReport
-	err := s.Service.Ready()
+	err := service.Ready()
 	for err != nil {
 		select {
 		case <-s.stopCh:
 			return map[string]error{s.Name(): fmt.Errorf("service was stoped while waiting: %w", context.Canceled)}
 		case <-ctx.Done():
-			hr[s.Service.Name()] = err
+			hr[service.Name()] = err
 			return hr
 		case <-time.After(time.Second):
-			err = s.Service.Ready()
+			err = service.Ready()
 		}
 	}
 
-	services.CopyHealth(hr, s.HealthReporter.HealthReport())
+	services.CopyHealth(hr, healthReporter.HealthReport())
 	return hr
 }
 
@@ -226,7 +265,10 @@ func (s *PluginService[P, S]) Close() error {
 
 		select {
 		case <-s.serviceCh:
-			if cerr := s.Service.Close(); !isCanceled(cerr) {
+			s.mu.RLock()
+			service := s.Service
+			s.mu.RUnlock()
+			if cerr := service.Close(); !isCanceled(cerr) {
 				err = errors.Join(err, cerr)
 			}
 		default:
@@ -237,15 +279,29 @@ func (s *PluginService[P, S]) Close() error {
 }
 
 func (s *PluginService[P, S]) closeClient() (err error) {
-	if s.clientProtocol != nil {
-		if cerr := s.clientProtocol.Close(); !isCanceled(cerr) {
-			err = cerr
-		}
+	s.mu.Lock()
+	client := s.client
+	clientProtocol := s.clientProtocol
+	s.client = nil
+	s.clientProtocol = nil
+	s.mu.Unlock()
+	return closeLaunched(client, clientProtocol)
+}
+
+func (s *PluginService[P, S]) hasService() bool {
+	select {
+	case <-s.serviceCh:
+		return true
+	default:
+		return false
 	}
-	if s.client != nil {
-		s.client.Kill()
+}
+
+func (s *PluginService[P, S]) closeService(service S) error {
+	if cerr := service.Close(); !isCanceled(cerr) {
+		return cerr
 	}
-	return
+	return nil
 }
 
 // WaitCtx waits for the service to start up until `ctx.Done` is triggered
@@ -303,4 +359,17 @@ func (ch TestPluginService[P, S]) Reset() {
 
 func isCanceled(err error) bool {
 	return errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled
+}
+
+func closeLaunched(client *plugin.Client, clientProtocol plugin.ClientProtocol) (err error) {
+	if clientProtocol != nil {
+		if cerr := clientProtocol.Close(); !isCanceled(cerr) {
+			err = cerr
+		}
+	}
+	if client != nil {
+		client.Kill()
+	}
+
+	return err
 }

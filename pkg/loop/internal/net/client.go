@@ -56,9 +56,11 @@ type clientConn struct {
 	newClient newClientFn
 	name      string
 
-	mu   sync.RWMutex
-	deps Resources
-	cc   *grpc.ClientConn
+	mu          sync.RWMutex
+	deps        Resources
+	cc          *grpc.ClientConn
+	refreshing  bool
+	refreshDone chan struct{}
 }
 
 func (c *clientConn) GetState() connectivity.State {
@@ -79,6 +81,11 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply 
 
 	var refErr error
 	if cc == nil {
+		if method == pb.Service_Close_FullMethodName {
+			// If the underlying plugin is already gone, treat Close as a no-op rather than
+			// attempting to recreate the client just to close it again.
+			return nil
+		}
 		cc, refErr = c.refresh(ctx, nil)
 	}
 	for cc != nil {
@@ -87,7 +94,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply 
 			if method == pb.Service_Close_FullMethodName {
 				// don't reconnect just to call Close
 				c.Logger.Warnw("clientConn: Invoke: terminal error", "method", method, "err", err)
-				return err
+				return nil
 			}
 			c.Logger.Errorw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
 			cc, refErr = c.refresh(ctx, cc)
@@ -122,17 +129,51 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 // refresh replaces c.cc with a new (different from orig) *grpc.ClientConn, and returns it as well.
 // It will block until a new connection is successfully dialed, or return nil if the context expires.
 func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.ClientConn, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cc != orig {
-		return c.cc, nil
-	}
-	if c.cc != nil {
-		if err := c.cc.Close(); err != nil {
-			c.Logger.Errorw("Client close failed", "err", err)
+	var refreshDone chan struct{}
+	for {
+		c.mu.Lock()
+		if c.cc != orig {
+			cc := c.cc
+			c.mu.Unlock()
+			return cc, nil
 		}
-		c.CloseAll(c.deps...)
+		if c.refreshing {
+			// Only one goroutine performs the reconnect work. Everyone else waits without
+			// holding the state lock, which avoids node-wide stalls during backoff.
+			refreshDone = c.refreshDone
+			c.mu.Unlock()
+			select {
+			case <-ctx.Done():
+				return nil, fmt.Errorf("%w", context.Cause(ctx))
+			case <-refreshDone:
+			}
+			continue
+		}
+
+		c.refreshing = true
+		refreshDone = make(chan struct{})
+		c.refreshDone = refreshDone
+
+		// Tear down the broken connection before dialing a replacement generation.
+		if c.cc != nil {
+			if err := c.cc.Close(); err != nil {
+				c.Logger.Errorw("Client close failed", "err", err)
+			}
+			c.CloseAll(c.deps...)
+			c.cc = nil
+			c.deps = nil
+		}
+		c.mu.Unlock()
+		break
 	}
+
+	defer func() {
+		c.mu.Lock()
+		c.refreshing = false
+		close(refreshDone)
+		c.refreshDone = nil
+		c.mu.Unlock()
+	}()
 
 	try := func() error {
 		if d, ok := ctx.Deadline(); ok {
@@ -144,18 +185,24 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 			c.CloseAll(deps...)
 			return err
 		}
-		c.deps = deps
 
 		lggr := logger.With(c.Logger, "id", id)
 		lggr.Debug("Client dial")
-		c.cc, err = c.Dial(id)
+		cc, err := c.Dial(id)
 		if err != nil {
 			if ctx.Err() != nil {
 				lggr.Errorw("Client dial failed", "err", ErrConnDial{Name: c.name, ID: id, Err: err})
 			}
-			c.CloseAll(c.deps...)
+			c.CloseAll(deps...)
 			return err
 		}
+
+		// Publish the new connection only after both the broker-side dependencies and the
+		// gRPC client are ready, so waiters see a fully initialized generation.
+		c.mu.Lock()
+		c.deps = deps
+		c.cc = cc
+		c.mu.Unlock()
 		return nil
 	}
 
@@ -179,5 +226,8 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 		}
 	}
 
-	return c.cc, nil
+	c.mu.RLock()
+	cc := c.cc
+	c.mu.RUnlock()
+	return cc, nil
 }

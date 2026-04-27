@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -24,7 +26,7 @@ func NewNoopClient() *Client {
 	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
-	logger := loggerProvider.Logger(defaultPackageName)
+	otelLogger := loggerProvider.Logger(defaultPackageName)
 	// Tracer
 	tracerProvider := oteltracenoop.NewTracerProvider()
 	tracer := tracerProvider.Tracer(defaultPackageName)
@@ -39,7 +41,25 @@ func NewNoopClient() *Client {
 	// ChipIngress
 	chipClient := &chipingress.NoopClient{}
 
-	return &Client{cfg, logger, tracer, meter, messageEmitter, chipClient, loggerProvider, tracerProvider, meterProvider, loggerProvider, nil, noopOnClose}
+	c := &Client{
+		Config:                cfg,
+		Logger:                otelLogger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               messageEmitter,
+		Chip:                  chipClient,
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: loggerProvider,
+		OnClose:               noopOnClose,
+	}
+	c.Service, c.eng = services.Config{
+		Name:  "BeholderClient",
+		Start: c.start,
+		Close: c.closeResources,
+	}.NewServiceEngine(logger.Nop())
+	return c
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output
@@ -61,7 +81,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return NewNoopClient(), err
 	}
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
-	logger := loggerProvider.Logger(defaultPackageName)
+	otelLogger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
 	traceExporter, err := stdouttrace.New(cfg.TraceOptions...)
@@ -89,7 +109,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 	meter := meterProvider.Meter(defaultPackageName)
 
 	// MessageEmitter
-	emitter := messageEmitter{messageLogger: logger}
+	emitter := messageEmitter{messageLogger: otelLogger}
 
 	onClose := func() (err error) {
 		for _, provider := range []shutdowner{loggerProvider, tracerProvider, meterProvider} {
@@ -98,7 +118,26 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return
 	}
 
-	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, Chip: &chipingress.NoopClient{}, LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, lazySigner: nil, OnClose: onClose}, nil
+	c := &Client{
+		Config:                cfg.Config,
+		Logger:                otelLogger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               emitter,
+		Chip:                  &chipingress.NoopClient{},
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: loggerProvider,
+		lazySigner:            nil,
+		OnClose:               onClose,
+	}
+	c.Service, c.eng = services.Config{
+		Name:  "BeholderClient",
+		Start: c.start,
+		Close: c.closeResources,
+	}.NewServiceEngine(logger.Nop())
+	return c, nil
 }
 
 type noopMessageEmitter struct{}

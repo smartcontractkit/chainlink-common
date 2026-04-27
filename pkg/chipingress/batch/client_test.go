@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
@@ -837,6 +841,11 @@ func TestStop(t *testing.T) {
 
 	t.Run("QueueMessage returns error after Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Maybe()
+
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -853,7 +862,7 @@ func TestStop(t *testing.T) {
 		}, nil)
 		require.NoError(t, err)
 
-		// Stop the client
+		// Stop the client — drains any buffered messages
 		client.Stop()
 
 		// Queue message after stop - should fail
@@ -1108,4 +1117,238 @@ func TestSeqnum(t *testing.T) {
 			expectedSeq++
 		}
 	})
+}
+
+func TestBatchClient_Metrics(t *testing.T) {
+	t.Run("records success path metrics", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithBatchSize(1),
+			WithBatchInterval(time.Second),
+			WithMessageBuffer(10),
+			WithMaxGRPCRequestSize(2048),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "metric-success",
+			Source: "platform",
+			Type:   "MetricSuccess",
+		}, nil)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for PublishBatch")
+		}
+
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+
+		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
+		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		successPoint := mustInt64SumPointWithAttr(t, reqSum, "status", "success")
+		assert.GreaterOrEqual(t, successPoint.Value, int64(1))
+
+		msgSize := mustMetric(t, rm, "chip_ingress.batch.request_size_messages")
+		msgSizeHist, ok := msgSize.Data.(metricdata.Histogram[int64])
+		require.True(t, ok)
+		msgSizePoint := mustInt64HistogramPointWithIntAttr(t, msgSizeHist, "max_batch_size", 1)
+		assert.GreaterOrEqual(t, msgSizePoint.Count, uint64(1))
+
+		reqSize := mustMetric(t, rm, "chip_ingress.batch.request_size_bytes")
+		reqSizeHist, ok := reqSize.Data.(metricdata.Histogram[int64])
+		require.True(t, ok)
+		reqSizePoint := mustInt64HistogramPointWithIntAttr(t, reqSizeHist, "max_grpc_request_size_bytes", 2048)
+		assert.GreaterOrEqual(t, reqSizePoint.Count, uint64(1))
+
+		latency := mustMetric(t, rm, "chip_ingress.batch.request_latency_ms")
+		latencyHist, ok := latency.Data.(metricdata.Histogram[float64])
+		require.True(t, ok)
+		latencyPoint := mustFloat64HistogramPointWithAttr(t, latencyHist, "status", "success")
+		assert.GreaterOrEqual(t, latencyPoint.Count, uint64(1))
+
+		config := mustMetric(t, rm, "chip_ingress.batch.config.info")
+		configGauge, ok := config.Data.(metricdata.Gauge[int64])
+		require.True(t, ok)
+		require.NotEmpty(t, configGauge.DataPoints)
+		assert.Equal(t, int64(1), configGauge.DataPoints[0].Value)
+		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_batch_size", 1))
+		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_grpc_request_size_bytes", 2048))
+	})
+
+	t.Run("records failure counters and latency", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, assert.AnError).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(1), WithMessageBuffer(10))
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "metric-failure",
+			Source: "platform",
+			Type:   "MetricFailure",
+		}, nil)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for PublishBatch")
+		}
+
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+
+		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
+		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		failureReq := mustInt64SumPointWithAttr(t, reqSum, "status", "failure")
+		assert.GreaterOrEqual(t, failureReq.Value, int64(1))
+
+		failures := mustMetric(t, rm, "chip_ingress.batch.send_failures_total")
+		failuresSum, ok := failures.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		require.NotEmpty(t, failuresSum.DataPoints)
+		assert.GreaterOrEqual(t, failuresSum.DataPoints[0].Value, int64(1))
+
+		latency := mustMetric(t, rm, "chip_ingress.batch.request_latency_ms")
+		latencyHist, ok := latency.Data.(metricdata.Histogram[float64])
+		require.True(t, ok)
+		failureLatency := mustFloat64HistogramPointWithAttr(t, latencyHist, "status", "failure")
+		assert.GreaterOrEqual(t, failureLatency.Count, uint64(1))
+	})
+}
+
+func BenchmarkBatchClient_QueueMessage(b *testing.B) {
+	client, err := NewBatchClient(
+		&chipingress.NoopClient{},
+		WithBatchSize(b.N+1),
+		WithMessageBuffer(b.N+10),
+		WithBatchInterval(time.Hour),
+	)
+	if err != nil {
+		b.Fatal(err)
+	}
+	client.Start(context.Background())
+	defer client.Stop()
+
+	payload := &chipingress.CloudEventPb{
+		Source: "bench",
+		Type:   "bench.event",
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		payload.Id = strconv.Itoa(i)
+		if err := client.QueueMessage(payload, nil); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func useTestMeterProvider(t *testing.T) (*sdkmetric.ManualReader, func()) {
+	t.Helper()
+	prev := otel.GetMeterProvider()
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	otel.SetMeterProvider(provider)
+	return reader, func() {
+		require.NoError(t, provider.Shutdown(t.Context()))
+		otel.SetMeterProvider(prev)
+	}
+}
+
+func collectResourceMetrics(t *testing.T, reader *sdkmetric.ManualReader) metricdata.ResourceMetrics {
+	t.Helper()
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &rm))
+	return rm
+}
+
+func mustMetric(t *testing.T, rm metricdata.ResourceMetrics, name string) metricdata.Metrics {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == name {
+				return m
+			}
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+	return metricdata.Metrics{}
+}
+
+func mustInt64SumPointWithAttr(t *testing.T, sum metricdata.Sum[int64], key, want string) metricdata.DataPoint[int64] {
+	t.Helper()
+	for _, dp := range sum.DataPoints {
+		if hasStringAttr(dp.Attributes, key, want) {
+			return dp
+		}
+	}
+	t.Fatalf("sum datapoint with %s=%s not found", key, want)
+	return metricdata.DataPoint[int64]{}
+}
+
+func mustInt64HistogramPointWithIntAttr(t *testing.T, hist metricdata.Histogram[int64], key string, want int) metricdata.HistogramDataPoint[int64] {
+	t.Helper()
+	for _, dp := range hist.DataPoints {
+		if hasIntAttr(dp.Attributes, key, want) {
+			return dp
+		}
+	}
+	t.Fatalf("histogram datapoint with %s=%d not found", key, want)
+	return metricdata.HistogramDataPoint[int64]{}
+}
+
+func mustFloat64HistogramPointWithAttr(t *testing.T, hist metricdata.Histogram[float64], key, want string) metricdata.HistogramDataPoint[float64] {
+	t.Helper()
+	for _, dp := range hist.DataPoints {
+		if hasStringAttr(dp.Attributes, key, want) {
+			return dp
+		}
+	}
+	t.Fatalf("histogram datapoint with %s=%s not found", key, want)
+	return metricdata.HistogramDataPoint[float64]{}
+}
+
+func hasStringAttr(set attribute.Set, key, want string) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsString() == want
+		}
+	}
+	return false
+}
+
+func hasIntAttr(set attribute.Set, key string, want int) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return int(kv.Value.AsInt64()) == want
+		}
+	}
+	return false
 }

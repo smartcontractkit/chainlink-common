@@ -9,6 +9,9 @@ import (
 	"time"
 
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
@@ -29,6 +32,7 @@ type seqnumKey struct {
 type Client struct {
 	client             chipingress.Client
 	batchSize          int
+	maxGRPCRequestSize int
 	cloneEvent         bool
 	maxConcurrentSends chan struct{}
 	batchInterval      time.Duration
@@ -42,6 +46,21 @@ type Client struct {
 	batcherDone        chan struct{}
 	cancelBatcher      context.CancelFunc
 	counters           sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
+
+	metrics batchClientMetrics
+}
+
+type batchClientMetrics struct {
+	sendRequestsTotal   otelmetric.Int64Counter
+	sendFailuresTotal   otelmetric.Int64Counter
+	requestSizeMessages otelmetric.Int64Histogram
+	requestSizeBytes    otelmetric.Int64Histogram
+	requestLatencyMS    otelmetric.Float64Histogram
+	configInfo          otelmetric.Int64Gauge
+	batchSizeAttr       otelmetric.MeasurementOption
+	maxGRPCReqSizeAttr  otelmetric.MeasurementOption
+	successStatusAttr   otelmetric.MeasurementOption
+	failureStatusAttr   otelmetric.MeasurementOption
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -53,6 +72,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		client:             client,
 		log:                zap.NewNop().Sugar(),
 		batchSize:          10,
+		maxGRPCRequestSize: 16 * 1024 * 1024, // Match chipingress maxMessageSize default.
 		cloneEvent:         true,
 		maxConcurrentSends: make(chan struct{}, 1),
 		messageBuffer:      make(chan *messageWithCallback, 200),
@@ -68,11 +88,19 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		opt(c)
 	}
 
+	var err error
+	c.metrics, err = newBatchClientMetrics()
+	if err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
 // Start begins processing messages from the queue and sending them in batches
 func (b *Client) Start(ctx context.Context) {
+	b.metrics.recordConfig(context.Background(), b)
+
 	// Create a cancellable context for the batcher
 	batcherCtx, cancel := context.WithCancel(ctx)
 	b.cancelBatcher = cancel
@@ -110,7 +138,9 @@ func (b *Client) Start(ctx context.Context) {
 // Forcibly shutdowns down after timeout if not completed.
 func (b *Client) Stop() {
 	b.shutdownOnce.Do(func() {
-		ctx, cancel := b.stopCh.CtxWithTimeout(b.shutdownTimeout)
+		// Use a standalone timeout context so the shutdown wait isn't cancelled
+		// by close(b.stopCh) below.
+		ctx, cancel := context.WithTimeout(context.Background(), b.shutdownTimeout)
 		defer cancel()
 
 		if b.cancelBatcher != nil {
@@ -230,7 +260,11 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 		for i, msg := range messages {
 			events[i] = msg.event
 		}
-		_, err := b.client.PublishBatch(ctxTimeout, &chipingress.CloudEventBatch{Events: events})
+		batchReq := &chipingress.CloudEventBatch{Events: events}
+		batchBytes := proto.Size(batchReq)
+		startedAt := time.Now()
+		_, err := b.client.PublishBatch(ctxTimeout, batchReq)
+		b.metrics.recordSend(context.Background(), len(messages), batchBytes, time.Since(startedAt), err == nil)
 		if err != nil {
 			b.log.Errorw("failed to publish batch", "error", err)
 		}
@@ -250,6 +284,13 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 func WithBatchSize(batchSize int) Opt {
 	return func(c *Client) {
 		c.batchSize = batchSize
+	}
+}
+
+// WithMaxGRPCRequestSize sets the max gRPC request size in bytes used for metric comparison attributes.
+func WithMaxGRPCRequestSize(maxReqSize int) Opt {
+	return func(c *Client) {
+		c.maxGRPCRequestSize = maxReqSize
 	}
 }
 
@@ -301,4 +342,114 @@ func WithLogger(log *zap.SugaredLogger) Opt {
 	return func(c *Client) {
 		c.log = log
 	}
+}
+
+func newBatchClientMetrics() (batchClientMetrics, error) {
+	meter := otel.Meter("chipingress/batch_client")
+	sendRequestsTotal, err := meter.Int64Counter(
+		"chip_ingress.batch.send_requests_total",
+		otelmetric.WithDescription("Total PublishBatch requests sent by batch client"),
+		otelmetric.WithUnit("{request}"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+	sendFailuresTotal, err := meter.Int64Counter(
+		"chip_ingress.batch.send_failures_total",
+		otelmetric.WithDescription("Total failed PublishBatch requests sent by batch client"),
+		otelmetric.WithUnit("{request}"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+	requestSizeMessages, err := meter.Int64Histogram(
+		"chip_ingress.batch.request_size_messages",
+		otelmetric.WithDescription("PublishBatch request size measured in number of events"),
+		otelmetric.WithUnit("{event}"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+	requestSizeBytes, err := meter.Int64Histogram(
+		"chip_ingress.batch.request_size_bytes",
+		otelmetric.WithDescription("PublishBatch request size measured in bytes"),
+		otelmetric.WithUnit("By"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+	requestLatencyMS, err := meter.Float64Histogram(
+		"chip_ingress.batch.request_latency_ms",
+		otelmetric.WithDescription("PublishBatch end-to-end latency in milliseconds"),
+		otelmetric.WithUnit("ms"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+	configInfo, err := meter.Int64Gauge(
+		"chip_ingress.batch.config.info",
+		otelmetric.WithDescription("Batch client configuration info metric"),
+		otelmetric.WithUnit("{info}"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+
+	return batchClientMetrics{
+		sendRequestsTotal:   sendRequestsTotal,
+		sendFailuresTotal:   sendFailuresTotal,
+		requestSizeMessages: requestSizeMessages,
+		requestSizeBytes:    requestSizeBytes,
+		requestLatencyMS:    requestLatencyMS,
+		configInfo:          configInfo,
+		successStatusAttr: otelmetric.WithAttributeSet(attribute.NewSet(
+			attribute.String("status", "success"),
+		)),
+		failureStatusAttr: otelmetric.WithAttributeSet(attribute.NewSet(
+			attribute.String("status", "failure"),
+		)),
+	}, nil
+}
+
+func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
+	m.batchSizeAttr = otelmetric.WithAttributeSet(attribute.NewSet(
+		attribute.Int("max_batch_size", c.batchSize),
+	))
+	m.maxGRPCReqSizeAttr = otelmetric.WithAttributeSet(attribute.NewSet(
+		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
+	))
+	m.configInfo.Record(ctx, 1, otelmetric.WithAttributes(
+		attribute.Int("max_batch_size", c.batchSize),
+		attribute.Int("message_buffer_size", cap(c.messageBuffer)),
+		attribute.Int("max_concurrent_sends", cap(c.maxConcurrentSends)),
+		attribute.Int64("batch_interval_ms", c.batchInterval.Milliseconds()),
+		attribute.Int64("max_publish_timeout_ms", c.maxPublishTimeout.Milliseconds()),
+		attribute.Int64("shutdown_timeout_ms", c.shutdownTimeout.Milliseconds()),
+		attribute.Bool("clone_event", c.cloneEvent),
+		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
+	))
+}
+
+func (m *batchClientMetrics) recordSend(ctx context.Context, messageCount int, requestBytes int, latency time.Duration, success bool) {
+	statusAttr := m.successStatusAttr
+	if !success {
+		statusAttr = m.failureStatusAttr
+	}
+	m.sendRequestsTotal.Add(ctx, 1, statusAttr)
+	if !success {
+		m.sendFailuresTotal.Add(ctx, 1)
+	}
+
+	messageSizeOpts := []otelmetric.RecordOption{}
+	if m.batchSizeAttr != nil {
+		messageSizeOpts = append(messageSizeOpts, m.batchSizeAttr)
+	}
+	requestSizeOpts := []otelmetric.RecordOption{}
+	if m.maxGRPCReqSizeAttr != nil {
+		requestSizeOpts = append(requestSizeOpts, m.maxGRPCReqSizeAttr)
+	}
+
+	m.requestSizeMessages.Record(ctx, int64(messageCount), messageSizeOpts...)
+	m.requestSizeBytes.Record(ctx, int64(requestBytes), requestSizeOpts...)
+	m.requestLatencyMS.Record(ctx, float64(latency)/float64(time.Millisecond), statusAttr)
 }

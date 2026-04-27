@@ -27,6 +27,7 @@ func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo 
 	reply, err := e.grpcClient.CalculateTransactionFee(ctx, &evmpb.CalculateTransactionFeeRequest{GasInfo: &evmpb.ReceiptGasInfo{
 		GasUsed:           receiptGasInfo.GasUsed,
 		EffectiveGasPrice: valuespb.NewBigIntFromInt(receiptGasInfo.EffectiveGasPrice),
+		L1_Fee:            valuespb.NewBigIntFromInt(receiptGasInfo.L1Fee),
 	}})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)

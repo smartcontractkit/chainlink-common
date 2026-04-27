@@ -147,6 +147,7 @@ func ConvertReceiptToProto(receipt *evmtypes.Receipt) (*Receipt, error) {
 		BlockNumber:       valuespb.NewBigIntFromInt(receipt.BlockNumber),
 		TxIndex:           receipt.TransactionIndex,
 		EffectiveGasPrice: valuespb.NewBigIntFromInt(receipt.EffectiveGasPrice),
+		L1_Fee:            valuespb.NewBigIntFromInt(receipt.L1Fee),
 	}, nil
 }
 

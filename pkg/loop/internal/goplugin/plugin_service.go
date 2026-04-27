@@ -46,7 +46,9 @@ type PluginService[P grpcPlugin, S services.Service] struct {
 
 	newService NewService[S]
 
-	serviceCh      chan struct{} // closed when service is available
+	serviceCh chan struct{} // closed when service is available
+
+	// Deprecated: use CurrentService instead. This is not protected by the mutex and may be stale as Service gets replaced across plugin relaunches.
 	Service        S
 	HealthReporter services.HealthReporter // may be the same as Service
 
@@ -226,9 +228,7 @@ func (s *PluginService[P, S]) Start(context.Context) error {
 func (s *PluginService[P, S]) Ready() error {
 	select {
 	case <-s.serviceCh:
-		s.mu.RLock()
-		service := s.Service
-		s.mu.RUnlock()
+		service := s.CurrentService()
 		return service.Ready()
 	default:
 		return ErrPluginUnavailable
@@ -236,6 +236,18 @@ func (s *PluginService[P, S]) Ready() error {
 }
 
 func (s *PluginService[P, S]) Name() string { return s.lggr.Name() }
+
+// CurrentService returns the currently published logical service for the active plugin generation.
+//
+// Callers should wait for service availability first via Wait or WaitCtx. The returned snapshot is
+// safe to use after the lock is released; callers may still race a relaunch and observe a service
+// that is in the process of being retired, but they will not race shared-state publication.
+func (s *PluginService[P, S]) CurrentService() S {
+	s.mu.RLock()
+	service := s.Service
+	s.mu.RUnlock()
+	return service
+}
 
 func (s *PluginService[P, S]) HealthReport() map[string]error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -381,8 +393,6 @@ func (ch TestPluginService[P, S]) Reset() {
 	ch <- func(r *PluginService[P, S]) {
 		defer close(done)
 		_ = r.closeClient()
-		r.client = nil
-		r.clientProtocol = nil
 	}
 	<-done
 }

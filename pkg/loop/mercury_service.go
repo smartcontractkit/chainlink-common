@@ -53,7 +53,7 @@ func (m *MercuryV4Service) NewMercuryPlugin(ctx context.Context, config ocr3type
 	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(ctx, config)
+	return m.CurrentService().NewMercuryPlugin(ctx, config)
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV3Service)(nil)
@@ -91,7 +91,7 @@ func (m *MercuryV3Service) NewMercuryPlugin(ctx context.Context, config ocr3type
 	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(ctx, config)
+	return m.CurrentService().NewMercuryPlugin(ctx, config)
 }
 
 // MercuryV1Service is a [types.Service] that maintains an internal [types.PluginMedian].
@@ -127,7 +127,7 @@ func (m *MercuryV1Service) NewMercuryPlugin(ctx context.Context, config ocr3type
 	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(ctx, config)
+	return m.CurrentService().NewMercuryPlugin(ctx, config)
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV1Service)(nil)
@@ -165,7 +165,7 @@ func (m *MercuryV2Service) NewMercuryPlugin(ctx context.Context, config ocr3type
 	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}
-	return m.Service.NewMercuryPlugin(ctx, config)
+	return m.CurrentService().NewMercuryPlugin(ctx, config)
 }
 
 var _ ocr3types.MercuryPluginFactory = (*MercuryV2Service)(nil)

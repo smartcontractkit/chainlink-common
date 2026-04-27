@@ -46,117 +46,117 @@ func (r *RelayerService) EVM() (types.EVMService, error) {
 	if err := r.Wait(); err != nil {
 		return nil, err
 	}
-	return r.Service.EVM()
+	return r.CurrentService().EVM()
 }
 
 func (r *RelayerService) TON() (types.TONService, error) {
 	if err := r.Wait(); err != nil {
 		return nil, err
 	}
-	return r.Service.TON()
+	return r.CurrentService().TON()
 }
 
 func (r *RelayerService) Solana() (types.SolanaService, error) {
 	if err := r.Wait(); err != nil {
 		return nil, err
 	}
-	return r.Service.Solana()
+	return r.CurrentService().Solana()
 }
 
 func (r *RelayerService) Aptos() (types.AptosService, error) {
 	if err := r.Wait(); err != nil {
 		return nil, err
 	}
-	return r.Service.Aptos()
+	return r.CurrentService().Aptos()
 }
 
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewContractReader(ctx, contractReaderConfig)
+	return r.CurrentService().NewContractReader(ctx, contractReaderConfig)
 }
 
 func (r *RelayerService) NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewContractWriter(ctx, contractWriterConfig)
+	return r.CurrentService().NewContractWriter(ctx, contractWriterConfig)
 }
 
 func (r *RelayerService) NewConfigProvider(ctx context.Context, args types.RelayArgs) (types.ConfigProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewConfigProvider(ctx, args)
+	return r.CurrentService().NewConfigProvider(ctx, args)
 }
 
 func (r *RelayerService) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewPluginProvider(ctx, rargs, pargs)
+	return r.CurrentService().NewPluginProvider(ctx, rargs, pargs)
 }
 
 func (r *RelayerService) NewLLOProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.LLOProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewLLOProvider(ctx, rargs, pargs)
+	return r.CurrentService().NewLLOProvider(ctx, rargs, pargs)
 }
 
 func (r *RelayerService) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewCCIPProvider(ctx, cargs)
+	return r.CurrentService().NewCCIPProvider(ctx, cargs)
 }
 
 func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.Head{}, err
 	}
-	return r.Service.LatestHead(ctx)
+	return r.CurrentService().LatestHead(ctx)
 }
 
 func (r *RelayerService) FinalizedHead(ctx context.Context) (types.Head, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.Head{}, err
 	}
-	return r.Service.FinalizedHead(ctx)
+	return r.CurrentService().FinalizedHead(ctx)
 }
 
 func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.ChainStatus{}, err
 	}
-	return r.Service.GetChainStatus(ctx)
+	return r.CurrentService().GetChainStatus(ctx)
 }
 
 func (r *RelayerService) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.ChainInfo{}, err
 	}
-	return r.Service.GetChainInfo(ctx)
+	return r.CurrentService().GetChainInfo(ctx)
 }
 
 func (r *RelayerService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, "", -1, err
 	}
-	return r.Service.ListNodeStatuses(ctx, pageSize, pageToken)
+	return r.CurrentService().ListNodeStatuses(ctx, pageSize, pageToken)
 }
 
 func (r *RelayerService) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
 	if err := r.WaitCtx(ctx); err != nil {
 		return err
 	}
-	return r.Service.Transact(ctx, from, to, amount, balanceCheck)
+	return r.CurrentService().Transact(ctx, from, to, amount, balanceCheck)
 }
 
 func (r *RelayerService) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
 	if err := r.WaitCtx(ctx); err != nil {
 		return err
 	}
-	return r.Service.Replay(ctx, fromBlock, args)
+	return r.CurrentService().Replay(ctx, fromBlock, args)
 }

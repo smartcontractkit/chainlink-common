@@ -95,5 +95,5 @@ func (m *CommitFactoryService) NewReportingPlugin(ctx context.Context, config oc
 	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(ctx, config)
+	return m.CurrentService().NewReportingPlugin(ctx, config)
 }

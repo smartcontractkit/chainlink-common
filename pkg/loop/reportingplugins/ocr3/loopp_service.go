@@ -60,7 +60,7 @@ func (g *LOOPPService) NewReportingPlugin(ctx context.Context, config ocr3types.
 	if err := g.WaitCtx(ctx); err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
-	return g.Service.NewReportingPlugin(ctx, config)
+	return g.CurrentService().NewReportingPlugin(ctx, config)
 }
 
 func NewLOOPPServiceValidation(

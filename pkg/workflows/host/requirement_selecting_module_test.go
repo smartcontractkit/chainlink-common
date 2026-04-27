@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -440,6 +441,35 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, &addNitroResult, got)
 		assert.Equal(t, 1, callCount, "main should only be called once for trigger 1")
+	})
+
+	t.Run("RequirementsRerun returned too late is rejected", func(t *testing.T) {
+		rerunErr := &RequirementsRerun{Tee: &sdk.Tee{}}
+
+		main := ModuleAndHandler{Module: &stubModule{
+			startFn: noop,
+			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+				time.Sleep(11 * time.Second)
+				return nil, rerunErr
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				startFn: noop,
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+					t.Fatal("additional module should not be called")
+					return nil, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "rerun requirement specified too late")
 	})
 
 	t.Run("RequirementsRerun with no additional modules returns error", func(t *testing.T) {

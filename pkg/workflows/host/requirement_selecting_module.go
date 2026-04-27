@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
@@ -72,6 +73,7 @@ func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.E
 		}
 	}
 
+	start := time.Now()
 	result, err := r.main.Execute(ctx, request, handler)
 	if err == nil {
 		return result, nil
@@ -80,6 +82,10 @@ func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.E
 	rerun := &RequirementsRerun{}
 	if !errors.As(err, &rerun) {
 		return nil, err
+	}
+
+	if time.Now().Sub(start) > time.Second*10 {
+		return nil, errors.New("rerun requirement specified too late")
 	}
 
 	for i, m := range r.additional {

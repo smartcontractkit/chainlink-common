@@ -126,13 +126,24 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	return nil, refErr
 }
 
-// refresh replaces c.cc with a new (different from orig) *grpc.ClientConn, and returns it as well.
-// It will block until a new connection is successfully dialed, or return nil if the context expires.
+// refresh replaces c.cc with a new (different from orig) *grpc.ClientConn and returns the currently
+// published replacement.
+//
+// Only one goroutine is allowed to perform reconnect work for a given broken generation. Other
+// callers wait for that reconnect attempt to finish rather than holding the lock across the entire
+// dial/backoff loop themselves. This keeps recovery from turning one dead plugin generation into a
+// wider lock convoy across all callers trying to use the client.
+//
+// The broken connection is unpublished before redialing, and the replacement is published only after
+// both the broker-side resources and the new gRPC connection are ready, so observers either see the
+// previous complete generation or the next complete generation, never a partial one.
 func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.ClientConn, error) {
 	var refreshDone chan struct{}
 	for {
 		c.mu.Lock()
 		if c.cc != orig {
+			// Another goroutine already installed a newer generation while we were racing to
+			// refresh this one.
 			cc := c.cc
 			c.mu.Unlock()
 			return cc, nil
@@ -153,6 +164,9 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 		c.refreshing = true
 		refreshDone = make(chan struct{})
 		c.refreshDone = refreshDone
+
+		// Mark this generation unavailable before redialing so new callers either wait for the
+		// replacement or observe a fully published successor.
 
 		// Tear down the broken connection before dialing a replacement generation.
 		if c.cc != nil {
@@ -176,6 +190,8 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 	}()
 
 	try := func() error {
+		// Each attempt acquires a fresh broker client ID/resources and dials the matching gRPC
+		// endpoint. Failed attempts must release those resources before backing off.
 		if d, ok := ctx.Deadline(); ok {
 			c.Logger.Debugw("Client refresh", "deadline", d, "until", time.Until(d))
 		}

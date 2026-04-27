@@ -118,6 +118,20 @@ func (s *PluginService[P, S]) keepAlive() {
 	}
 }
 
+// tryLaunch installs a freshly launched plugin generation if the caller is still looking at the
+// current one.
+//
+// It first builds the full replacement generation: plugin process, client protocol, logical
+// service, and health reporter. It then swaps that generation into shared state atomically, so
+// readers never observe a new client paired with an old service or any other partial update.
+//
+// The old ClientProtocol passed in from keepAlive is used as a generation token. If another
+// goroutine already replaced the plugin after the health check failed, tryLaunch exits without
+// publishing a second replacement or tearing down the newer generation.
+//
+// After the swap, the superseded service and plugin client are closed. That prevents stale child
+// clients owned by the old service from continuing to refresh against dead sockets from the old
+// plugin generation.
 func (s *PluginService[P, S]) tryLaunch(old plugin.ClientProtocol) (err error) {
 	if old != nil {
 		s.mu.RLock()
@@ -134,6 +148,8 @@ func (s *PluginService[P, S]) tryLaunch(old plugin.ClientProtocol) (err error) {
 		return err
 	}
 
+	// serviceCh is a one-time readiness gate for the first successful launch. Later relaunches must
+	// replace the current generation in place without re-closing the channel.
 	hadService := s.hasService()
 
 	// Build the replacement service before mutating shared state so callers never observe a
@@ -278,6 +294,11 @@ func (s *PluginService[P, S]) Close() error {
 	})
 }
 
+// closeClient detaches the currently published plugin process/client from shared state before
+// closing it.
+//
+// Clearing the pointers under lock prevents concurrent readers from picking up a client generation
+// that is already on its way out while the underlying go-plugin teardown runs.
 func (s *PluginService[P, S]) closeClient() (err error) {
 	s.mu.Lock()
 	client := s.client
@@ -288,6 +309,10 @@ func (s *PluginService[P, S]) closeClient() (err error) {
 	return closeLaunched(client, clientProtocol)
 }
 
+// hasService reports whether the first successful launch has happened yet.
+//
+// The service channel is intentionally used only as a readiness latch. Once closed, subsequent
+// relaunches replace the current service in place rather than changing readiness semantics.
 func (s *PluginService[P, S]) hasService() bool {
 	select {
 	case <-s.serviceCh:
@@ -297,6 +322,11 @@ func (s *PluginService[P, S]) hasService() bool {
 	}
 }
 
+// closeService retires a superseded logical service while treating cancellation during teardown as
+// expected.
+//
+// Relaunch publishes the new generation before calling this helper so any child clients owned by the
+// old service stop refreshing against the dead plugin generation.
 func (s *PluginService[P, S]) closeService(service S) error {
 	if cerr := service.Close(); !isCanceled(cerr) {
 		return cerr

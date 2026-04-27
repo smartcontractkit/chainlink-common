@@ -113,6 +113,7 @@ type Receipt struct {
 	BlockNumber       *big.Int // number of the block containing this receipt
 	TransactionIndex  uint64   // index of the transaction inside of the block
 	EffectiveGasPrice *big.Int // actual price in wei paid per gas unit
+	L1Fee             *big.Int // For L2 chains only
 }
 
 // matches simplified evm-style head

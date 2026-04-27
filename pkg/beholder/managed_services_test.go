@@ -34,7 +34,7 @@ func TestManagedServices_BatchDisabled(t *testing.T) {
 	assert.Nil(t, client.ManagedServices())
 }
 
-func TestManagedServices_BatchEnabledCompatibilityShim(t *testing.T) {
+func TestManagedServices_BatchEnabledReturnsClientService(t *testing.T) {
 	lggr := newTestLogger(t)
 
 	client, err := beholder.NewClient(beholder.Config{
@@ -52,10 +52,12 @@ func TestManagedServices_BatchEnabledCompatibilityShim(t *testing.T) {
 	})
 	require.NoError(t, err)
 	defer func() { _ = client.Close() }()
-	assert.Nil(t, client.ManagedServices())
+	managedServices := client.ManagedServices()
+	require.Len(t, managedServices, 1)
+	assert.Same(t, client, managedServices[0])
 }
 
-func TestClientLifecycle_BatchEmitterNotAutoStarted(t *testing.T) {
+func TestClientLifecycle_BatchEmitterStartsWithClient(t *testing.T) {
 	lggr := newTestLogger(t)
 
 	client, err := beholder.NewClient(beholder.Config{

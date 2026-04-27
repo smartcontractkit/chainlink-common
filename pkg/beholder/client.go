@@ -290,7 +290,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 // ManagedServices returns services whose lifecycle is owned by the application
 // (start, stop, health). Returns nil when the receiver is nil or has none.
 func (c *Client) ManagedServices() []services.Service {
-	return nil
+	if c == nil || c.batchEmitterService == nil || c.Service == nil {
+		return nil
+	}
+	return []services.Service{c}
 }
 
 // Close shuts down OTel providers and the chip ingress connection.

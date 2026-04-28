@@ -122,17 +122,16 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 // refresh replaces c.cc with a new (different from orig) *grpc.ClientConn, and returns it as well.
 // It will block until a new connection is successfully dialed, or return nil if the context expires.
 func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.ClientConn, error) {
+	var oldCC *grpc.ClientConn
+	var oldDeps Resources
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.cc != orig {
 		return c.cc, nil
 	}
-	if c.cc != nil {
-		if err := c.cc.Close(); err != nil {
-			c.Logger.Errorw("Client close failed", "err", err)
-		}
-		c.CloseAll(c.deps...)
-	}
+	oldCC = c.cc
+	oldDeps = c.deps
 
 	try := func() error {
 		if d, ok := ctx.Deadline(); ok {
@@ -144,17 +143,28 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 			c.CloseAll(deps...)
 			return err
 		}
-		c.deps = deps
 
 		lggr := logger.With(c.Logger, "id", id)
 		lggr.Debug("Client dial")
-		c.cc, err = c.Dial(id)
+		cc, err := c.Dial(id)
 		if err != nil {
 			if ctx.Err() != nil {
 				lggr.Errorw("Client dial failed", "err", ErrConnDial{Name: c.name, ID: id, Err: err})
 			}
-			c.CloseAll(c.deps...)
+			c.CloseAll(deps...)
 			return err
+		}
+
+		c.deps = deps
+		c.cc = cc
+
+		if oldCC != nil {
+			if err := oldCC.Close(); err != nil {
+				c.Logger.Errorw("Client close failed", "err", err)
+			}
+			c.CloseAll(oldDeps...)
+			oldCC = nil
+			oldDeps = nil
 		}
 		return nil
 	}

@@ -35,6 +35,7 @@ const (
 	oomBinaryLocation          = "test/oom/cmd/testmodule.wasm"
 	oomBinaryCmd               = "test/oom/cmd"
 	sleepBinaryLocation        = "test/sleep/cmd/testmodule.wasm"
+	sleepBinaryLocation2       = "test/sleep/cmd/testmodule_2.wasm" // used to avoid a build race between tests
 	sleepBinaryCmd             = "test/sleep/cmd"
 	filesBinaryLocation        = "test/files/cmd/testmodule.wasm"
 	filesBinaryCmd             = "test/files/cmd"
@@ -1020,7 +1021,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
 	ctx := t.Context()
-	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation2, true, t)
 
 	tmt := 10 * time.Millisecond
 	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)

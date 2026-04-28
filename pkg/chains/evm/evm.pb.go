@@ -537,7 +537,7 @@ type Receipt struct {
 	EffectiveGasPrice *pb.BigInt             `protobuf:"bytes,8,opt,name=effective_gas_price,json=effectiveGasPrice,proto3" json:"effective_gas_price,omitempty"` // actual gas price paid in wei (include after EIP-1559)
 	BlockNumber       *pb.BigInt             `protobuf:"bytes,9,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`                     // block number containing the transaction
 	ContractAddress   []byte                 `protobuf:"bytes,10,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`        // address of the contract if this transaction created one in evm address [20]byte fix-sized array format
-	L1_Fee            *pb.BigInt             `protobuf:"bytes,11,opt,name=L1_Fee,json=L1Fee,proto3" json:"L1_Fee,omitempty"`                                      // layer 1 fee paid by L2 chains
+	L1_Fee            *pb.BigInt             `protobuf:"bytes,11,opt,name=l1_Fee,json=l1Fee,proto3" json:"l1_Fee,omitempty"`                                      // layer 1 fee paid by L2 chains
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2555,7 +2555,7 @@ type ReceiptGasInfo struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	GasUsed           uint64                 `protobuf:"varint,1,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`                                // gas used by this transaction (in gas units)
 	EffectiveGasPrice *pb.BigInt             `protobuf:"bytes,2,opt,name=effective_gas_price,json=effectiveGasPrice,proto3" json:"effective_gas_price,omitempty"` // actual gas price paid in wei (include after EIP-1559)
-	L1_Fee            *pb.BigInt             `protobuf:"bytes,3,opt,name=L1_Fee,json=L1Fee,proto3" json:"L1_Fee,omitempty"`                                       // layer 1 fee paid by L2 chains
+	L1_Fee            *pb.BigInt             `protobuf:"bytes,3,opt,name=l1_Fee,json=l1Fee,proto3" json:"l1_Fee,omitempty"`                                       // layer 1 fee paid by L2 chains
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -3062,7 +3062,7 @@ const file_evm_proto_rawDesc = "" +
 	"\fblock_number\x18\t \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12)\n" +
 	"\x10contract_address\x18\n" +
 	" \x01(\fR\x0fcontractAddress\x12(\n" +
-	"\x06L1_Fee\x18\v \x01(\v2\x11.values.v1.BigIntR\x05L1Fee\"\x94\x02\n" +
+	"\x06l1_Fee\x18\v \x01(\v2\x11.values.v1.BigIntR\x05l1Fee\"\x94\x02\n" +
 	"\bLPFilter\x12\"\n" +
 	"\rmax_logs_kept\x18\x01 \x01(\x04R\vmaxLogsKept\x12%\n" +
 	"\x0eretention_time\x18\x02 \x01(\x03R\rretentionTime\x12$\n" +
@@ -3185,7 +3185,7 @@ const file_evm_proto_rawDesc = "" +
 	"\x0eReceiptGasInfo\x12\x19\n" +
 	"\bgas_used\x18\x01 \x01(\x04R\agasUsed\x12A\n" +
 	"\x13effective_gas_price\x18\x02 \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\x12(\n" +
-	"\x06L1_Fee\x18\x03 \x01(\v2\x11.values.v1.BigIntR\x05L1Fee\"Z\n" +
+	"\x06l1_Fee\x18\x03 \x01(\v2\x11.values.v1.BigIntR\x05l1Fee\"Z\n" +
 	"\x1cCalculateTransactionFeeReply\x12:\n" +
 	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"\x86\x01\n" +
 	"\x18SubmitTransactionRequest\x12\x0e\n" +
@@ -3327,7 +3327,7 @@ var file_evm_proto_depIdxs = []int32{
 	4,  // 6: loop.evm.Receipt.logs:type_name -> loop.evm.Log
 	51, // 7: loop.evm.Receipt.effective_gas_price:type_name -> values.v1.BigInt
 	51, // 8: loop.evm.Receipt.block_number:type_name -> values.v1.BigInt
-	51, // 9: loop.evm.Receipt.L1_Fee:type_name -> values.v1.BigInt
+	51, // 9: loop.evm.Receipt.l1_Fee:type_name -> values.v1.BigInt
 	51, // 10: loop.evm.Header.block_number:type_name -> values.v1.BigInt
 	18, // 11: loop.evm.Expression.primitive:type_name -> loop.evm.Primitive
 	12, // 12: loop.evm.Expression.boolean_expression:type_name -> loop.evm.BooleanExpression
@@ -3365,7 +3365,7 @@ var file_evm_proto_depIdxs = []int32{
 	10, // 44: loop.evm.GetLatestLPBlockReply.lp_block:type_name -> loop.evm.LPBlock
 	42, // 45: loop.evm.CalculateTransactionFeeRequest.gas_info:type_name -> loop.evm.ReceiptGasInfo
 	51, // 46: loop.evm.ReceiptGasInfo.effective_gas_price:type_name -> values.v1.BigInt
-	51, // 47: loop.evm.ReceiptGasInfo.L1_Fee:type_name -> values.v1.BigInt
+	51, // 47: loop.evm.ReceiptGasInfo.l1_Fee:type_name -> values.v1.BigInt
 	51, // 48: loop.evm.CalculateTransactionFeeReply.transaction_fee:type_name -> values.v1.BigInt
 	40, // 49: loop.evm.SubmitTransactionRequest.gas_config:type_name -> loop.evm.GasConfig
 	0,  // 50: loop.evm.SubmitTransactionReply.txStatus:type_name -> loop.evm.TxStatus

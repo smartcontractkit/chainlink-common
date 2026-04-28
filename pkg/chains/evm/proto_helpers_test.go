@@ -278,7 +278,7 @@ func TestReceiptRoundtrip(t *testing.T) {
 
 	in := &evmtypes.Receipt{
 		Status:            1,
-		Logs:              nil,
+		Logs:              make([]*evmtypes.Log, 0),
 		TxHash:            txHash,
 		ContractAddress:   contractAddr,
 		GasUsed:           21000,

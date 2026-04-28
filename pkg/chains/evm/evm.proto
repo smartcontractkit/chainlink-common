@@ -83,7 +83,7 @@ message Receipt {
   values.v1.BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
   values.v1.BigInt block_number = 9; // block number containing the transaction
   bytes contract_address = 10; // address of the contract if this transaction created one in evm address [20]byte fix-sized array format
-  values.v1.BigInt L1_Fee = 11; // layer 1 fee paid by L2 chains
+  values.v1.BigInt l1_Fee = 11; // layer 1 fee paid by L2 chains
 }
 
 
@@ -321,7 +321,7 @@ message CalculateTransactionFeeRequest {
 message ReceiptGasInfo {
   uint64 gas_used = 1; // gas used by this transaction (in gas units)
   values.v1.BigInt effective_gas_price = 2; // actual gas price paid in wei (include after EIP-1559)
-  values.v1.BigInt L1_Fee = 3; // layer 1 fee paid by L2 chains
+  values.v1.BigInt l1_Fee = 3; // layer 1 fee paid by L2 chains
 }
 
 

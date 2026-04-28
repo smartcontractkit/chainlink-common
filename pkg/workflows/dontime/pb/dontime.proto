@@ -5,7 +5,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/
 message Observation {
   int64 timestamp = 1;
   map<string, int64> requests = 2;
-  reserved 3; // old rollout flag 'prune_executions'
+  // Flag to roll out execution pruning fix. Can be removed after rollout (once unused in the outcome phase).
+  bool prune_executions = 3;
 }
 
 message ObservedDonTimes {

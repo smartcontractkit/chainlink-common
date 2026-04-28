@@ -35,6 +35,7 @@ const (
 	oomBinaryLocation          = "test/oom/cmd/testmodule.wasm"
 	oomBinaryCmd               = "test/oom/cmd"
 	sleepBinaryLocation        = "test/sleep/cmd/testmodule.wasm"
+	sleepBinaryLocation2       = "test/sleep/cmd/testmodule_2.wasm" // used to avoid a build race between tests
 	sleepBinaryCmd             = "test/sleep/cmd"
 	filesBinaryLocation        = "test/files/cmd/testmodule.wasm"
 	filesBinaryCmd             = "test/files/cmd"

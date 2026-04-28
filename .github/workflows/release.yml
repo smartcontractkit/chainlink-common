@@ -52,13 +52,13 @@ on:
         type: choice
         # Keep this up-to-date with the modules in the repository.
         options:
-          - '.'
-          - 'keystore'
-          - 'observability-lib'
-          - 'pkg/values'
-          - 'pkg/workflows/sdk/v2/pb'
-          - 'pkg/chipingress'
-          - 'pkg/monitoring'
+          - "."
+          - "keystore"
+          - "observability-lib"
+          - "pkg/values"
+          - "pkg/workflows/sdk/v2/pb"
+          - "pkg/chipingress"
+          - "pkg/monitoring"
 
       tag-prefix-override:
         # Tags for go modules have some formatting requirements.
@@ -84,7 +84,7 @@ on:
       head-ref-override:
         # This overrides/forces the tag to point to something other than the HEAD of the branch the workflow is running on.
         # This is only needed if the commit to be released is not the HEAD of the branch.
-        description: 'HEAD REF (override) - the ref/sha the new release/tag will reference. Defaults to the HEAD of the current branch.'
+        description: "HEAD REF (override) - the ref/sha the new release/tag will reference. Defaults to the HEAD of the current branch."
         required: false
         # default: ${{ github.ref_name }} - not possible here
         type: string
@@ -93,12 +93,12 @@ on:
         # Normally, the workflow determines the latest version/release by comparing the git tags matching the desired format (see tag-prefix-override).
         # This overrides the latest release/version to be a specific ref. The computed API diff will be between this ref and the head ref (or release-ref-override if specified).
         # If this is set then version-override is required, as overriding the base ref breaks the normal version recommendation heuristic.
-        description: 'BASE REF (override) - The most recent release/version/ref to compare against. Defaults to the latest (semver) tag with the associated tag prefix. version-override is required if this is set.'
+        description: "BASE REF (override) - The most recent release/version/ref to compare against. Defaults to the latest (semver) tag with the associated tag prefix. version-override is required if this is set."
         required: false
         type: string
 
       dry-run:
-        description: 'DRY RUN - Run everything, except for release creation.'
+        description: "DRY RUN - Run everything, except for release creation."
         required: true
         type: boolean
         default: false
@@ -202,7 +202,7 @@ jobs:
 
   release:
     name: Version and Draft Release ${{ inputs.dry-run && '(dry-run)' || '' }}
-    needs: [ process-inputs, approval-gate ]
+    needs: [process-inputs, approval-gate]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -344,14 +344,15 @@ jobs:
 
           gh release create "${release_args[@]}"
 
-
   # Used to enforce approvals before kicking off the rest of the jobs.
   approval-gate:
     name: Approval Gate ${{ inputs.dry-run && '(dry-run bypass)' || '' }}
-    needs: [ review-context, process-inputs ]
+    needs: [review-context, process-inputs]
     runs-on: ubuntu-latest
     # Only require approval gate if not a dry-run
-    environment: ${{ !inputs.dry-run && 'approval-gate-foundations' || '' }}
+    environment:
+      name: ${{ !inputs.dry-run && 'approval-gate-foundations' || '' }}
+      deployment: false
     steps:
       - name: Exit successfully
         run: exit 0

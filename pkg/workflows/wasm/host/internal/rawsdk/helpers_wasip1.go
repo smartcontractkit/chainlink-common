@@ -61,6 +61,13 @@ func SendSubscription(subscriptions *sdk.TriggerSubscriptionRequest) {
 	os.Exit(0)
 }
 
+func SendRestrictions(restrictions *sdk.Restrictions) {
+	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_Restrictions{Restrictions: restrictions}}
+	bytes := Must(proto.Marshal(execResult))
+	sendResponse(BufferToPointerLen(bytes))
+	os.Exit(0)
+}
+
 func Now() time.Time {
 	var buf [8]byte // host writes UnixNano as little-endian uint64
 	rc := now(unsafe.Pointer(&buf[0]))

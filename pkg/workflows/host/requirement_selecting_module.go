@@ -27,31 +27,35 @@ func (l *lazyModule) ensureStarted() {
 	})
 }
 
+// NewRequirementSelectingModule creates a module that routes trigger executions
+// based on subscription requirements. main is prepended as modules[0]; additional
+// modules follow. Subscribe always runs on modules[0].
 func NewRequirementSelectingModule(main ModuleAndHandler, additional []ModuleAndHandler) Module {
-	wrapped := make([]*lazyModule, len(additional))
-	for i := range additional {
-		wrapped[i] = &lazyModule{ModuleAndHandler: additional[i]}
+	modules := make([]*lazyModule, 1+len(additional))
+	modules[0] = &lazyModule{ModuleAndHandler: main}
+	for i, a := range additional {
+		modules[1+i] = &lazyModule{ModuleAndHandler: a}
 	}
-	return &requirementSelectingModule{
-		main:       main,
-		additional: wrapped,
-	}
+	return &requirementSelectingModule{modules: modules}
+}
+
+type triggerInfo struct {
+	moduleIdx int
+	preHook   bool
 }
 
 type requirementSelectingModule struct {
-	main       ModuleAndHandler
-	additional []*lazyModule
-	// triggerID → index into additional
+	modules []*lazyModule
+	// triggerID → triggerInfo
 	cache sync.Map
 }
 
 func (r *requirementSelectingModule) Start() {
-	r.main.Start()
+	r.modules[0].ensureStarted()
 }
 
 func (r *requirementSelectingModule) Close() {
-	r.main.Close()
-	for _, m := range r.additional {
+	for _, m := range r.modules {
 		if m.started {
 			m.Close()
 		}
@@ -59,32 +63,28 @@ func (r *requirementSelectingModule) Close() {
 }
 
 func (r *requirementSelectingModule) IsLegacyDAG() bool {
-	return r.main.IsLegacyDAG()
+	return r.modules[0].IsLegacyDAG()
 }
 
 func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
-	if triggerID, ok := extractTriggerID(request); ok {
-		if idx, cached := r.cache.Load(triggerID); cached {
-			return r.additional[idx.(int)].Execute(ctx, request, handler)
-		}
-		return r.main.Execute(ctx, request, handler)
+	if request.GetTrigger() == nil {
+		return r.subscribe(ctx, request, handler)
 	}
+	return r.trigger(ctx, request, handler)
+}
 
-	// Subscribe: run main, then build triggerID→module cache from subscription requirements
-	result, err := r.main.Execute(ctx, request, handler)
+func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
+	result, err := r.modules[0].Execute(ctx, request, handler)
 	if err != nil {
 		return nil, err
 	}
 
 	for i, sub := range result.GetTriggerSubscriptions().GetSubscriptions() {
-		if sub.Requirements == nil || CheckRequirements(r.main.RequirementsHandler, sub.Requirements) {
-			continue
-		}
 		matched := false
-		for j, m := range r.additional {
+		for j, m := range r.modules {
 			if CheckRequirements(m.RequirementsHandler, sub.Requirements) {
 				m.ensureStarted()
-				r.cache.Store(uint64(i), j)
+				r.cache.Store(uint64(i), triggerInfo{moduleIdx: j, preHook: sub.PreHook})
 				matched = true
 				break
 			}
@@ -97,11 +97,21 @@ func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.E
 	return result, nil
 }
 
-func extractTriggerID(req *sdk.ExecuteRequest) (uint64, bool) {
-	if t := req.GetTrigger(); t != nil {
-		return t.Id, true
+func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
+	trigger := request.GetTrigger()
+	if val, cached := r.cache.Load(trigger.Id); cached {
+		info := val.(triggerInfo)
+		if info.preHook {
+			prehook := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_PreHook{PreHook: trigger}}
+			preHookResult, err := r.modules[0].Execute(ctx, prehook, handler)
+			if err != nil {
+				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
+			}
+			handler = newRestrictedExecutionHelper(handler, preHookResult.GetRestrictions())
+		}
+		return r.modules[info.moduleIdx].Execute(ctx, request, handler)
 	}
-	return 0, false
+	return r.modules[0].Execute(ctx, request, handler)
 }
 
 var _ Module = &requirementSelectingModule{}

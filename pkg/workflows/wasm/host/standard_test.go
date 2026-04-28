@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
@@ -581,6 +582,32 @@ func TestStandardTeeRuntime(t *testing.T) {
 	assertProto(t, expected, actual.GetTriggerSubscriptions())
 }
 
+func TestStandardRestrictions(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	// Some languages call time during initiation of the executable before the main is called.
+	// This would be in unknown mode, which would call Node mode by default.
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	// subscribe so pre-hooks are known.
+	// subscriptions are always done before the first trigger
+	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+	m := host.NewRequirementSelectingModule(host.ModuleAndHandler{Module: makeTestModule(t)}, []host.ModuleAndHandler{})
+	_, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
+	require.NoError(t, err)
+
+	response := runWithBasicTriggerWithModule(t, mockExecutionHelper, m)
+	switch r := response.Result.(type) {
+	case *sdk.ExecutionResult_Error:
+		assert.Contains(t, r.Error, "capability call denied by restrictions: basic-test-action@1.0.0 PerformAction")
+	default:
+		assert.Fail(t, "Expected an error result due to restricted capability call, got %T", response.Result)
+	}
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)
@@ -594,9 +621,12 @@ func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.
 }
 
 func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionResult {
+	return runWithBasicTriggerWithModule(t, executor, makeTestModule(t))
+}
+
+func runWithBasicTriggerWithModule(t *testing.T, executor ExecutionHelper, m ModuleV2) *sdk.ExecutionResult {
 	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
 	executeRequest := triggerExecuteRequest(t, 0, trigger)
-	m := makeTestModule(t)
 	response, err := m.Execute(t.Context(), executeRequest, executor)
 	require.NoError(t, err)
 	return response

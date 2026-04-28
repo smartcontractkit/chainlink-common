@@ -1021,7 +1021,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
 	ctx := t.Context()
-	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation2, true, t)
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
 	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)

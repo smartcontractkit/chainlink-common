@@ -14,6 +14,10 @@ type RequirementsHandler struct {
 // non-nil field in req, returning false if any are false, or if the handler is nil.
 // Unknown fields on the proto also result in a false return value.
 func CheckRequirements(handler RequirementsHandler, req *sdk.Requirements) bool {
+	if req == nil {
+		return true
+	}
+
 	if len(req.ProtoReflect().GetUnknown()) != 0 {
 		return false
 	}

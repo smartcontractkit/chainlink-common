@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 type stubModule struct {
@@ -507,4 +509,178 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot find a runner")
 	})
+}
+
+func subWithReqsAndPreHook(reqs *sdk.Requirements) *sdk.TriggerSubscription {
+	return &sdk.TriggerSubscription{Requirements: reqs, PreHook: true}
+}
+
+func restrictionsResult(r *sdk.Restrictions) *sdk.ExecutionResult {
+	return &sdk.ExecutionResult{
+		Result: &sdk.ExecutionResult_Restrictions{Restrictions: r},
+	}
+}
+
+func TestRequirementSelectingModule_PreHook(t *testing.T) {
+	teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+
+	t.Run("pre-hook runs in main, trigger runs in additional with restricted helper", func(t *testing.T) {
+		restrictions := &sdk.Restrictions{
+			Capabilities: &sdk.CapabilityRestrictions{
+				MaxTotalCalls: 1,
+				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_OPEN,
+			},
+		}
+
+		var helperSeenByAdditional ExecutionHelper
+		main := ModuleAndHandler{Module: &stubModule{
+			startFn: noop,
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return restrictionsResult(restrictions), nil
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				startFn: noop, closeFn: noopClose,
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+					helperSeenByAdditional = h
+					return &sdk.ExecutionResult{}, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+
+		_, isRestricted := helperSeenByAdditional.(*executionRestrictions)
+		assert.True(t, isRestricted, "additional module should receive a restricted helper")
+	})
+
+	t.Run("pre-hook error propagates", func(t *testing.T) {
+		main := ModuleAndHandler{Module: &stubModule{
+			startFn: noop,
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return nil, assert.AnError
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				startFn: noop, closeFn: noopClose,
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+					t.Fatal("additional module should not be called when pre-hook fails")
+					return nil, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pre-hook execution failed")
+	})
+
+	t.Run("pre-hook on main-routed trigger applies restrictions to main", func(t *testing.T) {
+		restrictions := &sdk.Restrictions{
+			Capabilities: &sdk.CapabilityRestrictions{MaxTotalCalls: 0},
+		}
+		var helperSeenByMain ExecutionHelper
+		main := ModuleAndHandler{Module: &stubModule{
+			startFn: noop,
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return restrictionsResult(restrictions), nil
+				}
+				if req.GetTrigger() != nil {
+					helperSeenByMain = h
+					return &sdk.ExecutionResult{}, nil
+				}
+				// Subscribe: no requirements, PreHook=true
+				return subscribeResult(&sdk.TriggerSubscription{PreHook: true}), nil
+			},
+		}}
+
+		m := NewRequirementSelectingModule(main, nil)
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+
+		_, isRestricted := helperSeenByMain.(*executionRestrictions)
+		assert.True(t, isRestricted, "main should receive a restricted helper when pre-hook is set")
+	})
+
+	t.Run("no pre-hook passes original helper to additional", func(t *testing.T) {
+		var helperSeenByAdditional ExecutionHelper
+		inner := &stubExecutionHelper{}
+
+		main := ModuleAndHandler{Module: &stubModule{
+			startFn: noop,
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if req.GetTrigger() != nil {
+					t.Fatal("main should not be called for trigger when cached in additional")
+				}
+				return subscribeResult(subWithReqs(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				startFn: noop, closeFn: noopClose,
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+					helperSeenByAdditional = h
+					return &sdk.ExecutionResult{}, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), inner)
+		require.NoError(t, err)
+
+		assert.Same(t, inner, helperSeenByAdditional, "without pre-hook, original helper should be passed unchanged")
+	})
+}
+
+// stubExecutionHelper is a minimal ExecutionHelper implementation for testing.
+type stubExecutionHelper struct{}
+
+func (s *stubExecutionHelper) CallCapability(context.Context, *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+	return nil, nil
+}
+func (s *stubExecutionHelper) GetSecrets(context.Context, *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
+	return nil, nil
+}
+func (s *stubExecutionHelper) GetWorkflowExecutionID() string { return "" }
+func (s *stubExecutionHelper) GetNodeTime() time.Time         { return time.Time{} }
+func (s *stubExecutionHelper) GetDONTime() (time.Time, error) { return time.Time{}, nil }
+func (s *stubExecutionHelper) EmitUserLog(string) error       { return nil }
+func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetric) error {
+	return nil
 }

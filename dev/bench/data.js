@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777032798948,
+  "lastUpdate": 1777392699889,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45060,6 +45060,66 @@ window.BENCHMARK_DATA = {
             "value": 145345,
             "unit": "ns/op",
             "extra": "8418 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "5570633668cd94853f0967db7ba3805fd969abc2",
+          "message": "Running a module respects the timeout on the provided context (#1999)\n\n* Running a module respects the timeout on the provided context\n\n* AI feedback\n\n* Fix module timeout detection and rename test module build so it's ignored. Remove shadowing of variable\n\n* Updated the wrong file before for the test binary name...",
+          "timestamp": "2026-04-28T15:59:39Z",
+          "tree_id": "0921e21fd67765e11c3a7c5cf0f3fad702f6dddd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5570633668cd94853f0967db7ba3805fd969abc2"
+        },
+        "date": 1777392697585,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 904.9,
+            "unit": "ns/op",
+            "extra": "1297360 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92357,
+            "unit": "ns/op",
+            "extra": "12987 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.3,
+            "unit": "ns/op",
+            "extra": "3001381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92141,
+            "unit": "ns/op",
+            "extra": "12986 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26767,
+            "unit": "ns/op",
+            "extra": "44860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139109,
+            "unit": "ns/op",
+            "extra": "8396 times\n4 procs"
           }
         ]
       }

@@ -130,6 +130,9 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 	if c.cc != orig {
 		return c.cc, nil
 	}
+	// Hold on to the currently published generation until the replacement has been fully
+	// created and dialed. This avoids tearing down live broker-backed sockets on a failed
+	// refresh attempt.
 	oldCC = c.cc
 	oldDeps = c.deps
 
@@ -159,6 +162,8 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 		c.cc = cc
 
 		if oldCC != nil {
+			// Only retire the previous generation after the successor is published, so callers
+			// never observe a failed cutover with the old sockets already gone.
 			if err := oldCC.Close(); err != nil {
 				c.Logger.Errorw("Client close failed", "err", err)
 			}

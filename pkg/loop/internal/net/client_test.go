@@ -58,6 +58,7 @@ func TestWrappedErrorError(t *testing.T) {
 func TestClientConnRefresh_PreservesPublishedDepsUntilReplacementSucceeds(t *testing.T) {
 	t.Parallel()
 
+	// Start with one published generation and make refresh fail once before succeeding.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	oldConn := newBufconnClientConn(t)
@@ -72,9 +73,11 @@ func TestClientConnRefresh_PreservesPublishedDepsUntilReplacementSucceeds(t *tes
 		BrokerExt: &BrokerExt{Broker: testBroker{dial: func(id uint32, _ ...grpc.DialOption) (*grpc.ClientConn, error) {
 			switch id {
 			case 1:
+				// A failed replacement attempt must not have already torn down the published deps.
 				assert.Equal(t, int32(0), oldDepClosed.Load(), "published deps must remain live while a replacement attempt fails")
 				return nil, errors.New("boom")
 			case 2:
+				// The next attempt publishes the replacement generation.
 				return newConn, nil
 			default:
 				return nil, fmt.Errorf("unexpected dial id %d", id)
@@ -91,11 +94,13 @@ func TestClientConnRefresh_PreservesPublishedDepsUntilReplacementSucceeds(t *tes
 	client.newClient = func(context.Context) (uint32, Resources, error) {
 		switch dialAttempts.Add(1) {
 		case 1:
+			// First attempt allocates deps that should be cleaned up immediately on failure.
 			return 1, Resources{{
 				Closer: fnCloser(func() { failedAttemptDepClosed.Add(1) }),
 				Name:   "failed-attempt",
 			}}, nil
 		case 2:
+			// Second attempt allocates the deps that should remain published after cutover.
 			return 2, Resources{{
 				Closer: fnCloser(func() { newDepClosed.Add(1) }),
 				Name:   "new",

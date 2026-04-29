@@ -32,7 +32,7 @@ rm-builders:
 	rm -f ./pkg/workflows/wasm/host/test/cmd/testmodule.wasm
 
 .PHONY: generate
-generate: mockery install-protoc gomods cre-protoc modgraph
+generate: mockery install-protoc cre-protoc
 	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -s proto_vendor -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
 

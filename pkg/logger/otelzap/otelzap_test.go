@@ -601,8 +601,7 @@ func TestCallerInfo(t *testing.T) {
 			assert.Contains(t, got, "caller")
 
 			expectedCaller := fmt.Sprintf("%s:%d", tt.caller.File, tt.caller.Line)
-			assert.Equal(t, expectedCaller, fmt.Sprintf("%v", got["caller"]))
-
+			assert.Equal(t, expectedCaller, got["caller"])
 		})
 	}
 }

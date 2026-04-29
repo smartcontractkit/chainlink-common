@@ -27,7 +27,7 @@ type JWTAuthenticator interface {
 type NodeAuthProvider interface {
 
 	// IsNodePubKeyTrusted checks if a node's public key is trusted
-	// Usually, this is done by checking the node aginst DON's on-chain topology.
-	// The check can be done aginst on-chain contracts or cache, depending on the each service's implementation.
+	// Usually, this is done by checking the node against DON's on-chain topology.
+	// The check can be done against on-chain contracts or cache, depending on the each service's implementation.
 	IsNodePubKeyTrusted(ctx context.Context, publicKey ed25519.PublicKey) (bool, error)
 }

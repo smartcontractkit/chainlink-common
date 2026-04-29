@@ -46,7 +46,7 @@ func TestDefault(t *testing.T) {
 		if *update {
 			require.NoError(t, os.WriteFile("defaults.json", b, 0644))
 		} else {
-			require.Equal(t, defaultsJSON, string(b))
+			require.JSONEq(t, defaultsJSON, string(b))
 		}
 	})
 
@@ -124,16 +124,16 @@ func TestSchema_Unmarshal(t *testing.T) {
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
-	assert.Equal(t, true, cfg.GatewayVaultManagementEnabled.DefaultValue)
-	assert.Equal(t, false, cfg.VaultJWTAuthEnabled.DefaultValue)
-	assert.Equal(t, false, cfg.VaultOrgIdAsSecretOwnerEnabled.DefaultValue)
-	assert.Equal(t, false, cfg.VaultForceEmptyOCRRounds.DefaultValue)
+	assert.True(t, cfg.GatewayVaultManagementEnabled.DefaultValue)
+	assert.False(t, cfg.VaultJWTAuthEnabled.DefaultValue)
+	assert.False(t, cfg.VaultOrgIdAsSecretOwnerEnabled.DefaultValue)
+	assert.False(t, cfg.VaultForceEmptyOCRRounds.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
-	assert.Equal(t, false, cfg.PerWorkflow.ChainAllowed.Default.DefaultValue)
+	assert.False(t, cfg.PerWorkflow.ChainAllowed.Default.DefaultValue)
 	assert.Equal(t, "true", cfg.PerWorkflow.ChainAllowed.Values["1"])
 	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.Default.Parse)
 	assert.NotNil(t, cfg.PerWorkflow.ChainAllowed.KeyFromCtx)
@@ -192,7 +192,6 @@ func TestDefaultGetter(t *testing.T) {
 	got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
 	require.NoError(t, err)
 	require.Equal(t, 20, got)
-
 }
 
 func TestDefaultGetter_SettingMap(t *testing.T) {
@@ -268,7 +267,7 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 
 func TestDefaultEnvVars(t *testing.T) {
 	// confirm defaults
-	require.Equal(t, "", Default.PerWorkflow.ChainAllowed.Values["1234"])
+	require.Empty(t, Default.PerWorkflow.ChainAllowed.Values["1234"])
 	require.Equal(t, "true", Default.PerWorkflow.ChainAllowed.Values["3379446385462418246"])
 
 	t.Cleanup(reinit) // restore after

@@ -1,7 +1,6 @@
 package binary_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -71,14 +70,14 @@ func TestString(t *testing.T) {
 
 	t.Run("Encode returns an error if type is not a string", func(t *testing.T) {
 		_, err := s.Encode(1, nil)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Encode returns an error if the value to encode is too long", func(t *testing.T) {
 		_, err := s.Encode(string(make([]byte, 256)), nil)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 		_, err = s2.Encode(string(make([]byte, 257)), nil)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns an error if the encoded value is too long but fits in the buffer", func(t *testing.T) {
@@ -87,7 +86,7 @@ func TestString(t *testing.T) {
 		encoded, err := s3.Encode(string(make([]byte, 257)), nil)
 		require.NoError(t, err)
 		_, _, err = s2.Decode(encoded)
-		assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("Decode returns an error if there are not enough bytes to decode", func(t *testing.T) {
@@ -95,17 +94,17 @@ func TestString(t *testing.T) {
 		require.NoError(t, err)
 		encoded = encoded[:len(encoded)-1]
 		_, _, err = s.Decode(encoded)
-		assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("Size returns an error", func(t *testing.T) {
 		_, err := s.Size(10)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("FixedSize returns an error", func(t *testing.T) {
 		_, err := s.FixedSize()
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("GetType returns string", func(t *testing.T) {

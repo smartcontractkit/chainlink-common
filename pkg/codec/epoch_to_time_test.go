@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"math/big"
 	"reflect"
 	"testing"
@@ -63,7 +62,7 @@ func TestTimeToUnix(t *testing.T) {
 	t.Run("RetypeToOffChain returns error if type is not an integer type", func(t *testing.T) {
 		converter := codec.NewEpochToTimeModifier([]string{"T"})
 		_, err := converter.RetypeToOffChain(reflect.TypeOf(testInvalidStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain converts integer types", func(t *testing.T) {

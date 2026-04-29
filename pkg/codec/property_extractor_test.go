@@ -80,7 +80,7 @@ func TestPropertyExtractor(t *testing.T) {
 
 	t.Run("RetypeToOffChain returns error for missing field", func(t *testing.T) {
 		_, err := invalidExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
-		require.NotNil(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {

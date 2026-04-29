@@ -14,10 +14,11 @@ import (
 const generatedHeader = "# File generated from source files. DO NOT EDIT.\n"
 
 // CombineTOMLFiles reads a set of TOML config files and combines them in to one file. The expected inputs are:
-//	- global.toml
-// 	- org/*.toml
-// 	- owner/*.toml
-// 	- workflow/*.toml
+//   - global.toml
+//   - org/*.toml
+//   - owner/*.toml
+//   - workflow/*.toml
+//
 // The directory and file names translate to keys in the TOML structure, while the file extensions are discarded.
 // For example: owner/0x1234.toml:Foo.Bar becomes owner.0x1234.Foo.Bar
 func CombineTOMLFiles(files fs.FS) ([]byte, error) {
@@ -138,7 +139,7 @@ type tomlGetter struct {
 }
 
 // NewTOMLGetter returns a static Getter backed by the given TOML.
-//TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
 // NewTOMLRegistry with polling & subscriptions
 func NewTOMLGetter(b []byte) (Getter, error) {
 	s, err := newTOMLSettings(b)

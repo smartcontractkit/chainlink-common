@@ -29,7 +29,7 @@ func TestCombineJSONFiles(t *testing.T) {
 		require.NoError(t, os.WriteFile("testdata/config.json", b, os.ModePerm))
 		return
 	}
-	require.Equal(t, configJSON, string(b))
+	require.JSONEq(t, configJSON, string(b))
 }
 func Test_jsonSettings_GetScoped(t *testing.T) {
 	s, err := newJSONSettings([]byte(configJSON))

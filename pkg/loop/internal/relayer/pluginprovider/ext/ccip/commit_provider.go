@@ -285,5 +285,5 @@ func (e *CommitProviderServer) SourceNativeToken(ctx context.Context, req *ccipp
 }
 
 func (e *CommitProviderServer) formatSubserviceName(serviceName string) string {
-	return fmt.Sprintf("CommitProvider.%s", serviceName)
+	return "CommitProvider." + serviceName
 }

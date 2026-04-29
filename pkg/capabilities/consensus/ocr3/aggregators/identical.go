@@ -3,6 +3,7 @@ package aggregators
 import (
 	"crypto/sha256"
 	"fmt"
+	"strconv"
 
 	"google.golang.org/protobuf/proto"
 
@@ -88,7 +89,7 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 		if useOverrides {
 			outcome[a.config.KeyOverrides[idx]] = highestObservation
 		} else {
-			outcome[fmt.Sprintf("%d", idx)] = highestObservation
+			outcome[strconv.Itoa(idx)] = highestObservation
 		}
 	}
 	valMap, err := values.NewMap(outcome)

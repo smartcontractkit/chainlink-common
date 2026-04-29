@@ -93,7 +93,6 @@ func Execute[I, C, O proto.Message](
 	input I,
 	config C,
 	exec func(context.Context, RequestMetadata, I, C) (O, ResponseMetadata, *OCRAttestation, error)) (CapabilityResponse, error) {
-
 	response := CapabilityResponse{}
 	migrated, err := UnwrapRequest(request, config, input)
 	if err != nil {

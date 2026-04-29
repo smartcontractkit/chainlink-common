@@ -39,7 +39,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 
 		_, err := codecpb.EncodeVersionedBytes(invalidData, codecpb.JSONEncodingVersion2)
 
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
@@ -128,13 +128,13 @@ func TestBind(t *testing.T) {
 				t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := t.Context()
 					err := contractReader.Bind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 
 				t.Run("Unbind unwraps errors from server"+errorType.Error(), func(t *testing.T) {
 					ctx := t.Context()
 					err := contractReader.Unbind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 		}
@@ -175,7 +175,7 @@ func TestGetLatestValue(t *testing.T) {
 				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := t.Context()
 					err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, nil, "anything")
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 
@@ -184,7 +184,7 @@ func TestGetLatestValue(t *testing.T) {
 			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 				ctx := t.Context()
 				err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, &cannotEncode{}, &TestStruct{})
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			})
 		}
 	})
@@ -224,7 +224,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 				t.Run("BatchGetLatestValues unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := t.Context()
 					_, err := contractReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 
@@ -241,7 +241,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 					},
 				)
 
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			})
 		}
 	})
@@ -280,7 +280,7 @@ func TestQueryKey(t *testing.T) {
 				t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 					ctx := t.Context()
 					_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]any{nil})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 
@@ -388,7 +388,6 @@ func (e *eventsRecorder) RecordEvent(contractID string, evt any, confidenceLevel
 		if !ok {
 			return fmt.Errorf("unexpected event type %T", evt)
 		}
-
 	}
 
 	e.events = append(e.events, event{contractID: contractID, event: evt, confidenceLevel: confidenceLevel, eventType: eventType})
@@ -813,7 +812,7 @@ func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.Contra
 				}
 				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), TxHash: []byte("0xtest"), Data: &value}})
 			} else {
-				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: fmt.Sprintf("%d", idx), TxHash: []byte("0xtest"), Data: trigger.event}})
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), TxHash: []byte("0xtest"), Data: trigger.event}})
 			}
 		}
 
@@ -871,7 +870,6 @@ func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.Contra
 			}
 		}
 	}, nil
-
 }
 
 func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ string, confidenceLevel primitives.ConfidenceLevel) {
@@ -950,14 +948,14 @@ func (pc *protoConversionTestContractReader) BatchGetLatestValues(_ context.Cont
 
 func (pc *protoConversionTestContractReader) Bind(_ context.Context, bc []types.BoundContract) error {
 	if !reflect.DeepEqual(pc.expectedBindings, bc) {
-		return fmt.Errorf("bound contract wasn't parsed properly")
+		return errors.New("bound contract wasn't parsed properly")
 	}
 	return nil
 }
 
 func (pc *protoConversionTestContractReader) Unbind(_ context.Context, bc []types.BoundContract) error {
 	if !reflect.DeepEqual(pc.expectedBindings, bc) {
-		return fmt.Errorf("bound contract wasn't parsed properly")
+		return errors.New("bound contract wasn't parsed properly")
 	}
 
 	return nil
@@ -965,7 +963,7 @@ func (pc *protoConversionTestContractReader) Unbind(_ context.Context, bc []type
 
 func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if !reflect.DeepEqual(pc.expectedQueryFilter, filter) {
-		return nil, fmt.Errorf("filter wasn't parsed properly")
+		return nil, errors.New("filter wasn't parsed properly")
 	}
 
 	// using deep equal on a slice returns false when one slice is nil and another is empty
@@ -984,7 +982,7 @@ func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types
 	}
 
 	if !reflect.DeepEqual(pc.expectedLimitAndSort.Limit, limitAndSort.Limit) || !reflect.DeepEqual(aSlice, bSlice) {
-		return nil, fmt.Errorf("limitAndSort wasn't parsed properly")
+		return nil, errors.New("limitAndSort wasn't parsed properly")
 	}
 
 	return nil, nil

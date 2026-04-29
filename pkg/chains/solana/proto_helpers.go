@@ -44,7 +44,7 @@ func ConvertPublicKeyFromProto(b []byte) (solana.PublicKey, error) {
 
 func ValidatePublicKeyBytes(b []byte) error {
 	if b == nil {
-		return fmt.Errorf("address can't be nil")
+		return errors.New("address can't be nil")
 	}
 	if len(b) != solana.PublicKeyLength {
 		return fmt.Errorf("invalid public key: got %d bytes, expected %d, value=%s",
@@ -89,7 +89,7 @@ func ConvertSignaturesToProto(sigs []solana.Signature) [][]byte {
 
 func ValidateSignatureBytes(b []byte) error {
 	if b == nil {
-		return fmt.Errorf("signature can't be nil")
+		return errors.New("signature can't be nil")
 	}
 	if len(b) != solana.SignatureLength {
 		return fmt.Errorf("invalid signature: got %d bytes, expected %d, value=%s",
@@ -100,7 +100,7 @@ func ValidateSignatureBytes(b []byte) error {
 
 func ConvertHashFromProto(b []byte) (solana.Hash, error) {
 	if b == nil {
-		return solana.Hash{}, fmt.Errorf("hash can't be nil")
+		return solana.Hash{}, errors.New("hash can't be nil")
 	}
 
 	if len(b) != solana.HashLength {
@@ -112,7 +112,7 @@ func ConvertHashFromProto(b []byte) (solana.Hash, error) {
 
 func ConvertEventSigFromProto(b []byte) (solana.EventSignature, error) {
 	if b == nil {
-		return solana.EventSignature{}, fmt.Errorf("hash can't be nil")
+		return solana.EventSignature{}, errors.New("hash can't be nil")
 	}
 
 	if len(b) != solana.EventSignatureLength {
@@ -121,7 +121,6 @@ func ConvertEventSigFromProto(b []byte) (solana.EventSignature, error) {
 	}
 
 	return solana.EventSignature(b), nil
-
 }
 
 func ConvertEncodingTypeFromProto(e EncodingType) solana.EncodingType {
@@ -1639,7 +1638,6 @@ func ptrUint64(v uint64) *uint64 {
 		return nil
 	}
 	return &v
-
 }
 
 func ptrUnix(v solana.UnixTimeSeconds) *solana.UnixTimeSeconds { return &v }

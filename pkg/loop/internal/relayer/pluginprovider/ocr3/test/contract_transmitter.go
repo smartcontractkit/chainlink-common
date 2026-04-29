@@ -3,12 +3,14 @@ package test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-	"github.com/stretchr/testify/assert"
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
@@ -85,7 +87,7 @@ func (s staticOCR3ContractTransmitter) Evaluate(ctx context.Context, ct ocr3type
 	}
 	err = ct.Transmit(ctx, s.ConfigDigest, s.SeqNr, ocr3types.ReportWithInfo[[]byte]{Report: s.Report, Info: s.Info}, s.Sigs)
 	if err != nil {
-		return fmt.Errorf("failed to Transmit")
+		return errors.New("failed to Transmit")
 	}
 	return nil
 }

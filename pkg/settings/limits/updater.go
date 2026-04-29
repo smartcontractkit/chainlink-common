@@ -53,7 +53,6 @@ func (u *updater[N]) Close() error {
 	})
 	<-u.done
 	return nil
-
 }
 
 func (u *updater[N]) updateCtx(ctx context.Context) {

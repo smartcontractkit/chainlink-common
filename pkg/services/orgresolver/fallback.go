@@ -112,8 +112,8 @@ func unwrapErr(err error) error {
 	return nil
 }
 
-func (c *OrgResolverFallback) Start(ctx context.Context) error  { return c.inner.Start(ctx) }
-func (c *OrgResolverFallback) Close() error                     { return c.inner.Close() }
-func (c *OrgResolverFallback) Ready() error                     { return c.inner.Ready() }
-func (c *OrgResolverFallback) HealthReport() map[string]error   { return c.inner.HealthReport() }
-func (c *OrgResolverFallback) Name() string                     { return c.inner.Name() }
+func (c *OrgResolverFallback) Start(ctx context.Context) error { return c.inner.Start(ctx) }
+func (c *OrgResolverFallback) Close() error                    { return c.inner.Close() }
+func (c *OrgResolverFallback) Ready() error                    { return c.inner.Ready() }
+func (c *OrgResolverFallback) HealthReport() map[string]error  { return c.inner.HealthReport() }
+func (c *OrgResolverFallback) Name() string                    { return c.inner.Name() }

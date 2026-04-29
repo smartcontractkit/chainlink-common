@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -466,6 +468,30 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		require.NoError(t, emitter.Close())
 
 		rm := collectEmitterMetrics(t, reader)
+		metricdatatest.AssertEqual(t, metricdata.ScopeMetrics{
+			Scope: instrumentation.Scope{Name: "beholder/chip_ingress_batch_emitter"},
+			Metrics: []metricdata.Metrics{
+				{
+					Name:        "chip_ingress.events_sent",
+					Description: "Total events successfully sent via PublishBatch",
+					Unit:        "{event}",
+					Data: metricdata.Sum[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						IsMonotonic: true,
+						DataPoints: []metricdata.DataPoint[int64]{
+							{
+								Attributes: attribute.NewSet(
+									attribute.String("domain", "platform"),
+									attribute.String("entity", "MetricEvent"),
+								),
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}, mustEmitterScopeMetrics(t, rm, "beholder/chip_ingress_batch_emitter"), metricdatatest.IgnoreTimestamp())
+
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_sent")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
@@ -506,6 +532,30 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		require.NoError(t, emitter.Close())
 
 		rm := collectEmitterMetrics(t, reader)
+		metricdatatest.AssertEqual(t, metricdata.ScopeMetrics{
+			Scope: instrumentation.Scope{Name: "beholder/chip_ingress_batch_emitter"},
+			Metrics: []metricdata.Metrics{
+				{
+					Name:        "chip_ingress.events_dropped",
+					Description: "Total events dropped (buffer full or send failure)",
+					Unit:        "{event}",
+					Data: metricdata.Sum[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						IsMonotonic: true,
+						DataPoints: []metricdata.DataPoint[int64]{
+							{
+								Attributes: attribute.NewSet(
+									attribute.String("domain", "platform"),
+									attribute.String("entity", "MetricDropEvent"),
+								),
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}, mustEmitterScopeMetrics(t, rm, "beholder/chip_ingress_batch_emitter"), metricdatatest.IgnoreTimestamp())
+
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
@@ -574,6 +624,17 @@ func mustEmitterMetric(t *testing.T, rm metricdata.ResourceMetrics, name string)
 	}
 	t.Fatalf("metric %q not found", name)
 	return metricdata.Metrics{}
+}
+
+func mustEmitterScopeMetrics(t *testing.T, rm metricdata.ResourceMetrics, name string) metricdata.ScopeMetrics {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		if sm.Scope.Name == name {
+			return sm
+		}
+	}
+	t.Fatalf("scope metrics %q not found", name)
+	return metricdata.ScopeMetrics{}
 }
 
 func mustEmitterInt64SumPoint(t *testing.T, sum metricdata.Sum[int64], k1, v1, k2, v2 string) metricdata.DataPoint[int64] {

@@ -3,6 +3,7 @@ package batch
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -252,32 +253,78 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
-		// this is specifically to prevent long running network calls
-		ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
-		defer cancel()
 
-		events := make([]*chipingress.CloudEventPb, len(messages))
-		for i, msg := range messages {
-			events[i] = msg.event
-		}
-		batchReq := &chipingress.CloudEventBatch{Events: events}
-		batchBytes := proto.Size(batchReq)
-		startedAt := time.Now()
-		_, err := b.client.PublishBatch(ctxTimeout, batchReq)
-		b.metrics.recordSend(context.Background(), len(messages), batchBytes, time.Since(startedAt), err == nil)
-		if err != nil {
-			b.log.Errorw("failed to publish batch", "error", err)
-		}
-		// the callbacks are placed in their own goroutine to not block releasing the semaphore
-		// we use a wait group, to ensure all callbacks are completed if  .Stop() is called.
-		b.callbackWg.Go(func() {
-			for _, msg := range messages {
-				if msg.callback != nil {
-					msg.callback(err)
-				}
+		for _, batchMessages := range splitMessagesByRequestSize(messages, b.maxGRPCRequestSize) {
+			batchReq, batchBytes := newBatchRequest(batchMessages)
+			if b.maxGRPCRequestSize > 0 && batchBytes > b.maxGRPCRequestSize {
+				err := fmt.Errorf("publish batch serialized size %d exceeds max gRPC request size %d", batchBytes, b.maxGRPCRequestSize)
+				b.metrics.recordSend(context.Background(), len(batchMessages), batchBytes, 0, false)
+				b.log.Errorw("failed to publish batch", "error", err)
+				b.completeBatchCallbacks(batchMessages, err)
+				continue
 			}
-		})
+
+			// this is specifically to prevent long running network calls
+			ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
+			startedAt := time.Now()
+			_, err := b.client.PublishBatch(ctxTimeout, batchReq)
+			cancel()
+
+			b.metrics.recordSend(context.Background(), len(batchMessages), batchBytes, time.Since(startedAt), err == nil)
+			if err != nil {
+				b.log.Errorw("failed to publish batch", "error", err)
+			}
+			b.completeBatchCallbacks(batchMessages, err)
+		}
 	}()
+}
+
+func (b *Client) completeBatchCallbacks(messages []*messageWithCallback, err error) {
+	callbackMessages, callbackErr := messages, err
+	// the callbacks are placed in their own goroutine to not block releasing the semaphore
+	// we use a wait group, to ensure all callbacks are completed if  .Stop() is called.
+	b.callbackWg.Go(func() {
+		for _, msg := range callbackMessages {
+			if msg.callback != nil {
+				msg.callback(callbackErr)
+			}
+		}
+	})
+}
+
+func splitMessagesByRequestSize(messages []*messageWithCallback, maxRequestSize int) [][]*messageWithCallback {
+	if len(messages) == 0 {
+		return nil
+	}
+	if maxRequestSize <= 0 {
+		return [][]*messageWithCallback{messages}
+	}
+
+	var batches [][]*messageWithCallback
+	current := make([]*messageWithCallback, 0, len(messages))
+	for _, msg := range messages {
+		candidate := append(current, msg)
+		_, candidateBytes := newBatchRequest(candidate)
+		if len(current) > 0 && candidateBytes > maxRequestSize {
+			batches = append(batches, current)
+			current = []*messageWithCallback{msg}
+			continue
+		}
+		current = candidate
+	}
+	if len(current) > 0 {
+		batches = append(batches, current)
+	}
+	return batches
+}
+
+func newBatchRequest(messages []*messageWithCallback) (*chipingress.CloudEventBatch, int) {
+	events := make([]*chipingress.CloudEventPb, len(messages))
+	for i, msg := range messages {
+		events[i] = msg.event
+	}
+	batchReq := &chipingress.CloudEventBatch{Events: events}
+	return batchReq, proto.Size(batchReq)
 }
 
 // WithBatchSize sets the number of messages to accumulate before sending a batch

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -15,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
@@ -210,6 +212,112 @@ func TestSendBatch(t *testing.T) {
 		}
 
 		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("splits oversized batch by max gRPC request size", func(t *testing.T) {
+		events := []*chipingress.CloudEventPb{
+			largeTestEvent("test-id-1"),
+			largeTestEvent("test-id-2"),
+			largeTestEvent("test-id-3"),
+			largeTestEvent("test-id-4"),
+			largeTestEvent("test-id-5"),
+		}
+		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: events[:2]})
+		require.LessOrEqual(t, proto.Size(&chipingress.CloudEventBatch{Events: events[:1]}), maxRequestSize)
+		require.Greater(t, proto.Size(&chipingress.CloudEventBatch{Events: events[:3]}), maxRequestSize)
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, len(events))
+		var mu sync.Mutex
+		var publishedIDs []string
+		var publishedSizes []int
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) > 0 && proto.Size(batch) <= maxRequestSize
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) {
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				mu.Lock()
+				for _, event := range batch.Events {
+					publishedIDs = append(publishedIDs, event.Id)
+				}
+				publishedSizes = append(publishedSizes, proto.Size(batch))
+				if len(publishedIDs) == len(events) {
+					close(done)
+				}
+				mu.Unlock()
+			}).
+			Times(3)
+
+		client, err := NewBatchClient(mockClient, WithMaxGRPCRequestSize(maxRequestSize))
+		require.NoError(t, err)
+
+		messages := make([]*messageWithCallback, 0, len(events))
+		for _, event := range events {
+			messages = append(messages, &messageWithCallback{
+				event: event,
+				callback: func(err error) {
+					callbackDone <- err
+				},
+			})
+		}
+
+		client.sendBatch(t.Context(), messages)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for split batches to be sent")
+		}
+		for range events {
+			select {
+			case err := <-callbackDone:
+				require.NoError(t, err)
+			case <-time.After(time.Second):
+				t.Fatal("timeout waiting for split batch callback")
+			}
+		}
+
+		assert.Equal(t, []string{"test-id-1", "test-id-2", "test-id-3", "test-id-4", "test-id-5"}, publishedIDs)
+		for _, size := range publishedSizes {
+			assert.LessOrEqual(t, size, maxRequestSize)
+		}
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("doesn't publish a single event over max gRPC request size", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		callbackDone := make(chan error, 1)
+		event := largeTestEvent("oversized-id")
+		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{event}}) - 1
+
+		client, err := NewBatchClient(mockClient, WithMaxGRPCRequestSize(maxRequestSize))
+		require.NoError(t, err)
+
+		client.sendBatch(t.Context(), []*messageWithCallback{
+			{
+				event: event,
+				callback: func(err error) {
+					callbackDone <- err
+				},
+			},
+		})
+
+		select {
+		case err := <-callbackDone:
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "exceeds max gRPC request size")
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for oversized batch callback")
+		}
+
+		mockClient.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
 	})
 }
 
@@ -901,6 +1009,18 @@ func countCounters(counters *sync.Map) int {
 		return true
 	})
 	return n
+}
+
+func largeTestEvent(id string) *chipingress.CloudEventPb {
+	return &chipingress.CloudEventPb{
+		Id:          id,
+		Source:      "test-source",
+		Type:        "test.event.type",
+		SpecVersion: "1.0",
+		Data: &cepb.CloudEvent_BinaryData{
+			BinaryData: []byte("0123456789abcdefghijklmnopqrstuvwxyz"),
+		},
+	}
 }
 
 func TestSeqnum(t *testing.T) {

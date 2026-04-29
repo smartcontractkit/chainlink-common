@@ -11,6 +11,9 @@ import (
 
 type PluginRelayer interface {
 	services.Service
+	// NewRelayer returns the active relayer for the plugin. Re-invoking NewRelayer
+	// replaces the previously served relayer; implementations must not retain
+	// background resources from old relayers outside the returned service.
 	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
 }
 

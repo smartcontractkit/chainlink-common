@@ -12,7 +12,7 @@ import (
 
 // WithJitter adds +/- 10% to a duration.
 //
-// Deprecated: Use [timeutil.JitterPct(0.1).Apply(d)] instead.
+// Deprecated: Use [timeutil.JitterPct] instead; for example, `timeutil.JitterPct(0.1).Apply(d)`.
 //
 //go:fix inline
 func WithJitter(d time.Duration) time.Duration { return timeutil.JitterPct(0.1).Apply(d) }

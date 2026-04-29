@@ -15,6 +15,9 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // Used for testing to override the default exporter
@@ -181,13 +184,32 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	onClose := func() (err error) {
-		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
+		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
 		return
 	}
-	// HTTP client doesn't currently support rotating auth, so lazySigner is always nil
-	return &Client{cfg, logger, tracer, meter, emitter, nil, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, nil, onClose}, nil
+	// HTTP client doesn't currently support rotating auth, so lazySigner is always nil.
+	c := &Client{
+		Config:                cfg,
+		Logger:                logger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               emitter,
+		Chip:                  nil,
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: messageLoggerProvider,
+		lazySigner:            nil,
+		OnClose:               onClose,
+	}
+	c.Service, c.eng = services.Config{
+		Name:  "BeholderClient",
+		Start: c.start,
+		Close: c.closeResources,
+	}.NewServiceEngine(pkglogger.Nop())
+	return c, nil
 }
 
 func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config) (*sdktrace.TracerProvider, error) {

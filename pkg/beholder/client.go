@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -26,6 +27,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 const defaultGRPCCompressor = "gzip"
@@ -37,6 +40,9 @@ type Emitter interface {
 }
 
 type Client struct {
+	services.Service
+	eng *services.Engine
+
 	Config Config
 	// Logger
 	Logger otellog.Logger
@@ -60,6 +66,12 @@ type Client struct {
 
 	// OnClose
 	OnClose func() error
+
+	// batchEmitterService is owned by the client and started/stopped via Client lifecycle.
+	batchEmitterService *ChipIngressBatchEmitterService
+
+	closeOnce sync.Once
+	closeErr  error
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
@@ -187,7 +199,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// This will eventually be removed in favor of chip-ingress emitter
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
-
+	var batchEmitterService *ChipIngressBatchEmitterService
 	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
@@ -223,38 +235,101 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+		var chipIngressEmitter Emitter
+		if cfg.ChipIngressBatchEmitterEnabled {
+			if cfg.ChipIngressLogger == nil {
+				return nil, fmt.Errorf("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
+			}
+			batchEmitterService, err = NewChipIngressBatchEmitterService(chipIngressClient, cfg, cfg.ChipIngressLogger)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
+			}
+			chipIngressEmitter = batchEmitterService
+		} else {
+			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+			}
 		}
 
-		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter, cfg.ChipIngressBatchEmitterEnabled)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
 	}
 
 	onClose := func() (err error) {
-		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
+		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, chipIngressClient, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, signer, onClose}, nil
+	c := &Client{
+		Config:                cfg,
+		Logger:                logger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               emitter,
+		Chip:                  chipIngressClient,
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: messageLoggerProvider,
+		lazySigner:            signer,
+		OnClose:               onClose,
+		batchEmitterService:   batchEmitterService,
+	}
+	c.Service, c.eng = services.Config{
+		Name:  "BeholderClient",
+		Start: c.start,
+		Close: c.closeResources,
+	}.NewServiceEngine(pkglogger.Nop())
+	return c, nil
 }
 
-// Closes all providers, flushes all data and stops all background processes
-func (c Client) Close() (err error) {
-	if c.Chip != nil {
-		err = errors.Join(err, c.Chip.Close())
+// ManagedServices returns services whose lifecycle is owned by the application
+// (start, stop, health). Returns nil when the receiver is nil or has none.
+func (c *Client) ManagedServices() []services.Service {
+	if c == nil || c.batchEmitterService == nil || c.Service == nil {
+		return nil
 	}
-	if c.Emitter != nil {
-		err = errors.Join(err, c.Emitter.Close())
+	return []services.Service{c}
+}
+
+// Close shuts down OTel providers and the chip ingress connection.
+func (c *Client) Close() (err error) {
+	if c == nil {
+		return nil
 	}
-	if c.OnClose != nil {
-		err = errors.Join(err, c.OnClose())
+	if c.Service != nil && c.eng != nil {
+		if err = c.eng.IfStarted(func() error { return nil }); err != nil {
+			return c.closeResources()
+		}
+		return c.Service.Close()
 	}
-	return
+	return c.closeResources()
+}
+
+func (c *Client) start(ctx context.Context) error {
+	if c.batchEmitterService != nil {
+		return c.batchEmitterService.Start(ctx)
+	}
+	return nil
+}
+
+func (c *Client) closeResources() (err error) {
+	c.closeOnce.Do(func() {
+		if c.Emitter != nil {
+			c.closeErr = errors.Join(c.closeErr, c.Emitter.Close())
+		}
+		if c.OnClose != nil {
+			c.closeErr = errors.Join(c.closeErr, c.OnClose())
+		}
+		if c.Chip != nil {
+			c.closeErr = errors.Join(c.closeErr, c.Chip.Close())
+		}
+	})
+	return c.closeErr
 }
 
 // Returns a new Client with the same configuration but with a different package name

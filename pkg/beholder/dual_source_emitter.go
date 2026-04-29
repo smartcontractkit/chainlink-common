@@ -15,15 +15,16 @@ import (
 // we want to send to both during the transition period, then cutover to using
 // chipIngressEmitter only
 type DualSourceEmitter struct {
-	chipIngressEmitter   Emitter
-	otelCollectorEmitter Emitter
-	log                  logger.Logger
-	stopCh               services.StopChan
-	wg                   services.WaitGroup
-	closed               atomic.Bool
+	chipIngressEmitter             Emitter
+	otelCollectorEmitter           Emitter
+	log                            logger.Logger
+	chipIngressBatchEmitterEnabled bool
+	stopCh                         services.StopChan
+	wg                             services.WaitGroup
+	closed                         atomic.Bool
 }
 
-func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
+func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter, chipIngressBatchEmitterEnabled bool) (Emitter, error) {
 
 	if chipIngressEmitter == nil {
 		return nil, fmt.Errorf("chip ingress emitter is nil")
@@ -39,10 +40,11 @@ func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitt
 	}
 
 	return &DualSourceEmitter{
-		chipIngressEmitter:   chipIngressEmitter,
-		otelCollectorEmitter: otelCollectorEmitter,
-		log:                  logger,
-		stopCh:               make(services.StopChan),
+		chipIngressEmitter:             chipIngressEmitter,
+		otelCollectorEmitter:           otelCollectorEmitter,
+		log:                            logger,
+		chipIngressBatchEmitterEnabled: chipIngressBatchEmitterEnabled,
+		stopCh:                         make(services.StopChan),
 	}, nil
 }
 
@@ -56,28 +58,31 @@ func (d *DualSourceEmitter) Close() error {
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-
-	// Emit via OTLP first
 	if err := d.otelCollectorEmitter.Emit(ctx, body, attrKVs...); err != nil {
 		return err
 	}
 
-	// Emit via chip ingress async
-	if err := d.wg.TryAdd(1); err != nil {
-		return err
-	}
-	go func(ctx context.Context) {
-		defer d.wg.Done()
-		var cancel context.CancelFunc
-		ctx, cancel = d.stopCh.Ctx(ctx)
-		defer cancel()
-
+	if d.chipIngressBatchEmitterEnabled {
 		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
-			// If the chip ingress emitter fails, we ONLY log the error
-			// because we still want to send the data to the OTLP collector and not cause disruption
 			d.log.Infof("failed to emit to chip ingress: %v", err)
 		}
-	}(context.WithoutCancel(ctx))
+	} else {
+		// Legacy ChipIngressEmitter.Emit is a synchronous gRPC call;
+		// fire-and-forget via goroutine to avoid blocking the caller.
+		if err := d.wg.TryAdd(1); err != nil {
+			return err
+		}
+		go func(ctx context.Context) {
+			defer d.wg.Done()
+			var cancel context.CancelFunc
+			ctx, cancel = d.stopCh.Ctx(ctx)
+			defer cancel()
+
+			if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+				d.log.Infof("failed to emit to chip ingress: %v", err)
+			}
+		}(context.WithoutCancel(ctx))
+	}
 
 	return nil
 }

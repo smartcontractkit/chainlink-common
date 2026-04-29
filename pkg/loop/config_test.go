@@ -84,8 +84,9 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterMaxQueueSize:       "1000",
 				envTelemetryLogStreamingEnabled:       "false",
 
-				envChipIngressEndpoint:           "chip-ingress.example.com:50051",
-				envChipIngressInsecureConnection: "true",
+				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
+				envChipIngressInsecureConnection:  "true",
+				envChipIngressBatchEmitterEnabled: "false",
 
 				envCRESettings:        `{"global":{}}`,
 				envCRESettingsDefault: `{"foo":"bar"}`,
@@ -195,8 +196,9 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
 
-	ChipIngressEndpoint:           "chip-ingress.example.com:50051",
-	ChipIngressInsecureConnection: true,
+	ChipIngressEndpoint:            "chip-ingress.example.com:50051",
+	ChipIngressInsecureConnection:  true,
+	ChipIngressBatchEmitterEnabled: false,
 
 	CRESettings:        `{"global":{}}`,
 	CRESettingsDefault: `{"foo":"bar"}`,
@@ -259,6 +261,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
 	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
+	assert.Equal(t, "false", got[envChipIngressBatchEmitterEnabled])
 
 	assert.Equal(t, `{"global":{}}`, got[envCRESettings])
 	assert.Equal(t, `{"foo":"bar"}`, got[envCRESettingsDefault])

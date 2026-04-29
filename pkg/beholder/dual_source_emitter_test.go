@@ -3,7 +3,9 @@ package beholder_test
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +20,7 @@ func TestNewDualSourceEmitter(t *testing.T) {
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, false)
 		require.NoError(t, err)
 
 		assert.NotNil(t, emitter)
@@ -29,7 +31,7 @@ func TestNewDualSourceEmitter(t *testing.T) {
 	t.Run("nil chip ingress emitter", func(t *testing.T) {
 
 		otelEmitter := &mockEmitter{}
-		emitter, err := beholder.NewDualSourceEmitter(nil, otelEmitter)
+		emitter, err := beholder.NewDualSourceEmitter(nil, otelEmitter, false)
 
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
@@ -39,7 +41,7 @@ func TestNewDualSourceEmitter(t *testing.T) {
 	t.Run("nil otel collector emitter", func(t *testing.T) {
 
 		chipEmitter := &mockEmitter{}
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, nil)
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, nil, false)
 
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
@@ -51,7 +53,7 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, false)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), []byte("test message"), "key", "value")
@@ -67,12 +69,64 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 			},
 		}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, false)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), []byte("test message"))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "otel emit error")
+	})
+}
+
+func TestDualSourceEmitterBlockingBehavior(t *testing.T) {
+	t.Run("legacy mode does not block caller", func(t *testing.T) {
+		var chipCalled atomic.Bool
+		chipEmitter := &mockEmitter{
+			emitFunc: func(ctx context.Context, body []byte, attrKVs ...any) error {
+				time.Sleep(200 * time.Millisecond)
+				chipCalled.Store(true)
+				return nil
+			},
+		}
+		otelEmitter := &mockEmitter{}
+
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, false)
+		require.NoError(t, err)
+
+		start := time.Now()
+		err = emitter.Emit(t.Context(), []byte("test"))
+		elapsed := time.Since(start)
+
+		assert.NoError(t, err)
+		assert.Less(t, elapsed, 100*time.Millisecond,
+			"Emit should return immediately; chip ingress runs in a goroutine")
+		assert.False(t, chipCalled.Load(),
+			"chip ingress emit should still be in-flight when Emit returns")
+
+		require.NoError(t, emitter.Close())
+		assert.True(t, chipCalled.Load(),
+			"Close should wait for the in-flight chip ingress emit to finish")
+	})
+
+	t.Run("non-blocking mode emits inline", func(t *testing.T) {
+		var chipCalled atomic.Bool
+		chipEmitter := &mockEmitter{
+			emitFunc: func(ctx context.Context, body []byte, attrKVs ...any) error {
+				chipCalled.Store(true)
+				return nil
+			},
+		}
+		otelEmitter := &mockEmitter{}
+
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, true)
+		require.NoError(t, err)
+
+		err = emitter.Emit(t.Context(), []byte("test"))
+		assert.NoError(t, err)
+		assert.True(t, chipCalled.Load(),
+			"chip ingress emit should complete before Emit returns")
+
+		require.NoError(t, emitter.Close())
 	})
 }
 

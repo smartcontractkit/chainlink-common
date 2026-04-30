@@ -401,12 +401,12 @@ func ConvertAccountTransactionsReplyFromProto(proto *AccountTransactionsReply) (
 	}
 	txs := make([]*typeaptos.Transaction, len(proto.Transactions))
 	for i, protoTx := range proto.Transactions {
-		if protoTx == nil {
-			return nil, fmt.Errorf("transaction %d is nil", i)
-		}
 		tx, err := ConvertTransactionFromProto(protoTx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert transaction %d: %w", i, err)
+		}
+		if tx == nil {
+			return nil, fmt.Errorf("transaction %d is nil", i)
 		}
 		txs[i] = tx
 	}

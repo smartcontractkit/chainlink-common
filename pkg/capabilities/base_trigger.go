@@ -33,10 +33,12 @@ const (
 
 	defaultPruneAge = 24 * time.Hour
 
-	// maxLoopTick caps how long the retransmit loop sleeps between scans.
-	// With DeliverEvent queueing events instead of sending immediately,
-	// a short tick is needed so first delivery latency stays low (~1s).
-	maxLoopTick = time.Second
+	// Memory outcomes
+	ackMemoryOutcomeHit                   = "hit"
+	ackMemoryOutcomeMissNoTriggerBucket   = "miss_no_trigger_bucket"
+	ackMemoryOutcomeMissNoEvent           = "miss_no_event"
+	ackMemoryOutcomeMissNilRecord         = "miss_nil_record"
+	ackMemoryOutcomePreAckDeliverySkipped = "pre_ack_delivery_skipped"
 )
 
 type PendingEvent struct {
@@ -67,7 +69,7 @@ type BaseTriggerMetrics interface {
 	IncInboxFull(triggerID string)
 	// IncAckError counts ACK paths that return an error (e.g. store delete failure). reason is a stable identifier for dashboards.
 	IncAckError(reason string)
-	// IncAckMemoryOutcome records how an ACK related to the in-memory pending map: hit, miss_no_trigger_bucket, miss_no_event, miss_nil_record.
+	// IncAckMemoryOutcome records how an ACK related to the in-memory pending map (see ackMemoryOutcome* constants).
 	IncAckMemoryOutcome(outcome string)
 	// AddPendingEvents adjusts the live gauge of events awaiting ACK. Positive on insert, negative on ACK/unregister.
 	AddPendingEvents(delta int64)
@@ -313,7 +315,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 			b.mu.Unlock()
 			b.lggr.Infow("base trigger DeliverEvent skipped: event was already ACKed (pre-ACK)",
 				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
-			b.metrics.IncAckMemoryOutcome("pre_ack_delivery_skipped")
+			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomePreAckDeliverySkipped)
 			return nil
 		}
 	}
@@ -362,7 +364,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 			b.mu.Unlock()
 			b.lggr.Infow("base trigger DeliverEvent skipped after persist: event was ACKed during store write (pre-ACK double-check)",
 				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
-			b.metrics.IncAckMemoryOutcome("pre_ack_delivery_skipped")
+			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomePreAckDeliverySkipped)
 			if err := b.store.DeleteEvent(ctx, triggerID, te.ID); err != nil {
 				b.lggr.Errorw("base trigger failed to delete pre-ACKed event from store",
 					"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
@@ -441,9 +443,9 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			found = true
 		case recOk && rec == nil:
 			hadNilPendingRecord = true
-			b.metrics.IncAckMemoryOutcome("miss_nil_record")
+			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNilRecord)
 		default:
-			b.metrics.IncAckMemoryOutcome("miss_no_event")
+			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNoEvent)
 		}
 
 		delete(eventsForTrigger, eventId)
@@ -451,7 +453,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			delete(b.pending, triggerId)
 		}
 	} else {
-		b.metrics.IncAckMemoryOutcome("miss_no_trigger_bucket")
+		b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNoTriggerBucket)
 	}
 
 	// Always record the ACK so that a later DeliverEvent for this event is
@@ -473,7 +475,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.lggr.Infow("base trigger ACK matched in-memory pending event",
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
 			"attempts", attempts, "firstAt", firstAt)
-		b.metrics.IncAckMemoryOutcome("hit")
+		b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeHit)
 		b.metrics.IncAck(triggerId, eventId)
 		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
 		b.metrics.AddPendingEvents(-1)

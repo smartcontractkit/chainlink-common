@@ -11,21 +11,18 @@ import (
 )
 
 type BaseTriggerBeholderMetrics struct {
-	capabilityID             string
-	retryCount               metric.Int64Counter
-	ackCount                 metric.Int64Counter
-	ackErrorCount            metric.Int64Counter
-	ackMemoryOutcomeCount    metric.Int64Counter
-	inboxMissingCount        metric.Int64Counter
-	inboxFullCount           metric.Int64Counter
-	undeliveredWarningCount  metric.Int64Counter
-	undeliveredCriticalCount metric.Int64Counter
-	timeToAckMs              metric.Int64Histogram
-	ackAttempts              metric.Int64Histogram // attempts distribution at ACK time
-	activeRegistrations      metric.Int64UpDownCounter
-	pendingEvents            metric.Int64UpDownCounter
-	stuckEvents              metric.Int64UpDownCounter
-	stoppedResendingCount    metric.Int64Counter
+	capabilityID          string
+	retryCount            metric.Int64Counter
+	ackCount              metric.Int64Counter
+	ackErrorCount         metric.Int64Counter
+	ackMemoryOutcomeCount metric.Int64Counter
+	inboxMissingCount     metric.Int64Counter
+	inboxFullCount        metric.Int64Counter
+	timeToAckMs           metric.Int64Histogram
+	ackAttempts           metric.Int64Histogram // attempts distribution at ACK time
+	activeRegistrations   metric.Int64UpDownCounter
+	pendingEvents         metric.Int64UpDownCounter
+	stoppedResendingCount metric.Int64Counter
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
@@ -55,15 +52,6 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 	if err != nil {
 		return nil, err
 	}
-	undeliveredWarningCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_undelivered_total")
-	if err != nil {
-		return nil, err
-	}
-	undeliveredCriticalCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_undelivered2_total")
-	if err != nil {
-		return nil, err
-	}
-
 	timeToAckMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_time_to_ack_ms",
 		metric.WithExplicitBucketBoundaries(100, 500, 1_000, 2_000, 5_000, 10_000, 30_000, 60_000, 120_000, 300_000, 600_000),
 	)
@@ -87,32 +75,24 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
-	stuckEvents, err := beholder.GetMeter().Int64UpDownCounter("capabilities_base_trigger_stuck_events")
-	if err != nil {
-		return nil, err
-	}
-
 	stoppedResendingCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_stopped_resending_total")
 	if err != nil {
 		return nil, err
 	}
 
 	return &BaseTriggerBeholderMetrics{
-		capabilityID:             capabilityID,
-		retryCount:               retryCount,
-		ackCount:                 ackCount,
-		ackErrorCount:            ackErrorCount,
-		ackMemoryOutcomeCount:    ackMemoryOutcomeCount,
-		inboxMissingCount:        inboxMissingCount,
-		inboxFullCount:           inboxFullCount,
-		undeliveredWarningCount:  undeliveredWarningCount,
-		undeliveredCriticalCount: undeliveredCriticalCount,
-		timeToAckMs:              timeToAckMs,
-		ackAttempts:              ackAttempts,
-		activeRegistrations:      activeRegistrations,
-		pendingEvents:            pendingEvents,
-		stuckEvents:              stuckEvents,
-		stoppedResendingCount:    stoppedResendingCount,
+		capabilityID:          capabilityID,
+		retryCount:            retryCount,
+		ackCount:              ackCount,
+		ackErrorCount:         ackErrorCount,
+		ackMemoryOutcomeCount: ackMemoryOutcomeCount,
+		inboxMissingCount:     inboxMissingCount,
+		inboxFullCount:        inboxFullCount,
+		timeToAckMs:           timeToAckMs,
+		ackAttempts:           ackAttempts,
+		activeRegistrations:   activeRegistrations,
+		pendingEvents:         pendingEvents,
+		stoppedResendingCount: stoppedResendingCount,
 	}, nil
 }
 
@@ -193,33 +173,9 @@ func (m *BaseTriggerBeholderMetrics) IncInboxFull(triggerID string) {
 	)
 }
 
-func (m *BaseTriggerBeholderMetrics) EmitUndeliveredWarning(triggerID, eventID string) {
-	m.undeliveredWarningCount.Add(context.Background(), 1,
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
-	)
-}
-
-func (m *BaseTriggerBeholderMetrics) EmitUndeliveredCritical(triggerID, eventID string) {
-	m.undeliveredCriticalCount.Add(context.Background(), 1,
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
-	)
-}
-
 func (m *BaseTriggerBeholderMetrics) AddPendingEvents(delta int64) {
 	m.pendingEvents.Add(context.Background(), delta,
 		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
-	)
-}
-
-func (m *BaseTriggerBeholderMetrics) IncStuckEvent(triggerID, eventID string) {
-	m.stuckEvents.Add(context.Background(), 1,
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
-	)
-}
-
-func (m *BaseTriggerBeholderMetrics) DecStuckEvent(triggerID, eventID string) {
-	m.stuckEvents.Add(context.Background(), -1,
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
 	)
 }
 
@@ -252,4 +208,4 @@ func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                       
 func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}
 func (noopBaseTriggerMetrics) IncStuckEvent(string, string)                        {}
 func (noopBaseTriggerMetrics) DecStuckEvent(string, string)                        {}
-func (noopBaseTriggerMetrics) IncStoppedResending(string, string, int)              {}
+func (noopBaseTriggerMetrics) IncStoppedResending(string, string, int)             {}

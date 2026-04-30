@@ -31,6 +31,8 @@ const (
 	// backlog from flooding P2P.
 	defaultMaxSendsPerTick = 20
 
+	defaultPruneAge = 24 * time.Hour
+
 	// maxLoopTick caps how long the retransmit loop sleeps between scans.
 	// With DeliverEvent queueing events instead of sending immediately,
 	// a short tick is needed so first delivery latency stays low (~1s).
@@ -63,26 +65,14 @@ type BaseTriggerMetrics interface {
 	ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int)
 	IncInboxMissing(triggerID string)
 	IncInboxFull(triggerID string)
-	EmitUndeliveredWarning(triggerID, eventID string)
-	EmitUndeliveredCritical(triggerID, eventID string)
 	// IncAckError counts ACK paths that return an error (e.g. store delete failure). reason is a stable identifier for dashboards.
 	IncAckError(reason string)
 	// IncAckMemoryOutcome records how an ACK related to the in-memory pending map: hit, miss_no_trigger_bucket, miss_no_event, miss_nil_record.
 	IncAckMemoryOutcome(outcome string)
 	// AddPendingEvents adjusts the live gauge of events awaiting ACK. Positive on insert, negative on ACK/unregister.
 	AddPendingEvents(delta int64)
-	// IncStuckEvent increments the live gauge of events stuck past the critical undelivered threshold.
-	// Keyed by (capability_id, trigger_id, event_id) so you can see exactly which events are stuck.
-	IncStuckEvent(triggerID, eventID string)
-	// DecStuckEvent decrements the stuck-event gauge when a previously-critical event is ACKed or unregistered.
-	DecStuckEvent(triggerID, eventID string)
 	// IncStoppedResending increments the counter of events where the node exhausted max retries and stopped resending.
 	IncStoppedResending(triggerID, eventID string, attempts int)
-}
-
-type undeliveredState struct {
-	emittedWarning  bool
-	emittedCritical bool
 }
 
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until
@@ -114,10 +104,6 @@ type BaseTriggerCapability[T proto.Message] struct {
 	wg     sync.WaitGroup
 
 	metrics BaseTriggerMetrics
-	// emit undelivered metrics after these thresholds
-	undeliveredWarning     time.Duration
-	undeliveredCritical    time.Duration
-	undeliveredAlertStates map[string]map[string]*undeliveredState // triggerID -> eventID -> flags
 }
 
 func NewBaseTriggerCapability[T proto.Message](
@@ -138,22 +124,19 @@ func NewBaseTriggerCapability[T proto.Message](
 	}
 
 	return &BaseTriggerCapability[T]{
-		store:                  store,
-		newMsg:                 newMsg,
-		lggr:                   lggr,
-		capabilityId:           capabilityId,
-		tRetransmit:            tRetransmit,
-		settings:               settings,
-		metrics:                metrics,
-		undeliveredWarning:     undeliveredWarning,
-		undeliveredCritical:    undeliveredCritical,
-		undeliveredAlertStates: make(map[string]map[string]*undeliveredState),
-		mu:                     sync.Mutex{},
-		inboxes:                make(map[string]chan<- TriggerAndId[T]),
-		pending:                make(map[string]map[string]*PendingEvent),
-		preAcked:               make(map[string]map[string]time.Time),
-		ctx:                    ctx,
-		cancel:                 cancel,
+		store:        store,
+		newMsg:       newMsg,
+		lggr:         lggr,
+		capabilityId: capabilityId,
+		tRetransmit:  tRetransmit,
+		settings:     settings,
+		metrics:      metrics,
+		mu:           sync.Mutex{},
+		inboxes:      make(map[string]chan<- TriggerAndId[T]),
+		pending:      make(map[string]map[string]*PendingEvent),
+		preAcked:     make(map[string]map[string]time.Time),
+		ctx:          ctx,
+		cancel:       cancel,
 	}
 }
 
@@ -209,6 +192,7 @@ func (b *BaseTriggerCapability[T]) maxSendsPerTick(ctx context.Context) int {
 		return defaultMaxSendsPerTick
 	}
 	if v <= 0 {
+		b.lggr.Errorw("settings BaseTriggerMaxSendsPerTick <=0; falling back to default", "defaultMaxSendsPerTick", defaultMaxSendsPerTick)
 		return defaultMaxSendsPerTick
 	}
 	return v
@@ -217,12 +201,15 @@ func (b *BaseTriggerCapability[T]) maxSendsPerTick(ctx context.Context) int {
 // pruneAge returns how long a pending row must exist before the pruning loop may remove it.
 func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
 	if b.settings == nil {
-		return 0
+		return defaultPruneAge
 	}
 	v, err := cresettings.Default.BaseTriggerPruneAge.GetOrDefault(ctx, b.settings)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerPruneAge; treating as disabled", "err", err)
-		return 0
+		b.lggr.Warnw("CRE settings read failed for BaseTriggerPruneAge; falling back to default", "err", err)
+		return defaultPruneAge
+	}
+	if v <= 0 {
+		b.lggr.Errorw("found BaseTriggerPruneAge <=0 in settings; falling back to default", "defaultPruneAge", defaultPruneAge)
 	}
 	return v
 }
@@ -284,24 +271,10 @@ func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	_, existed := b.inboxes[triggerID]
 	pendingCount := int64(len(b.pending[triggerID]))
 
-	var criticalEvents []string
-	if m, ok := b.undeliveredAlertStates[triggerID]; ok {
-		for eventID, s := range m {
-			if s != nil && s.emittedCritical {
-				criticalEvents = append(criticalEvents, eventID)
-			}
-		}
-	}
-
 	delete(b.inboxes, triggerID)
 	delete(b.pending, triggerID)
 	delete(b.preAcked, triggerID)
-	delete(b.undeliveredAlertStates, triggerID)
 	b.mu.Unlock()
-
-	for _, eventID := range criticalEvents {
-		b.metrics.DecStuckEvent(triggerID, eventID)
-	}
 
 	if existed {
 		b.metrics.DecActiveTriggers()
@@ -493,21 +466,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	}
 	b.preAcked[triggerId][eventId] = time.Now()
 
-	var wasCritical bool
-	if m, ok := b.undeliveredAlertStates[triggerId]; ok {
-		if s, exists := m[eventId]; exists && s != nil && s.emittedCritical {
-			wasCritical = true
-		}
-		delete(m, eventId)
-		if len(m) == 0 {
-			delete(b.undeliveredAlertStates, triggerId)
-		}
-	}
 	b.mu.Unlock()
-
-	if wasCritical {
-		b.metrics.DecStuckEvent(triggerId, eventId)
-	}
 
 	switch {
 	case found:
@@ -622,8 +581,6 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	}
 
 	maxRetries := b.maxRetries(ctx)
-	warnThreshold := 1 * interval
-	critThreshold := 3 * interval
 
 	b.mu.Lock()
 
@@ -640,7 +597,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, pendingForTrigger))
 				continue
 			}
-			b.collectResendCandidate(rec, now, interval, warnThreshold, critThreshold, &toResend)
+			b.collectResendCandidate(rec, now, interval, &toResend)
 		}
 	}
 	b.mu.Unlock()
@@ -702,25 +659,14 @@ func (b *BaseTriggerCapability[T]) collectStoppedResending(
 	rec *PendingEvent,
 	pendingForTrigger map[string]*PendingEvent,
 ) stoppedResendingEvent {
-	wasCritical := false
-	if m, ok := b.undeliveredAlertStates[triggerID]; ok {
-		if s, exists := m[eventID]; exists && s != nil && s.emittedCritical {
-			wasCritical = true
-		}
-		delete(m, eventID)
-		if len(m) == 0 {
-			delete(b.undeliveredAlertStates, triggerID)
-		}
-	}
 	delete(pendingForTrigger, eventID)
 	if len(pendingForTrigger) == 0 {
 		delete(b.pending, triggerID)
 	}
 	return stoppedResendingEvent{
-		triggerID:   triggerID,
-		eventID:     eventID,
-		attempts:    rec.Attempts,
-		wasCritical: wasCritical,
+		triggerID: triggerID,
+		eventID:   eventID,
+		attempts:  rec.Attempts,
 	}
 }
 
@@ -729,7 +675,7 @@ func (b *BaseTriggerCapability[T]) collectStoppedResending(
 func (b *BaseTriggerCapability[T]) collectResendCandidate(
 	rec *PendingEvent,
 	now time.Time,
-	interval, warnThreshold, critThreshold time.Duration,
+	interval time.Duration,
 	toResend *[]PendingEvent,
 ) {
 	backoff := addJitter(retryBackoff(interval, rec.Attempts))
@@ -739,33 +685,6 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 			EventId:   rec.EventId,
 			Attempts:  rec.Attempts,
 		})
-	}
-
-	if warnThreshold == 0 && critThreshold == 0 {
-		return
-	}
-	age := now.Sub(rec.FirstAt)
-
-	triggerID, eventID := rec.TriggerId, rec.EventId
-	if b.undeliveredAlertStates[triggerID] == nil {
-		b.undeliveredAlertStates[triggerID] = make(map[string]*undeliveredState)
-	}
-
-	state := b.undeliveredAlertStates[triggerID][eventID]
-	if state == nil {
-		state = &undeliveredState{}
-		b.undeliveredAlertStates[triggerID][eventID] = state
-	}
-
-	if warnThreshold > 0 && !state.emittedWarning && age >= warnThreshold {
-		b.metrics.EmitUndeliveredWarning(triggerID, eventID)
-		state.emittedWarning = true
-	}
-
-	if critThreshold > 0 && !state.emittedCritical && age >= critThreshold {
-		b.metrics.EmitUndeliveredCritical(triggerID, eventID)
-		b.metrics.IncStuckEvent(triggerID, eventID)
-		state.emittedCritical = true
 	}
 }
 
@@ -779,9 +698,6 @@ func (b *BaseTriggerCapability[T]) emitStoppedResending(ctx context.Context, ev 
 		"reason", "max_retries_exhausted")
 	b.metrics.IncStoppedResending(ev.triggerID, ev.eventID, ev.attempts)
 	b.metrics.AddPendingEvents(-1)
-	if ev.wasCritical {
-		b.metrics.DecStuckEvent(ev.triggerID, ev.eventID)
-	}
 }
 
 // pruneLoop periodically removes old rows from the event store that are no longer tracked in memory.
@@ -814,6 +730,7 @@ func (b *BaseTriggerCapability[T]) pruneLoop() {
 }
 
 func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
+	//
 	age := b.pruneAge(b.ctx)
 	if age <= 0 {
 		return

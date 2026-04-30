@@ -669,7 +669,6 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 	defer cancel()
 
 	detailKVs := cloudEventPublishKVs(id, "immediate", d.cfg.PublishTimeout, eventPb)
-	//d.log.Infow("DurableEmitter: Chip Ingress publish attempt (immediate)", detailKVs...)
 
 	t0 := time.Now()
 	_, err := d.client.Publish(ctx, eventPb)
@@ -699,12 +698,6 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		return
 	}
 
-	pubOKKVs := append([]any{}, detailKVs...)
-	pubOKKVs = append(pubOKKVs,
-		"publish_rpc_elapsed", elapsed.String(),
-		"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
-	)
-
 	t1 := time.Now()
 	markErr := d.store.MarkDelivered(context.Background(), id)
 	if h := d.cfg.Hooks; h != nil && h.OnImmediateDelete != nil {
@@ -727,7 +720,7 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		"store_mark_delivered_elapsed", markElapsed.String(),
 		"store_mark_delivered_elapsed_ms", markElapsed.Milliseconds(),
 	)
-	//d.log.Infow("DurableEmitter: durable row marked delivered after successful Chip publish (immediate)", delOKKVs...)
+	d.log.Infow("DurableEmitter: durable row marked delivered after successful Chip publish (immediate)", delOKKVs...)
 }
 
 // batchPublishLoop reads events from publishCh, collects them into batches of

@@ -17,6 +17,9 @@ type SecretIdentifier struct {
 // SecretsRequestParams is the JSON-RPC params for "confidential.secrets.get".
 type SecretsRequestParams struct {
 	WorkflowID       string             `json:"workflow_id"`
+	Owner            string             `json:"owner"`              // Ethereum address (hex, 0x-prefixed)
+	ExecutionID      string             `json:"execution_id"`       // 32 bytes, hex-encoded
+	OrgID            string             `json:"org_id,omitempty"`   // Organization identifier for org-based secret ownership
 	Secrets          []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey string             `json:"enclave_public_key"`
 	Attestation      string             `json:"attestation,omitempty"`
@@ -30,15 +33,18 @@ type SecretEntry struct {
 }
 
 // SecretsResponseResult is the JSON-RPC result for "confidential.secrets.get".
+// The enclave uses its own config for MasterPublicKey and threshold (config.T),
+// so the relay handler only returns the encrypted shares per secret.
 type SecretsResponseResult struct {
-	Secrets         []SecretEntry `json:"secrets"`
-	MasterPublicKey string        `json:"master_public_key"`
-	Threshold       int           `json:"threshold"`
+	Secrets []SecretEntry `json:"secrets"`
 }
 
 // CapabilityRequestParams is the JSON-RPC params for "confidential.capability.execute".
 type CapabilityRequestParams struct {
 	WorkflowID   string `json:"workflow_id"`
+	Owner        string `json:"owner,omitempty"`
+	ExecutionID  string `json:"execution_id,omitempty"`
+	ReferenceID  string `json:"reference_id,omitempty"`
 	CapabilityID string `json:"capability_id"`
 	Payload      string `json:"payload"`
 	Attestation  string `json:"attestation,omitempty"`

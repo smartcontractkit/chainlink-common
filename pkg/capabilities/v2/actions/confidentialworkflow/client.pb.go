@@ -88,8 +88,17 @@ type WorkflowExecution struct {
 	// execute_request is a serialized sdk.v1alpha.ExecuteRequest proto.
 	// Contains either a subscribe request or a trigger execution request.
 	ExecuteRequest []byte `protobuf:"bytes,4,opt,name=execute_request,json=executeRequest,proto3" json:"execute_request,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// owner is the on-chain owner address of the workflow (hex, 0x-prefixed).
+	// Used by the enclave for runtime secret fetching from VaultDON.
+	Owner string `protobuf:"bytes,5,opt,name=owner,proto3" json:"owner,omitempty"`
+	// execution_id is the unique execution identifier (64 hex chars, 32 bytes).
+	// Used by the enclave for runtime secret fetching from VaultDON.
+	ExecutionId string `protobuf:"bytes,6,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	// org_id is the organization identifier for the workflow owner.
+	// Used by the enclave when fetching secrets from VaultDON with org-based ownership.
+	OrgId         string `protobuf:"bytes,7,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WorkflowExecution) Reset() {
@@ -148,6 +157,27 @@ func (x *WorkflowExecution) GetExecuteRequest() []byte {
 		return x.ExecuteRequest
 	}
 	return nil
+}
+
+func (x *WorkflowExecution) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *WorkflowExecution) GetExecutionId() string {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return ""
+}
+
+func (x *WorkflowExecution) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
 }
 
 // ConfidentialWorkflowRequest is the input provided to the confidential workflows capability.
@@ -259,7 +289,7 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
 	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
 	"\n" +
-	"_namespace\"\x9d\x01\n" +
+	"_namespace\"\xed\x01\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x1d\n" +
@@ -267,7 +297,10 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"binary_url\x18\x02 \x01(\tR\tbinaryUrl\x12\x1f\n" +
 	"\vbinary_hash\x18\x03 \x01(\fR\n" +
 	"binaryHash\x12'\n" +
-	"\x0fexecute_request\x18\x04 \x01(\fR\x0eexecuteRequest\"\xf2\x01\n" +
+	"\x0fexecute_request\x18\x04 \x01(\fR\x0eexecuteRequest\x12\x14\n" +
+	"\x05owner\x18\x05 \x01(\tR\x05owner\x12!\n" +
+	"\fexecution_id\x18\x06 \x01(\tR\vexecutionId\x12\x15\n" +
+	"\x06org_id\x18\a \x01(\tR\x05orgId\"\xf2\x01\n" +
 	"\x1bConfidentialWorkflowRequest\x12o\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
 	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\"I\n" +

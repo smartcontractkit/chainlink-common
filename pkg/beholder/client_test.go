@@ -495,9 +495,6 @@ func TestNewClient_Chip(t *testing.T) {
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
 
-		// Verify it implements the Client interface
-		var _ chipingress.Client = client.Chip
-
 		// Verify the emitter is configured as dual source
 		assert.NotNil(t, client.Emitter)
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
@@ -513,9 +510,6 @@ func TestNewClient_Chip(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
-
-		// Verify it implements the Client interface
-		var _ chipingress.Client = client.Chip
 
 		// Verify emitter is not dual source when dual emitter is disabled
 		assert.NotNil(t, client.Emitter)

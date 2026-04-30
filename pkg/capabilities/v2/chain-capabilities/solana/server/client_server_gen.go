@@ -123,6 +123,7 @@ var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 const ClientID = "solana@1.0.0"
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "LogTrigger":
 		input := &solana.FilterLogTriggerRequest{}
@@ -133,6 +134,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 }
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "LogTrigger":
 		input := &solana.FilterLogTriggerRequest{}
@@ -165,131 +167,132 @@ func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request c
 
 func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
+	ctx = request.Metadata.ContextWithCRE(ctx)
 	switch request.Method {
 	case "GetAccountInfoWithOpts":
 		input := &solana.GetAccountInfoWithOptsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetAccountInfoWithOptsRequest, _ *emptypb.Empty) (*solana.GetAccountInfoWithOptsReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetAccountInfoWithOptsRequest, _ *emptypb.Empty) (*solana.GetAccountInfoWithOptsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetAccountInfoWithOpts(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetAccountInfoWithOpts(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetAccountInfoWithOpts(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetBalance":
 		input := &solana.GetBalanceRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBalanceRequest, _ *emptypb.Empty) (*solana.GetBalanceReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBalanceRequest, _ *emptypb.Empty) (*solana.GetBalanceReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetBalance(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetBalance(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetBalance(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetBlock":
 		input := &solana.GetBlockRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBlockRequest, _ *emptypb.Empty) (*solana.GetBlockReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBlockRequest, _ *emptypb.Empty) (*solana.GetBlockReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetBlock(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetBlock(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetBlock(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetFeeForMessage":
 		input := &solana.GetFeeForMessageRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetFeeForMessageRequest, _ *emptypb.Empty) (*solana.GetFeeForMessageReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetFeeForMessageRequest, _ *emptypb.Empty) (*solana.GetFeeForMessageReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetFeeForMessage(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetFeeForMessage(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetFeeForMessage(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetMultipleAccountsWithOpts":
 		input := &solana.GetMultipleAccountsWithOptsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetMultipleAccountsWithOptsRequest, _ *emptypb.Empty) (*solana.GetMultipleAccountsWithOptsReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetMultipleAccountsWithOptsRequest, _ *emptypb.Empty) (*solana.GetMultipleAccountsWithOptsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetMultipleAccountsWithOpts(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetMultipleAccountsWithOpts(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetMultipleAccountsWithOpts(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetSignatureStatuses":
 		input := &solana.GetSignatureStatusesRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSignatureStatusesRequest, _ *emptypb.Empty) (*solana.GetSignatureStatusesReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSignatureStatusesRequest, _ *emptypb.Empty) (*solana.GetSignatureStatusesReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetSignatureStatuses(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetSignatureStatuses(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetSignatureStatuses(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetSlotHeight":
 		input := &solana.GetSlotHeightRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSlotHeightRequest, _ *emptypb.Empty) (*solana.GetSlotHeightReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSlotHeightRequest, _ *emptypb.Empty) (*solana.GetSlotHeightReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetSlotHeight(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetSlotHeight(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetSlotHeight(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransaction":
 		input := &solana.GetTransactionRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest, _ *emptypb.Empty) (*solana.GetTransactionReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest, _ *emptypb.Empty) (*solana.GetTransactionReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.GetTransaction(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method GetTransaction(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransaction(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":
 		input := &solana.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest, _ *emptypb.Empty) (*solana.WriteReportReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest, _ *emptypb.Empty) (*solana.WriteReportReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

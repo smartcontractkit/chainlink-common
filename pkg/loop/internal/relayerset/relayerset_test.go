@@ -22,7 +22,6 @@ import (
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	soltypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
-	tontypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 	mocks2 "github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
@@ -661,7 +660,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				out, err := sol.GetAccountInfoWithOpts(ctx, req)
 				require.NoError(t, err)
 				require.Equal(t, lamports, out.Value.Lamports)
-				require.Equal(t, slot, out.RPCContext.Slot)
+				require.Equal(t, slot, out.Slot)
 			},
 		},
 		{
@@ -962,6 +961,18 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 		run  func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService)
 	}{
 		{
+			name: "LedgerVersion",
+			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
+				const ledgerVersion = uint64(12345)
+				mockApt.EXPECT().LedgerVersion(mock.Anything).
+					Return(ledgerVersion, nil)
+
+				reply, err := apt.LedgerVersion(ctx)
+				require.NoError(t, err)
+				require.Equal(t, ledgerVersion, reply)
+			},
+		},
+		{
 			name: "AccountAPTBalance",
 			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
 				address := aptos.AccountAddress{
@@ -1003,6 +1014,39 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 					},
 				}
 				expectedData := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64} // 100
+				mockApt.EXPECT().View(mock.Anything, req).
+					Return(&aptos.ViewReply{Data: expectedData}, nil)
+
+				reply, err := apt.View(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expectedData, reply.Data)
+			},
+		},
+		{
+			name: "View with ledger version",
+			run: func(t *testing.T, apt types.AptosService, mockApt *mocks2.AptosService) {
+				moduleAddr := aptos.AccountAddress{
+					0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				}
+				ledgerVersion := uint64(77)
+				req := aptos.ViewRequest{
+					Payload: &aptos.ViewPayload{
+						Module: aptos.ModuleID{
+							Address: moduleAddr,
+							Name:    "coin",
+						},
+						Function: "balance",
+						ArgTypes: []aptos.TypeTag{
+							{Value: aptos.AddressTag{}},
+						},
+						Args: [][]byte{{0x01, 0x02}},
+					},
+					LedgerVersion: &ledgerVersion,
+				}
+				expectedData := []byte(`["ok"]`)
 				mockApt.EXPECT().View(mock.Anything, req).
 					Return(&aptos.ViewReply{Data: expectedData}, nil)
 
@@ -1232,48 +1276,48 @@ func Test_RelayerSet_TONService(t *testing.T) {
 	}{
 		{
 			name: "GetMasterchainInfo",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
-				blockIDExt := &tontypes.BlockIDExt{
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
+				blockIDExt := &ton.BlockIDExt{
 					Workchain: 0,
 					Shard:     123,
 					SeqNo:     1,
 				}
 				mockTON.EXPECT().GetMasterchainInfo(mock.Anything).Return(blockIDExt, nil)
-				out, err := ton.GetMasterchainInfo(ctx)
+				out, err := ts.GetMasterchainInfo(ctx)
 				require.NoError(t, err)
 				require.Equal(t, blockIDExt, out)
 			},
 		},
 		{
 			name: "GetBlockData",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
-				blockIDExt := &tontypes.BlockIDExt{Workchain: 0, Shard: 1, SeqNo: 100}
-				block := &tontypes.Block{GlobalID: -217}
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
+				blockIDExt := &ton.BlockIDExt{Workchain: 0, Shard: 1, SeqNo: 100}
+				block := &ton.Block{GlobalID: -217}
 				mockTON.EXPECT().GetBlockData(mock.Anything, blockIDExt).Return(block, nil)
-				out, err := ton.GetBlockData(ctx, blockIDExt)
+				out, err := ts.GetBlockData(ctx, blockIDExt)
 				require.NoError(t, err)
 				require.Equal(t, block, out)
 			},
 		},
 		{
 			name: "GetAccountBalance",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
 				addr := "0:abc123"
-				blockID := &tontypes.BlockIDExt{Workchain: 0, Shard: 1, SeqNo: 100}
-				balance := &tontypes.Balance{}
+				blockID := &ton.BlockIDExt{Workchain: 0, Shard: 1, SeqNo: 100}
+				balance := &ton.Balance{}
 				mockTON.EXPECT().GetAccountBalance(mock.Anything, addr, blockID).Return(balance, nil)
-				out, err := ton.GetAccountBalance(ctx, addr, blockID)
+				out, err := ts.GetAccountBalance(ctx, addr, blockID)
 				require.NoError(t, err)
 				require.Equal(t, balance, out)
 			},
 		},
 		{
 			name: "SendTx",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
 				addr := "0:abc123"
 				body := []byte("body")
 				stateInit := []byte("state-init")
-				msg := tontypes.Message{
+				msg := ton.Message{
 					Mode:      1,
 					ToAddress: addr,
 					Amount:    "1.0",
@@ -1282,18 +1326,18 @@ func Test_RelayerSet_TONService(t *testing.T) {
 					StateInit: stateInit,
 				}
 				mockTON.EXPECT().SendTx(mock.Anything, msg).Return(nil)
-				err := ton.SendTx(ctx, msg)
+				err := ts.SendTx(ctx, msg)
 				require.NoError(t, err)
 			},
 		},
 		{
 			name: "GetTxStatus",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
 				lt := uint64(123456)
 				status := types.Finalized
-				exitCode := tontypes.ExitCode(0)
+				exitCode := ton.ExitCode(0)
 				mockTON.EXPECT().GetTxStatus(mock.Anything, lt).Return(status, exitCode, nil)
-				s, c, err := ton.GetTxStatus(ctx, lt)
+				s, c, err := ts.GetTxStatus(ctx, lt)
 				require.NoError(t, err)
 				require.Equal(t, status, s)
 				require.Equal(t, exitCode, c)
@@ -1301,11 +1345,11 @@ func Test_RelayerSet_TONService(t *testing.T) {
 		},
 		{
 			name: "GetTxExecutionFees",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
 				lt := uint64(123456)
-				fees := &tontypes.TransactionFee{TransactionFee: big.NewInt(100)}
+				fees := &ton.TransactionFee{TransactionFee: big.NewInt(100)}
 				mockTON.EXPECT().GetTxExecutionFees(mock.Anything, lt).Return(fees, nil)
-				out, err := ton.GetTxExecutionFees(ctx, lt)
+				out, err := ts.GetTxExecutionFees(ctx, lt)
 				require.NoError(t, err)
 				require.Equal(t, fees, out)
 			},
@@ -1321,10 +1365,10 @@ func Test_RelayerSet_TONService(t *testing.T) {
 		},
 		{
 			name: "RegisterFilter",
-			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
-				filter := tontypes.LPFilterQuery{Name: "filter1"}
+			run: func(t *testing.T, ts types.TONService, mockTON *mocks2.TONService) {
+				filter := ton.LPFilterQuery{Name: "filter1"}
 				mockTON.EXPECT().RegisterFilter(mock.Anything, filter).Return(nil)
-				err := ton.RegisterFilter(ctx, filter)
+				err := ts.RegisterFilter(ctx, filter)
 				require.NoError(t, err)
 			},
 		},
@@ -1408,15 +1452,15 @@ type TestTON struct {
 	mockedTONService *mocks2.TONService
 }
 
-func (t *TestTON) GetMasterchainInfo(ctx context.Context) (*tontypes.BlockIDExt, error) {
+func (t *TestTON) GetMasterchainInfo(ctx context.Context) (*ton.BlockIDExt, error) {
 	return t.mockedTONService.GetMasterchainInfo(ctx)
 }
 
-func (t *TestTON) GetBlockData(ctx context.Context, block *tontypes.BlockIDExt) (*tontypes.Block, error) {
+func (t *TestTON) GetBlockData(ctx context.Context, block *ton.BlockIDExt) (*ton.Block, error) {
 	return t.mockedTONService.GetBlockData(ctx, block)
 }
 
-func (t *TestTON) GetAccountBalance(ctx context.Context, address string, block *tontypes.BlockIDExt) (*tontypes.Balance, error) {
+func (t *TestTON) GetAccountBalance(ctx context.Context, address string, block *ton.BlockIDExt) (*ton.Balance, error) {
 	return t.mockedTONService.GetAccountBalance(ctx, address, block)
 }
 

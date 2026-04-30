@@ -19,19 +19,19 @@ func TestCodec(t *testing.T) {
 
 	t.Run("ChainSpecificAddressCodec", func(t *testing.T) {
 		// Test that the embedded ChainSpecificAddressCodec works
-		result, err := codec.ChainSpecificAddressCodec.AddressBytesToString([]byte("test"))
+		result, err := codec.AddressBytesToString([]byte("test"))
 		assert.NoError(t, err)
 		assert.Equal(t, "test-address", result)
 
-		bytes, err := codec.ChainSpecificAddressCodec.AddressStringToBytes("test")
+		bytes, err := codec.AddressStringToBytes("test")
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("test-address"), bytes)
 
-		oracleBytes, err := codec.ChainSpecificAddressCodec.OracleIDAsAddressBytes(42)
+		oracleBytes, err := codec.OracleIDAsAddressBytes(42)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{42}, oracleBytes)
 
-		transmitter, err := codec.ChainSpecificAddressCodec.TransmitterBytesToString([]byte("test"))
+		transmitter, err := codec.TransmitterBytesToString([]byte("test"))
 		assert.NoError(t, err)
 		assert.Equal(t, "test-transmitter", transmitter)
 	})
@@ -65,7 +65,7 @@ func TestCodec(t *testing.T) {
 		message := ccipocr3.Bytes("test-message")
 		attestation := ccipocr3.Bytes("test-attestation")
 
-		encoded, err := codec.TokenDataEncoder.EncodeUSDC(ctx, message, attestation)
+		encoded, err := codec.EncodeUSDC(ctx, message, attestation)
 		assert.NoError(t, err)
 		assert.Equal(t, ccipocr3.Bytes("encoded-usdc"), encoded)
 	})
@@ -73,13 +73,13 @@ func TestCodec(t *testing.T) {
 	t.Run("SourceChainExtraDataCodec", func(t *testing.T) {
 		// Test that the embedded SourceChainExtraDataCodec works
 		extraArgs := ccipocr3.Bytes("test-extra-args")
-		result, err := codec.SourceChainExtraDataCodec.DecodeExtraArgsToMap(extraArgs)
+		result, err := codec.DecodeExtraArgsToMap(extraArgs)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Contains(t, result, "gasLimit")
 
 		destExecData := ccipocr3.Bytes("test-dest-exec-data")
-		result2, err := codec.SourceChainExtraDataCodec.DecodeDestExecDataToMap(destExecData)
+		result2, err := codec.DecodeDestExecDataToMap(destExecData)
 		assert.NoError(t, err)
 		assert.NotNil(t, result2)
 		assert.Contains(t, result2, "data")
@@ -152,17 +152,17 @@ func TestCodecIntegration(t *testing.T) {
 		// Test address conversion workflow
 		testAddress := "0x1234567890abcdef"
 
-		addressBytes, err := codec.ChainSpecificAddressCodec.AddressStringToBytes(testAddress)
+		addressBytes, err := codec.AddressStringToBytes(testAddress)
 		require.NoError(t, err)
 		assert.NotEmpty(t, addressBytes)
 
-		addressString, err := codec.ChainSpecificAddressCodec.AddressBytesToString(addressBytes)
+		addressString, err := codec.AddressBytesToString(addressBytes)
 		require.NoError(t, err)
 		assert.NotEmpty(t, addressString)
 
 		// Test oracle ID to address conversion
 		oracleID := uint8(42)
-		oracleAddress, err := codec.ChainSpecificAddressCodec.OracleIDAsAddressBytes(oracleID)
+		oracleAddress, err := codec.OracleIDAsAddressBytes(oracleID)
 		require.NoError(t, err)
 		assert.Equal(t, []byte{42}, oracleAddress)
 	})
@@ -172,7 +172,7 @@ func TestCodecIntegration(t *testing.T) {
 		message := ccipocr3.Bytes("test-usdc-message")
 		attestation := ccipocr3.Bytes("test-usdc-attestation")
 
-		encodedUSDC, err := codec.TokenDataEncoder.EncodeUSDC(ctx, message, attestation)
+		encodedUSDC, err := codec.EncodeUSDC(ctx, message, attestation)
 		require.NoError(t, err)
 		assert.NotEmpty(t, encodedUSDC)
 		assert.Equal(t, ccipocr3.Bytes("encoded-usdc"), encodedUSDC)
@@ -181,12 +181,12 @@ func TestCodecIntegration(t *testing.T) {
 	t.Run("ExtraDataWorkflow", func(t *testing.T) {
 		// Test extra data decoding workflow
 		extraArgs := ccipocr3.Bytes("{\"gasLimit\": 100000}")
-		argsMap, err := codec.SourceChainExtraDataCodec.DecodeExtraArgsToMap(extraArgs)
+		argsMap, err := codec.DecodeExtraArgsToMap(extraArgs)
 		require.NoError(t, err)
 		assert.NotEmpty(t, argsMap)
 
 		destExecData := ccipocr3.Bytes("{\"data\": \"test\"}")
-		execMap, err := codec.SourceChainExtraDataCodec.DecodeDestExecDataToMap(destExecData)
+		execMap, err := codec.DecodeDestExecDataToMap(destExecData)
 		require.NoError(t, err)
 		assert.NotEmpty(t, execMap)
 	})

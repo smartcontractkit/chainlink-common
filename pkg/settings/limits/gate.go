@@ -52,7 +52,7 @@ func newGateLimiter(f Factory, limit settings.SettingSpec[bool]) (GateLimiter, e
 		key:   limit.GetKey(),
 		scope: limit.GetScope(),
 	}
-	g.updater.recordLimit = func(ctx context.Context, b bool) { g.recordStatus(ctx, b) }
+	g.recordLimit = func(ctx context.Context, b bool) { g.recordStatus(ctx, b) }
 
 	if f.Meter != nil {
 		if g.key == "" {

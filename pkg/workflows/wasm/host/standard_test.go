@@ -174,7 +174,7 @@ func TestStandardModeSwitch(t *testing.T) {
 				input := &basicaction.Inputs{}
 				assert.NoError(t, request.Payload.UnmarshalTo(input))
 				assert.True(t, input.InputThing)
-				payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("test")})
+				payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: "test"})
 				require.NoError(t, err)
 				return &sdk.CapabilityResponse{
 					Response: &sdk.CapabilityResponse_Payload{Payload: payload},
@@ -551,11 +551,6 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionR
 func makeTestModule(t *testing.T) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
 	return makeTestModuleByName(t, testName, nil)
-}
-
-func makeTestModuleWithCfg(t *testing.T, cfg *ModuleConfig) *module {
-	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, cfg)
 }
 
 func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {

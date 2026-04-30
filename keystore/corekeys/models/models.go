@@ -2,15 +2,14 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/pkg/errors"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
-
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/aptoskey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/cosmoskey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/csakey"
@@ -209,11 +208,11 @@ func (kr *KeyRing) Encrypt(password string, scryptParams keystore.ScryptParams) 
 		scryptParams.P,
 	)
 	if err != nil {
-		return ekr, errors.Wrapf(err, "could not encrypt key ring")
+		return ekr, fmt.Errorf("could not encrypt key ring: %w", err)
 	}
 	encryptedKeys, err := json.Marshal(&cryptoJSON)
 	if err != nil {
-		return ekr, errors.Wrapf(err, "could not encode cryptoJSON")
+		return ekr, fmt.Errorf("could not encode cryptoJSON: %w", err)
 	}
 	return EncryptedKeyRing{
 		EncryptedKeys: encryptedKeys,

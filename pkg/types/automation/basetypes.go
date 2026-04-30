@@ -30,9 +30,9 @@ var checkResultStringTemplate = `{
 }`
 
 func init() {
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, " ", "", -1)
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, "\t", "", -1)
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, "\n", "", -1)
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, " ", "")
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, "\t", "")
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, "\n", "")
 }
 
 type TransmitEventType int

@@ -141,9 +141,10 @@ func TestContractReaderByIDsQueryKey(t *testing.T) {
 
 	// Mock QueryKey function
 	mockReader.queryKeyFunc = func(ctx context.Context, contract types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
-		if contract == bc1 {
+		switch contract {
+		case bc1:
 			return []types.Sequence{{Data: "sequenceData1"}}, nil
-		} else if contract == bc2 {
+		case bc2:
 			return []types.Sequence{{Data: "sequenceData2"}}, nil
 		}
 		return nil, fmt.Errorf("not found")

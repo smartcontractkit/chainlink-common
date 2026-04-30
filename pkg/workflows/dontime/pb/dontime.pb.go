@@ -22,11 +22,13 @@ const (
 )
 
 type Observation struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timestamp     int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Requests      map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Requests  map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// Flag to roll out execution pruning fix. Can be removed after rollout (once unused in the outcome phase).
+	PruneExecutions bool `protobuf:"varint,3,opt,name=prune_executions,json=pruneExecutions,proto3" json:"prune_executions,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Observation) Reset() {
@@ -73,49 +75,11 @@ func (x *Observation) GetRequests() map[string]int64 {
 	return nil
 }
 
-type Observations struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// batched observations for multiple workflow execution IDs
-	Observations  []*Observation `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Observations) Reset() {
-	*x = Observations{}
-	mi := &file_dontime_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Observations) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Observations) ProtoMessage() {}
-
-func (x *Observations) ProtoReflect() protoreflect.Message {
-	mi := &file_dontime_proto_msgTypes[1]
+func (x *Observation) GetPruneExecutions() bool {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+		return x.PruneExecutions
 	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Observations.ProtoReflect.Descriptor instead.
-func (*Observations) Descriptor() ([]byte, []int) {
-	return file_dontime_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Observations) GetObservations() []*Observation {
-	if x != nil {
-		return x.Observations
-	}
-	return nil
+	return false
 }
 
 type ObservedDonTimes struct {
@@ -127,7 +91,7 @@ type ObservedDonTimes struct {
 
 func (x *ObservedDonTimes) Reset() {
 	*x = ObservedDonTimes{}
-	mi := &file_dontime_proto_msgTypes[2]
+	mi := &file_dontime_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +103,7 @@ func (x *ObservedDonTimes) String() string {
 func (*ObservedDonTimes) ProtoMessage() {}
 
 func (x *ObservedDonTimes) ProtoReflect() protoreflect.Message {
-	mi := &file_dontime_proto_msgTypes[2]
+	mi := &file_dontime_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +116,7 @@ func (x *ObservedDonTimes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObservedDonTimes.ProtoReflect.Descriptor instead.
 func (*ObservedDonTimes) Descriptor() ([]byte, []int) {
-	return file_dontime_proto_rawDescGZIP(), []int{2}
+	return file_dontime_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ObservedDonTimes) GetTimestamps() []int64 {
@@ -172,7 +136,7 @@ type Outcome struct {
 
 func (x *Outcome) Reset() {
 	*x = Outcome{}
-	mi := &file_dontime_proto_msgTypes[3]
+	mi := &file_dontime_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -184,7 +148,7 @@ func (x *Outcome) String() string {
 func (*Outcome) ProtoMessage() {}
 
 func (x *Outcome) ProtoReflect() protoreflect.Message {
-	mi := &file_dontime_proto_msgTypes[3]
+	mi := &file_dontime_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +161,7 @@ func (x *Outcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outcome.ProtoReflect.Descriptor instead.
 func (*Outcome) Descriptor() ([]byte, []int) {
-	return file_dontime_proto_rawDescGZIP(), []int{3}
+	return file_dontime_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Outcome) GetTimestamp() int64 {
@@ -218,15 +182,14 @@ var File_dontime_proto protoreflect.FileDescriptor
 
 const file_dontime_proto_rawDesc = "" +
 	"\n" +
-	"\rdontime.proto\"\xa0\x01\n" +
+	"\rdontime.proto\"\xcb\x01\n" +
 	"\vObservation\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x126\n" +
-	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x1a;\n" +
+	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x12)\n" +
+	"\x10prune_executions\x18\x03 \x01(\bR\x0fpruneExecutions\x1a;\n" +
 	"\rRequestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"@\n" +
-	"\fObservations\x120\n" +
-	"\fobservations\x18\x01 \x03(\v2\f.ObservationR\fobservations\"2\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"2\n" +
 	"\x10ObservedDonTimes\x12\x1e\n" +
 	"\n" +
 	"timestamps\x18\x01 \x03(\x03R\n" +
@@ -250,25 +213,23 @@ func file_dontime_proto_rawDescGZIP() []byte {
 	return file_dontime_proto_rawDescData
 }
 
-var file_dontime_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_dontime_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_dontime_proto_goTypes = []any{
 	(*Observation)(nil),      // 0: Observation
-	(*Observations)(nil),     // 1: Observations
-	(*ObservedDonTimes)(nil), // 2: ObservedDonTimes
-	(*Outcome)(nil),          // 3: Outcome
-	nil,                      // 4: Observation.RequestsEntry
-	nil,                      // 5: Outcome.ObservedDonTimesEntry
+	(*ObservedDonTimes)(nil), // 1: ObservedDonTimes
+	(*Outcome)(nil),          // 2: Outcome
+	nil,                      // 3: Observation.RequestsEntry
+	nil,                      // 4: Outcome.ObservedDonTimesEntry
 }
 var file_dontime_proto_depIdxs = []int32{
-	4, // 0: Observation.requests:type_name -> Observation.RequestsEntry
-	0, // 1: Observations.observations:type_name -> Observation
-	5, // 2: Outcome.observed_don_times:type_name -> Outcome.ObservedDonTimesEntry
-	2, // 3: Outcome.ObservedDonTimesEntry.value:type_name -> ObservedDonTimes
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 0: Observation.requests:type_name -> Observation.RequestsEntry
+	4, // 1: Outcome.observed_don_times:type_name -> Outcome.ObservedDonTimesEntry
+	1, // 2: Outcome.ObservedDonTimesEntry.value:type_name -> ObservedDonTimes
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_dontime_proto_init() }
@@ -282,7 +243,7 @@ func file_dontime_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dontime_proto_rawDesc), len(file_dontime_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

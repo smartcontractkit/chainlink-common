@@ -3,10 +3,11 @@ package ocr2key
 import (
 	"crypto/ed25519"
 	"crypto/sha256"
+	"errors"
+	"fmt"
 	"io"
 
 	"github.com/hdevalence/ed25519consensus"
-	"github.com/pkg/errors"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -105,7 +106,7 @@ func (tkr *tonKeyring) Marshal() ([]byte, error) {
 
 func (tkr *tonKeyring) Unmarshal(in []byte) error {
 	if len(in) != ed25519.SeedSize {
-		return errors.Errorf("unexpected seed size, got %d want %d", len(in), ed25519.SeedSize)
+		return fmt.Errorf("unexpected seed size, got %d want %d", len(in), ed25519.SeedSize)
 	}
 	privKey := ed25519.NewKeyFromSeed(in)
 	tkr.privKey = func() ed25519.PrivateKey { return privKey }

@@ -7,11 +7,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/curve25519"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting/types"
@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	ErrScalarTooBig = errors.Errorf("can't handle scalars greater than %d", curve25519.PointSize)
+	ErrScalarTooBig = fmt.Errorf("can't handle scalars greater than %d", curve25519.PointSize)
 	curve           = secp256k1.S256()
 )
 
@@ -34,7 +34,7 @@ func KeyFor(raw internal.Raw) KeyV2 {
 	var key KeyV2
 	err := json.Unmarshal(internal.Bytes(raw), &key)
 	if err != nil {
-		panic(errors.Wrap(err, "while unmarshalling OCR key"))
+		panic(fmt.Errorf("while unmarshalling OCR key: %w", err))
 	}
 	key.raw = raw
 	return key
@@ -173,7 +173,7 @@ func (key *KeyV2) UnmarshalJSON(b []byte) (err error) {
 	}
 	ecdsaDSize := len(rawKeyData.EcdsaD.Bytes())
 	if ecdsaDSize > curve25519.PointSize {
-		return errors.Wrapf(ErrScalarTooBig, "got %d byte ecdsa scalar", ecdsaDSize)
+		return fmt.Errorf("got %d byte ecdsa scalar: %w", ecdsaDSize, ErrScalarTooBig)
 	}
 
 	publicKey := ecdsa.PublicKey{Curve: curve}

@@ -479,6 +479,18 @@ func TestAccountTransactionsConverters(t *testing.T) {
 		require.NoError(t, err)
 		require.Nil(t, roundtrip)
 	})
+
+	t.Run("Reply with nil transaction entry rejected", func(t *testing.T) {
+		protoReply := &conv.AccountTransactionsReply{
+			Transactions: []*conv.Transaction{
+				{Hash: "0xaaa"},
+				nil,
+			},
+		}
+		_, err := conv.ConvertAccountTransactionsReplyFromProto(protoReply)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "transaction 1 is nil")
+	})
 }
 
 func TestNilHandling(t *testing.T) {

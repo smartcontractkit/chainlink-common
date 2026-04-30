@@ -16,6 +16,7 @@ import (
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
+	stelpb "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -44,6 +45,7 @@ type Server struct {
 	ton            *tonServer
 	evm            *evmServer
 	aptos          *aptosServer
+	stellar        *stellarServer
 	contractReader *readerServer
 
 	serverResources net.Resources
@@ -65,6 +67,7 @@ func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *
 	server.ton = &tonServer{parent: server}
 	server.evm = &evmServer{parent: server}
 	server.aptos = &aptosServer{parent: server}
+	server.stellar = &stellarServer{parent: server}
 	server.contractReader = &readerServer{parent: server}
 
 	return server, net.Resource{
@@ -77,6 +80,7 @@ func (s *Server) SolanaServer() solpb.SolanaServer              { return s.sol }
 func (s *Server) TONServer() tonpb.TONServer                    { return s.ton }
 func (s *Server) EVMServer() evmpb.EVMServer                    { return s.evm }
 func (s *Server) AptosServer() aptospb.AptosServer              { return s.aptos }
+func (s *Server) StellarServer() stelpb.StellarServer           { return s.stellar }
 func (s *Server) ContractReaderServer() pb.ContractReaderServer { return s.contractReader }
 
 func (s *Server) Close() error {

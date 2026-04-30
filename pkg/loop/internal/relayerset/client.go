@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -28,26 +29,28 @@ type Client struct {
 
 	log logger.Logger
 
-	relayerSetClient       relayerset.RelayerSetClient
-	contractReaderClient   pb.ContractReaderClient
-	evmRelayerSetClient    evm.EVMClient
-	tonRelayerSetClient    ton.TONClient
-	solanaRelayerSetClient solana.SolanaClient
-	aptosRelayerSetClient  aptos.AptosClient
+	relayerSetClient        relayerset.RelayerSetClient
+	contractReaderClient    pb.ContractReaderClient
+	evmRelayerSetClient     evm.EVMClient
+	tonRelayerSetClient     ton.TONClient
+	solanaRelayerSetClient  solana.SolanaClient
+	aptosRelayerSetClient   aptos.AptosClient
+	stellarRelayerSetClient stellar.StellarClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
 	return &Client{
-		log:                    log,
-		BrokerExt:              b,
-		ServiceClient:          goplugin.NewServiceClient(b, conn),
-		relayerSetClient:       relayerset.NewRelayerSetClient(conn),
-		evmRelayerSetClient:    evm.NewEVMClient(conn),
-		tonRelayerSetClient:    ton.NewTONClient(conn),
-		solanaRelayerSetClient: solana.NewSolanaClient(conn),
-		aptosRelayerSetClient:  aptos.NewAptosClient(conn),
-		contractReaderClient:   pb.NewContractReaderClient(conn)}
+		log:                     log,
+		BrokerExt:               b,
+		ServiceClient:           goplugin.NewServiceClient(b, conn),
+		contractReaderClient:    pb.NewContractReaderClient(conn),
+		relayerSetClient:        relayerset.NewRelayerSetClient(conn),
+		evmRelayerSetClient:     evm.NewEVMClient(conn),
+		tonRelayerSetClient:     ton.NewTONClient(conn),
+		solanaRelayerSetClient:  solana.NewSolanaClient(conn),
+		aptosRelayerSetClient:   aptos.NewAptosClient(conn),
+		stellarRelayerSetClient: stellar.NewStellarClient(conn)}
 }
 
 func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, error) {
@@ -208,6 +211,16 @@ func (k *Client) Aptos(relayID types.RelayID) (types.AptosService, error) {
 	return rel.NewAptosClient(&aptosClient{
 		relayID: relayID,
 		client:  k.aptosRelayerSetClient,
+	}), nil
+}
+
+func (k *Client) Stellar(relayID types.RelayID) (types.StellarService, error) {
+	if k.stellarRelayerSetClient == nil {
+		return nil, errors.New("stellarRelayerSetClient can't be nil")
+	}
+	return rel.NewStellarClient(&stellarClient{
+		relayID: relayID,
+		client:  k.stellarRelayerSetClient,
 	}), nil
 }
 

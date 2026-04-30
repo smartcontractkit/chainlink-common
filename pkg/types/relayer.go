@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -268,6 +269,12 @@ type AptosService interface {
 	SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error)
 }
 
+// StellarService exposes the Stellar RPC operations needed by CRE:
+// fetch ledger entries and get the latest ledger.
+type StellarService interface {
+	stellar.Client
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
@@ -280,6 +287,8 @@ type Relayer interface {
 	Solana() (SolanaService, error)
 	// Aptos returns AptosService that provides access to Aptos specific functionalities
 	Aptos() (AptosService, error)
+	// Stellar returns StellarService that provides access to Stellar specific functionalities
+	Stellar() (StellarService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
@@ -410,6 +419,10 @@ func (u *UnimplementedRelayer) Solana() (SolanaService, error) {
 
 func (u *UnimplementedRelayer) Aptos() (AptosService, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Aptos not implemented")
+}
+
+func (u *UnimplementedRelayer) Stellar() (StellarService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stellar not implemented")
 }
 
 func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
@@ -627,4 +640,19 @@ func (ua *UnimplementedAptosService) AccountTransactions(ctx context.Context, re
 
 func (ua *UnimplementedAptosService) SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+var _ StellarService = &UnimplementedStellarService{}
+
+// UnimplementedStellarService implements the StellarService interface with stubbed methods that return codes.Unimplemented errors.
+// Embed this in real StellarService implementations so that new methods added to the interface
+// don't immediately break downstream packages on dependency bumps.
+type UnimplementedStellarService struct{}
+
+func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stellar.GetLedgerEntriesRequest) (stellar.GetLedgerEntriesResponse, error) {
+	return stellar.GetLedgerEntriesResponse{}, status.Errorf(codes.Unimplemented, "method GetLedgerEntries not implemented")
+}
+
+func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stellar.GetLatestLedgerResponse, error) {
+	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
 }

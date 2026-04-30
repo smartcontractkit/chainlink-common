@@ -79,10 +79,6 @@ type DurableEmitterHooks struct {
 	// OnEmitInsert is called after each store.Insert in Emit (the DB write that
 	// blocks the caller). elapsed covers only the INSERT; err is nil on success.
 	OnEmitInsert func(elapsed time.Duration, err error)
-	// OnImmediatePublish is legacy; the durable emitter no longer uses unary Publish for durable emits.
-	OnImmediatePublish func(elapsed time.Duration, err error)
-	// OnImmediateDelete is unused; retained for API compatibility.
-	OnImmediateDelete func(elapsed time.Duration, err error)
 	// OnBatchPublish is called after each PublishBatch RPC in the batch publish loop.
 	// batchSize is the number of events in the batch; err is nil on success.
 	OnBatchPublish func(elapsed time.Duration, batchSize int, err error)
@@ -105,6 +101,7 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,
 		PublishBatchSize:    1,
+		Metrics:             &DurableEmitterMetricsConfig{},
 	}
 }
 

@@ -98,8 +98,8 @@ type WorkflowExecution struct {
 	// org_id is the organization identifier for the workflow owner.
 	// Used by the enclave when fetching secrets from VaultDON with org-based ownership.
 	OrgId string `protobuf:"bytes,7,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	// regions that the workflow is allowed to run in.
-	Tee           *sdk.Tee `protobuf:"bytes,8,opt,name=tee,proto3" json:"tee,omitempty"`
+	// requirements to run this workflow
+	Requirements  *sdk.Requirements `protobuf:"bytes,8,opt,name=requirements,proto3" json:"requirements,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -183,9 +183,9 @@ func (x *WorkflowExecution) GetOrgId() string {
 	return ""
 }
 
-func (x *WorkflowExecution) GetTee() *sdk.Tee {
+func (x *WorkflowExecution) GetRequirements() *sdk.Requirements {
 	if x != nil {
-		return x.Tee
+		return x.Requirements
 	}
 	return nil
 }
@@ -343,7 +343,7 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
 	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
 	"\n" +
-	"_namespace\"\xae\x02\n" +
+	"_namespace\"\xc9\x02\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x1d\n" +
@@ -354,8 +354,8 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\x0fexecute_request\x18\x04 \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x0eexecuteRequest\x12\x14\n" +
 	"\x05owner\x18\x05 \x01(\tR\x05owner\x12!\n" +
 	"\fexecution_id\x18\x06 \x01(\tR\vexecutionId\x12\x15\n" +
-	"\x06org_id\x18\a \x01(\tR\x05orgId\x12\"\n" +
-	"\x03tee\x18\b \x01(\v2\x10.sdk.v1alpha.TeeR\x03tee\"\xf2\x01\n" +
+	"\x06org_id\x18\a \x01(\tR\x05orgId\x12=\n" +
+	"\frequirements\x18\b \x01(\v2\x19.sdk.v1alpha.RequirementsR\frequirements\"\xf2\x01\n" +
 	"\x1bConfidentialWorkflowRequest\x12o\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
 	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\"g\n" +
@@ -388,13 +388,13 @@ var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_goTypes 
 	(*ConfidentialWorkflowResponse)(nil), // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
 	(*GetRegionsResponse)(nil),           // 4: capabilities.compute.confidentialworkflow.v1alpha.GetRegionsResponse
 	(*sdk.ExecuteRequest)(nil),           // 5: sdk.v1alpha.ExecuteRequest
-	(*sdk.Tee)(nil),                      // 6: sdk.v1alpha.Tee
+	(*sdk.Requirements)(nil),             // 6: sdk.v1alpha.Requirements
 	(*sdk.ExecutionResult)(nil),          // 7: sdk.v1alpha.ExecutionResult
 	(*emptypb.Empty)(nil),                // 8: google.protobuf.Empty
 }
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_depIdxs = []int32{
 	5, // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.execute_request:type_name -> sdk.v1alpha.ExecuteRequest
-	6, // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.tee:type_name -> sdk.v1alpha.Tee
+	6, // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.requirements:type_name -> sdk.v1alpha.Requirements
 	0, // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
 	1, // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
 	7, // 4: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse.execution_result:type_name -> sdk.v1alpha.ExecutionResult

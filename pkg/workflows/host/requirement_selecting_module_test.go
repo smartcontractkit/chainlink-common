@@ -27,6 +27,15 @@ func (s *stubModule) Execute(ctx context.Context, req *sdk.ExecuteRequest, h Exe
 	return s.executeFn(ctx, req, h)
 }
 
+type requirementEnforcingStub struct {
+	*stubModule
+	setRequirementsFn func(string, *sdk.Requirements)
+}
+
+func (s *requirementEnforcingStub) SetRequirements(executionID string, requirements *sdk.Requirements) {
+	s.setRequirementsFn(executionID, requirements)
+}
+
 func noop()      {}
 func noopClose() {}
 
@@ -361,6 +370,62 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, int32(1), atomic.LoadInt32(&mainTriggerCalls), "trigger should run on main")
+	})
+
+	t.Run("cached trigger sets requirements before execute", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+		want := &sdk.ExecutionResult{}
+		executionID := "wf-exec-1"
+
+		main := ModuleAndHandler{
+			Module: &stubModule{
+				startFn: noop,
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+					return subscribeResult(subWithReqs(teeReqs)), nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+		}
+
+		var calls []string
+		var gotReqs *sdk.Requirements
+		var gotExecutionID string
+		enforcingAdd := &requirementEnforcingStub{
+			stubModule: &stubModule{
+				startFn: noop,
+				closeFn: noopClose,
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+					calls = append(calls, "execute")
+					return want, nil
+				},
+			},
+			setRequirementsFn: func(id string, requirements *sdk.Requirements) {
+				calls = append(calls, "set")
+				gotExecutionID = id
+				gotReqs = requirements
+			},
+		}
+		add := ModuleAndHandler{
+			Module:              enforcingAdd,
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		helper := &MockExecutionHelper{}
+		helper.On("GetWorkflowExecutionID").Return(executionID).Once()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		got, err := m.Execute(t.Context(), triggerRequest(0), helper)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+		assert.Equal(t, []string{"set", "execute"}, calls)
+		assert.Equal(t, executionID, gotExecutionID)
+		assert.Same(t, teeReqs, gotReqs)
+		helper.AssertExpectations(t)
 	})
 }
 

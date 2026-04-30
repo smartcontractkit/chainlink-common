@@ -66,3 +66,38 @@ message Outcome {
   map<string, AggregationOutcome> outcomes = 1;
   repeated Report current_reports = 2;
 }
+
+// --- OCR3_1-only messages (added under OCRBump) ---------------------------
+//
+// Under OCR3_1 the bulk per-request values.List payload moves to blobs, keeping
+// the on-wire observation well under the 512 KiB OCR3_1 cap. The existing
+// Observations message is broadcast as the blob contents; BlobbedObservation
+// is what travels the consensus channel and carries only the blob handle plus
+// small metadata.
+message BlobbedObservation {
+  // Handle returned by BlobBroadcastFetcher.BroadcastBlob. The fetching node
+  // calls FetchBlob(handle) to retrieve the Observations payload.
+  bytes blob_handle = 1;
+
+  // IDs this observation has data for. Mirrors the Observations.observations
+  // list' Id fields so ValidateObservation can reject mismatches without
+  // dereferencing the blob.
+  repeated Id ids = 2;
+
+  // Node timestamp, carried out-of-blob so StateTransition can compute the
+  // median timestamp without fetching every blob first.
+  google.protobuf.Timestamp timestamp = 3;
+
+  // Registered workflow IDs on this node; carried out-of-blob for the same
+  // reason as `timestamp`.
+  repeated string registered_workflow_ids = 4;
+}
+
+// OutcomeEnvelope wraps a per-workflow AggregationOutcome stored in the
+// OCR3_1 replicated KV. The explicit version field lets us detect stored
+// values from older schemas and migrate. Never reuse a version number with
+// an incompatible payload — bump the number and add a new key prefix.
+message OutcomeEnvelope {
+  uint32 version = 1;                // currently 1
+  AggregationOutcome outcome = 2;
+}

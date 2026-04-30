@@ -549,6 +549,146 @@ func (x *Outcome) GetCurrentReports() []*Report {
 	return nil
 }
 
+// --- OCR3_1-only messages (added under OCRBump) ---------------------------
+//
+// Under OCR3_1 the bulk per-request values.List payload moves to blobs, keeping
+// the on-wire observation well under the 512 KiB OCR3_1 cap. The existing
+// Observations message is broadcast as the blob contents; BlobbedObservation
+// is what travels the consensus channel and carries only the blob handle plus
+// small metadata.
+type BlobbedObservation struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Handle returned by BlobBroadcastFetcher.BroadcastBlob. The fetching node
+	// calls FetchBlob(handle) to retrieve the Observations payload.
+	BlobHandle []byte `protobuf:"bytes,1,opt,name=blob_handle,json=blobHandle,proto3" json:"blob_handle,omitempty"`
+	// IDs this observation has data for. Mirrors the Observations.observations
+	// list' Id fields so ValidateObservation can reject mismatches without
+	// dereferencing the blob.
+	Ids []*Id `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`
+	// Node timestamp, carried out-of-blob so StateTransition can compute the
+	// median timestamp without fetching every blob first.
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// Registered workflow IDs on this node; carried out-of-blob for the same
+	// reason as `timestamp`.
+	RegisteredWorkflowIds []string `protobuf:"bytes,4,rep,name=registered_workflow_ids,json=registeredWorkflowIds,proto3" json:"registered_workflow_ids,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *BlobbedObservation) Reset() {
+	*x = BlobbedObservation{}
+	mi := &file_ocr3_types_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlobbedObservation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlobbedObservation) ProtoMessage() {}
+
+func (x *BlobbedObservation) ProtoReflect() protoreflect.Message {
+	mi := &file_ocr3_types_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlobbedObservation.ProtoReflect.Descriptor instead.
+func (*BlobbedObservation) Descriptor() ([]byte, []int) {
+	return file_ocr3_types_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *BlobbedObservation) GetBlobHandle() []byte {
+	if x != nil {
+		return x.BlobHandle
+	}
+	return nil
+}
+
+func (x *BlobbedObservation) GetIds() []*Id {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+func (x *BlobbedObservation) GetTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamp
+	}
+	return nil
+}
+
+func (x *BlobbedObservation) GetRegisteredWorkflowIds() []string {
+	if x != nil {
+		return x.RegisteredWorkflowIds
+	}
+	return nil
+}
+
+// OutcomeEnvelope wraps a per-workflow AggregationOutcome stored in the
+// OCR3_1 replicated KV. The explicit version field lets us detect stored
+// values from older schemas and migrate. Never reuse a version number with
+// an incompatible payload — bump the number and add a new key prefix.
+type OutcomeEnvelope struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Version       uint32                 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"` // currently 1
+	Outcome       *AggregationOutcome    `protobuf:"bytes,2,opt,name=outcome,proto3" json:"outcome,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OutcomeEnvelope) Reset() {
+	*x = OutcomeEnvelope{}
+	mi := &file_ocr3_types_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OutcomeEnvelope) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OutcomeEnvelope) ProtoMessage() {}
+
+func (x *OutcomeEnvelope) ProtoReflect() protoreflect.Message {
+	mi := &file_ocr3_types_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OutcomeEnvelope.ProtoReflect.Descriptor instead.
+func (*OutcomeEnvelope) Descriptor() ([]byte, []int) {
+	return file_ocr3_types_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *OutcomeEnvelope) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *OutcomeEnvelope) GetOutcome() *AggregationOutcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return nil
+}
+
 var File_ocr3_types_proto protoreflect.FileDescriptor
 
 const file_ocr3_types_proto_rawDesc = "" +
@@ -599,7 +739,16 @@ const file_ocr3_types_proto_rawDesc = "" +
 	"\x0fcurrent_reports\x18\x02 \x03(\v2\x12.ocr3_types.ReportR\x0ecurrentReports\x1a[\n" +
 	"\rOutcomesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
-	"\x05value\x18\x02 \x01(\v2\x1e.ocr3_types.AggregationOutcomeR\x05value:\x028\x01B#Z!capabilities/consensus/ocr3/typesb\x06proto3"
+	"\x05value\x18\x02 \x01(\v2\x1e.ocr3_types.AggregationOutcomeR\x05value:\x028\x01\"\xc9\x01\n" +
+	"\x12BlobbedObservation\x12\x1f\n" +
+	"\vblob_handle\x18\x01 \x01(\fR\n" +
+	"blobHandle\x12 \n" +
+	"\x03ids\x18\x02 \x03(\v2\x0e.ocr3_types.IdR\x03ids\x128\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x126\n" +
+	"\x17registered_workflow_ids\x18\x04 \x03(\tR\x15registeredWorkflowIds\"e\n" +
+	"\x0fOutcomeEnvelope\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\rR\aversion\x128\n" +
+	"\aoutcome\x18\x02 \x01(\v2\x1e.ocr3_types.AggregationOutcomeR\aoutcomeB#Z!capabilities/consensus/ocr3/typesb\x06proto3"
 
 var (
 	file_ocr3_types_proto_rawDescOnce sync.Once
@@ -613,7 +762,7 @@ func file_ocr3_types_proto_rawDescGZIP() []byte {
 	return file_ocr3_types_proto_rawDescData
 }
 
-var file_ocr3_types_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_ocr3_types_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_ocr3_types_proto_goTypes = []any{
 	(*AggregationOutcome)(nil),    // 0: ocr3_types.AggregationOutcome
 	(*Query)(nil),                 // 1: ocr3_types.Query
@@ -623,32 +772,37 @@ var file_ocr3_types_proto_goTypes = []any{
 	(*Report)(nil),                // 5: ocr3_types.Report
 	(*ReportInfo)(nil),            // 6: ocr3_types.ReportInfo
 	(*Outcome)(nil),               // 7: ocr3_types.Outcome
-	nil,                           // 8: ocr3_types.Outcome.OutcomesEntry
-	(*pb.Map)(nil),                // 9: values.v1.Map
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*pb.List)(nil),               // 11: values.v1.List
+	(*BlobbedObservation)(nil),    // 8: ocr3_types.BlobbedObservation
+	(*OutcomeEnvelope)(nil),       // 9: ocr3_types.OutcomeEnvelope
+	nil,                           // 10: ocr3_types.Outcome.OutcomesEntry
+	(*pb.Map)(nil),                // 11: values.v1.Map
+	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(*pb.List)(nil),               // 13: values.v1.List
 }
 var file_ocr3_types_proto_depIdxs = []int32{
-	9,  // 0: ocr3_types.AggregationOutcome.encodableOutcome:type_name -> values.v1.Map
-	10, // 1: ocr3_types.AggregationOutcome.timestamp:type_name -> google.protobuf.Timestamp
-	9,  // 2: ocr3_types.AggregationOutcome.encoderConfig:type_name -> values.v1.Map
+	11, // 0: ocr3_types.AggregationOutcome.encodableOutcome:type_name -> values.v1.Map
+	12, // 1: ocr3_types.AggregationOutcome.timestamp:type_name -> google.protobuf.Timestamp
+	11, // 2: ocr3_types.AggregationOutcome.encoderConfig:type_name -> values.v1.Map
 	2,  // 3: ocr3_types.Query.ids:type_name -> ocr3_types.Id
 	2,  // 4: ocr3_types.Observation.id:type_name -> ocr3_types.Id
-	11, // 5: ocr3_types.Observation.observations:type_name -> values.v1.List
-	9,  // 6: ocr3_types.Observation.overriddenEncoderConfig:type_name -> values.v1.Map
+	13, // 5: ocr3_types.Observation.observations:type_name -> values.v1.List
+	11, // 6: ocr3_types.Observation.overriddenEncoderConfig:type_name -> values.v1.Map
 	3,  // 7: ocr3_types.Observations.observations:type_name -> ocr3_types.Observation
-	10, // 8: ocr3_types.Observations.timestamp:type_name -> google.protobuf.Timestamp
+	12, // 8: ocr3_types.Observations.timestamp:type_name -> google.protobuf.Timestamp
 	2,  // 9: ocr3_types.Report.id:type_name -> ocr3_types.Id
 	0,  // 10: ocr3_types.Report.outcome:type_name -> ocr3_types.AggregationOutcome
 	2,  // 11: ocr3_types.ReportInfo.id:type_name -> ocr3_types.Id
-	8,  // 12: ocr3_types.Outcome.outcomes:type_name -> ocr3_types.Outcome.OutcomesEntry
+	10, // 12: ocr3_types.Outcome.outcomes:type_name -> ocr3_types.Outcome.OutcomesEntry
 	5,  // 13: ocr3_types.Outcome.current_reports:type_name -> ocr3_types.Report
-	0,  // 14: ocr3_types.Outcome.OutcomesEntry.value:type_name -> ocr3_types.AggregationOutcome
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	2,  // 14: ocr3_types.BlobbedObservation.ids:type_name -> ocr3_types.Id
+	12, // 15: ocr3_types.BlobbedObservation.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 16: ocr3_types.OutcomeEnvelope.outcome:type_name -> ocr3_types.AggregationOutcome
+	0,  // 17: ocr3_types.Outcome.OutcomesEntry.value:type_name -> ocr3_types.AggregationOutcome
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_ocr3_types_proto_init() }
@@ -662,7 +816,7 @@ func file_ocr3_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ocr3_types_proto_rawDesc), len(file_ocr3_types_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

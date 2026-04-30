@@ -423,6 +423,11 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		work.event = eventPb
 	}
 	select {
+	case <-d.stopCh:
+		return fmt.Errorf("durable emitter closed")
+	default:
+	}
+	select {
 	case d.publishCh <- work:
 	default:
 		// Channel full — event is safely in the DB; retransmit loop will deliver it.
@@ -434,14 +439,15 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 }
 
 // Close signals background loops to stop and waits for them to finish.
-// Insert and publish channels are closed so workers can drain.
+// stopCh is closed first so workers exit before publishCh is closed after wg.Wait,
+// avoiding send vs close races on publishCh.
 func (d *DurableEmitter) Close() error {
 	close(d.stopCh)
 	if d.insertCh != nil {
 		close(d.insertCh)
 	}
-	close(d.publishCh)
 	d.wg.Wait()
+	close(d.publishCh)
 	d.markWg.Wait()
 	return nil
 }
@@ -569,6 +575,9 @@ func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
 		case <-ctx.Done():
 			d.drainPublishCh(batch)
 			return
+		case <-d.stopCh:
+			d.drainPublishChOnShutdown(batch)
+			return
 		}
 
 		// Stage 2: linger — keep reading until batch is full or deadline.
@@ -591,12 +600,46 @@ func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
 				linger.Stop()
 				d.drainPublishCh(batch)
 				return
+			case <-d.stopCh:
+				linger.Stop()
+				d.drainPublishChOnShutdown(batch)
+				return
 			}
 		}
 		linger.Stop()
 
 		d.flushBatch(batch)
 		batch = batch[:0]
+	}
+}
+
+// drainPublishChOnShutdown empties publishCh after stopCh has fired but before
+// Close closes publishCh; finishes any in-flight batches.
+func (d *DurableEmitter) drainPublishChOnShutdown(batch []publishWork) {
+	bs := d.cfg.PublishBatchSize
+	if bs < 1 {
+		bs = 1
+	}
+	for {
+		select {
+		case w, ok := <-d.publishCh:
+			if !ok {
+				if len(batch) > 0 {
+					d.flushBatch(batch)
+				}
+				return
+			}
+			batch = append(batch, w)
+			if len(batch) >= bs {
+				d.flushBatch(batch)
+				batch = batch[:0]
+			}
+		default:
+			if len(batch) > 0 {
+				d.flushBatch(batch)
+			}
+			return
+		}
 	}
 }
 
@@ -786,8 +829,6 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		work := publishWork{id: pe.ID, payload: pe.Payload}
 
 		select {
-		case <-d.stopCh:
-			return
 		case d.publishCh <- work:
 			enqueued++
 		default:

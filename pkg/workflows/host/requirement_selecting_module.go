@@ -77,12 +77,12 @@ func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.E
 	}
 
 	for i, sub := range result.GetTriggerSubscriptions().GetSubscriptions() {
-		if sub.Requirements == nil || CheckRequirements(r.main.RequirementsHandler, sub.Requirements) {
+		if sub.Requirements == nil || CheckRequirements(ctx, r.main.RequirementsHandler, sub.Requirements) {
 			continue
 		}
 		matched := false
 		for j, m := range r.additional {
-			if CheckRequirements(m.RequirementsHandler, sub.Requirements) {
+			if CheckRequirements(ctx, m.RequirementsHandler, sub.Requirements) {
 				m.ensureStarted()
 				r.cache.Store(uint64(i), j)
 				matched = true

@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,16 +10,20 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
+func regionsFn(regions map[string]bool) func(context.Context) map[string]bool {
+	return func(context.Context) map[string]bool { return regions }
+}
+
 func TestNewTeeProvider(t *testing.T) {
 	t.Parallel()
 	t.Run("matches any", func(t *testing.T) {
-		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regions: map[string]bool{"us-west-2": true}}
+		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regionsFn: regionsFn(map[string]bool{"us-west-2": true})}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_Any{Any: &emptypb.Empty{}}}
-		assert.True(t, p.Provides(tee))
+		assert.True(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("matches type selection with no region constraint", func(t *testing.T) {
-		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regions: map[string]bool{"us-west-2": true}}
+		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regionsFn: regionsFn(map[string]bool{"us-west-2": true})}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
 				Types: []*sdkpb.TeeTypeAndRegions{
@@ -27,7 +32,7 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.True(t, p.Provides(tee))
+		assert.True(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("does not match different types", func(t *testing.T) {
@@ -39,11 +44,11 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.False(t, p.Provides(tee))
+		assert.False(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("matches type and region", func(t *testing.T) {
-		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regions: map[string]bool{"us-west-2": true}}
+		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regionsFn: regionsFn(map[string]bool{"us-west-2": true})}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
 				Types: []*sdkpb.TeeTypeAndRegions{
@@ -51,11 +56,11 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.True(t, p.Provides(tee))
+		assert.True(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("matches type but not region", func(t *testing.T) {
-		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regions: map[string]bool{"us-west-2": true}}
+		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regionsFn: regionsFn(map[string]bool{"us-west-2": true})}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
 				Types: []*sdkpb.TeeTypeAndRegions{
@@ -63,11 +68,11 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.False(t, p.Provides(tee))
+		assert.False(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("matches one of multiple requested regions", func(t *testing.T) {
-		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regions: map[string]bool{"eu-west-1": true}}
+		p := teeProvider{TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, regionsFn: regionsFn(map[string]bool{"eu-west-1": true})}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
 				Types: []*sdkpb.TeeTypeAndRegions{
@@ -75,13 +80,13 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.True(t, p.Provides(tee))
+		assert.True(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("provider has multiple regions and one matches", func(t *testing.T) {
 		p := teeProvider{
-			TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO,
-			regions: map[string]bool{"us-west-2": true, "us-east-1": true},
+			TeeType:   sdkpb.TeeType_TEE_TYPE_AWS_NITRO,
+			regionsFn: regionsFn(map[string]bool{"us-west-2": true, "us-east-1": true}),
 		}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
@@ -90,13 +95,13 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.True(t, p.Provides(tee))
+		assert.True(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("no matching region across multiple provider regions", func(t *testing.T) {
 		p := teeProvider{
-			TeeType: sdkpb.TeeType_TEE_TYPE_AWS_NITRO,
-			regions: map[string]bool{"us-west-2": true, "us-east-1": true},
+			TeeType:   sdkpb.TeeType_TEE_TYPE_AWS_NITRO,
+			regionsFn: regionsFn(map[string]bool{"us-west-2": true, "us-east-1": true}),
 		}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
@@ -105,11 +110,11 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.False(t, p.Provides(tee))
+		assert.False(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("type mismatch ignores region match", func(t *testing.T) {
-		p := teeProvider{TeeType: sdkpb.TeeType(99), regions: map[string]bool{"us-west-2": true}}
+		p := teeProvider{TeeType: sdkpb.TeeType(99), regionsFn: regionsFn(map[string]bool{"us-west-2": true})}
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
 				Types: []*sdkpb.TeeTypeAndRegions{
@@ -117,17 +122,17 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.False(t, p.Provides(tee))
+		assert.False(t, p.Provides(context.Background(), tee))
 	})
 
 	t.Run("matches any tee", func(t *testing.T) {
-		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, []string{"us-west-2"})
+		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, func(context.Context) []string { return []string{"us-west-2"} })
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_Any{Any: &emptypb.Empty{}}}
-		assert.True(t, provides(tee))
+		assert.True(t, provides(context.Background(), tee))
 	})
 
 	t.Run("returns a function that checks regions", func(t *testing.T) {
-		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, []string{"us-west-2"})
+		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, func(context.Context) []string { return []string{"us-west-2"} })
 		tee := &sdkpb.Tee{Type: &sdkpb.Tee_TypeSelection{
 			TypeSelection: &sdkpb.TeeTypeSelection{
 				Types: []*sdkpb.TeeTypeAndRegions{
@@ -135,6 +140,6 @@ func TestNewTeeProvider(t *testing.T) {
 				},
 			},
 		}}
-		assert.False(t, provides(tee))
+		assert.False(t, provides(context.Background(), tee))
 	})
 }

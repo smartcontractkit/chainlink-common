@@ -1,21 +1,34 @@
 package host
 
-import sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+import (
+	"context"
+	"sync"
+
+	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+)
 
 type teeProvider struct {
 	sdkpb.TeeType
-	regions map[string]bool
+	regionsFn func(ctx context.Context) map[string]bool
+	once      sync.Once
 }
 
-func NewTeeProvider(tpe sdkpb.TeeType, regions []string) func(tee *sdkpb.Tee) bool {
-	supportedRegions := map[string]bool{}
-	for _, region := range regions {
-		supportedRegions[region] = true
+func NewTeeProvider(tpe sdkpb.TeeType, regionsFn func(ctx context.Context) []string) func(context.Context, *sdkpb.Tee) bool {
+	p := &teeProvider{
+		TeeType: tpe,
+		regionsFn: func(ctx context.Context) map[string]bool {
+			regions := regionsFn(ctx)
+			rMap := make(map[string]bool, len(regions))
+			for _, region := range regions {
+				rMap[region] = true
+			}
+			return rMap
+		},
 	}
-	return (&teeProvider{TeeType: tpe, regions: supportedRegions}).Provides
+	return p.Provides
 }
 
-func (t *teeProvider) Provides(tee *sdkpb.Tee) bool {
+func (t *teeProvider) Provides(ctx context.Context, tee *sdkpb.Tee) bool {
 	switch teet := tee.Type.(type) {
 	case *sdkpb.Tee_Any:
 		return true
@@ -26,8 +39,9 @@ func (t *teeProvider) Provides(tee *sdkpb.Tee) bool {
 					return true
 				}
 
+				regions := t.regionsFn(ctx)
 				for _, region := range selection.Regions {
-					if t.regions[region] {
+					if regions[region] {
 						return true
 					}
 				}

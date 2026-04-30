@@ -106,14 +106,14 @@ func TestRequirementSelectingModule_Close(t *testing.T) {
 				startFn: noop,
 				closeFn: func() { add0Closed = true },
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 		add1 := ModuleAndHandler{
 			Module: &stubModule{
 				startFn: noop,
 				closeFn: func() { add1Closed = true },
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return false }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add0, add1})
@@ -172,7 +172,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return nil, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -200,7 +200,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return want, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -225,7 +225,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		}}
 		add := ModuleAndHandler{
 			Module:              &stubModule{startFn: noop},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return false }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -248,7 +248,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		}}
 		add0 := ModuleAndHandler{
 			Module:              &stubModule{startFn: noop},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return false }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
 		}
 		add1 := ModuleAndHandler{
 			Module: &stubModule{
@@ -258,7 +258,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return want, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add0, add1})
@@ -287,7 +287,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 				startFn: func() { atomic.AddInt32(&addStartCount, 1) },
 				closeFn: noopClose,
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -338,7 +338,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return subscribeResult(subWithReqs(teeReqs)), nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 		add := ModuleAndHandler{
 			Module: &stubModule{
@@ -348,7 +348,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return nil, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -386,7 +386,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -427,7 +427,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -469,7 +469,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 					return wantAdditional, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})

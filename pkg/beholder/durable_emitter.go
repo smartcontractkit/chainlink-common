@@ -704,7 +704,6 @@ func (d *DurableEmitter) publishAndDelete(id int64, eventPb *chipingress.CloudEv
 		"publish_rpc_elapsed", elapsed.String(),
 		"publish_rpc_elapsed_ms", elapsed.Milliseconds(),
 	)
-	//d.log.Infow("DurableEmitter: Chip Ingress publish succeeded (immediate)", pubOKKVs...)
 
 	t1 := time.Now()
 	markErr := d.store.MarkDelivered(context.Background(), id)

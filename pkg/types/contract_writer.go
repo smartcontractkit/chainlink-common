@@ -42,6 +42,10 @@ type TxMeta struct {
 	// setting a gas limit for the transaction.  If it is set and the ContractWriter implementation does not support setting
 	// this value per transaction it will return ErrSettingTransactionGasLimitNotSupported
 	GasLimit *big.Int
+	// An optional gas unit price for the transaction. If not set the ContractWriter implementation will be responsible for
+	// determining the gas price (e.g. via simulation, fee estimator, or node-level config). When set, the implementation
+	// should honor the caller-provided value instead of overriding it with its own estimate.
+	GasPrice *big.Int
 }
 
 // TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.

@@ -2,7 +2,6 @@ package beholder
 
 import (
 	"context"
-	"runtime"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -150,8 +149,6 @@ type DurableEmitterMetricsConfig struct {
 	NearExpiryLead time.Duration
 	// MaxQueuePayloadBytes, if > 0, records capacity_usage_ratio = queue_payload_bytes / max.
 	MaxQueuePayloadBytes int64
-	// RecordProcessStats records Go heap gauges and, on Unix, cumulative CPU seconds (getrusage).
-	RecordProcessStats bool
 }
 
 type durableEmitterMetrics struct {
@@ -326,16 +323,6 @@ func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs Durable
 	if maxBytes > 0 {
 		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
 	}
-}
-
-func (m *durableEmitterMetrics) recordProcessMem(ctx context.Context) {
-	if m == nil {
-		return
-	}
-	var ms runtime.MemStats
-	runtime.ReadMemStats(&ms)
-	m.procHeapInuse.Record(ctx, int64(ms.HeapInuse))
-	m.procHeapSys.Record(ctx, int64(ms.HeapSys))
 }
 
 func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase string, err error) {

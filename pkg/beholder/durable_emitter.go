@@ -900,10 +900,6 @@ func (d *DurableEmitter) metricsLoop(ctx context.Context) {
 			if obs, ok := d.store.(DurableQueueObserver); ok {
 				d.metrics.pollQueueGauges(bctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}
-			if mc.RecordProcessStats {
-				d.metrics.recordProcessMem(bctx)
-				d.metrics.recordProcessCPU(bctx)
-			}
 		}
 	}
 }

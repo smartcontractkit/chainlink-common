@@ -115,14 +115,14 @@ func newTestDurableEmitter(t *testing.T, store DurableEventStore, client chiping
 	return em
 }
 
-func TestDurableEmitter_HooksImmediatePath(t *testing.T) {
+func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
-	var pubCalls, delCalls atomic.Int32
+	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultDurableEmitterConfig()
 	cfg.Hooks = &DurableEmitterHooks{
-		OnImmediatePublish: func(time.Duration, error) { pubCalls.Add(1) },
-		OnImmediateDelete:  func(time.Duration, error) { delCalls.Add(1) },
+		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, client, cfg, logger.Test(t))
 	require.NoError(t, err)
@@ -135,18 +135,18 @@ func TestDurableEmitter_HooksImmediatePath(t *testing.T) {
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
 	assert.Equal(t, int32(1), pubCalls.Load())
-	assert.Equal(t, int32(1), delCalls.Load())
+	require.Eventually(t, func() bool { return markCalls.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
 }
 
-func TestDurableEmitter_HooksPublishFailureSkipsDeleteHook(t *testing.T) {
+func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 	client.setPublishErr(errors.New("down"))
-	var pubCalls, delCalls atomic.Int32
+	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultDurableEmitterConfig()
 	cfg.Hooks = &DurableEmitterHooks{
-		OnImmediatePublish: func(time.Duration, error) { pubCalls.Add(1) },
-		OnImmediateDelete:  func(time.Duration, error) { delCalls.Add(1) },
+		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, client, cfg, logger.Test(t))
 	require.NoError(t, err)
@@ -158,7 +158,7 @@ func TestDurableEmitter_HooksPublishFailureSkipsDeleteHook(t *testing.T) {
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return pubCalls.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
-	assert.Equal(t, int32(0), delCalls.Load())
+	assert.Equal(t, int32(0), markCalls.Load())
 }
 
 func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
@@ -174,9 +174,9 @@ func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err)
 
-	// Immediate async publish should fire and delete the record.
+	// Batch publish should fire (PublishBatch with batch size 1) and delete the record.
 	require.Eventually(t, func() bool {
-		return client.publishCount.Load() == 1
+		return client.batchCount.Load() == 1
 	}, 2*time.Second, 10*time.Millisecond)
 
 	require.Eventually(t, func() bool {
@@ -199,9 +199,9 @@ func TestDurableEmitter_EmitReturnSuccessEvenWhenPublishFails(t *testing.T) {
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err, "Emit must succeed once the DB insert succeeds")
 
-	// Wait for the async publish attempt to complete.
+	// Wait for the async PublishBatch attempt to complete.
 	require.Eventually(t, func() bool {
-		return client.publishCount.Load() == 1
+		return client.batchCount.Load() == 1
 	}, 2*time.Second, 10*time.Millisecond)
 
 	// Event must remain in the store for retransmit.
@@ -214,7 +214,6 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	client.setPublishErr(errors.New("connection refused"))
 
 	cfg := DefaultDurableEmitterConfig()
-	cfg.PublishBatchSize = 0 // this test keys off unary Publish; batch mode uses PublishBatch
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
@@ -231,8 +230,8 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	// Wait until the async immediate path has run with the error and the row
 	// is still pending (not a success race after we clear the error).
 	require.Eventually(t, func() bool {
-		return client.publishCount.Load() >= 1 && store.Len() == 1
-	}, 2*time.Second, 5*time.Millisecond, "failed immediate publish should leave the row")
+		return client.batchCount.Load() >= 1 && store.Len() == 1
+	}, 2*time.Second, 5*time.Millisecond, "failed PublishBatch should leave the row")
 
 	client.setPublishErr(nil)
 
@@ -240,9 +239,8 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond, "retransmit loop should eventually deliver and delete the event")
 
-	// At least: one failed immediate publish + one successful delivery (retransmit
-	// may be unary Publish or PublishBatch when batching is enabled).
-	assert.GreaterOrEqual(t, client.totalChipRPCs(), int64(2))
+	// At least: one failed PublishBatch + one successful delivery (retransmit uses PublishBatch too).
+	assert.GreaterOrEqual(t, client.batchCount.Load(), int64(2))
 }
 
 func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
@@ -251,7 +249,6 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	client.setPublishErr(errors.New("immediate fail"))
 
 	cfg := DefaultDurableEmitterConfig()
-	cfg.PublishBatchSize = 0 // unary immediate Publish; serial retransmit
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
@@ -266,8 +263,8 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	require.NoError(t, em.Emit(ctx, []byte("second"), testEmitAttrs()...))
 
 	require.Eventually(t, func() bool {
-		return client.publishCount.Load() >= 2 && store.Len() == 2
-	}, 2*time.Second, 5*time.Millisecond, "both failed immediate publishes should leave two rows")
+		return client.batchCount.Load() >= 2 && store.Len() == 2
+	}, 2*time.Second, 5*time.Millisecond, "both failed PublishBatch calls should leave two rows")
 
 	client.setPublishErr(nil)
 
@@ -275,7 +272,7 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 
 	ids := client.getPublishedIDs()
 	require.GreaterOrEqual(t, len(ids), 4, "two failed attempts then two successful deliveries (IDs recorded)")
-	require.GreaterOrEqual(t, client.totalChipRPCs(), int64(4))
+	require.GreaterOrEqual(t, client.batchCount.Load(), int64(4))
 	a, b := ids[len(ids)-2], ids[len(ids)-1]
 	assert.NotEmpty(t, a)
 	assert.NotEmpty(t, b)
@@ -308,57 +305,7 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 	}, 5*time.Second, 50*time.Millisecond, "expiry loop should purge the event")
 }
 
-func TestDurableEmitter_PersistSourceFilter_skipsStoreBestEffortPublish(t *testing.T) {
-	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	cfg := DefaultDurableEmitterConfig()
-	cfg.PersistCloudEventSources = []string{"only-this"}
-	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
-
-	require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
-	require.Eventually(t, func() bool { return client.publishCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
-	assert.Equal(t, 0, store.Len())
-}
-
-func TestDurableEmitter_PersistSourceFilter_persistsAllowedSource(t *testing.T) {
-	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	cfg := DefaultDurableEmitterConfig()
-	cfg.PersistCloudEventSources = []string{"test-source"}
-	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
-
-	require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
-	require.Eventually(t, func() bool { return client.publishCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
-	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
-}
-
-func TestDurableEmitter_PersistSourceWildcardStarAllowsAll(t *testing.T) {
-	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	cfg := DefaultDurableEmitterConfig()
-	cfg.PersistCloudEventSources = []string{"*"}
-	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
-
-	require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
-	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
-}
-
-func TestDurableEmitter_RetransmitDropsDisallowedSource(t *testing.T) {
+func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 
@@ -373,7 +320,6 @@ func TestDurableEmitter_RetransmitDropsDisallowedSource(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := DefaultDurableEmitterConfig()
-	cfg.PersistCloudEventSources = []string{"test-source"}
 	cfg.RetransmitInterval = 50 * time.Millisecond
 	cfg.RetransmitAfter = 30 * time.Millisecond
 
@@ -385,8 +331,8 @@ func TestDurableEmitter_RetransmitDropsDisallowedSource(t *testing.T) {
 	defer em.Close()
 
 	require.Eventually(t, func() bool {
-		return store.Len() == 0 && client.publishCount.Load() == 0
-	}, 3*time.Second, 20*time.Millisecond, "disallowed row should be deleted without Publish")
+		return store.Len() == 0 && client.batchCount.Load() >= 1
+	}, 3*time.Second, 20*time.Millisecond, "pending row should be delivered via PublishBatch")
 }
 
 func TestDurableEmitter_EmitRejectsInvalidAttributes(t *testing.T) {
@@ -416,7 +362,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	}
 
 	require.Eventually(t, func() bool {
-		return client.publishCount.Load() == int64(n)
+		return client.batchCount.Load() == int64(n)
 	}, 5*time.Second, 10*time.Millisecond)
 
 	require.Eventually(t, func() bool {
@@ -575,14 +521,14 @@ func emitAttrs() []any {
 
 func fastCfg() DurableEmitterConfig {
 	return DurableEmitterConfig{
-		// Retransmit must use unary Publish (not batch enqueue) in these tests.
-		PublishBatchSize:    0,
-		RetransmitInterval:  100 * time.Millisecond,
-		RetransmitAfter:     50 * time.Millisecond,
-		RetransmitBatchSize: 50,
-		ExpiryInterval:      200 * time.Millisecond,
-		EventTTL:            500 * time.Millisecond,
-		PublishTimeout:      2 * time.Second,
+		PublishBatchSize:          1,
+		PublishBatchFlushInterval: 10 * time.Millisecond,
+		RetransmitInterval:        100 * time.Millisecond,
+		RetransmitAfter:           50 * time.Millisecond,
+		RetransmitBatchSize:       50,
+		ExpiryInterval:            200 * time.Millisecond,
+		EventTTL:                  500 * time.Millisecond,
+		PublishTimeout:            2 * time.Second,
 	}
 }
 
@@ -615,9 +561,9 @@ func TestIntegration_HappyPath(t *testing.T) {
 }
 
 func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
-	// Start with server returning UNAVAILABLE.
+	// Start with server returning UNAVAILABLE on PublishBatch.
 	srv := &mockChipServer{}
-	srv.setPublishErr(status.Error(codes.Unavailable, "chip down"))
+	srv.setBatchErr(status.Error(codes.Unavailable, "chip down"))
 	_, addr := startMockServer(t, srv)
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
@@ -633,19 +579,19 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 	require.NoError(t, em.Emit(ctx, []byte("will-retry"), emitAttrs()...))
 
 	require.Eventually(t, func() bool {
-		return srv.publishCount.Load() >= 1 && store.Len() == 1
-	}, 2*time.Second, 10*time.Millisecond, "failed immediate Publish should leave the row pending")
+		return srv.batchCount.Load() >= 1 && store.Len() == 1
+	}, 2*time.Second, 10*time.Millisecond, "failed PublishBatch should leave the row pending")
 
 	// "Recover" the server.
-	srv.setPublishErr(nil)
+	srv.setBatchErr(nil)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond, "retransmit loop should deliver after recovery")
 
-	assert.GreaterOrEqual(t, srv.publishCount.Load(), int64(2),
-		"one failed immediate Publish then one retransmit Publish")
-	assert.Equal(t, int64(0), srv.batchCount.Load(), "retransmit should not use PublishBatch")
+	assert.GreaterOrEqual(t, srv.batchCount.Load(), int64(2),
+		"one failed PublishBatch then at least one successful PublishBatch (retransmit)")
+	assert.Equal(t, int64(0), srv.publishCount.Load(), "unary Publish should not be used for durable path")
 }
 
 func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
@@ -737,7 +683,7 @@ func TestIntegration_HighThroughput(t *testing.T) {
 func TestIntegration_EventExpiry(t *testing.T) {
 	// Server always rejects — events can never be delivered.
 	srv := &mockChipServer{}
-	srv.setPublishErr(status.Error(codes.Internal, "permanent failure"))
+	srv.setBatchErr(status.Error(codes.Internal, "permanent failure"))
 	_, addr := startMockServer(t, srv)
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
@@ -762,10 +708,10 @@ func TestIntegration_EventExpiry(t *testing.T) {
 		"expiry loop should purge undeliverable events after TTL")
 }
 
-func TestIntegration_RetransmitUsesSerialPublish(t *testing.T) {
-	// Immediate Publish fails; retransmit uses one Publish per queued row.
+func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
+	// PublishBatch fails for each emit; retransmit recovers via PublishBatch.
 	srv := &mockChipServer{}
-	srv.setPublishErr(status.Error(codes.Unavailable, "reject immediate"))
+	srv.setBatchErr(status.Error(codes.Unavailable, "reject batch"))
 	_, addr := startMockServer(t, srv)
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
@@ -782,22 +728,22 @@ func TestIntegration_RetransmitUsesSerialPublish(t *testing.T) {
 		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
 	}
 
-	// All five async immediate publishes must observe the error before we clear
+	// All five async PublishBatch attempts must observe the error before we clear
 	// it, or they succeed immediately and the retransmit loop has nothing to do.
 	require.Eventually(t, func() bool {
-		return srv.publishCount.Load() >= 5 && store.Len() == 5
-	}, 3*time.Second, 10*time.Millisecond, "all five immediate Publish RPCs should have failed and left five rows")
+		return srv.batchCount.Load() >= 5 && store.Len() == 5
+	}, 3*time.Second, 10*time.Millisecond, "all five PublishBatch RPCs should have failed and left five rows")
 
-	srv.setPublishErr(nil)
+	srv.setBatchErr(nil)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond,
-		"retransmit should deliver each event with its own Publish RPC")
+		"retransmit should deliver via PublishBatch")
 
-	assert.Equal(t, 0, srv.batchCallCount(), "retransmit should not call PublishBatch")
-	assert.GreaterOrEqual(t, srv.publishCount.Load(), int64(10),
-		"five failed immediate attempts plus five retransmit publishes")
+	assert.GreaterOrEqual(t, srv.batchCount.Load(), int64(10),
+		"five failed PublishBatch plus five successful PublishBatch (retransmit)")
+	assert.Equal(t, int64(0), srv.publishCount.Load(), "no unary Publish on durable path")
 }
 
 // TestIntegration_GRPCConnection verifies the emitter works over a real gRPC

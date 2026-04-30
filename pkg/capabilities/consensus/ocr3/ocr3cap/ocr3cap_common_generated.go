@@ -11,6 +11,7 @@ import (
 
 type Encoder string
 
+const EncoderBorsh Encoder = "Borsh"
 
 type EncoderConfig map[string]interface{}
 
@@ -19,6 +20,7 @@ const EncoderValueMap Encoder = "ValueMap"
 
 var enumValues_Encoder = []interface{}{
 	"EVM",
+	"Borsh",
 	"ValueMap",
 }
 

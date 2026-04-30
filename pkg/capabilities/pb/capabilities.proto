@@ -10,6 +10,10 @@ import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+import "capabilities/blockchain/evm/v1alpha/client.proto";
+import "capabilities/blockchain/solana/v1alpha/client.proto";
+import "capabilities/actions/vault/messages.proto";
+
 service BaseCapability {
   rpc Info (google.protobuf.Empty) returns (CapabilityInfoReply) {}
 }
@@ -58,42 +62,48 @@ message RequestMetadata {
 
 message CapabilityRequest {
   RequestMetadata metadata = 1;
-  // Used for DAG SDK
   values.v1.Map config = 2;
-  // Used for DAG SDK
   values.v1.Map inputs = 3;
 
-  // Used for no DAG SDK
   google.protobuf.Any payload = 4;
-  // Used for no DAG SDK
   google.protobuf.Any configPayload = 5;
-  // Used for no DAG SDK
   string method = 6;
   string capabilityId = 7;
+
+  oneof typed_payload {
+    capabilities.blockchain.evm.v1alpha.WriteReportRequest evm_write_report_request = 8;
+    capabilities.blockchain.solana.v1alpha.WriteReportRequest solana_write_report_request = 10;
+    vault.GetSecretsRequest vault_get_secrets_request = 11;
+  }
 }
 
 message TriggerRegistrationRequest {
   string triggerId = 1;
   RequestMetadata metadata = 2;
-  // Used for DAG SDK
   values.v1.Map config = 3;
 
-  // Used for no DAG SDK
   google.protobuf.Any payload = 4;
-  // Used for no DAG SDK
   string method = 5;
+
+  oneof typed_payload {
+    capabilities.blockchain.evm.v1alpha.WriteReportRequest evm_write_report_request = 6;
+    capabilities.blockchain.solana.v1alpha.WriteReportRequest solana_write_report_request = 7;
+  }
 }
 
 message TriggerEvent {
-  reserved 5; // Previously used for v1.OCRTriggerEvent
+  reserved 5;
   string triggerType = 1;
   string id = 2;
 
-  // Used for DAG SDK
   values.v1.Map outputs = 4;
 
-  // used for no DAG SDK
   google.protobuf.Any payload = 6;
+
+  oneof typed_payload {
+    capabilities.blockchain.evm.v1alpha.WriteReportRequest evm_write_report_request = 7;
+    capabilities.blockchain.solana.v1alpha.WriteReportRequest solana_write_report_request = 8;
+  }
 }
 
 message TriggerResponse {
@@ -109,7 +119,7 @@ message TriggerResponseMessage {
 }
 
 message AckEventRequest {
-  string trigger_id = 1; // triggerID is unique per workflow as it contains the workflowID
+  string trigger_id = 1;
   string event_id = 2;
   string method = 3;
 }
@@ -122,27 +132,21 @@ service TriggerExecutable {
 }
 
 message CapabilityResponse {
-  // Used for DAG SDK
   values.v1.Map value = 1;
   string error = 2;
   ResponseMetadata metadata = 3;
-  // Used for no DAG SDK
   google.protobuf.Any payload = 4;
   optional OCRAttestation ocr_attestation = 5;
+
+  oneof typed_payload {
+    capabilities.blockchain.evm.v1alpha.WriteReportRequest evm_write_report_request = 6;
+    capabilities.blockchain.solana.v1alpha.WriteReportRequest solana_write_report_request = 7;
+    vault.GetSecretsResponse vault_get_secrets_response = 8;
+  }
 }
 
 message ResponseMetadata {
-  // MeteringReportNodeDetail is repeated here due to
-  // the identical response aggregation strategy at the Don2Don layer.
-  // We expect identical responses from capabilities, but not identical
-  // metering reports. Since we pass the CapabilityResponse through the
-  // protocol layer to the engine, this field needs to be repeated to
-  // eventually hold all the reports from each capability response node.
-  //
-  // If you are working with this in a capability, you should not emit
-  // more than one metering report per node.
   repeated metering.MeteringReportNodeDetail metering = 1;
-  // capdon_n represents the total number of nodes in a capability don.
   uint32 capdon_n = 2;
 }
 
@@ -209,6 +213,6 @@ service Settings {
 }
 
 message SettingsUpdate {
-  string settings = 1; // default format TOML
-  string hash = 2; // default sha256
+  string settings = 1;
+  string hash = 2;
 }

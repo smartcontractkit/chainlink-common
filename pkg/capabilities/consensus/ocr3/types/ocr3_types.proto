@@ -6,6 +6,7 @@ package ocr3_types;
 
 import "values/v1/values.proto";
 import "google/protobuf/timestamp.proto";
+import "capabilities/consensus/ocr3/datafeeds/data_feeds_types.proto";
 
 // per-workflow aggregation outcome
 message AggregationOutcome {
@@ -16,6 +17,11 @@ message AggregationOutcome {
   google.protobuf.Timestamp timestamp = 5; // current time of the node
   string encoderName = 6; // optional dynamic encoder override
   values.v1.Map encoderConfig = 7; // optional dynamic encoder config
+  oneof typed_metadata {
+    datafeeds_types.DataFeedsOutcomeMetadata data_feeds_metadata = 8;
+    datafeeds_types.LLOOutcomeMetadata llo_metadata = 9;
+    values.v1.Map reduce_metadata = 10;
+  }
 }
 
 message Query {
@@ -37,18 +43,14 @@ message Id {
 
 message Observation {
   Id id = 1;
-  // list of observations defined in inputs.observations
   values.v1.List observations = 4;
   string overriddenEncoderName = 5;
   values.v1.Map overriddenEncoderConfig = 6;
 }
 
 message Observations {
-  // batched observations for multiple workflow execution IDs
   repeated Observation observations = 1;
-  // the workflow IDs that are registered in the node
   repeated string registeredWorkflowIds = 2;
-  // the node's current current time
   google.protobuf.Timestamp timestamp = 3;
 }
 

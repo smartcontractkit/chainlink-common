@@ -132,7 +132,7 @@ type TriggerMock[O any] struct {
 var _ capabilities.TriggerCapability = &TriggerMock[any]{}
 
 func (t *TriggerMock[O]) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	result, err := t.mockBase.fn(struct{}{})
+	result, err := t.fn(struct{}{})
 
 	wrapped, wErr := values.CreateMapFromStruct(result)
 	if wErr != nil {
@@ -182,9 +182,9 @@ var _ capabilities.ExecutableCapability = &TargetMock[any]{}
 
 func (t *TargetMock[I]) GetAllWrites() TargetResults[I] {
 	targetResults := TargetResults[I]{}
-	for ref := range t.mockBase.inputs {
+	for ref := range t.inputs {
 		targetResults.NumRuns++
-		step := t.mockBase.GetStep(ref)
+		step := t.GetStep(ref)
 		targetResults.Inputs = append(targetResults.Inputs, step.Input)
 		if step.Error != nil {
 			targetResults.Errors = append(targetResults.Errors, step.Error)

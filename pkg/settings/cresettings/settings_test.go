@@ -71,6 +71,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:100",
 	"GatewayIncomingPayloadSizeLimit": "14kb",
     "GatewayVaultManagementEnabled": "true",
+	"GatewayConfidentialRelayGlobalRate": "20rps:7",
+	"GatewayConfidentialRelayPerNodeRate": "4rps:2",
 	"PerOrg": {
 		"ZeroBalancePruningTimeout": "48h"
 	},
@@ -115,13 +117,20 @@ func TestSchema_Unmarshal(t *testing.T) {
 		"ChainRead": {
 			"CallLimit": "3"
 		},
-		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC"
+		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC",
+		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2025-07-15 00:00:00 +0000 UTC,2025-08-15 00:00:00 +0000 UTC]",
+		"FeatureEVMWriteReportL1FeeActivePeriod": "[2025-09-15 00:00:00 +0000 UTC,2025-10-15 00:00:00 +0000 UTC]"
 	}
 }`), &cfg))
 
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
 	assert.Equal(t, true, cfg.GatewayVaultManagementEnabled.DefaultValue)
+	assert.Equal(t, false, cfg.VaultJWTAuthEnabled.DefaultValue)
+	assert.Equal(t, false, cfg.VaultOrgIdAsSecretOwnerEnabled.DefaultValue)
+	assert.Equal(t, false, cfg.VaultForceEmptyOCRRounds.DefaultValue)
+	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
+	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
 	assert.Equal(t, 99, cfg.PerOwner.WorkflowExecutionConcurrencyLimit.DefaultValue)
 	assert.Equal(t, 250*config.MByte, cfg.PerWorkflow.WASMMemoryLimit.DefaultValue)
@@ -139,6 +148,14 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 	assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2025, 7, 15, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2025, 8, 15, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2025, 10, 15, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod.DefaultValue)
 }
 
 func TestDefaultGetter(t *testing.T) {

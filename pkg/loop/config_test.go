@@ -1,7 +1,6 @@
 package loop
 
 import (
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -55,6 +54,13 @@ func TestEnvConfig_parse(t *testing.T) {
 				envMercuryVerboseLogging:                  "true",
 
 				envPromPort: "8080",
+
+				envPyroscopeAuthToken:                 "token",
+				envPyroscopeServerAddress:             "http://pyroscope:4040",
+				envPyroscopeEnvironment:               "pyroscope-env",
+				envPyroscopeLinkTracesToProfiles:      "true",
+				envPyroscopePPROFBlockProfileRate:     "42",
+				envPyroscopePPROFMutexProfileFraction: "99",
 
 				envTracingEnabled:           "true",
 				envTracingCollectorTarget:   "some:target",
@@ -161,6 +167,13 @@ var envCfgFull = EnvConfig{
 
 	PrometheusPort: 8080,
 
+	PyroscopeAuthToken:                 "token",
+	PyroscopeServerAddress:             "http://pyroscope:4040",
+	PyroscopeEnvironment:               "pyroscope-env",
+	PyroscopeLinkTracesToProfiles:      true,
+	PyroscopePPROFBlockProfileRate:     42,
+	PyroscopePPROFMutexProfileFraction: 99,
+
 	TracingEnabled:         true,
 	TracingAttributes:      map[string]string{"XYZ": "value"},
 	TracingCollectorTarget: "some:target",
@@ -214,6 +227,13 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 
 	assert.Equal(t, strconv.Itoa(8080), got[envPromPort])
 
+	assert.Equal(t, "token", got[envPyroscopeAuthToken])
+	assert.Equal(t, "http://pyroscope:4040", got[envPyroscopeServerAddress])
+	assert.Equal(t, "pyroscope-env", got[envPyroscopeEnvironment])
+	assert.Equal(t, "true", got[envPyroscopeLinkTracesToProfiles])
+	assert.Equal(t, "42", got[envPyroscopePPROFBlockProfileRate])
+	assert.Equal(t, "99", got[envPyroscopePPROFMutexProfileFraction])
+
 	assert.Equal(t, "true", got[envTracingEnabled])
 	assert.Equal(t, "some:target", got[envTracingCollectorTarget])
 	assert.Equal(t, "1", got[envTracingSamplingRatio])
@@ -245,15 +265,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 }
 
 func TestGetMap(t *testing.T) {
-	os.Setenv("TEST_PREFIX_KEY1", "value1")
-	os.Setenv("TEST_PREFIX_KEY2", "value2")
-	os.Setenv("OTHER_KEY", "othervalue")
-
-	defer func() {
-		os.Unsetenv("TEST_PREFIX_KEY1")
-		os.Unsetenv("TEST_PREFIX_KEY2")
-		os.Unsetenv("OTHER_KEY")
-	}()
+	t.Setenv("TEST_PREFIX_KEY1", "value1")
+	t.Setenv("TEST_PREFIX_KEY2", "value2")
+	t.Setenv("OTHER_KEY", "othervalue")
 
 	result := getMap("TEST_PREFIX_")
 
@@ -292,7 +306,7 @@ func TestManagedGRPCClientConfig(t *testing.T) {
 
 		assert.NotNil(t, clientConfig.Logger)
 		assert.Equal(t, []plugin.Protocol{plugin.ProtocolGRPC}, clientConfig.AllowedProtocols)
-		assert.Equal(t, brokerConfig.GRPCOpts.DialOpts, clientConfig.GRPCDialOptions)
+		assert.Equal(t, brokerConfig.DialOpts, clientConfig.GRPCDialOptions)
 		assert.True(t, clientConfig.Managed)
 	})
 }

@@ -52,13 +52,21 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                          Int(200),
-	WorkflowExecutionConcurrencyLimit:      Int(200),
+	WorkflowLimit:                          Int(1000),
+	WorkflowExecutionConcurrencyLimit:      Int(1000),
 	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:          Bool(true),
+	VaultJWTAuthEnabled:                    Bool(false),
+	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
+	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
+	BaseTriggerRetransmitEnabled:           Bool(false),
+	BaseTriggerRetryInterval:               Duration(30 * time.Second),
+
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
@@ -112,9 +120,11 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
-		ZeroBalancePruningTimeout: Duration(24 * time.Hour),
+		WorkflowExecutionConcurrencyLimit: Int(100),
+		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
 	},
 	PerOwner: Owners{
+		WorkflowLimit:                     Int(1000),
 		WorkflowExecutionConcurrencyLimit: Int(5),
 
 		// DANGER(cedric): Be extremely careful changing this vault limit as it acts as a default value
@@ -143,6 +153,11 @@ var Default = Schema{
 		WASMSecretsSizeLimit:          Size(config.MByte),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
+		UserMetricEnabled:             Bool(false),
+		UserMetricPayloadLimit:        Size(4 * config.KByte),
+		UserMetricNameLengthLimit:     Int(128),
+		UserMetricLabelsPerMetric:     Int(10),
+		UserMetricLabelValueLength:    Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
@@ -176,6 +191,15 @@ var Default = Schema{
 					// geth-devnet2
 					"12922642891491394802": 50_000_000,
 				}),
+				ReportSizeLimit: Size(5 * config.KByte),
+			},
+			Solana: solanaChainWrite{
+				ReportSizeLimit: Size(265 * config.Byte),
+				GasLimit:        PerChainSelector(Uint32(300_000), map[string]uint32{}),
+			},
+			Aptos: aptosChainWrite{
+				ReportSizeLimit: Size(5 * config.KByte),
+				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
 		},
 		ChainRead: chainRead{
@@ -208,17 +232,31 @@ var Default = Schema{
 		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
 type Schema struct {
-	WorkflowLimit                          Setting[int] `unit:"{workflow}"` // Deprecated
+	WorkflowLimit                          Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit      Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
 	GatewayVaultManagementEnabled          Setting[bool]
+	VaultJWTAuthEnabled                    Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
+	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
+
+	BaseTriggerRetransmitEnabled Setting[bool]
+	BaseTriggerRetryInterval     Setting[time.Duration]
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
@@ -244,10 +282,12 @@ type Schema struct {
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
-	ZeroBalancePruningTimeout Setting[time.Duration]
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	ZeroBalancePruningTimeout         Setting[time.Duration]
 }
 
 type Owners struct {
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 }
@@ -278,6 +318,12 @@ type Workflows struct {
 	LogLineLimit  Setting[config.Size]
 	LogEventLimit Setting[int] `unit:"{log}"`
 
+	UserMetricEnabled          Setting[bool]
+	UserMetricPayloadLimit     Setting[config.Size]
+	UserMetricNameLengthLimit  Setting[int] `unit:"{char}"`
+	UserMetricLabelsPerMetric  Setting[int] `unit:"{label}"`
+	UserMetricLabelValueLength Setting[int] `unit:"{char}"`
+
 	ChainAllowed SettingMap[bool]
 
 	CRONTrigger cronTrigger
@@ -291,8 +337,10 @@ type Workflows struct {
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 
-	FeatureMultiTriggerExecutionIDsActiveAt     Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod Setting[Range[config.Timestamp]]
+	FeatureMultiTriggerExecutionIDsActiveAt        Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod    Setting[Range[config.Timestamp]]
+	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod         Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {
@@ -308,14 +356,25 @@ type logTrigger struct {
 	FilterTopicsPerSlotLimit Setting[int] `unit:"{topic}"`
 }
 type chainWrite struct {
-	TargetsLimit    Setting[int] `unit:"{target}"`
-	ReportSizeLimit Setting[config.Size]
+	TargetsLimit    Setting[int]         `unit:"{target}"`
+	ReportSizeLimit Setting[config.Size] // Deprecated
 
-	EVM evmChainWrite
+	EVM    evmChainWrite
+	Solana solanaChainWrite
+	Aptos  aptosChainWrite
+}
+type solanaChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	GasLimit        SettingMap[uint32] `unit:"{gas}"`
+}
+type aptosChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	GasLimit        SettingMap[uint64] `unit:"{gas}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
 	GasLimit            SettingMap[uint64] `unit:"{gas}"`
+	ReportSizeLimit     Setting[config.Size]
 }
 type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`

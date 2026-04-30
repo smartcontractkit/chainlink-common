@@ -20,7 +20,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
@@ -36,6 +35,7 @@ const (
 	oomBinaryLocation          = "test/oom/cmd/testmodule.wasm"
 	oomBinaryCmd               = "test/oom/cmd"
 	sleepBinaryLocation        = "test/sleep/cmd/testmodule.wasm"
+	sleepBinaryLocation2       = "test/sleep/cmd/testmodule_2.wasm" // used to avoid a build race between tests
 	sleepBinaryCmd             = "test/sleep/cmd"
 	filesBinaryLocation        = "test/files/cmd/testmodule.wasm"
 	filesBinaryCmd             = "test/files/cmd"
@@ -184,10 +184,10 @@ func Test_Compute_Emit(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId:         "transform",
 						WorkflowId:          "workflow-id",
 						WorkflowName:        "workflow-name",
@@ -276,8 +276,8 @@ func Test_Compute_Emit(t *testing.T) {
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Message)
 		}
 	})
 
@@ -300,10 +300,10 @@ func Test_Compute_Emit(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -327,8 +327,8 @@ func Test_Compute_Emit(t *testing.T) {
 		}
 
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Message)
 		}
 	})
 }
@@ -350,10 +350,10 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -398,10 +398,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -451,10 +451,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -502,10 +502,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -547,10 +547,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -568,8 +568,8 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Message)
 		}
 	})
 
@@ -577,7 +577,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		t.Parallel()
 		type testkey string
 		var key testkey = "test-key"
-		var expectedValue string = "test-value"
+		var expectedValue = "test-value"
 
 		expected := FetchResponse{
 			ExecutionError: false,
@@ -605,10 +605,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -654,10 +654,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -706,10 +706,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -750,10 +750,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -795,10 +795,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -840,10 +840,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -896,8 +896,8 @@ func TestModule_Errors(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
-					Metadata: &capabilitiespb.RequestMetadata{
+				Request: &pb.CapabilityRequest{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "doesnt-exist",
 					},
 				},
@@ -1053,10 +1053,10 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1081,10 +1081,10 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1109,10 +1109,10 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1124,7 +1124,6 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
-	t.Parallel()
 	ctx := t.Context()
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
@@ -1133,17 +1132,16 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 
 	m.Start()
 
-	os.Setenv("FOO", "BAR")
-	defer os.Unsetenv("FOO")
+	t.Setenv("FOO", "BAR")
 
 	req := &wasmpb.Request{
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1161,10 +1159,10 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1231,10 +1229,10 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -1265,10 +1263,10 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -1301,10 +1299,10 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId:         "transform",
 							WorkflowId:          "workflow-id",
 							WorkflowName:        "workflow-name",
@@ -1331,8 +1329,8 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Message)
 		}
 	})
 	t.Run("Emitted message size outside the limit", func(t *testing.T) {
@@ -1355,10 +1353,10 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId:         "transform",
 							WorkflowId:          "workflow-id",
 							WorkflowName:        "workflow-name",
@@ -1386,8 +1384,8 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Message)
 		}
 	})
 }

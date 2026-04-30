@@ -31,6 +31,7 @@ import (
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 const v2ImportPrefix = "version_v2"
@@ -48,6 +49,11 @@ var (
 	defaultMaxLogCountDONMode        = 10_000
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
+
+	defaultMaxUserMetricPayloadBytes     = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength       = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric  = uint32(10)
+	defaultMaxUserMetricLabelValueLength = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -75,6 +81,16 @@ type ModuleConfig struct {
 	MaxLogLenBytes      uint32
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
+
+	EnableUserMetricsLimiter             limits.GateLimiter
+	MaxUserMetricPayloadBytes            uint32
+	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
+	MaxUserMetricNameLength              uint32
+	MaxUserMetricNameLengthLimiter       limits.BoundLimiter[int] // supersedes MaxUserMetricNameLength if set
+	MaxUserMetricLabelsPerMetric         uint32
+	MaxUserMetricLabelsPerMetricLimiter  limits.BoundLimiter[int] // supersedes MaxUserMetricLabelsPerMetric if set
+	MaxUserMetricLabelValueLength        uint32
+	MaxUserMetricLabelValueLengthLimiter limits.BoundLimiter[int] // supersedes MaxUserMetricLabelValueLength if set
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -121,6 +137,8 @@ type ExecutionHelper interface {
 	GetDONTime() (time.Time, error)
 
 	EmitUserLog(log string) error
+
+	EmitUserMetric(ctx context.Context, metric *wfpb.WorkflowUserMetric) error
 }
 
 type module struct {
@@ -215,7 +233,57 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxLogCountNodeMode = uint32(defaultMaxLogCountNodeMode)
 	}
 
+	if modCfg.MaxUserMetricPayloadBytes == 0 {
+		modCfg.MaxUserMetricPayloadBytes = defaultMaxUserMetricPayloadBytes
+	}
+	if modCfg.MaxUserMetricNameLength == 0 {
+		modCfg.MaxUserMetricNameLength = defaultMaxUserMetricNameLength
+	}
+	if modCfg.MaxUserMetricLabelsPerMetric == 0 {
+		modCfg.MaxUserMetricLabelsPerMetric = defaultMaxUserMetricLabelsPerMetric
+	}
+	if modCfg.MaxUserMetricLabelValueLength == 0 {
+		modCfg.MaxUserMetricLabelValueLength = defaultMaxUserMetricLabelValueLength
+	}
+
 	lf := limits.Factory{Logger: modCfg.Logger}
+
+	if modCfg.EnableUserMetricsLimiter == nil {
+		modCfg.EnableUserMetricsLimiter = limits.NewGateLimiter(false)
+	}
+
+	if modCfg.MaxUserMetricPayloadLimiter == nil {
+		limit := settings.Size(config.Size(modCfg.MaxUserMetricPayloadBytes))
+		var err error
+		modCfg.MaxUserMetricPayloadLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make metric payload size limiter: %w", err)
+		}
+	}
+	if modCfg.MaxUserMetricNameLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricNameLength))
+		var err error
+		modCfg.MaxUserMetricNameLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make metric name length limiter: %w", err)
+		}
+	}
+	if modCfg.MaxUserMetricLabelsPerMetricLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricLabelsPerMetric))
+		var err error
+		modCfg.MaxUserMetricLabelsPerMetricLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make labels per metric limiter: %w", err)
+		}
+	}
+	if modCfg.MaxUserMetricLabelValueLengthLimiter == nil {
+		limit := settings.Int(int(modCfg.MaxUserMetricLabelValueLength))
+		var err error
+		modCfg.MaxUserMetricLabelValueLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make label value length limiter: %w", err)
+		}
+	}
 	if modCfg.MemoryLimiter == nil {
 		// Take the max of the min and the configured max memory mbs.
 		// We do this because Go requires a minimum of 16 megabytes to run,
@@ -295,7 +363,9 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	if modCfg.InitialFuel > 0 {
 		cfg.SetConsumeFuel(true)
 	}
-	cfg.CacheConfigLoadDefault()
+	if err := cfg.CacheConfigLoadDefault(); err != nil {
+		return nil, fmt.Errorf("failed to load cache config: %w", err)
+	}
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	SetUnwinding(cfg) // Handled differenty based on host OS.
 
@@ -383,12 +453,20 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping await_secrets func: %w", err)
 	}
 
-	if err := linker.FuncWrap(
+	if err = linker.FuncWrap(
 		"env",
 		"log",
 		exec.log,
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"emit_metric",
+		exec.emitMetric,
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping emit_metric func: %w", err)
 	}
 
 	if err = linker.FuncWrap(
@@ -545,7 +623,16 @@ func runWasm[I, O proto.Message](
 
 	var o O
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
+	// No reason to run the WASM longer if the outer ctx will cancel.
+	ctxDeadline, hasDeadline := ctx.Deadline()
+	var ctxWithTimeout context.Context
+	var cancel func()
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
+		ctxWithTimeout, cancel = context.WithCancel(ctx)
+	} else {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
+	}
+
 	defer cancel()
 
 	store := wasmtime.NewStore(m.engine)
@@ -653,7 +740,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

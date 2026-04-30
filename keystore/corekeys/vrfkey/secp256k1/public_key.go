@@ -2,9 +2,9 @@ package secp256k1
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -126,7 +126,7 @@ func (k PublicKey) MarshalText() ([]byte, error) {
 // UnmarshalText reads a PublicKey into k from text, or errors
 func (k *PublicKey) UnmarshalText(text []byte) error {
 	if err := k.SetFromHex(string(text)); err != nil {
-		return errors.Wrapf(err, "while parsing %s as public key", text)
+		return fmt.Errorf("while parsing %s as public key: %w", text, err)
 	}
 	return nil
 }
@@ -140,10 +140,10 @@ func (k PublicKey) Value() (driver.Value, error) {
 func (k *PublicKey) Scan(value any) error {
 	rawKey, ok := value.(string)
 	if !ok {
-		return errors.Wrap(fmt.Errorf("unable to convert %+v of type %T to PublicKey", value, value), "scan failure")
+		return fmt.Errorf("scan failure: unable to convert %+v of type %T to PublicKey", value, value)
 	}
 	if err := k.SetFromHex(rawKey); err != nil {
-		return errors.Wrapf(err, "while scanning %s as PublicKey", rawKey)
+		return fmt.Errorf("while scanning %s as PublicKey: %w", rawKey, err)
 	}
 	return nil
 }

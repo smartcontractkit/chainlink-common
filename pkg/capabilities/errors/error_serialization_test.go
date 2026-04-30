@@ -113,4 +113,14 @@ func TestParsingWithInvalidVisibilityOriginAndErrorCodesAndBackwardsCompatibilit
 			t.Errorf("expected %v, got %v", expectedErr, deserializedErr)
 		}
 	})
+
+	t.Run("NotASerializedCapabilityError", func(t *testing.T) {
+		msg := "some error has occurred that is not in the serialized capability error format"
+		deserializedErr := caperrors.DeserializeErrorFromString(msg)
+
+		expectedErr := caperrors.NewError(errors.New(msg), caperrors.VisibilityPrivate, caperrors.OriginSystem, caperrors.Unknown)
+		if !deserializedErr.Equals(expectedErr) {
+			t.Errorf("expected %v, got %v", expectedErr, deserializedErr)
+		}
+	})
 }

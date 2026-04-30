@@ -66,7 +66,7 @@ func (m *wrapperModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (
 }
 
 func (m *wrapperModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
-	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	offChainValue, itemType, err := m.selectType(offChainValue, m.offChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (m *wrapperModifier) TransformToOnChain(offChainValue any, itemType string)
 }
 
 func (m *wrapperModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
-	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	onChainValue, itemType, err := m.selectType(onChainValue, m.onChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,17 @@
-WorkflowLimit = '200'
-WorkflowExecutionConcurrencyLimit = '200'
+WorkflowLimit = '1000'
+WorkflowExecutionConcurrencyLimit = '1000'
 GatewayIncomingPayloadSizeLimit = '1mb'
 GatewayVaultManagementEnabled = 'true'
+VaultJWTAuthEnabled = 'false'
+VaultOrgIdAsSecretOwnerEnabled = 'false'
+VaultForceEmptyOCRRounds = 'false'
 GatewayHTTPGlobalRate = '500rps:500'
 GatewayHTTPPerNodeRate = '100rps:100'
+GatewayConfidentialRelayGlobalRate = '50rps:10'
+GatewayConfidentialRelayPerNodeRate = '10rps:10'
 TriggerRegistrationStatusUpdateTimeout = '0s'
+BaseTriggerRetransmitEnabled = 'false'
+BaseTriggerRetryInterval = '30s'
 VaultCiphertextSizeLimit = '2kb'
 VaultShareSizeLimit = '600b'
 VaultIdentifierKeySizeLimit = '64b'
@@ -24,9 +31,11 @@ VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit = '31.45728mb'
 VaultMaxPerOracleUnexpiredBlobCount = '1000'
 
 [PerOrg]
+WorkflowExecutionConcurrencyLimit = '100'
 ZeroBalancePruningTimeout = '24h0m0s'
 
 [PerOwner]
+WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'
 VaultSecretsLimit = '100'
 
@@ -50,8 +59,15 @@ WASMConfigSizeLimit = '1mb'
 WASMSecretsSizeLimit = '1mb'
 LogLineLimit = '1kb'
 LogEventLimit = '1000'
+UserMetricEnabled = 'false'
+UserMetricPayloadLimit = '4kb'
+UserMetricNameLengthLimit = '128'
+UserMetricLabelsPerMetric = '10'
+UserMetricLabelValueLength = '256'
 FeatureMultiTriggerExecutionIDsActiveAt = '2100-01-01 00:00:00 +0000 UTC'
 FeatureMultiTriggerExecutionIDsActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureChainCapabilityHashBasedOCRActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureEVMWriteReportL1FeeActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'
@@ -79,6 +95,7 @@ ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM]
 TransactionGasLimit = '5000000'
+ReportSizeLimit = '5kb'
 
 [PerWorkflow.ChainWrite.EVM.GasLimit]
 Default = '5000000'
@@ -86,6 +103,22 @@ Default = '5000000'
 [PerWorkflow.ChainWrite.EVM.GasLimit.Values]
 12922642891491394802 = '50000000'
 3379446385462418246 = '10000000'
+
+[PerWorkflow.ChainWrite.Solana]
+ReportSizeLimit = '265b'
+
+[PerWorkflow.ChainWrite.Solana.GasLimit]
+Default = '300000'
+
+[PerWorkflow.ChainWrite.Solana.GasLimit.Values]
+
+[PerWorkflow.ChainWrite.Aptos]
+ReportSizeLimit = '5kb'
+
+[PerWorkflow.ChainWrite.Aptos.GasLimit]
+Default = '2000000'
+
+[PerWorkflow.ChainWrite.Aptos.GasLimit.Values]
 
 [PerWorkflow.ChainRead]
 CallLimit = '15'

@@ -59,3 +59,14 @@ lint:
 modgraph: gomods
 	go install github.com/jmank88/modgraph@v0.1.0
 	./modgraph > go.md
+
+.PHONY: dependabot
+ifndef DEPENDABOT_SEVERITY
+DEPENDABOT_SEVERITY := "critical,high"
+endif
+dependabot: gomods
+	gh api --paginate -H "Accept: application/vnd.github+json" --method GET \
+      '/repos/smartcontractkit/chainlink-common/dependabot/alerts?state=open&ecosystem=Go&severity=$(DEPENDABOT_SEVERITY)' | \
+      jq -r '.[] | select(.security_vulnerability.first_patched_version != null) | .dependency.manifest_path |= rtrimstr("go.mod") | "./\(.dependency.manifest_path) \(.security_vulnerability.package.name) \(.security_vulnerability.first_patched_version.identifier)"' | \
+      go run ./script/cmd/dependabot
+	gomods tidy

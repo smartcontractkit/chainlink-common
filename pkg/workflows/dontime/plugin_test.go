@@ -150,6 +150,7 @@ func TestPlugin_Outcome(t *testing.T) {
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
 
 	// Add single request to queue
 	executionID := "workflow-123"
@@ -159,27 +160,19 @@ func TestPlugin_Outcome(t *testing.T) {
 	observations := []*pb.Observation{
 		{
 			Timestamp: timestamp,
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Requests:  map[string]int64{executionID: 0},
 		},
 		{
 			Timestamp: timestamp - int64(time.Second),
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Requests:  map[string]int64{executionID: 0},
 		},
 		{
 			Timestamp: timestamp + int64(time.Second),
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Requests:  map[string]int64{executionID: 0},
 		},
 		{
 			Timestamp: timestamp,
-			Requests: map[string]int64{
-				executionID: 0,
-			},
+			Requests:  map[string]int64{executionID: 0},
 		},
 	}
 
@@ -433,22 +426,10 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	t.Run("Outcome: remove expired workflow executions", func(t *testing.T) {
 		timestamp := time.Now().UnixMilli()
 		observations := []*pb.Observation{
-			{
-				Timestamp: timestamp,
-				Requests:  map[string]int64{},
-			},
-			{
-				Timestamp: timestamp - int64(time.Second),
-				Requests:  map[string]int64{},
-			},
-			{
-				Timestamp: timestamp + int64(time.Second),
-				Requests:  map[string]int64{},
-			},
-			{
-				Timestamp: timestamp,
-				Requests:  map[string]int64{},
-			},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
+			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
 		}
 
 		aos := make([]types.AttributedObservation, 4)
@@ -481,6 +462,45 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		err = proto.Unmarshal(outcome, outcomeProto)
 		require.NoError(t, err)
 		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-123")
+	})
+
+	t.Run("Outcome: empty-timestamps entries are always pruned", func(t *testing.T) {
+		timestamp := time.Now().UnixMilli()
+		emptyID := "empty-workflow"
+
+		observations := []*pb.Observation{
+			{Timestamp: timestamp, Requests: map[string]int64{}},
+			{Timestamp: timestamp - int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp + int64(time.Second), Requests: map[string]int64{}},
+			{Timestamp: timestamp, Requests: map[string]int64{}},
+		}
+
+		aos := make([]types.AttributedObservation, len(observations))
+		for i, obs := range observations {
+			rawObs, err := proto.Marshal(obs)
+			require.NoError(t, err)
+			aos[i] = types.AttributedObservation{Observation: rawObs, Observer: commontypes.OracleID(i)}
+		}
+
+		// prevOutcome contains an entry for emptyID with no timestamps.
+		prevOutcome := &pb.Outcome{
+			Timestamp: timestamp - 1000,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+				emptyID: {Timestamps: []int64{}},
+			},
+		}
+		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+		require.NoError(t, err)
+
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+
+		newOutcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, newOutcomeProto)
+		require.NoError(t, err)
+
+		// Empty-timestamps entries are always pruned.
+		require.NotContains(t, newOutcomeProto.ObservedDonTimes, emptyID)
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {

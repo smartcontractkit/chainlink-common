@@ -61,7 +61,7 @@ func roundTripGasPriceEstimatorExecTests(t *testing.T, client *ccip.ExecGasEstim
 
 	t.Run("Median", func(t *testing.T) {
 		ctx := t.Context()
-		median, err := client.Median(ctx, GasPriceEstimatorExec.medianRequest.gasPrices)
+		median, err := client.Median(ctx, GasPriceEstimatorExec.gasPrices)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.medianResponse, median)
 	})

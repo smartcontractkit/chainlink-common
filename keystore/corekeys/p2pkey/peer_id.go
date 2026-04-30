@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
@@ -57,7 +55,7 @@ func (p *PeerID) UnmarshalText(bs []byte) error {
 	var peerID types.PeerID
 	err := peerID.UnmarshalText([]byte(input))
 	if err != nil {
-		return errors.Wrapf(err, `PeerID#UnmarshalText("%v")`, input)
+		return fmt.Errorf(`PeerID#UnmarshalText("%v")`, input)
 	}
 	*p = PeerID(peerID)
 	return nil
@@ -72,7 +70,7 @@ func (p *PeerID) Scan(value any) error {
 		}
 	case nil:
 	default:
-		return errors.Errorf("PeerID#Scan got %T, expected string", value)
+		return fmt.Errorf("PeerID#Scan got %T, expected string", value)
 	}
 	return nil
 }

@@ -132,7 +132,7 @@ func newRateLimiter(scope settings.Scope, limit rate.Limit, burst int) RateLimit
 			addUsage:     func(ctx context.Context, incr int64) {},
 			recordDenied: func(ctx context.Context, incr int) {},
 		}
-		close(rl.updater.done) // no background routine
+		close(rl.done) // no background routine
 		return rl
 	}
 	return &scopedRateLimiter{

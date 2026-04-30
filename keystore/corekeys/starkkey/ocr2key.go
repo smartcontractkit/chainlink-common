@@ -2,10 +2,10 @@ package starkkey
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"math/big"
-
-	"github.com/pkg/errors"
 
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/curve"
@@ -79,7 +79,7 @@ func (sk *OCR2Key) Sign(reportCtx types.ReportContext, report types.Report) ([]b
 
 	out := buff.Bytes()
 	if len(out) != sk.MaxSignatureLength() {
-		return []byte{}, errors.Errorf("unexpected signature size, got %d want %d", len(out), sk.MaxSignatureLength())
+		return []byte{}, fmt.Errorf("unexpected signature size, got %d want %d", len(out), sk.MaxSignatureLength())
 	}
 	return out, nil
 }
@@ -149,7 +149,7 @@ const privateKeyLen = 32
 func (sk *OCR2Key) Unmarshal(in []byte) error {
 	// enforce byte length
 	if len(in) != privateKeyLen {
-		return errors.Errorf("unexpected seed size, got %d want %d", len(in), privateKeyLen)
+		return fmt.Errorf("unexpected seed size, got %d want %d", len(in), privateKeyLen)
 	}
 
 	sk.Key = KeyFor(internal.NewRaw(in))

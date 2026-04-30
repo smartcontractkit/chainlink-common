@@ -23,9 +23,9 @@ func (c *contractTransmitterClient) Transmit(ctx context.Context, reportContext 
 	req := &pb.TransmitRequest{
 		ReportContext: &pb.ReportContext{
 			ReportTimestamp: &pb.ReportTimestamp{
-				ConfigDigest: reportContext.ReportTimestamp.ConfigDigest[:],
-				Epoch:        reportContext.ReportTimestamp.Epoch,
-				Round:        uint32(reportContext.ReportTimestamp.Round),
+				ConfigDigest: reportContext.ConfigDigest[:],
+				Epoch:        reportContext.Epoch,
+				Round:        uint32(reportContext.Round),
 			},
 			ExtraHash: reportContext.ExtraHash[:],
 		},

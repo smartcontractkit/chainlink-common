@@ -41,11 +41,11 @@ func (e ErrConnDial) Unwrap() error {
 // must be refreshed.
 func isErrTerminal(err error) bool {
 	switch status.Code(err) {
-	case codes.Unavailable, codes.Canceled:
+	case codes.Unavailable:
 		return true
-	case codes.OK, codes.Unknown, codes.InvalidArgument, codes.DeadlineExceeded, codes.NotFound, codes.AlreadyExists,
-		codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange,
-		codes.Unimplemented, codes.Internal, codes.DataLoss, codes.Unauthenticated:
+	case codes.OK, codes.Unknown, codes.InvalidArgument, codes.Canceled, codes.DeadlineExceeded, codes.NotFound,
+		codes.AlreadyExists, codes.PermissionDenied, codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted,
+		codes.OutOfRange, codes.Unimplemented, codes.Internal, codes.DataLoss, codes.Unauthenticated:
 		return false
 	}
 	return false

@@ -50,6 +50,73 @@ func TestSecretsResponseResultHash_IgnoresAttestationAndBindsRequestAndResponse(
 	require.NotEqual(t, result.Hash(params), differentResponse.Hash(params))
 }
 
+func TestSecretsResponseResultHash_IsStableUnderSecretsAndSharesReordering(t *testing.T) {
+	paramsA := SecretsRequestParams{
+		WorkflowID:       "wf-1",
+		Owner:            "0x1234",
+		ExecutionID:      "exec-1",
+		OrgID:            "org-1",
+		EnclavePublicKey: "pubkey-1",
+		Secrets: []SecretIdentifier{
+			{Key: "beta", Namespace: "ns-b"},
+			{Key: "alpha", Namespace: "ns-a"},
+		},
+	}
+	paramsB := SecretsRequestParams{
+		WorkflowID:       "wf-1",
+		Owner:            "0x1234",
+		ExecutionID:      "exec-1",
+		OrgID:            "org-1",
+		EnclavePublicKey: "pubkey-1",
+		Secrets: []SecretIdentifier{
+			{Key: "alpha", Namespace: "ns-a"},
+			{Key: "beta", Namespace: "ns-b"},
+		},
+	}
+	resultA := SecretsResponseResult{
+		Secrets: []SecretEntry{
+			{
+				ID:         SecretIdentifier{Key: "beta", Namespace: "ns-b"},
+				Ciphertext: "cipher-b",
+				EncryptedShares: []string{
+					"share-b2",
+					"share-b1",
+				},
+			},
+			{
+				ID:         SecretIdentifier{Key: "alpha", Namespace: "ns-a"},
+				Ciphertext: "cipher-a",
+				EncryptedShares: []string{
+					"share-a2",
+					"share-a1",
+				},
+			},
+		},
+	}
+	resultB := SecretsResponseResult{
+		Secrets: []SecretEntry{
+			{
+				ID:         SecretIdentifier{Key: "alpha", Namespace: "ns-a"},
+				Ciphertext: "cipher-a",
+				EncryptedShares: []string{
+					"share-a1",
+					"share-a2",
+				},
+			},
+			{
+				ID:         SecretIdentifier{Key: "beta", Namespace: "ns-b"},
+				Ciphertext: "cipher-b",
+				EncryptedShares: []string{
+					"share-b1",
+					"share-b2",
+				},
+			},
+		},
+	}
+
+	require.Equal(t, resultA.Hash(paramsA), resultB.Hash(paramsB))
+}
+
 func TestCapabilityResponseResultHash_IgnoresAttestationAndBindsRequestAndResponse(t *testing.T) {
 	params := CapabilityRequestParams{
 		WorkflowID:   "wf-1",

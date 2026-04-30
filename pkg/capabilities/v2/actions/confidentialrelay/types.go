@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"hash"
+	"sort"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
@@ -52,8 +53,9 @@ type SecretsResponseResult struct {
 	Secrets []SecretEntry `json:"secrets"`
 }
 
-// Hash computes the canonical hash of the cleaned request params and logical
-// relay response body. Attestation is intentionally excluded.
+// Hash computes the canonical hash of the caller-provided request params and
+// logical relay response body. Attestation is intentionally excluded, and the
+// secrets and encrypted share slices are sorted before hashing.
 func (r *SecretsResponseResult) Hash(params SecretsRequestParams) [32]byte {
 	h := sha256.New()
 	h.Write([]byte(teeattestation.DomainSeparator))
@@ -61,13 +63,19 @@ func (r *SecretsResponseResult) Hash(params SecretsRequestParams) [32]byte {
 
 	writeSecretsRequestParams(h, params)
 
-	writeLengthPrefix(h, len(r.Secrets))
-	for _, secret := range r.Secrets {
+	secrets := append([]SecretEntry(nil), r.Secrets...)
+	sortSecretEntries(secrets)
+
+	writeLengthPrefix(h, len(secrets))
+	for _, secret := range secrets {
 		writeSecretIdentifier(h, secret.ID)
 		writeString(h, secret.Ciphertext)
 
-		writeLengthPrefix(h, len(secret.EncryptedShares))
-		for _, share := range secret.EncryptedShares {
+		shares := append([]string(nil), secret.EncryptedShares...)
+		sort.Strings(shares)
+
+		writeLengthPrefix(h, len(shares))
+		for _, share := range shares {
 			writeString(h, share)
 		}
 	}
@@ -94,8 +102,8 @@ type CapabilityResponseResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
-// Hash computes the canonical hash of the cleaned request params and logical
-// relay response body. Attestation is intentionally excluded.
+// Hash computes the canonical hash of the caller-provided request params and
+// logical relay response body. Attestation is intentionally excluded.
 func (r *CapabilityResponseResult) Hash(params CapabilityRequestParams) [32]byte {
 	h := sha256.New()
 	h.Write([]byte(teeattestation.DomainSeparator))
@@ -143,8 +151,11 @@ func writeSecretsRequestParams(h hash.Hash, params SecretsRequestParams) {
 	writeString(h, params.ExecutionID)
 	writeString(h, params.OrgID)
 
-	writeLengthPrefix(h, len(params.Secrets))
-	for _, secret := range params.Secrets {
+	secrets := append([]SecretIdentifier(nil), params.Secrets...)
+	sortSecretIdentifiers(secrets)
+
+	writeLengthPrefix(h, len(secrets))
+	for _, secret := range secrets {
 		writeSecretIdentifier(h, secret)
 	}
 
@@ -163,6 +174,27 @@ func writeCapabilityRequestParams(h hash.Hash, params CapabilityRequestParams) {
 func writeSecretIdentifier(h hash.Hash, id SecretIdentifier) {
 	writeString(h, id.Key)
 	writeString(h, id.Namespace)
+}
+
+func sortSecretIdentifiers(secrets []SecretIdentifier) {
+	sort.Slice(secrets, func(i, j int) bool {
+		if secrets[i].Namespace != secrets[j].Namespace {
+			return secrets[i].Namespace < secrets[j].Namespace
+		}
+		return secrets[i].Key < secrets[j].Key
+	})
+}
+
+func sortSecretEntries(secrets []SecretEntry) {
+	sort.Slice(secrets, func(i, j int) bool {
+		if secrets[i].ID.Namespace != secrets[j].ID.Namespace {
+			return secrets[i].ID.Namespace < secrets[j].ID.Namespace
+		}
+		if secrets[i].ID.Key != secrets[j].ID.Key {
+			return secrets[i].ID.Key < secrets[j].ID.Key
+		}
+		return secrets[i].Ciphertext < secrets[j].Ciphertext
+	})
 }
 
 func writeString(h hash.Hash, s string) {

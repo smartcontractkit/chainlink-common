@@ -7,6 +7,7 @@
 package confidentialworkflow
 
 import (
+	sdk "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	_ "github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -86,9 +87,8 @@ type WorkflowExecution struct {
 	BinaryUrl string `protobuf:"bytes,2,opt,name=binary_url,json=binaryUrl,proto3" json:"binary_url,omitempty"`
 	// binary_hash is the expected SHA-256 hash of the WASM binary, for integrity verification.
 	BinaryHash []byte `protobuf:"bytes,3,opt,name=binary_hash,json=binaryHash,proto3" json:"binary_hash,omitempty"`
-	// execute_request is a serialized sdk.v1alpha.ExecuteRequest proto.
 	// Contains either a subscribe request or a trigger execution request.
-	ExecuteRequest []byte `protobuf:"bytes,4,opt,name=execute_request,json=executeRequest,proto3" json:"execute_request,omitempty"`
+	ExecuteRequest *sdk.ExecuteRequest `protobuf:"bytes,4,opt,name=execute_request,json=executeRequest,proto3" json:"execute_request,omitempty"`
 	// owner is the on-chain owner address of the workflow (hex, 0x-prefixed).
 	// Used by the enclave for runtime secret fetching from VaultDON.
 	Owner string `protobuf:"bytes,5,opt,name=owner,proto3" json:"owner,omitempty"`
@@ -99,7 +99,7 @@ type WorkflowExecution struct {
 	// Used by the enclave when fetching secrets from VaultDON with org-based ownership.
 	OrgId string `protobuf:"bytes,7,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
 	// regions that the workflow is allowed to run in.
-	Regions       []string `protobuf:"bytes,8,rep,name=regions,proto3" json:"regions,omitempty"`
+	Tee           *sdk.Tee `protobuf:"bytes,8,opt,name=tee,proto3" json:"tee,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -155,7 +155,7 @@ func (x *WorkflowExecution) GetBinaryHash() []byte {
 	return nil
 }
 
-func (x *WorkflowExecution) GetExecuteRequest() []byte {
+func (x *WorkflowExecution) GetExecuteRequest() *sdk.ExecuteRequest {
 	if x != nil {
 		return x.ExecuteRequest
 	}
@@ -183,9 +183,9 @@ func (x *WorkflowExecution) GetOrgId() string {
 	return ""
 }
 
-func (x *WorkflowExecution) GetRegions() []string {
+func (x *WorkflowExecution) GetTee() *sdk.Tee {
 	if x != nil {
-		return x.Regions
+		return x.Tee
 	}
 	return nil
 }
@@ -248,7 +248,7 @@ func (x *ConfidentialWorkflowRequest) GetExecution() *WorkflowExecution {
 type ConfidentialWorkflowResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// execution_result is a serialized sdk.v1alpha.ExecutionResult proto.
-	ExecutionResult []byte `protobuf:"bytes,1,opt,name=execution_result,json=executionResult,proto3" json:"execution_result,omitempty"`
+	ExecutionResult *sdk.ExecutionResult `protobuf:"bytes,1,opt,name=execution_result,json=executionResult,proto3" json:"execution_result,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -283,7 +283,7 @@ func (*ConfidentialWorkflowResponse) Descriptor() ([]byte, []int) {
 	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ConfidentialWorkflowResponse) GetExecutionResult() []byte {
+func (x *ConfidentialWorkflowResponse) GetExecutionResult() *sdk.ExecutionResult {
 	if x != nil {
 		return x.ExecutionResult
 	}
@@ -338,29 +338,29 @@ var File_capabilities_compute_confidentialworkflow_v1alpha_client_proto protoref
 
 const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x1bgoogle/protobuf/empty.proto\"U\n" +
+	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x15sdk/v1alpha/sdk.proto\x1a\x1bgoogle/protobuf/empty.proto\"U\n" +
 	"\x10SecretIdentifier\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
 	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
 	"\n" +
-	"_namespace\"\x87\x02\n" +
+	"_namespace\"\xae\x02\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x1d\n" +
 	"\n" +
 	"binary_url\x18\x02 \x01(\tR\tbinaryUrl\x12\x1f\n" +
 	"\vbinary_hash\x18\x03 \x01(\fR\n" +
-	"binaryHash\x12'\n" +
-	"\x0fexecute_request\x18\x04 \x01(\fR\x0eexecuteRequest\x12\x14\n" +
+	"binaryHash\x12D\n" +
+	"\x0fexecute_request\x18\x04 \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x0eexecuteRequest\x12\x14\n" +
 	"\x05owner\x18\x05 \x01(\tR\x05owner\x12!\n" +
 	"\fexecution_id\x18\x06 \x01(\tR\vexecutionId\x12\x15\n" +
-	"\x06org_id\x18\a \x01(\tR\x05orgId\x12\x18\n" +
-	"\aregions\x18\b \x03(\tR\aregions\"\xf2\x01\n" +
+	"\x06org_id\x18\a \x01(\tR\x05orgId\x12\"\n" +
+	"\x03tee\x18\b \x01(\v2\x10.sdk.v1alpha.TeeR\x03tee\"\xf2\x01\n" +
 	"\x1bConfidentialWorkflowRequest\x12o\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
-	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\"I\n" +
-	"\x1cConfidentialWorkflowResponse\x12)\n" +
-	"\x10execution_result\x18\x01 \x01(\fR\x0fexecutionResult\".\n" +
+	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\"g\n" +
+	"\x1cConfidentialWorkflowResponse\x12G\n" +
+	"\x10execution_result\x18\x01 \x01(\v2\x1c.sdk.v1alpha.ExecutionResultR\x0fexecutionResult\".\n" +
 	"\x12GetRegionsResponse\x12\x18\n" +
 	"\aregions\x18\x01 \x03(\tR\aregions2\xce\x02\n" +
 	"\x06Client\x12\xaa\x01\n" +
@@ -387,20 +387,26 @@ var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_goTypes 
 	(*ConfidentialWorkflowRequest)(nil),  // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
 	(*ConfidentialWorkflowResponse)(nil), // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
 	(*GetRegionsResponse)(nil),           // 4: capabilities.compute.confidentialworkflow.v1alpha.GetRegionsResponse
-	(*emptypb.Empty)(nil),                // 5: google.protobuf.Empty
+	(*sdk.ExecuteRequest)(nil),           // 5: sdk.v1alpha.ExecuteRequest
+	(*sdk.Tee)(nil),                      // 6: sdk.v1alpha.Tee
+	(*sdk.ExecutionResult)(nil),          // 7: sdk.v1alpha.ExecutionResult
+	(*emptypb.Empty)(nil),                // 8: google.protobuf.Empty
 }
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_depIdxs = []int32{
-	0, // 0: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
-	1, // 1: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
-	2, // 2: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
-	5, // 3: capabilities.compute.confidentialworkflow.v1alpha.Client.GetRegions:input_type -> google.protobuf.Empty
-	3, // 4: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
-	4, // 5: capabilities.compute.confidentialworkflow.v1alpha.Client.GetRegions:output_type -> capabilities.compute.confidentialworkflow.v1alpha.GetRegionsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.execute_request:type_name -> sdk.v1alpha.ExecuteRequest
+	6, // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.tee:type_name -> sdk.v1alpha.Tee
+	0, // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
+	1, // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
+	7, // 4: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse.execution_result:type_name -> sdk.v1alpha.ExecutionResult
+	2, // 5: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
+	8, // 6: capabilities.compute.confidentialworkflow.v1alpha.Client.GetRegions:input_type -> google.protobuf.Empty
+	3, // 7: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
+	4, // 8: capabilities.compute.confidentialworkflow.v1alpha.Client.GetRegions:output_type -> capabilities.compute.confidentialworkflow.v1alpha.GetRegionsResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() }

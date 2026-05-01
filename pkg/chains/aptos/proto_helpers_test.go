@@ -3,6 +3,7 @@ package aptos_test
 import (
 	"bytes"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -152,6 +153,44 @@ func TestTypeTagConverters(t *testing.T) {
 		gen, ok := roundtrip.Value.(typeaptos.GenericTag)
 		require.True(t, ok)
 		require.EqualValues(t, 42, gen.Index)
+	})
+
+	t.Run("GenericTag boundary index (math.MaxUint16) accepted", func(t *testing.T) {
+		protoTag := &conv.TypeTag{
+			Kind: conv.TypeTagKind_TYPE_TAG_KIND_GENERIC,
+			Value: &conv.TypeTag_Generic{
+				Generic: &conv.GenericTag{Index: math.MaxUint16},
+			},
+		}
+
+		roundtrip, err := conv.ConvertTypeTagFromProto(protoTag)
+		require.NoError(t, err)
+		gen, ok := roundtrip.Value.(typeaptos.GenericTag)
+		require.True(t, ok)
+		require.EqualValues(t, math.MaxUint16, gen.Index)
+	})
+
+	t.Run("GenericTag index overflow rejected", func(t *testing.T) {
+		protoTag := &conv.TypeTag{
+			Kind: conv.TypeTagKind_TYPE_TAG_KIND_GENERIC,
+			Value: &conv.TypeTag_Generic{
+				Generic: &conv.GenericTag{Index: math.MaxUint16 + 1},
+			},
+		}
+
+		_, err := conv.ConvertTypeTagFromProto(protoTag)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "generic type index out of range")
+	})
+
+	t.Run("GenericTag missing generic value", func(t *testing.T) {
+		protoTag := &conv.TypeTag{
+			Kind: conv.TypeTagKind_TYPE_TAG_KIND_GENERIC,
+		}
+
+		_, err := conv.ConvertTypeTagFromProto(protoTag)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "generic type tag missing generic value")
 	})
 
 	t.Run("Nil type tag error", func(t *testing.T) {

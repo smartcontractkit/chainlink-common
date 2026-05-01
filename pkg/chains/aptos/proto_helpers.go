@@ -405,6 +405,9 @@ func ConvertAccountTransactionsReplyFromProto(proto *AccountTransactionsReply) (
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert transaction %d: %w", i, err)
 		}
+		if tx == nil {
+			return nil, fmt.Errorf("transaction %d is nil", i)
+		}
 		txs[i] = tx
 	}
 	return &typeaptos.AccountTransactionsReply{

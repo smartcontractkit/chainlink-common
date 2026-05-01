@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -102,6 +103,9 @@ type pluginRelayerServer struct {
 	*net.BrokerExt
 
 	impl looptypes.PluginRelayer
+
+	activeRelayerMu sync.Mutex
+	activeRelayer   net.Resource
 }
 
 func RegisterPluginRelayerServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl looptypes.PluginRelayer) error {
@@ -150,12 +154,13 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	err = r.Start(ctx)
 	if err != nil {
 		p.CloseAll(ksRes, ksCSARes, crRes)
+		err = errors.Join(err, r.Close())
 		return nil, err
 	}
 
 	const name = "Relayer"
 	rRes := net.Resource{Closer: r, Name: name}
-	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
+	id, relayerResource, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 		if evmService, ok := r.(types.EVMService); ok {
@@ -175,7 +180,20 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		return nil, err
 	}
 
+	p.replaceActiveRelayer(relayerResource)
+
 	return &pb.NewRelayerReply{RelayerID: id}, nil
+}
+
+func (p *pluginRelayerServer) replaceActiveRelayer(next net.Resource) {
+	p.activeRelayerMu.Lock()
+	prev := p.activeRelayer
+	p.activeRelayer = next
+	p.activeRelayerMu.Unlock()
+
+	if prev.Closer != nil {
+		p.CloseAll(prev)
+	}
 }
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].

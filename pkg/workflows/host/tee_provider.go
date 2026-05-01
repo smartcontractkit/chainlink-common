@@ -1,51 +1,51 @@
 package host
 
-import (
-	"context"
-	"sync"
-
-	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
-)
+import sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 
 type teeProvider struct {
 	sdkpb.TeeType
-	regionsFn func(ctx context.Context) map[string]bool
-	once      sync.Once
+	regions map[string]bool
 }
 
-func NewTeeProvider(tpe sdkpb.TeeType, regionsFn func(ctx context.Context) []string) func(context.Context, *sdkpb.Tee) bool {
-	p := &teeProvider{
-		TeeType: tpe,
-		regionsFn: func(ctx context.Context) map[string]bool {
-			regions := regionsFn(ctx)
-			rMap := make(map[string]bool, len(regions))
-			for _, region := range regions {
-				rMap[region] = true
-			}
-			return rMap
-		},
+func NewTeeProvider(tpe sdkpb.TeeType, regions []string) func(tee *sdkpb.Tee) bool {
+	supportedRegions := map[string]bool{}
+	for _, region := range regions {
+		supportedRegions[region] = true
 	}
-	return p.Provides
+	return (&teeProvider{TeeType: tpe, regions: supportedRegions}).Provides
 }
 
-func (t *teeProvider) Provides(ctx context.Context, tee *sdkpb.Tee) bool {
-	switch teet := tee.Type.(type) {
-	case *sdkpb.Tee_Any:
-		return true
-	case *sdkpb.Tee_TypeSelection:
-		for _, selection := range teet.TypeSelection.Types {
-			if selection.Type == t.TeeType {
-				if len(selection.Regions) == 0 {
-					return true
-				}
+func (t *teeProvider) Provides(tee *sdkpb.Tee) bool {
+	var regions []string
+	switch teet := tee.Item.(type) {
+	case *sdkpb.Tee_AnyRegions:
+		regions = teet.AnyRegions.Regions
+	case *sdkpb.Tee_TeeTypesAndRegions:
+		if teet.TeeTypesAndRegions == nil {
+			return false
+		}
 
-				regions := t.regionsFn(ctx)
-				for _, region := range selection.Regions {
-					if regions[region] {
-						return true
-					}
-				}
+		found := false
+		for _, tr := range teet.TeeTypesAndRegions.TeeTypeAndRegions {
+			if tr.Type == t.TeeType {
+				found = true
+				regions = tr.Regions
+				break
 			}
+		}
+
+		if !found {
+			return false
+		}
+	}
+
+	if len(regions) == 0 {
+		return true
+	}
+
+	for _, region := range regions {
+		if t.regions[region] {
+			return true
 		}
 	}
 

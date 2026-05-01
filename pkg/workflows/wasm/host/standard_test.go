@@ -560,9 +560,9 @@ func TestStandardTeeRuntime(t *testing.T) {
 				Method:  "Trigger",
 				Requirements: &sdk.Requirements{
 					Tee: &sdk.Tee{
-						Type: &sdk.Tee_TypeSelection{
-							TypeSelection: &sdk.TeeTypeSelection{
-								Types: []*sdk.TeeTypeAndRegions{
+						Item: &sdk.Tee_TeeTypesAndRegions{
+							TeeTypesAndRegions: &sdk.TeeTypesAndRegions{
+								TeeTypeAndRegions: []*sdk.TeeTypeAndRegions{
 									{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}},
 								},
 							},

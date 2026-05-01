@@ -510,8 +510,8 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 	t.Run("different triggers route to different modules", func(t *testing.T) {
 		// subscription 0: TEE required → additional; subscription 1: no requirements → main
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{
-			Type: &sdk.Tee_TypeSelection{TypeSelection: &sdk.TeeTypeSelection{
-				Types: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO}},
+			Item: &sdk.Tee_TeeTypesAndRegions{TeeTypesAndRegions: &sdk.TeeTypesAndRegions{
+				TeeTypeAndRegions: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO}},
 			}},
 		}}
 		var mainTriggerCalls int32

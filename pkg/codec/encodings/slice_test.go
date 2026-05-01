@@ -1,7 +1,6 @@
 package encodings_test
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -43,15 +42,15 @@ func TestSlice(t *testing.T) {
 
 	t.Run("NewSlice returns error if args are nil", func(t *testing.T) {
 		_, err := encodings.NewSlice(nil, sizeCodec)
-		require.True(t, errors.Is(err, types.ErrInvalidConfig))
+		require.ErrorIs(t, err, types.ErrInvalidConfig)
 
 		_, err = encodings.NewSlice(elementCodec, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidConfig))
+		require.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	t.Run("NewSlice returns error if size arg is not an int", func(t *testing.T) {
 		_, err := encodings.NewSlice(nil, &binary.Int8{})
-		require.True(t, errors.Is(err, types.ErrInvalidConfig))
+		require.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	t.Run("GetType returns slice of underlying type", func(t *testing.T) {
@@ -73,7 +72,7 @@ func TestSlice(t *testing.T) {
 	t.Run("Encode returns an error if slice is too large for size bytes", func(t *testing.T) {
 		tmp := make([]int, math.MaxUint16+1)
 		_, err := testSlice.Encode(tmp, []byte{})
-		require.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		require.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("Encode allows large maximal sizes without overflowing", func(t *testing.T) {
@@ -110,7 +109,7 @@ func TestSlice(t *testing.T) {
 		ts, err := encodings.NewSlice(elementCodec, negSizeCodec)
 		require.NoError(t, err)
 		_, _, err = ts.Decode([]byte{0xFF, 0xFF, 0xFF, 0xFF})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("Decode returns an error if the size codec non int type", func(t *testing.T) {
@@ -122,7 +121,7 @@ func TestSlice(t *testing.T) {
 		require.NoError(t, err)
 		negSizeCodec.Value = "foo"
 		_, _, err = ts.Decode([]byte{0xFF, 0xFF, 0xFF, 0xFF})
-		require.True(t, errors.Is(err, types.ErrInternal))
+		require.ErrorIs(t, err, types.ErrInternal)
 	})
 
 	t.Run("Encode returns an error if the underlying type returns an error", func(t *testing.T) {
@@ -137,7 +136,7 @@ func TestSlice(t *testing.T) {
 
 	t.Run("Encode returns an error if the value is not a slice or array", func(t *testing.T) {
 		_, err := testSlice.Encode(anyValue, []byte{})
-		require.True(t, errors.Is(err, types.ErrNotASlice))
+		require.ErrorIs(t, err, types.ErrNotASlice)
 	})
 
 	t.Run("Decode returns an error if the underlying type returns an error", func(t *testing.T) {
@@ -152,7 +151,7 @@ func TestSlice(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes for the size", func(t *testing.T) {
 		_, _, err := testSlice.Decode([]byte{1})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("Size returns numElements * the element size + the size of the size", func(t *testing.T) {
@@ -173,6 +172,6 @@ func TestSlice(t *testing.T) {
 
 	t.Run("FixedSize returns an error", func(t *testing.T) {
 		_, err := testSlice.FixedSize()
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 }

@@ -1,15 +1,15 @@
 package binary_test
 
 import (
-	"errors"
 	"math"
 	"math/big"
 	"reflect"
 	"testing"
 
-	"github.com/smartcontractkit/libocr/bigbigendian"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/bigbigendian"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/codec/encodings"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -18,7 +18,7 @@ import (
 func TestBigInteger(t *testing.T) {
 	t.Run("NewBigInt returns error if numBytes is too large", func(t *testing.T) {
 		_, err := bi.BigInt(bigbigendian.MaxSize+1, false)
-		assert.True(t, errors.Is(err, types.ErrInvalidConfig))
+		assert.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	signed, createErr := bi.BigInt(4, true)
@@ -57,22 +57,22 @@ func TestBigInteger(t *testing.T) {
 	t.Run("Encoding out of range values return an error", func(t *testing.T) {
 		bi := big.NewInt(math.MaxInt32 + 1)
 		_, err := signed.Encode(bi, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 		bi = big.NewInt(math.MinInt32 - 1)
 		_, err = signed.Encode(bi, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 
 		bi = big.NewInt(math.MaxUint32 + 1)
 		_, err = unsigned.Encode(bi, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 		bi = big.NewInt(-1)
 		_, err = unsigned.Encode(bi, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Encode returns an error if input is not a *big.Int", func(t *testing.T) {
 		_, err := signed.Encode(100, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("GetType returns *big.Int", func(t *testing.T) {
@@ -126,6 +126,6 @@ func TestBigInteger(t *testing.T) {
 
 	t.Run("Decode returns an error when there are not enough bytes", func(t *testing.T) {
 		_, _, err := signed.Decode([]byte{1, 2})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 }

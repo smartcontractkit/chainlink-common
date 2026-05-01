@@ -60,7 +60,6 @@ func TestRelayerService(t *testing.T) {
 
 		relayertest.Run(t, relayer)
 		servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames...)
-
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -71,7 +70,6 @@ func TestRelayerService(t *testing.T) {
 
 		relayertest.Run(t, relayer)
 		servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames...)
-
 	})
 }
 
@@ -93,7 +91,6 @@ func TestRelayerService_recovery(t *testing.T) {
 	} else {
 		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames...)
 	}
-
 }
 
 func TestRelayerService_HealthReport(t *testing.T) {
@@ -113,7 +110,6 @@ func TestRelayerService_HealthReport(t *testing.T) {
 	require.Eventually(t, func() bool { return s.Ready() == nil }, tests.WaitTimeout(t)/2, time.Second, s.Ready())
 
 	servicetest.AssertHealthReportNames(t, s.HealthReport(), relayerServiceNames...)
-
 }
 
 // AssertLogsObserved records an error for each name which does not have any corresponding log lines.

@@ -69,7 +69,7 @@ func TestReportingPlugin_Query(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, qry.Ids, 1)
-	assert.Equal(t, qry.Ids[0].WorkflowId, workflowTestID)
+	assert.Equal(t, workflowTestID, qry.Ids[0].WorkflowId)
 	assert.Equal(t, qry.Ids[0].WorkflowExecutionId, eid)
 }
 
@@ -196,7 +196,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	assert.Len(t, obspb.Observations, 1)
 	fo := obspb.Observations[0]
 	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
-	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
+	assert.Equal(t, workflowTestID, fo.Id.WorkflowId)
 	lvp, err := values.FromListValueProto(fo.Observations)
 	require.NoError(t, err)
 	assert.Equal(t, o, lvp)
@@ -266,7 +266,7 @@ func TestReportingPlugin_Observation_NoResults(t *testing.T) {
 	err = proto.Unmarshal(obs, obspb)
 	require.NoError(t, err)
 
-	assert.Len(t, obspb.Observations, 0)
+	assert.Empty(t, obspb.Observations)
 }
 
 func TestReportingPlugin_Outcome(t *testing.T) {
@@ -570,7 +570,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 
 	assert.Len(t, reports, 1)
 	gotRep := reports[0]
-	assert.Len(t, gotRep.ReportWithInfo.Report, 0)
+	assert.Empty(t, gotRep.ReportWithInfo.Report)
 
 	ib := gotRep.ReportWithInfo.Info
 	info, err := extractReportInfo(ib)
@@ -1101,17 +1101,17 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 	err = proto.Unmarshal(outcome, opb1)
 	require.NoError(t, err)
 
-	assert.Equal(t, opb1.Outcomes[workflowTestID].EncoderName, "evm")
+	assert.Equal(t, "evm", opb1.Outcomes[workflowTestID].EncoderName)
 	ec, err := values.FromMapValueProto(opb1.Outcomes[workflowTestID].EncoderConfig)
 	require.NoError(t, err)
 	assert.Equal(t, ec, m)
 
 	// No consensus on outcome 2
-	assert.Equal(t, opb1.Outcomes[workflowTestID2].EncoderName, "")
+	assert.Empty(t, opb1.Outcomes[workflowTestID2].EncoderName)
 	assert.Nil(t, opb1.Outcomes[workflowTestID2].EncoderConfig)
 
 	// Outcome 3 doesn't set the encoder
-	assert.Equal(t, opb1.Outcomes[workflowTestID3].EncoderName, "")
+	assert.Empty(t, opb1.Outcomes[workflowTestID3].EncoderName)
 	assert.Nil(t, opb1.Outcomes[workflowTestID3].EncoderConfig)
 }
 

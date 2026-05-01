@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/testing/protocmp"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -172,9 +173,9 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	unmarshaled, err := pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
-	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
-	require.EqualValues(t, req.Config, unmarshaled.Config)
-	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
+	require.Equal(t, req.Metadata, unmarshaled.Metadata)
+	require.Equal(t, req.Config, unmarshaled.Config)
+	require.Equal(t, req.Inputs, unmarshaled.Inputs)
 	require.True(t, proto.Equal(req.ConfigPayload, unmarshaled.ConfigPayload))
 
 	req.Metadata.ReferenceID = anyReferenceID
@@ -184,9 +185,9 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	unmarshaled, err = pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
-	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
-	require.EqualValues(t, req.Config, unmarshaled.Config)
-	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
+	require.Equal(t, req.Metadata, unmarshaled.Metadata)
+	require.Equal(t, req.Config, unmarshaled.Config)
+	require.Equal(t, req.Inputs, unmarshaled.Inputs)
 	require.True(t, proto.Equal(req.ConfigPayload, unmarshaled.ConfigPayload))
 }
 
@@ -207,7 +208,7 @@ func TestTriggerResponseFromProto(t *testing.T) {
 		}
 		resp, err := pb.TriggerResponseFromProto(protoResp)
 		require.NoError(t, err)
-		assert.Nil(t, resp.Err)
+		assert.NoError(t, resp.Err)
 		assert.Equal(t, "id", resp.Event.ID)
 		assert.Equal(t, "type", resp.Event.TriggerType)
 		assert.NotNil(t, resp.Event.Outputs)
@@ -220,7 +221,7 @@ func TestTriggerResponseFromProto(t *testing.T) {
 		}
 		resp, err := pb.TriggerResponseFromProto(protoResp)
 		require.NoError(t, err)
-		assert.NotNil(t, resp.Err)
+		assert.Error(t, resp.Err)
 		assert.Equal(t, "something went wrong", resp.Err.Error())
 	})
 
@@ -265,9 +266,9 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 	unmarshaled, err := pb.UnmarshalTriggerRegistrationRequest(raw)
 	require.NoError(t, err)
 
-	require.EqualValues(t, req.TriggerID, unmarshaled.TriggerID)
-	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
-	require.EqualValues(t, req.Config, unmarshaled.Config)
+	require.Equal(t, req.TriggerID, unmarshaled.TriggerID)
+	require.Equal(t, req.Metadata, unmarshaled.Metadata)
+	require.Equal(t, req.Config, unmarshaled.Config)
 	require.True(t, proto.Equal(req.Payload, unmarshaled.Payload))
-	require.EqualValues(t, req.Method, unmarshaled.Method)
+	require.Equal(t, req.Method, unmarshaled.Method)
 }

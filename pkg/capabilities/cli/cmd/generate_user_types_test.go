@@ -2,7 +2,6 @@ package cmd_test
 
 import (
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -41,7 +40,7 @@ func TestGenerateUserTypes(t *testing.T) {
 		content, err := os.ReadFile("./testdata/fixtures/usercode/pkg2/wrappers_generated.go")
 		require.NoError(t, err)
 
-		require.False(t, strings.Contains(string(content), "NotWrappedCap"))
+		require.NotContains(t, string(content), "NotWrappedCap")
 	})
 
 	t.Run("Wrapping wrapped type is no-op", func(t *testing.T) {

@@ -39,7 +39,6 @@ func TestBigFloatUnmarshalFloat64(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.payload, func(t *testing.T) {
 			var b BigFloat
 			err := json.Unmarshal([]byte(tc.payload), &b)
@@ -63,7 +62,6 @@ func TestBigFloatUnmarshalString(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.payload, func(t *testing.T) {
 			var b BigFloat
 			err := json.Unmarshal([]byte(tc.payload), &b)

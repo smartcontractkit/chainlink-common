@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -194,7 +195,7 @@ func ValidateEncryptedSecrets(secretsData []byte, encryptionPublicKeys map[strin
 		}
 
 		if keyFromMetadata != hex.EncodeToString(encryptionPublicKey[:]) {
-			return fmt.Errorf("the encryption public key in the encrypted secrets metadata does not match the one in the workflow registry. Ensure secrets have been correctly encrypted for this DON")
+			return errors.New("the encryption public key in the encrypted secrets metadata does not match the one in the workflow registry. Ensure secrets have been correctly encrypted for this DON")
 		}
 	}
 

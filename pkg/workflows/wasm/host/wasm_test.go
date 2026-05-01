@@ -62,7 +62,7 @@ const (
 )
 
 func createTestBinary(outputPath, path string, uncompressed bool, t testing.TB) []byte {
-	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
+	cmd := exec.Command("go", "build", "-o", path, "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/"+outputPath) // #nosec
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
 
 	output, err := cmd.CombinedOutput()
@@ -232,7 +232,7 @@ func Test_Compute_Emit(t *testing.T) {
 		m.Start()
 
 		_, err = m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("failure on emit writes to error chain and logs", func(t *testing.T) {
@@ -409,7 +409,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
@@ -462,7 +462,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
@@ -516,7 +516,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
@@ -558,7 +558,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.ErrorContains(t, err, assert.AnError.Error())
 		require.Len(t, logs.AllUntimed(), 1)
 
@@ -621,7 +621,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 		ctx := context.WithValue(t.Context(), key, expectedValue)
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
@@ -671,7 +671,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		_, err = m.Run(ctx, req)
-		require.NotNil(t, err)
+		require.Error(t, err)
 		assert.ErrorContains(t, err, fmt.Sprintf("error executing runner: error executing custom compute: %s", assert.AnError))
 	})
 
@@ -717,7 +717,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.NotNil(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("NOK: exceeded default max fetch calls", func(t *testing.T) {
@@ -761,7 +761,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.NotNil(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("OK: making up to max fetch calls", func(t *testing.T) {
@@ -806,7 +806,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.Nil(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("OK: multiple request reusing module", func(t *testing.T) {
@@ -851,13 +851,12 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.Nil(t, err)
+		require.NoError(t, err)
 
 		// we can reuse the request because after completion it gets deleted from the store
 		_, err = m.Run(ctx, req)
-		require.Nil(t, err)
+		require.NoError(t, err)
 	})
-
 }
 
 func TestModule_Errors(t *testing.T) {
@@ -1016,7 +1015,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	// but with our stubbed out functions,
 	// it should execute and return almost immediately.
 	assert.WithinDuration(t, start, end, 10*time.Second)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
@@ -1120,7 +1119,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 		},
 	}
 	_, err = m.Run(ctx, req)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
@@ -1150,7 +1149,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	}
 	// This will return an error if FOO == BAR in the WASM binary
 	_, err = m.Run(ctx, req)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestModule_Sandbox_RandomGet(t *testing.T) {
@@ -1185,7 +1184,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		m.Start()
 
 		_, err = m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("success: default module config is non deterministic", func(t *testing.T) {
@@ -1321,11 +1320,11 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		expectedEntries := []zapcore.Entry{
 			{
 				Level:   zapcore.ErrorLevel,
-				Message: fmt.Sprintf("error emitting message: %s", "some error"),
+				Message: "error emitting message: " + "some error",
 			},
 			{
 				Level:   zapcore.ErrorLevel,
-				Message: fmt.Sprintf("error emitting message* failed to create emission* %s", "some error"),
+				Message: "error emitting message* failed to create emission* " + "some error",
 			},
 		}
 		for i := range expectedEntries {
@@ -1376,7 +1375,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		expectedEntries := []zapcore.Entry{
 			{
 				Level:   zapcore.ErrorLevel,
-				Message: fmt.Sprintf("error emitting message: %s", "some error"),
+				Message: "error emitting message: " + "some error",
 			},
 			{
 				Level:   zapcore.ErrorLevel,

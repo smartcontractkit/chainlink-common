@@ -534,7 +534,7 @@ func TestPackSecureMintReportForIntoUint224(t *testing.T) {
 
 			// Additional validation: ensure the result fits in 224 bits
 			maxUint224 := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 224), big.NewInt(1))
-			assert.True(t, result.Cmp(maxUint224) <= 0, "result should fit in 224 bits")
+			assert.LessOrEqual(t, result.Cmp(maxUint224), 0, "result should fit in 224 bits")
 
 			// Verify bit layout if we have expected values and not a large block number
 			if tt.expected != nil {
@@ -592,7 +592,7 @@ func TestPackSecureMintReportForIntoUint224_EdgeCases(t *testing.T) {
 
 			// Verify the result is within uint224 bounds
 			maxUint224 := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 224), big.NewInt(1))
-			assert.True(t, result.Cmp(maxUint224) <= 0, "result should fit in 224 bits")
+			assert.LessOrEqual(t, result.Cmp(maxUint224), 0, "result should fit in 224 bits")
 		})
 	}
 }

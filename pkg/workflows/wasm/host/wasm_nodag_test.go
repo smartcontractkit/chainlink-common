@@ -191,7 +191,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
-		require.Equal(t, len(triggers.Subscriptions), 3)
+		require.Len(t, triggers.Subscriptions, 3)
 	})
 }
 
@@ -232,7 +232,7 @@ func Test_NoDAG_LoggingWithLimits(t *testing.T) {
 
 	// allowed 3 logs max, one of which got rejected because it was too long
 	// so expect 2 logs to be emitted
-	require.Equal(t, 2, len(logs))
+	require.Len(t, logs, 2)
 	require.Equal(t, "short log 1", logs[0])
 	require.Equal(t, "short log 3", logs[1])
 }
@@ -280,7 +280,7 @@ func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {
 	// 3. "valid_gauge"               (11 chars) - ALLOWED
 	// 4. "third_one"                 ( 9 chars) - ALLOWED
 	// 5. "fourth_one"                (10 chars) - ALLOWED
-	require.Equal(t, 4, len(emittedMetrics))
+	require.Len(t, emittedMetrics, 4)
 }
 
 func Test_NoDAG_EmitMetricDisabled(t *testing.T) {

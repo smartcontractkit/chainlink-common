@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -74,7 +73,7 @@ func TestRenamer(t *testing.T) {
 
 	t.Run("RetypeToOffChain returns exception if a field is not on the type", func(t *testing.T) {
 		_, err := invalidRenamer.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain works on nested fields even if the field itself is renamed", func(t *testing.T) {
@@ -99,7 +98,7 @@ func TestRenamer(t *testing.T) {
 	t.Run("RetypeToOffChain returns an error if the name is already in use", func(t *testing.T) {
 		dup := codec.NewRenamer(map[string]string{"A": "B"})
 		_, err := dup.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
@@ -127,7 +126,7 @@ func TestRenamer(t *testing.T) {
 
 	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {
 		_, err := invalidRenamer.TransformToOnChain(testStruct{}, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {

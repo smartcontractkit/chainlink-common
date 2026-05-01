@@ -58,7 +58,6 @@ func (c *TONClient) GetAccountBalance(ctx context.Context, addr string, block *t
 	return &tontypes.Balance{
 		Balance: balance,
 	}, nil
-
 }
 
 // ---- Transaction Management ----

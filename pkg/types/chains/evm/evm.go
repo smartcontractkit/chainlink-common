@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 
@@ -27,7 +26,7 @@ type Log struct {
 	BlockNumber *big.Int   // number of the block containing this log
 	Topics      []Hash     // indexed fields of the log
 	EventSig    Hash       // keccak256 hash of log event signature
-	Address     Address    // address of the contract that emmited the log
+	Address     Address    // address of the contract that emitted the log
 	TxHash      Hash       // hash of the transaction this log is produced by
 	Data        ABIPayload // abi encoded data of the log
 	Removed     bool       // flag if log was removed during reorg
@@ -106,7 +105,7 @@ type ReceiptGasInfo struct {
 // matches evm-style receipt
 type Receipt struct {
 	Status            uint64   // 1 for success 0 for revert
-	Logs              []*Log   // logs emmited by the transaction
+	Logs              []*Log   // logs emitted by the transaction
 	TxHash            Hash     // hash of the transaction this receipt is for
 	ContractAddress   Address  // Address of the contract if one was created by this transaction
 	GasUsed           uint64   // actual gas used during execution in gas units
@@ -154,7 +153,7 @@ type TxError struct {
 }
 
 func (e *TxError) Error() string {
-	return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
+	return "Fail processing Transaction with internal TxID: " + e.TxID
 }
 
 type TransactionResult struct {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777652949787,
+  "lastUpdate": 1777681439299,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45420,6 +45420,66 @@ window.BENCHMARK_DATA = {
             "value": 128381,
             "unit": "ns/op",
             "extra": "8913 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cfe1cc77332f89799d52e31e540928faad84fdfe",
+          "message": "codeowners: add privacy team to /pkg/teeattestation/ (#2005)\n\nThe TEE attestation logic was extracted from the confidential-compute\nrepo (deleting enclave-client/attestation-validator/ in\nsmartcontractkit/confidential-compute#279) and now lives here. The\nprivacy team owns the upstream code and needs codeowner status to\nreview changes to attestation logic going forward. Foundations stays\non as co-owner, matching the multi-team pattern used elsewhere in\nthis file.",
+          "timestamp": "2026-05-02T00:12:35Z",
+          "tree_id": "148513e1e5ec92bf261f5928a3317866cc63143e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cfe1cc77332f89799d52e31e540928faad84fdfe"
+        },
+        "date": 1777681436786,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 929.6,
+            "unit": "ns/op",
+            "extra": "1312503 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 66650,
+            "unit": "ns/op",
+            "extra": "18128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.6,
+            "unit": "ns/op",
+            "extra": "2903671 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 74988,
+            "unit": "ns/op",
+            "extra": "15718 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25040,
+            "unit": "ns/op",
+            "extra": "48421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 124306,
+            "unit": "ns/op",
+            "extra": "9595 times\n4 procs"
           }
         ]
       }

@@ -268,6 +268,9 @@ func (b *BaseTriggerCapability[T]) Stop() {
 
 func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan<- TriggerAndId[T]) {
 	b.mu.Lock()
+	// getOrCreateRegLocked returns the existing record if AckEvent already created
+	// one (preserving any pre-ACKed entries), or a fresh one.  In either case we
+	// only overwrite the inbox field, so pre-ACK state is never erased.
 	reg := b.getOrCreateRegLocked(triggerID)
 	hadInbox := reg.inbox != nil
 	reg.inbox = sendCh
@@ -443,7 +446,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	if reg != nil {
 		_, eventWasInPending = reg.pending[eventId]
 	}
-	hadTriggerBucket = reg != nil && (len(reg.pending) > 0 || eventWasInPending)
+	hadTriggerBucket = reg != nil
 
 	if reg != nil {
 		eventsForTrigger := reg.pending
@@ -477,6 +480,11 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	//   2. (re-delivery) The upstream trigger re-delivers the same event
 	//      (e.g. EVM trigger after block finalization prunes its sent-set),
 	//      even though the event was already ACKed during a prior delivery.
+	//
+	// reg is nil when an ACK arrives before RegisterTrigger on this node — a
+	// valid scenario when faster peers form quorum and the subscriber broadcasts
+	// an ACK to all nodes before this node has registered the trigger.  We still
+	// create a record so that the subsequent DeliverEvent skips the event.
 	if reg == nil {
 		reg = b.getOrCreateRegLocked(triggerId)
 	}
@@ -499,6 +507,10 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			"hadNilPendingRecord", hadNilPendingRecord)
 	}
 
+	// Always attempt the store delete regardless of whether the event was found
+	// in memory.  Store and in-memory state can diverge after a node restart
+	// (the store survives, the in-memory map is rebuilt lazily from the store).
+	// store.DeleteEvent must be idempotent: a missing row is not an error.
 	if err := b.store.DeleteEvent(ctx, triggerId, eventId); err != nil {
 		b.lggr.Errorw("base trigger ACK failed to delete event from store",
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
@@ -506,13 +518,9 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAckError("store_delete_failed")
 		return err
 	}
-	if found {
-		b.lggr.Debugw("base trigger ACK store delete succeeded",
-			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
-	} else {
-		b.lggr.Infow("base trigger ACK store delete succeeded (memory miss path; store row removed if present)",
-			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
-	}
+	b.lggr.Debugw("base trigger ACK store delete succeeded",
+		"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
+		"foundInMemory", found)
 	return nil
 }
 

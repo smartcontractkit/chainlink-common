@@ -201,11 +201,7 @@ func (noopBaseTriggerMetrics) IncAck(string, string)                            
 func (noopBaseTriggerMetrics) ObserveTimeToAck(string, string, time.Duration, int) {}
 func (noopBaseTriggerMetrics) IncInboxMissing(string)                              {}
 func (noopBaseTriggerMetrics) IncInboxFull(string)                                 {}
-func (noopBaseTriggerMetrics) EmitUndeliveredWarning(string, string)               {}
-func (noopBaseTriggerMetrics) EmitUndeliveredCritical(string, string)              {}
 func (noopBaseTriggerMetrics) IncAckError(string)                                  {}
 func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                          {}
 func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}
-func (noopBaseTriggerMetrics) IncStuckEvent(string, string)                        {}
-func (noopBaseTriggerMetrics) DecStuckEvent(string, string)                        {}
 func (noopBaseTriggerMetrics) IncStoppedResending(string, string, int)             {}

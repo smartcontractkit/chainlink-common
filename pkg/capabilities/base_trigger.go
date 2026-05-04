@@ -222,6 +222,7 @@ func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
 		return defaultPruneAge
 	}
 	if v <= 0 {
+		v = defaultPruneAge
 		b.lggr.Errorw("found BaseTriggerPruneAge <=0 in settings; falling back to default", "defaultPruneAge", defaultPruneAge)
 	}
 	return v
@@ -537,10 +538,9 @@ func (b *BaseTriggerCapability[T]) retransmitLoop() {
 }
 
 type stoppedResendingEvent struct {
-	triggerID   string
-	eventID     string
-	attempts    int
-	wasCritical bool
+	triggerID string
+	eventID   string
+	attempts  int
 }
 
 // reachedMaxRetries returns true when the event has exhausted its allowed send attempts.
@@ -739,7 +739,6 @@ func (b *BaseTriggerCapability[T]) pruneLoop() {
 }
 
 func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
-	//
 	age := b.pruneAge(b.ctx)
 	if age <= 0 {
 		return

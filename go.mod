@@ -2,6 +2,8 @@ module github.com/smartcontractkit/chainlink-common
 
 go 1.26.2
 
+replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress
+
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/XSAM/otelsql v0.37.0

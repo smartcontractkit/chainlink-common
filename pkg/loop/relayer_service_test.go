@@ -39,7 +39,8 @@ var relayerServiceNames = []string{
 }
 
 func TestRelayerService(t *testing.T) {
-	t.Parallel()
+	tests.VerifyNoLeaks(t)
+
 	capRegistry := mocks.NewCapabilitiesRegistry(t)
 	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginRelayerName, false, 0)
@@ -56,7 +57,7 @@ func TestRelayerService(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * goplugin.KeepAliveTickDuration)
+		time.Sleep(goplugin.KeepAliveTickDuration)
 
 		relayertest.Run(t, relayer)
 		servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames...)
@@ -66,7 +67,7 @@ func TestRelayerService(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * goplugin.KeepAliveTickDuration)
+		time.Sleep(goplugin.KeepAliveTickDuration)
 
 		relayertest.Run(t, relayer)
 		servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames...)

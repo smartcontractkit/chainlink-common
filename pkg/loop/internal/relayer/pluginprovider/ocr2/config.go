@@ -27,7 +27,7 @@ type ConfigProviderClient struct {
 	contractTracker  libocr.ContractConfigTracker
 }
 
-func NewConfigProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ConfigProviderClient {
+func NewConfigProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *ConfigProviderClient {
 	c := &ConfigProviderClient{ServiceClient: goplugin.NewServiceClient(b, cc)}
 	c.offchainDigester = &offchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
 	c.contractTracker = &contractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}

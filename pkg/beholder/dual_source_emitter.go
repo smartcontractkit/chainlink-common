@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -55,14 +56,21 @@ func (d *DualSourceEmitter) Close() error {
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	_, err := d.BatchEmit(ctx, []Message{
+		NewMessage(body, attrKVs...),
+	})
+	return err
+}
+
+func (d *DualSourceEmitter) BatchEmit(ctx context.Context, messages []Message, options ...BatchEmitOption) ([]*chipingress.PublishResult, error) {
 	// Emit via OTLP first
-	if err := d.otelCollectorEmitter.Emit(ctx, body, attrKVs...); err != nil {
-		return err
+	if _, err := d.otelCollectorEmitter.BatchEmit(ctx, messages, options...); err != nil {
+		return nil, err
 	}
 
 	// Emit via chip ingress async
 	if err := d.wg.TryAdd(1); err != nil {
-		return err
+		return nil, err
 	}
 	go func(ctx context.Context) {
 		defer d.wg.Done()
@@ -70,12 +78,12 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 		ctx, cancel = d.stopCh.Ctx(ctx)
 		defer cancel()
 
-		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+		if _, err := d.chipIngressEmitter.BatchEmit(ctx, messages, options...); err != nil {
 			// If the chip ingress emitter fails, we ONLY log the error
 			// because we still want to send the data to the OTLP collector and not cause disruption
 			d.log.Infof("failed to emit to chip ingress: %v", err)
 		}
 	}(context.WithoutCancel(ctx))
 
-	return nil
+	return nil, nil
 }

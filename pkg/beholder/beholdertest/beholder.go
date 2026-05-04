@@ -15,6 +15,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 const (
@@ -192,3 +193,15 @@ func (e *assertMessageEmitter) EmitMessage(_ context.Context, msg beholder.Messa
 
 	return nil
 }
+
+func (e *assertMessageEmitter) BatchEmit(_ context.Context, messages []beholder.Message, _ ...beholder.BatchEmitOption) ([]*chipingress.PublishResult, error) {
+	e.t.Helper()
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.msgs = append(e.msgs, messages...)
+
+	return nil, nil
+}
+

@@ -2,6 +2,8 @@ module github.com/smartcontractkit/chainlink-common
 
 go 1.26.2
 
+replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress
+
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/XSAM/otelsql v0.37.0
@@ -41,7 +43,7 @@ require (
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/chain-selectors v1.0.89
-	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.10
+	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.11-0.20260504142219-ceccf433a82e
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20251024234028-0988426d98f4
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20260420204255-a3f3bdd56877
 	github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b

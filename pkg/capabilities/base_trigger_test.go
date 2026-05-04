@@ -1202,60 +1202,76 @@ func TestIsDuplicateKeyError(t *testing.T) {
 	}
 }
 
-func TestBaseTrigger_ScanPending_SortOrder(t *testing.T) {
+func TestBaseTrigger_ScanPending_NewEventsBeforeRetries(t *testing.T) {
 	store := NewMemEventStore()
-	// Use a capacity large enough to receive everything without blocking.
-	sendChA := make(chan TriggerAndId[*wrapperspb.BytesValue], 20)
-	sendChB := make(chan TriggerAndId[*wrapperspb.BytesValue], 20)
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 20)
 	b := newBase(t, store)
+	b.RegisterTrigger("trig", sendCh)
+	// No Start — call scanPending directly to avoid background-loop interference.
 
-	b.RegisterTrigger("trigA", sendChA)
-	b.RegisterTrigger("trigB", sendChB)
-	require.NoError(t, b.Start(t.Context()))
-	t.Cleanup(func() { b.Stop() })
-
-	// Inject events directly into pending so we control Attempts counts.
-	// "new" events (Attempts==0) must always sort before retries (Attempts>0).
-	// Among retries, sort is by EventId then TriggerId.
+	stale := time.Now().Add(-time.Minute) // ensure backoff has elapsed
 	b.mu.Lock()
-	regA := b.byTrigger["trigA"]
-	regB := b.byTrigger["trigB"]
-	now := time.Now().Add(-time.Minute) // guarantee backoff has elapsed
-
-	regA.pending["e-retry"] = &PendingEvent{TriggerId: "trigA", EventId: "e-retry", Attempts: 5, FirstAt: now, LastSentAt: now, Payload: []byte{}}
-	regA.pending["e-new"] = &PendingEvent{TriggerId: "trigA", EventId: "e-new", Attempts: 0, FirstAt: now, Payload: []byte{}}
-	regB.pending["e-new"] = &PendingEvent{TriggerId: "trigB", EventId: "e-new", Attempts: 0, FirstAt: now, Payload: []byte{}}
+	reg := b.byTrigger["trig"]
+	reg.pending["z-new"] = &PendingEvent{TriggerId: "trig", EventId: "z-new", Attempts: 0, FirstAt: stale, Payload: []byte{}}
+	reg.pending["e-retry"] = &PendingEvent{TriggerId: "trig", EventId: "e-retry", Attempts: 3, FirstAt: stale, LastSentAt: stale, Payload: []byte{}}
+	reg.pending["a-new"] = &PendingEvent{TriggerId: "trig", EventId: "a-new", Attempts: 0, FirstAt: stale, Payload: []byte{}}
 	b.mu.Unlock()
 
-	// Run one tick so the sort fires.
 	b.scanPending()
 
-	// Collect every send in order received across both channels.
-	type sent struct{ trigger, event string }
-	var got []sent
+	// Buffered channel is FIFO — read order matches send order.
+	var got []string
 drain:
 	for {
 		select {
-		case v := <-sendChA:
-			got = append(got, sent{"trigA", v.Id})
-		case v := <-sendChB:
-			got = append(got, sent{"trigB", v.Id})
+		case v := <-sendCh:
+			got = append(got, v.Id)
 		default:
 			break drain
 		}
 	}
 
-	require.Len(t, got, 3)
+	require.Equal(t, []string{"a-new", "z-new", "e-retry"}, got,
+		"new events must precede retries; within each tier events sort alphabetically by EventId")
+}
 
-	// The two "e-new" events (Attempts==0) must appear before "e-retry".
-	// Within new events: trigA sorts before trigB by TriggerId.
-	require.Equal(t, "e-new", got[0].event, "first send must be a new event")
-	require.Equal(t, "e-new", got[1].event, "second send must be a new event")
-	require.Equal(t, "e-retry", got[2].event, "retry must come after all new events")
+func TestBaseTrigger_ScanPending_TriggerIDTiebreaker(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
 
-	// Tiebreak by TriggerId: "trigA" < "trigB".
-	require.Equal(t, "trigA", got[0].trigger, "trigA new event must sort before trigB new event")
-	require.Equal(t, "trigB", got[1].trigger)
+	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"BaseTriggerRetransmitEnabled": "true",
+			"BaseTriggerRetryInterval":     "1ms",
+			"BaseTriggerMaxSendsPerTick":   "1",
+			"BaseTriggerMaxRetries":        "1000"
+		}
+	}`))
+
+	store := NewMemEventStore()
+	b, err := NewBaseTriggerCapabilityWithCRESettings(context.Background(), store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	sendChA := make(chan TriggerAndId[*wrapperspb.BytesValue], 5)
+	sendChB := make(chan TriggerAndId[*wrapperspb.BytesValue], 5)
+	b.RegisterTrigger("trigA", sendChA)
+	b.RegisterTrigger("trigB", sendChB)
+
+	// Same EventId on both triggers — only differentiator in the sort is TriggerId.
+	stale := time.Now().Add(-time.Minute)
+	b.mu.Lock()
+	b.byTrigger["trigA"].pending["e1"] = &PendingEvent{TriggerId: "trigA", EventId: "e1", Attempts: 2, FirstAt: stale, LastSentAt: stale, Payload: []byte{}}
+	b.byTrigger["trigB"].pending["e1"] = &PendingEvent{TriggerId: "trigB", EventId: "e1", Attempts: 2, FirstAt: stale, LastSentAt: stale, Payload: []byte{}}
+	b.mu.Unlock()
+
+	// Cap=1: only the event from the alphabetically first trigger is sent.
+	b.scanPending()
+
+	require.Equal(t, 1, len(sendChA), "trigA must be the one event sent under the cap")
+	require.Equal(t, 0, len(sendChB), "trigB must be deferred: trigA sorts first by TriggerId")
 }
 
 func TestBaseTrigger_ExpirePreAcked_RemovesStaleEntries(t *testing.T) {

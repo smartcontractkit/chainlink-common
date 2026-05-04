@@ -48,7 +48,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 	t.Run("GetLedgerEntries_WithLiveUntil", func(t *testing.T) {
 		liveUntil := uint32(500)
 		svc.getLedgerEntries = func(_ context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
-			require.Equal(t, []stellartypes.XDR{"a2V5MQ=="}, req.Keys) // base64("key1")
+			require.Equal(t, "a2V5MQ==", req.Keys) // base64("key1")
 			return stellartypes.GetLedgerEntriesResponse{
 				LatestLedger: 50,
 				Entries: []stellartypes.LedgerEntryResult{
@@ -62,12 +62,12 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			}, nil
 		}
 
-		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"a2V5MQ=="}})
+		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5MQ=="}})
 		require.NoError(t, err)
 		require.Equal(t, uint32(50), resp.LatestLedger)
 		require.Len(t, resp.Entries, 1)
-		require.Equal(t, stellartypes.XDR("a2V5MQ=="), resp.Entries[0].KeyXDR)
-		require.Equal(t, stellartypes.XDR("ZGF0YTE="), resp.Entries[0].DataXDR)
+		require.Equal(t, "a2V5MQ==", resp.Entries[0].KeyXDR)
+		require.Equal(t, "ZGF0YTE=", resp.Entries[0].DataXDR)
 		require.Equal(t, uint32(30), resp.Entries[0].LastModifiedLedger)
 		require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)
 		require.Equal(t, liveUntil, *resp.Entries[0].LiveUntilLedgerSeq)
@@ -88,7 +88,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			}, nil
 		}
 
-		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"a2V5Mg=="}})
+		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5Mg=="}})
 		require.NoError(t, err)
 		require.Len(t, resp.Entries, 1)
 		require.Nil(t, resp.Entries[0].LiveUntilLedgerSeq)
@@ -111,7 +111,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			}, nil
 		}
 
-		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"azE=", "azI="}})
+		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"azE=", "azI="}})
 		require.NoError(t, err)
 		require.Len(t, resp.Entries, 2)
 		require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)
@@ -131,7 +131,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 
 		resp, err := client.GetLatestLedger(ctx)
 		require.NoError(t, err)
-		require.Equal(t, stellartypes.LedgerHash("deadbeef"), resp.Hash)
+		require.Equal(t, "deadbeef", resp.Hash)
 		require.Equal(t, uint32(21), resp.ProtocolVersion)
 		require.Equal(t, uint32(1234), resp.Sequence)
 		require.Equal(t, int64(9876543210), resp.LedgerCloseTime)

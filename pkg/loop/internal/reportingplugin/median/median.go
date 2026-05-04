@@ -50,7 +50,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			pb.RegisterDataSourceServer(s, newDataSourceServer(juelsPerFeeCoin))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(juelsPerFeeCoinDataSourceRes)
 
@@ -58,7 +58,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			pb.RegisterDataSourceServer(s, newDataSourceServer(gasPriceSubunits))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(gasPriceSubunitsDataSourceRes)
 
@@ -74,7 +74,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(providerRes)
 
@@ -82,7 +82,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			pb.RegisterErrorLogServer(s, errorlog.NewServer(errorLog))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(errorLogRes)
 
@@ -90,7 +90,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		if deviationFuncDefinition != nil {
 			deviationFuncDefinitionJSON, err = json.Marshal(deviationFuncDefinition)
 			if err != nil {
-				return 0, nil, fmt.Errorf("failed to marshal deviationFuncDefinition: %w", err)
+				return 0, deps, fmt.Errorf("failed to marshal deviationFuncDefinition: %w", err)
 			}
 		}
 
@@ -104,9 +104,9 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			DeviationFuncDefinition:      deviationFuncDefinitionJSON,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
-		return reply.ReportingPluginFactoryID, nil, nil
+		return reply.ReportingPluginFactoryID, deps, nil
 	})
 	return ocr2.NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
 }

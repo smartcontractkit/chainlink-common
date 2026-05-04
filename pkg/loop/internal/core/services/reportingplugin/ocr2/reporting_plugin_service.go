@@ -59,7 +59,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterPipelineRunnerServiceServer(s, pipeline.NewRunnerServer(pipelineRunner))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(pipelineRunnerRes)
 
@@ -67,7 +67,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(telemetryRes)
 
@@ -75,7 +75,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterErrorLogServer(s, errorlog.NewServer(errorLog))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(errorLogRes)
 
@@ -84,14 +84,14 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		})
 
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new key value store: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new key value store: %w", err)
 		}
 
 		deps.Add(keyValueStoreRes)
 
 		relayerSetServer, relayerSetServerRes := relayerset.NewRelayerSetServer(m.Logger, relayerSet, m.BrokerExt)
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to create new relayer set: %w", err)
+			return 0, deps, fmt.Errorf("failed to create new relayer set: %w", err)
 		}
 
 		relayerSetID, relayerSetRes, err := m.ServeNew("RelayerSet", func(s *grpc.Server) {
@@ -99,7 +99,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		})
 
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new relayer set: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new relayer set: %w", err)
 		}
 
 		deps.Add(relayerSetRes)
@@ -121,9 +121,9 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			RelayerSetID:     relayerSetID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
-		return reply.ID, nil, nil
+		return reply.ID, deps, nil
 	})
 	return NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
 }

@@ -139,9 +139,9 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 
 			if md == nil {
 				return false, nil
-			} else {
-				return md.MapToUntypedApi, nil
 			}
+
+			return md.MapToUntypedApi, nil
 		},
 		"addImport": func(importPath protogen.GoImportPath, ignore string) string {
 			importName := importPath.String()
@@ -258,6 +258,18 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			default:
 				return line
 			}
+		},
+		"TeeEnabled": func(s *protogen.Service) (bool, error) {
+			md, err := getCapabilityMetadata(s)
+			if err != nil {
+				return false, err
+			}
+			for _, env := range md.AdditionalEnvironments {
+				if env == generator.AdditionalEnironments_ADDITIONAL_ENVIRONMENTS_TEE {
+					return true, nil
+				}
+			}
+			return false, nil
 		},
 	}).Funcs(t.ExtraFns)
 

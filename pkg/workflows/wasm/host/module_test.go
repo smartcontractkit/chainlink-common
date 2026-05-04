@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
@@ -620,7 +622,7 @@ func Test_SdkLabeler(t *testing.T) {
 // CallAwaitRace validates that every call can be awaited.
 func Test_CallAwaitRace(t *testing.T) {
 	ctx := t.Context()
-	mockExecHelper := NewMockExecutionHelper(t)
+	mockExecHelper := mocks.NewMockExecutionHelper(t)
 	mockExecHelper.EXPECT().
 		CallCapability(matches.AnyContext, mock.Anything).
 		Return(&sdkpb.CapabilityResponse{}, nil)

@@ -48,7 +48,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 	t.Run("GetLedgerEntries_WithLiveUntil", func(t *testing.T) {
 		liveUntil := uint32(500)
 		svc.getLedgerEntries = func(_ context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
-			require.Equal(t, "a2V5MQ==", req.Keys) // base64("key1")
+			require.Equal(t, []string{"a2V5MQ=="}, req.Keys) // base64("key1")
 			return stellartypes.GetLedgerEntriesResponse{
 				LatestLedger: 50,
 				Entries: []stellartypes.LedgerEntryResult{

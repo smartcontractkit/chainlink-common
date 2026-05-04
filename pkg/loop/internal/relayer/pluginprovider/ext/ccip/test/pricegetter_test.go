@@ -70,7 +70,7 @@ func setupPriceGetterServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) 
 	return priceGetter
 }
 
-func setupPriceGetterClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.PriceGetterGRPCClient {
+func setupPriceGetterClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.PriceGetterGRPCClient {
 	return ccip.NewPriceGetterGRPCClient(conn)
 }
 

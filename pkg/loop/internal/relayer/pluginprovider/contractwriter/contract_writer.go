@@ -25,7 +25,7 @@ type Client struct {
 	encodeWith codecpb.EncodingVersion
 }
 
-func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
+func NewClient(b *net.BrokerExt, cc net.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewContractWriterClient(cc),

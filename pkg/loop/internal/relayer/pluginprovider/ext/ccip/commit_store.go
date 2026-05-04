@@ -35,7 +35,7 @@ type CommitStoreGRPCClient struct {
 	conn grpc.ClientConnInterface
 }
 
-func NewCommitStoreReaderGRPCClient(brokerExt *net.BrokerExt, cc grpc.ClientConnInterface) *CommitStoreGRPCClient {
+func NewCommitStoreReaderGRPCClient(brokerExt *net.BrokerExt, cc net.ClientConnInterface) *CommitStoreGRPCClient {
 	return &CommitStoreGRPCClient{client: ccippb.NewCommitStoreReaderClient(cc), b: brokerExt, conn: cc}
 }
 

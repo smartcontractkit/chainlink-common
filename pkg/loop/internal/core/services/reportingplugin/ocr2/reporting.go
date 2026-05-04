@@ -22,7 +22,7 @@ type ReportingPluginFactoryClient struct {
 	grpc pb.ReportingPluginFactoryClient
 }
 
-func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ReportingPluginFactoryClient {
+func NewReportingPluginFactoryClient(b *net.BrokerExt, cc net.ClientConnInterface) *ReportingPluginFactoryClient {
 	b = b.WithName("ReportingPluginProviderClient")
 	return &ReportingPluginFactoryClient{
 		BrokerExt:     b,

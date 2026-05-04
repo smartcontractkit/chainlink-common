@@ -34,7 +34,7 @@ type ExecProviderClient struct {
 	grpcClient ccippb.ExecutionCustomHandlersClient
 }
 
-func NewExecProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *ExecProviderClient {
+func NewExecProviderClient(b *net.BrokerExt, conn net.ClientConnInterface) *ExecProviderClient {
 	pluginProviderClient := ocr2.NewPluginProviderClient(b, conn)
 	grpc := ccippb.NewExecutionCustomHandlersClient(conn)
 	return &ExecProviderClient{

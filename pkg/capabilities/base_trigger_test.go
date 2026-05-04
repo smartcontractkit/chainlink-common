@@ -1018,3 +1018,273 @@ drain:
 	}
 	b.mu.Unlock()
 }
+
+// errStore is a configurable EventStore that can inject errors on any method.
+type errStore struct {
+	*MemEventStore
+	insertErr      error
+	deleteEventErr error
+}
+
+func (s *errStore) Insert(ctx context.Context, r PendingEvent) error {
+	if s.insertErr != nil {
+		return s.insertErr
+	}
+	return s.MemEventStore.Insert(ctx, r)
+}
+
+func (s *errStore) DeleteEvent(ctx context.Context, triggerID, eventID string) error {
+	if s.deleteEventErr != nil {
+		return s.deleteEventErr
+	}
+	return s.MemEventStore.DeleteEvent(ctx, triggerID, eventID)
+}
+
+func TestBaseTrigger_DeliverEvent_SkipsAlreadyPending(t *testing.T) {
+	store := NewMemEventStore()
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b := newBase(t, store)
+
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+
+	// First delivery: goes through normally.
+	require.NoError(t, b.DeliverEvent(t.Context(), te, "trig"))
+
+	// Second delivery of the same event while still pending: must be silently skipped.
+	require.NoError(t, b.DeliverEvent(t.Context(), te, "trig"))
+
+	// Only one store row should exist (the second call must not insert).
+	recs, err := store.List(t.Context())
+	require.NoError(t, err)
+	require.Len(t, recs, 1, "second delivery of a pending event must not insert a duplicate store row")
+}
+
+func TestBaseTrigger_DeliverEvent_DuplicateKeyFromStore_Skips(t *testing.T) {
+	store := &errStore{
+		MemEventStore: NewMemEventStore(),
+		insertErr:     errors.New("ERROR: duplicate key value violates unique constraint (SQLSTATE 23505)"),
+	}
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b := newBase(t, store)
+
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+
+	// The store rejects the insert as a duplicate — DeliverEvent must return nil (no error).
+	require.NoError(t, b.DeliverEvent(t.Context(), te, "trig"),
+		"duplicate key from store should be silently swallowed")
+
+	// Nothing should have been added to in-memory pending.
+	b.mu.Lock()
+	reg := b.byTrigger["trig"]
+	_, isPending := reg.pending["e1"]
+	b.mu.Unlock()
+	require.False(t, isPending, "event must not be in-memory pending after duplicate-key skip")
+}
+
+func TestBaseTrigger_DeliverEvent_StoreInsertError_Propagates(t *testing.T) {
+	storeErr := errors.New("connection refused")
+	store := &errStore{
+		MemEventStore: NewMemEventStore(),
+		insertErr:     storeErr,
+	}
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b := newBase(t, store)
+
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	err := b.DeliverEvent(t.Context(), te, "trig")
+	require.ErrorIs(t, err, storeErr, "generic store insert error must be surfaced to the caller")
+}
+
+func TestBaseTrigger_SendToInbox_NoInboxRegistered(t *testing.T) {
+	store := NewMemEventStore()
+	// tRetransmit=0 disables persistence so DeliverEvent calls sendToInbox directly.
+	b := newBaseWithRetransmit(t, store, 0)
+
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	err := b.DeliverEvent(t.Context(), te, "trig")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no inbox registered for trigger trig")
+}
+
+func TestBaseTrigger_SendToInbox_InboxFull(t *testing.T) {
+	store := NewMemEventStore()
+	// Capacity-0 channel is always full from the sender's perspective.
+	fullCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 0)
+	b := newBaseWithRetransmit(t, store, 0)
+
+	b.RegisterTrigger("trig", fullCh)
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	err := b.DeliverEvent(t.Context(), te, "trig")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "inbox full or closed for trigger trig")
+}
+
+func TestBaseTrigger_AckEvent_NilPendingRecord(t *testing.T) {
+	store := NewMemEventStore()
+	b := newBase(t, store)
+
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	// Manually plant a nil record — this is an abnormal state but must not panic.
+	b.mu.Lock()
+	reg := b.getOrCreateRegLocked("trig")
+	reg.pending["e1"] = nil
+	b.mu.Unlock()
+
+	// AckEvent must not panic and must still reach the store delete.
+	require.NoError(t, b.AckEvent(t.Context(), "trig", "e1"))
+
+	// The nil record must be cleaned up from pending.
+	b.mu.Lock()
+	_, still := b.byTrigger["trig"].pending["e1"]
+	b.mu.Unlock()
+	require.False(t, still, "nil pending record must be removed after ACK")
+}
+
+func TestBaseTrigger_AckEvent_StoreDeleteError_Propagates(t *testing.T) {
+	deleteErr := errors.New("store unavailable")
+	store := &errStore{
+		MemEventStore:  NewMemEventStore(),
+		deleteEventErr: deleteErr,
+	}
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b := newBase(t, store)
+
+	b.RegisterTrigger("trig", sendCh)
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	te := makeTE(t, "trig", "e1", []byte("payload"))
+	// Use the real MemEventStore for Insert so pending is populated normally;
+	// only DeleteEvent is broken.
+	store.insertErr = nil
+	require.NoError(t, b.DeliverEvent(t.Context(), te, "trig"))
+
+	err := b.AckEvent(t.Context(), "trig", "e1")
+	require.ErrorIs(t, err, deleteErr, "store delete error must be returned from AckEvent")
+}
+
+func TestIsDuplicateKeyError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil error", nil, false},
+		{"unrelated error", errors.New("connection refused"), false},
+		{"sqlstate 23505", errors.New("ERROR: duplicate key (SQLSTATE 23505)"), true},
+		{"duplicate key text", errors.New("duplicate key value violates unique constraint"), true},
+		{"both markers", errors.New("duplicate key 23505"), true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, isDuplicateKeyError(tc.err))
+		})
+	}
+}
+
+func TestBaseTrigger_ScanPending_SortOrder(t *testing.T) {
+	store := NewMemEventStore()
+	// Use a capacity large enough to receive everything without blocking.
+	sendChA := make(chan TriggerAndId[*wrapperspb.BytesValue], 20)
+	sendChB := make(chan TriggerAndId[*wrapperspb.BytesValue], 20)
+	b := newBase(t, store)
+
+	b.RegisterTrigger("trigA", sendChA)
+	b.RegisterTrigger("trigB", sendChB)
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	// Inject events directly into pending so we control Attempts counts.
+	// "new" events (Attempts==0) must always sort before retries (Attempts>0).
+	// Among retries, sort is by EventId then TriggerId.
+	b.mu.Lock()
+	regA := b.byTrigger["trigA"]
+	regB := b.byTrigger["trigB"]
+	now := time.Now().Add(-time.Minute) // guarantee backoff has elapsed
+
+	regA.pending["e-retry"] = &PendingEvent{TriggerId: "trigA", EventId: "e-retry", Attempts: 5, FirstAt: now, LastSentAt: now, Payload: []byte{}}
+	regA.pending["e-new"] = &PendingEvent{TriggerId: "trigA", EventId: "e-new", Attempts: 0, FirstAt: now, Payload: []byte{}}
+	regB.pending["e-new"] = &PendingEvent{TriggerId: "trigB", EventId: "e-new", Attempts: 0, FirstAt: now, Payload: []byte{}}
+	b.mu.Unlock()
+
+	// Run one tick so the sort fires.
+	b.scanPending()
+
+	// Collect every send in order received across both channels.
+	type sent struct{ trigger, event string }
+	var got []sent
+drain:
+	for {
+		select {
+		case v := <-sendChA:
+			got = append(got, sent{"trigA", v.Id})
+		case v := <-sendChB:
+			got = append(got, sent{"trigB", v.Id})
+		default:
+			break drain
+		}
+	}
+
+	require.Len(t, got, 3)
+
+	// The two "e-new" events (Attempts==0) must appear before "e-retry".
+	// Within new events: trigA sorts before trigB by TriggerId.
+	require.Equal(t, "e-new", got[0].event, "first send must be a new event")
+	require.Equal(t, "e-new", got[1].event, "second send must be a new event")
+	require.Equal(t, "e-retry", got[2].event, "retry must come after all new events")
+
+	// Tiebreak by TriggerId: "trigA" < "trigB".
+	require.Equal(t, "trigA", got[0].trigger, "trigA new event must sort before trigB new event")
+	require.Equal(t, "trigB", got[1].trigger)
+}
+
+func TestBaseTrigger_ExpirePreAcked_RemovesStaleEntries(t *testing.T) {
+	store := NewMemEventStore()
+	b := newBase(t, store)
+
+	require.NoError(t, b.Start(t.Context()))
+	t.Cleanup(func() { b.Stop() })
+
+	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
+	b.RegisterTrigger("trig", sendCh)
+
+	// Plant two pre-ACK entries: one fresh, one expired (25 h old).
+	b.mu.Lock()
+	reg := b.byTrigger["trig"]
+	reg.preAcked["fresh"] = time.Now().Add(-time.Hour)
+	reg.preAcked["stale"] = time.Now().Add(-25 * time.Hour)
+	b.mu.Unlock()
+
+	// Call expirePreAcked directly with the current time.
+	b.mu.Lock()
+	b.expirePreAcked(time.Now())
+	b.mu.Unlock()
+
+	b.mu.Lock()
+	_, freshExists := b.byTrigger["trig"].preAcked["fresh"]
+	_, staleExists := b.byTrigger["trig"].preAcked["stale"]
+	b.mu.Unlock()
+
+	require.True(t, freshExists, "entry within TTL must be retained")
+	require.False(t, staleExists, "entry older than 24 h must be evicted")
+}

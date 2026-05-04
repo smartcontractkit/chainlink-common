@@ -485,8 +485,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 
 	b.mu.Unlock()
 
-	switch {
-	case found:
+	if found {
 		b.lggr.Infow("base trigger ACK matched in-memory pending event",
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
 			"attempts", attempts, "firstAt", firstAt)
@@ -494,15 +493,11 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 		b.metrics.IncAck(triggerId, eventId)
 		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
 		b.metrics.AddPendingEvents(-1)
-	case hadNilPendingRecord:
-		b.lggr.Warnw("base trigger ACK: pending map had nil record for event (treating as miss; reconciling store)",
-			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
-	case hadTriggerBucket && !hadEventKey:
-		b.lggr.Infow("base trigger ACK: event id not in in-memory pending map for trigger (may exist only in store; reconciling)",
-			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
-	case !hadTriggerBucket:
-		b.lggr.Infow("base trigger ACK: no in-memory pending bucket for trigger (not pending here; still deleting from store if row exists)",
-			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId)
+	} else {
+		b.lggr.Infow("base trigger ACK: event not found in memory (reconciling store)",
+			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
+			"hadTriggerBucket", hadTriggerBucket, "hadEventKey", hadEventKey,
+			"hadNilPendingRecord", hadNilPendingRecord)
 	}
 
 	if err := b.store.DeleteEvent(ctx, triggerId, eventId); err != nil {

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path"
 	"slices"
@@ -34,7 +35,6 @@ func (t *TemplateGenerator) GenerateFile(
 	args any,
 	toolName,
 	localPrefix string) error {
-
 	seen := map[string]int{}
 	if t.importToPkg == nil {
 		t.importToPkg = map[protogen.GoImportPath]protogen.GoPackageName{}
@@ -118,7 +118,7 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 		},
 		"dict": func(values ...any) (map[string]any, error) {
 			if len(values)%2 != 0 {
-				return nil, fmt.Errorf("dict requires even number of arguments")
+				return nil, errors.New("dict requires even number of arguments")
 			}
 			m := make(map[string]any, len(values)/2)
 			for i := 0; i < len(values); i += 2 {
@@ -202,7 +202,7 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			for _, lbl := range orderedLabels {
 				lblValStr, err := t.StringLblValue(lbl.name, lbl.label)
 				if err != nil {
-					return "", fmt.Errorf("failed to stringify receving label %s: %w", lbl.name, err)
+					return "", fmt.Errorf("failed to stringify receiving label %s: %w", lbl.name, err)
 				}
 				fullName = fmt.Sprintf(`%s + ":%s:" + %s`, fullName, lbl.name, lblValStr)
 			}
@@ -294,7 +294,7 @@ func getCapabilityMetadata(service *protogen.Service) (*generator.CapabilityMeta
 		if meta, ok := ext.(*generator.CapabilityMetadata); ok {
 			return meta, nil
 		}
-		return nil, fmt.Errorf("invalid type for CapabilityMetadata")
+		return nil, errors.New("invalid type for CapabilityMetadata")
 	}
 	return nil, nil
 }
@@ -306,7 +306,7 @@ func getCapabilityMethodMetadata(m *protogen.Method) (*generator.CapabilityMetho
 		if meta, ok := ext.(*generator.CapabilityMethodMetadata); ok {
 			return meta, nil
 		}
-		return nil, fmt.Errorf("invalid type for CapabilityMethodMetadata")
+		return nil, errors.New("invalid type for CapabilityMethodMetadata")
 	}
 	return nil, nil
 }

@@ -50,6 +50,6 @@ type LPBlock struct {
 }
 
 type CPIFilterConfig struct {
-	DestAddress    PublicKey
-	MethodName string
+	DestAddress PublicKey
+	MethodName  string
 }

@@ -195,7 +195,7 @@ type relayerClient struct {
 	stellarClient stelpb.StellarClient
 }
 
-func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
+func newRelayerClient(b *net.BrokerExt, conn net.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
 	return &relayerClient{
 		b, goplugin.NewServiceClient(b, conn),
@@ -282,7 +282,7 @@ type PluginProviderClient interface {
 	goplugin.GRPCClientConn
 }
 
-func WrapProviderClientConnection(ctx context.Context, providerType string, cc grpc.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
+func WrapProviderClientConnection(ctx context.Context, providerType string, cc net.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
 	// TODO: Remove this when we have fully transitioned all relayers to running in LOOPPs.
 	// This allows callers to type assert a PluginProvider into a product provider type (eg. MedianProvider)
 	// for interoperability with legacy code.
@@ -307,9 +307,9 @@ func WrapProviderClientConnection(ctx context.Context, providerType string, cc g
 		// even make sense to me because the relayer client will in the reporting plugin loop
 		// for now we return an error and test for the this error case
 		// return nil, fmt.Errorf("need to fix BCF-3061")
-		return ccip.NewExecProviderClient(broker, cc), fmt.Errorf("need to fix BCF-3061")
+		return ccip.NewExecProviderClient(broker, cc), errors.New("need to fix BCF-3061")
 	case string(types.CCIPCommit):
-		return ccip.NewCommitProviderClient(broker, cc), fmt.Errorf("need to fix BCF-3061")
+		return ccip.NewCommitProviderClient(broker, cc), errors.New("need to fix BCF-3061")
 	default:
 		return nil, fmt.Errorf("provider type not supported: %s", providerType)
 	}

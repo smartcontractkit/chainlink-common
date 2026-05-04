@@ -2,7 +2,6 @@ package codec_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -86,7 +85,7 @@ func TestElementExtractor(t *testing.T) {
 
 	t.Run("RetypeToOffChain returns exception if a field is not on the type", func(t *testing.T) {
 		_, err := invalidExtractor.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
@@ -161,9 +160,9 @@ func TestElementExtractor(t *testing.T) {
 
 	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {
 		_, err := invalidExtractor.TransformToOnChain(testStruct{}, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 		_, err = invalidExtractor.TransformToOffChain(testStruct{}, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {

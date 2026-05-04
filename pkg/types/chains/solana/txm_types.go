@@ -14,7 +14,7 @@ const (
 	TxFatal TransactionStatus = iota
 	// Transaction was sent successfully to the chain but the program execution was aborted
 	TxAborted
-	// Transaction was sent successfully to the chain, program was succesfully executed and mined into a block.
+	// Transaction was sent successfully to the chain, program was successfully executed and mined into a block.
 	TxSuccess
 )
 

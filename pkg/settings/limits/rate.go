@@ -592,7 +592,7 @@ func (m MultiRateLimiter) cleanup(ctx context.Context) {
 
 func (m MultiRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
 	if len(m) == 0 {
-		return config.Rate{}, fmt.Errorf("empty")
+		return config.Rate{}, errors.New("empty")
 	}
 	return m[0].Limit(ctx)
 }

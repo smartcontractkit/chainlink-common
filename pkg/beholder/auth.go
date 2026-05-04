@@ -12,9 +12,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
@@ -110,13 +111,11 @@ func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Durati
 }
 
 func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
-
 	// Return a copy of the headers to avoid concurrent read/write to the map by callers
 	returnHeader := make(map[string]string)
 	lastUpdated := time.Unix(0, r.lastUpdatedNanos.Load())
 
 	if time.Since(lastUpdated) > r.ttl {
-
 		r.mu.Lock()
 		defer r.mu.Unlock()
 
@@ -200,7 +199,6 @@ func NewAuthHeaders(ed25519Signer crypto.Signer) (map[string]string, error) {
 //
 // where the byte value of <public_key_hex> + <timestamp_bytes> is what's being signed
 func NewAuthHeaderV2(ctx context.Context, pubKey ed25519.PublicKey, signer Signer, ts time.Time) (map[string]string, error) {
-
 	// Append the bytes of the public key with bytes of the timestamp to create the message to sign
 	tsBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))

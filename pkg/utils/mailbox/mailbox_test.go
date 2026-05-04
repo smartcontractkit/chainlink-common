@@ -89,7 +89,7 @@ func TestMailbox_RetrieveLatestAndClear(t *testing.T) {
 	}
 
 	require.Equal(t, expected, m.RetrieveLatestAndClear())
-	require.Len(t, m.RetrieveAll(), 0)
+	require.Empty(t, m.RetrieveAll())
 }
 
 func TestMailbox_NoEmptyReceivesWhenCapacityIsTwo(t *testing.T) {
@@ -119,7 +119,7 @@ func TestMailbox_NoEmptyReceivesWhenCapacityIsTwo(t *testing.T) {
 	close(m.chNotify)
 
 	<-chDone
-	require.Len(t, emptyReceives, 0)
+	require.Empty(t, emptyReceives)
 }
 
 func TestMailbox_load(t *testing.T) {

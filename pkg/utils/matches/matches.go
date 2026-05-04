@@ -12,4 +12,3 @@ func anyContext(_ context.Context) bool {
 
 // AnyContext is an argument matcher that matches any argument of type context.Context.
 var AnyContext = mock.MatchedBy(anyContext)
-

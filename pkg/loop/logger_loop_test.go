@@ -1,7 +1,6 @@
 package loop_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -88,7 +87,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 			c.Kill()
 			fLogs := ol.FilterMessage(tt.expectedMessage)
 			logs := fLogs.TakeAll()
-			require.Equal(t, len(logs), 1, fmt.Sprintf("could not find expected log %q", tt.expectedMessage))
+			require.Len(t, logs, 1, "could not find expected log %q", tt.expectedMessage)
 			require.Equal(t, tt.expectedMessage, logs[0].Message)
 			require.Equal(t, tt.expectedLogLevel, logs[0].Level)
 			require.Equal(t, zapcore.EntryCaller{}, logs[0].Caller)
@@ -100,7 +99,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 						break
 					}
 				}
-				require.True(t, found, fmt.Sprintf("could not find expected values %s=%s", tt.expectedCustomKey, tt.expectedCustomValue))
+				require.True(t, found, "could not find expected values %s=%s", tt.expectedCustomKey, tt.expectedCustomValue)
 			}
 		})
 	}

@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"google.golang.org/grpc"
+
 	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
-	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
@@ -108,7 +109,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		return reply.ReportingPluginFactoryID, nil, nil
 	})
-	return ocr2.NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
+	return ocr2.NewReportingPluginFactoryClient(m.BrokerExt, cc), nil
 }
 
 var _ pb.PluginMedianServer = (*pluginMedianServer)(nil)
@@ -173,7 +174,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 	var deviationFuncDefinition map[string]any
 	if len(request.DeviationFuncDefinition) > 0 {
-		if err = json.Unmarshal(request.DeviationFuncDefinition, deviationFuncDefinition); err != nil {
+		if err = json.Unmarshal(request.DeviationFuncDefinition, &deviationFuncDefinition); err != nil {
 			m.CloseAll(dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 			return nil, fmt.Errorf("failed to unmarshal deviationFuncDefinition: %w", err)
 		}

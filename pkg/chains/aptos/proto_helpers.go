@@ -1,6 +1,7 @@
 package aptos
 
 import (
+	"errors"
 	"fmt"
 
 	typeaptos "github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
@@ -9,7 +10,7 @@ import (
 // ConvertViewPayloadFromProto converts a proto ViewPayload to Go types
 func ConvertViewPayloadFromProto(proto *ViewPayload) (*typeaptos.ViewPayload, error) {
 	if proto == nil {
-		return nil, fmt.Errorf("proto payload is nil")
+		return nil, errors.New("proto payload is nil")
 	}
 
 	if len(proto.Module.Address) != typeaptos.AccountAddressLength {
@@ -34,9 +35,7 @@ func ConvertViewPayloadFromProto(proto *ViewPayload) (*typeaptos.ViewPayload, er
 	}
 
 	args := make([][]byte, len(proto.Args))
-	for i, protoArg := range proto.Args {
-		args[i] = protoArg
-	}
+	copy(args, proto.Args)
 
 	return &typeaptos.ViewPayload{
 		Module:   module,
@@ -49,7 +48,7 @@ func ConvertViewPayloadFromProto(proto *ViewPayload) (*typeaptos.ViewPayload, er
 // ConvertViewPayloadToProto converts a Go ViewPayload to proto types
 func ConvertViewPayloadToProto(payload *typeaptos.ViewPayload) (*ViewPayload, error) {
 	if payload == nil {
-		return nil, fmt.Errorf("payload is nil")
+		return nil, errors.New("payload is nil")
 	}
 
 	protoModule := &ModuleID{
@@ -67,9 +66,7 @@ func ConvertViewPayloadToProto(payload *typeaptos.ViewPayload) (*ViewPayload, er
 	}
 
 	protoArgs := make([][]byte, len(payload.Args))
-	for i, arg := range payload.Args {
-		protoArgs[i] = arg
-	}
+	copy(protoArgs, payload.Args)
 
 	return &ViewPayload{
 		Module:   protoModule,
@@ -82,7 +79,7 @@ func ConvertViewPayloadToProto(payload *typeaptos.ViewPayload) (*ViewPayload, er
 // ConvertTypeTagFromProto converts a proto TypeTag to Go types
 func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 	if proto == nil {
-		return nil, fmt.Errorf("proto type tag is nil")
+		return nil, errors.New("proto type tag is nil")
 	}
 
 	var impl typeaptos.TypeTagImpl
@@ -109,7 +106,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 	case TypeTagKind_TYPE_TAG_KIND_VECTOR:
 		vectorValue := proto.GetVector()
 		if vectorValue == nil {
-			return nil, fmt.Errorf("vector type tag missing vector value")
+			return nil, errors.New("vector type tag missing vector value")
 		}
 		elementType, err := ConvertTypeTagFromProto(vectorValue.ElementType)
 		if err != nil {
@@ -121,7 +118,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 	case TypeTagKind_TYPE_TAG_KIND_STRUCT:
 		structValue := proto.GetStruct()
 		if structValue == nil {
-			return nil, fmt.Errorf("struct type tag missing struct value")
+			return nil, errors.New("struct type tag missing struct value")
 		}
 		if len(structValue.Address) != typeaptos.AccountAddressLength {
 			return nil, fmt.Errorf("invalid struct address length: expected %d, got %d", typeaptos.AccountAddressLength, len(structValue.Address))
@@ -146,7 +143,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 	case TypeTagKind_TYPE_TAG_KIND_GENERIC:
 		genericValue := proto.GetGeneric()
 		if genericValue == nil {
-			return nil, fmt.Errorf("generic type tag missing generic value")
+			return nil, errors.New("generic type tag missing generic value")
 		}
 		impl = typeaptos.GenericTag{
 			Index: uint16(genericValue.Index),
@@ -163,7 +160,7 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 // ConvertTypeTagToProto converts a Go TypeTag to proto types
 func ConvertTypeTagToProto(tag *typeaptos.TypeTag) (*TypeTag, error) {
 	if tag == nil || tag.Value == nil {
-		return nil, fmt.Errorf("type tag or value is nil")
+		return nil, errors.New("type tag or value is nil")
 	}
 
 	protoTag := &TypeTag{
@@ -215,7 +212,7 @@ func ConvertTypeTagToProto(tag *typeaptos.TypeTag) (*TypeTag, error) {
 // ConvertViewReplyFromProto converts proto reply to Go types
 func ConvertViewReplyFromProto(protoReply *ViewReply) (*typeaptos.ViewReply, error) {
 	if protoReply == nil {
-		return nil, fmt.Errorf("proto reply is nil")
+		return nil, errors.New("proto reply is nil")
 	}
 	return &typeaptos.ViewReply{
 		Data: protoReply.Data,
@@ -225,7 +222,7 @@ func ConvertViewReplyFromProto(protoReply *ViewReply) (*typeaptos.ViewReply, err
 // ConvertViewReplyToProto converts Go reply to proto types
 func ConvertViewReplyToProto(reply *typeaptos.ViewReply) (*ViewReply, error) {
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 	return &ViewReply{
 		Data: reply.Data,
@@ -372,7 +369,7 @@ func ConvertAccountTransactionsRequestToProto(req typeaptos.AccountTransactionsR
 
 func ConvertAccountTransactionsRequestFromProto(proto *AccountTransactionsRequest) (typeaptos.AccountTransactionsRequest, error) {
 	if proto == nil {
-		return typeaptos.AccountTransactionsRequest{}, fmt.Errorf("proto request is nil")
+		return typeaptos.AccountTransactionsRequest{}, errors.New("proto request is nil")
 	}
 	if len(proto.Address) != typeaptos.AccountAddressLength {
 		return typeaptos.AccountTransactionsRequest{}, fmt.Errorf("invalid address length: expected %d, got %d", typeaptos.AccountAddressLength, len(proto.Address))
@@ -439,11 +436,11 @@ func ConvertSubmitTransactionRequestToProto(req typeaptos.SubmitTransactionReque
 
 func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (*typeaptos.SubmitTransactionRequest, error) {
 	if proto == nil {
-		return nil, fmt.Errorf("proto request is nil")
+		return nil, errors.New("proto request is nil")
 	}
 
 	if proto.ReceiverModuleId == nil {
-		return nil, fmt.Errorf("receiver module id is nil")
+		return nil, errors.New("receiver module id is nil")
 	}
 
 	if len(proto.ReceiverModuleId.Address) != typeaptos.AccountAddressLength {
@@ -473,7 +470,7 @@ func ConvertSubmitTransactionRequestFromProto(proto *SubmitTransactionRequest) (
 
 func ConvertSubmitTransactionReplyToProto(reply *typeaptos.SubmitTransactionReply) (*SubmitTransactionReply, error) {
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 
 	return &SubmitTransactionReply{
@@ -485,7 +482,7 @@ func ConvertSubmitTransactionReplyToProto(reply *typeaptos.SubmitTransactionRepl
 
 func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*typeaptos.SubmitTransactionReply, error) {
 	if proto == nil {
-		return nil, fmt.Errorf("proto reply is nil")
+		return nil, errors.New("proto reply is nil")
 	}
 
 	return &typeaptos.SubmitTransactionReply{

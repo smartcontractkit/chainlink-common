@@ -2,6 +2,7 @@ package limits
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -28,7 +29,7 @@ func ExampleRateLimiter_Allow() {
 	for range 5 {
 		g.Go(func() error {
 			if !rl.Allow(ctx) {
-				return fmt.Errorf("rate limit exceeded")
+				return errors.New("rate limit exceeded")
 			}
 			return nil
 		})
@@ -46,7 +47,7 @@ func ExampleRateLimiter_Allow() {
 	for range 4 {
 		g.Go(func() error {
 			if !rl.Allow(ctx) {
-				return fmt.Errorf("rate limit exceeded")
+				return errors.New("rate limit exceeded")
 			}
 			return nil
 		})

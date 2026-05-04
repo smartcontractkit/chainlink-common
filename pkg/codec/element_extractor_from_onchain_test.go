@@ -2,7 +2,6 @@ package codec_test
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"testing"
 
@@ -118,7 +117,7 @@ func TestElementExtractorFromOnchain(t *testing.T) {
 		}
 		badWrapper := codec.NewElementExtractorFromOnchain(map[string]*codec.ElementExtractorLocation{"X": &first})
 		_, err := badWrapper.RetypeToOffChain(reflect.TypeOf(badStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain works on nested fields even if the field itself is also wrapped", func(t *testing.T) {

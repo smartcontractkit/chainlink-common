@@ -3,7 +3,6 @@ package loop
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -90,7 +89,7 @@ func (p *PromServer) Close() error {
 
 // Name of the server
 func (p *PromServer) Name() string {
-	return fmt.Sprintf("%s-prom-server", p.lggr.Name())
+	return p.lggr.Name() + "-prom-server"
 }
 
 // setupListener creates explicit listener so that we can resolve `:0` port, which is needed for testing

@@ -243,6 +243,9 @@ func GetSeed(mode int32) int64
 //go:wasmimport env log
 func Log(message unsafe.Pointer, messageLen int32)
 
+//go:wasmimport env emit_metric
+func EmitMetric(payload unsafe.Pointer, payloadLen int32) int32
+
 //go:wasmimport env get_secrets
 func getSecrets(req unsafe.Pointer, reqLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64
 

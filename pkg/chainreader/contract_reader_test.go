@@ -2,7 +2,7 @@ package chainreader
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"testing"
 
@@ -36,7 +36,7 @@ func TestContractReaderByIDsUnbind(t *testing.T) {
 
 	// Mock Unbind function for error case
 	mockReader.unbindFunc = func(ctx context.Context, contracts []types.BoundContract) error {
-		return fmt.Errorf("some error")
+		return errors.New("some error")
 	}
 
 	// Test Unbind with error shouldn't remove bindings
@@ -94,7 +94,7 @@ func TestContractReaderByIDsGetLatestValue(t *testing.T) {
 		if identifier == bc2.ReadIdentifier(readName2) {
 			return nil
 		}
-		return fmt.Errorf("not found")
+		return errors.New("not found")
 	}
 
 	// Test GetLatestValue for bc1
@@ -141,12 +141,13 @@ func TestContractReaderByIDsQueryKey(t *testing.T) {
 
 	// Mock QueryKey function
 	mockReader.queryKeyFunc = func(ctx context.Context, contract types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]types.Sequence, error) {
-		if contract == bc1 {
+		switch contract {
+		case bc1:
 			return []types.Sequence{{Data: "sequenceData1"}}, nil
-		} else if contract == bc2 {
+		case bc2:
 			return []types.Sequence{{Data: "sequenceData2"}}, nil
 		}
-		return nil, fmt.Errorf("not found")
+		return nil, errors.New("not found")
 	}
 
 	// Test QueryKey for bc1
@@ -224,7 +225,7 @@ func TestContractReaderByIDsBatchGetLatestValues(t *testing.T) {
 	bc1BatchResult1 := types.BatchReadResult{ReadName: bc1Batch[0].ReadName}
 	bc1BatchResult1.SetResult("res-"+bc1Batch[0].ReadName, nil)
 	bc1BatchResult2 := types.BatchReadResult{ReadName: bc1Batch[1].ReadName}
-	bc1BatchResult2.SetResult(nil, fmt.Errorf("err"))
+	bc1BatchResult2.SetResult(nil, errors.New("err"))
 
 	bc2BatchResult1 := types.BatchReadResult{ReadName: bc2Batch[0].ReadName}
 	bc2BatchResult1.SetResult("res-"+bc2Batch[0].ReadName, nil)

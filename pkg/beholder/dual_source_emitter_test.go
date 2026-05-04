@@ -2,7 +2,7 @@ package beholder_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,6 @@ import (
 func TestNewDualSourceEmitter(t *testing.T) {
 	// Test successful creation
 	t.Run("successful creation", func(t *testing.T) {
-
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{}
 
@@ -28,7 +27,6 @@ func TestNewDualSourceEmitter(t *testing.T) {
 
 	// Test nil chip ingress emitter
 	t.Run("nil chip ingress emitter", func(t *testing.T) {
-
 		otelEmitter := &mockEmitter{}
 		emitter, err := beholder.NewDualSourceEmitter(nil, otelEmitter)
 
@@ -38,7 +36,6 @@ func TestNewDualSourceEmitter(t *testing.T) {
 
 	// Test nil otel collector emitter
 	t.Run("nil otel collector emitter", func(t *testing.T) {
-
 		chipEmitter := &mockEmitter{}
 		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, nil)
 
@@ -48,7 +45,6 @@ func TestNewDualSourceEmitter(t *testing.T) {
 }
 func TestDualSourceEmitterEmit(t *testing.T) {
 	t.Run("successful emit to both destinations", func(t *testing.T) {
-
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{}
 
@@ -60,11 +56,10 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 	})
 
 	t.Run("otel emitter fails", func(t *testing.T) {
-
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{
 			emitFunc: func(ctx context.Context, body []byte, attrKVs ...any) error {
-				return fmt.Errorf("otel emit error")
+				return errors.New("otel emit error")
 			},
 		}
 

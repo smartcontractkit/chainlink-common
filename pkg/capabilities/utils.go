@@ -40,13 +40,14 @@ func UnwrapResponse(response CapabilityResponse, value proto.Message) (bool, err
 }
 
 // SetResponse sets the response payload based on whether it was migrated to use pbany.Any values.
-func SetResponse(response *CapabilityResponse, migrated bool, value proto.Message) error {
+func SetResponse(response *CapabilityResponse, migrated bool, value proto.Message, ocrAttestation *OCRAttestation) error {
 	if migrated {
 		wrapped, err := anypb.New(value)
 		if err != nil {
 			return err
 		}
 		response.Payload = wrapped
+		response.OCRAttestation = ocrAttestation
 		return nil
 	}
 
@@ -91,21 +92,20 @@ func Execute[I, C, O proto.Message](
 	request CapabilityRequest,
 	input I,
 	config C,
-	exec func(context.Context, RequestMetadata, I, C) (O, ResponseMetadata, error)) (CapabilityResponse, error) {
-
+	exec func(context.Context, RequestMetadata, I, C) (O, ResponseMetadata, *OCRAttestation, error)) (CapabilityResponse, error) {
 	response := CapabilityResponse{}
 	migrated, err := UnwrapRequest(request, config, input)
 	if err != nil {
 		return response, fmt.Errorf("error when unwrapping request: %w", err)
 	}
 
-	output, metadata, err := exec(ctx, request.Metadata, input, config)
+	output, metadata, ocrAttestation, err := exec(ctx, request.Metadata, input, config)
 	response.Metadata = metadata
 	if err != nil {
 		return response, err
 	}
 
-	if err = SetResponse(&response, migrated, output); err != nil {
+	if err = SetResponse(&response, migrated, output, ocrAttestation); err != nil {
 		return response, fmt.Errorf("error when setting response: %w", err)
 	}
 

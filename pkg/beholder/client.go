@@ -130,14 +130,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	var auth Auth
 
 	if cfg.AuthHeadersTTL > 0 {
-
 		if cfg.AuthPublicKeyHex == "" {
-			return nil, fmt.Errorf("auth: public key hex required for rotating auth (TTL > 0)")
+			return nil, errors.New("auth: public key hex required for rotating auth (TTL > 0)")
 		}
 
 		// Clamp lowest possible value to 10mins
 		if cfg.AuthHeadersTTL < 10*time.Minute {
-			return nil, fmt.Errorf("auth: headers TTL must be at least 10 minutes")
+			return nil, errors.New("auth: headers TTL must be at least 10 minutes")
 		}
 
 		key, err := hex.DecodeString(cfg.AuthPublicKeyHex)
@@ -209,7 +208,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
-
 		var opts []chipingress.Opt
 
 		if cfg.ChipIngressInsecureConnection {

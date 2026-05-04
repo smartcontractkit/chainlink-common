@@ -27,6 +27,7 @@ func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo 
 	reply, err := e.grpcClient.CalculateTransactionFee(ctx, &evmpb.CalculateTransactionFeeRequest{GasInfo: &evmpb.ReceiptGasInfo{
 		GasUsed:           receiptGasInfo.GasUsed,
 		EffectiveGasPrice: valuespb.NewBigIntFromInt(receiptGasInfo.EffectiveGasPrice),
+		L1_Fee:            valuespb.NewBigIntFromInt(receiptGasInfo.L1Fee),
 	}})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -212,7 +213,6 @@ func (e *EVMClient) HeaderByNumber(ctx context.Context, request evmtypes.HeaderB
 	}
 
 	return &evmtypes.HeaderByNumberReply{Header: &header}, nil
-
 }
 func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evmtypes.Log, error) {
@@ -574,6 +574,7 @@ func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.
 	txFee, err := e.impl.CalculateTransactionFee(ctx, evmtypes.ReceiptGasInfo{
 		GasUsed:           request.GasInfo.GasUsed,
 		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+		L1Fee:             valuespb.NewIntFromBigInt(request.GasInfo.L1_Fee),
 	})
 	if err != nil {
 		return nil, err

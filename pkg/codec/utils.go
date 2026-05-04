@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -242,9 +243,10 @@ func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) 
 		return convertToEpoch(to, time.Unix(unixTime, 0)), nil
 	default:
 		// value to time.Time
-		if to == timeType {
+		switch to {
+		case timeType:
 			return convertToTime(from, data), nil
-		} else if to == timePtrType {
+		case timePtrType:
 			if t, ok := convertToTime(from, data).(time.Time); ok {
 				return &t, nil
 			}
@@ -475,7 +477,7 @@ func SetValueAtPath(vInto, vField reflect.Value, itemType string) error {
 
 func applyValue(vInto, vField reflect.Value) error {
 	if derefTypePtr(vInto.Type()) != derefTypePtr(vField.Type()) {
-		return fmt.Errorf("value type mismatch for field")
+		return errors.New("value type mismatch for field")
 	}
 
 	switch vInto.Kind() {
@@ -489,7 +491,7 @@ func applyValue(vInto, vField reflect.Value) error {
 			}
 
 			if !vInto.Elem().IsValid() {
-				return fmt.Errorf("value to set is unaddressable")
+				return errors.New("value to set is unaddressable")
 			}
 
 			if vField.IsNil() {
@@ -516,7 +518,7 @@ func applyValue(vInto, vField reflect.Value) error {
 			return nil
 		}
 
-		return fmt.Errorf("value is not settable")
+		return errors.New("value is not settable")
 	}
 
 	return nil

@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 )
 
 func TestNewChipIngressEmitter(t *testing.T) {
@@ -27,7 +28,6 @@ func TestNewChipIngressEmitter(t *testing.T) {
 }
 
 func TestChipIngressEmit(t *testing.T) {
-
 	body := []byte("test body")
 	domain := "test-domain"
 	entity := "test-entity"
@@ -39,7 +39,6 @@ func TestChipIngressEmit(t *testing.T) {
 	}
 
 	t.Run("happy path", func(t *testing.T) {
-
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
@@ -56,7 +55,6 @@ func TestChipIngressEmit(t *testing.T) {
 	})
 
 	t.Run("returns error when ExtractSourceAndType fails", func(t *testing.T) {
-
 		emitter, err := beholder.NewChipIngressEmitter(mocks.NewClient(t))
 		require.NoError(t, err)
 
@@ -65,7 +63,6 @@ func TestChipIngressEmit(t *testing.T) {
 	})
 
 	t.Run("returns error when Publish fails", func(t *testing.T) {
-
 		clientMock := mocks.NewClient(t)
 
 		clientMock.

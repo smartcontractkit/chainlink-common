@@ -67,12 +67,12 @@ func (a TokenInfo) Validate() error {
 		return fmt.Errorf("aggregatorAddress must be a valid ethereum address, got %d bytes expected 20", len(decoded))
 	}
 
-	if a.DeviationPPB.Int.Cmp(big.NewInt(0)) <= 0 {
+	if a.DeviationPPB.Cmp(big.NewInt(0)) <= 0 {
 		return errors.New("deviationPPB not set or negative, must be positive")
 	}
 
 	if a.Decimals == 0 {
-		return fmt.Errorf("tokenDecimals can't be zero")
+		return errors.New("tokenDecimals can't be zero")
 	}
 
 	return nil

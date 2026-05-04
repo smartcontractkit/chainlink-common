@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
@@ -125,7 +126,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		return reply.ID, nil, nil
 	})
-	return NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
+	return NewReportingPluginFactoryClient(m.BrokerExt, cc), nil
 }
 
 func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -136,7 +137,7 @@ func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context)
 		}
 		return reply.ID, nil, nil
 	})
-	return validation.NewValidationServiceClient(m.PluginClient.BrokerExt, cc), nil
+	return validation.NewValidationServiceClient(m.BrokerExt, cc), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)

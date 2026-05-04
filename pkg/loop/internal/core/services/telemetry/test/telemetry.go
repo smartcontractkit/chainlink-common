@@ -41,7 +41,7 @@ type staticEndpoint struct {
 }
 
 func (s staticEndpoint) SendLog(ctx context.Context, log []byte) error {
-	return s.staticTelemetry.Send(ctx, s.network, s.chainID, s.contractID, s.telemType, log)
+	return s.Send(ctx, s.network, s.chainID, s.contractID, s.telemType, log)
 }
 
 type staticTelemetry struct {
@@ -251,8 +251,8 @@ func TestTelemetry(t *testing.T) {
 			require.ErrorContains(t, err, test.error)
 		} else {
 			require.NotNil(t, e)
-			require.Nil(t, err)
-			require.Nil(t, e.SendLog(t.Context(), []byte("some-data")))
+			require.NoError(t, err)
+			require.NoError(t, e.SendLog(t.Context(), []byte("some-data")))
 		}
 	}
 }

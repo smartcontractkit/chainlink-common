@@ -27,6 +27,7 @@ type LPFilterQuery struct {
 	Retention       time.Duration
 	MaxLogsKept     int64
 	IncludeReverted bool
+	CPIFilterConfig *CPIFilterConfig
 }
 
 // matches lp-parsed solana logs
@@ -46,4 +47,9 @@ type Log struct {
 
 type LPBlock struct {
 	Slot uint64
+}
+
+type CPIFilterConfig struct {
+	DestAddress PublicKey
+	MethodName  string
 }

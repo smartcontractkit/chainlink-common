@@ -3,7 +3,7 @@ package jwt
 import (
 	"crypto/ed25519"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -30,7 +30,7 @@ func NewNodeJWTGenerator(signer *core.Ed25519Signer, csaPubKey ed25519.PublicKey
 // CreateJWTForRequest creates a JWT token for the given request
 func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 	if m.signer == nil {
-		return "", fmt.Errorf("no signer configured")
+		return "", errors.New("no signer configured")
 	}
 
 	// Create request digest for integrity

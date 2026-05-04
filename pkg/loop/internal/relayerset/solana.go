@@ -2,7 +2,10 @@ package relayerset
 
 import (
 	"context"
-	"fmt"
+	"errors"
+
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
@@ -10,8 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // solClient wraps the SolanaRelayerSetClient by attaching a RelayerID to SolClient requests.
@@ -133,7 +134,7 @@ func (ss *solServer) RegisterLogTracking(ctx context.Context, req *solpb.Registe
 		return nil, err
 	}
 	if req.Filter == nil {
-		return nil, fmt.Errorf("missing filter")
+		return nil, errors.New("missing filter")
 	}
 
 	filter, err := solpb.ConvertLPFilterQueryFromProto(req.Filter)

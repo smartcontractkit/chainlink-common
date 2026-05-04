@@ -99,7 +99,7 @@ messageLoop:
 		payload := pb.BaseMessage{}
 		err := proto.Unmarshal(eMsg.Body, &payload)
 		if err != nil {
-			return nil, fmt.Errorf("error unmarshalling base message: %v", err)
+			return nil, fmt.Errorf("error unmarshalling base message: %w", err)
 		}
 
 		for k, v := range labels {

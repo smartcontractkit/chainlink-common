@@ -132,7 +132,7 @@ func newRateLimiter(scope settings.Scope, limit rate.Limit, burst int) RateLimit
 			addUsage:     func(ctx context.Context, incr int64) {},
 			recordDenied: func(ctx context.Context, incr int) {},
 		}
-		close(rl.updater.done) // no background routine
+		close(rl.done) // no background routine
 		return rl
 	}
 	return &scopedRateLimiter{
@@ -592,7 +592,7 @@ func (m MultiRateLimiter) cleanup(ctx context.Context) {
 
 func (m MultiRateLimiter) Limit(ctx context.Context) (config.Rate, error) {
 	if len(m) == 0 {
-		return config.Rate{}, fmt.Errorf("empty")
+		return config.Rate{}, errors.New("empty")
 	}
 	return m[0].Limit(ctx)
 }

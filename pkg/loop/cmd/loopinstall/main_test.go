@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -609,7 +610,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 			mockDownload: func(cmd *exec.Cmd) error {
 				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 					moduleDir := filepath.Join(tempDir, "modules", "github.com", "example", "test")
-					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+					fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 				}
 				return nil
 			},
@@ -627,7 +628,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 			},
 			defaults: DefaultsConfig{},
 			mockDownload: func(cmd *exec.Cmd) error {
-				return fmt.Errorf("failed to download module")
+				return errors.New("failed to download module")
 			},
 			mockBuild: func(cmd *exec.Cmd) error {
 				return nil
@@ -646,12 +647,12 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 			mockDownload: func(cmd *exec.Cmd) error {
 				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 					moduleDir := filepath.Join(tempDir, "modules", "github.com", "example", "test")
-					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+					fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 				}
 				return nil
 			},
 			mockBuild: func(cmd *exec.Cmd) error {
-				return fmt.Errorf("failed to install plugin")
+				return errors.New("failed to install plugin")
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to install plugin",
@@ -680,7 +681,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 					// Derive moduleDir from ModuleURI for consistency
 					parts := strings.Split("github.com/example/full", "/")
 					moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+					fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 				}
 				return nil
 			},
@@ -709,7 +710,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 					parts := strings.Split("github.com/example/rootinstall", "/")
 					moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+					fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 				}
 				return nil
 			},
@@ -793,7 +794,7 @@ func TestFlags(t *testing.T) {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 				parts := strings.Split("github.com/example/rootinstall", "/")
 				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 			}
 			return nil
 		}
@@ -823,7 +824,6 @@ func TestFlags(t *testing.T) {
 			cmdLine := strings.Join(cmd.Args, " ")
 			if strings.Contains(cmdLine, "go mod download") {
 				return mockDownload(cmd)
-
 			} else if strings.Contains(cmdLine, "go install") {
 				return mockInstall(cmd)
 			}
@@ -868,7 +868,7 @@ func TestEnvVars(t *testing.T) {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 				parts := strings.Split("github.com/example/test", "/")
 				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 			}
 			return nil
 		}
@@ -892,13 +892,13 @@ func TestEnvVars(t *testing.T) {
 			}
 
 			if !foundGOOS {
-				return fmt.Errorf("expected GOOS=linux in environment, not found")
+				return errors.New("expected GOOS=linux in environment, not found")
 			}
 			if !foundGOARCH {
-				return fmt.Errorf("expected GOARCH=amd64 in environment, not found")
+				return errors.New("expected GOARCH=amd64 in environment, not found")
 			}
 			if !foundCGOEnabled {
-				return fmt.Errorf("expected CGO_ENABLED=0 in environment, not found")
+				return errors.New("expected CGO_ENABLED=0 in environment, not found")
 			}
 
 			return nil
@@ -951,7 +951,7 @@ func TestEnvVars(t *testing.T) {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 				parts := strings.Split("github.com/example/test", "/")
 				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 			}
 			return nil
 		}
@@ -974,7 +974,7 @@ func TestEnvVars(t *testing.T) {
 				return fmt.Errorf("expected exactly 1 GOOS env var, found %d", goosCount)
 			}
 			if !correctValue {
-				return fmt.Errorf("expected GOOS=linux, but found different value")
+				return errors.New("expected GOOS=linux, but found different value")
 			}
 
 			return nil
@@ -992,15 +992,7 @@ func TestEnvVars(t *testing.T) {
 		}
 
 		// Set GOOS in the environment to a different value
-		oldGOOS := os.Getenv("GOOS")
-		os.Setenv("GOOS", "darwin")
-		defer func() {
-			if oldGOOS == "" {
-				os.Unsetenv("GOOS")
-			} else {
-				os.Setenv("GOOS", oldGOOS)
-			}
-		}()
+		t.Setenv("GOOS", "darwin")
 
 		defaults := DefaultsConfig{
 			EnvVars: []string{"GOOS=linux"}, // Override with linux
@@ -1037,7 +1029,7 @@ func TestEnvVars(t *testing.T) {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 				parts := strings.Split("github.com/example/test", "/")
 				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 			}
 			return nil
 		}
@@ -1061,13 +1053,13 @@ func TestEnvVars(t *testing.T) {
 			}
 
 			if !foundGOOS {
-				return fmt.Errorf("expected GOOS=linux from defaults, not found")
+				return errors.New("expected GOOS=linux from defaults, not found")
 			}
 			if !foundGOARCH {
-				return fmt.Errorf("expected GOARCH=amd64 from CL_PLUGIN_ENVVARS, not found")
+				return errors.New("expected GOARCH=amd64 from CL_PLUGIN_ENVVARS, not found")
 			}
 			if !foundCGOEnabled {
-				return fmt.Errorf("expected CGO_ENABLED=0 from CL_PLUGIN_ENVVARS, not found")
+				return errors.New("expected CGO_ENABLED=0 from CL_PLUGIN_ENVVARS, not found")
 			}
 
 			return nil
@@ -1085,15 +1077,7 @@ func TestEnvVars(t *testing.T) {
 		}
 
 		// Set CL_PLUGIN_ENVVARS
-		oldEnvVars := os.Getenv("CL_PLUGIN_ENVVARS")
-		os.Setenv("CL_PLUGIN_ENVVARS", "GOARCH=amd64 CGO_ENABLED=0")
-		defer func() {
-			if oldEnvVars == "" {
-				os.Unsetenv("CL_PLUGIN_ENVVARS")
-			} else {
-				os.Setenv("CL_PLUGIN_ENVVARS", oldEnvVars)
-			}
-		}()
+		t.Setenv("CL_PLUGIN_ENVVARS", "GOARCH=amd64 CGO_ENABLED=0")
 
 		defaults := DefaultsConfig{
 			EnvVars: []string{"GOOS=linux"}, // Should be preserved
@@ -1130,7 +1114,7 @@ func TestEnvVars(t *testing.T) {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
 				parts := strings.Split("github.com/example/test", "/")
 				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
-				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
 			}
 			return nil
 		}
@@ -1153,7 +1137,7 @@ func TestEnvVars(t *testing.T) {
 				return fmt.Errorf("expected exactly 1 GOOS env var, found %d", goosCount)
 			}
 			if !correctValue {
-				return fmt.Errorf("expected GOOS=windows from plugin, but found different value")
+				return errors.New("expected GOOS=windows from plugin, but found different value")
 			}
 
 			return nil
@@ -1171,15 +1155,7 @@ func TestEnvVars(t *testing.T) {
 		}
 
 		// Set CL_PLUGIN_ENVVARS with a different GOOS
-		oldEnvVars := os.Getenv("CL_PLUGIN_ENVVARS")
-		os.Setenv("CL_PLUGIN_ENVVARS", "GOOS=linux")
-		defer func() {
-			if oldEnvVars == "" {
-				os.Unsetenv("CL_PLUGIN_ENVVARS")
-			} else {
-				os.Setenv("CL_PLUGIN_ENVVARS", oldEnvVars)
-			}
-		}()
+		t.Setenv("CL_PLUGIN_ENVVARS", "GOOS=linux")
 
 		defaults := DefaultsConfig{
 			EnvVars: []string{"GOOS=darwin"}, // Should be overridden

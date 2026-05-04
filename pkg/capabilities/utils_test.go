@@ -11,6 +11,8 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
@@ -148,19 +150,24 @@ func TestSetResponse(t *testing.T) {
 	t.Run("set with any", func(t *testing.T) {
 		msg := &pb.TriggerEvent{Id: "val-any"}
 		resp := capabilities.CapabilityResponse{}
-		err := capabilities.SetResponse(&resp, true, msg)
+		attestation := &capabilities.OCRAttestation{
+			ConfigDigest: ocrtypes.ConfigDigest{1, 2, 3},
+		}
+		err := capabilities.SetResponse(&resp, true, msg, attestation)
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Payload)
 		assert.Nil(t, resp.Value)
+		assert.Equal(t, attestation, resp.OCRAttestation)
 	})
 
 	t.Run("set with value", func(t *testing.T) {
 		msg := &pb.TriggerEvent{Id: "val-map"}
 		resp := capabilities.CapabilityResponse{}
-		err := capabilities.SetResponse(&resp, false, msg)
+		err := capabilities.SetResponse(&resp, false, msg, nil)
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Value)
 		assert.Nil(t, resp.Payload)
+		assert.Nil(t, resp.OCRAttestation)
 	})
 }
 
@@ -178,12 +185,12 @@ func TestExecute(t *testing.T) {
 		req := capabilities.CapabilityRequest{ConfigPayload: a, Payload: a}
 
 		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{},
-			func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, capabilities.ResponseMetadata, error) {
+			func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 				return &pb.TriggerEvent{Id: "out"}, capabilities.ResponseMetadata{
 					Metering: []capabilities.MeteringNodeDetail{
 						meteringNodeDetail,
 					},
-				}, nil
+				}, nil, nil
 			})
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Payload)
@@ -205,14 +212,14 @@ func TestExecute(t *testing.T) {
 		req := capabilities.CapabilityRequest{Inputs: wrapped, Config: wrapped}
 
 		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{},
-			func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, capabilities.ResponseMetadata, error) {
+			func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 				assert.Equal(t, "input", i.Id)
 				assert.Equal(t, "input", c.Id)
 				return &pb.TriggerEvent{Id: "out"}, capabilities.ResponseMetadata{
 					Metering: []capabilities.MeteringNodeDetail{
 						meteringNodeDetail,
 					},
-				}, nil
+				}, nil, nil
 			})
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Value)
@@ -280,7 +287,7 @@ func TestRegisterTrigger(t *testing.T) {
 			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
 			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
 		}
-		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+		require.Equal(t, wantEvents, gotEvents, "expected %d events, got %d", wantEvents, gotEvents)
 	})
 
 	// Validate that if the original context is canceled, all events are sent
@@ -342,7 +349,7 @@ func TestRegisterTrigger(t *testing.T) {
 			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
 			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
 		}
-		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+		require.Equal(t, wantEvents, gotEvents, "expected %d events, got %d", wantEvents, gotEvents)
 	})
 
 	// Validate that if the context is canceled while calling the passed function
@@ -436,7 +443,7 @@ func TestRegisterTrigger(t *testing.T) {
 					_, isOpen := <-respCh
 					return !isOpen
 				}, 1*time.Second, 100*time.Millisecond)
-				require.True(t, gotEvents < sentEvents)
+				require.Less(t, gotEvents, sentEvents)
 				return
 			}
 

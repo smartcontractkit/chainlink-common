@@ -2,8 +2,8 @@ package capabilities
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -12,34 +12,25 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
 
-// ResolveBaseTriggerRetryInterval returns the retransmit ticker interval for [BaseTriggerCapability].
-// When [cresettings.Default.BaseTriggerRetransmitEnabled] is false, it returns (0, nil) so the base
-// trigger delivers fire-and-forget without persistence or ACK tracking.
-// When enabled, [cresettings.Default.BaseTriggerRetryInterval] must be positive.
-func ResolveBaseTriggerRetryInterval(ctx context.Context, g settings.Getter, lggr logger.Logger) (retryInterval time.Duration, err error) {
-	enabled, gerr := cresettings.Default.BaseTriggerRetransmitEnabled.GetOrDefault(ctx, g)
-	if gerr != nil {
-		lggr.Errorw("CRE settings read failed for base trigger retransmit flag; using default", "err", gerr)
+// ValidateBaseTriggerRetryInterval returns an error if the configured retry interval is not positive.
+// Retransmit enablement is evaluated dynamically at runtime via BaseTriggerRetransmitEnabled.
+func ValidateBaseTriggerRetryInterval(ctx context.Context, g settings.Getter) error {
+	if g == nil {
+		return errors.New("base trigger CRE settings getter is nil")
 	}
-	if !enabled {
-		return 0, nil
+	iv, err := cresettings.Default.BaseTriggerRetryInterval.GetOrDefault(ctx, g)
+	if err != nil {
+		return fmt.Errorf("base trigger retry interval: %w", err)
 	}
-	retryInterval, gerr = cresettings.Default.BaseTriggerRetryInterval.GetOrDefault(ctx, g)
-	if gerr != nil {
-		lggr.Errorw("CRE settings read failed for base trigger retry interval; using default", "err", gerr)
+	if iv <= 0 {
+		return fmt.Errorf("BaseTriggerRetryInterval must be positive (got %v)", iv)
 	}
-	if retryInterval <= 0 {
-		return 0, fmt.Errorf(
-			"BaseTriggerRetransmitEnabled is true but BaseTriggerRetryInterval must be positive (got %s)",
-			retryInterval,
-		)
-	}
-	return retryInterval, nil
+	return nil
 }
 
-// NewBaseTriggerCapabilityWithCRESettings builds a [BaseTriggerCapability] using global CRE settings
-// for retransmit enablement and interval. Undelivered warning/critical thresholds are derived from
-// the resolved interval when retransmit is enabled.
+// NewBaseTriggerCapabilityWithCRESettings builds a [BaseTriggerCapability] that reads
+// [cresettings.Default.BaseTriggerRetransmitEnabled] and [cresettings.Default.BaseTriggerRetryInterval]
+// on each delivery, resend, and scan so changes apply without restarting the node.
 func NewBaseTriggerCapabilityWithCRESettings[T proto.Message](
 	ctx context.Context,
 	store EventStore,
@@ -48,14 +39,8 @@ func NewBaseTriggerCapabilityWithCRESettings[T proto.Message](
 	capabilityID string,
 	getter settings.Getter,
 ) (*BaseTriggerCapability[T], error) {
-	retry, err := ResolveBaseTriggerRetryInterval(ctx, getter, lggr)
-	if err != nil {
+	if err := ValidateBaseTriggerRetryInterval(ctx, getter); err != nil {
 		return nil, err
 	}
-	var undeliveredWarning, undeliveredCritical time.Duration
-	if retry > 0 {
-		undeliveredWarning = 5 * retry
-		undeliveredCritical = 20 * retry
-	}
-	return NewBaseTriggerCapability(store, newMsg, lggr, capabilityID, retry, undeliveredWarning, undeliveredCritical), nil
+	return NewBaseTriggerCapability(store, newMsg, lggr, capabilityID, 0, 0, 0, getter), nil
 }

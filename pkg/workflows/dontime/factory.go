@@ -26,10 +26,8 @@ const (
 var _ core.OCR3ReportingPluginFactory = &Factory{}
 
 type Factory struct {
-	store                   *Store
-	batchSize               int
-	outcomePruningThreshold uint64
-	lggr                    logger.Logger
+	store *Store
+	lggr  logger.Logger
 
 	services.StateMachine
 }

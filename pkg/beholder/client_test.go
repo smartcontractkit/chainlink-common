@@ -495,9 +495,6 @@ func TestNewClient_Chip(t *testing.T) {
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
 
-		// Verify it implements the Client interface
-		var _ chipingress.Client = client.Chip
-
 		// Verify the emitter is configured as dual source
 		assert.NotNil(t, client.Emitter)
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
@@ -513,9 +510,6 @@ func TestNewClient_Chip(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
-
-		// Verify it implements the Client interface
-		var _ chipingress.Client = client.Chip
 
 		// Verify emitter is not dual source when dual emitter is disabled
 		assert.NotNil(t, client.Emitter)
@@ -547,13 +541,11 @@ func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
 }
 
 func TestNewGRPCClientRotatingAuth(t *testing.T) {
-
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	pubKeyHex := hex.EncodeToString(pubKey)
 
 	t.Run("successful rotating auth setup", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -575,7 +567,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("error when public key hex is empty but TTL is set", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthPublicKeyHex:         "",               // Empty public key hex
@@ -594,7 +585,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("error when TTL is too short", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -616,7 +606,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("error when public key hex is invalid", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -640,7 +629,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 
 func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 	t.Run("uses static auth when no rotating auth is configured", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthHeaders: map[string]string{
@@ -659,7 +647,6 @@ func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 	})
 
 	t.Run("no auth when neither rotating nor static auth is configured", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			InsecureConnection:       true,
@@ -676,13 +663,11 @@ func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 }
 
 func TestNewGRPCClientChipIngressAuth(t *testing.T) {
-
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	pubKeyHex := hex.EncodeToString(pubKey)
 
 	t.Run("chip ingress with rotating auth", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -733,7 +718,6 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 	})
 
 	t.Run("chip ingress with no auth", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint:       "localhost:4317",
 			ChipIngressEmitterEnabled:      true,

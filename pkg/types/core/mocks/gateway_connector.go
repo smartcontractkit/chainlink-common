@@ -6,10 +6,8 @@ import (
 	context "context"
 	json "encoding/json"
 
-	core "github.com/smartcontractkit/chainlink-common/pkg/types/core"
-
 	jsonrpc2 "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
-
+	core "github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	mock "github.com/stretchr/testify/mock"
 )
 

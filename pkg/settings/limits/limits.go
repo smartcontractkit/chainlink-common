@@ -42,7 +42,6 @@ func TryCleanup[N any](ctx context.Context, limiter Limiter[N]) {
 	}); ok {
 		c.cleanup(ctx)
 	}
-	return
 }
 
 // TenantEvictor is optionally implemented by scoped limiters to allow removal

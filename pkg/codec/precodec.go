@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/go-viper/mapstructure/v2"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -72,7 +73,7 @@ type preCodec struct {
 
 func (pc *preCodec) TransformToOffChain(onChainValue any, itemType string) (any, error) {
 	// set itemType to an ignore value if path traversal is not enabled
-	if !pc.modifierBase.enablePathTraverse {
+	if !pc.enablePathTraverse {
 		itemType = ""
 	}
 
@@ -139,7 +140,7 @@ func (pc *preCodec) TransformToOnChain(offChainValue any, itemType string) (any,
 	allHooks[0] = hardCodeManyHook
 
 	// set itemType to an ignore value if path traversal is not enabled
-	if !pc.modifierBase.enablePathTraverse {
+	if !pc.enablePathTraverse {
 		itemType = ""
 	}
 

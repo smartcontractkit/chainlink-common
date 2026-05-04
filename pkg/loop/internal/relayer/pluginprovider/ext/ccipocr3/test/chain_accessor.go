@@ -309,7 +309,6 @@ type staticChainAccessor struct {
 }
 
 func newStaticChainAccessor(lggr logger.Logger, cfg staticChainAccessorConfig) staticChainAccessor {
-	lggr = logger.Named(lggr, "staticChainAccessor")
 	return staticChainAccessor{
 		staticChainAccessorConfig: cfg,
 	}
@@ -387,7 +386,7 @@ func (s staticChainAccessor) MessagesByTokenID(ctx context.Context, source, dest
 	result := make(map[ccipocr3.MessageTokenID]ccipocr3.Bytes)
 	for tokenID := range tokens {
 		// Return some test message bytes
-		result[tokenID] = ccipocr3.Bytes(fmt.Sprintf("usdc-message-data-for-%s", tokenID.String()))
+		result[tokenID] = ccipocr3.Bytes("usdc-message-data-for-" + tokenID.String())
 	}
 	return result, nil
 }

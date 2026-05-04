@@ -2,7 +2,6 @@ package solana_test
 
 import (
 	"bytes"
-	"errors"
 	"testing"
 	"time"
 
@@ -320,7 +319,7 @@ func TestLPFilterAndSubkeysConverters(t *testing.T) {
 	df, err := conv.ConvertLPFilterQueryFromProto(f)
 	require.NoError(t, err)
 	require.Equal(t, "test", df.Name)
-	require.Equal(t, 2, len(df.SubkeyPaths))
+	require.Len(t, df.SubkeyPaths, 2)
 
 	back := conv.ConvertLPFilterQueryToProto(df)
 	require.Equal(t, f.Name, back.Name)
@@ -380,10 +379,10 @@ func TestGetSignatureStatusesConverters(t *testing.T) {
 	drep := conv.ConvertGetSignatureStatusesReplyFromProto(rep)
 	require.EqualValues(t, 1, drep.Results[0].Slot)
 	require.NotNil(t, drep.Results[0].Confirmations)
-	require.EqualValues(t, c, *drep.Results[0].Confirmations)
+	require.Equal(t, c, *drep.Results[0].Confirmations)
 
 	rep2 := conv.ConvertGetSignatureStatusesReplyToProto(drep)
-	require.EqualValues(t, &c, rep2.Results[0].Confirmations)
+	require.Equal(t, &c, rep2.Results[0].Confirmations)
 	require.Equal(t, conv.ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED, rep2.Results[0].ConfirmationStatus)
 }
 
@@ -399,5 +398,63 @@ func TestErrorJoinBehavior_PublicKeys(t *testing.T) {
 	require.Contains(t, err.Error(), "public key[1]")
 
 	// Ensure errors.Is behaves reasonably (not super strict here)
-	require.True(t, errors.Is(err, err))
+	require.ErrorIs(t, err, err)
+}
+
+func TestConvertCPIFilterConfigToProto(t *testing.T) {
+	t.Run("nil input returns nil", func(t *testing.T) {
+		got, err := conv.ConvertCPIFilterConfigToProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("valid config converts successfully", func(t *testing.T) {
+		addr := mkBytes(typesolana.PublicKeyLength, 0xAB)
+		methodName := []byte("someMethod")
+		in := &conv.CPIFilterConfig{
+			DestAddress: addr,
+			MethodName:  methodName,
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		require.Equal(t, addr, got.DestAddress[:])
+		require.Equal(t, "someMethod", got.MethodName)
+	})
+
+	t.Run("nil address returns error", func(t *testing.T) {
+		in := &conv.CPIFilterConfig{
+			DestAddress: nil,
+			MethodName:  []byte("method"),
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "convert address err")
+		require.Contains(t, err.Error(), "address can't be nil")
+	})
+
+	t.Run("invalid address length returns error", func(t *testing.T) {
+		in := &conv.CPIFilterConfig{
+			DestAddress: mkBytes(typesolana.PublicKeyLength-1, 0x01),
+			MethodName:  []byte("method"),
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "convert address err")
+		require.Contains(t, err.Error(), "invalid public key")
+	})
+
+	t.Run("empty method name is allowed", func(t *testing.T) {
+		addr := mkBytes(typesolana.PublicKeyLength, 0x11)
+		in := &conv.CPIFilterConfig{
+			DestAddress: addr,
+			MethodName:  nil,
+		}
+		got, err := conv.ConvertCPIFilterConfigToProto(in)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		require.Empty(t, got.MethodName)
+	})
 }

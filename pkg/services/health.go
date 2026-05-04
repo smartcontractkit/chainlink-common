@@ -219,20 +219,33 @@ func (c *HealthChecker) Register(service HealthReporter) error {
 	}
 
 	c.servicesMu.Lock()
-	defer c.servicesMu.Unlock()
 	if testing.Testing() {
 		if orig, ok := c.services[name]; ok {
 			panic(fmt.Errorf("duplicate name %q: service names must be unique: types %T & %T", name, service, orig))
 		}
 	}
 	c.services[name] = service
+	c.servicesMu.Unlock()
+
+	// Populate health state directly for the new service so it is
+	// visible immediately without waiting for the next polling tick.
+	ready := service.Ready()
+	report := service.HealthReport()
+
+	c.stateMu.Lock()
+	c.ready[name] = ready
+	for n, err := range report {
+		c.healthy[n] = err
+	}
+	c.stateMu.Unlock()
+
 	return nil
 }
 
 // Unregister a service.
 func (c *HealthChecker) Unregister(name string) error {
 	if name == "" {
-		return fmt.Errorf("name cannot be empty")
+		return errors.New("name cannot be empty")
 	}
 	ctx := context.Background()
 

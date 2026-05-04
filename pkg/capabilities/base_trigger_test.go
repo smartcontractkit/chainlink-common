@@ -17,7 +17,7 @@ import (
 )
 
 func TestValidateBaseTriggerRetryInterval(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("nil getter errors", func(t *testing.T) {
 		err := ValidateBaseTriggerRetryInterval(ctx, nil)
@@ -79,7 +79,7 @@ func (f *atomicJSONGetter) GetScoped(ctx context.Context, scope settings.Scope, 
 func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
@@ -325,7 +325,7 @@ func TestRetransmitDisabled_AckReconcilesStore(t *testing.T) {
 func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
@@ -373,7 +373,7 @@ func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
 func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
@@ -740,7 +740,7 @@ func TestAddJitter_ZeroDuration(t *testing.T) {
 func TestBaseTrigger_BackoffDelaysRetransmit(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
@@ -848,7 +848,7 @@ drainCap:
 func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	store := NewMemEventStore()
 
@@ -897,7 +897,7 @@ func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	store := NewMemEventStore()
 
@@ -940,7 +940,7 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{

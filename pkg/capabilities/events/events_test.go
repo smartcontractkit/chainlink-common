@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type testEmitter struct {
@@ -23,6 +25,10 @@ func (t *testEmitter) Emit(ctx context.Context, payload []byte, attrKVs ...any) 
 	t.payload = payload
 	t.attrs = attrKVs
 	return nil
+}
+
+func (t *testEmitter) BatchEmit(_ context.Context, _ []beholder.Message, _ ...beholder.BatchEmitOption) ([]*chipingress.PublishResult, error) {
+	return nil, nil
 }
 
 func TestEmitter(t *testing.T) {

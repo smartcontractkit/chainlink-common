@@ -722,6 +722,52 @@ func (_c *Relayer_Solana_Call) RunAndReturn(run func() (types.SolanaService, err
 	return _c
 }
 
+// Start provides a mock function with given fields: _a0
+func (_m *Relayer) Start(_a0 context.Context) error {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Start")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Relayer_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
+type Relayer_Start_Call struct {
+	*mock.Call
+}
+
+// Start is a helper method to define mock.On call
+//   - _a0 context.Context
+func (_e *Relayer_Expecter) Start(_a0 interface{}) *Relayer_Start_Call {
+	return &Relayer_Start_Call{Call: _e.mock.On("Start", _a0)}
+}
+
+func (_c *Relayer_Start_Call) Run(run func(_a0 context.Context)) *Relayer_Start_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_Start_Call) Return(_a0 error) *Relayer_Start_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Relayer_Start_Call) RunAndReturn(run func(context.Context) error) *Relayer_Start_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Stellar provides a mock function with no fields
 func (_m *Relayer) Stellar() (types.StellarService, error) {
 	ret := _m.Called()
@@ -775,52 +821,6 @@ func (_c *Relayer_Stellar_Call) Return(_a0 types.StellarService, _a1 error) *Rel
 }
 
 func (_c *Relayer_Stellar_Call) RunAndReturn(run func() (types.StellarService, error)) *Relayer_Stellar_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Start provides a mock function with given fields: _a0
-func (_m *Relayer) Start(_a0 context.Context) error {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Start")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Relayer_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
-type Relayer_Start_Call struct {
-	*mock.Call
-}
-
-// Start is a helper method to define mock.On call
-//   - _a0 context.Context
-func (_e *Relayer_Expecter) Start(_a0 interface{}) *Relayer_Start_Call {
-	return &Relayer_Start_Call{Call: _e.mock.On("Start", _a0)}
-}
-
-func (_c *Relayer_Start_Call) Run(run func(_a0 context.Context)) *Relayer_Start_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *Relayer_Start_Call) Return(_a0 error) *Relayer_Start_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Relayer_Start_Call) RunAndReturn(run func(context.Context) error) *Relayer_Start_Call {
 	_c.Call.Return(run)
 	return _c
 }

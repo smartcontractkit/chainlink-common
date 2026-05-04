@@ -52,7 +52,7 @@ func (c *Client) GetFolders() (GetAllFoldersResponse, *resty.Response, error) {
 	resp, err := c.resty.R().
 		SetHeader("Accept", "application/json").
 		SetResult(&grafanaResp).
-		SetQueryParam("limit", "100").
+		SetQueryParam("limit", "1000").
 		Get("/api/folders")
 
 	if err != nil {

@@ -14,7 +14,7 @@ type Client interface {
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
 type GetLedgerEntriesRequest struct {
 	// Keys is a slice of base64-encoded XDR ledger keys.
-	Keys []XDR
+	Keys []string
 }
 
 // LedgerEntryResult is a single ledger entry returned from GetLedgerEntries.

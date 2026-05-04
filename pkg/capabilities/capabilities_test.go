@@ -26,7 +26,7 @@ func Test_CapabilityInfo(t *testing.T) {
 
 	gotCi, err := ci.Info(t.Context())
 	require.NoError(t, err)
-	require.Equal(t, ci.Version(), "1.0.0")
+	require.Equal(t, "1.0.0", ci.Version())
 	assert.Equal(t, ci, gotCi)
 
 	ci, err = NewCapabilityInfo(
@@ -39,7 +39,7 @@ func Test_CapabilityInfo(t *testing.T) {
 
 	gotCi, err = ci.Info(t.Context())
 	require.NoError(t, err)
-	require.Equal(t, ci.Version(), "1.0.0+build.1234.sha-5678")
+	require.Equal(t, "1.0.0+build.1234.sha-5678", ci.Version())
 	assert.Equal(t, ci, gotCi)
 
 	// prerelease
@@ -52,7 +52,7 @@ func Test_CapabilityInfo(t *testing.T) {
 
 	gotCi, err = ci.Info(t.Context())
 	require.NoError(t, err)
-	require.Equal(t, ci.Version(), "1.0.0-beta")
+	require.Equal(t, "1.0.0-beta", ci.Version())
 	assert.Equal(t, ci, gotCi)
 }
 
@@ -236,7 +236,7 @@ func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {
 				"Report should match")
 
 			// Compare signatures
-			assert.Equal(t, len(tc.event.Sigs), len(reconstructedEvent.Sigs),
+			assert.Len(t, reconstructedEvent.Sigs, len(tc.event.Sigs),
 				"Number of signatures should match")
 
 			for i := 0; i < len(tc.event.Sigs); i++ {
@@ -276,7 +276,6 @@ func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {
 		})
 		assert.ErrorContains(t, err, "nil underlying map")
 	})
-
 }
 
 func TestParseID(t *testing.T) {
@@ -336,7 +335,7 @@ func ptr[T any](v T) *T { return &v }
 
 func TestRequestMetadata_ContextWithCRE(t *testing.T) {
 	ctx := t.Context()
-	require.Equal(t, "", contexts.CREValue(ctx).Org)
+	require.Empty(t, contexts.CREValue(ctx).Org)
 
 	// set it
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})
@@ -350,7 +349,7 @@ func TestRequestMetadata_ContextWithCRE(t *testing.T) {
 
 func TestRegistrationMetadata_ContextWithCRE(t *testing.T) {
 	ctx := t.Context()
-	require.Equal(t, "", contexts.CREValue(ctx).Org)
+	require.Empty(t, contexts.CREValue(ctx).Org)
 
 	// set it
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})

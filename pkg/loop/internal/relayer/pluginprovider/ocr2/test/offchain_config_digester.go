@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
+
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 type staticOffchainConfigDigesterConfig struct {

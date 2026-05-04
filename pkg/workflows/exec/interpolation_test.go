@@ -271,9 +271,9 @@ func TestInterpolateEnv_Secrets(t *testing.T) {
 		c,
 		exec.Env{Secrets: secrets})
 	require.NoError(t, err)
-	assert.Equal(t, got, map[string]any{
+	assert.Equal(t, map[string]any{
 		"secrets": secrets,
-	})
+	}, got)
 
 	c = map[string]any{
 		"secrets": "$(ENV.secrets.foo)",
@@ -286,9 +286,9 @@ func TestInterpolateEnv_Secrets(t *testing.T) {
 		c,
 		exec.Env{Secrets: secrets})
 	require.NoError(t, err)
-	assert.Equal(t, got, map[string]any{
+	assert.Equal(t, map[string]any{
 		"secrets": "fooSecret",
-	})
+	}, got)
 }
 
 type fakeResults map[string]*exec.Result

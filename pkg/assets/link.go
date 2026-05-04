@@ -22,7 +22,7 @@ func getDenominator(precision int) *big.Int {
 
 func Format(i *big.Int, precision int) string {
 	r := big.NewRat(1, 1).SetFrac(i, getDenominator(precision))
-	return fmt.Sprintf("%v", r.FloatString(precision))
+	return r.FloatString(precision)
 }
 
 // Link contains a field to represent the smallest units of LINK

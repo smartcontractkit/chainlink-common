@@ -2,7 +2,6 @@ package solana_test
 
 import (
 	"bytes"
-	"errors"
 	"testing"
 	"time"
 
@@ -320,7 +319,7 @@ func TestLPFilterAndSubkeysConverters(t *testing.T) {
 	df, err := conv.ConvertLPFilterQueryFromProto(f)
 	require.NoError(t, err)
 	require.Equal(t, "test", df.Name)
-	require.Equal(t, 2, len(df.SubkeyPaths))
+	require.Len(t, df.SubkeyPaths, 2)
 
 	back := conv.ConvertLPFilterQueryToProto(df)
 	require.Equal(t, f.Name, back.Name)
@@ -380,10 +379,10 @@ func TestGetSignatureStatusesConverters(t *testing.T) {
 	drep := conv.ConvertGetSignatureStatusesReplyFromProto(rep)
 	require.EqualValues(t, 1, drep.Results[0].Slot)
 	require.NotNil(t, drep.Results[0].Confirmations)
-	require.EqualValues(t, c, *drep.Results[0].Confirmations)
+	require.Equal(t, c, *drep.Results[0].Confirmations)
 
 	rep2 := conv.ConvertGetSignatureStatusesReplyToProto(drep)
-	require.EqualValues(t, &c, rep2.Results[0].Confirmations)
+	require.Equal(t, &c, rep2.Results[0].Confirmations)
 	require.Equal(t, conv.ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED, rep2.Results[0].ConfirmationStatus)
 }
 
@@ -399,7 +398,7 @@ func TestErrorJoinBehavior_PublicKeys(t *testing.T) {
 	require.Contains(t, err.Error(), "public key[1]")
 
 	// Ensure errors.Is behaves reasonably (not super strict here)
-	require.True(t, errors.Is(err, err))
+	require.ErrorIs(t, err, err)
 }
 
 func TestConvertCPIFilterConfigToProto(t *testing.T) {
@@ -456,6 +455,6 @@ func TestConvertCPIFilterConfigToProto(t *testing.T) {
 		got, err := conv.ConvertCPIFilterConfigToProto(in)
 		require.NoError(t, err)
 		require.NotNil(t, got)
-		require.Equal(t, "", got.MethodName)
+		require.Empty(t, got.MethodName)
 	})
 }

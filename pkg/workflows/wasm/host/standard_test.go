@@ -105,7 +105,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 
 		assert.False(t, callsSeen[input.InputThing])
 		callsSeen[input.InputThing] = true
-		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("%t", input.InputThing)})
+		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: strconv.FormatBool(input.InputThing)})
 		require.NoError(t, err)
 
 		return &sdk.CapabilityResponse{
@@ -261,7 +261,7 @@ func TestStandardLogging(t *testing.T) {
 		return time.Now(), nil
 	}).Maybe()
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
-		assert.True(t, strings.Contains(s, "log from wasm!"))
+		assert.Contains(t, s, "log from wasm!")
 		return nil
 	}).Once()
 

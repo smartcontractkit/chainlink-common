@@ -251,8 +251,8 @@ func TestTelemetry(t *testing.T) {
 			require.ErrorContains(t, err, test.error)
 		} else {
 			require.NotNil(t, e)
-			require.Nil(t, err)
-			require.Nil(t, e.SendLog(t.Context(), []byte("some-data")))
+			require.NoError(t, err)
+			require.NoError(t, e.SendLog(t.Context(), []byte("some-data")))
 		}
 	}
 }

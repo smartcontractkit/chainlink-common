@@ -2,7 +2,7 @@ package beholder
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync/atomic"
 )
 
@@ -18,7 +18,7 @@ type lazySigner struct {
 func (l *lazySigner) Sign(ctx context.Context, keyID string, data []byte) ([]byte, error) {
 	s := l.signer.Load()
 	if s == nil {
-		return nil, fmt.Errorf("keystore not yet available for signing")
+		return nil, errors.New("keystore not yet available for signing")
 	}
 	return (*s).Sign(ctx, keyID, data)
 }

@@ -3,9 +3,10 @@ package ccipocr3
 import (
 	"testing"
 
-	chainsel "github.com/smartcontractkit/chain-selectors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	chainsel "github.com/smartcontractkit/chain-selectors"
 )
 
 func TestExtraDataCodec_DecodeExtraArgs(t *testing.T) {

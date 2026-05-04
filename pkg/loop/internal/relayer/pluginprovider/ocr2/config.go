@@ -4,8 +4,9 @@ import (
 	"context"
 	"math"
 
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
+
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"

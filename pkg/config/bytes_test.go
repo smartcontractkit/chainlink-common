@@ -29,7 +29,6 @@ func TestBytes_MarshalText_String(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.expected, func(t *testing.T) {
 			t.Parallel()
 
@@ -77,7 +76,6 @@ func TestBytes_UnmarshalText(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.input, func(t *testing.T) {
 			t.Parallel()
 

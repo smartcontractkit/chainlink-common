@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"log"
 	"reflect"
 	"testing"
@@ -75,7 +74,6 @@ func TestWrapper(t *testing.T) {
 		offChainType, err = wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf(testStruct{})}}).Kind(), offChainType.Elem().Kind())
-
 	})
 
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
@@ -106,7 +104,7 @@ func TestWrapper(t *testing.T) {
 
 	t.Run("RetypeToOffChain returns exception if a field is not on the type", func(t *testing.T) {
 		_, err := invalidWrapper.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain works on nested fields", func(t *testing.T) {
@@ -207,7 +205,7 @@ func TestWrapper(t *testing.T) {
 
 	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {
 		_, err := invalidWrapper.TransformToOnChain(testStruct{}, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers, but doesn't maintain same addresses", func(t *testing.T) {
@@ -232,7 +230,6 @@ func TestWrapper(t *testing.T) {
 		newInput, err := wrapper.TransformToOffChain(output, "")
 		require.NoError(t, err)
 		assert.Equal(t, rInput.Interface(), newInput)
-
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on slices", func(t *testing.T) {

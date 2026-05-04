@@ -170,7 +170,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 
 		got, err := client.GetTransactionStatus(ctx, txId)
 		require.NoError(t, err)
-		require.Equal(t, got, types.Finalized)
+		require.Equal(t, types.Finalized, got)
 	})
 
 	t.Run("FilterLogs", func(t *testing.T) {
@@ -207,7 +207,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		reply, err := client.FilterLogs(ctx, request)
 		require.NoError(t, err)
 		require.Equal(t, expLog, reply.Logs)
-
 	})
 
 	t.Run("EstimateGas", func(t *testing.T) {
@@ -254,7 +253,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		got, err := client.GetTransactionReceipt(ctx, evm.GeTransactionReceiptRequest{Hash: txHash})
 		require.NoError(t, err)
 		require.Equal(t, expReceipt, got)
-
 	})
 
 	t.Run("GetTransactionByHash", func(t *testing.T) {
@@ -320,7 +318,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		got, err := client.QueryTrackedLogs(ctx, expQuery, expLimitAndSort, expConfidence)
 		require.NoError(t, err)
 		require.Equal(t, expLog, got)
-
 	})
 
 	t.Run("GetForwarderForEOA", func(t *testing.T) {

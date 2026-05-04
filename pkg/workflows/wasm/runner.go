@@ -136,7 +136,7 @@ func (r *Runner) parseRequest() (*wasmpb.Request, error) {
 
 	b, err := base64.StdEncoding.DecodeString(request)
 	if err != nil {
-		return nil, fmt.Errorf("invalid request: could not decode request into bytes")
+		return nil, errors.New("invalid request: could not decode request into bytes")
 	}
 
 	req := &wasmpb.Request{}
@@ -183,7 +183,7 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 
 	creq, err := capabilitiespb.CapabilityRequestFromProto(req)
 	if err != nil {
-		return nil, fmt.Errorf("invalid compute request: could not translate proto into capability request")
+		return nil, errors.New("invalid compute request: could not translate proto into capability request")
 	}
 
 	// Extract the config from the request

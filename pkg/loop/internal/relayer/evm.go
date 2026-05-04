@@ -213,7 +213,6 @@ func (e *EVMClient) HeaderByNumber(ctx context.Context, request evmtypes.HeaderB
 	}
 
 	return &evmtypes.HeaderByNumberReply{Header: &header}, nil
-
 }
 func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evmtypes.Log, error) {

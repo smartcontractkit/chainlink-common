@@ -2,7 +2,6 @@ package contractreader_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"testing"
@@ -32,22 +31,22 @@ func TestCodecClient(t *testing.T) {
 		es.err = errorType
 		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := esCodec.Encode(t.Context(), anyObj, "doesnotmatter")
-			assert.True(t, errors.Is(err, errorType))
+			assert.ErrorIs(t, err, errorType)
 		})
 
 		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := esCodec.Encode(t.Context(), anyObj, "doesnotmatter")
-			assert.True(t, errors.Is(err, errorType))
+			assert.ErrorIs(t, err, errorType)
 		})
 
 		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := esCodec.GetMaxEncodingSize(t.Context(), 1, "anything")
-			assert.True(t, errors.Is(err, errorType))
+			assert.ErrorIs(t, err, errorType)
 		})
 
 		t.Run("GetMaxDecodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
 			_, err := esCodec.GetMaxDecodingSize(t.Context(), 1, "anything")
-			assert.True(t, errors.Is(err, errorType))
+			assert.ErrorIs(t, err, errorType)
 		})
 	}
 
@@ -57,7 +56,7 @@ func TestCodecClient(t *testing.T) {
 		interfaceTester.Setup(t)
 		c := interfaceTester.GetCodec(t)
 		_, err := c.Encode(t.Context(), &cannotEncode{}, "doesnotmatter")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
@@ -67,7 +66,7 @@ func TestCodecClient(t *testing.T) {
 		toDecode, err := c.Encode(t.Context(), &interfacetests.TestStruct{Field: &fv}, interfacetests.TestItemType)
 		require.NoError(t, err)
 		err = c.Decode(t.Context(), toDecode, &cannotEncode{}, interfacetests.TestItemType)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Nil esCodec returns unimplemented", func(t *testing.T) {

@@ -17,5 +17,4 @@ func Test_ByzantineQuorum(t *testing.T) {
 	assert.Equal(t, 4, ByzantineQuorum(5, 1))
 	assert.Equal(t, 4, ByzantineQuorum(6, 1))
 	assert.Equal(t, 6, ByzantineQuorum(9, 2))
-
 }

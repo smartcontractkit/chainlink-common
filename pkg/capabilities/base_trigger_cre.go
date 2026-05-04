@@ -42,5 +42,5 @@ func NewBaseTriggerCapabilityWithCRESettings[T proto.Message](
 	if err := ValidateBaseTriggerRetryInterval(ctx, getter); err != nil {
 		return nil, err
 	}
-	return NewBaseTriggerCapability(store, newMsg, lggr, capabilityID, 0, 0, 0, getter), nil
+	return NewBaseTriggerCapability(store, newMsg, lggr, capabilityID, 0, getter), nil
 }

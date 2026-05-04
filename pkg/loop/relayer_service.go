@@ -63,6 +63,13 @@ func (r *RelayerService) Solana() (types.SolanaService, error) {
 	return r.Service.Solana()
 }
 
+func (r *RelayerService) Stellar() (types.StellarService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.Stellar()
+}
+
 func (r *RelayerService) Aptos() (types.AptosService, error) {
 	if err := r.Wait(); err != nil {
 		return nil, err

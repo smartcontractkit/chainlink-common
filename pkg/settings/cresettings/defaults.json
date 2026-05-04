@@ -143,6 +143,7 @@
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC",
 		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
-		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
+		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureEVMWriteReportL1FeeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

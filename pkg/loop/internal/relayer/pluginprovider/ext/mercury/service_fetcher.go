@@ -2,6 +2,7 @@ package mercury
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -65,7 +66,7 @@ func (s *serverFetcherServer) FetchInitialMaxFinalizedBlockNumber(ctx context.Co
 	}
 	// play defense against a nil dereference below. it's a bit weird that we're returning a pointer to an int64.
 	if val == nil {
-		return nil, fmt.Errorf("FetchInitialMaxFinalizedBlockNumber returned nil")
+		return nil, errors.New("FetchInitialMaxFinalizedBlockNumber returned nil")
 	}
 	return &mercury_pb.FetchInitialMaxFinalizedBlockNumberReply{InitialMaxFinalizedBlockNumber: *val}, nil
 }

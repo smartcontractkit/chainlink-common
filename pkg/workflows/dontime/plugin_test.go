@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"

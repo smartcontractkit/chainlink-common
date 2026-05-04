@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
@@ -286,7 +287,7 @@ func TestRegisterTrigger(t *testing.T) {
 			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
 			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
 		}
-		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+		require.Equal(t, wantEvents, gotEvents, "expected %d events, got %d", wantEvents, gotEvents)
 	})
 
 	// Validate that if the original context is canceled, all events are sent
@@ -348,7 +349,7 @@ func TestRegisterTrigger(t *testing.T) {
 			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
 			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
 		}
-		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+		require.Equal(t, wantEvents, gotEvents, "expected %d events, got %d", wantEvents, gotEvents)
 	})
 
 	// Validate that if the context is canceled while calling the passed function
@@ -442,7 +443,7 @@ func TestRegisterTrigger(t *testing.T) {
 					_, isOpen := <-respCh
 					return !isOpen
 				}, 1*time.Second, 100*time.Millisecond)
-				require.True(t, gotEvents < sentEvents)
+				require.Less(t, gotEvents, sentEvents)
 				return
 			}
 

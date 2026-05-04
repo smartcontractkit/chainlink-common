@@ -62,7 +62,7 @@ func TestOCR3_ReportingFactoryIsAService(t *testing.T) {
 	require.NoError(t, factory.Start(ctx))
 
 	r.AssertCalled(t, "Add", mock.Anything, o.config.capability)
-	assert.Nil(t, factory.Ready())
+	assert.NoError(t, factory.Ready())
 
 	err = o.Close()
 	require.NoError(t, err)

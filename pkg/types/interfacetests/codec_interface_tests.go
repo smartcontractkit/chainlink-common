@@ -1,12 +1,12 @@
 package interfacetests
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -149,7 +149,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 
 				codec := tester.GetCodec(t)
 				_, err := codec.Encode(ctx, item, TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			},
 		},
 		{
@@ -241,10 +241,10 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, item, "NOT"+TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 
 				err = codec.Decode(ctx, []byte(""), item, "NOT"+TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			},
 		},
 		{
@@ -260,7 +260,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, items, TestItemArray2Type)
-				assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+				assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 			},
 		},
 		{
@@ -277,7 +277,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				codec := tester.GetCodec(t)
 
 				_, err := codec.Encode(ctx, items, TestItemArray1Type)
-				assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+				assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 			},
 		},
 		{
@@ -286,7 +286,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				ctx := t.Context()
 				cr := tester.GetCodec(t)
 				_, err := cr.GetMaxEncodingSize(ctx, 10, "not"+TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			},
 		},
 		{
@@ -295,7 +295,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				ctx := t.Context()
 				cr := tester.GetCodec(t)
 				_, err := cr.GetMaxDecodingSize(ctx, 10, "not"+TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			},
 		},
 		{
@@ -371,7 +371,7 @@ func RunCodecInterfaceTests(t *testing.T, tester CodecInterfaceTester) {
 				cr := tester.GetCodec(t)
 				notTestStruct := &MidLevelDynamicTestStruct{}
 				_, err := cr.Encode(ctx, notTestStruct, TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			},
 		},
 	}
@@ -399,7 +399,7 @@ func RunCodecWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTest
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &item, TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+				assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 			},
 		},
 		{
@@ -415,7 +415,7 @@ func RunCodecWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTest
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &item, TestItemType)
-				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+				assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 			},
 		},
 		{
@@ -431,7 +431,7 @@ func RunCodecWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTest
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &items, TestItemSliceType)
-				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+				assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 			},
 		},
 		{
@@ -447,7 +447,7 @@ func RunCodecWithStrictArgsInterfaceTest(t *testing.T, tester CodecInterfaceTest
 				resp := tester.EncodeFields(t, req)
 				codec := tester.GetCodec(t)
 				err := codec.Decode(ctx, resp, &items, TestItemSliceType)
-				assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+				assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 			},
 		},
 	}

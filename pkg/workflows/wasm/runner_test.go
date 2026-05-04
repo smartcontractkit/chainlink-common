@@ -403,7 +403,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 			if tt.errorString == "" {
 				assert.NotNil(t, gotResponse.GetComputeResponse())
 				resp := gotResponse.GetComputeResponse().GetResponse()
-				assert.Equal(t, resp.Error, "")
+				assert.Empty(t, resp.Error)
 
 				m, err = values.FromMapValueProto(resp.Value)
 				require.NoError(t, err)

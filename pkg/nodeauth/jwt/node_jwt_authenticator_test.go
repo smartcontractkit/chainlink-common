@@ -71,7 +71,6 @@ func createTestLogger() *slog.Logger {
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_ValidToken(t *testing.T) {
-
 	// Given
 	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
@@ -93,7 +92,6 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ValidToken(t *testing.T) {
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_TamperedRequest(t *testing.T) {
-
 	// Given
 	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
@@ -111,7 +109,6 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_TamperedRequest(t *testing.T) {
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
-
 	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
 	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
@@ -146,7 +143,6 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testing.T) {
-
 	// Given - create two different key pairs
 	privateKey1, _ := createValidatorTestKeys()
 	_, csaPubKey2 := createValidatorTestKeys()
@@ -183,7 +179,6 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testi
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_UntrustedPublicKey(t *testing.T) {
-
 	// Given
 	privateKey, csaPubKey := createValidatorTestKeys()
 

@@ -2,6 +2,7 @@ package otelzap
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -21,29 +22,31 @@ type otelArrayEncoder struct {
 
 func (a *otelArrayEncoder) AppendString(v string) { a.elements = append(a.elements, v) }
 func (a *otelArrayEncoder) AppendInt64(v int64) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.FormatInt(v, 10))
 }
-func (a *otelArrayEncoder) AppendInt(v int) { a.elements = append(a.elements, fmt.Sprintf("%d", v)) }
+func (a *otelArrayEncoder) AppendInt(v int) { a.elements = append(a.elements, strconv.Itoa(v)) }
 func (a *otelArrayEncoder) AppendInt32(v int32) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.Itoa(int(v)))
 }
 func (a *otelArrayEncoder) AppendInt16(v int16) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.Itoa(int(v)))
 }
-func (a *otelArrayEncoder) AppendInt8(v int8) { a.elements = append(a.elements, fmt.Sprintf("%d", v)) }
+func (a *otelArrayEncoder) AppendInt8(v int8) { a.elements = append(a.elements, strconv.Itoa(int(v))) }
 func (a *otelArrayEncoder) AppendUint64(v uint64) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.FormatUint(v, 10))
 }
 func (a *otelArrayEncoder) AppendUint32(v uint32) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.FormatUint(uint64(v), 10))
 }
 func (a *otelArrayEncoder) AppendUint16(v uint16) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.FormatUint(uint64(v), 10))
 }
 func (a *otelArrayEncoder) AppendUint8(v uint8) {
-	a.elements = append(a.elements, fmt.Sprintf("%d", v))
+	a.elements = append(a.elements, strconv.FormatUint(uint64(v), 10))
 }
-func (a *otelArrayEncoder) AppendUint(v uint) { a.elements = append(a.elements, fmt.Sprintf("%d", v)) }
+func (a *otelArrayEncoder) AppendUint(v uint) {
+	a.elements = append(a.elements, strconv.FormatUint(uint64(v), 10))
+}
 func (a *otelArrayEncoder) AppendUintptr(v uintptr) {
 	a.elements = append(a.elements, fmt.Sprintf("%d", v))
 }
@@ -53,7 +56,7 @@ func (a *otelArrayEncoder) AppendFloat64(v float64) {
 func (a *otelArrayEncoder) AppendFloat32(v float32) {
 	a.elements = append(a.elements, fmt.Sprintf("%g", v))
 }
-func (a *otelArrayEncoder) AppendBool(v bool) { a.elements = append(a.elements, fmt.Sprintf("%t", v)) }
+func (a *otelArrayEncoder) AppendBool(v bool) { a.elements = append(a.elements, strconv.FormatBool(v)) }
 func (a *otelArrayEncoder) AppendArray(zapcore.ArrayMarshaler) error {
 	a.elements = append(a.elements, "[nested array]")
 	return nil

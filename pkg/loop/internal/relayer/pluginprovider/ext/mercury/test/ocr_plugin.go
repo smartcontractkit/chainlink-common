@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )

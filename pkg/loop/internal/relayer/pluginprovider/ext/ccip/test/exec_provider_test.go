@@ -1,7 +1,6 @@
 package test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,7 @@ func TestStaticExecProvider(t *testing.T) {
 		err := ep.Evaluate(t.Context(), botched)
 		require.Error(t, err)
 		var evalErr evaluationError
-		require.True(t, errors.As(err, &evalErr), "expected error to be an evaluationError")
+		require.ErrorAs(t, err, &evalErr, "expected error to be an evaluationError")
 		assert.Equal(t, priceRegistryComponent, evalErr.component)
 	})
 	t.Run("Self consistent AssertEqual", func(t *testing.T) {

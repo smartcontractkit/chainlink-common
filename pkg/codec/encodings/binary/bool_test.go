@@ -1,7 +1,6 @@
 package binary_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -27,12 +26,12 @@ func TestBool(t *testing.T) {
 
 		tDecoded, remaining, err := b.Decode(tEncoded)
 		require.NoError(t, err)
-		assert.Equal(t, 0, len(remaining))
+		assert.Empty(t, remaining)
 		assert.Equal(t, true, tDecoded)
 
 		fDecoded, remaining, err := b.Decode(fEncoded)
 		require.NoError(t, err)
-		assert.Equal(t, 0, len(remaining))
+		assert.Empty(t, remaining)
 		assert.Equal(t, false, fDecoded)
 	})
 
@@ -47,7 +46,7 @@ func TestBool(t *testing.T) {
 
 	t.Run("Encode returns an error if input is not a bool", func(t *testing.T) {
 		_, err := b.Encode("not a bool", nil)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 	t.Run("Decode leaves a suffix", func(t *testing.T) {
 		suffix := []byte{1, 2, 3}
@@ -60,7 +59,7 @@ func TestBool(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		_, _, err := b.Decode([]byte{})
-		assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("GetType returns the correct type", func(t *testing.T) {

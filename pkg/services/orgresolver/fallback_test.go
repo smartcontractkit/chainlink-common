@@ -41,11 +41,11 @@ func (m *mockInnerResolver) setGetFunc(fn func(ctx context.Context, owner string
 	m.getFunc = fn
 }
 
-func (m *mockInnerResolver) Start(_ context.Context) error    { return m.startErr }
-func (m *mockInnerResolver) Close() error                     { return m.closeErr }
-func (m *mockInnerResolver) Ready() error                     { return m.readyErr }
-func (m *mockInnerResolver) Name() string                     { return m.name }
-func (m *mockInnerResolver) HealthReport() map[string]error   { return map[string]error{m.name: nil} }
+func (m *mockInnerResolver) Start(_ context.Context) error  { return m.startErr }
+func (m *mockInnerResolver) Close() error                   { return m.closeErr }
+func (m *mockInnerResolver) Ready() error                   { return m.readyErr }
+func (m *mockInnerResolver) Name() string                   { return m.name }
+func (m *mockInnerResolver) HealthReport() map[string]error { return map[string]error{m.name: nil} }
 
 func newMockInner(fn func(ctx context.Context, owner string) (string, error)) *mockInnerResolver {
 	return &mockInnerResolver{getFunc: fn, name: "mockInner"}

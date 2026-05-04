@@ -46,8 +46,8 @@ const (
 // groups inbox, pending rows, and the pre-ACK dedupe cache for that trigger.
 type triggerReg[T proto.Message] struct {
 	inbox    chan<- TriggerAndId[T]
-	pending  map[string]*PendingEvent
-	preAcked map[string]time.Time
+	pending  map[string]*PendingEvent // eventID --> PendingEvent
+	preAcked map[string]time.Time     // keyed on eventID
 }
 
 type PendingEvent struct {
@@ -329,8 +329,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomePreAckDeliverySkipped)
 			return nil
 		}
-	}
-	if reg != nil {
+
 		if _, exists := reg.pending[te.ID]; exists {
 			b.mu.Unlock()
 			b.lggr.Debugw("base trigger DeliverEvent skipped: event already pending",
@@ -455,7 +454,7 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			attempts = rec.Attempts
 			firstAt = rec.FirstAt
 			found = true
-		case recOk && rec == nil:
+		case recOk:
 			hadNilPendingRecord = true
 			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNilRecord)
 		default:

@@ -507,10 +507,6 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			"hadNilPendingRecord", hadNilPendingRecord)
 	}
 
-	// Always attempt the store delete regardless of whether the event was found
-	// in memory.  Store and in-memory state can diverge after a node restart
-	// (the store survives, the in-memory map is rebuilt lazily from the store).
-	// store.DeleteEvent must be idempotent: a missing row is not an error.
 	if err := b.store.DeleteEvent(ctx, triggerId, eventId); err != nil {
 		b.lggr.Errorw("base trigger ACK failed to delete event from store",
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,

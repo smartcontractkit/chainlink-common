@@ -3,6 +3,7 @@ package evm_test
 import (
 	"bytes"
 	"errors"
+	"math/big"
 	"strings"
 	"testing"
 
@@ -268,6 +269,32 @@ func TestHashConverters(t *testing.T) {
 			t.Fatalf("joined error should include failing indices, got: %v", err)
 		}
 	})
+}
+
+func TestReceiptRoundtrip(t *testing.T) {
+	blockHash := evmtypes.Hash(mkBytes(evmtypes.HashLength, 0xAA))
+	txHash := evmtypes.Hash(mkBytes(evmtypes.HashLength, 0xBB))
+	contractAddr := evmtypes.Address(mkBytes(evmtypes.AddressLength, 0xCC))
+
+	in := &evmtypes.Receipt{
+		Status:            1,
+		Logs:              make([]*evmtypes.Log, 0),
+		TxHash:            txHash,
+		ContractAddress:   contractAddr,
+		GasUsed:           21000,
+		BlockHash:         blockHash,
+		BlockNumber:       big.NewInt(100),
+		TransactionIndex:  3,
+		EffectiveGasPrice: big.NewInt(1e9),
+		L1Fee:             big.NewInt(5000),
+	}
+
+	proto, err := evm.ConvertReceiptToProto(in)
+	require.NoError(t, err)
+
+	got, err := evm.ConvertReceiptFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, in, got)
 }
 
 func TestConvertExpressionsFromProto(t *testing.T) {

@@ -2,7 +2,6 @@ package ocr3
 
 import (
 	"encoding/hex"
-	"errors"
 	"testing"
 	"time"
 
@@ -104,7 +103,7 @@ func TestTransmitter(t *testing.T) {
 	require.NoError(t, err)
 
 	resp := <-gotCh
-	assert.Nil(t, resp.Err)
+	assert.NoError(t, resp.Err)
 
 	signedReport := pbtypes.SignedReport{}
 	require.NoError(t, resp.Value.UnwrapTo(&signedReport))
@@ -190,6 +189,6 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	require.NoError(t, err)
 
 	resp := <-gotCh
-	assert.NotNil(t, resp.Err)
-	assert.True(t, errors.Is(resp.Err, capabilities.ErrStopExecution))
+	assert.Error(t, resp.Err)
+	assert.ErrorIs(t, resp.Err, capabilities.ErrStopExecution)
 }

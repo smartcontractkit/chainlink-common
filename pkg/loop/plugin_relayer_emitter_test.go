@@ -62,7 +62,6 @@ func TestNormalizeEndpoint(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, normalizeEndpoint(tt.in))
 		})
@@ -109,12 +108,12 @@ func TestParseOriginURL(t *testing.T) {
 
 	scheme, host, err = parseOriginURL("user:pass@host:8545/path")
 	require.NoError(t, err)
-	require.Equal(t, "", scheme)
+	require.Empty(t, scheme)
 	require.Equal(t, "host", host)
 
 	scheme, host, err = parseOriginURL("/just/path")
 	require.NoError(t, err)
-	require.Equal(t, "", scheme)
+	require.Empty(t, scheme)
 	require.Equal(t, "/just/path", host)
 
 	_, _, err = parseOriginURL("http://\x7f")
@@ -137,7 +136,7 @@ func TestNewPluginRelayerConfigEmitterDefaults(t *testing.T) {
 
 	require.Equal(t, defaultEmitInterval, emitter.interval)
 	require.Equal(t, "from-beholder", emitter.csaPublicKey)
-	require.Equal(t, "", emitter.chainID)
+	require.Empty(t, emitter.chainID)
 	require.Equal(t, []*commonv1.Node{{Urls: map[string]string{"URL": "host"}}}, emitter.nodes)
 }
 

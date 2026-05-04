@@ -1,7 +1,6 @@
 package interfacetests
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -195,7 +194,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 				for _, log := range logsIter {
 					logs = append(logs, log)
 				}
-				assert.Len(t, logs, 0)
+				assert.Empty(t, logs)
 			},
 		},
 
@@ -748,7 +747,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 
 				result := &TestStruct{}
 				err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Unconfirmed, nil, &result)
-				assert.True(t, errors.Is(err, types.ErrNotFound))
+				assert.ErrorIs(t, err, types.ErrNotFound)
 			},
 		},
 		{
@@ -1092,7 +1091,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				logs, err := cr.QueryKey(ctx, bound, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &TestStruct{})
 
 				require.NoError(t, err)
-				assert.Len(t, logs, 0)
+				assert.Empty(t, logs)
 			},
 		},
 		{

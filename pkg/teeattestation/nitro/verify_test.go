@@ -64,13 +64,13 @@ func TestHashForCurve_UnsupportedCurve(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mutate the curve name to something unsupported.
-	fakeCurve := *key.PublicKey.Curve.Params()
+	fakeCurve := *key.Params()
 	fakeCurve.Name = "P-999"
 
 	fakeKey := &ecdsa.PublicKey{
 		Curve: &fakeCurve,
-		X:     key.PublicKey.X,
-		Y:     key.PublicKey.Y,
+		X:     key.X,
+		Y:     key.Y,
 	}
 
 	hash, ok := hashForCurve(fakeKey, []byte("data"))

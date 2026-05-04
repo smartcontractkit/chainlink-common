@@ -238,6 +238,9 @@ var Default = Schema{
 		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -340,9 +343,10 @@ type Workflows struct {
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 
-	FeatureMultiTriggerExecutionIDsActiveAt     Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod Setting[Range[config.Timestamp]]
+	FeatureMultiTriggerExecutionIDsActiveAt        Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod    Setting[Range[config.Timestamp]]
 	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod         Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

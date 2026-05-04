@@ -456,7 +456,7 @@ func (r *WrapperModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Mo
 			return nil, fmt.Errorf("%w: wrapper modifier config should have only one field with an empty key to wrap the whole value", types.ErrInvalidConfig)
 		}
 		// using a private variable will make the field not serialize, essentially dropping the field
-		fields[upperFirstCharacter(f)] = fmt.Sprintf("dropFieldPrivateName-%s", i)
+		fields[upperFirstCharacter(f)] = "dropFieldPrivateName-" + i
 	}
 	return NewPathTraverseWrapperModifier(r.Fields, r.EnablePathTraverse), nil
 }

@@ -212,18 +212,18 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	}
 
 	_, err = c.StandardCapabilitiesClient.Initialise(ctx, &capabilitiespb.InitialiseRequest{
-		Config:               config,
-		ErrorLogId:           errorLogID,
-		PipelineRunnerId:     pipelineRunnerID,
-		TelemetryId:          telemetryID,
-		CapRegistryId:        capabilitiesRegistryID,
-		KeyValueStoreId:      keyValueStoreID,
-		RelayerSetId:         relayerSetID,
-		OracleFactoryId:      oracleFactoryID,
-		GatewayConnectorId:   gatewayConnectorID,
-		KeystoreId:           keyStoreID,
-		OrgResolverId:        orgResolverID,
-		CreSettingsId:        creSettingsID,
+		Config:              config,
+		ErrorLogId:          errorLogID,
+		PipelineRunnerId:    pipelineRunnerID,
+		TelemetryId:         telemetryID,
+		CapRegistryId:       capabilitiesRegistryID,
+		KeyValueStoreId:     keyValueStoreID,
+		RelayerSetId:        relayerSetID,
+		OracleFactoryId:     oracleFactoryID,
+		GatewayConnectorId:  gatewayConnectorID,
+		KeystoreId:          keyStoreID,
+		OrgResolverId:       orgResolverID,
+		CreSettingsId:       creSettingsID,
 		TriggerEventStoreId: triggerEventStoreID,
 	})
 

@@ -104,7 +104,7 @@ func (m *wrapperModifier) TransformToOffChain(onChainValue any, itemType string)
 			var ok bool
 			name, ok = any(v).(string)
 			if !ok {
-				return nil, fmt.Errorf("%q invalid type for m.fields value expected string got : %q", types.ErrInternal, reflect.TypeOf(v).String())
+				return nil, fmt.Errorf("%w invalid type for m.fields value expected string got : %q", types.ErrInternal, reflect.TypeOf(v).String())
 			}
 		}
 

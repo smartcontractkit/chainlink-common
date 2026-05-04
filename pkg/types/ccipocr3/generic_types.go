@@ -72,7 +72,7 @@ func (a TokenInfo) Validate() error {
 	}
 
 	if a.Decimals == 0 {
-		return fmt.Errorf("tokenDecimals can't be zero")
+		return errors.New("tokenDecimals can't be zero")
 	}
 
 	return nil

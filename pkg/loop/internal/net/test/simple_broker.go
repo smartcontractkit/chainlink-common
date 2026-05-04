@@ -3,12 +3,14 @@ package test
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"sync"
 	"testing"
 
-	"github.com/smartcontractkit/freeport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/smartcontractkit/freeport"
 
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
@@ -51,7 +53,7 @@ func (v *Broker) Accept(id uint32) (net.Listener, error) {
 	}
 
 	port := freeport.GetOne(v.T)
-	l, err := net.Listen("tcp", "localhost:"+fmt.Sprint(port))
+	l, err := net.Listen("tcp", "localhost:"+strconv.Itoa(port))
 	if err != nil {
 		return nil, err
 	}

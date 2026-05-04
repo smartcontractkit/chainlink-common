@@ -1,13 +1,13 @@
 package binary_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/codec/encodings/binary"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -22,12 +22,12 @@ func TestOracleID(t *testing.T) {
 		encoded, err := i.Encode(value, nil)
 
 		require.NoError(t, err)
-		assert.Equal(t, 1, len(encoded))
+		assert.Len(t, encoded, 1)
 
 		decoded, remaining, err := i.Decode(encoded)
 
 		require.NoError(t, err)
-		assert.Equal(t, 0, len(remaining))
+		assert.Empty(t, remaining)
 		assert.Equal(t, value, decoded)
 	})
 
@@ -39,7 +39,7 @@ func TestOracleID(t *testing.T) {
 		encoded, err := i.Encode(value, prefix)
 
 		require.NoError(t, err)
-		assert.Equal(t, 4, len(encoded))
+		assert.Len(t, encoded, 4)
 		expected, err := i.Encode(value, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expected, encoded[3:])
@@ -63,7 +63,7 @@ func TestOracleID(t *testing.T) {
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		i := &binary.OracleID{}
 		_, _, err := i.Decode([]byte{})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("GetType returns correct type", func(t *testing.T) {
@@ -74,19 +74,19 @@ func TestOracleID(t *testing.T) {
 	t.Run("Size returns correct size", func(t *testing.T) {
 		size, err := (&binary.OracleID{}).Size(100)
 		require.NoError(t, err)
-		assert.Equal(t, size, 1)
+		assert.Equal(t, 1, size)
 	})
 
 	t.Run("FixedSize returns correct size", func(t *testing.T) {
 		size, err := (&binary.OracleID{}).FixedSize()
 		require.NoError(t, err)
-		assert.Equal(t, size, 1)
+		assert.Equal(t, 1, size)
 	})
 
 	t.Run("returns an error if the input is not an OracleID", func(t *testing.T) {
 		i := &binary.OracleID{}
 
 		_, err := i.Encode("foo", nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 }

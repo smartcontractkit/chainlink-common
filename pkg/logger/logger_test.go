@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 
@@ -90,7 +89,7 @@ func TestNamed(t *testing.T) {
 			logger:       Named(&mismatch{zaptest.NewLogger(t).Named("mismatch").Sugar()}, "should_not_work"),
 		},
 	} {
-		t.Run(fmt.Sprintf("test_logger_name_expect_%s", tt.expectedName), func(t *testing.T) {
+		t.Run("test_logger_name_expect_"+tt.expectedName, func(t *testing.T) {
 			require.Equal(t, tt.expectedName, tt.logger.Name())
 		})
 	}

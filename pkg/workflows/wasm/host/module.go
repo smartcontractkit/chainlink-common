@@ -50,10 +50,10 @@ var (
 	defaultMaxLogCountNodeMode       = 10_000
 	ResponseBufferTooSmall           = "response buffer too small"
 
-	defaultMaxUserMetricPayloadBytes      = uint32(4096) // 4 KB
-	defaultMaxUserMetricNameLength        = uint32(128)
-	defaultMaxUserMetricLabelsPerMetric   = uint32(10)
-	defaultMaxUserMetricLabelValueLength  = uint32(256)
+	defaultMaxUserMetricPayloadBytes     = uint32(4096) // 4 KB
+	defaultMaxUserMetricNameLength       = uint32(128)
+	defaultMaxUserMetricLabelsPerMetric  = uint32(10)
+	defaultMaxUserMetricLabelValueLength = uint32(256)
 )
 
 type DeterminismConfig struct {
@@ -82,7 +82,7 @@ type ModuleConfig struct {
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
 
-	EnableUserMetricsLimiter limits.GateLimiter
+	EnableUserMetricsLimiter             limits.GateLimiter
 	MaxUserMetricPayloadBytes            uint32
 	MaxUserMetricPayloadLimiter          limits.BoundLimiter[config.Size] // supersedes MaxUserMetricPayloadBytes if set
 	MaxUserMetricNameLength              uint32
@@ -184,7 +184,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.Fetch == nil {
 		modCfg.Fetch = func(context.Context, *FetchRequest) (*FetchResponse, error) {
-			return nil, fmt.Errorf("fetch not implemented")
+			return nil, errors.New("fetch not implemented")
 		}
 	}
 
@@ -367,7 +367,7 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 		return nil, fmt.Errorf("failed to load cache config: %w", err)
 	}
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
-	SetUnwinding(cfg) // Handled differenty based on host OS.
+	SetUnwinding(cfg) // Handled differently based on host OS.
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
 
@@ -453,7 +453,7 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping await_secrets func: %w", err)
 	}
 
-	if err := linker.FuncWrap(
+	if err = linker.FuncWrap(
 		"env",
 		"log",
 		exec.log,
@@ -461,7 +461,7 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
-	if err := linker.FuncWrap(
+	if err = linker.FuncWrap(
 		"env",
 		"emit_metric",
 		exec.emitMetric,
@@ -573,11 +573,11 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	}
 
 	if executor == nil {
-		return nil, fmt.Errorf("invalid capability executor: can't be nil")
+		return nil, errors.New("invalid capability executor: can't be nil")
 	}
 
 	if req == nil {
-		return nil, fmt.Errorf("invalid request: can't be nil")
+		return nil, errors.New("invalid request: can't be nil")
 	}
 
 	setMaxResponseSize := func(r *sdkpb.ExecuteRequest, maxSize uint64) {
@@ -590,11 +590,11 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 // Run is deprecated, use execute instead
 func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error) {
 	if request == nil {
-		return nil, fmt.Errorf("invalid request: can't be nil")
+		return nil, errors.New("invalid request: can't be nil")
 	}
 
 	if request.Id == "" {
-		return nil, fmt.Errorf("invalid request: can't be empty")
+		return nil, errors.New("invalid request: can't be empty")
 	}
 
 	if !m.IsLegacyDAG() {
@@ -620,10 +620,18 @@ func runWasm[I, O proto.Message](
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
 	helper ExecutionHelper) (O, error) {
-
 	var o O
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
+	// No reason to run the WASM longer if the outer ctx will cancel.
+	ctxDeadline, hasDeadline := ctx.Deadline()
+	var ctxWithTimeout context.Context
+	var cancel func()
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
+		ctxWithTimeout, cancel = context.WithCancel(ctx)
+	} else {
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
+	}
+
 	defer cancel()
 
 	store := wasmtime.NewStore(m.engine)
@@ -713,25 +721,25 @@ func runWasm[I, O proto.Message](
 		}
 		return exec.response, nil
 	case containsCode(err, wasm.CodeInvalidResponse):
-		return o, fmt.Errorf("invariant violation: error marshaling response")
+		return o, errors.New("invariant violation: error marshaling response")
 	case containsCode(err, wasm.CodeInvalidRequest):
-		return o, fmt.Errorf("invariant violation: invalid request to runner")
+		return o, errors.New("invariant violation: invalid request to runner")
 	case containsCode(err, wasm.CodeRunnerErr):
 		// legacy DAG captured all errors, since the function didn't return an error
 		resp, ok := any(exec).(*execution[*wasmdagpb.Response])
 		if ok && resp.response != nil {
 			return o, fmt.Errorf("error executing runner: %s: %w", resp.response.ErrMsg, err)
 		}
-		return o, fmt.Errorf("error executing runner")
+		return o, errors.New("error executing runner")
 	case containsCode(err, wasm.CodeHostErr):
-		return o, fmt.Errorf("invariant violation: host errored during sendResponse")
+		return o, errors.New("invariant violation: host errored during sendResponse")
 	}
 
 	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}
@@ -821,7 +829,6 @@ func fromSdkResp(resp *dagsdk.FetchResponse) (*wasmdagpb.FetchResponse, error) {
 		Headers:        values.ProtoMap(m),
 		Body:           resp.Body,
 	}, nil
-
 }
 
 type FetchRequestMetadata struct {
@@ -1191,7 +1198,7 @@ func createCallCapFn(
 		innerErr = proto.Unmarshal(b, req)
 		if innerErr != nil {
 			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
-			logger.Errorf(errStr)
+			logger.Errorf("%s", errStr)
 			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
 		}
 
@@ -1266,7 +1273,7 @@ func createGetSecretsFn(
 		innerErr = proto.Unmarshal(b, r)
 		if innerErr != nil {
 			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
-			logger.Errorf(errStr)
+			logger.Errorf("%s", errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 

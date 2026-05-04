@@ -2,7 +2,6 @@ package loop
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -120,12 +119,12 @@ func parseJSON(input string) (*logMessage, error) {
 // maybeCritical recognizes panic, fatal or critical log message, and logs them again at critical level.
 func maybeCritical(msg string, l logger.SugaredLogger, args ...any) bool {
 	if strings.HasPrefix(msg, "panic:") {
-		l.Criticalw(fmt.Sprintf("[PANIC] %s", msg), args...)
+		l.Criticalw("[PANIC] "+msg, args...)
 		return true
 	} else if log, err := parseJSON(msg); err == nil {
 		switch log.Level {
 		case "fatal":
-			l.Criticalw(fmt.Sprintf("[FATAL] %s", log.Message), flattenExtraArgs(log)...)
+			l.Criticalw("[FATAL] "+log.Message, flattenExtraArgs(log)...)
 			return true
 		case "critical", "dpanic":
 			l.Criticalw(log.Message, flattenExtraArgs(log)...)

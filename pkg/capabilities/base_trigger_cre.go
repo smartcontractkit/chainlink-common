@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
@@ -15,7 +16,7 @@ import (
 // Retransmit enablement is evaluated dynamically at runtime via BaseTriggerRetransmitEnabled.
 func ValidateBaseTriggerRetryInterval(ctx context.Context, g settings.Getter) error {
 	if g == nil {
-		return fmt.Errorf("base trigger CRE settings getter is nil")
+		return errors.New("base trigger CRE settings getter is nil")
 	}
 	iv, err := cresettings.Default.BaseTriggerRetryInterval.GetOrDefault(ctx, g)
 	if err != nil {

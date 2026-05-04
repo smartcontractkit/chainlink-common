@@ -2,6 +2,7 @@ package ccip
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -316,7 +317,7 @@ func tokenAmountSlicePB(tokenAmounts []cciptypes.TokenAmount) []*ccippb.TokenAmo
 func hash(h []byte) (cciptypes.Hash, error) {
 	var res cciptypes.Hash
 	if len(h) != 32 {
-		return res, fmt.Errorf("hash length is not 32 bytes")
+		return res, errors.New("hash length is not 32 bytes")
 	}
 	copy(res[:], h)
 	return res, nil

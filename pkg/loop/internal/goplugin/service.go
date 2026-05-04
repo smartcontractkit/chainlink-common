@@ -24,11 +24,11 @@ var (
 // to another loop that is proxied through the core node.
 type ServiceClient struct {
 	b    *net.BrokerExt
-	cc   grpc.ClientConnInterface
+	cc   net.ClientConnInterface
 	grpc pb.ServiceClient
 }
 
-func NewServiceClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ServiceClient {
+func NewServiceClient(b *net.BrokerExt, cc net.ClientConnInterface) *ServiceClient {
 	return &ServiceClient{b, cc, pb.NewServiceClient(cc)}
 }
 
@@ -41,7 +41,7 @@ func (s *ServiceClient) Close() error {
 	defer cancel()
 
 	_, err := s.grpc.Close(ctx, &emptypb.Empty{})
-	return err
+	return errors.Join(err, s.cc.Close())
 }
 
 func (s *ServiceClient) Ready() error {

@@ -39,7 +39,7 @@ type ProviderClient struct {
 	codec              types.Codec
 }
 
-func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderClient {
+func NewProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *ProviderClient {
 	m := &ProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(cc)}
@@ -313,7 +313,7 @@ type ProviderServer struct{}
 
 func (m ProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.MedianProvider {
 	be := &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
-	pc := NewProviderClient(be, conn)
+	pc := NewProviderClient(be, net.ClientConnInterfaceFromGRPC(conn))
 	pc.RmUnimplemented(context.Background())
 	return pc
 }

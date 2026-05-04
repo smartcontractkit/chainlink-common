@@ -32,7 +32,7 @@ type CCIPProviderClient struct {
 	messageHasher             ccipocr3.MessageHasher
 }
 
-func NewCCIPProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *CCIPProviderClient {
+func NewCCIPProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *CCIPProviderClient {
 	c := &CCIPProviderClient{
 		ServiceClient: goplugin.NewServiceClient(b.WithName("CCIPProviderClient"), cc),
 	}
@@ -87,7 +87,7 @@ type CCIPProviderServer struct{}
 
 func (s CCIPProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.CCIPProvider {
 	be := &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
-	return NewCCIPProviderClient(be, conn)
+	return NewCCIPProviderClient(be, net.ClientConnInterfaceFromGRPC(conn))
 }
 
 func RegisterProviderServices(s *grpc.Server, provider types.CCIPProvider) {

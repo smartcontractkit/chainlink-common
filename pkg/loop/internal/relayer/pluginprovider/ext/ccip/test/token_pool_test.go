@@ -58,7 +58,7 @@ func setupTokenPoolServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *c
 	return tokenPool
 }
 
-func setupTokenPoolClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.TokenPoolBatchedReaderGRPCClient {
+func setupTokenPoolClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.TokenPoolBatchedReaderGRPCClient {
 	return ccip.NewTokenPoolBatchedReaderGRPCClient(conn)
 }
 

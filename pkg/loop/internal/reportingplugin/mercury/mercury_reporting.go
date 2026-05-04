@@ -23,7 +23,7 @@ type PluginFactoryClient struct {
 	client mercurypb.MercuryPluginFactoryClient
 }
 
-func NewPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginFactoryClient {
+func NewPluginFactoryClient(b *net.BrokerExt, cc net.ClientConnInterface) *PluginFactoryClient {
 	b = b.WithName("MercuryPluginProviderClient")
 	return &PluginFactoryClient{b, goplugin.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }

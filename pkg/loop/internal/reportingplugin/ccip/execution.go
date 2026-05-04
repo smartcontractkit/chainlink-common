@@ -84,7 +84,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(dstProviderResource)
 
@@ -96,7 +96,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			SrcTokenAddress:      srcTokenAddress,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return resp.ExecutionFactoryServiceId, deps, nil
 	}

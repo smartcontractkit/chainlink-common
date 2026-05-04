@@ -102,7 +102,7 @@ type SetupGRPCServer[S any] func(t *testing.T, s *grpc.Server, b *loopnet.Broker
 
 // SetupGRPCClient is a function that sets up a grpc client with a given broker and connection
 // analogous to SetupGRPCServer. Typically it is implemented as a light wrapper around the grpc client constructor
-type SetupGRPCClient[T Client] func(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) T
+type SetupGRPCClient[T Client] func(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) T
 
 // MockDep is a mock dependency that can be used to test that a grpc client closes its dependencies
 // to be used in tests that require a grpc client to close its dependencies

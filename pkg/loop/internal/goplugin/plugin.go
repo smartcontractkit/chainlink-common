@@ -1,6 +1,7 @@
 package goplugin
 
 import (
+	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -19,7 +20,7 @@ func NewPluginClient(brokerCfg net.BrokerConfig) *PluginClient {
 	return &pc
 }
 
-func (p *PluginClient) Refresh(broker net.Broker, conn *grpc.ClientConn) {
+func (p *PluginClient) Refresh(broker *plugin.GRPCBroker, conn *grpc.ClientConn) {
 	p.AtomicBroker.Store(broker)
 	p.AtomicClient.Store(conn)
 	p.Logger.Debugw("Refreshed PluginClient connection", "state", conn.GetState())

@@ -58,7 +58,7 @@ func setupTokenDataServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *c
 	return tokenData
 }
 
-func setupTokenDataClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.TokenDataReaderGRPCClient {
+func setupTokenDataClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.TokenDataReaderGRPCClient {
 	return ccip.NewTokenDataReaderGRPCClient(conn)
 }
 

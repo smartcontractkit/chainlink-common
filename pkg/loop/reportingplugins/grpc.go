@@ -50,7 +50,7 @@ type serverAdapter struct {
 	NewReportingPluginFactoryFn func(
 		ctx context.Context,
 		config core.ReportingPluginServiceConfig,
-		conn grpc.ClientConnInterface,
+		conn net.ClientConnInterface,
 		pr core.PipelineRunnerService,
 		ts core.TelemetryService,
 		errorLog core.ErrorLog,
@@ -79,14 +79,14 @@ func (s serverAdapter) NewReportingPluginFactory(
 	kv core.KeyValueStore,
 	rs core.RelayerSet,
 ) (types.ReportingPluginFactory, error) {
-	return s.NewReportingPluginFactoryFn(ctx, config, conn, pr, ts, errorLog, kv, rs)
+	return s.NewReportingPluginFactoryFn(ctx, config, net.ClientConnInterfaceFromGRPC(conn), pr, ts, errorLog, kv, rs)
 }
 
 func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
 	newReportingPluginFactoryFn := func(
 		ctx context.Context,
 		cfg core.ReportingPluginServiceConfig,
-		conn grpc.ClientConnInterface,
+		conn net.ClientConnInterface,
 		pr core.PipelineRunnerService,
 		ts core.TelemetryService,
 		el core.ErrorLog,

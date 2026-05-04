@@ -29,7 +29,7 @@ func (p *ProviderClient) OCR3ContractTransmitter() ocr3types.ContractTransmitter
 	return p.ocr3ContractTransmitter
 }
 
-func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderClient {
+func NewProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *ProviderClient {
 	m := &ProviderClient{
 		PluginProviderClient:    ocr2.NewPluginProviderClient(b.WithName("OCR3CapabilityProviderClient"), cc),
 		ocr3ContractTransmitter: ocr3.NewContractTransmitterClient(b.WithName("OCR3ContractTransmitter"), cc),
@@ -42,7 +42,7 @@ type ProviderServer struct{}
 
 func (m ProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.OCR3CapabilityProvider {
 	be := &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
-	return NewProviderClient(be, conn)
+	return NewProviderClient(be, net.ClientConnInterfaceFromGRPC(conn))
 }
 
 func RegisterProviderServices(s *grpc.Server, provider types.OCR3CapabilityProvider) {

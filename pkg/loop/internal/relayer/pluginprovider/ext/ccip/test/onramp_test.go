@@ -98,6 +98,6 @@ func setupOnRampServer(t *testing.T, server *grpc.Server, b *loopnet.BrokerExt) 
 	return onRamp
 }
 
-func setupOnRampClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.OnRampReaderGRPCClient {
+func setupOnRampClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.OnRampReaderGRPCClient {
 	return ccip.NewOnRampReaderGRPCClient(conn)
 }

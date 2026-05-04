@@ -34,7 +34,7 @@ type CommitProviderClient struct {
 	grpcClient ccippb.CommitCustomHandlersClient
 }
 
-func NewCommitProviderClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *CommitProviderClient {
+func NewCommitProviderClient(b *net.BrokerExt, conn net.ClientConnInterface) *CommitProviderClient {
 	pluginProviderClient := ocr2.NewPluginProviderClient(b, conn)
 	client := ccippb.NewCommitCustomHandlersClient(conn)
 	return &CommitProviderClient{

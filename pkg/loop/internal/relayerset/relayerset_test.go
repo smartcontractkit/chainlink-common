@@ -1575,7 +1575,7 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
 				liveUntil := uint32(9999)
 				mockSvc.EXPECT().GetLedgerEntries(mock.Anything, stellartypes.GetLedgerEntriesRequest{
-					Keys: []stellartypes.XDR{"a2V5MQ=="}, // base64("key1")
+					Keys: []string{"a2V5MQ=="}, // base64("key1")
 				}).Return(stellartypes.GetLedgerEntriesResponse{
 					LatestLedger: 80,
 					Entries: []stellartypes.LedgerEntryResult{
@@ -1588,20 +1588,20 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 					},
 				}, nil)
 
-				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"a2V5MQ=="}})
+				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5MQ=="}})
 				require.NoError(t, err)
 				require.Equal(t, uint32(80), resp.LatestLedger)
 				require.Len(t, resp.Entries, 1)
 				require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)
 				require.Equal(t, liveUntil, *resp.Entries[0].LiveUntilLedgerSeq)
-				require.Equal(t, stellartypes.XDR("a2V5MQ=="), resp.Entries[0].KeyXDR)
+				require.Equal(t, "a2V5MQ==", resp.Entries[0].KeyXDR)
 			},
 		},
 		{
 			name: "GetLedgerEntries_NoLiveUntil",
 			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
 				mockSvc.EXPECT().GetLedgerEntries(mock.Anything, stellartypes.GetLedgerEntriesRequest{
-					Keys: []stellartypes.XDR{"a2V5Mg=="}, // base64("key2")
+					Keys: []string{"a2V5Mg=="}, // base64("key2")
 				}).Return(stellartypes.GetLedgerEntriesResponse{
 					LatestLedger: 90,
 					Entries: []stellartypes.LedgerEntryResult{
@@ -1614,7 +1614,7 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 					},
 				}, nil)
 
-				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []stellartypes.XDR{"a2V5Mg=="}})
+				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5Mg=="}})
 				require.NoError(t, err)
 				require.Equal(t, uint32(90), resp.LatestLedger)
 				require.Len(t, resp.Entries, 1)
@@ -1633,7 +1633,7 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 
 				resp, err := svc.GetLatestLedger(ctx)
 				require.NoError(t, err)
-				require.Equal(t, stellartypes.LedgerHash("deadbeef"), resp.Hash)
+				require.Equal(t, "deadbeef", resp.Hash)
 				require.Equal(t, uint32(22), resp.ProtocolVersion)
 				require.Equal(t, uint32(4321), resp.Sequence)
 				require.Equal(t, int64(9000000), resp.LedgerCloseTime)

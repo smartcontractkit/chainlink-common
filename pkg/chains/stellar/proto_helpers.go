@@ -9,44 +9,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 )
 
-// xdrToBytes base64-decodes a domain XDR string to raw binary.
-func xdrToBytes(x stellar.XDR) ([]byte, error) {
-	b, err := base64.StdEncoding.DecodeString(string(x))
-	if err != nil {
-		return nil, fmt.Errorf("invalid base64 XDR %q: %w", x, err)
-	}
-	return b, nil
-}
-
-// bytesToXDR base64-encodes raw binary XDR to the domain type.
-func bytesToXDR(b []byte) stellar.XDR {
-	return stellar.XDR(base64.StdEncoding.EncodeToString(b))
-}
-
-// hashToBytes hex-decodes a domain hash string to raw bytes.
-func hashToBytes(h string) ([]byte, error) {
-	b, err := hex.DecodeString(h)
-	if err != nil {
-		return nil, fmt.Errorf("invalid hex hash %q: %w", h, err)
-	}
-	return b, nil
-}
-
-// bytesToHash hex-encodes raw hash bytes to a string.
-func bytesToHash(b []byte) string {
-	return hex.EncodeToString(b)
-}
-
-// ---- GetLedgerEntries ----
-
 // ConvertGetLedgerEntriesRequestToProto converts a domain GetLedgerEntriesRequest to its proto representation.
 func ConvertGetLedgerEntriesRequestToProto(req stellar.GetLedgerEntriesRequest) (*GetLedgerEntriesRequest, error) {
 	keys := make([][]byte, len(req.Keys))
 	var errs []error
 	for i, k := range req.Keys {
-		b, err := xdrToBytes(k)
+		b, err := base64.StdEncoding.DecodeString(k)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("key[%d]: %w", i, err))
+			errs = append(errs, fmt.Errorf("key[%d]: invalid base64 XDR %q: %w", i, k, err))
 			continue
 		}
 		keys[i] = b
@@ -66,26 +36,26 @@ func ConvertGetLedgerEntriesRequestFromProto(p *GetLedgerEntriesRequest) (stella
 		return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("ledger entry keys are empty")
 	}
 	rawKeys := p.GetKeys()
-	keys := make([]stellar.XDR, len(rawKeys))
+	keys := make([]string, len(rawKeys))
 	for i, k := range rawKeys {
-		keys[i] = bytesToXDR(k)
+		keys[i] = base64.StdEncoding.EncodeToString(k)
 	}
 	return stellar.GetLedgerEntriesRequest{Keys: keys}, nil
 }
 
 // ConvertLedgerEntryResultToProto converts a domain LedgerEntryResult to its proto representation.
 func ConvertLedgerEntryResultToProto(r stellar.LedgerEntryResult) (*LedgerEntryResult, error) {
-	keyXDR, err := xdrToBytes(r.KeyXDR)
+	keyXDR, err := base64.StdEncoding.DecodeString(r.KeyXDR)
 	if err != nil {
-		return nil, fmt.Errorf("key_xdr: %w", err)
+		return nil, fmt.Errorf("invalid key xdr %q: %w", r.KeyXDR, err)
 	}
-	dataXDR, err := xdrToBytes(r.DataXDR)
+	dataXDR, err := base64.StdEncoding.DecodeString(r.DataXDR)
 	if err != nil {
-		return nil, fmt.Errorf("data_xdr: %w", err)
+		return nil, fmt.Errorf("invalid data xdr %q: %w", r.DataXDR, err)
 	}
-	extXDR, err := xdrToBytes(r.ExtensionXDR)
+	extXDR, err := base64.StdEncoding.DecodeString(r.ExtensionXDR)
 	if err != nil {
-		return nil, fmt.Errorf("extension_xdr: %w", err)
+		return nil, fmt.Errorf("invalid extension xdr %q: %w", r.ExtensionXDR, err)
 	}
 	pr := &LedgerEntryResult{
 		KeyXdr:             keyXDR,
@@ -106,10 +76,10 @@ func ConvertLedgerEntryResultFromProto(p *LedgerEntryResult) (stellar.LedgerEntr
 		return stellar.LedgerEntryResult{}, fmt.Errorf("ledger entry result is nil")
 	}
 	r := stellar.LedgerEntryResult{
-		KeyXDR:             bytesToXDR(p.GetKeyXdr()),
-		DataXDR:            bytesToXDR(p.GetDataXdr()),
+		KeyXDR:             base64.StdEncoding.EncodeToString(p.GetKeyXdr()),
+		DataXDR:            base64.StdEncoding.EncodeToString(p.GetDataXdr()),
 		LastModifiedLedger: p.GetLastModifiedLedger(),
-		ExtensionXDR:       bytesToXDR(p.GetExtensionXdr()),
+		ExtensionXDR:       base64.StdEncoding.EncodeToString(p.GetExtensionXdr()),
 	}
 	if p.GetHasLiveUntilLedgerSeq() {
 		v := p.GetLiveUntilLedgerSeq()
@@ -163,21 +133,20 @@ func ConvertGetLedgerEntriesResponseFromProto(p *GetLedgerEntriesResponse) (stel
 	}, nil
 }
 
-// ---- GetLatestLedger ----
-
 // ConvertGetLatestLedgerResponseToProto converts a domain GetLatestLedgerResponse to its proto representation.
 func ConvertGetLatestLedgerResponseToProto(resp stellar.GetLatestLedgerResponse) (*GetLatestLedgerResponse, error) {
-	hash, err := hashToBytes(string(resp.Hash))
+	hash, err := hex.DecodeString(resp.Hash)
 	if err != nil {
-		return nil, fmt.Errorf("hash: %w", err)
+		return nil, fmt.Errorf("invalid hex hash %q: %w", resp.Hash, err)
 	}
-	headerXDR, err := xdrToBytes(resp.LedgerHeaderXDR)
+
+	headerXDR, err := base64.StdEncoding.DecodeString(resp.LedgerHeaderXDR)
 	if err != nil {
-		return nil, fmt.Errorf("ledger_header_xdr: %w", err)
+		return nil, fmt.Errorf("invalid ledger header xdr %q: %w", resp.LedgerHeaderXDR, err)
 	}
-	metaXDR, err := xdrToBytes(resp.LedgerMetadataXDR)
+	metaXDR, err := base64.StdEncoding.DecodeString(resp.LedgerMetadataXDR)
 	if err != nil {
-		return nil, fmt.Errorf("ledger_metadata_xdr: %w", err)
+		return nil, fmt.Errorf("invalid ledger metadata xdr %q: %w", resp.LedgerMetadataXDR, err)
 	}
 	return &GetLatestLedgerResponse{
 		Hash:              hash,
@@ -195,11 +164,11 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 		return stellar.GetLatestLedgerResponse{}, fmt.Errorf("get latest ledger response is nil")
 	}
 	return stellar.GetLatestLedgerResponse{
-		Hash:              stellar.LedgerHash(bytesToHash(p.GetHash())),
+		Hash:              hex.EncodeToString(p.GetHash()),
 		ProtocolVersion:   p.GetProtocolVersion(),
 		Sequence:          p.GetSequence(),
 		LedgerCloseTime:   p.GetLedgerCloseTime(),
-		LedgerHeaderXDR:   bytesToXDR(p.GetLedgerHeaderXdr()),
-		LedgerMetadataXDR: bytesToXDR(p.GetLedgerMetadataXdr()),
+		LedgerHeaderXDR:   base64.StdEncoding.EncodeToString(p.GetLedgerHeaderXdr()),
+		LedgerMetadataXDR: base64.StdEncoding.EncodeToString(p.GetLedgerMetadataXdr()),
 	}, nil
 }

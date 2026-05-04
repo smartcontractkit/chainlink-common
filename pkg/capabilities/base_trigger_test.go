@@ -127,7 +127,7 @@ func newBaseWithRetransmit(t *testing.T, store EventStore, tRetransmit time.Dura
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
-		"testCap", tRetransmit, 0, 0, nil)
+		"testCap", tRetransmit, nil)
 }
 
 func ctxWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
@@ -272,99 +272,6 @@ drain:
 	}
 }
 
-func TestBaseTrigger_UndeliveredStateAlerting(t *testing.T) {
-	type testCase struct {
-		name               string
-		warnAfter          time.Duration
-		criticalAfter      time.Duration
-		expectWarning      bool
-		expectCritical     bool
-		expectClearedOnAck bool
-	}
-
-	tests := []testCase{
-		{
-			name:          "warning fires",
-			warnAfter:     200 * time.Millisecond,
-			expectWarning: true,
-		},
-		{
-			name:           "critical fires",
-			warnAfter:      100 * time.Millisecond,
-			criticalAfter:  300 * time.Millisecond,
-			expectWarning:  true,
-			expectCritical: true,
-		},
-		{
-			name:               "cleared on ack",
-			warnAfter:          200 * time.Millisecond,
-			expectWarning:      true,
-			expectClearedOnAck: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			store := NewMemEventStore()
-			sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
-
-			lggr, err := logger.New()
-			require.NoError(t, err)
-
-			b := NewBaseTriggerCapability(
-				store,
-				func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
-				lggr,
-				"testCap",
-				50*time.Millisecond,
-				tc.warnAfter,
-				tc.criticalAfter,
-				nil,
-			)
-
-			ctx, cancel := context.WithCancel(t.Context())
-			defer cancel()
-
-			b.RegisterTrigger("trig", sendCh)
-			require.NoError(t, b.Start(ctx))
-			t.Cleanup(func() { b.Stop() })
-
-			te := makeTE(t, "trig", "e1", []byte("x"))
-			require.NoError(t, b.DeliverEvent(ctx, te, "trig"))
-
-			// Wait for expected thresholds
-			require.Eventually(t, func() bool {
-				b.mu.Lock()
-				defer b.mu.Unlock()
-
-				state := b.undeliveredAlertStates["trig"]["e1"]
-				if state == nil {
-					return false
-				}
-
-				if tc.expectCritical {
-					return state.emittedCritical
-				}
-				if tc.expectWarning {
-					return state.emittedWarning
-				}
-				return true
-			}, 3*time.Second, 10*time.Millisecond)
-
-			if tc.expectClearedOnAck {
-				require.NoError(t, b.AckEvent(ctx, "trig", "e1"))
-
-				require.Eventually(t, func() bool {
-					b.mu.Lock()
-					defer b.mu.Unlock()
-					_, exists := b.undeliveredAlertStates["trig"]
-					return !exists
-				}, 1*time.Second, 10*time.Millisecond)
-			}
-		})
-	}
-}
-
 func TestRetransmitDisabled_DeliversOnceWithoutPersistence(t *testing.T) {
 	store := NewMemEventStore()
 	sendCh := make(chan TriggerAndId[*wrapperspb.BytesValue], 10)
@@ -448,9 +355,13 @@ func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
 	// giving operators time to investigate unrecoverable payloads.
 	require.Eventually(t, func() bool {
 		b.mu.Lock()
-		_, hasTrig := b.pending["trig"]
-		b.mu.Unlock()
-		return !hasTrig
+		defer b.mu.Unlock()
+		reg := b.byTrigger["trig"]
+		if reg == nil {
+			return true
+		}
+		_, still := reg.pending["e1"]
+		return !still
 	}, 5*time.Second, 10*time.Millisecond, "event should be removed from pending after max retries")
 
 	// Store should still contain the row (prune loop handles cleanup).
@@ -493,9 +404,10 @@ func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {
 
 	// Verify cleared.
 	b.mu.Lock()
-	_, hasTrig := b.pending["trig"]
+	reg := b.byTrigger["trig"]
+	pendingEmpty := reg == nil || len(reg.pending) == 0
 	b.mu.Unlock()
-	require.False(t, hasTrig)
+	require.True(t, pendingEmpty)
 }
 
 func TestBaseTrigger_PreAck_DeliverAfterAck(t *testing.T) {
@@ -526,9 +438,10 @@ func TestBaseTrigger_PreAck_DeliverAfterAck(t *testing.T) {
 
 	// Event should NOT be in the pending map.
 	b.mu.Lock()
-	_, hasTrig := b.pending["trigA"]
+	reg := b.byTrigger["trigA"]
+	_, stillPending := reg.pending["e1"]
 	b.mu.Unlock()
-	require.False(t, hasTrig, "event should not be pending after pre-ACK")
+	require.False(t, stillPending, "event should not be pending after pre-ACK")
 
 	// Event should NOT be in the store.
 	recs, err := store.List(ctx)
@@ -601,20 +514,20 @@ func TestBaseTrigger_PreAck_CleanedUpByUnregister(t *testing.T) {
 	require.NoError(t, b.AckEvent(ctx, "trigA", "e1"))
 
 	b.mu.Lock()
-	require.Contains(t, b.preAcked["trigA"], "e1")
+	require.Contains(t, b.byTrigger["trigA"].preAcked, "e1")
 	b.mu.Unlock()
 
 	// preAcked entries have a 24h TTL and should persist across scanPending cycles.
 	time.Sleep(50 * time.Millisecond)
 	b.mu.Lock()
-	require.Contains(t, b.preAcked["trigA"], "e1", "preAcked entry should persist (24h TTL)")
+	require.Contains(t, b.byTrigger["trigA"].preAcked, "e1", "preAcked entry should persist (24h TTL)")
 	b.mu.Unlock()
 
 	// UnregisterTrigger should clean up preAcked entries for that trigger.
 	b.UnregisterTrigger("trigA")
 
 	b.mu.Lock()
-	_, exists := b.preAcked["trigA"]
+	_, exists := b.byTrigger["trigA"]
 	b.mu.Unlock()
 	require.False(t, exists, "preAcked entries should be cleaned up after unregister")
 }
@@ -663,9 +576,10 @@ func TestBaseTrigger_PreAck_DoubleCheckCatchesRace(t *testing.T) {
 
 	// Event should NOT be in pending (double-check removed it).
 	b.mu.Lock()
-	_, hasTrig := b.pending["trigA"]
+	reg := b.byTrigger["trigA"]
+	_, stillPending := reg.pending["e1"]
 	b.mu.Unlock()
-	require.False(t, hasTrig, "event should not be pending after double-check caught pre-ACK")
+	require.False(t, stillPending, "event should not be pending after double-check caught pre-ACK")
 
 	// No retransmissions should occur.
 	time.Sleep(3 * b.tRetransmit)
@@ -714,13 +628,14 @@ func TestBaseTrigger_PreAck_UnregisterClearsCache(t *testing.T) {
 	require.NoError(t, b.AckEvent(t.Context(), "trigA", "e1"))
 
 	b.mu.Lock()
-	require.Contains(t, b.preAcked, "trigA")
+	_, hasReg := b.byTrigger["trigA"]
 	b.mu.Unlock()
+	require.True(t, hasReg)
 
 	b.UnregisterTrigger("trigA")
 
 	b.mu.Lock()
-	_, exists := b.preAcked["trigA"]
+	_, exists := b.byTrigger["trigA"]
 	b.mu.Unlock()
 	require.False(t, exists, "preAcked should be cleared on unregister")
 }
@@ -752,8 +667,9 @@ func TestBaseTrigger_RedeliveryAfterAck_Skipped(t *testing.T) {
 	// so that re-deliveries (e.g. from EVM trigger after block finalization)
 	// are skipped.
 	b.mu.Lock()
-	_, inPreAcked := b.preAcked["trigA"]["e1"]
-	_, inPending := b.pending["trigA"]
+	reg := b.byTrigger["trigA"]
+	_, inPreAcked := reg.preAcked["e1"]
+	_, inPending := reg.pending["e1"]
 	b.mu.Unlock()
 	require.True(t, inPreAcked, "ACKed event should be in preAcked cache")
 	require.False(t, inPending, "ACKed event should not be in pending")
@@ -765,9 +681,10 @@ func TestBaseTrigger_RedeliveryAfterAck_Skipped(t *testing.T) {
 
 	// Should NOT be in pending or store.
 	b.mu.Lock()
-	_, hasTrig := b.pending["trigA"]
+	reg2 := b.byTrigger["trigA"]
+	_, stillPending := reg2.pending["e1"]
 	b.mu.Unlock()
-	require.False(t, hasTrig, "re-delivered event should not be pending")
+	require.False(t, stillPending, "re-delivered event should not be pending")
 
 	recs, err := store.List(ctx)
 	require.NoError(t, err)
@@ -893,7 +810,10 @@ func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 	b.RegisterTrigger("trig", sendCh)
 
 	// Inject more events than the per-tick cap directly into pending.
-	b.pending["trig"] = make(map[string]*PendingEvent)
+	b.mu.Lock()
+	reg := b.byTrigger["trig"]
+	require.NotNil(t, reg)
+	reg.pending = make(map[string]*PendingEvent)
 	n := defaultMaxSendsPerTick + 30
 	for i := 0; i < n; i++ {
 		eid := fmt.Sprintf("e%d", i)
@@ -903,8 +823,9 @@ func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 			Payload:   []byte("x"),
 			FirstAt:   time.Now().Add(-time.Minute),
 		}
-		b.pending["trig"][eid] = rec
+		reg.pending[eid] = rec
 	}
+	b.mu.Unlock()
 
 	// Manually call scanPending once.
 	b.scanPending()
@@ -962,7 +883,7 @@ func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 
 	b := NewBaseTriggerCapability(store,
 		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
-		lggr, "testCap", 0, 0, 0, getter)
+		lggr, "testCap", 0, getter)
 
 	// Don't Start the full loop — just call pruneStaleEvents directly.
 	b.pruneStaleEvents()
@@ -1001,10 +922,13 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 
 	b := NewBaseTriggerCapability(store,
 		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
-		lggr, "testCap", 0, 0, 0, getter)
+		lggr, "testCap", 0, getter)
 
 	// Manually put event in memory to simulate it being actively tracked.
-	b.pending["trig"] = map[string]*PendingEvent{"inMemory": &oldRec}
+	b.mu.Lock()
+	reg := b.getOrCreateRegLocked("trig")
+	reg.pending["inMemory"] = &oldRec
+	b.mu.Unlock()
 
 	b.pruneStaleEvents()
 
@@ -1060,7 +984,7 @@ func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 
 	// Verify no attempts were incremented — events should have been skipped.
 	b.mu.Lock()
-	for _, rec := range b.pending["trig"] {
+	for _, rec := range b.byTrigger["trig"].pending {
 		require.Equal(t, 0, rec.Attempts,
 			"event %s should have 0 attempts when no inbox is registered", rec.EventId)
 	}
@@ -1088,7 +1012,7 @@ drain:
 
 	// Verify attempts were incremented now that inbox exists.
 	b.mu.Lock()
-	for _, rec := range b.pending["trig"] {
+	for _, rec := range b.byTrigger["trig"].pending {
 		require.Greater(t, rec.Attempts, 0,
 			"event %s should have attempts > 0 after inbox is registered", rec.EventId)
 	}

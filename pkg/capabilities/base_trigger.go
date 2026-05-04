@@ -41,6 +41,15 @@ const (
 	ackMemoryOutcomePreAckDeliverySkipped = "pre_ack_delivery_skipped"
 )
 
+// triggerReg holds all per-triggerID runtime state for a [BaseTriggerCapability].
+// triggerID remains the map key in [BaseTriggerCapability.byTrigger]; this type
+// groups inbox, pending rows, and the pre-ACK dedupe cache for that trigger.
+type triggerReg[T proto.Message] struct {
+	inbox    chan<- TriggerAndId[T]
+	pending  map[string]*PendingEvent
+	preAcked map[string]time.Time
+}
+
 type PendingEvent struct {
 	TriggerId  string
 	EventId    string
@@ -89,17 +98,8 @@ type BaseTriggerCapability[T proto.Message] struct {
 	// When nil, tRetransmit > 0 enables persistence/retry with fixed spacing.
 	settings settings.Getter
 
-	mu      sync.Mutex
-	inboxes map[string]chan<- TriggerAndId[T]   // triggerID --> registered send channel
-	pending map[string]map[string]*PendingEvent // triggerID --> eventID --> PendingEvent
-
-	// preAcked remembers ACKs that arrived before DeliverEvent was called on this node.
-	// In a multi-node capability DON, other nodes may deliver the event first, causing
-	// the workflow engine to ACK before the slower node has even persisted the event.
-	// Without this cache, the late node would persist and retransmit forever since no
-	// new ACK will arrive (other nodes already stopped retransmitting, so the subscriber
-	// can't reach aggregation quorum).
-	preAcked map[string]map[string]time.Time // triggerID -> eventID -> ackedAt
+	mu        sync.Mutex
+	byTrigger map[string]*triggerReg[T] // triggerID -> registration state
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -114,8 +114,6 @@ func NewBaseTriggerCapability[T proto.Message](
 	lggr logger.Logger,
 	capabilityId string,
 	tRetransmit time.Duration,
-	undeliveredWarning time.Duration,
-	undeliveredCritical time.Duration,
 	settings settings.Getter,
 ) *BaseTriggerCapability[T] {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -134,12 +132,25 @@ func NewBaseTriggerCapability[T proto.Message](
 		settings:     settings,
 		metrics:      metrics,
 		mu:           sync.Mutex{},
-		inboxes:      make(map[string]chan<- TriggerAndId[T]),
-		pending:      make(map[string]map[string]*PendingEvent),
-		preAcked:     make(map[string]map[string]time.Time),
+		byTrigger:    make(map[string]*triggerReg[T]),
 		ctx:          ctx,
 		cancel:       cancel,
 	}
+}
+
+// getOrCreateRegLocked returns the registration record for triggerID, creating it if needed.
+// Both pending and preAcked are always initialized; inbox remains nil until RegisterTrigger.
+// Must be called with b.mu held.
+func (b *BaseTriggerCapability[T]) getOrCreateRegLocked(triggerID string) *triggerReg[T] {
+	reg := b.byTrigger[triggerID]
+	if reg == nil {
+		reg = &triggerReg[T]{
+			pending:  make(map[string]*PendingEvent),
+			preAcked: make(map[string]time.Time),
+		}
+		b.byTrigger[triggerID] = reg
+	}
+	return reg
 }
 
 // retransmitAllowed is true when events should be persisted and eligible for resend / ACK tracking.
@@ -229,10 +240,8 @@ func (b *BaseTriggerCapability[T]) Start(ctx context.Context) error {
 	b.mu.Lock()
 	for i := range recs {
 		r := &recs[i]
-		if _, ok := b.pending[r.TriggerId]; !ok {
-			b.pending[r.TriggerId] = map[string]*PendingEvent{}
-		}
-		b.pending[r.TriggerId][r.EventId] = r
+		reg := b.getOrCreateRegLocked(r.TriggerId)
+		reg.pending[r.EventId] = r
 	}
 	b.mu.Unlock()
 
@@ -259,23 +268,26 @@ func (b *BaseTriggerCapability[T]) Stop() {
 
 func (b *BaseTriggerCapability[T]) RegisterTrigger(triggerID string, sendCh chan<- TriggerAndId[T]) {
 	b.mu.Lock()
-	_, existed := b.inboxes[triggerID]
-	b.inboxes[triggerID] = sendCh
+	reg := b.getOrCreateRegLocked(triggerID)
+	hadInbox := reg.inbox != nil
+	reg.inbox = sendCh
 	b.mu.Unlock()
 
-	if !existed {
+	if !hadInbox {
 		b.metrics.IncActiveTriggers()
 	}
 }
 
 func (b *BaseTriggerCapability[T]) UnregisterTrigger(triggerID string) {
 	b.mu.Lock()
-	_, existed := b.inboxes[triggerID]
-	pendingCount := int64(len(b.pending[triggerID]))
-
-	delete(b.inboxes, triggerID)
-	delete(b.pending, triggerID)
-	delete(b.preAcked, triggerID)
+	reg, ok := b.byTrigger[triggerID]
+	var pendingCount int64
+	var existed bool
+	if ok {
+		pendingCount = int64(len(reg.pending))
+		existed = reg.inbox != nil
+		delete(b.byTrigger, triggerID)
+	}
 	b.mu.Unlock()
 
 	if existed {
@@ -305,13 +317,12 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	// causing the workflow engine to ACK before this node calls DeliverEvent.
 	// Already pending: the EVM trigger re-delivers after finalization
 	// while the event is still awaiting ACK.
+	var reg *triggerReg[T]
 	b.mu.Lock()
-	if pa, ok := b.preAcked[triggerID]; ok {
-		if _, wasAcked := pa[te.ID]; wasAcked {
-			delete(pa, te.ID)
-			if len(pa) == 0 {
-				delete(b.preAcked, triggerID)
-			}
+	reg = b.byTrigger[triggerID]
+	if reg != nil {
+		if _, wasAcked := reg.preAcked[te.ID]; wasAcked {
+			delete(reg.preAcked, te.ID)
 			b.mu.Unlock()
 			b.lggr.Infow("base trigger DeliverEvent skipped: event was already ACKed (pre-ACK)",
 				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
@@ -319,8 +330,8 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 			return nil
 		}
 	}
-	if pending, ok := b.pending[triggerID]; ok {
-		if _, exists := pending[te.ID]; exists {
+	if reg != nil {
+		if _, exists := reg.pending[te.ID]; exists {
 			b.mu.Unlock()
 			b.lggr.Debugw("base trigger DeliverEvent skipped: event already pending",
 				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
@@ -355,28 +366,21 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	// this second check, the event would be retransmitted forever because
 	// the first preAcked check (before Insert) narrowly missed the ACK.
 	b.mu.Lock()
-	if pa, ok := b.preAcked[triggerID]; ok {
-		if _, wasAcked := pa[te.ID]; wasAcked {
-			delete(pa, te.ID)
-			if len(pa) == 0 {
-				delete(b.preAcked, triggerID)
-			}
-			b.mu.Unlock()
-			b.lggr.Infow("base trigger DeliverEvent skipped after persist: event was ACKed during store write (pre-ACK double-check)",
-				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
-			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomePreAckDeliverySkipped)
-			if err := b.store.DeleteEvent(ctx, triggerID, te.ID); err != nil {
-				b.lggr.Errorw("base trigger failed to delete pre-ACKed event from store",
-					"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
-			}
-			return nil
+	reg = b.getOrCreateRegLocked(triggerID)
+	if _, wasAcked := reg.preAcked[te.ID]; wasAcked {
+		delete(reg.preAcked, te.ID)
+		b.mu.Unlock()
+		b.lggr.Infow("base trigger DeliverEvent skipped after persist: event was ACKed during store write (pre-ACK double-check)",
+			"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID)
+		b.metrics.IncAckMemoryOutcome(ackMemoryOutcomePreAckDeliverySkipped)
+		if err := b.store.DeleteEvent(ctx, triggerID, te.ID); err != nil {
+			b.lggr.Errorw("base trigger failed to delete pre-ACKed event from store",
+				"capabilityID", b.capabilityId, "triggerID", triggerID, "eventID", te.ID, "err", err)
 		}
-	}
-	if b.pending[triggerID] == nil {
-		b.pending[triggerID] = map[string]*PendingEvent{}
+		return nil
 	}
 	rec.LastSentAt = time.Now()
-	b.pending[triggerID][te.ID] = &rec
+	reg.pending[te.ID] = &rec
 	b.mu.Unlock()
 
 	b.metrics.AddPendingEvents(1)
@@ -394,10 +398,14 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 // sendToInbox unmarshals the payload and delivers it to the registered inbox channel.
 func (b *BaseTriggerCapability[T]) sendToInbox(triggerID, eventID string, payload []byte) error {
 	b.mu.Lock()
-	sendCh, ok := b.inboxes[triggerID]
+	reg := b.byTrigger[triggerID]
+	var sendCh chan<- TriggerAndId[T]
+	if reg != nil {
+		sendCh = reg.inbox
+	}
 	b.mu.Unlock()
 
-	if !ok {
+	if sendCh == nil {
 		b.metrics.IncInboxMissing(triggerID)
 		return fmt.Errorf("no inbox registered for trigger %s", triggerID)
 	}
@@ -431,9 +439,15 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	)
 
 	b.mu.Lock()
-	eventsForTrigger, ok := b.pending[triggerId]
-	hadTriggerBucket = ok && eventsForTrigger != nil
-	if hadTriggerBucket {
+	reg := b.byTrigger[triggerId]
+	eventWasInPending := false
+	if reg != nil {
+		_, eventWasInPending = reg.pending[eventId]
+	}
+	hadTriggerBucket = reg != nil && (len(reg.pending) > 0 || eventWasInPending)
+
+	if reg != nil {
+		eventsForTrigger := reg.pending
 		rec, recOk := eventsForTrigger[eventId]
 		hadEventKey = recOk
 		switch {
@@ -445,13 +459,14 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			hadNilPendingRecord = true
 			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNilRecord)
 		default:
-			b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNoEvent)
+			if !eventWasInPending && len(eventsForTrigger) == 0 {
+				b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNoTriggerBucket)
+			} else {
+				b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNoEvent)
+			}
 		}
 
 		delete(eventsForTrigger, eventId)
-		if len(eventsForTrigger) == 0 {
-			delete(b.pending, triggerId)
-		}
 	} else {
 		b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeMissNoTriggerBucket)
 	}
@@ -463,10 +478,10 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 	//   2. (re-delivery) The upstream trigger re-delivers the same event
 	//      (e.g. EVM trigger after block finalization prunes its sent-set),
 	//      even though the event was already ACKed during a prior delivery.
-	if b.preAcked[triggerId] == nil {
-		b.preAcked[triggerId] = make(map[string]time.Time)
+	if reg == nil {
+		reg = b.getOrCreateRegLocked(triggerId)
 	}
-	b.preAcked[triggerId][eventId] = time.Now()
+	reg.preAcked[eventId] = time.Now()
 
 	b.mu.Unlock()
 
@@ -588,15 +603,15 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 
 	b.expirePreAcked(now)
 
-	toResend := make([]PendingEvent, 0, len(b.pending))
+	toResend := make([]PendingEvent, 0, defaultMaxSendsPerTick)
 	var toStop []stoppedResendingEvent
-	for triggerID, pendingForTrigger := range b.pending {
-		if _, hasInbox := b.inboxes[triggerID]; !hasInbox {
+	for triggerID, reg := range b.byTrigger {
+		if reg.inbox == nil {
 			continue // registration hasn't arrived yet — skip to avoid wasting retry attempts
 		}
-		for eventID, rec := range pendingForTrigger {
+		for eventID, rec := range reg.pending {
 			if reachedMaxRetries(rec.Attempts, maxRetries) {
-				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, pendingForTrigger))
+				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, reg.pending))
 				continue
 			}
 			b.collectResendCandidate(rec, now, interval, &toResend)
@@ -605,7 +620,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	b.mu.Unlock()
 
 	for _, ev := range toStop {
-		b.emitStoppedResending(ctx, ev, maxRetries)
+		b.emitStoppedResending(ev, maxRetries)
 	}
 
 	// Sort deterministically so all DON nodes select similar events when
@@ -642,29 +657,23 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 // Must be called under b.mu.
 func (b *BaseTriggerCapability[T]) expirePreAcked(now time.Time) {
 	preAckTTL := 24 * time.Hour
-	for triggerID, events := range b.preAcked {
-		for eventID, ackedAt := range events {
+	for _, reg := range b.byTrigger {
+		for eventID, ackedAt := range reg.preAcked {
 			if now.Sub(ackedAt) > preAckTTL {
-				delete(events, eventID)
+				delete(reg.preAcked, eventID)
 			}
-		}
-		if len(events) == 0 {
-			delete(b.preAcked, triggerID)
 		}
 	}
 }
 
-// collectStoppedResending removes the event from pending and alert tracking, returning
-// the metadata needed to emit metrics/logs outside the lock. Must be called under b.mu.
+// collectStoppedResending removes the event from pending, returning the metadata
+// needed to emit metrics/logs outside the lock. Must be called under b.mu.
 func (b *BaseTriggerCapability[T]) collectStoppedResending(
 	triggerID, eventID string,
 	rec *PendingEvent,
 	pendingForTrigger map[string]*PendingEvent,
 ) stoppedResendingEvent {
 	delete(pendingForTrigger, eventID)
-	if len(pendingForTrigger) == 0 {
-		delete(b.pending, triggerID)
-	}
 	return stoppedResendingEvent{
 		triggerID: triggerID,
 		eventID:   eventID,
@@ -672,8 +681,8 @@ func (b *BaseTriggerCapability[T]) collectStoppedResending(
 	}
 }
 
-// collectResendCandidate appends the event to toResend if the retry backoff has elapsed,
-// and checks undelivered alert thresholds. Must be called under b.mu.
+// collectResendCandidate appends the event to toResend if the retry backoff has elapsed.
+// Must be called under b.mu.
 func (b *BaseTriggerCapability[T]) collectResendCandidate(
 	rec *PendingEvent,
 	now time.Time,
@@ -693,7 +702,7 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 // emitStoppedResending logs and emits metrics for an event that exhausted its retries.
 // The event is NOT deleted from the store here — the prune loop handles cleanup,
 // giving operators time to investigate unrecoverable payloads (e.g. HTTP triggers).
-func (b *BaseTriggerCapability[T]) emitStoppedResending(ctx context.Context, ev stoppedResendingEvent, maxRetries int) {
+func (b *BaseTriggerCapability[T]) emitStoppedResending(ev stoppedResendingEvent, maxRetries int) {
 	b.lggr.Errorw("base trigger stopped resending event after max retries",
 		"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
 		"attempts", ev.attempts, "maxRetries", maxRetries,
@@ -758,8 +767,8 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 
 		b.mu.Lock()
 		inMemory := false
-		if evts, ok := b.pending[rec.TriggerId]; ok {
-			_, inMemory = evts[rec.EventId]
+		if reg, ok := b.byTrigger[rec.TriggerId]; ok {
+			_, inMemory = reg.pending[rec.EventId]
 		}
 		b.mu.Unlock()
 
@@ -795,12 +804,12 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	}
 
 	b.mu.Lock()
-	eventsForTrigger, ok := b.pending[event.TriggerId]
-	if !ok || eventsForTrigger == nil {
+	reg := b.byTrigger[event.TriggerId]
+	if reg == nil {
 		b.mu.Unlock()
 		return
 	}
-
+	eventsForTrigger := reg.pending
 	rec, ok := eventsForTrigger[event.EventId]
 	if !ok || rec == nil {
 		b.mu.Unlock()

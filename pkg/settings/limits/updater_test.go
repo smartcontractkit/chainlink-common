@@ -37,7 +37,7 @@ func Test_updater(t *testing.T) {
 
 				assert.GreaterOrEqual(t, len(got), 1)
 				for i := range got {
-					assert.Equal(t, got[i], 13)
+					assert.Equal(t, 13, got[i])
 				}
 			})
 			t.Run("dynamic", func(t *testing.T) {
@@ -58,8 +58,8 @@ func Test_updater(t *testing.T) {
 				require.NoError(t, u.Close())
 
 				assert.GreaterOrEqual(t, len(got), 2)
-				assert.Equal(t, got[0], 13)
-				assert.Equal(t, got[len(got)-1], 42)
+				assert.Equal(t, 13, got[0])
+				assert.Equal(t, 42, got[len(got)-1])
 
 				cancel()
 				select {
@@ -86,8 +86,8 @@ func Test_updater(t *testing.T) {
 				require.NoError(t, u.Close())
 
 				assert.GreaterOrEqual(t, len(got), 2)
-				assert.Equal(t, got[0], 42)
-				assert.Equal(t, got[len(got)-1], 100)
+				assert.Equal(t, 42, got[0])
+				assert.Equal(t, 100, got[len(got)-1])
 
 				cancel()
 				select {
@@ -99,5 +99,4 @@ func Test_updater(t *testing.T) {
 			})
 		})
 	}
-
 }

@@ -99,6 +99,9 @@ flowchart
         subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
             BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
             BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
+            BaseTriggerMaxRetries{{BaseTriggerMaxRetries}}:::bound
+            BaseTriggerPruneAge>BaseTriggerPruneAge]:::time
+            BaseTriggerMaxSendsPerTick{{BaseTriggerMaxSendsPerTick}}:::bound
         end
     end
 
@@ -141,6 +144,7 @@ flowchart
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
+        PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end

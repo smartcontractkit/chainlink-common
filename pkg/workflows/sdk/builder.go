@@ -197,7 +197,7 @@ func (w *WorkflowSpecFactory) Spec() (WorkflowSpec, error) {
 	}
 
 	if w.emptyNames {
-		return WorkflowSpec{}, fmt.Errorf("empty step references are not allowed")
+		return WorkflowSpec{}, errors.New("empty step references are not allowed")
 	}
 
 	if len(w.badCapTypes) > 0 {

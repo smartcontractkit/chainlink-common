@@ -20,13 +20,40 @@ var _ ClientConnInterface = (*grpc.ClientConn)(nil)
 type ClientConnInterface interface {
 	grpc.ClientConnInterface
 	GetState() connectivity.State
+	Close() error
 }
+
+func ClientConnInterfaceFromGRPC(conn grpc.ClientConnInterface) ClientConnInterface {
+	connCloser, ok := conn.(ClientConnInterface)
+	if !ok {
+		connCloser = &noopClientConnInterface{conn}
+	}
+	return connCloser
+}
+
+// noopClientConnInterface adapts ClientConnInterface to implement net.ClientConnInterface with no-ops.
+type noopClientConnInterface struct {
+	grpc.ClientConnInterface
+}
+
+func (c *noopClientConnInterface) GetState() connectivity.State {
+	return connectivity.State(-1)
+}
+
+func (*noopClientConnInterface) Close() error { return nil }
 
 var _ ClientConnInterface = (*AtomicClient)(nil)
 
 // An AtomicClient implements [grpc.ClientConnInterface] and is backed by a swappable [*grpc.ClientConn].
 type AtomicClient struct {
 	cc atomic.Pointer[grpc.ClientConn]
+}
+
+func (a *AtomicClient) Close() error {
+	if v := a.cc.Swap(nil); v != nil {
+		return (*v).Close()
+	}
+	return nil
 }
 
 func (a *AtomicClient) GetState() connectivity.State {
@@ -59,6 +86,23 @@ type clientConn struct {
 	mu   sync.RWMutex
 	deps Resources
 	cc   *grpc.ClientConn
+}
+
+func (c *clientConn) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.close()
+}
+
+func (c *clientConn) close() error {
+	if c.cc != nil {
+		err := c.cc.Close()
+		c.CloseAll(c.deps...)
+		c.cc = nil
+		c.deps = nil
+		return err
+	}
+	return nil
 }
 
 func (c *clientConn) GetState() connectivity.State {
@@ -127,11 +171,8 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 	if c.cc != orig {
 		return c.cc, nil
 	}
-	if c.cc != nil {
-		if err := c.cc.Close(); err != nil {
-			c.Logger.Errorw("Client close failed", "err", err)
-		}
-		c.CloseAll(c.deps...)
+	if err := c.close(); err != nil {
+		c.Logger.Errorw("Client close failed", "err", err)
 	}
 
 	try := func() error {

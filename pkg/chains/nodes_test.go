@@ -2,7 +2,7 @@ package chains
 
 import (
 	"encoding/base64"
-	"fmt"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -133,7 +133,7 @@ func TestListNodeStatuses(t *testing.T) {
 			name: "bad list fn",
 			args: args{
 				listFn: func(start, end int) ([]types.NodeStatus, int, error) {
-					return nil, 0, fmt.Errorf("i'm a bad list fn")
+					return nil, 0, errors.New("i'm a bad list fn")
 				},
 			},
 			wantTotal: -1,

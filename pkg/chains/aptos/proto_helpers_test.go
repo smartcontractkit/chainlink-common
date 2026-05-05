@@ -2,7 +2,6 @@ package aptos_test
 
 import (
 	"bytes"
-	"errors"
 	"math"
 	"testing"
 
@@ -395,7 +394,7 @@ func TestErrorJoinBehavior(t *testing.T) {
 		}
 		_, err := conv.ConvertViewPayloadFromProto(protoPayload)
 		require.Error(t, err)
-		require.True(t, errors.Is(err, err))
+		require.ErrorIs(t, err, err)
 	})
 }
 
@@ -503,11 +502,11 @@ func TestAccountTransactionsConverters(t *testing.T) {
 		}
 
 		protoReply := conv.ConvertAccountTransactionsReplyToProto(reply)
-		require.Len(t, protoReply.Transactions, 0)
+		require.Empty(t, protoReply.Transactions)
 
 		roundtrip, err := conv.ConvertAccountTransactionsReplyFromProto(protoReply)
 		require.NoError(t, err)
-		require.Len(t, roundtrip.Transactions, 0)
+		require.Empty(t, roundtrip.Transactions)
 	})
 
 	t.Run("Reply nil handling", func(t *testing.T) {

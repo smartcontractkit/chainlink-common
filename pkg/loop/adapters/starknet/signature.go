@@ -1,6 +1,7 @@
 package starknet
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -19,7 +20,7 @@ func (s *Signature) Bytes() ([]byte, error) {
 
 func (s *Signature) Ints() (x *big.Int, y *big.Int, err error) {
 	if s.sig == nil {
-		return nil, nil, fmt.Errorf("signature uninitialized")
+		return nil, nil, errors.New("signature uninitialized")
 	}
 
 	return s.sig.X.Int(), s.sig.Y.Int(), nil

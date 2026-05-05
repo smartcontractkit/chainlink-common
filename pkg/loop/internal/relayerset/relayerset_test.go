@@ -1178,7 +1178,7 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 
 				reply, err := apt.AccountTransactions(ctx, req)
 				require.NoError(t, err)
-				require.Len(t, reply.Transactions, 0)
+				require.Empty(t, reply.Transactions)
 			},
 		},
 		{

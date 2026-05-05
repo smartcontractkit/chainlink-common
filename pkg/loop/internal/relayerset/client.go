@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"google.golang.org/grpc"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
@@ -36,7 +34,7 @@ type Client struct {
 	aptosRelayerSetClient  aptos.AptosClient
 }
 
-func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
+func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn net.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
 	return &Client{
 		log:                    log,

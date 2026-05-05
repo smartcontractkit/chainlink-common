@@ -37,7 +37,6 @@ func NewMercuryV4Service(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 		factory, err := plug.NewMercuryV4Factory(ctx, provider, dataSource)
 		if err != nil {
 			return nil, nil, err
-
 		}
 		return factory, plug, nil
 	}

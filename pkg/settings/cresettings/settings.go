@@ -66,6 +66,9 @@ var Default = Schema{
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetransmitEnabled:           Bool(false),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
+	BaseTriggerMaxRetries:                  Int(20),
+	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:             Int(20),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -235,6 +238,9 @@ var Default = Schema{
 		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -254,6 +260,9 @@ type Schema struct {
 
 	BaseTriggerRetransmitEnabled Setting[bool]
 	BaseTriggerRetryInterval     Setting[time.Duration]
+	BaseTriggerMaxRetries        Setting[int]           `unit:"{attempt}"`
+	BaseTriggerPruneAge          Setting[time.Duration]
+	BaseTriggerMaxSendsPerTick   Setting[int]           `unit:"{event}"`
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
@@ -334,9 +343,10 @@ type Workflows struct {
 	ConfidentialHTTP confidentialHTTP
 	Secrets          secrets
 
-	FeatureMultiTriggerExecutionIDsActiveAt     Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod Setting[Range[config.Timestamp]]
+	FeatureMultiTriggerExecutionIDsActiveAt        Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod    Setting[Range[config.Timestamp]]
 	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod         Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

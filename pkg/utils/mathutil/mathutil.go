@@ -1,6 +1,7 @@
 package mathutil
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"slices"
@@ -57,7 +58,7 @@ func Median[V constraints.Integer](arr ...V) (V, error) {
 
 	l := len(arr)
 	if l == 0 {
-		return 0, fmt.Errorf("empty input")
+		return 0, errors.New("empty input")
 	}
 	if l%2 == 0 {
 		return Avg(arr[l/2-1 : l/2+1]...)

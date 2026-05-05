@@ -5,10 +5,11 @@ import (
 	"math"
 	"time"
 
-	"github.com/smartcontractkit/libocr/commontypes"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/smartcontractkit/libocr/commontypes"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -21,7 +22,7 @@ type ReportingPluginFactoryClient struct {
 	grpc pb.ReportingPluginFactoryClient
 }
 
-func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ReportingPluginFactoryClient {
+func NewReportingPluginFactoryClient(b *net.BrokerExt, cc net.ClientConnInterface) *ReportingPluginFactoryClient {
 	b = b.WithName("ReportingPluginProviderClient")
 	return &ReportingPluginFactoryClient{
 		BrokerExt:     b,

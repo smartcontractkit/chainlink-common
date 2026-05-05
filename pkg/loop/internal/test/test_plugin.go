@@ -24,7 +24,7 @@ type HelperProcessCommand struct {
 
 func (h HelperProcessCommand) New() *exec.Cmd {
 	cmdArgs := []string{
-		"go", "run", h.CommandLocation, fmt.Sprintf("-cmd=%s", h.Command),
+		"go", "run", h.CommandLocation, "-cmd=" + h.Command,
 	}
 
 	if h.Limit != 0 {

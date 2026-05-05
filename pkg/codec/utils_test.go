@@ -1,7 +1,6 @@
 package codec
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -124,13 +123,13 @@ func TestBigIntHook(t *testing.T) {
 		t.Run("Overflow return an error "+intType.Type.String(), func(t *testing.T) {
 			bigger := new(big.Int).Add(intType.Max, big.NewInt(1))
 			_, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
-			assert.True(t, errors.Is(err, types.ErrInvalidType))
+			assert.ErrorIs(t, err, types.ErrInvalidType)
 		})
 
 		t.Run("Underflow return an error "+intType.Type.String(), func(t *testing.T) {
 			smaller := new(big.Int).Sub(intType.Min, big.NewInt(1))
 			_, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
-			assert.True(t, errors.Is(err, types.ErrInvalidType))
+			assert.ErrorIs(t, err, types.ErrInvalidType)
 		})
 
 		t.Run("Converts from "+intType.Type.String(), func(t *testing.T) {
@@ -162,7 +161,7 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Errors for invalid string", func(t *testing.T) {
 		_, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Not a big int returns the input data", func(t *testing.T) {
@@ -188,14 +187,14 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1, 2, 3}
 		_, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("Too small slice returns error", func(t *testing.T) {
 		to := reflect.TypeOf([2]int64{})
 		data := []int64{1}
 		_, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("Empty slices are treated as ok to allow unset values", func(t *testing.T) {
@@ -424,7 +423,7 @@ func TestSetValueAtPath(t *testing.T) {
 
 		output := into.Elem().Interface()
 
-		assert.Equal(t, *output.(*basicStruct).A, int(42))
+		assert.Equal(t, int(42), *output.(*basicStruct).A)
 	})
 
 	t.Run("works for structs with nested structs", func(t *testing.T) {

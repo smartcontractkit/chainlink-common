@@ -522,14 +522,14 @@ func TestCommitPluginReportConversions(t *testing.T) {
 			convertedReport := pbToCommitPluginReportDetailed(pbReport)
 
 			// Verify round-trip conversion preserves all data
-			assert.Equal(t, len(tc.report.PriceUpdates.TokenPriceUpdates), len(convertedReport.PriceUpdates.TokenPriceUpdates))
-			assert.Equal(t, len(tc.report.PriceUpdates.GasPriceUpdates), len(convertedReport.PriceUpdates.GasPriceUpdates))
+			assert.Len(t, convertedReport.PriceUpdates.TokenPriceUpdates, len(tc.report.PriceUpdates.TokenPriceUpdates))
+			assert.Len(t, convertedReport.PriceUpdates.GasPriceUpdates, len(tc.report.PriceUpdates.GasPriceUpdates))
 
 			// Verify blessed and unblessed merkle roots are preserved separately
-			assert.Equal(t, len(tc.report.BlessedMerkleRoots), len(convertedReport.BlessedMerkleRoots))
-			assert.Equal(t, len(tc.report.UnblessedMerkleRoots), len(convertedReport.UnblessedMerkleRoots))
+			assert.Len(t, convertedReport.BlessedMerkleRoots, len(tc.report.BlessedMerkleRoots))
+			assert.Len(t, convertedReport.UnblessedMerkleRoots, len(tc.report.UnblessedMerkleRoots))
 
-			assert.Equal(t, len(tc.report.RMNSignatures), len(convertedReport.RMNSignatures))
+			assert.Len(t, convertedReport.RMNSignatures, len(tc.report.RMNSignatures))
 
 			// Verify specific field values (OnRampAddress and RMN signatures)
 			if len(tc.report.BlessedMerkleRoots) > 0 {
@@ -621,7 +621,7 @@ func TestArrayAlignmentInvariant(t *testing.T) {
 				}
 
 				// Verify alignment invariant before conversion
-				require.Equal(t, len(messages), len(tc.tokenArrays),
+				require.Len(t, tc.tokenArrays, len(messages),
 					"Messages and OffchainTokenData arrays must have the same length")
 
 				// Test conversion
@@ -632,7 +632,7 @@ func TestArrayAlignmentInvariant(t *testing.T) {
 				chainReport := pb.ChainReports[0]
 
 				// Verify alignment invariant after conversion
-				assert.Equal(t, len(chainReport.Messages), len(chainReport.OffchainTokenData),
+				assert.Len(t, chainReport.OffchainTokenData, len(chainReport.Messages),
 					"Messages and OffchainTokenData arrays must maintain alignment after conversion")
 
 				// Verify each token array matches expected structure

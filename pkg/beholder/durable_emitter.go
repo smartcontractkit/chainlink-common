@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // DurableEmitterConfig configures the DurableEmitter behaviour.
@@ -84,10 +85,6 @@ type DurableEmitterHooks struct {
 	OnBatchPublish func(elapsed time.Duration, batchSize int, err error)
 	// OnBatchMarkDelivered is called after MarkDeliveredBatch following a successful batch publish.
 	OnBatchMarkDelivered func(elapsed time.Duration, count int)
-	// OnRetransmitBatchPublish is not invoked (retransmit uses the same batch loop as Emit; use OnBatchPublish).
-	OnRetransmitBatchPublish func(elapsed time.Duration, eventCount int, err error)
-	// OnRetransmitBatchDeletes is not invoked (mark delivered is async per batch; hook retained for API compatibility).
-	OnRetransmitBatchDeletes func(elapsed time.Duration, markedDeliveredCount int)
 }
 
 func DefaultDurableEmitterConfig() DurableEmitterConfig {
@@ -96,7 +93,7 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		RetransmitAfter:     10 * time.Second,
 		RetransmitBatchSize: 100,
 		ExpiryInterval:      1 * time.Minute,
-		EventTTL:            24 * time.Hour,
+		EventTTL:            72 * time.Hour,
 		PublishTimeout:      5 * time.Second,
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,
@@ -162,9 +159,8 @@ type DurableEmitter struct {
 	// publishCh buffers events for the batch publish loop.
 	publishCh chan publishWork
 
-	stopCh chan struct{}
+	stopCh services.StopChan
 	wg     sync.WaitGroup
-	markWg sync.WaitGroup // tracks in-flight async MarkDelivered goroutines
 }
 
 // grpcConnProvider is an optional interface for clients that expose the
@@ -305,21 +301,21 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 		n++
 	}
 	d.wg.Add(n)
-	go d.retransmitLoop(ctx)
+	go d.retransmitLoop()
 	if !d.cfg.DisablePruning {
 		go d.expiryLoop(ctx)
 		go d.purgeLoop(ctx)
 	}
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
-			go d.insertBatchLoop(ctx)
+			go d.insertBatchLoop()
 		}
 	}
 	for i := 0; i < batchWorkers; i++ {
-		go d.batchPublishLoop(ctx)
+		go d.batchPublishLoop()
 	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
-		go d.metricsLoop(ctx)
+		go d.metricsLoop()
 	}
 }
 
@@ -448,7 +444,6 @@ func (d *DurableEmitter) Close() error {
 	}
 	d.wg.Wait()
 	close(d.publishCh)
-	d.markWg.Wait()
 	return nil
 }
 
@@ -456,7 +451,7 @@ func (d *DurableEmitter) Close() error {
 // as multi-row INSERTs via BatchInserter.InsertBatch. Uses a linger pattern:
 // blocks for the first request, then collects more until the batch is full or
 // the flush interval elapses.
-func (d *DurableEmitter) insertBatchLoop(ctx context.Context) {
+func (d *DurableEmitter) insertBatchLoop() {
 	defer d.wg.Done()
 	batchSize := d.cfg.InsertBatchSize
 	linger := d.cfg.InsertBatchFlushInterval
@@ -464,6 +459,9 @@ func (d *DurableEmitter) insertBatchLoop(ctx context.Context) {
 		linger = 2 * time.Millisecond
 	}
 	batch := make([]*insertRequest, 0, batchSize)
+
+	ctx, cancel := d.stopCh.NewCtx()
+	defer cancel()
 
 	for {
 		batch = batch[:0]
@@ -475,8 +473,6 @@ func (d *DurableEmitter) insertBatchLoop(ctx context.Context) {
 				return
 			}
 			batch = append(batch, req)
-		case <-ctx.Done():
-			return
 		case <-d.stopCh:
 			return
 		}
@@ -553,7 +549,7 @@ func (d *DurableEmitter) decPending(n int64) {
 // PublishBatchSize, and sends each batch via PublishBatch RPC. It blocks until
 // the batch is full or PublishBatchFlushInterval elapses after the first event
 // arrives (linger pattern), guaranteeing full batches at high throughput.
-func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
+func (d *DurableEmitter) batchPublishLoop() {
 	defer d.wg.Done()
 
 	batchSize := d.cfg.PublishBatchSize
@@ -572,9 +568,6 @@ func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
 				return
 			}
 			batch = append(batch, w)
-		case <-ctx.Done():
-			d.drainPublishCh(batch)
-			return
 		case <-d.stopCh:
 			d.drainPublishChOnShutdown(batch)
 			return
@@ -596,10 +589,6 @@ func (d *DurableEmitter) batchPublishLoop(ctx context.Context) {
 				batch = append(batch, w)
 			case <-linger.C:
 				break fill
-			case <-ctx.Done():
-				linger.Stop()
-				d.drainPublishCh(batch)
-				return
 			case <-d.stopCh:
 				linger.Stop()
 				d.drainPublishChOnShutdown(batch)
@@ -706,9 +695,9 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 	// the batch worker can immediately start collecting the next batch.
 	// If MarkDelivered fails, events stay pending and the retransmit loop
 	// delivers them (at-least-once semantics are unchanged).
-	d.markWg.Add(1)
+	d.wg.Add(1)
 	go func() {
-		defer d.markWg.Done()
+		defer d.wg.Done()
 		tMark := time.Now()
 		marked, markErr := d.store.MarkDeliveredBatch(context.Background(), ids)
 		markElapsed := time.Since(tMark)
@@ -765,24 +754,25 @@ func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWor
 	return err
 }
 
-func (d *DurableEmitter) retransmitLoop(ctx context.Context) {
+func (d *DurableEmitter) retransmitLoop() {
 	defer d.wg.Done()
 	ticker := time.NewTicker(d.cfg.RetransmitInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-ctx.Done():
-			return
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			d.retransmitPending(ctx)
+			d.retransmitPending()
 		}
 	}
 }
 
-func (d *DurableEmitter) retransmitPending(ctx context.Context) {
+func (d *DurableEmitter) retransmitPending() {
+	ctx, cancel := d.stopCh.NewCtx()
+	defer cancel()
+
 	cutoff := time.Now().Add(-d.cfg.RetransmitAfter)
 	pending, err := d.store.ListPending(ctx, cutoff, d.cfg.RetransmitBatchSize)
 	if err != nil {
@@ -913,30 +903,31 @@ func (d *DurableEmitter) queueStatsNearExpiryLead() time.Duration {
 	return lead
 }
 
-func (d *DurableEmitter) metricsLoop(ctx context.Context) {
+func (d *DurableEmitter) metricsLoop() {
 	defer d.wg.Done()
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
 		poll = 10 * time.Second
 	}
+
+	ctx, cancel := d.stopCh.NewCtx()
+	defer cancel()
+
 	ticker := time.NewTicker(poll)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-ctx.Done():
-			return
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
 			if d.metrics == nil {
 				return
 			}
-			bctx := context.Background()
-			d.metrics.queueDepth.Record(bctx, d.pendingCount.Load())
-			d.metrics.queueDepthMax.Record(bctx, d.pendingMax.Load())
+			d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
+			d.metrics.queueDepthMax.Record(ctx, d.pendingMax.Load())
 			if obs, ok := d.store.(DurableQueueObserver); ok {
-				d.metrics.pollQueueGauges(bctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
+				d.metrics.pollQueueGauges(ctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}
 		}
 	}

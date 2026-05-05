@@ -22,6 +22,7 @@ type (
 	PingResponse         = pb.PingResponse
 	PublishResponse      = pb.PublishResponse
 	PublishResult        = pb.PublishResult
+	PublishOptions       = pb.PublishOptions
 	StreamEventsRequest  = pb.StreamEventsRequest
 	StreamEventsResponse = pb.StreamEventsResponse
 )

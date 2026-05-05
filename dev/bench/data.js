@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777985527861,
+  "lastUpdate": 1778003049270,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45660,6 +45660,66 @@ window.BENCHMARK_DATA = {
             "value": 146178,
             "unit": "ns/op",
             "extra": "7807 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcd288aaf3b1058f836378f1897e6a4c733eefa6",
+          "message": "Add Stellar Service plumbing and GetLedgerEntries,GetLatestLedger (#1990)\n\n* Add Stellar Service plumbing and GetLedgerEntries,GetLatestLedger\n\n* Add err handling in proto helper\n\n* Add Stellar service mocks\n\n* lint\n\n* inline stellar xdr type wrappers\n\n* lint\n\n* lint\n\n* lint\n\n* generate mockery\n\n* Add missing Stellar Service definitions\n\n* lint\n\n---------\n\nCo-authored-by: Yashvardhan Nevatia <yashvardhan.nevatia@smartcontract.com>",
+          "timestamp": "2026-05-05T17:32:21Z",
+          "tree_id": "4b14d16755eec17bc377e8c5d1c477f763e64aa2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fcd288aaf3b1058f836378f1897e6a4c733eefa6"
+        },
+        "date": 1778003047532,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 378.1,
+            "unit": "ns/op",
+            "extra": "2828048 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 101279,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 394.2,
+            "unit": "ns/op",
+            "extra": "3031509 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 101563,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26569,
+            "unit": "ns/op",
+            "extra": "45039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 153162,
+            "unit": "ns/op",
+            "extra": "7698 times\n4 procs"
           }
         ]
       }

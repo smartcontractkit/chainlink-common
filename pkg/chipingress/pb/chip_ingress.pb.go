@@ -26,12 +26,12 @@ const (
 // PublishOptions controls optional behaviour of PublishBatch.
 type PublishOptions struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// allOrNothing makes the batch atomic: either all events are committed or none are.
-	// When unset, the server defaults to true (preserving the original atomic behaviour).
-	// Set to false to allow partial success, where individual results carry per-event errors.
-	AllOrNothing  *bool `protobuf:"varint,1,opt,name=allOrNothing,proto3,oneof" json:"allOrNothing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// allowPartialSuccess makes the batch atomic: either all events are committed or none are.
+	// When unset, the server preserves the original atomic behaviour.
+	// Set to true to allow partial success, where individual results carry per-event errors.
+	AllowPartialSuccess *bool `protobuf:"varint,1,opt,name=allowPartialSuccess,proto3,oneof" json:"allowPartialSuccess,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *PublishOptions) Reset() {
@@ -64,9 +64,9 @@ func (*PublishOptions) Descriptor() ([]byte, []int) {
 	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PublishOptions) GetAllOrNothing() bool {
-	if x != nil && x.AllOrNothing != nil {
-		return *x.AllOrNothing
+func (x *PublishOptions) GetAllowPartialSuccess() bool {
+	if x != nil && x.AllowPartialSuccess != nil {
+		return *x.AllowPartialSuccess
 	}
 	return false
 }
@@ -76,7 +76,7 @@ type CloudEventBatch struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Events []*pb.CloudEvent       `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
 	// options are optional publish settings. When omitted, allOrNothing defaults to true.
-	Options       *PublishOptions `protobuf:"bytes,2,opt,name=options,proto3,oneof" json:"options,omitempty"`
+	Options       *PublishOptions `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -172,7 +172,7 @@ func (x *PublishResponse) GetResults() []*PublishResult {
 type PublishResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EventId       string                 `protobuf:"bytes,1,opt,name=eventId,proto3" json:"eventId,omitempty"`
-	Error         *status.Status         `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"`
+	Error         *status.Status         `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -494,21 +494,18 @@ var File_pb_chip_ingress_proto protoreflect.FileDescriptor
 
 const file_pb_chip_ingress_proto_rawDesc = "" +
 	"\n" +
-	"\x15pb/chip_ingress.proto\x12\x0echipingress.pb\x1aLgithub.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto\x1a\x14pb/chip_common.proto\x1a\x17google/rpc/status.proto\"J\n" +
-	"\x0ePublishOptions\x12'\n" +
-	"\fallOrNothing\x18\x01 \x01(\bH\x00R\fallOrNothing\x88\x01\x01B\x0f\n" +
-	"\r_allOrNothing\"\x93\x01\n" +
+	"\x15pb/chip_ingress.proto\x12\x0echipingress.pb\x1aLgithub.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto\x1a\x14pb/chip_common.proto\x1a\x17google/rpc/status.proto\"_\n" +
+	"\x0ePublishOptions\x125\n" +
+	"\x13allowPartialSuccess\x18\x01 \x01(\bH\x00R\x13allowPartialSuccess\x88\x01\x01B\x16\n" +
+	"\x14_allowPartialSuccess\"\x82\x01\n" +
 	"\x0fCloudEventBatch\x125\n" +
-	"\x06events\x18\x01 \x03(\v2\x1d.io.cloudevents.v1.CloudEventR\x06events\x12=\n" +
-	"\aoptions\x18\x02 \x01(\v2\x1e.chipingress.pb.PublishOptionsH\x00R\aoptions\x88\x01\x01B\n" +
-	"\n" +
-	"\b_options\"J\n" +
+	"\x06events\x18\x01 \x03(\v2\x1d.io.cloudevents.v1.CloudEventR\x06events\x128\n" +
+	"\aoptions\x18\x02 \x01(\v2\x1e.chipingress.pb.PublishOptionsR\aoptions\"J\n" +
 	"\x0fPublishResponse\x127\n" +
-	"\aresults\x18\x01 \x03(\v2\x1d.chipingress.pb.PublishResultR\aresults\"b\n" +
+	"\aresults\x18\x01 \x03(\v2\x1d.chipingress.pb.PublishResultR\aresults\"S\n" +
 	"\rPublishResult\x12\x18\n" +
-	"\aeventId\x18\x01 \x01(\tR\aeventId\x12-\n" +
-	"\x05error\x18\x02 \x01(\v2\x12.google.rpc.StatusH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error\"\x0e\n" +
+	"\aeventId\x18\x01 \x01(\tR\aeventId\x12(\n" +
+	"\x05error\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x05error\"\x0e\n" +
 	"\fEmptyRequest\"(\n" +
 	"\fPingResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"J\n" +
@@ -591,8 +588,6 @@ func file_pb_chip_ingress_proto_init() {
 	}
 	file_pb_chip_common_proto_init()
 	file_pb_chip_ingress_proto_msgTypes[0].OneofWrappers = []any{}
-	file_pb_chip_ingress_proto_msgTypes[1].OneofWrappers = []any{}
-	file_pb_chip_ingress_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

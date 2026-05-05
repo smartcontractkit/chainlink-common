@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777981492410,
+  "lastUpdate": 1777985527861,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45600,6 +45600,66 @@ window.BENCHMARK_DATA = {
             "value": 151205,
             "unit": "ns/op",
             "extra": "7789 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "72181f5345ceb85ee04bdaba26f88e847d0e792f",
+          "message": "Trigger Delivery: Refactor BaseTrigger (#1969)\n\n* Implement max retries\n\n* Fix test\n\n* Handle Pre-ACKs\n\n* Fix DeliverEvent ACK race\n\n* Fix preAcked cache\n\n* Update base_trigger.go\n\n* Address comments\n\n* Add backoff + jitter + send cap\n\n* Remove immediate send + fix buckets\n\n* Set max send to 20 + add event sorting\n\n* Fix duplicate key race + skip no inbox\n\n* Immediate send again\n\n* Update base_trigger.go\n\n* Update base_trigger.go\n\n* Fix resend\n\n* Fix test\n\n* Fix backoff\n\n* Update base_trigger.go\n\n* Clean up\n\n* Update retransmit loop\n\n* Address comments\n\n* extract memory outcomes\n\n* Refactor & Clean up\n\n* lint\n\n* Add test coverage\n\n* Fix test context\n\n* Update base_trigger_test.go\n\n* Fix\n\n* Address comments\n\n* Update base_trigger.go\n\n* Cleanup",
+          "timestamp": "2026-05-05T12:41:04Z",
+          "tree_id": "31a333ead2b614fe2568b42e0d3642d42f0b47cf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/72181f5345ceb85ee04bdaba26f88e847d0e792f"
+        },
+        "date": 1777985525724,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369.3,
+            "unit": "ns/op",
+            "extra": "3395576 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97808,
+            "unit": "ns/op",
+            "extra": "12230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.3,
+            "unit": "ns/op",
+            "extra": "2927251 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 98243,
+            "unit": "ns/op",
+            "extra": "12212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26982,
+            "unit": "ns/op",
+            "extra": "45190 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 146178,
+            "unit": "ns/op",
+            "extra": "7807 times\n4 procs"
           }
         ]
       }

@@ -74,7 +74,7 @@ func (c *CommitLOOPClient) NewCommitFactory(ctx context.Context, provider types.
 			ProviderServiceId: providerID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return resp.CommitFactoryServiceId, deps, nil
 	}

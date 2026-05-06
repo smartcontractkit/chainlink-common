@@ -2,6 +2,8 @@ package ocr3
 
 import (
 	"context"
+	"errors"
+	"io"
 	"math"
 	"time"
 
@@ -24,7 +26,7 @@ type reportingPluginFactoryClient struct {
 	grpc ocr3.ReportingPluginFactoryClient
 }
 
-func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
+func NewReportingPluginFactoryClient(b *net.BrokerExt, cc net.ClientConnInterface) *reportingPluginFactoryClient {
 	b = b.WithName("OCR3ReportingPluginProviderClient")
 	return &reportingPluginFactoryClient{b, goplugin.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }
@@ -126,6 +128,7 @@ var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPluginClient)(nil)
 
 type reportingPluginClient struct {
 	*net.BrokerExt
+	cc   io.Closer // backing client connection
 	grpc ocr3.ReportingPluginClient
 }
 
@@ -221,11 +224,11 @@ func (o *reportingPluginClient) Close() error {
 	defer cancel()
 
 	_, err := o.grpc.Close(ctx, &emptypb.Empty{})
-	return err
+	return errors.Join(err, o.cc.Close())
 }
 
-func newReportingPluginClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginClient {
-	return &reportingPluginClient{b.WithName("OCR3ReportingPluginClient"), ocr3.NewReportingPluginClient(cc)}
+func newReportingPluginClient(b *net.BrokerExt, cc net.ClientConnInterface) *reportingPluginClient {
+	return &reportingPluginClient{b.WithName("OCR3ReportingPluginClient"), cc, ocr3.NewReportingPluginClient(cc)}
 }
 
 var _ ocr3.ReportingPluginServer = (*reportingPluginServer)(nil)

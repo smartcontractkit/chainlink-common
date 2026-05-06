@@ -273,7 +273,7 @@ func TestOwnerResourcePoolLimiter(t *testing.T) {
 	})
 	var err ErrorResourceLimited[int]
 	if assert.ErrorAs(t, l.Use(ctx1, 1), &err) {
-		assert.Equal(t, "", err.Key)
+		assert.Empty(t, err.Key)
 		assert.Equal(t, settings.ScopeOwner, err.Scope)
 		assert.Equal(t, "foo", err.Tenant)
 		assert.Equal(t, 1, err.Used)
@@ -301,7 +301,7 @@ func Test_newScopedResourcePoolLimiterFromFactory(t *testing.T) {
 	var errLimited ErrorResourceLimited[int]
 	if assert.ErrorAs(t, l.Use(ctx1, 1), &errLimited) {
 		t.Log(errLimited)
-		assert.Equal(t, "", errLimited.Key)
+		assert.Empty(t, errLimited.Key)
 		assert.Equal(t, settings.ScopeOwner, errLimited.Scope)
 		assert.Equal(t, "foo", errLimited.Tenant)
 		assert.Equal(t, 1, errLimited.Used)

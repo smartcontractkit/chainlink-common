@@ -1,7 +1,6 @@
 package encodings_test
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -35,7 +34,7 @@ func TestArray(t *testing.T) {
 
 	t.Run("NewArray returns error if elements is nil", func(t *testing.T) {
 		_, err := encodings.NewArray(0, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidConfig))
+		require.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	t.Run("GetType returns Array of underlying type", func(t *testing.T) {
@@ -56,7 +55,7 @@ func TestArray(t *testing.T) {
 
 	t.Run("Encode returns an error if Array is the wrong size", func(t *testing.T) {
 		_, err := testArray.Encode([2]int{anyValue, anyValue}, []byte{})
-		require.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		require.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("Decode returns Array", func(t *testing.T) {
@@ -80,7 +79,7 @@ func TestArray(t *testing.T) {
 
 	t.Run("Encode returns an error if the value is not a Array or array", func(t *testing.T) {
 		_, err := testArray.Encode(anyValue, []byte{})
-		require.True(t, errors.Is(err, types.ErrNotASlice))
+		require.ErrorIs(t, err, types.ErrNotASlice)
 	})
 
 	t.Run("Decode returns an error if the underlying type returns an error", func(t *testing.T) {
@@ -90,7 +89,7 @@ func TestArray(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes for the size", func(t *testing.T) {
 		_, _, err := testArray.Decode([]byte{1})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("Size fixed size", func(t *testing.T) {

@@ -260,8 +260,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
 	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
 
-	assert.Equal(t, `{"global":{}}`, got[envCRESettings])
-	assert.Equal(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
+	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
+	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
 }
 
 func TestGetMap(t *testing.T) {

@@ -59,7 +59,7 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 
 	base64EncodedBinaryData := artifacts.GetBinaryData()
 	// Compare if the compiled WASM binary is the same as the CRE-CLI output
-	s.Equal(636684, len(base64EncodedBinaryData), "binary data size should be same as CRE-CLI output")
+	s.Len(base64EncodedBinaryData, 636684, "binary data size should be same as CRE-CLI output")
 	s.Equal("m1upG3s6AJQvOA8AAK295+EaARsHAADf/YcBgFURwPQAANDq5wFQVVVVVVVVVVVV3ZMQEI7ZtgMAAKqq",
 		string(base64EncodedBinaryData[0:80]))
 	s.Equal("gUEoFNoVRfyHGTsZmdg7wCJbGVibOhmYmsDAytgg92FTTmiddpI/x8SYzdANBkPGhtLoj/Hn7jvK26YE",

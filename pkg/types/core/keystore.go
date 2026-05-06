@@ -7,6 +7,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -72,7 +73,7 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 	ctx, cancel := s.stopCh.NewCtx()
 	defer cancel()
 	if r != rand.Reader {
-		return nil, fmt.Errorf("invalid reader: only crypto/rand.Reader is supported")
+		return nil, errors.New("invalid reader: only crypto/rand.Reader is supported")
 	}
 	if opts != crypto.Hash(0) { // x509.PureEd25519
 		return nil, fmt.Errorf("invalid opts, only crypto.Hash(0) is supported: %v", opts)
@@ -100,7 +101,7 @@ func NewSingleAccountSigner(account *string, signer crypto.Signer) (*singleAccou
 
 func (c *singleAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
 	if c.account == nil {
-		return nil, fmt.Errorf("account is nil")
+		return nil, errors.New("account is nil")
 	}
 
 	return []string{*c.account}, nil
@@ -114,7 +115,7 @@ func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []b
 }
 
 func (c *singleAccountSigner) Decrypt(ctx context.Context, account string, encrypted []byte) (decrypted []byte, err error) {
-	return nil, fmt.Errorf("decrypt not supported for single account signer")
+	return nil, errors.New("decrypt not supported for single account signer")
 }
 
 type Decrypter interface {
@@ -145,7 +146,7 @@ func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte)
 		return nil, fmt.Errorf("account not found: %s", account)
 	}
 	if c.signer == nil {
-		return nil, fmt.Errorf("signer is nil")
+		return nil, errors.New("signer is nil")
 	}
 
 	// For the `StandardCapabilityAccount`, assert that the user is passing in correctly domain separated data.
@@ -153,7 +154,7 @@ func (c *signerDecrypter) Sign(ctx context.Context, account string, data []byte)
 	// Implicitly, this also requires the message length to be <= 1024 bytes.
 	if account == StandardCapabilityAccount {
 		if !bytes.HasPrefix(data, genericPrefix[:97]) {
-			return nil, fmt.Errorf("data does not have expected prefix")
+			return nil, errors.New("data does not have expected prefix")
 		}
 	}
 
@@ -165,7 +166,7 @@ func (c *signerDecrypter) Decrypt(ctx context.Context, account string, encrypted
 		return nil, fmt.Errorf("account not found: %s", account)
 	}
 	if c.decrypter == nil {
-		return nil, fmt.Errorf("decrypter is nil")
+		return nil, errors.New("decrypter is nil")
 	}
 	return c.decrypter.Decrypt(encrypted)
 }

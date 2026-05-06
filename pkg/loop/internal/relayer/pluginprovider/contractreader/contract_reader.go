@@ -650,7 +650,7 @@ func convertSequencesWithKeyToVersionedBytesProto(sequences iter.Seq2[string, ty
 
 func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, reply *pb.BatchGetLatestValuesReply) (types.BatchGetLatestValuesResult, error) {
 	if reply == nil {
-		return nil, fmt.Errorf("received nil reply from grpc BatchGetLatestValues")
+		return nil, errors.New("received nil reply from grpc BatchGetLatestValues")
 	}
 
 	result := make(types.BatchGetLatestValuesResult)
@@ -691,7 +691,7 @@ func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, r
 
 func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestValuesRequest, impl types.ContractReader) (types.BatchGetLatestValuesRequest, error) {
 	if pbRequest == nil {
-		return nil, fmt.Errorf("received nil request from grpc BatchGetLatestValues")
+		return nil, errors.New("received nil request from grpc BatchGetLatestValues")
 	}
 
 	request := make(types.BatchGetLatestValuesRequest)

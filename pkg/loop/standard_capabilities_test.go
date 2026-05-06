@@ -32,7 +32,7 @@ func TestPluginStandardCapabilities(t *testing.T) {
 			ctx := t.Context()
 			infos, err := s.Infos(ctx)
 			assert.NoError(t, err)
-			assert.Equal(t, 2, len(infos))
+			assert.Len(t, infos, 2)
 			assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 			assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 
@@ -50,7 +50,7 @@ func TestRunningStandardCapabilitiesPluginOutOfProcess(t *testing.T) {
 
 	infos, err := scs.Infos(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(infos))
+	assert.Len(t, infos, 2)
 	assert.Equal(t, capabilities.CapabilityTypeAction, infos[0].CapabilityType)
 	assert.Equal(t, capabilities.CapabilityTypeTarget, infos[1].CapabilityType)
 

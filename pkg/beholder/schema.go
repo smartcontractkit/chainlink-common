@@ -2,7 +2,6 @@
 package beholder
 
 import (
-	"fmt"
 	"path"
 	"regexp"
 	"strings"
@@ -50,7 +49,7 @@ func toSchemaPath(m proto.Message, basePath string) string {
 
 	// Join the path components again
 	protoPath = strings.Join(pp, "/")
-	protoPath = fmt.Sprintf("%s.proto", protoPath)
+	protoPath = protoPath + ".proto"
 
 	// Return the full schema path
 	return path.Join(basePath, protoPath)

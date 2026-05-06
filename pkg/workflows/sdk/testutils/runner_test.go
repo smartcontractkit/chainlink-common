@@ -57,7 +57,7 @@ func TestRunner(t *testing.T) {
 
 		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
-		assert.Len(t, target.Errors, 0)
+		assert.Empty(t, target.Errors)
 		assert.Len(t, target.Inputs, 1)
 		assert.Equal(t, rawConsensus.Output, target.Inputs[0].SignedReport)
 	})
@@ -130,7 +130,7 @@ func TestRunner(t *testing.T) {
 		consensusMock := ocr3captest.IdenticalConsensus[basicaction.ActionOutputs](runner)
 
 		runner.Run(wf)
-		assert.True(t, errors.Is(runner.Err(), expectedErr))
+		assert.ErrorIs(t, runner.Err(), expectedErr)
 
 		consensus := consensusMock.GetStep("consensus")
 		assert.False(t, consensus.WasRun)
@@ -190,8 +190,8 @@ func TestRunner(t *testing.T) {
 		runner.Run(workflow)
 
 		actualErr := runner.Err()
-		assert.True(t, errors.Is(actualErr, triggerMock.regErr))
-		assert.True(t, errors.Is(actualErr, executableMock.regErr))
+		assert.ErrorIs(t, actualErr, triggerMock.regErr)
+		assert.ErrorIs(t, actualErr, executableMock.regErr)
 	})
 
 	t.Run("Run captures unregister errors", func(t *testing.T) {
@@ -208,8 +208,8 @@ func TestRunner(t *testing.T) {
 		runner.Run(workflow)
 
 		actualErr := runner.Err()
-		assert.True(t, errors.Is(actualErr, triggerMock.unregErr))
-		assert.True(t, errors.Is(actualErr, executableMock.unregErr))
+		assert.ErrorIs(t, actualErr, triggerMock.unregErr)
+		assert.ErrorIs(t, actualErr, executableMock.unregErr)
 	})
 
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {

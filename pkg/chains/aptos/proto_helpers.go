@@ -3,6 +3,7 @@ package aptos
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	typeaptos "github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
 )
@@ -144,6 +145,9 @@ func ConvertTypeTagFromProto(proto *TypeTag) (*typeaptos.TypeTag, error) {
 		genericValue := proto.GetGeneric()
 		if genericValue == nil {
 			return nil, errors.New("generic type tag missing generic value")
+		}
+		if genericValue.Index > math.MaxUint16 {
+			return nil, fmt.Errorf("generic type index out of range: %d", genericValue.Index)
 		}
 		impl = typeaptos.GenericTag{
 			Index: uint16(genericValue.Index),

@@ -249,6 +249,10 @@ func (s staticRelayer) Solana() (types.SolanaService, error) {
 	return nil, nil
 }
 
+func (s staticRelayer) Stellar() (types.StellarService, error) {
+	return nil, nil
+}
+
 func (s staticRelayer) Aptos() (types.AptosService, error) {
 	return nil, nil
 }

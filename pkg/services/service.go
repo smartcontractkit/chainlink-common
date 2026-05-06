@@ -107,6 +107,36 @@ func (e *Engine) GoTick(ticker *timeutil.Ticker, fn func(context.Context)) {
 	})
 }
 
+// GoTickUntil is like GoTick but halts when fn returns true, and closes the returned chan.
+func (e *Engine) GoTickUntil(ticker *timeutil.Ticker, fn func(context.Context) bool) <-chan struct{} {
+	ch := make(chan struct{})
+	e.Go(func(ctx context.Context) {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if fn(ctx) {
+					close(ch)
+					return
+				}
+			}
+		}
+	})
+	return ch
+}
+
+// WaitFor blocks on receiving from ch then return true, or exits early if the Engine is closed and returns false.
+func (e *Engine) WaitFor(ch <-chan struct{}) bool {
+	select {
+	case <-e.StopChan:
+		return false
+	case <-ch:
+	}
+	return true
+}
+
 // Tracer returns the otel tracer with service attributes included.
 func (e *Engine) Tracer() trace.Tracer {
 	return e.tracer

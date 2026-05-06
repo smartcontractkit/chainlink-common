@@ -82,7 +82,7 @@ type BaseTriggerMetrics interface {
 	IncAckMemoryOutcome(outcome string)
 	// AddPendingEvents adjusts the live gauge of events awaiting ACK. Positive on insert, negative on ACK/unregister.
 	AddPendingEvents(delta int64)
-	// IncStoppedResending increments the counter of events where the node exhausted max retries and stopped resending.
+	// IncStoppedResending records a gauge (Unix seconds) when the node exhausted max retries and stopped resending.
 	IncStoppedResending(triggerID, eventID string, attempts int)
 }
 

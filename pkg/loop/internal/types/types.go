@@ -50,6 +50,7 @@ type Relayer interface {
 	TON() (types.TONService, error)
 	Solana() (types.SolanaService, error)
 	Aptos() (types.AptosService, error)
+	Stellar() (types.StellarService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)

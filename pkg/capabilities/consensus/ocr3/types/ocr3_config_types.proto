@@ -19,4 +19,43 @@ message ReportingPluginConfig {
   uint64 outcomePruningThreshold = 7;
   google.protobuf.Duration requestTimeout = 8;
   uint64 historical_outcome_expiry_seq_nr_span = 9;
+
+  // --- OCR3_1-only fields (added under OCRBump) ------------------------
+  // Consumed only by the OCR3_1 factory; ignored by the OCR3 factory.
+  // Operators may leave them unset under OCR3; zero values fall back to
+  // plugin defaults when the OCR3_1 factory is used.
+
+  // maxReportsPlusPrecursorBytes caps the precursor emitted by
+  // StateTransition. OCR3_1's MaxMaxReportsPlusPrecursorLength is 5 MiB.
+  uint32 maxReportsPlusPrecursorBytes = 10;
+
+  // maxKeyValueModifiedKeysPlusValuesBytes caps the KV write budget of a
+  // single StateTransition. OCR3_1's cap is 10 MiB.
+  uint32 maxKeyValueModifiedKeysPlusValuesBytes = 11;
+
+  // maxBlobPayloadBytes caps a single blob's payload size. OCR3_1's cap
+  // is 5 MiB. For CRE consensus, set to the largest expected workflow
+  // input.
+  uint32 maxBlobPayloadBytes = 12;
+
+  // blobExpirationK is the number of seqNrs a broadcast blob must survive
+  // past its broadcast. Must cover the full round lifetime plus any epoch
+  // retry window (DeltaStage). Default 60. Zone-a (DeltaRound=0) may need
+  // 150. See plan §3.4.
+  uint64 blobExpirationK = 13;
+
+  // maxKeyValueModifiedKeys caps the number of distinct keys a single
+  // StateTransition may modify (write or delete). OCR3_1's cap is 10_000.
+  uint32 maxKeyValueModifiedKeys = 14;
+
+  // maxPerOracleUnexpiredBlobCount caps the number of unreaped blobs a
+  // single oracle may have outstanding. Must account for blob reaping
+  // intervals "in the tens of seconds" per libocr docs. Plan §3.7 step 8
+  // sizes this at 500.
+  uint32 maxPerOracleUnexpiredBlobCount = 15;
+
+  // maxPerOracleUnexpiredBlobCumulativePayloadBytes caps the cumulative
+  // payload bytes for all unreaped blobs from a single oracle. Plan §3.7
+  // step 8 sizes this at MaxPerOracleUnexpiredBlobCount × MaxBlobPayloadBytes.
+  uint64 maxPerOracleUnexpiredBlobCumulativePayloadBytes = 16;
 }

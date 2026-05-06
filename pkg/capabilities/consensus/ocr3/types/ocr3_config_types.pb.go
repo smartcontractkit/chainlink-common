@@ -35,8 +35,35 @@ type ReportingPluginConfig struct {
 	OutcomePruningThreshold          uint64               `protobuf:"varint,7,opt,name=outcomePruningThreshold,proto3" json:"outcomePruningThreshold,omitempty"`
 	RequestTimeout                   *durationpb.Duration `protobuf:"bytes,8,opt,name=requestTimeout,proto3" json:"requestTimeout,omitempty"`
 	HistoricalOutcomeExpirySeqNrSpan uint64               `protobuf:"varint,9,opt,name=historical_outcome_expiry_seq_nr_span,json=historicalOutcomeExpirySeqNrSpan,proto3" json:"historical_outcome_expiry_seq_nr_span,omitempty"`
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	// maxReportsPlusPrecursorBytes caps the precursor emitted by
+	// StateTransition. OCR3_1's MaxMaxReportsPlusPrecursorLength is 5 MiB.
+	MaxReportsPlusPrecursorBytes uint32 `protobuf:"varint,10,opt,name=maxReportsPlusPrecursorBytes,proto3" json:"maxReportsPlusPrecursorBytes,omitempty"`
+	// maxKeyValueModifiedKeysPlusValuesBytes caps the KV write budget of a
+	// single StateTransition. OCR3_1's cap is 10 MiB.
+	MaxKeyValueModifiedKeysPlusValuesBytes uint32 `protobuf:"varint,11,opt,name=maxKeyValueModifiedKeysPlusValuesBytes,proto3" json:"maxKeyValueModifiedKeysPlusValuesBytes,omitempty"`
+	// maxBlobPayloadBytes caps a single blob's payload size. OCR3_1's cap
+	// is 5 MiB. For CRE consensus, set to the largest expected workflow
+	// input.
+	MaxBlobPayloadBytes uint32 `protobuf:"varint,12,opt,name=maxBlobPayloadBytes,proto3" json:"maxBlobPayloadBytes,omitempty"`
+	// blobExpirationK is the number of seqNrs a broadcast blob must survive
+	// past its broadcast. Must cover the full round lifetime plus any epoch
+	// retry window (DeltaStage). Default 60. Zone-a (DeltaRound=0) may need
+	// 150. See plan §3.4.
+	BlobExpirationK uint64 `protobuf:"varint,13,opt,name=blobExpirationK,proto3" json:"blobExpirationK,omitempty"`
+	// maxKeyValueModifiedKeys caps the number of distinct keys a single
+	// StateTransition may modify (write or delete). OCR3_1's cap is 10_000.
+	MaxKeyValueModifiedKeys uint32 `protobuf:"varint,14,opt,name=maxKeyValueModifiedKeys,proto3" json:"maxKeyValueModifiedKeys,omitempty"`
+	// maxPerOracleUnexpiredBlobCount caps the number of unreaped blobs a
+	// single oracle may have outstanding. Must account for blob reaping
+	// intervals "in the tens of seconds" per libocr docs. Plan §3.7 step 8
+	// sizes this at 500.
+	MaxPerOracleUnexpiredBlobCount uint32 `protobuf:"varint,15,opt,name=maxPerOracleUnexpiredBlobCount,proto3" json:"maxPerOracleUnexpiredBlobCount,omitempty"`
+	// maxPerOracleUnexpiredBlobCumulativePayloadBytes caps the cumulative
+	// payload bytes for all unreaped blobs from a single oracle. Plan §3.7
+	// step 8 sizes this at MaxPerOracleUnexpiredBlobCount × MaxBlobPayloadBytes.
+	MaxPerOracleUnexpiredBlobCumulativePayloadBytes uint64 `protobuf:"varint,16,opt,name=maxPerOracleUnexpiredBlobCumulativePayloadBytes,proto3" json:"maxPerOracleUnexpiredBlobCumulativePayloadBytes,omitempty"`
+	unknownFields                                   protoimpl.UnknownFields
+	sizeCache                                       protoimpl.SizeCache
 }
 
 func (x *ReportingPluginConfig) Reset() {
@@ -132,11 +159,60 @@ func (x *ReportingPluginConfig) GetHistoricalOutcomeExpirySeqNrSpan() uint64 {
 	return 0
 }
 
+func (x *ReportingPluginConfig) GetMaxReportsPlusPrecursorBytes() uint32 {
+	if x != nil {
+		return x.MaxReportsPlusPrecursorBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxKeyValueModifiedKeysPlusValuesBytes() uint32 {
+	if x != nil {
+		return x.MaxKeyValueModifiedKeysPlusValuesBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxBlobPayloadBytes() uint32 {
+	if x != nil {
+		return x.MaxBlobPayloadBytes
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetBlobExpirationK() uint64 {
+	if x != nil {
+		return x.BlobExpirationK
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxKeyValueModifiedKeys() uint32 {
+	if x != nil {
+		return x.MaxKeyValueModifiedKeys
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxPerOracleUnexpiredBlobCount() uint32 {
+	if x != nil {
+		return x.MaxPerOracleUnexpiredBlobCount
+	}
+	return 0
+}
+
+func (x *ReportingPluginConfig) GetMaxPerOracleUnexpiredBlobCumulativePayloadBytes() uint64 {
+	if x != nil {
+		return x.MaxPerOracleUnexpiredBlobCumulativePayloadBytes
+	}
+	return 0
+}
+
 var File_ocr3_config_types_proto protoreflect.FileDescriptor
 
 const file_ocr3_config_types_proto_rawDesc = "" +
 	"\n" +
-	"\x17ocr3_config_types.proto\x12\x11ocr3_config_types\x1a\x1egoogle/protobuf/duration.proto\"\x8b\x04\n" +
+	"\x17ocr3_config_types.proto\x12\x11ocr3_config_types\x1a\x1egoogle/protobuf/duration.proto\"\xef\a\n" +
 	"\x15ReportingPluginConfig\x120\n" +
 	"\x13maxQueryLengthBytes\x18\x01 \x01(\rR\x13maxQueryLengthBytes\x12<\n" +
 	"\x19maxObservationLengthBytes\x18\x02 \x01(\rR\x19maxObservationLengthBytes\x124\n" +
@@ -146,7 +222,15 @@ const file_ocr3_config_types_proto_rawDesc = "" +
 	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSize\x128\n" +
 	"\x17outcomePruningThreshold\x18\a \x01(\x04R\x17outcomePruningThreshold\x12A\n" +
 	"\x0erequestTimeout\x18\b \x01(\v2\x19.google.protobuf.DurationR\x0erequestTimeout\x12O\n" +
-	"%historical_outcome_expiry_seq_nr_span\x18\t \x01(\x04R historicalOutcomeExpirySeqNrSpanB#Z!capabilities/consensus/ocr3/typesb\x06proto3"
+	"%historical_outcome_expiry_seq_nr_span\x18\t \x01(\x04R historicalOutcomeExpirySeqNrSpan\x12B\n" +
+	"\x1cmaxReportsPlusPrecursorBytes\x18\n" +
+	" \x01(\rR\x1cmaxReportsPlusPrecursorBytes\x12V\n" +
+	"&maxKeyValueModifiedKeysPlusValuesBytes\x18\v \x01(\rR&maxKeyValueModifiedKeysPlusValuesBytes\x120\n" +
+	"\x13maxBlobPayloadBytes\x18\f \x01(\rR\x13maxBlobPayloadBytes\x12(\n" +
+	"\x0fblobExpirationK\x18\r \x01(\x04R\x0fblobExpirationK\x128\n" +
+	"\x17maxKeyValueModifiedKeys\x18\x0e \x01(\rR\x17maxKeyValueModifiedKeys\x12F\n" +
+	"\x1emaxPerOracleUnexpiredBlobCount\x18\x0f \x01(\rR\x1emaxPerOracleUnexpiredBlobCount\x12h\n" +
+	"/maxPerOracleUnexpiredBlobCumulativePayloadBytes\x18\x10 \x01(\x04R/maxPerOracleUnexpiredBlobCumulativePayloadBytesB#Z!capabilities/consensus/ocr3/typesb\x06proto3"
 
 var (
 	file_ocr3_config_types_proto_rawDescOnce sync.Once

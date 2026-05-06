@@ -8,6 +8,13 @@ import (
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
+const (
+	validOwnerA        = "0x1111111111111111111111111111111111111111"
+	validOwnerB        = "0x2222222222222222222222222222222222222222"
+	validExecutionID   = "1111111111111111111111111111111111111111111111111111111111111111"
+	validEnclavePubKey = "deadbeef"
+)
+
 func mustSecretsHash(t *testing.T, r SecretsResponseResult, p SecretsRequestParams) [32]byte {
 	t.Helper()
 	h, err := r.Hash(p)
@@ -25,10 +32,10 @@ func mustCapabilityHash(t *testing.T, r CapabilityResponseResult, p CapabilityRe
 func validSecretsParams() SecretsRequestParams {
 	return SecretsRequestParams{
 		WorkflowID:       "wf-1",
-		Owner:            "0x1234",
-		ExecutionID:      "exec-1",
+		Owner:            validOwnerA,
+		ExecutionID:      validExecutionID,
 		OrgID:            "org-1",
-		EnclavePublicKey: "pubkey-1",
+		EnclavePublicKey: validEnclavePubKey,
 		Attestation:      "att-a",
 		Secrets: []SecretIdentifier{
 			{Key: "alpha", Namespace: "ns-a"},
@@ -39,8 +46,8 @@ func validSecretsParams() SecretsRequestParams {
 func validCapabilityParams() CapabilityRequestParams {
 	return CapabilityRequestParams{
 		WorkflowID:   "wf-1",
-		Owner:        "0x1234",
-		ExecutionID:  "exec-1",
+		Owner:        validOwnerA,
+		ExecutionID:  validExecutionID,
 		ReferenceID:  "42",
 		CapabilityID: "write_ethereum-testnet-sepolia@1.0.0",
 		Payload:      "request-payload",
@@ -72,7 +79,7 @@ func TestSecretsResponseResultHash_IgnoresAttestationAndBindsRequestAndResponse(
 	require.Equal(t, mustSecretsHash(t, result, params), mustSecretsHash(t, result, sameButDifferentAttestation))
 
 	differentRequest := params
-	differentRequest.Owner = "0x9999"
+	differentRequest.Owner = validOwnerB
 	require.NotEqual(t, mustSecretsHash(t, result, params), mustSecretsHash(t, result, differentRequest))
 
 	differentResponse := result
@@ -164,9 +171,38 @@ func TestSecretsRequestParams_Validate(t *testing.T) {
 	}{
 		{"missing workflow_id", func(p *SecretsRequestParams) { p.WorkflowID = "" }, "workflow_id is required"},
 		{"missing owner", func(p *SecretsRequestParams) { p.Owner = "" }, "owner is required"},
+		{"owner without 0x prefix", func(p *SecretsRequestParams) {
+			p.Owner = "1111111111111111111111111111111111111111"
+		}, "owner must be a 0x-prefixed 20-byte hex address"},
+		{"owner wrong length", func(p *SecretsRequestParams) { p.Owner = "0x1234" }, "owner must be a 0x-prefixed 20-byte hex address"},
+		{"owner non-hex digits", func(p *SecretsRequestParams) {
+			p.Owner = "0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+		}, "owner must be a 0x-prefixed 20-byte hex address"},
 		{"missing execution_id", func(p *SecretsRequestParams) { p.ExecutionID = "" }, "execution_id is required"},
+		{"execution_id wrong length", func(p *SecretsRequestParams) { p.ExecutionID = "abcd" }, "execution_id must be 32 bytes hex-encoded"},
+		{"execution_id with 0x prefix", func(p *SecretsRequestParams) {
+			p.ExecutionID = "0x" + validExecutionID[:62]
+		}, "execution_id must be 32 bytes hex-encoded"},
+		{"execution_id non-hex digits", func(p *SecretsRequestParams) {
+			p.ExecutionID = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+		}, "execution_id must be 32 bytes hex-encoded"},
 		{"missing enclave_public_key", func(p *SecretsRequestParams) { p.EnclavePublicKey = "" }, "enclave_public_key is required"},
+		{"enclave_public_key non-hex digits", func(p *SecretsRequestParams) {
+			p.EnclavePublicKey = "not-hex"
+		}, "enclave_public_key must be hex-encoded"},
 		{"empty secrets slice", func(p *SecretsRequestParams) { p.Secrets = nil }, "secrets must be non-empty"},
+		{"secret with empty key", func(p *SecretsRequestParams) {
+			p.Secrets = []SecretIdentifier{{Key: "", Namespace: "ns"}}
+		}, "secrets[0].key is required"},
+		{"secret with empty namespace", func(p *SecretsRequestParams) {
+			p.Secrets = []SecretIdentifier{{Key: "k", Namespace: ""}}
+		}, "secrets[0].namespace is required"},
+		{"second secret with empty key reports its index", func(p *SecretsRequestParams) {
+			p.Secrets = []SecretIdentifier{
+				{Key: "k", Namespace: "ns"},
+				{Key: "", Namespace: "ns"},
+			}
+		}, "secrets[1].key is required"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -198,7 +234,15 @@ func TestCapabilityRequestParams_Validate(t *testing.T) {
 	}{
 		{"missing workflow_id", func(p *CapabilityRequestParams) { p.WorkflowID = "" }, "workflow_id is required"},
 		{"missing owner", func(p *CapabilityRequestParams) { p.Owner = "" }, "owner is required"},
+		{"owner wrong length", func(p *CapabilityRequestParams) { p.Owner = "0x1234" }, "owner must be a 0x-prefixed 20-byte hex address"},
+		{"owner without 0x prefix", func(p *CapabilityRequestParams) {
+			p.Owner = "1111111111111111111111111111111111111111"
+		}, "owner must be a 0x-prefixed 20-byte hex address"},
 		{"missing execution_id", func(p *CapabilityRequestParams) { p.ExecutionID = "" }, "execution_id is required"},
+		{"execution_id wrong length", func(p *CapabilityRequestParams) { p.ExecutionID = "abcd" }, "execution_id must be 32 bytes hex-encoded"},
+		{"execution_id non-hex digits", func(p *CapabilityRequestParams) {
+			p.ExecutionID = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+		}, "execution_id must be 32 bytes hex-encoded"},
 		{"missing reference_id", func(p *CapabilityRequestParams) { p.ReferenceID = "" }, "reference_id is required"},
 		{"missing capability_id", func(p *CapabilityRequestParams) { p.CapabilityID = "" }, "capability_id is required"},
 		{"missing payload", func(p *CapabilityRequestParams) { p.Payload = "" }, "payload is required"},

@@ -3,6 +3,7 @@ package confidentialrelay
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash"
@@ -55,9 +56,11 @@ type SecretsResponseResult struct {
 	Secrets []SecretEntry `json:"secrets"`
 }
 
-// Validate rejects request params that are missing fields the canonical hash binds to.
-// Without these fields a signature would cover a less-unique context than the caller
-// believes, which would let a malicious gateway replay it across requests.
+// Validate rejects request params that are missing fields the canonical hash binds to,
+// or that carry a malformed value for a structured field. Without these fields a
+// signature would cover a less-unique context than the caller believes, which would
+// let a malicious gateway replay it across requests; alternate encodings of structured
+// fields would similarly let two distinct logical requests collide on the same hash.
 func (p SecretsRequestParams) Validate() error {
 	if p.WorkflowID == "" {
 		return errors.New("workflow_id is required")
@@ -65,14 +68,26 @@ func (p SecretsRequestParams) Validate() error {
 	if p.Owner == "" {
 		return errors.New("owner is required")
 	}
+	if err := validateOwnerAddress(p.Owner); err != nil {
+		return err
+	}
 	if p.ExecutionID == "" {
 		return errors.New("execution_id is required")
+	}
+	if err := validateExecutionID(p.ExecutionID); err != nil {
+		return err
 	}
 	if p.EnclavePublicKey == "" {
 		return errors.New("enclave_public_key is required")
 	}
+	if err := validateEnclavePublicKey(p.EnclavePublicKey); err != nil {
+		return err
+	}
 	if len(p.Secrets) == 0 {
 		return errors.New("secrets must be non-empty")
+	}
+	if err := validateSecretIdentifiers(p.Secrets); err != nil {
+		return err
 	}
 	return nil
 }
@@ -135,9 +150,11 @@ type CapabilityResponseResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
-// Validate rejects request params that are missing fields the canonical hash binds to.
-// Without these fields a signature would cover a less-unique context than the caller
-// believes, which would let a malicious gateway replay it across requests.
+// Validate rejects request params that are missing fields the canonical hash binds to,
+// or that carry a malformed value for a structured field. Without these fields a
+// signature would cover a less-unique context than the caller believes, which would
+// let a malicious gateway replay it across requests; alternate encodings of structured
+// fields would similarly let two distinct logical requests collide on the same hash.
 func (p CapabilityRequestParams) Validate() error {
 	if p.WorkflowID == "" {
 		return errors.New("workflow_id is required")
@@ -145,8 +162,14 @@ func (p CapabilityRequestParams) Validate() error {
 	if p.Owner == "" {
 		return errors.New("owner is required")
 	}
+	if err := validateOwnerAddress(p.Owner); err != nil {
+		return err
+	}
 	if p.ExecutionID == "" {
 		return errors.New("execution_id is required")
+	}
+	if err := validateExecutionID(p.ExecutionID); err != nil {
+		return err
 	}
 	if p.ReferenceID == "" {
 		return errors.New("reference_id is required")
@@ -156,6 +179,55 @@ func (p CapabilityRequestParams) Validate() error {
 	}
 	if p.Payload == "" {
 		return errors.New("payload is required")
+	}
+	return nil
+}
+
+// validateOwnerAddress enforces the canonical "0x-prefixed 20-byte hex" Ethereum address
+// shape so two encodings of the same address (e.g., differing case or a missing prefix)
+// cannot produce different hashes.
+func validateOwnerAddress(s string) error {
+	if len(s) != 42 || s[:2] != "0x" {
+		return errors.New("owner must be a 0x-prefixed 20-byte hex address")
+	}
+	if _, err := hex.DecodeString(s[2:]); err != nil {
+		return errors.New("owner must be a 0x-prefixed 20-byte hex address")
+	}
+	return nil
+}
+
+// validateExecutionID enforces 32-byte hex with no prefix.
+func validateExecutionID(s string) error {
+	if len(s) != 64 {
+		return errors.New("execution_id must be 32 bytes hex-encoded (64 hex chars, no 0x prefix)")
+	}
+	if _, err := hex.DecodeString(s); err != nil {
+		return errors.New("execution_id must be 32 bytes hex-encoded (64 hex chars, no 0x prefix)")
+	}
+	return nil
+}
+
+// validateEnclavePublicKey requires hex-encoded bytes; length is intentionally not pinned
+// because the encoding length depends on the enclave's key type and is not yet contracted
+// in this package.
+func validateEnclavePublicKey(s string) error {
+	if _, err := hex.DecodeString(s); err != nil {
+		return errors.New("enclave_public_key must be hex-encoded")
+	}
+	return nil
+}
+
+// validateSecretIdentifiers rejects any entry with an empty Key or Namespace because the
+// canonical hash binds to them and an empty value would produce a signature over an
+// ambiguous selector.
+func validateSecretIdentifiers(secrets []SecretIdentifier) error {
+	for i, s := range secrets {
+		if s.Key == "" {
+			return fmt.Errorf("secrets[%d].key is required", i)
+		}
+		if s.Namespace == "" {
+			return fmt.Errorf("secrets[%d].namespace is required", i)
+		}
 	}
 	return nil
 }

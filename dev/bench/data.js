@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778062525662,
+  "lastUpdate": 1778066058774,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45780,6 +45780,66 @@ window.BENCHMARK_DATA = {
             "value": 139625,
             "unit": "ns/op",
             "extra": "8421 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "36506122+Fletch153@users.noreply.github.com",
+            "name": "Michael Fletcher",
+            "username": "Fletch153"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ecb19f434fafea99b496fd50bf07422dfb5ab57",
+          "message": "fix(aptos): range-check generic type index in proto conversion [PLEX-2890] (#2016)\n\nThe proto schema defines `GenericTag.index` as `uint32` but the Go domain\ntype stores it as `uint16`. `ConvertTypeTagFromProto` previously cast\ndirectly with `uint16(genericValue.Index)`, silently truncating any\nvalue above `math.MaxUint16` and causing a request to be interpreted\nas a different type parameter than the one supplied.\n\nReject indices greater than `math.MaxUint16` at the proto-helper\nboundary, matching the existing check in `typeTagFromCapability` on\nthe public Aptos View capability path.\n\nCo-authored-by: Yashvardhan Nevatia <yashvardhan.nevatia@smartcontract.com>",
+          "timestamp": "2026-05-06T11:02:46Z",
+          "tree_id": "edbca61df87c167f9d8231a56a8714b931e789ac",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5ecb19f434fafea99b496fd50bf07422dfb5ab57"
+        },
+        "date": 1778066057013,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 282.2,
+            "unit": "ns/op",
+            "extra": "4099881 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 58090,
+            "unit": "ns/op",
+            "extra": "20512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 294.4,
+            "unit": "ns/op",
+            "extra": "4069122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 56883,
+            "unit": "ns/op",
+            "extra": "21025 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22728,
+            "unit": "ns/op",
+            "extra": "52956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 98822,
+            "unit": "ns/op",
+            "extra": "12145 times\n4 procs"
           }
         ]
       }

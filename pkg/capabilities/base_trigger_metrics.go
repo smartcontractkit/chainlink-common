@@ -11,18 +11,18 @@ import (
 )
 
 type BaseTriggerBeholderMetrics struct {
-	capabilityID          string
-	retryCount            metric.Int64Counter
-	ackCount              metric.Int64Counter
-	ackErrorCount         metric.Int64Counter
-	ackMemoryOutcomeCount metric.Int64Counter
-	inboxMissingCount     metric.Int64Counter
-	inboxFullCount        metric.Int64Counter
-	timeToAckMs           metric.Int64Histogram
-	ackAttempts           metric.Int64Histogram // attempts distribution at ACK time
-	activeRegistrations   metric.Int64UpDownCounter
-	pendingEvents         metric.Int64UpDownCounter
-	stoppedResendingCount metric.Int64Counter
+	capabilityID              string
+	retryCount                metric.Int64Counter
+	ackCount                  metric.Int64Counter
+	ackErrorCount             metric.Int64Counter
+	ackMemoryOutcomeCount     metric.Int64Counter
+	inboxMissingCount         metric.Int64Counter
+	inboxFullCount            metric.Int64Counter
+	timeToAckMs               metric.Int64Histogram
+	ackAttempts               metric.Int64Histogram // attempts distribution at ACK time
+	activeRegistrations       metric.Int64UpDownCounter
+	pendingEvents             metric.Int64UpDownCounter
+	stoppedResendingTimestamp metric.Int64Gauge
 }
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
@@ -75,24 +75,26 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
-	stoppedResendingCount, err := beholder.GetMeter().Int64Counter("capabilities_base_trigger_stopped_resending_total")
+	stoppedResendingTimestamp, err := beholder.GetMeter().Int64Gauge(
+		"capabilities_base_trigger_stopped_resending_timestamp",
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &BaseTriggerBeholderMetrics{
-		capabilityID:          capabilityID,
-		retryCount:            retryCount,
-		ackCount:              ackCount,
-		ackErrorCount:         ackErrorCount,
-		ackMemoryOutcomeCount: ackMemoryOutcomeCount,
-		inboxMissingCount:     inboxMissingCount,
-		inboxFullCount:        inboxFullCount,
-		timeToAckMs:           timeToAckMs,
-		ackAttempts:           ackAttempts,
-		activeRegistrations:   activeRegistrations,
-		pendingEvents:         pendingEvents,
-		stoppedResendingCount: stoppedResendingCount,
+		capabilityID:              capabilityID,
+		retryCount:                retryCount,
+		ackCount:                  ackCount,
+		ackErrorCount:             ackErrorCount,
+		ackMemoryOutcomeCount:     ackMemoryOutcomeCount,
+		inboxMissingCount:         inboxMissingCount,
+		inboxFullCount:            inboxFullCount,
+		timeToAckMs:               timeToAckMs,
+		ackAttempts:               ackAttempts,
+		activeRegistrations:       activeRegistrations,
+		pendingEvents:             pendingEvents,
+		stoppedResendingTimestamp: stoppedResendingTimestamp,
 	}, nil
 }
 
@@ -180,7 +182,7 @@ func (m *BaseTriggerBeholderMetrics) AddPendingEvents(delta int64) {
 }
 
 func (m *BaseTriggerBeholderMetrics) IncStoppedResending(triggerID, eventID string, attempts int) {
-	m.stoppedResendingCount.Add(context.Background(), 1,
+	m.stoppedResendingTimestamp.Record(context.Background(), time.Now().Unix(),
 		metric.WithAttributes(
 			attribute.String("capability_id", m.capabilityID),
 			attribute.String("trigger_id", triggerID),

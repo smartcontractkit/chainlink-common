@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778066058774,
+  "lastUpdate": 1778069860181,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -45840,6 +45840,66 @@ window.BENCHMARK_DATA = {
             "value": 98822,
             "unit": "ns/op",
             "extra": "12145 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "36506122+Fletch153@users.noreply.github.com",
+            "name": "Michael Fletcher",
+            "username": "Fletch153"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7f10be016c898504f51912a9d4f86c1ff5d7963a",
+          "message": "fix(aptos): reject nil tx entries in AccountTransactionsReply [PLEX-2889] (#2017)\n\n* fix(aptos): reject nil tx entries in AccountTransactionsReply [PLEX-2889]\n\nConvertTransactionFromProto(nil) returns (nil, nil), which let\nConvertAccountTransactionsReplyFromProto silently produce a slice\ncontaining nil transactions. Downstream callers (capability scan,\nGetTransmitterTransactions) dereference these without checking,\ncrashing if a malicious or buggy relayer sends nil entries.\n\nReject nil protoTx with an indexed error instead.\n\n* refactor(aptos): nil-check converted tx instead of proto input\n\nEquivalent guard but reads naturally as \"did the conversion produce\na usable transaction\" — also catches future converter changes that\nmight return nil for non-nil input.\n\n---------\n\nCo-authored-by: Yashvardhan Nevatia <yashvardhan.nevatia@smartcontract.com>",
+          "timestamp": "2026-05-06T12:06:07Z",
+          "tree_id": "1cc9f8fe13aadf0f51478f9c16c4569ae1a227e8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7f10be016c898504f51912a9d4f86c1ff5d7963a"
+        },
+        "date": 1778069857491,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368,
+            "unit": "ns/op",
+            "extra": "3044763 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 75417,
+            "unit": "ns/op",
+            "extra": "15819 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 385.1,
+            "unit": "ns/op",
+            "extra": "3050191 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 76148,
+            "unit": "ns/op",
+            "extra": "15796 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29662,
+            "unit": "ns/op",
+            "extra": "39655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 129574,
+            "unit": "ns/op",
+            "extra": "9297 times\n4 procs"
           }
         ]
       }

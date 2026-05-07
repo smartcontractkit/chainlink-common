@@ -37,6 +37,8 @@ type Relayer interface {
 	Solana() (types.SolanaService, error)
 	// Aptos returns AptosService that provides access to Aptos specific functionalities
 	Aptos() (types.AptosService, error)
+	// Stellar returns StellarService that provides access to Stellar specific functionalities
+	Stellar() (types.StellarService, error)
 	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (PluginProvider, error)
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error)

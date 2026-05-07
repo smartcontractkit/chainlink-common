@@ -2,7 +2,6 @@ package binary_test
 
 import (
 	rawbinary "encoding/binary"
-	"errors"
 	"math"
 	"reflect"
 	"testing"
@@ -28,7 +27,7 @@ func TestFloat64(t *testing.T) {
 		decoded, remaining, err := f.Decode(encoded)
 
 		require.NoError(t, err)
-		assert.Equal(t, 0, len(remaining))
+		assert.Empty(t, remaining)
 		assert.Equal(t, fVal, decoded)
 	})
 
@@ -46,7 +45,7 @@ func TestFloat64(t *testing.T) {
 
 	t.Run("Encode returns an error if input is not a Float64", func(t *testing.T) {
 		_, err := f.Encode("not a Float64", nil)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 	t.Run("Decode leaves a suffix", func(t *testing.T) {
 		onlyFencoded, err := f.Encode(fVal, nil)
@@ -62,7 +61,7 @@ func TestFloat64(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes", func(t *testing.T) {
 		_, _, err := f.Decode([]byte{1, 2, 3})
-		assert.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		assert.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("GetType returns the correct type", func(t *testing.T) {

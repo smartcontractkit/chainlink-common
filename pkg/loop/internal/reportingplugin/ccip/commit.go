@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2"
@@ -73,7 +74,7 @@ func (c *CommitLOOPClient) NewCommitFactory(ctx context.Context, provider types.
 			ProviderServiceId: providerID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return resp.CommitFactoryServiceId, deps, nil
 	}

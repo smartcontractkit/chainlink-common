@@ -5,7 +5,8 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
+	"errors"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -63,7 +64,7 @@ func TestNewAuthHeaderV2(t *testing.T) {
 
 		assert.Equal(t, "2", parts[0], "Version should be 2")
 		assert.Equal(t, hex.EncodeToString(pubKey), parts[1], "Public key should match")
-		assert.Equal(t, fmt.Sprintf("%d", ts.UnixNano()), parts[2], "Timestamp should match")
+		assert.Equal(t, strconv.FormatInt(ts.UnixNano(), 10), parts[2], "Timestamp should match")
 		assert.Equal(t, hex.EncodeToString(expectedSignature), parts[3], "Signature should match")
 
 		mockSigner.AssertExpectations(t)
@@ -72,7 +73,7 @@ func TestNewAuthHeaderV2(t *testing.T) {
 		mockSigner := &MockSigner{}
 		ts := time.Now()
 
-		expectedErr := fmt.Errorf("signing failed")
+		expectedErr := errors.New("signing failed")
 		mockSigner.
 			On("Sign", t.Context(), hex.EncodeToString(pubKey), mock.Anything).
 			Return([]byte{}, expectedErr).
@@ -226,7 +227,6 @@ func TestRotatingAuth(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("creates valid rotating auth headers", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		dummySignature := ed25519.Sign(privKey, []byte("test data"))
@@ -262,7 +262,6 @@ func TestRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("reuses headers within TTL", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		dummySignature := ed25519.Sign(privKey, []byte("test data"))
@@ -287,7 +286,6 @@ func TestRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("handles signer errors", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 		expectedErr := assert.AnError
 
@@ -308,7 +306,6 @@ func TestRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("implements PerRPCCredentialsProvider interface", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 		dummySignature := ed25519.Sign(privKey, []byte("test data"))
 
@@ -333,7 +330,6 @@ func TestRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("respects transport security requirement", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 		dummySignature := ed25519.Sign(privKey, []byte("test data"))
 
@@ -362,7 +358,7 @@ func TestRotatingAuth(t *testing.T) {
 		ts := time.Now()
 		signature := ed25519.Sign(privKey, []byte("initial"))
 		initialHeaders := map[string]string{
-			"X-Beholder-Node-Auth-Token": "2:" + hex.EncodeToString(pubKey) + ":" + fmt.Sprintf("%d", ts.UnixNano()) + ":" + hex.EncodeToString(signature),
+			"X-Beholder-Node-Auth-Token": "2:" + hex.EncodeToString(pubKey) + ":" + strconv.FormatInt(ts.UnixNano(), 10) + ":" + hex.EncodeToString(signature),
 		}
 
 		// Use a very short TTL so it expires quickly
@@ -395,7 +391,6 @@ func TestRotatingAuth(t *testing.T) {
 // BenchmarkRotatingAuth_Headers_CachedPath benchmarks the fast path where headers are cached and within TTL.
 // This is the most common case in production.
 func BenchmarkRotatingAuth_Headers_CachedPath(b *testing.B) {
-
 	pubKey, privKey, err := ed25519.GenerateKey(nil)
 	require.NoError(b, err)
 
@@ -432,7 +427,6 @@ func BenchmarkRotatingAuth_Headers_CachedPath(b *testing.B) {
 // BenchmarkRotatingAuth_Headers_ExpiredPath benchmarks the slow path where headers need to be regenerated.
 // This happens when TTL expires.
 func BenchmarkRotatingAuth_Headers_ExpiredPath(b *testing.B) {
-
 	pubKey, privKey, err := ed25519.GenerateKey(nil)
 	require.NoError(b, err)
 
@@ -466,7 +460,6 @@ func BenchmarkRotatingAuth_Headers_ExpiredPath(b *testing.B) {
 // BenchmarkRotatingAuth_Headers_ParallelCached benchmarks concurrent access when headers are cached.
 // This simulates multiple goroutines making concurrent requests with valid cached headers.
 func BenchmarkRotatingAuth_Headers_ParallelCached(b *testing.B) {
-
 	pubKey, privKey, err := ed25519.GenerateKey(nil)
 	require.NoError(b, err)
 
@@ -506,7 +499,6 @@ func BenchmarkRotatingAuth_Headers_ParallelCached(b *testing.B) {
 // BenchmarkRotatingAuth_Headers_ParallelExpired benchmarks concurrent access when headers expire.
 // This tests contention on the mutex when multiple goroutines race to regenerate headers.
 func BenchmarkRotatingAuth_Headers_ParallelExpired(b *testing.B) {
-
 	pubKey, privKey, err := ed25519.GenerateKey(nil)
 	require.NoError(b, err)
 

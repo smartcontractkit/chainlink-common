@@ -36,7 +36,7 @@ type OffRampReaderGRPCClient struct {
 // NewOffRampReaderGRPCClient creates a new OffRampReaderGRPCClient. It is used by the reporting plugin to call the offramp reader service.
 // The client is created by wrapping a grpc client connection. It requires a brokerExt to allocate and serve the gas estimator server.
 // *must* be the same broker used by the server BCF-3061
-func NewOffRampReaderGRPCClient(brokerExt *net.BrokerExt, cc grpc.ClientConnInterface) *OffRampReaderGRPCClient {
+func NewOffRampReaderGRPCClient(brokerExt *net.BrokerExt, cc net.ClientConnInterface) *OffRampReaderGRPCClient {
 	return &OffRampReaderGRPCClient{client: ccippb.NewOffRampReaderClient(cc), b: brokerExt, conn: cc}
 }
 

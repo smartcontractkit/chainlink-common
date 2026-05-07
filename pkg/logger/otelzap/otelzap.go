@@ -25,7 +25,6 @@ type Option func(c *OtelZapCore)
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
 func NewCore(logger otellog.Logger, opts ...Option) zapcore.Core {
-
 	c := &OtelZapCore{
 		logger:       logger,
 		levelEnabler: zapcore.InfoLevel,

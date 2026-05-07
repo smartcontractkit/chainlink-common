@@ -25,13 +25,12 @@ type DualSourceEmitter struct {
 }
 
 func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter, chipIngressBatchEmitterEnabled bool) (Emitter, error) {
-
 	if chipIngressEmitter == nil {
-		return nil, fmt.Errorf("chip ingress emitter is nil")
+		return nil, errors.New("chip ingress emitter is nil")
 	}
 
 	if otelCollectorEmitter == nil {
-		return nil, fmt.Errorf("otel collector emitter is nil")
+		return nil, errors.New("otel collector emitter is nil")
 	}
 
 	logger, err := logger.New()
@@ -58,6 +57,7 @@ func (d *DualSourceEmitter) Close() error {
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	// Emit via OTLP first
 	if err := d.otelCollectorEmitter.Emit(ctx, body, attrKVs...); err != nil {
 		return err
 	}

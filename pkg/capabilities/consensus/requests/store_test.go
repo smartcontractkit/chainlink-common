@@ -28,7 +28,7 @@ func TestOCR3Store(t *testing.T) {
 	t.Run("all with 0 requests", func(t *testing.T) {
 		items, err := s.All()
 		require.NoError(t, err)
-		assert.Len(t, items, 0)
+		assert.Empty(t, items)
 	})
 
 	t.Run("Add", func(t *testing.T) {

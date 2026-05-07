@@ -96,7 +96,7 @@ func TestMercuryTrigger(t *testing.T) {
 	require.NoError(t, ts.UnregisterTrigger(ctx, registerUnregisterRequest))
 	err = ts.ProcessReport(mfr)
 	require.NoError(t, err)
-	require.Len(t, callback, 0)
+	require.Empty(t, callback)
 	require.NoError(t, ts.Close())
 }
 
@@ -203,15 +203,15 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 			// expect to eventually get updated feed value
 			break
 		}
-		require.True(t, retryCount < 100)
+		require.Less(t, retryCount, 100)
 		retryCount++
 	}
 
 	require.NoError(t, ts.UnregisterTrigger(ctx, cr2))
 	err = ts.ProcessReport(mfr1)
 	assert.NoError(t, err)
-	assert.Len(t, callback1, 0)
-	assert.Len(t, callback2, 0)
+	assert.Empty(t, callback1)
+	assert.Empty(t, callback2)
 	require.NoError(t, ts.Close())
 }
 

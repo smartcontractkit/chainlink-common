@@ -147,6 +147,7 @@ func ConvertReceiptToProto(receipt *evmtypes.Receipt) (*Receipt, error) {
 		BlockNumber:       valuespb.NewBigIntFromInt(receipt.BlockNumber),
 		TxIndex:           receipt.TransactionIndex,
 		EffectiveGasPrice: valuespb.NewBigIntFromInt(receipt.EffectiveGasPrice),
+		L1_Fee:            valuespb.NewBigIntFromInt(receipt.L1Fee),
 	}, nil
 }
 
@@ -186,6 +187,7 @@ func ConvertReceiptFromProto(protoReceipt *Receipt) (*evmtypes.Receipt, error) {
 		BlockNumber:       valuespb.NewIntFromBigInt(protoReceipt.GetBlockNumber()),
 		TransactionIndex:  protoReceipt.GetTxIndex(),
 		EffectiveGasPrice: valuespb.NewIntFromBigInt(protoReceipt.GetEffectiveGasPrice()),
+		L1Fee:             valuespb.NewIntFromBigInt(protoReceipt.GetL1_Fee()),
 	}, nil
 }
 
@@ -419,7 +421,7 @@ func ConvertLogsFromProto(protoLogs []*Log) ([]*evmtypes.Log, error) {
 
 func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 	if protoLog == nil {
-		return nil, fmt.Errorf("log can't be nil")
+		return nil, errors.New("log can't be nil")
 	}
 
 	blockHash, err := ConvertHashFromProto(protoLog.GetBlockHash())
@@ -713,7 +715,7 @@ func putEVMPrimitive(exp *Expression, p *Primitive) {
 
 func ConvertGasConfigToProto(gasConfig evmtypes.GasConfig) (*GasConfig, error) {
 	if gasConfig.GasLimit == nil {
-		return nil, fmt.Errorf("gas limit can't be nil")
+		return nil, errors.New("gas limit can't be nil")
 	}
 
 	return &GasConfig{
@@ -754,7 +756,7 @@ func ConvertTxStatusToProto(txStatus evmtypes.TransactionStatus) TxStatus {
 
 func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionRequest) (evmtypes.SubmitTransactionRequest, error) {
 	if txRequest == nil {
-		return evmtypes.SubmitTransactionRequest{}, fmt.Errorf("tx request can't be nil")
+		return evmtypes.SubmitTransactionRequest{}, errors.New("tx request can't be nil")
 	}
 
 	return evmtypes.SubmitTransactionRequest{
@@ -797,7 +799,7 @@ func ConvertHashFromProto(b []byte) (evmtypes.Hash, error) {
 
 func ValidateAddressBytes(b []byte) error {
 	if b == nil {
-		return fmt.Errorf("address can't be nil")
+		return errors.New("address can't be nil")
 	}
 
 	if len(b) != evmtypes.AddressLength {
@@ -808,7 +810,7 @@ func ValidateAddressBytes(b []byte) error {
 
 func validateHashBytes(b []byte) error {
 	if b == nil {
-		return fmt.Errorf("hash can't be nil")
+		return errors.New("hash can't be nil")
 	}
 
 	if len(b) != evmtypes.HashLength {

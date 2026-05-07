@@ -210,7 +210,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	request := s.Get(rid)
 	assert.Nil(t, request)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
@@ -281,7 +281,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 
 	reqs := s.GetByIDs([]string{rid})
 
-	assert.Equal(t, 0, len(reqs))
+	assert.Empty(t, reqs)
 }
 
 func TestOCR3Capability_Registration(t *testing.T) {

@@ -24,6 +24,7 @@ packages:
       TONService:
       SolanaService:
       AptosService:
+      StellarService:
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
       CapabilitiesRegistry:

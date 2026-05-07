@@ -40,7 +40,7 @@ type ProviderClient struct {
 	mercuryChainReader mercury.ChainReader
 }
 
-func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderClient {
+func NewProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *ProviderClient {
 	m := &ProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MercuryProviderClient"), cc)}
 
 	m.reportCodecV1 = newReportCodecV1Client(mercury_v1_internal.NewReportCodecClient(cc))

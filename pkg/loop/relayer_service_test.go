@@ -39,7 +39,8 @@ var relayerServiceNames = []string{
 }
 
 func TestRelayerService(t *testing.T) {
-	t.Parallel()
+	tests.VerifyNoLeaks(t)
+
 	capRegistry := mocks.NewCapabilitiesRegistry(t)
 	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginRelayerName, false, 0)
@@ -56,22 +57,20 @@ func TestRelayerService(t *testing.T) {
 		hook.Kill()
 
 		// wait for relaunch
-		time.Sleep(2 * goplugin.KeepAliveTickDuration)
+		time.Sleep(goplugin.KeepAliveTickDuration)
 
 		relayertest.Run(t, relayer)
 		servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames...)
-
 	})
 
 	t.Run("Reset", func(t *testing.T) {
 		hook.Reset()
 
 		// wait for relaunch
-		time.Sleep(2 * goplugin.KeepAliveTickDuration)
+		time.Sleep(goplugin.KeepAliveTickDuration)
 
 		relayertest.Run(t, relayer)
 		servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames...)
-
 	})
 }
 
@@ -93,7 +92,6 @@ func TestRelayerService_recovery(t *testing.T) {
 	} else {
 		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames...)
 	}
-
 }
 
 func TestRelayerService_HealthReport(t *testing.T) {
@@ -113,7 +111,6 @@ func TestRelayerService_HealthReport(t *testing.T) {
 	require.Eventually(t, func() bool { return s.Ready() == nil }, tests.WaitTimeout(t)/2, time.Second, s.Ready())
 
 	servicetest.AssertHealthReportNames(t, s.HealthReport(), relayerServiceNames...)
-
 }
 
 // AssertLogsObserved records an error for each name which does not have any corresponding log lines.

@@ -428,7 +428,7 @@ func (m MultiResourcePoolLimiter[N]) cleanup(ctx context.Context) {
 func (m MultiResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
 	if len(m) == 0 {
 		var zero N
-		return zero, fmt.Errorf("no limiters")
+		return zero, errors.New("no limiters")
 	}
 	return m[0].Limit(ctx)
 }
@@ -436,7 +436,7 @@ func (m MultiResourcePoolLimiter[N]) Limit(ctx context.Context) (N, error) {
 func (m MultiResourcePoolLimiter[N]) Available(ctx context.Context) (N, error) {
 	if len(m) == 0 {
 		var zero N
-		return zero, fmt.Errorf("no limiters")
+		return zero, errors.New("no limiters")
 	}
 	return m[0].Available(ctx)
 }

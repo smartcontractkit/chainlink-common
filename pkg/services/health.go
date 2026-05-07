@@ -245,7 +245,7 @@ func (c *HealthChecker) Register(service HealthReporter) error {
 // Unregister a service.
 func (c *HealthChecker) Unregister(name string) error {
 	if name == "" {
-		return fmt.Errorf("name cannot be empty")
+		return errors.New("name cannot be empty")
 	}
 	ctx := context.Background()
 

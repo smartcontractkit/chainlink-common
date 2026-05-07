@@ -1,6 +1,7 @@
 package aptos
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -12,10 +13,10 @@ import (
 // addresses up to 32 bytes instead of requiring exact-length address bytes.
 func ConvertViewPayloadFromProto(payload *ViewPayload) (*typesaptos.ViewPayload, error) {
 	if payload == nil {
-		return nil, fmt.Errorf("payload is required")
+		return nil, errors.New("payload is required")
 	}
 	if payload.Module == nil {
-		return nil, fmt.Errorf("payload.module is required")
+		return nil, errors.New("payload.module is required")
 	}
 	if err := requireNonEmptyBytes(payload.Module.Address, "payload.module.address"); err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ func ConvertViewPayloadFromProto(payload *ViewPayload) (*typesaptos.ViewPayload,
 // ConvertTypeTagFromProto converts a capability TypeTag into Aptos domain types.
 func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 	if tag == nil {
-		return nil, fmt.Errorf("type tag is nil")
+		return nil, errors.New("type tag is nil")
 	}
 
 	switch tag.Kind {
@@ -80,7 +81,7 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 	case TypeTagKind_TYPE_TAG_KIND_VECTOR:
 		vector := tag.GetVector()
 		if vector == nil {
-			return nil, fmt.Errorf("vector tag missing vector value")
+			return nil, errors.New("vector tag missing vector value")
 		}
 		elementType, err := ConvertTypeTagFromProto(vector.ElementType)
 		if err != nil {
@@ -90,7 +91,7 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 	case TypeTagKind_TYPE_TAG_KIND_STRUCT:
 		structTag := tag.GetStruct()
 		if structTag == nil {
-			return nil, fmt.Errorf("struct tag missing struct value")
+			return nil, errors.New("struct tag missing struct value")
 		}
 		if err := requireNonEmptyBytes(structTag.Address, "struct address"); err != nil {
 			return nil, err
@@ -125,7 +126,7 @@ func ConvertTypeTagFromProto(tag *TypeTag) (*typesaptos.TypeTag, error) {
 	case TypeTagKind_TYPE_TAG_KIND_GENERIC:
 		generic := tag.GetGeneric()
 		if generic == nil {
-			return nil, fmt.Errorf("generic tag missing generic value")
+			return nil, errors.New("generic tag missing generic value")
 		}
 		if generic.Index > math.MaxUint16 {
 			return nil, fmt.Errorf("generic type index out of range: %d", generic.Index)

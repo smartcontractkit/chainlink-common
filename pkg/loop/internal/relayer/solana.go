@@ -2,7 +2,9 @@ package relayer
 
 import (
 	"context"
-	"fmt"
+	"errors"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
@@ -10,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var _ types.SolanaService = (*SolClient)(nil)
@@ -277,7 +278,7 @@ func (s *solServer) SubmitTransaction(ctx context.Context, req *solpb.SubmitTran
 
 func (s *solServer) RegisterLogTracking(ctx context.Context, req *solpb.RegisterLogTrackingRequest) (*solpb.RegisterLogTrackingReply, error) {
 	if req.Filter == nil {
-		return nil, net.WrapRPCErr(fmt.Errorf("missing filter"))
+		return nil, net.WrapRPCErr(errors.New("missing filter"))
 	}
 
 	filter, err := solpb.ConvertLPFilterQueryFromProto(req.Filter)

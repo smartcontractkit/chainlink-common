@@ -19,6 +19,8 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 // Default client to fallback when is is not initialized properly

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 
@@ -356,7 +357,7 @@ type ChannelDefinitions map[ChannelID]ChannelDefinition
 func (c *ChannelDefinitions) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
-		return fmt.Errorf("failed to scan Data: value is not []byte")
+		return errors.New("failed to scan Data: value is not []byte")
 	}
 	if bytes == nil {
 		*c = nil

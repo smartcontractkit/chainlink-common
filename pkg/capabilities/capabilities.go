@@ -394,10 +394,10 @@ func (e *OCRTriggerEvent) ToMap() (*values.Map, error) {
 // This is useful deserialization purposes with the [TriggerEvent] struct.
 func (e *OCRTriggerEvent) FromMap(m *values.Map) error {
 	if m == nil {
-		return fmt.Errorf("nil map")
+		return errors.New("nil map")
 	}
 	if m.Underlying == nil {
-		return fmt.Errorf("nil underlying map")
+		return errors.New("nil underlying map")
 	}
 	val, ok := m.Underlying[e.topLevelKey()]
 	if !ok {

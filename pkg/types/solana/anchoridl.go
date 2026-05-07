@@ -7,6 +7,7 @@ package solana
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/davecgh/go-spew/spew"
@@ -103,7 +104,7 @@ func (env *IdlAccountItem) UnmarshalJSON(data []byte) error {
 		_, hasIsMut := v["isMut"]
 
 		if hasAccounts == hasIsMut {
-			return fmt.Errorf("invalid idl structure: expected exactly one of 'accounts' or 'isMut'")
+			return errors.New("invalid idl structure: expected exactly one of 'accounts' or 'isMut'")
 		}
 
 		if hasAccounts {
@@ -118,7 +119,7 @@ func (env *IdlAccountItem) UnmarshalJSON(data []byte) error {
 
 func (env IdlAccountItem) MarshalJSON() ([]byte, error) {
 	if (env.IdlAccount == nil) == (env.IdlAccounts == nil) {
-		return nil, fmt.Errorf("invalid structure: expected either IdlAccount or IdlAccounts to be defined")
+		return nil, errors.New("invalid structure: expected either IdlAccount or IdlAccounts to be defined")
 	}
 
 	visited := make(map[*IdlAccounts]struct{})
@@ -150,7 +151,7 @@ func checkForIdlAccountsCycle(acc *IdlAccounts, visited map[*IdlAccounts]struct{
 
 	for _, item := range acc.Accounts {
 		if (item.IdlAccount == nil) == (item.IdlAccounts == nil) {
-			return fmt.Errorf("invalid nested structure: expected either IdlAccount or IdlAccounts to be defined")
+			return errors.New("invalid nested structure: expected either IdlAccount or IdlAccounts to be defined")
 		}
 		if item.IdlAccounts != nil {
 			if err := checkForIdlAccountsCycle(item.IdlAccounts, visited); err != nil {
@@ -254,7 +255,7 @@ func (env IdlType) MarshalJSON() ([]byte, error) {
 			"array": []any{array.Thing, array.Num},
 		}
 	default:
-		return nil, fmt.Errorf("nil envelope is not supported in IdlType")
+		return nil, errors.New("nil envelope is not supported in IdlType")
 	}
 
 	return json.Marshal(result)

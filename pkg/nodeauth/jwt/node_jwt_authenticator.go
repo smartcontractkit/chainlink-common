@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -107,14 +108,13 @@ func (v *NodeJWTAuthenticator) parseJWTClaims(tokenString string) (*types.NodeJW
 
 	claims, ok := token.Claims.(*types.NodeJWTClaims)
 	if !ok {
-		return nil, fmt.Errorf("invalid claims type")
+		return nil, errors.New("invalid claims type")
 	}
 	return claims, nil
 }
 
 // verifyJWTSignature prove the JWT signature is signed by the node's private key.
 func (v *NodeJWTAuthenticator) verifyJWTSignature(tokenString string, publicKey ed25519.PublicKey) error {
-
 	token, err := v.parser.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// Ensure the signing method is jwt.SigningMethodEd25519
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
@@ -129,7 +129,7 @@ func (v *NodeJWTAuthenticator) verifyJWTSignature(tokenString string, publicKey 
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("token is invalid after signature verification")
+		return errors.New("token is invalid after signature verification")
 	}
 
 	return nil

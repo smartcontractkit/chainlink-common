@@ -277,11 +277,15 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		OnClose:               onClose,
 		batchEmitterService:   batchEmitterService,
 	}
+	svcLggr := cfg.ChipIngressLogger
+	if svcLggr == nil {
+		svcLggr = pkglogger.Nop()
+	}
 	c.Service, c.eng = services.Config{
 		Name:  "BeholderClient",
 		Start: c.start,
 		Close: c.closeResources,
-	}.NewServiceEngine(pkglogger.Nop())
+	}.NewServiceEngine(svcLggr)
 	return c, nil
 }
 

@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"

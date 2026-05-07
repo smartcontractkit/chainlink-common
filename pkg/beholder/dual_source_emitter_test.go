@@ -2,7 +2,6 @@ package beholder_test
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 	"errors"
 	"testing"

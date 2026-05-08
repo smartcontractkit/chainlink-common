@@ -926,3 +926,85 @@ func TestChipIngressClient(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+// TestClient_batchEmitterService groups lifecycle and construction tests for the
+// ChipIngress batch emitter sub-service embedded in the beholder Client.
+func TestClient_batchEmitterService(t *testing.T) {
+	newBatchClient := func(t *testing.T) *beholder.Client {
+		t.Helper()
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressBatchEmitterEnabled: true,
+			ChipIngressLogger:              newTestLogger(t),
+			ChipIngressBufferSize:          10,
+			ChipIngressMaxBatchSize:        5,
+			ChipIngressSendInterval:        50 * time.Millisecond,
+			ChipIngressSendTimeout:         1 * time.Second,
+			ChipIngressDrainTimeout:        1 * time.Second,
+		})
+		require.NoError(t, err)
+		return client
+	}
+
+	// startsWithClient: batch emitter sub-service starts and stops with the Client lifecycle.
+	t.Run("starts with client", func(t *testing.T) {
+		client := newBatchClient(t)
+
+		// Before Start: service is unready and incomplete emit fails validation.
+		assert.ErrorContains(t, client.Service.Ready(), "not started")
+		err := client.Emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+			// AttrKeyDataSchema intentionally omitted — triggers required-field validation error.
+		)
+		assert.ErrorContains(t, err, "BeholderDataSchema")
+
+		require.NoError(t, client.Service.Start(t.Context()))
+		assert.NoError(t, client.Service.Ready())
+		_ = client.Close()
+	})
+
+	// emitSucceedsBeforeStart: a fully-valid Emit returns no error before Start.
+	// The OTLP path is always active; the batch emitter's service-not-started error is
+	// swallowed by DualSourceEmitter and only logged.
+	t.Run("emit succeeds before start", func(t *testing.T) {
+		client := newBatchClient(t)
+
+		assert.ErrorContains(t, client.Service.Ready(), "not started")
+
+		err := client.Emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+			beholder.AttrKeyDataSchema, "test-schema",
+		)
+		assert.NoError(t, err, "emit must not fail when service is not yet started")
+
+		require.NoError(t, client.Service.Start(t.Context()))
+		assert.NoError(t, client.Service.Ready())
+		_ = client.Close()
+	})
+
+	// closeWithoutStart: Close on a never-started client must not return ErrCannotStopUnstarted.
+	// OTel provider flush errors from a non-existent endpoint are ignored.
+	t.Run("close without start", func(t *testing.T) {
+		client := newBatchClient(t)
+		_ = client.Close()
+	})
+
+	// requiresLogger: constructing with batch emitter enabled but no logger returns an error.
+	t.Run("requires logger", func(t *testing.T) {
+		_, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressBatchEmitterEnabled: true,
+			ChipIngressLogger:              nil,
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ChipIngressLogger")
+	})
+}

@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	caperrors "github.com/smartcontractkit/cre-capability-errors/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
@@ -352,7 +352,7 @@ func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capab
 	}
 
 	if ackMsg.GetAck() == nil {
-		return nil, cancel, caperrors.DeserializeErrorFromString(ackMsg.GetResponse().GetError())
+		return nil, cancel, caperrors.DeserializeErrorFromString(ackMsg.GetResponse().GetError(), true)
 	}
 
 	ch, err := forwardTriggerResponsesToChannel(ctx, responseStream.Recv)
@@ -493,7 +493,7 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
-		return capabilities.CapabilityResponse{}, caperrors.DeserializeErrorFromString(resp.Error)
+		return capabilities.CapabilityResponse{}, caperrors.DeserializeErrorFromString(resp.Error, true)
 	}
 
 	r, err := pb.CapabilityResponseFromProto(resp)

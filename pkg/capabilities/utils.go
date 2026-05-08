@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	caperrors "github.com/smartcontractkit/cre-capability-errors/errors"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 

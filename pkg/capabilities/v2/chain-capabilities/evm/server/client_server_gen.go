@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	caperrors "github.com/smartcontractkit/cre-capability-errors/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 

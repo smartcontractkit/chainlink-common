@@ -14,7 +14,7 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	caperrors "github.com/smartcontractkit/cre-capability-errors/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )

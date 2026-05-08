@@ -301,6 +301,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	te TriggerEvent,
 	triggerID string,
 ) error {
+	b.lggr.Infow("received event from capability", "triggerID", triggerID, "eventID", te.ID)
 	if !b.retransmitAllowed(ctx) {
 		b.lggr.Infow("base trigger retransmit not active")
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())

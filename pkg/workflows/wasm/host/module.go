@@ -102,8 +102,7 @@ type ModuleConfig struct {
 
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
-	Determinism         *DeterminismConfig
-	RequirementsHandler host.RequirementsHandler
+	Determinism *DeterminismConfig
 }
 
 type ModuleBase = host.ModuleBase

@@ -16,22 +16,42 @@ func NewTeeProvider(tpe sdkpb.TeeType, regions []string) func(tee *sdkpb.Tee) bo
 }
 
 func (t *teeProvider) Provides(tee *sdkpb.Tee) bool {
-	switch teet := tee.Type.(type) {
-	case *sdkpb.Tee_Any:
+	if tee == nil {
 		return true
-	case *sdkpb.Tee_TypeSelection:
-		for _, selection := range teet.TypeSelection.Types {
-			if selection.Type == t.TeeType {
-				if len(selection.Regions) == 0 {
-					return true
-				}
+	}
 
-				for _, region := range selection.Regions {
-					if t.regions[region] {
-						return true
-					}
-				}
+	var regions []string
+	switch teet := tee.Item.(type) {
+	case *sdkpb.Tee_AnyRegions:
+		regions = teet.AnyRegions.Regions
+	case *sdkpb.Tee_TeeTypesAndRegions:
+		if teet.TeeTypesAndRegions == nil {
+			return false
+		}
+
+		found := false
+		for _, tr := range teet.TeeTypesAndRegions.TeeTypeAndRegions {
+			if tr.Type == t.TeeType {
+				found = true
+				regions = tr.Regions
+				break
 			}
+		}
+
+		if !found {
+			return false
+		}
+	default:
+		return false
+	}
+
+	if len(regions) == 0 {
+		return true
+	}
+
+	for _, region := range regions {
+		if t.regions[region] {
+			return true
 		}
 	}
 

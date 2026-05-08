@@ -23,6 +23,13 @@ type Module interface {
 	Execute(ctx context.Context, request *sdkpb.ExecuteRequest, handler ExecutionHelper) (*sdkpb.ExecutionResult, error)
 }
 
+type RequirementEnforcingModule interface {
+	Module
+
+	// SetRequirements must respect the requirements for the execution until it completes
+	SetRequirements(executionId string, requirements *sdkpb.Requirements)
+}
+
 // ExecutionHelper Implemented by those running the host, for example the Workflow Engine
 type ExecutionHelper interface {
 	// CallCapability blocking call to the Workflow Engine

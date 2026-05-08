@@ -40,8 +40,9 @@ func NewRequirementSelectingModule(main ModuleAndHandler, additional []ModuleAnd
 }
 
 type triggerInfo struct {
-	moduleIdx int
-	preHook   bool
+	moduleIdx    int
+	preHook      bool
+	requirements *sdk.Requirements
 }
 
 type requirementSelectingModule struct {
@@ -82,9 +83,9 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 	for i, sub := range result.GetTriggerSubscriptions().GetSubscriptions() {
 		matched := false
 		for j, m := range r.modules {
-			if CheckRequirements(m.RequirementsHandler, sub.Requirements) {
+			if CheckRequirements(ctx, m.RequirementsHandler, sub.Requirements) {
 				m.ensureStarted()
-				r.cache.Store(uint64(i), triggerInfo{moduleIdx: j, preHook: sub.PreHook})
+				r.cache.Store(uint64(i), triggerInfo{moduleIdx: j, requirements: sub.Requirements, preHook: sub.PreHook})
 				matched = true
 				break
 			}
@@ -101,6 +102,7 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 	trigger := request.GetTrigger()
 	if val, cached := r.cache.Load(trigger.Id); cached {
 		info := val.(triggerInfo)
+
 		if info.preHook {
 			prehook := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_PreHook{PreHook: trigger}}
 			preHookResult, err := r.modules[0].Execute(ctx, prehook, handler)
@@ -109,8 +111,15 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 			}
 			handler = newRestrictedExecutionHelper(handler, preHookResult.GetRestrictions())
 		}
-		return r.modules[info.moduleIdx].Execute(ctx, request, handler)
+
+		m := r.modules[info.moduleIdx]
+		if rem, ok := m.Module.(RequirementEnforcingModule); ok && info.requirements != nil {
+			rem.SetRequirements(handler.GetWorkflowExecutionID(), info.requirements)
+		}
+
+		return m.Execute(ctx, request, handler)
 	}
+
 	return r.modules[0].Execute(ctx, request, handler)
 }
 

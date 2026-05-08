@@ -561,9 +561,9 @@ func TestStandardTeeRuntime(t *testing.T) {
 				Method:  "Trigger",
 				Requirements: &sdk.Requirements{
 					Tee: &sdk.Tee{
-						Type: &sdk.Tee_TypeSelection{
-							TypeSelection: &sdk.TeeTypeSelection{
-								Types: []*sdk.TeeTypeAndRegions{
+						Item: &sdk.Tee_TeeTypesAndRegions{
+							TeeTypesAndRegions: &sdk.TeeTypesAndRegions{
+								TeeTypeAndRegions: []*sdk.TeeTypeAndRegions{
 									{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}},
 								},
 							},
@@ -602,7 +602,7 @@ func TestStandardRestrictions(t *testing.T) {
 	response := runWithBasicTriggerWithModule(t, mockExecutionHelper, m)
 	switch r := response.Result.(type) {
 	case *sdk.ExecutionResult_Error:
-		assert.Contains(t, r.Error, "capability call denied by restrictions: basic-test-action@1.0.0 PerformAction")
+		assert.Contains(t, r.Error, "capability call denied by user pre-hook restrictions: basic-test-action@1.0.0 PerformAction")
 	default:
 		assert.Fail(t, "Expected an error result due to restricted capability call, got %T", response.Result)
 	}

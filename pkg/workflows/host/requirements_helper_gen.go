@@ -2,18 +2,22 @@
 
 package host
 
-import "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+import (
+	"context"
+
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+)
 
 // RequirementsHandler contains a callback for each public field in sdk.Requirements.
 // Each callback receives the field value and returns a list of strings or an error.
 type RequirementsHandler struct {
-	Tee func(*sdk.Tee) bool
+	Tee func(context.Context, *sdk.Tee) bool
 }
 
-// CheckRequirements calls each non-nil callback in handler for the corresponding
+// CheckRequirements calls each non-nil callback in the handler for the corresponding
 // non-nil field in req, returning false if any are false, or if the handler is nil.
 // Unknown fields on the proto also result in a false return value.
-func CheckRequirements(handler RequirementsHandler, req *sdk.Requirements) bool {
+func CheckRequirements(ctx context.Context, handler RequirementsHandler, req *sdk.Requirements) bool {
 	if req == nil {
 		return true
 	}
@@ -23,7 +27,7 @@ func CheckRequirements(handler RequirementsHandler, req *sdk.Requirements) bool 
 	}
 
 	if req.Tee != nil {
-		if handler.Tee == nil || !handler.Tee(req.Tee) {
+		if handler.Tee == nil || !handler.Tee(ctx, req.Tee) {
 			return false
 		}
 

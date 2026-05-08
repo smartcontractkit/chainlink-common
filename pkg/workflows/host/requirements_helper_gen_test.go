@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,27 +22,27 @@ func Test_CheckRequirements(t *testing.T) {
 		req := &sdk.Requirements{}
 		require.NoError(t, proto.Unmarshal(b, req))
 
-		assert.False(t, CheckRequirements(RequirementsHandler{}, req))
+		assert.False(t, CheckRequirements(context.Background(), RequirementsHandler{}, req))
 	})
 
 	t.Run("no fields always passes", func(t *testing.T) {
-		assert.True(t, CheckRequirements(RequirementsHandler{}, &sdk.Requirements{}))
+		assert.True(t, CheckRequirements(context.Background(), RequirementsHandler{}, &sdk.Requirements{}))
 	})
 
 	t.Run("handler not set returns false", func(t *testing.T) {
 		req := &sdk.Requirements{Tee: &sdk.Tee{}}
-		assert.False(t, CheckRequirements(RequirementsHandler{}, req))
+		assert.False(t, CheckRequirements(context.Background(), RequirementsHandler{}, req))
 	})
 
 	t.Run("handler returns false causes false return value", func(t *testing.T) {
 		req := &sdk.Requirements{Tee: &sdk.Tee{}}
-		handler := RequirementsHandler{Tee: func(*sdk.Tee) bool { return false }}
-		assert.False(t, CheckRequirements(handler, req))
+		handler := RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }}
+		assert.False(t, CheckRequirements(context.Background(), handler, req))
 	})
 
 	t.Run("handler returns true causes true return value", func(t *testing.T) {
 		req := &sdk.Requirements{Tee: &sdk.Tee{}}
-		handler := RequirementsHandler{Tee: func(*sdk.Tee) bool { return true }}
-		assert.True(t, CheckRequirements(handler, req))
+		handler := RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }}
+		assert.True(t, CheckRequirements(context.Background(), handler, req))
 	})
 }

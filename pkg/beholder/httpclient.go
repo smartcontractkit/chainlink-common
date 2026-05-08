@@ -205,9 +205,9 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		OnClose:               onClose,
 	}
 	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Start: c.start,
-		Close: c.closeResources,
+		Name:                 "BeholderClient",
+		Close:                c.close,
+		CloseIfNeverStarted:  true,
 	}.NewServiceEngine(pkglogger.Nop())
 	return c, nil
 }

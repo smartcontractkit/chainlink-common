@@ -56,9 +56,9 @@ func NewNoopClient() *Client {
 		OnClose:               noopOnClose,
 	}
 	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Start: c.start,
-		Close: c.closeResources,
+		Name:                 "BeholderClient",
+		Close:                c.close,
+		CloseIfNeverStarted:  true,
 	}.NewServiceEngine(logger.Nop())
 	return c
 }
@@ -134,9 +134,9 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		OnClose:               onClose,
 	}
 	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Start: c.start,
-		Close: c.closeResources,
+		Name:                 "BeholderClient",
+		Close:                c.close,
+		CloseIfNeverStarted:  true,
 	}.NewServiceEngine(logger.Nop())
 	return c, nil
 }

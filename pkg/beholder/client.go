@@ -282,44 +282,21 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		svcLggr = pkglogger.Nop()
 	}
 	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Start: c.start,
-		Close: c.closeResources,
+		Name:                "BeholderClient",
+		Close:               c.close,
+		CloseIfNeverStarted: true,
+		NewSubServices: func(l pkglogger.Logger) []services.Service {
+			if c.batchEmitterService == nil {
+				return nil
+			}
+			return []services.Service{c.batchEmitterService}
+		},
 	}.NewServiceEngine(svcLggr)
 	return c, nil
 }
 
-// ManagedServices returns services whose lifecycle is owned by the application
-// (start, stop, health). Returns nil when the receiver is nil or has none.
-func (c *Client) ManagedServices() []services.Service {
-	if c == nil || c.batchEmitterService == nil || c.Service == nil {
-		return nil
-	}
-	return []services.Service{c}
-}
-
-// Close shuts down OTel providers and the chip ingress connection.
-func (c *Client) Close() (err error) {
-	if c == nil {
-		return nil
-	}
-	if c.Service != nil && c.eng != nil {
-		if err = c.eng.IfStarted(func() error { return nil }); err != nil {
-			return c.closeResources()
-		}
-		return c.Service.Close()
-	}
-	return c.closeResources()
-}
-
-func (c *Client) start(ctx context.Context) error {
-	if c.batchEmitterService != nil {
-		return c.batchEmitterService.Start(ctx)
-	}
-	return nil
-}
-
-func (c *Client) closeResources() (err error) {
+// close is the lifecycle Close hook: OTel/message shutdown and CHIP close.f
+func (c *Client) close() (err error) {
 	c.closeOnce.Do(func() {
 		if c.Emitter != nil {
 			c.closeErr = errors.Join(c.closeErr, c.Emitter.Close())

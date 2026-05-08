@@ -103,16 +103,21 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 	if val, cached := r.cache.Load(trigger.Id); cached {
 		info := val.(triggerInfo)
 
+		m := r.modules[info.moduleIdx]
 		if info.preHook {
 			prehook := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_PreHook{PreHook: trigger}}
 			preHookResult, err := r.modules[0].Execute(ctx, prehook, handler)
 			if err != nil {
 				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
 			}
-			handler = newRestrictedExecutionHelper(handler, preHookResult.GetRestrictions())
+			restrictions := preHookResult.GetRestrictions()
+			if rem, ok := m.Module.(RestrictionAwareModule); ok {
+				rem.SetRestrictions(handler.GetWorkflowExecutionID(), restrictions)
+			}
+
+			handler = NewRestrictedExecutionHelper(handler, restrictions)
 		}
 
-		m := r.modules[info.moduleIdx]
 		if rem, ok := m.Module.(RequirementEnforcingModule); ok && info.requirements != nil {
 			rem.SetRequirements(handler.GetWorkflowExecutionID(), info.requirements)
 		}

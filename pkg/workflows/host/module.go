@@ -30,6 +30,16 @@ type RequirementEnforcingModule interface {
 	SetRequirements(executionId string, requirements *sdkpb.Requirements)
 }
 
+// RestrictionAwareModule allows the module to know of the user-enforced restrictions.
+// Enforcement by this module is NOT to be trusted by the host,
+// however a violation is considered an indicator of a serious issues, such as compromise
+type RestrictionAwareModule interface {
+	Module
+
+	// SetRestrictions must respect the restrictions for the execution until it completes
+	SetRestrictions(executionId string, restrictions *sdkpb.Restrictions)
+}
+
 // ExecutionHelper Implemented by those running the host, for example the Workflow Engine
 type ExecutionHelper interface {
 	// CallCapability blocking call to the Workflow Engine

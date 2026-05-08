@@ -650,7 +650,7 @@ func TestCallCapWithRestrictions(t *testing.T) {
 	}
 
 	t.Run("denies blocked capability", func(t *testing.T) {
-		h := newRestrictedExecutionHelper(NewMockExecutionHelper(t), restrictions)
+		h := NewRestrictedExecutionHelper(NewMockExecutionHelper(t), restrictions)
 		_, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "blocked@1.0.0", Method: "Bar"})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "denied by user pre-hook restrictions")
@@ -659,7 +659,7 @@ func TestCallCapWithRestrictions(t *testing.T) {
 	t.Run("allows permitted capability", func(t *testing.T) {
 		inner := NewMockExecutionHelper(t)
 		inner.EXPECT().CallCapability(matches.AnyContext, mock.Anything).Return(&sdk.CapabilityResponse{}, nil)
-		h := newRestrictedExecutionHelper(inner, restrictions)
+		h := NewRestrictedExecutionHelper(inner, restrictions)
 		_, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "allowed@1.0.0", Method: "Foo"})
 		require.NoError(t, err)
 	})
@@ -667,7 +667,7 @@ func TestCallCapWithRestrictions(t *testing.T) {
 	t.Run("no restrictions allows everything", func(t *testing.T) {
 		inner := NewMockExecutionHelper(t)
 		inner.EXPECT().CallCapability(matches.AnyContext, mock.Anything).Return(&sdk.CapabilityResponse{}, nil)
-		h := newRestrictedExecutionHelper(inner, nil)
+		h := NewRestrictedExecutionHelper(inner, nil)
 		_, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "anything@1.0.0", Method: "Whatever"})
 		require.NoError(t, err)
 	})
@@ -686,7 +686,7 @@ func TestGetSecretsWithRestrictions(t *testing.T) {
 	}
 
 	t.Run("blocked secret returns error response without calling inner", func(t *testing.T) {
-		h := newRestrictedExecutionHelper(NewMockExecutionHelper(t), restrictions)
+		h := NewRestrictedExecutionHelper(NewMockExecutionHelper(t), restrictions)
 		resp, err := h.GetSecrets(t.Context(), &sdk.GetSecretsRequest{
 			Requests: []*sdk.SecretRequest{{Id: "blocked-secret", Namespace: "ns"}},
 		})
@@ -700,7 +700,7 @@ func TestGetSecretsWithRestrictions(t *testing.T) {
 	t.Run("allows permitted secret", func(t *testing.T) {
 		inner := NewMockExecutionHelper(t)
 		inner.EXPECT().GetSecrets(matches.AnyContext, mock.Anything).Return([]*sdk.SecretResponse{}, nil)
-		h := newRestrictedExecutionHelper(inner, restrictions)
+		h := NewRestrictedExecutionHelper(inner, restrictions)
 		_, err := h.GetSecrets(t.Context(), &sdk.GetSecretsRequest{
 			Requests: []*sdk.SecretRequest{{Id: "allowed-secret", Namespace: "ns"}},
 		})
@@ -712,7 +712,7 @@ func TestGetSecretsWithRestrictions(t *testing.T) {
 		inner.EXPECT().GetSecrets(matches.AnyContext, mock.MatchedBy(func(r *sdk.GetSecretsRequest) bool {
 			return len(r.Requests) == 1 && r.Requests[0].Id == "allowed-secret"
 		})).Return([]*sdk.SecretResponse{{}}, nil)
-		h := newRestrictedExecutionHelper(inner, restrictions)
+		h := NewRestrictedExecutionHelper(inner, restrictions)
 		resp, err := h.GetSecrets(t.Context(), &sdk.GetSecretsRequest{
 			Requests: []*sdk.SecretRequest{
 				{Id: "allowed-secret", Namespace: "ns"},

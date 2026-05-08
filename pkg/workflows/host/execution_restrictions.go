@@ -99,10 +99,6 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 	return er
 }
 
-func newRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) ExecutionHelper {
-	return NewRestrictedExecutionHelper(inner, r)
-}
-
 func (e *executionRestrictions) canCallCapability(request *sdk.CapabilityRequest) bool {
 	if e == nil || !e.hasCaps {
 		return true

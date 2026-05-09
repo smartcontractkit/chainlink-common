@@ -140,6 +140,8 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 
 	// Message Emitter
 	var messageLogProcessor sdklog.Processor
+	// EmitterBatchProcessor=true uses async batching for custom-message logs;
+	// false uses a simple processor that exports each record immediately.
 	if cfg.EmitterBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
 		if cfg.EmitterExportTimeout > 0 {

@@ -24,7 +24,9 @@ type Config struct {
 	EmitterExportInterval     time.Duration
 	EmitterExportMaxBatchSize int
 	EmitterMaxQueueSize       int
-	EmitterBatchProcessor     bool // Enabled by default. Disable only for testing.
+	// EmitterBatchProcessor controls custom-message export mode:
+	// true = batched async export; false = immediate per-record export.
+	EmitterBatchProcessor     bool
 
 	// OTel Trace
 	TraceSampleRatio  float64
@@ -123,6 +125,7 @@ func DefaultConfig() Config {
 		EmitterExportMaxBatchSize: 512,
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
+		// Keep batched export enabled by default for throughput.
 		EmitterBatchProcessor:     true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
@@ -162,6 +165,7 @@ func DefaultConfig() Config {
 func TestDefaultConfig() Config {
 	config := DefaultConfig()
 	// Should be only disabled for testing
+	// Use simple (non-batched) exporter in tests for faster, deterministic teardown.
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
@@ -176,6 +180,7 @@ func TestDefaultConfig() Config {
 func TestDefaultConfigHTTPClient() Config {
 	config := DefaultConfig()
 	// Should be only disabled for testing
+	// Use simple (non-batched) exporter in tests for faster, deterministic teardown.
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	config.OtelExporterGRPCEndpoint = ""

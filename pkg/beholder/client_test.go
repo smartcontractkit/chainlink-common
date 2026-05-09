@@ -934,6 +934,12 @@ func TestClient_batchEmitterService(t *testing.T) {
 		t.Helper()
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "localhost:4317",
+			// Use simple exporter in this lifecycle test to avoid batch flush/shutdown delays.
+			EmitterBatchProcessor:          false,
+			LogBatchProcessor:              false,
+			LogRetryConfig:                 &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			TraceRetryConfig:               &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			MetricRetryConfig:              &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
 			ChipIngressEmitterEnabled:      true,
 			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
 			ChipIngressInsecureConnection:  true,

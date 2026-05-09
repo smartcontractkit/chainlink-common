@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,29 +38,30 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		return nil, fmt.Errorf("chip ingress client is nil")
 	}
 
+	defaults := DefaultConfig()
 	bufferSize := int(cfg.ChipIngressBufferSize)
 	if bufferSize == 0 {
-		bufferSize = 1000
+		bufferSize = int(defaults.ChipIngressBufferSize)
 	}
 	maxBatchSize := int(cfg.ChipIngressMaxBatchSize)
 	if maxBatchSize == 0 {
-		maxBatchSize = 500
+		maxBatchSize = int(defaults.ChipIngressMaxBatchSize)
 	}
 	maxConcurrentSends := cfg.ChipIngressMaxConcurrentSends
 	if maxConcurrentSends == 0 {
-		maxConcurrentSends = defaultMaxConcurrentSends
+		maxConcurrentSends = defaults.ChipIngressMaxConcurrentSends
 	}
 	sendInterval := cfg.ChipIngressSendInterval
 	if sendInterval == 0 {
-		sendInterval = 100 * time.Millisecond
+		sendInterval = defaults.ChipIngressSendInterval
 	}
 	sendTimeout := cfg.ChipIngressSendTimeout
 	if sendTimeout == 0 {
-		sendTimeout = 3 * time.Second
+		sendTimeout = defaults.ChipIngressSendTimeout
 	}
 	drainTimeout := cfg.ChipIngressDrainTimeout
 	if drainTimeout == 0 {
-		drainTimeout = 10 * time.Second
+		drainTimeout = defaults.ChipIngressDrainTimeout
 	}
 
 	meter := otel.Meter("beholder/chip_ingress_batch_emitter")

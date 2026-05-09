@@ -670,6 +670,8 @@ func newLoggerProviderOpts(cfg Config, baseResource *sdkresource.Resource, share
 // newMessageLoggerProviderOpts creates logger provider options for custom message emitter
 func newMessageLoggerProviderOpts(cfg Config, baseResource *sdkresource.Resource, sharedLogExporter sdklog.Exporter) ([]sdklog.LoggerProviderOption, error) {
 	var messageLogProcessor sdklog.Processor
+	// EmitterBatchProcessor=true uses async batching for custom-message logs;
+	// false uses a simple processor that exports each record immediately.
 	if cfg.EmitterBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
 		if cfg.EmitterExportTimeout > 0 {

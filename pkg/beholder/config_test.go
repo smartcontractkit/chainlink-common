@@ -30,6 +30,7 @@ func ExampleConfig() {
 		EmitterExportMaxBatchSize: 512,
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
+		// true uses batched async export for custom messages.
 		EmitterBatchProcessor:     true,
 		// OTel message log exporter retry config
 		LogRetryConfig: nil,

@@ -148,6 +148,8 @@ type EnvConfig struct {
 	TelemetryAuthHeaders               map[string]string
 	TelemetryAuthPubKeyHex             string
 	TelemetryAuthHeadersTTL            time.Duration
+	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor
+	// (batched async custom-message export vs immediate per-record export).
 	TelemetryEmitterBatchProcessor     bool
 	TelemetryEmitterExportTimeout      time.Duration
 	TelemetryEmitterExportInterval     time.Duration

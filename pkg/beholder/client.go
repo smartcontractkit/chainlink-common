@@ -242,7 +242,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress batch emitter: %w", err)
 			}
-			chipIngressEmitter = batchEmitterService
+			// Batch emitter lifecycle is owned by Client's service-engine sub-service wiring.
+			// Wrap it with noCloseEmitter so DualSourceEmitter.Close() does not attempt to
+			// close it directly; the service engine closes batchEmitterService in sub-service
+			// teardown after parent close hook completes.
+			chipIngressEmitter = noCloseEmitter{Emitter: batchEmitterService}
 		} else {
 			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
 			if err != nil {
@@ -303,12 +307,15 @@ func (c *Client) close() (err error) {
 		if c.OnClose != nil {
 			c.closeErr = errors.Join(c.closeErr, c.OnClose())
 		}
-		if c.Chip != nil {
-			c.closeErr = errors.Join(c.closeErr, c.Chip.Close())
-		}
 	})
 	return c.closeErr
 }
+
+// noCloseEmitter delegates Emit to the wrapped emitter but makes Close a no-op.
+// Use this when lifecycle ownership is external (e.g. service engine sub-service).
+type noCloseEmitter struct{ Emitter }
+
+func (n noCloseEmitter) Close() error { return nil }
 
 // Returns a new Client with the same configuration but with a different package name
 // Deprecated: Use ForName

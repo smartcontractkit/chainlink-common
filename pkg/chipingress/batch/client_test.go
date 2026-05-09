@@ -72,6 +72,7 @@ func TestNewBatchClient(t *testing.T) {
 		const maxGRPCSize = 2048
 
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		mockClient.
 			On("PublishBatch", mock.Anything, mock.Anything).
@@ -185,6 +186,7 @@ func TestQueueMessage(t *testing.T) {
 func TestSendBatch(t *testing.T) {
 	t.Run("successfully sends a batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -224,6 +226,7 @@ func TestSendBatch(t *testing.T) {
 
 	t.Run("doesn't publish empty batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 
 		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
@@ -235,6 +238,7 @@ func TestSendBatch(t *testing.T) {
 
 	t.Run("sends multiple batches successfully", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 
 		done := make(chan struct{})
 		callCount := 0
@@ -282,6 +286,7 @@ func TestSendBatch(t *testing.T) {
 func TestStart(t *testing.T) {
 	t.Run("batch size trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -324,6 +329,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("timeout trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -361,6 +367,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("context cancellation flushes pending batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -404,6 +411,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("stop flushes pending batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -442,6 +450,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("no flush when batch is empty", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
@@ -460,6 +469,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("multiple batches via size trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callCount := 0
 
@@ -508,6 +518,7 @@ func TestStart(t *testing.T) {
 func TestCallbacks(t *testing.T) {
 	t.Run("callback invoked on successful send", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -558,6 +569,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callback receives error on failed send", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 		expectedErr := assert.AnError
@@ -610,6 +622,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("nil callback works without panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -651,6 +664,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("multiple messages with different callbacks", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callback1Done := make(chan error, 1)
 		callback2Done := make(chan error, 1)
@@ -731,6 +745,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callback invoked for timeout-triggered batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -781,6 +796,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callback invoked for size-triggered batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -835,6 +851,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callbacks invoked on context cancellation", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -891,8 +908,21 @@ func TestCallbacks(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
+	t.Run("close underlying client only once when enabled", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Once()
+
+		client, err := NewBatchClient(mockClient)
+		require.NoError(t, err)
+
+		client.Stop()
+		client.Stop()
+		client.Stop()
+	})
+
 	t.Run("can call Stop multiple times without panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -907,6 +937,7 @@ func TestStop(t *testing.T) {
 
 	t.Run("QueueMessage returns error after Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		mockClient.
 			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(&chipingress.PublishResponse{}, nil).
@@ -943,6 +974,7 @@ func TestStop(t *testing.T) {
 
 	t.Run("clears seqnum counters on Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -1191,6 +1223,7 @@ func TestBatchClient_Metrics(t *testing.T) {
 		defer restore()
 
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		mockClient.
 			On("PublishBatch", mock.Anything, mock.Anything).
@@ -1262,6 +1295,7 @@ func TestBatchClient_Metrics(t *testing.T) {
 		defer restore()
 
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		mockClient.
 			On("PublishBatch", mock.Anything, mock.Anything).

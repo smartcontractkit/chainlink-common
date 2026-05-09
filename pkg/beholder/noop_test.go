@@ -85,6 +85,7 @@ func TestNoopClient(t *testing.T) {
 	err = noopClient.Chip.Close()
 	assert.NoError(t, err)
 
+	require.NoError(t, noopClient.Start(t.Context()))
 	err = noopClient.Close()
 	assert.NoError(t, err)
 }

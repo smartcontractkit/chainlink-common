@@ -168,6 +168,10 @@ func (b *Client) Stop() {
 
 		// Release per-stream seqnum state to avoid unbounded growth from high-cardinality source/type values.
 		b.clearCounters()
+
+		if err := b.client.Close(); err != nil {
+			b.log.Warnw("failed to close chip ingress client", "error", err)
+		}
 	})
 }
 

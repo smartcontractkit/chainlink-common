@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type MockExporter struct {
@@ -191,6 +192,7 @@ func TestClient_Close(t *testing.T) {
 	client, err := beholder.NewStdoutClient()
 	require.NoError(t, err)
 
+	require.NoError(t, client.Start(t.Context()))
 	err = client.Close()
 	require.NoError(t, err)
 
@@ -220,7 +222,8 @@ func TestClient_ForPackage(t *testing.T) {
 	// Meter
 	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
 	counter.Add(t.Context(), 1)
-	clientForTest.Close()
+	require.NoError(t, client.Start(t.Context()))
+	require.NoError(t, clientForTest.Close())
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testMetric")
 }
@@ -993,11 +996,12 @@ func TestClient_batchEmitterService(t *testing.T) {
 		_ = client.Close()
 	})
 
-	// closeWithoutStart: Close on a never-started client must not return ErrCannotStopUnstarted.
-	// OTel provider flush errors from a non-existent endpoint are ignored.
+	// closeWithoutStart: strict service semantics require Start before Close.
 	t.Run("close without start", func(t *testing.T) {
 		client := newBatchClient(t)
-		_ = client.Close()
+		err := client.Close()
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, services.ErrCannotStopUnstarted)
 	})
 
 	// requiresLogger: constructing with batch emitter enabled but no logger returns an error.

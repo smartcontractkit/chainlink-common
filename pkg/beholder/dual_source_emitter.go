@@ -53,14 +53,7 @@ func (d *DualSourceEmitter) Close() error {
 	}
 	close(d.stopCh)
 	d.wg.Wait()
-	// When the batch emitter is enabled its lifecycle (Start/Stop) is owned by the Client's
-	// service engine, not by DualSourceEmitter. Calling Close() on it here would return
-	// ErrCannotStopUnstarted when the client is closed without ever being started.
-	var chipErr error
-	if !d.chipIngressBatchEmitterEnabled {
-		chipErr = d.chipIngressEmitter.Close()
-	}
-	return errors.Join(chipErr, d.otelCollectorEmitter.Close())
+	return errors.Join(d.chipIngressEmitter.Close(), d.otelCollectorEmitter.Close())
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {

@@ -284,7 +284,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	c.Service, c.eng = services.Config{
 		Name:                "BeholderClient",
 		Close:               c.close,
-		CloseIfNeverStarted: true,
 		NewSubServices: func(l pkglogger.Logger) []services.Service {
 			if c.batchEmitterService == nil {
 				return nil

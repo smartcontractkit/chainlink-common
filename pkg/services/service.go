@@ -167,11 +167,6 @@ type Config struct {
 	Start func(context.Context) error
 	// Close is an optional hook called before closing SubServices.
 	Close func() error
-	// CloseIfNeverStarted configures Close() to invoke the Close hook when the lifecycle
-	// state is still Unstarted, instead of returning ErrCannotStopUnstarted.
-	// Sub-services are not closed by this branch; callers should Start the parent normally
-	// if sub-service shutdown must run via the usual teardown path.
-	CloseIfNeverStarted bool
 }
 
 // NewServiceEngine returns a new Service defined by Config, and an Engine for managing health, goroutines, and logging.
@@ -284,11 +279,6 @@ func (s *service) Start(ctx context.Context) error {
 }
 
 func (s *service) Close() error {
-	if s.cfg.CloseIfNeverStarted {
-		if handled, cerr := s.tryCloseNeverStarted(); handled {
-			return cerr
-		}
-	}
 	return s.StopOnce(s.cfg.Name, func() (err error) {
 		s.eng.Info("Closing")
 		defer s.eng.Info("Closed")
@@ -307,40 +297,6 @@ func (s *service) Close() error {
 		err = errors.Join(err, MultiCloser(s.subs).Close())
 		return
 	})
-}
-
-// tryCloseNeverStarted handles Close when the lifecycle never reached Started but
-// Config.Close hook must still run (used for tearing down ctor-held resources).
-// It does not close sub-services — they are only torn down via the normal StopOnce path.
-func (s *service) tryCloseNeverStarted() (handled bool, err error) {
-	s.Lock()
-	defer s.Unlock()
-
-	if s.loadState() != stateUnstarted {
-		return false, nil
-	}
-	success := s.state.CompareAndSwap(int32(stateUnstarted), int32(stateStopping))
-	if !success {
-		return false, nil
-	}
-
-	s.eng.Info("Closing")
-	defer s.eng.Info("Closed")
-
-	if s.cfg.Close != nil {
-		err = s.cfg.Close()
-	}
-
-	if err == nil {
-		if !s.state.CompareAndSwap(int32(stateStopping), int32(stateStopped)) {
-			panic(fmt.Sprintf("%v entered unreachable state, unable to set state to stopped", s.cfg.Name))
-		}
-	} else {
-		if !s.state.CompareAndSwap(int32(stateStopping), int32(stateStopFailed)) {
-			panic(fmt.Sprintf("%v entered unreachable state, unable to set state to StopFailed", s.cfg.Name))
-		}
-	}
-	return true, err
 }
 
 func (s *service) emitHealthErr(err error) { s.SvcErrBuffer.Append(err) }

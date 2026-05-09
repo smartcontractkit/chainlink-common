@@ -13,8 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
@@ -1157,6 +1159,77 @@ func TestBatchClient_Metrics(t *testing.T) {
 
 		client.Stop()
 		rm := collectResourceMetrics(t, reader)
+		metricdatatest.AssertEqual(t, metricdata.ScopeMetrics{
+			Scope: instrumentation.Scope{Name: "chipingress/batch_client"},
+			Metrics: []metricdata.Metrics{
+				{
+					Name:        "chip_ingress.batch.send_requests_total",
+					Description: "Total PublishBatch requests sent by batch client",
+					Unit:        "{request}",
+					Data: metricdata.Sum[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						IsMonotonic: true,
+						DataPoints: []metricdata.DataPoint[int64]{
+							{Attributes: attribute.NewSet(attribute.String("status", "success"))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.request_size_messages",
+					Description: "PublishBatch request size measured in number of events",
+					Unit:        "{event}",
+					Data: metricdata.Histogram[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{Attributes: attribute.NewSet(attribute.Int("max_batch_size", 1))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.request_size_bytes",
+					Description: "PublishBatch request size measured in bytes",
+					Unit:        "By",
+					Data: metricdata.Histogram[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{Attributes: attribute.NewSet(attribute.Int("max_grpc_request_size_bytes", 2048))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.request_latency_ms",
+					Description: "PublishBatch end-to-end latency in milliseconds",
+					Unit:        "ms",
+					Data: metricdata.Histogram[float64]{
+						Temporality: metricdata.CumulativeTemporality,
+						DataPoints: []metricdata.HistogramDataPoint[float64]{
+							{Attributes: attribute.NewSet(attribute.String("status", "success"))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.config.info",
+					Description: "Batch client configuration info metric",
+					Unit:        "{info}",
+					Data: metricdata.Gauge[int64]{
+						DataPoints: []metricdata.DataPoint[int64]{
+							{
+								Attributes: attribute.NewSet(
+									attribute.Int("max_batch_size", 1),
+									attribute.Int("message_buffer_size", 10),
+									attribute.Int("max_concurrent_sends", 1),
+									attribute.Int64("batch_interval_ms", 1000),
+									attribute.Int64("max_publish_timeout_ms", 5000),
+									attribute.Int64("shutdown_timeout_ms", 5000),
+									attribute.Bool("clone_event", true),
+									attribute.Int("max_grpc_request_size_bytes", 2048),
+								),
+							},
+						},
+					},
+				},
+			},
+		}, mustScopeMetrics(t, rm, "chipingress/batch_client"), metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreValue())
 
 		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
 		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
@@ -1222,6 +1295,87 @@ func TestBatchClient_Metrics(t *testing.T) {
 
 		client.Stop()
 		rm := collectResourceMetrics(t, reader)
+		metricdatatest.AssertEqual(t, metricdata.ScopeMetrics{
+			Scope: instrumentation.Scope{Name: "chipingress/batch_client"},
+			Metrics: []metricdata.Metrics{
+				{
+					Name:        "chip_ingress.batch.send_requests_total",
+					Description: "Total PublishBatch requests sent by batch client",
+					Unit:        "{request}",
+					Data: metricdata.Sum[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						IsMonotonic: true,
+						DataPoints: []metricdata.DataPoint[int64]{
+							{Attributes: attribute.NewSet(attribute.String("status", "failure"))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.send_failures_total",
+					Description: "Total failed PublishBatch requests sent by batch client",
+					Unit:        "{request}",
+					Data: metricdata.Sum[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						IsMonotonic: true,
+						DataPoints:  []metricdata.DataPoint[int64]{{}},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.request_size_messages",
+					Description: "PublishBatch request size measured in number of events",
+					Unit:        "{event}",
+					Data: metricdata.Histogram[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{Attributes: attribute.NewSet(attribute.Int("max_batch_size", 1))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.request_size_bytes",
+					Description: "PublishBatch request size measured in bytes",
+					Unit:        "By",
+					Data: metricdata.Histogram[int64]{
+						Temporality: metricdata.CumulativeTemporality,
+						DataPoints: []metricdata.HistogramDataPoint[int64]{
+							{Attributes: attribute.NewSet(attribute.Int("max_grpc_request_size_bytes", 16*1024*1024))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.request_latency_ms",
+					Description: "PublishBatch end-to-end latency in milliseconds",
+					Unit:        "ms",
+					Data: metricdata.Histogram[float64]{
+						Temporality: metricdata.CumulativeTemporality,
+						DataPoints: []metricdata.HistogramDataPoint[float64]{
+							{Attributes: attribute.NewSet(attribute.String("status", "failure"))},
+						},
+					},
+				},
+				{
+					Name:        "chip_ingress.batch.config.info",
+					Description: "Batch client configuration info metric",
+					Unit:        "{info}",
+					Data: metricdata.Gauge[int64]{
+						DataPoints: []metricdata.DataPoint[int64]{
+							{
+								Attributes: attribute.NewSet(
+									attribute.Int("max_batch_size", 1),
+									attribute.Int("message_buffer_size", 10),
+									attribute.Int("max_concurrent_sends", 1),
+									attribute.Int64("batch_interval_ms", 100),
+									attribute.Int64("max_publish_timeout_ms", 5000),
+									attribute.Int64("shutdown_timeout_ms", 5000),
+									attribute.Bool("clone_event", true),
+									attribute.Int("max_grpc_request_size_bytes", 16*1024*1024),
+								),
+							},
+						},
+					},
+				},
+			},
+		}, mustScopeMetrics(t, rm, "chipingress/batch_client"), metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreValue())
 
 		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
 		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
@@ -1300,6 +1454,17 @@ func mustMetric(t *testing.T, rm metricdata.ResourceMetrics, name string) metric
 	}
 	t.Fatalf("metric %q not found", name)
 	return metricdata.Metrics{}
+}
+
+func mustScopeMetrics(t *testing.T, rm metricdata.ResourceMetrics, name string) metricdata.ScopeMetrics {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		if sm.Scope.Name == name {
+			return sm
+		}
+	}
+	t.Fatalf("scope metrics %q not found", name)
+	return metricdata.ScopeMetrics{}
 }
 
 func mustInt64SumPointWithAttr(t *testing.T, sum metricdata.Sum[int64], key, want string) metricdata.DataPoint[int64] {

@@ -42,6 +42,7 @@ func newTestLogger(t *testing.T) logger.Logger {
 func TestNewChipIngressBatchEmitterService(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 		assert.NotNil(t, emitter)
@@ -57,6 +58,7 @@ func TestNewChipIngressBatchEmitterService(t *testing.T) {
 func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 	t.Run("returns error when domain/entity missing", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, newTestConfig(), newTestLogger(t))
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
@@ -68,6 +70,7 @@ func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 
 	t.Run("events are batched and sent via PublishBatch", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 
 		var mu sync.Mutex
 		var receivedBatches []*chipingress.CloudEventBatch
@@ -117,6 +120,7 @@ func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 
 func TestChipIngressBatchEmitterService_CloudEventFormat(t *testing.T) {
 	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
 
 	var mu sync.Mutex
 	var receivedBatch *chipingress.CloudEventBatch
@@ -162,6 +166,7 @@ func TestChipIngressBatchEmitterService_CloudEventFormat(t *testing.T) {
 
 func TestChipIngressBatchEmitterService_PublishBatchError(t *testing.T) {
 	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
 
 	var mu sync.Mutex
 	callCount := 0
@@ -200,6 +205,7 @@ func TestChipIngressBatchEmitterService_PublishBatchError(t *testing.T) {
 
 func TestChipIngressBatchEmitterService_ContextCancellation(t *testing.T) {
 	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
 	clientMock.
 		On("PublishBatch", mock.Anything, mock.Anything).
 		Return(nil, nil).
@@ -226,6 +232,7 @@ func TestChipIngressBatchEmitterService_ContextCancellation(t *testing.T) {
 
 func TestChipIngressBatchEmitterService_DefaultConfig(t *testing.T) {
 	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
 
 	var mu sync.Mutex
 	var receivedBatch *chipingress.CloudEventBatch
@@ -263,6 +270,7 @@ func TestChipIngressBatchEmitterService_DefaultConfig(t *testing.T) {
 
 func TestChipIngressBatchEmitterService_EmitAfterClose(t *testing.T) {
 	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
 	clientMock.
 		On("PublishBatch", mock.Anything, mock.Anything).
 		Return(nil, nil).
@@ -283,6 +291,7 @@ func TestChipIngressBatchEmitterService_EmitAfterClose(t *testing.T) {
 func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 	t.Run("callback receives nil on success", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, nil)
@@ -315,6 +324,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 
 	t.Run("callback receives error on PublishBatch failure", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, assert.AnError)
@@ -347,6 +357,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 
 	t.Run("callback receives error when buffer is full", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 
 		sendBlocked := make(chan struct{})
 		firstCallSignal := make(chan struct{}, 1)
@@ -410,6 +421,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 
 	t.Run("nil callback behaves like Emit", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
 			Return(nil, nil).
@@ -438,6 +450,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		defer restore()
 
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
@@ -478,6 +491,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		defer restore()
 
 		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).

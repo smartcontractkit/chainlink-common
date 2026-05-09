@@ -206,11 +206,15 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		lazySigner:            nil,
 		OnClose:               onClose,
 	}
+	svcLggr := cfg.ChipIngressLogger
+	if svcLggr == nil {
+		svcLggr = pkglogger.Nop()
+	}
 	c.Service, c.eng = services.Config{
 		Name:                 "BeholderClient",
 		Close:                c.close,
 		CloseIfNeverStarted:  true,
-	}.NewServiceEngine(pkglogger.Nop())
+	}.NewServiceEngine(svcLggr)
 	return c, nil
 }
 

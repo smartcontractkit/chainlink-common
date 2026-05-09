@@ -264,7 +264,7 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 		batchBytes := proto.Size(batchReq)
 		startedAt := time.Now()
 		_, err := b.client.PublishBatch(ctxTimeout, batchReq)
-		b.metrics.recordSend(context.Background(), len(messages), batchBytes, time.Since(startedAt), err == nil)
+		b.metrics.recordSend(ctxTimeout, len(messages), batchBytes, time.Since(startedAt), err == nil)
 		if err != nil {
 			b.log.Errorw("failed to publish batch", "error", err)
 		}

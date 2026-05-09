@@ -72,7 +72,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		client:             client,
 		log:                zap.NewNop().Sugar(),
 		batchSize:          10,
-		maxGRPCRequestSize: 16 * 1024 * 1024, // Match chipingress maxMessageSize default.
+		maxGRPCRequestSize: 10 * 1024 * 1024, // Match chipingress maxMessageSize default.
 		cloneEvent:         true,
 		maxConcurrentSends: make(chan struct{}, 1),
 		messageBuffer:      make(chan *messageWithCallback, 200),

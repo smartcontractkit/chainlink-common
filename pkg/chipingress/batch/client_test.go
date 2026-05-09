@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,6 +16,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
@@ -59,6 +63,68 @@ func TestNewBatchClient(t *testing.T) {
 		client, err := NewBatchClient(nil, WithMessageBuffer(1000))
 		require.NoError(t, err)
 		assert.Equal(t, 1000, cap(client.messageBuffer))
+	})
+
+	t.Run("records failure metrics when request exceeds configured max grpc size", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		const maxGRPCSize = 2048
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				batchReq := args.Get(1).(*chipingress.CloudEventBatch)
+				assert.Greater(t, proto.Size(batchReq), maxGRPCSize)
+				close(done)
+			}).
+			Return(&chipingress.PublishResponse{}, status.Error(codes.ResourceExhausted, "received message larger than max"))
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithBatchSize(1),
+			WithBatchInterval(time.Second),
+			WithMessageBuffer(10),
+			WithMaxGRPCRequestSize(maxGRPCSize),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     strings.Repeat("x", maxGRPCSize*2),
+			Source: "platform",
+			Type:   "MetricOversizeFailure",
+		}, nil)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for PublishBatch")
+		}
+
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+
+		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
+		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		failureReq := mustInt64SumPointWithAttr(t, reqSum, "status", "failure")
+		assert.GreaterOrEqual(t, failureReq.Value, int64(1))
+
+		failures := mustMetric(t, rm, "chip_ingress.batch.send_failures_total")
+		failuresSum, ok := failures.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		require.NotEmpty(t, failuresSum.DataPoints)
+		assert.GreaterOrEqual(t, failuresSum.DataPoints[0].Value, int64(1))
+
+		reqSize := mustMetric(t, rm, "chip_ingress.batch.request_size_bytes")
+		reqSizeHist, ok := reqSize.Data.(metricdata.Histogram[int64])
+		require.True(t, ok)
+		reqSizePoint := mustInt64HistogramPointWithIntAttr(t, reqSizeHist, "max_grpc_request_size_bytes", maxGRPCSize)
+		assert.GreaterOrEqual(t, reqSizePoint.Count, uint64(1))
 	})
 }
 

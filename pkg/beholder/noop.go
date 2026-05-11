@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -55,10 +53,7 @@ func NewNoopClient() *Client {
 		MessageLoggerProvider: loggerProvider,
 		OnClose:               noopOnClose,
 	}
-	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Close: c.close,
-	}.NewServiceEngine(logger.Nop())
+	c.initService(nil)
 	return c
 }
 
@@ -132,10 +127,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		lazySigner:            nil,
 		OnClose:               onClose,
 	}
-	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Close: c.close,
-	}.NewServiceEngine(logger.Nop())
+	c.initService(nil)
 	return c, nil
 }
 

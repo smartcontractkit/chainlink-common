@@ -74,6 +74,24 @@ type Client struct {
 	closeErr  error
 }
 
+// initService wires up the services.Service lifecycle for the Client.
+// Must be called exactly once after populating the Client fields.
+func (c *Client) initService(lggr pkglogger.Logger) {
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
+	c.Service, c.eng = services.Config{
+		Name:  "BeholderClient",
+		Close: c.close,
+		NewSubServices: func(l pkglogger.Logger) []services.Service {
+			if c.batchEmitterService == nil {
+				return nil
+			}
+			return []services.Service{c.batchEmitterService}
+		},
+	}.NewServiceEngine(lggr)
+}
+
 // NewClient creates a new Client with initialized OpenTelemetry components
 // To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
 func NewClient(cfg Config) (*Client, error) {
@@ -281,20 +299,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		OnClose:               onClose,
 		batchEmitterService:   batchEmitterService,
 	}
-	svcLggr := cfg.ChipIngressLogger
-	if svcLggr == nil {
-		svcLggr = pkglogger.Nop()
-	}
-	c.Service, c.eng = services.Config{
-		Name:                "BeholderClient",
-		Close:               c.close,
-		NewSubServices: func(l pkglogger.Logger) []services.Service {
-			if c.batchEmitterService == nil {
-				return nil
-			}
-			return []services.Service{c.batchEmitterService}
-		},
-	}.NewServiceEngine(svcLggr)
+	c.initService(cfg.ChipIngressLogger)
 	return c, nil
 }
 

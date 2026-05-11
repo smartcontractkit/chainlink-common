@@ -15,9 +15,6 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
-	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // Used for testing to override the default exporter
@@ -206,14 +203,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		lazySigner:            nil,
 		OnClose:               onClose,
 	}
-	svcLggr := cfg.ChipIngressLogger
-	if svcLggr == nil {
-		svcLggr = pkglogger.Nop()
-	}
-	c.Service, c.eng = services.Config{
-		Name:  "BeholderClient",
-		Close: c.close,
-	}.NewServiceEngine(svcLggr)
+	c.initService(cfg.ChipIngressLogger)
 	return c, nil
 }
 

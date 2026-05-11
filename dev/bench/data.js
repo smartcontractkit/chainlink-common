@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778497517164,
+  "lastUpdate": 1778510207976,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -46140,6 +46140,66 @@ window.BENCHMARK_DATA = {
             "value": 115506,
             "unit": "ns/op",
             "extra": "9963 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "brunotm@gmail.com",
+            "name": "Bruno Moura",
+            "username": "brunotm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0441b446ad7552f322dd88b9fe48bafe234b6e55",
+          "message": "llo/types: add backfilling report format (#2041)",
+          "timestamp": "2026-05-11T14:23:28Z",
+          "tree_id": "762168c87d1a58ab7210dc71c995d887981ba69c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0441b446ad7552f322dd88b9fe48bafe234b6e55"
+        },
+        "date": 1778510206120,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.5,
+            "unit": "ns/op",
+            "extra": "3380032 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 76710,
+            "unit": "ns/op",
+            "extra": "15570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 379.7,
+            "unit": "ns/op",
+            "extra": "3156505 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 75199,
+            "unit": "ns/op",
+            "extra": "16270 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29191,
+            "unit": "ns/op",
+            "extra": "41097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 128132,
+            "unit": "ns/op",
+            "extra": "9226 times\n4 procs"
           }
         ]
       }

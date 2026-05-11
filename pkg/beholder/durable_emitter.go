@@ -135,8 +135,11 @@ type insertResult struct {
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
-	cfg    DurableEmitterConfig
-	log    logger.Logger
+	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
+	// Should be set to false when initialized inside LOOP plugins.
+	isHostProcess bool
+	cfg           DurableEmitterConfig
+	log           logger.Logger
 
 	metrics *durableEmitterMetrics
 
@@ -222,6 +225,7 @@ var _ Emitter = (*DurableEmitter)(nil)
 func NewDurableEmitter(
 	store DurableEventStore,
 	client chipingress.Client,
+	isHostProcess bool,
 	cfg DurableEmitterConfig,
 	log logger.Logger,
 ) (*DurableEmitter, error) {
@@ -247,12 +251,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:   store,
-		client:  client,
-		cfg:     cfg,
-		log:     log,
-		metrics: m,
-		stopCh:  make(chan struct{}),
+		store:         store,
+		client:        client,
+		isHostProcess: isHostProcess,
+		cfg:           cfg,
+		log:           log,
+		metrics:       m,
+		stopCh:        make(chan struct{}),
 	}
 	if cp, ok := client.(grpcConnProvider); ok {
 		d.rawConn = cp.Conn()
@@ -297,11 +302,12 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 		insertWorkers = 4
 	}
 
-	// WaitGroup.Go pairs Add/Done with each worker; loop bodies must not call wg.Done.
-	d.wg.Go(d.retransmitLoop)
-	if !d.cfg.DisablePruning {
-		d.wg.Go(func() { d.expiryLoop(ctx) })
-		d.wg.Go(func() { d.purgeLoop(ctx) })
+	if d.isHostProcess {
+		d.wg.Go(d.retransmitLoop)
+		if !d.cfg.DisablePruning {
+			d.wg.Go(func() { d.expiryLoop(ctx) })
+			d.wg.Go(func() { d.purgeLoop(ctx) })
+		}
 	}
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {

@@ -127,6 +127,9 @@ const (
 
 	// ConsensusFailed indicates failure to reach consensus
 	ConsensusFailed ErrorCode = 100
+
+	// LimitExceeded indicates that a CRE limit breach has occurred.
+	LimitExceeded ErrorCode = 101
 )
 
 // String returns the string representation of the ErrorCode.

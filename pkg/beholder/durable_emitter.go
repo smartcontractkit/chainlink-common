@@ -135,8 +135,11 @@ type insertResult struct {
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
-	cfg    DurableEmitterConfig
-	log    logger.Logger
+	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
+	// Should be set to false when initialized inside LOOP plugins.
+	isHostProcess bool
+	cfg           DurableEmitterConfig
+	log           logger.Logger
 
 	metrics *durableEmitterMetrics
 
@@ -222,6 +225,7 @@ var _ Emitter = (*DurableEmitter)(nil)
 func NewDurableEmitter(
 	store DurableEventStore,
 	client chipingress.Client,
+	isHostProcess bool,
 	cfg DurableEmitterConfig,
 	log logger.Logger,
 ) (*DurableEmitter, error) {
@@ -247,12 +251,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:   store,
-		client:  client,
-		cfg:     cfg,
-		log:     log,
-		metrics: m,
-		stopCh:  make(chan struct{}),
+		store:         store,
+		client:        client,
+		isHostProcess: isHostProcess,
+		cfg:           cfg,
+		log:           log,
+		metrics:       m,
+		stopCh:        make(chan struct{}),
 	}
 	if cp, ok := client.(grpcConnProvider); ok {
 		d.rawConn = cp.Conn()
@@ -286,40 +291,37 @@ func NewDurableEmitter(
 // Start launches the retransmit, expiry, purge, and (optionally) batch publish
 // background loops. Cancel the supplied context or call Close to stop them.
 func (d *DurableEmitter) Start(ctx context.Context) {
-	n := 1 // retransmit always runs
-	if !d.cfg.DisablePruning {
-		n += 2 // expiry + purge
+
+	if d.isHostProcess {
+		d.wg.Add(1)
+		go d.retransmitLoop()
+		if !d.cfg.DisablePruning {
+			d.wg.Add(2)
+			go d.expiryLoop(ctx)
+			go d.purgeLoop(ctx)
+		}
 	}
+
 	batchWorkers := d.cfg.PublishBatchWorkers
 	if batchWorkers <= 0 {
 		batchWorkers = 1
 	}
-	n += batchWorkers
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
 		insertWorkers = 4
 	}
 	if d.insertCh != nil {
-		n += insertWorkers
-	}
-	if d.metrics != nil && d.cfg.Metrics != nil {
-		n++
-	}
-	d.wg.Add(n)
-	go d.retransmitLoop()
-	if !d.cfg.DisablePruning {
-		go d.expiryLoop(ctx)
-		go d.purgeLoop(ctx)
-	}
-	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
+			d.wg.Add(1)
 			go d.insertBatchLoop()
 		}
 	}
 	for i := 0; i < batchWorkers; i++ {
+		d.wg.Add(1)
 		go d.batchPublishLoop()
 	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
+		d.wg.Add(1)
 		go d.metricsLoop()
 	}
 }

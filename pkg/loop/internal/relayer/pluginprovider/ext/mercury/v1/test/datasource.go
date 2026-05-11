@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	mercury_v1_types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"

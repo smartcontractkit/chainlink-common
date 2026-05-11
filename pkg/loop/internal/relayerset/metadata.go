@@ -3,8 +3,9 @@ package relayerset
 import (
 	"context"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
 const metadataChain = "relay-chain-id"

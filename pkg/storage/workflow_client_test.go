@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
 	"os"
 	"testing"
@@ -39,7 +39,6 @@ type testWorkflowServer struct {
 }
 
 func (s *testWorkflowServer) DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (*pb.DownloadArtifactResponse, error) {
-
 	resp := &pb.DownloadArtifactResponse{
 		Url:    "pre-signed-url",
 		Expiry: timestamppb.New(time.Now().Add(time.Hour)),
@@ -289,7 +288,7 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "test"}
 
-	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", fmt.Errorf("mock JWT creation error")).Once()
+	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", errors.New("mock JWT creation error")).Once()
 
 	wc := &workflowClient{
 		logger:       logger.Test(t),

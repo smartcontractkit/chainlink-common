@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -40,10 +39,10 @@ func TestHardCoder(t *testing.T) {
 
 	t.Run("NewHardCoder returns error if key and subkey are in a map", func(t *testing.T) {
 		_, err := codec.NewHardCoder(map[string]any{"A.Z": "Foo", "A": testStruct{A: "Z"}}, map[string]any{})
-		assert.True(t, errors.Is(err, types.ErrInvalidConfig))
+		assert.ErrorIs(t, err, types.ErrInvalidConfig)
 
 		_, err = codec.NewHardCoder(map[string]any{}, map[string]any{"A.Z": "Foo", "A": testStruct{A: "Z"}})
-		assert.True(t, errors.Is(err, types.ErrInvalidConfig))
+		assert.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	t.Run("RetypeToOffChain adds fields to struct", func(t *testing.T) {
@@ -106,7 +105,7 @@ func TestHardCoder(t *testing.T) {
 		invalidHardCoder, err := codec.NewHardCoder(map[string]any{}, map[string]any{"A": int64(2), "Q": []int32{4, 5}})
 		require.NoError(t, err)
 		_, err = invalidHardCoder.RetypeToOffChain(onChainType, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
@@ -144,7 +143,7 @@ func TestHardCoder(t *testing.T) {
 
 	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {
 		_, err := hardCoder.TransformToOnChain(testStruct{}, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {

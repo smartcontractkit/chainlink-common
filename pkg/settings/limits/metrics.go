@@ -73,5 +73,4 @@ func metricConstructors[N Number](meter metric.Meter, unit string) (
 			g, err := meter.Int64Histogram(key, metric.WithUnit(unit))
 			return &intRecorder[N]{g}, err
 		}
-
 }

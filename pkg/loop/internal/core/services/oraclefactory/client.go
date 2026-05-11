@@ -28,7 +28,7 @@ type client struct {
 	serviceClient *goplugin.ServiceClient
 }
 
-func NewClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *client {
+func NewClient(log logger.Logger, b *net.BrokerExt, conn net.ClientConnInterface) *client {
 	b = b.WithName("OracleFactoryClient")
 	return &client{
 		log:           log,

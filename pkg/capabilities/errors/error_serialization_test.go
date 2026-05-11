@@ -2,7 +2,6 @@ package errors_test
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -46,7 +45,7 @@ func TestRemoteErrorSerializationAndDeserialization(t *testing.T) {
 					require.Equal(t, deserializedErr.Visibility(), originalErr.Visibility())
 					require.Equal(t, deserializedErr.Origin(), originalErr.Origin())
 					require.Equal(t, deserializedErr.Code(), originalErr.Code())
-					require.True(t, strings.Contains(deserializedErr.Error(), "error whilst executing capability - the error message is not publicly reportable"))
+					require.Contains(t, deserializedErr.Error(), "error whilst executing capability - the error message is not publicly reportable")
 				} else {
 					if !originalErr.Equals(deserializedErr) {
 						t.Errorf("expected %v, got %v", originalErr, deserializedErr)

@@ -77,10 +77,10 @@ func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) ur
 		quotedTemplate := pq.QuoteIdentifier(template)
 		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s", quotedName, quotedTemplate))
 	} else {
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", quotedName))
+		_, err = db.Exec("CREATE DATABASE " + quotedName)
 	}
 	require.NoError(t, err, "unable to create postgres test database with name '%s'", dbName)
-	u.Path = fmt.Sprintf("/%s", dbName)
+	u.Path = "/" + dbName
 	// simple best effort; some tests seem to hold a db connection and race with this drop
 	t.Cleanup(func() {
 		var err error
@@ -117,7 +117,7 @@ func drop(dbURL url.URL) error {
 	quoted := pq.QuoteIdentifier(dbname)
 	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH (FORCE)", quoted))
 	if err != nil {
-		return fmt.Errorf("unable to drop postgres migrations test database: %v", err)
+		return fmt.Errorf("unable to drop postgres migrations test database: %w", err)
 	}
 	return nil
 }

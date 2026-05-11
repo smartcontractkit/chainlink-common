@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
-	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation/nitro/fake"
+	nitrofake "github.com/smartcontractkit/chainlink-common/pkg/teeattestation/nitro/fake"
 )
 
 func TestValidateAttestation_Attestor(t *testing.T) {

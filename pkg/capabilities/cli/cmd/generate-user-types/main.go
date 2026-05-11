@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd"
@@ -67,7 +66,7 @@ func genForStruct() func(string) bool {
 				return false
 			}
 		default:
-			panic(fmt.Sprintf("invalid type %s", s))
+			panic("invalid type " + s)
 		}
 
 		return true

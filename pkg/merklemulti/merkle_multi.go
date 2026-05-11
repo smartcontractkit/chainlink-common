@@ -148,7 +148,7 @@ func VerifyComputeRoot[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []
 	leavesLength := len(leafHashes)
 	proofsLength := len(proof.Hashes)
 	if leavesLength == 0 && proofsLength == 0 {
-		return hasher.ZeroHash(), fmt.Errorf("leaves and proofs are empty")
+		return hasher.ZeroHash(), errors.New("leaves and proofs are empty")
 	}
 	if leavesLength > MaxNumberTreeLeaves+1 || proofsLength > MaxNumberTreeLeaves+1 {
 		return hasher.ZeroHash(), fmt.Errorf("leaves or proofs length is beyond the limit %d", MaxNumberTreeLeaves)
@@ -204,7 +204,7 @@ func VerifyComputeRoot[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []
 	if hashPos != totalHashes-1 ||
 		leafPos != leavesLength ||
 		proofPos != proofsLength {
-		return hasher.ZeroHash(), fmt.Errorf("not all proofs used during processing")
+		return hasher.ZeroHash(), errors.New("not all proofs used during processing")
 	}
 	return hashes[totalHashes-1], nil
 }

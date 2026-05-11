@@ -47,7 +47,7 @@ func TestEncryptSecretsForNodes(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Ensure all p2pKeys are in encryptedSecrets map
-	assert.Equal(t, len(encryptionPublicKeys), len(encryptedSecrets))
+	assert.Len(t, encryptedSecrets, len(encryptionPublicKeys))
 	for p2pId := range encryptionPublicKeys {
 		_, exists := encryptedSecrets[p2pId]
 		assert.True(t, exists, "p2pId %s not found in encryptedSecrets", p2pId)

@@ -517,7 +517,9 @@ func (d *DurableEmitter) insertBatchLoop() {
 		}
 		// Detached from stopCh so closing stopCh does not cancel inserts while
 		// draining insertCh during shutdown.
-		ids, batchErr := d.batchInserter.InsertBatch(context.Background(), payloads)
+		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+		cancel()
 		for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
@@ -549,9 +551,11 @@ func (d *DurableEmitter) incPending(n int64) {
 		}
 	}
 	if d.metrics != nil {
-		d.metrics.queueDepth.Record(context.Background(), cur)
+		ctx, cancel := d.stopCh.NewCtx()
+		defer cancel()
+		d.metrics.queueDepth.Record(ctx, cur)
 		if updated {
-			d.metrics.queueDepthMax.Record(context.Background(), cur)
+			d.metrics.queueDepthMax.Record(ctx, cur)
 		}
 	}
 }
@@ -559,7 +563,9 @@ func (d *DurableEmitter) incPending(n int64) {
 func (d *DurableEmitter) decPending(n int64) {
 	cur := d.pendingCount.Add(-n)
 	if d.metrics != nil {
-		d.metrics.queueDepth.Record(context.Background(), cur)
+		ctx, cancel := d.stopCh.NewCtx()
+		defer cancel()
+		d.metrics.queueDepth.Record(ctx, cur)
 	}
 }
 
@@ -678,8 +684,10 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 		ids[i] = w.id
 	}
 
-	pubCtx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	ctx, cancel := d.stopCh.NewCtx()
 	defer cancel()
+	pubCtx, pubCancel := context.WithTimeout(ctx, d.cfg.PublishTimeout)
+	defer pubCancel()
 
 	t0 := time.Now()
 	var err error
@@ -693,11 +701,11 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 	if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
 		h.OnBatchPublish(elapsed, len(batch), err)
 	}
-	d.metrics.recordPublish(context.Background(), elapsed, "batch", err)
+	d.metrics.recordPublish(ctx, elapsed, "batch", err)
 
 	if err != nil {
 		if d.metrics != nil {
-			d.metrics.publishBatchEvErr.Add(context.Background(), int64(len(batch)))
+			d.metrics.publishBatchEvErr.Add(ctx, int64(len(batch)))
 		}
 		d.log.Warnw("DurableEmitter: PublishBatch failed, events will be retransmitted",
 			"batch_size", len(batch), "error", err,
@@ -706,7 +714,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 	}
 
 	if d.metrics != nil {
-		d.metrics.publishBatchEvOK.Add(context.Background(), int64(len(batch)))
+		d.metrics.publishBatchEvOK.Add(pubCtx, int64(len(batch)))
 	}
 
 	// Async MarkDelivered: the DB UPDATE runs in a background goroutine so
@@ -717,7 +725,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 	go func() {
 		defer d.wg.Done()
 		tMark := time.Now()
-		marked, markErr := d.store.MarkDeliveredBatch(context.Background(), ids)
+		marked, markErr := d.store.MarkDeliveredBatch(ctx, ids)
 		markElapsed := time.Since(tMark)
 		if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
 			h.OnBatchMarkDelivered(markElapsed, int(marked))
@@ -728,7 +736,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 		}
 		d.decPending(marked)
 		if d.metrics != nil {
-			d.metrics.deliverComplete.Add(context.Background(), marked)
+			d.metrics.deliverComplete.Add(ctx, marked)
 		}
 	}()
 }
@@ -890,6 +898,8 @@ func (d *DurableEmitter) expiryLoop(ctx context.Context) {
 	ticker := time.NewTicker(d.cfg.ExpiryInterval)
 	defer ticker.Stop()
 
+	ctx, cancel := d.stopCh.NewCtx()
+	defer cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -905,7 +915,7 @@ func (d *DurableEmitter) expiryLoop(ctx context.Context) {
 			if deleted > 0 {
 				d.decPending(deleted)
 				if d.metrics != nil {
-					d.metrics.expiredPurged.Add(context.Background(), deleted)
+					d.metrics.expiredPurged.Add(ctx, deleted)
 				}
 				d.log.Infow("purged expired events", "count", deleted)
 			}

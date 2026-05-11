@@ -67,6 +67,6 @@ func Test_FeedID_UnmarshalText(t *testing.T) {
 	assert.NoError(t, f.UnmarshalText([]byte(strings.ToUpper(v1FeedIDString))))
 	assert.Equal(t, v1FeedID, f)
 	assert.ErrorContains(t, f.UnmarshalText([]byte("zzz")), "FeedID must be 32 bytes")
-	assert.ErrorContains(t, f.UnmarshalText([]byte("0y00016b4aa7e57ca7b68ae1bf45653f56b656fd3aa335ef7fae696b663f1b8472")), "FeedID must start with ")
+	assert.ErrorContains(t, f.UnmarshalText([]byte("0y00016b4aa7e57ca7b68ae1bf45653f56b656fd3aa335ef7fae696b663f1b8472")), "FeedID must start with '0x' or '0X' prefix")
 	assert.ErrorContains(t, f.UnmarshalText([]byte("0xz0016b4aa7e57ca7b68ae1bf45653f56b656fd3aa335ef7fae696b663f1b8472")), "Failed to decode hex")
 }

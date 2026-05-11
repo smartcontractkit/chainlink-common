@@ -297,7 +297,6 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 		insertWorkers = 4
 	}
 
-	// WaitGroup.Go pairs Add/Done with each worker; loop bodies must not call wg.Done.
 	d.wg.Go(d.retransmitLoop)
 	if !d.cfg.DisablePruning {
 		d.wg.Go(func() { d.expiryLoop(ctx) })

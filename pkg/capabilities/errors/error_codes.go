@@ -158,6 +158,7 @@ var errorCodeToString = map[ErrorCode]string{
 	DataLoss:           "DataLoss",
 	Unauthenticated:    "Unauthenticated",
 	ConsensusFailed:    "ConsensusFailed",
+	LimitExceeded:      "LimitExceeded",
 }
 
 var stringToErrorCode = map[string]ErrorCode{
@@ -178,6 +179,7 @@ var stringToErrorCode = map[string]ErrorCode{
 	"DataLoss":           DataLoss,
 	"Unauthenticated":    Unauthenticated,
 	"ConsensusFailed":    ConsensusFailed,
+	"LimitExceeded":      LimitExceeded,
 }
 
 func FromErrorCodeString(str string) ErrorCode {

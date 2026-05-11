@@ -157,7 +157,7 @@ func (c *conn) Begin() (driver.Tx, error) {
 	c.Lock()
 	defer c.Unlock()
 	if c.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 	// Begin is a noop because the transaction was already opened
 	return tx{c.tx}, nil
@@ -182,7 +182,7 @@ func (c *conn) PrepareContext(_ context.Context, query string) (driver.Stmt, err
 	c.Lock()
 	defer c.Unlock()
 	if c.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 
 	// It is not safe to give the passed in context to the tx directly
@@ -231,7 +231,7 @@ func (c *conn) QueryContext(_ context.Context, query string, args []driver.Named
 	c.Lock()
 	defer c.Unlock()
 	if c.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 
 	ctx, cancel := utils.ContextFromChan(c.abort)
@@ -251,7 +251,7 @@ func (c *conn) ExecContext(_ context.Context, query string, args []driver.NamedV
 	c.Lock()
 	defer c.Unlock()
 	if c.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 	ctx, cancel := utils.ContextFromChan(c.abort)
 	defer cancel()
@@ -345,7 +345,7 @@ func (s stmt) Exec(args []driver.Value) (driver.Result, error) {
 	s.conn.Lock()
 	defer s.conn.Unlock()
 	if s.conn.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 	return s.st.Exec(mapArgs(args)...)
 }
@@ -355,7 +355,7 @@ func (s *stmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.
 	s.conn.Lock()
 	defer s.conn.Unlock()
 	if s.conn.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 
 	ctx, cancel := utils.ContextFromChan(s.abort)
@@ -380,7 +380,7 @@ func (s stmt) Query(args []driver.Value) (driver.Rows, error) {
 	s.conn.Lock()
 	defer s.conn.Unlock()
 	if s.conn.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 	rows, err := s.st.Query(mapArgs(args)...)
 	defer func() {
@@ -397,7 +397,7 @@ func (s *stmt) QueryContext(_ context.Context, args []driver.NamedValue) (driver
 	s.conn.Lock()
 	defer s.conn.Unlock()
 	if s.conn.closed {
-		return nil, fmt.Errorf("conn is closed")
+		return nil, errors.New("conn is closed")
 	}
 
 	ctx, cancel := utils.ContextFromChan(s.abort)

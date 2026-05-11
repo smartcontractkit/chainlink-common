@@ -1,7 +1,7 @@
 package query
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
@@ -125,7 +125,7 @@ func Where(key string, expressions ...Expression) (KeyFilter, error) {
 	for _, expr := range expressions {
 		if !expr.IsPrimitive() {
 			if len(expr.BoolExpression.Expressions) < 2 {
-				return KeyFilter{}, fmt.Errorf("all boolean expressions should have at least 2 expressions")
+				return KeyFilter{}, errors.New("all boolean expressions should have at least 2 expressions")
 			}
 		}
 	}

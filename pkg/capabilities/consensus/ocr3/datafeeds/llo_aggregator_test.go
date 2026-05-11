@@ -159,7 +159,7 @@ func TestGetLatestPrices(t *testing.T) {
 			}
 
 			// Ensure no extra prices
-			assert.Equal(t, len(tc.expectedPrices), len(prices), "Unexpected number of prices")
+			assert.Len(t, prices, len(tc.expectedPrices), "Unexpected number of prices")
 		})
 	}
 }
@@ -600,7 +600,7 @@ func TestLLOAggregatorConfig_RoundTrip(t *testing.T) {
 
 			// Step 3: Compare original and round-tripped configs
 			// We need to compare each field specifically since the derived fields won't be compared correctly
-			assert.Equal(t, len(tc.config.Streams), len(roundTrippedConfig.Streams),
+			assert.Len(t, roundTrippedConfig.Streams, len(tc.config.Streams),
 				"Number of streams should match")
 
 			// Compare streams

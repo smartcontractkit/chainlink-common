@@ -296,11 +296,11 @@ func initConfig(a any, scope Scope, parent string) error {
 		}
 		if s, ok := f.Addr().Interface().(keySetter); ok {
 			if err := s.initSetting(key, scope, unit); err != nil {
-				return fmt.Errorf("%s failed to init Setting: %s", key, err)
+				return fmt.Errorf("%s failed to init Setting: %w", key, err)
 			}
 		} else if f.Type().Kind() == reflect.Struct {
 			if err := initConfig(f.Addr().Interface(), scope, key); err != nil {
-				return fmt.Errorf("%s failed to set keys: %s", key, err)
+				return fmt.Errorf("%s failed to set keys: %w", key, err)
 			}
 		} else {
 			return fmt.Errorf("%s unsupported field type %v", key, f.Type())

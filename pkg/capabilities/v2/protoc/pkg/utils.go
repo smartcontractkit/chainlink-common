@@ -16,7 +16,7 @@ func StringLblValue(method bool) func(string, *generator.Label) (string, error) 
 		}
 		switch pbLbl := label.Kind.(type) {
 		case *generator.Label_StringLabel:
-			return fmt.Sprintf("+ c.%s", name), nil
+			return "+ c." + name, nil
 		case *generator.Label_Uint32Label:
 			return fmt.Sprintf("strconv.FormatUint(uint64(c.%s), 10)", name), nil
 		case *generator.Label_Int32Label:

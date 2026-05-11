@@ -3,6 +3,7 @@ package ocr3
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -235,7 +236,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 				Value: response.Value,
 				Metadata: capabilities.ResponseMetadata{
 					Metering: []capabilities.MeteringNodeDetail{
-						{SpendUnit: metering.PayloadUnit.Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
+						{SpendUnit: metering.PayloadUnit.Name, SpendValue: strconv.Itoa(inputLenBytes + outputLenBytes)},
 					},
 				},
 			}, response.Err

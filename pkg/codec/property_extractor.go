@@ -478,7 +478,7 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 	var prevIsSlice bool
 
 	if rootType == nil {
-		return reflect.Value{}, fmt.Errorf("root type is nil")
+		return reflect.Value{}, errors.New("root type is nil")
 	}
 
 	typ := derefTypePtr(rootType)

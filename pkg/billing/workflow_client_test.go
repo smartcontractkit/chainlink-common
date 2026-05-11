@@ -2,7 +2,7 @@ package billing
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
 	"os"
 	"testing"
@@ -284,7 +284,7 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "test"}
 
-	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", fmt.Errorf("mock JWT creation error")).Once()
+	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", errors.New("mock JWT creation error")).Once()
 
 	wc := &workflowClient{
 		logger:       logger.Test(t),

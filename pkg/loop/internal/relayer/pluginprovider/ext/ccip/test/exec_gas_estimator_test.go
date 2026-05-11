@@ -74,7 +74,7 @@ func setupExecGasEstimatorServer(t *testing.T, s *grpc.Server, b *loopnet.Broker
 }
 
 // adapt the client constructor so we can use it with the grpc scaffold
-func setupExecGasEstimatorClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.ExecGasEstimatorGRPCClient {
+func setupExecGasEstimatorClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.ExecGasEstimatorGRPCClient {
 	return ccip.NewExecGasEstimatorGRPCClient(conn)
 }
 

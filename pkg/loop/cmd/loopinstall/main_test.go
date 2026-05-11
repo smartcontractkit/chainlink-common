@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -627,7 +628,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 			},
 			defaults: DefaultsConfig{},
 			mockDownload: func(cmd *exec.Cmd) error {
-				return fmt.Errorf("failed to download module")
+				return errors.New("failed to download module")
 			},
 			mockBuild: func(cmd *exec.Cmd) error {
 				return nil
@@ -651,7 +652,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				return nil
 			},
 			mockBuild: func(cmd *exec.Cmd) error {
-				return fmt.Errorf("failed to install plugin")
+				return errors.New("failed to install plugin")
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to install plugin",
@@ -823,7 +824,6 @@ func TestFlags(t *testing.T) {
 			cmdLine := strings.Join(cmd.Args, " ")
 			if strings.Contains(cmdLine, "go mod download") {
 				return mockDownload(cmd)
-
 			} else if strings.Contains(cmdLine, "go install") {
 				return mockInstall(cmd)
 			}
@@ -892,13 +892,13 @@ func TestEnvVars(t *testing.T) {
 			}
 
 			if !foundGOOS {
-				return fmt.Errorf("expected GOOS=linux in environment, not found")
+				return errors.New("expected GOOS=linux in environment, not found")
 			}
 			if !foundGOARCH {
-				return fmt.Errorf("expected GOARCH=amd64 in environment, not found")
+				return errors.New("expected GOARCH=amd64 in environment, not found")
 			}
 			if !foundCGOEnabled {
-				return fmt.Errorf("expected CGO_ENABLED=0 in environment, not found")
+				return errors.New("expected CGO_ENABLED=0 in environment, not found")
 			}
 
 			return nil
@@ -974,7 +974,7 @@ func TestEnvVars(t *testing.T) {
 				return fmt.Errorf("expected exactly 1 GOOS env var, found %d", goosCount)
 			}
 			if !correctValue {
-				return fmt.Errorf("expected GOOS=linux, but found different value")
+				return errors.New("expected GOOS=linux, but found different value")
 			}
 
 			return nil
@@ -1053,13 +1053,13 @@ func TestEnvVars(t *testing.T) {
 			}
 
 			if !foundGOOS {
-				return fmt.Errorf("expected GOOS=linux from defaults, not found")
+				return errors.New("expected GOOS=linux from defaults, not found")
 			}
 			if !foundGOARCH {
-				return fmt.Errorf("expected GOARCH=amd64 from CL_PLUGIN_ENVVARS, not found")
+				return errors.New("expected GOARCH=amd64 from CL_PLUGIN_ENVVARS, not found")
 			}
 			if !foundCGOEnabled {
-				return fmt.Errorf("expected CGO_ENABLED=0 from CL_PLUGIN_ENVVARS, not found")
+				return errors.New("expected CGO_ENABLED=0 from CL_PLUGIN_ENVVARS, not found")
 			}
 
 			return nil
@@ -1137,7 +1137,7 @@ func TestEnvVars(t *testing.T) {
 				return fmt.Errorf("expected exactly 1 GOOS env var, found %d", goosCount)
 			}
 			if !correctValue {
-				return fmt.Errorf("expected GOOS=windows from plugin, but found different value")
+				return errors.New("expected GOOS=windows from plugin, but found different value")
 			}
 
 			return nil

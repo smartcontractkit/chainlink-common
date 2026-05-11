@@ -153,7 +153,7 @@ func (r *Runner) MockCapability(name string, step *string, capability capabiliti
 	if r.registry[fullName] != nil {
 		forSuffix := ""
 		if step != nil {
-			forSuffix = fmt.Sprintf(" for step %s", *step)
+			forSuffix = " for step " + *step
 		}
 		r.errors = append(r.errors, fmt.Errorf("capability %s already exists in registry%s", name, forSuffix))
 	}
@@ -334,7 +334,7 @@ func (r *Runner) unregisterWorkflow(spec sdk.WorkflowSpec) {
 func getFullName(name string, step *string) string {
 	fullName := name
 	if step != nil {
-		fullName += fmt.Sprintf("@@@%s", *step)
+		fullName += "@@@" + *step
 	}
 	return fullName
 }

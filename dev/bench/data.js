@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778522173073,
+  "lastUpdate": 1778530866862,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -46380,6 +46380,66 @@ window.BENCHMARK_DATA = {
             "value": 118283,
             "unit": "ns/op",
             "extra": "9672 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b941304384174ba2d233077b1a19c155ff00f517",
+          "message": "ChIP Durable Emitter (#1911)\n\n* Initial PoC\n\n* Create durable_emitter_integration_test.go\n\n* Update DurableEmitterDesign.md\n\n* Update doc with tests\n\n* Add hooks\n\n* Update durable_emitter.go\n\n* Add metrics\n\n* Single publish\n\n* Add beholder schema?\n\n* Log publish details\n\n* Add logs\n\n* Add Persist Sources\n\n* Update durable_emitter.go\n\n* mute logging\n\n* Update durable_emitter.go\n\n* Update durable_emitter.go\n\n* Background delete from event store\n\n* Add metrics\n\n* Add publish workers\n\n* Revert\n\n* Add counter\n\n* Match Metrics + Production Rate\n\n* Async mark delivered\n\n* Update\n\n* Batching\n\n* Use publish workers for re-transmit\n\n* Payload optimization\n\n* Batch insert\n\n* Clean up files\n\n* Clean up\n\n* Clean up\n\n* Remove process stats (only used in local testing)\n\n* Update durable_emitter.go\n\n* tidy\n\n* Fix race in tests\n\n* Trigger CI\n\n* Fix context\n\n* Drain insert on shutdown\n\n* Trigger CI\n\n* Fix ctx handling\n\n* Fix wg handling\n\n* Update durable_emitter.go\n\n* Remove beholder dataschema key",
+          "timestamp": "2026-05-11T20:09:25Z",
+          "tree_id": "ddf9829c7da0922e5a0e8f6995d0e75042972300",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b941304384174ba2d233077b1a19c155ff00f517"
+        },
+        "date": 1778530865029,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.2,
+            "unit": "ns/op",
+            "extra": "3409458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 77829,
+            "unit": "ns/op",
+            "extra": "15412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 384.3,
+            "unit": "ns/op",
+            "extra": "3104364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79125,
+            "unit": "ns/op",
+            "extra": "14962 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29243,
+            "unit": "ns/op",
+            "extra": "40558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 133728,
+            "unit": "ns/op",
+            "extra": "8842 times\n4 procs"
           }
         ]
       }

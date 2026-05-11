@@ -38,6 +38,7 @@ flowchart
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
     end
 

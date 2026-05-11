@@ -3,7 +3,6 @@ package capabilities
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"sort"
 	"strings"
 	"sync"
@@ -17,15 +16,6 @@ import (
 )
 
 const (
-	// backoffMultiplierCap limits the exponential backoff multiplier so retry
-	// intervals don't grow unbounded. With a 30s base interval, this caps at
-	// 30s * 10 = 5 minutes between retries.
-	backoffMultiplierCap = 10
-
-	// jitterFraction is the ±percentage applied to backoff intervals to
-	// desynchronize retries across DON nodes and prevent P2P burst traffic.
-	jitterFraction = 0.25
-
 	// defaultMaxSendsPerTick limits how many events are sent per scanPending
 	// cycle (initial deliveries AND retransmissions). This prevents a large
 	// backlog from flooding P2P.
@@ -311,6 +301,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	te TriggerEvent,
 	triggerID string,
 ) error {
+	b.lggr.Infow("received event from capability", "triggerID", triggerID, "eventID", te.ID)
 	if !b.retransmitAllowed(ctx) {
 		b.lggr.Infow("base trigger retransmit not active")
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
@@ -559,33 +550,6 @@ func isDuplicateKeyError(err error) bool {
 	return strings.Contains(msg, "23505") || strings.Contains(msg, "duplicate key")
 }
 
-// retryBackoff computes an exponential backoff interval: baseInterval * 2^attempts,
-// capped at baseInterval * backoffMultiplierCap. DeliverEvent starts with
-// Attempts=0 (the initial send is not a retry), so the first retransmission
-// waits baseInterval and subsequent ones double each time.
-func retryBackoff(baseInterval time.Duration, attempts int) time.Duration {
-	if attempts <= 0 {
-		return baseInterval
-	}
-	shift := uint(attempts)
-	multiplier := int64(1) << shift
-	if multiplier > backoffMultiplierCap || multiplier <= 0 {
-		multiplier = backoffMultiplierCap
-	}
-	return baseInterval * time.Duration(multiplier)
-}
-
-// addJitter applies ±jitterFraction random noise to d so that retries from
-// multiple nodes don't collide on the same P2P window.
-func addJitter(d time.Duration) time.Duration {
-	if d <= 0 {
-		return d
-	}
-	// rand.Float64 is concurrency-safe and auto-seeded since Go 1.20.
-	noise := time.Duration(float64(d) * jitterFraction * (2*rand.Float64() - 1))
-	return d + noise
-}
-
 func (b *BaseTriggerCapability[T]) scanPending() {
 	now := time.Now()
 	ctx := b.ctx
@@ -687,8 +651,7 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 	interval time.Duration,
 	toResend *[]PendingEvent,
 ) {
-	backoff := addJitter(retryBackoff(interval, rec.Attempts))
-	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= backoff {
+	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
 		*toResend = append(*toResend, PendingEvent{
 			TriggerId: rec.TriggerId,
 			EventId:   rec.EventId,

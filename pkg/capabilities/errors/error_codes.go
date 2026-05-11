@@ -127,6 +127,9 @@ const (
 
 	// ConsensusFailed indicates failure to reach consensus
 	ConsensusFailed ErrorCode = 100
+
+	// LimitExceeded indicates that a CRE limit breach has occurred.
+	LimitExceeded ErrorCode = 101
 )
 
 // String returns the string representation of the ErrorCode.
@@ -155,6 +158,7 @@ var errorCodeToString = map[ErrorCode]string{
 	DataLoss:           "DataLoss",
 	Unauthenticated:    "Unauthenticated",
 	ConsensusFailed:    "ConsensusFailed",
+	LimitExceeded:      "LimitExceeded",
 }
 
 var stringToErrorCode = map[string]ErrorCode{
@@ -175,6 +179,7 @@ var stringToErrorCode = map[string]ErrorCode{
 	"DataLoss":           DataLoss,
 	"Unauthenticated":    Unauthenticated,
 	"ConsensusFailed":    ConsensusFailed,
+	"LimitExceeded":      LimitExceeded,
 }
 
 func FromErrorCodeString(str string) ErrorCode {

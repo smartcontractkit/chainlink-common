@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -902,4 +903,151 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 
 	assert.Equal(t, "test-domain", received.Source)
 	assert.Equal(t, "test-entity", received.Type)
+}
+
+// MemDurableEventStore is an in-memory DurableEventStore for unit tests.
+type MemDurableEventStore struct {
+	mu     sync.Mutex
+	events map[int64]*DurableEvent
+	nextID atomic.Int64
+}
+
+var (
+	_ DurableEventStore    = (*MemDurableEventStore)(nil)
+	_ DurableQueueObserver = (*MemDurableEventStore)(nil)
+	_ BatchInserter        = (*MemDurableEventStore)(nil)
+)
+
+func NewMemDurableEventStore() *MemDurableEventStore {
+	return &MemDurableEventStore{
+		events: make(map[int64]*DurableEvent),
+	}
+}
+
+func (m *MemDurableEventStore) Insert(_ context.Context, payload []byte) (int64, error) {
+	id := m.nextID.Add(1)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events[id] = &DurableEvent{
+		ID:        id,
+		Payload:   append([]byte(nil), payload...), // defensive copy
+		CreatedAt: time.Now(),
+	}
+	return id, nil
+}
+
+func (m *MemDurableEventStore) InsertBatch(_ context.Context, payloads [][]byte) ([]int64, error) {
+	now := time.Now()
+	ids := make([]int64, len(payloads))
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i, p := range payloads {
+		id := m.nextID.Add(1)
+		m.events[id] = &DurableEvent{
+			ID:        id,
+			Payload:   append([]byte(nil), p...),
+			CreatedAt: now,
+		}
+		ids[i] = id
+	}
+	return ids, nil
+}
+
+func (m *MemDurableEventStore) Delete(_ context.Context, id int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.events, id)
+	return nil
+}
+
+func (m *MemDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
+	return m.Delete(ctx, id)
+}
+
+func (m *MemDurableEventStore) MarkDeliveredBatch(_ context.Context, ids []int64) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var n int64
+	for _, id := range ids {
+		if _, ok := m.events[id]; ok {
+			delete(m.events, id)
+			n++
+		}
+	}
+	return n, nil
+}
+
+func (m *MemDurableEventStore) PurgeDelivered(_ context.Context, _ int) (int64, error) {
+	return 0, nil
+}
+
+func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var result []DurableEvent
+	for _, e := range m.events {
+		if e.CreatedAt.Before(createdBefore) {
+			result = append(result, *e)
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.Before(result[j].CreatedAt)
+	})
+	if len(result) > limit {
+		result = result[:limit]
+	}
+	return result, nil
+}
+
+func (m *MemDurableEventStore) DeleteExpired(_ context.Context, ttl time.Duration) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	cutoff := time.Now().Add(-ttl)
+	var deleted int64
+	for id, e := range m.events {
+		if e.CreatedAt.Before(cutoff) {
+			delete(m.events, id)
+			deleted++
+		}
+	}
+	return deleted, nil
+}
+
+// Len returns the number of events in the store (test helper).
+func (m *MemDurableEventStore) Len() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.events)
+}
+
+// ObserveDurableQueue implements DurableQueueObserver.
+func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	now := time.Now()
+	var st DurableQueueStats
+	if len(m.events) == 0 {
+		return st, nil
+	}
+	var oldest time.Time
+	first := true
+	for _, e := range m.events {
+		st.Depth++
+		st.PayloadBytes += int64(len(e.Payload))
+		if first || e.CreatedAt.Before(oldest) {
+			oldest = e.CreatedAt
+			first = false
+		}
+		age := now.Sub(e.CreatedAt)
+		if eventTTL > 0 && nearExpiryLead > 0 && nearExpiryLead < eventTTL {
+			threshold := eventTTL - nearExpiryLead
+			if age >= threshold && age < eventTTL {
+				st.NearTTLCount++
+			}
+		}
+	}
+	st.OldestPendingAge = now.Sub(oldest)
+	return st, nil
 }

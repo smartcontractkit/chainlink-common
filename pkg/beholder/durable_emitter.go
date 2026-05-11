@@ -135,11 +135,8 @@ type insertResult struct {
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
-	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
-	// Should be set to false when initialized inside LOOP plugins.
-	isHostProcess bool
-	cfg           DurableEmitterConfig
-	log           logger.Logger
+	cfg    DurableEmitterConfig
+	log    logger.Logger
 
 	metrics *durableEmitterMetrics
 
@@ -225,7 +222,6 @@ var _ Emitter = (*DurableEmitter)(nil)
 func NewDurableEmitter(
 	store DurableEventStore,
 	client chipingress.Client,
-	isHostProcess bool,
 	cfg DurableEmitterConfig,
 	log logger.Logger,
 ) (*DurableEmitter, error) {
@@ -251,13 +247,12 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:         store,
-		client:        client,
-		isHostProcess: isHostProcess,
-		cfg:           cfg,
-		log:           log,
-		metrics:       m,
-		stopCh:        make(chan struct{}),
+		store:   store,
+		client:  client,
+		cfg:     cfg,
+		log:     log,
+		metrics: m,
+		stopCh:  make(chan struct{}),
 	}
 	if cp, ok := client.(grpcConnProvider); ok {
 		d.rawConn = cp.Conn()
@@ -291,38 +286,33 @@ func NewDurableEmitter(
 // Start launches the retransmit, expiry, purge, and (optionally) batch publish
 // background loops. Cancel the supplied context or call Close to stop them.
 func (d *DurableEmitter) Start(ctx context.Context) {
-
-	if d.isHostProcess {
-		d.wg.Add(1)
-		go d.retransmitLoop()
-		if !d.cfg.DisablePruning {
-			d.wg.Add(2)
-			go d.expiryLoop(ctx)
-			go d.purgeLoop(ctx)
-		}
-	}
-
 	batchWorkers := d.cfg.PublishBatchWorkers
 	if batchWorkers <= 0 {
+		d.log.Warnw("configured batchWorkers <=0; defaulting to 1")
 		batchWorkers = 1
 	}
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
+		d.log.Warnw("configured insertWorkers <=0; defaulting to 4")
 		insertWorkers = 4
+	}
+
+	// WaitGroup.Go pairs Add/Done with each worker; loop bodies must not call wg.Done.
+	d.wg.Go(d.retransmitLoop)
+	if !d.cfg.DisablePruning {
+		d.wg.Go(func() { d.expiryLoop(ctx) })
+		d.wg.Go(func() { d.purgeLoop(ctx) })
 	}
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
-			d.wg.Add(1)
-			go d.insertBatchLoop()
+			d.wg.Go(d.insertBatchLoop)
 		}
 	}
 	for i := 0; i < batchWorkers; i++ {
-		d.wg.Add(1)
-		go d.batchPublishLoop()
+		d.wg.Go(d.batchPublishLoop)
 	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
-		d.wg.Add(1)
-		go d.metricsLoop()
+		d.wg.Go(d.metricsLoop)
 	}
 }
 
@@ -477,7 +467,6 @@ func (d *DurableEmitter) Close() error {
 // blocks for the first request, then collects more until the batch is full or
 // the flush interval elapses.
 func (d *DurableEmitter) insertBatchLoop() {
-	defer d.wg.Done()
 	batchSize := d.cfg.InsertBatchSize
 	linger := d.cfg.InsertBatchFlushInterval
 	if linger <= 0 {
@@ -576,8 +565,6 @@ func (d *DurableEmitter) decPending(n int64) {
 // the batch is full or PublishBatchFlushInterval elapses after the first event
 // arrives (linger pattern), guaranteeing full batches at high throughput.
 func (d *DurableEmitter) batchPublishLoop() {
-	defer d.wg.Done()
-
 	batchSize := d.cfg.PublishBatchSize
 	flushInterval := d.cfg.PublishBatchFlushInterval
 	if flushInterval <= 0 {
@@ -723,9 +710,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 	// the batch worker can immediately start collecting the next batch.
 	// If MarkDelivered fails, events stay pending and the retransmit loop
 	// delivers them (at-least-once semantics are unchanged).
-	d.wg.Add(1)
-	go func() {
-		defer d.wg.Done()
+	d.wg.Go(func() {
 		tMark := time.Now()
 		marked, markErr := d.store.MarkDeliveredBatch(ctx, ids)
 		markElapsed := time.Since(tMark)
@@ -740,7 +725,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(ctx, marked)
 		}
-	}()
+	})
 }
 
 // flushBatchRaw builds the CloudEventBatch wire format directly from
@@ -783,7 +768,6 @@ func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWor
 }
 
 func (d *DurableEmitter) retransmitLoop() {
-	defer d.wg.Done()
 	ticker := time.NewTicker(d.cfg.RetransmitInterval)
 	defer ticker.Stop()
 
@@ -863,7 +847,6 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 }
 
 func (d *DurableEmitter) purgeLoop(ctx context.Context) {
-	defer d.wg.Done()
 	interval := d.cfg.PurgeInterval
 	if interval <= 0 {
 		interval = 250 * time.Millisecond
@@ -896,7 +879,6 @@ func (d *DurableEmitter) purgeLoop(ctx context.Context) {
 }
 
 func (d *DurableEmitter) expiryLoop(ctx context.Context) {
-	defer d.wg.Done()
 	ticker := time.NewTicker(d.cfg.ExpiryInterval)
 	defer ticker.Stop()
 
@@ -934,7 +916,6 @@ func (d *DurableEmitter) queueStatsNearExpiryLead() time.Duration {
 }
 
 func (d *DurableEmitter) metricsLoop() {
-	defer d.wg.Done()
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
@@ -951,9 +932,6 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			if d.metrics == nil {
-				return
-			}
 			d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
 			d.metrics.queueDepthMax.Record(ctx, d.pendingMax.Load())
 			if obs, ok := d.store.(DurableQueueObserver); ok {

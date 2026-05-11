@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,9 +37,6 @@ type Client interface {
 type client struct {
 	client pb.ChipIngressClient
 	conn   *grpc.ClientConn
-
-	closeOnce sync.Once
-	closeErr  error
 }
 
 // Opt defines a function type for configuring the ChipIngressClient.
@@ -130,7 +126,7 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &client{pb.NewChipIngressClient(conn), conn, sync.Once{}, nil}, nil
+	return &client{pb.NewChipIngressClient(conn), conn}, nil
 }
 
 func (c *client) Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PingResponse, error) {
@@ -155,10 +151,7 @@ func (c *client) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaReques
 }
 
 func (c *client) Close() error {
-	c.closeOnce.Do(func() {
-		c.closeErr = c.conn.Close()
-	})
-	return c.closeErr
+	return c.conn.Close()
 }
 
 // RegisterSchemas registers one or more schemas with the Chip Ingress service.

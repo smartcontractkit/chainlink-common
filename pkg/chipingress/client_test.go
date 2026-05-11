@@ -86,14 +86,13 @@ func TestClient(t *testing.T) {
 		assert.Empty(t, result)
 	})
 
-	t.Run("Close is idempotent", func(t *testing.T) {
+	t.Run("Close", func(t *testing.T) {
 		rawClient, err := NewClient("localhost:8080")
 		require.NoError(t, err)
 
 		client, ok := rawClient.(*client)
 		require.True(t, ok)
 
-		require.NoError(t, client.Close())
 		require.NoError(t, client.Close())
 	})
 

@@ -2,8 +2,9 @@ package mercury
 
 import (
 	"encoding/binary"
-
-	"github.com/ethereum/go-ethereum/common"
+	"encoding/hex"
+	"fmt"
+	"strings"
 )
 
 var legacyV1FeedIDs = []FeedID{
@@ -89,12 +90,27 @@ const (
 
 type FeedID [32]byte
 
-func (f FeedID) Hex() string { return (common.Hash)(f).Hex() }
+func (f FeedID) Hex() string { return "0x" + hex.EncodeToString(f[:]) }
 
-func (f FeedID) String() string { return (common.Hash)(f).String() }
+func (f FeedID) String() string { return f.Hex() }
 
 func (f *FeedID) UnmarshalText(input []byte) error {
-	return (*common.Hash)(f).UnmarshalText(input)
+	s := string(input)
+	if len(s) != 66 { // "0x" + 64 hex chars
+		return fmt.Errorf("FeedID must be 32 bytes (64 hex chars) long: %s", s)
+	}
+
+	if !strings.HasPrefix(s, "0x") && !strings.HasPrefix(s, "0X") {
+		return fmt.Errorf("FeedID must start with '0x' or '0X' prefix: %s", s)
+	}
+
+	b, err := hex.DecodeString(s[2:])
+	if err != nil {
+		return fmt.Errorf("Failed to decode hex: %w", err)
+	}
+
+	copy(f[:], b)
+	return nil
 }
 
 func (f FeedID) Version() FeedVersion {

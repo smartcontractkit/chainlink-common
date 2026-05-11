@@ -1,6 +1,7 @@
 package mercury
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,4 +56,17 @@ func Test_FeedID_Version(t *testing.T) {
 			assert.Equal(t, REPORT_V1, feedID.Version())
 		}
 	})
+}
+
+func Test_FeedID_UnmarshalText(t *testing.T) {
+	const v1FeedIDString = "0x00016b4aa7e57ca7b68ae1bf45653f56b656fd3aa335ef7fae696b663f1b8472"
+	assert.Equal(t, v1FeedIDString, v1FeedID.Hex())
+	var f FeedID
+	assert.NoError(t, f.UnmarshalText([]byte(v1FeedIDString)))
+	assert.Equal(t, v1FeedID, f)
+	assert.NoError(t, f.UnmarshalText([]byte(strings.ToUpper(v1FeedIDString))))
+	assert.Equal(t, v1FeedID, f)
+	assert.ErrorContains(t, f.UnmarshalText([]byte("zzz")), "FeedID must be 32 bytes")
+	assert.ErrorContains(t, f.UnmarshalText([]byte("0y00016b4aa7e57ca7b68ae1bf45653f56b656fd3aa335ef7fae696b663f1b8472")), "FeedID must start with ")
+	assert.ErrorContains(t, f.UnmarshalText([]byte("0xz0016b4aa7e57ca7b68ae1bf45653f56b656fd3aa335ef7fae696b663f1b8472")), "Failed to decode hex")
 }

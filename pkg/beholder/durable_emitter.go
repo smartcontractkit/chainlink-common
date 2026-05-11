@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -149,6 +150,10 @@ type DurableEmitter struct {
 	// insertCh buffers payloads for the write coalescer. Nil when batch
 	// inserting is disabled.
 	insertCh chan *insertRequest
+	// insertShutdown stops new coalesced inserts; insertInFlight counts Emit
+	// callers inside the coalesced path so Close can close(insertCh) after wait
+	insertShutdown atomic.Bool
+	insertInFlight atomic.Int32
 
 	// pendingCount is an exact, atomic count of rows inserted but not yet
 	// delivered/deleted. Incremented on successful Insert, decremented on
@@ -367,15 +372,31 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			payload: payload,
 			result:  make(chan insertResult, 1),
 		}
-		tIns := time.Now()
-		select {
-		case d.insertCh <- req:
-		case <-ctx.Done():
-			emitFail()
-			return ctx.Err()
+		var res insertResult
+		var cerr error
+		func() {
+			d.insertInFlight.Add(1)
+			defer d.insertInFlight.Add(-1)
+			if d.insertShutdown.Load() {
+				cerr = fmt.Errorf("durable emitter closed")
+				return
+			}
+			tIns := time.Now()
+			select {
+			case d.insertCh <- req:
+			case <-ctx.Done():
+				cerr = ctx.Err()
+				return
+			}
+			res = <-req.result
+			insElapsed = time.Since(tIns)
+		}()
+		if cerr != nil {
+			if errors.Is(cerr, context.Canceled) || errors.Is(cerr, context.DeadlineExceeded) {
+				emitFail()
+			}
+			return cerr
 		}
-		res := <-req.result
-		insElapsed = time.Since(tIns)
 		if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
 			h.OnEmitInsert(insElapsed, res.err)
 		}
@@ -419,29 +440,31 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		work.event = eventPb
 	}
 	select {
-	case <-d.stopCh:
-		return fmt.Errorf("durable emitter closed")
-	default:
-	}
-	select {
 	case d.publishCh <- work:
+		return nil
 	default:
 		// Channel full — event is safely in the DB; retransmit loop will deliver it.
 		d.log.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
 			"id", id, "ch_len", len(d.publishCh), "ch_cap", cap(d.publishCh))
 	}
-
 	return nil
 }
 
 // Close signals background loops to stop and waits for them to finish.
-// stopCh is closed first so workers exit before publishCh is closed after wg.Wait,
-// avoiding send vs close races on publishCh.
+//
+// When coalesced inserts are enabled, insertShutdown and insertInFlight drain run
+// before close(stopCh) so Emit can finish enqueueing to publishCh after a
+// successful insert (receive on a closed stopCh in select would race with default).
+// Then stopCh is closed, workers exit, and publishCh is closed after wg.Wait.
 func (d *DurableEmitter) Close() error {
-	close(d.stopCh)
 	if d.insertCh != nil {
+		d.insertShutdown.Store(true)
+		for d.insertInFlight.Load() > 0 {
+			time.Sleep(time.Millisecond)
+		}
 		close(d.insertCh)
 	}
+	close(d.stopCh)
 	d.wg.Wait()
 	close(d.publishCh)
 	return nil
@@ -460,22 +483,16 @@ func (d *DurableEmitter) insertBatchLoop() {
 	}
 	batch := make([]*insertRequest, 0, batchSize)
 
-	ctx, cancel := d.stopCh.NewCtx()
-	defer cancel()
-
 	for {
 		batch = batch[:0]
 
-		// Block until first request or shutdown.
-		select {
-		case req, ok := <-d.insertCh:
-			if !ok {
-				return
-			}
-			batch = append(batch, req)
-		case <-d.stopCh:
+		// Exit only when insertCh is closed and drained; do not exit on stopCh
+		// or Emit callers blocked on req.result would hang.
+		req, ok := <-d.insertCh
+		if !ok {
 			return
 		}
+		batch = append(batch, req)
 
 		// Linger to collect more.
 		timer := time.NewTimer(linger)
@@ -494,12 +511,13 @@ func (d *DurableEmitter) insertBatchLoop() {
 		}
 		timer.Stop()
 
-		// Flush: multi-row INSERT.
 		payloads := make([][]byte, len(batch))
 		for i, r := range batch {
 			payloads[i] = r.payload
 		}
-		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+		// Detached from stopCh so closing stopCh does not cancel inserts while
+		// draining insertCh during shutdown.
+		ids, batchErr := d.batchInserter.InsertBatch(context.Background(), payloads)
 		for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}

@@ -115,6 +115,68 @@ func newTestDurableEmitter(t *testing.T, store DurableEventStore, client chiping
 	return em
 }
 
+// stallBatchStore wraps MemDurableEventStore so tests can block InsertBatch until stall is unlocked.
+type stallBatchStore struct {
+	*MemDurableEventStore
+	stall *sync.Mutex
+}
+
+func (s *stallBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+	s.stall.Lock()
+	defer s.stall.Unlock()
+	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
+}
+
+func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
+	stall := new(sync.Mutex)
+	stall.Lock()
+	store := &stallBatchStore{
+		MemDurableEventStore: NewMemDurableEventStore(),
+		stall:                stall,
+	}
+	client := &testChipClient{}
+	cfg := DefaultDurableEmitterConfig()
+	cfg.InsertBatchSize = 1
+	cfg.InsertBatchWorkers = 1
+	cfg.DisablePruning = true
+
+	em := newTestDurableEmitter(t, store, client, &cfg)
+	ctx := t.Context()
+	em.Start(ctx)
+
+	emitErr := make(chan error, 1)
+	go func() { emitErr <- em.Emit(ctx, []byte("during-close"), testEmitAttrs()...) }()
+
+	require.Eventually(t, func() bool {
+		return em.insertInFlight.Load() == 1
+	}, time.Second, 5*time.Millisecond, "Emit should be in-flight waiting on InsertBatch")
+
+	closeErr := make(chan error, 1)
+	go func() { closeErr <- em.Close() }()
+
+	select {
+	case err := <-closeErr:
+		require.NoError(t, err)
+		t.Fatal("Close returned before coalesced insert finished; shutdown wait is broken")
+	case <-time.After(150 * time.Millisecond):
+	}
+
+	stall.Unlock()
+
+	select {
+	case err := <-closeErr:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close timed out after releasing InsertBatch")
+	}
+
+	require.NoError(t, <-emitErr, "Emit should complete after insert path drains")
+
+	err := em.Emit(ctx, []byte("after-close"), testEmitAttrs()...)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "durable emitter closed")
+}
+
 func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}

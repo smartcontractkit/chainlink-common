@@ -58,6 +58,7 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:          Bool(true),
 	VaultJWTAuthEnabled:                    Bool(false),
 	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
+	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
@@ -251,6 +252,7 @@ type Schema struct {
 	GatewayVaultManagementEnabled          Setting[bool]
 	VaultJWTAuthEnabled                    Setting[bool]
 	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
+	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]

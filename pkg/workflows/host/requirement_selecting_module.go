@@ -111,11 +111,11 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
 			}
 			restrictions := preHookResult.GetRestrictions()
+
+			handler = NewRestrictedExecutionHelper(handler, restrictions)
 			if rem, ok := m.Module.(RestrictionAwareModule); ok {
 				rem.SetRestrictions(handler.GetWorkflowExecutionID(), restrictions)
 			}
-
-			handler = NewRestrictedExecutionHelper(handler, restrictions)
 		}
 
 		if rem, ok := m.Module.(RequirementEnforcingModule); ok && info.requirements != nil {

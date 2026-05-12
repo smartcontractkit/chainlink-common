@@ -11,6 +11,16 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
+// LimitError marks errors returned when a settings limit applies.
+// Use errors.As to detect any limit error, for example:
+//
+//	var le LimitError
+//	if errors.As(err, &le) { ... }
+type LimitError interface {
+	error
+	isLimitError()
+}
+
 type ErrorRateLimited struct {
 	Key string
 
@@ -21,6 +31,8 @@ type ErrorRateLimited struct {
 
 	Err error
 }
+
+func (ErrorRateLimited) isLimitError() {}
 
 func (e ErrorRateLimited) Unwrap() error { return e.Err }
 
@@ -51,6 +63,8 @@ type ErrorResourceLimited[N Number] struct {
 	Used, Limit, Amount N
 }
 
+func (ErrorResourceLimited[N]) isLimitError() {}
+
 func (e ErrorResourceLimited[N]) GRPCStatus() *status.Status {
 	return status.New(codes.ResourceExhausted, e.Error())
 }
@@ -73,6 +87,8 @@ type ErrorTimeLimited struct {
 
 	Timeout time.Duration
 }
+
+func (ErrorTimeLimited) isLimitError() {}
 
 func (e ErrorTimeLimited) GRPCStatus() *status.Status {
 	return status.New(codes.DeadlineExceeded, e.Error())
@@ -107,6 +123,8 @@ type ErrorBoundLimited[N Number] struct {
 	Limit, Amount N
 }
 
+func (ErrorBoundLimited[N]) isLimitError() {}
+
 func (e ErrorBoundLimited[N]) GRPCStatus() *status.Status {
 	return status.New(codes.ResourceExhausted, e.Error())
 }
@@ -131,6 +149,8 @@ type ErrorRangeLimited[N Number] struct {
 	Amount N
 }
 
+func (ErrorRangeLimited[N]) isLimitError() {}
+
 func (e ErrorRangeLimited[N]) GRPCStatus() *status.Status {
 	return status.New(codes.ResourceExhausted, e.Error())
 }
@@ -154,6 +174,8 @@ type ErrorQueueFull struct {
 	Limit int
 }
 
+func (ErrorQueueFull) isLimitError() {}
+
 func (e ErrorQueueFull) GRPCStatus() *status.Status {
 	return status.New(codes.ResourceExhausted, e.Error())
 }
@@ -176,6 +198,8 @@ type ErrorNotAllowed struct {
 	Scope  settings.Scope
 	Tenant string
 }
+
+func (ErrorNotAllowed) isLimitError() {}
 
 func (e ErrorNotAllowed) GRPCStatus() *status.Status {
 	return status.New(codes.PermissionDenied, e.Error())

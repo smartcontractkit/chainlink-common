@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -69,9 +68,6 @@ type Client struct {
 
 	// batchEmitterService is owned by the client and started/stopped via Client lifecycle.
 	batchEmitterService *ChipIngressBatchEmitterService
-
-	closeOnce sync.Once
-	closeErr  error
 }
 
 // initService wires up the services.Service lifecycle for the Client.
@@ -303,17 +299,15 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	return c, nil
 }
 
-// close is the lifecycle Close hook: OTel/message shutdown and CHIP close.f
+// close is the lifecycle Close hook: OTel/message shutdown and CHIP close.
 func (c *Client) close() (err error) {
-	c.closeOnce.Do(func() {
-		if c.Emitter != nil {
-			c.closeErr = errors.Join(c.closeErr, c.Emitter.Close())
-		}
-		if c.OnClose != nil {
-			c.closeErr = errors.Join(c.closeErr, c.OnClose())
-		}
-	})
-	return c.closeErr
+	if c.Emitter != nil {
+		err = errors.Join(err, c.Emitter.Close())
+	}
+	if c.OnClose != nil {
+		err = errors.Join(err, c.OnClose())
+	}
+	return err
 }
 
 // noCloseEmitter delegates Emit to the wrapped emitter but makes Close a no-op.

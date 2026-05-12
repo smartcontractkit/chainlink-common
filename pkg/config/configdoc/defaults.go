@@ -65,7 +65,7 @@ var (
 )
 
 func nilToZero(val reflect.Value) {
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		if val.IsNil() {
 			t := val.Type().Elem()
 			val.Set(reflect.New(t))

@@ -54,7 +54,7 @@ func TestHardCoder(t *testing.T) {
 	t.Run("RetypeToOffChain adds fields to pointers", func(t *testing.T) {
 		offChainType, err := hardCoder.RetypeToOffChain(reflect.PointerTo(onChainType), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		assertBasicHardCodedType(t, onChainType, offChainType.Elem())
 	})
 

@@ -918,7 +918,7 @@ drain:
 	// Verify attempts were incremented now that inbox exists.
 	b.mu.Lock()
 	for _, rec := range b.byTrigger["trig"].pending {
-		require.Greater(t, rec.Attempts, 0,
+		require.Positive(t, rec.Attempts,
 			"event %s should have attempts > 0 after inbox is registered", rec.EventId)
 	}
 	b.mu.Unlock()
@@ -1175,8 +1175,8 @@ func TestBaseTrigger_ScanPending_TriggerIDTiebreaker(t *testing.T) {
 	// Cap=1: only the event from the alphabetically first trigger is sent.
 	b.scanPending()
 
-	require.Equal(t, 1, len(sendChA), "trigA must be the one event sent under the cap")
-	require.Equal(t, 0, len(sendChB), "trigB must be deferred: trigA sorts first by TriggerId")
+	require.Len(t, sendChA, 1, "trigA must be the one event sent under the cap")
+	require.Empty(t, sendChB, "trigB must be deferred: trigA sorts first by TriggerId")
 }
 
 func TestBaseTrigger_ExpirePreAcked_RemovesStaleEntries(t *testing.T) {

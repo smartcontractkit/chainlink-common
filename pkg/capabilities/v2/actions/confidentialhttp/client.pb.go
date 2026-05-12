@@ -66,7 +66,7 @@ func (x HmacCustom_Hash) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HmacCustom_Hash.Descriptor instead.
 func (HmacCustom_Hash) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{13, 0}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{14, 0}
 }
 
 type SecretIdentifier struct {
@@ -289,6 +289,10 @@ type HTTPRequest struct {
 	// "san_marino_aes_gcm_encryption_key" secret.
 	// Default is false (response returned unencrypted).
 	EncryptOutput bool `protobuf:"varint,9,opt,name=encrypt_output,json=encryptOutput,proto3" json:"encrypt_output,omitempty"`
+	// mtls, when set, configures mutual TLS for this request. Serialized here
+	// (on HTTPRequest, not just ConfidentialHTTPRequest) so the config reaches
+	// the enclave through the standard GetInput() serialization path.
+	Mtls          *MtlsAuth `protobuf:"bytes,10,opt,name=mtls,proto3,oneof" json:"mtls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -397,6 +401,13 @@ func (x *HTTPRequest) GetEncryptOutput() bool {
 	return false
 }
 
+func (x *HTTPRequest) GetMtls() *MtlsAuth {
+	if x != nil {
+		return x.Mtls
+	}
+	return nil
+}
+
 type isHTTPRequest_Body interface {
 	isHTTPRequest_Body()
 }
@@ -478,6 +489,71 @@ func (x *HTTPResponse) GetMultiHeaders() map[string]*HeaderValues {
 	return nil
 }
 
+// MtlsAuth configures mutual TLS for the outbound request. The client
+// certificate and private key are fetched from Vault DON at execution time;
+// only the SecretIdentifier key names (non-sensitive) are stored here.
+// Every SecretIdentifier referenced inside MtlsAuth must also appear in
+// vault_don_secrets (enforced by the capability validator).
+type MtlsAuth struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClientCert    *SecretIdentifier      `protobuf:"bytes,1,opt,name=client_cert,json=clientCert,proto3" json:"client_cert,omitempty"` // required; Vault key for PEM-encoded client certificate
+	ClientKey     *SecretIdentifier      `protobuf:"bytes,2,opt,name=client_key,json=clientKey,proto3" json:"client_key,omitempty"`    // required; Vault key for PEM-encoded private key
+	CaCert        *SecretIdentifier      `protobuf:"bytes,3,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`             // optional; Vault key for custom CA certificate PEM
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MtlsAuth) Reset() {
+	*x = MtlsAuth{}
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MtlsAuth) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MtlsAuth) ProtoMessage() {}
+
+func (x *MtlsAuth) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MtlsAuth.ProtoReflect.Descriptor instead.
+func (*MtlsAuth) Descriptor() ([]byte, []int) {
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MtlsAuth) GetClientCert() *SecretIdentifier {
+	if x != nil {
+		return x.ClientCert
+	}
+	return nil
+}
+
+func (x *MtlsAuth) GetClientKey() *SecretIdentifier {
+	if x != nil {
+		return x.ClientKey
+	}
+	return nil
+}
+
+func (x *MtlsAuth) GetCaCert() *SecretIdentifier {
+	if x != nil {
+		return x.CaCert
+	}
+	return nil
+}
+
 // ConfidentialHTTPRequest is the input provided to the confidential HTTP capability.
 // It combines an HTTPRequest with secrets from VaultDON.
 type ConfidentialHTTPRequest struct {
@@ -490,14 +566,18 @@ type ConfidentialHTTPRequest struct {
 	// When auth is nil, the request is sent with only the headers/body the
 	// caller provided — preserving the legacy "{{.SECRET_NAME}}" header-template
 	// behavior.
-	Auth          *AuthConfig `protobuf:"bytes,3,opt,name=auth,proto3,oneof" json:"auth,omitempty"`
+	Auth *AuthConfig `protobuf:"bytes,3,opt,name=auth,proto3,oneof" json:"auth,omitempty"`
+	// mtls, when set, configures mutual TLS for the outbound request. mTLS is
+	// transport-level and can be combined with any auth method. The cert/key
+	// PEM values are fetched from Vault DON and never leave the enclave.
+	Mtls          *MtlsAuth `protobuf:"bytes,4,opt,name=mtls,proto3,oneof" json:"mtls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConfidentialHTTPRequest) Reset() {
 	*x = ConfidentialHTTPRequest{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +589,7 @@ func (x *ConfidentialHTTPRequest) String() string {
 func (*ConfidentialHTTPRequest) ProtoMessage() {}
 
 func (x *ConfidentialHTTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +602,7 @@ func (x *ConfidentialHTTPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfidentialHTTPRequest.ProtoReflect.Descriptor instead.
 func (*ConfidentialHTTPRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{5}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ConfidentialHTTPRequest) GetVaultDonSecrets() []*SecretIdentifier {
@@ -546,6 +626,13 @@ func (x *ConfidentialHTTPRequest) GetAuth() *AuthConfig {
 	return nil
 }
 
+func (x *ConfidentialHTTPRequest) GetMtls() *MtlsAuth {
+	if x != nil {
+		return x.Mtls
+	}
+	return nil
+}
+
 // AuthConfig selects one of the supported request-signing methods.
 // Each variant carries the method-specific parameters and references
 // the secrets it needs.
@@ -565,7 +652,7 @@ type AuthConfig struct {
 
 func (x *AuthConfig) Reset() {
 	*x = AuthConfig{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[6]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -577,7 +664,7 @@ func (x *AuthConfig) String() string {
 func (*AuthConfig) ProtoMessage() {}
 
 func (x *AuthConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[6]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -590,7 +677,7 @@ func (x *AuthConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthConfig.ProtoReflect.Descriptor instead.
 func (*AuthConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{6}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *AuthConfig) GetMethod() isAuthConfig_Method {
@@ -695,7 +782,7 @@ type ApiKeyAuth struct {
 
 func (x *ApiKeyAuth) Reset() {
 	*x = ApiKeyAuth{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[7]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -707,7 +794,7 @@ func (x *ApiKeyAuth) String() string {
 func (*ApiKeyAuth) ProtoMessage() {}
 
 func (x *ApiKeyAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[7]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +807,7 @@ func (x *ApiKeyAuth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiKeyAuth.ProtoReflect.Descriptor instead.
 func (*ApiKeyAuth) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{7}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ApiKeyAuth) GetHeaderName() string {
@@ -755,7 +842,7 @@ type BasicAuth struct {
 
 func (x *BasicAuth) Reset() {
 	*x = BasicAuth{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[8]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -767,7 +854,7 @@ func (x *BasicAuth) String() string {
 func (*BasicAuth) ProtoMessage() {}
 
 func (x *BasicAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[8]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -780,7 +867,7 @@ func (x *BasicAuth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BasicAuth.ProtoReflect.Descriptor instead.
 func (*BasicAuth) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{8}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *BasicAuth) GetUsername() *StringOrSecret {
@@ -812,7 +899,7 @@ type BearerAuth struct {
 
 func (x *BearerAuth) Reset() {
 	*x = BearerAuth{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[9]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -824,7 +911,7 @@ func (x *BearerAuth) String() string {
 func (*BearerAuth) ProtoMessage() {}
 
 func (x *BearerAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[9]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,7 +924,7 @@ func (x *BearerAuth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BearerAuth.ProtoReflect.Descriptor instead.
 func (*BearerAuth) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{9}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *BearerAuth) GetToken() *SecretIdentifier {
@@ -876,7 +963,7 @@ type HmacAuth struct {
 
 func (x *HmacAuth) Reset() {
 	*x = HmacAuth{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[10]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -888,7 +975,7 @@ func (x *HmacAuth) String() string {
 func (*HmacAuth) ProtoMessage() {}
 
 func (x *HmacAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[10]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -901,7 +988,7 @@ func (x *HmacAuth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HmacAuth.ProtoReflect.Descriptor instead.
 func (*HmacAuth) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{10}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *HmacAuth) GetVariant() isHmacAuth_Variant {
@@ -976,7 +1063,7 @@ type HmacSha256 struct {
 
 func (x *HmacSha256) Reset() {
 	*x = HmacSha256{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[11]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -988,7 +1075,7 @@ func (x *HmacSha256) String() string {
 func (*HmacSha256) ProtoMessage() {}
 
 func (x *HmacSha256) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[11]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1001,7 +1088,7 @@ func (x *HmacSha256) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HmacSha256.ProtoReflect.Descriptor instead.
 func (*HmacSha256) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{11}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HmacSha256) GetSecret() *SecretIdentifier {
@@ -1060,7 +1147,7 @@ type AwsSigV4 struct {
 
 func (x *AwsSigV4) Reset() {
 	*x = AwsSigV4{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[12]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1072,7 +1159,7 @@ func (x *AwsSigV4) String() string {
 func (*AwsSigV4) ProtoMessage() {}
 
 func (x *AwsSigV4) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[12]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1085,7 +1172,7 @@ func (x *AwsSigV4) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwsSigV4.ProtoReflect.Descriptor instead.
 func (*AwsSigV4) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{12}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AwsSigV4) GetAccessKeyId() *StringOrSecret {
@@ -1158,7 +1245,7 @@ type HmacCustom struct {
 
 func (x *HmacCustom) Reset() {
 	*x = HmacCustom{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[13]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1170,7 +1257,7 @@ func (x *HmacCustom) String() string {
 func (*HmacCustom) ProtoMessage() {}
 
 func (x *HmacCustom) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[13]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1183,7 +1270,7 @@ func (x *HmacCustom) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HmacCustom.ProtoReflect.Descriptor instead.
 func (*HmacCustom) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{13}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *HmacCustom) GetSecret() *SecretIdentifier {
@@ -1258,7 +1345,7 @@ type OAuth2Auth struct {
 
 func (x *OAuth2Auth) Reset() {
 	*x = OAuth2Auth{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[14]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1270,7 +1357,7 @@ func (x *OAuth2Auth) String() string {
 func (*OAuth2Auth) ProtoMessage() {}
 
 func (x *OAuth2Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[14]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1283,7 +1370,7 @@ func (x *OAuth2Auth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OAuth2Auth.ProtoReflect.Descriptor instead.
 func (*OAuth2Auth) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{14}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *OAuth2Auth) GetVariant() isOAuth2Auth_Variant {
@@ -1349,7 +1436,7 @@ type OAuth2ClientCredentials struct {
 
 func (x *OAuth2ClientCredentials) Reset() {
 	*x = OAuth2ClientCredentials{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[15]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1361,7 +1448,7 @@ func (x *OAuth2ClientCredentials) String() string {
 func (*OAuth2ClientCredentials) ProtoMessage() {}
 
 func (x *OAuth2ClientCredentials) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[15]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1374,7 +1461,7 @@ func (x *OAuth2ClientCredentials) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OAuth2ClientCredentials.ProtoReflect.Descriptor instead.
 func (*OAuth2ClientCredentials) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{15}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *OAuth2ClientCredentials) GetTokenUrl() string {
@@ -1447,7 +1534,7 @@ type OAuth2RefreshToken struct {
 
 func (x *OAuth2RefreshToken) Reset() {
 	*x = OAuth2RefreshToken{}
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[16]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1459,7 +1546,7 @@ func (x *OAuth2RefreshToken) String() string {
 func (*OAuth2RefreshToken) ProtoMessage() {}
 
 func (x *OAuth2RefreshToken) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[16]
+	mi := &file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1472,7 +1559,7 @@ func (x *OAuth2RefreshToken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OAuth2RefreshToken.ProtoReflect.Descriptor instead.
 func (*OAuth2RefreshToken) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{16}
+	return file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *OAuth2RefreshToken) GetTokenUrl() string {
@@ -1532,7 +1619,7 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\x06secret\x18\x02 \x01(\v2B.capabilities.networking.confidentialhttp.v1alpha.SecretIdentifierH\x00R\x06secretB\a\n" +
 	"\x05value\"&\n" +
 	"\fHeaderValues\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values\"\xe5\x05\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"\xc3\x06\n" +
 	"\vHTTPRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12!\n" +
@@ -1544,14 +1631,17 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\x16template_public_values\x18\x05 \x03(\v2W.capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntryR\x14templatePublicValues\x124\n" +
 	"\x17custom_root_ca_cert_pem\x18\x06 \x01(\fR\x13customRootCaCertPem\x123\n" +
 	"\atimeout\x18\a \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12%\n" +
-	"\x0eencrypt_output\x18\t \x01(\bR\rencryptOutput\x1a\x7f\n" +
+	"\x0eencrypt_output\x18\t \x01(\bR\rencryptOutput\x12S\n" +
+	"\x04mtls\x18\n" +
+	" \x01(\v2:.capabilities.networking.confidentialhttp.v1alpha.MtlsAuthH\x01R\x04mtls\x88\x01\x01\x1a\x7f\n" +
 	"\x11MultiHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12T\n" +
 	"\x05value\x18\x02 \x01(\v2>.capabilities.networking.confidentialhttp.v1alpha.HeaderValuesR\x05value:\x028\x01\x1aG\n" +
 	"\x19TemplatePublicValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x06\n" +
-	"\x04body\"\xbb\x02\n" +
+	"\x04bodyB\a\n" +
+	"\x05_mtls\"\xbb\x02\n" +
 	"\fHTTPResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\rR\n" +
 	"statusCode\x12\x12\n" +
@@ -1559,12 +1649,20 @@ const file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc
 	"\rmulti_headers\x18\x03 \x03(\v2P.capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntryR\fmultiHeaders\x1a\x7f\n" +
 	"\x11MultiHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12T\n" +
-	"\x05value\x18\x02 \x01(\v2>.capabilities.networking.confidentialhttp.v1alpha.HeaderValuesR\x05value:\x028\x01\"\xc2\x02\n" +
+	"\x05value\x18\x02 \x01(\v2>.capabilities.networking.confidentialhttp.v1alpha.HeaderValuesR\x05value:\x028\x01\"\xaf\x02\n" +
+	"\bMtlsAuth\x12c\n" +
+	"\vclient_cert\x18\x01 \x01(\v2B.capabilities.networking.confidentialhttp.v1alpha.SecretIdentifierR\n" +
+	"clientCert\x12a\n" +
+	"\n" +
+	"client_key\x18\x02 \x01(\v2B.capabilities.networking.confidentialhttp.v1alpha.SecretIdentifierR\tclientKey\x12[\n" +
+	"\aca_cert\x18\x03 \x01(\v2B.capabilities.networking.confidentialhttp.v1alpha.SecretIdentifierR\x06caCert\"\xa0\x03\n" +
 	"\x17ConfidentialHTTPRequest\x12n\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2B.capabilities.networking.confidentialhttp.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12W\n" +
 	"\arequest\x18\x02 \x01(\v2=.capabilities.networking.confidentialhttp.v1alpha.HTTPRequestR\arequest\x12U\n" +
-	"\x04auth\x18\x03 \x01(\v2<.capabilities.networking.confidentialhttp.v1alpha.AuthConfigH\x00R\x04auth\x88\x01\x01B\a\n" +
-	"\x05_auth\"\xc6\x03\n" +
+	"\x04auth\x18\x03 \x01(\v2<.capabilities.networking.confidentialhttp.v1alpha.AuthConfigH\x00R\x04auth\x88\x01\x01\x12S\n" +
+	"\x04mtls\x18\x04 \x01(\v2:.capabilities.networking.confidentialhttp.v1alpha.MtlsAuthH\x01R\x04mtls\x88\x01\x01B\a\n" +
+	"\x05_authB\a\n" +
+	"\x05_mtls\"\xc6\x03\n" +
 	"\n" +
 	"AuthConfig\x12W\n" +
 	"\aapi_key\x18\x01 \x01(\v2<.capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuthH\x00R\x06apiKey\x12S\n" +
@@ -1664,7 +1762,7 @@ func file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDescG
 }
 
 var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_goTypes = []any{
 	(HmacCustom_Hash)(0),            // 0: capabilities.networking.confidentialhttp.v1alpha.HmacCustom.Hash
 	(*SecretIdentifier)(nil),        // 1: capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
@@ -1672,70 +1770,76 @@ var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_goTypes =
 	(*HeaderValues)(nil),            // 3: capabilities.networking.confidentialhttp.v1alpha.HeaderValues
 	(*HTTPRequest)(nil),             // 4: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
 	(*HTTPResponse)(nil),            // 5: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
-	(*ConfidentialHTTPRequest)(nil), // 6: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
-	(*AuthConfig)(nil),              // 7: capabilities.networking.confidentialhttp.v1alpha.AuthConfig
-	(*ApiKeyAuth)(nil),              // 8: capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuth
-	(*BasicAuth)(nil),               // 9: capabilities.networking.confidentialhttp.v1alpha.BasicAuth
-	(*BearerAuth)(nil),              // 10: capabilities.networking.confidentialhttp.v1alpha.BearerAuth
-	(*HmacAuth)(nil),                // 11: capabilities.networking.confidentialhttp.v1alpha.HmacAuth
-	(*HmacSha256)(nil),              // 12: capabilities.networking.confidentialhttp.v1alpha.HmacSha256
-	(*AwsSigV4)(nil),                // 13: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4
-	(*HmacCustom)(nil),              // 14: capabilities.networking.confidentialhttp.v1alpha.HmacCustom
-	(*OAuth2Auth)(nil),              // 15: capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth
-	(*OAuth2ClientCredentials)(nil), // 16: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials
-	(*OAuth2RefreshToken)(nil),      // 17: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken
-	nil,                             // 18: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntry
-	nil,                             // 19: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntry
-	nil,                             // 20: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntry
-	nil,                             // 21: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.ExtraParamsEntry
-	nil,                             // 22: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.ExtraParamsEntry
-	(*durationpb.Duration)(nil),     // 23: google.protobuf.Duration
+	(*MtlsAuth)(nil),                // 6: capabilities.networking.confidentialhttp.v1alpha.MtlsAuth
+	(*ConfidentialHTTPRequest)(nil), // 7: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
+	(*AuthConfig)(nil),              // 8: capabilities.networking.confidentialhttp.v1alpha.AuthConfig
+	(*ApiKeyAuth)(nil),              // 9: capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuth
+	(*BasicAuth)(nil),               // 10: capabilities.networking.confidentialhttp.v1alpha.BasicAuth
+	(*BearerAuth)(nil),              // 11: capabilities.networking.confidentialhttp.v1alpha.BearerAuth
+	(*HmacAuth)(nil),                // 12: capabilities.networking.confidentialhttp.v1alpha.HmacAuth
+	(*HmacSha256)(nil),              // 13: capabilities.networking.confidentialhttp.v1alpha.HmacSha256
+	(*AwsSigV4)(nil),                // 14: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4
+	(*HmacCustom)(nil),              // 15: capabilities.networking.confidentialhttp.v1alpha.HmacCustom
+	(*OAuth2Auth)(nil),              // 16: capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth
+	(*OAuth2ClientCredentials)(nil), // 17: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials
+	(*OAuth2RefreshToken)(nil),      // 18: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken
+	nil,                             // 19: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntry
+	nil,                             // 20: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntry
+	nil,                             // 21: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntry
+	nil,                             // 22: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.ExtraParamsEntry
+	nil,                             // 23: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.ExtraParamsEntry
+	(*durationpb.Duration)(nil),     // 24: google.protobuf.Duration
 }
 var file_capabilities_networking_confidentialhttp_v1alpha_client_proto_depIdxs = []int32{
 	1,  // 0: capabilities.networking.confidentialhttp.v1alpha.StringOrSecret.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	18, // 1: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.multi_headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntry
-	19, // 2: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.template_public_values:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntry
-	23, // 3: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.timeout:type_name -> google.protobuf.Duration
-	20, // 4: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.multi_headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntry
-	1,  // 5: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.vault_don_secrets:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	4,  // 6: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.request:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
-	7,  // 7: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.auth:type_name -> capabilities.networking.confidentialhttp.v1alpha.AuthConfig
-	8,  // 8: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.api_key:type_name -> capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuth
-	9,  // 9: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.basic:type_name -> capabilities.networking.confidentialhttp.v1alpha.BasicAuth
-	10, // 10: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.bearer:type_name -> capabilities.networking.confidentialhttp.v1alpha.BearerAuth
-	11, // 11: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.hmac:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacAuth
-	15, // 12: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.oauth2:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth
-	1,  // 13: capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuth.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	2,  // 14: capabilities.networking.confidentialhttp.v1alpha.BasicAuth.username:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
-	1,  // 15: capabilities.networking.confidentialhttp.v1alpha.BasicAuth.password:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	1,  // 16: capabilities.networking.confidentialhttp.v1alpha.BearerAuth.token:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	12, // 17: capabilities.networking.confidentialhttp.v1alpha.HmacAuth.sha256:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacSha256
-	13, // 18: capabilities.networking.confidentialhttp.v1alpha.HmacAuth.aws_sig_v4:type_name -> capabilities.networking.confidentialhttp.v1alpha.AwsSigV4
-	14, // 19: capabilities.networking.confidentialhttp.v1alpha.HmacAuth.custom:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacCustom
-	1,  // 20: capabilities.networking.confidentialhttp.v1alpha.HmacSha256.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	2,  // 21: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4.access_key_id:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
-	1,  // 22: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4.secret_access_key:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	1,  // 23: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4.session_token:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	1,  // 24: capabilities.networking.confidentialhttp.v1alpha.HmacCustom.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	0,  // 25: capabilities.networking.confidentialhttp.v1alpha.HmacCustom.hash:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacCustom.Hash
-	16, // 26: capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth.client_credentials:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials
-	17, // 27: capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth.refresh_token:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken
-	2,  // 28: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.client_id:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
-	1,  // 29: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.client_secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	21, // 30: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.extra_params:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.ExtraParamsEntry
-	1,  // 31: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.refresh_token:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	2,  // 32: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.client_id:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
-	1,  // 33: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.client_secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
-	22, // 34: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.extra_params:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.ExtraParamsEntry
-	3,  // 35: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntry.value:type_name -> capabilities.networking.confidentialhttp.v1alpha.HeaderValues
-	3,  // 36: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntry.value:type_name -> capabilities.networking.confidentialhttp.v1alpha.HeaderValues
-	6,  // 37: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:input_type -> capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
-	5,  // 38: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:output_type -> capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
-	38, // [38:39] is the sub-list for method output_type
-	37, // [37:38] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	19, // 1: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.multi_headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntry
+	20, // 2: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.template_public_values:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.TemplatePublicValuesEntry
+	24, // 3: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.timeout:type_name -> google.protobuf.Duration
+	6,  // 4: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.mtls:type_name -> capabilities.networking.confidentialhttp.v1alpha.MtlsAuth
+	21, // 5: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.multi_headers:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntry
+	1,  // 6: capabilities.networking.confidentialhttp.v1alpha.MtlsAuth.client_cert:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	1,  // 7: capabilities.networking.confidentialhttp.v1alpha.MtlsAuth.client_key:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	1,  // 8: capabilities.networking.confidentialhttp.v1alpha.MtlsAuth.ca_cert:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	1,  // 9: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.vault_don_secrets:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	4,  // 10: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.request:type_name -> capabilities.networking.confidentialhttp.v1alpha.HTTPRequest
+	8,  // 11: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.auth:type_name -> capabilities.networking.confidentialhttp.v1alpha.AuthConfig
+	6,  // 12: capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest.mtls:type_name -> capabilities.networking.confidentialhttp.v1alpha.MtlsAuth
+	9,  // 13: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.api_key:type_name -> capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuth
+	10, // 14: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.basic:type_name -> capabilities.networking.confidentialhttp.v1alpha.BasicAuth
+	11, // 15: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.bearer:type_name -> capabilities.networking.confidentialhttp.v1alpha.BearerAuth
+	12, // 16: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.hmac:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacAuth
+	16, // 17: capabilities.networking.confidentialhttp.v1alpha.AuthConfig.oauth2:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth
+	1,  // 18: capabilities.networking.confidentialhttp.v1alpha.ApiKeyAuth.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	2,  // 19: capabilities.networking.confidentialhttp.v1alpha.BasicAuth.username:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
+	1,  // 20: capabilities.networking.confidentialhttp.v1alpha.BasicAuth.password:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	1,  // 21: capabilities.networking.confidentialhttp.v1alpha.BearerAuth.token:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	13, // 22: capabilities.networking.confidentialhttp.v1alpha.HmacAuth.sha256:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacSha256
+	14, // 23: capabilities.networking.confidentialhttp.v1alpha.HmacAuth.aws_sig_v4:type_name -> capabilities.networking.confidentialhttp.v1alpha.AwsSigV4
+	15, // 24: capabilities.networking.confidentialhttp.v1alpha.HmacAuth.custom:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacCustom
+	1,  // 25: capabilities.networking.confidentialhttp.v1alpha.HmacSha256.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	2,  // 26: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4.access_key_id:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
+	1,  // 27: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4.secret_access_key:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	1,  // 28: capabilities.networking.confidentialhttp.v1alpha.AwsSigV4.session_token:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	1,  // 29: capabilities.networking.confidentialhttp.v1alpha.HmacCustom.secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	0,  // 30: capabilities.networking.confidentialhttp.v1alpha.HmacCustom.hash:type_name -> capabilities.networking.confidentialhttp.v1alpha.HmacCustom.Hash
+	17, // 31: capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth.client_credentials:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials
+	18, // 32: capabilities.networking.confidentialhttp.v1alpha.OAuth2Auth.refresh_token:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken
+	2,  // 33: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.client_id:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
+	1,  // 34: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.client_secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	22, // 35: capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.extra_params:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2ClientCredentials.ExtraParamsEntry
+	1,  // 36: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.refresh_token:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	2,  // 37: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.client_id:type_name -> capabilities.networking.confidentialhttp.v1alpha.StringOrSecret
+	1,  // 38: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.client_secret:type_name -> capabilities.networking.confidentialhttp.v1alpha.SecretIdentifier
+	23, // 39: capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.extra_params:type_name -> capabilities.networking.confidentialhttp.v1alpha.OAuth2RefreshToken.ExtraParamsEntry
+	3,  // 40: capabilities.networking.confidentialhttp.v1alpha.HTTPRequest.MultiHeadersEntry.value:type_name -> capabilities.networking.confidentialhttp.v1alpha.HeaderValues
+	3,  // 41: capabilities.networking.confidentialhttp.v1alpha.HTTPResponse.MultiHeadersEntry.value:type_name -> capabilities.networking.confidentialhttp.v1alpha.HeaderValues
+	7,  // 42: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:input_type -> capabilities.networking.confidentialhttp.v1alpha.ConfidentialHTTPRequest
+	5,  // 43: capabilities.networking.confidentialhttp.v1alpha.Client.SendRequest:output_type -> capabilities.networking.confidentialhttp.v1alpha.HTTPResponse
+	43, // [43:44] is the sub-list for method output_type
+	42, // [42:43] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_networking_confidentialhttp_v1alpha_client_proto_init() }
@@ -1752,20 +1856,20 @@ func file_capabilities_networking_confidentialhttp_v1alpha_client_proto_init() {
 		(*HTTPRequest_BodyString)(nil),
 		(*HTTPRequest_BodyBytes)(nil),
 	}
-	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[5].OneofWrappers = []any{}
-	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[6].OneofWrappers = []any{
+	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[6].OneofWrappers = []any{}
+	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[7].OneofWrappers = []any{
 		(*AuthConfig_ApiKey)(nil),
 		(*AuthConfig_Basic)(nil),
 		(*AuthConfig_Bearer)(nil),
 		(*AuthConfig_Hmac)(nil),
 		(*AuthConfig_Oauth2)(nil),
 	}
-	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[10].OneofWrappers = []any{
+	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[11].OneofWrappers = []any{
 		(*HmacAuth_Sha256)(nil),
 		(*HmacAuth_AwsSigV4)(nil),
 		(*HmacAuth_Custom)(nil),
 	}
-	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[14].OneofWrappers = []any{
+	file_capabilities_networking_confidentialhttp_v1alpha_client_proto_msgTypes[15].OneofWrappers = []any{
 		(*OAuth2Auth_ClientCredentials)(nil),
 		(*OAuth2Auth_RefreshToken)(nil),
 	}
@@ -1775,7 +1879,7 @@ func file_capabilities_networking_confidentialhttp_v1alpha_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc), len(file_capabilities_networking_confidentialhttp_v1alpha_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   22,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

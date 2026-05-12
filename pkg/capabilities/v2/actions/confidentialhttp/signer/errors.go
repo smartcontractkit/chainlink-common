@@ -77,4 +77,12 @@ var (
 	// ErrUnsupportedEncoding is returned for an unrecognized "hex"/"base64"
 	// encoding string.
 	ErrUnsupportedEncoding = errors.New("confidentialhttp signer: unsupported encoding")
+
+	// ErrMtlsCertInvalid is returned when the client certificate PEM is
+	// invalid, expired, or missing the ClientAuth extended key usage.
+	ErrMtlsCertInvalid = errors.New("confidentialhttp signer: mTLS client certificate invalid")
+
+	// ErrMtlsCACertInvalid is returned when the CA certificate PEM could not
+	// be parsed or contained fewer valid certificates than expected.
+	ErrMtlsCACertInvalid = errors.New("confidentialhttp signer: mTLS CA certificate invalid")
 )

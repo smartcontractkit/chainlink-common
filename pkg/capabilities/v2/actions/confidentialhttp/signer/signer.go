@@ -52,6 +52,16 @@ func NewBuilder(client *http.Client) *Builder {
 	}
 }
 
+// BuildTransport returns a TransportConfigurer for the given MtlsAuth config.
+// Returns (nil, nil) when mtls is nil — callers should treat that as "no mTLS,
+// use the default transport as-is".
+func (b *Builder) BuildTransport(mtls *confhttppb.MtlsAuth) (TransportConfigurer, error) {
+	if mtls == nil {
+		return nil, nil
+	}
+	return newMtlsConfigurer(mtls), nil
+}
+
 // Build selects the appropriate Signer for the given AuthConfig.
 // Returns (nil, nil) when auth is nil — callers should treat that as "no
 // signing, send the request as-is".

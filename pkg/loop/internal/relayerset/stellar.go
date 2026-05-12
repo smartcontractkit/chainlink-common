@@ -29,6 +29,10 @@ func (sc *stellarClient) GetLatestLedger(ctx context.Context, in *emptypb.Empty,
 	return sc.client.GetLatestLedger(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *stellarClient) ReadContract(ctx context.Context, in *stelpb.ReadContractRequest, opts ...grpc.CallOption) (*stelpb.ReadContractResponse, error) {
+	return sc.client.ReadContract(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 // stellarServer implements stelpb.StellarServer by routing each RPC through the RelayerSet.
 type stellarServer struct {
 	stelpb.UnimplementedStellarServer
@@ -69,6 +73,26 @@ func (ss *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) 
 	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
 	if err != nil {
 		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (ss *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContractRequest) (*stelpb.ReadContractResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dReq, err := stelpb.ConvertReadContractRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ReadContract request: %w", err)
+	}
+	dResp, err := svc.ReadContract(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertReadContractResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ReadContract response: %w", err)
 	}
 	return pResp, nil
 }

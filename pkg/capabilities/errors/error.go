@@ -2,8 +2,6 @@ package errors
 
 import (
 	"fmt"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 )
 
 type Origin int
@@ -116,7 +114,7 @@ func NewPublicUserError(err error, errorCode ErrorCode) Error {
 
 // NewLimitBreachedError creates a public user error that embeds the provided limit error, indicating that a CRE limit
 // breach has occurred. The error message will include the provided errorMsg as a prefix for additional context.
-func NewLimitBreachedError(errorMsg string, err limits.LimitError) Error {
+func NewLimitBreachedError(errorMsg string, err error) Error {
 	return NewPublicUserError(fmt.Errorf("%s: %w", errorMsg, err), LimitExceeded)
 }
 

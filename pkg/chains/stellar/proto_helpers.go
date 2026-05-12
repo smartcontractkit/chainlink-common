@@ -222,3 +222,117 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadCo
 		LedgerSequence: p.GetLedgerSequence(),
 	}, nil
 }
+
+// ConvertSubmitTransactionRequestToProto converts a domain SubmitTransactionRequest to its proto representation.
+func ConvertSubmitTransactionRequestToProto(req stellar.SubmitTransactionRequest) (*SubmitTransactionRequest, error) {
+	return &SubmitTransactionRequest{
+		Id:                 req.ID,
+		FromAddress:        req.FromAddress,
+		OperationsXdr:      req.OperationsXDR,
+		LedgerBoundsOffset: req.LedgerBoundsOffset,
+	}, nil
+}
+
+// ConvertSubmitTransactionRequestFromProto converts a proto SubmitTransactionRequest to the domain type.
+func ConvertSubmitTransactionRequestFromProto(p *SubmitTransactionRequest) (stellar.SubmitTransactionRequest, error) {
+	if p == nil {
+		return stellar.SubmitTransactionRequest{}, fmt.Errorf("submit transaction request is nil")
+	}
+	return stellar.SubmitTransactionRequest{
+		ID:                 p.GetId(),
+		FromAddress:        p.GetFromAddress(),
+		OperationsXDR:      p.GetOperationsXdr(),
+		LedgerBoundsOffset: p.GetLedgerBoundsOffset(),
+	}, nil
+}
+
+// ConvertSubmitTransactionResponseToProto converts a domain SubmitTransactionResponse to its proto representation.
+func ConvertSubmitTransactionResponseToProto(resp *stellar.SubmitTransactionResponse) (*SubmitTransactionResponse, error) {
+	if resp == nil {
+		return nil, fmt.Errorf("submit transaction response is nil")
+	}
+	return &SubmitTransactionResponse{
+		TxHash: resp.TxHash,
+	}, nil
+}
+
+// ConvertSubmitTransactionResponseFromProto converts a proto SubmitTransactionResponse to the domain type.
+func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*stellar.SubmitTransactionResponse, error) {
+	if p == nil {
+		return nil, fmt.Errorf("submit transaction response is nil")
+	}
+	return &stellar.SubmitTransactionResponse{
+		TxHash: p.GetTxHash(),
+	}, nil
+}
+
+// ConvertSimulateTransactionRequestToProto converts a domain SimulateTransactionRequest to its proto representation.
+func ConvertSimulateTransactionRequestToProto(req stellar.SimulateTransactionRequest) (*SimulateTransactionRequest, error) {
+	return &SimulateTransactionRequest{
+		FromAddress:        req.FromAddress,
+		OperationsXdr:      req.OperationsXDR,
+		LedgerBoundsOffset: req.LedgerBoundsOffset,
+	}, nil
+}
+
+// ConvertSimulateTransactionRequestFromProto converts a proto SimulateTransactionRequest to the domain type.
+func ConvertSimulateTransactionRequestFromProto(p *SimulateTransactionRequest) (stellar.SimulateTransactionRequest, error) {
+	if p == nil {
+		return stellar.SimulateTransactionRequest{}, fmt.Errorf("simulate transaction request is nil")
+	}
+	return stellar.SimulateTransactionRequest{
+		FromAddress:        p.GetFromAddress(),
+		OperationsXDR:      p.GetOperationsXdr(),
+		LedgerBoundsOffset: p.GetLedgerBoundsOffset(),
+	}, nil
+}
+
+// ConvertSimulateTransactionResponseToProto converts a domain SimulateTransactionResponse to its proto representation.
+func ConvertSimulateTransactionResponseToProto(resp stellar.SimulateTransactionResponse) (*SimulateTransactionResponse, error) {
+	return &SimulateTransactionResponse{
+		Error:          resp.Error,
+		MinResourceFee: resp.MinResourceFee,
+		Results:        resp.Results,
+	}, nil
+}
+
+// ConvertSimulateTransactionResponseFromProto converts a proto SimulateTransactionResponse to the domain type.
+func ConvertSimulateTransactionResponseFromProto(p *SimulateTransactionResponse) (stellar.SimulateTransactionResponse, error) {
+	if p == nil {
+		return stellar.SimulateTransactionResponse{}, fmt.Errorf("simulate transaction response is nil")
+	}
+	return stellar.SimulateTransactionResponse{
+		Error:          p.GetError(),
+		MinResourceFee: p.GetMinResourceFee(),
+		Results:        p.GetResults(),
+	}, nil
+}
+
+// ConvertTxResultToProto converts a domain TxResult to its proto representation.
+func ConvertTxResultToProto(res stellar.TxResult) (*GetTransactionResultResponse, error) {
+	return &GetTransactionResultResponse{
+		Id:            res.ID,
+		Hash:          res.Hash,
+		Status:        res.Status,
+		Fee:           res.Fee,
+		ResultXdr:     res.ResultXDR,
+		ResultMetaXdr: res.ResultMetaXDR,
+		Error:         res.Error,
+	}, nil
+}
+
+// ConvertTxResultFromProto converts a proto GetTransactionResultResponse to the domain type.
+func ConvertTxResultFromProto(p *GetTransactionResultResponse) (stellar.TxResult, error) {
+	if p == nil {
+		return stellar.TxResult{}, fmt.Errorf("transaction result response is nil")
+	}
+	return stellar.TxResult{
+		ID:            p.GetId(),
+		Hash:          p.GetHash(),
+		Status:        p.GetStatus(),
+		Fee:           p.GetFee(),
+		ResultXDR:     p.GetResultXdr(),
+		ResultMetaXDR: p.GetResultMetaXdr(),
+		Error:         p.GetError(),
+	}, nil
+}

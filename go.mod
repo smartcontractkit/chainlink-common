@@ -162,5 +162,3 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
-
-replace github.com/smartcontractkit/chainlink-protos/cre/go => /Users/wentzeld/Documents/GitHub/ErrorFixes/chainlink-protos/cre/go

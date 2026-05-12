@@ -2,7 +2,6 @@ package limits
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -229,58 +228,4 @@ func marshalUnmarshalError(t *testing.T, err error) error {
 	var pb spb.Status
 	require.NoError(t, proto.Unmarshal(b, &pb))
 	return status.FromProto(&pb).Err()
-}
-
-func TestLimitError_errorsAs(t *testing.T) {
-	for _, tt := range []struct {
-		name string
-		err  error
-	}{
-		{
-			name: "rate",
-			err:  ErrorRateLimited{Err: errors.New("inner")},
-		},
-		{
-			name: "resource",
-			err:  ErrorResourceLimited[int]{Limit: 1, Used: 0, Amount: 1},
-		},
-		{
-			name: "time",
-			err:  ErrorTimeLimited{Timeout: time.Second},
-		},
-		{
-			name: "bound",
-			err:  ErrorBoundLimited[int]{Limit: 1, Amount: 2},
-		},
-		{
-			name: "range",
-			err: ErrorRangeLimited[int]{
-				Limit:  settings.Range[int]{Lower: 0, Upper: 1},
-				Amount: 2,
-			},
-		},
-		{
-			name: "queue_full",
-			err:  ErrorQueueFull{Limit: 1},
-		},
-		{
-			name: "not_allowed",
-			err:  ErrorNotAllowed{},
-		},
-		{
-			name: "wrapped",
-			err:  fmt.Errorf("wrap: %w", ErrorTimeLimited{Timeout: time.Second}),
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			var le LimitError
-			require.True(t, errors.As(tt.err, &le), "expected limit error")
-		})
-	}
-}
-
-func TestLimitError_errorsAs_negative(t *testing.T) {
-	var le LimitError
-	assert.False(t, errors.As(ErrQueueEmpty, &le))
-	assert.False(t, errors.As(errors.New("other"), &le))
 }

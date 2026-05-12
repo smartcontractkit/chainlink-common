@@ -15,6 +15,7 @@ import (
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	stellartypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
+	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
 func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
@@ -136,12 +137,68 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, uint32(1234), resp.Sequence)
 		require.Equal(t, int64(9876543210), resp.LedgerCloseTime)
 	})
+
+	t.Run("ReadContract_roundtrip", func(t *testing.T) {
+		sym := xdr.ScSymbol("transfer")
+		argVal := xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &sym}
+
+		u32 := xdr.Uint32(42)
+		resultVal := xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u32}
+
+		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
+			require.Equal(t, "CABC123", req.ContractID)
+			require.Equal(t, "my_fn", req.Function)
+			require.Equal(t, uint32(100), req.LedgerSequence)
+			require.Len(t, req.Args, 1)
+			require.Equal(t, xdr.ScValTypeScvSymbol, req.Args[0].Type)
+			require.NotNil(t, req.Args[0].Sym)
+			require.Equal(t, xdr.ScSymbol("transfer"), *req.Args[0].Sym)
+			return stellartypes.ReadContractResponse{
+				Result:         &resultVal,
+				LedgerSequence: 101,
+			}, nil
+		}
+
+		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
+			ContractID:     "CABC123",
+			Function:       "my_fn",
+			Args:           []xdr.ScVal{argVal},
+			LedgerSequence: 100,
+		})
+		require.NoError(t, err)
+		require.Equal(t, uint32(101), resp.LedgerSequence)
+		require.Empty(t, resp.Error)
+		require.NotNil(t, resp.Result)
+		require.Equal(t, xdr.ScValTypeScvU32, resp.Result.Type)
+		require.NotNil(t, resp.Result.U32)
+		require.Equal(t, xdr.Uint32(42), *resp.Result.U32)
+	})
+
+	t.Run("ReadContract_noArgs_noResult", func(t *testing.T) {
+		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
+			require.Empty(t, req.Args)
+			return stellartypes.ReadContractResponse{
+				Error:          "contract error: not found",
+				LedgerSequence: 200,
+			}, nil
+		}
+
+		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
+			ContractID: "CXYZ",
+			Function:   "noop",
+		})
+		require.NoError(t, err)
+		require.Equal(t, "contract error: not found", resp.Error)
+		require.Nil(t, resp.Result)
+		require.Equal(t, uint32(200), resp.LedgerSequence)
+	})
 }
 
 type staticStellarService struct {
 	types.UnimplementedStellarService
 	getLedgerEntries func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
 	getLatestLedger  func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
+	readContract     func(ctx context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error)
 }
 
 func (s *staticStellarService) GetLedgerEntries(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
@@ -156,4 +213,11 @@ func (s *staticStellarService) GetLatestLedger(ctx context.Context) (stellartype
 		return s.UnimplementedStellarService.GetLatestLedger(ctx)
 	}
 	return s.getLatestLedger(ctx)
+}
+
+func (s *staticStellarService) ReadContract(ctx context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
+	if s.readContract == nil {
+		return s.UnimplementedStellarService.ReadContract(ctx, req)
+	}
+	return s.readContract(ctx, req)
 }

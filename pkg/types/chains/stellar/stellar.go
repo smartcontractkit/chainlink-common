@@ -1,6 +1,10 @@
 package stellar
 
-import "context"
+import (
+	"context"
+
+	"github.com/stellar/go-stellar-sdk/xdr"
+)
 
 // Client wraps Stellar RPC calls via the type/chains/stellar domain types.
 // Both methods map 1:1 to the Stellar RPC API.
@@ -9,6 +13,9 @@ type Client interface {
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
+	// ReadContract simulates a read-only Soroban contract function call.
+	// Each element of Args is a proto-marshalled ScVal (loop.stellar.ScVal).
+	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
@@ -37,6 +44,31 @@ type GetLedgerEntriesResponse struct {
 	Entries []LedgerEntryResult
 	// LatestLedger is the latest ledger sequence number at query time.
 	LatestLedger uint32
+}
+
+// ReadContractRequest is the domain representation of a Soroban read-only call.
+// Each element of Args is a proto-marshalled loop.stellar.ScVal message.
+// Use the helpers in pkg/chains/stellar to construct ScVal bytes conveniently.
+type ReadContractRequest struct {
+	// ContractID is the Stellar contract address in C… StrKey encoding.
+	ContractID string
+	// Function is the Soroban function name to call.
+	Function string
+	// Args holds one proto-marshalled ScVal per contract argument.
+	// An empty slice is valid for zero-argument functions.
+	Args []xdr.ScVal
+	// LedgerSequence is the ledger to simulate against; 0 means use the latest.
+	LedgerSequence uint32
+}
+
+// ReadContractResponse is the domain representation of a Soroban simulation result.
+type ReadContractResponse struct {
+	// Result is the XDR ScVal returned by the contract (nil when Error is non-empty).
+	Result *xdr.ScVal
+	// LedgerSequence is the ledger that was used for the simulation.
+	LedgerSequence uint32
+	// Error is non-empty when the call failed.
+	Error string
 }
 
 // GetLatestLedgerResponse holds the current ledger state.

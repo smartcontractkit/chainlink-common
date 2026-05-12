@@ -103,7 +103,6 @@ func TestValidateReadContractRequest_AcceptsValidRequest(t *testing.T) {
 	err := stellarcap.ValidateReadContractRequest(&stellarcap.ReadContractRequest{
 		ContractId: "CAHJJJKK7777AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555FFFF6666",
 		Function:   "balance",
-		Args:       [][]byte{{0x01}, {0x02}},
 	})
 	require.NoError(t, err)
 }

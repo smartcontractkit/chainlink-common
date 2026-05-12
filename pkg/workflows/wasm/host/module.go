@@ -21,6 +21,8 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -31,7 +33,6 @@ import (
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
-	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 const v2ImportPrefix = "version_v2"
@@ -104,11 +105,7 @@ type ModuleConfig struct {
 	Determinism *DeterminismConfig
 }
 
-type ModuleBase interface {
-	Start()
-	Close()
-	IsLegacyDAG() bool
-}
+type ModuleBase = host.ModuleBase
 
 type ModuleV1 interface {
 	ModuleBase
@@ -117,29 +114,9 @@ type ModuleV1 interface {
 	Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error)
 }
 
-type ModuleV2 interface {
-	ModuleBase
+type ModuleV2 = host.Module
 
-	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
-	Execute(ctx context.Context, request *sdkpb.ExecuteRequest, handler ExecutionHelper) (*sdkpb.ExecutionResult, error)
-}
-
-// ExecutionHelper Implemented by those running the host, for example the Workflow Engine
-type ExecutionHelper interface {
-	// CallCapability blocking call to the Workflow Engine
-	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
-	GetSecrets(ctx context.Context, request *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error)
-
-	GetWorkflowExecutionID() string
-
-	GetNodeTime() time.Time
-
-	GetDONTime() (time.Time, error)
-
-	EmitUserLog(log string) error
-
-	EmitUserMetric(ctx context.Context, metric *wfpb.WorkflowUserMetric) error
-}
+type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
 	engine  *wasmtime.Engine

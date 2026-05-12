@@ -58,6 +58,7 @@ func SendError(err error) {
 func SendSubscription(subscriptions *sdk.TriggerSubscriptionRequest) {
 	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
+	os.Exit(0)
 }
 
 func Now() time.Time {

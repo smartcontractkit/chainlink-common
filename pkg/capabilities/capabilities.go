@@ -632,22 +632,31 @@ func MustNewRemoteCapabilityInfo(
 }
 
 const (
-	DefaultRegistrationRefresh       = 30 * time.Second
-	DefaultRegistrationExpiry        = 2 * time.Minute
-	DefaultMessageExpiry             = 2 * time.Minute
-	DefaultBatchSize                 = 100
-	DefaultBatchCollectionPeriod     = 100 * time.Millisecond
-	DefaultExecutableRequestTimeout  = 8 * time.Minute
-	DefaultServerMaxParallelRequests = uint32(1000)
+	DefaultRegistrationRefresh        = 30 * time.Second
+	DefaultRegistrationExpiry         = 2 * time.Minute
+	DefaultMessageExpiry              = 2 * time.Minute
+	DefaultBatchSize                  = 100
+	DefaultBatchCollectionPeriod      = 100 * time.Millisecond
+	DefaultExecutableRequestTimeout   = 8 * time.Minute
+	DefaultServerMaxParallelRequests  = uint32(1000)
+	DefaultBaseTriggerPruneAge        = 24 * time.Hour
+	DefaultBaseTriggerRetryInterval   = 30 * time.Second
+	DefaultBaseTriggerMaxRetries      = 20
+	DefaultBaseTriggerMaxSendsPerTick = 20
 )
 
 type RemoteTriggerConfig struct {
-	RegistrationRefresh     time.Duration
-	RegistrationExpiry      time.Duration
-	MinResponsesToAggregate uint32
-	MessageExpiry           time.Duration
-	MaxBatchSize            uint32
-	BatchCollectionPeriod   time.Duration
+	RegistrationRefresh          time.Duration
+	RegistrationExpiry           time.Duration
+	MinResponsesToAggregate      uint32
+	MessageExpiry                time.Duration
+	MaxBatchSize                 uint32
+	BatchCollectionPeriod        time.Duration
+	BaseTriggerRetransmitEnabled bool
+	BaseTriggerPruneAge          time.Duration
+	BaseTriggerRetryInterval     time.Duration
+	BaseTriggerMaxRetries        uint32
+	BaseTriggerMaxSendsPerTick   uint32
 }
 
 type RemoteTargetConfig struct { // deprecated - v1 only
@@ -685,6 +694,18 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 	if c.BatchCollectionPeriod == 0 {
 		c.BatchCollectionPeriod = DefaultBatchCollectionPeriod
+	}
+	if c.BaseTriggerPruneAge == 0 {
+		c.BaseTriggerPruneAge = DefaultBaseTriggerPruneAge
+	}
+	if c.BaseTriggerMaxRetries == 0 {
+		c.BaseTriggerMaxRetries = DefaultBaseTriggerMaxRetries
+	}
+	if c.BaseTriggerMaxSendsPerTick == 0 {
+		c.BaseTriggerMaxSendsPerTick = DefaultBaseTriggerMaxSendsPerTick
+	}
+	if c.BaseTriggerRetryInterval == 0 {
+		c.BaseTriggerRetryInterval = DefaultBaseTriggerRetryInterval
 	}
 }
 

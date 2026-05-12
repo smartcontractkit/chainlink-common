@@ -11,9 +11,16 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
+
+type BaseTriggerSettingsGetter interface {
+	RetransmitEnabled(ctx context.Context) (bool, error)
+	PruneAge(ctx context.Context) (time.Duration, error)
+	RetryInterval(ctx context.Context) (time.Duration, error)
+	MaxRetries(ctx context.Context) (int, error)
+	MaxSendsPerTick(ctx context.Context) (int, error)
+}
 
 const (
 	// defaultMaxSendsPerTick limits how many events are sent per scanPending
@@ -84,9 +91,8 @@ type BaseTriggerCapability[T proto.Message] struct {
 	newMsg       func() T // factory to allocate a new T for unmarshalling
 	lggr         logger.Logger
 	capabilityId string
-	// settings provides live CRE globals (BaseTriggerRetransmitEnabled, BaseTriggerRetryInterval).
-	// When nil, tRetransmit > 0 enables persistence/retry with fixed spacing.
-	settings settings.Getter
+
+	settings BaseTriggerSettingsGetter
 
 	mu        sync.Mutex
 	byTrigger map[string]*triggerReg[T] // triggerID -> registration state
@@ -104,7 +110,7 @@ func NewBaseTriggerCapability[T proto.Message](
 	lggr logger.Logger,
 	capabilityId string,
 	tRetransmit time.Duration,
-	settings settings.Getter,
+	settings BaseTriggerSettingsGetter,
 ) *BaseTriggerCapability[T] {
 	ctx, cancel := context.WithCancel(context.Background())
 	metrics, err := NewBaseTriggerBeholderMetrics(capabilityId)
@@ -148,9 +154,10 @@ func (b *BaseTriggerCapability[T]) retransmitAllowed(ctx context.Context) bool {
 	if b.settings == nil {
 		return b.tRetransmit > 0
 	}
-	enabled, err := cresettings.Default.BaseTriggerRetransmitEnabled.GetOrDefault(ctx, b.settings)
+
+	enabled, err := b.settings.RetransmitEnabled(ctx)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerRetransmitEnabled; treating retransmit as disabled", "err", err)
+		b.lggr.Warnw("Setting read failed for BaseTriggerRetransmitEnabled; treating retransmit as disabled", "err", err)
 		return false
 	}
 	return enabled
@@ -161,9 +168,9 @@ func (b *BaseTriggerCapability[T]) retryInterval(ctx context.Context) time.Durat
 	if b.settings == nil {
 		return b.tRetransmit
 	}
-	interval, err := cresettings.Default.BaseTriggerRetryInterval.GetOrDefault(ctx, b.settings)
+	interval, err := b.settings.RetryInterval(ctx)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerRetryInterval; using schema default", "err", err)
+		b.lggr.Warnw("settings read failed for BaseTriggerRetryInterval; using schema default", "err", err)
 		return cresettings.Default.BaseTriggerRetryInterval.DefaultValue
 	}
 	return interval
@@ -175,23 +182,22 @@ func (b *BaseTriggerCapability[T]) maxRetries(ctx context.Context) int {
 	if b.settings == nil {
 		return defaultMaxRetries
 	}
-	v, err := cresettings.Default.BaseTriggerMaxRetries.GetOrDefault(ctx, b.settings)
+	v, err := b.settings.MaxRetries(ctx)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxRetries; using default (20)", "err", err)
+		b.lggr.Warnw("settings read failed for BaseTriggerMaxRetries; using default (20)", "err", err)
 		return defaultMaxRetries
 	}
 	return v
 }
 
 // maxSendsPerTick returns how many events a single scanPending cycle may send.
-// Tunable via CRE settings so operators can balance P2P load without code deploys.
 func (b *BaseTriggerCapability[T]) maxSendsPerTick(ctx context.Context) int {
 	if b.settings == nil {
 		return defaultMaxSendsPerTick
 	}
-	v, err := cresettings.Default.BaseTriggerMaxSendsPerTick.GetOrDefault(ctx, b.settings)
+	v, err := b.settings.MaxSendsPerTick(ctx)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxSendsPerTick; using default", "err", err)
+		b.lggr.Warnw("settings read failed for BaseTriggerMaxSendsPerTick; using default", "err", err)
 		return defaultMaxSendsPerTick
 	}
 	if v <= 0 {
@@ -206,9 +212,9 @@ func (b *BaseTriggerCapability[T]) pruneAge(ctx context.Context) time.Duration {
 	if b.settings == nil {
 		return defaultPruneAge
 	}
-	v, err := cresettings.Default.BaseTriggerPruneAge.GetOrDefault(ctx, b.settings)
+	v, err := b.settings.PruneAge(ctx)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerPruneAge; falling back to default", "err", err)
+		b.lggr.Warnw("settings read failed for BaseTriggerPruneAge; falling back to default", "err", err)
 		return defaultPruneAge
 	}
 	if v <= 0 {

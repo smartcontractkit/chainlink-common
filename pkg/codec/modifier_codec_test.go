@@ -2,7 +2,6 @@ package codec_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"strconv"
 	"testing"
@@ -95,7 +94,7 @@ func TestModifierCodec(t *testing.T) {
 	t.Run("Decode works on slices", func(t *testing.T) {
 		decoded := &[]ModifierCodecOffChainCompatibleType{}
 		require.NoError(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType))
-		assert.Equal(t, len(*decoded), anyValue)
+		assert.Len(t, *decoded, anyValue)
 		for i, d := range *decoded {
 			assert.Equal(t, anyValue+i, d.Z)
 		}
@@ -114,7 +113,7 @@ func TestModifierCodec(t *testing.T) {
 
 	t.Run("Encode returns errors from type converter", func(t *testing.T) {
 		_, err = mod.Encode(ctx, &modifierCodecOffChainType{Z: anyValue}, "invalid type")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns errors from codec", func(t *testing.T) {
@@ -123,22 +122,22 @@ func TestModifierCodec(t *testing.T) {
 
 	t.Run("Decode returns error for non pointer types", func(t *testing.T) {
 		decoded := modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anyItemType), types.ErrInvalidType))
+		require.ErrorIs(t, mod.Decode(ctx, anyTestBytes, decoded, anyItemType), types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns error arrays with wrong number of elements", func(t *testing.T) {
 		decoded := &[3]modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrSliceWrongLen))
+		require.ErrorIs(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrSliceWrongLen)
 	})
 
 	t.Run("Decode returns error for incompatible type", func(t *testing.T) {
 		decoded := &modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrInvalidType))
+		require.ErrorIs(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrInvalidType)
 	})
 
 	t.Run("Encode returns errors from type converter", func(t *testing.T) {
 		err = mod.Decode(ctx, anyTestBytes, &modifierCodecOffChainType{}, "invalid type")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	var actual any

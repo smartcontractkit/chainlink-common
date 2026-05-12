@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 
@@ -57,6 +58,9 @@ const (
 	// ReportFormatEVMABIEncodeUnpackedExpr is like ReportFormatEVMABIEncodeUnpacked
 	// but adds custom expressions to calculate report values from the available streams
 	ReportFormatEVMABIEncodeUnpackedExpr = 7
+	// ReportFormatHistoryBackfill is a meta-format: the channel carries pre-aggregated
+	// historical observations in opts; reports are encoded with the target channel's codec.
+	ReportFormatHistoryBackfill = 8
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -69,6 +73,7 @@ var ReportFormats = []ReportFormat{
 	ReportFormatCapabilityTrigger,
 	ReportFormatEVMStreamlined,
 	ReportFormatEVMABIEncodeUnpackedExpr,
+	ReportFormatHistoryBackfill,
 }
 
 func (rf ReportFormat) String() string {
@@ -87,6 +92,8 @@ func (rf ReportFormat) String() string {
 		return "evm_streamlined"
 	case ReportFormatEVMABIEncodeUnpackedExpr:
 		return "evm_abi_encode_unpacked_expr"
+	case ReportFormatHistoryBackfill:
+		return "history_backfill"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -108,6 +115,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatEVMStreamlined, nil
 	case "evm_abi_encode_unpacked_expr":
 		return ReportFormatEVMABIEncodeUnpackedExpr, nil
+	case "history_backfill":
+		return ReportFormatHistoryBackfill, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}
@@ -356,7 +365,7 @@ type ChannelDefinitions map[ChannelID]ChannelDefinition
 func (c *ChannelDefinitions) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
-		return fmt.Errorf("failed to scan Data: value is not []byte")
+		return errors.New("failed to scan Data: value is not []byte")
 	}
 	if bytes == nil {
 		*c = nil

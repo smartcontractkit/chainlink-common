@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2"
@@ -83,7 +84,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(dstProviderResource)
 
@@ -95,7 +96,7 @@ func (c *ExecutionLOOPClient) NewExecutionFactory(ctx context.Context, srcProvid
 			SrcTokenAddress:      srcTokenAddress,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return resp.ExecutionFactoryServiceId, deps, nil
 	}

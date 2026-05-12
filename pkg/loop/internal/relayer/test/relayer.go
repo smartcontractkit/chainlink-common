@@ -193,14 +193,14 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 		return nil, err
 	}
 	if len(keys) == 0 {
-		return nil, fmt.Errorf("expected at least one key but got none")
+		return nil, errors.New("expected at least one key but got none")
 	}
 	keys, err = csaKeystore.Accounts(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if len(keys) == 0 {
-		return nil, fmt.Errorf("expected at least one CSA key but got none")
+		return nil, errors.New("expected at least one CSA key but got none")
 	}
 
 	return s.relayer, nil
@@ -246,6 +246,10 @@ func (s staticRelayer) TON() (types.TONService, error) {
 }
 
 func (s staticRelayer) Solana() (types.SolanaService, error) {
+	return nil, nil
+}
+
+func (s staticRelayer) Stellar() (types.StellarService, error) {
 	return nil, nil
 }
 

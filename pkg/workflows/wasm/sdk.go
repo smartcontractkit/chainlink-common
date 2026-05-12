@@ -98,7 +98,7 @@ func createEmitFn(
 	emitFn := func(msg string, labels map[string]string) error {
 		// Prepare the labels to be emitted
 		if sdkConfig.Metadata == nil {
-			return NewEmissionError(fmt.Errorf("metadata is required to emit"))
+			return NewEmissionError(errors.New("metadata is required to emit"))
 		}
 
 		if labels == nil {
@@ -192,7 +192,7 @@ func createFetchFn(
 		}
 
 		if sdkConfig.RequestID == nil {
-			return sdk.FetchResponse{}, fmt.Errorf("request ID is required to fetch")
+			return sdk.FetchResponse{}, errors.New("request ID is required to fetch")
 		}
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
@@ -271,7 +271,7 @@ func createFetchFn(
 // bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
 func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32, error) {
 	if len(buf) == 0 {
-		return nil, 0, fmt.Errorf("buffer cannot be empty")
+		return nil, 0, errors.New("buffer cannot be empty")
 	}
 	return unsafe.Pointer(&buf[0]), int32(len(buf)), nil
 }
@@ -279,19 +279,19 @@ func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32, error) {
 // toEmitLabels ensures that the required metadata is present in the labels map
 func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]string) (map[string]string, error) {
 	if md.WorkflowID == "" {
-		return nil, fmt.Errorf("must provide workflow id to emit event")
+		return nil, errors.New("must provide workflow id to emit event")
 	}
 
 	if md.WorkflowName == "" {
-		return nil, fmt.Errorf("must provide workflow name to emit event")
+		return nil, errors.New("must provide workflow name to emit event")
 	}
 
 	if md.WorkflowOwner == "" {
-		return nil, fmt.Errorf("must provide workflow owner to emit event")
+		return nil, errors.New("must provide workflow owner to emit event")
 	}
 
 	if md.WorkflowExecutionID == "" {
-		return nil, fmt.Errorf("must provide workflow execution id to emit event")
+		return nil, errors.New("must provide workflow execution id to emit event")
 	}
 
 	labels[events.LabelWorkflowExecutionID] = md.WorkflowExecutionID

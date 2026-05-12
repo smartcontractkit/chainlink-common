@@ -145,7 +145,7 @@ func (es *evmServer) CallContract(ctx context.Context, request *evmpb.CallContra
 		return nil, err
 	}
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 
 	return &evmpb.CallContractReply{
@@ -178,7 +178,7 @@ func (es *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsRe
 		return nil, err
 	}
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 
 	logs, err := evmpb.ConvertLogsToProto(reply.Logs)
@@ -214,7 +214,7 @@ func (es *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequ
 	}
 
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 
 	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(reply.Balance)}, nil
@@ -307,7 +307,7 @@ func (es *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderBy
 	}
 
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 
 	header, err := evmpb.ConvertHeaderToProto(reply.Header)
@@ -435,7 +435,7 @@ func (es *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.Submi
 		return nil, err
 	}
 	if reply == nil {
-		return nil, fmt.Errorf("txResult is nil")
+		return nil, errors.New("txResult is nil")
 	}
 
 	return &evmpb.SubmitTransactionReply{
@@ -459,7 +459,7 @@ func (es *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb
 		return nil, err
 	}
 	if reply == nil {
-		return nil, fmt.Errorf("reply is nil")
+		return nil, errors.New("reply is nil")
 	}
 
 	return &evmpb.CalculateTransactionFeeReply{

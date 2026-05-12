@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	relayersetpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
@@ -59,7 +60,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterPipelineRunnerServiceServer(s, pipeline.NewRunnerServer(pipelineRunner))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(pipelineRunnerRes)
 
@@ -67,7 +68,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(telemetryRes)
 
@@ -75,7 +76,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterErrorLogServer(s, errorlog.NewServer(errorLog))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(errorLogRes)
 
@@ -83,7 +84,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(capRegistryRes)
 
@@ -91,7 +92,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterKeyValueStoreServer(s, keyvalue.NewServer(keyValueStore))
 		})
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve KeyValueStore: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve KeyValueStore: %w", err)
 		}
 		deps.Add(keyValueStoreRes)
 
@@ -102,7 +103,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		})
 
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new relayer set: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new relayer set: %w", err)
 		}
 
 		deps.Add(relayerSetRes)
@@ -125,9 +126,9 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 			RelayerSetID:     relayerSetID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
-		return reply.ID, nil, nil
+		return reply.ID, deps, nil
 	})
 	return NewReportingPluginFactoryClient(o.BrokerExt, cc), nil
 }

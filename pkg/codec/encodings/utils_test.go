@@ -1,7 +1,6 @@
 package encodings_test
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -40,7 +39,7 @@ func TestSafeDecode(t *testing.T) {
 			require.Fail(t, "method must not be called")
 			return 0
 		})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 }
 
@@ -89,7 +88,7 @@ func TestEncodeEach(t *testing.T) {
 		}
 
 		_, err := encodings.EncodeEach(reflect.ValueOf(100), nil, codec)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("returns error if any encoding fails", func(t *testing.T) {
@@ -153,7 +152,7 @@ func TestDecodeEach(t *testing.T) {
 			Value: 100,
 		}
 		_, _, err := encodings.DecodeEach(bytes, reflect.ValueOf(&into), 3, codec)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("returns error if size too small", func(t *testing.T) {
@@ -164,7 +163,7 @@ func TestDecodeEach(t *testing.T) {
 			Value: 100,
 		}
 		_, _, err := encodings.DecodeEach(bytes, reflect.ValueOf(into), 3, codec)
-		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("returns error if any encoding fails", func(t *testing.T) {
@@ -187,7 +186,7 @@ func TestDecodeEach(t *testing.T) {
 			Value: 100,
 		}
 		_, _, err := encodings.DecodeEach(bytes, reflect.ValueOf(into), 3, codec)
-		assert.True(t, errors.Is(err, types.ErrInternal))
+		assert.ErrorIs(t, err, types.ErrInternal)
 	})
 }
 
@@ -208,6 +207,6 @@ func TestIndirectIfPointer(t *testing.T) {
 
 	t.Run("returns error if the pointer is nil", func(t *testing.T) {
 		_, err := encodings.IndirectIfPointer(reflect.ValueOf((*int)(nil)))
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 }

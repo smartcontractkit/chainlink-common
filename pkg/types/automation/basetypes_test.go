@@ -27,7 +27,7 @@ func TestTriggerUnmarshal(t *testing.T) {
 	rawJSON := `{"BlockNumber":5,"BlockHash":[1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4],"LogTriggerExtension":{"TxHash":[1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4],"Index":99,"BlockHash":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"BlockNumber":0}}`
 
 	// the encoded value above should match the rawjson expected
-	assert.Equal(t, rawJSON, string(encoded), "encoded should match expected")
+	assert.JSONEq(t, rawJSON, string(encoded), "encoded should match expected")
 
 	// the plugin will decode and re-encode the trigger value at least once
 	// before some decoding might happen
@@ -102,7 +102,7 @@ func TestLogIdentifier(t *testing.T) {
 	}
 
 	logIdentifier := input.LogTriggerExtension.LogIdentifier()
-	assert.Equal(t, hex.EncodeToString(logIdentifier), "0102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030400000063")
+	assert.Equal(t, "0102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030400000063", hex.EncodeToString(logIdentifier))
 }
 
 func TestTriggerUnmarshal_EmptyExtension(t *testing.T) {
@@ -116,7 +116,7 @@ func TestTriggerUnmarshal_EmptyExtension(t *testing.T) {
 	rawJSON := `{"BlockNumber":5,"BlockHash":[1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4],"LogTriggerExtension":null}`
 
 	// the encoded value above should match the rawjson expected
-	assert.Equal(t, rawJSON, string(encoded), "encoded should match expected")
+	assert.JSONEq(t, rawJSON, string(encoded), "encoded should match expected")
 
 	// the plugin will decode and re-encode the trigger value at least once
 	// before some decoding might happen
@@ -576,7 +576,7 @@ func assertCongruentKeyStructure(t *testing.T, structMap, jsonMap map[string]any
 	// this functions asserts that the two inputs have congruent key shapes, while disregarding
 	// the values
 	for k := range structMap {
-		assert.True(t, jsonMap[k] != nil, "json string does not contain field %s", k)
+		assert.NotNil(t, jsonMap[k], "json string does not contain field %s", k)
 		if nested1, ok := structMap[k].(map[string]any); ok {
 			if nested2, ok := jsonMap[k].(map[string]any); ok {
 				assertCongruentKeyStructure(t, nested1, nested2)

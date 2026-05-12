@@ -141,7 +141,7 @@ func TestMessageProtobufFlattening(t *testing.T) {
 			} else {
 				assert.Equal(t, tc.message.FeeValueJuels.Int, convertedMessage.FeeValueJuels.Int, "FeeValueJuels.Int nil mismatch")
 			}
-			assert.Equal(t, len(tc.message.TokenAmounts), len(convertedMessage.TokenAmounts))
+			assert.Len(t, convertedMessage.TokenAmounts, len(tc.message.TokenAmounts))
 
 			// Verify token amounts
 			for i, original := range tc.message.TokenAmounts {
@@ -202,7 +202,7 @@ func TestRMNTypesConversion(t *testing.T) {
 			assert.Equal(t, []byte(tc.rmnReport.RmnRemoteContractAddress), pbReport.RmnRemoteContractAddress)
 			assert.Equal(t, []byte(tc.rmnReport.OfframpAddress), pbReport.OfframpAddress)
 			assert.Equal(t, tc.rmnReport.RmnHomeContractConfigDigest[:], pbReport.RmnHomeContractConfigDigest)
-			assert.Equal(t, len(tc.rmnReport.LaneUpdates), len(pbReport.LaneUpdates))
+			assert.Len(t, pbReport.LaneUpdates, len(tc.rmnReport.LaneUpdates))
 
 			// Convert back to Go struct
 			convertedReport := pbToRMNReport(pbReport)
@@ -214,7 +214,7 @@ func TestRMNTypesConversion(t *testing.T) {
 			assert.Equal(t, []byte(tc.rmnReport.RmnRemoteContractAddress), []byte(convertedReport.RmnRemoteContractAddress))
 			assert.Equal(t, []byte(tc.rmnReport.OfframpAddress), []byte(convertedReport.OfframpAddress))
 			assert.Equal(t, tc.rmnReport.RmnHomeContractConfigDigest, convertedReport.RmnHomeContractConfigDigest)
-			assert.Equal(t, len(tc.rmnReport.LaneUpdates), len(convertedReport.LaneUpdates))
+			assert.Len(t, convertedReport.LaneUpdates, len(tc.rmnReport.LaneUpdates))
 
 			// Verify lane updates
 			for i, original := range tc.rmnReport.LaneUpdates {
@@ -656,8 +656,8 @@ func TestSourceChainConfigNilHandling(t *testing.T) {
 
 		// Verify zero values are preserved
 		assert.Equal(t, []byte(nil), pbConfig.Router)
-		assert.Equal(t, false, pbConfig.IsEnabled)
-		assert.Equal(t, false, pbConfig.IsRmnVerificationDisabled)
+		assert.False(t, pbConfig.IsEnabled)
+		assert.False(t, pbConfig.IsRmnVerificationDisabled)
 		assert.Equal(t, uint64(0), pbConfig.MinSeqNr)
 		assert.Equal(t, []byte(nil), pbConfig.OnRamp)
 	})
@@ -709,7 +709,7 @@ func TestTokenPriceMapConversion(t *testing.T) {
 			}
 
 			require.NotNil(t, pbMap)
-			assert.Equal(t, len(tc.priceMap), len(pbMap))
+			assert.Len(t, pbMap, len(tc.priceMap))
 
 			// Verify protobuf values
 			for token, price := range tc.priceMap {
@@ -723,7 +723,7 @@ func TestTokenPriceMapConversion(t *testing.T) {
 			convertedMap := pbToTokenPriceMap(pbMap)
 
 			// Verify round-trip conversion
-			assert.Equal(t, len(tc.priceMap), len(convertedMap))
+			assert.Len(t, convertedMap, len(tc.priceMap))
 			for token, originalPrice := range tc.priceMap {
 				convertedPrice, exists := convertedMap[token]
 				require.True(t, exists, "token %s should exist in converted map", string(token))
@@ -748,7 +748,7 @@ func TestTokenPriceMapNilHandling(t *testing.T) {
 		emptyPbMap := make(map[string]*ccipocr3pb.BigInt)
 		priceMap := pbToTokenPriceMap(emptyPbMap)
 		require.NotNil(t, priceMap)
-		assert.Equal(t, 0, len(priceMap))
+		assert.Empty(t, priceMap)
 	})
 }
 
@@ -816,7 +816,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 			}
 
 			require.NotNil(t, pbMap)
-			assert.Equal(t, len(tc.tokenMap), len(pbMap))
+			assert.Len(t, pbMap, len(tc.tokenMap))
 
 			// Verify protobuf values
 			for tokenID, amount := range tc.tokenMap {
@@ -836,7 +836,7 @@ func TestMessageTokenIDMapConversion(t *testing.T) {
 			require.NoError(t, err)
 
 			// Verify round-trip conversion
-			assert.Equal(t, len(tc.tokenMap), len(convertedMap))
+			assert.Len(t, convertedMap, len(tc.tokenMap))
 			for tokenID, originalAmount := range tc.tokenMap {
 				convertedAmount, exists := convertedMap[tokenID]
 				require.True(t, exists, "tokenID %s should exist in converted map", tokenID.String())
@@ -921,7 +921,7 @@ func TestMessagesByTokenIDConversion(t *testing.T) {
 			}
 
 			require.NotNil(t, pbMap)
-			assert.Equal(t, len(tc.messages), len(pbMap))
+			assert.Len(t, pbMap, len(tc.messages))
 
 			// Verify protobuf values
 			for tokenID, messageBytes := range tc.messages {
@@ -936,7 +936,7 @@ func TestMessagesByTokenIDConversion(t *testing.T) {
 			require.NoError(t, err)
 
 			// Verify round-trip conversion
-			assert.Equal(t, len(tc.messages), len(convertedMap))
+			assert.Len(t, convertedMap, len(tc.messages))
 			for tokenID, originalBytes := range tc.messages {
 				convertedBytes, exists := convertedMap[tokenID]
 				require.True(t, exists, "tokenID %s should exist in converted map", tokenID.String())
@@ -1148,7 +1148,7 @@ func TestTokenUpdatesUnixConversion(t *testing.T) {
 			}
 
 			require.NotNil(t, pbMap)
-			assert.Equal(t, len(tc.updates), len(pbMap))
+			assert.Len(t, pbMap, len(tc.updates))
 
 			// Verify protobuf values
 			for token, update := range tc.updates {
@@ -1165,7 +1165,7 @@ func TestTokenUpdatesUnixConversion(t *testing.T) {
 			convertedMap := pbToTokenUpdatesUnix(pbMap)
 
 			// Verify round-trip conversion
-			assert.Equal(t, len(tc.updates), len(convertedMap))
+			assert.Len(t, convertedMap, len(tc.updates))
 			for token, originalUpdate := range tc.updates {
 				convertedUpdate, exists := convertedMap[token]
 				require.True(t, exists, "token %s should exist in converted map", string(token))
@@ -1192,7 +1192,7 @@ func TestTokenUpdatesUnixNilHandling(t *testing.T) {
 		emptyPbMap := make(map[string]*ccipocr3pb.TimestampedUnixBig)
 		updates := pbToTokenUpdatesUnix(emptyPbMap)
 		require.NotNil(t, updates)
-		assert.Equal(t, 0, len(updates))
+		assert.Empty(t, updates)
 	})
 
 	t.Run("protobuf map with nil value", func(t *testing.T) {
@@ -1347,7 +1347,7 @@ func TestPbBigIntToInt(t *testing.T) {
 			} else {
 				assert.NotNil(t, result, "result should not be nil when expected is not nil")
 				assert.Equal(t, tc.expected.String(), result.String(), "converted big.Int should match expected value")
-				assert.Equal(t, tc.expected.Cmp(result), 0, "big.Int comparison should be equal")
+				assert.Equal(t, 0, tc.expected.Cmp(result), "big.Int comparison should be equal")
 			}
 		})
 	}
@@ -1494,7 +1494,7 @@ func TestPbToBigInt(t *testing.T) {
 			} else {
 				assert.NotNil(t, result.Int, "result.Int should not be nil when expected is not nil")
 				assert.Equal(t, tc.expected.String(), result.String(), "converted BigInt should match expected value")
-				assert.Equal(t, tc.expected.Cmp(result.Int), 0, "BigInt comparison should be equal")
+				assert.Equal(t, 0, tc.expected.Cmp(result.Int), "BigInt comparison should be equal")
 			}
 		})
 	}
@@ -1536,7 +1536,7 @@ func TestPbBigIntRoundTrip(t *testing.T) {
 			} else {
 				assert.NotNil(t, convertedValue, "non-nil should round-trip to non-nil")
 				assert.Equal(t, originalValue.String(), convertedValue.String(), "round-trip conversion should preserve value")
-				assert.Equal(t, originalValue.Cmp(convertedValue), 0, "round-trip big.Int comparison should be equal")
+				assert.Equal(t, 0, originalValue.Cmp(convertedValue), "round-trip big.Int comparison should be equal")
 			}
 		})
 	}
@@ -1621,7 +1621,7 @@ func TestPbToBigIntRoundTrip(t *testing.T) {
 			} else {
 				assert.NotNil(t, convertedValue.Int, "converted value should not be nil for non-nil input")
 				assert.Equal(t, originalValue.String(), convertedValue.String(), "round-trip conversion should preserve value")
-				assert.Equal(t, originalValue.Cmp(convertedValue.Int), 0, "round-trip BigInt comparison should be equal")
+				assert.Equal(t, 0, originalValue.Cmp(convertedValue.Int), "round-trip BigInt comparison should be equal")
 			}
 		})
 	}
@@ -1804,7 +1804,7 @@ func TestTokenInfoMapNilHandling(t *testing.T) {
 		pbMap := tokenInfoMapToPb(emptyMap)
 		convertedMap := pbToTokenInfoMap(pbMap)
 		assert.NotNil(t, convertedMap)
-		assert.Len(t, convertedMap, 0)
+		assert.Empty(t, convertedMap)
 	})
 }
 
@@ -1830,7 +1830,7 @@ func TestExtraDataCodecBundleConversion(t *testing.T) {
 		result, err := pbMapToGoMap(pbMap)
 		require.NoError(t, err)
 		assert.NotNil(t, result, "empty map should not become nil")
-		assert.Equal(t, 0, len(result), "empty map should remain empty")
+		assert.Empty(t, result, "empty map should remain empty")
 	})
 
 	t.Run("ExtraArgs-like data structure preservation", func(t *testing.T) {
@@ -1849,7 +1849,7 @@ func TestExtraDataCodecBundleConversion(t *testing.T) {
 		require.NoError(t, err, "conversion from protobuf should succeed")
 
 		// Verify structure is preserved
-		assert.Equal(t, len(input), len(result), "map size should be preserved")
+		assert.Len(t, result, len(input), "map size should be preserved")
 
 		// Verify all keys exist
 		for key := range input {
@@ -1913,19 +1913,19 @@ func TestExtraDataCodecBundleConversion(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify top-level structure
-		assert.Equal(t, len(input), len(result), "top-level map size should be preserved")
+		assert.Len(t, result, len(input), "top-level map size should be preserved")
 
 		// Verify nested map structure
 		configResult, ok := result["config"].(map[string]any)
 		require.True(t, ok, "config should remain a map")
 		configInput := input["config"].(map[string]any)
-		assert.Equal(t, len(configInput), len(configResult), "nested map size should be preserved")
+		assert.Len(t, configResult, len(configInput), "nested map size should be preserved")
 
 		// Verify array structure
 		amountsResult, ok := result["amounts"].([]any)
 		require.True(t, ok, "amounts should remain an array")
 		amountsInput := input["amounts"].([]any)
-		assert.Equal(t, len(amountsInput), len(amountsResult), "array size should be preserved")
+		assert.Len(t, amountsResult, len(amountsInput), "array size should be preserved")
 
 		// Verify BigInt values in array are preserved
 		for i, originalAmount := range amountsInput {

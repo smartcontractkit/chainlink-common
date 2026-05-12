@@ -5,7 +5,7 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
-	"fmt"
+	"errors"
 	"io"
 	"testing"
 
@@ -137,7 +137,7 @@ func TestSingleAccountSigner_Sign(t *testing.T) {
 	})
 
 	t.Run("propagates signer error", func(t *testing.T) {
-		expectedError := fmt.Errorf("signing failed")
+		expectedError := errors.New("signing failed")
 		signer := &mockSigner{signError: expectedError}
 		account := "account1"
 		singleSigner, err := core.NewSingleAccountSigner(&account, signer)
@@ -190,7 +190,7 @@ func (b *boxDecrypter) Public() crypto.PublicKey {
 func (b *boxDecrypter) Decrypt(ciphertext []byte) ([]byte, error) {
 	msg, ok := box.OpenAnonymous(nil, ciphertext, b.publicKey, b.privateKey)
 	if !ok {
-		return nil, fmt.Errorf("decryption failed")
+		return nil, errors.New("decryption failed")
 	}
 	return msg, nil
 }
@@ -239,7 +239,7 @@ func TestSingleAccountSignerDecrypter(t *testing.T) {
 		assert.True(t, valid, "signature should be valid")
 
 		_, err = singleSigner.Sign(ctx, account, []byte("foobar"))
-		require.Equal(t, err.Error(), "data does not have expected prefix")
+		require.Equal(t, "data does not have expected prefix", err.Error())
 	})
 
 	t.Run("real nacl/box keys decrypt integration", func(t *testing.T) {

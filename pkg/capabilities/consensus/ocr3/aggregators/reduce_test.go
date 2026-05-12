@@ -917,7 +917,6 @@ func TestInputChanges(t *testing.T) {
 	}
 
 	require.Equal(t, expectedOutcome2, mm)
-
 }
 
 func TestMedianAggregator_ParseConfig(t *testing.T) {
@@ -1992,7 +1991,7 @@ func TestAggregateShouldReport(t *testing.T) {
 		// 3rd round
 		thirdOutcome, err := agg.Aggregate(logger.Nop(), secondOutcome, map[commontypes.OracleID][]values.Value{1: {tc.mockValueThirdRound}, 2: {tc.mockValueThirdRound}, 3: {tc.mockValueThirdRound}}, 1)
 		require.NoError(t, err)
-		require.Equal(t, true, thirdOutcome.ShouldReport)
+		require.True(t, thirdOutcome.ShouldReport)
 
 		// validate metadata
 		proto.Unmarshal(thirdOutcome.Metadata, pb)

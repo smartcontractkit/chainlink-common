@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"strconv"
 	"testing"
 	"time"
 
@@ -470,7 +471,7 @@ func createLLOAggregator(b *testing.B, numStreams int) (pbtypes.Aggregator, erro
 	// Create feed configs for all streams
 	streamConfigs := make(map[string]datafeeds.FeedConfig, numStreams)
 	for i := range numStreams {
-		streamConfigs[fmt.Sprintf("%d", i)] = datafeeds.FeedConfig{
+		streamConfigs[strconv.Itoa(i)] = datafeeds.FeedConfig{
 			//	Deviation:     decimal.NewFromFloat(0.01),     // 1% deviation threshold
 			Heartbeat:     3600,                           // 1 hour heartbeat
 			RemappedIDHex: fmt.Sprintf("0x%064x", i+1000), // Unique remapped ID

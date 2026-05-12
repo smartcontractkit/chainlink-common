@@ -43,6 +43,7 @@ var (
 	topic2           = evm.Hash{33, 1, 33}
 	topic3           = evm.Hash{20, 19, 17}
 	gas              = uint64(10)
+	l1Fee            = big.NewInt(9876)
 	txHash           = evm.Hash{5, 3, 44}
 	eventSigHash     = evm.Hash{14, 16, 29}
 	filterName       = "f name 1"
@@ -169,7 +170,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 
 		got, err := client.GetTransactionStatus(ctx, txId)
 		require.NoError(t, err)
-		require.Equal(t, got, types.Finalized)
+		require.Equal(t, types.Finalized, got)
 	})
 
 	t.Run("FilterLogs", func(t *testing.T) {
@@ -206,7 +207,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		reply, err := client.FilterLogs(ctx, request)
 		require.NoError(t, err)
 		require.Equal(t, expLog, reply.Logs)
-
 	})
 
 	t.Run("EstimateGas", func(t *testing.T) {
@@ -246,13 +246,13 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			GasUsed:           gas,
 			BlockNumber:       blockNum,
 			TransactionIndex:  uint64(txIndex),
+			L1Fee:             l1Fee,
 		}
 		evmService.EXPECT().GetTransactionReceipt(mock.Anything, evm.GeTransactionReceiptRequest{Hash: txHash}).Return(expReceipt, nil).Once()
 
 		got, err := client.GetTransactionReceipt(ctx, evm.GeTransactionReceiptRequest{Hash: txHash})
 		require.NoError(t, err)
 		require.Equal(t, expReceipt, got)
-
 	})
 
 	t.Run("GetTransactionByHash", func(t *testing.T) {
@@ -318,7 +318,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		got, err := client.QueryTrackedLogs(ctx, expQuery, expLimitAndSort, expConfidence)
 		require.NoError(t, err)
 		require.Equal(t, expLog, got)
-
 	})
 
 	t.Run("GetForwarderForEOA", func(t *testing.T) {
@@ -339,6 +338,19 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		actualNames, err := client.GetFiltersNames(ctx)
 		require.NoError(t, err)
 		require.Equal(t, expectedNames, actualNames)
+	})
+
+	t.Run("CalculateTransactionFee", func(t *testing.T) {
+		gasInfo := evm.ReceiptGasInfo{
+			GasUsed:           gas,
+			EffectiveGasPrice: gasPrice,
+			L1Fee:             l1Fee,
+		}
+		evmService.EXPECT().CalculateTransactionFee(mock.Anything, gasInfo).Return(&evm.TransactionFee{TransactionFee: txFee}, nil).Once()
+
+		got, err := client.CalculateTransactionFee(ctx, gasInfo)
+		require.NoError(t, err)
+		require.Equal(t, txFee, got.TransactionFee)
 	})
 }
 

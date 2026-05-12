@@ -281,7 +281,7 @@ func Test_Capabilities(t *testing.T) {
 		// Closing the client will result in an error being
 		// bubbled back to the client.
 		resp := <-ch
-		assert.Equal(t, status.Code(resp.Err), codes.Unavailable)
+		assert.Equal(t, codes.Unavailable, status.Code(resp.Err))
 
 		resp, isOpen := <-ch
 		assert.False(t, isOpen)
@@ -310,7 +310,7 @@ func Test_Capabilities(t *testing.T) {
 		// Closing the client will result in an error being
 		// bubbled back to the client.
 		resp := <-ch
-		assert.Equal(t, status.Code(resp.Err), codes.Unavailable)
+		assert.Equal(t, codes.Unavailable, status.Code(resp.Err))
 
 		_, isOpen := <-ch
 		assert.False(t, isOpen)

@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -47,7 +46,7 @@ func TestBoolToByteModifier(t *testing.T) {
 	t.Run("RetypeToOffChain returns error if field type is not convertible", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
 		_, err := converter.RetypeToOffChain(reflect.TypeOf(testInvalidStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain converts uint8 to bool", func(t *testing.T) {

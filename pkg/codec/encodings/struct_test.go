@@ -1,7 +1,6 @@
 package encodings_test
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -26,7 +25,7 @@ func TestStructCodec(t *testing.T) {
 			{Name: "Bar", Codec: &testutils.TestTypeCodec{Value: 1}},
 			{Name: "Foo", Codec: &testutils.TestTypeCodec{Value: 1}},
 		})
-		require.True(t, errors.Is(err, types.ErrInvalidConfig))
+		require.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	t.Run("NewStructCodec returns an error if names are invalid", func(t *testing.T) {
@@ -35,7 +34,7 @@ func TestStructCodec(t *testing.T) {
 			{Name: "Bar", Codec: &testutils.TestTypeCodec{Value: 1}},
 			{Name: "", Codec: &testutils.TestTypeCodec{Value: 1}},
 		})
-		require.True(t, errors.Is(err, types.ErrInvalidConfig))
+		require.ErrorIs(t, err, types.ErrInvalidConfig)
 	})
 
 	structCodec, createErr := encodings.NewStructCodec([]encodings.NamedTypeCodec{
@@ -90,7 +89,7 @@ func TestStructCodec(t *testing.T) {
 			Bar: toPointer(uint64(2)),
 			Baz: toPointer(3),
 		}, nil)
-		require.True(t, errors.Is(err, types.ErrInvalidType))
+		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Encode returns an error fields return an error", func(t *testing.T) {
@@ -130,7 +129,7 @@ func TestStructCodec(t *testing.T) {
 
 	t.Run("Decode returns an error if there are not enough bytes to decode", func(t *testing.T) {
 		_, _, err := structCodec.Decode([]byte{0x01})
-		require.True(t, errors.Is(err, types.ErrInvalidEncoding))
+		require.ErrorIs(t, err, types.ErrInvalidEncoding)
 	})
 
 	t.Run("Decode returns an error fields return an error", func(t *testing.T) {

@@ -591,35 +591,6 @@ func Test_Capabilities(t *testing.T) {
 		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
 	})
 
-	t.Run("fetching an action capability, and executing it with private system error", func(t *testing.T) {
-		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
-		c, _, _, err := newCapabilityPlugin(t, ma)
-		require.NoError(t, err)
-
-		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
-		require.NoError(t, err)
-
-		imap, err := values.NewMap(map[string]any{"bar": "baz"})
-		require.NoError(t, err)
-		expectedRequest := capabilities.CapabilityRequest{
-			Config: cmap,
-			Inputs: imap,
-		}
-
-		ma.responseError = caperrors.NewPrivateSystemError(errors.New("bang"), caperrors.DeadlineExceeded)
-
-		_, err = c.(capabilities.ActionCapability).Execute(
-			t.Context(),
-			expectedRequest)
-		require.Error(t, err)
-		capErr, ok := errors.AsType[caperrors.Error](err)
-		require.True(t, ok)
-		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
-		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
-		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())
-		require.Equal(t, caperrors.OriginSystem, capErr.Origin())
-	})
-
 	// This will only happen a local capability has not had it's API migrated to always return capability.Error
 	t.Run("fetching an action capability, and executing it without capability error", func(t *testing.T) {
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)

@@ -502,7 +502,7 @@ var File_capabilities_blockchain_stellar_v1alpha_client_proto protoreflect.FileD
 
 const file_capabilities_blockchain_stellar_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"4capabilities/blockchain/stellar/v1alpha/client.proto\x12'capabilities.blockchain.stellar.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a3capabilities/blockchain/stellar/v1alpha/scval.proto\"\xbf\x01\n" +
+	"4capabilities/blockchain/stellar/v1alpha/client.proto\x12'capabilities.blockchain.stellar.v1alpha\x1a3capabilities/blockchain/stellar/v1alpha/scval.proto\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"\xbf\x01\n" +
 	"\x13ReadContractRequest\x12\x1f\n" +
 	"\vcontract_id\x18\x01 \x01(\tR\n" +
 	"contractId\x12\x1a\n" +

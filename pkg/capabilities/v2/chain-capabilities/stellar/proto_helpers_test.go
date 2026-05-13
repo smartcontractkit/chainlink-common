@@ -55,7 +55,7 @@ func TestConvertGetLatestLedgerResponseFromProto_RejectsNil(t *testing.T) {
 	t.Parallel()
 
 	_, err := stellarcap.ConvertGetLatestLedgerResponseFromProto(nil)
-	require.ErrorContains(t, err, "GetLatestLedgerResponse is nil")
+	require.ErrorContains(t, err, "getLatestLedgerResponse is nil")
 }
 
 func TestConvertGetLatestLedgerResponseFromProto_EmptyFieldsReturnZeroValues(t *testing.T) {
@@ -118,7 +118,7 @@ func TestValidateReadContractRequest_RejectsInvalidInputs(t *testing.T) {
 		{
 			name:    "nil request",
 			req:     nil,
-			wantErr: "ReadContractRequest is nil",
+			wantErr: "readContractRequest is nil",
 		},
 		{
 			name:    "empty contract_id",
@@ -175,7 +175,7 @@ func TestValidateWriteReportRequest_RejectsInvalidInputs(t *testing.T) {
 		{
 			name:    "nil request",
 			req:     nil,
-			wantErr: "WriteReportRequest is nil",
+			wantErr: "writeReportRequest is nil",
 		},
 		{
 			name:    "empty contract_id",

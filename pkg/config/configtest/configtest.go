@@ -87,12 +87,12 @@ func assertValNotNil(t *testing.T, key string, val reflect.Value) error {
 	t.Helper()
 	k := val.Kind()
 	switch k { //nolint:exhaustive
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if val.IsNil() {
 			return fmt.Errorf("%s: nil", key)
 		}
 	}
-	if k == reflect.Ptr {
+	if k == reflect.Pointer {
 		if val.Type().Implements(textUnmarshalerType) {
 			return nil // skip values unmarshaled from strings
 		}

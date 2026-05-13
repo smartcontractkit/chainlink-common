@@ -34,10 +34,10 @@ func ConvertGetLedgerEntriesRequestToProto(req stellar.GetLedgerEntriesRequest) 
 // ConvertGetLedgerEntriesRequestFromProto converts a proto GetLedgerEntriesRequest to the domain type.
 func ConvertGetLedgerEntriesRequestFromProto(p *GetLedgerEntriesRequest) (stellar.GetLedgerEntriesRequest, error) {
 	if p == nil {
-		return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("get ledger entries request is nil")
+		return stellar.GetLedgerEntriesRequest{}, errors.New("get ledger entries request is nil")
 	}
 	if len(p.GetKeys()) == 0 {
-		return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("ledger entry keys are empty")
+		return stellar.GetLedgerEntriesRequest{}, errors.New("ledger entry keys are empty")
 	}
 	rawKeys := p.GetKeys()
 	keys := make([]string, len(rawKeys))
@@ -77,7 +77,7 @@ func ConvertLedgerEntryResultToProto(r stellar.LedgerEntryResult) (*LedgerEntryR
 // ConvertLedgerEntryResultFromProto converts a proto LedgerEntryResult to the domain type.
 func ConvertLedgerEntryResultFromProto(p *LedgerEntryResult) (stellar.LedgerEntryResult, error) {
 	if p == nil {
-		return stellar.LedgerEntryResult{}, fmt.Errorf("ledger entry result is nil")
+		return stellar.LedgerEntryResult{}, errors.New("ledger entry result is nil")
 	}
 	r := stellar.LedgerEntryResult{
 		KeyXDR:             base64.StdEncoding.EncodeToString(p.GetKeyXdr()),
@@ -111,7 +111,7 @@ func ConvertGetLedgerEntriesResponseToProto(resp stellar.GetLedgerEntriesRespons
 // ConvertGetLedgerEntriesResponseFromProto converts a proto GetLedgerEntriesResponse to the domain type.
 func ConvertGetLedgerEntriesResponseFromProto(p *GetLedgerEntriesResponse) (stellar.GetLedgerEntriesResponse, error) {
 	if p == nil {
-		return stellar.GetLedgerEntriesResponse{}, fmt.Errorf("get ledger entries response is nil")
+		return stellar.GetLedgerEntriesResponse{}, errors.New("get ledger entries response is nil")
 	}
 	pEntries := p.GetEntries()
 	entries := make([]stellar.LedgerEntryResult, 0, len(pEntries))
@@ -156,7 +156,7 @@ func ConvertGetLatestLedgerResponseToProto(resp stellar.GetLatestLedgerResponse)
 // ConvertGetLatestLedgerResponseFromProto converts a proto GetLatestLedgerResponse to the domain type.
 func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stellar.GetLatestLedgerResponse, error) {
 	if p == nil {
-		return stellar.GetLatestLedgerResponse{}, fmt.Errorf("get latest ledger response is nil")
+		return stellar.GetLatestLedgerResponse{}, errors.New("get latest ledger response is nil")
 	}
 	return stellar.GetLatestLedgerResponse{
 		Hash:              hex.EncodeToString(p.GetHash()),

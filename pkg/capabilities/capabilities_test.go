@@ -311,13 +311,13 @@ func TestChainSelectorLabel(t *testing.T) {
 		errMsg string
 	}{
 		{"none@v1.0.0", nil, ""},
-		{"kv:ChainSelector_1@v1.0.0", ptr[uint64](1), ""},
-		{"kk:ChainSelector:1@v1.0.0", ptr[uint64](1), ""},
-		{"kv-others:k_v:ChainSelector_1@v1.0.0", ptr[uint64](1), ""},
-		{"kk-others:k_v:ChainSelector:1@v1.0.0", ptr[uint64](1), ""},
+		{"kv:ChainSelector_1@v1.0.0", new(uint64(1)), ""},
+		{"kk:ChainSelector:1@v1.0.0", new(uint64(1)), ""},
+		{"kv-others:k_v:ChainSelector_1@v1.0.0", new(uint64(1)), ""},
+		{"kk-others:k_v:ChainSelector:1@v1.0.0", new(uint64(1)), ""},
 
-		{"kv:ChainSelector_foo@v1.0.0", ptr[uint64](1), "invalid chain selector"},
-		{"kk:ChainSelector:bar@v1.0.0", ptr[uint64](1), "invalid chain selector"},
+		{"kv:ChainSelector_foo@v1.0.0", new(uint64(1)), "invalid chain selector"},
+		{"kk:ChainSelector:bar@v1.0.0", new(uint64(1)), "invalid chain selector"},
 	} {
 		t.Run(tc.id, func(t *testing.T) {
 			_, labels, _ := ParseID(tc.id)
@@ -330,8 +330,6 @@ func TestChainSelectorLabel(t *testing.T) {
 		})
 	}
 }
-
-func ptr[T any](v T) *T { return &v }
 
 func TestRequestMetadata_ContextWithCRE(t *testing.T) {
 	ctx := t.Context()

@@ -262,9 +262,9 @@ type Schema struct {
 
 	BaseTriggerRetransmitEnabled Setting[bool]
 	BaseTriggerRetryInterval     Setting[time.Duration]
-	BaseTriggerMaxRetries        Setting[int]           `unit:"{attempt}"`
+	BaseTriggerMaxRetries        Setting[int] `unit:"{attempt}"`
 	BaseTriggerPruneAge          Setting[time.Duration]
-	BaseTriggerMaxSendsPerTick   Setting[int]           `unit:"{event}"`
+	BaseTriggerMaxSendsPerTick   Setting[int] `unit:"{event}"`
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]

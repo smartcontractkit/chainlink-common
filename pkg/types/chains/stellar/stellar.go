@@ -47,7 +47,7 @@ type GetLedgerEntriesResponse struct {
 }
 
 // ReadContractRequest is the domain representation of a Soroban read-only call.
-// Use the helpers in pkg/chains/stellar to construct XDR ScVal values conveniently.
+// Use the proto helpers to construct XDR ScVal values conveniently.
 type ReadContractRequest struct {
 	// ContractID is the Stellar contract address in C… StrKey encoding.
 	ContractID string

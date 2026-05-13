@@ -26,7 +26,7 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 }
 
 // ConvertGetLatestLedgerResponseToProto converts the domain GetLatestLedgerResponse to a proto.
-// Hash must be a valid lowercase hex string; XDR fields must be valid standard base64.
+// Hash must be a valid hex string; XDR fields must be valid standard base64.
 func ConvertGetLatestLedgerResponseToProto(r stellartypes.GetLatestLedgerResponse) (*GetLatestLedgerResponse, error) {
 	hash, err := hex.DecodeString(r.Hash)
 	if err != nil {

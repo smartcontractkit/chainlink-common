@@ -15,7 +15,6 @@ func parseImportPaths(s string) (proto, goPkg string) {
 	return
 }
 
-// p
 func generateFlat(gen *pkg.ProtocGen, proto, outDir string) error {
 	if err := gen.GenerateFile(proto, "."); err != nil {
 		return err

@@ -484,8 +484,8 @@ func Test_Capabilities(t *testing.T) {
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		capErr := err.(caperrors.Error)
-
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())
@@ -513,8 +513,8 @@ func Test_Capabilities(t *testing.T) {
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		capErr := err.(caperrors.Error)
-
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		require.Equal(t, "[5]NotFound: bang", capErr.Error())
 		require.Equal(t, caperrors.NotFound, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())
@@ -542,8 +542,8 @@ func Test_Capabilities(t *testing.T) {
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		capErr := err.(caperrors.Error)
-
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())
@@ -571,8 +571,8 @@ func Test_Capabilities(t *testing.T) {
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		capErr := err.(caperrors.Error)
-
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		require.Equal(t, "[4]DeadlineExceeded: bang", capErr.Error())
 		require.Equal(t, caperrors.DeadlineExceeded, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())
@@ -601,8 +601,8 @@ func Test_Capabilities(t *testing.T) {
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
-		capErr := err.(caperrors.Error)
-
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		require.Equal(t, "[2]Unknown: Private:bang", capErr.Error())
 		require.Equal(t, caperrors.Unknown, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPrivate, capErr.Visibility())

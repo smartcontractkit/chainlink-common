@@ -14,7 +14,7 @@ type Client interface {
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
 	// ReadContract simulates a read-only Soroban contract function call.
-	// Each element of Args is a proto-marshalled ScVal (loop.stellar.ScVal).
+	// Each element of Args is an XDR ScVal value.
 	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
 }
 
@@ -47,14 +47,13 @@ type GetLedgerEntriesResponse struct {
 }
 
 // ReadContractRequest is the domain representation of a Soroban read-only call.
-// Each element of Args is a proto-marshalled loop.stellar.ScVal message.
-// Use the helpers in pkg/chains/stellar to construct ScVal bytes conveniently.
+// Use the helpers in pkg/chains/stellar to construct XDR ScVal values conveniently.
 type ReadContractRequest struct {
 	// ContractID is the Stellar contract address in C… StrKey encoding.
 	ContractID string
 	// Function is the Soroban function name to call.
 	Function string
-	// Args holds one proto-marshalled ScVal per contract argument.
+	// Args holds one XDR ScVal per contract argument.
 	// An empty slice is valid for zero-argument functions.
 	Args []xdr.ScVal
 	// LedgerSequence is the ledger to simulate against; 0 means use the latest.

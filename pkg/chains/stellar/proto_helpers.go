@@ -554,6 +554,9 @@ func protoScValToXDRAt(sv *scval.ScVal, depth int) (xdr.ScVal, error) {
 		}
 		xMap := make(xdr.ScMap, len(v.Map.Entries))
 		for i, pe := range v.Map.Entries {
+			if pe == nil {
+				return xdr.ScVal{}, fmt.Errorf("map[%d]: nil entry", i)
+			}
 			xk, err := protoScValToXDRAt(pe.Key, depth+1)
 			if err != nil {
 				return xdr.ScVal{}, fmt.Errorf("map[%d].key: %w", i, err)
@@ -703,6 +706,9 @@ func protoScContractInstanceToXDRAt(inst *scval.ScContractInstance, depth int) (
 	if len(inst.Storage) > 0 {
 		xMap := make(xdr.ScMap, len(inst.Storage))
 		for i, pe := range inst.Storage {
+			if pe == nil {
+				return xdr.ScContractInstance{}, fmt.Errorf("instance.storage[%d]: nil entry", i)
+			}
 			xk, err := protoScValToXDRAt(pe.Key, depth+1)
 			if err != nil {
 				return xdr.ScContractInstance{}, fmt.Errorf("instance.storage[%d].key: %w", i, err)

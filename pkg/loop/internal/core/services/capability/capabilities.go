@@ -484,12 +484,12 @@ var _ capabilities.Executable = (*executableClient)(nil)
 func (c *executableClient) Execute(ctx context.Context, req capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	responseStream, err := c.grpc.Execute(ctx, pb.CapabilityRequestToProto(req))
 	if err != nil {
-		return capabilities.CapabilityResponse{}, fmt.Errorf("error executing capability request: %w", err)
+		return capabilities.CapabilityResponse{}, caperrors.NewPublicSystemError(fmt.Errorf("error executing capability request: %w", err), caperrors.Unavailable)
 	}
 
 	resp, err := responseStream.Recv()
 	if err != nil {
-		return capabilities.CapabilityResponse{}, fmt.Errorf("error waiting for response message: %w", err)
+		return capabilities.CapabilityResponse{}, caperrors.NewPublicSystemError(fmt.Errorf("error waiting for response message: %w", err), caperrors.Unavailable)
 	}
 
 	if resp.Error != "" {
@@ -498,7 +498,7 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 
 	r, err := pb.CapabilityResponseFromProto(resp)
 	if err != nil {
-		return capabilities.CapabilityResponse{}, fmt.Errorf("could not unmarshal response: %w", err)
+		return capabilities.CapabilityResponse{}, caperrors.NewPublicSystemError(fmt.Errorf("could not unmarshal response: %w", err), caperrors.Internal)
 	}
 
 	return r, err

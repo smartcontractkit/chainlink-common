@@ -112,9 +112,9 @@ func NewPublicUserError(err error, errorCode ErrorCode) Error {
 	return NewError(err, VisibilityPublic, OriginUser, errorCode)
 }
 
-// NewLimitBreachedError creates a public user error that embeds the provided limit error, indicating that a CRE limit
-// breach has occurred. The error message will include the provided errorMsg as a prefix for additional context.
-func NewLimitBreachedError(errorMsg string, err error) Error {
+// NewLimitExceededError creates a public user error that embeds the provided limit error, indicating that a CRE limit
+// has been exceeded. The error message will include the provided errorMsg as a prefix for additional context.
+func NewLimitExceededError(errorMsg string, err error) Error {
 	return NewPublicUserError(fmt.Errorf("%s: %w", errorMsg, err), LimitExceeded)
 }
 

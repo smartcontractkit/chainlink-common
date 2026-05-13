@@ -509,15 +509,15 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	if err != nil {
 		return nil, err
 	}
-	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
-				exporter,
-				sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
-			)),
+	metricOpts := []sdkmetric.Option{sdkmetric.WithReader(
+		sdkmetric.NewPeriodicReader(
+			exporter,
+			sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
+		)),
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithView(cfg.MetricViews...),
-	)
+		sdkmetric.WithView(cfg.MetricViews...)}
+	metricOpts = append(metricOpts, cfg.MetricOptions...)
+	mp := sdkmetric.NewMeterProvider(metricOpts...)
 	return mp, nil
 }
 

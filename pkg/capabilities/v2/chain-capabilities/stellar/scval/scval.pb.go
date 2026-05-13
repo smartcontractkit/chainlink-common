@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: capabilities/blockchain/stellar/v1alpha/scval.proto
 
-package v1alpha
+package scval
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -24,43 +24,43 @@ const (
 type ScError_Type int32
 
 const (
-	ScError_SCE_CONTRACT ScError_Type = 0
-	ScError_SCE_WASM_VM  ScError_Type = 1
-	ScError_SCE_CONTEXT  ScError_Type = 2
-	ScError_SCE_STORAGE  ScError_Type = 3
-	ScError_SCE_OBJECT   ScError_Type = 4
-	ScError_SCE_CRYPTO   ScError_Type = 5
-	ScError_SCE_EVENTS   ScError_Type = 6
-	ScError_SCE_BUDGET   ScError_Type = 7
-	ScError_SCE_VALUE    ScError_Type = 8
-	ScError_SCE_AUTH     ScError_Type = 9
+	ScError_TYPE_CONTRACT ScError_Type = 0
+	ScError_TYPE_WASM_VM  ScError_Type = 1
+	ScError_TYPE_CONTEXT  ScError_Type = 2
+	ScError_TYPE_STORAGE  ScError_Type = 3
+	ScError_TYPE_OBJECT   ScError_Type = 4
+	ScError_TYPE_CRYPTO   ScError_Type = 5
+	ScError_TYPE_EVENTS   ScError_Type = 6
+	ScError_TYPE_BUDGET   ScError_Type = 7
+	ScError_TYPE_VALUE    ScError_Type = 8
+	ScError_TYPE_AUTH     ScError_Type = 9
 )
 
 // Enum value maps for ScError_Type.
 var (
 	ScError_Type_name = map[int32]string{
-		0: "SCE_CONTRACT",
-		1: "SCE_WASM_VM",
-		2: "SCE_CONTEXT",
-		3: "SCE_STORAGE",
-		4: "SCE_OBJECT",
-		5: "SCE_CRYPTO",
-		6: "SCE_EVENTS",
-		7: "SCE_BUDGET",
-		8: "SCE_VALUE",
-		9: "SCE_AUTH",
+		0: "TYPE_CONTRACT",
+		1: "TYPE_WASM_VM",
+		2: "TYPE_CONTEXT",
+		3: "TYPE_STORAGE",
+		4: "TYPE_OBJECT",
+		5: "TYPE_CRYPTO",
+		6: "TYPE_EVENTS",
+		7: "TYPE_BUDGET",
+		8: "TYPE_VALUE",
+		9: "TYPE_AUTH",
 	}
 	ScError_Type_value = map[string]int32{
-		"SCE_CONTRACT": 0,
-		"SCE_WASM_VM":  1,
-		"SCE_CONTEXT":  2,
-		"SCE_STORAGE":  3,
-		"SCE_OBJECT":   4,
-		"SCE_CRYPTO":   5,
-		"SCE_EVENTS":   6,
-		"SCE_BUDGET":   7,
-		"SCE_VALUE":    8,
-		"SCE_AUTH":     9,
+		"TYPE_CONTRACT": 0,
+		"TYPE_WASM_VM":  1,
+		"TYPE_CONTEXT":  2,
+		"TYPE_STORAGE":  3,
+		"TYPE_OBJECT":   4,
+		"TYPE_CRYPTO":   5,
+		"TYPE_EVENTS":   6,
+		"TYPE_BUDGET":   7,
+		"TYPE_VALUE":    8,
+		"TYPE_AUTH":     9,
 	}
 )
 
@@ -94,43 +94,43 @@ func (ScError_Type) EnumDescriptor() ([]byte, []int) {
 type ScError_Code int32
 
 const (
-	ScError_SCEC_ARITH_DOMAIN    ScError_Code = 0
-	ScError_SCEC_INDEX_BOUNDS    ScError_Code = 1
-	ScError_SCEC_INVALID_INPUT   ScError_Code = 2
-	ScError_SCEC_MISSING_VALUE   ScError_Code = 3
-	ScError_SCEC_EXISTING_VALUE  ScError_Code = 4
-	ScError_SCEC_EXCEEDED_LIMIT  ScError_Code = 5
-	ScError_SCEC_INVALID_ACTION  ScError_Code = 6
-	ScError_SCEC_INTERNAL_ERROR  ScError_Code = 7
-	ScError_SCEC_UNEXPECTED_TYPE ScError_Code = 8
-	ScError_SCEC_UNEXPECTED_SIZE ScError_Code = 9
+	ScError_CODE_ARITH_DOMAIN    ScError_Code = 0
+	ScError_CODE_INDEX_BOUNDS    ScError_Code = 1
+	ScError_CODE_INVALID_INPUT   ScError_Code = 2
+	ScError_CODE_MISSING_VALUE   ScError_Code = 3
+	ScError_CODE_EXISTING_VALUE  ScError_Code = 4
+	ScError_CODE_EXCEEDED_LIMIT  ScError_Code = 5
+	ScError_CODE_INVALID_ACTION  ScError_Code = 6
+	ScError_CODE_INTERNAL_ERROR  ScError_Code = 7
+	ScError_CODE_UNEXPECTED_TYPE ScError_Code = 8
+	ScError_CODE_UNEXPECTED_SIZE ScError_Code = 9
 )
 
 // Enum value maps for ScError_Code.
 var (
 	ScError_Code_name = map[int32]string{
-		0: "SCEC_ARITH_DOMAIN",
-		1: "SCEC_INDEX_BOUNDS",
-		2: "SCEC_INVALID_INPUT",
-		3: "SCEC_MISSING_VALUE",
-		4: "SCEC_EXISTING_VALUE",
-		5: "SCEC_EXCEEDED_LIMIT",
-		6: "SCEC_INVALID_ACTION",
-		7: "SCEC_INTERNAL_ERROR",
-		8: "SCEC_UNEXPECTED_TYPE",
-		9: "SCEC_UNEXPECTED_SIZE",
+		0: "CODE_ARITH_DOMAIN",
+		1: "CODE_INDEX_BOUNDS",
+		2: "CODE_INVALID_INPUT",
+		3: "CODE_MISSING_VALUE",
+		4: "CODE_EXISTING_VALUE",
+		5: "CODE_EXCEEDED_LIMIT",
+		6: "CODE_INVALID_ACTION",
+		7: "CODE_INTERNAL_ERROR",
+		8: "CODE_UNEXPECTED_TYPE",
+		9: "CODE_UNEXPECTED_SIZE",
 	}
 	ScError_Code_value = map[string]int32{
-		"SCEC_ARITH_DOMAIN":    0,
-		"SCEC_INDEX_BOUNDS":    1,
-		"SCEC_INVALID_INPUT":   2,
-		"SCEC_MISSING_VALUE":   3,
-		"SCEC_EXISTING_VALUE":  4,
-		"SCEC_EXCEEDED_LIMIT":  5,
-		"SCEC_INVALID_ACTION":  6,
-		"SCEC_INTERNAL_ERROR":  7,
-		"SCEC_UNEXPECTED_TYPE": 8,
-		"SCEC_UNEXPECTED_SIZE": 9,
+		"CODE_ARITH_DOMAIN":    0,
+		"CODE_INDEX_BOUNDS":    1,
+		"CODE_INVALID_INPUT":   2,
+		"CODE_MISSING_VALUE":   3,
+		"CODE_EXISTING_VALUE":  4,
+		"CODE_EXCEEDED_LIMIT":  5,
+		"CODE_INVALID_ACTION":  6,
+		"CODE_INTERNAL_ERROR":  7,
+		"CODE_UNEXPECTED_TYPE": 8,
+		"CODE_UNEXPECTED_SIZE": 9,
 	}
 )
 
@@ -450,7 +450,7 @@ func (x *ScError) GetType() ScError_Type {
 	if x != nil {
 		return x.Type
 	}
-	return ScError_SCE_CONTRACT
+	return ScError_TYPE_CONTRACT
 }
 
 func (x *ScError) GetCodeOrContract() isScError_CodeOrContract {
@@ -475,7 +475,7 @@ func (x *ScError) GetCode() ScError_Code {
 			return x.Code
 		}
 	}
-	return ScError_SCEC_ARITH_DOMAIN
+	return ScError_CODE_ARITH_DOMAIN
 }
 
 type isScError_CodeOrContract interface {
@@ -1500,37 +1500,34 @@ const file_capabilities_blockchain_stellar_v1alpha_scval_proto_rawDesc = "" +
 	"\x05hi_hi\x18\x01 \x01(\x03R\x04hiHi\x12\x13\n" +
 	"\x05hi_lo\x18\x02 \x01(\x04R\x04hiLo\x12\x13\n" +
 	"\x05lo_hi\x18\x03 \x01(\x04R\x04loHi\x12\x13\n" +
-	"\x05lo_lo\x18\x04 \x01(\x04R\x04loLo\"\x86\x05\n" +
+	"\x05lo_lo\x18\x04 \x01(\x04R\x04loLo\"\x90\x05\n" +
 	"\aScError\x12I\n" +
 	"\x04type\x18\x01 \x01(\x0e25.capabilities.blockchain.stellar.v1alpha.ScError.TypeR\x04type\x12%\n" +
 	"\rcontract_code\x18\x02 \x01(\rH\x00R\fcontractCode\x12K\n" +
-	"\x04code\x18\x03 \x01(\x0e25.capabilities.blockchain.stellar.v1alpha.ScError.CodeH\x00R\x04code\"\xa8\x01\n" +
-	"\x04Type\x12\x10\n" +
-	"\fSCE_CONTRACT\x10\x00\x12\x0f\n" +
-	"\vSCE_WASM_VM\x10\x01\x12\x0f\n" +
-	"\vSCE_CONTEXT\x10\x02\x12\x0f\n" +
-	"\vSCE_STORAGE\x10\x03\x12\x0e\n" +
+	"\x04code\x18\x03 \x01(\x0e25.capabilities.blockchain.stellar.v1alpha.ScError.CodeH\x00R\x04code\"\xb2\x01\n" +
+	"\x04Type\x12\x11\n" +
+	"\rTYPE_CONTRACT\x10\x00\x12\x10\n" +
+	"\fTYPE_WASM_VM\x10\x01\x12\x10\n" +
+	"\fTYPE_CONTEXT\x10\x02\x12\x10\n" +
+	"\fTYPE_STORAGE\x10\x03\x12\x0f\n" +
+	"\vTYPE_OBJECT\x10\x04\x12\x0f\n" +
+	"\vTYPE_CRYPTO\x10\x05\x12\x0f\n" +
+	"\vTYPE_EVENTS\x10\x06\x12\x0f\n" +
+	"\vTYPE_BUDGET\x10\a\x12\x0e\n" +
 	"\n" +
-	"SCE_OBJECT\x10\x04\x12\x0e\n" +
-	"\n" +
-	"SCE_CRYPTO\x10\x05\x12\x0e\n" +
-	"\n" +
-	"SCE_EVENTS\x10\x06\x12\x0e\n" +
-	"\n" +
-	"SCE_BUDGET\x10\a\x12\r\n" +
-	"\tSCE_VALUE\x10\b\x12\f\n" +
-	"\bSCE_AUTH\x10\t\"\xfc\x01\n" +
+	"TYPE_VALUE\x10\b\x12\r\n" +
+	"\tTYPE_AUTH\x10\t\"\xfc\x01\n" +
 	"\x04Code\x12\x15\n" +
-	"\x11SCEC_ARITH_DOMAIN\x10\x00\x12\x15\n" +
-	"\x11SCEC_INDEX_BOUNDS\x10\x01\x12\x16\n" +
-	"\x12SCEC_INVALID_INPUT\x10\x02\x12\x16\n" +
-	"\x12SCEC_MISSING_VALUE\x10\x03\x12\x17\n" +
-	"\x13SCEC_EXISTING_VALUE\x10\x04\x12\x17\n" +
-	"\x13SCEC_EXCEEDED_LIMIT\x10\x05\x12\x17\n" +
-	"\x13SCEC_INVALID_ACTION\x10\x06\x12\x17\n" +
-	"\x13SCEC_INTERNAL_ERROR\x10\a\x12\x18\n" +
-	"\x14SCEC_UNEXPECTED_TYPE\x10\b\x12\x18\n" +
-	"\x14SCEC_UNEXPECTED_SIZE\x10\tB\x12\n" +
+	"\x11CODE_ARITH_DOMAIN\x10\x00\x12\x15\n" +
+	"\x11CODE_INDEX_BOUNDS\x10\x01\x12\x16\n" +
+	"\x12CODE_INVALID_INPUT\x10\x02\x12\x16\n" +
+	"\x12CODE_MISSING_VALUE\x10\x03\x12\x17\n" +
+	"\x13CODE_EXISTING_VALUE\x10\x04\x12\x17\n" +
+	"\x13CODE_EXCEEDED_LIMIT\x10\x05\x12\x17\n" +
+	"\x13CODE_INVALID_ACTION\x10\x06\x12\x17\n" +
+	"\x13CODE_INTERNAL_ERROR\x10\a\x12\x18\n" +
+	"\x14CODE_UNEXPECTED_TYPE\x10\b\x12\x18\n" +
+	"\x14CODE_UNEXPECTED_SIZE\x10\tB\x12\n" +
 	"\x10code_or_contract\"?\n" +
 	"\x13MuxedEd25519Account\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x18\n" +
@@ -1591,7 +1588,7 @@ const file_capabilities_blockchain_stellar_v1alpha_scval_proto_rawDesc = "" +
 	"\x11contract_instance\x18\x14 \x01(\v2;.capabilities.blockchain.stellar.v1alpha.ScContractInstanceH\x00R\x10contractInstance\x12p\n" +
 	"\x1cledger_key_contract_instance\x18\x15 \x01(\v2-.capabilities.blockchain.stellar.v1alpha.VoidH\x00R\x19ledgerKeyContractInstance\x12R\n" +
 	"\tnonce_key\x18\x16 \x01(\v23.capabilities.blockchain.stellar.v1alpha.ScNonceKeyH\x00R\bnonceKeyB\a\n" +
-	"\x05valueB]Z[github.com/smartcontractkit/chainlink-protos/cre/go/capabilities/blockchain/stellar/v1alphab\x06proto3"
+	"\x05valueb\x06proto3"
 
 var (
 	file_capabilities_blockchain_stellar_v1alpha_scval_proto_rawDescOnce sync.Once

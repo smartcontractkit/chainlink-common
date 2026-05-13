@@ -8,7 +8,7 @@ import (
 
 	"github.com/stellar/go-stellar-sdk/xdr"
 
-	v1alpha "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 )
@@ -184,11 +184,11 @@ func unwrapScMap(v **xdr.ScMap) (xdr.ScMap, error) {
 
 // xdrScValToProto converts an XDR ScVal to its proto representation.
 // Returns an error if nesting depth exceeds 64 levels.
-func xdrScValToProto(sv xdr.ScVal) (*v1alpha.ScVal, error) {
+func xdrScValToProto(sv xdr.ScVal) (*scval.ScVal, error) {
 	return xdrScValToProtoAt(sv, 0)
 }
 
-func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
+func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*scval.ScVal, error) {
 	if depth > 64 {
 		return nil, fmt.Errorf("ScVal nesting exceeds maximum depth of 64")
 	}
@@ -197,9 +197,9 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 		if sv.B == nil {
 			return nil, fmt.Errorf("scvBool: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_B{B: *sv.B}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_B{B: *sv.B}}, nil
 	case xdr.ScValTypeScvVoid:
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_VoidVal{VoidVal: &v1alpha.Void{}}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_VoidVal{VoidVal: &scval.Void{}}}, nil
 	case xdr.ScValTypeScvError:
 		if sv.Error == nil {
 			return nil, fmt.Errorf("scvError: nil")
@@ -208,42 +208,42 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Error{Error: pe}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Error{Error: pe}}, nil
 	case xdr.ScValTypeScvU32:
 		if sv.U32 == nil {
 			return nil, fmt.Errorf("scvU32: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_U32{U32: uint32(*sv.U32)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_U32{U32: uint32(*sv.U32)}}, nil
 	case xdr.ScValTypeScvI32:
 		if sv.I32 == nil {
 			return nil, fmt.Errorf("scvI32: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_I32{I32: int32(*sv.I32)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_I32{I32: int32(*sv.I32)}}, nil
 	case xdr.ScValTypeScvU64:
 		if sv.U64 == nil {
 			return nil, fmt.Errorf("scvU64: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_U64{U64: uint64(*sv.U64)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_U64{U64: uint64(*sv.U64)}}, nil
 	case xdr.ScValTypeScvI64:
 		if sv.I64 == nil {
 			return nil, fmt.Errorf("scvI64: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_I64{I64: int64(*sv.I64)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_I64{I64: int64(*sv.I64)}}, nil
 	case xdr.ScValTypeScvTimepoint:
 		if sv.Timepoint == nil {
 			return nil, fmt.Errorf("scvTimepoint: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Timepoint{Timepoint: uint64(*sv.Timepoint)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Timepoint{Timepoint: uint64(*sv.Timepoint)}}, nil
 	case xdr.ScValTypeScvDuration:
 		if sv.Duration == nil {
 			return nil, fmt.Errorf("scvDuration: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Duration{Duration: uint64(*sv.Duration)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Duration{Duration: uint64(*sv.Duration)}}, nil
 	case xdr.ScValTypeScvU128:
 		if sv.U128 == nil {
 			return nil, fmt.Errorf("scvU128: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_U128{U128: &v1alpha.UInt128Parts{
+		return &scval.ScVal{Value: &scval.ScVal_U128{U128: &scval.UInt128Parts{
 			Hi: uint64(sv.U128.Hi),
 			Lo: uint64(sv.U128.Lo),
 		}}}, nil
@@ -252,7 +252,7 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 			return nil, fmt.Errorf("scvI128: nil")
 		}
 		// Per XDR spec for signed integer types: Hi is signed, Lo is unsigned.
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_I128{I128: &v1alpha.Int128Parts{
+		return &scval.ScVal{Value: &scval.ScVal_I128{I128: &scval.Int128Parts{
 			Hi: int64(sv.I128.Hi),
 			Lo: uint64(sv.I128.Lo),
 		}}}, nil
@@ -260,7 +260,7 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 		if sv.U256 == nil {
 			return nil, fmt.Errorf("scvU256: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_U256{U256: &v1alpha.UInt256Parts{
+		return &scval.ScVal{Value: &scval.ScVal_U256{U256: &scval.UInt256Parts{
 			HiHi: uint64(sv.U256.HiHi),
 			HiLo: uint64(sv.U256.HiLo),
 			LoHi: uint64(sv.U256.LoHi),
@@ -271,7 +271,7 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 			return nil, fmt.Errorf("scvI256: nil")
 		}
 		// Per XDR spec for signed integer types: HiHi is signed, remaining parts are unsigned.
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_I256{I256: &v1alpha.Int256Parts{
+		return &scval.ScVal{Value: &scval.ScVal_I256{I256: &scval.Int256Parts{
 			HiHi: int64(sv.I256.HiHi),
 			HiLo: uint64(sv.I256.HiLo),
 			LoHi: uint64(sv.I256.LoHi),
@@ -281,23 +281,23 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 		if sv.Bytes == nil {
 			return nil, fmt.Errorf("scvBytes: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_BytesVal{BytesVal: *sv.Bytes}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_BytesVal{BytesVal: *sv.Bytes}}, nil
 	case xdr.ScValTypeScvString:
 		if sv.Str == nil {
 			return nil, fmt.Errorf("scvString: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Str{Str: string(*sv.Str)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Str{Str: string(*sv.Str)}}, nil
 	case xdr.ScValTypeScvSymbol:
 		if sv.Sym == nil {
 			return nil, fmt.Errorf("scvSymbol: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Sym{Sym: string(*sv.Sym)}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Sym{Sym: string(*sv.Sym)}}, nil
 	case xdr.ScValTypeScvVec:
 		xVec, err := unwrapScVec(sv.Vec)
 		if err != nil {
 			return nil, fmt.Errorf("scvVec: %w", err)
 		}
-		pVals := make([]*v1alpha.ScVal, len(xVec))
+		pVals := make([]*scval.ScVal, len(xVec))
 		for i, elem := range xVec {
 			pv, err := xdrScValToProtoAt(elem, depth+1)
 			if err != nil {
@@ -305,13 +305,13 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 			}
 			pVals[i] = pv
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Vec{Vec: &v1alpha.ScVec{Values: pVals}}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: pVals}}}, nil
 	case xdr.ScValTypeScvMap:
 		xMap, err := unwrapScMap(sv.Map)
 		if err != nil {
 			return nil, fmt.Errorf("scvMap: %w", err)
 		}
-		entries := make([]*v1alpha.ScMapEntry, len(xMap))
+		entries := make([]*scval.ScMapEntry, len(xMap))
 		for i, entry := range xMap {
 			pk, err := xdrScValToProtoAt(entry.Key, depth+1)
 			if err != nil {
@@ -321,9 +321,9 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 			if err != nil {
 				return nil, fmt.Errorf("map[%d].val: %w", i, err)
 			}
-			entries[i] = &v1alpha.ScMapEntry{Key: pk, Val: pv}
+			entries[i] = &scval.ScMapEntry{Key: pk, Val: pv}
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Map{Map: &v1alpha.ScMap{Entries: entries}}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Map{Map: &scval.ScMap{Entries: entries}}}, nil
 	case xdr.ScValTypeScvAddress:
 		if sv.Address == nil {
 			return nil, fmt.Errorf("scvAddress: nil")
@@ -332,7 +332,7 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_Address{Address: pa}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_Address{Address: pa}}, nil
 	case xdr.ScValTypeScvContractInstance:
 		if sv.Instance == nil {
 			return nil, fmt.Errorf("scvContractInstance: nil")
@@ -341,52 +341,52 @@ func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*v1alpha.ScVal, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_ContractInstance{ContractInstance: pi}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: pi}}, nil
 	case xdr.ScValTypeScvLedgerKeyContractInstance:
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_LedgerKeyContractInstance{LedgerKeyContractInstance: &v1alpha.Void{}}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_LedgerKeyContractInstance{LedgerKeyContractInstance: &scval.Void{}}}, nil
 	case xdr.ScValTypeScvLedgerKeyNonce:
 		if sv.NonceKey == nil {
 			return nil, fmt.Errorf("scvLedgerKeyNonce: nil")
 		}
-		return &v1alpha.ScVal{Value: &v1alpha.ScVal_NonceKey{NonceKey: &v1alpha.ScNonceKey{Nonce: int64(sv.NonceKey.Nonce)}}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: &scval.ScNonceKey{Nonce: int64(sv.NonceKey.Nonce)}}}, nil
 	default:
 		return nil, fmt.Errorf("unsupported ScVal type: %d", sv.Type)
 	}
 }
 
-func xdrScErrorToProto(e *xdr.ScError) (*v1alpha.ScError, error) {
-	pe := &v1alpha.ScError{Type: v1alpha.ScError_Type(e.Type)}
+func xdrScErrorToProto(e *xdr.ScError) (*scval.ScError, error) {
+	pe := &scval.ScError{Type: scval.ScError_Type(e.Type)}
 	if e.Type == xdr.ScErrorTypeSceContract {
 		if e.ContractCode == nil {
 			return nil, fmt.Errorf("scError.contractCode: nil")
 		}
-		pe.CodeOrContract = &v1alpha.ScError_ContractCode{ContractCode: uint32(*e.ContractCode)}
+		pe.CodeOrContract = &scval.ScError_ContractCode{ContractCode: uint32(*e.ContractCode)}
 	} else {
 		if e.Code == nil {
 			return nil, fmt.Errorf("scError type %d: nil code", e.Type)
 		}
-		pe.CodeOrContract = &v1alpha.ScError_Code_{Code: v1alpha.ScError_Code(*e.Code)}
+		pe.CodeOrContract = &scval.ScError_Code_{Code: scval.ScError_Code(*e.Code)}
 	}
 	return pe, nil
 }
 
-func xdrScAddressToProto(a *xdr.ScAddress) (*v1alpha.ScAddress, error) {
+func xdrScAddressToProto(a *xdr.ScAddress) (*scval.ScAddress, error) {
 	switch a.Type {
 	case xdr.ScAddressTypeScAddressTypeAccount:
 		if a.AccountId == nil || a.AccountId.Ed25519 == nil {
 			return nil, fmt.Errorf("scAddress.account: nil accountId or ed25519")
 		}
-		return &v1alpha.ScAddress{Address: &v1alpha.ScAddress_AccountId{AccountId: (*a.AccountId.Ed25519)[:]}}, nil
+		return &scval.ScAddress{Address: &scval.ScAddress_AccountId{AccountId: (*a.AccountId.Ed25519)[:]}}, nil
 	case xdr.ScAddressTypeScAddressTypeContract:
 		if a.ContractId == nil {
 			return nil, fmt.Errorf("scAddress.contract: nil contractId")
 		}
-		return &v1alpha.ScAddress{Address: &v1alpha.ScAddress_ContractId{ContractId: (*a.ContractId)[:]}}, nil
+		return &scval.ScAddress{Address: &scval.ScAddress_ContractId{ContractId: (*a.ContractId)[:]}}, nil
 	case xdr.ScAddressTypeScAddressTypeMuxedAccount:
 		if a.MuxedAccount == nil {
 			return nil, fmt.Errorf("scAddress.muxed: nil")
 		}
-		return &v1alpha.ScAddress{Address: &v1alpha.ScAddress_MuxedAccount{MuxedAccount: &v1alpha.MuxedEd25519Account{
+		return &scval.ScAddress{Address: &scval.ScAddress_MuxedAccount{MuxedAccount: &scval.MuxedEd25519Account{
 			Id:      uint64(a.MuxedAccount.Id),
 			Ed25519: a.MuxedAccount.Ed25519[:],
 		}}}, nil
@@ -394,42 +394,42 @@ func xdrScAddressToProto(a *xdr.ScAddress) (*v1alpha.ScAddress, error) {
 		if a.ClaimableBalanceId == nil || a.ClaimableBalanceId.V0 == nil {
 			return nil, fmt.Errorf("scAddress.claimableBalance: nil")
 		}
-		return &v1alpha.ScAddress{Address: &v1alpha.ScAddress_ClaimableBalanceId{ClaimableBalanceId: &v1alpha.ClaimableBalanceId{
+		return &scval.ScAddress{Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: &scval.ClaimableBalanceId{
 			V0: (*a.ClaimableBalanceId.V0)[:],
 		}}}, nil
 	case xdr.ScAddressTypeScAddressTypeLiquidityPool:
 		if a.LiquidityPoolId == nil {
 			return nil, fmt.Errorf("scAddress.liquidityPool: nil poolId")
 		}
-		return &v1alpha.ScAddress{Address: &v1alpha.ScAddress_LiquidityPoolId{LiquidityPoolId: (*a.LiquidityPoolId)[:]}}, nil
+		return &scval.ScAddress{Address: &scval.ScAddress_LiquidityPoolId{LiquidityPoolId: (*a.LiquidityPoolId)[:]}}, nil
 	default:
 		return nil, fmt.Errorf("unsupported ScAddress type: %d", a.Type)
 	}
 }
 
-func xdrContractExecutableToProto(exec xdr.ContractExecutable) (*v1alpha.ContractExecutable, error) {
+func xdrContractExecutableToProto(exec xdr.ContractExecutable) (*scval.ContractExecutable, error) {
 	switch exec.Type {
 	case xdr.ContractExecutableTypeContractExecutableWasm:
 		if exec.WasmHash == nil {
 			return nil, fmt.Errorf("contractExecutable.wasm: nil wasmHash")
 		}
-		return &v1alpha.ContractExecutable{Type: &v1alpha.ContractExecutable_WasmHash{WasmHash: (*exec.WasmHash)[:]}}, nil
+		return &scval.ContractExecutable{Type: &scval.ContractExecutable_WasmHash{WasmHash: (*exec.WasmHash)[:]}}, nil
 	case xdr.ContractExecutableTypeContractExecutableStellarAsset:
-		return &v1alpha.ContractExecutable{Type: &v1alpha.ContractExecutable_StellarAsset{StellarAsset: true}}, nil
+		return &scval.ContractExecutable{Type: &scval.ContractExecutable_StellarAsset{StellarAsset: true}}, nil
 	default:
 		return nil, fmt.Errorf("unsupported ContractExecutable type: %d", exec.Type)
 	}
 }
 
-func xdrScContractInstanceToProtoAt(inst *xdr.ScContractInstance, depth int) (*v1alpha.ScContractInstance, error) {
+func xdrScContractInstanceToProtoAt(inst *xdr.ScContractInstance, depth int) (*scval.ScContractInstance, error) {
 	pExec, err := xdrContractExecutableToProto(inst.Executable)
 	if err != nil {
 		return nil, err
 	}
-	pi := &v1alpha.ScContractInstance{Executable: pExec}
+	pi := &scval.ScContractInstance{Executable: pExec}
 	if inst.Storage != nil {
 		xMap := *inst.Storage
-		entries := make([]*v1alpha.ScMapEntry, len(xMap))
+		entries := make([]*scval.ScMapEntry, len(xMap))
 		for i, entry := range xMap {
 			pk, err := xdrScValToProtoAt(entry.Key, depth+1)
 			if err != nil {
@@ -439,7 +439,7 @@ func xdrScContractInstanceToProtoAt(inst *xdr.ScContractInstance, depth int) (*v
 			if err != nil {
 				return nil, fmt.Errorf("instance.storage[%d].val: %w", i, err)
 			}
-			entries[i] = &v1alpha.ScMapEntry{Key: pk, Val: pv}
+			entries[i] = &scval.ScMapEntry{Key: pk, Val: pv}
 		}
 		pi.Storage = entries
 	}
@@ -448,11 +448,11 @@ func xdrScContractInstanceToProtoAt(inst *xdr.ScContractInstance, depth int) (*v
 
 // protoScValToXDR converts a proto ScVal to its XDR representation.
 // Returns an error if nesting depth exceeds 64 levels.
-func protoScValToXDR(sv *v1alpha.ScVal) (xdr.ScVal, error) {
+func protoScValToXDR(sv *scval.ScVal) (xdr.ScVal, error) {
 	return protoScValToXDRAt(sv, 0)
 }
 
-func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
+func protoScValToXDRAt(sv *scval.ScVal, depth int) (xdr.ScVal, error) {
 	if depth > 64 {
 		return xdr.ScVal{}, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
 	}
@@ -460,49 +460,49 @@ func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
 		return xdr.ScVal{}, fmt.Errorf("proto ScVal is nil")
 	}
 	switch v := sv.Value.(type) {
-	case *v1alpha.ScVal_B:
+	case *scval.ScVal_B:
 		b := v.B
 		return xdr.ScVal{Type: xdr.ScValTypeScvBool, B: &b}, nil
-	case *v1alpha.ScVal_VoidVal:
+	case *scval.ScVal_VoidVal:
 		return xdr.ScVal{Type: xdr.ScValTypeScvVoid}, nil
-	case *v1alpha.ScVal_Error:
+	case *scval.ScVal_Error:
 		xe, err := protoScErrorToXDR(v.Error)
 		if err != nil {
 			return xdr.ScVal{}, err
 		}
 		return xdr.ScVal{Type: xdr.ScValTypeScvError, Error: &xe}, nil
-	case *v1alpha.ScVal_U32:
+	case *scval.ScVal_U32:
 		u := xdr.Uint32(v.U32)
 		return xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}, nil
-	case *v1alpha.ScVal_I32:
+	case *scval.ScVal_I32:
 		i := xdr.Int32(v.I32)
 		return xdr.ScVal{Type: xdr.ScValTypeScvI32, I32: &i}, nil
-	case *v1alpha.ScVal_U64:
+	case *scval.ScVal_U64:
 		u := xdr.Uint64(v.U64)
 		return xdr.ScVal{Type: xdr.ScValTypeScvU64, U64: &u}, nil
-	case *v1alpha.ScVal_I64:
+	case *scval.ScVal_I64:
 		i := xdr.Int64(v.I64)
 		return xdr.ScVal{Type: xdr.ScValTypeScvI64, I64: &i}, nil
-	case *v1alpha.ScVal_Timepoint:
+	case *scval.ScVal_Timepoint:
 		t := xdr.TimePoint(v.Timepoint)
 		return xdr.ScVal{Type: xdr.ScValTypeScvTimepoint, Timepoint: &t}, nil
-	case *v1alpha.ScVal_Duration:
+	case *scval.ScVal_Duration:
 		d := xdr.Duration(v.Duration)
 		return xdr.ScVal{Type: xdr.ScValTypeScvDuration, Duration: &d}, nil
-	case *v1alpha.ScVal_U128:
+	case *scval.ScVal_U128:
 		if v.U128 == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvU128: nil")
 		}
 		u128 := xdr.UInt128Parts{Hi: xdr.Uint64(v.U128.Hi), Lo: xdr.Uint64(v.U128.Lo)}
 		return xdr.ScVal{Type: xdr.ScValTypeScvU128, U128: &u128}, nil
-	case *v1alpha.ScVal_I128:
+	case *scval.ScVal_I128:
 		if v.I128 == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvI128: nil")
 		}
 		// Per XDR spec for signed integer types: Hi is signed, Lo is unsigned.
 		i128 := xdr.Int128Parts{Hi: xdr.Int64(v.I128.Hi), Lo: xdr.Uint64(v.I128.Lo)}
 		return xdr.ScVal{Type: xdr.ScValTypeScvI128, I128: &i128}, nil
-	case *v1alpha.ScVal_U256:
+	case *scval.ScVal_U256:
 		if v.U256 == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvU256: nil")
 		}
@@ -513,7 +513,7 @@ func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
 			LoLo: xdr.Uint64(v.U256.LoLo),
 		}
 		return xdr.ScVal{Type: xdr.ScValTypeScvU256, U256: &u256}, nil
-	case *v1alpha.ScVal_I256:
+	case *scval.ScVal_I256:
 		if v.I256 == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvI256: nil")
 		}
@@ -525,16 +525,16 @@ func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
 			LoLo: xdr.Uint64(v.I256.LoLo),
 		}
 		return xdr.ScVal{Type: xdr.ScValTypeScvI256, I256: &i256}, nil
-	case *v1alpha.ScVal_BytesVal:
+	case *scval.ScVal_BytesVal:
 		xb := xdr.ScBytes(v.BytesVal)
 		return xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: &xb}, nil
-	case *v1alpha.ScVal_Str:
+	case *scval.ScVal_Str:
 		xs := xdr.ScString(v.Str)
 		return xdr.ScVal{Type: xdr.ScValTypeScvString, Str: &xs}, nil
-	case *v1alpha.ScVal_Sym:
+	case *scval.ScVal_Sym:
 		xs := xdr.ScSymbol(v.Sym)
 		return xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &xs}, nil
-	case *v1alpha.ScVal_Vec:
+	case *scval.ScVal_Vec:
 		if v.Vec == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvVec: nil")
 		}
@@ -548,7 +548,7 @@ func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
 		}
 		xVecP := &xVec
 		return xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &xVecP}, nil
-	case *v1alpha.ScVal_Map:
+	case *scval.ScVal_Map:
 		if v.Map == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvMap: nil")
 		}
@@ -566,21 +566,21 @@ func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
 		}
 		xMapP := &xMap
 		return xdr.ScVal{Type: xdr.ScValTypeScvMap, Map: &xMapP}, nil
-	case *v1alpha.ScVal_Address:
+	case *scval.ScVal_Address:
 		xa, err := protoScAddressToXDR(v.Address)
 		if err != nil {
 			return xdr.ScVal{}, err
 		}
 		return xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xa}, nil
-	case *v1alpha.ScVal_ContractInstance:
+	case *scval.ScVal_ContractInstance:
 		xi, err := protoScContractInstanceToXDRAt(v.ContractInstance, depth+1)
 		if err != nil {
 			return xdr.ScVal{}, err
 		}
 		return xdr.ScVal{Type: xdr.ScValTypeScvContractInstance, Instance: &xi}, nil
-	case *v1alpha.ScVal_LedgerKeyContractInstance:
+	case *scval.ScVal_LedgerKeyContractInstance:
 		return xdr.ScVal{Type: xdr.ScValTypeScvLedgerKeyContractInstance}, nil
-	case *v1alpha.ScVal_NonceKey:
+	case *scval.ScVal_NonceKey:
 		if v.NonceKey == nil {
 			return xdr.ScVal{}, fmt.Errorf("scvLedgerKeyNonce: nil")
 		}
@@ -590,16 +590,16 @@ func protoScValToXDRAt(sv *v1alpha.ScVal, depth int) (xdr.ScVal, error) {
 	}
 }
 
-func protoScErrorToXDR(e *v1alpha.ScError) (xdr.ScError, error) {
+func protoScErrorToXDR(e *scval.ScError) (xdr.ScError, error) {
 	if e == nil {
 		return xdr.ScError{}, fmt.Errorf("proto ScError is nil")
 	}
 	xe := xdr.ScError{Type: xdr.ScErrorType(e.Type)}
 	switch v := e.CodeOrContract.(type) {
-	case *v1alpha.ScError_ContractCode:
+	case *scval.ScError_ContractCode:
 		cc := xdr.Uint32(v.ContractCode)
 		xe.ContractCode = &cc
-	case *v1alpha.ScError_Code_:
+	case *scval.ScError_Code_:
 		code := xdr.ScErrorCode(v.Code)
 		xe.Code = &code
 	default:
@@ -608,12 +608,12 @@ func protoScErrorToXDR(e *v1alpha.ScError) (xdr.ScError, error) {
 	return xe, nil
 }
 
-func protoScAddressToXDR(a *v1alpha.ScAddress) (xdr.ScAddress, error) {
+func protoScAddressToXDR(a *scval.ScAddress) (xdr.ScAddress, error) {
 	if a == nil {
 		return xdr.ScAddress{}, fmt.Errorf("proto ScAddress is nil")
 	}
 	switch v := a.Address.(type) {
-	case *v1alpha.ScAddress_AccountId:
+	case *scval.ScAddress_AccountId:
 		if len(v.AccountId) != 32 {
 			return xdr.ScAddress{}, fmt.Errorf("accountId must be 32 bytes, got %d", len(v.AccountId))
 		}
@@ -621,14 +621,14 @@ func protoScAddressToXDR(a *v1alpha.ScAddress) (xdr.ScAddress, error) {
 		copy(ed25519[:], v.AccountId)
 		aid := xdr.AccountId(xdr.PublicKey{Type: xdr.PublicKeyTypePublicKeyTypeEd25519, Ed25519: &ed25519})
 		return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeAccount, AccountId: &aid}, nil
-	case *v1alpha.ScAddress_ContractId:
+	case *scval.ScAddress_ContractId:
 		if len(v.ContractId) != 32 {
 			return xdr.ScAddress{}, fmt.Errorf("contractId must be 32 bytes, got %d", len(v.ContractId))
 		}
 		var cid xdr.ContractId
 		copy(cid[:], v.ContractId)
 		return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeContract, ContractId: &cid}, nil
-	case *v1alpha.ScAddress_MuxedAccount:
+	case *scval.ScAddress_MuxedAccount:
 		if v.MuxedAccount == nil {
 			return xdr.ScAddress{}, fmt.Errorf("muxedAccount: nil")
 		}
@@ -644,7 +644,7 @@ func protoScAddressToXDR(a *v1alpha.ScAddress) (xdr.ScAddress, error) {
 				Ed25519: ed25519,
 			},
 		}, nil
-	case *v1alpha.ScAddress_ClaimableBalanceId:
+	case *scval.ScAddress_ClaimableBalanceId:
 		if v.ClaimableBalanceId == nil {
 			return xdr.ScAddress{}, fmt.Errorf("claimableBalanceId: nil")
 		}
@@ -660,7 +660,7 @@ func protoScAddressToXDR(a *v1alpha.ScAddress) (xdr.ScAddress, error) {
 				V0:   &h,
 			},
 		}, nil
-	case *v1alpha.ScAddress_LiquidityPoolId:
+	case *scval.ScAddress_LiquidityPoolId:
 		if len(v.LiquidityPoolId) != 32 {
 			return xdr.ScAddress{}, fmt.Errorf("liquidityPoolId must be 32 bytes, got %d", len(v.LiquidityPoolId))
 		}
@@ -672,26 +672,26 @@ func protoScAddressToXDR(a *v1alpha.ScAddress) (xdr.ScAddress, error) {
 	}
 }
 
-func protoContractExecutableToXDR(exec *v1alpha.ContractExecutable) (xdr.ContractExecutable, error) {
+func protoContractExecutableToXDR(exec *scval.ContractExecutable) (xdr.ContractExecutable, error) {
 	if exec == nil {
 		return xdr.ContractExecutable{}, fmt.Errorf("proto ContractExecutable is nil")
 	}
 	switch v := exec.Type.(type) {
-	case *v1alpha.ContractExecutable_WasmHash:
+	case *scval.ContractExecutable_WasmHash:
 		if len(v.WasmHash) != 32 {
 			return xdr.ContractExecutable{}, fmt.Errorf("wasmHash must be 32 bytes, got %d", len(v.WasmHash))
 		}
 		var h xdr.Hash
 		copy(h[:], v.WasmHash)
 		return xdr.ContractExecutable{Type: xdr.ContractExecutableTypeContractExecutableWasm, WasmHash: &h}, nil
-	case *v1alpha.ContractExecutable_StellarAsset:
+	case *scval.ContractExecutable_StellarAsset:
 		return xdr.ContractExecutable{Type: xdr.ContractExecutableTypeContractExecutableStellarAsset}, nil
 	default:
 		return xdr.ContractExecutable{}, fmt.Errorf("unsupported proto ContractExecutable type: %T", exec.Type)
 	}
 }
 
-func protoScContractInstanceToXDRAt(inst *v1alpha.ScContractInstance, depth int) (xdr.ScContractInstance, error) {
+func protoScContractInstanceToXDRAt(inst *scval.ScContractInstance, depth int) (xdr.ScContractInstance, error) {
 	if inst == nil {
 		return xdr.ScContractInstance{}, fmt.Errorf("proto ScContractInstance is nil")
 	}
@@ -727,7 +727,7 @@ func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadCo
 	if req.Function == "" {
 		return nil, fmt.Errorf("function is required")
 	}
-	args := make([]*v1alpha.ScVal, len(req.Args))
+	args := make([]*scval.ScVal, len(req.Args))
 	for i, sv := range req.Args {
 		psv, err := xdrScValToProto(sv)
 		if err != nil {

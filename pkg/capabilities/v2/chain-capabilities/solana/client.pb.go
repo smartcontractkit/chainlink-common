@@ -430,11 +430,10 @@ func (x *Account) GetSpace() uint64 {
 
 // Compute budget configuration when submitting txs.
 type ComputeConfig struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ComputeLimit    uint32                 `protobuf:"varint,1,opt,name=compute_limit,json=computeLimit,proto3" json:"compute_limit,omitempty"`            // max CUs (approx per-tx limit)
-	ComputeMaxPrice uint64                 `protobuf:"varint,2,opt,name=compute_max_price,json=computeMaxPrice,proto3" json:"compute_max_price,omitempty"` // max lamports per CU
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ComputeLimit  uint32                 `protobuf:"varint,1,opt,name=compute_limit,json=computeLimit,proto3" json:"compute_limit,omitempty"` // max CUs (approx per-tx limit)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComputeConfig) Reset() {
@@ -470,13 +469,6 @@ func (*ComputeConfig) Descriptor() ([]byte, []int) {
 func (x *ComputeConfig) GetComputeLimit() uint32 {
 	if x != nil {
 		return x.ComputeLimit
-	}
-	return 0
-}
-
-func (x *ComputeConfig) GetComputeMaxPrice() uint64 {
-	if x != nil {
-		return x.ComputeMaxPrice
 	}
 	return 0
 }
@@ -3433,10 +3425,9 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"executable\x120\n" +
 	"\n" +
 	"rent_epoch\x18\x05 \x01(\v2\x11.values.v1.BigIntR\trentEpoch\x12\x14\n" +
-	"\x05space\x18\x06 \x01(\x04R\x05space\"`\n" +
+	"\x05space\x18\x06 \x01(\x04R\x05space\"4\n" +
 	"\rComputeConfig\x12#\n" +
-	"\rcompute_limit\x18\x01 \x01(\rR\fcomputeLimit\x12*\n" +
-	"\x11compute_max_price\x18\x02 \x01(\x04R\x0fcomputeMaxPrice\"\x95\x01\n" +
+	"\rcompute_limit\x18\x01 \x01(\rR\fcomputeLimit\"\x95\x01\n" +
 	"\x0fDataBytesOrJSON\x12P\n" +
 	"\bencoding\x18\x01 \x01(\x0e24.capabilities.blockchain.solana.v1alpha.EncodingTypeR\bencoding\x12\x12\n" +
 	"\x03raw\x18\x02 \x01(\fH\x00R\x03raw\x12\x14\n" +

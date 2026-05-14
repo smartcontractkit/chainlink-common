@@ -854,6 +854,17 @@ func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
 	getter := &atomicJSONGetter{}
+	require.NoError(t, getter.setJSON(`{
+		"global": {
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
+			"BaseTriggerRetryInterval": "50ms",
+			"BaseTriggerMaxRetries": "5"
+		}
+	}`))
+
+	store := NewMemEventStore()
+
+	// Build a valid protobuf payload for the events.
 	msg := &wrapperspb.BytesValue{Value: []byte("payload")}
 	anyMsg, err := anypb.New(msg)
 	require.NoError(t, err)

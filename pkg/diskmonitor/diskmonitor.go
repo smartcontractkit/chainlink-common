@@ -42,6 +42,7 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 		lggr: logger.With(
 			logger.Named(lggr, "DiskMonitor"),
 			"dirPath", dirPath,
+			"gaugeName", gaugeName,
 		),
 		sizeOfDir: func() (int64, error) {
 			var totalSize int64

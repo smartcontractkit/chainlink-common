@@ -4,13 +4,22 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
+
+func TestNewDiskMonitor(t *testing.T) {
+	dm, err := NewDiskMonitor(logger.Test(t), t.TempDir(), "tmp_disk_usage_bytes", time.Second)
+	require.NoError(t, err)
+	assert.NotNil(t, dm)
+	assert.Equal(t, time.Second, dm.tickInterval)
+}
 
 type mockGauge struct {
 	gotValue int64

@@ -177,8 +177,12 @@ func TestBaseTrigger_CRE_PerOrgRetransmit(t *testing.T) {
 	default:
 	}
 
-	recs, err := store.List(baseCtx)
+	recs, err := store.List(ctxOrgA)
 	require.NoError(t, err)
+	for _, r := range recs {
+		require.NotEqual(t, "orgB", r.OrgID,
+			"orgB DeliverEvent uses retransmit-off path and must not insert pending rows")
+	}
 	require.Len(t, recs, 1, "only orgA persists pending rows when retransmit is enabled for that org only")
 	require.Equal(t, "orgA", recs[0].OrgID)
 }

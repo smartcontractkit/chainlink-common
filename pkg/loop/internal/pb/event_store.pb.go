@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v5.29.3
-// source: pkg/loop/internal/pb/event_store.proto
+// source: event_store.proto
 
 package pb
 
@@ -39,7 +39,7 @@ type PendingEventProto struct {
 
 func (x *PendingEventProto) Reset() {
 	*x = PendingEventProto{}
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[0]
+	mi := &file_event_store_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *PendingEventProto) String() string {
 func (*PendingEventProto) ProtoMessage() {}
 
 func (x *PendingEventProto) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[0]
+	mi := &file_event_store_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *PendingEventProto) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingEventProto.ProtoReflect.Descriptor instead.
 func (*PendingEventProto) Descriptor() ([]byte, []int) {
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP(), []int{0}
+	return file_event_store_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PendingEventProto) GetTriggerId() string {
@@ -125,7 +125,7 @@ type InsertEventRequest struct {
 
 func (x *InsertEventRequest) Reset() {
 	*x = InsertEventRequest{}
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[1]
+	mi := &file_event_store_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -137,7 +137,7 @@ func (x *InsertEventRequest) String() string {
 func (*InsertEventRequest) ProtoMessage() {}
 
 func (x *InsertEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[1]
+	mi := &file_event_store_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -150,7 +150,7 @@ func (x *InsertEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InsertEventRequest.ProtoReflect.Descriptor instead.
 func (*InsertEventRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP(), []int{1}
+	return file_event_store_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *InsertEventRequest) GetEvent() *PendingEventProto {
@@ -172,7 +172,7 @@ type UpdateDeliveryRequest struct {
 
 func (x *UpdateDeliveryRequest) Reset() {
 	*x = UpdateDeliveryRequest{}
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[2]
+	mi := &file_event_store_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -184,7 +184,7 @@ func (x *UpdateDeliveryRequest) String() string {
 func (*UpdateDeliveryRequest) ProtoMessage() {}
 
 func (x *UpdateDeliveryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[2]
+	mi := &file_event_store_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +197,7 @@ func (x *UpdateDeliveryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeliveryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateDeliveryRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP(), []int{2}
+	return file_event_store_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UpdateDeliveryRequest) GetTriggerId() string {
@@ -237,7 +237,7 @@ type ListEventsResponse struct {
 
 func (x *ListEventsResponse) Reset() {
 	*x = ListEventsResponse{}
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[3]
+	mi := &file_event_store_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -249,7 +249,7 @@ func (x *ListEventsResponse) String() string {
 func (*ListEventsResponse) ProtoMessage() {}
 
 func (x *ListEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[3]
+	mi := &file_event_store_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -262,7 +262,7 @@ func (x *ListEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEventsResponse.ProtoReflect.Descriptor instead.
 func (*ListEventsResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP(), []int{3}
+	return file_event_store_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListEventsResponse) GetEvents() []*PendingEventProto {
@@ -282,7 +282,7 @@ type DeleteEventRequest struct {
 
 func (x *DeleteEventRequest) Reset() {
 	*x = DeleteEventRequest{}
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[4]
+	mi := &file_event_store_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +294,7 @@ func (x *DeleteEventRequest) String() string {
 func (*DeleteEventRequest) ProtoMessage() {}
 
 func (x *DeleteEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[4]
+	mi := &file_event_store_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +307,7 @@ func (x *DeleteEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEventRequest.ProtoReflect.Descriptor instead.
 func (*DeleteEventRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP(), []int{4}
+	return file_event_store_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeleteEventRequest) GetTriggerId() string {
@@ -333,7 +333,7 @@ type DeleteEventsForTriggerRequest struct {
 
 func (x *DeleteEventsForTriggerRequest) Reset() {
 	*x = DeleteEventsForTriggerRequest{}
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[5]
+	mi := &file_event_store_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -345,7 +345,7 @@ func (x *DeleteEventsForTriggerRequest) String() string {
 func (*DeleteEventsForTriggerRequest) ProtoMessage() {}
 
 func (x *DeleteEventsForTriggerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_loop_internal_pb_event_store_proto_msgTypes[5]
+	mi := &file_event_store_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -358,7 +358,7 @@ func (x *DeleteEventsForTriggerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEventsForTriggerRequest.ProtoReflect.Descriptor instead.
 func (*DeleteEventsForTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP(), []int{5}
+	return file_event_store_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeleteEventsForTriggerRequest) GetTriggerId() string {
@@ -368,11 +368,11 @@ func (x *DeleteEventsForTriggerRequest) GetTriggerId() string {
 	return ""
 }
 
-var File_pkg_loop_internal_pb_event_store_proto protoreflect.FileDescriptor
+var File_event_store_proto protoreflect.FileDescriptor
 
-const file_pkg_loop_internal_pb_event_store_proto_rawDesc = "" +
+const file_event_store_proto_rawDesc = "" +
 	"\n" +
-	"&pkg/loop/internal/pb/event_store.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\x02\n" +
+	"\x11event_store.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\x02\n" +
 	"\x11PendingEventProto\x12\x1d\n" +
 	"\n" +
 	"trigger_id\x18\x01 \x01(\tR\ttriggerId\x12\x19\n" +
@@ -410,19 +410,19 @@ const file_pkg_loop_internal_pb_event_store_proto_rawDesc = "" +
 	"\x16DeleteEventsForTrigger\x12#.loop.DeleteEventsForTriggerRequest\x1a\x16.google.protobuf.EmptyBCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_pkg_loop_internal_pb_event_store_proto_rawDescOnce sync.Once
-	file_pkg_loop_internal_pb_event_store_proto_rawDescData []byte
+	file_event_store_proto_rawDescOnce sync.Once
+	file_event_store_proto_rawDescData []byte
 )
 
-func file_pkg_loop_internal_pb_event_store_proto_rawDescGZIP() []byte {
-	file_pkg_loop_internal_pb_event_store_proto_rawDescOnce.Do(func() {
-		file_pkg_loop_internal_pb_event_store_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkg_loop_internal_pb_event_store_proto_rawDesc), len(file_pkg_loop_internal_pb_event_store_proto_rawDesc)))
+func file_event_store_proto_rawDescGZIP() []byte {
+	file_event_store_proto_rawDescOnce.Do(func() {
+		file_event_store_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_event_store_proto_rawDesc), len(file_event_store_proto_rawDesc)))
 	})
-	return file_pkg_loop_internal_pb_event_store_proto_rawDescData
+	return file_event_store_proto_rawDescData
 }
 
-var file_pkg_loop_internal_pb_event_store_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_pkg_loop_internal_pb_event_store_proto_goTypes = []any{
+var file_event_store_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_event_store_proto_goTypes = []any{
 	(*PendingEventProto)(nil),             // 0: loop.PendingEventProto
 	(*InsertEventRequest)(nil),            // 1: loop.InsertEventRequest
 	(*UpdateDeliveryRequest)(nil),         // 2: loop.UpdateDeliveryRequest
@@ -432,7 +432,7 @@ var file_pkg_loop_internal_pb_event_store_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),         // 6: google.protobuf.Timestamp
 	(*emptypb.Empty)(nil),                 // 7: google.protobuf.Empty
 }
-var file_pkg_loop_internal_pb_event_store_proto_depIdxs = []int32{
+var file_event_store_proto_depIdxs = []int32{
 	6,  // 0: loop.PendingEventProto.first_at:type_name -> google.protobuf.Timestamp
 	6,  // 1: loop.PendingEventProto.last_sent_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: loop.InsertEventRequest.event:type_name -> loop.PendingEventProto
@@ -455,26 +455,26 @@ var file_pkg_loop_internal_pb_event_store_proto_depIdxs = []int32{
 	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_pkg_loop_internal_pb_event_store_proto_init() }
-func file_pkg_loop_internal_pb_event_store_proto_init() {
-	if File_pkg_loop_internal_pb_event_store_proto != nil {
+func init() { file_event_store_proto_init() }
+func file_event_store_proto_init() {
+	if File_event_store_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_loop_internal_pb_event_store_proto_rawDesc), len(file_pkg_loop_internal_pb_event_store_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_event_store_proto_rawDesc), len(file_event_store_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_pkg_loop_internal_pb_event_store_proto_goTypes,
-		DependencyIndexes: file_pkg_loop_internal_pb_event_store_proto_depIdxs,
-		MessageInfos:      file_pkg_loop_internal_pb_event_store_proto_msgTypes,
+		GoTypes:           file_event_store_proto_goTypes,
+		DependencyIndexes: file_event_store_proto_depIdxs,
+		MessageInfos:      file_event_store_proto_msgTypes,
 	}.Build()
-	File_pkg_loop_internal_pb_event_store_proto = out.File
-	file_pkg_loop_internal_pb_event_store_proto_goTypes = nil
-	file_pkg_loop_internal_pb_event_store_proto_depIdxs = nil
+	File_event_store_proto = out.File
+	file_event_store_proto_goTypes = nil
+	file_event_store_proto_depIdxs = nil
 }

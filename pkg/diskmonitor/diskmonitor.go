@@ -55,9 +55,10 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 		Name:  "DiskMonitor",
 		Start: dm.start,
 	}.NewServiceEngine(logger.With(
-			"dirPath", dirPath,
-			"gaugeName", gaugeName,
-		))
+		lggr,
+		"dirPath", dirPath,
+		"gaugeName", gaugeName,
+	))
 	dm.lggr = dm.eng.SugaredLogger
 	return dm, nil
 }

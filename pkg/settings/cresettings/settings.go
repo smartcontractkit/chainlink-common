@@ -65,7 +65,6 @@ var Default = Schema{
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
-	BaseTriggerRetransmitEnabled:           Bool(false),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
 	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
@@ -124,6 +123,7 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
+		BaseTriggerRetransmitEnabled:       Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
 	},
@@ -260,8 +260,7 @@ type Schema struct {
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
-	BaseTriggerRetransmitEnabled Setting[bool]
-	BaseTriggerRetryInterval     Setting[time.Duration]
+	BaseTriggerRetryInterval Setting[time.Duration]
 	BaseTriggerMaxRetries        Setting[int] `unit:"{attempt}"`
 	BaseTriggerPruneAge          Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick   Setting[int] `unit:"{event}"`
@@ -290,6 +289,7 @@ type Schema struct {
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
+	BaseTriggerRetransmitEnabled Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
 }

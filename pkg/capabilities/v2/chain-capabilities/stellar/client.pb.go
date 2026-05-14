@@ -189,8 +189,9 @@ func (x *ReadContractRequest) GetLedgerSequence() uint32 {
 }
 
 type ReadContractResponse struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Result []byte                 `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Result is a serialized base64 string - return value of the Host Function call.
+	Result string `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	// Ledger actually used for simulation
 	LedgerSequence uint32 `protobuf:"varint,2,opt,name=ledger_sequence,json=ledgerSequence,proto3" json:"ledger_sequence,omitempty"`
 	// Response
@@ -229,11 +230,11 @@ func (*ReadContractResponse) Descriptor() ([]byte, []int) {
 	return file_capabilities_blockchain_stellar_v1alpha_client_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ReadContractResponse) GetResult() []byte {
+func (x *ReadContractResponse) GetResult() string {
 	if x != nil {
 		return x.Result
 	}
-	return nil
+	return ""
 }
 
 func (x *ReadContractResponse) GetLedgerSequence() uint32 {
@@ -510,7 +511,7 @@ const file_capabilities_blockchain_stellar_v1alpha_client_proto_rawDesc = "" +
 	"\x04args\x18\x03 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x12'\n" +
 	"\x0fledger_sequence\x18\x04 \x01(\rR\x0eledgerSequence\"m\n" +
 	"\x14ReadContractResponse\x12\x16\n" +
-	"\x06result\x18\x01 \x01(\fR\x06result\x12'\n" +
+	"\x06result\x18\x01 \x01(\tR\x06result\x12'\n" +
 	"\x0fledger_sequence\x18\x02 \x01(\rR\x0eledgerSequence\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"\x18\n" +
 	"\x16GetLatestLedgerRequest\"\xfc\x01\n" +

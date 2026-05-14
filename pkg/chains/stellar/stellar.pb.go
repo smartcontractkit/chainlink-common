@@ -96,7 +96,7 @@ func (x *ReadContractRequest) GetLedgerSequence() uint32 {
 // ReadContractResponse carries the return value of the simulated call.
 type ReadContractResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Result         *scval.ScVal           `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`                                        // Return value (only valid when error is empty)
+	Result         string                 `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`                                        // Return value (only valid when error is empty)
 	LedgerSequence uint32                 `protobuf:"varint,2,opt,name=ledger_sequence,json=ledgerSequence,proto3" json:"ledger_sequence,omitempty"` // Ledger actually used for the simulation
 	Error          string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`                                          // Non-empty on failure
 	unknownFields  protoimpl.UnknownFields
@@ -133,11 +133,11 @@ func (*ReadContractResponse) Descriptor() ([]byte, []int) {
 	return file_stellar_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ReadContractResponse) GetResult() *scval.ScVal {
+func (x *ReadContractResponse) GetResult() string {
 	if x != nil {
 		return x.Result
 	}
-	return nil
+	return ""
 }
 
 func (x *ReadContractResponse) GetLedgerSequence() uint32 {
@@ -433,9 +433,9 @@ const file_stellar_proto_rawDesc = "" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x02 \x01(\tR\bfunction\x12B\n" +
 	"\x04args\x18\x03 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x12'\n" +
-	"\x0fledger_sequence\x18\x04 \x01(\rR\x0eledgerSequence\"\x9d\x01\n" +
-	"\x14ReadContractResponse\x12F\n" +
-	"\x06result\x18\x01 \x01(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x06result\x12'\n" +
+	"\x0fledger_sequence\x18\x04 \x01(\rR\x0eledgerSequence\"m\n" +
+	"\x14ReadContractResponse\x12\x16\n" +
+	"\x06result\x18\x01 \x01(\tR\x06result\x12'\n" +
 	"\x0fledger_sequence\x18\x02 \x01(\rR\x0eledgerSequence\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"-\n" +
 	"\x17GetLedgerEntriesRequest\x12\x12\n" +
@@ -487,19 +487,18 @@ var file_stellar_proto_goTypes = []any{
 }
 var file_stellar_proto_depIdxs = []int32{
 	6, // 0: loop.stellar.ReadContractRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	6, // 1: loop.stellar.ReadContractResponse.result:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	3, // 2: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
-	2, // 3: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
-	7, // 4: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
-	0, // 5: loop.stellar.Stellar.ReadContract:input_type -> loop.stellar.ReadContractRequest
-	4, // 6: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
-	5, // 7: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
-	1, // 8: loop.stellar.Stellar.ReadContract:output_type -> loop.stellar.ReadContractResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	3, // 1: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
+	2, // 2: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
+	7, // 3: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
+	0, // 4: loop.stellar.Stellar.ReadContract:input_type -> loop.stellar.ReadContractRequest
+	4, // 5: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
+	5, // 6: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
+	1, // 7: loop.stellar.Stellar.ReadContract:output_type -> loop.stellar.ReadContractResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_stellar_proto_init() }

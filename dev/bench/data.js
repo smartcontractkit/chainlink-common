@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778694325834,
+  "lastUpdate": 1778751824011,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -46740,6 +46740,66 @@ window.BENCHMARK_DATA = {
             "value": 130951,
             "unit": "ns/op",
             "extra": "8524 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "79c4ac085b1e02799e5511aac41e34e81ad911f4",
+          "message": "Add cap server client (#2049)\n\n* Add stellar cap client/server and use xdr scvalues for read contract\n\n* Add ReadContract proto helpers\n\n* bump versions\n\n* tidy\n\n* tidy and fix package name\n\n* tidy\n\n* lint\n\n* Cleanup generator file\n\n* lint\n\n* lint",
+          "timestamp": "2026-05-14T09:30:51Z",
+          "tree_id": "2fc523e8d86201cec7b92bb70331af08bc0a3692",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/79c4ac085b1e02799e5511aac41e34e81ad911f4"
+        },
+        "date": 1778751821385,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 414.1,
+            "unit": "ns/op",
+            "extra": "2416500 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97726,
+            "unit": "ns/op",
+            "extra": "12190 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 432,
+            "unit": "ns/op",
+            "extra": "2640069 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 100750,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26584,
+            "unit": "ns/op",
+            "extra": "45108 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 150779,
+            "unit": "ns/op",
+            "extra": "7610 times\n4 procs"
           }
         ]
       }

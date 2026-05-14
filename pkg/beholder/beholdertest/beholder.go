@@ -12,6 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 const (
@@ -119,7 +120,7 @@ func NewObserver(t *testing.T) Observer {
 
 	messageEmitter := &assertMessageEmitter{t: t}
 
-	client := beholder.NewNoopClient()
+	client := beholder.NewNoopClient(logger.Test(t))
 	client.Emitter = messageEmitter
 	require.NoError(t, client.Start(t.Context()))
 

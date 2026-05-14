@@ -537,7 +537,7 @@ func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
 	}
-	emitter, err := beholder.NewChipIngressBatchEmitterService(&chipingress.NoopClient{}, cfg, logger.Nop())
+	emitter, err := beholder.NewChipIngressBatchEmitterService(&chipingress.NoopClient{}, cfg, logger.Test(b))
 	if err != nil {
 		b.Fatal(err)
 	}

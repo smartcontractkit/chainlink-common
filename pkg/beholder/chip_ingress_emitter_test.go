@@ -16,13 +16,13 @@ import (
 func TestNewChipIngressEmitter(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Nop())
+		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Test(t))
 		require.NoError(t, err)
 		assert.NotNil(t, emitter)
 	})
 
 	t.Run("returns error when client is nil", func(t *testing.T) {
-		emitter, err := beholder.NewChipIngressEmitter(nil, logger.Nop())
+		emitter, err := beholder.NewChipIngressEmitter(nil, logger.Test(t))
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
 	})
@@ -47,7 +47,7 @@ func TestChipIngressEmit(t *testing.T) {
 			Return(nil, nil)
 		clientMock.On("Close").Return(nil)
 
-		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Nop())
+		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Test(t))
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity, attributes)
@@ -59,7 +59,7 @@ func TestChipIngressEmit(t *testing.T) {
 	})
 
 	t.Run("returns error when ExtractSourceAndType fails", func(t *testing.T) {
-		emitter, err := beholder.NewChipIngressEmitter(mocks.NewClient(t), logger.Nop())
+		emitter, err := beholder.NewChipIngressEmitter(mocks.NewClient(t), logger.Test(t))
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, "bad_key", domain)
@@ -74,7 +74,7 @@ func TestChipIngressEmit(t *testing.T) {
 			Return(nil, assert.AnError)
 		clientMock.On("Close").Return(nil)
 
-		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Nop())
+		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Test(t))
 		require.NoError(t, err)
 
 		// Emit returns nil because the error is logged asynchronously.

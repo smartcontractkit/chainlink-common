@@ -20,17 +20,18 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestGlobal(t *testing.T) {
 	// Get global logger, tracer, meter, messageEmitter
 	// If not initialized with beholder.SetClient will return noop client
 	logger, tracer, meter, messageEmitter := beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
-	noopClient := beholder.NewNoopClient()
+	noopClient := beholder.NewNoopClient(pkglogger.Test(t))
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
 	assert.IsType(t, otelmetricnoop.Meter{}, meter)
-	expectedMessageEmitter := beholder.NewNoopClient().Emitter
+	expectedMessageEmitter := beholder.NewNoopClient(pkglogger.Test(t)).Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
 	assert.IsType(t, noopClient, beholder.GetClient())

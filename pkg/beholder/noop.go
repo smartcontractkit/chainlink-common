@@ -21,8 +21,10 @@ import (
 	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-// Default client to fallback when is is not initialized properly
-func NewNoopClient() *Client {
+// Default client to fallback when is is not initialized properly.
+// An optional logger may be passed to surface service-engine diagnostics;
+// when omitted a no-op logger is used.
+func NewNoopClient(optLogger ...pkglogger.Logger) *Client {
 	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
@@ -54,7 +56,11 @@ func NewNoopClient() *Client {
 		MessageLoggerProvider: loggerProvider,
 		OnClose:               noopOnClose,
 	}
-	c.initService(pkglogger.Nop(), nil)
+	lggr := pkglogger.Logger(pkglogger.Nop())
+	if len(optLogger) > 0 && optLogger[0] != nil {
+		lggr = optLogger[0]
+	}
+	c.initService(lggr, nil)
 	return c
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -258,10 +259,6 @@ func NewDurableEmitter(
 		log:           log,
 		metrics:       m,
 		stopCh:        make(chan struct{}),
-	}
-	if cp, ok := client.(grpcConnProvider); ok {
-		d.rawConn = cp.Conn()
-		log.Infow("DurableEmitter: raw-codec batch publishing enabled (zero-copy protowire)")
 	}
 	if cfg.InsertBatchSize > 0 {
 		if bi, ok := store.(BatchInserter); ok {
@@ -757,6 +754,7 @@ func (d *DurableEmitter) flushBatchRaw(ctx context.Context, batch []publishWork)
 // standard gRPC client. Used as fallback when rawConn is not available.
 func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWork) error {
 	events := make([]*chipingress.CloudEventPb, len(batch))
+	mapEventIDtoTableId := make(map[string]int64, len(batch))
 	for i, w := range batch {
 		if w.event != nil {
 			events[i] = w.event
@@ -767,10 +765,58 @@ func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWor
 			}
 			events[i] = ev
 		}
+		mapEventIDtoTableId[events[i].Id] = w.id
 	}
-	batchPb := &chipingress.CloudEventBatch{Events: events}
-	_, err := d.client.PublishBatch(ctx, batchPb)
-	return err
+
+	batchPb := &chipingress.CloudEventBatch{
+		Events: events,
+		Options: &chipingress.PublishOptions{
+			AllowPartialSuccess: new(true),
+		},
+	}
+	response, err := d.client.PublishBatch(ctx, batchPb)
+	if err != nil {
+		return fmt.Errorf("PublishBatch RPC failed: %w", err)
+	}
+
+	groupByError := make(map[string][]int64)
+	for _, result := range response.Results {
+		if result.Error == nil {
+			continue
+		}
+		msg := result.Error.GetMessage()
+		if len(strings.TrimSpace(msg)) == 0 {
+			continue
+		}
+		id, exists := mapEventIDtoTableId[result.EventId]
+		if !exists {
+			d.log.Warnw("PublishBatch returned invalid event", "event_id", result.EventId)
+			continue
+		}
+		groupByError[msg] = append(groupByError[msg], id)
+	}
+	if len(groupByError) > 0 {
+		if err := d.reportPartialFailures(ctx, groupByError); err != nil {
+			return fmt.Errorf("publish errors reporting failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (d *DurableEmitter) reportPartialFailures(ctx context.Context, errGroups map[string][]int64) error {
+	var errList []error
+
+	for msg, ids := range errGroups {
+		if err := d.store.MarkFailedBatch(ctx, msg, ids); err != nil {
+			errList = append(errList, err)
+		}
+	}
+
+	if len(errList) > 0 {
+		return fmt.Errorf("multiple errors: %v", errList)
+	}
+	return nil
 }
 
 func (d *DurableEmitter) retransmitLoop() {

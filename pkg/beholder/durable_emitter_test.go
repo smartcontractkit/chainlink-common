@@ -1000,6 +1000,11 @@ func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore time
 	return result, nil
 }
 
+func (m *MemDurableEventStore) MarkFailedBatch(_ context.Context, _ string, _ []int64) error {
+	// In-memory store has no persistent failure state; events remain pending for retransmit.
+	return nil
+}
+
 func (m *MemDurableEventStore) DeleteExpired(_ context.Context, ttl time.Duration) (int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

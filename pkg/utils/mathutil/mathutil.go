@@ -1,6 +1,7 @@
 package mathutil
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"math"
@@ -9,7 +10,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-func Max[V constraints.Ordered](first V, vals ...V) V {
+func Max[V cmp.Ordered](first V, vals ...V) V {
 	max := first
 	for _, v := range vals {
 		if v > max {
@@ -19,7 +20,7 @@ func Max[V constraints.Ordered](first V, vals ...V) V {
 	return max
 }
 
-func Min[V constraints.Ordered](first V, vals ...V) V {
+func Min[V cmp.Ordered](first V, vals ...V) V {
 	min := first
 	for _, v := range vals {
 		if v < min {

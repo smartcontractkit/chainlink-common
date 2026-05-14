@@ -18,6 +18,7 @@ import (
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // Default client to fallback when is is not initialized properly
@@ -53,7 +54,7 @@ func NewNoopClient() *Client {
 		MessageLoggerProvider: loggerProvider,
 		OnClose:               noopOnClose,
 	}
-	c.initService(nil)
+	c.initService(pkglogger.Nop())
 	return c
 }
 
@@ -127,7 +128,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		lazySigner:            nil,
 		OnClose:               onClose,
 	}
-	c.initService(nil)
+	c.initService(pkglogger.Nop())
 	return c, nil
 }
 

@@ -73,9 +73,6 @@ type Client struct {
 // initService wires up the services.Service lifecycle for the Client.
 // Must be called exactly once after populating the Client fields.
 func (c *Client) initService(lggr pkglogger.Logger) {
-	if lggr == nil {
-		lggr = pkglogger.Nop()
-	}
 	c.Service, c.eng = services.Config{
 		Name:  "BeholderClient",
 		Close: c.close,
@@ -295,7 +292,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		OnClose:               onClose,
 		batchEmitterService:   batchEmitterService,
 	}
-	c.initService(cfg.ChipIngressLogger)
+	lggr := cfg.ChipIngressLogger
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
+	c.initService(lggr)
 	return c, nil
 }
 

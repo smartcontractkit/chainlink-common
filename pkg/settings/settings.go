@@ -268,7 +268,7 @@ func InitConfig(a any) error {
 func initConfig(a any, scope Scope, parent string) error {
 	v := reflect.ValueOf(a)
 
-	if v.Kind() != reflect.Ptr {
+	if v.Kind() != reflect.Pointer {
 		return fmt.Errorf("must be a pointer to a struct: %s: %v", parent, v.Kind())
 	}
 	v = v.Elem()

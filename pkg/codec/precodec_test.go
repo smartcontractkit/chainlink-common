@@ -135,7 +135,7 @@ func TestPreCodec(t *testing.T) {
 	t.Run("RetypeToOffChain works on pointers to type", func(t *testing.T) {
 		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
@@ -149,7 +149,7 @@ func TestPreCodec(t *testing.T) {
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
 		offChainType, err := pointerPreCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOnPointer{})), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)

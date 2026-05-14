@@ -3,6 +3,9 @@ package confidentialrelay
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
+	"errors"
+	"fmt"
 	"hash"
 	"sort"
 
@@ -53,10 +56,52 @@ type SecretsResponseResult struct {
 	Secrets []SecretEntry `json:"secrets"`
 }
 
+// Validate rejects request params that are missing fields the canonical hash binds to,
+// or that carry a malformed value for a structured field. Without these fields a
+// signature would cover a less-unique context than the caller believes, which would
+// let a malicious gateway replay it across requests; alternate encodings of structured
+// fields would similarly let two distinct logical requests collide on the same hash.
+func (p SecretsRequestParams) Validate() error {
+	if p.WorkflowID == "" {
+		return errors.New("workflow_id is required")
+	}
+	if p.Owner == "" {
+		return errors.New("owner is required")
+	}
+	if err := validateOwnerAddress(p.Owner); err != nil {
+		return err
+	}
+	if p.ExecutionID == "" {
+		return errors.New("execution_id is required")
+	}
+	if err := validateExecutionID(p.ExecutionID); err != nil {
+		return err
+	}
+	if p.EnclavePublicKey == "" {
+		return errors.New("enclave_public_key is required")
+	}
+	if err := validateEnclavePublicKey(p.EnclavePublicKey); err != nil {
+		return err
+	}
+	if len(p.Secrets) == 0 {
+		return errors.New("secrets must be non-empty")
+	}
+	if err := validateSecretIdentifiers(p.Secrets); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Hash computes the canonical hash of the caller-provided request params and
 // logical relay response body. Attestation is intentionally excluded, and the
-// secrets and encrypted share slices are sorted before hashing.
-func (r *SecretsResponseResult) Hash(params SecretsRequestParams) [32]byte {
+// secrets and encrypted share slices are sorted before hashing. Returns an
+// error if params fails Validate so a caller cannot accidentally produce a
+// signature over an unbinding payload.
+func (r *SecretsResponseResult) Hash(params SecretsRequestParams) ([32]byte, error) {
+	if err := params.Validate(); err != nil {
+		return [32]byte{}, fmt.Errorf("invalid secrets request params: %w", err)
+	}
+
 	h := sha256.New()
 	h.Write([]byte(teeattestation.DomainSeparator))
 	h.Write([]byte("\nSecretsResponseResult\n"))
@@ -82,15 +127,18 @@ func (r *SecretsResponseResult) Hash(params SecretsRequestParams) [32]byte {
 
 	var result [32]byte
 	h.Sum(result[:0])
-	return result
+	return result, nil
 }
 
 // CapabilityRequestParams is the JSON-RPC params for "confidential.capability.execute".
+// Owner, ExecutionID, and ReferenceID are required: they bind a relay-DON signature to a
+// specific (workflow, execution, step) tuple. Without them the same signature could be
+// replayed across distinct logical requests that happened to share the remaining fields.
 type CapabilityRequestParams struct {
 	WorkflowID   string `json:"workflow_id"`
-	Owner        string `json:"owner,omitempty"`
-	ExecutionID  string `json:"execution_id,omitempty"`
-	ReferenceID  string `json:"reference_id,omitempty"`
+	Owner        string `json:"owner"`
+	ExecutionID  string `json:"execution_id"`
+	ReferenceID  string `json:"reference_id"`
 	CapabilityID string `json:"capability_id"`
 	Payload      string `json:"payload"`
 	Attestation  string `json:"attestation,omitempty"`
@@ -102,9 +150,97 @@ type CapabilityResponseResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
+// Validate rejects request params that are missing fields the canonical hash binds to,
+// or that carry a malformed value for a structured field. Without these fields a
+// signature would cover a less-unique context than the caller believes, which would
+// let a malicious gateway replay it across requests; alternate encodings of structured
+// fields would similarly let two distinct logical requests collide on the same hash.
+func (p CapabilityRequestParams) Validate() error {
+	if p.WorkflowID == "" {
+		return errors.New("workflow_id is required")
+	}
+	if p.Owner == "" {
+		return errors.New("owner is required")
+	}
+	if err := validateOwnerAddress(p.Owner); err != nil {
+		return err
+	}
+	if p.ExecutionID == "" {
+		return errors.New("execution_id is required")
+	}
+	if err := validateExecutionID(p.ExecutionID); err != nil {
+		return err
+	}
+	if p.ReferenceID == "" {
+		return errors.New("reference_id is required")
+	}
+	if p.CapabilityID == "" {
+		return errors.New("capability_id is required")
+	}
+	if p.Payload == "" {
+		return errors.New("payload is required")
+	}
+	return nil
+}
+
+// validateOwnerAddress enforces the canonical "0x-prefixed 20-byte hex" Ethereum address
+// shape so two encodings of the same address (e.g., differing case or a missing prefix)
+// cannot produce different hashes.
+func validateOwnerAddress(s string) error {
+	if len(s) != 42 || s[:2] != "0x" {
+		return errors.New("owner must be a 0x-prefixed 20-byte hex address")
+	}
+	if _, err := hex.DecodeString(s[2:]); err != nil {
+		return errors.New("owner must be a 0x-prefixed 20-byte hex address")
+	}
+	return nil
+}
+
+// validateExecutionID enforces 32-byte hex with no prefix.
+func validateExecutionID(s string) error {
+	if len(s) != 64 {
+		return errors.New("execution_id must be 32 bytes hex-encoded (64 hex chars, no 0x prefix)")
+	}
+	if _, err := hex.DecodeString(s); err != nil {
+		return errors.New("execution_id must be 32 bytes hex-encoded (64 hex chars, no 0x prefix)")
+	}
+	return nil
+}
+
+// validateEnclavePublicKey requires hex-encoded bytes; length is intentionally not pinned
+// because the encoding length depends on the enclave's key type and is not yet contracted
+// in this package.
+func validateEnclavePublicKey(s string) error {
+	if _, err := hex.DecodeString(s); err != nil {
+		return errors.New("enclave_public_key must be hex-encoded")
+	}
+	return nil
+}
+
+// validateSecretIdentifiers rejects any entry with an empty Key or Namespace because the
+// canonical hash binds to them and an empty value would produce a signature over an
+// ambiguous selector.
+func validateSecretIdentifiers(secrets []SecretIdentifier) error {
+	for i, s := range secrets {
+		if s.Key == "" {
+			return fmt.Errorf("secrets[%d].key is required", i)
+		}
+		if s.Namespace == "" {
+			return fmt.Errorf("secrets[%d].namespace is required", i)
+		}
+	}
+	return nil
+}
+
 // Hash computes the canonical hash of the caller-provided request params and
-// logical relay response body. Attestation is intentionally excluded.
-func (r *CapabilityResponseResult) Hash(params CapabilityRequestParams) [32]byte {
+// logical relay response body. Attestation is intentionally excluded. Returns an
+// error if params fails Validate so a caller cannot accidentally produce a
+// signature over an unbinding payload.
+func (r *CapabilityResponseResult) Hash(params CapabilityRequestParams) ([32]byte, error) {
+	if err := params.Validate(); err != nil {
+		return [32]byte{}, fmt.Errorf("invalid capability request params: %w", err)
+	}
+
 	h := sha256.New()
 	h.Write([]byte(teeattestation.DomainSeparator))
 	h.Write([]byte("\nCapabilityResponseResult\n"))
@@ -115,7 +251,7 @@ func (r *CapabilityResponseResult) Hash(params CapabilityRequestParams) [32]byte
 
 	var result [32]byte
 	h.Sum(result[:0])
-	return result
+	return result, nil
 }
 
 // RelayResponseSignature is a single relay-DON node signature over a relay

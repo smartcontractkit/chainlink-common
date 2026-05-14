@@ -1,6 +1,10 @@
 package stellar
 
-import "context"
+import (
+	"context"
+
+	"github.com/stellar/go-stellar-sdk/xdr"
+)
 
 // Client wraps Stellar RPC calls via the type/chains/stellar domain types.
 // Both methods map 1:1 to the Stellar RPC API.
@@ -9,6 +13,9 @@ type Client interface {
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
+	// ReadContract simulates a read-only Soroban contract function call.
+	// Each element of Args is an XDR ScVal value.
+	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
@@ -39,6 +46,30 @@ type GetLedgerEntriesResponse struct {
 	LatestLedger uint32
 }
 
+// ReadContractRequest is the domain representation of a Soroban read-only call.
+// Use the proto helpers to construct XDR ScVal values conveniently.
+type ReadContractRequest struct {
+	// ContractID is the Stellar contract address in C… StrKey encoding.
+	ContractID string
+	// Function is the Soroban function name to call.
+	Function string
+	// Args holds one XDR ScVal per contract argument.
+	// An empty slice is valid for zero-argument functions.
+	Args []xdr.ScVal
+	// LedgerSequence is the ledger to simulate against; 0 means use the latest.
+	LedgerSequence uint32
+}
+
+// ReadContractResponse is the domain representation of a Soroban simulation result.
+type ReadContractResponse struct {
+	// Result is a serialized base64 string - return value of the Host Function call.
+	Result string
+	// LedgerSequence is the ledger that was used for the simulation.
+	LedgerSequence uint32
+	// Error is non-empty when the call failed.
+	Error string
+}
+
 // GetLatestLedgerResponse holds the current ledger state.
 type GetLatestLedgerResponse struct {
 	// Hash is the hex-encoded latest ledger hash.
@@ -53,4 +84,24 @@ type GetLatestLedgerResponse struct {
 	LedgerHeaderXDR string
 	// LedgerMetadataXDR is the base64-encoded LedgerCloseMetaV2 XDR for the latest ledger.
 	LedgerMetadataXDR string
+}
+
+// RMNSigner is a single signer entry in the RMN Remote contract config.
+type RMNSigner struct {
+	// NodeIndex is the index of the RMN node.
+	NodeIndex uint64
+	// OnchainPubKey is the hex-encoded 32-byte Ed25519 public key used for on-chain verification.
+	OnchainPubKey string
+}
+
+// RMNConfig holds the active configuration of the RMN Remote contract.
+type RMNConfig struct {
+	// Version is the config version number.
+	Version uint32
+	// FSign is the minimum number of valid signatures required.
+	FSign uint64
+	// RMNHomeConfigDigest is the hex-encoded 32-byte digest of the corresponding RMN Home config.
+	RMNHomeConfigDigest string
+	// Signers is the ordered list of RMN signers for this config.
+	Signers []RMNSigner
 }

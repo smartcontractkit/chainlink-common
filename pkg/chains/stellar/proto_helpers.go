@@ -6,6 +6,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/stellar/go-stellar-sdk/xdr"
+
+	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 )
 
@@ -30,10 +35,10 @@ func ConvertGetLedgerEntriesRequestToProto(req stellar.GetLedgerEntriesRequest) 
 // ConvertGetLedgerEntriesRequestFromProto converts a proto GetLedgerEntriesRequest to the domain type.
 func ConvertGetLedgerEntriesRequestFromProto(p *GetLedgerEntriesRequest) (stellar.GetLedgerEntriesRequest, error) {
 	if p == nil {
-		return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("get ledger entries request is nil")
+		return stellar.GetLedgerEntriesRequest{}, errors.New("get ledger entries request is nil")
 	}
 	if len(p.GetKeys()) == 0 {
-		return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("ledger entry keys are empty")
+		return stellar.GetLedgerEntriesRequest{}, errors.New("ledger entry keys are empty")
 	}
 	rawKeys := p.GetKeys()
 	keys := make([]string, len(rawKeys))
@@ -73,7 +78,7 @@ func ConvertLedgerEntryResultToProto(r stellar.LedgerEntryResult) (*LedgerEntryR
 // ConvertLedgerEntryResultFromProto converts a proto LedgerEntryResult to the domain type.
 func ConvertLedgerEntryResultFromProto(p *LedgerEntryResult) (stellar.LedgerEntryResult, error) {
 	if p == nil {
-		return stellar.LedgerEntryResult{}, fmt.Errorf("ledger entry result is nil")
+		return stellar.LedgerEntryResult{}, errors.New("ledger entry result is nil")
 	}
 	r := stellar.LedgerEntryResult{
 		KeyXDR:             base64.StdEncoding.EncodeToString(p.GetKeyXdr()),
@@ -91,17 +96,12 @@ func ConvertLedgerEntryResultFromProto(p *LedgerEntryResult) (stellar.LedgerEntr
 // ConvertGetLedgerEntriesResponseToProto converts a domain GetLedgerEntriesResponse to its proto representation.
 func ConvertGetLedgerEntriesResponseToProto(resp stellar.GetLedgerEntriesResponse) (*GetLedgerEntriesResponse, error) {
 	entries := make([]*LedgerEntryResult, 0, len(resp.Entries))
-	var errs []error
 	for i, e := range resp.Entries {
 		protoEntry, err := ConvertLedgerEntryResultToProto(e)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("entry[%d]: %w", i, err))
-			continue
+			return nil, fmt.Errorf("entry[%d]: %w", i, err)
 		}
 		entries = append(entries, protoEntry)
-	}
-	if len(errs) > 0 {
-		return nil, errors.Join(errs...)
 	}
 	return &GetLedgerEntriesResponse{
 		Entries:      entries,
@@ -112,20 +112,16 @@ func ConvertGetLedgerEntriesResponseToProto(resp stellar.GetLedgerEntriesRespons
 // ConvertGetLedgerEntriesResponseFromProto converts a proto GetLedgerEntriesResponse to the domain type.
 func ConvertGetLedgerEntriesResponseFromProto(p *GetLedgerEntriesResponse) (stellar.GetLedgerEntriesResponse, error) {
 	if p == nil {
-		return stellar.GetLedgerEntriesResponse{}, fmt.Errorf("get ledger entries response is nil")
+		return stellar.GetLedgerEntriesResponse{}, errors.New("get ledger entries response is nil")
 	}
-	entries := make([]stellar.LedgerEntryResult, 0, len(p.GetEntries()))
-	var errs []error
-	for i, pe := range p.GetEntries() {
+	pEntries := p.GetEntries()
+	entries := make([]stellar.LedgerEntryResult, 0, len(pEntries))
+	for i, pe := range pEntries {
 		e, err := ConvertLedgerEntryResultFromProto(pe)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("entry[%d]: %w", i, err))
-			continue
+			return stellar.GetLedgerEntriesResponse{}, fmt.Errorf("entry[%d]: %w", i, err)
 		}
 		entries = append(entries, e)
-	}
-	if len(errs) > 0 {
-		return stellar.GetLedgerEntriesResponse{}, errors.Join(errs...)
 	}
 	return stellar.GetLedgerEntriesResponse{
 		Entries:      entries,
@@ -161,7 +157,7 @@ func ConvertGetLatestLedgerResponseToProto(resp stellar.GetLatestLedgerResponse)
 // ConvertGetLatestLedgerResponseFromProto converts a proto GetLatestLedgerResponse to the domain type.
 func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stellar.GetLatestLedgerResponse, error) {
 	if p == nil {
-		return stellar.GetLatestLedgerResponse{}, fmt.Errorf("get latest ledger response is nil")
+		return stellar.GetLatestLedgerResponse{}, errors.New("get latest ledger response is nil")
 	}
 	return stellar.GetLatestLedgerResponse{
 		Hash:              hex.EncodeToString(p.GetHash()),
@@ -170,5 +166,59 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 		LedgerCloseTime:   p.GetLedgerCloseTime(),
 		LedgerHeaderXDR:   base64.StdEncoding.EncodeToString(p.GetLedgerHeaderXdr()),
 		LedgerMetadataXDR: base64.StdEncoding.EncodeToString(p.GetLedgerMetadataXdr()),
+	}, nil
+}
+
+// ConvertReadContractRequestToProto converts a domain ReadContractRequest to its
+// proto representation.
+func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadContractRequest, error) {
+	if req.ContractID == "" {
+		return nil, fmt.Errorf("contractID is required")
+	}
+	if req.Function == "" {
+		return nil, fmt.Errorf("function is required")
+	}
+	args := make([]*scval.ScVal, len(req.Args))
+	for i, sv := range req.Args {
+		psv, err := stellarcap.XdrScValToProto(sv)
+		if err != nil {
+			return nil, fmt.Errorf("args[%d]: %w", i, err)
+		}
+		args[i] = psv
+	}
+	return &ReadContractRequest{
+		ContractId:     req.ContractID,
+		Function:       req.Function,
+		Args:           args,
+		LedgerSequence: req.LedgerSequence,
+	}, nil
+}
+
+// ConvertReadContractRequestFromProto converts a proto ReadContractRequest to the
+// domain type.
+func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadContractRequest, error) {
+	if p == nil {
+		return stellar.ReadContractRequest{}, fmt.Errorf("readContractRequest is nil")
+	}
+	if p.GetContractId() == "" {
+		return stellar.ReadContractRequest{}, fmt.Errorf("contractID is required")
+	}
+	if p.GetFunction() == "" {
+		return stellar.ReadContractRequest{}, fmt.Errorf("function is required")
+	}
+	pArgs := p.GetArgs()
+	args := make([]xdr.ScVal, len(pArgs))
+	for i, psv := range pArgs {
+		sv, err := stellarcap.ProtoScValToXDR(psv)
+		if err != nil {
+			return stellar.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
+		}
+		args[i] = sv
+	}
+	return stellar.ReadContractRequest{
+		ContractID:     p.GetContractId(),
+		Function:       p.GetFunction(),
+		Args:           args,
+		LedgerSequence: p.GetLedgerSequence(),
 	}, nil
 }

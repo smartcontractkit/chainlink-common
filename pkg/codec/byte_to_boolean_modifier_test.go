@@ -11,11 +11,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// ptrUint8 is a helper that returns a pointer to a uint8.
-func ptrUint8(u uint8) *uint8 {
-	return &u
-}
-
 // deepEqualPtrTestStruct compares two values of type ptrTestStruct.
 func deepEqualPtrTestStruct(a any, b any) bool {
 	return reflect.DeepEqual(a, b)
@@ -189,7 +184,7 @@ func TestBoolToByteModifier(t *testing.T) {
 
 		expected := ptrTestStruct{
 			A: "pointer",
-			B: ptrUint8(1),
+			B: new(uint8(1)),
 		}
 		assert.True(t, deepEqualPtrTestStruct(onChainVal, expected))
 

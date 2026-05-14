@@ -207,7 +207,7 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 			return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
 		}
 
-		if prevLocation.Type.Kind() == reflect.Ptr {
+		if prevLocation.Type.Kind() == reflect.Pointer {
 			if prevLocation.Type.Elem().Kind() == reflect.Slice {
 				prevIsSlice = true
 			}

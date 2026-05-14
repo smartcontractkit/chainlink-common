@@ -3,6 +3,8 @@ package diskmonitor
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -19,6 +21,26 @@ func TestNewDiskMonitor(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, dm)
 	assert.Equal(t, time.Second, dm.tickInterval)
+}
+
+func TestDiskMonitor_emitDirSizeMetric_realDir(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(root, "a.txt"), []byte("hello"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "b.txt"), []byte("xy"), 0o644))
+	sub := filepath.Join(root, "sub")
+	require.NoError(t, os.Mkdir(sub, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(sub, "c.txt"), []byte("z"), 0o644))
+
+	dm := &DiskMonitor{
+		sizeOfDir: func() (int64, error) {
+			return totalRegularFileSizeBytes(root)
+		},
+		gauge: &mockGauge{},
+		lggr:  logger.Test(t),
+	}
+
+	dm.emitDirSizeMetric(t.Context())
+	assert.Equal(t, int64(8), dm.gauge.(*mockGauge).gotValue)
 }
 
 type mockGauge struct {

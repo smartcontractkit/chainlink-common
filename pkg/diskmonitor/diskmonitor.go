@@ -18,6 +18,23 @@ type int64Gauge interface {
 	Record(ctx context.Context, value int64, options ...metric.RecordOption)
 }
 
+// totalRegularFileSizeBytes sums on-disk file sizes for every non-directory under dirPath (recursive), using filepath.WalkDir.
+func totalRegularFileSizeBytes(dirPath string) (int64, error) {
+	var totalSize int64
+	walkErr := filepath.WalkDir(dirPath, func(_ string, d fs.DirEntry, ierr error) error {
+		if ierr != nil || d.IsDir() {
+			return nil
+		}
+		fi, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		totalSize += fi.Size()
+		return nil
+	})
+	return totalSize, walkErr
+}
+
 // DiskMonitor measures dirPath on a fixed interval and records total file bytes to gaugeName.
 type DiskMonitor struct {
 	services.Service
@@ -40,19 +57,7 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 		gauge:        g,
 		tickInterval: tickInterval,
 		sizeOfDir: func() (int64, error) {
-			var totalSize int64
-			walkErr := filepath.WalkDir(dirPath, func(_ string, d fs.DirEntry, ierr error) error {
-				if ierr != nil || d.IsDir() {
-					return nil
-				}
-				fi, err := d.Info()
-				if err != nil {
-					return nil
-				}
-				totalSize += fi.Size()
-				return nil
-			})
-			return totalSize, walkErr
+			return totalRegularFileSizeBytes(dirPath)
 		},
 	}
 

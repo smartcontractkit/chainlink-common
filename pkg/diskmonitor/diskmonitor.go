@@ -3,7 +3,7 @@ package diskmonitor
 import (
 	"context"
 	"fmt"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"time"
 
@@ -41,10 +41,15 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 		tickInterval: tickInterval,
 		sizeOfDir: func() (int64, error) {
 			var totalSize int64
-			walkErr := filepath.Walk(dirPath, func(_ string, info os.FileInfo, ierr error) error {
-				if ierr == nil && !info.IsDir() {
-					totalSize += info.Size()
+			walkErr := filepath.WalkDir(dirPath, func(_ string, d fs.DirEntry, ierr error) error {
+				if ierr != nil || d.IsDir() {
+					return nil
 				}
+				fi, err := d.Info()
+				if err != nil {
+					return nil
+				}
+				totalSize += fi.Size()
 				return nil
 			})
 			return totalSize, walkErr

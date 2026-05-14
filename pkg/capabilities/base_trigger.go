@@ -312,7 +312,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	b.lggr.Infow("received event from capability", "triggerID", triggerID, "eventID", te.ID)
 	orgID := contexts.CREValue(ctx).Org
 	if !b.retransmitAllowedForOrg(b.ctx, orgID) {
-		b.lggr.Infow("base trigger retransmit not active")
+		b.lggr.Infow("base trigger retransmit disabled for org", "orgID", orgID)
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
 

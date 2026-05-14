@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -754,7 +753,7 @@ func (d *DurableEmitter) flushBatchRaw(ctx context.Context, batch []publishWork)
 // standard gRPC client. Used as fallback when rawConn is not available.
 func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWork) error {
 	events := make([]*chipingress.CloudEventPb, len(batch))
-	mapEventIDtoTableId := make(map[string]int64, len(batch))
+	eventIDtoQueueID := make(map[string]int64, len(batch))
 	for i, w := range batch {
 		if w.event != nil {
 			events[i] = w.event
@@ -765,7 +764,7 @@ func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWor
 			}
 			events[i] = ev
 		}
-		mapEventIDtoTableId[events[i].Id] = w.id
+		eventIDtoQueueID[events[i].Id] = w.id
 	}
 
 	batchPb := &chipingress.CloudEventBatch{
@@ -784,11 +783,8 @@ func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWor
 		if result.Error == nil {
 			continue
 		}
-		msg := result.Error.GetMessage()
-		if len(strings.TrimSpace(msg)) == 0 {
-			continue
-		}
-		id, exists := mapEventIDtoTableId[result.EventId]
+		msg := fmt.Sprintf("%s (code %d) - %s", result.Error.Message, result.Error.Code, result.Error.Details)
+		id, exists := eventIDtoQueueID[result.EventId]
 		if !exists {
 			d.log.Warnw("PublishBatch returned invalid event", "event_id", result.EventId)
 			continue

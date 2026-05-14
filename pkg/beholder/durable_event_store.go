@@ -65,8 +65,7 @@ type DurableEventStore interface {
 	DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error)
 	// MarkFailedBatch records a delivery failure for a batch of events, annotating
 	// each row with the provided errorMessage. Failed events remain pending so the
-	// retransmit loop can attempt redelivery. Implementations that do not support
-	// per-row failure tracking may treat this as a no-op and return nil.
+	// retransmit loop can attempt redelivery.
 	MarkFailedBatch(ctx context.Context, errorMessage string, ids []int64) error
 }
 

@@ -24,13 +24,15 @@ const (
 )
 
 type PendingEventProto struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TriggerId     string                 `protobuf:"bytes,1,opt,name=trigger_id,json=triggerId,proto3" json:"trigger_id,omitempty"`
-	EventId       string                 `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
-	Payload       []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
-	FirstAt       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=first_at,json=firstAt,proto3" json:"first_at,omitempty"`
-	LastSentAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_sent_at,json=lastSentAt,proto3" json:"last_sent_at,omitempty"`
-	Attempts      int32                  `protobuf:"varint,6,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	TriggerId  string                 `protobuf:"bytes,1,opt,name=trigger_id,json=triggerId,proto3" json:"trigger_id,omitempty"`
+	EventId    string                 `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	Payload    []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	FirstAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=first_at,json=firstAt,proto3" json:"first_at,omitempty"`
+	LastSentAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_sent_at,json=lastSentAt,proto3" json:"last_sent_at,omitempty"`
+	Attempts   int32                  `protobuf:"varint,6,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	// CRE organization id for the workflow that registered the trigger; used for org-scoped retransmit policy.
+	OrgId         string `protobuf:"bytes,7,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,6 +107,13 @@ func (x *PendingEventProto) GetAttempts() int32 {
 		return x.Attempts
 	}
 	return 0
+}
+
+func (x *PendingEventProto) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
+	}
+	return ""
 }
 
 type InsertEventRequest struct {
@@ -363,7 +372,7 @@ var File_event_store_proto protoreflect.FileDescriptor
 
 const file_event_store_proto_rawDesc = "" +
 	"\n" +
-	"\x11event_store.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf8\x01\n" +
+	"\x11event_store.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\x02\n" +
 	"\x11PendingEventProto\x12\x1d\n" +
 	"\n" +
 	"trigger_id\x18\x01 \x01(\tR\ttriggerId\x12\x19\n" +
@@ -372,7 +381,8 @@ const file_event_store_proto_rawDesc = "" +
 	"\bfirst_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\afirstAt\x12<\n" +
 	"\flast_sent_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"lastSentAt\x12\x1a\n" +
-	"\battempts\x18\x06 \x01(\x05R\battempts\"C\n" +
+	"\battempts\x18\x06 \x01(\x05R\battempts\x12\x15\n" +
+	"\x06org_id\x18\a \x01(\tR\x05orgId\"C\n" +
 	"\x12InsertEventRequest\x12-\n" +
 	"\x05event\x18\x01 \x01(\v2\x17.loop.PendingEventProtoR\x05event\"\xab\x01\n" +
 	"\x15UpdateDeliveryRequest\x12\x1d\n" +

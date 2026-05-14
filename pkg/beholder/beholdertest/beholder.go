@@ -8,13 +8,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	otellognoop "go.opentelemetry.io/otel/log/noop"
-	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
-	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 const (
@@ -120,39 +118,16 @@ messageLoop:
 func NewObserver(t *testing.T) Observer {
 	t.Helper()
 
-	cfg := beholder.DefaultConfig()
-
-	// Logger
-	loggerProvider := otellognoop.NewLoggerProvider()
-	logger := loggerProvider.Logger(packageNameBeholder)
-
-	// Tracer
-	tracerProvider := oteltracenoop.NewTracerProvider()
-	tracer := tracerProvider.Tracer(packageNameBeholder)
-
-	// Meter
-	meterProvider := otelmetricnoop.NewMeterProvider()
-	meter := meterProvider.Meter(packageNameBeholder)
-
-	// MessageEmitter
 	messageEmitter := &assertMessageEmitter{t: t}
 
-	client := &beholder.Client{
-		Config:                cfg,
-		Logger:                logger,
-		Tracer:                tracer,
-		Meter:                 meter,
-		Emitter:               messageEmitter,
-		LoggerProvider:        loggerProvider,
-		TracerProvider:        tracerProvider,
-		MeterProvider:         meterProvider,
-		MessageLoggerProvider: loggerProvider,
-		OnClose:               func() error { return nil },
-	}
+	client := beholder.NewNoopClient(logger.Test(t))
+	client.Emitter = messageEmitter
+	require.NoError(t, client.Start(t.Context()))
 
 	//reset NewObserver state after the test
 	prevClient := beholder.GetClient()
 	t.Cleanup(func() {
+		require.NoError(t, client.Close())
 		beholder.SetClient(prevClient)
 		t.Setenv(packageNameBeholder, packageNameBeholder)
 	})

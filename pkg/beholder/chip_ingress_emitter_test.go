@@ -10,18 +10,19 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestNewChipIngressEmitter(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
-		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Test(t))
 		require.NoError(t, err)
 		assert.NotNil(t, emitter)
 	})
 
 	t.Run("returns error when client is nil", func(t *testing.T) {
-		emitter, err := beholder.NewChipIngressEmitter(nil)
+		emitter, err := beholder.NewChipIngressEmitter(nil, logger.Test(t))
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
 	})
@@ -44,37 +45,44 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock.
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, nil)
+		clientMock.On("Close").Return(nil)
 
-		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Test(t))
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity, attributes)
 		require.NoError(t, err)
 
+		// Close drains in-flight goroutines so mock expectations are met.
+		require.NoError(t, emitter.Close())
 		clientMock.AssertExpectations(t)
 	})
 
 	t.Run("returns error when ExtractSourceAndType fails", func(t *testing.T) {
-		emitter, err := beholder.NewChipIngressEmitter(mocks.NewClient(t))
+		emitter, err := beholder.NewChipIngressEmitter(mocks.NewClient(t), logger.Test(t))
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, "bad_key", domain)
 		assert.Error(t, err)
 	})
 
-	t.Run("returns error when Publish fails", func(t *testing.T) {
+	t.Run("logs error when Publish fails", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, assert.AnError)
+		clientMock.On("Close").Return(nil)
 
-		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock, logger.Test(t))
 		require.NoError(t, err)
 
+		// Emit returns nil because the error is logged asynchronously.
 		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
-		require.Error(t, err)
+		require.NoError(t, err)
 
+		// Close drains in-flight goroutines so mock expectations are met.
+		require.NoError(t, emitter.Close())
 		clientMock.AssertExpectations(t)
 	})
 }

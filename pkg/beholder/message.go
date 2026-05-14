@@ -84,6 +84,10 @@ func newAttributes(attrKVs ...any) Attributes {
 		case Attributes:
 			maps.Copy(a, t)
 			i++
+		case []any:
+			// Treat a []any element as if its contents were passed directly.
+			maps.Copy(a, newAttributes(t...))
+			i++
 		case string:
 			if i+1 >= l {
 				break

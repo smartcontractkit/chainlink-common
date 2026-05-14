@@ -809,12 +809,12 @@ func (d *DurableEmitter) reportPartialFailures(ctx context.Context, errGroups ma
 
 	for msg, ids := range errGroups {
 		if err := d.store.MarkFailedBatch(ctx, msg, ids); err != nil {
-			errList = append(errList, err)
+			errList = append(errList, fmt.Errorf("mark failed batch for message %q ids %v: %w", msg, ids, err))
 		}
 	}
 
 	if len(errList) > 0 {
-		return fmt.Errorf("multiple errors: %v", errList)
+		return errors.Join(errList...)
 	}
 	return nil
 }

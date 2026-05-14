@@ -18,7 +18,7 @@ type int64Gauge interface {
 	Record(ctx context.Context, value int64, options ...metric.RecordOption)
 }
 
-// DiskMonitor measures dirPath on a fixed interval and records total file bytes to [GaugeVaultDiskUsageBytes].
+// DiskMonitor measures dirPath on a fixed interval and records total file bytes to gaugeName.
 type DiskMonitor struct {
 	services.Service
 
@@ -71,10 +71,10 @@ func (dm *DiskMonitor) start(ctx context.Context) error {
 func (dm *DiskMonitor) emitDirSizeMetric(ctx context.Context) {
 	totalSize, err := dm.sizeOfDir()
 	if err != nil {
-		dm.lggr.Errorw("Failed to measure vault directory size", "error", err)
+		dm.lggr.Errorw("Failed to measure directory size", "error", err)
 		return
 	}
 
-	dm.lggr.Debugw("Emitting vault directory size metric", "sizeBytes", totalSize)
+	dm.lggr.Debugw("Emitting directory size metric", "sizeBytes", totalSize)
 	dm.gauge.Record(ctx, totalSize)
 }

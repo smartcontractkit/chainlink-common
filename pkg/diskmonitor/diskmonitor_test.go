@@ -43,7 +43,7 @@ func TestDiskMonitor_emitDirSizeMetric(t *testing.T) {
 	dm.emitDirSizeMetric(t.Context())
 	assert.Equal(t, int64(42), dm.gauge.(*mockGauge).gotValue)
 
-	assert.Len(t, observed.FilterMessage("Emitting vault directory size metric").All(), 1)
+	assert.Len(t, observed.FilterMessage("Emitting directory size metric").All(), 1)
 }
 
 func TestDiskMonitor_emitDirSizeMetric_error(t *testing.T) {
@@ -60,5 +60,5 @@ func TestDiskMonitor_emitDirSizeMetric_error(t *testing.T) {
 	dm.emitDirSizeMetric(t.Context())
 	assert.Equal(t, int64(0), dm.gauge.(*mockGauge).gotValue)
 
-	assert.Len(t, observed.FilterMessage("Failed to measure vault directory size").All(), 1)
+	assert.Len(t, observed.FilterMessage("Failed to measure directory size").All(), 1)
 }

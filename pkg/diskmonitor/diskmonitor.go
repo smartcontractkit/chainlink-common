@@ -39,11 +39,6 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 	dm := &DiskMonitor{
 		gauge:        g,
 		tickInterval: tickInterval,
-		lggr: logger.With(
-			logger.Named(lggr, "DiskMonitor"),
-			"dirPath", dirPath,
-			"gaugeName", gaugeName,
-		),
 		sizeOfDir: func() (int64, error) {
 			var totalSize int64
 			walkErr := filepath.Walk(dirPath, func(_ string, info os.FileInfo, ierr error) error {
@@ -59,7 +54,11 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 	dm.Service, dm.eng = services.Config{
 		Name:  "DiskMonitor",
 		Start: dm.start,
-	}.NewServiceEngine(lggr)
+	}.NewServiceEngine(logger.With(
+			"dirPath", dirPath,
+			"gaugeName", gaugeName,
+		))
+	dm.lggr = dm.eng.SugaredLogger
 	return dm, nil
 }
 

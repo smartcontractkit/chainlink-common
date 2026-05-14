@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778759867500,
+  "lastUpdate": 1778770574329,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -46860,6 +46860,66 @@ window.BENCHMARK_DATA = {
             "value": 143424,
             "unit": "ns/op",
             "extra": "8451 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "maciej.wisniewski@smartcontract.com",
+            "name": "mchain0",
+            "username": "mchain0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "29b2f52c4fcfb6ffce36ed107e9e5bfdd1cc3892",
+          "message": "cre-4340: common diskmonitor (#2055)\n\n* cre-4340: common diskmonitor\n\n* cre-4340: minor tests improvement\n\n* cre-4340: logger improvement\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* cre-4340: naming and logs cleanup\n\n* cre-4340: minor improvement\n\n* cre-4340: walkdir\n\n* cre-4340: refactor\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2026-05-14T14:44:56Z",
+          "tree_id": "7f7fe22e241a0ff7db654dfd82baee8dc63704da",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/29b2f52c4fcfb6ffce36ed107e9e5bfdd1cc3892"
+        },
+        "date": 1778770571964,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3376200 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 102077,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.3,
+            "unit": "ns/op",
+            "extra": "2975547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 103272,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26652,
+            "unit": "ns/op",
+            "extra": "44960 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 154180,
+            "unit": "ns/op",
+            "extra": "7768 times\n4 procs"
           }
         ]
       }

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
@@ -27,7 +28,7 @@ func TestValidateBaseTriggerRetryInterval(t *testing.T) {
 	t.Run("positive interval succeeds even when retransmit disabled", func(t *testing.T) {
 		getter, err := settings.NewJSONGetter([]byte(`{
 			"global": {
-				"BaseTriggerRetransmitEnabled": "false",
+				"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 				"BaseTriggerRetryInterval": "7s"
 			}
 		}`))
@@ -38,7 +39,7 @@ func TestValidateBaseTriggerRetryInterval(t *testing.T) {
 	t.Run("zero interval errors", func(t *testing.T) {
 		getter, err := settings.NewJSONGetter([]byte(`{
 			"global": {
-				"BaseTriggerRetransmitEnabled": "true",
+				"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 				"BaseTriggerRetryInterval": "0s"
 			}
 		}`))
@@ -80,11 +81,12 @@ func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	ctx := t.Context()
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "true",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "20ms"
 		}
 	}`))
@@ -107,7 +109,7 @@ func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "false",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 			"BaseTriggerRetryInterval": "20ms"
 		}
 	}`))
@@ -326,11 +328,12 @@ func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	ctx := t.Context()
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "true",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "20ms",
 			"BaseTriggerMaxRetries": "3"
 		}
@@ -374,11 +377,12 @@ func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	ctx := t.Context()
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "true",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "20ms",
 			"BaseTriggerMaxRetries": "100"
 		}
@@ -700,7 +704,7 @@ func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "true",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "50ms",
 			"BaseTriggerMaxRetries": "1000"
 		}
@@ -727,6 +731,7 @@ func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 			EventId:   eid,
 			Payload:   []byte("x"),
 			FirstAt:   time.Now().Add(-time.Minute),
+			OrgID:     "testorg",
 		}
 		reg.pending[eid] = rec
 	}
@@ -780,7 +785,7 @@ func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "false",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 			"BaseTriggerRetryInterval": "30s",
 			"BaseTriggerPruneAge": "1h"
 		}
@@ -819,7 +824,7 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "false",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 			"BaseTriggerRetryInterval": "30s",
 			"BaseTriggerPruneAge": "1h"
 		}
@@ -846,19 +851,9 @@ func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	ctx := t.Context()
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
 	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
-		"global": {
-			"BaseTriggerRetransmitEnabled": "true",
-			"BaseTriggerRetryInterval": "50ms",
-			"BaseTriggerMaxRetries": "5"
-		}
-	}`))
-
-	store := NewMemEventStore()
-
-	// Build a valid protobuf payload for the events.
 	msg := &wrapperspb.BytesValue{Value: []byte("payload")}
 	anyMsg, err := anypb.New(msg)
 	require.NoError(t, err)
@@ -871,6 +866,7 @@ func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 			AnyTypeURL: anyMsg.GetTypeUrl(),
 			Payload:    anyMsg.GetValue(),
 			FirstAt:    time.Now().Add(-time.Minute),
+			OrgID:      "testorg",
 		}))
 	}
 
@@ -1147,7 +1143,7 @@ func TestBaseTrigger_ScanPending_TriggerIDTiebreaker(t *testing.T) {
 	getter := &atomicJSONGetter{}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
-			"BaseTriggerRetransmitEnabled": "true",
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval":     "1ms",
 			"BaseTriggerMaxSendsPerTick":   "1",
 			"BaseTriggerMaxRetries":        "1000"
@@ -1168,8 +1164,8 @@ func TestBaseTrigger_ScanPending_TriggerIDTiebreaker(t *testing.T) {
 	// Same EventId on both triggers — only differentiator in the sort is TriggerId.
 	stale := time.Now().Add(-time.Minute)
 	b.mu.Lock()
-	b.byTrigger["trigA"].pending["e1"] = &PendingEvent{TriggerId: "trigA", EventId: "e1", Attempts: 2, FirstAt: stale, LastSentAt: stale, Payload: []byte{}}
-	b.byTrigger["trigB"].pending["e1"] = &PendingEvent{TriggerId: "trigB", EventId: "e1", Attempts: 2, FirstAt: stale, LastSentAt: stale, Payload: []byte{}}
+	b.byTrigger["trigA"].pending["e1"] = &PendingEvent{TriggerId: "trigA", EventId: "e1", Attempts: 2, FirstAt: stale, LastSentAt: stale, Payload: []byte{}, OrgID: "testorg"}
+	b.byTrigger["trigB"].pending["e1"] = &PendingEvent{TriggerId: "trigB", EventId: "e1", Attempts: 2, FirstAt: stale, LastSentAt: stale, Payload: []byte{}, OrgID: "testorg"}
 	b.mu.Unlock()
 
 	// Cap=1: only the event from the alphabetically first trigger is sent.

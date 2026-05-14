@@ -98,7 +98,7 @@ flowchart
             PerWorkflow.LogTrigger.FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
         end
         subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
-            BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
+            PerOrg.BaseTriggerRetransmitEnabled[/PerOrg.BaseTriggerRetransmitEnabled\]:::gate
             BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
             BaseTriggerMaxRetries{{BaseTriggerMaxRetries}}:::bound
             BaseTriggerPruneAge>BaseTriggerPruneAge]:::time

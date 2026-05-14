@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
@@ -48,6 +49,8 @@ type PendingEvent struct {
 	FirstAt    time.Time
 	LastSentAt time.Time
 	Attempts   int
+	// OrgID is the CRE organization for the workflow that registered the trigger; used for org-scoped retransmit policy.
+	OrgID string
 }
 
 type EventStore interface {
@@ -84,7 +87,7 @@ type BaseTriggerCapability[T proto.Message] struct {
 	newMsg       func() T // factory to allocate a new T for unmarshalling
 	lggr         logger.Logger
 	capabilityId string
-	// settings provides live CRE globals (BaseTriggerRetransmitEnabled, BaseTriggerRetryInterval).
+	// settings provides live CRE settings (PerOrg.BaseTriggerRetransmitEnabled, BaseTriggerRetryInterval, ...).
 	// When nil, tRetransmit > 0 enables persistence/retry with fixed spacing.
 	settings settings.Getter
 
@@ -143,14 +146,19 @@ func (b *BaseTriggerCapability[T]) getOrCreateRegLocked(triggerID string) *trigg
 	return reg
 }
 
-// retransmitAllowed is true when events should be persisted and eligible for resend / ACK tracking.
-func (b *BaseTriggerCapability[T]) retransmitAllowed(ctx context.Context) bool {
+// retransmitAllowedForOrg is true when events for this CRE org should be persisted and eligible for resend / ACK tracking.
+// When CRE settings are configured, an empty org ID disables retransmit (secure default).
+func (b *BaseTriggerCapability[T]) retransmitAllowedForOrg(parent context.Context, orgID string) bool {
 	if b.settings == nil {
 		return b.tRetransmit > 0
 	}
-	enabled, err := cresettings.Default.BaseTriggerRetransmitEnabled.GetOrDefault(ctx, b.settings)
+	if orgID == "" {
+		return false
+	}
+	ctx := contexts.WithCRE(parent, contexts.CRE{Org: orgID})
+	enabled, err := cresettings.Default.PerOrg.BaseTriggerRetransmitEnabled.GetOrDefault(ctx, b.settings)
 	if err != nil {
-		b.lggr.Warnw("CRE settings read failed for BaseTriggerRetransmitEnabled; treating retransmit as disabled", "err", err)
+		b.lggr.Warnw("CRE settings read failed for PerOrg.BaseTriggerRetransmitEnabled; treating retransmit as disabled", "err", err)
 		return false
 	}
 	return enabled
@@ -302,7 +310,8 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 	triggerID string,
 ) error {
 	b.lggr.Infow("received event from capability", "triggerID", triggerID, "eventID", te.ID)
-	if !b.retransmitAllowed(ctx) {
+	orgID := contexts.CREValue(ctx).Org
+	if !b.retransmitAllowedForOrg(b.ctx, orgID) {
 		b.lggr.Infow("base trigger retransmit not active")
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
@@ -340,6 +349,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 		AnyTypeURL: te.Payload.GetTypeUrl(),
 		Payload:    te.Payload.GetValue(),
 		FirstAt:    time.Now(),
+		OrgID:      orgID,
 	}
 
 	if err := b.store.Insert(ctx, rec); err != nil {
@@ -555,7 +565,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	ctx := b.ctx
 
 	interval := b.retryInterval(ctx)
-	if !b.retransmitAllowed(ctx) || interval <= 0 {
+	if interval <= 0 {
 		return
 	}
 
@@ -651,11 +661,15 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 	interval time.Duration,
 	toResend *[]PendingEvent,
 ) {
+	if !b.retransmitAllowedForOrg(b.ctx, rec.OrgID) {
+		return
+	}
 	if rec.LastSentAt.IsZero() || now.Sub(rec.LastSentAt) >= interval {
 		*toResend = append(*toResend, PendingEvent{
 			TriggerId: rec.TriggerId,
 			EventId:   rec.EventId,
 			Attempts:  rec.Attempts,
+			OrgID:     rec.OrgID,
 		})
 	}
 }
@@ -756,9 +770,6 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 // It updates Attempts and LastSentAt on every attempt locally. Success is determined
 // later by an AckEvent call.
 func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
-	if !b.retransmitAllowed(b.ctx) {
-		return
-	}
 	if b.retryInterval(b.ctx) <= 0 {
 		return
 	}
@@ -772,6 +783,11 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	eventsForTrigger := reg.pending
 	rec, ok := eventsForTrigger[event.EventId]
 	if !ok || rec == nil {
+		b.mu.Unlock()
+		return
+	}
+
+	if !b.retransmitAllowedForOrg(b.ctx, rec.OrgID) {
 		b.mu.Unlock()
 		return
 	}

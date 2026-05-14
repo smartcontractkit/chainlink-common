@@ -12,7 +12,6 @@
 	"GatewayConfidentialRelayGlobalRate": "50rps:10",
 	"GatewayConfidentialRelayPerNodeRate": "10rps:10",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
-	"BaseTriggerRetransmitEnabled": "false",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",
 	"BaseTriggerPruneAge": "24h0m0s",
@@ -35,6 +34,7 @@
 	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
 	"PerOrg": {
+		"BaseTriggerRetransmitEnabled": "false",
 		"WorkflowExecutionConcurrencyLimit": "100",
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},

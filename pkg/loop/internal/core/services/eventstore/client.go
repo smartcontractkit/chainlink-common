@@ -29,6 +29,7 @@ func (c *Client) Insert(ctx context.Context, rec capabilities.PendingEvent) erro
 		Payload:   rec.Payload,
 		FirstAt:   timestamppb.New(rec.FirstAt),
 		Attempts:  int32(rec.Attempts),
+		OrgId:     rec.OrgID,
 	}
 	if !rec.LastSentAt.IsZero() {
 		ev.LastSentAt = timestamppb.New(rec.LastSentAt)
@@ -59,6 +60,7 @@ func (c *Client) List(ctx context.Context) ([]capabilities.PendingEvent, error) 
 			EventId:   ev.GetEventId(),
 			Payload:   ev.GetPayload(),
 			Attempts:  int(ev.GetAttempts()),
+			OrgID:     ev.GetOrgId(),
 		}
 		if t := ev.GetFirstAt(); t != nil {
 			rec.FirstAt = t.AsTime()

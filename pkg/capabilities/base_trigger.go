@@ -315,6 +315,7 @@ func (b *BaseTriggerCapability[T]) DeliverEvent(
 		b.lggr.Infow("base trigger retransmit disabled for org", "orgID", orgID)
 		return b.sendToInbox(triggerID, te.ID, te.Payload.GetValue())
 	}
+	b.lggr.Infow("base trigger retransmit enabled for org", "orgID", orgID)
 
 	// Check if this event was already ACKed or is already pending.
 	// Pre-ACK: other capability DON nodes deliver the event faster,

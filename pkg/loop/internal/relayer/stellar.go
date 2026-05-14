@@ -61,11 +61,11 @@ func (sc *StellarClient) ReadContract(ctx context.Context, req stellar.ReadContr
 	if err != nil {
 		return stellar.ReadContractResponse{}, net.WrapRPCErr(err)
 	}
-	resp, err := stelpb.ConvertReadContractResponseFromProto(pResp)
-	if err != nil {
-		return stellar.ReadContractResponse{}, fmt.Errorf("invalid ReadContract response: %w", err)
-	}
-	return resp, nil
+	return stellar.ReadContractResponse{
+		Result:         pResp.Result,
+		LedgerSequence: pResp.LedgerSequence,
+		Error:          pResp.Error,
+	}, nil
 }
 
 // stellarServer wraps types.StellarService and exposes it as a stelpb.StellarServer gRPC endpoint.
@@ -120,9 +120,9 @@ func (s *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContra
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	pResp, err := stelpb.ConvertReadContractResponseToProto(dResp)
-	if err != nil {
-		return nil, fmt.Errorf("invalid ReadContract response: %w", err)
-	}
-	return pResp, nil
+	return &stelpb.ReadContractResponse{
+		Result:         dResp.Result,
+		LedgerSequence: dResp.LedgerSequence,
+		Error:          dResp.Error,
+	}, nil
 }

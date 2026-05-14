@@ -62,8 +62,8 @@ type ReadContractRequest struct {
 
 // ReadContractResponse is the domain representation of a Soroban simulation result.
 type ReadContractResponse struct {
-	// Result is the XDR ScVal returned by the contract (nil when Error is non-empty).
-	Result *xdr.ScVal
+	// Result is a serialized base64 string - return value of the Host Function call.
+	Result string
 	// LedgerSequence is the ledger that was used for the simulation.
 	LedgerSequence uint32
 	// Error is non-empty when the call failed.
@@ -84,4 +84,24 @@ type GetLatestLedgerResponse struct {
 	LedgerHeaderXDR string
 	// LedgerMetadataXDR is the base64-encoded LedgerCloseMetaV2 XDR for the latest ledger.
 	LedgerMetadataXDR string
+}
+
+// RMNSigner is a single signer entry in the RMN Remote contract config.
+type RMNSigner struct {
+	// NodeIndex is the index of the RMN node.
+	NodeIndex uint64
+	// OnchainPubKey is the hex-encoded 32-byte Ed25519 public key used for on-chain verification.
+	OnchainPubKey string
+}
+
+// RMNConfig holds the active configuration of the RMN Remote contract.
+type RMNConfig struct {
+	// Version is the config version number.
+	Version uint32
+	// FSign is the minimum number of valid signatures required.
+	FSign uint64
+	// RMNHomeConfigDigest is the hex-encoded 32-byte digest of the corresponding RMN Home config.
+	RMNHomeConfigDigest string
+	// Signers is the ordered list of RMN signers for this config.
+	Signers []RMNSigner
 }

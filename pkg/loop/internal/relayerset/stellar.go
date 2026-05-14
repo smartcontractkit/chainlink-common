@@ -90,11 +90,12 @@ func (ss *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContr
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	pResp, err := stelpb.ConvertReadContractResponseToProto(dResp)
-	if err != nil {
-		return nil, fmt.Errorf("invalid ReadContract response: %w", err)
-	}
-	return pResp, nil
+
+	return &stelpb.ReadContractResponse{
+		Result:         dResp.Result,
+		LedgerSequence: dResp.LedgerSequence,
+		Error:          dResp.Error,
+	}, nil
 }
 
 // getStellarService extracts the RelayID from context metadata and returns the StellarService

@@ -10,12 +10,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/stellar/go-stellar-sdk/xdr"
+
 	stelpb "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	stellartypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
-	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
 func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
@@ -144,6 +145,8 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 
 		u32 := xdr.Uint32(42)
 		resultVal := xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u32}
+		resultB64, err := xdr.MarshalBase64(resultVal)
+		require.NoError(t, err)
 
 		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
 			require.Equal(t, "CABC123", req.ContractID)
@@ -154,7 +157,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			require.NotNil(t, req.Args[0].Sym)
 			require.Equal(t, xdr.ScSymbol("transfer"), *req.Args[0].Sym)
 			return stellartypes.ReadContractResponse{
-				Result:         &resultVal,
+				Result:         resultB64,
 				LedgerSequence: 101,
 			}, nil
 		}
@@ -168,10 +171,13 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, uint32(101), resp.LedgerSequence)
 		require.Empty(t, resp.Error)
-		require.NotNil(t, resp.Result)
-		require.Equal(t, xdr.ScValTypeScvU32, resp.Result.Type)
-		require.NotNil(t, resp.Result.U32)
-		require.Equal(t, xdr.Uint32(42), *resp.Result.U32)
+		require.Equal(t, resultB64, resp.Result)
+
+		var gotResult xdr.ScVal
+		require.NoError(t, xdr.SafeUnmarshalBase64(resp.Result, &gotResult))
+		require.Equal(t, xdr.ScValTypeScvU32, gotResult.Type)
+		require.NotNil(t, gotResult.U32)
+		require.Equal(t, xdr.Uint32(42), *gotResult.U32)
 	})
 
 	t.Run("ReadContract_noArgs_noResult", func(t *testing.T) {
@@ -189,7 +195,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, "contract error: not found", resp.Error)
-		require.Nil(t, resp.Result)
+		require.Empty(t, resp.Result)
 		require.Equal(t, uint32(200), resp.LedgerSequence)
 	})
 }

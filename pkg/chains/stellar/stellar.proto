@@ -23,7 +23,7 @@ message ReadContractRequest {
 
 // ReadContractResponse carries the return value of the simulated call.
 message ReadContractResponse {
-  capabilities.blockchain.stellar.v1alpha.ScVal result          = 1; // Return value (only valid when error is empty)
+  string                                         result          = 1; // Return value (only valid when error is empty)
   uint32                                         ledger_sequence = 2; // Ledger actually used for the simulation
   string                                         error           = 3; // Non-empty on failure
 }

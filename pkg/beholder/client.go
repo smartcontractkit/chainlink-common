@@ -65,22 +65,19 @@ type Client struct {
 
 	// OnClose
 	OnClose func() error
-
-	// batchEmitterService is owned by the client and started/stopped via Client lifecycle.
-	batchEmitterService *ChipIngressBatchEmitterService
 }
 
 // initService wires up the services.Service lifecycle for the Client.
 // Must be called exactly once after populating the Client fields.
-func (c *Client) initService(lggr pkglogger.Logger) {
+func (c *Client) initService(lggr pkglogger.Logger, batchSvc *ChipIngressBatchEmitterService) {
 	c.Service, c.eng = services.Config{
 		Name:  "BeholderClient",
 		Close: c.close,
 		NewSubServices: func(l pkglogger.Logger) []services.Service {
-			if c.batchEmitterService == nil {
+			if batchSvc == nil {
 				return nil
 			}
-			return []services.Service{c.batchEmitterService}
+			return []services.Service{batchSvc}
 		},
 	}.NewServiceEngine(lggr)
 }
@@ -211,6 +208,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	emitter := NewMessageEmitter(messageLogger)
 	var batchEmitterService *ChipIngressBatchEmitterService
 	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
+	lggr := cfg.ChipIngressLogger
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
@@ -259,13 +260,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			// teardown after parent close hook completes.
 			chipIngressEmitter = noCloseEmitter{Emitter: batchEmitterService}
 		} else {
-			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient)
+			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient, cfg.ChipIngressLogger)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
 			}
 		}
 
-		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter, cfg.ChipIngressBatchEmitterEnabled)
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter, lggr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
 		}
@@ -290,13 +291,8 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		MessageLoggerProvider: messageLoggerProvider,
 		lazySigner:            signer,
 		OnClose:               onClose,
-		batchEmitterService:   batchEmitterService,
 	}
-	lggr := cfg.ChipIngressLogger
-	if lggr == nil {
-		lggr = pkglogger.Nop()
-	}
-	c.initService(lggr)
+	c.initService(lggr, batchEmitterService)
 	return c, nil
 }
 

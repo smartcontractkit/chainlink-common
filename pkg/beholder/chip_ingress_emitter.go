@@ -5,26 +5,46 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sync/atomic"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
+// ChipIngressEmitter wraps a synchronous chipingress.Client.Publish call
+// in a fire-and-forget goroutine so callers are never blocked.
 type ChipIngressEmitter struct {
 	client chipingress.Client
+	log    logger.Logger
+	stopCh services.StopChan
+	wg     services.WaitGroup
+	closed atomic.Bool
 }
 
-func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
+func NewChipIngressEmitter(client chipingress.Client, lggr logger.Logger) (Emitter, error) {
 	if client == nil {
 		return nil, errors.New("chip ingress client is nil")
 	}
 
-	return &ChipIngressEmitter{client: client}, nil
+	return &ChipIngressEmitter{
+		client: client,
+		log:    lggr,
+		stopCh: make(services.StopChan),
+	}, nil
 }
 
 func (c *ChipIngressEmitter) Close() error {
+	if wasClosed := c.closed.Swap(true); wasClosed {
+		return errors.New("already closed")
+	}
+	close(c.stopCh)
+	c.wg.Wait()
 	return c.client.Close()
 }
 
+// Emit fires a synchronous gRPC Publish call in a background goroutine
+// so the caller is never blocked.
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)
 	if err != nil {
@@ -41,10 +61,21 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return fmt.Errorf("failed to convert event to proto: %w", err)
 	}
 
-	_, err = c.client.Publish(ctx, eventPb)
-	if err != nil {
+	if err := c.wg.TryAdd(1); err != nil {
 		return err
 	}
+	// Legacy ChipIngressEmitter.Emit is a synchronous gRPC call;
+	// fire-and-forget via goroutine to avoid blocking the caller.
+	go func(ctx context.Context) {
+		defer c.wg.Done()
+		var cancel context.CancelFunc
+		ctx, cancel = c.stopCh.Ctx(ctx)
+		defer cancel()
+
+		if _, err := c.client.Publish(ctx, eventPb); err != nil {
+			c.log.Infof("failed to emit to chip ingress: %v", err)
+		}
+	}(context.WithoutCancel(ctx))
 
 	return nil
 }

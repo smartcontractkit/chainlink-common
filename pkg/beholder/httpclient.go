@@ -209,7 +209,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	if lggr == nil {
 		lggr = pkglogger.Nop()
 	}
-	c.initService(lggr)
+	c.initService(lggr, nil)
 	return c, nil
 }
 

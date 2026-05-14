@@ -54,7 +54,7 @@ func NewNoopClient() *Client {
 		MessageLoggerProvider: loggerProvider,
 		OnClose:               noopOnClose,
 	}
-	c.initService(pkglogger.Nop())
+	c.initService(pkglogger.Nop(), nil)
 	return c
 }
 
@@ -128,7 +128,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		lazySigner:            nil,
 		OnClose:               onClose,
 	}
-	c.initService(pkglogger.Nop())
+	c.initService(pkglogger.Nop(), nil)
 	return c, nil
 }
 

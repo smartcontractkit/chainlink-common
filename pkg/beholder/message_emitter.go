@@ -3,8 +3,9 @@ package beholder
 import (
 	"context"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	otellog "go.opentelemetry.io/otel/log"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type messageEmitter struct {

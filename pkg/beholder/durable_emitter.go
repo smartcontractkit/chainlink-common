@@ -448,6 +448,15 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 	return nil
 }
 
+func (d *DurableEmitter) BatchEmit(ctx context.Context, messages []Message, _ ...BatchEmitOption) ([]*chipingress.PublishResult, error) {
+	for _, message := range messages {
+		if err := d.Emit(ctx, message.Body, toAttributesList(message.Attrs)...); err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
 // Close signals background loops to stop and waits for them to finish.
 //
 // When coalesced inserts are enabled, insertShutdown and insertInFlight drain run

@@ -204,4 +204,3 @@ func (e *assertMessageEmitter) BatchEmit(_ context.Context, messages []beholder.
 
 	return nil, nil
 }
-

@@ -96,4 +96,3 @@ func (m *mockEmitter) BatchEmit(ctx context.Context, messages []beholder.Message
 	}
 	return nil, nil
 }
-

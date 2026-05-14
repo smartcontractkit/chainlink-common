@@ -31,18 +31,14 @@ import (
 const defaultGRPCCompressor = "gzip"
 
 type BatchEmitOptions struct {
-	AllOrNothing bool
-}
-
-var DefaultBatchEmitOptions = BatchEmitOptions{
-	AllOrNothing: true,
+	AllowPartialSuccess bool
 }
 
 type BatchEmitOption = func(*BatchEmitOptions)
 
-func WithAllOrNothing(v bool) BatchEmitOption {
+func WithAllowPartialSuccess(v bool) BatchEmitOption {
 	return func(o *BatchEmitOptions) {
-		o.AllOrNothing = v
+		o.AllowPartialSuccess = v
 	}
 }
 

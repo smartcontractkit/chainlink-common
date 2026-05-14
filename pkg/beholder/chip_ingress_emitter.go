@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type ChipIngressEmitter struct {
@@ -36,14 +37,14 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 }
 
 func (c *ChipIngressEmitter) BatchEmit(ctx context.Context, messages []Message, options ...BatchEmitOption) ([]*chipingress.PublishResult, error) {
-	emitOpts := DefaultBatchEmitOptions
+	var emitOpts BatchEmitOptions
 	for _, opt := range options {
 		opt(&emitOpts)
 	}
 
 	events := make([]chipingress.CloudEvent, len(messages))
 	for i, msg := range messages {
-		sourceDomain, entityType, err := ExtractSourceAndType(msg.Attrs)
+		sourceDomain, entityType, err := ExtractSourceAndTypeAndAttributes(msg.Attrs)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func (c *ChipIngressEmitter) BatchEmit(ctx context.Context, messages []Message, 
 	}
 
 	eventPb.Options = &chipingress.PublishOptions{
-		AllOrNothing: proto.Bool(emitOpts.AllOrNothing),
+		AllowPartialSuccess: proto.Bool(emitOpts.AllowPartialSuccess),
 	}
 
 	response, err := c.client.PublishBatch(ctx, eventPb)
@@ -78,7 +79,12 @@ func (c *ChipIngressEmitter) BatchEmit(ctx context.Context, messages []Message, 
 }
 
 // ExtractSourceAndType extracts source domain and entity from the attributes
-func ExtractSourceAndType(attributes Attributes) (string, string, error) {
+func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
+	return ExtractSourceAndTypeAndAttributes(newAttributes(attrKVs...))
+}
+
+// ExtractSourceAndTypeAndAttributes extracts source domain and entity from the attributes
+func ExtractSourceAndTypeAndAttributes(attributes Attributes) (string, string, error) {
 	var sourceDomain string
 	var entityType string
 
@@ -114,4 +120,12 @@ func ExtractAttributes(attrKVs ...any) map[string]any {
 	maps.Copy(attributesMap, attributes)
 
 	return attributesMap
+}
+
+func toAttributesList(attrs Attributes) []any {
+	list := make([]any, 0, len(attrs)*2)
+	for k, v := range attrs {
+		list = append(list, k, v)
+	}
+	return list
 }

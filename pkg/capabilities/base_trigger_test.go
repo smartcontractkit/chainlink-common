@@ -121,6 +121,68 @@ func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 	}
 }
 
+func TestBaseTrigger_CRE_PerOrgRetransmit(t *testing.T) {
+	lggr, err := logger.New()
+	require.NoError(t, err)
+	baseCtx := t.Context()
+	ctxOrgA := contexts.WithCRE(baseCtx, contexts.CRE{Org: "orgA"})
+	ctxOrgB := contexts.WithCRE(baseCtx, contexts.CRE{Org: "orgB"})
+
+	// Global default: no retransmit. Org orgA overrides PerOrg.BaseTriggerRetransmitEnabled to true.
+	getter, err := settings.NewJSONGetter([]byte(`{
+		"global": {
+			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
+			"BaseTriggerRetryInterval": "20ms",
+			"BaseTriggerMaxRetries": "20"
+		},
+		"org": {
+			"orgA": {
+				"PerOrg": {"BaseTriggerRetransmitEnabled": "true"}
+			}
+		}
+	}`))
+	require.NoError(t, err)
+
+	store := NewMemEventStore()
+	b, err := NewBaseTriggerCapabilityWithCRESettings(baseCtx, store,
+		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
+		lggr, "testCap", getter)
+	require.NoError(t, err)
+
+	chA := make(chan TriggerAndId[*wrapperspb.BytesValue], 50)
+	chB := make(chan TriggerAndId[*wrapperspb.BytesValue], 50)
+	b.RegisterTrigger("trigA", chA)
+	b.RegisterTrigger("trigB", chB)
+	require.NoError(t, b.Start(baseCtx))
+	t.Cleanup(func() { b.Stop() })
+
+	require.NoError(t, b.DeliverEvent(ctxOrgA, makeTE(t, "trigA", "eA", []byte("payloadA")), "trigA"))
+	require.NoError(t, b.DeliverEvent(ctxOrgB, makeTE(t, "trigB", "eB", []byte("payloadB")), "trigB"))
+
+	<-chA
+	<-chB
+
+	require.Eventually(t, func() bool {
+		select {
+		case <-chA:
+			return true
+		default:
+			return false
+		}
+	}, 3*time.Second, 10*time.Millisecond, "orgA should receive at least one retransmit")
+
+	select {
+	case extra := <-chB:
+		t.Fatalf("orgB (retransmit disabled via global default) should not retransmit, got %+v", extra)
+	default:
+	}
+
+	recs, err := store.List(baseCtx)
+	require.NoError(t, err)
+	require.Len(t, recs, 1, "only orgA persists pending rows when retransmit is enabled for that org only")
+	require.Equal(t, "orgA", recs[0].OrgID)
+}
+
 func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.BytesValue] {
 	return newBaseWithRetransmit(t, store, 100*time.Millisecond)
 }

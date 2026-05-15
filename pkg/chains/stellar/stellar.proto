@@ -10,6 +10,11 @@ service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
   rpc ReadContract(ReadContractRequest) returns (ReadContractResponse);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusResponse);
+  rpc SimulateTransaction(SimulateTransactionRequest) returns (SimulateTransactionResponse);
+  rpc GetTransactionResult(GetTransactionResultRequest) returns (GetTransactionResultResponse);
+  rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeResponse);
 }
 
 // ReadContractRequest invokes a read-only (simulation) Soroban contract function.
@@ -58,4 +63,57 @@ message GetLatestLedgerResponse {
   int64  ledger_close_time = 4;
   bytes  ledger_header_xdr = 5;   // LedgerHeader binary XDR
   bytes  ledger_metadata_xdr = 6; // LedgerCloseMetaV2 binary XDR
+}
+
+message SubmitTransactionRequest {
+  string id = 1;
+  string from_address = 2;
+  repeated string operations_xdr = 3;
+  uint32 ledger_bounds_offset = 4;
+}
+
+message SubmitTransactionResponse {
+  string tx_hash = 1;
+}
+
+message GetTransactionStatusRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionStatusResponse {
+  int32 status = 1; // Maps to commontypes.TransactionStatus
+}
+
+message SimulateTransactionRequest {
+  string from_address = 1;
+  repeated string operations_xdr = 2;
+  uint32 ledger_bounds_offset = 3;
+}
+
+message SimulateTransactionResponse {
+  string error = 1;
+  int64 min_resource_fee = 2;
+  repeated string results = 3; // XDR-encoded results
+}
+
+message GetTransactionResultRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionResultResponse {
+  string id = 1;
+  string hash = 2;
+  int32 status = 3; // Maps to commontypes.TransactionStatus
+  int64 fee = 4;
+  string result_xdr = 5;
+  string result_meta_xdr = 6;
+  string error = 7;
+}
+
+message GetTransactionFeeRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionFeeResponse {
+  int64 fee = 1;
 }

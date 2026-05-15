@@ -4,7 +4,9 @@ package mocks
 
 import (
 	context "context"
+	big "math/big"
 
+	types "github.com/smartcontractkit/chainlink-common/pkg/types"
 	stellar "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -135,6 +137,179 @@ func (_c *StellarService_GetLedgerEntries_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
+// GetTransactionFee provides a mock function with given fields: ctx, transactionID
+func (_m *StellarService) GetTransactionFee(ctx context.Context, transactionID string) (*big.Int, error) {
+	ret := _m.Called(ctx, transactionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionFee")
+	}
+
+	var r0 *big.Int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*big.Int, error)); ok {
+		return rf(ctx, transactionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *big.Int); ok {
+		r0 = rf(ctx, transactionID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*big.Int)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, transactionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_GetTransactionFee_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionFee'
+type StellarService_GetTransactionFee_Call struct {
+	*mock.Call
+}
+
+// GetTransactionFee is a helper method to define mock.On call
+//   - ctx context.Context
+//   - transactionID string
+func (_e *StellarService_Expecter) GetTransactionFee(ctx interface{}, transactionID interface{}) *StellarService_GetTransactionFee_Call {
+	return &StellarService_GetTransactionFee_Call{Call: _e.mock.On("GetTransactionFee", ctx, transactionID)}
+}
+
+func (_c *StellarService_GetTransactionFee_Call) Run(run func(ctx context.Context, transactionID string)) *StellarService_GetTransactionFee_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *StellarService_GetTransactionFee_Call) Return(_a0 *big.Int, _a1 error) *StellarService_GetTransactionFee_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_GetTransactionFee_Call) RunAndReturn(run func(context.Context, string) (*big.Int, error)) *StellarService_GetTransactionFee_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionResult provides a mock function with given fields: ctx, transactionID
+func (_m *StellarService) GetTransactionResult(ctx context.Context, transactionID string) (stellar.TxResult, error) {
+	ret := _m.Called(ctx, transactionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionResult")
+	}
+
+	var r0 stellar.TxResult
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (stellar.TxResult, error)); ok {
+		return rf(ctx, transactionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) stellar.TxResult); ok {
+		r0 = rf(ctx, transactionID)
+	} else {
+		r0 = ret.Get(0).(stellar.TxResult)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, transactionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_GetTransactionResult_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionResult'
+type StellarService_GetTransactionResult_Call struct {
+	*mock.Call
+}
+
+// GetTransactionResult is a helper method to define mock.On call
+//   - ctx context.Context
+//   - transactionID string
+func (_e *StellarService_Expecter) GetTransactionResult(ctx interface{}, transactionID interface{}) *StellarService_GetTransactionResult_Call {
+	return &StellarService_GetTransactionResult_Call{Call: _e.mock.On("GetTransactionResult", ctx, transactionID)}
+}
+
+func (_c *StellarService_GetTransactionResult_Call) Run(run func(ctx context.Context, transactionID string)) *StellarService_GetTransactionResult_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *StellarService_GetTransactionResult_Call) Return(_a0 stellar.TxResult, _a1 error) *StellarService_GetTransactionResult_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_GetTransactionResult_Call) RunAndReturn(run func(context.Context, string) (stellar.TxResult, error)) *StellarService_GetTransactionResult_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionStatus provides a mock function with given fields: ctx, transactionID
+func (_m *StellarService) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	ret := _m.Called(ctx, transactionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionStatus")
+	}
+
+	var r0 types.TransactionStatus
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (types.TransactionStatus, error)); ok {
+		return rf(ctx, transactionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) types.TransactionStatus); ok {
+		r0 = rf(ctx, transactionID)
+	} else {
+		r0 = ret.Get(0).(types.TransactionStatus)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, transactionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_GetTransactionStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionStatus'
+type StellarService_GetTransactionStatus_Call struct {
+	*mock.Call
+}
+
+// GetTransactionStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - transactionID string
+func (_e *StellarService_Expecter) GetTransactionStatus(ctx interface{}, transactionID interface{}) *StellarService_GetTransactionStatus_Call {
+	return &StellarService_GetTransactionStatus_Call{Call: _e.mock.On("GetTransactionStatus", ctx, transactionID)}
+}
+
+func (_c *StellarService_GetTransactionStatus_Call) Run(run func(ctx context.Context, transactionID string)) *StellarService_GetTransactionStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *StellarService_GetTransactionStatus_Call) Return(_a0 types.TransactionStatus, _a1 error) *StellarService_GetTransactionStatus_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_GetTransactionStatus_Call) RunAndReturn(run func(context.Context, string) (types.TransactionStatus, error)) *StellarService_GetTransactionStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReadContract provides a mock function with given fields: ctx, req
 func (_m *StellarService) ReadContract(ctx context.Context, req stellar.ReadContractRequest) (stellar.ReadContractResponse, error) {
 	ret := _m.Called(ctx, req)
@@ -188,6 +363,122 @@ func (_c *StellarService_ReadContract_Call) Return(_a0 stellar.ReadContractRespo
 }
 
 func (_c *StellarService_ReadContract_Call) RunAndReturn(run func(context.Context, stellar.ReadContractRequest) (stellar.ReadContractResponse, error)) *StellarService_ReadContract_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SimulateTransaction provides a mock function with given fields: ctx, req
+func (_m *StellarService) SimulateTransaction(ctx context.Context, req stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SimulateTransaction")
+	}
+
+	var r0 stellar.SimulateTransactionResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.SimulateTransactionRequest) stellar.SimulateTransactionResponse); ok {
+		r0 = rf(ctx, req)
+	} else {
+		r0 = ret.Get(0).(stellar.SimulateTransactionResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, stellar.SimulateTransactionRequest) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_SimulateTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SimulateTransaction'
+type StellarService_SimulateTransaction_Call struct {
+	*mock.Call
+}
+
+// SimulateTransaction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req stellar.SimulateTransactionRequest
+func (_e *StellarService_Expecter) SimulateTransaction(ctx interface{}, req interface{}) *StellarService_SimulateTransaction_Call {
+	return &StellarService_SimulateTransaction_Call{Call: _e.mock.On("SimulateTransaction", ctx, req)}
+}
+
+func (_c *StellarService_SimulateTransaction_Call) Run(run func(ctx context.Context, req stellar.SimulateTransactionRequest)) *StellarService_SimulateTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(stellar.SimulateTransactionRequest))
+	})
+	return _c
+}
+
+func (_c *StellarService_SimulateTransaction_Call) Return(_a0 stellar.SimulateTransactionResponse, _a1 error) *StellarService_SimulateTransaction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_SimulateTransaction_Call) RunAndReturn(run func(context.Context, stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error)) *StellarService_SimulateTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SubmitTransaction provides a mock function with given fields: ctx, req
+func (_m *StellarService) SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SubmitTransaction")
+	}
+
+	var r0 *stellar.SubmitTransactionResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.SubmitTransactionRequest) *stellar.SubmitTransactionResponse); ok {
+		r0 = rf(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*stellar.SubmitTransactionResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, stellar.SubmitTransactionRequest) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_SubmitTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SubmitTransaction'
+type StellarService_SubmitTransaction_Call struct {
+	*mock.Call
+}
+
+// SubmitTransaction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req stellar.SubmitTransactionRequest
+func (_e *StellarService_Expecter) SubmitTransaction(ctx interface{}, req interface{}) *StellarService_SubmitTransaction_Call {
+	return &StellarService_SubmitTransaction_Call{Call: _e.mock.On("SubmitTransaction", ctx, req)}
+}
+
+func (_c *StellarService_SubmitTransaction_Call) Run(run func(ctx context.Context, req stellar.SubmitTransactionRequest)) *StellarService_SubmitTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(stellar.SubmitTransactionRequest))
+	})
+	return _c
+}
+
+func (_c *StellarService_SubmitTransaction_Call) Return(_a0 *stellar.SubmitTransactionResponse, _a1 error) *StellarService_SubmitTransaction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_SubmitTransaction_Call) RunAndReturn(run func(context.Context, stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)) *StellarService_SubmitTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }

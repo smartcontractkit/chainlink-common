@@ -273,6 +273,17 @@ type AptosService interface {
 // fetch ledger entries and get the latest ledger.
 type StellarService interface {
 	stellar.Client
+
+	// SubmitTransaction submits a transaction to the network.
+	SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)
+	// GetTransactionStatus returns the current status of a transaction.
+	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
+	// SimulateTransaction performs a read-only simulation.
+	SimulateTransaction(ctx context.Context, req stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error)
+	// GetTransactionResult returns the full result of a transaction.
+	GetTransactionResult(ctx context.Context, transactionID string) (stellar.TxResult, error)
+	// GetTransactionFee returns the fee charged for a transaction.
+	GetTransactionFee(ctx context.Context, transactionID string) (*big.Int, error)
 }
 
 // Relayer extends ChainService with providers for each product.
@@ -659,4 +670,24 @@ func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stel
 
 func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stellar.GetLatestLedgerResponse, error) {
 	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
+}
+
+func (u *UnimplementedStellarService) SubmitTransaction(_ context.Context, _ stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetTransactionStatus(_ context.Context, _ string) (TransactionStatus, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
+
+func (u *UnimplementedStellarService) SimulateTransaction(_ context.Context, _ stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
+	return stellar.SimulateTransactionResponse{}, status.Errorf(codes.Unimplemented, "method SimulateTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetTransactionResult(_ context.Context, _ string) (stellar.TxResult, error) {
+	return stellar.TxResult{}, status.Errorf(codes.Unimplemented, "method GetTransactionResult not implemented")
+}
+
+func (u *UnimplementedStellarService) GetTransactionFee(_ context.Context, _ string) (*big.Int, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
 }

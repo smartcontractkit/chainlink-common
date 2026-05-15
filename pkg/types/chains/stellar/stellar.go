@@ -105,3 +105,41 @@ type RMNConfig struct {
 	// Signers is the ordered list of RMN signers for this config.
 	Signers []RMNSigner
 }
+
+// SubmitTransactionRequest represents a request to submit a transaction.
+type SubmitTransactionRequest struct {
+	ID                 string
+	FromAddress        string
+	OperationsXDR      []string
+	LedgerBoundsOffset uint32
+}
+
+// SubmitTransactionResponse represents the response from submitting a transaction.
+type SubmitTransactionResponse struct {
+	TxHash string
+}
+
+// SimulateTransactionRequest represents a request to simulate a transaction.
+type SimulateTransactionRequest struct {
+	FromAddress        string
+	OperationsXDR      []string
+	LedgerBoundsOffset uint32
+}
+
+// SimulateTransactionResponse represents the response from simulating a transaction.
+type SimulateTransactionResponse struct {
+	Error          string
+	MinResourceFee int64
+	Results        []string // XDR-encoded results
+}
+
+// TxResult represents the full result of a transaction.
+type TxResult struct {
+	ID            string
+	Hash          string
+	Status        int32 // Maps to commontypes.TransactionStatus
+	Fee           int64 // Total fee charged in stroops
+	ResultXDR     string
+	ResultMetaXDR string
+	Error         string
+}

@@ -33,6 +33,26 @@ func (sc *stellarClient) ReadContract(ctx context.Context, in *stelpb.ReadContra
 	return sc.client.ReadContract(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *stellarClient) SubmitTransaction(ctx context.Context, in *stelpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*stelpb.SubmitTransactionResponse, error) {
+	return sc.client.SubmitTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *stellarClient) GetTransactionStatus(ctx context.Context, in *stelpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*stelpb.GetTransactionStatusResponse, error) {
+	return sc.client.GetTransactionStatus(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *stellarClient) SimulateTransaction(ctx context.Context, in *stelpb.SimulateTransactionRequest, opts ...grpc.CallOption) (*stelpb.SimulateTransactionResponse, error) {
+	return sc.client.SimulateTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *stellarClient) GetTransactionResult(ctx context.Context, in *stelpb.GetTransactionResultRequest, opts ...grpc.CallOption) (*stelpb.GetTransactionResultResponse, error) {
+	return sc.client.GetTransactionResult(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *stellarClient) GetTransactionFee(ctx context.Context, in *stelpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*stelpb.GetTransactionFeeResponse, error) {
+	return sc.client.GetTransactionFee(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 // stellarServer implements stelpb.StellarServer by routing each RPC through the RelayerSet.
 type stellarServer struct {
 	stelpb.UnimplementedStellarServer
@@ -96,6 +116,86 @@ func (ss *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContr
 		LedgerSequence: dResp.LedgerSequence,
 		Error:          dResp.Error,
 	}, nil
+}
+
+func (ss *stellarServer) SubmitTransaction(ctx context.Context, req *stelpb.SubmitTransactionRequest) (*stelpb.SubmitTransactionResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dReq, err := stelpb.ConvertSubmitTransactionRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction request: %w", err)
+	}
+	dResp, err := svc.SubmitTransaction(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertSubmitTransactionResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (ss *stellarServer) GetTransactionStatus(ctx context.Context, req *stelpb.GetTransactionStatusRequest) (*stelpb.GetTransactionStatusResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	status, err := svc.GetTransactionStatus(ctx, req.GetTransactionId())
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return &stelpb.GetTransactionStatusResponse{Status: int32(status)}, nil
+}
+
+func (ss *stellarServer) SimulateTransaction(ctx context.Context, req *stelpb.SimulateTransactionRequest) (*stelpb.SimulateTransactionResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dReq, err := stelpb.ConvertSimulateTransactionRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SimulateTransaction request: %w", err)
+	}
+	dResp, err := svc.SimulateTransaction(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertSimulateTransactionResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SimulateTransaction response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (ss *stellarServer) GetTransactionResult(ctx context.Context, req *stelpb.GetTransactionResultRequest) (*stelpb.GetTransactionResultResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dResp, err := svc.GetTransactionResult(ctx, req.GetTransactionId())
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertTxResultToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetTransactionResult response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (ss *stellarServer) GetTransactionFee(ctx context.Context, req *stelpb.GetTransactionFeeRequest) (*stelpb.GetTransactionFeeResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fee, err := svc.GetTransactionFee(ctx, req.GetTransactionId())
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return &stelpb.GetTransactionFeeResponse{Fee: fee.Int64()}, nil
 }
 
 // getStellarService extracts the RelayID from context metadata and returns the StellarService

@@ -423,6 +423,550 @@ func (x *GetLatestLedgerResponse) GetLedgerMetadataXdr() []byte {
 	return nil
 }
 
+type SubmitTransactionRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	FromAddress        string                 `protobuf:"bytes,2,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
+	OperationsXdr      []string               `protobuf:"bytes,3,rep,name=operations_xdr,json=operationsXdr,proto3" json:"operations_xdr,omitempty"`
+	LedgerBoundsOffset uint32                 `protobuf:"varint,4,opt,name=ledger_bounds_offset,json=ledgerBoundsOffset,proto3" json:"ledger_bounds_offset,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SubmitTransactionRequest) Reset() {
+	*x = SubmitTransactionRequest{}
+	mi := &file_stellar_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitTransactionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitTransactionRequest) ProtoMessage() {}
+
+func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
+func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SubmitTransactionRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SubmitTransactionRequest) GetFromAddress() string {
+	if x != nil {
+		return x.FromAddress
+	}
+	return ""
+}
+
+func (x *SubmitTransactionRequest) GetOperationsXdr() []string {
+	if x != nil {
+		return x.OperationsXdr
+	}
+	return nil
+}
+
+func (x *SubmitTransactionRequest) GetLedgerBoundsOffset() uint32 {
+	if x != nil {
+		return x.LedgerBoundsOffset
+	}
+	return 0
+}
+
+type SubmitTransactionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TxHash        string                 `protobuf:"bytes,1,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitTransactionResponse) Reset() {
+	*x = SubmitTransactionResponse{}
+	mi := &file_stellar_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitTransactionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitTransactionResponse) ProtoMessage() {}
+
+func (x *SubmitTransactionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitTransactionResponse.ProtoReflect.Descriptor instead.
+func (*SubmitTransactionResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SubmitTransactionResponse) GetTxHash() string {
+	if x != nil {
+		return x.TxHash
+	}
+	return ""
+}
+
+type GetTransactionStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionStatusRequest) Reset() {
+	*x = GetTransactionStatusRequest{}
+	mi := &file_stellar_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionStatusRequest) ProtoMessage() {}
+
+func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionStatusRequest.ProtoReflect.Descriptor instead.
+func (*GetTransactionStatusRequest) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetTransactionStatusRequest) GetTransactionId() string {
+	if x != nil {
+		return x.TransactionId
+	}
+	return ""
+}
+
+type GetTransactionStatusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        int32                  `protobuf:"varint,1,opt,name=status,proto3" json:"status,omitempty"` // Maps to commontypes.TransactionStatus
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionStatusResponse) Reset() {
+	*x = GetTransactionStatusResponse{}
+	mi := &file_stellar_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionStatusResponse) ProtoMessage() {}
+
+func (x *GetTransactionStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionStatusResponse.ProtoReflect.Descriptor instead.
+func (*GetTransactionStatusResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetTransactionStatusResponse) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+type SimulateTransactionRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FromAddress        string                 `protobuf:"bytes,1,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
+	OperationsXdr      []string               `protobuf:"bytes,2,rep,name=operations_xdr,json=operationsXdr,proto3" json:"operations_xdr,omitempty"`
+	LedgerBoundsOffset uint32                 `protobuf:"varint,3,opt,name=ledger_bounds_offset,json=ledgerBoundsOffset,proto3" json:"ledger_bounds_offset,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SimulateTransactionRequest) Reset() {
+	*x = SimulateTransactionRequest{}
+	mi := &file_stellar_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SimulateTransactionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SimulateTransactionRequest) ProtoMessage() {}
+
+func (x *SimulateTransactionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SimulateTransactionRequest.ProtoReflect.Descriptor instead.
+func (*SimulateTransactionRequest) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SimulateTransactionRequest) GetFromAddress() string {
+	if x != nil {
+		return x.FromAddress
+	}
+	return ""
+}
+
+func (x *SimulateTransactionRequest) GetOperationsXdr() []string {
+	if x != nil {
+		return x.OperationsXdr
+	}
+	return nil
+}
+
+func (x *SimulateTransactionRequest) GetLedgerBoundsOffset() uint32 {
+	if x != nil {
+		return x.LedgerBoundsOffset
+	}
+	return 0
+}
+
+type SimulateTransactionResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Error          string                 `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	MinResourceFee int64                  `protobuf:"varint,2,opt,name=min_resource_fee,json=minResourceFee,proto3" json:"min_resource_fee,omitempty"`
+	Results        []string               `protobuf:"bytes,3,rep,name=results,proto3" json:"results,omitempty"` // XDR-encoded results
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SimulateTransactionResponse) Reset() {
+	*x = SimulateTransactionResponse{}
+	mi := &file_stellar_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SimulateTransactionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SimulateTransactionResponse) ProtoMessage() {}
+
+func (x *SimulateTransactionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SimulateTransactionResponse.ProtoReflect.Descriptor instead.
+func (*SimulateTransactionResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SimulateTransactionResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *SimulateTransactionResponse) GetMinResourceFee() int64 {
+	if x != nil {
+		return x.MinResourceFee
+	}
+	return 0
+}
+
+func (x *SimulateTransactionResponse) GetResults() []string {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
+type GetTransactionResultRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionResultRequest) Reset() {
+	*x = GetTransactionResultRequest{}
+	mi := &file_stellar_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionResultRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionResultRequest) ProtoMessage() {}
+
+func (x *GetTransactionResultRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionResultRequest.ProtoReflect.Descriptor instead.
+func (*GetTransactionResultRequest) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetTransactionResultRequest) GetTransactionId() string {
+	if x != nil {
+		return x.TransactionId
+	}
+	return ""
+}
+
+type GetTransactionResultResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
+	Status        int32                  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"` // Maps to commontypes.TransactionStatus
+	Fee           int64                  `protobuf:"varint,4,opt,name=fee,proto3" json:"fee,omitempty"`
+	ResultXdr     string                 `protobuf:"bytes,5,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`
+	ResultMetaXdr string                 `protobuf:"bytes,6,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"`
+	Error         string                 `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionResultResponse) Reset() {
+	*x = GetTransactionResultResponse{}
+	mi := &file_stellar_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionResultResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionResultResponse) ProtoMessage() {}
+
+func (x *GetTransactionResultResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionResultResponse.ProtoReflect.Descriptor instead.
+func (*GetTransactionResultResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetTransactionResultResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *GetTransactionResultResponse) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *GetTransactionResultResponse) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *GetTransactionResultResponse) GetFee() int64 {
+	if x != nil {
+		return x.Fee
+	}
+	return 0
+}
+
+func (x *GetTransactionResultResponse) GetResultXdr() string {
+	if x != nil {
+		return x.ResultXdr
+	}
+	return ""
+}
+
+func (x *GetTransactionResultResponse) GetResultMetaXdr() string {
+	if x != nil {
+		return x.ResultMetaXdr
+	}
+	return ""
+}
+
+func (x *GetTransactionResultResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type GetTransactionFeeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionFeeRequest) Reset() {
+	*x = GetTransactionFeeRequest{}
+	mi := &file_stellar_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionFeeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionFeeRequest) ProtoMessage() {}
+
+func (x *GetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionFeeRequest.ProtoReflect.Descriptor instead.
+func (*GetTransactionFeeRequest) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetTransactionFeeRequest) GetTransactionId() string {
+	if x != nil {
+		return x.TransactionId
+	}
+	return ""
+}
+
+type GetTransactionFeeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fee           int64                  `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionFeeResponse) Reset() {
+	*x = GetTransactionFeeResponse{}
+	mi := &file_stellar_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionFeeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionFeeResponse) ProtoMessage() {}
+
+func (x *GetTransactionFeeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionFeeResponse.ProtoReflect.Descriptor instead.
+func (*GetTransactionFeeResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetTransactionFeeResponse) GetFee() int64 {
+	if x != nil {
+		return x.Fee
+	}
+	return 0
+}
+
 var File_stellar_proto protoreflect.FileDescriptor
 
 const file_stellar_proto_rawDesc = "" +
@@ -456,11 +1000,50 @@ const file_stellar_proto_rawDesc = "" +
 	"\bsequence\x18\x03 \x01(\rR\bsequence\x12*\n" +
 	"\x11ledger_close_time\x18\x04 \x01(\x03R\x0fledgerCloseTime\x12*\n" +
 	"\x11ledger_header_xdr\x18\x05 \x01(\fR\x0fledgerHeaderXdr\x12.\n" +
-	"\x13ledger_metadata_xdr\x18\x06 \x01(\fR\x11ledgerMetadataXdr2\x95\x02\n" +
+	"\x13ledger_metadata_xdr\x18\x06 \x01(\fR\x11ledgerMetadataXdr\"\xa6\x01\n" +
+	"\x18SubmitTransactionRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
+	"\ffrom_address\x18\x02 \x01(\tR\vfromAddress\x12%\n" +
+	"\x0eoperations_xdr\x18\x03 \x03(\tR\roperationsXdr\x120\n" +
+	"\x14ledger_bounds_offset\x18\x04 \x01(\rR\x12ledgerBoundsOffset\"4\n" +
+	"\x19SubmitTransactionResponse\x12\x17\n" +
+	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"D\n" +
+	"\x1bGetTransactionStatusRequest\x12%\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"6\n" +
+	"\x1cGetTransactionStatusResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\x05R\x06status\"\x98\x01\n" +
+	"\x1aSimulateTransactionRequest\x12!\n" +
+	"\ffrom_address\x18\x01 \x01(\tR\vfromAddress\x12%\n" +
+	"\x0eoperations_xdr\x18\x02 \x03(\tR\roperationsXdr\x120\n" +
+	"\x14ledger_bounds_offset\x18\x03 \x01(\rR\x12ledgerBoundsOffset\"w\n" +
+	"\x1bSimulateTransactionResponse\x12\x14\n" +
+	"\x05error\x18\x01 \x01(\tR\x05error\x12(\n" +
+	"\x10min_resource_fee\x18\x02 \x01(\x03R\x0eminResourceFee\x12\x18\n" +
+	"\aresults\x18\x03 \x03(\tR\aresults\"D\n" +
+	"\x1bGetTransactionResultRequest\x12%\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"\xc9\x01\n" +
+	"\x1cGetTransactionResultResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04hash\x18\x02 \x01(\tR\x04hash\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\x05R\x06status\x12\x10\n" +
+	"\x03fee\x18\x04 \x01(\x03R\x03fee\x12\x1d\n" +
+	"\n" +
+	"result_xdr\x18\x05 \x01(\tR\tresultXdr\x12&\n" +
+	"\x0fresult_meta_xdr\x18\x06 \x01(\tR\rresultMetaXdr\x12\x14\n" +
+	"\x05error\x18\a \x01(\tR\x05error\"A\n" +
+	"\x18GetTransactionFeeRequest\x12%\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"-\n" +
+	"\x19GetTransactionFeeResponse\x12\x10\n" +
+	"\x03fee\x18\x01 \x01(\x03R\x03fee2\xab\x06\n" +
 	"\aStellar\x12a\n" +
 	"\x10GetLedgerEntries\x12%.loop.stellar.GetLedgerEntriesRequest\x1a&.loop.stellar.GetLedgerEntriesResponse\x12P\n" +
 	"\x0fGetLatestLedger\x12\x16.google.protobuf.Empty\x1a%.loop.stellar.GetLatestLedgerResponse\x12U\n" +
-	"\fReadContract\x12!.loop.stellar.ReadContractRequest\x1a\".loop.stellar.ReadContractResponseBAZ?github.com/smartcontractkit/chainlink-common/pkg/chains/stellarb\x06proto3"
+	"\fReadContract\x12!.loop.stellar.ReadContractRequest\x1a\".loop.stellar.ReadContractResponse\x12d\n" +
+	"\x11SubmitTransaction\x12&.loop.stellar.SubmitTransactionRequest\x1a'.loop.stellar.SubmitTransactionResponse\x12m\n" +
+	"\x14GetTransactionStatus\x12).loop.stellar.GetTransactionStatusRequest\x1a*.loop.stellar.GetTransactionStatusResponse\x12j\n" +
+	"\x13SimulateTransaction\x12(.loop.stellar.SimulateTransactionRequest\x1a).loop.stellar.SimulateTransactionResponse\x12m\n" +
+	"\x14GetTransactionResult\x12).loop.stellar.GetTransactionResultRequest\x1a*.loop.stellar.GetTransactionResultResponse\x12d\n" +
+	"\x11GetTransactionFee\x12&.loop.stellar.GetTransactionFeeRequest\x1a'.loop.stellar.GetTransactionFeeResponseBAZ?github.com/smartcontractkit/chainlink-common/pkg/chains/stellarb\x06proto3"
 
 var (
 	file_stellar_proto_rawDescOnce sync.Once
@@ -474,31 +1057,51 @@ func file_stellar_proto_rawDescGZIP() []byte {
 	return file_stellar_proto_rawDescData
 }
 
-var file_stellar_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_stellar_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_stellar_proto_goTypes = []any{
-	(*ReadContractRequest)(nil),      // 0: loop.stellar.ReadContractRequest
-	(*ReadContractResponse)(nil),     // 1: loop.stellar.ReadContractResponse
-	(*GetLedgerEntriesRequest)(nil),  // 2: loop.stellar.GetLedgerEntriesRequest
-	(*LedgerEntryResult)(nil),        // 3: loop.stellar.LedgerEntryResult
-	(*GetLedgerEntriesResponse)(nil), // 4: loop.stellar.GetLedgerEntriesResponse
-	(*GetLatestLedgerResponse)(nil),  // 5: loop.stellar.GetLatestLedgerResponse
-	(*scval.ScVal)(nil),              // 6: capabilities.blockchain.stellar.v1alpha.ScVal
-	(*emptypb.Empty)(nil),            // 7: google.protobuf.Empty
+	(*ReadContractRequest)(nil),          // 0: loop.stellar.ReadContractRequest
+	(*ReadContractResponse)(nil),         // 1: loop.stellar.ReadContractResponse
+	(*GetLedgerEntriesRequest)(nil),      // 2: loop.stellar.GetLedgerEntriesRequest
+	(*LedgerEntryResult)(nil),            // 3: loop.stellar.LedgerEntryResult
+	(*GetLedgerEntriesResponse)(nil),     // 4: loop.stellar.GetLedgerEntriesResponse
+	(*GetLatestLedgerResponse)(nil),      // 5: loop.stellar.GetLatestLedgerResponse
+	(*SubmitTransactionRequest)(nil),     // 6: loop.stellar.SubmitTransactionRequest
+	(*SubmitTransactionResponse)(nil),    // 7: loop.stellar.SubmitTransactionResponse
+	(*GetTransactionStatusRequest)(nil),  // 8: loop.stellar.GetTransactionStatusRequest
+	(*GetTransactionStatusResponse)(nil), // 9: loop.stellar.GetTransactionStatusResponse
+	(*SimulateTransactionRequest)(nil),   // 10: loop.stellar.SimulateTransactionRequest
+	(*SimulateTransactionResponse)(nil),  // 11: loop.stellar.SimulateTransactionResponse
+	(*GetTransactionResultRequest)(nil),  // 12: loop.stellar.GetTransactionResultRequest
+	(*GetTransactionResultResponse)(nil), // 13: loop.stellar.GetTransactionResultResponse
+	(*GetTransactionFeeRequest)(nil),     // 14: loop.stellar.GetTransactionFeeRequest
+	(*GetTransactionFeeResponse)(nil),    // 15: loop.stellar.GetTransactionFeeResponse
+	(*scval.ScVal)(nil),                  // 16: capabilities.blockchain.stellar.v1alpha.ScVal
+	(*emptypb.Empty)(nil),                // 17: google.protobuf.Empty
 }
 var file_stellar_proto_depIdxs = []int32{
-	6, // 0: loop.stellar.ReadContractRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	3, // 1: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
-	2, // 2: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
-	7, // 3: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
-	0, // 4: loop.stellar.Stellar.ReadContract:input_type -> loop.stellar.ReadContractRequest
-	4, // 5: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
-	5, // 6: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
-	1, // 7: loop.stellar.Stellar.ReadContract:output_type -> loop.stellar.ReadContractResponse
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	16, // 0: loop.stellar.ReadContractRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	3,  // 1: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
+	2,  // 2: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
+	17, // 3: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
+	0,  // 4: loop.stellar.Stellar.ReadContract:input_type -> loop.stellar.ReadContractRequest
+	6,  // 5: loop.stellar.Stellar.SubmitTransaction:input_type -> loop.stellar.SubmitTransactionRequest
+	8,  // 6: loop.stellar.Stellar.GetTransactionStatus:input_type -> loop.stellar.GetTransactionStatusRequest
+	10, // 7: loop.stellar.Stellar.SimulateTransaction:input_type -> loop.stellar.SimulateTransactionRequest
+	12, // 8: loop.stellar.Stellar.GetTransactionResult:input_type -> loop.stellar.GetTransactionResultRequest
+	14, // 9: loop.stellar.Stellar.GetTransactionFee:input_type -> loop.stellar.GetTransactionFeeRequest
+	4,  // 10: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
+	5,  // 11: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
+	1,  // 12: loop.stellar.Stellar.ReadContract:output_type -> loop.stellar.ReadContractResponse
+	7,  // 13: loop.stellar.Stellar.SubmitTransaction:output_type -> loop.stellar.SubmitTransactionResponse
+	9,  // 14: loop.stellar.Stellar.GetTransactionStatus:output_type -> loop.stellar.GetTransactionStatusResponse
+	11, // 15: loop.stellar.Stellar.SimulateTransaction:output_type -> loop.stellar.SimulateTransactionResponse
+	13, // 16: loop.stellar.Stellar.GetTransactionResult:output_type -> loop.stellar.GetTransactionResultResponse
+	15, // 17: loop.stellar.Stellar.GetTransactionFee:output_type -> loop.stellar.GetTransactionFeeResponse
+	10, // [10:18] is the sub-list for method output_type
+	2,  // [2:10] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_stellar_proto_init() }
@@ -512,7 +1115,7 @@ func file_stellar_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stellar_proto_rawDesc), len(file_stellar_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

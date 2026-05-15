@@ -541,7 +541,7 @@ func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	if err := emitter.Start(context.Background()); err != nil {
+	if err := emitter.Start(b.Context()); err != nil {
 		b.Fatal(err)
 	}
 	defer func() { _ = emitter.Close() }()
@@ -549,7 +549,7 @@ func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {
 	payload := []byte("benchmark-payload")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := emitter.Emit(context.Background(), payload,
+		if err := emitter.Emit(b.Context(), payload,
 			beholder.AttrKeyDomain, "bench",
 			beholder.AttrKeyEntity, "BenchmarkEvent",
 		); err != nil {

@@ -146,20 +146,23 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 		}
 
 		metricAttrs := e.metricAttrsFor(domain, entity)
-		metricsCtx := context.Background()
 
 		queueErr := e.batchClient.QueueMessage(eventPb, func(sendErr error) {
+			// The callback fires asynchronously after the batch is sent,
+			// so the caller's ctx may already be cancelled. Use ctx directly
+			// for metric recording — OTel Add is non-blocking and tolerates
+			// cancelled contexts.
 			if sendErr != nil {
-				e.metrics.eventsDropped.Add(metricsCtx, 1, metricAttrs)
+				e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
 			} else {
-				e.metrics.eventsSent.Add(metricsCtx, 1, metricAttrs)
+				e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
 			}
 			if callback != nil {
 				callback(sendErr)
 			}
 		})
 		if queueErr != nil {
-			e.metrics.eventsDropped.Add(metricsCtx, 1, metricAttrs)
+			e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
 			if callback != nil {
 				callback(queueErr)
 			}

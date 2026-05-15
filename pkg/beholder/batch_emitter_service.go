@@ -97,7 +97,11 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	return e, nil
 }
 
-func (e *ChipIngressBatchEmitterService) start(ctx context.Context) error {
+func (e *ChipIngressBatchEmitterService) start(_ context.Context) error {
+	// Do not pass the startup ctx — the services contract forbids retaining it
+	// after Start returns. Use the engine's lifecycle context so the batcher
+	// is cancelled when the service shuts down (StopChan closes before stop() runs).
+	ctx, _ := e.eng.NewCtx()
 	e.batchClient.Start(ctx)
 	return nil
 }

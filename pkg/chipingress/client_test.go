@@ -71,7 +71,7 @@ func TestClient(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test Ping returns success
-		pingResp, err := client.Ping(context.Background(), &pb.EmptyRequest{})
+		pingResp, err := client.Ping(t.Context(), &pb.EmptyRequest{})
 		require.NoError(t, err)
 		assert.NotNil(t, pingResp)
 		assert.Equal(t, "pong", pingResp.Message)
@@ -80,7 +80,7 @@ func TestClient(t *testing.T) {
 		schemas := []*pb.Schema{
 			{Subject: "test", Schema: `{"test":"value"}`, Format: 1},
 		}
-		result, err := client.RegisterSchemas(context.Background(), schemas...)
+		result, err := client.RegisterSchemas(t.Context(), schemas...)
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Empty(t, result)
@@ -673,8 +673,9 @@ func TestNewClientWithTLS(t *testing.T) {
 func TestClient_RegisterSchemas(t *testing.T) {
 	t.Run("successfully registers schemas", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		ctx := t.Context()
 		mockClient.EXPECT().RegisterSchema(
-			context.Background(),
+			ctx,
 			&pb.RegisterSchemaRequest{
 				Schemas: []*pb.Schema{
 					{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
@@ -698,15 +699,16 @@ func TestClient_RegisterSchemas(t *testing.T) {
 			{Subject: "schema2", Schema: `{"type":"record","name":"Test2","fields":[{"name":"field2"}]}`, Format: 2},
 		}
 
-		result, err := client.RegisterSchemas(context.Background(), schemas...)
+		result, err := client.RegisterSchemas(ctx, schemas...)
 		require.NoError(t, err)
 		assert.Equal(t, map[string]int{"schema1": 1, "schema2": 2}, result)
 	})
 
-	t.Run("returns error when registration fails", func(t *testing.T) {
+		t.Run("returns error when registration fails", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		ctx := t.Context()
 		mockClient.EXPECT().RegisterSchema(
-			context.Background(),
+			ctx,
 			&pb.RegisterSchemaRequest{
 				Schemas: []*pb.Schema{
 					{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
@@ -723,7 +725,7 @@ func TestClient_RegisterSchemas(t *testing.T) {
 			{Subject: "schema1", Schema: `{"type":"record","name":"Test","fields":[{"name":"field1"}]}`, Format: 1},
 		}
 
-		result, err := client.RegisterSchemas(context.Background(), schemas...)
+		result, err := client.RegisterSchemas(ctx, schemas...)
 		assert.Nil(t, result)
 		assert.EqualError(t, err, "failed to register schema: registration failed")
 	})

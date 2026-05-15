@@ -248,9 +248,9 @@ func TestSendBatch(t *testing.T) {
 			{event: &chipingress.CloudEventPb{Id: "batch3-id-1", Source: "test-source", Type: "test.event.type"}},
 		}
 
-		client.sendBatch(context.Background(), batch1)
-		client.sendBatch(context.Background(), batch2)
-		client.sendBatch(context.Background(), batch3)
+		client.sendBatch(t.Context(), batch1)
+		client.sendBatch(t.Context(), batch2)
+		client.sendBatch(t.Context(), batch3)
 
 		// wait for the internal goroutines to complete
 		select {
@@ -1519,7 +1519,7 @@ func BenchmarkSendBatch(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		client.Start(context.Background())
+		client.Start(b.Context())
 		defer client.Stop()
 
 		msgs := make([]*messageWithCallback, 100)
@@ -1535,7 +1535,7 @@ func BenchmarkSendBatch(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			client.sendBatch(context.Background(), msgs)
+			client.sendBatch(b.Context(), msgs)
 		}
 	})
 
@@ -1550,7 +1550,7 @@ func BenchmarkSendBatch(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		client.Start(context.Background())
+		client.Start(b.Context())
 		defer client.Stop()
 
 		msgs := make([]*messageWithCallback, 100)
@@ -1566,7 +1566,7 @@ func BenchmarkSendBatch(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			client.sendBatch(context.Background(), msgs)
+			client.sendBatch(b.Context(), msgs)
 		}
 	})
 }
@@ -1581,7 +1581,7 @@ func BenchmarkBatchClient_QueueMessage(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	client.Start(context.Background())
+	client.Start(b.Context())
 	defer client.Stop()
 
 	payload := &chipingress.CloudEventPb{

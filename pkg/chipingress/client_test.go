@@ -704,7 +704,7 @@ func TestClient_RegisterSchemas(t *testing.T) {
 		assert.Equal(t, map[string]int{"schema1": 1, "schema2": 2}, result)
 	})
 
-		t.Run("returns error when registration fails", func(t *testing.T) {
+	t.Run("returns error when registration fails", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		ctx := t.Context()
 		mockClient.EXPECT().RegisterSchema(

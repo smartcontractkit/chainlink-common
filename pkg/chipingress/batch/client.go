@@ -45,7 +45,7 @@ type Client struct {
 	shutdownTimeout    time.Duration
 	shutdownOnce       sync.Once
 	batcherDone        chan struct{}
-	cancelBatcher      context.CancelFunc
+	started            bool
 	counters           sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
 
 	metrics batchClientMetrics
@@ -97,21 +97,23 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	return c, nil
 }
 
-// Start begins processing messages from the queue and sending them in batches
+// Start begins processing messages from the queue and sending them in batches.
+// The context is used only for the initial metrics recording call and is NOT
+// retained after Start returns. The client manages its own internal lifecycle
+// context that is cancelled when Stop is called.
 func (b *Client) Start(ctx context.Context) {
 	b.metrics.recordConfig(ctx, b)
+	b.started = true
 
-	// Create a cancellable context for the batcher
-	batcherCtx, cancel := context.WithCancel(ctx)
-	b.cancelBatcher = cancel
+	// Detach from the caller's cancellation but keep its values (trace IDs, etc.).
+	// This avoids retaining a startup context whose cancellation we don't control.
+	batcherCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 
 	go func() {
 		defer close(b.batcherDone)
 
 		go func() {
 			select {
-			case <-ctx.Done():
-				b.Stop()
 			case <-b.stopCh:
 				cancel()
 			}
@@ -143,15 +145,11 @@ func (b *Client) Stop() {
 		ctx, cancel := context.WithTimeout(context.Background(), b.shutdownTimeout)
 		defer cancel()
 
-		started := b.cancelBatcher != nil
-		if started {
-			b.cancelBatcher()
-		}
 		close(b.stopCh)
 
 		// Only wait for the batcher goroutine when Start() was called;
 		// otherwise batcherDone is never closed and we'd block until timeout.
-		if started {
+		if b.started {
 			done := make(chan struct{})
 			go func() {
 				<-b.batcherDone

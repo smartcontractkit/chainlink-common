@@ -266,7 +266,7 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			batchReq, batchBytes := newBatchRequest(batchMessages)
 			if b.maxGRPCRequestSize > 0 && batchBytes > b.maxGRPCRequestSize {
 				err := fmt.Errorf("publish batch serialized size %d exceeds max gRPC request size %d", batchBytes, b.maxGRPCRequestSize)
-				b.metrics.recordSend(context.Background(), len(batchMessages), batchBytes, 0, false)
+				b.metrics.recordSend(ctx, len(batchMessages), batchBytes, 0, false)
 				b.log.Errorw("failed to publish batch", "error", err)
 				b.completeBatchCallbacks(batchMessages, err)
 				continue
@@ -278,7 +278,7 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			_, err := b.client.PublishBatch(ctxTimeout, batchReq)
 			cancel()
 
-			b.metrics.recordSend(context.Background(), len(batchMessages), batchBytes, time.Since(startedAt), err == nil)
+			b.metrics.recordSend(ctx, len(batchMessages), batchBytes, time.Since(startedAt), err == nil)
 			if err != nil {
 				b.log.Errorw("failed to publish batch", "error", err)
 			}

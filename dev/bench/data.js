@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778850439236,
+  "lastUpdate": 1778866320963,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -47040,6 +47040,66 @@ window.BENCHMARK_DATA = {
             "value": 137485,
             "unit": "ns/op",
             "extra": "8524 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f60f14be40ad29e412541213ef8f03c0e94d4d1f",
+          "message": "pkg/chipingress: batch client with metrics and request splitting (#2058)\n\n* pkg/chipingress/batch: add OTel metrics, fix shutdown, harden tests\n\nAdd observability metrics to the batch client using OpenTelemetry:\n- send_requests_total (counter with status=success|failure attribute)\n- request_size_messages (histogram with batch_size attribute)\n- request_size_bytes (histogram with max_grpc_request_size_bytes attribute)\n- request_latency_ms (histogram with status attribute)\n- config.info (gauge recording batch configuration at startup)\n\nShutdown improvements:\n- Close the underlying chipingress.Client in Stop()\n- Use a standalone timeout context for the shutdown drain so it is not\n  cancelled prematurely by close(stopCh)\n- Remove closeOnce guard from client.Close (shutdownOnce already\n  serialises)\n\nBug fixes:\n- Pass caller-provided ctx to recordConfig instead of\n  context.Background()\n- Remove redundant send_failures_total counter; send_requests_total\n  with its status label already captures failure counts\n- Remove misleading comment on maxGRPCRequestSize default (10MB\n  matches the chip-ingress server MaxRecvMsgSize, not the client-side\n  16MB maxMessageSize used for MaxCallRecvMsgSize)\n\nTest improvements:\n- Replace nil client in 17 test call sites with mocks.NewClient(t);\n  nil is not a valid chipingress.Client and would panic on Stop()\n- Add WithMaxGRPCRequestSize option and oversize-event metrics test\n- Add config.info gauge assertion\n\n* pkg/chipingress/batch: preserve caller context for send metrics\n\n* pkg/chipingress: use testing contexts in tests\n\n* pkg/chipingress: fix client test formatting",
+          "timestamp": "2026-05-15T17:21:05Z",
+          "tree_id": "6bf1aed55a8cb7194db576e45812e2411095cc5d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f60f14be40ad29e412541213ef8f03c0e94d4d1f"
+        },
+        "date": 1778866319148,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.7,
+            "unit": "ns/op",
+            "extra": "3383559 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 80220,
+            "unit": "ns/op",
+            "extra": "14896 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 385.3,
+            "unit": "ns/op",
+            "extra": "3123998 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 77316,
+            "unit": "ns/op",
+            "extra": "15764 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29199,
+            "unit": "ns/op",
+            "extra": "41168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131589,
+            "unit": "ns/op",
+            "extra": "8796 times\n4 procs"
           }
         ]
       }

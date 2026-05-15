@@ -260,7 +260,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			// teardown after parent close hook completes.
 			chipIngressEmitter = noCloseEmitter{Emitter: batchEmitterService}
 		} else {
-			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient, cfg.ChipIngressLogger)
+			chipIngressEmitter, err = NewChipIngressEmitter(chipIngressClient, lggr)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
 			}

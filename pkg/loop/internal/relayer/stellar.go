@@ -52,6 +52,22 @@ func (sc *StellarClient) GetLatestLedger(ctx context.Context) (stellar.GetLatest
 	return resp, nil
 }
 
+func (sc *StellarClient) ReadContract(ctx context.Context, req stellar.ReadContractRequest) (stellar.ReadContractResponse, error) {
+	pReq, err := stelpb.ConvertReadContractRequestToProto(req)
+	if err != nil {
+		return stellar.ReadContractResponse{}, fmt.Errorf("invalid ReadContract request: %w", err)
+	}
+	pResp, err := sc.grpcClient.ReadContract(ctx, pReq)
+	if err != nil {
+		return stellar.ReadContractResponse{}, net.WrapRPCErr(err)
+	}
+	return stellar.ReadContractResponse{
+		Result:         pResp.Result,
+		LedgerSequence: pResp.LedgerSequence,
+		Error:          pResp.Error,
+	}, nil
+}
+
 // stellarServer wraps types.StellarService and exposes it as a stelpb.StellarServer gRPC endpoint.
 type stellarServer struct {
 	stelpb.UnimplementedStellarServer
@@ -93,4 +109,20 @@ func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (
 		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
 	}
 	return pResp, nil
+}
+
+func (s *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContractRequest) (*stelpb.ReadContractResponse, error) {
+	dReq, err := stelpb.ConvertReadContractRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ReadContract request: %w", err)
+	}
+	dResp, err := s.impl.ReadContract(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return &stelpb.ReadContractResponse{
+		Result:         dResp.Result,
+		LedgerSequence: dResp.LedgerSequence,
+		Error:          dResp.Error,
+	}, nil
 }

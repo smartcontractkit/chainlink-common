@@ -13,7 +13,7 @@ import (
 )
 
 // ValidateBaseTriggerRetryInterval returns an error if the configured retry interval is not positive.
-// Retransmit enablement is evaluated dynamically at runtime via BaseTriggerRetransmitEnabled.
+// Retransmit enablement is evaluated dynamically at runtime via [cresettings.Default.PerOrg.BaseTriggerRetransmitEnabled].
 func ValidateBaseTriggerRetryInterval(ctx context.Context, g settings.Getter) error {
 	if g == nil {
 		return errors.New("base trigger CRE settings getter is nil")
@@ -29,7 +29,7 @@ func ValidateBaseTriggerRetryInterval(ctx context.Context, g settings.Getter) er
 }
 
 // NewBaseTriggerCapabilityWithCRESettings builds a [BaseTriggerCapability] that reads
-// [cresettings.Default.BaseTriggerRetransmitEnabled] and [cresettings.Default.BaseTriggerRetryInterval]
+// [cresettings.Default.PerOrg.BaseTriggerRetransmitEnabled] and [cresettings.Default.BaseTriggerRetryInterval]
 // on each delivery, resend, and scan so changes apply without restarting the node.
 func NewBaseTriggerCapabilityWithCRESettings[T proto.Message](
 	ctx context.Context,

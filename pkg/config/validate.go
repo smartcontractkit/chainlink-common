@@ -37,7 +37,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 	}
 
 	t := v.Type()
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return
 		}
@@ -47,7 +47,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 	switch t.Kind() {
 	case reflect.Bool, reflect.Chan, reflect.Complex128, reflect.Complex64, reflect.Float32, reflect.Float64,
 		reflect.Func, reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Interface,
-		reflect.Invalid, reflect.Ptr, reflect.String, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Invalid, reflect.Pointer, reflect.String, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Uint8, reflect.Uintptr, reflect.UnsafePointer:
 		return
 	case reflect.Struct:
@@ -60,7 +60,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 			if !fv.CanInterface() {
 				continue
 			}
-			if fv.Kind() == reflect.Ptr && fv.IsNil() {
+			if fv.Kind() == reflect.Pointer && fv.IsNil() {
 				continue
 			}
 			// skip the interface if Anonymous, since the parent struct inherits the methods
@@ -81,7 +81,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 			if !mv.CanInterface() {
 				continue
 			}
-			if mv.Kind() == reflect.Ptr && mv.IsNil() {
+			if mv.Kind() == reflect.Pointer && mv.IsNil() {
 				continue
 			}
 			if me := validate(mv, true); me != nil {
@@ -95,7 +95,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 			if !iv.CanInterface() {
 				continue
 			}
-			if iv.Kind() == reflect.Ptr && iv.IsNil() {
+			if iv.Kind() == reflect.Pointer && iv.IsNil() {
 				continue
 			}
 			if me := validate(iv, true); me != nil {

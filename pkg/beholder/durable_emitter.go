@@ -230,13 +230,13 @@ func NewDurableEmitter(
 	log logger.Logger,
 ) (*DurableEmitter, error) {
 	if store == nil {
-		return nil, fmt.Errorf("durable event store is nil")
+		return nil, errors.New("durable event store is nil")
 	}
 	if client == nil {
-		return nil, fmt.Errorf("chipingress client is nil")
+		return nil, errors.New("chipingress client is nil")
 	}
 	if log == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
 	if cfg.PublishBatchSize < 1 {
 		cfg.PublishBatchSize = 1
@@ -376,7 +376,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			d.insertInFlight.Add(1)
 			defer d.insertInFlight.Add(-1)
 			if d.insertShutdown.Load() {
-				cerr = fmt.Errorf("durable emitter closed")
+				cerr = errors.New("durable emitter closed")
 				return
 			}
 			tIns := time.Now()

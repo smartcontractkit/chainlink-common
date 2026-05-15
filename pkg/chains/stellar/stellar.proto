@@ -2,12 +2,30 @@ syntax = "proto3";
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar";
 
 import "google/protobuf/empty.proto";
+import "capabilities/blockchain/stellar/v1alpha/scval.proto";
 
 package loop.stellar;
 
 service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
+  rpc ReadContract(ReadContractRequest) returns (ReadContractResponse);
+}
+
+// ReadContractRequest invokes a read-only (simulation) Soroban contract function.
+message ReadContractRequest {
+  string                                           contract_id     = 1; // Stellar contract address (C… StrKey)
+  string                                           function        = 2; // Soroban function name
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal args     = 3; // Typed Soroban arguments
+  // Optional: ledger to simulate against; 0 means use the latest.
+  uint32                                           ledger_sequence = 4;
+}
+
+// ReadContractResponse carries the return value of the simulated call.
+message ReadContractResponse {
+  string                                         result          = 1; // Return value (only valid when error is empty)
+  uint32                                         ledger_sequence = 2; // Ledger actually used for the simulation
+  string                                         error           = 3; // Non-empty on failure
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.

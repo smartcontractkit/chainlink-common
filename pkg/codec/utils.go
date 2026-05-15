@@ -323,7 +323,7 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 			}
 
 			iItem := reflect.ValueOf(item)
-			if iItem.Kind() == reflect.Ptr {
+			if iItem.Kind() == reflect.Pointer {
 				iItem = iItem.Elem()
 			}
 
@@ -481,9 +481,9 @@ func applyValue(vInto, vField reflect.Value) error {
 	}
 
 	switch vInto.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		switch vField.Kind() {
-		case reflect.Ptr:
+		case reflect.Pointer:
 			if vInto.CanSet() {
 				vInto.Set(vField)
 
@@ -509,7 +509,7 @@ func applyValue(vInto, vField reflect.Value) error {
 	default:
 		if vInto.CanSet() {
 			switch vField.Kind() {
-			case reflect.Ptr:
+			case reflect.Pointer:
 				vInto.Set(vField.Elem())
 			default:
 				vInto.Set(vField)
@@ -525,7 +525,7 @@ func applyValue(vInto, vField reflect.Value) error {
 }
 
 func derefTypePtr(typ reflect.Type) reflect.Type {
-	for typ.Kind() == reflect.Ptr {
+	for typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 	}
 	return typ

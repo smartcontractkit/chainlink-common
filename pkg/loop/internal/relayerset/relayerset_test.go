@@ -645,6 +645,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 						Encoding:   soltypes.EncodingJSONParsed,
 						Commitment: soltypes.CommitmentFinalized,
 					},
+					IsExternal: true,
 				}
 				slot := uint64(22)
 				lamports := uint64(33)
@@ -673,6 +674,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 						Encoding:   soltypes.EncodingBase64,
 						Commitment: soltypes.CommitmentProcessed,
 					},
+					IsExternal: true,
 				}
 				slot := uint64(22)
 				lamports := uint64(33)
@@ -736,7 +738,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 			run: func(t *testing.T, sol types.SolanaService, mockSol *mocks2.SolanaService) {
 				var sig soltypes.Signature
 				copy(sig[:], []byte{1, 2, 3, 4})
-				req := soltypes.GetTransactionRequest{Signature: sig}
+				req := soltypes.GetTransactionRequest{Signature: sig, IsExternal: true}
 				expTime := soltypes.UnixTimeSeconds(11)
 				expFee := uint64(33)
 				expSlot := uint64(17)
@@ -808,6 +810,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 						Commitment:             soltypes.CommitmentProcessed,
 						ReplaceRecentBlockhash: true,
 					},
+					IsExternal: true,
 				}
 				mockSol.EXPECT().
 					SimulateTX(mock.Anything, req).

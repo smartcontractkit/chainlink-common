@@ -358,6 +358,29 @@ func ConvertGetAccountInfoOptsToProto(o *solana.GetAccountInfoOpts) *GetAccountI
 	}
 }
 
+func ConvertGetAccountInfoRequestFromProto(p *GetAccountInfoWithOptsRequest) (solana.GetAccountInfoRequest, error) {
+	if p == nil {
+		return solana.GetAccountInfoRequest{}, fmt.Errorf("nil GetAccountInfoWithOptsRequest")
+	}
+	addr, err := ConvertPublicKeyFromProto(p.GetAccount())
+	if err != nil {
+		return solana.GetAccountInfoRequest{}, err
+	}
+	return solana.GetAccountInfoRequest{
+		Account:    addr,
+		Opts:       ConvertGetAccountInfoOptsFromProto(p.GetOpts()),
+		IsExternal: p.GetIsExternal(),
+	}, nil
+}
+
+func ConvertGetAccountInfoRequestToProto(r solana.GetAccountInfoRequest) *GetAccountInfoWithOptsRequest {
+	return &GetAccountInfoWithOptsRequest{
+		Account:    r.Account[:],
+		Opts:       ConvertGetAccountInfoOptsToProto(r.Opts),
+		IsExternal: r.IsExternal,
+	}
+}
+
 func ConvertGetMultipleAccountsOptsFromProto(p *GetMultipleAccountsOpts) *solana.GetMultipleAccountsOpts {
 	if p == nil {
 		return nil
@@ -825,11 +848,11 @@ func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (solana.Get
 	if err != nil {
 		return solana.GetTransactionRequest{}, err
 	}
-	return solana.GetTransactionRequest{Signature: sig}, nil
+	return solana.GetTransactionRequest{Signature: sig, IsExternal: p.GetIsExternal()}, nil
 }
 
 func ConvertGetTransactionRequestToProto(r solana.GetTransactionRequest) *GetTransactionRequest {
-	return &GetTransactionRequest{Signature: r.Signature[:]}
+	return &GetTransactionRequest{Signature: r.Signature[:], IsExternal: r.IsExternal}
 }
 
 func ConvertGetBalanceReplyFromProto(p *GetBalanceReply) *solana.GetBalanceReply {
@@ -996,8 +1019,9 @@ func ConvertGetMultipleAccountsRequestFromProto(p *GetMultipleAccountsWithOptsRe
 	}
 	accts, _ := ConvertPublicKeysFromProto(p.Accounts)
 	return &solana.GetMultipleAccountsRequest{
-		Accounts: accts,
-		Opts:     ConvertGetMultipleAccountsOptsFromProto(p.Opts),
+		Accounts:   accts,
+		Opts:       ConvertGetMultipleAccountsOptsFromProto(p.Opts),
+		IsExternal: p.GetIsExternal(),
 	}
 }
 
@@ -1006,8 +1030,9 @@ func ConvertGetMultipleAccountsRequestToProto(r *solana.GetMultipleAccountsReque
 		return nil
 	}
 	return &GetMultipleAccountsWithOptsRequest{
-		Accounts: ConvertPublicKeysToProto(r.Accounts),
-		Opts:     ConvertGetMultipleAccountsOptsToProto(r.Opts),
+		Accounts:   ConvertPublicKeysToProto(r.Accounts),
+		Opts:       ConvertGetMultipleAccountsOptsToProto(r.Opts),
+		IsExternal: r.IsExternal,
 	}
 }
 
@@ -1150,6 +1175,7 @@ func ConvertSimulateTXRequestFromProto(p *SimulateTXRequest) (solana.SimulateTXR
 		Receiver:           recv,
 		EncodedTransaction: p.EncodedTransaction,
 		Opts:               ConvertSimulateTXOptsFromProto(p.Opts),
+		IsExternal:         p.GetIsExternal(),
 	}, nil
 }
 
@@ -1158,6 +1184,7 @@ func ConvertSimulateTXRequestToProto(r solana.SimulateTXRequest) *SimulateTXRequ
 		Receiver:           r.Receiver[:],
 		EncodedTransaction: r.EncodedTransaction,
 		Opts:               ConvertSimulateTXOptsToProto(r.Opts),
+		IsExternal:         r.IsExternal,
 	}
 }
 

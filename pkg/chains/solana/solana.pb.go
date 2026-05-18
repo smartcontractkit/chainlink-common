@@ -648,6 +648,7 @@ type GetAccountInfoWithOptsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"` // 32-byte Pubkey
 	Opts          *GetAccountInfoOpts    `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal    bool                   `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -694,6 +695,13 @@ func (x *GetAccountInfoWithOptsRequest) GetOpts() *GetAccountInfoOpts {
 		return x.Opts
 	}
 	return nil
+}
+
+func (x *GetAccountInfoWithOptsRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 // Reply for GetBalance.
@@ -1237,6 +1245,7 @@ type GetMultipleAccountsWithOptsRequest struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Accounts      [][]byte                 `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"` // list of 32-byte Pubkeys
 	Opts          *GetMultipleAccountsOpts `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal    bool                     `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1283,6 +1292,13 @@ func (x *GetMultipleAccountsWithOptsRequest) GetOpts() *GetMultipleAccountsOpts 
 		return x.Opts
 	}
 	return nil
+}
+
+func (x *GetMultipleAccountsWithOptsRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 // Reply for GetSignatureStatuses.
@@ -2416,6 +2432,7 @@ func (x *GetTransactionReply) GetMeta() *TransactionMeta {
 type GetTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"` // 64-byte signature
+	IsExternal    bool                   `protobuf:"varint,2,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2455,6 +2472,13 @@ func (x *GetTransactionRequest) GetSignature() []byte {
 		return x.Signature
 	}
 	return nil
+}
+
+func (x *GetTransactionRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 // RPC read context.
@@ -2646,6 +2670,7 @@ type SimulateTXRequest struct {
 	Receiver           []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`                                               // 32-byte program id (target)
 	EncodedTransaction string                 `protobuf:"bytes,2,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"` // base64/base58 tx
 	Opts               *SimulateTXOpts        `protobuf:"bytes,3,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal         bool                   `protobuf:"varint,4,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -2699,6 +2724,13 @@ func (x *SimulateTXRequest) GetOpts() *SimulateTXOpts {
 		return x.Opts
 	}
 	return nil
+}
+
+func (x *SimulateTXRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 // Accounts to return during simulation.
@@ -4083,10 +4115,12 @@ const file_solana_proto_rawDesc = "" +
 	"\vrpc_context\x18\x01 \x01(\v2\x17.loop.solana.RPCContextR\n" +
 	"rpcContext\x12/\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.loop.solana.AccountH\x00R\x05value\x88\x01\x01B\b\n" +
-	"\x06_value\"n\n" +
+	"\x06_value\"\x8f\x01\n" +
 	"\x1dGetAccountInfoWithOptsRequest\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\fR\aaccount\x123\n" +
-	"\x04opts\x18\x02 \x01(\v2\x1f.loop.solana.GetAccountInfoOptsR\x04opts\"'\n" +
+	"\x04opts\x18\x02 \x01(\v2\x1f.loop.solana.GetAccountInfoOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x03 \x01(\bR\n" +
+	"isExternal\"'\n" +
 	"\x0fGetBalanceReply\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\x04R\x05value\"d\n" +
 	"\x11GetBalanceRequest\x12\x12\n" +
@@ -4132,10 +4166,12 @@ const file_solana_proto_rawDesc = "" +
 	" GetMultipleAccountsWithOptsReply\x128\n" +
 	"\vrpc_context\x18\x01 \x01(\v2\x17.loop.solana.RPCContextR\n" +
 	"rpcContext\x129\n" +
-	"\x05value\x18\x02 \x03(\v2#.loop.solana.OptionalAccountWrapperR\x05value\"z\n" +
+	"\x05value\x18\x02 \x03(\v2#.loop.solana.OptionalAccountWrapperR\x05value\"\x9b\x01\n" +
 	"\"GetMultipleAccountsWithOptsRequest\x12\x1a\n" +
 	"\baccounts\x18\x01 \x03(\fR\baccounts\x128\n" +
-	"\x04opts\x18\x02 \x01(\v2$.loop.solana.GetMultipleAccountsOptsR\x04opts\"^\n" +
+	"\x04opts\x18\x02 \x01(\v2$.loop.solana.GetMultipleAccountsOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x03 \x01(\bR\n" +
+	"isExternal\"^\n" +
 	"\x19GetSignatureStatusesReply\x12A\n" +
 	"\aresults\x18\x01 \x03(\v2'.loop.solana.GetSignatureStatusesResultR\aresults\"1\n" +
 	"\x1bGetSignatureStatusesRequest\x12\x12\n" +
@@ -4225,9 +4261,11 @@ const file_solana_proto_rawDesc = "" +
 	"\x04meta\x18\x04 \x01(\v2\x1c.loop.solana.TransactionMetaH\x02R\x04meta\x88\x01\x01B\r\n" +
 	"\v_block_timeB\x0e\n" +
 	"\f_transactionB\a\n" +
-	"\x05_meta\"5\n" +
+	"\x05_meta\"V\n" +
 	"\x15GetTransactionRequest\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignature\" \n" +
+	"\tsignature\x18\x01 \x01(\fR\tsignature\x12\x1f\n" +
+	"\vis_external\x18\x02 \x01(\bR\n" +
+	"isExternal\" \n" +
 	"\n" +
 	"RPCContext\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\x04R\x04slot\"\xf0\x01\n" +
@@ -4243,11 +4281,13 @@ const file_solana_proto_rawDesc = "" +
 	"\x03err\x18\x01 \x01(\tR\x03err\x12\x12\n" +
 	"\x04logs\x18\x02 \x03(\tR\x04logs\x120\n" +
 	"\baccounts\x18\x03 \x03(\v2\x14.loop.solana.AccountR\baccounts\x12%\n" +
-	"\x0eunits_consumed\x18\x04 \x01(\x04R\runitsConsumed\"\x91\x01\n" +
+	"\x0eunits_consumed\x18\x04 \x01(\x04R\runitsConsumed\"\xb2\x01\n" +
 	"\x11SimulateTXRequest\x12\x1a\n" +
 	"\breceiver\x18\x01 \x01(\fR\breceiver\x12/\n" +
 	"\x13encoded_transaction\x18\x02 \x01(\tR\x12encodedTransaction\x12/\n" +
-	"\x04opts\x18\x03 \x01(\v2\x1b.loop.solana.SimulateTXOptsR\x04opts\"v\n" +
+	"\x04opts\x18\x03 \x01(\v2\x1b.loop.solana.SimulateTXOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x04 \x01(\bR\n" +
+	"isExternal\"v\n" +
 	"\x1fSimulateTransactionAccountsOpts\x125\n" +
 	"\bencoding\x18\x01 \x01(\x0e2\x19.loop.solana.EncodingTypeR\bencoding\x12\x1c\n" +
 	"\taddresses\x18\x02 \x03(\fR\taddresses\"\x8e\x01\n" +

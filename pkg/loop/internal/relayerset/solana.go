@@ -214,14 +214,11 @@ func (ss *solServer) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetA
 		return nil, err
 	}
 
-	addr, err := solpb.ConvertPublicKeyFromProto(req.GetAccount())
+	dReq, err := solpb.ConvertGetAccountInfoRequestFromProto(req)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	opts := solpb.ConvertGetAccountInfoOptsFromProto(req.GetOpts())
-
-	dReq := solana.GetAccountInfoRequest{Account: addr, Opts: opts}
 	dResp, err := solService.GetAccountInfoWithOpts(ctx, dReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)

@@ -107,6 +107,7 @@ message GetAccountInfoWithOptsReply {
 message GetAccountInfoWithOptsRequest {
   bytes account = 1;        // 32-byte Pubkey
   GetAccountInfoOpts opts = 2;
+  bool is_external = 3;
 }
 
 // Reply for GetBalance.
@@ -172,6 +173,7 @@ message GetMultipleAccountsWithOptsReply {
 message GetMultipleAccountsWithOptsRequest {
   repeated bytes accounts = 1; // list of 32-byte Pubkeys
   GetMultipleAccountsOpts opts = 2;
+  bool is_external = 3;
 }
 
 // Reply for GetSignatureStatuses.
@@ -304,6 +306,7 @@ message GetTransactionReply {
 // GetTransaction request.
 message GetTransactionRequest {
   bytes signature = 1; // 64-byte signature
+  bool is_external = 2;
 }
 
 // RPC read context.
@@ -332,6 +335,7 @@ message SimulateTXRequest {
   bytes receiver = 1;            // 32-byte program id (target)
   string encoded_transaction = 2; // base64/base58 tx
   SimulateTXOpts opts = 3;
+  bool is_external = 4;
 }
 
 // Accounts to return during simulation.

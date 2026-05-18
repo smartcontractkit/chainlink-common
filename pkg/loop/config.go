@@ -82,6 +82,7 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryMetricPromBridgeEnabled   = "CL_TELEMETRY_METRIC_PROM_BRIDGE_ENABLED"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 
 	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
@@ -160,6 +161,7 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
+	TelemetryMetricPromBridgeEnabled   bool
 	TelemetryLogCompressor             string
 
 	TracingEnabled         bool
@@ -251,6 +253,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryMetricPromBridgeEnabled, strconv.FormatBool(e.TelemetryMetricPromBridgeEnabled))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
@@ -479,6 +482,10 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		e.TelemetryMetricPromBridgeEnabled, err = getBool(envTelemetryMetricPromBridgeEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricPromBridgeEnabled, err)
+		}
 		e.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)

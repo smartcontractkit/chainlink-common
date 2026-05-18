@@ -8,11 +8,15 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	otelpyroscope "github.com/grafana/otel-profiling-go"
 	"github.com/grafana/pyroscope-go"
 	"github.com/jmoiron/sqlx"
+	prometheus2 "github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
+	"go.opentelemetry.io/contrib/bridges/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -182,6 +186,15 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 		}
+
+		// TODO repeat in core
+		var bridgeOpts []prometheus.Option
+		if !s.EnvConfig.TelemetryMetricPromBridgeEnabled {
+			// go_ runtime metrics only
+			bridgeOpts = append(bridgeOpts, prometheus.WithGatherer(&goGatherer{prometheus2.DefaultGatherer}))
+		}
+		// bridge prometheus metrics through otel
+		beholderCfg.MetricOptions = append(beholderCfg.MetricOptions, sdkmetric.WithReader(sdkmetric.NewManualReader(sdkmetric.WithProducer(prometheus.NewMetricProducer(bridgeOpts...)))))
 
 		// Configure beholder auth - the client will determine rotating vs static mode
 		// Rotating mode: when AuthHeadersTTL is set, client creates internal lazySigner
@@ -365,4 +378,27 @@ func (s *Server) Stop() {
 	if err := s.Logger.Sync(); err != nil {
 		fmt.Println("Failed to sync logger:", err)
 	}
+}
+
+// TODO export for core
+// goGatherer filters a Gatherer to produce only go_ prefixed metrics.
+type goGatherer struct {
+	prometheus2.Gatherer
+}
+
+func (g *goGatherer) Gather() ([]*dto.MetricFamily, error) {
+	var ret []*dto.MetricFamily
+	all, err := g.Gatherer.Gather()
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range all {
+		if m.Name == nil {
+			continue
+		}
+		if strings.HasPrefix(*m.Name, "go_") {
+			ret = append(ret, m)
+		}
+	}
+	return ret, nil
 }

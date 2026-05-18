@@ -350,6 +350,8 @@ type SimulateTXOpts struct {
 type GetAccountInfoRequest struct {
 	Account PublicKey
 	Opts    *GetAccountInfoOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 type GetAccountInfoReply struct {
@@ -360,6 +362,8 @@ type GetAccountInfoReply struct {
 type GetMultipleAccountsRequest struct {
 	Accounts []PublicKey
 	Opts     *GetMultipleAccountsOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 type GetMultipleAccountsReply struct {
@@ -477,6 +481,8 @@ type TransactionResultEnvelope struct {
 // arguments for solana-rpc GetTransaction call
 type GetTransactionRequest struct {
 	Signature Signature
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 // result of solana-rpc GetTransaction call
@@ -517,7 +523,9 @@ type SimulateTXRequest struct {
 	Receiver PublicKey
 	// Encoded
 	EncodedTransaction string
-	Opts               *SimulateTXOpts
+	Opts *SimulateTXOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 type SimulateTXReply struct {

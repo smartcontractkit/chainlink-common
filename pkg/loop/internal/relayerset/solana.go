@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 )
 
 // solClient wraps the SolanaRelayerSetClient by attaching a RelayerID to SolClient requests.
@@ -214,14 +213,11 @@ func (ss *solServer) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetA
 		return nil, err
 	}
 
-	addr, err := solpb.ConvertPublicKeyFromProto(req.GetAccount())
+	dReq, err := solpb.ConvertGetAccountInfoRequestFromProto(req)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	opts := solpb.ConvertGetAccountInfoOptsFromProto(req.GetOpts())
-
-	dReq := solana.GetAccountInfoRequest{Account: addr, Opts: opts}
 	dResp, err := solService.GetAccountInfoWithOpts(ctx, dReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)

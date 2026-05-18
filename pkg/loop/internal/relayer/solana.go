@@ -117,10 +117,7 @@ func (sc *SolClient) GetBalance(ctx context.Context, req solana.GetBalanceReques
 }
 
 func (sc *SolClient) GetAccountInfoWithOpts(ctx context.Context, req solana.GetAccountInfoRequest) (*solana.GetAccountInfoReply, error) {
-	pReq := &solpb.GetAccountInfoWithOptsRequest{
-		Account: req.Account[:],
-		Opts:    solpb.ConvertGetAccountInfoOptsToProto(req.Opts),
-	}
+	pReq := solpb.ConvertGetAccountInfoRequestToProto(req)
 	pResp, err := sc.grpcClient.GetAccountInfoWithOpts(ctx, pReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -339,14 +336,11 @@ func (s *solServer) GetBalance(ctx context.Context, req *solpb.GetBalanceRequest
 }
 
 func (s *solServer) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetAccountInfoWithOptsRequest) (*solpb.GetAccountInfoWithOptsReply, error) {
-	addr, err := solpb.ConvertPublicKeyFromProto(req.GetAccount())
+	dReq, err := solpb.ConvertGetAccountInfoRequestFromProto(req)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	opts := solpb.ConvertGetAccountInfoOptsFromProto(req.GetOpts())
-
-	dReq := solana.GetAccountInfoRequest{Account: addr, Opts: opts}
 	dResp, err := s.impl.GetAccountInfoWithOpts(ctx, dReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)

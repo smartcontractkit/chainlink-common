@@ -386,6 +386,73 @@ func TestGetSignatureStatusesConverters(t *testing.T) {
 	require.Equal(t, conv.ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED, rep2.Results[0].ConfirmationStatus)
 }
 
+func TestExternalRequestProtoRoundTrip(t *testing.T) {
+	t.Run("GetAccountInfoRequest", func(t *testing.T) {
+		pk := typesolana.PublicKey{}
+		copy(pk[:], mkBytes(typesolana.PublicKeyLength, 0xAB))
+		d := typesolana.GetAccountInfoRequest{
+			Account: pk,
+			Opts: &typesolana.GetAccountInfoOpts{
+				Encoding:   typesolana.EncodingBase64,
+				Commitment: typesolana.CommitmentFinalized,
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertGetAccountInfoRequestToProto(d)
+		got, err := conv.ConvertGetAccountInfoRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+
+	t.Run("GetMultipleAccountsRequest", func(t *testing.T) {
+		d := &typesolana.GetMultipleAccountsRequest{
+			Accounts: []typesolana.PublicKey{
+				{1},
+				func() (pk typesolana.PublicKey) { copy(pk[:], mkBytes(typesolana.PublicKeyLength, 0xCD)); return pk }(),
+			},
+			Opts: &typesolana.GetMultipleAccountsOpts{
+				Encoding:   typesolana.EncodingJSONParsed,
+				Commitment: typesolana.CommitmentProcessed,
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertGetMultipleAccountsRequestToProto(d)
+		got := conv.ConvertGetMultipleAccountsRequestFromProto(pb)
+		require.Equal(t, d.Accounts[0], got.Accounts[0])
+		require.Equal(t, d.Accounts[1], got.Accounts[1])
+		require.Equal(t, d.IsExternal, got.IsExternal)
+		require.Equal(t, d.Opts, got.Opts)
+	})
+
+	t.Run("GetTransactionRequest", func(t *testing.T) {
+		var sig typesolana.Signature
+		copy(sig[:], mkBytes(typesolana.SignatureLength, 0xEF))
+		d := typesolana.GetTransactionRequest{Signature: sig, IsExternal: true}
+		pb := conv.ConvertGetTransactionRequestToProto(d)
+		got, err := conv.ConvertGetTransactionRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+
+	t.Run("SimulateTXRequest", func(t *testing.T) {
+		var recv typesolana.PublicKey
+		copy(recv[:], mkBytes(typesolana.PublicKeyLength, 0x11))
+		d := typesolana.SimulateTXRequest{
+			Receiver:           recv,
+			EncodedTransaction: "txdata",
+			Opts: &typesolana.SimulateTXOpts{
+				SigVerify:  true,
+				Commitment: typesolana.CommitmentConfirmed,
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertSimulateTXRequestToProto(d)
+		got, err := conv.ConvertSimulateTXRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+}
+
 func TestErrorJoinBehavior_PublicKeys(t *testing.T) {
 	in := [][]byte{
 		mkBytes(typesolana.PublicKeyLength-1, 0x01),

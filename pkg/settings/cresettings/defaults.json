@@ -36,7 +36,10 @@
 	"PerOrg": {
 		"BaseTriggerRetransmitEnabled": "false",
 		"WorkflowExecutionConcurrencyLimit": "100",
-		"ZeroBalancePruningTimeout": "24h0m0s"
+		"ZeroBalancePruningTimeout": "24h0m0s",
+		"HTTPAction": {
+			"MtlsAuthAllowed": "false"
+		}
 	},
 	"PerOwner": {
 		"WorkflowLimit": "1000",

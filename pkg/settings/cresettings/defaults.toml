@@ -38,6 +38,9 @@ BaseTriggerRetransmitEnabled = 'false'
 WorkflowExecutionConcurrencyLimit = '100'
 ZeroBalancePruningTimeout = '24h0m0s'
 
+[PerOrg.HTTPAction]
+MtlsAuthAllowed = 'false'
+
 [PerOwner]
 WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'

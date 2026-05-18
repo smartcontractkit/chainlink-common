@@ -70,7 +70,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	"GatewayUnauthenticatedRequestRateLimit": "200rps:50",
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:100",
 	"GatewayIncomingPayloadSizeLimit": "14kb",
-    "GatewayVaultManagementEnabled": "true",
+	"GatewayVaultManagementEnabled": "true",
 	"GatewayConfidentialRelayGlobalRate": "20rps:7",
 	"GatewayConfidentialRelayPerNodeRate": "4rps:2",
 	"PerOrg": {

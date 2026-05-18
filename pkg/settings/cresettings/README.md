@@ -214,6 +214,9 @@ flowchart
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
         end
+        subgraph PerOrg.HTTPAction
+            PerOrg.HTTPAction.MtlsAuthAllowed[/PerOrg.HTTPAction.MtlsAuthAllowed/]:::gate
+        end
     end
     subgraph vault
         VaultCiphertextSizeLimit{{VaultCiphertextSizeLimit}}:::bound

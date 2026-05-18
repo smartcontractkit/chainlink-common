@@ -123,9 +123,12 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
-		BaseTriggerRetransmitEnabled:       Bool(false),
+		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
+		HTTPAction: perOrgHTTPAction{
+			MtlsAuthAllowed: Bool(false),
+		},
 	},
 	PerOwner: Owners{
 		WorkflowLimit:                     Int(1000),
@@ -260,10 +263,10 @@ type Schema struct {
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
-	BaseTriggerRetryInterval Setting[time.Duration]
-	BaseTriggerMaxRetries        Setting[int] `unit:"{attempt}"`
-	BaseTriggerPruneAge          Setting[time.Duration]
-	BaseTriggerMaxSendsPerTick   Setting[int] `unit:"{event}"`
+	BaseTriggerRetryInterval   Setting[time.Duration]
+	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
+	BaseTriggerPruneAge        Setting[time.Duration]
+	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
@@ -289,9 +292,10 @@ type Schema struct {
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
-	BaseTriggerRetransmitEnabled Setting[bool]
+	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
+	HTTPAction                        perOrgHTTPAction
 }
 
 type Owners struct {
@@ -395,6 +399,9 @@ type httpAction struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+type perOrgHTTPAction struct {
+	MtlsAuthAllowed Setting[bool]
 }
 type confidentialHTTP struct {
 	CallLimit         Setting[int] `unit:"{call}"`

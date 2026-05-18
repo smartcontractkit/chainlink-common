@@ -648,7 +648,7 @@ type GetAccountInfoWithOptsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"` // 32-byte Pubkey
 	Opts          *GetAccountInfoOpts    `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
-	IsExternal    bool                   `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
+	IsExternal    bool                   `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1245,7 +1245,7 @@ type GetMultipleAccountsWithOptsRequest struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Accounts      [][]byte                 `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"` // list of 32-byte Pubkeys
 	Opts          *GetMultipleAccountsOpts `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
-	IsExternal    bool                     `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
+	IsExternal    bool                     `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2431,8 +2431,8 @@ func (x *GetTransactionReply) GetMeta() *TransactionMeta {
 // GetTransaction request.
 type GetTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"` // 64-byte signature
-	IsExternal    bool                   `protobuf:"varint,2,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`                      // 64-byte signature
+	IsExternal    bool                   `protobuf:"varint,2,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2670,7 +2670,7 @@ type SimulateTXRequest struct {
 	Receiver           []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`                                               // 32-byte program id (target)
 	EncodedTransaction string                 `protobuf:"bytes,2,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"` // base64/base58 tx
 	Opts               *SimulateTXOpts        `protobuf:"bytes,3,opt,name=opts,proto3" json:"opts,omitempty"`
-	IsExternal         bool                   `protobuf:"varint,4,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"`
+	IsExternal         bool                   `protobuf:"varint,4,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }

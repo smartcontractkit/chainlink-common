@@ -31,7 +31,10 @@ func (b *PlainHexBytes) UnmarshalJSON(input []byte) (err error) {
 		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.TypeOf((PlainHexBytes)(nil))}
 	}
 	err = b.UnmarshalText(input[1 : len(input)-1])
-	return fmt.Errorf("UnmarshalJSON failed: %w", err)
+	if err != nil {
+		err = fmt.Errorf("UnmarshalJSON failed: %w", err)
+	}
+	return err
 }
 
 func isString(input []byte) bool {

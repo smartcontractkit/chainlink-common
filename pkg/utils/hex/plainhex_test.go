@@ -24,7 +24,7 @@ var (
 	unmarshalBytesTests = []unmarshalTest{
 		// invalid encoding
 		{input: "", wantErr: "unexpected end of JSON input"},
-		{input: "null", wantErr: "json: cannot unmarshal non-string into Go value of type utils.PlainHexBytes"},
+		{input: "null", wantErr: "json: cannot unmarshal non-string into Go value of type hex.PlainHexBytes"},
 		{input: `"null"`, wantErr: "UnmarshalJSON failed: UnmarshalText failed: encoding/hex: invalid byte: U+006E 'n'"},
 		{input: `"0x"`, wantErr: "UnmarshalJSON failed: UnmarshalText failed: encoding/hex: invalid byte: U+0078 'x'"},
 		{input: `"0X"`, wantErr: "UnmarshalJSON failed: UnmarshalText failed: encoding/hex: invalid byte: U+0058 'X'"},

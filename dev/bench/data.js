@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779114939326,
+  "lastUpdate": 1779137505372,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -47220,6 +47220,66 @@ window.BENCHMARK_DATA = {
             "value": 101371,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4a2d236e3e5a997e5841e52f95ef920112a73aac",
+          "message": "pkg/beholder: add batch emitter service with service-engine lifecycle (#2059)\n\n* pkg/beholder: add batch emitter service and bump chipingress batching dependency\n\n* chore: bump chipingress dependency to publishBatch\n\n* refactor: remove context.Background() in batch emitter service and tests\n\nUse caller ctx for OTel metric Add calls (non-blocking, tolerates\ncancelled contexts) and b.Context() in benchmarks.\n\n* chore: bump chipingress dependency to latest main\n\n* fix: use engine lifecycle context in batch emitter Start instead of startup ctx\n\nThe services contract forbids retaining the startup context after Start\nreturns. Use eng.NewCtx() to get a lifecycle-owned context that is\ncancelled when StopChan closes during service shutdown, rather than\npassing through the caller's startup context.\n\n* fix: use defaulted logger for legacy chip-ingress emitter to prevent nil panic\n\n* bump chipingress to main (bacfb6ba4146), gomodtidy\n\n* refactor: use config structs for emitter/noop constructors preserving signatures\n\nIntroduce ChipIngressEmitterConfig, DualSourceEmitterConfig, and\nNoopClientConfig structs with New() factory methods. The public\nconstructors (NewChipIngressEmitter, NewDualSourceEmitter, NewNoopClient)\nretain their original signatures and delegate to the config structs.\n\nInternal callers that need a logger use the config struct directly;\nnil Lggr defaults to logger.Nop().",
+          "timestamp": "2026-05-18T20:38:58Z",
+          "tree_id": "2397f1ac745805bb0e64b2dd02a0adf072fbb7e7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4a2d236e3e5a997e5841e52f95ef920112a73aac"
+        },
+        "date": 1779137503458,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 528.2,
+            "unit": "ns/op",
+            "extra": "2048068 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94486,
+            "unit": "ns/op",
+            "extra": "12675 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.3,
+            "unit": "ns/op",
+            "extra": "2921940 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93046,
+            "unit": "ns/op",
+            "extra": "12843 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26854,
+            "unit": "ns/op",
+            "extra": "45044 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139741,
+            "unit": "ns/op",
+            "extra": "8878 times\n4 procs"
           }
         ]
       }

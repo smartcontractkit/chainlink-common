@@ -19,7 +19,7 @@ import (
 )
 
 func TestNoopClient(t *testing.T) {
-	noopClient := beholder.NewNoopClient(logger.Test(t))
+	noopClient := beholder.NoopClientConfig{Lggr: logger.Test(t)}.New()
 	assert.NotNil(t, noopClient)
 
 	// Message Emitter

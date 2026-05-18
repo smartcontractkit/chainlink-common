@@ -16,20 +16,34 @@ import (
 // in a fire-and-forget goroutine so callers are never blocked.
 type ChipIngressEmitter struct {
 	client chipingress.Client
-	log    logger.Logger
+	lggr   logger.Logger
 	stopCh services.StopChan
 	wg     services.WaitGroup
 	closed atomic.Bool
 }
 
-func NewChipIngressEmitter(client chipingress.Client, lggr logger.Logger) (Emitter, error) {
+func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
+	return ChipIngressEmitterConfig{}.New(client)
+}
+
+// ChipIngressEmitterConfig holds configuration for creating a ChipIngressEmitter.
+type ChipIngressEmitterConfig struct {
+	Lggr logger.Logger
+}
+
+// New creates a ChipIngressEmitter from the config.
+func (c ChipIngressEmitterConfig) New(client chipingress.Client) (Emitter, error) {
 	if client == nil {
 		return nil, errors.New("chip ingress client is nil")
+	}
+	lggr := c.Lggr
+	if lggr == nil {
+		lggr = logger.Nop()
 	}
 
 	return &ChipIngressEmitter{
 		client: client,
-		log:    lggr,
+		lggr:    lggr,
 		stopCh: make(services.StopChan),
 	}, nil
 }
@@ -73,7 +87,7 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		defer cancel()
 
 		if _, err := c.client.Publish(ctx, eventPb); err != nil {
-			c.log.Infof("failed to emit to chip ingress: %v", err)
+			c.lggr.Infof("failed to emit to chip ingress: %v", err)
 		}
 	}(context.WithoutCancel(ctx))
 

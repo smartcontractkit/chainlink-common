@@ -14,10 +14,20 @@ import (
 type DualSourceEmitter struct {
 	chipIngressEmitter   Emitter
 	otelCollectorEmitter Emitter
-	log                  logger.Logger
+	lggr                 logger.Logger
 }
 
-func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter, lggr logger.Logger) (Emitter, error) {
+func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
+	return DualSourceEmitterConfig{}.New(chipIngressEmitter, otelCollectorEmitter)
+}
+
+// DualSourceEmitterConfig holds configuration for creating a DualSourceEmitter.
+type DualSourceEmitterConfig struct {
+	Lggr logger.Logger
+}
+
+// New creates a DualSourceEmitter from the config.
+func (c DualSourceEmitterConfig) New(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
 	if chipIngressEmitter == nil {
 		return nil, errors.New("chip ingress emitter is nil")
 	}
@@ -26,10 +36,15 @@ func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitt
 		return nil, errors.New("otel collector emitter is nil")
 	}
 
+	lggr := c.Lggr
+	if lggr == nil {
+		lggr = logger.Nop()
+	}
+
 	return &DualSourceEmitter{
 		chipIngressEmitter:   chipIngressEmitter,
 		otelCollectorEmitter: otelCollectorEmitter,
-		log:                  lggr,
+		lggr:                 lggr,
 	}, nil
 }
 
@@ -44,7 +59,7 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 	}
 
 	if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
-		d.log.Infof("failed to emit to chip ingress: %v", err)
+		d.lggr.Infof("failed to emit to chip ingress: %v", err)
 	}
 
 	return nil

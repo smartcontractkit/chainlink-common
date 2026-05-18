@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestNewDualSourceEmitter(t *testing.T) {
@@ -20,7 +19,7 @@ func TestNewDualSourceEmitter(t *testing.T) {
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
 		require.NoError(t, err)
 
 		assert.NotNil(t, emitter)
@@ -30,7 +29,7 @@ func TestNewDualSourceEmitter(t *testing.T) {
 	// Test nil chip ingress emitter
 	t.Run("nil chip ingress emitter", func(t *testing.T) {
 		otelEmitter := &mockEmitter{}
-		emitter, err := beholder.NewDualSourceEmitter(nil, otelEmitter, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(nil, otelEmitter)
 
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
@@ -39,7 +38,7 @@ func TestNewDualSourceEmitter(t *testing.T) {
 	// Test nil otel collector emitter
 	t.Run("nil otel collector emitter", func(t *testing.T) {
 		chipEmitter := &mockEmitter{}
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, nil, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, nil)
 
 		assert.Error(t, err)
 		assert.Nil(t, emitter)
@@ -50,7 +49,7 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 		chipEmitter := &mockEmitter{}
 		otelEmitter := &mockEmitter{}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), []byte("test message"), "key", "value")
@@ -65,7 +64,7 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 			},
 		}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), []byte("test message"))
@@ -88,7 +87,7 @@ func TestDualSourceEmitterBlockingBehavior(t *testing.T) {
 		}
 		otelEmitter := &mockEmitter{}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), []byte("test"))
@@ -107,7 +106,7 @@ func TestDualSourceEmitterBlockingBehavior(t *testing.T) {
 		}
 		otelEmitter := &mockEmitter{}
 
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter, logger.Test(t))
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), []byte("test"))

@@ -120,7 +120,7 @@ func NewObserver(t *testing.T) Observer {
 
 	messageEmitter := &assertMessageEmitter{t: t}
 
-	client := beholder.NewNoopClient(logger.Test(t))
+	client := beholder.NoopClientConfig{Lggr: logger.Test(t)}.New()
 	client.Emitter = messageEmitter
 	require.NoError(t, client.Start(t.Context()))
 

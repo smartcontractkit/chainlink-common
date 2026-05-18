@@ -22,9 +22,21 @@ import (
 )
 
 // Default client to fallback when is is not initialized properly.
-// An optional logger may be passed to surface service-engine diagnostics;
-// when omitted a no-op logger is used.
-func NewNoopClient(optLogger ...pkglogger.Logger) *Client {
+func NewNoopClient() *Client {
+	return NoopClientConfig{}.New()
+}
+
+// NoopClientConfig holds configuration for creating a no-op Client.
+type NoopClientConfig struct {
+	Lggr pkglogger.Logger
+}
+
+// New creates a no-op Client from the config.
+func (c NoopClientConfig) New() *Client {
+	lggr := c.Lggr
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
 	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
@@ -43,7 +55,7 @@ func NewNoopClient(optLogger ...pkglogger.Logger) *Client {
 	// ChipIngress
 	chipClient := &chipingress.NoopClient{}
 
-	c := &Client{
+	cl := &Client{
 		Config:                cfg,
 		Logger:                otelLogger,
 		Tracer:                tracer,
@@ -56,12 +68,8 @@ func NewNoopClient(optLogger ...pkglogger.Logger) *Client {
 		MessageLoggerProvider: loggerProvider,
 		OnClose:               noopOnClose,
 	}
-	lggr := pkglogger.Logger(pkglogger.Nop())
-	if len(optLogger) > 0 && optLogger[0] != nil {
-		lggr = optLogger[0]
-	}
-	c.initService(lggr, nil)
-	return c
+	cl.initService(lggr, nil)
+	return cl
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output

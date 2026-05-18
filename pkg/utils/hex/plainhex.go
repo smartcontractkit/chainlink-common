@@ -3,9 +3,9 @@ package hex
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"reflect"
-
-	"github.com/pkg/errors"
 )
 
 // Similar to go-ethereum's hexutil.Bytes but does not assume a 0x prefix.
@@ -31,7 +31,7 @@ func (b *PlainHexBytes) UnmarshalJSON(input []byte) (err error) {
 		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.TypeOf((PlainHexBytes)(nil))}
 	}
 	err = b.UnmarshalText(input[1 : len(input)-1])
-	return errors.Wrap(err, "UnmarshalJSON failed")
+	return fmt.Errorf("UnmarshalJSON failed: %w", err)
 }
 
 func isString(input []byte) bool {
@@ -42,11 +42,11 @@ func isString(input []byte) bool {
 func (b *PlainHexBytes) UnmarshalText(input []byte) error {
 	raw, err := checkText(input, true)
 	if err != nil {
-		return errors.Wrap(err, "UnmarshalText failed")
+		return fmt.Errorf("UnmarshalText failed: %w", err)
 	}
 	dec := make([]byte, len(raw)/2)
 	if _, err = hex.Decode(dec, raw); err != nil {
-		return errors.Wrap(err, "UnmarshalText failed")
+		return fmt.Errorf("UnmarshalText failed: %w", err)
 	}
 	*b = dec
 	return nil

@@ -63,6 +63,10 @@ type DurableEventStore interface {
 	ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error)
 	// DeleteExpired removes events older than ttl and returns the count deleted.
 	DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error)
+	// MarkFailedBatch records a delivery failure for a batch of events, annotating
+	// each row with the provided errorMessage. Failed events remain pending so the
+	// retransmit loop can attempt redelivery.
+	MarkFailedBatch(ctx context.Context, errorMessage string, ids []int64) error
 }
 
 // metricsInstrumentedStore wraps DurableEventStore to record store operation metrics.
@@ -72,6 +76,7 @@ type metricsInstrumentedStore struct {
 }
 
 var _ DurableEventStore = (*metricsInstrumentedStore)(nil)
+
 var _ DurableQueueObserver = (*metricsInstrumentedStore)(nil)
 
 func newMetricsInstrumentedStore(inner DurableEventStore, m *durableEmitterMetrics) DurableEventStore {
@@ -147,4 +152,11 @@ func (s *metricsInstrumentedStore) InsertBatch(ctx context.Context, payloads [][
 	ids, err := bi.InsertBatch(ctx, payloads)
 	s.m.recordStoreOp(ctx, "insert_batch", time.Since(t0), err)
 	return ids, err
+}
+
+func (s *metricsInstrumentedStore) MarkFailedBatch(ctx context.Context, errorMessage string, ids []int64) error {
+	t0 := time.Now()
+	err := s.inner.MarkFailedBatch(ctx, errorMessage, ids)
+	s.m.recordStoreOp(ctx, "mark_failed_batch", time.Since(t0), err)
+	return err
 }

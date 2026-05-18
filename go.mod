@@ -86,6 +86,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress
+
 require (
 	github.com/apache/arrow-go/v18 v18.3.1 // indirect
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect

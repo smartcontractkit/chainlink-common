@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779099342032,
+  "lastUpdate": 1779114939326,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -47160,6 +47160,66 @@ window.BENCHMARK_DATA = {
             "value": 147074,
             "unit": "ns/op",
             "extra": "7605 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bacfb6ba4146d49d7ed720ede9a8b2c794bb3166",
+          "message": "fix: batch client should not retain startup context (#2064)\n\nUse context.WithoutCancel to detach from the caller's cancellation\nwhile preserving values (trace IDs, etc.). The batcher lifecycle is\ncontrolled exclusively via Stop() which closes stopCh, triggering\ncancel on the internal context.\n\nRemove cancelBatcher field; cancel is now local to the goroutine\nclosure and a simple started bool replaces the nil-check sentinel.",
+          "timestamp": "2026-05-18T14:24:24Z",
+          "tree_id": "7031107d98ba36ea3c6219e6bed3b28642d6be09",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bacfb6ba4146d49d7ed720ede9a8b2c794bb3166"
+        },
+        "date": 1779114936827,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 274.2,
+            "unit": "ns/op",
+            "extra": "4384908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 61068,
+            "unit": "ns/op",
+            "extra": "19704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 295,
+            "unit": "ns/op",
+            "extra": "4009534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 62067,
+            "unit": "ns/op",
+            "extra": "19327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22677,
+            "unit": "ns/op",
+            "extra": "52802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 101371,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

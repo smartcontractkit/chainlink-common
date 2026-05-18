@@ -451,7 +451,7 @@ func TestStart(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 
-	t.Run("context cancellation flushes pending batch", func(t *testing.T) {
+	t.Run("stop flushes pending batch before batch interval", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
@@ -459,7 +459,7 @@ func TestStart(t *testing.T) {
 		mockClient.
 			On("PublishBatch",
 				mock.MatchedBy(func(ctx context.Context) bool {
-					// Regression guard: flush on cancellation must not use an already-canceled context.
+					// Regression guard: flush on stop must not use an already-canceled context.
 					return ctx != nil && ctx.Err() == nil
 				}),
 				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
@@ -475,21 +475,19 @@ func TestStart(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(t.Context())
-
-		client.Start(ctx)
+		client.Start(t.Context())
 
 		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
 		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 
 		time.Sleep(10 * time.Millisecond)
 
-		cancel()
+		client.Stop()
 
 		select {
 		case <-done:
 		case <-time.After(time.Second):
-			t.Fatal("timeout waiting for flush on context cancellation")
+			t.Fatal("timeout waiting for flush on stop")
 		}
 
 		mockClient.AssertExpectations(t)
@@ -541,12 +539,11 @@ func TestStart(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(t.Context())
-		client.Start(ctx)
+		client.Start(t.Context())
 
 		time.Sleep(10 * time.Millisecond)
 
-		cancel()
+		client.Stop()
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -935,7 +932,7 @@ func TestCallbacks(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 
-	t.Run("callbacks invoked on context cancellation", func(t *testing.T) {
+	t.Run("callbacks invoked on stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
@@ -944,7 +941,7 @@ func TestCallbacks(t *testing.T) {
 		mockClient.
 			On("PublishBatch",
 				mock.MatchedBy(func(ctx context.Context) bool {
-					// Regression guard: flush on cancellation must not use an already-canceled context.
+					// Regression guard: flush on stop must not use an already-canceled context.
 					return ctx != nil && ctx.Err() == nil
 				}),
 				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
@@ -959,9 +956,7 @@ func TestCallbacks(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(t.Context())
-
-		client.Start(ctx)
+		client.Start(t.Context())
 
 		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
@@ -973,13 +968,13 @@ func TestCallbacks(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		// cancel context to trigger flush
-		cancel()
+		// stop to trigger flush
+		client.Stop()
 
 		select {
 		case <-done:
 		case <-time.After(time.Second):
-			t.Fatal("timeout waiting for flush on cancellation")
+			t.Fatal("timeout waiting for flush on stop")
 		}
 
 		select {

@@ -54,8 +54,15 @@ type SecretsRequestParams struct {
 	Owner            string             `json:"owner"`            // Ethereum address (hex, 0x-prefixed)
 	ExecutionID      string             `json:"execution_id"`     // 32 bytes, hex-encoded
 	OrgID            string             `json:"org_id,omitempty"` // Organization identifier for org-based secret ownership
-	Secrets          []SecretIdentifier `json:"secrets"`
-	EnclavePublicKey string             `json:"enclave_public_key"`
+	Secrets []SecretIdentifier `json:"secrets"`
+	// EnclavePublicKey is the ephemeral encryption key the relay encrypts
+	// returned shares to.
+	//
+	// Deprecated: this field will be removed in a future change. The relay
+	// will source the enclave public key from a different mechanism (not
+	// from this request payload). New callers should not depend on the
+	// field being present.
+	EnclavePublicKey string `json:"enclave_public_key"`
 	// EnclaveConfig is the enclave's current config, included so the relay can
 	// verify it against onchain DON state after attestation validation. See
 	// the EnclaveConfig type doc-comment for the threat model.

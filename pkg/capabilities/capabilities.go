@@ -170,9 +170,8 @@ type SpendLimit struct {
 }
 
 type RequestMetadata struct {
-	WorkflowID    string
-	WorkflowOwner string
-	// OrgID is CRE organization context propagated with capability requests.
+	WorkflowID               string
+	WorkflowOwner            string
 	OrgID                    string
 	WorkflowExecutionID      string
 	WorkflowName             string

@@ -84,9 +84,10 @@ const (
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 
-	envChipIngressEndpoint            = "CL_CHIP_INGRESS_ENDPOINT"
-	envChipIngressInsecureConnection  = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
-	envChipIngressBatchEmitterEnabled = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
+	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
+	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -261,6 +262,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
+	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(e.ChipIngressDurableEmitterEnabled))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -495,6 +497,10 @@ func (e *EnvConfig) parse() error {
 		e.ChipIngressBatchEmitterEnabled, err = getBool(envChipIngressBatchEmitterEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressBatchEmitterEnabled, err)
+		}
+		e.ChipIngressDurableEmitterEnabled, err = getBool(envChipIngressDurableEmitterEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
 		}
 	}
 

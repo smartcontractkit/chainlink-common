@@ -123,7 +123,7 @@ func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSou
 		return errors.New("durable emitter requires a database connection")
 	}
 
-	pgStore := NewPgDurableEventStore(ds)
+	pgStore := NewPGDurableEventStore(ds)
 	durableEmitter, err := NewDurableEmitter(pgStore, chipClient, retransmit, DefaultDurableEmitterConfig(), lggr)
 	if err != nil {
 		return fmt.Errorf("failed to create durable emitter: %w", err)
@@ -178,8 +178,8 @@ type DurableEmitter struct {
 	// loops over the shared queue. Should be set to false when initialized inside
 	// LOOP plugins so a single host process owns reclamation and cleanup.
 	retransmit bool
-	cfg           DurableEmitterConfig
-	log           logger.Logger
+	cfg        DurableEmitterConfig
+	log        logger.Logger
 
 	metrics *durableEmitterMetrics
 

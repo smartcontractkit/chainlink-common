@@ -13,22 +13,22 @@ import (
 
 const chipDurableEventsTable = "cre.chip_durable_events"
 
-// PgDurableEventStore is a Postgres-backed implementation of DurableEventStore.
-type PgDurableEventStore struct {
+// PGDurableEventStore is a Postgres-backed implementation of DurableEventStore.
+type PGDurableEventStore struct {
 	ds sqlutil.DataSource
 }
 
 var (
-	_ DurableEventStore    = (*PgDurableEventStore)(nil)
-	_ DurableQueueObserver = (*PgDurableEventStore)(nil)
-	_ BatchInserter        = (*PgDurableEventStore)(nil)
+	_ DurableEventStore    = (*PGDurableEventStore)(nil)
+	_ DurableQueueObserver = (*PGDurableEventStore)(nil)
+	_ BatchInserter        = (*PGDurableEventStore)(nil)
 )
 
-func NewPgDurableEventStore(ds sqlutil.DataSource) *PgDurableEventStore {
-	return &PgDurableEventStore{ds: ds}
+func NewPGDurableEventStore(ds sqlutil.DataSource) *PGDurableEventStore {
+	return &PGDurableEventStore{ds: ds}
 }
 
-func (s *PgDurableEventStore) Insert(ctx context.Context, payload []byte) (int64, error) {
+func (s *PGDurableEventStore) Insert(ctx context.Context, payload []byte) (int64, error) {
 	const q = `INSERT INTO ` + chipDurableEventsTable + ` (payload) VALUES ($1) RETURNING id`
 	var id int64
 	if err := s.ds.GetContext(ctx, &id, q, payload); err != nil {
@@ -37,7 +37,7 @@ func (s *PgDurableEventStore) Insert(ctx context.Context, payload []byte) (int64
 	return id, nil
 }
 
-func (s *PgDurableEventStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+func (s *PGDurableEventStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
 	if len(payloads) == 0 {
 		return nil, nil
 	}
@@ -60,7 +60,7 @@ func (s *PgDurableEventStore) InsertBatch(ctx context.Context, payloads [][]byte
 	return ids, nil
 }
 
-func (s *PgDurableEventStore) Delete(ctx context.Context, id int64) error {
+func (s *PGDurableEventStore) Delete(ctx context.Context, id int64) error {
 	const q = `DELETE FROM ` + chipDurableEventsTable + ` WHERE id = $1`
 	if _, err := s.ds.ExecContext(ctx, q, id); err != nil {
 		return fmt.Errorf("failed to delete chip durable event id=%d: %w", id, err)
@@ -68,7 +68,7 @@ func (s *PgDurableEventStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *PgDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
+func (s *PGDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
 	const q = `UPDATE ` + chipDurableEventsTable + ` SET delivered_at = now() WHERE id = $1 AND delivered_at IS NULL`
 	if _, err := s.ds.ExecContext(ctx, q, id); err != nil {
 		return fmt.Errorf("failed to mark chip durable event delivered id=%d: %w", id, err)
@@ -76,7 +76,7 @@ func (s *PgDurableEventStore) MarkDelivered(ctx context.Context, id int64) error
 	return nil
 }
 
-func (s *PgDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+func (s *PGDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
@@ -89,7 +89,7 @@ func (s *PgDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int6
 	return n, nil
 }
 
-func (s *PgDurableEventStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
+func (s *PGDurableEventStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
 	if batchLimit <= 0 {
 		return 0, nil
 	}
@@ -113,7 +113,7 @@ USING picked WHERE t.id = picked.id`
 	return n, nil
 }
 
-func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+func (s *PGDurableEventStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
 	const q = `
 SELECT id, payload, created_at
 FROM ` + chipDurableEventsTable + `
@@ -144,7 +144,7 @@ LIMIT $2`
 	return out, nil
 }
 
-func (s *PgDurableEventStore) DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error) {
+func (s *PGDurableEventStore) DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error) {
 	const q = `
 WITH deleted AS (
     DELETE FROM ` + chipDurableEventsTable + `
@@ -167,7 +167,7 @@ type chipDurableQueueAgg struct {
 }
 
 // ObserveDurableQueue implements DurableQueueObserver for queue depth / age gauges.
-func (s *PgDurableEventStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (s *PGDurableEventStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
 	const qAgg = `
 SELECT
 	count(*)::bigint AS cnt,

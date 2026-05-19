@@ -148,6 +148,28 @@ func (s *Server) start(opts ...ServerOpt) error {
 		OnDialError:     func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
 	}
 
+	if s.EnvConfig.DatabaseURL != nil {
+		pg.SetApplicationName(s.EnvConfig.DatabaseURL.URL(), build.Program)
+		dbURL := s.EnvConfig.DatabaseURL.URL().String()
+		var err error
+		s.db, err = pg.DBConfig{
+			IdleInTxSessionTimeout: s.EnvConfig.DatabaseIdleInTxSessionTimeout,
+			LockTimeout:            s.EnvConfig.DatabaseLockTimeout,
+			MaxOpenConns:           s.EnvConfig.DatabaseMaxOpenConns,
+			MaxIdleConns:           s.EnvConfig.DatabaseMaxIdleConns,
+			EnableTracing:          s.EnvConfig.DatabaseTracingEnabled,
+		}.New(ctx, dbURL, pg.DriverPostgres)
+		if err != nil {
+			return fmt.Errorf("error connecting to DataBase: %w", err)
+		}
+		s.DataSource = sqlutil.WrapDataSource(s.db, s.Logger,
+			sqlutil.TimeoutHook(func() time.Duration { return s.EnvConfig.DatabaseQueryTimeout }),
+			sqlutil.MonitorHook(func() bool { return s.EnvConfig.DatabaseLogSQL }))
+
+		s.dbStatsReporter = pg.NewStatsReporter(s.db.Stats, s.Logger)
+		s.dbStatsReporter.Start()
+	}
+
 	if s.EnvConfig.TelemetryEndpoint == "" {
 		err := SetupTracing(tracingConfig)
 		if err != nil {
@@ -217,6 +239,12 @@ func (s *Server) start(opts ...ServerOpt) error {
 
 		if err := s.startBeholderClient(ctx, beholderCfg); err != nil {
 			return err
+		}
+
+		if s.EnvConfig.ChipIngressDurableEmitterEnabled {
+			if err := s.setupDurableEmitter(ctx); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -301,28 +329,6 @@ func (s *Server) start(opts ...ServerOpt) error {
 		return fmt.Errorf("error starting health checker: %w", err)
 	}
 
-	if s.EnvConfig.DatabaseURL != nil {
-		pg.SetApplicationName(s.EnvConfig.DatabaseURL.URL(), build.Program)
-		dbURL := s.EnvConfig.DatabaseURL.URL().String()
-		var err error
-		s.db, err = pg.DBConfig{
-			IdleInTxSessionTimeout: s.EnvConfig.DatabaseIdleInTxSessionTimeout,
-			LockTimeout:            s.EnvConfig.DatabaseLockTimeout,
-			MaxOpenConns:           s.EnvConfig.DatabaseMaxOpenConns,
-			MaxIdleConns:           s.EnvConfig.DatabaseMaxIdleConns,
-			EnableTracing:          s.EnvConfig.DatabaseTracingEnabled,
-		}.New(ctx, dbURL, pg.DriverPostgres)
-		if err != nil {
-			return fmt.Errorf("error connecting to DataBase: %w", err)
-		}
-		s.DataSource = sqlutil.WrapDataSource(s.db, s.Logger,
-			sqlutil.TimeoutHook(func() time.Duration { return s.EnvConfig.DatabaseQueryTimeout }),
-			sqlutil.MonitorHook(func() bool { return s.EnvConfig.DatabaseLogSQL }))
-
-		s.dbStatsReporter = pg.NewStatsReporter(s.db.Stats, s.Logger)
-		s.dbStatsReporter.Start()
-	}
-
 	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
 	if bc := beholder.GetClient(); bc != nil {
 		s.LimitsFactory.Meter = bc.Meter
@@ -361,6 +367,42 @@ func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.C
 		s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
 	}
 
+	return nil
+}
+
+func (s *Server) setupDurableEmitter(ctx context.Context) error {
+	if s.beholderClient == nil {
+		return fmt.Errorf("beholder client not initialized")
+	}
+
+	chipClient := s.beholderClient.Chip
+	if chipClient == nil {
+		return fmt.Errorf("chip ingress client not available")
+	}
+
+	if s.DataSource == nil {
+		return fmt.Errorf("durable emitter requires a database connection: set CL_DATABASE_URL")
+	}
+
+	pgStore := beholder.NewPgDurableEventStore(s.DataSource)
+	durableCfg := beholder.DefaultDurableEmitterConfig()
+	durableEmitter, err := beholder.NewDurableEmitter(pgStore, chipClient, false, durableCfg, s.Logger)
+	if err != nil {
+		return fmt.Errorf("failed to create durable emitter: %w", err)
+	}
+
+	// Build a new DualSourceEmitter: durable chip + OTLP.
+	messageLogger := s.beholderClient.MessageLoggerProvider.Logger("durable-emitter")
+	otlpEmitter := beholder.NewMessageEmitter(messageLogger)
+	dualEmitter, err := beholder.NewDualSourceEmitter(durableEmitter, otlpEmitter)
+	if err != nil {
+		return fmt.Errorf("failed to create dual source emitter: %w", err)
+	}
+
+	durableEmitter.Start(ctx)
+	s.beholderClient.Emitter = dualEmitter
+
+	s.Logger.Infow("Durable emitter enabled — all CloudEvent sources use the durable Chip queue")
 	return nil
 }
 

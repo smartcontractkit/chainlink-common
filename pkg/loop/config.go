@@ -84,9 +84,9 @@ const (
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 
-	envChipIngressEndpoint             = "CL_CHIP_INGRESS_ENDPOINT"
-	envChipIngressInsecureConnection   = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
-	envChipIngressBatchEmitterEnabled  = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
+	envChipIngressEndpoint            = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressInsecureConnection  = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressBatchEmitterEnabled = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -97,9 +97,10 @@ const (
 type EnvConfig struct {
 	AppID string
 
-	ChipIngressEndpoint           string
-	ChipIngressInsecureConnection bool
-	ChipIngressBatchEmitterEnabled bool
+	ChipIngressEndpoint              string
+	ChipIngressInsecureConnection    bool
+	ChipIngressBatchEmitterEnabled   bool
+	ChipIngressDurableEmitterEnabled bool
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -139,15 +140,15 @@ type EnvConfig struct {
 	PyroscopePPROFBlockProfileRate     int
 	PyroscopePPROFMutexProfileFraction int
 
-	TelemetryEnabled                   bool
-	TelemetryEndpoint                  string
-	TelemetryInsecureConnection        bool
-	TelemetryCACertFile                string
-	TelemetryAttributes                OtelAttributes
-	TelemetryTraceSampleRatio          float64
-	TelemetryAuthHeaders               map[string]string
-	TelemetryAuthPubKeyHex             string
-	TelemetryAuthHeadersTTL            time.Duration
+	TelemetryEnabled            bool
+	TelemetryEndpoint           string
+	TelemetryInsecureConnection bool
+	TelemetryCACertFile         string
+	TelemetryAttributes         OtelAttributes
+	TelemetryTraceSampleRatio   float64
+	TelemetryAuthHeaders        map[string]string
+	TelemetryAuthPubKeyHex      string
+	TelemetryAuthHeadersTTL     time.Duration
 	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor
 	// (batched async custom-message export vs immediate per-record export).
 	TelemetryEmitterBatchProcessor     bool

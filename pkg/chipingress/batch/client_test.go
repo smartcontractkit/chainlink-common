@@ -64,6 +64,43 @@ func TestNewBatchClient(t *testing.T) {
 		assert.Equal(t, 1000, cap(client.messageBuffer))
 	})
 
+	t.Run("WithMaxGRPCRequestSize", func(t *testing.T) {
+		t.Run("applies value at or above minimum", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(4*1024*1024))
+			require.NoError(t, err)
+			assert.Equal(t, 4*1024*1024, client.maxGRPCRequestSize)
+			assert.Equal(t, 4*1024*1024-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("clamps value below minimum to minMaxGRPCRequestSize", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(512))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("clamps zero to minMaxGRPCRequestSize", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(0))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("clamps negative to minMaxGRPCRequestSize", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(-1))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("exact minimum is accepted as-is", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(minMaxGRPCRequestSize))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+	})
+
 	t.Run("records failure metrics when request exceeds configured max grpc size", func(t *testing.T) {
 		reader, restore := useTestMeterProvider(t)
 		defer restore()
@@ -79,8 +116,10 @@ func TestNewBatchClient(t *testing.T) {
 			WithBatchSize(1),
 			WithBatchInterval(time.Second),
 			WithMessageBuffer(10),
-			WithMaxGRPCRequestSize(maxGRPCSize),
 		)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxGRPCSize
+		client.effectiveMaxRequestSize = maxGRPCSize
 		require.NoError(t, err)
 		client.Start(t.Context())
 
@@ -303,8 +342,10 @@ func TestSendBatch(t *testing.T) {
 			}).
 			Times(3)
 
-		client, err := NewBatchClient(mockClient, WithMaxGRPCRequestSize(maxRequestSize))
+		client, err := NewBatchClient(mockClient)
 		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
 
 		messages := make([]*messageWithCallback, 0, len(events))
 		for _, event := range events {
@@ -339,14 +380,71 @@ func TestSendBatch(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 
+	t.Run("records batch_splits_total metric when batch is split", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		events := []*chipingress.CloudEventPb{
+			largeTestEvent("split-metric-1"),
+			largeTestEvent("split-metric-2"),
+			largeTestEvent("split-metric-3"),
+		}
+		// Set maxRequestSize so that 2 events fit but 3 do not, forcing a split.
+		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: events[:2]})
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		var mu sync.Mutex
+		var publishCount int
+
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				publishCount++
+				if publishCount == 2 {
+					close(done)
+				}
+				mu.Unlock()
+			})
+
+		client, err := NewBatchClient(mockClient)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
+
+		messages := make([]*messageWithCallback, 0, len(events))
+		for _, event := range events {
+			messages = append(messages, &messageWithCallback{event: event})
+		}
+
+		client.sendBatch(t.Context(), messages)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for split batches to be sent")
+		}
+
+		rm := collectResourceMetrics(t, reader)
+		splitsMetric := mustMetric(t, rm, "chip_ingress.batch.batch_splits_total")
+		splitsSum, ok := splitsMetric.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		require.Len(t, splitsSum.DataPoints, 1)
+		assert.Equal(t, int64(1), splitsSum.DataPoints[0].Value)
+	})
+
 	t.Run("doesn't publish a single event over max gRPC request size", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		callbackDone := make(chan error, 1)
 		event := largeTestEvent("oversized-id")
 		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{event}}) - 1
 
-		client, err := NewBatchClient(mockClient, WithMaxGRPCRequestSize(maxRequestSize))
+		client, err := NewBatchClient(mockClient)
 		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
 
 		client.sendBatch(t.Context(), []*messageWithCallback{
 			{
@@ -1350,7 +1448,7 @@ func TestBatchClient_Metrics(t *testing.T) {
 			WithBatchSize(1),
 			WithBatchInterval(time.Second),
 			WithMessageBuffer(10),
-			WithMaxGRPCRequestSize(2048),
+			WithMaxGRPCRequestSize(minMaxGRPCRequestSize),
 		)
 		require.NoError(t, err)
 		client.Start(t.Context())
@@ -1386,7 +1484,7 @@ func TestBatchClient_Metrics(t *testing.T) {
 		reqSize := mustMetric(t, rm, "chip_ingress.batch.request_size_bytes")
 		reqSizeHist, ok := reqSize.Data.(metricdata.Histogram[int64])
 		require.True(t, ok)
-		reqSizePoint := mustInt64HistogramPointWithIntAttr(t, reqSizeHist, "max_grpc_request_size_bytes", 2048)
+		reqSizePoint := mustInt64HistogramPointWithIntAttr(t, reqSizeHist, "max_grpc_request_size_bytes", minMaxGRPCRequestSize)
 		assert.GreaterOrEqual(t, reqSizePoint.Count, uint64(1))
 
 		latency := mustMetric(t, rm, "chip_ingress.batch.request_latency_ms")
@@ -1401,7 +1499,7 @@ func TestBatchClient_Metrics(t *testing.T) {
 		require.NotEmpty(t, configGauge.DataPoints)
 		assert.Equal(t, int64(1), configGauge.DataPoints[0].Value)
 		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_batch_size", 1))
-		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_grpc_request_size_bytes", 2048))
+		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_grpc_request_size_bytes", minMaxGRPCRequestSize))
 	})
 
 	t.Run("records failure counters and latency", func(t *testing.T) {
@@ -1540,11 +1638,12 @@ func BenchmarkSendBatch(b *testing.B) {
 			WithBatchSize(100),
 			WithMessageBuffer(b.N*100+10),
 			WithBatchInterval(time.Hour),
-			WithMaxGRPCRequestSize(512),
 		)
 		if err != nil {
 			b.Fatal(err)
 		}
+		client.maxGRPCRequestSize = 512
+		client.effectiveMaxRequestSize = 512
 		client.Start(b.Context())
 		defer client.Stop()
 

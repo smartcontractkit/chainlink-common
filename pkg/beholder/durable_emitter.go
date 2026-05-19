@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 )
 
 // DurableEmitterConfig configures the DurableEmitter behaviour.
@@ -105,10 +104,14 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 }
 
 // SetupDurableEmitter replaces client.Emitter with a DualSourceEmitter whose Chip
-// sink is a DurableEmitter backed by a Postgres event store. CloudEvents are
-// persisted to the DB before async delivery to Chip ingress, so they survive
-// process restarts and chip ingress outages.
-func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSource, retransmit bool, lggr logger.Logger) error {
+// sink is a DurableEmitter backed by the supplied store. CloudEvents are persisted
+// before async delivery to Chip ingress, so they survive process restarts and chip
+// ingress outages.
+//
+// store is the persistence layer. Callers in a Postgres environment should pass
+// pgstore.New(ds); the indirection keeps the lib/pq driver out of consumers that
+// only need the beholder API (e.g. wasip1 builds of the workflow runtime).
+func SetupDurableEmitter(ctx context.Context, client *Client, store DurableEventStore, retransmit bool, lggr logger.Logger) error {
 	if client == nil {
 		return errors.New("beholder client not initialized")
 	}
@@ -119,12 +122,11 @@ func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSou
 	if _, noop := chipClient.(*chipingress.NoopClient); noop {
 		return errors.New("chip ingress client is a no-op; configure CL_CHIP_INGRESS_ENDPOINT")
 	}
-	if ds == nil {
-		return errors.New("durable emitter requires a database connection")
+	if store == nil {
+		return errors.New("durable emitter requires a non-nil DurableEventStore")
 	}
 
-	pgStore := NewPGDurableEventStore(ds)
-	durableEmitter, err := NewDurableEmitter(pgStore, chipClient, retransmit, DefaultDurableEmitterConfig(), lggr)
+	durableEmitter, err := NewDurableEmitter(store, chipClient, retransmit, DefaultDurableEmitterConfig(), lggr)
 	if err != nil {
 		return fmt.Errorf("failed to create durable emitter: %w", err)
 	}

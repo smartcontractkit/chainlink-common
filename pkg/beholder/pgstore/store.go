@@ -1,4 +1,8 @@
-package beholder
+// Package pgstore provides a Postgres-backed implementation of
+// beholder.DurableEventStore. It is kept in a sibling package to pkg/beholder
+// so that consumers of the beholder API (including builds targeting wasip1)
+// do not transitively import lib/pq.
+package pgstore
 
 import (
 	"context"
@@ -8,27 +12,29 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 )
 
 const chipDurableEventsTable = "cre.chip_durable_events"
 
-// PGDurableEventStore is a Postgres-backed implementation of DurableEventStore.
-type PGDurableEventStore struct {
+// Store is a Postgres-backed implementation of beholder.DurableEventStore.
+type Store struct {
 	ds sqlutil.DataSource
 }
 
 var (
-	_ DurableEventStore    = (*PGDurableEventStore)(nil)
-	_ DurableQueueObserver = (*PGDurableEventStore)(nil)
-	_ BatchInserter        = (*PGDurableEventStore)(nil)
+	_ beholder.DurableEventStore    = (*Store)(nil)
+	_ beholder.DurableQueueObserver = (*Store)(nil)
+	_ beholder.BatchInserter        = (*Store)(nil)
 )
 
-func NewPGDurableEventStore(ds sqlutil.DataSource) *PGDurableEventStore {
-	return &PGDurableEventStore{ds: ds}
+// New returns a Postgres-backed DurableEventStore bound to ds.
+func New(ds sqlutil.DataSource) *Store {
+	return &Store{ds: ds}
 }
 
-func (s *PGDurableEventStore) Insert(ctx context.Context, payload []byte) (int64, error) {
+func (s *Store) Insert(ctx context.Context, payload []byte) (int64, error) {
 	const q = `INSERT INTO ` + chipDurableEventsTable + ` (payload) VALUES ($1) RETURNING id`
 	var id int64
 	if err := s.ds.GetContext(ctx, &id, q, payload); err != nil {
@@ -37,7 +43,7 @@ func (s *PGDurableEventStore) Insert(ctx context.Context, payload []byte) (int64
 	return id, nil
 }
 
-func (s *PGDurableEventStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+func (s *Store) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
 	if len(payloads) == 0 {
 		return nil, nil
 	}
@@ -60,7 +66,7 @@ func (s *PGDurableEventStore) InsertBatch(ctx context.Context, payloads [][]byte
 	return ids, nil
 }
 
-func (s *PGDurableEventStore) Delete(ctx context.Context, id int64) error {
+func (s *Store) Delete(ctx context.Context, id int64) error {
 	const q = `DELETE FROM ` + chipDurableEventsTable + ` WHERE id = $1`
 	if _, err := s.ds.ExecContext(ctx, q, id); err != nil {
 		return fmt.Errorf("failed to delete chip durable event id=%d: %w", id, err)
@@ -68,7 +74,7 @@ func (s *PGDurableEventStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *PGDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
+func (s *Store) MarkDelivered(ctx context.Context, id int64) error {
 	const q = `UPDATE ` + chipDurableEventsTable + ` SET delivered_at = now() WHERE id = $1 AND delivered_at IS NULL`
 	if _, err := s.ds.ExecContext(ctx, q, id); err != nil {
 		return fmt.Errorf("failed to mark chip durable event delivered id=%d: %w", id, err)
@@ -76,7 +82,7 @@ func (s *PGDurableEventStore) MarkDelivered(ctx context.Context, id int64) error
 	return nil
 }
 
-func (s *PGDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+func (s *Store) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
@@ -89,7 +95,7 @@ func (s *PGDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int6
 	return n, nil
 }
 
-func (s *PGDurableEventStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
+func (s *Store) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
 	if batchLimit <= 0 {
 		return 0, nil
 	}
@@ -113,7 +119,7 @@ USING picked WHERE t.id = picked.id`
 	return n, nil
 }
 
-func (s *PGDurableEventStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+func (s *Store) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]beholder.DurableEvent, error) {
 	const q = `
 SELECT id, payload, created_at
 FROM ` + chipDurableEventsTable + `
@@ -133,9 +139,9 @@ LIMIT $2`
 		return nil, fmt.Errorf("failed to list pending chip durable events: %w", err)
 	}
 
-	out := make([]DurableEvent, 0, len(rows))
+	out := make([]beholder.DurableEvent, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, DurableEvent{
+		out = append(out, beholder.DurableEvent{
 			ID:        r.ID,
 			Payload:   r.Payload,
 			CreatedAt: r.CreatedAt,
@@ -144,7 +150,7 @@ LIMIT $2`
 	return out, nil
 }
 
-func (s *PGDurableEventStore) DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error) {
+func (s *Store) DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error) {
 	const q = `
 WITH deleted AS (
     DELETE FROM ` + chipDurableEventsTable + `
@@ -166,8 +172,8 @@ type chipDurableQueueAgg struct {
 	MinCreated *time.Time `db:"min_created"`
 }
 
-// ObserveDurableQueue implements DurableQueueObserver for queue depth / age gauges.
-func (s *PGDurableEventStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+// ObserveDurableQueue implements beholder.DurableQueueObserver for queue depth / age gauges.
+func (s *Store) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (beholder.DurableQueueStats, error) {
 	const qAgg = `
 SELECT
 	count(*)::bigint AS cnt,
@@ -178,9 +184,9 @@ WHERE delivered_at IS NULL`
 
 	var row chipDurableQueueAgg
 	if err := s.ds.GetContext(ctx, &row, qAgg); err != nil {
-		return DurableQueueStats{}, fmt.Errorf("durable queue aggregate: %w", err)
+		return beholder.DurableQueueStats{}, fmt.Errorf("durable queue aggregate: %w", err)
 	}
-	var st DurableQueueStats
+	var st beholder.DurableQueueStats
 	st.Depth = row.Cnt
 	st.PayloadBytes = row.PayloadSum
 	if row.MinCreated != nil {
@@ -196,7 +202,7 @@ WHERE delivered_at IS NULL
   AND created_at >= now() - ($1::bigint * interval '1 second')
   AND created_at < now() - (($1::bigint - $2::bigint) * interval '1 second')`
 		if err := s.ds.GetContext(ctx, &st.NearTTLCount, qNear, ttlSec, leadSec); err != nil {
-			return DurableQueueStats{}, fmt.Errorf("durable queue near-ttl: %w", err)
+			return beholder.DurableQueueStats{}, fmt.Errorf("durable queue near-ttl: %w", err)
 		}
 	}
 	return st, nil

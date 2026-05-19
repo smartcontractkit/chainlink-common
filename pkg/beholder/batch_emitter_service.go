@@ -158,6 +158,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			// cancelled contexts.
 			if sendErr != nil {
 				e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
+				e.eng.Errorw("failed to emit to chip ingress", "error", sendErr, "domain", domain, "entity", entity)
 			} else {
 				e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
 			}
@@ -167,6 +168,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 		})
 		if queueErr != nil {
 			e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
+			e.eng.Errorw("failed to queue message for chip ingress", "error", queueErr, "domain", domain, "entity", entity)
 			if callback != nil {
 				callback(queueErr)
 			}

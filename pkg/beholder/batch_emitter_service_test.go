@@ -2,6 +2,7 @@ package beholder_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -356,6 +359,8 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 	})
 
 	t.Run("callback receives error when buffer is full", func(t *testing.T) {
+		lggr, observed := logger.TestObserved(t, zap.InfoLevel)
+
 		clientMock := mocks.NewClient(t)
 		clientMock.EXPECT().Close().Return(nil).Maybe()
 
@@ -380,7 +385,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
 		cfg.ChipIngressDrainTimeout = 200 * time.Millisecond
 
-		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, newTestLogger(t))
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, lggr)
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 		defer close(sendBlocked)
@@ -417,6 +422,15 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 		case <-time.After(time.Second):
 			t.Fatal("callback was not invoked for dropped event")
 		}
+
+		logs := observed.FilterMessage("failed to queue message for chip ingress")
+		require.GreaterOrEqual(t, logs.Len(), 1, "expected error log for queue failure")
+		entry := logs.All()[0]
+		assert.Equal(t, zap.ErrorLevel, entry.Level)
+		fieldMap := logFieldMap(entry)
+		assert.Contains(t, fieldMap, "error")
+		assert.Equal(t, "platform", fieldMap["domain"])
+		assert.Equal(t, "TestEvent", fieldMap["entity"])
 	})
 
 	t.Run("nil callback behaves like Emit", func(t *testing.T) {
@@ -490,6 +504,8 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		reader, restore := useEmitterTestMeterProvider(t)
 		defer restore()
 
+		lggr, observed := logger.TestObserved(t, zap.InfoLevel)
+
 		clientMock := mocks.NewClient(t)
 		clientMock.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
@@ -502,7 +518,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		cfg := newTestConfig()
 		cfg.ChipIngressMaxBatchSize = 1
 		cfg.ChipIngressSendInterval = time.Second
-		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, newTestLogger(t))
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, lggr)
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
@@ -525,7 +541,28 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricDropEvent")
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
+
+		logs := observed.FilterMessage("failed to emit to chip ingress")
+		require.GreaterOrEqual(t, logs.Len(), 1, "expected error log for publish failure")
+		entry := logs.All()[0]
+		assert.Equal(t, zap.ErrorLevel, entry.Level)
+		fieldMap := logFieldMap(entry)
+		assert.Contains(t, fieldMap, "error")
+		assert.Equal(t, "platform", fieldMap["domain"])
+		assert.Equal(t, "MetricDropEvent", fieldMap["entity"])
 	})
+}
+
+func logFieldMap(entry observer.LoggedEntry) map[string]string {
+	m := make(map[string]string)
+	for _, f := range entry.Context {
+		if f.Interface != nil {
+			m[f.Key] = fmt.Sprintf("%v", f.Interface)
+		} else if f.String != "" {
+			m[f.Key] = f.String
+		}
+	}
+	return m
 }
 
 func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {

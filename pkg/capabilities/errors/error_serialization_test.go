@@ -13,7 +13,7 @@ func TestErrorSerializationAndDeserialization(t *testing.T) {
 	// Assuming you have types: Visibility, Origin, and a custom Error type with serialization logic.
 	visibilities := []caperrors.Visibility{caperrors.VisibilityPublic, caperrors.VisibilityPrivate}
 	origins := []caperrors.Origin{caperrors.OriginUser, caperrors.OriginSystem}
-	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InvalidArgument}
+	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InsufficientObservations, caperrors.InvalidArgument}
 
 	for _, v := range visibilities {
 		for _, o := range origins {
@@ -33,7 +33,7 @@ func TestRemoteErrorSerializationAndDeserialization(t *testing.T) {
 	// Assuming you have types: Visibility, Origin, and a custom Error type with serialization logic.
 	visibilities := []caperrors.Visibility{caperrors.VisibilityPublic, caperrors.VisibilityPrivate}
 	origins := []caperrors.Origin{caperrors.OriginUser, caperrors.OriginSystem}
-	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InvalidArgument}
+	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InsufficientObservations, caperrors.InvalidArgument}
 
 	for _, v := range visibilities {
 		for _, o := range origins {

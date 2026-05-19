@@ -108,7 +108,7 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 // sink is a DurableEmitter backed by a Postgres event store. CloudEvents are
 // persisted to the DB before async delivery to Chip ingress, so they survive
 // process restarts and chip ingress outages.
-func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSource, isHostProcess bool, lggr logger.SugaredLogger) error {
+func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSource, isHostProcess bool, lggr logger.Logger) error {
 	if client == nil {
 		return errors.New("beholder client not initialized")
 	}

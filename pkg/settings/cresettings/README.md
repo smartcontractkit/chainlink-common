@@ -39,7 +39,7 @@ flowchart
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
-        VaultTenantID{{VaultTenantID}}:::bound
+        TenantID{{TenantID}}:::bound
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
     end

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -59,11 +58,9 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:     Bool(true),
 	VaultJWTAuthEnabled:               Bool(false),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
-	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
-	PropagateOrgIDInRequestMetadata: Bool(false),
-	VaultTenantID: NewSetting("", func(s string) (string, error) {
-		return strings.TrimSpace(s), nil
-	}),
+	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
+	PropagateOrgIDInRequestMetadata:        Bool(false),
+	TenantID:                               Uint64(1),
 	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
@@ -259,7 +256,7 @@ type Schema struct {
 	VaultJWTAuthEnabled                    Setting[bool]
 	VaultOrgIdAsSecretOwnerEnabled         Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata        Setting[bool]
-	VaultTenantID                          Setting[string]
+	TenantID                               Setting[uint64]
 	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]

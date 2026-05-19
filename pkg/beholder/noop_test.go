@@ -15,10 +15,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestNoopClient(t *testing.T) {
-	noopClient := beholder.NewNoopClient()
+	noopClient := beholder.NoopClientConfig{Lggr: logger.Test(t)}.New()
 	assert.NotNil(t, noopClient)
 
 	// Message Emitter
@@ -85,6 +86,7 @@ func TestNoopClient(t *testing.T) {
 	err = noopClient.Chip.Close()
 	assert.NoError(t, err)
 
+	require.NoError(t, noopClient.Start(t.Context()))
 	err = noopClient.Close()
 	assert.NoError(t, err)
 }

@@ -254,7 +254,7 @@ func (s *service) Name() string { return s.eng.Name() }
 func (s *service) Start(ctx context.Context) error {
 	return s.StartOnce(s.cfg.Name, func() error {
 		var span trace.Span
-		ctx, span = s.eng.tracer.Start(ctx, "Start") //nolint
+		ctx, span = s.eng.tracer.Start(ctx, "Start")
 		defer span.End()
 
 		s.eng.Info("Starting")

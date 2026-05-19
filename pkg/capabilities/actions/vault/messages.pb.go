@@ -2196,49 +2196,49 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x04data\x18\x02 \x01(\v2\x11.vault.SecretDataH\x00R\x04data\x12\x16\n" +
 	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
-	"\x06result\"i\n" +
+	"\x06result\"E\n" +
 	"\x11GetSecretsRequest\x120\n" +
-	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequestsJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04R\x06org_idR\x0eworkflow_owner\"I\n" +
+	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\"I\n" +
 	"\x12GetSecretsResponse\x123\n" +
 	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\"c\n" +
 	"\x0fEncryptedSecret\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"\x9e\x01\n" +
+	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"z\n" +
 	"\x14CreateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
-	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecretsJ\x04\b\x03\x10\x04J\x04\b\x04\x10\x05R\x06org_idR\x0eworkflow_owner\"o\n" +
+	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\"o\n" +
 	"\x14CreateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15CreateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"\x9e\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"z\n" +
 	"\x14UpdateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
-	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecretsJ\x04\b\x03\x10\x04J\x04\b\x04\x10\x05R\x06org_idR\x0eworkflow_owner\"o\n" +
+	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\"o\n" +
 	"\x14UpdateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15UpdateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"\x84\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"`\n" +
 	"\x14DeleteSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12)\n" +
-	"\x03ids\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x03idsJ\x04\b\x03\x10\x04J\x04\b\x04\x10\x05R\x06org_idR\x0eworkflow_owner\"o\n" +
+	"\x03ids\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x03ids\"o\n" +
 	"\x14DeleteSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15DeleteSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"\x95\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"q\n" +
 	"\x1cListSecretIdentifiersRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x1c\n" +
-	"\tnamespace\x18\x03 \x01(\tR\tnamespaceJ\x04\b\x04\x10\x05J\x04\b\x05\x10\x06R\x06org_idR\x0eworkflow_owner\"\x8a\x01\n" +
+	"\tnamespace\x18\x03 \x01(\tR\tnamespace\"\x8a\x01\n" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
 	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +

@@ -38,8 +38,6 @@ message SecretResponse {
 
 message GetSecretsRequest {
   repeated SecretRequest requests = 1;
-  reserved 2, 3;
-  reserved "org_id", "workflow_owner";
 }
 
 message GetSecretsResponse {
@@ -54,8 +52,6 @@ message EncryptedSecret {
 message CreateSecretsRequest {
   string request_id = 1;
   repeated EncryptedSecret encrypted_secrets = 2;
-  reserved 3, 4;
-  reserved "org_id", "workflow_owner";
 }
 
 message CreateSecretResponse {
@@ -71,8 +67,6 @@ message CreateSecretsResponse {
 message UpdateSecretsRequest {
   string request_id = 1;
   repeated EncryptedSecret encrypted_secrets = 2;
-  reserved 3, 4;
-  reserved "org_id", "workflow_owner";
 }
 
 message UpdateSecretResponse {
@@ -88,8 +82,6 @@ message UpdateSecretsResponse {
 message DeleteSecretsRequest {
   string request_id = 1;
   repeated SecretIdentifier ids = 2;
-  reserved 3, 4;
-  reserved "org_id", "workflow_owner";
 }
 
 message DeleteSecretResponse {
@@ -106,8 +98,6 @@ message ListSecretIdentifiersRequest {
   string request_id = 1;
   string owner = 2;
   string namespace = 3;
-  reserved 4, 5;
-  reserved "org_id", "workflow_owner";
 }
 
 message ListSecretIdentifiersResponse {

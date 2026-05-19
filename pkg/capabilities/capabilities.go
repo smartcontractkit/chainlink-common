@@ -170,8 +170,10 @@ type SpendLimit struct {
 }
 
 type RequestMetadata struct {
-	WorkflowID               string
-	WorkflowOwner            string
+	WorkflowID    string
+	WorkflowOwner string
+	// OrgID is CRE organization context propagated with capability requests.
+	OrgID                    string
 	WorkflowExecutionID      string
 	WorkflowName             string
 	WorkflowDonID            uint32
@@ -195,6 +197,9 @@ func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
 	val := contexts.CREValue(ctx)
 	val.Owner = m.WorkflowOwner
 	val.Workflow = m.WorkflowID
+	if m.OrgID != "" {
+		val.Org = m.OrgID
+	}
 	return contexts.WithCRE(ctx, val)
 }
 

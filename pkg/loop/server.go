@@ -242,7 +242,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 		}
 
 		if s.EnvConfig.ChipIngressDurableEmitterEnabled {
-			if err := s.setupDurableEmitter(ctx); err != nil {
+			if err := beholder.SetupDurableEmitter(ctx, s.beholderClient, s.DataSource, false, s.Logger); err != nil {
 				return err
 			}
 		}
@@ -367,42 +367,6 @@ func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.C
 		s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
 	}
 
-	return nil
-}
-
-func (s *Server) setupDurableEmitter(ctx context.Context) error {
-	if s.beholderClient == nil {
-		return fmt.Errorf("beholder client not initialized")
-	}
-
-	chipClient := s.beholderClient.Chip
-	if chipClient == nil {
-		return fmt.Errorf("chip ingress client not available")
-	}
-
-	if s.DataSource == nil {
-		return fmt.Errorf("durable emitter requires a database connection: set CL_DATABASE_URL")
-	}
-
-	pgStore := beholder.NewPgDurableEventStore(s.DataSource)
-	durableCfg := beholder.DefaultDurableEmitterConfig()
-	durableEmitter, err := beholder.NewDurableEmitter(pgStore, chipClient, false, durableCfg, s.Logger)
-	if err != nil {
-		return fmt.Errorf("failed to create durable emitter: %w", err)
-	}
-
-	// Build a new DualSourceEmitter: durable chip + OTLP.
-	messageLogger := s.beholderClient.MessageLoggerProvider.Logger("durable-emitter")
-	otlpEmitter := beholder.NewMessageEmitter(messageLogger)
-	dualEmitter, err := beholder.NewDualSourceEmitter(durableEmitter, otlpEmitter)
-	if err != nil {
-		return fmt.Errorf("failed to create dual source emitter: %w", err)
-	}
-
-	durableEmitter.Start(ctx)
-	s.beholderClient.Emitter = dualEmitter
-
-	s.Logger.Infow("Durable emitter enabled — all CloudEvent sources use the durable Chip queue")
 	return nil
 }
 

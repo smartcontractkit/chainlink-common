@@ -17,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 )
 
 // DurableEmitterConfig configures the DurableEmitter behaviour.
@@ -101,6 +102,44 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		PublishBatchSize:    1,
 		Metrics:             &DurableEmitterMetricsConfig{},
 	}
+}
+
+// SetupDurableEmitter replaces client.Emitter with a DualSourceEmitter whose Chip
+// sink is a DurableEmitter backed by a Postgres event store. CloudEvents are
+// persisted to the DB before async delivery to Chip ingress, so they survive
+// process restarts and chip ingress outages.
+func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSource, isHostProcess bool, lggr logger.SugaredLogger) error {
+	if client == nil {
+		return errors.New("beholder client not initialized")
+	}
+	chipClient := client.Chip
+	if chipClient == nil {
+		return errors.New("chip ingress client not available")
+	}
+	if _, noop := chipClient.(*chipingress.NoopClient); noop {
+		return errors.New("chip ingress client is a no-op; configure CL_CHIP_INGRESS_ENDPOINT")
+	}
+	if ds == nil {
+		return errors.New("durable emitter requires a database connection")
+	}
+
+	pgStore := NewPgDurableEventStore(ds)
+	durableEmitter, err := NewDurableEmitter(pgStore, chipClient, isHostProcess, DefaultDurableEmitterConfig(), lggr)
+	if err != nil {
+		return fmt.Errorf("failed to create durable emitter: %w", err)
+	}
+
+	otlpEmitter := NewMessageEmitter(client.MessageLoggerProvider.Logger("durable-emitter"))
+	dualEmitter, err := NewDualSourceEmitter(durableEmitter, otlpEmitter)
+	if err != nil {
+		return fmt.Errorf("failed to create dual source emitter: %w", err)
+	}
+
+	durableEmitter.Start(ctx)
+	client.Emitter = dualEmitter
+
+	lggr.Infow("Durable emitter enabled — all CloudEvent sources use the durable Chip queue")
+	return nil
 }
 
 // DurableEmitter implements Emitter with persistence-backed delivery guarantees.

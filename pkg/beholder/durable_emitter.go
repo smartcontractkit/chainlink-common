@@ -108,7 +108,7 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 // sink is a DurableEmitter backed by a Postgres event store. CloudEvents are
 // persisted to the DB before async delivery to Chip ingress, so they survive
 // process restarts and chip ingress outages.
-func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSource, isHostProcess bool, lggr logger.Logger) error {
+func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSource, retransmit bool, lggr logger.Logger) error {
 	if client == nil {
 		return errors.New("beholder client not initialized")
 	}
@@ -124,7 +124,7 @@ func SetupDurableEmitter(ctx context.Context, client *Client, ds sqlutil.DataSou
 	}
 
 	pgStore := NewPgDurableEventStore(ds)
-	durableEmitter, err := NewDurableEmitter(pgStore, chipClient, isHostProcess, DefaultDurableEmitterConfig(), lggr)
+	durableEmitter, err := NewDurableEmitter(pgStore, chipClient, retransmit, DefaultDurableEmitterConfig(), lggr)
 	if err != nil {
 		return fmt.Errorf("failed to create durable emitter: %w", err)
 	}
@@ -174,9 +174,10 @@ type insertResult struct {
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
-	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
-	// Should be set to false when initialized inside LOOP plugins.
-	isHostProcess bool
+	// retransmit determines if the emitter runs the retransmit, expiry, and purge
+	// loops over the shared queue. Should be set to false when initialized inside
+	// LOOP plugins so a single host process owns reclamation and cleanup.
+	retransmit bool
 	cfg           DurableEmitterConfig
 	log           logger.Logger
 
@@ -264,7 +265,7 @@ var _ Emitter = (*DurableEmitter)(nil)
 func NewDurableEmitter(
 	store DurableEventStore,
 	client chipingress.Client,
-	isHostProcess bool,
+	retransmit bool,
 	cfg DurableEmitterConfig,
 	log logger.Logger,
 ) (*DurableEmitter, error) {
@@ -290,13 +291,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:         store,
-		client:        client,
-		isHostProcess: isHostProcess,
-		cfg:           cfg,
-		log:           log,
-		metrics:       m,
-		stopCh:        make(chan struct{}),
+		store:      store,
+		client:     client,
+		retransmit: retransmit,
+		cfg:        cfg,
+		log:        log,
+		metrics:    m,
+		stopCh:     make(chan struct{}),
 	}
 	if cp, ok := client.(grpcConnProvider); ok {
 		d.rawConn = cp.Conn()
@@ -341,7 +342,7 @@ func (d *DurableEmitter) Start(_ context.Context) {
 		insertWorkers = 4
 	}
 
-	if d.isHostProcess {
+	if d.retransmit {
 		d.wg.Go(d.retransmitLoop)
 		if !d.cfg.DisablePruning {
 			d.wg.Go(d.expiryLoop)
@@ -858,13 +859,13 @@ func (d *DurableEmitter) retransmitPending() {
 		return
 	}
 
-	d.retransmit(pending)
+	d.retransmitBatch(pending)
 }
 
-// retransmit enqueues pending DB rows to publishCh so the batch workers handle
-// publishing. When rawConn is set, payloads are passed through without
+// retransmitBatch enqueues pending DB rows to publishCh so the batch workers
+// handle publishing. When rawConn is set, payloads are passed through without
 // proto.Unmarshal — the batch workers use buildBatchBytes for the wire format.
-func (d *DurableEmitter) retransmit(pending []DurableEvent) {
+func (d *DurableEmitter) retransmitBatch(pending []DurableEvent) {
 	var enqueued int
 
 	for _, pe := range pending {

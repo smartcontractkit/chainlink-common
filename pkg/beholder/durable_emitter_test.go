@@ -224,7 +224,7 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	assert.Equal(t, int32(0), markCalls.Load())
 }
 
-func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
+func TestDurableEmitter_NoRetransmitSkipsRetransmitAndExpiry(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 	client.setPublishErr(errors.New("chip unavailable"))
@@ -249,14 +249,14 @@ func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 		return client.batchCount.Load() >= 1 && store.Len() == 1
 	}, 2*time.Second, 5*time.Millisecond, "initial PublishBatch should fail and leave the row")
 
-	// Several host-only ticks would have cleared or retried by now.
+	// Several retransmit-only ticks would have cleared or retried by now.
 	time.Sleep(250 * time.Millisecond)
 
-	assert.Equal(t, 1, store.Len(), "non-host must not run retransmit or expiry loops")
-	assert.Equal(t, int64(1), client.batchCount.Load(), "non-host must not schedule extra PublishBatch via retransmit")
+	assert.Equal(t, 1, store.Len(), "retransmit=false must not run retransmit or expiry loops")
+	assert.Equal(t, int64(1), client.batchCount.Load(), "retransmit=false must not schedule extra PublishBatch via retransmit")
 }
 
-func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T) {
+func TestDurableEmitter_NoRetransmitStillDeliversViaBatchWorkers(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 
@@ -272,7 +272,7 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0 && client.batchCount.Load() >= 1
-	}, 2*time.Second, 10*time.Millisecond, "batch publish workers must still run when isHostProcess is false")
+	}, 2*time.Second, 10*time.Millisecond, "batch publish workers must still run when retransmit is false")
 }
 
 func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {

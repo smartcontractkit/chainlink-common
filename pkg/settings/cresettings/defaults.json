@@ -6,7 +6,6 @@
 	"VaultJWTAuthEnabled": "false",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
-	"TenantID": "1",
 	"VaultBase64EncodingEnabled": "false",
 	"VaultForceEmptyOCRRounds": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",

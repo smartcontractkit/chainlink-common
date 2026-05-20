@@ -60,7 +60,6 @@ var Default = Schema{
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
 	PropagateOrgIDInRequestMetadata:        Bool(false),
-	TenantID:                               Uint64(1),
 	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
@@ -256,7 +255,6 @@ type Schema struct {
 	VaultJWTAuthEnabled                    Setting[bool]
 	VaultOrgIdAsSecretOwnerEnabled         Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata        Setting[bool]
-	TenantID                               Setting[uint64]
 	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]

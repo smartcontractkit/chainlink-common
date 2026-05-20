@@ -72,9 +72,9 @@ type ModuleConfig struct {
 	IsUncompressed   bool
 	Fetch            func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
 	MaxFetchRequests int
-	// MaxPendingCalls bounds the number of concurrent in-flight capability call
-	// goroutines per execution. Additional calls block until a slot is freed.
-	MaxPendingCalls              int
+	// MaxPendingCalls bounds concurrent in-flight capability calls per workflow.
+	MaxPendingCalls int
+	// When PendingCallsLimiter is set, it enforces a separate pending calls pool per workflow ID.
 	PendingCallsLimiter          limits.ResourcePoolLimiter[int] // supersedes MaxPendingCalls if set
 	MaxCompressedBinarySize      uint64
 	MaxCompressedBinaryLimiter   limits.BoundLimiter[config.Size] // supersedes MaxCompressedBinarySize if set
@@ -711,7 +711,6 @@ func runWasm[I, O proto.Message](
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
 		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
-		pendingCallsFree:    map[int32]func(){},
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,

@@ -71,7 +71,6 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 		ctx:                 t.Context(),
 		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(defaultMaxPendingCalls),
-		pendingCallsFree:    map[int32]func(){},
 		executor:            stub,
 	}
 

@@ -635,7 +635,6 @@ func Test_CallAwaitRace(t *testing.T) {
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter[int](defaultMaxPendingCalls),
-		pendingCallsFree:    map[int32]func(){},
 		ctx:                 t.Context(),
 		executor:            mockExecHelper,
 	}

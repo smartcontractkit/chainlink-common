@@ -23,7 +23,6 @@ type execution[T any] struct {
 	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
 	secretsResponses     map[int32]<-chan *secretsResponse
 	pendingCallsLimiter  limits.ResourcePoolLimiter[int]
-	pendingCallsFree     map[int32]func()
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
@@ -51,9 +50,10 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.capabilityResponses[req.CallbackId] = ch
-	e.pendingCallsFree[req.CallbackId] = free
 
 	go func() {
+		defer free()
+
 		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
@@ -92,10 +92,6 @@ func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCa
 		}
 
 		delete(e.capabilityResponses, callId)
-		if free, ok := e.pendingCallsFree[callId]; ok {
-			free()
-			delete(e.pendingCallsFree, callId)
-		}
 	}
 
 	return &sdkpb.AwaitCapabilitiesResponse{
@@ -119,9 +115,10 @@ func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecret
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.secretsResponses[req.CallbackId] = ch
-	e.pendingCallsFree[req.CallbackId] = free
 
 	go func() {
+		defer free()
+
 		resp, err := e.executor.GetSecrets(ctx, req)
 		sr := &secretsResponse{responses: resp, err: err}
 
@@ -157,10 +154,6 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 		}
 
 		delete(e.secretsResponses, callId)
-		if free, ok := e.pendingCallsFree[callId]; ok {
-			free()
-			delete(e.pendingCallsFree, callId)
-		}
 	}
 
 	return &sdkpb.AwaitSecretsResponse{

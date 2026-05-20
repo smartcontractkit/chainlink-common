@@ -107,11 +107,6 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 // sink is a DurableEmitter backed by the supplied store. CloudEvents are persisted
 // before async delivery to Chip ingress, so they survive process restarts and chip
 // ingress outages.
-//
-// store is the persistence layer. Callers in a Postgres environment should pass
-// durable_events.New(ds); the indirection keeps the lib/pq driver out of
-// consumers that only need the beholder API (e.g. wasip1 builds of the workflow
-// runtime).
 func SetupDurableEmitter(ctx context.Context, client *Client, store DurableEventStore, retransmit bool, lggr logger.Logger) error {
 	if client == nil {
 		return errors.New("beholder client not initialized")

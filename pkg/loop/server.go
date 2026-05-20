@@ -241,15 +241,6 @@ func (s *Server) start(opts ...ServerOpt) error {
 		if err := s.startBeholderClient(ctx, beholderCfg); err != nil {
 			return err
 		}
-
-		if s.EnvConfig.ChipIngressDurableEmitterEnabled {
-			if s.DataSource == nil {
-				return fmt.Errorf("durable emitter requires a database connection: set CL_DATABASE_URL")
-			}
-			if err := beholder.SetupDurableEmitter(ctx, s.beholderClient, durable_events.New(s.DataSource), false, s.Logger); err != nil {
-				return err
-			}
-		}
 	}
 
 	if addr := s.EnvConfig.PyroscopeServerAddress; addr != "" {
@@ -356,6 +347,17 @@ func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.C
 	if err != nil {
 		return fmt.Errorf("failed to create beholder client: %w", err)
 	}
+
+	if s.EnvConfig.ChipIngressDurableEmitterEnabled {
+		if s.DataSource == nil {
+			return fmt.Errorf("durable emitter requires a database connection: set CL_DATABASE_URL")
+		}
+		err = beholder.SetupDurableEmitter(ctx, beholderClient, durable_events.New(s.DataSource), false, s.Logger)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := beholderClient.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start beholder client: %w", err)
 	}

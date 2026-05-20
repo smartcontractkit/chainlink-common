@@ -30,6 +30,7 @@ const (
 	anyReferenceID    = "anything"
 	testWorkflowOwner = "testowner"
 	testWorkflowName  = "00112233445566778899"
+	testOrgID         = "test-org-id"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -75,6 +76,11 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 	out, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
 	require.Equal(t, anyReferenceID, out.Metadata.ReferenceID)
+
+	pr.Metadata.OrgId = testOrgID
+	out, err = pb.CapabilityRequestFromProto(&pr)
+	require.NoError(t, err)
+	require.Equal(t, testOrgID, out.Metadata.OrgID)
 }
 
 func TestCapabilityResponseFromProto(t *testing.T) {
@@ -140,7 +146,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowID:               "test-workflow-id",
 			WorkflowExecutionID:      testWorkflowID,
 			WorkflowOwner:            "0xaa",
-			OrgID:                    "org-123",
+			OrgID:                    testOrgID,
 			WorkflowName:             testWorkflowName,
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
@@ -238,7 +244,7 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 			WorkflowID:               "test-workflow-id",
 			WorkflowExecutionID:      testWorkflowID,
 			WorkflowOwner:            testWorkflowOwner,
-			OrgID:                    "org-456",
+			OrgID:                    testOrgID,
 			WorkflowName:             testWorkflowName,
 			WorkflowDonID:            2,
 			WorkflowDonConfigVersion: 3,
@@ -271,4 +277,37 @@ func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
 	require.Equal(t, req.Config, unmarshaled.Config)
 	require.True(t, proto.Equal(req.Payload, unmarshaled.Payload))
 	require.Equal(t, req.Method, unmarshaled.Method)
+}
+
+func TestCapabilityRequest_OrgID_ToProto_FromProto(t *testing.T) {
+	req := capabilities.CapabilityRequest{
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:    "wf",
+			WorkflowOwner: "0xaa",
+			OrgID:         testOrgID,
+		},
+	}
+	protoReq := pb.CapabilityRequestToProto(req)
+	require.Equal(t, testOrgID, protoReq.GetMetadata().GetOrgId())
+
+	roundTrip, err := pb.CapabilityRequestFromProto(protoReq)
+	require.NoError(t, err)
+	require.Equal(t, testOrgID, roundTrip.Metadata.OrgID)
+}
+
+func TestTriggerRegistrationRequest_OrgID_ToProto_FromProto(t *testing.T) {
+	req := capabilities.TriggerRegistrationRequest{
+		TriggerID: "t1",
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:    "wf",
+			WorkflowOwner: testWorkflowOwner,
+			OrgID:         testOrgID,
+		},
+	}
+	protoReq := pb.TriggerRegistrationRequestToProto(req)
+	require.Equal(t, testOrgID, protoReq.GetMetadata().GetOrgId())
+
+	roundTrip, err := pb.TriggerRegistrationRequestFromProto(protoReq)
+	require.NoError(t, err)
+	require.Equal(t, testOrgID, roundTrip.Metadata.OrgID)
 }

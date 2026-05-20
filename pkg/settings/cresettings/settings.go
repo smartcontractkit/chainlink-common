@@ -52,12 +52,14 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                          Int(1000),
-	WorkflowExecutionConcurrencyLimit:      Int(1000),
-	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:          Bool(true),
-	VaultJWTAuthEnabled:                    Bool(false),
+	WorkflowLimit:                     Int(1000),
+	WorkflowExecutionConcurrencyLimit: Int(1000),
+	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:     Bool(true),
+	VaultJWTAuthEnabled:               Bool(false),
+	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
+	PropagateOrgIDInRequestMetadata:        Bool(false),
 	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
@@ -123,7 +125,7 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
-		BaseTriggerRetransmitEnabled:       Bool(false),
+		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
 	},
@@ -251,7 +253,8 @@ type Schema struct {
 	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
 	GatewayVaultManagementEnabled          Setting[bool]
 	VaultJWTAuthEnabled                    Setting[bool]
-	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled         Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata        Setting[bool]
 	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
@@ -260,10 +263,10 @@ type Schema struct {
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
-	BaseTriggerRetryInterval Setting[time.Duration]
-	BaseTriggerMaxRetries        Setting[int] `unit:"{attempt}"`
-	BaseTriggerPruneAge          Setting[time.Duration]
-	BaseTriggerMaxSendsPerTick   Setting[int] `unit:"{event}"`
+	BaseTriggerRetryInterval   Setting[time.Duration]
+	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
+	BaseTriggerPruneAge        Setting[time.Duration]
+	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
@@ -289,7 +292,7 @@ type Schema struct {
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
-	BaseTriggerRetransmitEnabled Setting[bool]
+	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
 }

@@ -201,6 +201,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxPendingCalls = defaultMaxPendingCalls
 	}
 
+	if modCfg.MaxPendingCalls < 0 {
+		return nil, fmt.Errorf("MaxPendingCalls must be positive, got %d", modCfg.MaxPendingCalls)
+	}
+
 	if modCfg.PendingCallsLimiter == nil {
 		modCfg.PendingCallsLimiter = limits.GlobalResourcePoolLimiter(modCfg.MaxPendingCalls)
 	}

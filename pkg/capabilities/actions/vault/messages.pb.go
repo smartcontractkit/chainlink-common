@@ -245,6 +245,7 @@ type EncryptedShares struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Shares        []string               `protobuf:"bytes,1,rep,name=shares,proto3" json:"shares,omitempty"`
 	EncryptionKey string                 `protobuf:"bytes,2,opt,name=encryption_key,json=encryptionKey,proto3" json:"encryption_key,omitempty"`
+	BinaryShares  [][]byte               `protobuf:"bytes,3,rep,name=binary_shares,json=binaryShares,proto3" json:"binary_shares,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -291,6 +292,13 @@ func (x *EncryptedShares) GetEncryptionKey() string {
 		return x.EncryptionKey
 	}
 	return ""
+}
+
+func (x *EncryptedShares) GetBinaryShares() [][]byte {
+	if x != nil {
+		return x.BinaryShares
+	}
+	return nil
 }
 
 type SecretData struct {
@@ -2310,10 +2318,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x05owner\x18\x03 \x01(\tR\x05owner\"a\n" +
 	"\rSecretRequest\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\"P\n" +
+	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\"u\n" +
 	"\x0fEncryptedShares\x12\x16\n" +
 	"\x06shares\x18\x01 \x03(\tR\x06shares\x12%\n" +
-	"\x0eencryption_key\x18\x02 \x01(\tR\rencryptionKey\"\x94\x01\n" +
+	"\x0eencryption_key\x18\x02 \x01(\tR\rencryptionKey\x12#\n" +
+	"\rbinary_shares\x18\x03 \x03(\fR\fbinaryShares\"\x94\x01\n" +
 	"\n" +
 	"SecretData\x12'\n" +
 	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\x12]\n" +

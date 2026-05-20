@@ -20,6 +20,7 @@ message SecretRequest {
 message EncryptedShares {
     repeated string shares = 1;
     string encryption_key = 2;
+    repeated bytes binary_shares = 3;
 }
 
 message SecretData {

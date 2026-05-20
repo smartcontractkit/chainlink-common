@@ -72,10 +72,13 @@ type ModuleConfig struct {
 	IsUncompressed   bool
 	Fetch            func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
 	MaxFetchRequests int
-	// MaxPendingCalls bounds concurrent in-flight capability calls per workflow.
+	// MaxPendingCalls is the fallback limit used to construct a default
+	// GlobalResourcePoolLimiter when PendingCallsLimiter is nil.
 	MaxPendingCalls int
-	// When PendingCallsLimiter is set, it enforces a separate pending calls pool per workflow ID.
-	PendingCallsLimiter          limits.ResourcePoolLimiter[int] // supersedes MaxPendingCalls if set
+	// PendingCallsLimiter bounds concurrent in-flight capability and secrets
+	// calls. When scoped (e.g. ScopeWorkflow), each workflow ID gets its own
+	// pool; when global/unscoped, the limit is shared across all callers.
+	PendingCallsLimiter          limits.ResourcePoolLimiter[int]
 	MaxCompressedBinarySize      uint64
 	MaxCompressedBinaryLimiter   limits.BoundLimiter[config.Size] // supersedes MaxCompressedBinarySize if set
 	MaxDecompressedBinarySize    uint64
@@ -197,15 +200,13 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxFetchRequests = defaultMaxFetchRequests
 	}
 
-	if modCfg.MaxPendingCalls == 0 {
-		modCfg.MaxPendingCalls = defaultMaxPendingCalls
-	}
-
-	if modCfg.MaxPendingCalls < 0 {
-		return nil, fmt.Errorf("MaxPendingCalls must be positive, got %d", modCfg.MaxPendingCalls)
-	}
-
 	if modCfg.PendingCallsLimiter == nil {
+		if modCfg.MaxPendingCalls == 0 {
+			modCfg.MaxPendingCalls = defaultMaxPendingCalls
+		}
+		if modCfg.MaxPendingCalls < 0 {
+			return nil, fmt.Errorf("MaxPendingCalls must be positive, got %d", modCfg.MaxPendingCalls)
+		}
 		modCfg.PendingCallsLimiter = limits.GlobalResourcePoolLimiter(modCfg.MaxPendingCalls)
 	}
 

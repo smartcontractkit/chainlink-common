@@ -103,43 +103,6 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 	}
 }
 
-// SetupDurableEmitter replaces client.Emitter with a DualSourceEmitter whose Chip
-// sink is a DurableEmitter backed by the supplied store. CloudEvents are persisted
-// before async delivery to Chip ingress, so they survive process restarts and chip
-// ingress outages.
-func SetupDurableEmitter(ctx context.Context, client *Client, store DurableEventStore, retransmit bool, lggr logger.Logger) error {
-	if client == nil {
-		return errors.New("beholder client not initialized")
-	}
-	chipClient := client.Chip
-	if chipClient == nil {
-		return errors.New("chip ingress client not available")
-	}
-	if _, noop := chipClient.(*chipingress.NoopClient); noop {
-		return errors.New("chip ingress client is a no-op; configure CL_CHIP_INGRESS_ENDPOINT")
-	}
-	if store == nil {
-		return errors.New("durable emitter requires a non-nil DurableEventStore")
-	}
-
-	durableEmitter, err := NewDurableEmitter(store, chipClient, retransmit, DefaultDurableEmitterConfig(), lggr)
-	if err != nil {
-		return fmt.Errorf("failed to create durable emitter: %w", err)
-	}
-
-	otlpEmitter := NewMessageEmitter(client.MessageLoggerProvider.Logger("durable-emitter"))
-	dualEmitter, err := NewDualSourceEmitter(durableEmitter, otlpEmitter)
-	if err != nil {
-		return fmt.Errorf("failed to create dual source emitter: %w", err)
-	}
-
-	durableEmitter.Start(ctx)
-	client.Emitter = dualEmitter
-
-	lggr.Infow("Durable emitter enabled — all CloudEvent sources use the durable Chip queue")
-	return nil
-}
-
 // DurableEmitter implements Emitter with persistence-backed delivery guarantees.
 //
 // Emit writes to a DurableEventStore, returns nil after insert, and enqueues the

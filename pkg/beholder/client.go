@@ -54,6 +54,9 @@ type Client struct {
 	// Chip
 	Chip chipingress.Client
 
+	// durableEmitter persists and resends events to Chip when configured
+	durableEmitter *DurableEmitter
+
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
 	TracerProvider        oteltrace.TracerProvider
@@ -354,6 +357,47 @@ func (c *Client) SetSigner(signer Signer) {
 // IsSignerSet returns true if a signer has been set in the lazy signer.
 func (c *Client) IsSignerSet() bool {
 	return c.lazySigner != nil && c.lazySigner.IsSet()
+}
+
+// SetupDurableEmitter replaces client.Emitter with a DualSourceEmitter whose Chip
+// sink is a DurableEmitter backed by the supplied store. CloudEvents are persisted
+// before async delivery to Chip ingress, so they survive process restarts and chip
+// ingress outages.
+//
+// StartDurableEmitter must be called before emitting events.
+func (c *Client) SetupDurableEmitter(store DurableEventStore, retransmit bool, lggr pkglogger.Logger) error {
+	if c.Chip == nil {
+		return fmt.Errorf("chip ingress client is nil")
+	}
+	if store == nil {
+		return fmt.Errorf("durable emitter requires a non-nil DurableEventStore")
+	}
+
+	durableEmitter, err := NewDurableEmitter(store, c.Chip, retransmit, DefaultDurableEmitterConfig(), lggr)
+	if err != nil {
+		return fmt.Errorf("failed to create durable emitter: %w", err)
+	}
+
+	otlpEmitter := NewMessageEmitter(c.MessageLoggerProvider.Logger("durable-emitter"))
+	dualEmitter, err := NewDualSourceEmitter(durableEmitter, otlpEmitter)
+	if err != nil {
+		return fmt.Errorf("failed to create dual source emitter: %w", err)
+	}
+
+	c.Emitter = dualEmitter
+	c.durableEmitter = durableEmitter
+
+	lggr.Infow("Durable emitter enabled — all CloudEvent sources use the durable Chip queue")
+	return nil
+}
+
+// StartDurableEmitter starts durable emitter. Close is handled transatively when Emitter is closed.
+func (c *Client) StartDurableEmitter(ctx context.Context) error {
+	if c.durableEmitter == nil {
+		return fmt.Errorf("failed to start nil durable emitter; call SetupDurableEmitter first")
+	}
+	c.durableEmitter.Start(ctx)
+	return nil
 }
 
 func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {

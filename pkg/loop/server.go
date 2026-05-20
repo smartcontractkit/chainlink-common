@@ -352,7 +352,11 @@ func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.C
 		if s.DataSource == nil {
 			return fmt.Errorf("durable emitter requires a database connection: set CL_DATABASE_URL")
 		}
-		err = beholder.SetupDurableEmitter(ctx, beholderClient, beholderstore.New(s.DataSource), false, s.Logger)
+		err = beholderClient.SetupDurableEmitter(beholderstore.New(s.DataSource), false, s.Logger)
+		if err != nil {
+			return err
+		}
+		err = beholderClient.StartDurableEmitter(ctx)
 		if err != nil {
 			return err
 		}

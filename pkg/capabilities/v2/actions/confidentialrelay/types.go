@@ -138,6 +138,7 @@ type CapabilityRequestParams struct {
 	WorkflowID   string `json:"workflow_id"`
 	Owner        string `json:"owner"`
 	ExecutionID  string `json:"execution_id"`
+	OrgID        string `json:"org_id,omitempty"` // propagated into capability.RequestMetadata when CRE setting enables it
 	ReferenceID  string `json:"reference_id"`
 	CapabilityID string `json:"capability_id"`
 	Payload      string `json:"payload"`
@@ -302,6 +303,7 @@ func writeCapabilityRequestParams(h hash.Hash, params CapabilityRequestParams) {
 	writeString(h, params.WorkflowID)
 	writeString(h, params.Owner)
 	writeString(h, params.ExecutionID)
+	writeString(h, params.OrgID)
 	writeString(h, params.ReferenceID)
 	writeString(h, params.CapabilityID)
 	writeString(h, params.Payload)

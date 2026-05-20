@@ -365,12 +365,17 @@ func (c *Client) IsSignerSet() bool {
 // ingress outages.
 //
 // StartDurableEmitter must be called before emitting events.
-func (c *Client) SetupDurableEmitter(store DurableEventStore, retransmit bool, lggr pkglogger.Logger) error {
+func (c *Client) SetupDurableEmitter(store DurableEventStore, retransmit bool) error {
 	if c.Chip == nil {
 		return fmt.Errorf("chip ingress client is nil")
 	}
 	if store == nil {
 		return fmt.Errorf("durable emitter requires a non-nil DurableEventStore")
+	}
+
+	lggr := c.Config.ChipIngressLogger
+	if lggr == nil {
+		return fmt.Errorf("chip ingress logger is required for durable emitter setup")
 	}
 
 	durableEmitter, err := NewDurableEmitter(store, c.Chip, retransmit, DefaultDurableEmitterConfig(), lggr)

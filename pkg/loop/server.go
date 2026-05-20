@@ -19,7 +19,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/durable_events"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/beholderstore"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -352,7 +352,7 @@ func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.C
 		if s.DataSource == nil {
 			return fmt.Errorf("durable emitter requires a database connection: set CL_DATABASE_URL")
 		}
-		err = beholder.SetupDurableEmitter(ctx, beholderClient, durable_events.New(s.DataSource), false, s.Logger)
+		err = beholder.SetupDurableEmitter(ctx, beholderClient, beholderstore.New(s.DataSource), false, s.Logger)
 		if err != nil {
 			return err
 		}

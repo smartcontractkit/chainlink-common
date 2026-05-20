@@ -52,8 +52,6 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	e.capabilityResponses[req.CallbackId] = ch
 
 	go func() {
-		defer func() { <-e.pendingCallsSem }()
-
 		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
@@ -92,6 +90,7 @@ func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCa
 		}
 
 		delete(e.capabilityResponses, callId)
+		<-e.pendingCallsSem
 	}
 
 	return &sdkpb.AwaitCapabilitiesResponse{
@@ -118,8 +117,6 @@ func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecret
 	e.secretsResponses[req.CallbackId] = ch
 
 	go func() {
-		defer func() { <-e.pendingCallsSem }()
-
 		resp, err := e.executor.GetSecrets(ctx, req)
 		sr := &secretsResponse{responses: resp, err: err}
 
@@ -155,6 +152,7 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 		}
 
 		delete(e.secretsResponses, callId)
+		<-e.pendingCallsSem
 	}
 
 	return &sdkpb.AwaitSecretsResponse{

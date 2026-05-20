@@ -38,7 +38,6 @@ message SecretResponse {
 
 message GetSecretsRequest {
   repeated SecretRequest requests = 1;
-
   string org_id = 2 [deprecated = true];
   string workflow_owner = 3 [deprecated = true];
 }
@@ -55,7 +54,6 @@ message EncryptedSecret {
 message CreateSecretsRequest {
   string request_id = 1;
   repeated EncryptedSecret encrypted_secrets = 2;
-
   string org_id = 3 [deprecated = true];
   string workflow_owner = 4 [deprecated = true];
 }
@@ -73,7 +71,6 @@ message CreateSecretsResponse {
 message UpdateSecretsRequest {
   string request_id = 1;
   repeated EncryptedSecret encrypted_secrets = 2;
-
   string org_id = 3 [deprecated = true];
   string workflow_owner = 4 [deprecated = true];
 }
@@ -91,7 +88,6 @@ message UpdateSecretsResponse {
 message DeleteSecretsRequest {
   string request_id = 1;
   repeated SecretIdentifier ids = 2;
-
   string org_id = 3 [deprecated = true];
   string workflow_owner = 4 [deprecated = true];
 }
@@ -110,7 +106,6 @@ message ListSecretIdentifiersRequest {
   string request_id = 1;
   string owner = 2;
   string namespace = 3;
-
   string org_id = 4 [deprecated = true];
   string workflow_owner = 5 [deprecated = true];
 }

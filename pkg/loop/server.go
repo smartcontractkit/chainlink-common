@@ -101,6 +101,7 @@ type Server struct {
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
 	profiler        *pyroscope.Profiler
+	beholderClient  *beholder.Client
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -180,6 +181,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 		}
 
@@ -212,19 +215,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 			beholderCfg.TraceSpanExporter = exporter
 		}
 
-		beholderClient, err := beholder.NewClient(beholderCfg)
-		if err != nil {
-			return fmt.Errorf("failed to create beholder client: %w", err)
-		}
-		beholder.SetClient(beholderClient)
-		beholder.SetGlobalOtelProviders()
-
-		if beholderCfg.LogStreamingEnabled {
-			otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
-			if err != nil {
-				return fmt.Errorf("failed to enable log streaming: %w", err)
-			}
-			s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+		if err := s.startBeholderClient(ctx, beholderCfg); err != nil {
+			return err
 		}
 	}
 
@@ -349,8 +341,34 @@ func (s *Server) MustRegister(c services.HealthReporter) {
 
 func (s *Server) Register(c services.HealthReporter) error { return s.checker.Register(c) }
 
+func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.Config) error {
+	beholderClient, err := beholder.NewClient(beholderCfg)
+	if err != nil {
+		return fmt.Errorf("failed to create beholder client: %w", err)
+	}
+	if err := beholderClient.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start beholder client: %w", err)
+	}
+	s.beholderClient = beholderClient
+	beholder.SetClient(beholderClient)
+	beholder.SetGlobalOtelProviders()
+
+	if beholderCfg.LogStreamingEnabled {
+		otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
+		if err != nil {
+			return fmt.Errorf("failed to enable log streaming: %w", err)
+		}
+		s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+	}
+
+	return nil
+}
+
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
+	if s.beholderClient != nil {
+		s.Logger.ErrorIfFn(s.beholderClient.Close, "Failed to close beholder client")
+	}
 	if s.dbStatsReporter != nil {
 		s.dbStatsReporter.Stop()
 	}

@@ -122,7 +122,7 @@ func TestParseOriginURL(t *testing.T) {
 
 func TestNewPluginRelayerConfigEmitterDefaults(t *testing.T) {
 	prev := beholder.GetClient()
-	client := beholder.NewNoopClient()
+	client := beholder.NoopClientConfig{Lggr: logger.Test(t)}.New()
 	client.Config.AuthPublicKeyHex = "from-beholder"
 	beholder.SetClient(client)
 	t.Cleanup(func() { beholder.SetClient(prev) })

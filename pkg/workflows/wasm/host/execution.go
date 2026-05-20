@@ -21,6 +21,7 @@ type execution[T any] struct {
 	ctx                  context.Context
 	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
 	secretsResponses     map[int32]<-chan *secretsResponse
+	pendingCallsSem      chan struct{}
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
@@ -38,12 +39,21 @@ type execution[T any] struct {
 // channel and storing each channel with a unique identifier for future
 // retrieval on await.
 func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) error {
+	// Acquire semaphore slot before spawning goroutine to bound concurrency.
+	select {
+	case e.pendingCallsSem <- struct{}{}:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
 	ch := make(chan *sdkpb.CapabilityResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.capabilityResponses[req.CallbackId] = ch
 
 	go func() {
+		defer func() { <-e.pendingCallsSem }()
+
 		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
@@ -95,12 +105,21 @@ type secretsResponse struct {
 }
 
 func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecretsRequest) error {
+	// Acquire semaphore slot before spawning goroutine to bound concurrency.
+	select {
+	case e.pendingCallsSem <- struct{}{}:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
 	ch := make(chan *secretsResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.secretsResponses[req.CallbackId] = ch
 
 	go func() {
+		defer func() { <-e.pendingCallsSem }()
+
 		resp, err := e.executor.GetSecrets(ctx, req)
 		sr := &secretsResponse{responses: resp, err: err}
 

@@ -42,6 +42,7 @@ var (
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
+	defaultMaxPendingCalls           = 100
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
 	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
@@ -61,16 +62,19 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval                 time.Duration
-	Timeout                      *time.Duration
-	MaxMemoryMBs                 uint64
-	MinMemoryMBs                 uint64
-	MemoryLimiter                limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
-	InitialFuel                  uint64
-	Logger                       logger.Logger
-	IsUncompressed               bool
-	Fetch                        func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
-	MaxFetchRequests             int
+	TickInterval     time.Duration
+	Timeout          *time.Duration
+	MaxMemoryMBs     uint64
+	MinMemoryMBs     uint64
+	MemoryLimiter    limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
+	InitialFuel      uint64
+	Logger           logger.Logger
+	IsUncompressed   bool
+	Fetch            func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
+	MaxFetchRequests int
+	// MaxPendingCalls bounds the number of concurrent in-flight capability call
+	// goroutines per execution. Additional calls block until a slot is freed.
+	MaxPendingCalls              int
 	MaxCompressedBinarySize      uint64
 	MaxCompressedBinaryLimiter   limits.BoundLimiter[config.Size] // supersedes MaxCompressedBinarySize if set
 	MaxDecompressedBinarySize    uint64
@@ -190,6 +194,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.MaxFetchRequests == 0 {
 		modCfg.MaxFetchRequests = defaultMaxFetchRequests
+	}
+
+	if modCfg.MaxPendingCalls == 0 {
+		modCfg.MaxPendingCalls = defaultMaxPendingCalls
 	}
 
 	if modCfg.Labeler == nil {
@@ -693,6 +701,7 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		pendingCallsSem:     make(chan struct{}, m.cfg.MaxPendingCalls),
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,

@@ -633,6 +633,7 @@ func Test_CallAwaitRace(t *testing.T) {
 	exec := &execution[*wasmpb.ExecutionResult]{
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		pendingCallsSem:     make(chan struct{}, 100),
 		ctx:                 t.Context(),
 		executor:            mockExecHelper,
 	}

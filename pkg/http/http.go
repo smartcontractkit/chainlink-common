@@ -34,6 +34,12 @@ func NewRestrictedClient(cfg clientConfig, lggr logger.Logger) *http.Client {
 	return &http.Client{Transport: tr}
 }
 
+func NewNewRestrictedClient(cfg clientConfig, lggr logger.Logger) *http.Client {
+	tr := newDefaultTransport()
+	tr.DialContext = makeRestrictedDialContext(cfg, lggr)
+	return &http.Client{Transport: tr}
+}
+
 // NewUnrestrictedClient returns a HTTP Client with no Transport restrictions
 func NewUnrestrictedClient() *http.Client {
 	unrestrictedTr := newDefaultTransport()
@@ -52,6 +58,7 @@ func newDefaultTransport() *http.Transport {
 
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
+	Break() error
 }
 
 // Request holds the request and config struct for a http request

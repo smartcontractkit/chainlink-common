@@ -1,8 +1,8 @@
-// Package pgstore provides a Postgres-backed implementation of
+// Package durable_events provides a Postgres-backed implementation of
 // beholder.DurableEventStore. It is kept in a sibling package to pkg/beholder
 // so that consumers of the beholder API (including builds targeting wasip1)
 // do not transitively import lib/pq.
-package pgstore
+package durable_events
 
 import (
 	"context"

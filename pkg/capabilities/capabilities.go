@@ -194,11 +194,11 @@ type RequestMetadata struct {
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
 	val := contexts.CREValue(ctx)
+	val.Owner = m.WorkflowOwner
+	val.Workflow = m.WorkflowID
 	if m.OrgID != "" {
 		val.Org = m.OrgID
 	}
-	val.Owner = m.WorkflowOwner
-	val.Workflow = m.WorkflowID
 	return contexts.WithCRE(ctx, val)
 }
 

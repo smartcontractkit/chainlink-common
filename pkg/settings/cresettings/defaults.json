@@ -5,6 +5,7 @@
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
+	"PropagateOrgIDInRequestMetadata": "false",
 	"VaultBase64EncodingEnabled": "false",
 	"VaultForceEmptyOCRRounds": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",

@@ -431,8 +431,8 @@ func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capab
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:                    md.WorkflowId,
 			WorkflowOwner:                 md.WorkflowOwner,
-			OrgID:                         md.OrgId,
 			WorkflowExecutionID:           md.WorkflowExecutionId,
+			OrgID:                         md.OrgId,
 			WorkflowName:                  md.WorkflowName,
 			WorkflowDonID:                 md.WorkflowDonId,
 			WorkflowDonConfigVersion:      md.WorkflowDonConfigVersion,

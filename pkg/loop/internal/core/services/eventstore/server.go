@@ -32,6 +32,7 @@ func (s *Server) Insert(ctx context.Context, req *pb.InsertEventRequest) (*empty
 		EventId:   ev.GetEventId(),
 		Payload:   ev.GetPayload(),
 		Attempts:  int(ev.GetAttempts()),
+		OrgID:     ev.GetOrgId(),
 	}
 	if t := ev.GetFirstAt(); t != nil {
 		rec.FirstAt = t.AsTime()
@@ -74,6 +75,7 @@ func (s *Server) List(ctx context.Context, _ *emptypb.Empty) (*pb.ListEventsResp
 			Payload:   ev.Payload,
 			FirstAt:   timestamppb.New(ev.FirstAt),
 			Attempts:  int32(ev.Attempts),
+			OrgId:     ev.OrgID,
 		}
 		if !ev.LastSentAt.IsZero() {
 			pev.LastSentAt = timestamppb.New(ev.LastSentAt)

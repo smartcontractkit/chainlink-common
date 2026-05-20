@@ -7,6 +7,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 type Config struct {
@@ -22,7 +24,9 @@ type Config struct {
 	EmitterExportInterval     time.Duration
 	EmitterExportMaxBatchSize int
 	EmitterMaxQueueSize       int
-	EmitterBatchProcessor     bool // Enabled by default. Disable only for testing.
+	// EmitterBatchProcessor controls custom-message export mode:
+	// true = batched async export; false = immediate per-record export.
+	EmitterBatchProcessor bool
 
 	// OTel Trace
 	TraceSampleRatio  float64
@@ -43,6 +47,16 @@ type Config struct {
 	ChipIngressEmitterEnabled      bool
 	ChipIngressEmitterGRPCEndpoint string
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
+
+	// Chip Ingress Batch Emitter
+	ChipIngressBatchEmitterEnabled bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
+	ChipIngressBufferSize          uint          // Message buffer size (default 1000)
+	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 500)
+	ChipIngressSendInterval        time.Duration // Flush interval (default 100ms)
+	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 3s)
+	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 10s)
+	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls (default 10)
+	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
 	LogExportTimeout      time.Duration
@@ -91,7 +105,8 @@ var defaultRetryConfig = RetryConfig{
 }
 
 const (
-	defaultPackageName = "beholder"
+	defaultPackageName        = "beholder"
+	defaultMaxConcurrentSends = 10
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{
@@ -110,7 +125,8 @@ func DefaultConfig() Config {
 		EmitterExportMaxBatchSize: 512,
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
-		EmitterBatchProcessor:     true,
+		// Keep batched export enabled by default for throughput.
+		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
@@ -133,6 +149,14 @@ func DefaultConfig() Config {
 		LogStreamingEnabled:   true, // Enable logs streaming by default
 		LogLevel:              zapcore.InfoLevel,
 		LogCompressor:         "gzip",
+		// Chip Ingress Batch Emitter
+		ChipIngressBatchEmitterEnabled: false,
+		ChipIngressBufferSize:          1000,
+		ChipIngressMaxBatchSize:        500,
+		ChipIngressSendInterval:        100 * time.Millisecond,
+		ChipIngressSendTimeout:         3 * time.Second,
+		ChipIngressDrainTimeout:        10 * time.Second,
+		ChipIngressMaxConcurrentSends:  defaultMaxConcurrentSends,
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}
@@ -141,6 +165,7 @@ func DefaultConfig() Config {
 func TestDefaultConfig() Config {
 	config := DefaultConfig()
 	// Should be only disabled for testing
+	// Use simple (non-batched) exporter in tests for faster, deterministic teardown.
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	// Retries are disabled for testing
@@ -155,6 +180,7 @@ func TestDefaultConfig() Config {
 func TestDefaultConfigHTTPClient() Config {
 	config := DefaultConfig()
 	// Should be only disabled for testing
+	// Use simple (non-batched) exporter in tests for faster, deterministic teardown.
 	config.EmitterBatchProcessor = false
 	config.LogBatchProcessor = false
 	config.OtelExporterGRPCEndpoint = ""

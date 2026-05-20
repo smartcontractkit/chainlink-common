@@ -130,6 +130,9 @@ const (
 
 	// LimitExceeded indicates that a CRE limit breach has occurred.
 	LimitExceeded ErrorCode = 101
+
+	// InsufficientObservations indicates that there are not enough observations to enable the operation to complete.
+	InsufficientObservations ErrorCode = 102
 )
 
 // String returns the string representation of the ErrorCode.
@@ -141,45 +144,47 @@ func (e ErrorCode) String() string {
 }
 
 var errorCodeToString = map[ErrorCode]string{
-	Canceled:           "Canceled",
-	Unknown:            "Unknown",
-	InvalidArgument:    "InvalidArgument",
-	DeadlineExceeded:   "DeadlineExceeded",
-	NotFound:           "NotFound",
-	AlreadyExists:      "AlreadyExists",
-	PermissionDenied:   "PermissionDenied",
-	ResourceExhausted:  "ResourceExhausted",
-	FailedPrecondition: "FailedPrecondition",
-	Aborted:            "Aborted",
-	OutOfRange:         "OutOfRange",
-	Unimplemented:      "Unimplemented",
-	Internal:           "Internal",
-	Unavailable:        "Unavailable",
-	DataLoss:           "DataLoss",
-	Unauthenticated:    "Unauthenticated",
-	ConsensusFailed:    "ConsensusFailed",
-	LimitExceeded:      "LimitExceeded",
+	Canceled:                 "Canceled",
+	Unknown:                  "Unknown",
+	InvalidArgument:          "InvalidArgument",
+	DeadlineExceeded:         "DeadlineExceeded",
+	NotFound:                 "NotFound",
+	AlreadyExists:            "AlreadyExists",
+	PermissionDenied:         "PermissionDenied",
+	ResourceExhausted:        "ResourceExhausted",
+	FailedPrecondition:       "FailedPrecondition",
+	Aborted:                  "Aborted",
+	OutOfRange:               "OutOfRange",
+	Unimplemented:            "Unimplemented",
+	Internal:                 "Internal",
+	Unavailable:              "Unavailable",
+	DataLoss:                 "DataLoss",
+	Unauthenticated:          "Unauthenticated",
+	ConsensusFailed:          "ConsensusFailed",
+	LimitExceeded:            "LimitExceeded",
+	InsufficientObservations: "InsufficientObservations",
 }
 
 var stringToErrorCode = map[string]ErrorCode{
-	"Canceled":           Canceled,
-	"Unknown":            Unknown,
-	"InvalidArgument":    InvalidArgument,
-	"DeadlineExceeded":   DeadlineExceeded,
-	"NotFound":           NotFound,
-	"AlreadyExists":      AlreadyExists,
-	"PermissionDenied":   PermissionDenied,
-	"ResourceExhausted":  ResourceExhausted,
-	"FailedPrecondition": FailedPrecondition,
-	"Aborted":            Aborted,
-	"OutOfRange":         OutOfRange,
-	"Unimplemented":      Unimplemented,
-	"Internal":           Internal,
-	"Unavailable":        Unavailable,
-	"DataLoss":           DataLoss,
-	"Unauthenticated":    Unauthenticated,
-	"ConsensusFailed":    ConsensusFailed,
-	"LimitExceeded":      LimitExceeded,
+	"Canceled":                 Canceled,
+	"Unknown":                  Unknown,
+	"InvalidArgument":          InvalidArgument,
+	"DeadlineExceeded":         DeadlineExceeded,
+	"NotFound":                 NotFound,
+	"AlreadyExists":            AlreadyExists,
+	"PermissionDenied":         PermissionDenied,
+	"ResourceExhausted":        ResourceExhausted,
+	"FailedPrecondition":       FailedPrecondition,
+	"Aborted":                  Aborted,
+	"OutOfRange":               OutOfRange,
+	"Unimplemented":            Unimplemented,
+	"Internal":                 Internal,
+	"Unavailable":              Unavailable,
+	"DataLoss":                 DataLoss,
+	"Unauthenticated":          Unauthenticated,
+	"ConsensusFailed":          ConsensusFailed,
+	"LimitExceeded":            LimitExceeded,
+	"InsufficientObservations": InsufficientObservations,
 }
 
 func FromErrorCodeString(str string) ErrorCode {

@@ -31,6 +31,7 @@ func TestClient_InsertAndList(t *testing.T) {
 		Payload:   []byte("payload-data"),
 		FirstAt:   testTime1,
 		Attempts:  0,
+		OrgID:     "org-a",
 	}
 
 	err := client.Insert(ctx, ev)
@@ -44,6 +45,7 @@ func TestClient_InsertAndList(t *testing.T) {
 	assert.Equal(t, []byte("payload-data"), events[0].Payload)
 	assert.Equal(t, testTime1, events[0].FirstAt)
 	assert.True(t, events[0].LastSentAt.IsZero())
+	assert.Equal(t, "org-a", events[0].OrgID)
 }
 
 func TestClient_InsertWithLastSentAt(t *testing.T) {

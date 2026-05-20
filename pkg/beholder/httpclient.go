@@ -15,6 +15,8 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // Used for testing to override the default exporter
@@ -137,6 +139,8 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 
 	// Message Emitter
 	var messageLogProcessor sdklog.Processor
+	// EmitterBatchProcessor=true uses async batching for custom-message logs;
+	// false uses a simple processor that exports each record immediately.
 	if cfg.EmitterBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
 		if cfg.EmitterExportTimeout > 0 {
@@ -181,13 +185,32 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	onClose := func() (err error) {
-		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
+		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
 		return
 	}
-	// HTTP client doesn't currently support rotating auth, so lazySigner is always nil
-	return &Client{cfg, logger, tracer, meter, emitter, nil, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, nil, onClose}, nil
+	// HTTP client doesn't currently support rotating auth, so lazySigner is always nil.
+	c := &Client{
+		Config:                cfg,
+		Logger:                logger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               emitter,
+		Chip:                  nil,
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: messageLoggerProvider,
+		lazySigner:            nil,
+		OnClose:               onClose,
+	}
+	lggr := cfg.ChipIngressLogger
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
+	c.initService(lggr, nil)
+	return c, nil
 }
 
 func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config) (*sdktrace.TracerProvider, error) {

@@ -135,8 +135,11 @@ type insertResult struct {
 type DurableEmitter struct {
 	store  DurableEventStore
 	client chipingress.Client
-	cfg    DurableEmitterConfig
-	log    logger.Logger
+	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
+	// Should be set to false when initialized inside LOOP plugins.
+	isHostProcess bool
+	cfg           DurableEmitterConfig
+	log           logger.Logger
 
 	metrics *durableEmitterMetrics
 
@@ -222,17 +225,18 @@ var _ Emitter = (*DurableEmitter)(nil)
 func NewDurableEmitter(
 	store DurableEventStore,
 	client chipingress.Client,
+	isHostProcess bool,
 	cfg DurableEmitterConfig,
 	log logger.Logger,
 ) (*DurableEmitter, error) {
 	if store == nil {
-		return nil, fmt.Errorf("durable event store is nil")
+		return nil, errors.New("durable event store is nil")
 	}
 	if client == nil {
-		return nil, fmt.Errorf("chipingress client is nil")
+		return nil, errors.New("chipingress client is nil")
 	}
 	if log == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
 	if cfg.PublishBatchSize < 1 {
 		cfg.PublishBatchSize = 1
@@ -247,12 +251,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:   store,
-		client:  client,
-		cfg:     cfg,
-		log:     log,
-		metrics: m,
-		stopCh:  make(chan struct{}),
+		store:         store,
+		client:        client,
+		isHostProcess: isHostProcess,
+		cfg:           cfg,
+		log:           log,
+		metrics:       m,
+		stopCh:        make(chan struct{}),
 	}
 	if cp, ok := client.(grpcConnProvider); ok {
 		d.rawConn = cp.Conn()
@@ -285,7 +290,7 @@ func NewDurableEmitter(
 
 // Start launches the retransmit, expiry, purge, and (optionally) batch publish
 // background loops. Cancel the supplied context or call Close to stop them.
-func (d *DurableEmitter) Start(ctx context.Context) {
+func (d *DurableEmitter) Start(_ context.Context) {
 	batchWorkers := d.cfg.PublishBatchWorkers
 	if batchWorkers <= 0 {
 		d.log.Warnw("configured batchWorkers <=0; defaulting to 1")
@@ -297,10 +302,12 @@ func (d *DurableEmitter) Start(ctx context.Context) {
 		insertWorkers = 4
 	}
 
-	d.wg.Go(d.retransmitLoop)
-	if !d.cfg.DisablePruning {
-		d.wg.Go(func() { d.expiryLoop(ctx) })
-		d.wg.Go(func() { d.purgeLoop(ctx) })
+	if d.isHostProcess {
+		d.wg.Go(d.retransmitLoop)
+		if !d.cfg.DisablePruning {
+			d.wg.Go(d.expiryLoop)
+			d.wg.Go(d.purgeLoop)
+		}
 	}
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
@@ -369,7 +376,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			d.insertInFlight.Add(1)
 			defer d.insertInFlight.Add(-1)
 			if d.insertShutdown.Load() {
-				cerr = fmt.Errorf("durable emitter closed")
+				cerr = errors.New("durable emitter closed")
 				return
 			}
 			tIns := time.Now()
@@ -845,7 +852,7 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 	)
 }
 
-func (d *DurableEmitter) purgeLoop(ctx context.Context) {
+func (d *DurableEmitter) purgeLoop() {
 	interval := d.cfg.PurgeInterval
 	if interval <= 0 {
 		interval = 250 * time.Millisecond
@@ -854,12 +861,13 @@ func (d *DurableEmitter) purgeLoop(ctx context.Context) {
 	if batch <= 0 {
 		batch = 500
 	}
+
+	ctx, cancel := d.stopCh.NewCtx()
+	defer cancel()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-ctx.Done():
-			return
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
@@ -877,7 +885,7 @@ func (d *DurableEmitter) purgeLoop(ctx context.Context) {
 	}
 }
 
-func (d *DurableEmitter) expiryLoop(ctx context.Context) {
+func (d *DurableEmitter) expiryLoop() {
 	ticker := time.NewTicker(d.cfg.ExpiryInterval)
 	defer ticker.Stop()
 
@@ -885,8 +893,6 @@ func (d *DurableEmitter) expiryLoop(ctx context.Context) {
 	defer cancel()
 	for {
 		select {
-		case <-ctx.Done():
-			return
 		case <-d.stopCh:
 			return
 		case <-ticker.C:

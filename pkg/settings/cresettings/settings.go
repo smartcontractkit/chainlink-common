@@ -65,7 +65,6 @@ var Default = Schema{
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
-	BaseTriggerRetransmitEnabled:           Bool(false),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
 	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
@@ -124,6 +123,7 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
 	PerOrg: Orgs{
+		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
 	},
@@ -153,8 +153,8 @@ var Default = Schema{
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
-		WASMConfigSizeLimit:           Size(config.MByte),
-		WASMSecretsSizeLimit:          Size(config.MByte),
+		WASMConfigSizeLimit:           Size(50 * config.KByte),
+		WASMSecretsSizeLimit:          Size(27 * config.KByte),
 		LogLineLimit:                  Size(config.KByte),
 		LogEventLimit:                 Int(1_000),
 		UserMetricEnabled:             Bool(false),
@@ -260,11 +260,10 @@ type Schema struct {
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
-	BaseTriggerRetransmitEnabled Setting[bool]
-	BaseTriggerRetryInterval     Setting[time.Duration]
-	BaseTriggerMaxRetries        Setting[int]           `unit:"{attempt}"`
-	BaseTriggerPruneAge          Setting[time.Duration]
-	BaseTriggerMaxSendsPerTick   Setting[int]           `unit:"{event}"`
+	BaseTriggerRetryInterval   Setting[time.Duration]
+	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
+	BaseTriggerPruneAge        Setting[time.Duration]
+	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
@@ -290,6 +289,7 @@ type Schema struct {
 	PerWorkflow Workflows `scope:"workflow"`
 }
 type Orgs struct {
+	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
 }

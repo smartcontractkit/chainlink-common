@@ -2,16 +2,17 @@ package capabilities
 
 import (
 	"context"
+	"crypto/sha3"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash"
 	"iter"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/sha3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -130,7 +131,7 @@ func ResponseToReportData(workflowExecutionID, referenceID string, responsePaylo
 		return [32]byte{}, fmt.Errorf("failed to extract metering from metadata: %w", err)
 	}
 
-	hash := sha3.New256()
+	hash := hash.Hash(sha3.New256())
 	const domainSeparator = "CapabilityResponseReportData:v1"
 	hash.Write([]byte(domainSeparator))
 	// Helper to write a length-prefixed byte slice.

@@ -220,7 +220,7 @@ func addressTransformationAction(length int) func(extractMap map[string]any, key
 				return fmt.Errorf("invalid value for field %s", fieldName)
 			}
 
-			if rVal.Kind() == reflect.Ptr && !rVal.IsNil() {
+			if rVal.Kind() == reflect.Pointer && !rVal.IsNil() {
 				rVal = reflect.Indirect(rVal)
 			}
 

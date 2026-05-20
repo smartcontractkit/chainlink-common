@@ -15,6 +15,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
@@ -633,7 +634,8 @@ func Test_CallAwaitRace(t *testing.T) {
 	exec := &execution[*wasmpb.ExecutionResult]{
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
-		pendingCallsSem:     make(chan struct{}, defaultMaxPendingCalls),
+		pendingCallsLimiter: limits.GlobalResourcePoolLimiter[int](defaultMaxPendingCalls),
+		pendingCallsFree:    map[int32]func(){},
 		ctx:                 t.Context(),
 		executor:            mockExecHelper,
 	}

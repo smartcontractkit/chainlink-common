@@ -75,6 +75,7 @@ type ModuleConfig struct {
 	// MaxPendingCalls bounds the number of concurrent in-flight capability call
 	// goroutines per execution. Additional calls block until a slot is freed.
 	MaxPendingCalls              int
+	PendingCallsLimiter          limits.ResourcePoolLimiter[int] // supersedes MaxPendingCalls if set
 	MaxCompressedBinarySize      uint64
 	MaxCompressedBinaryLimiter   limits.BoundLimiter[config.Size] // supersedes MaxCompressedBinarySize if set
 	MaxDecompressedBinarySize    uint64
@@ -198,6 +199,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.MaxPendingCalls == 0 {
 		modCfg.MaxPendingCalls = defaultMaxPendingCalls
+	}
+
+	if modCfg.PendingCallsLimiter == nil {
+		modCfg.PendingCallsLimiter = limits.GlobalResourcePoolLimiter(modCfg.MaxPendingCalls)
 	}
 
 	if modCfg.Labeler == nil {
@@ -701,7 +706,8 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
-		pendingCallsSem:     make(chan struct{}, m.cfg.MaxPendingCalls),
+		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
+		pendingCallsFree:    map[int32]func(){},
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
@@ -21,7 +22,8 @@ type execution[T any] struct {
 	ctx                  context.Context
 	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
 	secretsResponses     map[int32]<-chan *secretsResponse
-	pendingCallsSem      chan struct{}
+	pendingCallsLimiter  limits.ResourcePoolLimiter[int]
+	pendingCallsFree     map[int32]func()
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
@@ -39,17 +41,17 @@ type execution[T any] struct {
 // channel and storing each channel with a unique identifier for future
 // retrieval on await.
 func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) error {
-	// Acquire semaphore slot before spawning goroutine to bound concurrency.
-	select {
-	case e.pendingCallsSem <- struct{}{}:
-	case <-ctx.Done():
-		return ctx.Err()
+	// Acquire a slot from the pool limiter to bound concurrency.
+	free, err := e.pendingCallsLimiter.Wait(ctx, 1)
+	if err != nil {
+		return err
 	}
 
 	ch := make(chan *sdkpb.CapabilityResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.capabilityResponses[req.CallbackId] = ch
+	e.pendingCallsFree[req.CallbackId] = free
 
 	go func() {
 		resp, err := e.executor.CallCapability(ctx, req)
@@ -90,7 +92,10 @@ func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCa
 		}
 
 		delete(e.capabilityResponses, callId)
-		<-e.pendingCallsSem
+		if free, ok := e.pendingCallsFree[callId]; ok {
+			free()
+			delete(e.pendingCallsFree, callId)
+		}
 	}
 
 	return &sdkpb.AwaitCapabilitiesResponse{
@@ -104,17 +109,17 @@ type secretsResponse struct {
 }
 
 func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecretsRequest) error {
-	// Acquire semaphore slot before spawning goroutine to bound concurrency.
-	select {
-	case e.pendingCallsSem <- struct{}{}:
-	case <-ctx.Done():
-		return ctx.Err()
+	// Acquire a slot from the pool limiter to bound concurrency.
+	free, err := e.pendingCallsLimiter.Wait(ctx, 1)
+	if err != nil {
+		return err
 	}
 
 	ch := make(chan *secretsResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.secretsResponses[req.CallbackId] = ch
+	e.pendingCallsFree[req.CallbackId] = free
 
 	go func() {
 		resp, err := e.executor.GetSecrets(ctx, req)
@@ -152,7 +157,10 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 		}
 
 		delete(e.secretsResponses, callId)
-		<-e.pendingCallsSem
+		if free, ok := e.pendingCallsFree[callId]; ok {
+			free()
+			delete(e.pendingCallsFree, callId)
+		}
 	}
 
 	return &sdkpb.AwaitSecretsResponse{

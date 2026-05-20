@@ -77,7 +77,7 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -109,7 +109,7 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
@@ -139,7 +139,7 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()

@@ -16,6 +16,10 @@ func NewTeeProvider(tpe sdkpb.TeeType, regions []string) func(tee *sdkpb.Tee) bo
 }
 
 func (t *teeProvider) Provides(tee *sdkpb.Tee) bool {
+	if tee == nil {
+		return true
+	}
+
 	var regions []string
 	switch teet := tee.Item.(type) {
 	case *sdkpb.Tee_AnyRegions:
@@ -37,6 +41,8 @@ func (t *teeProvider) Provides(tee *sdkpb.Tee) bool {
 		if !found {
 			return false
 		}
+	default:
+		return false
 	}
 
 	if len(regions) == 0 {

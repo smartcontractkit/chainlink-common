@@ -169,14 +169,25 @@ func TestNewProviderFromSelection(t *testing.T) {
 		assert.False(t, provider(tee))
 	})
 
-	t.Run("multi-type AnyRegions with empty regions list returns false", func(t *testing.T) {
+	t.Run("multi-type TeeTypesAndRegions with empty Regions and matching TEE type array returns true", func(t *testing.T) {
+		provider := NewProviderFromSelection([]*sdkpb.TeeTypeAndRegions{
+			{Type: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}},
+		})
+
+		tee := &sdkpb.Tee{Item: &sdkpb.Tee_TeeTypesAndRegions{TeeTypesAndRegions: &sdkpb.TeeTypesAndRegions{
+			TeeTypeAndRegions: []*sdkpb.TeeTypeAndRegions{{Type: sdkpb.TeeType_TEE_TYPE_AWS_NITRO}},
+		}}}
+		assert.True(t, provider(tee))
+	})
+
+	t.Run("multi-type AnyRegions with no region returns true", func(t *testing.T) {
 		provider := NewProviderFromSelection([]*sdkpb.TeeTypeAndRegions{
 			{Type: sdkpb.TeeType_TEE_TYPE_AWS_NITRO, Regions: []string{"us-west-2"}},
 			{Type: sdkpb.TeeType(999), Regions: []string{"eu-west-1"}},
 		})
 
 		tee := &sdkpb.Tee{Item: &sdkpb.Tee_AnyRegions{AnyRegions: &sdkpb.Regions{}}}
-		assert.False(t, provider(tee))
+		assert.True(t, provider(tee))
 	})
 
 	t.Run("multiple types with no regions in first type", func(t *testing.T) {

@@ -265,7 +265,7 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 				return false, err
 			}
 			for _, env := range md.AdditionalEnvironments {
-				if env == generator.AdditionalEnironments_ADDITIONAL_ENVIRONMENTS_TEE {
+				if env == generator.AdditionalEnvironments_ADDITIONAL_ENVIRONMENTS_TEE {
 					return true, nil
 				}
 			}

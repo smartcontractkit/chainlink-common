@@ -140,7 +140,7 @@ func TestNewTeeProvider(t *testing.T) {
 	t.Run("returns false when tee item is nil", func(t *testing.T) {
 		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, []string{"us-west-2"})
 		tee := &sdkpb.Tee{}
-		assert.True(t, provides(tee))
+		assert.False(t, provides(tee))
 	})
 
 	t.Run("AnyRegions with empty region list returns false", func(t *testing.T) {

@@ -69,7 +69,7 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 	exec := &execution[*sdkpb.ExecutionResult]{
 		ctx:                 t.Context(),
 		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
-		pendingCallsSem:     make(chan struct{}, 100),
+		pendingCallsSem:     make(chan struct{}, defaultMaxPendingCalls),
 		executor:            stub,
 	}
 

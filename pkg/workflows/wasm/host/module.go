@@ -42,7 +42,7 @@ var (
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
-	defaultMaxPendingCalls           = 30 // matches engine CapabilityConcurrencyLimit default
+	defaultMaxPendingCalls           = 30                // matches engine CapabilityConcurrencyLimit default
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
 	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB

@@ -13,18 +13,37 @@ type ModuleAndHandler struct {
 	RequirementsHandler
 }
 
-// lazyModule wraps a ModuleAndHandler so that Start is called at most once.
+// lazyModule wraps a ModuleAndHandler so that Start is called at most once
+// and Close only fires for modules that were actually started. The mutex
+// serializes start/close so a concurrent Close cannot race past an in-flight
+// Start (leaving a started module unclosed) and vice versa.
 type lazyModule struct {
 	ModuleAndHandler
-	startOnce sync.Once
-	started   bool
+	mu      sync.Mutex
+	started bool
+	closed  bool
 }
 
 func (l *lazyModule) ensureStarted() {
-	l.startOnce.Do(func() {
-		l.Module.Start()
-		l.started = true
-	})
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.started || l.closed {
+		return
+	}
+	l.Module.Start()
+	l.started = true
+}
+
+func (l *lazyModule) ensureClosed() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.closed {
+		return
+	}
+	l.closed = true
+	if l.started {
+		l.Module.Close()
+	}
 }
 
 // NewRequirementSelectingModule creates a module that routes trigger executions
@@ -56,9 +75,7 @@ func (r *requirementSelectingModule) Start() {
 
 func (r *requirementSelectingModule) Close() {
 	for _, m := range r.modules {
-		if m.started {
-			m.Close()
-		}
+		m.ensureClosed()
 	}
 }
 

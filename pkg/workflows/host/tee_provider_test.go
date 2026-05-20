@@ -159,7 +159,7 @@ func TestNewTeeProvider(t *testing.T) {
 		assert.True(t, provides(tee))
 	})
 
-	t.Run("TeeTypesAndRegions with nil regions returns false", func(t *testing.T) {
+	t.Run("TeeTypesAndRegions with nil regions returns true", func(t *testing.T) {
 		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, []string{"us-west-2"})
 		tee := &sdkpb.Tee{Item: &sdkpb.Tee_TeeTypesAndRegions{TeeTypesAndRegions: &sdkpb.TeeTypesAndRegions{
 			TeeTypeAndRegions: []*sdkpb.TeeTypeAndRegions{

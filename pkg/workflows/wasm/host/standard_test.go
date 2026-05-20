@@ -621,7 +621,6 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
 	cmd.Dir = absPath
-	fmt.Printf("Compiling test module from %s with command %s\n:", cmd.Dir, cmd.String())
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))

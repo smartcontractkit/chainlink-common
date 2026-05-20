@@ -9,7 +9,7 @@ import (
 )
 
 // RequirementsHandler contains a callback for each public field in sdk.Requirements.
-// Each callback receives the field value and returns a list of strings or an error.
+// Each callback receives the field value and returns a boolean indicating whether the requirement is satisfied.
 type RequirementsHandler struct {
 	Tee func(context.Context, *sdk.Tee) bool
 }

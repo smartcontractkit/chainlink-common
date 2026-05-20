@@ -20,6 +20,10 @@ func NewProviderFromSelection(types []*sdkpb.TeeTypeAndRegions) func(tee *sdkpb.
 	}
 
 	return func(tee *sdkpb.Tee) bool {
+		if tee == nil {
+			return true
+		}
+
 		switch teet := tee.Item.(type) {
 		case *sdkpb.Tee_AnyRegions:
 			for _, provider := range providers {

@@ -235,13 +235,13 @@ func NewDurableEmitter(
 	lggr logger.Logger,
 ) (*DurableEmitter, error) {
 	if store == nil {
-		return nil, fmt.Errorf("durable event store is nil")
+		return nil, errors.New("durable event store is nil")
 	}
 	if client == nil {
-		return nil, fmt.Errorf("chipingress client is nil")
+		return nil, errors.New("chipingress client is nil")
 	}
 	if lggr == nil {
-		return nil, fmt.Errorf("logger is nil")
+		return nil, errors.New("logger is nil")
 	}
 	if cfg.PublishBatchSize < 1 {
 		cfg.PublishBatchSize = 1

@@ -158,6 +158,10 @@ func TestCapabilityResponseResultHash_IgnoresAttestationAndBindsRequestAndRespon
 	differentRequest.ReferenceID = "43"
 	require.NotEqual(t, mustCapabilityHash(t, result, params), mustCapabilityHash(t, result, differentRequest))
 
+	differentOrg := params
+	differentOrg.OrgID = "org-other"
+	require.NotEqual(t, mustCapabilityHash(t, result, params), mustCapabilityHash(t, result, differentOrg))
+
 	differentResponse := result
 	differentResponse.Error = "boom"
 	require.NotEqual(t, mustCapabilityHash(t, result, params), mustCapabilityHash(t, differentResponse, params))

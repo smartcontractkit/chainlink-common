@@ -436,10 +436,12 @@ func (*SecretResponse_Data) isSecretResponse_Result() {}
 func (*SecretResponse_Error) isSecretResponse_Result() {}
 
 type GetSecretsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Requests      []*SecretRequest       `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
-	OrgId         string                 `protobuf:"bytes,2,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	WorkflowOwner string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Requests []*SecretRequest       `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	OrgId string `protobuf:"bytes,2,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	WorkflowOwner string `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -481,6 +483,7 @@ func (x *GetSecretsRequest) GetRequests() []*SecretRequest {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *GetSecretsRequest) GetOrgId() string {
 	if x != nil {
 		return x.OrgId
@@ -488,6 +491,7 @@ func (x *GetSecretsRequest) GetOrgId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *GetSecretsRequest) GetWorkflowOwner() string {
 	if x != nil {
 		return x.WorkflowOwner
@@ -595,10 +599,12 @@ type CreateSecretsRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RequestId        string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	EncryptedSecrets []*EncryptedSecret     `protobuf:"bytes,2,rep,name=encrypted_secrets,json=encryptedSecrets,proto3" json:"encrypted_secrets,omitempty"`
-	OrgId            string                 `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	WorkflowOwner    string                 `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	OrgId string `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	WorkflowOwner string `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateSecretsRequest) Reset() {
@@ -645,6 +651,7 @@ func (x *CreateSecretsRequest) GetEncryptedSecrets() []*EncryptedSecret {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *CreateSecretsRequest) GetOrgId() string {
 	if x != nil {
 		return x.OrgId
@@ -652,6 +659,7 @@ func (x *CreateSecretsRequest) GetOrgId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *CreateSecretsRequest) GetWorkflowOwner() string {
 	if x != nil {
 		return x.WorkflowOwner
@@ -767,10 +775,12 @@ type UpdateSecretsRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RequestId        string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	EncryptedSecrets []*EncryptedSecret     `protobuf:"bytes,2,rep,name=encrypted_secrets,json=encryptedSecrets,proto3" json:"encrypted_secrets,omitempty"`
-	OrgId            string                 `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	WorkflowOwner    string                 `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	OrgId string `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	WorkflowOwner string `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateSecretsRequest) Reset() {
@@ -817,6 +827,7 @@ func (x *UpdateSecretsRequest) GetEncryptedSecrets() []*EncryptedSecret {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *UpdateSecretsRequest) GetOrgId() string {
 	if x != nil {
 		return x.OrgId
@@ -824,6 +835,7 @@ func (x *UpdateSecretsRequest) GetOrgId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *UpdateSecretsRequest) GetWorkflowOwner() string {
 	if x != nil {
 		return x.WorkflowOwner
@@ -936,11 +948,13 @@ func (x *UpdateSecretsResponse) GetResponses() []*UpdateSecretResponse {
 }
 
 type DeleteSecretsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	Ids           []*SecretIdentifier    `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`
-	OrgId         string                 `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	WorkflowOwner string                 `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Ids       []*SecretIdentifier    `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	OrgId string `protobuf:"bytes,3,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	WorkflowOwner string `protobuf:"bytes,4,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -989,6 +1003,7 @@ func (x *DeleteSecretsRequest) GetIds() []*SecretIdentifier {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *DeleteSecretsRequest) GetOrgId() string {
 	if x != nil {
 		return x.OrgId
@@ -996,6 +1011,7 @@ func (x *DeleteSecretsRequest) GetOrgId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *DeleteSecretsRequest) GetWorkflowOwner() string {
 	if x != nil {
 		return x.WorkflowOwner
@@ -1108,12 +1124,14 @@ func (x *DeleteSecretsResponse) GetResponses() []*DeleteSecretResponse {
 }
 
 type ListSecretIdentifiersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	Owner         string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	Namespace     string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	OrgId         string                 `protobuf:"bytes,4,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	WorkflowOwner string                 `protobuf:"bytes,5,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Owner     string                 `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	Namespace string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	OrgId string `protobuf:"bytes,4,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
+	WorkflowOwner string `protobuf:"bytes,5,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1169,6 +1187,7 @@ func (x *ListSecretIdentifiersRequest) GetNamespace() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *ListSecretIdentifiersRequest) GetOrgId() string {
 	if x != nil {
 		return x.OrgId
@@ -1176,6 +1195,7 @@ func (x *ListSecretIdentifiersRequest) GetOrgId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 func (x *ListSecretIdentifiersRequest) GetWorkflowOwner() string {
 	if x != nil {
 		return x.WorkflowOwner
@@ -2276,59 +2296,59 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x04data\x18\x02 \x01(\v2\x11.vault.SecretDataH\x00R\x04data\x12\x16\n" +
 	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
-	"\x06result\"\x83\x01\n" +
+	"\x06result\"\x8b\x01\n" +
 	"\x11GetSecretsRequest\x120\n" +
-	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\x12\x15\n" +
-	"\x06org_id\x18\x02 \x01(\tR\x05orgId\x12%\n" +
-	"\x0eworkflow_owner\x18\x03 \x01(\tR\rworkflowOwner\"I\n" +
+	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\x12\x19\n" +
+	"\x06org_id\x18\x02 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
+	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\"I\n" +
 	"\x12GetSecretsResponse\x123\n" +
 	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\"c\n" +
 	"\x0fEncryptedSecret\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"\xb8\x01\n" +
+	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"\xc0\x01\n" +
 	"\x14CreateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
-	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\x12\x15\n" +
-	"\x06org_id\x18\x03 \x01(\tR\x05orgId\x12%\n" +
-	"\x0eworkflow_owner\x18\x04 \x01(\tR\rworkflowOwner\"o\n" +
+	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\x12\x19\n" +
+	"\x06org_id\x18\x03 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
+	"\x0eworkflow_owner\x18\x04 \x01(\tB\x02\x18\x01R\rworkflowOwner\"o\n" +
 	"\x14CreateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15CreateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"\xb8\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"\xc0\x01\n" +
 	"\x14UpdateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
-	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\x12\x15\n" +
-	"\x06org_id\x18\x03 \x01(\tR\x05orgId\x12%\n" +
-	"\x0eworkflow_owner\x18\x04 \x01(\tR\rworkflowOwner\"o\n" +
+	"\x11encrypted_secrets\x18\x02 \x03(\v2\x16.vault.EncryptedSecretR\x10encryptedSecrets\x12\x19\n" +
+	"\x06org_id\x18\x03 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
+	"\x0eworkflow_owner\x18\x04 \x01(\tB\x02\x18\x01R\rworkflowOwner\"o\n" +
 	"\x14UpdateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15UpdateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"\x9e\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"\xa6\x01\n" +
 	"\x14DeleteSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12)\n" +
-	"\x03ids\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x03ids\x12\x15\n" +
-	"\x06org_id\x18\x03 \x01(\tR\x05orgId\x12%\n" +
-	"\x0eworkflow_owner\x18\x04 \x01(\tR\rworkflowOwner\"o\n" +
+	"\x03ids\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x03ids\x12\x19\n" +
+	"\x06org_id\x18\x03 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
+	"\x0eworkflow_owner\x18\x04 \x01(\tB\x02\x18\x01R\rworkflowOwner\"o\n" +
 	"\x14DeleteSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
 	"\x15DeleteSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"\xaf\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"\xb7\x01\n" +
 	"\x1cListSecretIdentifiersRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x1c\n" +
-	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x15\n" +
-	"\x06org_id\x18\x04 \x01(\tR\x05orgId\x12%\n" +
-	"\x0eworkflow_owner\x18\x05 \x01(\tR\rworkflowOwner\"\x8a\x01\n" +
+	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x19\n" +
+	"\x06org_id\x18\x04 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
+	"\x0eworkflow_owner\x18\x05 \x01(\tB\x02\x18\x01R\rworkflowOwner\"\x8a\x01\n" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
 	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +

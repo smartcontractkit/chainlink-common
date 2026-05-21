@@ -3,7 +3,9 @@ package beholder_test
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,6 +70,51 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 		err = emitter.Emit(t.Context(), []byte("test message"))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "otel emit error")
+	})
+}
+
+func TestDualSourceEmitterBlockingBehavior(t *testing.T) {
+	t.Run("chip ingress emit does not block caller", func(t *testing.T) {
+		var chipCalled atomic.Bool
+		chipEmitter := &mockEmitter{
+			emitFunc: func(ctx context.Context, body []byte, attrKVs ...any) error {
+				// Simulate slow work; the emitter itself is non-blocking
+				// (fire-and-forget lives inside ChipIngressEmitter or batch service).
+				time.Sleep(200 * time.Millisecond)
+				chipCalled.Store(true)
+				return nil
+			},
+		}
+		otelEmitter := &mockEmitter{}
+
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
+		require.NoError(t, err)
+
+		err = emitter.Emit(t.Context(), []byte("test"))
+		assert.NoError(t, err)
+
+		require.NoError(t, emitter.Close())
+	})
+
+	t.Run("chip ingress emit completes inline when emitter is synchronous", func(t *testing.T) {
+		var chipCalled atomic.Bool
+		chipEmitter := &mockEmitter{
+			emitFunc: func(ctx context.Context, body []byte, attrKVs ...any) error {
+				chipCalled.Store(true)
+				return nil
+			},
+		}
+		otelEmitter := &mockEmitter{}
+
+		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
+		require.NoError(t, err)
+
+		err = emitter.Emit(t.Context(), []byte("test"))
+		assert.NoError(t, err)
+		assert.True(t, chipCalled.Load(),
+			"chip ingress emit should complete before Emit returns")
+
+		require.NoError(t, emitter.Close())
 	})
 }
 

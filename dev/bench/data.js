@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779392249566,
+  "lastUpdate": 1779399518524,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -47640,6 +47640,66 @@ window.BENCHMARK_DATA = {
             "value": 113401,
             "unit": "ns/op",
             "extra": "9752 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "223a934ccc7a996ea10e83e6ebb5a3ecaca4eec9",
+          "message": "Create DurableEmitter pkg and Implement Services.Service (#2081)\n\n* Services service\n\n* Update durable_emitter_test.go\n\n* Update durable_emitter.go\n\n* require no error on close\n\n* Extract\n\n* Remove beholder dependency",
+          "timestamp": "2026-05-21T21:27:07Z",
+          "tree_id": "fd7167b054ec7d7a20cd03986127e6dc8f85245a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/223a934ccc7a996ea10e83e6ebb5a3ecaca4eec9"
+        },
+        "date": 1779399516707,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.2,
+            "unit": "ns/op",
+            "extra": "3435152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 81348,
+            "unit": "ns/op",
+            "extra": "14685 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 380.7,
+            "unit": "ns/op",
+            "extra": "3144008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 81468,
+            "unit": "ns/op",
+            "extra": "15073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29748,
+            "unit": "ns/op",
+            "extra": "39117 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131038,
+            "unit": "ns/op",
+            "extra": "8905 times\n4 procs"
           }
         ]
       }

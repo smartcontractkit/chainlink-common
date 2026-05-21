@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // withTestBeholderMeter swaps the global beholder client meter for t's lifetime (for metrics assertions).
@@ -143,7 +144,7 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 
 	em := newTestDurableEmitter(t, store, client, &cfg)
 	ctx := t.Context()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 
 	emitErr := make(chan error, 1)
 	go func() { emitErr <- em.Emit(ctx, []byte("during-close"), testEmitAttrs()...) }()
@@ -192,7 +193,7 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
@@ -216,7 +217,7 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
@@ -240,7 +241,7 @@ func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("plugin-row"), testEmitAttrs()...))
@@ -265,7 +266,7 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("loop-plugin"), testEmitAttrs()...))
@@ -282,7 +283,7 @@ func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
@@ -307,7 +308,7 @@ func TestDurableEmitter_EmitReturnSuccessEvenWhenPublishFails(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
@@ -335,7 +336,7 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	err := em.Emit(ctx, []byte("retry-me"), testEmitAttrs()...)
@@ -370,7 +371,7 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.NoError(t, em.Emit(ctx, []byte("first"), testEmitAttrs()...))
@@ -407,7 +408,7 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	err := em.Emit(ctx, []byte("will-expire"), testEmitAttrs()...)
@@ -441,7 +442,7 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.Eventually(t, func() bool {
@@ -466,7 +467,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	const n = 50
@@ -498,6 +499,41 @@ func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 	assert.ErrorContains(t, err, "logger")
 }
 
+func TestDurableEmitter_ImplementsServicesService(t *testing.T) {
+	em, err := NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, DefaultDurableEmitterConfig(), logger.Test(t))
+	require.NoError(t, err)
+
+	// Compile-time check that *DurableEmitter satisfies the services.Service interface.
+	var _ services.Service = em
+
+	assert.Equal(t, "DurableEmitter", em.Name())
+}
+
+func TestDurableEmitter_StartCloseIdempotent(t *testing.T) {
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), &testChipClient{}, nil)
+	ctx := t.Context()
+
+	require.NoError(t, em.Start(ctx))
+	// Second Start must error: services.Engine guarantees idempotency.
+	require.Error(t, em.Start(ctx), "expected error on re-start")
+
+	require.NoError(t, em.Ready())
+
+	require.NoError(t, em.Close())
+	// Close after Close should also error (StopOnce semantics).
+	require.Error(t, em.Close(), "expected error on re-close")
+}
+
+func TestDurableEmitter_HealthReport(t *testing.T) {
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), &testChipClient{}, nil)
+	require.NoError(t, em.Start(t.Context()))
+	defer func() { _ = em.Close() }()
+
+	report := em.HealthReport()
+	require.Contains(t, report, "DurableEmitter")
+	require.NoError(t, report["DurableEmitter"], "service should be healthy after Start")
+}
+
 func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	reader := withTestBeholderMeter(t)
 
@@ -512,7 +548,7 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer func() { _ = em.Close() }()
 
 	require.NoError(t, em.Emit(ctx, []byte("m"), testEmitAttrs()...))
@@ -659,7 +695,7 @@ func TestIntegration_HappyPath(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.NoError(t, em.Emit(ctx, []byte("billing-record-1"), emitAttrs()...))
@@ -687,7 +723,7 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.NoError(t, em.Emit(ctx, []byte("will-retry"), emitAttrs()...))
@@ -722,7 +758,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 
 	// Stop the gRPC server entirely.
 	gs.Stop()
@@ -752,7 +788,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 
 	em2, err := NewDurableEmitter(store, client2, true, cfg, logger.Test(t))
 	require.NoError(t, err)
-	em2.Start(ctx)
+	require.NoError(t, em2.Start(ctx))
 	defer em2.Close()
 
 	require.Eventually(t, func() bool {
@@ -777,7 +813,7 @@ func TestIntegration_HighThroughput(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	const n = 500
@@ -810,7 +846,7 @@ func TestIntegration_EventExpiry(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	require.NoError(t, em.Emit(ctx, []byte("will-expire"), emitAttrs()...))
@@ -835,7 +871,7 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	for i := 0; i < 5; i++ {
@@ -886,7 +922,7 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 	defer em.Close()
 
 	payload := []byte("proto-round-trip-test")

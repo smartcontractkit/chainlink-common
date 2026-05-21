@@ -133,13 +133,15 @@ type insertResult struct {
 }
 
 type DurableEmitter struct {
+	services.Service
+	eng *services.Engine
+
 	store  DurableEventStore
 	client chipingress.Client
 	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
 	// Should be set to false when initialized inside LOOP plugins.
 	isHostProcess bool
 	cfg           DurableEmitterConfig
-	log           logger.Logger
 
 	metrics *durableEmitterMetrics
 
@@ -154,7 +156,7 @@ type DurableEmitter struct {
 	// inserting is disabled.
 	insertCh chan *insertRequest
 	// insertShutdown stops new coalesced inserts; insertInFlight counts Emit
-	// callers inside the coalesced path so Close can close(insertCh) after wait
+	// callers inside the coalesced path so stop can close(insertCh) after wait
 	insertShutdown atomic.Bool
 	insertInFlight atomic.Int32
 
@@ -167,6 +169,9 @@ type DurableEmitter struct {
 	// publishCh buffers events for the batch publish loop.
 	publishCh chan publishWork
 
+	// stopCh signals background loops to exit. It is owned by DurableEmitter
+	// (not the service engine) because shutdown must drain coalesced inserts
+	// and close publishCh in a specific order after all workers stop.
 	stopCh services.StopChan
 	wg     sync.WaitGroup
 }
@@ -227,16 +232,16 @@ func NewDurableEmitter(
 	client chipingress.Client,
 	isHostProcess bool,
 	cfg DurableEmitterConfig,
-	log logger.Logger,
+	lggr logger.Logger,
 ) (*DurableEmitter, error) {
 	if store == nil {
-		return nil, errors.New("durable event store is nil")
+		return nil, fmt.Errorf("durable event store is nil")
 	}
 	if client == nil {
-		return nil, errors.New("chipingress client is nil")
+		return nil, fmt.Errorf("chipingress client is nil")
 	}
-	if log == nil {
-		return nil, errors.New("logger is nil")
+	if lggr == nil {
+		return nil, fmt.Errorf("logger is nil")
 	}
 	if cfg.PublishBatchSize < 1 {
 		cfg.PublishBatchSize = 1
@@ -255,13 +260,18 @@ func NewDurableEmitter(
 		client:        client,
 		isHostProcess: isHostProcess,
 		cfg:           cfg,
-		log:           log,
 		metrics:       m,
 		stopCh:        make(chan struct{}),
 	}
+	d.Service, d.eng = services.Config{
+		Name:  "DurableEmitter",
+		Start: d.start,
+		Close: d.stop,
+	}.NewServiceEngine(lggr)
+
 	if cp, ok := client.(grpcConnProvider); ok {
 		d.rawConn = cp.Conn()
-		log.Infow("DurableEmitter: raw-codec batch publishing enabled (zero-copy protowire)")
+		d.eng.Infow("DurableEmitter: raw-codec batch publishing enabled (zero-copy protowire)")
 	}
 	if cfg.InsertBatchSize > 0 {
 		if bi, ok := store.(BatchInserter); ok {
@@ -271,7 +281,7 @@ func NewDurableEmitter(
 				chanSize = 10_000
 			}
 			d.insertCh = make(chan *insertRequest, chanSize)
-			log.Infow("DurableEmitter: write coalescing enabled",
+			d.eng.Infow("DurableEmitter: write coalescing enabled",
 				"insertBatchSize", cfg.InsertBatchSize,
 				"insertBatchWorkers", cfg.InsertBatchWorkers,
 				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
@@ -288,17 +298,20 @@ func NewDurableEmitter(
 	return d, nil
 }
 
-// Start launches the retransmit, expiry, purge, and (optionally) batch publish
-// background loops. Cancel the supplied context or call Close to stop them.
-func (d *DurableEmitter) Start(_ context.Context) {
+// start launches the retransmit, expiry, purge, and (optionally) batch publish
+// background loops. It is invoked by the services.Engine when the embedded
+// Service is started; callers should not call this directly. The supplied
+// context must not be retained beyond start (per services.Service contract);
+// loops use d.stopCh.NewCtx() for their own lifecycle.
+func (d *DurableEmitter) start(_ context.Context) error {
 	batchWorkers := d.cfg.PublishBatchWorkers
 	if batchWorkers <= 0 {
-		d.log.Warnw("configured batchWorkers <=0; defaulting to 1")
+		d.eng.Warnw("configured batchWorkers <=0; defaulting to 1")
 		batchWorkers = 1
 	}
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
-		d.log.Warnw("configured insertWorkers <=0; defaulting to 4")
+		d.eng.Warnw("configured insertWorkers <=0; defaulting to 4")
 		insertWorkers = 4
 	}
 
@@ -320,6 +333,7 @@ func (d *DurableEmitter) Start(_ context.Context) {
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		d.wg.Go(d.metricsLoop)
 	}
+	return nil
 }
 
 // Emit persists the event then enqueues it for async PublishBatch delivery. Returns nil once
@@ -442,19 +456,22 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		return nil
 	default:
 		// Channel full — event is safely in the DB; retransmit loop will deliver it.
-		d.log.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
+		d.eng.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
 			"id", id, "ch_len", len(d.publishCh), "ch_cap", cap(d.publishCh))
 	}
 	return nil
 }
 
-// Close signals background loops to stop and waits for them to finish.
+// stop signals background loops to stop and waits for them to finish. It is
+// invoked by the services.Engine when the embedded Service is closed; callers
+// should not call this directly.
 //
-// When coalesced inserts are enabled, insertShutdown and insertInFlight drain run
+// When coalesced inserts are enabled, insertShutdown and insertInFlight drain
 // before close(stopCh) so Emit can finish enqueueing to publishCh after a
-// successful insert (receive on a closed stopCh in select would race with default).
-// Then stopCh is closed, workers exit, and publishCh is closed after wg.Wait.
-func (d *DurableEmitter) Close() error {
+// successful insert (receive on a closed stopCh in select would race with
+// default). Then stopCh is closed, workers exit, and publishCh is closed
+// after wg.Wait.
+func (d *DurableEmitter) stop() error {
 	if d.insertCh != nil {
 		d.insertShutdown.Store(true)
 		for d.insertInFlight.Load() > 0 {
@@ -702,7 +719,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 		if d.metrics != nil {
 			d.metrics.publishBatchEvErr.Add(ctx, int64(len(batch)))
 		}
-		d.log.Warnw("DurableEmitter: PublishBatch failed, events will be retransmitted",
+		d.eng.Warnw("DurableEmitter: PublishBatch failed, events will be retransmitted",
 			"batch_size", len(batch), "error", err,
 			"elapsed_ms", elapsed.Milliseconds())
 		return
@@ -724,7 +741,7 @@ func (d *DurableEmitter) flushBatch(batch []publishWork) {
 			h.OnBatchMarkDelivered(markElapsed, int(marked))
 		}
 		if markErr != nil {
-			d.log.Errorw("failed to batch-mark events delivered", "batch_size", len(ids), "error", markErr)
+			d.eng.Errorw("failed to batch-mark events delivered", "batch_size", len(ids), "error", markErr)
 			return
 		}
 		d.decPending(marked)
@@ -794,16 +811,16 @@ func (d *DurableEmitter) retransmitPending() {
 	cutoff := time.Now().Add(-d.cfg.RetransmitAfter)
 	pending, err := d.store.ListPending(ctx, cutoff, d.cfg.RetransmitBatchSize)
 	if err != nil {
-		d.log.Errorw("failed to list pending events", "error", err)
+		d.eng.Errorw("failed to list pending events", "error", err)
 		return
 	}
 
 	if obs, ok := d.store.(DurableQueueObserver); ok {
 		st, obsErr := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
 		if obsErr != nil {
-			d.log.Warnw("DurableEmitter: retransmit scan ObserveDurableQueue failed", "error", obsErr)
+			d.eng.Warnw("DurableEmitter: retransmit scan ObserveDurableQueue failed", "error", obsErr)
 		} else {
-			d.log.Infow("DurableEmitter: retransmit pending scan",
+			d.eng.Infow("DurableEmitter: retransmit pending scan",
 				"pending_rows", st.Depth,
 				"pending_payload_bytes", st.PayloadBytes,
 				"oldest_pending_age", st.OldestPendingAge.String(),
@@ -843,7 +860,7 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		}
 	}
 
-	d.log.Infow("DurableEmitter: retransmit enqueued to batch workers",
+	d.eng.Infow("DurableEmitter: retransmit enqueued to batch workers",
 		"enqueued", enqueued,
 		"skipped_ch_full", len(pending)-enqueued,
 		"total_pending", len(pending),
@@ -874,7 +891,7 @@ func (d *DurableEmitter) purgeLoop() {
 			for {
 				n, err := d.store.PurgeDelivered(ctx, batch)
 				if err != nil {
-					d.log.Errorw("failed to purge delivered chip durable events", "error", err)
+					d.eng.Errorw("failed to purge delivered chip durable events", "error", err)
 					break
 				}
 				if n == 0 {
@@ -898,7 +915,7 @@ func (d *DurableEmitter) expiryLoop() {
 		case <-ticker.C:
 			deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
 			if err != nil {
-				d.log.Errorw("failed to delete expired events", "error", err)
+				d.eng.Errorw("failed to delete expired events", "error", err)
 				continue
 			}
 			if deleted > 0 {
@@ -906,7 +923,7 @@ func (d *DurableEmitter) expiryLoop() {
 				if d.metrics != nil {
 					d.metrics.expiredPurged.Add(ctx, deleted)
 				}
-				d.log.Infow("purged expired events", "count", deleted)
+				d.eng.Infow("purged expired events", "count", deleted)
 			}
 		}
 	}

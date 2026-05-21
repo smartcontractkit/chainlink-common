@@ -1,9 +1,11 @@
 package artifacts
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -78,10 +80,77 @@ func GetBuildCmd(inputFile string, outputFile string, rootFolder string) *exec.C
 			"-buildvcs=false",
 			inputFile,
 		)
-		buildCmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
+		env := append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
+		// Pin GOTOOLCHAIN to the version declared in the nearest go.mod so the
+		// compiled WASM is reproducible across machines whose local Go differs
+		// from go.mod (GOTOOLCHAIN=auto uses the local Go when it's newer).
+		if toolchain := goToolchainFromMod(rootFolder); toolchain != "" {
+			env = append(env, "GOTOOLCHAIN="+toolchain)
+		}
+		buildCmd.Env = env
 	}
 
 	buildCmd.Dir = rootFolder
 
 	return buildCmd
+}
+
+// goToolchainFromMod returns a GOTOOLCHAIN value (e.g. "go1.26.2") derived
+// from the nearest go.mod walking up from startDir. Prefers the toolchain
+// directive when present, falling back to the go directive. Returns "" when
+// no go.mod or version can be determined.
+func goToolchainFromMod(startDir string) string {
+	goModPath := findNearestGoMod(startDir)
+	if goModPath == "" {
+		return ""
+	}
+	f, err := os.Open(goModPath)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	var goVersion, toolchain string
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		switch fields[0] {
+		case "go":
+			goVersion = fields[1]
+		case "toolchain":
+			toolchain = fields[1]
+		}
+	}
+	if toolchain != "" {
+		return toolchain
+	}
+	if goVersion != "" {
+		return "go" + goVersion
+	}
+	return ""
+}
+
+func findNearestGoMod(startDir string) string {
+	dir, err := filepath.Abs(startDir)
+	if err != nil {
+		return ""
+	}
+	for {
+		candidate := filepath.Join(dir, "go.mod")
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
 }

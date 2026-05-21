@@ -306,6 +306,17 @@ func (a *LLOAggregator) extractLLOEvents(lggr logger.Logger, observations map[oc
 			lggr.Warnw("could not parse observations", "err", err)
 			continue
 		}
+		payload := make([]*datastreams.LLOStreamDecimal, 0, len(triggerEvent.Payload))
+		seenStreamIDs := make(map[uint32]struct{})
+		for _, p := range triggerEvent.Payload {
+			if _, ok := seenStreamIDs[p.StreamID]; ok {
+				lggr.Warnw("duplicate streamID in observation", "streamID", p.StreamID)
+				continue
+			}
+			seenStreamIDs[p.StreamID] = struct{}{}
+			payload = append(payload, p)
+		}
+		triggerEvent.Payload = payload
 		events[nodeID] = triggerEvent
 	}
 	return events

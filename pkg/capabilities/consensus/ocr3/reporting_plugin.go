@@ -227,6 +227,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 
 		sortedTimestamps = append(sortedTimestamps, obs.Timestamp)
 
+		seenExecutionIDs := map[string]bool{}
 		for _, request := range obs.Observations {
 			if request == nil {
 				r.lggr.Debugw("skipping nil request in observations", "observations", obs.Observations)
@@ -239,6 +240,11 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			}
 
 			weid := request.Id.WorkflowExecutionId
+			if seenExecutionIDs[weid] {
+				r.lggr.Debugw("skipping duplicate workflow execution id in observation", "executionID", weid)
+				continue
+			}
+			seenExecutionIDs[weid] = true
 
 			obsList, innerErr := values.FromListValueProto(request.Observations)
 			if obsList == nil || innerErr != nil {

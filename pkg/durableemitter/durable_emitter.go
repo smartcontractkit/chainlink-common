@@ -1,4 +1,4 @@
-package beholder
+package durableemitter
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -225,7 +226,7 @@ func buildBatchBytes(payloads [][]byte) []byte {
 	return buf
 }
 
-var _ Emitter = (*DurableEmitter)(nil)
+var _ beholder.Emitter = (*DurableEmitter)(nil)
 
 func NewDurableEmitter(
 	store DurableEventStore,
@@ -337,129 +338,132 @@ func (d *DurableEmitter) start(_ context.Context) error {
 }
 
 // Emit persists the event then enqueues it for async PublishBatch delivery. Returns nil once
-// the insert is accepted (or the coalesced insert path completes successfully).
+// the insert is accepted (or the coalesced insert path completes successfully). Returns an
+// error when the service is not in the Started state (e.g. before Start or after Close).
 func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	tEmitTotal := time.Now()
-	defer func() {
-		if d.metrics != nil {
-			d.metrics.emitTotalDuration.Record(ctx, time.Since(tEmitTotal).Seconds())
-		}
-	}()
-	emitFail := func() {
-		if d.metrics != nil {
-			d.metrics.emitFail.Add(ctx, 1)
-		}
-	}
-	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)
-	if err != nil {
-		emitFail()
-		return err
-	}
-
-	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
-	if err != nil {
-		emitFail()
-		return err
-	}
-
-	eventPb, err := chipingress.EventToProto(event)
-	if err != nil {
-		emitFail()
-		return fmt.Errorf("failed to convert event to proto: %w", err)
-	}
-
-	payload, err := proto.Marshal(eventPb)
-	if err != nil {
-		emitFail()
-		return fmt.Errorf("failed to marshal event proto: %w", err)
-	}
-
-	var id int64
-	var insElapsed time.Duration
-
-	if d.insertCh != nil {
-		// Write coalescing: send payload to the batch insert loop and block
-		// until the multi-row INSERT completes.
-		req := &insertRequest{
-			payload: payload,
-			result:  make(chan insertResult, 1),
-		}
-		var res insertResult
-		var cerr error
-		func() {
-			d.insertInFlight.Add(1)
-			defer d.insertInFlight.Add(-1)
-			if d.insertShutdown.Load() {
-				cerr = errors.New("durable emitter closed")
-				return
+	return d.eng.IfStarted(func() error {
+		tEmitTotal := time.Now()
+		defer func() {
+			if d.metrics != nil {
+				d.metrics.emitTotalDuration.Record(ctx, time.Since(tEmitTotal).Seconds())
 			}
-			tIns := time.Now()
-			select {
-			case d.insertCh <- req:
-			case <-ctx.Done():
-				cerr = ctx.Err()
-				return
-			}
-			res = <-req.result
-			insElapsed = time.Since(tIns)
 		}()
-		if cerr != nil {
-			if errors.Is(cerr, context.Canceled) || errors.Is(cerr, context.DeadlineExceeded) {
-				emitFail()
-			}
-			return cerr
-		}
-		if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
-			h.OnEmitInsert(insElapsed, res.err)
-		}
-		if d.metrics != nil {
-			d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
-			if res.err != nil {
+		emitFail := func() {
+			if d.metrics != nil {
 				d.metrics.emitFail.Add(ctx, 1)
-			} else {
-				d.metrics.emitSuccess.Add(ctx, 1)
 			}
 		}
-		if res.err != nil {
-			return fmt.Errorf("failed to persist event: %w", res.err)
-		}
-		id = res.id
-	} else {
-		tIns := time.Now()
-		id, err = d.store.Insert(ctx, payload)
-		insElapsed = time.Since(tIns)
-		if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
-			h.OnEmitInsert(insElapsed, err)
-		}
-		if d.metrics != nil {
-			d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
-			if err != nil {
-				d.metrics.emitFail.Add(ctx, 1)
-			} else {
-				d.metrics.emitSuccess.Add(ctx, 1)
-			}
-		}
+		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
 		if err != nil {
-			return fmt.Errorf("failed to persist event: %w", err)
+			emitFail()
+			return err
 		}
-	}
 
-	d.incPending(1)
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, beholder.ExtractAttributes(attrKVs...))
+		if err != nil {
+			emitFail()
+			return err
+		}
 
-	// Batch path: enqueue for batch publish loop (PublishBatchSize is always >= 1).
-	work := publishWork{id: id, payload: payload}
-	if d.rawConn == nil {
-		work.event = eventPb
-	}
-	select {
-	case d.publishCh <- work:
+		eventPb, err := chipingress.EventToProto(event)
+		if err != nil {
+			emitFail()
+			return fmt.Errorf("failed to convert event to proto: %w", err)
+		}
+
+		payload, err := proto.Marshal(eventPb)
+		if err != nil {
+			emitFail()
+			return fmt.Errorf("failed to marshal event proto: %w", err)
+		}
+
+		var id int64
+		var insElapsed time.Duration
+
+		if d.insertCh != nil {
+			// Write coalescing: send payload to the batch insert loop and block
+			// until the multi-row INSERT completes.
+			req := &insertRequest{
+				payload: payload,
+				result:  make(chan insertResult, 1),
+			}
+			var res insertResult
+			var cerr error
+			func() {
+				d.insertInFlight.Add(1)
+				defer d.insertInFlight.Add(-1)
+				if d.insertShutdown.Load() {
+					cerr = errors.New("durable emitter closed")
+					return
+				}
+				tIns := time.Now()
+				select {
+				case d.insertCh <- req:
+				case <-ctx.Done():
+					cerr = ctx.Err()
+					return
+				}
+				res = <-req.result
+				insElapsed = time.Since(tIns)
+			}()
+			if cerr != nil {
+				if errors.Is(cerr, context.Canceled) || errors.Is(cerr, context.DeadlineExceeded) {
+					emitFail()
+				}
+				return cerr
+			}
+			if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
+				h.OnEmitInsert(insElapsed, res.err)
+			}
+			if d.metrics != nil {
+				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				if res.err != nil {
+					d.metrics.emitFail.Add(ctx, 1)
+				} else {
+					d.metrics.emitSuccess.Add(ctx, 1)
+				}
+			}
+			if res.err != nil {
+				return fmt.Errorf("failed to persist event: %w", res.err)
+			}
+			id = res.id
+		} else {
+			tIns := time.Now()
+			id, err = d.store.Insert(ctx, payload)
+			insElapsed = time.Since(tIns)
+			if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
+				h.OnEmitInsert(insElapsed, err)
+			}
+			if d.metrics != nil {
+				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				if err != nil {
+					d.metrics.emitFail.Add(ctx, 1)
+				} else {
+					d.metrics.emitSuccess.Add(ctx, 1)
+				}
+			}
+			if err != nil {
+				return fmt.Errorf("failed to persist event: %w", err)
+			}
+		}
+
+		d.incPending(1)
+
+		// Batch path: enqueue for batch publish loop (PublishBatchSize is always >= 1).
+		work := publishWork{id: id, payload: payload}
+		if d.rawConn == nil {
+			work.event = eventPb
+		}
+		select {
+		case d.publishCh <- work:
+			return nil
+		default:
+			// Channel full — event is safely in the DB; retransmit loop will deliver it.
+			d.eng.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
+				"id", id, "ch_len", len(d.publishCh), "ch_cap", cap(d.publishCh))
+		}
 		return nil
-	default:
-		// Channel full — event is safely in the DB; retransmit loop will deliver it.
-		d.eng.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
-			"id", id, "ch_len", len(d.publishCh), "ch_cap", cap(d.publishCh))
-	}
-	return nil
+	})
 }
 
 // stop signals background loops to stop and waits for them to finish. It is

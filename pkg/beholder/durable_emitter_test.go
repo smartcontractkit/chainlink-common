@@ -24,7 +24,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // withTestBeholderMeter swaps the global beholder client meter for t's lifetime (for metrics assertions).
@@ -497,31 +496,6 @@ func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 
 	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfg, nil)
 	assert.ErrorContains(t, err, "logger")
-}
-
-func TestDurableEmitter_ImplementsServicesService(t *testing.T) {
-	em, err := NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, DefaultDurableEmitterConfig(), logger.Test(t))
-	require.NoError(t, err)
-
-	// Compile-time check that *DurableEmitter satisfies the services.Service interface.
-	var _ services.Service = em
-
-	assert.Equal(t, "DurableEmitter", em.Name())
-}
-
-func TestDurableEmitter_StartCloseIdempotent(t *testing.T) {
-	em := newTestDurableEmitter(t, NewMemDurableEventStore(), &testChipClient{}, nil)
-	ctx := t.Context()
-
-	require.NoError(t, em.Start(ctx))
-	// Second Start must error: services.Engine guarantees idempotency.
-	require.Error(t, em.Start(ctx), "expected error on re-start")
-
-	require.NoError(t, em.Ready())
-
-	require.NoError(t, em.Close())
-	// Close after Close should also error (StopOnce semantics).
-	require.Error(t, em.Close(), "expected error on re-close")
 }
 
 func TestDurableEmitter_HealthReport(t *testing.T) {

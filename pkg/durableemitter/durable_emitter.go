@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"maps"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 	grpcEncoding "google.golang.org/grpc/encoding"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -61,8 +63,8 @@ type DurableEmitterConfig struct {
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
 	Hooks *DurableEmitterHooks
-	// Metrics enables OpenTelemetry instruments on beholder.GetMeter() (queue, publish, store, optional process stats).
-	// Nil disables.
+	// Metrics enables OpenTelemetry instruments (queue, publish, store, optional process stats).
+	// When non-nil, a meter must be supplied to NewDurableEmitter; nil disables instrumentation.
 	Metrics *DurableEmitterMetricsConfig
 	// InsertBatchSize enables write coalescing when > 0 and the store implements
 	// BatchInserter. Multiple concurrent Emit() calls are grouped into a single
@@ -100,7 +102,9 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,
 		PublishBatchSize:    1,
-		Metrics:             &DurableEmitterMetricsConfig{},
+		// Metrics is opt-in: callers who want instrumentation must set this
+		// and pass a metric.Meter to NewDurableEmitter.
+		Metrics: nil,
 	}
 }
 
@@ -226,14 +230,26 @@ func buildBatchBytes(payloads [][]byte) []byte {
 	return buf
 }
 
-var _ beholder.Emitter = (*DurableEmitter)(nil)
+// Compile-time assertion that *DurableEmitter exposes the canonical emit and
+// close methods expected of an emitter.
+var _ interface {
+	Emit(ctx context.Context, body []byte, attrKVs ...any) error
+	io.Closer
+} = (*DurableEmitter)(nil)
 
+// NewDurableEmitter constructs a DurableEmitter as a services.Service.
+//
+// meter is the OpenTelemetry Meter used for instrument registration. It is
+// required when cfg.Metrics is non-nil and must be supplied by the caller
+// (e.g. otel.Meter("durableemitter") or a meter from the host's
+// MeterProvider). Pass nil when metrics are disabled.
 func NewDurableEmitter(
 	store DurableEventStore,
 	client chipingress.Client,
 	isHostProcess bool,
 	cfg DurableEmitterConfig,
 	lggr logger.Logger,
+	meter metric.Meter,
 ) (*DurableEmitter, error) {
 	if store == nil {
 		return nil, errors.New("durable event store is nil")
@@ -249,8 +265,11 @@ func NewDurableEmitter(
 	}
 	var m *durableEmitterMetrics
 	if cfg.Metrics != nil {
+		if meter == nil {
+			return nil, errors.New("durable emitter metrics enabled but meter is nil")
+		}
 		var err error
-		m, err = newDurableEmitterMetrics()
+		m, err = newDurableEmitterMetrics(meter)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}
@@ -353,13 +372,13 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				d.metrics.emitFail.Add(ctx, 1)
 			}
 		}
-		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
+		sourceDomain, entityType, err := extractSourceAndType(attrKVs...)
 		if err != nil {
 			emitFail()
 			return err
 		}
 
-		event, err := chipingress.NewEvent(sourceDomain, entityType, body, beholder.ExtractAttributes(attrKVs...))
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, parseAttrs(attrKVs...))
 		if err != nil {
 			emitFail()
 			return err
@@ -965,4 +984,47 @@ func (d *DurableEmitter) metricsLoop() {
 			}
 		}
 	}
+}
+
+// parseAttrs converts a variadic slice of (key, value) pairs (with optional
+// embedded map[string]any) into a flat attributes map.
+func parseAttrs(attrKVs ...any) map[string]any {
+	a := make(map[string]any, len(attrKVs)/2)
+	l := len(attrKVs)
+	for i := 0; i < l; {
+		switch t := attrKVs[i].(type) {
+		case map[string]any:
+			maps.Copy(a, t)
+			i++
+		case string:
+			if i+1 >= l {
+				break
+			}
+			a[t] = attrKVs[i+1]
+			i += 2
+		default:
+			return a
+		}
+	}
+	return a
+}
+
+// extractSourceAndType returns the CloudEvent source domain and entity type
+// from the supplied attributes. Callers must provide the canonical CloudEvents
+// keys "source" and "type". Both must be non-empty strings.
+func extractSourceAndType(attrKVs ...any) (sourceDomain, entityType string, err error) {
+	attrs := parseAttrs(attrKVs...)
+	if v, ok := attrs["source"].(string); ok {
+		sourceDomain = v
+	}
+	if v, ok := attrs["type"].(string); ok {
+		entityType = v
+	}
+	if sourceDomain == "" {
+		return "", "", errors.New(`"source" not found in provided key/value attributes`)
+	}
+	if entityType == "" {
+		return "", "", errors.New(`"type" not found in provided key/value attributes`)
+	}
+	return sourceDomain, entityType, nil
 }

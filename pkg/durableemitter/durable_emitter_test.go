@@ -13,6 +13,7 @@ import (
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"google.golang.org/grpc"
@@ -21,28 +22,21 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
-// withTestBeholderMeter swaps the global beholder client meter for t's lifetime (for metrics assertions).
-func withTestBeholderMeter(t *testing.T) *sdkmetric.ManualReader {
+// newTestMeter returns a metric.Meter backed by a ManualReader so tests can
+// inspect recorded metrics. No global state is mutated — the meter is fully
+// owned by the test.
+func newTestMeter(t *testing.T) (metric.Meter, *sdkmetric.ManualReader) {
 	t.Helper()
-	prev := beholder.GetClient()
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	c := beholder.NewNoopClient()
-	c.MeterProvider = mp
-	c.Meter = mp.Meter("beholder")
-	beholder.SetClient(c)
-	t.Cleanup(func() {
-		beholder.SetClient(prev)
-		_ = mp.Shutdown(context.Background())
-	})
-	return reader
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+	return mp.Meter("durableemitter"), reader
 }
 
 // testChipClient is a minimal chipingress.Client for tests.
@@ -113,7 +107,8 @@ func newTestDurableEmitter(t *testing.T, store DurableEventStore, client chiping
 	if cfgOverride != nil {
 		cfg = *cfgOverride
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	// Tests that need metrics build the emitter directly with an injected meter.
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	return em
 }
@@ -189,7 +184,7 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -210,7 +205,7 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -231,7 +226,7 @@ func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 	cfg.ExpiryInterval = 40 * time.Millisecond
 	cfg.EventTTL = 25 * time.Millisecond
 
-	em, err := NewDurableEmitter(store, client, false, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, false, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -253,7 +248,7 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 
-	em, err := NewDurableEmitter(store, client, false, DefaultDurableEmitterConfig(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, false, DefaultDurableEmitterConfig(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -456,14 +451,19 @@ func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 	log := logger.Test(t)
 	cfg := DefaultDurableEmitterConfig()
 
-	_, err := NewDurableEmitter(nil, &testChipClient{}, true, cfg, log)
+	_, err := NewDurableEmitter(nil, &testChipClient{}, true, cfg, log, nil)
 	assert.ErrorContains(t, err, "store")
 
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), nil, true, cfg, log)
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), nil, true, cfg, log, nil)
 	assert.ErrorContains(t, err, "client")
 
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfg, nil)
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfg, nil, nil)
 	assert.ErrorContains(t, err, "logger")
+
+	cfgWithMetrics := cfg
+	cfgWithMetrics.Metrics = &DurableEmitterMetricsConfig{}
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfgWithMetrics, log, nil)
+	assert.ErrorContains(t, err, "meter")
 }
 
 func TestDurableEmitter_HealthReport(t *testing.T) {
@@ -477,7 +477,7 @@ func TestDurableEmitter_HealthReport(t *testing.T) {
 }
 
 func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
-	reader := withTestBeholderMeter(t)
+	meter, reader := newTestMeter(t)
 
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
@@ -485,7 +485,7 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	cfg.RetransmitInterval = time.Hour
 	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
 
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), meter)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -500,12 +500,12 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	var found bool
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {
-			if m.Name == "beholder.durable_emitter.emit.success" {
+			if m.Name == "durable_emitter.emit.success" {
 				found = true
 			}
 		}
 	}
-	assert.True(t, found, "expected beholder.durable_emitter.emit.success in exported metrics")
+	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.
@@ -629,7 +629,7 @@ func TestIntegration_HappyPath(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -654,7 +654,7 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -686,7 +686,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 
 	cfg := fastCfg()
 	cfg.PublishTimeout = 500 * time.Millisecond
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -719,7 +719,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = client2.Close() })
 
-	em2, err := NewDurableEmitter(store, client2, true, cfg, logger.Test(t))
+	em2, err := NewDurableEmitter(store, client2, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em2)
 
@@ -740,7 +740,7 @@ func TestIntegration_HighThroughput(t *testing.T) {
 
 	cfg := fastCfg()
 	cfg.RetransmitBatchSize = 200
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -770,7 +770,7 @@ func TestIntegration_EventExpiry(t *testing.T) {
 	cfg := fastCfg()
 	cfg.EventTTL = 100 * time.Millisecond
 	cfg.ExpiryInterval = 100 * time.Millisecond
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -792,7 +792,7 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -840,7 +840,7 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()

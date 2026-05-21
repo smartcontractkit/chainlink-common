@@ -2,148 +2,21 @@ package durableemitter
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-)
-
-var (
-	durableEmitterMetricEmitSuccess = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.emit.success",
-		Unit:        "{call}",
-		Description: "Successful durable Emit calls (insert returned)",
-	}
-	durableEmitterMetricEmitFailure = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.emit.failure",
-		Unit:        "{call}",
-		Description: "Failed Emit calls (before or during insert)",
-	}
-	durableEmitterMetricEmitDuration = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.emit.duration",
-		Unit:        "s",
-		Description: "Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds)",
-	}
-	durableEmitterMetricEmitTotalDuration = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.emit.total_duration",
-		Unit:        "s",
-		Description: "Full Emit() wall time including event construction, DB insert, and channel enqueue (seconds)",
-	}
-	durableEmitterMetricPublishImmSuccess = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.immediate.success",
-		Unit:        "{call}",
-		Description: "Immediate Publish RPC successes",
-	}
-	durableEmitterMetricPublishImmFailure = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.immediate.failure",
-		Unit:        "{call}",
-		Description: "Immediate Publish RPC failures (events await retransmit)",
-	}
-	durableEmitterMetricPublishDuration = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.duration",
-		Unit:        "s",
-		Description: "Chip Ingress Publish RPC duration (seconds); labels: phase={immediate,retransmit,best_effort}, error={true,false}",
-	}
-	durableEmitterMetricPublishBatchSuccess = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.retransmit.batch.success",
-		Unit:        "{call}",
-		Description: "Unused; retransmit uses serial Publish (see retransmit.events.*)",
-	}
-	durableEmitterMetricPublishBatchFailure = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.retransmit.batch.failure",
-		Unit:        "{call}",
-		Description: "Unused; retransmit uses serial Publish (see retransmit.events.*)",
-	}
-	durableEmitterMetricPublishBatchEvSuccess = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.retransmit.events.success",
-		Unit:        "{event}",
-		Description: "Retransmit Publish RPC successes (one RPC per queued event)",
-	}
-	durableEmitterMetricPublishBatchEvFailure = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.publish.retransmit.events.failure",
-		Unit:        "{event}",
-		Description: "Retransmit Publish RPC failures (event stays queued)",
-	}
-	durableEmitterMetricDeliveryCompleted = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.delivery.completed",
-		Unit:        "{event}",
-		Description: "Events removed from store after successful publish (immediate or retransmit)",
-	}
-	durableEmitterMetricExpiredPurged = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.expired_purged",
-		Unit:        "{event}",
-		Description: "Events deleted by TTL expiry loop",
-	}
-	durableEmitterMetricStoreOperations = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.store.operations",
-		Unit:        "{op}",
-		Description: "Durable store operations (proxy for DB load / IOPs)",
-	}
-	durableEmitterMetricStoreOpDuration = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.store.operation.duration",
-		Unit:        "s",
-		Description: "Durable store operation latency (seconds, fractional)",
-	}
-	durableEmitterMetricQueueDepth = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.queue.depth",
-		Unit:        "{row}",
-		Description: "Pending rows in durable queue",
-	}
-	durableEmitterMetricQueueDepthMax = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.queue.depth_max",
-		Unit:        "{row}",
-		Description: "High-water mark of pending queue depth since start",
-	}
-	durableEmitterMetricQueuePayloadBytes = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.queue.payload_bytes",
-		Unit:        "By",
-		Description: "Sum of payload bytes for pending rows",
-	}
-	durableEmitterMetricQueueOldestAgeSec = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.queue.oldest_pending_age_seconds",
-		Unit:        "s",
-		Description: "Age of oldest pending row at last poll (longest wait)",
-	}
-	durableEmitterMetricQueueNearTTL = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.queue.near_ttl",
-		Unit:        "{row}",
-		Description: "Rows within near-expiry window of EventTTL (DLQ pressure proxy; no separate DLQ table)",
-	}
-	durableEmitterMetricQueueCapacityRatio = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.queue.capacity_usage_ratio",
-		Unit:        "1",
-		Description: "queue.payload_bytes / MaxQueuePayloadBytes when max > 0",
-	}
-	durableEmitterMetricProcHeapInuse = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.process.memory.heap_inuse_bytes",
-		Unit:        "By",
-		Description: "Go runtime MemStats HeapInuse",
-	}
-	durableEmitterMetricProcHeapSys = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.process.memory.heap_sys_bytes",
-		Unit:        "By",
-		Description: "Go runtime MemStats HeapSys",
-	}
-	durableEmitterMetricProcCPUUser = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.process.cpu.user_seconds",
-		Unit:        "s",
-		Description: "Cumulative user CPU seconds (getrusage; Unix only)",
-	}
-	durableEmitterMetricProcCPUSys = beholder.MetricInfo{
-		Name:        "beholder.durable_emitter.process.cpu.system_seconds",
-		Unit:        "s",
-		Description: "Cumulative system CPU seconds (getrusage; Unix only)",
-	}
 )
 
 // DurableEmitterMetricsConfig enables OpenTelemetry metrics for DurableEmitter.
 // Set on DurableEmitterConfig.Metrics; nil disables instrumentation.
 //
-// Instruments are registered on beholder.GetMeter() (same path as capabilities
-// and monitoring metrics). Ensure beholder.SetClient has been called with a
-// configured client before NewDurableEmitter when metrics are enabled.
+// When non-nil, an otel Meter must be supplied to NewDurableEmitter so that
+// instruments can be registered. DurableEmitter does not look up a global
+// meter on its own — callers are responsible for supplying one (usually via
+// otel.Meter("durableemitter") or an equivalently scoped meter from their
+// telemetry stack).
 type DurableEmitterMetricsConfig struct {
 	// PollInterval is how often queue and optional process gauges refresh. Zero = 10s.
 	PollInterval time.Duration
@@ -190,103 +63,192 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 	0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
 )
 
-func newDurableEmitterMetrics() (*durableEmitterMetrics, error) {
-	meter := beholder.GetMeter()
+// newDurableEmitterMetrics registers all DurableEmitter instruments on the
+// supplied meter. The caller is responsible for the meter's scope (the
+// instrument prefix below acts as the metric namespace).
+func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error) {
+	if meter == nil {
+		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
+	}
 	m := &durableEmitterMetrics{}
 	var err error
-	if m.emitSuccess, err = durableEmitterMetricEmitSuccess.NewInt64Counter(meter); err != nil {
+	if m.emitSuccess, err = meter.Int64Counter(
+		"durable_emitter.emit.success",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Successful durable Emit calls (insert returned)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.emitFail, err = durableEmitterMetricEmitFailure.NewInt64Counter(meter); err != nil {
+	if m.emitFail, err = meter.Int64Counter(
+		"durable_emitter.emit.failure",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Failed Emit calls (before or during insert)"),
+	); err != nil {
 		return nil, err
 	}
 	if m.emitDuration, err = meter.Float64Histogram(
-		durableEmitterMetricEmitDuration.Name,
-		metric.WithUnit(durableEmitterMetricEmitDuration.Unit),
-		metric.WithDescription(durableEmitterMetricEmitDuration.Description),
+		"durable_emitter.emit.duration",
+		metric.WithUnit("s"),
+		metric.WithDescription("Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds)"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
 	}
 	if m.emitTotalDuration, err = meter.Float64Histogram(
-		durableEmitterMetricEmitTotalDuration.Name,
-		metric.WithUnit(durableEmitterMetricEmitTotalDuration.Unit),
-		metric.WithDescription(durableEmitterMetricEmitTotalDuration.Description),
+		"durable_emitter.emit.total_duration",
+		metric.WithUnit("s"),
+		metric.WithDescription("Full Emit() wall time including event construction, DB insert, and channel enqueue (seconds)"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
 	}
-	if m.publishImmOK, err = durableEmitterMetricPublishImmSuccess.NewInt64Counter(meter); err != nil {
+	if m.publishImmOK, err = meter.Int64Counter(
+		"durable_emitter.publish.immediate.success",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Immediate Publish RPC successes"),
+	); err != nil {
 		return nil, err
 	}
-	if m.publishImmErr, err = durableEmitterMetricPublishImmFailure.NewInt64Counter(meter); err != nil {
+	if m.publishImmErr, err = meter.Int64Counter(
+		"durable_emitter.publish.immediate.failure",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Immediate Publish RPC failures (events await retransmit)"),
+	); err != nil {
 		return nil, err
 	}
 	if m.publishDuration, err = meter.Float64Histogram(
-		durableEmitterMetricPublishDuration.Name,
-		metric.WithUnit(durableEmitterMetricPublishDuration.Unit),
-		metric.WithDescription(durableEmitterMetricPublishDuration.Description),
+		"durable_emitter.publish.duration",
+		metric.WithUnit("s"),
+		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={immediate,retransmit,best_effort}, error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
 	}
-	if m.publishBatchOK, err = durableEmitterMetricPublishBatchSuccess.NewInt64Counter(meter); err != nil {
+	if m.publishBatchOK, err = meter.Int64Counter(
+		"durable_emitter.publish.retransmit.batch.success",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.publishBatchErr, err = durableEmitterMetricPublishBatchFailure.NewInt64Counter(meter); err != nil {
+	if m.publishBatchErr, err = meter.Int64Counter(
+		"durable_emitter.publish.retransmit.batch.failure",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.publishBatchEvOK, err = durableEmitterMetricPublishBatchEvSuccess.NewInt64Counter(meter); err != nil {
+	if m.publishBatchEvOK, err = meter.Int64Counter(
+		"durable_emitter.publish.retransmit.events.success",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Retransmit Publish RPC successes (one RPC per queued event)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.publishBatchEvErr, err = durableEmitterMetricPublishBatchEvFailure.NewInt64Counter(meter); err != nil {
+	if m.publishBatchEvErr, err = meter.Int64Counter(
+		"durable_emitter.publish.retransmit.events.failure",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Retransmit Publish RPC failures (event stays queued)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.deliverComplete, err = durableEmitterMetricDeliveryCompleted.NewInt64Counter(meter); err != nil {
+	if m.deliverComplete, err = meter.Int64Counter(
+		"durable_emitter.delivery.completed",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events removed from store after successful publish (immediate or retransmit)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.expiredPurged, err = durableEmitterMetricExpiredPurged.NewInt64Counter(meter); err != nil {
+	if m.expiredPurged, err = meter.Int64Counter(
+		"durable_emitter.expired_purged",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events deleted by TTL expiry loop"),
+	); err != nil {
 		return nil, err
 	}
-	if m.storeOps, err = durableEmitterMetricStoreOperations.NewInt64Counter(meter); err != nil {
+	if m.storeOps, err = meter.Int64Counter(
+		"durable_emitter.store.operations",
+		metric.WithUnit("{op}"),
+		metric.WithDescription("Durable store operations (proxy for DB load / IOPs)"),
+	); err != nil {
 		return nil, err
 	}
 	if m.storeOpDuration, err = meter.Float64Histogram(
-		durableEmitterMetricStoreOpDuration.Name,
-		metric.WithUnit(durableEmitterMetricStoreOpDuration.Unit),
-		metric.WithDescription(durableEmitterMetricStoreOpDuration.Description),
+		"durable_emitter.store.operation.duration",
+		metric.WithUnit("s"),
+		metric.WithDescription("Durable store operation latency (seconds, fractional)"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
 	}
-	if m.queueDepth, err = durableEmitterMetricQueueDepth.NewInt64Gauge(meter); err != nil {
+	if m.queueDepth, err = meter.Int64Gauge(
+		"durable_emitter.queue.depth",
+		metric.WithUnit("{row}"),
+		metric.WithDescription("Pending rows in durable queue"),
+	); err != nil {
 		return nil, err
 	}
-	if m.queueDepthMax, err = durableEmitterMetricQueueDepthMax.NewInt64Gauge(meter); err != nil {
+	if m.queueDepthMax, err = meter.Int64Gauge(
+		"durable_emitter.queue.depth_max",
+		metric.WithUnit("{row}"),
+		metric.WithDescription("High-water mark of pending queue depth since start"),
+	); err != nil {
 		return nil, err
 	}
-	if m.queuePayloadBytes, err = durableEmitterMetricQueuePayloadBytes.NewInt64Gauge(meter); err != nil {
+	if m.queuePayloadBytes, err = meter.Int64Gauge(
+		"durable_emitter.queue.payload_bytes",
+		metric.WithUnit("By"),
+		metric.WithDescription("Sum of payload bytes for pending rows"),
+	); err != nil {
 		return nil, err
 	}
-	if m.queueOldestAgeSec, err = durableEmitterMetricQueueOldestAgeSec.NewFloat64Gauge(meter); err != nil {
+	if m.queueOldestAgeSec, err = meter.Float64Gauge(
+		"durable_emitter.queue.oldest_pending_age_seconds",
+		metric.WithUnit("s"),
+		metric.WithDescription("Age of oldest pending row at last poll (longest wait)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.queueNearTTL, err = durableEmitterMetricQueueNearTTL.NewInt64Gauge(meter); err != nil {
+	if m.queueNearTTL, err = meter.Int64Gauge(
+		"durable_emitter.queue.near_ttl",
+		metric.WithUnit("{row}"),
+		metric.WithDescription("Rows within near-expiry window of EventTTL (DLQ pressure proxy; no separate DLQ table)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.queueCapacityRatio, err = durableEmitterMetricQueueCapacityRatio.NewFloat64Gauge(meter); err != nil {
+	if m.queueCapacityRatio, err = meter.Float64Gauge(
+		"durable_emitter.queue.capacity_usage_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("queue.payload_bytes / MaxQueuePayloadBytes when max > 0"),
+	); err != nil {
 		return nil, err
 	}
-	if m.procHeapInuse, err = durableEmitterMetricProcHeapInuse.NewInt64Gauge(meter); err != nil {
+	if m.procHeapInuse, err = meter.Int64Gauge(
+		"durable_emitter.process.memory.heap_inuse_bytes",
+		metric.WithUnit("By"),
+		metric.WithDescription("Go runtime MemStats HeapInuse"),
+	); err != nil {
 		return nil, err
 	}
-	if m.procHeapSys, err = durableEmitterMetricProcHeapSys.NewInt64Gauge(meter); err != nil {
+	if m.procHeapSys, err = meter.Int64Gauge(
+		"durable_emitter.process.memory.heap_sys_bytes",
+		metric.WithUnit("By"),
+		metric.WithDescription("Go runtime MemStats HeapSys"),
+	); err != nil {
 		return nil, err
 	}
-	if m.procCPUUser, err = durableEmitterMetricProcCPUUser.NewFloat64Gauge(meter); err != nil {
+	if m.procCPUUser, err = meter.Float64Gauge(
+		"durable_emitter.process.cpu.user_seconds",
+		metric.WithUnit("s"),
+		metric.WithDescription("Cumulative user CPU seconds (getrusage; Unix only)"),
+	); err != nil {
 		return nil, err
 	}
-	if m.procCPUSys, err = durableEmitterMetricProcCPUSys.NewFloat64Gauge(meter); err != nil {
+	if m.procCPUSys, err = meter.Float64Gauge(
+		"durable_emitter.process.cpu.system_seconds",
+		metric.WithUnit("s"),
+		metric.WithDescription("Cumulative system CPU seconds (getrusage; Unix only)"),
+	); err != nil {
 		return nil, err
 	}
 	return m, nil

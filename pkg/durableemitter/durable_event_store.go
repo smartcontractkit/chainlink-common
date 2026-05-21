@@ -1,4 +1,4 @@
-package beholder
+package durableemitter
 
 import (
 	"context"

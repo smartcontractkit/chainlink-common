@@ -193,7 +193,7 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
@@ -217,7 +217,7 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return pubCalls.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
@@ -283,7 +283,7 @@ func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err)
@@ -308,7 +308,7 @@ func TestDurableEmitter_EmitReturnSuccessEvenWhenPublishFails(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err, "Emit must succeed once the DB insert succeeds")
@@ -336,7 +336,7 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	err := em.Emit(ctx, []byte("retry-me"), testEmitAttrs()...)
 	require.NoError(t, err)
@@ -371,7 +371,7 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("first"), testEmitAttrs()...))
 	require.NoError(t, em.Emit(ctx, []byte("second"), testEmitAttrs()...))
@@ -408,7 +408,7 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	err := em.Emit(ctx, []byte("will-expire"), testEmitAttrs()...)
 	require.NoError(t, err)
@@ -442,7 +442,7 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0 && client.batchCount.Load() >= 1
@@ -467,7 +467,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	const n = 50
 	for i := 0; i < n; i++ {
@@ -501,7 +501,7 @@ func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 func TestDurableEmitter_HealthReport(t *testing.T) {
 	em := newTestDurableEmitter(t, NewMemDurableEventStore(), &testChipClient{}, nil)
 	require.NoError(t, em.Start(t.Context()))
-	defer func() { _ = em.Close() }()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	report := em.HealthReport()
 	require.Contains(t, report, "DurableEmitter")
@@ -523,7 +523,7 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer func() { _ = em.Close() }()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("m"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
@@ -670,7 +670,7 @@ func TestIntegration_HappyPath(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("billing-record-1"), emitAttrs()...))
 	require.NoError(t, em.Emit(ctx, []byte("billing-record-2"), emitAttrs()...))
@@ -698,7 +698,7 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("will-retry"), emitAttrs()...))
 
@@ -743,7 +743,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	assert.Equal(t, 1, store.Len(), "event should be persisted even with server down")
 
 	// Stop the emitter to simulate a "node shutdown".
-	em.Close()
+	require.NoError(t, em.Close())
 
 	// Bring up a new server on the same address.
 	srv2 := &mockChipServer{}
@@ -788,7 +788,7 @@ func TestIntegration_HighThroughput(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	const n = 500
 	for i := 0; i < n; i++ {
@@ -821,7 +821,7 @@ func TestIntegration_EventExpiry(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	require.NoError(t, em.Emit(ctx, []byte("will-expire"), emitAttrs()...))
 	assert.Equal(t, 1, store.Len())
@@ -846,7 +846,7 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	for i := 0; i < 5; i++ {
 		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
@@ -897,7 +897,7 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, em.Start(ctx))
-	defer em.Close()
+	defer func() { require.NoError(t, em.Close()) }()
 
 	payload := []byte("proto-round-trip-test")
 	require.NoError(t, em.Emit(ctx, payload, emitAttrs()...))

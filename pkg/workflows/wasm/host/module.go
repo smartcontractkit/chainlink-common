@@ -72,9 +72,6 @@ type ModuleConfig struct {
 	IsUncompressed   bool
 	Fetch            func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
 	MaxFetchRequests int
-	// MaxPendingCalls is the fallback limit used to construct a default
-	// GlobalResourcePoolLimiter when PendingCallsLimiter is nil.
-	MaxPendingCalls int
 	// PendingCallsLimiter bounds concurrent in-flight capability and secrets
 	// calls. When scoped (e.g. ScopeWorkflow), each workflow ID gets its own
 	// pool; when global/unscoped, the limit is shared across all callers.
@@ -198,14 +195,6 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.MaxFetchRequests == 0 {
 		modCfg.MaxFetchRequests = defaultMaxFetchRequests
-	}
-
-	if modCfg.MaxPendingCalls < 0 {
-		return nil, fmt.Errorf("MaxPendingCalls must be positive, got %d", modCfg.MaxPendingCalls)
-	}
-
-	if modCfg.PendingCallsLimiter == nil && modCfg.MaxPendingCalls > 0 {
-		modCfg.PendingCallsLimiter = limits.GlobalResourcePoolLimiter(modCfg.MaxPendingCalls)
 	}
 
 	if modCfg.PendingCallsLimiter == nil {

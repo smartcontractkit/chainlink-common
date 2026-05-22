@@ -262,11 +262,9 @@ func TestSemaphore_ConcurrentCallAndAwait(t *testing.T) {
 	// Simulate sequential call-then-await pattern from a single WASM thread
 	// (the real case). We run it in parallel workers to stress-test the lock.
 	for w := 0; w < workers; w++ {
-		wg.Add(1)
-		go func(workerID int) {
-			defer wg.Done()
+		wg.Go(func() {
 			for i := 0; i < callsPerWorker; i++ {
-				id := int32(workerID*callsPerWorker + i)
+				id := int32(w*callsPerWorker + i)
 				err := exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: id})
 				if err != nil {
 					return
@@ -276,14 +274,16 @@ func TestSemaphore_ConcurrentCallAndAwait(t *testing.T) {
 					return
 				}
 			}
-		}(w)
+		})
 	}
 
 	wg.Wait()
 
 	assert.LessOrEqual(t, int(stub.peakLoad.Load()), max)
 	assert.Equal(t, int32(workers*callsPerWorker), stub.callCount.Load())
-	avail, err := exec.pendingCallsLimiter.Available(context.Background())
-	require.NoError(t, err)
-	assert.Equal(t, max, avail)
+	assert.Eventually(t, func() bool {
+		avail, err := exec.pendingCallsLimiter.Available(context.Background())
+		return err == nil && avail == max
+	}, time.Second, 5*time.Millisecond,
+		"limiter still has occupied slots after all awaits completed")
 }

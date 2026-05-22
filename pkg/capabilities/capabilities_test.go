@@ -339,10 +339,22 @@ func TestRequestMetadata_ContextWithCRE(t *testing.T) {
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "org-id"})
 	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
 
-	// preserve it
+	// preserve org when RequestMetadata.OrgID is unset
 	md := RequestMetadata{WorkflowOwner: "owner-id", WorkflowID: "workflow-id"}
 	ctx = md.ContextWithCRE(ctx)
 	require.Equal(t, "org-id", contexts.CREValue(ctx).Org)
+
+	// OrgID from metadata replaces context org when set
+	ctx = contexts.WithCRE(t.Context(), contexts.CRE{Org: "old-org"})
+	md = RequestMetadata{WorkflowOwner: "o", WorkflowID: "w", OrgID: "new-org"}
+	ctx = md.ContextWithCRE(ctx)
+	require.Equal(t, "new-org", contexts.CREValue(ctx).Org)
+
+	// OrgID propagates when ctx had no org
+	ctx = md.ContextWithCRE(t.Context())
+	require.Equal(t, "new-org", contexts.CREValue(ctx).Org)
+	require.Equal(t, "o", contexts.CREValue(ctx).Owner)
+	require.Equal(t, "w", contexts.CREValue(ctx).Workflow)
 }
 
 func TestRegistrationMetadata_ContextWithCRE(t *testing.T) {

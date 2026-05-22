@@ -1,4 +1,4 @@
-package beholder
+package durableemitter
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"google.golang.org/grpc"
@@ -24,23 +25,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
-// withTestBeholderMeter swaps the global beholder client meter for t's lifetime (for metrics assertions).
-func withTestBeholderMeter(t *testing.T) *sdkmetric.ManualReader {
+// newTestMeter returns a metric.Meter backed by a ManualReader so tests can
+// inspect recorded metrics. No global state is mutated — the meter is fully
+// owned by the test.
+func newTestMeter(t *testing.T) (metric.Meter, *sdkmetric.ManualReader) {
 	t.Helper()
-	prev := GetClient()
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	c := NewNoopClient()
-	c.MeterProvider = mp
-	c.Meter = mp.Meter(defaultPackageName)
-	SetClient(c)
-	t.Cleanup(func() {
-		SetClient(prev)
-		_ = mp.Shutdown(context.Background())
-	})
-	return reader
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+	return mp.Meter("durableemitter"), reader
 }
 
 // testChipClient is a minimal chipingress.Client for tests.
@@ -111,7 +107,8 @@ func newTestDurableEmitter(t *testing.T, store DurableEventStore, client chiping
 	if cfgOverride != nil {
 		cfg = *cfgOverride
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	// Tests that need metrics build the emitter directly with an injected meter.
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	return em
 }
@@ -143,7 +140,7 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 
 	em := newTestDurableEmitter(t, store, client, &cfg)
 	ctx := t.Context()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 
 	emitErr := make(chan error, 1)
 	go func() { emitErr <- em.Emit(ctx, []byte("during-close"), testEmitAttrs()...) }()
@@ -175,7 +172,7 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 
 	err := em.Emit(ctx, []byte("after-close"), testEmitAttrs()...)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "durable emitter closed")
+	assert.Contains(t, err.Error(), "not started")
 }
 
 func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
@@ -187,13 +184,10 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
@@ -211,13 +205,10 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("hello"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return pubCalls.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
@@ -235,13 +226,10 @@ func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 	cfg.ExpiryInterval = 40 * time.Millisecond
 	cfg.EventTTL = 25 * time.Millisecond
 
-	em, err := NewDurableEmitter(store, client, false, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, false, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer func() { require.NoError(t, em.Close()) }()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("plugin-row"), testEmitAttrs()...))
 
@@ -260,13 +248,10 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 
-	em, err := NewDurableEmitter(store, client, false, DefaultDurableEmitterConfig(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, false, DefaultDurableEmitterConfig(), logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer func() { require.NoError(t, em.Close()) }()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("loop-plugin"), testEmitAttrs()...))
 
@@ -279,11 +264,8 @@ func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 	em := newTestDurableEmitter(t, store, client, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err)
@@ -304,11 +286,8 @@ func TestDurableEmitter_EmitReturnSuccessEvenWhenPublishFails(t *testing.T) {
 	client.setPublishErr(errors.New("connection refused"))
 
 	em := newTestDurableEmitter(t, store, client, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err, "Emit must succeed once the DB insert succeeds")
@@ -332,11 +311,8 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
 	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("retry-me"), testEmitAttrs()...)
 	require.NoError(t, err)
@@ -367,11 +343,8 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
 	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("first"), testEmitAttrs()...))
 	require.NoError(t, em.Emit(ctx, []byte("second"), testEmitAttrs()...))
@@ -404,11 +377,8 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 	cfg.RetransmitInterval = 10 * time.Minute // effectively disable retransmit
 
 	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("will-expire"), testEmitAttrs()...)
 	require.NoError(t, err)
@@ -438,11 +408,7 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	cfg.RetransmitAfter = 30 * time.Millisecond
 
 	em := newTestDurableEmitter(t, store, client, &cfg)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0 && client.batchCount.Load() >= 1
@@ -463,11 +429,8 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
 	em := newTestDurableEmitter(t, store, client, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	const n = 50
 	for i := 0; i < n; i++ {
@@ -488,18 +451,33 @@ func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 	log := logger.Test(t)
 	cfg := DefaultDurableEmitterConfig()
 
-	_, err := NewDurableEmitter(nil, &testChipClient{}, true, cfg, log)
+	_, err := NewDurableEmitter(nil, &testChipClient{}, true, cfg, log, nil)
 	assert.ErrorContains(t, err, "store")
 
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), nil, true, cfg, log)
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), nil, true, cfg, log, nil)
 	assert.ErrorContains(t, err, "client")
 
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfg, nil)
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfg, nil, nil)
 	assert.ErrorContains(t, err, "logger")
+
+	cfgWithMetrics := cfg
+	cfgWithMetrics.Metrics = &DurableEmitterMetricsConfig{}
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfgWithMetrics, log, nil)
+	assert.ErrorContains(t, err, "meter")
+}
+
+func TestDurableEmitter_HealthReport(t *testing.T) {
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), &testChipClient{}, nil)
+	servicetest.Run(t, em)
+
+	report := em.HealthReport()
+	require.Contains(t, report, "DurableEmitter")
+	require.NoError(t, report["DurableEmitter"], "service should be healthy after Start")
+	require.NoError(t, em.Ready())
 }
 
 func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
-	reader := withTestBeholderMeter(t)
+	meter, reader := newTestMeter(t)
 
 	store := NewMemDurableEventStore()
 	client := &testChipClient{}
@@ -507,13 +485,10 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	cfg.RetransmitInterval = time.Hour
 	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
 
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), meter)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer func() { _ = em.Close() }()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("m"), testEmitAttrs()...))
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 2*time.Second, 10*time.Millisecond)
@@ -525,12 +500,12 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	var found bool
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {
-			if m.Name == "beholder.durable_emitter.emit.success" {
+			if m.Name == "durable_emitter.emit.success" {
 				found = true
 			}
 		}
 	}
-	assert.True(t, found, "expected beholder.durable_emitter.emit.success in exported metrics")
+	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.
@@ -654,13 +629,10 @@ func TestIntegration_HappyPath(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("billing-record-1"), emitAttrs()...))
 	require.NoError(t, em.Emit(ctx, []byte("billing-record-2"), emitAttrs()...))
@@ -682,13 +654,10 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("will-retry"), emitAttrs()...))
 
@@ -717,12 +686,12 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 
 	cfg := fastCfg()
 	cfg.PublishTimeout = 500 * time.Millisecond
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	em.Start(ctx)
+	require.NoError(t, em.Start(ctx))
 
 	// Stop the gRPC server entirely.
 	gs.Stop()
@@ -733,7 +702,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	assert.Equal(t, 1, store.Len(), "event should be persisted even with server down")
 
 	// Stop the emitter to simulate a "node shutdown".
-	em.Close()
+	require.NoError(t, em.Close())
 
 	// Bring up a new server on the same address.
 	srv2 := &mockChipServer{}
@@ -750,10 +719,9 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = client2.Close() })
 
-	em2, err := NewDurableEmitter(store, client2, true, cfg, logger.Test(t))
+	em2, err := NewDurableEmitter(store, client2, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
-	em2.Start(ctx)
-	defer em2.Close()
+	servicetest.Run(t, em2)
 
 	require.Eventually(t, func() bool {
 		return srv2.receivedCount() == 1
@@ -772,13 +740,10 @@ func TestIntegration_HighThroughput(t *testing.T) {
 
 	cfg := fastCfg()
 	cfg.RetransmitBatchSize = 200
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	const n = 500
 	for i := 0; i < n; i++ {
@@ -805,13 +770,10 @@ func TestIntegration_EventExpiry(t *testing.T) {
 	cfg := fastCfg()
 	cfg.EventTTL = 100 * time.Millisecond
 	cfg.ExpiryInterval = 100 * time.Millisecond
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("will-expire"), emitAttrs()...))
 	assert.Equal(t, 1, store.Len())
@@ -830,13 +792,10 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	for i := 0; i < 5; i++ {
 		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
@@ -881,13 +840,10 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 	client := newChipClient(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t))
+	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	em.Start(ctx)
-	defer em.Close()
+	servicetest.Run(t, em)
+	ctx := t.Context()
 
 	payload := []byte("proto-round-trip-test")
 	require.NoError(t, em.Emit(ctx, payload, emitAttrs()...))

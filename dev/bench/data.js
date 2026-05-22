@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779399518524,
+  "lastUpdate": 1779455621826,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -47700,6 +47700,66 @@ window.BENCHMARK_DATA = {
             "value": 131038,
             "unit": "ns/op",
             "extra": "8905 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c735c287b3a88b382bfabbb259c5a41de4a92cd0",
+          "message": "Bump chainlink-protos/cre/go for ConfidentialWorkflow proto restructure (#2080)\n\n* Bump chainlink-protos/cre/go for ConfidentialWorkflow proto restructure\n\nBumps github.com/smartcontractkit/chainlink-protos/cre/go pseudo-version\nfrom v0.0.0-20260514104516-a827acdffe43 to v0.0.0-20260520181035-b5bb732eb9d7\n(chainlink-protos cap-dev tip after #365 merged).\n\nThe proto restructure (chainlink-protos#365):\n\n- binary_url moved from WorkflowExecution to ConfidentialWorkflowRequest\n  (sibling of execution, outside ComputeRequest.PublicData hash envelope).\n- SecretIdentifier message and vault_don_secrets field removed; enclave\n  fetches secrets dynamically at runtime and the host-side adapter\n  already returns nil for vault_don_secrets.\n- WorkflowExecution fields renumbered cleanly with no reserved gap; org_id\n  moves from field 7 to field 6.\n\nRegenerated pkg/capabilities/v2/actions/confidentialworkflow/client.pb.go.\nAlso bumped the indirect pin in keystore/go.mod for consistency.\n\nNo chainlink-common code consumers reference WorkflowExecution.BinaryUrl\nor VaultDonSecrets, so no other source changes needed.\n\nSee PRIV-389.\n\n* Tidy keystore/go.sum after cre/go bump\n\nThe keystore submodule was bumped via 'go get' but go.sum still carried\nthe orphan old-pin entries (v0.0.0-20260420204255-a3f3bdd56877) for the\nchainlink-protos/cre/go indirect dependency. Running 'go mod tidy' from\ninside the keystore module removes them.\n\nFixes check-tidy CI failure on this branch.",
+          "timestamp": "2026-05-22T13:00:32Z",
+          "tree_id": "106171257b01e3f5f4d8b6ee5f2603ba094f0954",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c735c287b3a88b382bfabbb259c5a41de4a92cd0"
+        },
+        "date": 1779455619203,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 399.8,
+            "unit": "ns/op",
+            "extra": "2605918 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92262,
+            "unit": "ns/op",
+            "extra": "12922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.9,
+            "unit": "ns/op",
+            "extra": "2857484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92058,
+            "unit": "ns/op",
+            "extra": "13045 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26630,
+            "unit": "ns/op",
+            "extra": "45150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144460,
+            "unit": "ns/op",
+            "extra": "9014 times\n4 procs"
           }
         ]
       }

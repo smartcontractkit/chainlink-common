@@ -25,6 +25,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
@@ -42,7 +43,6 @@ var (
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
-	defaultMaxPendingCalls           = 30                // matches engine CapabilityConcurrencyLimit default
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
 	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
@@ -200,14 +200,21 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		modCfg.MaxFetchRequests = defaultMaxFetchRequests
 	}
 
-	if modCfg.PendingCallsLimiter == nil {
-		if modCfg.MaxPendingCalls == 0 {
-			modCfg.MaxPendingCalls = defaultMaxPendingCalls
-		}
-		if modCfg.MaxPendingCalls < 0 {
-			return nil, fmt.Errorf("MaxPendingCalls must be positive, got %d", modCfg.MaxPendingCalls)
-		}
+	if modCfg.MaxPendingCalls < 0 {
+		return nil, fmt.Errorf("MaxPendingCalls must be positive, got %d", modCfg.MaxPendingCalls)
+	}
+
+	if modCfg.PendingCallsLimiter == nil && modCfg.MaxPendingCalls > 0 {
 		modCfg.PendingCallsLimiter = limits.GlobalResourcePoolLimiter(modCfg.MaxPendingCalls)
+	}
+
+	if modCfg.PendingCallsLimiter == nil {
+		lf := limits.Factory{Logger: modCfg.Logger}
+		var err error
+		modCfg.PendingCallsLimiter, err = limits.MakeResourcePoolLimiter(lf, cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make pending calls limiter: %w", err)
+		}
 	}
 
 	if modCfg.Labeler == nil {

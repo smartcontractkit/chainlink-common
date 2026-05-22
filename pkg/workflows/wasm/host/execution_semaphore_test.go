@@ -202,9 +202,12 @@ func TestSemaphore_SlotsRecycledCorrectly(t *testing.T) {
 	}
 
 	// After all rounds, all slots should be available again.
-	avail, err := exec.pendingCallsLimiter.Available(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, max, avail,
+	// Goroutines release slots via defer after the channel send, so allow a
+	// brief window for the last batch of defers to execute.
+	assert.Eventually(t, func() bool {
+		avail, err := exec.pendingCallsLimiter.Available(ctx)
+		return err == nil && avail == max
+	}, time.Second, 5*time.Millisecond,
 		"limiter still has occupied slots after all awaits completed")
 }
 

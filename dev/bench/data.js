@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779481344289,
+  "lastUpdate": 1779494659419,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -47820,6 +47820,66 @@ window.BENCHMARK_DATA = {
             "value": 129791,
             "unit": "ns/op",
             "extra": "9930 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce0c8e8622a88113039157f472a085b29db917e6",
+          "message": "Bound capability call's max concurrency (#2074)\n\n* (fix): bound capability call max concurrency\n\n* Match engine CapabilityConcurrencyLimit\n\n* Changes from review\n\n* release in awaitCapabilites instead of callCapAsync\n\n* Use ResourcePoolLimiter for limit control & observability\n\n* Add negative number guard to MaxPendingCalls\n\n* defer free()\n\n* Clean up comments & gofmt\n\n* Use cresettings\n\n* Cleanup\n\n* Give wasm tests an actual PnedingCallsLimiter in ModuleConfig\n\n* fix test race\n\n* fix another racing test",
+          "timestamp": "2026-05-22T23:53:05Z",
+          "tree_id": "cee0fbba7a41f15bc3f237f736bd0bfbfffcedfa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ce0c8e8622a88113039157f472a085b29db917e6"
+        },
+        "date": 1779494657179,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 282.7,
+            "unit": "ns/op",
+            "extra": "3963351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 60268,
+            "unit": "ns/op",
+            "extra": "19863 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 294,
+            "unit": "ns/op",
+            "extra": "4044904 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 60963,
+            "unit": "ns/op",
+            "extra": "19677 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22610,
+            "unit": "ns/op",
+            "extra": "53100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 101364,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

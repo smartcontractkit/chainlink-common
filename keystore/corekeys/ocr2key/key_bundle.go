@@ -35,6 +35,9 @@ type KeyBundle interface {
 	Unmarshal(b []byte) (err error)
 	Raw() internal.Raw
 	OnChainPublicKey() string
+	// RawOnChainPublicKey returns the full uncompressed secp256k1 public key for EVM (65 bytes, hex-encoded).
+	// Returns empty string for other chain types.
+	RawOnChainPublicKey() string
 	// Decrypts ciphertext using the encryptionKey from an OCR2 offchainKeyring
 	NaclBoxOpenAnonymous(ciphertext []byte) (plaintext []byte, err error)
 }

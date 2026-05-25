@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"encoding/hex"
 	"io"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,6 +33,12 @@ func newEVMKeyring(material io.Reader) (*evmKeyring, error) {
 func (ekr *evmKeyring) PublicKey() ocrtypes.OnchainPublicKey {
 	address := ekr.signingAddress()
 	return address[:]
+}
+
+// RawOnChainPublicKey returns the full uncompressed public key (65 bytes for EVM)
+// while PublicKey returns the address (20 bytes for EVM)
+func (ekr *evmKeyring) RawOnChainPublicKey() string {
+	return hex.EncodeToString(crypto.FromECDSAPub(&ekr.privateKey().PublicKey))
 }
 
 func (ekr *evmKeyring) Sign(reportCtx ocrtypes.ReportContext, report ocrtypes.Report) ([]byte, error) {

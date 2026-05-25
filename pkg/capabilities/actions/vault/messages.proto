@@ -219,6 +219,7 @@ message StoredPendingQueueItem {
 // Not persisted; wire format only. Old nodes treat blobs as single StoredPendingQueueItem.
 message StoredPendingQueueBatch {
   repeated StoredPendingQueueItem items = 1;
+  bool is_batch = 3;  // Disambiguates from single StoredPendingQueueItem during unmarshalling
 }
 
 message ReportingPluginConfig {

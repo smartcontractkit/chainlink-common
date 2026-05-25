@@ -2112,6 +2112,7 @@ func (x *StoredPendingQueueItem) GetId() string {
 type StoredPendingQueueBatch struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
 	Items         []*StoredPendingQueueItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	IsBatch       bool                      `protobuf:"varint,3,opt,name=is_batch,json=isBatch,proto3" json:"is_batch,omitempty"` // Disambiguates from single StoredPendingQueueItem during unmarshalling
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2151,6 +2152,13 @@ func (x *StoredPendingQueueBatch) GetItems() []*StoredPendingQueueItem {
 		return x.Items
 	}
 	return nil
+}
+
+func (x *StoredPendingQueueBatch) GetIsBatch() bool {
+	if x != nil {
+		return x.IsBatch
+	}
+	return false
 }
 
 type ReportingPluginConfig struct {
@@ -2461,9 +2469,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x06length\x18\x01 \x01(\x03R\x06length\"R\n" +
 	"\x16StoredPendingQueueItem\x12(\n" +
 	"\x04item\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x04item\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"N\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"i\n" +
 	"\x17StoredPendingQueueBatch\x123\n" +
-	"\x05items\x18\x01 \x03(\v2\x1d.vault.StoredPendingQueueItemR\x05items\"\xa0\t\n" +
+	"\x05items\x18\x01 \x03(\v2\x1d.vault.StoredPendingQueueItemR\x05items\x12\x19\n" +
+	"\bis_batch\x18\x03 \x01(\bR\aisBatch\"\xa0\t\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
 	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +

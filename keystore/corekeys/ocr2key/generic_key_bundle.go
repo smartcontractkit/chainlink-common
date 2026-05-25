@@ -117,17 +117,18 @@ func (kb *keyBundle[K]) OnChainPublicKey() string {
 	return hex.EncodeToString(kb.keyring.PublicKey())
 }
 
-// RawOnChainPublicKey returns the full uncompressed secp256k1 public key for EVM.
-// Returns empty string for other chain types.
-func (kb *keyBundle[K]) RawOnChainPublicKey() string {
-	if kb.chainType != corekeys.EVM {
-		return ""
-	}
-	evmKr, ok := any(kb.keyring).(*evmKeyring)
+// RawOnChainPublicKey returns the full uncompressed secp256k1 public key (65 bytes, hex-encoded).
+func (kb *keyBundle[*evmKeyring]) RawOnChainPublicKey() string {
+	return kb.keyring.RawOnChainPublicKey()
+}
+
+// RawEVMOnChainPublicKey returns the raw EVM onchain signing public key when kb supports it.
+func RawEVMOnChainPublicKey(kb KeyBundle) (string, bool) {
+	r, ok := kb.(EVMRawOnChainPublicKeyer)
 	if !ok {
-		return ""
+		return "", false
 	}
-	return evmKr.RawOnChainPublicKey()
+	return r.RawOnChainPublicKey(), true
 }
 
 func (kb *keyBundle[K]) Marshal() ([]byte, error) {

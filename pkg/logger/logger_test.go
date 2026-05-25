@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 
@@ -90,7 +89,7 @@ func TestNamed(t *testing.T) {
 			logger:       Named(&mismatch{zaptest.NewLogger(t).Named("mismatch").Sugar()}, "should_not_work"),
 		},
 	} {
-		t.Run(fmt.Sprintf("test_logger_name_expect_%s", tt.expectedName), func(t *testing.T) {
+		t.Run("test_logger_name_expect_"+tt.expectedName, func(t *testing.T) {
 			require.Equal(t, tt.expectedName, tt.logger.Name())
 		})
 	}
@@ -236,7 +235,7 @@ func (o *other) With(args ...any) Logger {
 }
 
 func (o *other) Helper(skip int) Logger {
-	return &other{o.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))}
+	return &other{o.WithOptions(zap.AddCallerSkip(skip))}
 }
 
 func (o *other) Name() string {
@@ -268,7 +267,7 @@ func (d *different) With(args ...any) differentLogger {
 }
 
 func (d *different) Helper(skip int) differentLogger {
-	return &different{d.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))}
+	return &different{d.WithOptions(zap.AddCallerSkip(skip))}
 }
 
 func (d *different) Name() string {
@@ -290,7 +289,7 @@ func (m *mismatch) With(args ...any) any {
 }
 
 func (m *mismatch) Helper(skip int) any {
-	return &mismatch{m.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))}
+	return &mismatch{m.WithOptions(zap.AddCallerSkip(skip))}
 }
 
 func (m *mismatch) Name() string {

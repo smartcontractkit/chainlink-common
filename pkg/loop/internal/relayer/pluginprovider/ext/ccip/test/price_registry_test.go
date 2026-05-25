@@ -107,6 +107,6 @@ func setupPriceRegistryServer(t *testing.T, server *grpc.Server, b *loopnet.Brok
 }
 
 // wrapper to enable use of the grpc scaffold
-func setupPriceRegistryClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.PriceRegistryGRPCClient {
+func setupPriceRegistryClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.PriceRegistryGRPCClient {
 	return ccip.NewPriceRegistryGRPCClient(conn)
 }

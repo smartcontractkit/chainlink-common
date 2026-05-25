@@ -47,27 +47,27 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 
 	// Compare the keccak256 hash of the binary data with the keccak256 hash of the
 	// base64 encoded binary from CRE-CLI
-	expKeccak256Hash, err := hex.DecodeString("7385ae61173b2886a12250b508e2d361af0f6a40b6d0dda153fd4c20cb7e0c10")
+	expKeccak256Hash, err := hex.DecodeString("a057a58ff8212122016515b2922b7c3893525f7f5afe95c8442e0cd629d68420")
 	s.NoError(err, "failed to decode expected keccak256 hash")
 	keccak256FromSha3Lib := sha3.NewLegacyKeccak256()
 	keccak256FromSha3Lib.Write(b64EncodedBinaryData)
 	actualKeccak256Hash := keccak256FromSha3Lib.Sum(nil)
-	s.Equal(actualKeccak256Hash, expKeccak256Hash)
+	s.Equal(expKeccak256Hash, actualKeccak256Hash, "expected %x but got %x", expKeccak256Hash, actualKeccak256Hash)
 
 	err = artifacts.Prepare()
 	s.NoError(err, "failed to prepare artifacts")
 
 	base64EncodedBinaryData := artifacts.GetBinaryData()
 	// Compare if the compiled WASM binary is the same as the CRE-CLI output
-	s.Equal(563960, len(base64EncodedBinaryData), "binary data size should be same as CRE-CLI output")
-	s.Equal("m6kIGWtQvQYAALADgIPzAADQt3oerhGwcQAA8PV/uALY1AHwSGF6AACo9vMAqKqqqqqqqqqqqmsSAsIx",
+	s.Len(base64EncodedBinaryData, 636684, "binary data size should be same as CRE-CLI output")
+	s.Equal("m1upG3s6AJQvOA8AAK295+EaARsHAADf/YcBgFURwPQAANDq5wFQVVVVVVVVVVVV3ZMQEI7ZtgMAAKqq",
 		string(base64EncodedBinaryData[0:80]))
-	s.Equal("iBgWTlBKb+iQflnikISk/ALWkBmXnTIkLiWJYdvkGOrbpWD+9ybhB5ISI+JHMO5tcviErMSoqk5p1CY=",
+	s.Equal("gUEoFNoVRfyHGTsZmdg7wCJbGVibOhmYmsDAytgg92FTTmiddpI/x8SYzdANBkPGhtLoj/Hn7jvK26YE",
 		string(base64EncodedBinaryData[len(base64EncodedBinaryData)-80:]))
 
 	s.Equal("myContract: 0x44DD9D24349965E5e20E3D6118F560BCd64828E9\nchainID: 11155111", string(artifacts.GetConfigData()))
 
-	s.Equal("008619548c29a2ed3eee5f904dc34305191e23e22559d788272b0d4587d776ef", artifacts.GetWorkflowID())
+	s.Equal("004789eee3f5eee474ef64fe8b9251086083ad14af7b9135c9f33b661a128b3e", artifacts.GetWorkflowID())
 }
 
 func (s *ArtifactsTestSuite) TestArtifactsSadPaths() {

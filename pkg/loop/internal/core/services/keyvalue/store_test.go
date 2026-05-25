@@ -37,7 +37,7 @@ func Test_KeyValueStoreServer(t *testing.T) {
 	assert.NoError(t, err)
 	resp, err := server.GetValueForKey(ctx, &pb.GetValueForKeyRequest{Key: "key"})
 	assert.NoError(t, err)
-	assert.Equal(t, []byte(`{"A":"a","B":1}`), resp.Value)
+	assert.JSONEq(t, `{"A":"a","B":1}`, string(resp.Value))
 }
 
 func Test_KeyValueStoreClient_PruneExpiredEntries(t *testing.T) {

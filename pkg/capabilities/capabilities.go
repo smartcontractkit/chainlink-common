@@ -2,8 +2,11 @@ package capabilities
 
 import (
 	"context"
+	"crypto/sha3"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash"
 	"iter"
 	"regexp"
 	"strconv"
@@ -37,6 +40,21 @@ func (e errStopExecution) Error() string {
 
 func (e errStopExecution) Is(err error) bool {
 	return strings.Contains(err.Error(), errStopExecutionMsg)
+}
+
+// ErrResponsePayloadNotAvailable is returned when a capability's Execute method cannot provide a response payload and engine should wait for another response instead of treating it as an error.
+var ErrResponsePayloadNotAvailable = &responsePayloadNotAvailableError{}
+
+type responsePayloadNotAvailableError struct{}
+
+const errResponsePayloadNotAvailableMsg = "__response_payload_not_available"
+
+func (e responsePayloadNotAvailableError) Error() string {
+	return errResponsePayloadNotAvailableMsg
+}
+
+func (e responsePayloadNotAvailableError) Is(err error) bool {
+	return strings.Contains(err.Error(), errResponsePayloadNotAvailableMsg)
 }
 
 // CapabilityType enum values.
@@ -76,12 +94,61 @@ type CapabilityResponse struct {
 	Metadata ResponseMetadata
 
 	// Payload is used for no DAG workflows
-	Payload *anypb.Any
+	Payload        *anypb.Any
+	OCRAttestation *OCRAttestation
 }
 
 type ResponseMetadata struct {
 	Metering []MeteringNodeDetail
 	CapDON_N uint32
+}
+
+type OCRAttestation struct {
+	ConfigDigest   ocrtypes.ConfigDigest
+	SequenceNumber uint64
+	Sigs           []AttributedSignature
+}
+
+type AttributedSignature struct {
+	Signature []byte
+	Signer    uint32
+}
+
+func ExtractMeteringFromMetadata(sender p2ptypes.PeerID, metadata ResponseMetadata) (MeteringNodeDetail, error) {
+	if len(metadata.Metering) != 1 {
+		return MeteringNodeDetail{}, fmt.Errorf("unexpected number of metering records received from peer %s: got %d, want 1", sender, len(metadata.Metering))
+	}
+
+	rpt := metadata.Metering[0]
+	rpt.Peer2PeerID = sender.String()
+	return rpt, nil
+}
+
+func ResponseToReportData(workflowExecutionID, referenceID string, responsePayload []byte, metadata ResponseMetadata) ([32]byte, error) {
+	// use empty PeerID since the sender must not be included in the hash
+	metering, err := ExtractMeteringFromMetadata(p2ptypes.PeerID{}, metadata)
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("failed to extract metering from metadata: %w", err)
+	}
+
+	hash := hash.Hash(sha3.New256())
+	const domainSeparator = "CapabilityResponseReportData:v1"
+	hash.Write([]byte(domainSeparator))
+	// Helper to write a length-prefixed byte slice.
+	writeField := func(b []byte) {
+		// Use a fixed-width length prefix to make encoding unambiguous.
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(b)))
+		_, _ = hash.Write(b)
+	}
+	writeField([]byte(workflowExecutionID))
+	writeField([]byte(referenceID))
+	writeField(responsePayload)
+	writeField([]byte(metering.SpendUnit))
+	writeField([]byte(metering.SpendValue))
+
+	var result [32]byte
+	copy(result[:], hash.Sum(nil))
+	return result, nil
 }
 
 type MeteringNodeDetail struct {
@@ -94,6 +161,7 @@ type MeteringNodeDetail struct {
 type ResponseAndMetadata[T proto.Message] struct {
 	Response         T
 	ResponseMetadata ResponseMetadata
+	OCRAttestation   *OCRAttestation
 }
 
 type SpendLimit struct {
@@ -104,6 +172,7 @@ type SpendLimit struct {
 type RequestMetadata struct {
 	WorkflowID               string
 	WorkflowOwner            string
+	OrgID                    string
 	WorkflowExecutionID      string
 	WorkflowName             string
 	WorkflowDonID            uint32
@@ -125,9 +194,11 @@ type RequestMetadata struct {
 
 func (m *RequestMetadata) ContextWithCRE(ctx context.Context) context.Context {
 	val := contexts.CREValue(ctx)
-	// preserve org, if set
 	val.Owner = m.WorkflowOwner
 	val.Workflow = m.WorkflowID
+	if m.OrgID != "" {
+		val.Org = m.OrgID
+	}
 	return contexts.WithCRE(ctx, val)
 }
 
@@ -324,10 +395,10 @@ func (e *OCRTriggerEvent) ToMap() (*values.Map, error) {
 // This is useful deserialization purposes with the [TriggerEvent] struct.
 func (e *OCRTriggerEvent) FromMap(m *values.Map) error {
 	if m == nil {
-		return fmt.Errorf("nil map")
+		return errors.New("nil map")
 	}
 	if m.Underlying == nil {
-		return fmt.Errorf("nil underlying map")
+		return errors.New("nil underlying map")
 	}
 	val, ok := m.Underlying[e.topLevelKey()]
 	if !ok {

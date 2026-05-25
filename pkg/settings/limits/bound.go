@@ -69,7 +69,7 @@ func newBoundLimiter[N Number](f Factory, bound settings.SettingSpec[N], isLower
 		scope:        bound.GetScope(),
 		isLowerBound: isLowerBound,
 	}
-	b.updater.recordLimit = func(ctx context.Context, n N) { b.recordBound(ctx, n) }
+	b.recordLimit = func(ctx context.Context, n N) { b.recordBound(ctx, n) }
 
 	if f.Meter != nil {
 		if b.key == "" {

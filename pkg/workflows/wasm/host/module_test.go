@@ -15,6 +15,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
@@ -504,7 +506,7 @@ func Test_writeUInt32(t *testing.T) {
 		n := writeUInt32(memory, 0, 42)
 		wantBuf := make([]byte, 4)
 		binary.LittleEndian.PutUint32(wantBuf, 42)
-		assert.Equal(t, n, int64(4))
+		assert.Equal(t, int64(4), n)
 		assert.Equal(t, wantBuf, memory)
 	})
 }
@@ -633,6 +635,7 @@ func Test_CallAwaitRace(t *testing.T) {
 	exec := &execution[*wasmpb.ExecutionResult]{
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 		ctx:                 t.Context(),
 		executor:            mockExecHelper,
 	}

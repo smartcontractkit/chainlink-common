@@ -42,6 +42,15 @@ func Test_EncodeExecutionID(t *testing.T) {
 	assert.NotEqual(t, reversed, actual)
 }
 
+func Test_GetTriggerReferenceID_RoundTrip(t *testing.T) {
+	for _, idx := range []int{0, 1, 5, 100} {
+		refID := GetTriggerReferenceID(idx)
+		got, err := GetTriggerIndexFromReferenceID(refID)
+		require.NoError(t, err)
+		assert.Equal(t, idx, got)
+	}
+}
+
 func Test_GenerateWorkflowIDFromStrings(t *testing.T) {
 	// With prefix
 	owner := "0x26729408f179371be6433b9585d8427f121bfe82"

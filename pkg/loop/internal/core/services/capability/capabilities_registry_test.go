@@ -7,12 +7,13 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-plugin"
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
@@ -245,7 +246,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	reg.On("List", mock.Anything).Return([]capabilities.BaseCapability{}, nil)
 	list, err := rc.List(t.Context())
 	require.NoError(t, err)
-	require.Len(t, list, 0)
+	require.Empty(t, list)
 
 	// Add capability Trigger
 	triggerInfo := capabilities.CapabilityInfo{

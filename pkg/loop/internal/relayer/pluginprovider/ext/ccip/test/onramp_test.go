@@ -60,10 +60,10 @@ func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
 	})
 
 	t.Run("GetSendRequestsBetweenSeqNums", func(t *testing.T) {
-		got, err := client.GetSendRequestsBetweenSeqNums(t.Context(), OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMin, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMax, OnRampReader.getSendRequestsBetweenSeqNums.Finalized)
+		got, err := client.GetSendRequestsBetweenSeqNums(t.Context(), OnRampReader.SeqNumMin, OnRampReader.SeqNumMax, OnRampReader.Finalized)
 		require.NoError(t, err)
-		if !reflect.DeepEqual(OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got) {
-			t.Errorf("expected %v, got %v", OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got)
+		if !reflect.DeepEqual(OnRampReader.EVM2EVMMessageWithTxMeta, got) {
+			t.Errorf("expected %v, got %v", OnRampReader.EVM2EVMMessageWithTxMeta, got)
 		}
 	})
 
@@ -98,6 +98,6 @@ func setupOnRampServer(t *testing.T, server *grpc.Server, b *loopnet.BrokerExt) 
 	return onRamp
 }
 
-func setupOnRampClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.OnRampReaderGRPCClient {
+func setupOnRampClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.OnRampReaderGRPCClient {
 	return ccip.NewOnRampReaderGRPCClient(conn)
 }

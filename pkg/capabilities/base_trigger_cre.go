@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
@@ -12,10 +13,10 @@ import (
 )
 
 // ValidateBaseTriggerRetryInterval returns an error if the configured retry interval is not positive.
-// Retransmit enablement is evaluated dynamically at runtime via BaseTriggerRetransmitEnabled.
+// Retransmit enablement is evaluated dynamically at runtime via [cresettings.Default.PerOrg.BaseTriggerRetransmitEnabled].
 func ValidateBaseTriggerRetryInterval(ctx context.Context, g settings.Getter) error {
 	if g == nil {
-		return fmt.Errorf("base trigger CRE settings getter is nil")
+		return errors.New("base trigger CRE settings getter is nil")
 	}
 	iv, err := cresettings.Default.BaseTriggerRetryInterval.GetOrDefault(ctx, g)
 	if err != nil {
@@ -28,7 +29,7 @@ func ValidateBaseTriggerRetryInterval(ctx context.Context, g settings.Getter) er
 }
 
 // NewBaseTriggerCapabilityWithCRESettings builds a [BaseTriggerCapability] that reads
-// [cresettings.Default.BaseTriggerRetransmitEnabled] and [cresettings.Default.BaseTriggerRetryInterval]
+// [cresettings.Default.PerOrg.BaseTriggerRetransmitEnabled] and [cresettings.Default.BaseTriggerRetryInterval]
 // on each delivery, resend, and scan so changes apply without restarting the node.
 func NewBaseTriggerCapabilityWithCRESettings[T proto.Message](
 	ctx context.Context,
@@ -41,5 +42,5 @@ func NewBaseTriggerCapabilityWithCRESettings[T proto.Message](
 	if err := ValidateBaseTriggerRetryInterval(ctx, getter); err != nil {
 		return nil, err
 	}
-	return NewBaseTriggerCapability(store, newMsg, lggr, capabilityID, 0, 0, 0, getter), nil
+	return NewBaseTriggerCapability(store, newMsg, lggr, capabilityID, 0, getter), nil
 }

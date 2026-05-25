@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -17,14 +16,31 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-// Default client to fallback when is is not initialized properly
+// Default client to fallback when is is not initialized properly.
 func NewNoopClient() *Client {
+	return NoopClientConfig{}.New()
+}
+
+// NoopClientConfig holds configuration for creating a no-op Client.
+type NoopClientConfig struct {
+	Lggr pkglogger.Logger
+}
+
+// New creates a no-op Client from the config.
+func (c NoopClientConfig) New() *Client {
+	lggr := c.Lggr
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
 	cfg := DefaultConfig()
 	// Logger
 	loggerProvider := otellognoop.NewLoggerProvider()
-	logger := loggerProvider.Logger(defaultPackageName)
+	otelLogger := loggerProvider.Logger(defaultPackageName)
 	// Tracer
 	tracerProvider := oteltracenoop.NewTracerProvider()
 	tracer := tracerProvider.Tracer(defaultPackageName)
@@ -39,7 +55,21 @@ func NewNoopClient() *Client {
 	// ChipIngress
 	chipClient := &chipingress.NoopClient{}
 
-	return &Client{cfg, logger, tracer, meter, messageEmitter, chipClient, loggerProvider, tracerProvider, meterProvider, loggerProvider, nil, noopOnClose}
+	cl := &Client{
+		Config:                cfg,
+		Logger:                otelLogger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               messageEmitter,
+		Chip:                  chipClient,
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: loggerProvider,
+		OnClose:               noopOnClose,
+	}
+	cl.initService(lggr, nil)
+	return cl
 }
 
 // NewStdoutClient creates a new Client with exporters which send telemetry data to standard output
@@ -61,7 +91,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return NewNoopClient(), err
 	}
 	loggerProvider := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewSimpleProcessor(loggerExporter)))
-	logger := loggerProvider.Logger(defaultPackageName)
+	otelLogger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
 	traceExporter, err := stdouttrace.New(cfg.TraceOptions...)
@@ -89,7 +119,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 	meter := meterProvider.Meter(defaultPackageName)
 
 	// MessageEmitter
-	emitter := messageEmitter{messageLogger: logger}
+	emitter := messageEmitter{messageLogger: otelLogger}
 
 	onClose := func() (err error) {
 		for _, provider := range []shutdowner{loggerProvider, tracerProvider, meterProvider} {
@@ -98,7 +128,22 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 		return
 	}
 
-	return &Client{Config: cfg.Config, Logger: logger, Tracer: tracer, Meter: meter, Emitter: emitter, Chip: &chipingress.NoopClient{}, LoggerProvider: loggerProvider, TracerProvider: tracerProvider, MeterProvider: meterProvider, MessageLoggerProvider: loggerProvider, lazySigner: nil, OnClose: onClose}, nil
+	c := &Client{
+		Config:                cfg.Config,
+		Logger:                otelLogger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               emitter,
+		Chip:                  &chipingress.NoopClient{},
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: loggerProvider,
+		lazySigner:            nil,
+		OnClose:               onClose,
+	}
+	c.initService(pkglogger.Nop(), nil)
+	return c, nil
 }
 
 type noopMessageEmitter struct{}

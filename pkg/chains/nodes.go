@@ -53,7 +53,7 @@ func NewPageToken(b64enc string) (*pageToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !(vals.Has("page") && vals.Has("size")) {
+	if !vals.Has("page") || !vals.Has("size") {
 		return nil, ErrInvalidToken
 	}
 	page, err := strconv.Atoi(vals.Get("page"))

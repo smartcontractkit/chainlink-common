@@ -131,12 +131,12 @@ func (s staticOnRamp) Evaluate(ctx context.Context, other ccip.OnRampReader) err
 		return fmt.Errorf("expected config %v but got %v", s.dynamicConfigResponse, config)
 	}
 
-	sendRequests, err := other.GetSendRequestsBetweenSeqNums(ctx, s.getSendRequestsBetweenSeqNums.SeqNumMin, s.getSendRequestsBetweenSeqNums.SeqNumMax, s.getSendRequestsBetweenSeqNums.Finalized)
+	sendRequests, err := other.GetSendRequestsBetweenSeqNums(ctx, s.SeqNumMin, s.SeqNumMax, s.Finalized)
 	if err != nil {
 		return fmt.Errorf("failed to get send requests: %w", err)
 	}
-	if !assert.ObjectsAreEqual(s.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, sendRequests) {
-		return fmt.Errorf("expected send requests %v but got %v", s.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, sendRequests)
+	if !assert.ObjectsAreEqual(s.EVM2EVMMessageWithTxMeta, sendRequests) {
+		return fmt.Errorf("expected send requests %v but got %v", s.EVM2EVMMessageWithTxMeta, sendRequests)
 	}
 
 	isSourceChainHealthy, err := other.IsSourceChainHealthy(ctx)
@@ -173,16 +173,16 @@ func (s staticOnRamp) GetDynamicConfig(context.Context) (ccip.OnRampDynamicConfi
 
 // GetSendRequestsBetweenSeqNums implements OnRampEvaluator.
 func (s staticOnRamp) GetSendRequestsBetweenSeqNums(ctx context.Context, seqNumMin uint64, seqNumMax uint64, finalized bool) ([]ccip.EVM2EVMMessageWithTxMeta, error) {
-	if seqNumMin != s.getSendRequestsBetweenSeqNums.SeqNumMin {
-		return nil, fmt.Errorf("expected seqNumMin %d but got %d", s.getSendRequestsBetweenSeqNums.SeqNumMin, seqNumMin)
+	if seqNumMin != s.SeqNumMin {
+		return nil, fmt.Errorf("expected seqNumMin %d but got %d", s.SeqNumMin, seqNumMin)
 	}
-	if seqNumMax != s.getSendRequestsBetweenSeqNums.SeqNumMax {
-		return nil, fmt.Errorf("expected seqNumMax %d but got %d", s.getSendRequestsBetweenSeqNums.SeqNumMax, seqNumMax)
+	if seqNumMax != s.SeqNumMax {
+		return nil, fmt.Errorf("expected seqNumMax %d but got %d", s.SeqNumMax, seqNumMax)
 	}
-	if finalized != s.getSendRequestsBetweenSeqNums.Finalized {
-		return nil, fmt.Errorf("expected finalized %t but got %t", s.getSendRequestsBetweenSeqNums.Finalized, finalized)
+	if finalized != s.Finalized {
+		return nil, fmt.Errorf("expected finalized %t but got %t", s.Finalized, finalized)
 	}
-	return s.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, nil
+	return s.EVM2EVMMessageWithTxMeta, nil
 }
 
 // RouterAddress implements OnRampEvaluator.

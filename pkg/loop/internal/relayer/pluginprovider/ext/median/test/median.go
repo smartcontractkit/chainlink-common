@@ -145,7 +145,7 @@ func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provide
 		var compareError *CompareError
 		isCompareError := errors.As(err, &compareError)
 		// allow 0 as valid data source value with the same staticMedianFactoryServer (because it is only defined once as a global var for all tests)
-		if !(isCompareError && compareError.GotZero()) {
+		if !isCompareError || !compareError.GotZero() {
 			return nil, fmt.Errorf("NewMedianFactory: gasPriceSubunitsDataSource does not equal a static gas price subunits data source implementation: %w", err)
 		}
 	}
@@ -278,12 +278,12 @@ func (s staticMedianProvider) AssertEqual(ctx context.Context, t *testing.T, pro
 
 	t.Run("ContractConfigTracker", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.staticMedianProviderConfig.contractTracker.Evaluate(ctx, provider.ContractConfigTracker()))
+		assert.NoError(t, s.contractTracker.Evaluate(ctx, provider.ContractConfigTracker()))
 	})
 
 	t.Run("ContractTransmitter", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, s.staticMedianProviderConfig.contractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
+		assert.NoError(t, s.contractTransmitter.Evaluate(ctx, provider.ContractTransmitter()))
 	})
 
 	t.Run("ReportCodec", func(t *testing.T) {
@@ -316,7 +316,7 @@ func (s staticMedianProvider) Evaluate(ctx context.Context, provider types.Media
 	}
 
 	ct := provider.ContractTransmitter()
-	err = s.staticMedianProviderConfig.contractTransmitter.Evaluate(ctx, ct)
+	err = s.contractTransmitter.Evaluate(ctx, ct)
 	if err != nil {
 		return fmt.Errorf("providers contract transmitter does not equal static contract transmitter: %w", err)
 	}

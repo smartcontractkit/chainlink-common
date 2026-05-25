@@ -3,10 +3,12 @@ package pluginprovider
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
+
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
@@ -68,7 +70,7 @@ func (s staticContractTransmitter) Evaluate(ctx context.Context, ct libocr.Contr
 	}
 	err = ct.Transmit(ctx, s.ReportContext, s.Report, sigs)
 	if err != nil {
-		return fmt.Errorf("failed to Transmit")
+		return errors.New("failed to Transmit")
 	}
 	return nil
 }

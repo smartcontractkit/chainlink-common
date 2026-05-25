@@ -6,8 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 	"google.golang.org/protobuf/proto"
+
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 // CalculateRequestDigest creates a SHA256 digest of the request for integrity verification

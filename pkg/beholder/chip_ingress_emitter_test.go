@@ -4,17 +4,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestNewChipIngressEmitter(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		require.NoError(t, err)
+		assert.NotNil(t, emitter)
+	})
+
+	t.Run("happy path with config struct", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+		emitter, err := beholder.ChipIngressEmitterConfig{Lggr: logger.Test(t)}.New(clientMock)
 		require.NoError(t, err)
 		assert.NotNil(t, emitter)
 	})
@@ -27,7 +36,6 @@ func TestNewChipIngressEmitter(t *testing.T) {
 }
 
 func TestChipIngressEmit(t *testing.T) {
-
 	body := []byte("test body")
 	domain := "test-domain"
 	entity := "test-entity"
@@ -39,45 +47,49 @@ func TestChipIngressEmit(t *testing.T) {
 	}
 
 	t.Run("happy path", func(t *testing.T) {
-
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, nil)
+		clientMock.On("Close").Return(nil)
 
-		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.ChipIngressEmitterConfig{Lggr: logger.Test(t)}.New(clientMock)
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity, attributes)
 		require.NoError(t, err)
 
+		// Close drains in-flight goroutines so mock expectations are met.
+		require.NoError(t, emitter.Close())
 		clientMock.AssertExpectations(t)
 	})
 
 	t.Run("returns error when ExtractSourceAndType fails", func(t *testing.T) {
-
-		emitter, err := beholder.NewChipIngressEmitter(mocks.NewClient(t))
+		emitter, err := beholder.ChipIngressEmitterConfig{Lggr: logger.Test(t)}.New(mocks.NewClient(t))
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, "bad_key", domain)
 		assert.Error(t, err)
 	})
 
-	t.Run("returns error when Publish fails", func(t *testing.T) {
-
+	t.Run("logs error when Publish fails", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
 
 		clientMock.
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, assert.AnError)
+		clientMock.On("Close").Return(nil)
 
-		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.ChipIngressEmitterConfig{Lggr: logger.Test(t)}.New(clientMock)
 		require.NoError(t, err)
 
+		// Emit returns nil because the error is logged asynchronously.
 		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
-		require.Error(t, err)
+		require.NoError(t, err)
 
+		// Close drains in-flight goroutines so mock expectations are met.
+		require.NoError(t, emitter.Close())
 		clientMock.AssertExpectations(t)
 	})
 }

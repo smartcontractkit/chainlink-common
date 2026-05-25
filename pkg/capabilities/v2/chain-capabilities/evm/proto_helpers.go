@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
@@ -189,7 +190,6 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 func ConvertFilterToProto(filter evmtypes.FilterQuery) (*FilterQuery, error) {
 	topics, err := convertTopicsToProto(filter.Topics)
 	if err != nil {
-
 		return nil, fmt.Errorf("%w: %w", evm.ErrTopicsConversion, err)
 	}
 
@@ -305,7 +305,7 @@ func convertTopicsToProto(topics [][]evmtypes.Hash) ([]*Topics, error) {
 
 func convertLogFromProto(protoLog *Log) (*evmtypes.Log, error) {
 	if protoLog == nil {
-		return nil, fmt.Errorf("log can't be nil")
+		return nil, errors.New("log can't be nil")
 	}
 
 	blockHash, err := evm.ConvertHashFromProto(protoLog.GetBlockHash())

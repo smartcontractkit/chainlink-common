@@ -38,7 +38,7 @@ type renamer struct {
 
 func (r *renamer) TransformToOffChain(onChainValue any, itemType string) (any, error) {
 	// set itemType to an ignore value if path traversal is not enabled
-	if !r.modifierBase.enablePathTraverse {
+	if !r.enablePathTraverse {
 		itemType = ""
 	}
 
@@ -73,7 +73,7 @@ func (r *renamer) TransformToOffChain(onChainValue any, itemType string) (any, e
 
 func (r *renamer) TransformToOnChain(offChainValue any, itemType string) (any, error) {
 	// set itemType to an ignore value if path traversal is not enabled
-	if !r.modifierBase.enablePathTraverse {
+	if !r.enablePathTraverse {
 		itemType = ""
 	}
 

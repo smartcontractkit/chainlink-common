@@ -407,6 +407,11 @@ message Subkeys {
   repeated string subkeys = 1; // e.g., ["events","0","fields","owner"]
 }
 
+message CPIFilterConfig {
+  bytes dest_address = 1;
+  bytes method_name = 2;
+}
+
 // Log-poller filter config (Solana flavor).
 message LPFilterQuery {
   string name = 1;                   // filter name/id
@@ -420,6 +425,7 @@ message LPFilterQuery {
   int64 max_logs_kept = 9;           // 0 = unlimited
   bool include_reverted = 10;        // include rolled-back
   bytes contract_idl_json = 11;      // contract IDL JSON bytes
+  optional CPIFilterConfig cpi_filter_config = 12;
 }
 
 // Canonical log shape for tracked events.

@@ -61,7 +61,7 @@ func roundTripGasPriceEstimatorExecTests(t *testing.T, client *ccip.ExecGasEstim
 
 	t.Run("Median", func(t *testing.T) {
 		ctx := t.Context()
-		median, err := client.Median(ctx, GasPriceEstimatorExec.medianRequest.gasPrices)
+		median, err := client.Median(ctx, GasPriceEstimatorExec.gasPrices)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.medianResponse, median)
 	})
@@ -74,7 +74,7 @@ func setupExecGasEstimatorServer(t *testing.T, s *grpc.Server, b *loopnet.Broker
 }
 
 // adapt the client constructor so we can use it with the grpc scaffold
-func setupExecGasEstimatorClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.ExecGasEstimatorGRPCClient {
+func setupExecGasEstimatorClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.ExecGasEstimatorGRPCClient {
 	return ccip.NewExecGasEstimatorGRPCClient(conn)
 }
 

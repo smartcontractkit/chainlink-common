@@ -1,6 +1,8 @@
 package mathutil
 
 import (
+	"cmp"
+	"errors"
 	"fmt"
 	"math"
 	"slices"
@@ -8,7 +10,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-func Max[V constraints.Ordered](first V, vals ...V) V {
+func Max[V cmp.Ordered](first V, vals ...V) V {
 	max := first
 	for _, v := range vals {
 		if v > max {
@@ -18,7 +20,7 @@ func Max[V constraints.Ordered](first V, vals ...V) V {
 	return max
 }
 
-func Min[V constraints.Ordered](first V, vals ...V) V {
+func Min[V cmp.Ordered](first V, vals ...V) V {
 	min := first
 	for _, v := range vals {
 		if v < min {
@@ -57,7 +59,7 @@ func Median[V constraints.Integer](arr ...V) (V, error) {
 
 	l := len(arr)
 	if l == 0 {
-		return 0, fmt.Errorf("empty input")
+		return 0, errors.New("empty input")
 	}
 	if l%2 == 0 {
 		return Avg(arr[l/2-1 : l/2+1]...)

@@ -1,6 +1,7 @@
 package limits
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -167,7 +168,7 @@ func (e ErrorQueueFull) Error() string {
 	return fmt.Sprintf("%slimited%s: queue of %d is full", which, who, e.Limit)
 }
 
-var ErrQueueEmpty = fmt.Errorf("queue is empty")
+var ErrQueueEmpty = errors.New("queue is empty")
 
 type ErrorNotAllowed struct {
 	Key string

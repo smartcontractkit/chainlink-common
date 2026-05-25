@@ -3,7 +3,6 @@ package codec_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -136,7 +135,7 @@ func TestPreCodec(t *testing.T) {
 	t.Run("RetypeToOffChain works on pointers to type", func(t *testing.T) {
 		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
@@ -150,7 +149,7 @@ func TestPreCodec(t *testing.T) {
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
 		offChainType, err := pointerPreCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOnPointer{})), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
@@ -229,21 +228,21 @@ func TestPreCodec(t *testing.T) {
 	t.Run("RetypeToOffChain only works on byte arrays", func(t *testing.T) {
 		_, err := preCodec.RetypeToOffChain(reflect.TypeOf(testStructOff{}), "")
 		require.Error(t, err)
-		assert.Equal(t, err.Error(), "can only decode []byte from on-chain: int")
+		assert.Equal(t, "can only decode []byte from on-chain: int", err.Error())
 	})
 
 	t.Run("RetypeToOffChain only works with a valid path", func(t *testing.T) {
 		_, err := invalidPreCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
 		require.Error(t, err)
-		assert.Equal(t, err.Error(), "invalid type: cannot find Unknown")
+		assert.Equal(t, "invalid type: cannot find Unknown", err.Error())
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {
 		incorrectVal := struct{}{}
 		_, err := preCodec.TransformToOnChain(incorrectVal, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 		_, err = preCodec.TransformToOffChain(incorrectVal, "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {

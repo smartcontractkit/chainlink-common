@@ -96,14 +96,14 @@ func roundTripCommitStoreTests(t *testing.T, client cciptypes.CommitStoreReader)
 
 		t.Run("Deviates", func(t *testing.T) {
 			ctx := t.Context()
-			deviates, err := estimator.Deviates(ctx, GasPriceEstimatorCommit.deviatesRequest.p1, GasPriceEstimatorCommit.deviatesRequest.p2)
+			deviates, err := estimator.Deviates(ctx, GasPriceEstimatorCommit.p1, GasPriceEstimatorCommit.p2)
 			require.NoError(t, err)
 			assert.Equal(t, GasPriceEstimatorCommit.deviatesResponse, deviates)
 		})
 
 		t.Run("Median", func(t *testing.T) {
 			ctx := t.Context()
-			median, err := estimator.Median(ctx, GasPriceEstimatorCommit.medianRequest.gasPrices)
+			median, err := estimator.Median(ctx, GasPriceEstimatorCommit.gasPrices)
 			require.NoError(t, err)
 			assert.Equal(t, GasPriceEstimatorCommit.medianResponse, median)
 		})

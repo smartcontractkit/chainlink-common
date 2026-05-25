@@ -3,7 +3,6 @@ package validation
 import (
 	"context"
 
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -29,7 +28,7 @@ func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map
 	return err
 }
 
-func NewValidationServiceClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
+func NewValidationServiceClient(b *net.BrokerExt, cc net.ClientConnInterface) *validationServiceClient {
 	b = b.WithName("ReportingPluginProviderClient")
 	return &validationServiceClient{b, goplugin.NewServiceClient(b, cc), pb.NewValidationServiceClient(cc)}
 }

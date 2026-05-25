@@ -47,11 +47,12 @@ func TestKafkaExporter(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			select {
 			case message := <-producer.sendCh:
-				if message.topic == cfg.Kafka.TransmissionTopic {
+				switch message.topic {
+				case cfg.Kafka.TransmissionTopic:
 					receivedTransmission = message
-				} else if message.topic == cfg.Kafka.ConfigSetSimplifiedTopic {
+				case cfg.Kafka.ConfigSetSimplifiedTopic:
 					receivedConfigSetSimplified = message
-				} else {
+				default:
 					t.Fatalf("received unexpected message with topic %s", message.topic)
 				}
 			case <-ctx.Done():

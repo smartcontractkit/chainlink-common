@@ -59,10 +59,10 @@ func roundTripOffRampTests(t *testing.T, client cciptypes.OffRampReader) {
 	})
 
 	t.Run("ChangeConfig", func(t *testing.T) {
-		gotAddr1, gotAddr2, err := client.ChangeConfig(t.Context(), OffRampReader.changeConfigRequest.onchainConfig, OffRampReader.changeConfigRequest.offchainConfig)
+		gotAddr1, gotAddr2, err := client.ChangeConfig(t.Context(), OffRampReader.onchainConfig, OffRampReader.offchainConfig)
 		require.NoError(t, err)
-		assert.Equal(t, OffRampReader.changeConfigResponse.onchainConfigDigest, gotAddr1)
-		assert.Equal(t, OffRampReader.changeConfigResponse.offchainConfigDigest, gotAddr2)
+		assert.Equal(t, OffRampReader.onchainConfigDigest, gotAddr1)
+		assert.Equal(t, OffRampReader.offchainConfigDigest, gotAddr2)
 	})
 
 	t.Run("CurrentRateLimiterState", func(t *testing.T) {

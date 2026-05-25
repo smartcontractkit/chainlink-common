@@ -127,15 +127,15 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	case "PerformAction":
 		input := &p1.Item{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *p1.Item, _ *emptypb.Empty) (*p2.Item, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *p1.Item, _ *emptypb.Empty) (*p2.Item, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.BasicActionCapability.PerformAction(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method PerformAction(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method PerformAction(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

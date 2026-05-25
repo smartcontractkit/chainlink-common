@@ -12,7 +12,6 @@ import (
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
 // PriceGetterGRPCClient implements [cciptypes.PriceGetter] by wrapping a
@@ -35,16 +34,16 @@ func NewPriceGetterGRPCClient(cc grpc.ClientConnInterface) *PriceGetterGRPCClien
 type PriceGetterGRPCServer struct {
 	ccippb.UnimplementedPriceGetterServer
 
-	impl cciptypes.PriceGetter
+	impl ccip.PriceGetter
 	deps []io.Closer
 }
 
-func NewPriceGetterGRPCServer(impl cciptypes.PriceGetter) *PriceGetterGRPCServer {
+func NewPriceGetterGRPCServer(impl ccip.PriceGetter) *PriceGetterGRPCServer {
 	return &PriceGetterGRPCServer{impl: impl, deps: []io.Closer{impl}}
 }
 
 // ensure the types are satisfied
-var _ cciptypes.PriceGetter = (*PriceGetterGRPCClient)(nil)
+var _ ccip.PriceGetter = (*PriceGetterGRPCClient)(nil)
 var _ ccippb.PriceGetterServer = (*PriceGetterGRPCServer)(nil)
 
 func (p *PriceGetterGRPCClient) ClientConn() grpc.ClientConnInterface {
@@ -52,9 +51,9 @@ func (p *PriceGetterGRPCClient) ClientConn() grpc.ClientConnInterface {
 }
 
 // FilterConfiguredTokens implements ccip.PriceGetter.
-func (p *PriceGetterGRPCClient) FilterConfiguredTokens(ctx context.Context, tokens []cciptypes.Address) (configured []cciptypes.Address, unconfigured []cciptypes.Address, err error) {
-	configured = []cciptypes.Address{}
-	unconfigured = []cciptypes.Address{}
+func (p *PriceGetterGRPCClient) FilterConfiguredTokens(ctx context.Context, tokens []ccip.Address) (configured []ccip.Address, unconfigured []ccip.Address, err error) {
+	configured = []ccip.Address{}
+	unconfigured = []ccip.Address{}
 
 	// convert the format
 	requestedTokens := make([]string, len(tokens))
@@ -81,7 +80,7 @@ func (p *PriceGetterGRPCClient) FilterConfiguredTokens(ctx context.Context, toke
 }
 
 // TokenPricesUSD implements ccip.PriceGetter.
-func (p *PriceGetterGRPCClient) TokenPricesUSD(ctx context.Context, tokens []cciptypes.Address) (map[cciptypes.Address]*big.Int, error) {
+func (p *PriceGetterGRPCClient) TokenPricesUSD(ctx context.Context, tokens []ccip.Address) (map[ccip.Address]*big.Int, error) {
 	// convert the format
 	requestedTokens := make([]string, len(tokens))
 	for i, t := range tokens {
@@ -92,7 +91,7 @@ func (p *PriceGetterGRPCClient) TokenPricesUSD(ctx context.Context, tokens []cci
 	if err != nil {
 		return nil, err
 	}
-	prices := make(map[cciptypes.Address]*big.Int, len(resp.Prices))
+	prices := make(map[ccip.Address]*big.Int, len(resp.Prices))
 	for addr, p := range resp.Prices {
 		prices[ccip.Address(addr)] = p.Int()
 	}
@@ -105,9 +104,9 @@ func (p *PriceGetterGRPCClient) Close() error {
 
 // FilterConfiguredTokens implements ccippb.PriceGetterServer.
 func (p *PriceGetterGRPCServer) FilterConfiguredTokens(ctx context.Context, req *ccippb.FilterConfiguredTokensRequest) (*ccippb.FilterConfiguredTokensResponse, error) {
-	tokenAddresses := make([]cciptypes.Address, len(req.Tokens))
+	tokenAddresses := make([]ccip.Address, len(req.Tokens))
 	for i, t := range req.Tokens {
-		tokenAddresses[i] = cciptypes.Address(t)
+		tokenAddresses[i] = ccip.Address(t)
 	}
 
 	configuredTokens, unconfiguredTokens, err := p.impl.FilterConfiguredTokens(ctx, tokenAddresses)
@@ -129,9 +128,9 @@ func (p *PriceGetterGRPCServer) FilterConfiguredTokens(ctx context.Context, req 
 
 // TokenPricesUSD implements ccippb.PriceGetterServer.
 func (p *PriceGetterGRPCServer) TokenPricesUSD(ctx context.Context, req *ccippb.TokenPricesRequest) (*ccippb.TokenPricesResponse, error) {
-	tokenAddresses := make([]cciptypes.Address, len(req.Tokens))
+	tokenAddresses := make([]ccip.Address, len(req.Tokens))
 	for i, t := range req.Tokens {
-		tokenAddresses[i] = cciptypes.Address(t)
+		tokenAddresses[i] = ccip.Address(t)
 	}
 
 	prices, err := p.impl.TokenPricesUSD(ctx, tokenAddresses)

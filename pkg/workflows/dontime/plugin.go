@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -16,13 +16,52 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
-type Plugin struct {
-	mu sync.RWMutex
+type pluginMetrics struct {
+	donTime        metric.Int64Gauge
+	donTimeEntries metric.Int64Gauge
+	outcomeSize    metric.Int64Gauge
+}
 
+func newPluginMetrics() (pluginMetrics, error) {
+	meter := beholder.GetMeter()
+
+	donTime, err := meter.Int64Gauge("platform_dontime_outcome_don_time_ms",
+		metric.WithDescription("DON consensus timestamp included in the latest outcome, in milliseconds"),
+		metric.WithUnit("ms"),
+	)
+	if err != nil {
+		return pluginMetrics{}, fmt.Errorf("failed to create don_time gauge: %w", err)
+	}
+
+	donTimeEntries, err := meter.Int64Gauge("platform_dontime_outcome_entries",
+		metric.WithDescription("Number of workflow execution entries tracked in the latest outcome"),
+		metric.WithUnit("{entry}"),
+	)
+	if err != nil {
+		return pluginMetrics{}, fmt.Errorf("failed to create don_time_entries gauge: %w", err)
+	}
+
+	outcomeSize, err := meter.Int64Gauge("platform_dontime_outcome_size_bytes",
+		metric.WithDescription("Serialised size of the latest outcome in bytes"),
+		metric.WithUnit("By"),
+	)
+	if err != nil {
+		return pluginMetrics{}, fmt.Errorf("failed to create outcome_size gauge: %w", err)
+	}
+
+	return pluginMetrics{
+		donTime:        donTime,
+		donTimeEntries: donTimeEntries,
+		outcomeSize:    outcomeSize,
+	}, nil
+}
+
+type Plugin struct {
 	store          *Store
 	config         ocr3types.ReportingPluginConfig
 	offChainConfig *pb.Config
@@ -30,6 +69,8 @@ type Plugin struct {
 
 	batchSize       int
 	minTimeIncrease int64
+
+	metrics pluginMetrics
 }
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
@@ -45,6 +86,11 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, offchainCfg
 		return nil, errors.New("execution removal time must be positive")
 	}
 
+	metrics, err := newPluginMetrics()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Plugin{
 		store:           store,
 		config:          config,
@@ -52,6 +98,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, offchainCfg
 		lggr:            logger.Named(lggr, "DONTimePlugin"),
 		batchSize:       int(offchainCfg.MaxBatchSize),
 		minTimeIncrease: offchainCfg.MinTimeIncrease / int64(time.Millisecond),
+		metrics:         metrics,
 	}, nil
 }
 
@@ -100,8 +147,9 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 	}
 
 	observation := &pb.Observation{
-		Timestamp: time.Now().UTC().UnixMilli(),
-		Requests:  requests,
+		Timestamp:       time.Now().UTC().UnixMilli(),
+		Requests:        requests,
+		PruneExecutions: true,
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
@@ -115,7 +163,7 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
-func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	type timestampNodePair struct {
 		Timestamp        int64
@@ -215,6 +263,9 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
 		"outcomeSizeBytes", len(outcomeBytes),
 	)
+	p.metrics.donTime.Record(ctx, outcome.Timestamp)
+	p.metrics.donTimeEntries.Record(ctx, int64(len(outcome.ObservedDonTimes)))
+	p.metrics.outcomeSize.Record(ctx, int64(len(outcomeBytes)))
 	return outcomeBytes, err
 }
 

@@ -4,13 +4,20 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
@@ -18,49 +25,132 @@ import (
 
 func TestNewBatchClient(t *testing.T) {
 	t.Run("NewBatchClient", func(t *testing.T) {
-		client, err := NewBatchClient(nil)
+		client, err := NewBatchClient(mocks.NewClient(t))
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 	})
 
 	t.Run("WithBatchSize", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithBatchSize(100))
+		client, err := NewBatchClient(mocks.NewClient(t), WithBatchSize(100))
 		require.NoError(t, err)
 		assert.Equal(t, 100, client.batchSize)
 	})
 
 	t.Run("WithEventClone", func(t *testing.T) {
-		client, err := NewBatchClient(nil)
+		client, err := NewBatchClient(mocks.NewClient(t))
 		require.NoError(t, err)
 		assert.True(t, client.cloneEvent)
 
-		client, err = NewBatchClient(nil, WithEventClone(false))
+		client, err = NewBatchClient(mocks.NewClient(t), WithEventClone(false))
 		require.NoError(t, err)
 		assert.False(t, client.cloneEvent)
 	})
 
 	t.Run("WithMaxConcurrentSends", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMaxConcurrentSends(10))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMaxConcurrentSends(10))
 		require.NoError(t, err)
 		assert.Equal(t, 10, cap(client.maxConcurrentSends))
 	})
 
 	t.Run("WithBatchInterval", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithBatchInterval(100*time.Millisecond))
+		client, err := NewBatchClient(mocks.NewClient(t), WithBatchInterval(100*time.Millisecond))
 		require.NoError(t, err)
 		assert.Equal(t, 100*time.Millisecond, client.batchInterval)
 	})
 
 	t.Run("WithMessageBuffer", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(1000))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(1000))
 		require.NoError(t, err)
 		assert.Equal(t, 1000, cap(client.messageBuffer))
+	})
+
+	t.Run("WithMaxGRPCRequestSize", func(t *testing.T) {
+		t.Run("applies value at or above minimum", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(4*1024*1024))
+			require.NoError(t, err)
+			assert.Equal(t, 4*1024*1024, client.maxGRPCRequestSize)
+			assert.Equal(t, 4*1024*1024-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("clamps value below minimum to minMaxGRPCRequestSize", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(512))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("clamps zero to minMaxGRPCRequestSize", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(0))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("clamps negative to minMaxGRPCRequestSize", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(-1))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+
+		t.Run("exact minimum is accepted as-is", func(t *testing.T) {
+			client, err := NewBatchClient(mocks.NewClient(t), WithMaxGRPCRequestSize(minMaxGRPCRequestSize))
+			require.NoError(t, err)
+			assert.Equal(t, minMaxGRPCRequestSize, client.maxGRPCRequestSize)
+			assert.Equal(t, minMaxGRPCRequestSize-grpcFramingOverhead, client.effectiveMaxRequestSize)
+		})
+	})
+
+	t.Run("records failure metrics when request exceeds configured max grpc size", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		const maxGRPCSize = 2048
+
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		// PublishBatch should NOT be called — the oversized event is rejected before sending.
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithBatchSize(1),
+			WithBatchInterval(time.Second),
+			WithMessageBuffer(10),
+		)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxGRPCSize
+		client.effectiveMaxRequestSize = maxGRPCSize
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     strings.Repeat("x", maxGRPCSize*2),
+			Source: "platform",
+			Type:   "MetricOversizeFailure",
+		}, nil)
+		require.NoError(t, err)
+
+		// Stop flushes the batch which triggers the oversize rejection path.
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+
+		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
+		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		failureReq := mustInt64SumPointWithAttr(t, reqSum, "status", "failure")
+		assert.GreaterOrEqual(t, failureReq.Value, int64(1))
+
+		reqSize := mustMetric(t, rm, "chip_ingress.batch.request_size_bytes")
+		reqSizeHist, ok := reqSize.Data.(metricdata.Histogram[int64])
+		require.True(t, ok)
+		reqSizePoint := mustInt64HistogramPointWithIntAttr(t, reqSizeHist, "max_grpc_request_size_bytes", maxGRPCSize)
+		assert.GreaterOrEqual(t, reqSizePoint.Count, uint64(1))
 	})
 }
 
 func TestQueueMessage(t *testing.T) {
 	t.Run("successfully queues a message", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(5))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		event := &chipingress.CloudEventPb{
@@ -81,7 +171,7 @@ func TestQueueMessage(t *testing.T) {
 	})
 
 	t.Run("drops message if buffer is full", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(1))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(1))
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
@@ -103,7 +193,7 @@ func TestQueueMessage(t *testing.T) {
 	})
 
 	t.Run("handles nil event", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(5))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(5))
 		require.NoError(t, err)
 
 		err = client.QueueMessage(nil, nil)
@@ -115,6 +205,7 @@ func TestQueueMessage(t *testing.T) {
 func TestSendBatch(t *testing.T) {
 	t.Run("successfully sends a batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -154,6 +245,7 @@ func TestSendBatch(t *testing.T) {
 
 	t.Run("doesn't publish empty batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 
 		client, err := NewBatchClient(mockClient, WithMessageBuffer(5))
 		require.NoError(t, err)
@@ -165,6 +257,7 @@ func TestSendBatch(t *testing.T) {
 
 	t.Run("sends multiple batches successfully", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 
 		done := make(chan struct{})
 		callCount := 0
@@ -194,9 +287,9 @@ func TestSendBatch(t *testing.T) {
 			{event: &chipingress.CloudEventPb{Id: "batch3-id-1", Source: "test-source", Type: "test.event.type"}},
 		}
 
-		client.sendBatch(context.Background(), batch1)
-		client.sendBatch(context.Background(), batch2)
-		client.sendBatch(context.Background(), batch3)
+		client.sendBatch(t.Context(), batch1)
+		client.sendBatch(t.Context(), batch2)
+		client.sendBatch(t.Context(), batch3)
 
 		// wait for the internal goroutines to complete
 		select {
@@ -207,11 +300,177 @@ func TestSendBatch(t *testing.T) {
 
 		mockClient.AssertExpectations(t)
 	})
+
+	t.Run("splits oversized batch by max gRPC request size", func(t *testing.T) {
+		events := []*chipingress.CloudEventPb{
+			largeTestEvent("test-id-1"),
+			largeTestEvent("test-id-2"),
+			largeTestEvent("test-id-3"),
+			largeTestEvent("test-id-4"),
+			largeTestEvent("test-id-5"),
+		}
+		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: events[:2]})
+		require.LessOrEqual(t, proto.Size(&chipingress.CloudEventBatch{Events: events[:1]}), maxRequestSize)
+		require.Greater(t, proto.Size(&chipingress.CloudEventBatch{Events: events[:3]}), maxRequestSize)
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		callbackDone := make(chan error, len(events))
+		var mu sync.Mutex
+		var publishedIDs []string
+		var publishedSizes []int
+
+		mockClient.
+			On("PublishBatch",
+				mock.Anything,
+				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+					return len(batch.Events) > 0 && proto.Size(batch) <= maxRequestSize
+				}),
+			).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) {
+				batch := args.Get(1).(*chipingress.CloudEventBatch)
+				mu.Lock()
+				for _, event := range batch.Events {
+					publishedIDs = append(publishedIDs, event.Id)
+				}
+				publishedSizes = append(publishedSizes, proto.Size(batch))
+				if len(publishedIDs) == len(events) {
+					close(done)
+				}
+				mu.Unlock()
+			}).
+			Times(3)
+
+		client, err := NewBatchClient(mockClient)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
+
+		messages := make([]*messageWithCallback, 0, len(events))
+		for _, event := range events {
+			messages = append(messages, &messageWithCallback{
+				event: event,
+				callback: func(err error) {
+					callbackDone <- err
+				},
+			})
+		}
+
+		client.sendBatch(t.Context(), messages)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for split batches to be sent")
+		}
+		for range events {
+			select {
+			case err := <-callbackDone:
+				require.NoError(t, err)
+			case <-time.After(time.Second):
+				t.Fatal("timeout waiting for split batch callback")
+			}
+		}
+
+		assert.Equal(t, []string{"test-id-1", "test-id-2", "test-id-3", "test-id-4", "test-id-5"}, publishedIDs)
+		for _, size := range publishedSizes {
+			assert.LessOrEqual(t, size, maxRequestSize)
+		}
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("records batch_splits_total metric when batch is split", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		events := []*chipingress.CloudEventPb{
+			largeTestEvent("split-metric-1"),
+			largeTestEvent("split-metric-2"),
+			largeTestEvent("split-metric-3"),
+		}
+		// Set maxRequestSize so that 2 events fit but 3 do not, forcing a split.
+		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: events[:2]})
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		var mu sync.Mutex
+		var publishCount int
+
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				publishCount++
+				if publishCount == 2 {
+					close(done)
+				}
+				mu.Unlock()
+			})
+
+		client, err := NewBatchClient(mockClient)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
+
+		messages := make([]*messageWithCallback, 0, len(events))
+		for _, event := range events {
+			messages = append(messages, &messageWithCallback{event: event})
+		}
+
+		client.sendBatch(t.Context(), messages)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for split batches to be sent")
+		}
+
+		rm := collectResourceMetrics(t, reader)
+		splitsMetric := mustMetric(t, rm, "chip_ingress.batch.batch_splits_total")
+		splitsSum, ok := splitsMetric.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		require.Len(t, splitsSum.DataPoints, 1)
+		assert.Equal(t, int64(1), splitsSum.DataPoints[0].Value)
+	})
+
+	t.Run("doesn't publish a single event over max gRPC request size", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		callbackDone := make(chan error, 1)
+		event := largeTestEvent("oversized-id")
+		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{event}}) - 1
+
+		client, err := NewBatchClient(mockClient)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
+
+		client.sendBatch(t.Context(), []*messageWithCallback{
+			{
+				event: event,
+				callback: func(err error) {
+					callbackDone <- err
+				},
+			},
+		})
+
+		select {
+		case err := <-callbackDone:
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "exceeds max gRPC request size")
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for oversized batch callback")
+		}
+
+		mockClient.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
+	})
 }
 
 func TestStart(t *testing.T) {
 	t.Run("batch size trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -254,6 +513,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("timeout trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -289,14 +549,15 @@ func TestStart(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 
-	t.Run("context cancellation flushes pending batch", func(t *testing.T) {
+	t.Run("stop flushes pending batch before batch interval", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
 			On("PublishBatch",
 				mock.MatchedBy(func(ctx context.Context) bool {
-					// Regression guard: flush on cancellation must not use an already-canceled context.
+					// Regression guard: flush on stop must not use an already-canceled context.
 					return ctx != nil && ctx.Err() == nil
 				}),
 				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
@@ -312,21 +573,19 @@ func TestStart(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(t.Context())
-
-		client.Start(ctx)
+		client.Start(t.Context())
 
 		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-1", Source: "test-source", Type: "test.event.type"}, nil)
 		_ = client.QueueMessage(&chipingress.CloudEventPb{Id: "test-id-2", Source: "test-source", Type: "test.event.type"}, nil)
 
 		time.Sleep(10 * time.Millisecond)
 
-		cancel()
+		client.Stop()
 
 		select {
 		case <-done:
 		case <-time.After(time.Second):
-			t.Fatal("timeout waiting for flush on context cancellation")
+			t.Fatal("timeout waiting for flush on stop")
 		}
 
 		mockClient.AssertExpectations(t)
@@ -334,6 +593,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("stop flushes pending batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -372,16 +632,16 @@ func TestStart(t *testing.T) {
 
 	t.Run("no flush when batch is empty", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(t.Context())
-		client.Start(ctx)
+		client.Start(t.Context())
 
 		time.Sleep(10 * time.Millisecond)
 
-		cancel()
+		client.Stop()
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -390,6 +650,7 @@ func TestStart(t *testing.T) {
 
 	t.Run("multiple batches via size trigger", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callCount := 0
 
@@ -438,6 +699,7 @@ func TestStart(t *testing.T) {
 func TestCallbacks(t *testing.T) {
 	t.Run("callback invoked on successful send", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -488,6 +750,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callback receives error on failed send", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 		expectedErr := assert.AnError
@@ -540,6 +803,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("nil callback works without panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 
 		mockClient.
@@ -581,6 +845,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("multiple messages with different callbacks", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callback1Done := make(chan error, 1)
 		callback2Done := make(chan error, 1)
@@ -661,6 +926,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callback invoked for timeout-triggered batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -711,6 +977,7 @@ func TestCallbacks(t *testing.T) {
 
 	t.Run("callback invoked for size-triggered batch", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
@@ -763,15 +1030,16 @@ func TestCallbacks(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 
-	t.Run("callbacks invoked on context cancellation", func(t *testing.T) {
+	t.Run("callbacks invoked on stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		done := make(chan struct{})
 		callbackDone := make(chan error, 1)
 
 		mockClient.
 			On("PublishBatch",
 				mock.MatchedBy(func(ctx context.Context) bool {
-					// Regression guard: flush on cancellation must not use an already-canceled context.
+					// Regression guard: flush on stop must not use an already-canceled context.
 					return ctx != nil && ctx.Err() == nil
 				}),
 				mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
@@ -786,9 +1054,7 @@ func TestCallbacks(t *testing.T) {
 		client, err := NewBatchClient(mockClient, WithBatchSize(10), WithBatchInterval(5*time.Second))
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(t.Context())
-
-		client.Start(ctx)
+		client.Start(t.Context())
 
 		_ = client.QueueMessage(&chipingress.CloudEventPb{
 			Id:     "test-id-1",
@@ -800,13 +1066,13 @@ func TestCallbacks(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		// cancel context to trigger flush
-		cancel()
+		// stop to trigger flush
+		client.Stop()
 
 		select {
 		case <-done:
 		case <-time.After(time.Second):
-			t.Fatal("timeout waiting for flush on cancellation")
+			t.Fatal("timeout waiting for flush on stop")
 		}
 
 		select {
@@ -821,8 +1087,42 @@ func TestCallbacks(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
+	t.Run("close underlying client only once when enabled", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Once()
+
+		client, err := NewBatchClient(mockClient)
+		require.NoError(t, err)
+
+		client.Stop()
+		client.Stop()
+		client.Stop()
+	})
+
+	t.Run("Stop without Start returns promptly", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Once()
+
+		client, err := NewBatchClient(mockClient, WithShutdownTimeout(10*time.Second))
+		require.NoError(t, err)
+
+		done := make(chan struct{})
+		go func() {
+			client.Stop()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			// Stop returned without waiting for shutdownTimeout
+		case <-time.After(time.Second):
+			t.Fatal("Stop blocked; likely waiting on batcherDone that was never closed")
+		}
+	})
+
 	t.Run("can call Stop multiple times without panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -837,6 +1137,12 @@ func TestStop(t *testing.T) {
 
 	t.Run("QueueMessage returns error after Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Maybe()
+
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -853,7 +1159,7 @@ func TestStop(t *testing.T) {
 		}, nil)
 		require.NoError(t, err)
 
-		// Stop the client
+		// Stop the client — drains any buffered messages
 		client.Stop()
 
 		// Queue message after stop - should fail
@@ -868,6 +1174,7 @@ func TestStop(t *testing.T) {
 
 	t.Run("clears seqnum counters on Stop", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
 		client, err := NewBatchClient(mockClient, WithBatchSize(10))
 		require.NoError(t, err)
 
@@ -894,9 +1201,21 @@ func countCounters(counters *sync.Map) int {
 	return n
 }
 
+func largeTestEvent(id string) *chipingress.CloudEventPb {
+	return &chipingress.CloudEventPb{
+		Id:          id,
+		Source:      "test-source",
+		Type:        "test.event.type",
+		SpecVersion: "1.0",
+		Data: &cepb.CloudEvent_BinaryData{
+			BinaryData: []byte("0123456789abcdefghijklmnopqrstuvwxyz"),
+		},
+	}
+}
+
 func TestSeqnum(t *testing.T) {
 	t.Run("dropped messages consume seqnum and create detectable gaps", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(1))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(1))
 		require.NoError(t, err)
 
 		first := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
@@ -923,7 +1242,7 @@ func TestSeqnum(t *testing.T) {
 	})
 
 	t.Run("reusing event pointer preserves queued seqnum snapshots", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(2))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(2))
 		require.NoError(t, err)
 
 		event := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
@@ -943,7 +1262,7 @@ func TestSeqnum(t *testing.T) {
 	})
 
 	t.Run("reusing event pointer can overwrite queued seqnum when clone disabled", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(2), WithEventClone(false))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(2), WithEventClone(false))
 		require.NoError(t, err)
 
 		event := &chipingress.CloudEventPb{Id: "id-1", Source: "domain-a", Type: "entity-x"}
@@ -963,7 +1282,7 @@ func TestSeqnum(t *testing.T) {
 	})
 
 	t.Run("stamps sequential seqnum for same source+type", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(10))
 		require.NoError(t, err)
 
 		events := []*chipingress.CloudEventPb{
@@ -988,7 +1307,7 @@ func TestSeqnum(t *testing.T) {
 	})
 
 	t.Run("independent counters per source+type pair", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(10))
 		require.NoError(t, err)
 
 		// Queue events with different source+type combinations
@@ -1024,7 +1343,7 @@ func TestSeqnum(t *testing.T) {
 	})
 
 	t.Run("source and type values containing separator do not collide", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(10))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(10))
 		require.NoError(t, err)
 
 		events := []*chipingress.CloudEventPb{
@@ -1052,7 +1371,7 @@ func TestSeqnum(t *testing.T) {
 	})
 
 	t.Run("concurrent access produces unique seqnums", func(t *testing.T) {
-		client, err := NewBatchClient(nil, WithMessageBuffer(1000))
+		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(1000))
 		require.NoError(t, err)
 
 		const numGoroutines = 50
@@ -1108,4 +1427,350 @@ func TestSeqnum(t *testing.T) {
 			expectedSeq++
 		}
 	})
+}
+
+func TestBatchClient_Metrics(t *testing.T) {
+	t.Run("records success path metrics", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithBatchSize(1),
+			WithBatchInterval(time.Second),
+			WithMessageBuffer(10),
+			WithMaxGRPCRequestSize(minMaxGRPCRequestSize),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "metric-success",
+			Source: "platform",
+			Type:   "MetricSuccess",
+		}, nil)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for PublishBatch")
+		}
+
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+
+		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
+		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		successPoint := mustInt64SumPointWithAttr(t, reqSum, "status", "success")
+		assert.GreaterOrEqual(t, successPoint.Value, int64(1))
+
+		msgSize := mustMetric(t, rm, "chip_ingress.batch.request_size_messages")
+		msgSizeHist, ok := msgSize.Data.(metricdata.Histogram[int64])
+		require.True(t, ok)
+		msgSizePoint := mustInt64HistogramPointWithIntAttr(t, msgSizeHist, "max_batch_size", 1)
+		assert.GreaterOrEqual(t, msgSizePoint.Count, uint64(1))
+
+		reqSize := mustMetric(t, rm, "chip_ingress.batch.request_size_bytes")
+		reqSizeHist, ok := reqSize.Data.(metricdata.Histogram[int64])
+		require.True(t, ok)
+		reqSizePoint := mustInt64HistogramPointWithIntAttr(t, reqSizeHist, "max_grpc_request_size_bytes", minMaxGRPCRequestSize)
+		assert.GreaterOrEqual(t, reqSizePoint.Count, uint64(1))
+
+		latency := mustMetric(t, rm, "chip_ingress.batch.request_latency_ms")
+		latencyHist, ok := latency.Data.(metricdata.Histogram[float64])
+		require.True(t, ok)
+		latencyPoint := mustFloat64HistogramPointWithAttr(t, latencyHist, "status", "success")
+		assert.GreaterOrEqual(t, latencyPoint.Count, uint64(1))
+
+		config := mustMetric(t, rm, "chip_ingress.batch.config.info")
+		configGauge, ok := config.Data.(metricdata.Gauge[int64])
+		require.True(t, ok)
+		require.NotEmpty(t, configGauge.DataPoints)
+		assert.Equal(t, int64(1), configGauge.DataPoints[0].Value)
+		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_batch_size", 1))
+		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_grpc_request_size_bytes", minMaxGRPCRequestSize))
+	})
+
+	t.Run("records failure counters and latency", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, assert.AnError).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(1), WithMessageBuffer(10))
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		err = client.QueueMessage(&chipingress.CloudEventPb{
+			Id:     "metric-failure",
+			Source: "platform",
+			Type:   "MetricFailure",
+		}, nil)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for PublishBatch")
+		}
+
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+
+		reqTotal := mustMetric(t, rm, "chip_ingress.batch.send_requests_total")
+		reqSum, ok := reqTotal.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		failureReq := mustInt64SumPointWithAttr(t, reqSum, "status", "failure")
+		assert.GreaterOrEqual(t, failureReq.Value, int64(1))
+
+		latency := mustMetric(t, rm, "chip_ingress.batch.request_latency_ms")
+		latencyHist, ok := latency.Data.(metricdata.Histogram[float64])
+		require.True(t, ok)
+		failureLatency := mustFloat64HistogramPointWithAttr(t, latencyHist, "status", "failure")
+		assert.GreaterOrEqual(t, failureLatency.Count, uint64(1))
+	})
+}
+
+func TestSplitMessagesByRequestSize(t *testing.T) {
+	t.Run("empty messages returns nil", func(t *testing.T) {
+		result := splitMessagesByRequestSize(nil, 1024)
+		assert.Nil(t, result)
+	})
+
+	t.Run("zero max request size returns single batch", func(t *testing.T) {
+		msgs := []*messageWithCallback{
+			{event: largeTestEvent("a")},
+			{event: largeTestEvent("b")},
+		}
+		result := splitMessagesByRequestSize(msgs, 0)
+		require.Len(t, result, 1)
+		assert.Len(t, result[0], 2)
+	})
+
+	t.Run("negative max request size returns single batch", func(t *testing.T) {
+		msgs := []*messageWithCallback{
+			{event: largeTestEvent("a")},
+		}
+		result := splitMessagesByRequestSize(msgs, -1)
+		require.Len(t, result, 1)
+		assert.Len(t, result[0], 1)
+	})
+
+	t.Run("all messages fit returns single batch", func(t *testing.T) {
+		msgs := []*messageWithCallback{
+			{event: largeTestEvent("a")},
+			{event: largeTestEvent("b")},
+		}
+		allBatch := &chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{msgs[0].event, msgs[1].event}}
+		result := splitMessagesByRequestSize(msgs, proto.Size(allBatch)+100)
+		require.Len(t, result, 1)
+		assert.Len(t, result[0], 2)
+	})
+
+	t.Run("each message in its own batch when tight limit", func(t *testing.T) {
+		msgs := []*messageWithCallback{
+			{event: largeTestEvent("a")},
+			{event: largeTestEvent("b")},
+			{event: largeTestEvent("c")},
+		}
+		singleBatch := &chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{msgs[0].event}}
+		// Set limit to exactly fit one event but not two.
+		result := splitMessagesByRequestSize(msgs, proto.Size(singleBatch))
+		require.Len(t, result, 3)
+		for _, batch := range result {
+			assert.Len(t, batch, 1)
+		}
+	})
+}
+
+func BenchmarkSendBatch(b *testing.B) {
+	b.Run("no splitting (maxGRPCRequestSize=0)", func(b *testing.B) {
+		client, err := NewBatchClient(
+			&chipingress.NoopClient{},
+			WithBatchSize(100),
+			WithMessageBuffer(b.N*100+10),
+			WithBatchInterval(time.Hour),
+		)
+		if err != nil {
+			b.Fatal(err)
+		}
+		client.Start(b.Context())
+		defer client.Stop()
+
+		msgs := make([]*messageWithCallback, 100)
+		for i := range msgs {
+			msgs[i] = &messageWithCallback{
+				event: &chipingress.CloudEventPb{
+					Id:     strconv.Itoa(i),
+					Source: "bench",
+					Type:   "bench.event",
+				},
+			}
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			client.sendBatch(b.Context(), msgs)
+		}
+	})
+
+	b.Run("with splitting (maxGRPCRequestSize=512)", func(b *testing.B) {
+		client, err := NewBatchClient(
+			&chipingress.NoopClient{},
+			WithBatchSize(100),
+			WithMessageBuffer(b.N*100+10),
+			WithBatchInterval(time.Hour),
+		)
+		if err != nil {
+			b.Fatal(err)
+		}
+		client.maxGRPCRequestSize = 512
+		client.effectiveMaxRequestSize = 512
+		client.Start(b.Context())
+		defer client.Stop()
+
+		msgs := make([]*messageWithCallback, 100)
+		for i := range msgs {
+			msgs[i] = &messageWithCallback{
+				event: &chipingress.CloudEventPb{
+					Id:     strconv.Itoa(i),
+					Source: "bench",
+					Type:   "bench.event",
+				},
+			}
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			client.sendBatch(b.Context(), msgs)
+		}
+	})
+}
+
+func BenchmarkBatchClient_QueueMessage(b *testing.B) {
+	client, err := NewBatchClient(
+		&chipingress.NoopClient{},
+		WithBatchSize(b.N+1),
+		WithMessageBuffer(b.N+10),
+		WithBatchInterval(time.Hour),
+	)
+	if err != nil {
+		b.Fatal(err)
+	}
+	client.Start(b.Context())
+	defer client.Stop()
+
+	payload := &chipingress.CloudEventPb{
+		Source: "bench",
+		Type:   "bench.event",
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		payload.Id = strconv.Itoa(i)
+		if err := client.QueueMessage(payload, nil); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func useTestMeterProvider(t *testing.T) (*sdkmetric.ManualReader, func()) {
+	t.Helper()
+	prev := otel.GetMeterProvider()
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	otel.SetMeterProvider(provider)
+	return reader, func() {
+		require.NoError(t, provider.Shutdown(t.Context()))
+		otel.SetMeterProvider(prev)
+	}
+}
+
+func collectResourceMetrics(t *testing.T, reader *sdkmetric.ManualReader) metricdata.ResourceMetrics {
+	t.Helper()
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(t.Context(), &rm))
+	return rm
+}
+
+func mustMetric(t *testing.T, rm metricdata.ResourceMetrics, name string) metricdata.Metrics {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name == name {
+				return m
+			}
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+	return metricdata.Metrics{}
+}
+
+func mustInt64SumPointWithAttr(t *testing.T, sum metricdata.Sum[int64], key, want string) metricdata.DataPoint[int64] {
+	t.Helper()
+	for _, dp := range sum.DataPoints {
+		if hasStringAttr(dp.Attributes, key, want) {
+			return dp
+		}
+	}
+	t.Fatalf("sum datapoint with %s=%s not found", key, want)
+	return metricdata.DataPoint[int64]{}
+}
+
+func mustInt64HistogramPointWithIntAttr(t *testing.T, hist metricdata.Histogram[int64], key string, want int) metricdata.HistogramDataPoint[int64] {
+	t.Helper()
+	for _, dp := range hist.DataPoints {
+		if hasIntAttr(dp.Attributes, key, want) {
+			return dp
+		}
+	}
+	t.Fatalf("histogram datapoint with %s=%d not found", key, want)
+	return metricdata.HistogramDataPoint[int64]{}
+}
+
+func mustFloat64HistogramPointWithAttr(t *testing.T, hist metricdata.Histogram[float64], key, want string) metricdata.HistogramDataPoint[float64] {
+	t.Helper()
+	for _, dp := range hist.DataPoints {
+		if hasStringAttr(dp.Attributes, key, want) {
+			return dp
+		}
+	}
+	t.Fatalf("histogram datapoint with %s=%s not found", key, want)
+	return metricdata.HistogramDataPoint[float64]{}
+}
+
+func hasStringAttr(set attribute.Set, key, want string) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsString() == want
+		}
+	}
+	return false
+}
+
+func hasIntAttr(set attribute.Set, key string, want int) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return int(kv.Value.AsInt64()) == want
+		}
+	}
+	return false
 }

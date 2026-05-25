@@ -94,13 +94,7 @@ func (ekr *evmKeyring) Verify3(publicKey ocrtypes.OnchainPublicKey, cd ocrtypes.
 }
 
 func (ekr *evmKeyring) VerifyBlob(pubkey types.OnchainPublicKey, b, sig []byte) bool {
-	authorPubkey, err := crypto.SigToPub(b, sig)
-	if err != nil {
-		return false
-	}
-	authorAddress := crypto.PubkeyToAddress(*authorPubkey)
-	// no need for constant time compare since neither arg is sensitive
-	return bytes.Equal(pubkey[:], authorAddress[:])
+	return EvmVerifyBlob(pubkey, b, sig)
 }
 
 func (ekr *evmKeyring) MaxSignatureLength() int {
@@ -122,4 +116,14 @@ func (ekr *evmKeyring) Unmarshal(in []byte) error {
 	}
 	ekr.privateKey = func() *ecdsa.PrivateKey { return privateKey }
 	return nil
+}
+
+func EvmVerifyBlob(pubkey types.OnchainPublicKey, b, sig []byte) bool {
+	authorPubkey, err := crypto.SigToPub(b, sig)
+	if err != nil {
+		return false
+	}
+	authorAddress := crypto.PubkeyToAddress(*authorPubkey)
+	// no need for constant time compare since neither arg is sensitive
+	return bytes.Equal(pubkey[:], authorAddress[:])
 }

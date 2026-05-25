@@ -3,6 +3,7 @@ package automation
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -30,9 +31,9 @@ var checkResultStringTemplate = `{
 }`
 
 func init() {
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, " ", "", -1)
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, "\t", "", -1)
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, "\n", "", -1)
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, " ", "")
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, "\t", "")
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, "\n", "")
 }
 
 type TransmitEventType int
@@ -223,7 +224,7 @@ func (r CheckResult) UniqueID() string {
 	}
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
-	return fmt.Sprintf("%x", resultBytes)
+	return hex.EncodeToString(resultBytes)
 }
 
 // NOTE: this function is used for debugging purposes only.
@@ -281,7 +282,7 @@ type BlockHistory []BlockKey
 
 func (bh BlockHistory) Latest() (BlockKey, error) {
 	if len(bh) == 0 {
-		return BlockKey{}, fmt.Errorf("empty block history")
+		return BlockKey{}, errors.New("empty block history")
 	}
 
 	return bh[0], nil

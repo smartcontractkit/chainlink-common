@@ -1,6 +1,9 @@
 package grafana
 
 import (
+	"regexp"
+	"strconv"
+
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
@@ -29,6 +32,7 @@ const (
 type Query struct {
 	Expr      string
 	Legend    string
+	Interval  string // i.e. 30s, 2m, a lower limit for the interval that will be sent to datasource and used by $__interval/range variables
 	Instant   bool
 	Min       float64
 	Format    prometheus.PromQueryFormat
@@ -41,6 +45,10 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 		LegendFormat(query.Legend).
 		Format(query.Format)
 
+	if isValidDuration(query.Interval) {
+		res.Interval(query.Interval)
+	}
+
 	if query.Instant {
 		res.Instant()
 	}
@@ -49,6 +57,16 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 	}
 
 	return res
+}
+
+func isValidDuration(interval string) bool {
+	var grafanaDurationRegexp = regexp.MustCompile(`^(\d+)(ms|[smhdwMy])$`) // ms, s, m, h, d, w, M, y
+	m := grafanaDurationRegexp.FindStringSubmatch(interval)
+	if m == nil {
+		return false
+	}
+	n, _ := strconv.ParseInt(m[1], 10, 64)
+	return n > 0
 }
 
 type LegendOptions struct {
@@ -194,6 +212,47 @@ type Panel struct {
 	businessVariablePanelBuilder *businessvariable.PanelBuilder
 	polystatPanelBuilder         *polystat.PanelBuilder
 	alertBuilders                []*alerting.RuleBuilder
+}
+
+// panelBuilder sets the panel ID and returns the underlying builder as a cog.Builder[dashboard.Panel].
+func (p *Panel) panelBuilder(id uint32) cog.Builder[dashboard.Panel] {
+	switch {
+	case p.statPanelBuilder != nil:
+		p.statPanelBuilder.Id(id)
+		return p.statPanelBuilder
+	case p.timeSeriesPanelBuilder != nil:
+		p.timeSeriesPanelBuilder.Id(id)
+		return p.timeSeriesPanelBuilder
+	case p.barGaugePanelBuilder != nil:
+		p.barGaugePanelBuilder.Id(id)
+		return p.barGaugePanelBuilder
+	case p.gaugePanelBuilder != nil:
+		p.gaugePanelBuilder.Id(id)
+		return p.gaugePanelBuilder
+	case p.tablePanelBuilder != nil:
+		p.tablePanelBuilder.Id(id)
+		return p.tablePanelBuilder
+	case p.logPanelBuilder != nil:
+		p.logPanelBuilder.Id(id)
+		return p.logPanelBuilder
+	case p.heatmapBuilder != nil:
+		p.heatmapBuilder.Id(id)
+		return p.heatmapBuilder
+	case p.textPanelBuilder != nil:
+		p.textPanelBuilder.Id(id)
+		return p.textPanelBuilder
+	case p.histogramPanelBuilder != nil:
+		p.histogramPanelBuilder.Id(id)
+		return p.histogramPanelBuilder
+	case p.businessVariablePanelBuilder != nil:
+		p.businessVariablePanelBuilder.Id(id)
+		return p.businessVariablePanelBuilder
+	case p.polystatPanelBuilder != nil:
+		p.polystatPanelBuilder.Id(id)
+		return p.polystatPanelBuilder
+	default:
+		return nil
+	}
 }
 
 // panel defaults

@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -22,7 +23,7 @@ type PluginFactoryClient struct {
 	client mercurypb.MercuryPluginFactoryClient
 }
 
-func NewPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginFactoryClient {
+func NewPluginFactoryClient(b *net.BrokerExt, cc net.ClientConnInterface) *PluginFactoryClient {
 	b = b.WithName("MercuryPluginProviderClient")
 	return &PluginFactoryClient{b, goplugin.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }
@@ -48,7 +49,7 @@ func (r *PluginFactoryClient) NewMercuryPlugin(ctx context.Context, config ocr3t
 			MaxReportLength:      int(response.MercuryPluginInfo.MercuryPluginLimits.MaxReportLength),
 		},
 	}
-	cc, err := r.BrokerExt.Dial(response.MercuryPluginID)
+	cc, err := r.Dial(response.MercuryPluginID)
 	if err != nil {
 		return nil, ocr3types.MercuryPluginInfo{}, err
 	}

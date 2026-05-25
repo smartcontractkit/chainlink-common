@@ -38,7 +38,6 @@ func (m *mockJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 
 // mockLinkingClientWithAuthCheck implements the LinkingServiceClient interface and checks for authorization header
 type mockLinkingClientWithAuthCheck struct {
-	expectedAuthHeader string
 	receivedAuthHeader string
 }
 

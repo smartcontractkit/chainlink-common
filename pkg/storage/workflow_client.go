@@ -3,7 +3,9 @@ package storage
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -66,7 +68,6 @@ func (wc *workflowClient) Close() error {
 }
 
 type workflowConfig struct {
-	log                  logger.Logger
 	transportCredentials credentials.TransportCredentials
 	tlsCert              string
 	serverName           string
@@ -159,7 +160,7 @@ func (wc *workflowClient) initGrpcConn(opts ...grpc.DialOption) error {
 	if wc.tlsCert != "" {
 		cp := x509.NewCertPool()
 		if !cp.AppendCertsFromPEM([]byte(wc.tlsCert)) {
-			return fmt.Errorf("credentials: failed to append certificates")
+			return errors.New("credentials: failed to append certificates")
 		}
 		wc.logger.Infow("Dialing with TLS (using provided certificate)", "address", wc.address)
 		// Use the provided serverName variable.

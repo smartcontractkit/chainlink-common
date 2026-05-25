@@ -170,12 +170,12 @@ type logger struct {
 }
 
 func (l *logger) with(args ...any) Logger {
-	return &logger{l.SugaredLogger.With(args...)}
+	return &logger{l.With(args...)}
 }
 
 func (l *logger) named(name string) Logger {
 	newLogger := *l
-	newLogger.SugaredLogger = l.SugaredLogger.Named(name)
+	newLogger.SugaredLogger = l.Named(name)
 	return &newLogger
 }
 
@@ -192,7 +192,7 @@ func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
 }
 
 func (l *logger) withOptions(opts ...zap.Option) *zap.SugaredLogger {
-	return l.SugaredLogger.WithOptions(opts...)
+	return l.WithOptions(opts...)
 }
 
 // With returns a Logger with keyvals, if 'l' has a method `With(...any) L`, where L implements Logger, otherwise it returns l.

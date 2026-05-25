@@ -38,6 +38,8 @@ flowchart
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
+        VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
     end
 
@@ -45,6 +47,8 @@ flowchart
 %%      DON nodes → gateway (separate from the inbound trigger flow)
         GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
+        GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
+        GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -95,8 +99,11 @@ flowchart
             PerWorkflow.LogTrigger.FilterTopicsPerSlotLimit{{FilterTopicsPerSlotLimit}}:::bound
         end
         subgraph EVMLogTriggerCapability[EVM log trigger capability startup]
-            BaseTriggerRetransmitEnabled[/BaseTriggerRetransmitEnabled\]:::gate
+            PerOrg.BaseTriggerRetransmitEnabled[/PerOrg.BaseTriggerRetransmitEnabled\]:::gate
             BaseTriggerRetryInterval>BaseTriggerRetryInterval]:::time
+            BaseTriggerMaxRetries{{BaseTriggerMaxRetries}}:::bound
+            BaseTriggerPruneAge>BaseTriggerPruneAge]:::time
+            BaseTriggerMaxSendsPerTick{{BaseTriggerMaxSendsPerTick}}:::bound
         end
     end
 
@@ -122,12 +129,24 @@ flowchart
             PerWorkflow.LogLineLimit{{PerWorkflow.LogLineLimit}}:::bound
             PerWorkflow.LogEventLimit{{PerWorkflow.LogEventLimit}}:::bound
         end
+
+        subgraph metrics
+            PerWorkflow.UserMetricEnabled[/PerWorkflow.UserMetricEnabled\]:::gate
+            PerWorkflow.UserMetricPayloadLimit{{PerWorkflow.UserMetricPayloadLimit}}:::bound
+            PerWorkflow.UserMetricNameLengthLimit{{PerWorkflow.UserMetricNameLengthLimit}}:::bound
+            PerWorkflow.UserMetricLabelsPerMetric{{PerWorkflow.UserMetricLabelsPerMetric}}:::bound
+            PerWorkflow.UserMetricLabelValueLength{{PerWorkflow.UserMetricLabelValueLength}}:::bound
+
+            PerWorkflow.UserMetricEnabled-->PerWorkflow.UserMetricPayloadLimit-->PerWorkflow.UserMetricNameLengthLimit-->PerWorkflow.UserMetricLabelsPerMetric-->PerWorkflow.UserMetricLabelValueLength
+        end
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
+        PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
+        PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end

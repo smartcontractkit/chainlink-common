@@ -468,16 +468,17 @@ func mode(items []values.Value) (values.Value, int, error) {
 		}
 	}
 
-	var modes []values.Value
-	for _, ctr := range counts {
+	var tied [][32]byte
+	for sha, ctr := range counts {
 		if ctr.count == maxCount {
-			modes = append(modes, ctr.fullObservation)
+			tied = append(tied, sha)
 		}
 	}
-
-	// If more than one mode found, choose first
-
-	return modes[0], maxCount, nil
+	slices.SortFunc(tied, func(a, b [32]byte) int {
+		return bytes.Compare(a[:], b[:])
+	})
+	// If more than one mode ties for max count, pick the one with smallest content hash (stable across nodes).
+	return counts[tied[0]].fullObservation, maxCount, nil
 }
 
 func modeHasQuorum(quorumType string, count int, f int) error {

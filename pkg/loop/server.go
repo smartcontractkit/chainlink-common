@@ -5,9 +5,17 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"time"
 
+	otelpyroscope "github.com/grafana/otel-profiling-go"
+	"github.com/grafana/pyroscope-go"
 	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
+	prombridge "go.opentelemetry.io/contrib/bridges/prometheus"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -23,6 +31,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
+	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/promutil"
 )
 
 // NewStartedServer returns a started Server.
@@ -94,6 +103,8 @@ type Server struct {
 	webServer       *webServer
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
+	profiler        *pyroscope.Profiler
+	beholderClient  *beholder.Client
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -173,7 +184,17 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
+			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
+		}
+
+		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {
+			var bridgeOpts []prombridge.Option
+			if prefixes := s.EnvConfig.TelemetryPrometheusBridgePrefixes; len(prefixes) > 0 {
+				bridgeOpts = append(bridgeOpts, prombridge.WithGatherer(promutil.NewPrefixGatherer(prometheus.DefaultGatherer, prefixes)))
+			}
+			beholderCfg.MetricProducers = append(beholderCfg.MetricProducers, prombridge.NewMetricProducer(bridgeOpts...))
 		}
 
 		// Configure beholder auth - the client will determine rotating vs static mode
@@ -205,19 +226,69 @@ func (s *Server) start(opts ...ServerOpt) error {
 			beholderCfg.TraceSpanExporter = exporter
 		}
 
-		beholderClient, err := beholder.NewClient(beholderCfg)
-		if err != nil {
-			return fmt.Errorf("failed to create beholder client: %w", err)
+		if err := s.startBeholderClient(ctx, beholderCfg); err != nil {
+			return err
 		}
-		beholder.SetClient(beholderClient)
-		beholder.SetGlobalOtelProviders()
+	}
 
-		if beholderCfg.LogStreamingEnabled {
-			otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
-			if err != nil {
-				return fmt.Errorf("failed to enable log streaming: %w", err)
+	if addr := s.EnvConfig.PyroscopeServerAddress; addr != "" {
+		runtime.SetBlockProfileRate(s.EnvConfig.PyroscopePPROFBlockProfileRate)
+		runtime.SetMutexProfileFraction(s.EnvConfig.PyroscopePPROFMutexProfileFraction)
+
+		hostname, _ := os.Hostname()
+		var ver, sha, goVer, module string
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			ver = bi.Main.Version
+			sha = bi.Main.Sum
+			if len(sha) > 7 {
+				sha = sha[:7]
 			}
-			s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+			goVer = bi.GoVersion
+			module = bi.Main.Path
+		}
+
+		appName, err := os.Executable()
+		if err != nil {
+			s.Logger.Warnf("Failed to get executable name: %v", err)
+			appName = "unknown"
+		} else {
+			appName = filepath.Base(appName)
+		}
+
+		s.profiler, err = pyroscope.Start(pyroscope.Config{
+			ApplicationName: appName,
+			ServerAddress:   s.EnvConfig.PyroscopeServerAddress,
+			AuthToken:       s.EnvConfig.PyroscopeAuthToken,
+
+			Tags: map[string]string{
+				"module":      module,
+				"SHA":         sha,
+				"Version":     ver,
+				"go":          goVer,
+				"Environment": s.EnvConfig.PyroscopeEnvironment,
+				"hostname":    hostname,
+			},
+			ProfileTypes: []pyroscope.ProfileType{
+				// these profile types are enabled by default:
+				pyroscope.ProfileCPU,
+				pyroscope.ProfileAllocObjects,
+				pyroscope.ProfileAllocSpace,
+				pyroscope.ProfileInuseObjects,
+				pyroscope.ProfileInuseSpace,
+
+				// these profile types are optional:
+				pyroscope.ProfileGoroutines,
+				pyroscope.ProfileMutexCount,
+				pyroscope.ProfileMutexDuration,
+				pyroscope.ProfileBlockCount,
+				pyroscope.ProfileBlockDuration,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to start pyroscope profiler: %w", err)
+		}
+		if tracingConfig.Enabled && s.EnvConfig.PyroscopeLinkTracesToProfiles {
+			otel.SetTracerProvider(otelpyroscope.NewTracerProvider(otel.GetTracerProvider()))
 		}
 	}
 
@@ -281,8 +352,34 @@ func (s *Server) MustRegister(c services.HealthReporter) {
 
 func (s *Server) Register(c services.HealthReporter) error { return s.checker.Register(c) }
 
+func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.Config) error {
+	beholderClient, err := beholder.NewClient(beholderCfg)
+	if err != nil {
+		return fmt.Errorf("failed to create beholder client: %w", err)
+	}
+	if err := beholderClient.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start beholder client: %w", err)
+	}
+	s.beholderClient = beholderClient
+	beholder.SetClient(beholderClient)
+	beholder.SetGlobalOtelProviders()
+
+	if beholderCfg.LogStreamingEnabled {
+		otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
+		if err != nil {
+			return fmt.Errorf("failed to enable log streaming: %w", err)
+		}
+		s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
+	}
+
+	return nil
+}
+
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
+	if s.beholderClient != nil {
+		s.Logger.ErrorIfFn(s.beholderClient.Close, "Failed to close beholder client")
+	}
 	if s.dbStatsReporter != nil {
 		s.dbStatsReporter.Stop()
 	}
@@ -291,6 +388,9 @@ func (s *Server) Stop() {
 	}
 	s.Logger.ErrorIfFn(s.checker.Close, "Failed to close health checker")
 	s.Logger.ErrorIfFn(s.webServer.Close, "Failed to close web server")
+	if s.profiler != nil {
+		s.Logger.ErrorIfFn(s.profiler.Stop, "Failed to stop pyroscope profiler")
+	}
 	if err := s.Logger.Sync(); err != nil {
 		fmt.Println("Failed to sync logger:", err)
 	}

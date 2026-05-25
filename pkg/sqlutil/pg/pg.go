@@ -8,8 +8,8 @@ import (
 
 	"github.com/XSAM/otelsql"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/scylladb/go-reflectx"
 	"go.opentelemetry.io/otel"
@@ -18,7 +18,7 @@ import (
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	// need to make sure pgx driver is registered before opening connection
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 // NOTE: This is the default level in Postgres anyway, we just make it explicit here.

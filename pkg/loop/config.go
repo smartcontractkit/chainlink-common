@@ -46,6 +46,13 @@ const (
 
 	envPromPort = "CL_PROMETHEUS_PORT"
 
+	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
+	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
+	envPyroscopeEnvironment               = "CL_PYROSCOPE_ENVIRONMENT"
+	envPyroscopeLinkTracesToProfiles      = "CL_PYROSCOPE_LINK_TRACES_TO_PROFILES"
+	envPyroscopePPROFBlockProfileRate     = "CL_PYROSCOPE_PPROF_BLOCK_PROFILE_RATE"
+	envPyroscopePPROFMutexProfileFraction = "CL_PYROSCOPE_PPROF_MUTEX_PROFILE_FRACTION"
+
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
 	envTracingSamplingRatio   = "CL_TRACING_SAMPLING_RATIO"
@@ -75,10 +82,13 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 
-	envChipIngressEndpoint           = "CL_CHIP_INGRESS_ENDPOINT"
-	envChipIngressInsecureConnection = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressEndpoint            = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressInsecureConnection  = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressBatchEmitterEnabled = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -88,6 +98,13 @@ const (
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
 	AppID string
+
+	ChipIngressEndpoint            string
+	ChipIngressInsecureConnection  bool
+	ChipIngressBatchEmitterEnabled bool
+
+	CRESettings        string
+	CRESettingsDefault string
 
 	DatabaseURL                          *config.SecretURL
 	DatabaseIdleInTxSessionTimeout       time.Duration
@@ -115,23 +132,26 @@ type EnvConfig struct {
 	MercuryTransmitterReaperMaxAge         time.Duration
 	MercuryVerboseLogging                  bool
 
-	PrometheusPort int //TODO more than just prom
+	PrometheusPort int // also serves pprof routes
 
-	TracingEnabled         bool
-	TracingCollectorTarget string
-	TracingSamplingRatio   float64
-	TracingTLSCertPath     string
-	TracingAttributes      map[string]string
+	PyroscopeAuthToken                 string
+	PyroscopeServerAddress             string
+	PyroscopeEnvironment               string
+	PyroscopeLinkTracesToProfiles      bool
+	PyroscopePPROFBlockProfileRate     int
+	PyroscopePPROFMutexProfileFraction int
 
-	TelemetryEnabled                   bool
-	TelemetryEndpoint                  string
-	TelemetryInsecureConnection        bool
-	TelemetryCACertFile                string
-	TelemetryAttributes                OtelAttributes
-	TelemetryTraceSampleRatio          float64
-	TelemetryAuthHeaders               map[string]string
-	TelemetryAuthPubKeyHex             string
-	TelemetryAuthHeadersTTL            time.Duration
+	TelemetryEnabled            bool
+	TelemetryEndpoint           string
+	TelemetryInsecureConnection bool
+	TelemetryCACertFile         string
+	TelemetryAttributes         OtelAttributes
+	TelemetryTraceSampleRatio   float64
+	TelemetryAuthHeaders        map[string]string
+	TelemetryAuthPubKeyHex      string
+	TelemetryAuthHeadersTTL     time.Duration
+	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor
+	// (batched async custom-message export vs immediate per-record export).
 	TelemetryEmitterBatchProcessor     bool
 	TelemetryEmitterExportTimeout      time.Duration
 	TelemetryEmitterExportInterval     time.Duration
@@ -146,13 +166,15 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
+	TelemetryPrometheusBridgeEnabled   bool
+	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
 
-	ChipIngressEndpoint           string
-	ChipIngressInsecureConnection bool
-
-	CRESettings        string
-	CRESettingsDefault string
+	TracingEnabled         bool
+	TracingCollectorTarget string
+	TracingSamplingRatio   float64
+	TracingTLSCertPath     string
+	TracingAttributes      map[string]string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -193,6 +215,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
+	add(envPyroscopeAuthToken, e.PyroscopeAuthToken)
+	add(envPyroscopeServerAddress, e.PyroscopeServerAddress)
+	add(envPyroscopeEnvironment, e.PyroscopeEnvironment)
+	add(envPyroscopeLinkTracesToProfiles, strconv.FormatBool(e.PyroscopeLinkTracesToProfiles))
+	add(envPyroscopePPROFBlockProfileRate, strconv.Itoa(e.PyroscopePPROFBlockProfileRate))
+	add(envPyroscopePPROFMutexProfileFraction, strconv.Itoa(e.PyroscopePPROFMutexProfileFraction))
+
 	add(envTracingEnabled, strconv.FormatBool(e.TracingEnabled))
 	add(envTracingCollectorTarget, e.TracingCollectorTarget)
 	add(envTracingSamplingRatio, strconv.FormatFloat(e.TracingSamplingRatio, 'f', -1, 64))
@@ -230,10 +259,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
+	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
+	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -352,6 +384,22 @@ func (e *EnvConfig) parse() error {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
 	}
 
+	e.PyroscopeAuthToken = os.Getenv(envPyroscopeAuthToken)
+	e.PyroscopeServerAddress = os.Getenv(envPyroscopeServerAddress)
+	e.PyroscopeEnvironment = os.Getenv(envPyroscopeEnvironment)
+	e.PyroscopeLinkTracesToProfiles, err = getBool(envPyroscopeLinkTracesToProfiles)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envPyroscopeLinkTracesToProfiles, err)
+	}
+	e.PyroscopePPROFBlockProfileRate, err = getInt(envPyroscopePPROFBlockProfileRate)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFBlockProfileRate, err)
+	}
+	e.PyroscopePPROFMutexProfileFraction, err = getInt(envPyroscopePPROFMutexProfileFraction)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFMutexProfileFraction, err)
+	}
+
 	e.TracingEnabled, err = getBool(envTracingEnabled)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s: %w", envTracingEnabled, err)
@@ -442,12 +490,21 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)
+		}
+		e.TelemetryPrometheusBridgePrefixes = strings.Split(os.Getenv(envTelemetryPrometheusBridgePrefixes), ",")
 		e.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressInsecureConnection, err)
+		}
+		e.ChipIngressBatchEmitterEnabled, err = getBool(envChipIngressBatchEmitterEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressBatchEmitterEnabled, err)
 		}
 	}
 

@@ -180,7 +180,8 @@ func TestQueryBatchHasCapacity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Handle special edge case tests that need dynamic size calculation
 			sizeLimit := tt.sizeLimit
-			if tt.name == "exactly at limit boundary" {
+			switch tt.name {
+			case "exactly at limit boundary":
 				// Calculate exact size needed for the new ID
 				newIdSize := calculateIdSize(tt.newId)
 				if newIdSize > 0 {
@@ -190,7 +191,7 @@ func TestQueryBatchHasCapacity(t *testing.T) {
 				} else {
 					sizeLimit = 0
 				}
-			} else if tt.name == "one byte over limit" {
+			case "one byte over limit":
 				// Calculate exact size needed for the new ID minus 1
 				newIdSize := calculateIdSize(tt.newId)
 				if newIdSize > 0 {
@@ -1334,14 +1335,15 @@ func TestReportBatchHasCapacity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Handle special edge case tests that need dynamic size calculation
 			sizeLimit := tt.sizeLimit
-			if tt.name == "exactly at limit boundary" {
+			switch tt.name {
+			case "exactly at limit boundary":
 				// Calculate exact size needed for the new report
 				newReportSize := calculateReportSize(tt.newReport)
 				// Always include tag and length overhead, even for empty messages
 				tagSize := varintSize(uint64(2<<3 | 2))
 				lengthSize := varintSize(uint64(newReportSize))
 				sizeLimit = tagSize + lengthSize + newReportSize
-			} else if tt.name == "one byte over limit" {
+			case "one byte over limit":
 				// Calculate exact size needed for the new report minus 1
 				newReportSize := calculateReportSize(tt.newReport)
 				// Always include tag and length overhead, even for empty messages

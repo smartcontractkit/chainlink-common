@@ -5,12 +5,18 @@
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
+	"PropagateOrgIDInRequestMetadata": "false",
+	"VaultBase64EncodingEnabled": "false",
 	"VaultForceEmptyOCRRounds": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
+	"GatewayConfidentialRelayGlobalRate": "50rps:10",
+	"GatewayConfidentialRelayPerNodeRate": "10rps:10",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
-	"BaseTriggerRetransmitEnabled": "false",
 	"BaseTriggerRetryInterval": "30s",
+	"BaseTriggerMaxRetries": "20",
+	"BaseTriggerPruneAge": "24h0m0s",
+	"BaseTriggerMaxSendsPerTick": "20",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",
@@ -29,6 +35,7 @@
 	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
 	"PerOrg": {
+		"BaseTriggerRetransmitEnabled": "false",
 		"WorkflowExecutionConcurrencyLimit": "100",
 		"ZeroBalancePruningTimeout": "24h0m0s"
 	},
@@ -53,10 +60,15 @@
 		"WASMMemoryLimit": "100mb",
 		"WASMBinarySizeLimit": "100mb",
 		"WASMCompressedBinarySizeLimit": "20mb",
-		"WASMConfigSizeLimit": "1mb",
-		"WASMSecretsSizeLimit": "1mb",
+		"WASMConfigSizeLimit": "50kb",
+		"WASMSecretsSizeLimit": "27kb",
 		"LogLineLimit": "1kb",
 		"LogEventLimit": "1000",
+		"UserMetricEnabled": "false",
+		"UserMetricPayloadLimit": "4kb",
+		"UserMetricNameLengthLimit": "128",
+		"UserMetricLabelsPerMetric": "10",
+		"UserMetricLabelValueLength": "256",
 		"ChainAllowed": {
 			"Default": "false",
 			"Values": {
@@ -132,6 +144,8 @@
 			"CallLimit": "5"
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC",
-		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
+		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureEVMWriteReportL1FeeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

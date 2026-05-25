@@ -137,71 +137,71 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	case "AccountAPTBalance":
 		input := &aptos.AccountAPTBalanceRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountAPTBalanceRequest, _ *emptypb.Empty) (*aptos.AccountAPTBalanceReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountAPTBalanceRequest, _ *emptypb.Empty) (*aptos.AccountAPTBalanceReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.AccountAPTBalance(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method AccountAPTBalance(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method AccountAPTBalance(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "View":
 		input := &aptos.ViewRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.ViewRequest, _ *emptypb.Empty) (*aptos.ViewReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.ViewRequest, _ *emptypb.Empty) (*aptos.ViewReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.View(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method View(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method View(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "TransactionByHash":
 		input := &aptos.TransactionByHashRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.TransactionByHashRequest, _ *emptypb.Empty) (*aptos.TransactionByHashReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.TransactionByHashRequest, _ *emptypb.Empty) (*aptos.TransactionByHashReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.TransactionByHash(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method TransactionByHash(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method TransactionByHash(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "AccountTransactions":
 		input := &aptos.AccountTransactionsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountTransactionsRequest, _ *emptypb.Empty) (*aptos.AccountTransactionsReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.AccountTransactionsRequest, _ *emptypb.Empty) (*aptos.AccountTransactionsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.AccountTransactions(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method AccountTransactions(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method AccountTransactions(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":
 		input := &aptos.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.WriteReportRequest, _ *emptypb.Empty) (*aptos.WriteReportReply, capabilities.ResponseMetadata, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *aptos.WriteReportRequest, _ *emptypb.Empty) (*aptos.WriteReportReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
 			if err != nil {
-				return nil, capabilities.ResponseMetadata{}, err
+				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
-				return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
-			return output.Response, output.ResponseMetadata, err
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

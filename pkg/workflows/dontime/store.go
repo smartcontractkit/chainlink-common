@@ -151,12 +151,3 @@ func (s *Store) deleteExecutionID(executionID string) {
 	delete(s.donTimes, executionID)
 	delete(s.requests, executionID)
 }
-
-func (s *Store) deleteExecutionIDs(executionIDs []string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, id := range executionIDs {
-		delete(s.donTimes, id)
-		delete(s.requests, id)
-	}
-}

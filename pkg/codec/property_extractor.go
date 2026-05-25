@@ -207,7 +207,7 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 			return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
 		}
 
-		if prevLocation.Type.Kind() == reflect.Ptr {
+		if prevLocation.Type.Kind() == reflect.Pointer {
 			if prevLocation.Type.Elem().Kind() == reflect.Slice {
 				prevIsSlice = true
 			}
@@ -470,7 +470,7 @@ type NoSliceUnderFieldPathError struct {
 }
 
 func (e *NoSliceUnderFieldPathError) Error() string {
-	return fmt.Sprintf("field path did not resolve to a slice")
+	return "field path did not resolve to a slice"
 }
 
 func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Value, error) {
@@ -478,7 +478,7 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 	var prevIsSlice bool
 
 	if rootType == nil {
-		return reflect.Value{}, fmt.Errorf("root type is nil")
+		return reflect.Value{}, errors.New("root type is nil")
 	}
 
 	typ := derefTypePtr(rootType)

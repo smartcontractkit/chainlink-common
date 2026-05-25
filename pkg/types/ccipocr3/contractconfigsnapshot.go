@@ -85,7 +85,13 @@ type ConfigInfo struct {
 }
 
 type RMNCurseResponse struct {
-	CursedSubjects [][16]byte
+	// CursedSubjects is a list of cursed subjects.
+	//
+	// Note that the mapstructure tag is required for correct decoding of the response
+	// from the EVM RPC. Due to the field named `CursedSubjects` not matching
+	// the named return `subjects` from the contract, without it the codec would silently
+	// ignore the field and not populate it with the cursed subjects from the contract.
+	CursedSubjects [][16]byte `mapstructure:"subjects"`
 }
 
 // OffRampStaticChainConfig is used to parse the response from the offRamp contract's getStaticConfig method.

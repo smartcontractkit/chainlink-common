@@ -84,7 +84,7 @@ func (h *Request) SendRequestReader() (responseBody io.ReadCloser, statusCode in
 	elapsed := time.Since(start)
 	logger.Sugared(h.Logger).Tracew(fmt.Sprintf("http adapter got %v in %s", statusCode, elapsed), "statusCode", statusCode, "timeElapsedSeconds", elapsed)
 
-	var source io.ReadCloser = r.Body
+	var source = r.Body
 	if h.Config.SizeLimit > 0 {
 		source = http.MaxBytesReader(&noOpResponseWriter{}, r.Body, h.Config.SizeLimit)
 	}

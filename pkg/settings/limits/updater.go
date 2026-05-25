@@ -53,7 +53,6 @@ func (u *updater[N]) Close() error {
 	})
 	<-u.done
 	return nil
-
 }
 
 func (u *updater[N]) updateCtx(ctx context.Context) {
@@ -109,7 +108,7 @@ func (u *updater[N]) updateLoop(ctx context.Context) {
 
 		case newCtx := <-u.ctxCh:
 			cancel()
-			ctx, cancel = u.stopCh.Ctx(newCtx)
+			ctx, cancel = u.stopCh.Ctx(newCtx) //nolint
 			if u.subFn != nil {
 				cancelSub()
 				updates, cancelSub = u.subFn(ctx)

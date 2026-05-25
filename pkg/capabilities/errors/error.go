@@ -1,6 +1,8 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Origin int
 
@@ -108,6 +110,12 @@ func NewPublicSystemError(err error, errorCode ErrorCode) Error {
 // with other nodes in the network.
 func NewPublicUserError(err error, errorCode ErrorCode) Error {
 	return NewError(err, VisibilityPublic, OriginUser, errorCode)
+}
+
+// NewLimitExceededError creates a public user error that embeds the provided limit error, indicating that a CRE limit
+// has been exceeded. The error message will include the provided errorMsg as a prefix for additional context.
+func NewLimitExceededError(errorMsg string, err error) Error {
+	return NewPublicUserError(fmt.Errorf("%s: %w", errorMsg, err), LimitExceeded)
 }
 
 // NewPrivateSystemError indicates that the wrapped error is due to a system-level issue and may contain

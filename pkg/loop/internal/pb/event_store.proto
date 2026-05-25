@@ -14,6 +14,8 @@ message PendingEventProto {
   google.protobuf.Timestamp first_at = 4;
   google.protobuf.Timestamp last_sent_at = 5;
   int32 attempts = 6;
+  // CRE organization id for the workflow that registered the trigger; used for org-scoped retransmit policy.
+  string org_id = 7;
 }
 
 message InsertEventRequest {

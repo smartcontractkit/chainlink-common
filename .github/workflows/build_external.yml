@@ -34,7 +34,9 @@ jobs:
 
   build-chainlink:
     needs: init
-    environment: integration
+    environment:
+      name: integration
+      deployment: false
     permissions:
       contents: read
       id-token: write
@@ -76,7 +78,9 @@ jobs:
 
   solana-build-relay:
     needs: init
-    environment: integration
+    environment:
+      name: integration
+      deployment: false
     permissions:
       id-token: write
       contents: read
@@ -115,7 +119,9 @@ jobs:
 
   starknet-build-relay:
     needs: init
-    environment: integration
+    environment:
+      name: integration
+      deployment: false
     permissions:
       id-token: write
       contents: read

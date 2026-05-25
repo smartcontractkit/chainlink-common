@@ -13,7 +13,7 @@ const (
 )
 
 func TestHandler_DecodeRequest(t *testing.T) {
-	var paramsStr string = "params"
+	var paramsStr = "params"
 	rawParams, err := json.Marshal(paramsStr)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -117,7 +117,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 
 func TestHandler_EncodeRequest(t *testing.T) {
 	t.Run("json.RawMessage", func(t *testing.T) {
-		var paramsStr string = "params"
+		var paramsStr = "params"
 		rawParams, err := json.Marshal(paramsStr)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)

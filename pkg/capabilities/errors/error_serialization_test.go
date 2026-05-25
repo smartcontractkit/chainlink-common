@@ -2,7 +2,6 @@ package errors_test
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,7 +13,7 @@ func TestErrorSerializationAndDeserialization(t *testing.T) {
 	// Assuming you have types: Visibility, Origin, and a custom Error type with serialization logic.
 	visibilities := []caperrors.Visibility{caperrors.VisibilityPublic, caperrors.VisibilityPrivate}
 	origins := []caperrors.Origin{caperrors.OriginUser, caperrors.OriginSystem}
-	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InvalidArgument}
+	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InsufficientObservations, caperrors.InvalidArgument}
 
 	for _, v := range visibilities {
 		for _, o := range origins {
@@ -34,7 +33,7 @@ func TestRemoteErrorSerializationAndDeserialization(t *testing.T) {
 	// Assuming you have types: Visibility, Origin, and a custom Error type with serialization logic.
 	visibilities := []caperrors.Visibility{caperrors.VisibilityPublic, caperrors.VisibilityPrivate}
 	origins := []caperrors.Origin{caperrors.OriginUser, caperrors.OriginSystem}
-	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InvalidArgument}
+	errorCodes := []caperrors.ErrorCode{caperrors.Unknown, caperrors.ConsensusFailed, caperrors.InsufficientObservations, caperrors.InvalidArgument}
 
 	for _, v := range visibilities {
 		for _, o := range origins {
@@ -46,7 +45,7 @@ func TestRemoteErrorSerializationAndDeserialization(t *testing.T) {
 					require.Equal(t, deserializedErr.Visibility(), originalErr.Visibility())
 					require.Equal(t, deserializedErr.Origin(), originalErr.Origin())
 					require.Equal(t, deserializedErr.Code(), originalErr.Code())
-					require.True(t, strings.Contains(deserializedErr.Error(), "error whilst executing capability - the error message is not publicly reportable"))
+					require.Contains(t, deserializedErr.Error(), "error whilst executing capability - the error message is not publicly reportable")
 				} else {
 					if !originalErr.Equals(deserializedErr) {
 						t.Errorf("expected %v, got %v", originalErr, deserializedErr)

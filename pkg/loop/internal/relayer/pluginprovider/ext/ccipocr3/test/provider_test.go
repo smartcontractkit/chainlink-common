@@ -45,11 +45,11 @@ func TestCCIPProvider(t *testing.T) {
 	codec := provider.Codec()
 
 	// Test ChainSpecificAddressCodec
-	addrStr, err := codec.ChainSpecificAddressCodec.AddressBytesToString([]byte("test"))
+	addrStr, err := codec.AddressBytesToString([]byte("test"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, addrStr)
 
-	addrBytes, err := codec.ChainSpecificAddressCodec.AddressStringToBytes("test")
+	addrBytes, err := codec.AddressStringToBytes("test")
 	assert.NoError(t, err)
 	assert.NotNil(t, addrBytes)
 
@@ -70,16 +70,16 @@ func TestCCIPProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test TokenDataEncoder
-	encodedUSDC, err := codec.TokenDataEncoder.EncodeUSDC(ctx, []byte("message"), []byte("attestation"))
+	encodedUSDC, err := codec.EncodeUSDC(ctx, []byte("message"), []byte("attestation"))
 	assert.NoError(t, err)
 	assert.NotNil(t, encodedUSDC)
 
 	// Test SourceChainExtraDataCodec
-	extraArgs, err := codec.SourceChainExtraDataCodec.DecodeExtraArgsToMap([]byte("test-extra-args"))
+	extraArgs, err := codec.DecodeExtraArgsToMap([]byte("test-extra-args"))
 	assert.NoError(t, err)
 	assert.NotNil(t, extraArgs)
 
-	destExecData, err := codec.SourceChainExtraDataCodec.DecodeDestExecDataToMap([]byte("test-dest-exec-data"))
+	destExecData, err := codec.DecodeDestExecDataToMap([]byte("test-dest-exec-data"))
 	assert.NoError(t, err)
 	assert.NotNil(t, destExecData)
 
@@ -112,7 +112,7 @@ func TestCCIPProvider(t *testing.T) {
 		},
 	}
 
-	hash, err := codec.MessageHasher.Hash(ctx, testMessage)
+	hash, err := codec.Hash(ctx, testMessage)
 	assert.NoError(t, err)
 	assert.NotNil(t, hash)
 }

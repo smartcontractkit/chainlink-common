@@ -211,15 +211,15 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
             input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
             config := &{{ConfigType $service}}{}
             {{- if eq "emptypb.Empty" (ConfigType $service) }}
-            wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, error) {
+            wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
                 output, err := c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
                 if err != nil {
-                    return nil, capabilities.ResponseMetadata{}, err
+                    return nil, capabilities.ResponseMetadata{}, nil, err
                 }
                 if output == nil {
-                    return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
+                    return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
                 }
-                return output.Response, output.ResponseMetadata, err
+                return output.Response, output.ResponseMetadata, output.OCRAttestation, err
             }
             return capabilities.Execute(ctx, request, input, config, wrapped)
             {{- else }}
@@ -233,12 +233,12 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
              wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, error) {
                  output, err := c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
                  if err != nil {
-                    return nil, capabilities.ResponseMetadata{}, err
+                    return nil, capabilities.ResponseMetadata{}, nil, err
                  }
                  if output == nil {
-                     return nil, capabilities.ResponseMetadata{}, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
+                     return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
                  }
-                 return output.Response, output.ResponseMetadata, err
+                 return output.Response, output.ResponseMetadata, output.OCRAttestation, err
              }
              return capabilities.Execute(ctx, request, input, config, wrapped)
              {{- else }}

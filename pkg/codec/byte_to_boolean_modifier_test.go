@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -11,11 +10,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
-
-// ptrUint8 is a helper that returns a pointer to a uint8.
-func ptrUint8(u uint8) *uint8 {
-	return &u
-}
 
 // deepEqualPtrTestStruct compares two values of type ptrTestStruct.
 func deepEqualPtrTestStruct(a any, b any) bool {
@@ -47,7 +41,7 @@ func TestBoolToByteModifier(t *testing.T) {
 	t.Run("RetypeToOffChain returns error if field type is not convertible", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
 		_, err := converter.RetypeToOffChain(reflect.TypeOf(testInvalidStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain converts uint8 to bool", func(t *testing.T) {
@@ -190,7 +184,7 @@ func TestBoolToByteModifier(t *testing.T) {
 
 		expected := ptrTestStruct{
 			A: "pointer",
-			B: ptrUint8(1),
+			B: new(uint8(1)),
 		}
 		assert.True(t, deepEqualPtrTestStruct(onChainVal, expected))
 

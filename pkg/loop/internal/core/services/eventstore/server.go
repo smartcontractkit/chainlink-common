@@ -2,7 +2,7 @@ package eventstore
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,7 +24,7 @@ func NewServer(impl capabilities.EventStore) *Server {
 
 func (s *Server) Insert(ctx context.Context, req *pb.InsertEventRequest) (*emptypb.Empty, error) {
 	if s.impl == nil {
-		return nil, fmt.Errorf("event store implementation is nil")
+		return nil, errors.New("event store implementation is nil")
 	}
 	ev := req.GetEvent()
 	rec := capabilities.PendingEvent{
@@ -32,6 +32,7 @@ func (s *Server) Insert(ctx context.Context, req *pb.InsertEventRequest) (*empty
 		EventId:   ev.GetEventId(),
 		Payload:   ev.GetPayload(),
 		Attempts:  int(ev.GetAttempts()),
+		OrgID:     ev.GetOrgId(),
 	}
 	if t := ev.GetFirstAt(); t != nil {
 		rec.FirstAt = t.AsTime()
@@ -47,7 +48,7 @@ func (s *Server) Insert(ctx context.Context, req *pb.InsertEventRequest) (*empty
 
 func (s *Server) UpdateDelivery(ctx context.Context, req *pb.UpdateDeliveryRequest) (*emptypb.Empty, error) {
 	if s.impl == nil {
-		return nil, fmt.Errorf("event store implementation is nil")
+		return nil, errors.New("event store implementation is nil")
 	}
 	var lastSentAt = req.GetLastSentAt().AsTime()
 	if err := s.impl.UpdateDelivery(ctx, req.GetTriggerId(), req.GetEventId(), lastSentAt, int(req.GetAttempts())); err != nil {
@@ -58,7 +59,7 @@ func (s *Server) UpdateDelivery(ctx context.Context, req *pb.UpdateDeliveryReque
 
 func (s *Server) List(ctx context.Context, _ *emptypb.Empty) (*pb.ListEventsResponse, error) {
 	if s.impl == nil {
-		return nil, fmt.Errorf("event store implementation is nil")
+		return nil, errors.New("event store implementation is nil")
 	}
 	events, err := s.impl.List(ctx)
 	if err != nil {
@@ -74,6 +75,7 @@ func (s *Server) List(ctx context.Context, _ *emptypb.Empty) (*pb.ListEventsResp
 			Payload:   ev.Payload,
 			FirstAt:   timestamppb.New(ev.FirstAt),
 			Attempts:  int32(ev.Attempts),
+			OrgId:     ev.OrgID,
 		}
 		if !ev.LastSentAt.IsZero() {
 			pev.LastSentAt = timestamppb.New(ev.LastSentAt)
@@ -85,7 +87,7 @@ func (s *Server) List(ctx context.Context, _ *emptypb.Empty) (*pb.ListEventsResp
 
 func (s *Server) DeleteEvent(ctx context.Context, req *pb.DeleteEventRequest) (*emptypb.Empty, error) {
 	if s.impl == nil {
-		return nil, fmt.Errorf("event store implementation is nil")
+		return nil, errors.New("event store implementation is nil")
 	}
 	if err := s.impl.DeleteEvent(ctx, req.GetTriggerId(), req.GetEventId()); err != nil {
 		return nil, err
@@ -95,7 +97,7 @@ func (s *Server) DeleteEvent(ctx context.Context, req *pb.DeleteEventRequest) (*
 
 func (s *Server) DeleteEventsForTrigger(ctx context.Context, req *pb.DeleteEventsForTriggerRequest) (*emptypb.Empty, error) {
 	if s.impl == nil {
-		return nil, fmt.Errorf("event store implementation is nil")
+		return nil, errors.New("event store implementation is nil")
 	}
 	if err := s.impl.DeleteEventsForTrigger(ctx, req.GetTriggerId()); err != nil {
 		return nil, err

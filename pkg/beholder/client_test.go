@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type MockExporter struct {
@@ -191,6 +192,7 @@ func TestClient_Close(t *testing.T) {
 	client, err := beholder.NewStdoutClient()
 	require.NoError(t, err)
 
+	require.NoError(t, client.Start(t.Context()))
 	err = client.Close()
 	require.NoError(t, err)
 
@@ -220,7 +222,8 @@ func TestClient_ForPackage(t *testing.T) {
 	// Meter
 	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
 	counter.Add(t.Context(), 1)
-	clientForTest.Close()
+	require.NoError(t, client.Start(t.Context()))
+	require.NoError(t, clientForTest.Close())
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testMetric")
 }
@@ -495,9 +498,6 @@ func TestNewClient_Chip(t *testing.T) {
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
 
-		// Verify it implements the Client interface
-		var _ chipingress.Client = client.Chip
-
 		// Verify the emitter is configured as dual source
 		assert.NotNil(t, client.Emitter)
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
@@ -513,9 +513,6 @@ func TestNewClient_Chip(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Chip)
-
-		// Verify it implements the Client interface
-		var _ chipingress.Client = client.Chip
 
 		// Verify emitter is not dual source when dual emitter is disabled
 		assert.NotNil(t, client.Emitter)
@@ -547,13 +544,11 @@ func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
 }
 
 func TestNewGRPCClientRotatingAuth(t *testing.T) {
-
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	pubKeyHex := hex.EncodeToString(pubKey)
 
 	t.Run("successful rotating auth setup", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -575,7 +570,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("error when public key hex is empty but TTL is set", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthPublicKeyHex:         "",               // Empty public key hex
@@ -594,7 +588,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("error when TTL is too short", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -616,7 +609,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 	})
 
 	t.Run("error when public key hex is invalid", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -640,7 +632,6 @@ func TestNewGRPCClientRotatingAuth(t *testing.T) {
 
 func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 	t.Run("uses static auth when no rotating auth is configured", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			AuthHeaders: map[string]string{
@@ -659,7 +650,6 @@ func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 	})
 
 	t.Run("no auth when neither rotating nor static auth is configured", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "localhost:4317",
 			InsecureConnection:       true,
@@ -676,13 +666,11 @@ func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
 }
 
 func TestNewGRPCClientChipIngressAuth(t *testing.T) {
-
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	pubKeyHex := hex.EncodeToString(pubKey)
 
 	t.Run("chip ingress with rotating auth", func(t *testing.T) {
-
 		mockSigner := &MockSigner{}
 
 		cfg := beholder.Config{
@@ -733,7 +721,6 @@ func TestNewGRPCClientChipIngressAuth(t *testing.T) {
 	})
 
 	t.Run("chip ingress with no auth", func(t *testing.T) {
-
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint:       "localhost:4317",
 			ChipIngressEmitterEnabled:      true,
@@ -940,5 +927,94 @@ func TestChipIngressClient(t *testing.T) {
 
 		err := mockClient.Close()
 		assert.NoError(t, err)
+	})
+}
+
+// TestClient_batchEmitterService groups lifecycle and construction tests for the
+// ChipIngress batch emitter sub-service embedded in the beholder Client.
+func TestClient_batchEmitterService(t *testing.T) {
+	newBatchClient := func(t *testing.T) *beholder.Client {
+		t.Helper()
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			// Use simple exporter in this lifecycle test to avoid batch flush/shutdown delays.
+			EmitterBatchProcessor:          false,
+			LogBatchProcessor:              false,
+			LogRetryConfig:                 &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			TraceRetryConfig:               &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			MetricRetryConfig:              &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressBatchEmitterEnabled: true,
+			ChipIngressLogger:              newTestLogger(t),
+			ChipIngressBufferSize:          10,
+			ChipIngressMaxBatchSize:        5,
+			ChipIngressSendInterval:        50 * time.Millisecond,
+			ChipIngressSendTimeout:         1 * time.Second,
+			ChipIngressDrainTimeout:        1 * time.Second,
+		})
+		require.NoError(t, err)
+		return client
+	}
+
+	// startsWithClient: batch emitter sub-service starts and stops with the Client lifecycle.
+	t.Run("starts with client", func(t *testing.T) {
+		client := newBatchClient(t)
+
+		// Before Start: service is unready and incomplete emit fails validation.
+		assert.ErrorContains(t, client.Service.Ready(), "not started")
+		err := client.Emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+			// AttrKeyDataSchema intentionally omitted — triggers required-field validation error.
+		)
+		assert.ErrorContains(t, err, "BeholderDataSchema")
+
+		require.NoError(t, client.Service.Start(t.Context()))
+		assert.NoError(t, client.Service.Ready())
+		_ = client.Close()
+	})
+
+	// emitSucceedsBeforeStart: a fully-valid Emit returns no error before Start.
+	// The OTLP path is always active; the batch emitter's service-not-started error is
+	// swallowed by DualSourceEmitter and only logged.
+	t.Run("emit succeeds before start", func(t *testing.T) {
+		client := newBatchClient(t)
+
+		assert.ErrorContains(t, client.Service.Ready(), "not started")
+
+		err := client.Emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+			beholder.AttrKeyDataSchema, "test-schema",
+		)
+		assert.NoError(t, err, "emit must not fail when service is not yet started")
+
+		require.NoError(t, client.Service.Start(t.Context()))
+		assert.NoError(t, client.Service.Ready())
+		_ = client.Close()
+	})
+
+	// closeWithoutStart: strict service semantics require Start before Close.
+	t.Run("close without start", func(t *testing.T) {
+		client := newBatchClient(t)
+		err := client.Close()
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, services.ErrCannotStopUnstarted)
+	})
+
+	// requiresLogger: constructing with batch emitter enabled but no logger returns an error.
+	t.Run("requires logger", func(t *testing.T) {
+		_, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressBatchEmitterEnabled: true,
+			ChipIngressLogger:              nil,
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ChipIngressLogger")
 	})
 }

@@ -34,7 +34,7 @@ func TestCommitService(t *testing.T) {
 		require.NotPanics(t, func() { commit.Name() })
 	})
 
-	hook := commit.PluginService.XXXTestHook()
+	hook := commit.XXXTestHook()
 	servicetest.Run(t, commit)
 
 	t.Run("control", func(t *testing.T) {

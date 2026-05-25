@@ -22,7 +22,7 @@ func TestMedianService(t *testing.T) {
 	median := loop.NewMedianService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMedianName, false, 0)
 	}, mediantest.MedianProvider(lggr), mediantest.MedianContractID, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.GasPriceSubunitsDataSource, errorlogtest.ErrorLog, nil)
-	hook := median.PluginService.XXXTestHook()
+	hook := median.XXXTestHook()
 	servicetest.Run(t, median)
 
 	t.Run("control", func(t *testing.T) {

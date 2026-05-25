@@ -1,3 +1,3 @@
 module github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb
 
-go 1.24.5
+go 1.26.2

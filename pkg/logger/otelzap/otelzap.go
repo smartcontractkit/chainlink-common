@@ -25,7 +25,6 @@ type Option func(c *OtelZapCore)
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
 func NewCore(logger otellog.Logger, opts ...Option) zapcore.Core {
-
 	c := &OtelZapCore{
 		logger:       logger,
 		levelEnabler: zapcore.InfoLevel,
@@ -108,6 +107,11 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	// Add caller information if available
 	if entry.Caller.Defined {
 		attributes = append(attributes, attribute.String("caller", entry.Caller.String()))
+	}
+
+	// Add zap logger name when present
+	if entry.LoggerName != "" {
+		attributes = append(attributes, attribute.String("logger", entry.LoggerName))
 	}
 
 	// Add exception metadata for error levels

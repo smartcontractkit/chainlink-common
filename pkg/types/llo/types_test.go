@@ -136,15 +136,15 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 
 	t.Run("different DisableNilStreamValues", func(t *testing.T) {
 		a := ChannelDefinition{
-			ReportFormat:          ReportFormatJSON,
-			Streams:               []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
-			Opts:                  nil,
+			ReportFormat:           ReportFormatJSON,
+			Streams:                []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:                   nil,
 			DisableNilStreamValues: true,
 		}
 		b := ChannelDefinition{
-			ReportFormat:          ReportFormatJSON,
-			Streams:               []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
-			Opts:                  nil,
+			ReportFormat:           ReportFormatJSON,
+			Streams:                []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:                   nil,
 			DisableNilStreamValues: false,
 		}
 		assert.False(t, a.Equals(b))
@@ -208,14 +208,14 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		c := ChannelDefinitions{
 			0: {
-				ReportFormat:          ReportFormatJSON,
-				Streams:               []Stream{{1, AggregatorMedian}, {2, AggregatorMode}},
-				Opts:                  nil,
-				Source:                1,
+				ReportFormat:           ReportFormatJSON,
+				Streams:                []Stream{{1, AggregatorMedian}, {2, AggregatorMode}},
+				Opts:                   nil,
+				Source:                 1,
 				DisableNilStreamValues: true,
 			},
 			1: {
-				ReportFormat:          ReportFormatEVMPremiumLegacy,
+				ReportFormat:           ReportFormatEVMPremiumLegacy,
 				Streams:                []Stream{{1, AggregatorMedian}, {2, AggregatorMedian}, {3, AggregatorQuote}},
 				Opts:                   []byte(`{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}`),
 				Source:                 2,

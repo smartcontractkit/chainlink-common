@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -76,7 +77,7 @@ func (c *AdapterClient) NewMercuryV1Factory(ctx context.Context,
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(providerRes)
 
@@ -85,13 +86,13 @@ func (c *AdapterClient) NewMercuryV1Factory(ctx context.Context,
 			DataSourceV1ID:    dataSourceID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return reply.MercuryV1FactoryID, deps, nil
 	}
 
 	cc := c.NewClientConn("MercuryV3Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
@@ -124,7 +125,7 @@ func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(providerRes)
 
@@ -133,13 +134,13 @@ func (c *AdapterClient) NewMercuryV2Factory(ctx context.Context,
 			DataSourceV2ID:    dataSourceID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return reply.MercuryV2FactoryID, deps, nil
 	}
 
 	cc := c.NewClientConn("MercuryV2Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
@@ -174,7 +175,7 @@ func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(providerRes)
 
@@ -183,13 +184,13 @@ func (c *AdapterClient) NewMercuryV3Factory(ctx context.Context,
 			DataSourceV3ID:    dataSourceID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return reply.MercuryV3FactoryID, deps, nil
 	}
 
 	cc := c.NewClientConn("MercuryV3Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 func (c *AdapterClient) NewMercuryV4Factory(ctx context.Context,
@@ -224,7 +225,7 @@ func (c *AdapterClient) NewMercuryV4Factory(ctx context.Context,
 			})
 		}
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(providerRes)
 
@@ -233,13 +234,13 @@ func (c *AdapterClient) NewMercuryV4Factory(ctx context.Context,
 			DataSourceV4ID:    dataSourceID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return reply.MercuryV4FactoryID, deps, nil
 	}
 
 	cc := c.NewClientConn("MercuryV4Factory", newMercuryClientFn)
-	return NewPluginFactoryClient(c.PluginClient.BrokerExt, cc), nil
+	return NewPluginFactoryClient(c.BrokerExt, cc), nil
 }
 
 var _ mercurypb.MercuryAdapterServer = (*AdapterServer)(nil)

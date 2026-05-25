@@ -24,7 +24,7 @@ func TestMercuryV4Service(t *testing.T) {
 	mercuryV4 := loop.NewMercuryV4Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
 	}, mercurytest.MercuryProvider(lggr), mercuryv4test.DataSource)
-	hook := mercuryV4.PluginService.XXXTestHook()
+	hook := mercuryV4.XXXTestHook()
 	servicetest.Run(t, mercuryV4)
 
 	t.Run("control", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestMercuryV3Service(t *testing.T) {
 	mercuryV3 := loop.NewMercuryV3Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
 	}, mercurytest.MercuryProvider(lggr), mercuryv3test.DataSource)
-	hook := mercuryV3.PluginService.XXXTestHook()
+	hook := mercuryV3.XXXTestHook()
 	servicetest.Run(t, mercuryV3)
 
 	t.Run("control", func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestMercuryV1Service(t *testing.T) {
 	mercuryV1 := loop.NewMercuryV1Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
 	}, mercurytest.MercuryProvider(lggr), mercuryv1test.DataSource)
-	hook := mercuryV1.PluginService.XXXTestHook()
+	hook := mercuryV1.XXXTestHook()
 	servicetest.Run(t, mercuryV1)
 
 	t.Run("control", func(t *testing.T) {
@@ -171,7 +171,7 @@ func TestMercuryV2Service(t *testing.T) {
 	mercuryV2 := loop.NewMercuryV2Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
 	}, mercurytest.MercuryProvider(lggr), mercuryv2test.DataSource)
-	hook := mercuryV2.PluginService.XXXTestHook()
+	hook := mercuryV2.XXXTestHook()
 	servicetest.Run(t, mercuryV2)
 
 	t.Run("control", func(t *testing.T) {

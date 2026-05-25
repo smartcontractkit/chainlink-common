@@ -92,7 +92,7 @@ func (builder *PanelBuilder) GridPos(gridPos dashboard.GridPos) *PanelBuilder {
 
 // Panel height. The height is the number of rows from the top edge of the panel.
 func (builder *PanelBuilder) Height(h uint32) *PanelBuilder {
-	if !(h > 0) {
+	if h <= 0 {
 		builder.errors["h"] = cog.MakeBuildErrors("h", errors.New("h must be > 0"))
 		return builder
 	}
@@ -106,11 +106,11 @@ func (builder *PanelBuilder) Height(h uint32) *PanelBuilder {
 
 // Panel width. The width is the number of columns from the left edge of the panel.
 func (builder *PanelBuilder) Span(w uint32) *PanelBuilder {
-	if !(w > 0) {
+	if w <= 0 {
 		builder.errors["w"] = cog.MakeBuildErrors("w", errors.New("w must be > 0"))
 		return builder
 	}
-	if !(w <= 24) {
+	if w > 24 {
 		builder.errors["w"] = cog.MakeBuildErrors("w", errors.New("w must be <= 24"))
 		return builder
 	}

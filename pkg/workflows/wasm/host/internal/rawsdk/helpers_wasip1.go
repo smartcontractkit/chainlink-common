@@ -231,6 +231,9 @@ func SwitchModes(mode int32)
 //go:wasmimport env now
 func now(response unsafe.Pointer) int32
 
+//go:wasmimport env sleep
+func sleep(ms int32)
+
 //go:wasmimport env call_capability
 func callCapability(req unsafe.Pointer, reqLen int32) int64
 

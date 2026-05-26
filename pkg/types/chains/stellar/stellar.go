@@ -2,7 +2,6 @@ package stellar
 
 import (
 	"context"
-	"time"
 )
 
 type ScErrorType int32
@@ -125,7 +124,7 @@ type ScVal struct {
 	U64       *uint64
 	I64       *int64
 	Timepoint *uint64
-	Duration  time.Duration
+	Duration  *uint64
 
 	U128 *UInt128Parts
 	I128 *Int128Parts

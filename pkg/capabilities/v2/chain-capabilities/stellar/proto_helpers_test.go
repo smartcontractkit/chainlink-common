@@ -328,7 +328,8 @@ func TestScVal_Timepoint(t *testing.T) {
 }
 
 func TestScVal_Duration(t *testing.T) {
-	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeDuration, Duration: 3600}
+	d := uint64(3600)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeDuration, Duration: &d}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 

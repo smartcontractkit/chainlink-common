@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
 	stellarservicetypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
@@ -138,7 +137,10 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Timepoint{Timepoint: *sv.Timepoint}}, nil
 	case stellarservicetypes.ScValTypeDuration:
-		return &scval.ScVal{Value: &scval.ScVal_Duration{Duration: uint64(sv.Duration)}}, nil
+		if sv.Duration == nil {
+			return nil, fmt.Errorf("scvDuration: nil")
+		}
+		return &scval.ScVal{Value: &scval.ScVal_Duration{Duration: *sv.Duration}}, nil
 	case stellarservicetypes.ScValTypeU128:
 		if sv.U128 == nil {
 			return nil, fmt.Errorf("scvU128: nil")
@@ -394,7 +396,7 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		t := v.Timepoint
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeTimepoint, Timepoint: &t}, nil
 	case *scval.ScVal_Duration:
-		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeDuration, Duration: time.Duration(v.Duration)}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeDuration, Duration: &v.Duration}, nil
 	case *scval.ScVal_U128:
 		if v.U128 == nil {
 			return stellarservicetypes.ScVal{}, fmt.Errorf("scvU128: nil")
@@ -437,7 +439,8 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 			if err != nil {
 				return stellarservicetypes.ScVal{}, fmt.Errorf("vec[%d]: %w", i, err)
 			}
-			values[i] = &dv
+			elem := dv
+			values[i] = &elem
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeVec, Vec: &stellarservicetypes.ScVec{Values: values}}, nil
 	case *scval.ScVal_Map:
@@ -457,7 +460,8 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 			if err != nil {
 				return stellarservicetypes.ScVal{}, fmt.Errorf("map[%d].val: %w", i, err)
 			}
-			entries[i] = stellarservicetypes.ScMapEntry{Key: &dk, Val: &dv}
+			key, val := dk, dv
+			entries[i] = stellarservicetypes.ScMapEntry{Key: &key, Val: &val}
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeMap, Map: &stellarservicetypes.ScMap{Entries: entries}}, nil
 	case *scval.ScVal_Address:
@@ -592,7 +596,8 @@ func protoToScContractInstanceAt(inst *scval.ScContractInstance, depth int) (*st
 			if err != nil {
 				return nil, fmt.Errorf("instance.storage[%d].val: %w", i, err)
 			}
-			entries[i] = stellarservicetypes.ScMapEntry{Key: &dk, Val: &dv}
+			key, val := dk, dv
+			entries[i] = stellarservicetypes.ScMapEntry{Key: &key, Val: &val}
 		}
 		di.Storage = entries
 	}

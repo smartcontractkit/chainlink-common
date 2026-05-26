@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779787334129,
+  "lastUpdate": 1779811563173,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48000,6 +48000,66 @@ window.BENCHMARK_DATA = {
             "value": 121498,
             "unit": "ns/op",
             "extra": "9609 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b8a3d3d78a44b23df5fe947763baa7c9b8143545",
+          "message": "Cleanup usage of stellar sdk (#2089)\n\n* Remove usage of stellar sdk\n\n* Address comments\n\n* Address comments",
+          "timestamp": "2026-05-26T15:53:23Z",
+          "tree_id": "63f61ffca9ba2a3d0bf8470be042b7854528cabe",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b8a3d3d78a44b23df5fe947763baa7c9b8143545"
+        },
+        "date": 1779811559948,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 488.7,
+            "unit": "ns/op",
+            "extra": "2202390 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 84426,
+            "unit": "ns/op",
+            "extra": "13831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 387.4,
+            "unit": "ns/op",
+            "extra": "3089275 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 84331,
+            "unit": "ns/op",
+            "extra": "14137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29211,
+            "unit": "ns/op",
+            "extra": "41010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139490,
+            "unit": "ns/op",
+            "extra": "7735 times\n4 procs"
           }
         ]
       }

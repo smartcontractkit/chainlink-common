@@ -14,6 +14,7 @@ import (
 const chipDurableEventsTable = "cre.chip_durable_events"
 
 // PgDurableEventStore is a Postgres-backed implementation of DurableEventStore.
+// Tests live in chainlink/core/services/durableemitter as they require DB migrations.
 type PgDurableEventStore struct {
 	ds sqlutil.DataSource
 }

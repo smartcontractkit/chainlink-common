@@ -44,9 +44,6 @@ type SetupConfig struct {
 	// DurableEmitterEnabled gates the entire setup. Setup returns (nil, nil)
 	// when false — callers do not need an outer guard.
 	DurableEmitterEnabled bool
-	// BatchEmitterEnabled must be true when DurableEmitterEnabled is true.
-	// Setup returns an error if DurableEmitterEnabled is true but this is false.
-	BatchEmitterEnabled bool
 	// Endpoint is the gRPC address for the Chip Ingress service.
 	Endpoint string
 	// InsecureConnection disables TLS when true.
@@ -89,10 +86,6 @@ func Setup(
 ) (*DurableEmitter, error) {
 	if !cfg.DurableEmitterEnabled {
 		return nil, nil
-	}
-	if !cfg.BatchEmitterEnabled {
-		return nil, errors.New("ChipIngressBatchEmitterEnabled must be true for DurableEmitter; " +
-			"set ChipIngressBatchEmitterEnabled = true in the telemetry config")
 	}
 	if cfg.Endpoint == "" {
 		return nil, errors.New("chip ingress endpoint is required for DurableEmitter")

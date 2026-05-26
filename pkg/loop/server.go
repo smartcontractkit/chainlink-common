@@ -350,11 +350,10 @@ func (s *Server) start(opts ...ServerOpt) error {
 
 		durableCfg := durableemitter.SetupConfig{
 			DurableEmitterEnabled: s.EnvConfig.ChipIngressDurableEmitterEnabled,
-			BatchEmitterEnabled:   s.EnvConfig.ChipIngressBatchEmitterEnabled,
 			Endpoint:              s.EnvConfig.ChipIngressEndpoint,
 			InsecureConnection:    s.EnvConfig.ChipIngressInsecureConnection,
 			Auth:                  auth,
-			RetransmitEnabled:     false, // LOOP plugins do not run the retransmit loop, the host process handles it.
+			RetransmitEnabled:     false, // LOOP plugins do not run the retransmit loop; the host process handles it.
 		}
 		store := durableemitter.NewPgDurableEventStore(s.DataSource)
 		var err error

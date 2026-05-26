@@ -1,0 +1,61 @@
+{
+  "InsecureConnection": true,
+  "CACertFile": "",
+  "OtelExporterGRPCEndpoint": "localhost:4317",
+  "OtelExporterHTTPEndpoint": "localhost:4318",
+  "ResourceAttributes": [
+    {
+      "Key": "package_name",
+      "Value": {
+        "Type": "STRING",
+        "Value": "beholder"
+      }
+    },
+    {
+      "Key": "sender",
+      "Value": {
+        "Type": "STRING",
+        "Value": "beholderclient"
+      }
+    }
+  ],
+  "EmitterExportTimeout": 1000000000,
+  "EmitterExportInterval": 1000000000,
+  "EmitterExportMaxBatchSize": 512,
+  "EmitterMaxQueueSize": 2048,
+  "EmitterBatchProcessor": true,
+  "TraceSampleRatio": 1,
+  "TraceBatchTimeout": 1000000000,
+  "TraceSpanExporter": null,
+  "TraceRetryConfig": null,
+  "TraceCompressor": "gzip",
+  "MetricReaderInterval": 1000000000,
+  "MetricRetryConfig": null,
+  "MetricViews": null,
+  "MetricCompressor": "gzip",
+  "MetricProducers": null,
+  "ChipIngressEmitterEnabled": false,
+  "ChipIngressEmitterGRPCEndpoint": "",
+  "ChipIngressInsecureConnection": false,
+  "ChipIngressBatchEmitterEnabled": false,
+  "ChipIngressBufferSize": 0,
+  "ChipIngressMaxBatchSize": 0,
+  "ChipIngressSendInterval": 0,
+  "ChipIngressSendTimeout": 0,
+  "ChipIngressDrainTimeout": 0,
+  "ChipIngressMaxConcurrentSends": 0,
+  "ChipIngressLogger": null,
+  "LogExportTimeout": 1000000000,
+  "LogExportInterval": 1000000000,
+  "LogExportMaxBatchSize": 512,
+  "LogMaxQueueSize": 2048,
+  "LogBatchProcessor": true,
+  "LogRetryConfig": null,
+  "LogStreamingEnabled": false,
+  "LogLevel": "info",
+  "LogCompressor": "gzip",
+  "AuthHeaders": {},
+  "AuthHeadersTTL": 0,
+  "AuthKeySigner": null,
+  "AuthPublicKeyHex": ""
+}

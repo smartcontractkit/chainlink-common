@@ -130,6 +130,9 @@ const (
 
 	// LimitExceeded indicates that a CRE limit breach has occurred.
 	LimitExceeded ErrorCode = 101
+
+	// InsufficientObservations indicates that there are not enough observations to enable the operation to complete.
+	InsufficientObservations ErrorCode = 102
 )
 
 // String returns the string representation of the ErrorCode.
@@ -157,8 +160,9 @@ var errorCodeToString = map[ErrorCode]string{
 	Unavailable:        "Unavailable",
 	DataLoss:           "DataLoss",
 	Unauthenticated:    "Unauthenticated",
-	ConsensusFailed:    "ConsensusFailed",
-	LimitExceeded:      "LimitExceeded",
+	ConsensusFailed:          "ConsensusFailed",
+	LimitExceeded:            "LimitExceeded",
+	InsufficientObservations: "InsufficientObservations",
 }
 
 var stringToErrorCode = map[string]ErrorCode{
@@ -178,8 +182,9 @@ var stringToErrorCode = map[string]ErrorCode{
 	"Unavailable":        Unavailable,
 	"DataLoss":           DataLoss,
 	"Unauthenticated":    Unauthenticated,
-	"ConsensusFailed":    ConsensusFailed,
-	"LimitExceeded":      LimitExceeded,
+	"ConsensusFailed":          ConsensusFailed,
+	"LimitExceeded":            LimitExceeded,
+	"InsufficientObservations": InsufficientObservations,
 }
 
 func FromErrorCodeString(str string) ErrorCode {

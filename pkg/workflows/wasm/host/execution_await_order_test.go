@@ -10,6 +10,8 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
@@ -69,6 +71,7 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 	exec := &execution[*sdkpb.ExecutionResult]{
 		ctx:                 t.Context(),
 		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
+		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 		executor:            stub,
 	}
 

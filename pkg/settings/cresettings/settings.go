@@ -52,14 +52,17 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                          Int(1000),
-	WorkflowExecutionConcurrencyLimit:      Int(1000),
-	GatewayIncomingPayloadSizeLimit:        Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:          Bool(true),
-	VaultJWTAuthEnabled:                    Bool(false),
+	WorkflowLimit:                     Int(1000),
+	WorkflowExecutionConcurrencyLimit: Int(1000),
+	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:     Bool(true),
+	VaultJWTAuthEnabled:               Bool(false),
+	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
+	PropagateOrgIDInRequestMetadata:        Bool(false),
 	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
+	VaultOptimizationsEnabled:              Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
@@ -255,9 +258,11 @@ type Schema struct {
 	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
 	GatewayVaultManagementEnabled          Setting[bool]
 	VaultJWTAuthEnabled                    Setting[bool]
-	VaultOrgIdAsSecretOwnerEnabled         Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled         Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata        Setting[bool]
 	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
+	VaultOptimizationsEnabled              Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]

@@ -10,8 +10,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/stellar/go-stellar-sdk/xdr"
-
 	stelpb "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -140,22 +138,21 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 	})
 
 	t.Run("ReadContract_roundtrip", func(t *testing.T) {
-		sym := xdr.ScSymbol("transfer")
-		argVal := xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &sym}
+		sym := "transfer"
+		argVal := stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
 
-		u32 := xdr.Uint32(42)
-		resultVal := xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u32}
-		resultB64, err := xdr.MarshalBase64(resultVal)
-		require.NoError(t, err)
+		// Result is an opaque base64-XDR blob to the relayer; the test only verifies
+		// the string is delivered intact across gRPC.
+		const resultB64 = "AAAABAAAACo="
 
 		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
 			require.Equal(t, "CABC123", req.ContractID)
 			require.Equal(t, "my_fn", req.Function)
 			require.Equal(t, uint32(100), req.LedgerSequence)
 			require.Len(t, req.Args, 1)
-			require.Equal(t, xdr.ScValTypeScvSymbol, req.Args[0].Type)
-			require.NotNil(t, req.Args[0].Sym)
-			require.Equal(t, xdr.ScSymbol("transfer"), *req.Args[0].Sym)
+			require.Equal(t, stellartypes.ScValTypeSymbol, req.Args[0].Type)
+			require.NotNil(t, req.Args[0].Symbol)
+			require.Equal(t, "transfer", *req.Args[0].Symbol)
 			return stellartypes.ReadContractResponse{
 				Result:         resultB64,
 				LedgerSequence: 101,
@@ -165,19 +162,13 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
 			ContractID:     "CABC123",
 			Function:       "my_fn",
-			Args:           []xdr.ScVal{argVal},
+			Args:           []stellartypes.ScVal{argVal},
 			LedgerSequence: 100,
 		})
 		require.NoError(t, err)
 		require.Equal(t, uint32(101), resp.LedgerSequence)
 		require.Empty(t, resp.Error)
 		require.Equal(t, resultB64, resp.Result)
-
-		var gotResult xdr.ScVal
-		require.NoError(t, xdr.SafeUnmarshalBase64(resp.Result, &gotResult))
-		require.Equal(t, xdr.ScValTypeScvU32, gotResult.Type)
-		require.NotNil(t, gotResult.U32)
-		require.Equal(t, xdr.Uint32(42), *gotResult.U32)
 	})
 
 	t.Run("ReadContract_noArgs_noResult", func(t *testing.T) {

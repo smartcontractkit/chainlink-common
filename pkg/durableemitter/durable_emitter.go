@@ -158,10 +158,10 @@ type DurableEmitter struct {
 	// were spawned during the final flush can complete before we close the
 	// fallback client connection.
 	fallbackWg sync.WaitGroup
-	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
-	// Should be set to false when initialized inside LOOP plugins.
-	isHostProcess bool
-	cfg           DurableEmitterConfig
+	// retransmitEnabled controls whether this instance runs the retransmit and
+	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
+	retransmitEnabled bool
+	cfg               DurableEmitterConfig
 
 	metrics *durableEmitterMetrics
 
@@ -215,7 +215,7 @@ func NewDurableEmitter(
 	store DurableEventStore,
 	batchEmitter BatchEmitter,
 	fallbackClient chipingress.Client,
-	isHostProcess bool,
+	retransmitEnabled bool,
 	cfg DurableEmitterConfig,
 	lggr logger.Logger,
 	meter metric.Meter,
@@ -242,13 +242,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:          store,
-		batchEmitter:   batchEmitter,
-		fallbackClient: fallbackClient,
-		isHostProcess:  isHostProcess,
-		cfg:            cfg,
-		metrics:        m,
-		stopCh:         make(chan struct{}),
+		store:             store,
+		batchEmitter:      batchEmitter,
+		fallbackClient:    fallbackClient,
+		retransmitEnabled: retransmitEnabled,
+		cfg:               cfg,
+		metrics:           m,
+		stopCh:            make(chan struct{}),
 	}
 	d.Service, d.eng = services.Config{
 		Name:  "DurableEmitter",
@@ -289,7 +289,7 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		}
 	}
 
-	if d.isHostProcess {
+	if d.retransmitEnabled {
 		d.wg.Go(d.retransmitLoop)
 		if !d.cfg.DisablePruning {
 			d.wg.Go(d.expiryLoop)

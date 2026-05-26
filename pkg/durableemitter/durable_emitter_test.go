@@ -252,7 +252,7 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0 && be.callCount.Load() >= 1
-	}, 2*time.Second, 10*time.Millisecond, "batch emitter must deliver even when isHostProcess is false")
+	}, 2*time.Second, 10*time.Millisecond, "batch emitter must deliver even when retransmitEnabled is false")
 }
 
 func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {

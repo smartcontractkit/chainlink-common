@@ -2107,30 +2107,31 @@ func (x *StoredPendingQueueItem) GetId() string {
 	return ""
 }
 
-// Multiple pending queue items packed into one OCR3.1 blob payload.
-// Not persisted; wire format only. Old nodes treat blobs as single StoredPendingQueueItem.
-type StoredPendingQueueBatch struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
-	Items         []*StoredPendingQueueItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	IsBatch       bool                      `protobuf:"varint,3,opt,name=is_batch,json=isBatch,proto3" json:"is_batch,omitempty"` // Disambiguates from single StoredPendingQueueItem during unmarshalling
+// Wire format for pending queue blobs. Not persisted.
+// When is_batch=false, wire-compatible with StoredPendingQueueItem (field 1 = Any, field 2 = string).
+type PendingQueueBlobItems struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*anypb.Any           `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`                     // non-batch: raw payload Any; batch: each Any wraps a StoredPendingQueueItem
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                           // non-batch: request ID; batch: empty
+	IsBatch       bool                   `protobuf:"varint,3,opt,name=is_batch,json=isBatch,proto3" json:"is_batch,omitempty"` // disambiguates single-item from batch during unmarshalling
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StoredPendingQueueBatch) Reset() {
-	*x = StoredPendingQueueBatch{}
+func (x *PendingQueueBlobItems) Reset() {
+	*x = PendingQueueBlobItems{}
 	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StoredPendingQueueBatch) String() string {
+func (x *PendingQueueBlobItems) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StoredPendingQueueBatch) ProtoMessage() {}
+func (*PendingQueueBlobItems) ProtoMessage() {}
 
-func (x *StoredPendingQueueBatch) ProtoReflect() protoreflect.Message {
+func (x *PendingQueueBlobItems) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2142,19 +2143,26 @@ func (x *StoredPendingQueueBatch) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StoredPendingQueueBatch.ProtoReflect.Descriptor instead.
-func (*StoredPendingQueueBatch) Descriptor() ([]byte, []int) {
+// Deprecated: Use PendingQueueBlobItems.ProtoReflect.Descriptor instead.
+func (*PendingQueueBlobItems) Descriptor() ([]byte, []int) {
 	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *StoredPendingQueueBatch) GetItems() []*StoredPendingQueueItem {
+func (x *PendingQueueBlobItems) GetItems() []*anypb.Any {
 	if x != nil {
 		return x.Items
 	}
 	return nil
 }
 
-func (x *StoredPendingQueueBatch) GetIsBatch() bool {
+func (x *PendingQueueBlobItems) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *PendingQueueBlobItems) GetIsBatch() bool {
 	if x != nil {
 		return x.IsBatch
 	}
@@ -2469,9 +2477,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x06length\x18\x01 \x01(\x03R\x06length\"R\n" +
 	"\x16StoredPendingQueueItem\x12(\n" +
 	"\x04item\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x04item\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"i\n" +
-	"\x17StoredPendingQueueBatch\x123\n" +
-	"\x05items\x18\x01 \x03(\v2\x1d.vault.StoredPendingQueueItemR\x05items\x12\x19\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"n\n" +
+	"\x15PendingQueueBlobItems\x12*\n" +
+	"\x05items\x18\x01 \x03(\v2\x14.google.protobuf.AnyR\x05items\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x19\n" +
 	"\bis_batch\x18\x03 \x01(\bR\aisBatch\"\xa0\t\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
@@ -2549,7 +2558,7 @@ var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(*StoredMetadata)(nil),                // 27: vault.StoredMetadata
 	(*StoredPendingQueueIndex)(nil),       // 28: vault.StoredPendingQueueIndex
 	(*StoredPendingQueueItem)(nil),        // 29: vault.StoredPendingQueueItem
-	(*StoredPendingQueueBatch)(nil),       // 30: vault.StoredPendingQueueBatch
+	(*PendingQueueBlobItems)(nil),         // 30: vault.PendingQueueBlobItems
 	(*ReportingPluginConfig)(nil),         // 31: vault.ReportingPluginConfig
 	(*anypb.Any)(nil),                     // 32: google.protobuf.Any
 }
@@ -2599,7 +2608,7 @@ var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	1,  // 42: vault.ReportInfo.format:type_name -> vault.ReportFormat
 	2,  // 43: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
 	32, // 44: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
-	29, // 45: vault.StoredPendingQueueBatch.items:type_name -> vault.StoredPendingQueueItem
+	32, // 45: vault.PendingQueueBlobItems.items:type_name -> google.protobuf.Any
 	46, // [46:46] is the sub-list for method output_type
 	46, // [46:46] is the sub-list for method input_type
 	46, // [46:46] is the sub-list for extension type_name

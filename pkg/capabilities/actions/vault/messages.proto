@@ -215,11 +215,12 @@ message StoredPendingQueueItem {
   string id = 2;
 }
 
-// Multiple pending queue items packed into one OCR3.1 blob payload.
-// Not persisted; wire format only. Old nodes treat blobs as single StoredPendingQueueItem.
-message StoredPendingQueueBatch {
-  repeated StoredPendingQueueItem items = 1;
-  bool is_batch = 3;  // Disambiguates from single StoredPendingQueueItem during unmarshalling
+// Wire format for pending queue blobs. Not persisted.
+// When is_batch=false, wire-compatible with StoredPendingQueueItem (field 1 = Any, field 2 = string).
+message PendingQueueBlobItems {
+  repeated google.protobuf.Any items = 1;  // non-batch: raw payload Any; batch: each Any wraps a StoredPendingQueueItem
+  string id = 2;                            // non-batch: request ID; batch: empty
+  bool is_batch = 3;                        // disambiguates single-item from batch during unmarshalling
 }
 
 message ReportingPluginConfig {

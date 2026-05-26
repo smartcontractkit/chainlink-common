@@ -10,6 +10,7 @@ GatewayHTTPGlobalRate = '500rps:500'
 GatewayHTTPPerNodeRate = '100rps:100'
 GatewayConfidentialRelayGlobalRate = '50rps:10'
 GatewayConfidentialRelayPerNodeRate = '10rps:10'
+GatewayHTTPActionMtlsRequestRate = 'every30s:0'
 TriggerRegistrationStatusUpdateTimeout = '0s'
 BaseTriggerRetryInterval = '30s'
 BaseTriggerMaxRetries = '20'
@@ -39,7 +40,7 @@ WorkflowExecutionConcurrencyLimit = '100'
 ZeroBalancePruningTimeout = '24h0m0s'
 
 [PerOrg.HTTPAction]
-MtlsAuthAllowed = 'false'
+MtlsRateLimit = 'every30s:3'
 
 [PerOwner]
 WorkflowLimit = '1000'

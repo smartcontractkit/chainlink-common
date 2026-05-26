@@ -48,6 +48,7 @@ flowchart
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
         GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
         GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
+        GatewayHTTPActionMtlsRequestRate[\GatewayHTTPActionMtlsRequestRate/]:::rate
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -215,7 +216,7 @@ flowchart
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
         end
         subgraph PerOrg.HTTPAction
-            PerOrg.HTTPAction.MtlsAuthAllowed[/PerOrg.HTTPAction.MtlsAuthAllowed/]:::gate
+            PerOrg.HTTPAction.MtlsRateLimit{{PerOrg.HTTPAction.MtlsRateLimit}}:::bound
         end
     end
     subgraph vault

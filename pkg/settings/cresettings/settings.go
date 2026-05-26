@@ -64,6 +64,7 @@ var Default = Schema{
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:       Rate(rate.Every(30*time.Second), 0),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
@@ -127,7 +128,7 @@ var Default = Schema{
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
 		HTTPAction: perOrgHTTPAction{
-			MtlsAuthAllowed: Bool(false),
+			MtlsRateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
 	},
 	PerOwner: Owners{
@@ -261,6 +262,7 @@ type Schema struct {
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate       Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
@@ -401,7 +403,7 @@ type httpAction struct {
 	ResponseSizeLimit Setting[config.Size]
 }
 type perOrgHTTPAction struct {
-	MtlsAuthAllowed Setting[bool]
+	MtlsRateLimit Setting[config.Rate]
 }
 type confidentialHTTP struct {
 	CallLimit         Setting[int] `unit:"{call}"`

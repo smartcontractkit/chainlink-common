@@ -54,7 +54,7 @@ var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
 var _ KeyBundle = &keyBundle[*tonKeyring]{}
 var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
 
-var _ EVMRawOnChainPublicKeyer = &keyBundle[*evmKeyring]{}
+var _ EVMRawOnChainPublicKeyer = (*evmKeyBundle)(nil)
 
 var curve = secp256k1.S256()
 

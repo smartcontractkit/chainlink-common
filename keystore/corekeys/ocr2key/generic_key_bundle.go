@@ -28,6 +28,9 @@ type (
 		keyring K
 	}
 
+	// evmKeyBundle is a type alias so RawOnChainPublicKey can be defined on EVM bundles only.
+	evmKeyBundle = keyBundle[*evmKeyring]
+
 	keyBundleRawData struct {
 		ChainType       corekeys.ChainType
 		OffchainKeyring []byte
@@ -118,7 +121,7 @@ func (kb *keyBundle[K]) OnChainPublicKey() string {
 }
 
 // RawOnChainPublicKey returns the full uncompressed secp256k1 public key (65 bytes, hex-encoded).
-func (kb *keyBundle[*evmKeyring]) RawOnChainPublicKey() string {
+func (kb *evmKeyBundle) RawOnChainPublicKey() string {
 	return kb.keyring.RawOnChainPublicKey()
 }
 

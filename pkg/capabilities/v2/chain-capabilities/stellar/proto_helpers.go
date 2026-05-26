@@ -4,8 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-
-	"github.com/stellar/go-stellar-sdk/xdr"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
 	stellarservicetypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
@@ -70,9 +69,9 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellarservice
 	}
 
 	pArgs := p.GetArgs()
-	args := make([]xdr.ScVal, len(pArgs))
+	args := make([]stellarservicetypes.ScVal, len(pArgs))
 	for i, psv := range pArgs {
-		sv, err := ProtoScValToXDR(psv)
+		sv, err := ProtoToScVal(psv)
 		if err != nil {
 			return stellarservicetypes.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
 		}
@@ -86,199 +85,175 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellarservice
 	}, nil
 }
 
-func unwrapScVec(v **xdr.ScVec) (xdr.ScVec, error) {
-	if v == nil || *v == nil {
-		return nil, fmt.Errorf("vec is nil")
-	}
-	return **v, nil
-}
-
-func unwrapScMap(v **xdr.ScMap) (xdr.ScMap, error) {
-	if v == nil || *v == nil {
-		return nil, fmt.Errorf("map is nil")
-	}
-	return **v, nil
-}
-
-// XdrScValToProto converts an XDR ScVal to its proto representation.
+// ScValToProto converts a domain ScVal to its proto representation.
 // Returns an error if nesting depth exceeds 64 levels.
-func XdrScValToProto(sv xdr.ScVal) (*scval.ScVal, error) {
-	return xdrScValToProtoAt(sv, 0)
+func ScValToProto(sv stellarservicetypes.ScVal) (*scval.ScVal, error) {
+	return scValToProtoAt(sv, 0)
 }
 
-func xdrScValToProtoAt(sv xdr.ScVal, depth int) (*scval.ScVal, error) {
+func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, error) {
 	if depth > 64 {
 		return nil, fmt.Errorf("ScVal nesting exceeds maximum depth of 64")
 	}
 	switch sv.Type {
-	case xdr.ScValTypeScvBool:
-		if sv.B == nil {
+	case stellarservicetypes.ScValTypeBool:
+		if sv.Bool == nil {
 			return nil, fmt.Errorf("scvBool: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_B{B: *sv.B}}, nil
-	case xdr.ScValTypeScvVoid:
+		return &scval.ScVal{Value: &scval.ScVal_B{B: *sv.Bool}}, nil
+	case stellarservicetypes.ScValTypeVoid:
 		return &scval.ScVal{Value: &scval.ScVal_VoidVal{VoidVal: &scval.Void{}}}, nil
-	case xdr.ScValTypeScvError:
+	case stellarservicetypes.ScValTypeError:
 		if sv.Error == nil {
 			return nil, fmt.Errorf("scvError: nil")
 		}
-		pe, err := xdrScErrorToProto(sv.Error)
+		pe, err := scErrorToProto(sv.Error)
 		if err != nil {
 			return nil, err
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Error{Error: pe}}, nil
-	case xdr.ScValTypeScvU32:
+	case stellarservicetypes.ScValTypeU32:
 		if sv.U32 == nil {
 			return nil, fmt.Errorf("scvU32: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_U32{U32: uint32(*sv.U32)}}, nil
-	case xdr.ScValTypeScvI32:
+		return &scval.ScVal{Value: &scval.ScVal_U32{U32: *sv.U32}}, nil
+	case stellarservicetypes.ScValTypeI32:
 		if sv.I32 == nil {
 			return nil, fmt.Errorf("scvI32: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_I32{I32: int32(*sv.I32)}}, nil
-	case xdr.ScValTypeScvU64:
+		return &scval.ScVal{Value: &scval.ScVal_I32{I32: *sv.I32}}, nil
+	case stellarservicetypes.ScValTypeU64:
 		if sv.U64 == nil {
 			return nil, fmt.Errorf("scvU64: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_U64{U64: uint64(*sv.U64)}}, nil
-	case xdr.ScValTypeScvI64:
+		return &scval.ScVal{Value: &scval.ScVal_U64{U64: *sv.U64}}, nil
+	case stellarservicetypes.ScValTypeI64:
 		if sv.I64 == nil {
 			return nil, fmt.Errorf("scvI64: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_I64{I64: int64(*sv.I64)}}, nil
-	case xdr.ScValTypeScvTimepoint:
+		return &scval.ScVal{Value: &scval.ScVal_I64{I64: *sv.I64}}, nil
+	case stellarservicetypes.ScValTypeTimepoint:
 		if sv.Timepoint == nil {
 			return nil, fmt.Errorf("scvTimepoint: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_Timepoint{Timepoint: uint64(*sv.Timepoint)}}, nil
-	case xdr.ScValTypeScvDuration:
-		if sv.Duration == nil {
-			return nil, fmt.Errorf("scvDuration: nil")
-		}
-		return &scval.ScVal{Value: &scval.ScVal_Duration{Duration: uint64(*sv.Duration)}}, nil
-	case xdr.ScValTypeScvU128:
+		return &scval.ScVal{Value: &scval.ScVal_Timepoint{Timepoint: *sv.Timepoint}}, nil
+	case stellarservicetypes.ScValTypeDuration:
+		return &scval.ScVal{Value: &scval.ScVal_Duration{Duration: uint64(sv.Duration)}}, nil
+	case stellarservicetypes.ScValTypeU128:
 		if sv.U128 == nil {
 			return nil, fmt.Errorf("scvU128: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_U128{U128: &scval.UInt128Parts{
-			Hi: uint64(sv.U128.Hi),
-			Lo: uint64(sv.U128.Lo),
-		}}}, nil
-	case xdr.ScValTypeScvI128:
+		return &scval.ScVal{Value: &scval.ScVal_U128{U128: &scval.UInt128Parts{Hi: sv.U128.Hi, Lo: sv.U128.Lo}}}, nil
+	case stellarservicetypes.ScValTypeI128:
 		if sv.I128 == nil {
 			return nil, fmt.Errorf("scvI128: nil")
 		}
-		// Per XDR spec for signed integer types: Hi is signed, Lo is unsigned.
-		return &scval.ScVal{Value: &scval.ScVal_I128{I128: &scval.Int128Parts{
-			Hi: int64(sv.I128.Hi),
-			Lo: uint64(sv.I128.Lo),
-		}}}, nil
-	case xdr.ScValTypeScvU256:
+		return &scval.ScVal{Value: &scval.ScVal_I128{I128: &scval.Int128Parts{Hi: sv.I128.Hi, Lo: sv.I128.Lo}}}, nil
+	case stellarservicetypes.ScValTypeU256:
 		if sv.U256 == nil {
 			return nil, fmt.Errorf("scvU256: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_U256{U256: &scval.UInt256Parts{
-			HiHi: uint64(sv.U256.HiHi),
-			HiLo: uint64(sv.U256.HiLo),
-			LoHi: uint64(sv.U256.LoHi),
-			LoLo: uint64(sv.U256.LoLo),
+			HiHi: sv.U256.HiHi, HiLo: sv.U256.HiLo, LoHi: sv.U256.LoHi, LoLo: sv.U256.LoLo,
 		}}}, nil
-	case xdr.ScValTypeScvI256:
+	case stellarservicetypes.ScValTypeI256:
 		if sv.I256 == nil {
 			return nil, fmt.Errorf("scvI256: nil")
 		}
-		// Per XDR spec for signed integer types: HiHi is signed, remaining parts are unsigned.
 		return &scval.ScVal{Value: &scval.ScVal_I256{I256: &scval.Int256Parts{
-			HiHi: int64(sv.I256.HiHi),
-			HiLo: uint64(sv.I256.HiLo),
-			LoHi: uint64(sv.I256.LoHi),
-			LoLo: uint64(sv.I256.LoLo),
+			HiHi: sv.I256.HiHi, HiLo: sv.I256.HiLo, LoHi: sv.I256.LoHi, LoLo: sv.I256.LoLo,
 		}}}, nil
-	case xdr.ScValTypeScvBytes:
+	case stellarservicetypes.ScValTypeBytes:
 		if sv.Bytes == nil {
 			return nil, fmt.Errorf("scvBytes: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_BytesVal{BytesVal: *sv.Bytes}}, nil
-	case xdr.ScValTypeScvString:
-		if sv.Str == nil {
+		return &scval.ScVal{Value: &scval.ScVal_BytesVal{BytesVal: sv.Bytes}}, nil
+	case stellarservicetypes.ScValTypeString:
+		if sv.String == nil {
 			return nil, fmt.Errorf("scvString: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_Str{Str: string(*sv.Str)}}, nil
-	case xdr.ScValTypeScvSymbol:
-		if sv.Sym == nil {
+		return &scval.ScVal{Value: &scval.ScVal_Str{Str: *sv.String}}, nil
+	case stellarservicetypes.ScValTypeSymbol:
+		if sv.Symbol == nil {
 			return nil, fmt.Errorf("scvSymbol: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_Sym{Sym: string(*sv.Sym)}}, nil
-	case xdr.ScValTypeScvVec:
-		xVec, err := unwrapScVec(sv.Vec)
-		if err != nil {
-			return nil, fmt.Errorf("scvVec: %w", err)
+		return &scval.ScVal{Value: &scval.ScVal_Sym{Sym: *sv.Symbol}}, nil
+	case stellarservicetypes.ScValTypeVec:
+		if sv.Vec == nil {
+			return nil, fmt.Errorf("scvVec: nil")
 		}
-		pVals := make([]*scval.ScVal, len(xVec))
-		for i, elem := range xVec {
-			pv, err := xdrScValToProtoAt(elem, depth+1)
+		pVals := make([]*scval.ScVal, len(sv.Vec.Values))
+		for i, elem := range sv.Vec.Values {
+			if elem == nil {
+				return nil, fmt.Errorf("vec[%d]: nil element", i)
+			}
+			pv, err := scValToProtoAt(*elem, depth+1)
 			if err != nil {
 				return nil, fmt.Errorf("vec[%d]: %w", i, err)
 			}
 			pVals[i] = pv
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: pVals}}}, nil
-	case xdr.ScValTypeScvMap:
-		xMap, err := unwrapScMap(sv.Map)
-		if err != nil {
-			return nil, fmt.Errorf("scvMap: %w", err)
+	case stellarservicetypes.ScValTypeMap:
+		if sv.Map == nil {
+			return nil, fmt.Errorf("scvMap: nil")
 		}
-		entries := make([]*scval.ScMapEntry, len(xMap))
-		for i, entry := range xMap {
-			pk, err := xdrScValToProtoAt(entry.Key, depth+1)
+		entries := make([]*scval.ScMapEntry, len(sv.Map.Entries))
+		for i, entry := range sv.Map.Entries {
+			if entry.Key == nil {
+				return nil, fmt.Errorf("map[%d].key: nil", i)
+			}
+			if entry.Val == nil {
+				return nil, fmt.Errorf("map[%d].val: nil", i)
+			}
+			pk, err := scValToProtoAt(*entry.Key, depth+1)
 			if err != nil {
 				return nil, fmt.Errorf("map[%d].key: %w", i, err)
 			}
-			pv, err := xdrScValToProtoAt(entry.Val, depth+1)
+			pv, err := scValToProtoAt(*entry.Val, depth+1)
 			if err != nil {
 				return nil, fmt.Errorf("map[%d].val: %w", i, err)
 			}
 			entries[i] = &scval.ScMapEntry{Key: pk, Val: pv}
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Map{Map: &scval.ScMap{Entries: entries}}}, nil
-	case xdr.ScValTypeScvAddress:
+	case stellarservicetypes.ScValTypeAddress:
 		if sv.Address == nil {
 			return nil, fmt.Errorf("scvAddress: nil")
 		}
-		pa, err := xdrScAddressToProto(sv.Address)
+		pa, err := scAddressToProto(sv.Address)
 		if err != nil {
 			return nil, err
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Address{Address: pa}}, nil
-	case xdr.ScValTypeScvContractInstance:
-		if sv.Instance == nil {
+	case stellarservicetypes.ScValTypeContractInstance:
+		if sv.ContractInstance == nil {
 			return nil, fmt.Errorf("scvContractInstance: nil")
 		}
-		pi, err := xdrScContractInstanceToProtoAt(sv.Instance, depth+1)
+		pi, err := scContractInstanceToProtoAt(sv.ContractInstance, depth+1)
 		if err != nil {
 			return nil, err
 		}
 		return &scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: pi}}, nil
-	case xdr.ScValTypeScvLedgerKeyContractInstance:
+	case stellarservicetypes.ScValTypeLedgerKeyContractInstance:
 		return &scval.ScVal{Value: &scval.ScVal_LedgerKeyContractInstance{LedgerKeyContractInstance: &scval.Void{}}}, nil
-	case xdr.ScValTypeScvLedgerKeyNonce:
+	case stellarservicetypes.ScValTypeNonceKey:
 		if sv.NonceKey == nil {
 			return nil, fmt.Errorf("scvLedgerKeyNonce: nil")
 		}
-		return &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: &scval.ScNonceKey{Nonce: int64(sv.NonceKey.Nonce)}}}, nil
+		return &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: &scval.ScNonceKey{Nonce: sv.NonceKey.Nonce}}}, nil
 	default:
 		return nil, fmt.Errorf("unsupported ScVal type: %d", sv.Type)
 	}
 }
 
-func xdrScErrorToProto(e *xdr.ScError) (*scval.ScError, error) {
+func scErrorToProto(e *stellarservicetypes.ScError) (*scval.ScError, error) {
 	pe := &scval.ScError{Type: scval.ScError_Type(e.Type)}
-	if e.Type == xdr.ScErrorTypeSceContract {
+	if e.Type == stellarservicetypes.ScErrorTypeContract {
 		if e.ContractCode == nil {
 			return nil, fmt.Errorf("scError.contractCode: nil")
 		}
-		pe.CodeOrContract = &scval.ScError_ContractCode{ContractCode: uint32(*e.ContractCode)}
+		pe.CodeOrContract = &scval.ScError_ContractCode{ContractCode: *e.ContractCode}
 	} else {
 		if e.Code == nil {
 			return nil, fmt.Errorf("scError type %d: nil code", e.Type)
@@ -288,72 +263,86 @@ func xdrScErrorToProto(e *xdr.ScError) (*scval.ScError, error) {
 	return pe, nil
 }
 
-func xdrScAddressToProto(a *xdr.ScAddress) (*scval.ScAddress, error) {
+func scAddressToProto(a *stellarservicetypes.ScAddress) (*scval.ScAddress, error) {
 	switch a.Type {
-	case xdr.ScAddressTypeScAddressTypeAccount:
-		if a.AccountId == nil || a.AccountId.Ed25519 == nil {
-			return nil, fmt.Errorf("scAddress.account: nil accountId or ed25519")
+	case stellarservicetypes.ScAddressTypeAccountID:
+		if len(a.AccountID) != 32 {
+			return nil, fmt.Errorf("scAddress.account: accountId must be 32 bytes, got %d", len(a.AccountID))
 		}
-		return &scval.ScAddress{Address: &scval.ScAddress_AccountId{AccountId: (*a.AccountId.Ed25519)[:]}}, nil
-	case xdr.ScAddressTypeScAddressTypeContract:
-		if a.ContractId == nil {
-			return nil, fmt.Errorf("scAddress.contract: nil contractId")
+		return &scval.ScAddress{Address: &scval.ScAddress_AccountId{AccountId: a.AccountID}}, nil
+	case stellarservicetypes.ScAddressTypeContractID:
+		if len(a.ContractID) != 32 {
+			return nil, fmt.Errorf("scAddress.contract: contractId must be 32 bytes, got %d", len(a.ContractID))
 		}
-		return &scval.ScAddress{Address: &scval.ScAddress_ContractId{ContractId: (*a.ContractId)[:]}}, nil
-	case xdr.ScAddressTypeScAddressTypeMuxedAccount:
+		return &scval.ScAddress{Address: &scval.ScAddress_ContractId{ContractId: a.ContractID}}, nil
+	case stellarservicetypes.ScAddressTypeMuxedAccount:
 		if a.MuxedAccount == nil {
 			return nil, fmt.Errorf("scAddress.muxed: nil")
 		}
+		if len(a.MuxedAccount.Ed25519) != 32 {
+			return nil, fmt.Errorf("scAddress.muxed: ed25519 must be 32 bytes, got %d", len(a.MuxedAccount.Ed25519))
+		}
 		return &scval.ScAddress{Address: &scval.ScAddress_MuxedAccount{MuxedAccount: &scval.MuxedEd25519Account{
-			Id:      uint64(a.MuxedAccount.Id),
-			Ed25519: a.MuxedAccount.Ed25519[:],
+			Id:      a.MuxedAccount.ID,
+			Ed25519: a.MuxedAccount.Ed25519,
 		}}}, nil
-	case xdr.ScAddressTypeScAddressTypeClaimableBalance:
-		if a.ClaimableBalanceId == nil || a.ClaimableBalanceId.V0 == nil {
+	case stellarservicetypes.ScAddressTypeClaimableBalanceID:
+		if a.ClaimableBalance == nil {
 			return nil, fmt.Errorf("scAddress.claimableBalance: nil")
 		}
-		return &scval.ScAddress{Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: &scval.ClaimableBalanceId{
-			V0: (*a.ClaimableBalanceId.V0)[:],
-		}}}, nil
-	case xdr.ScAddressTypeScAddressTypeLiquidityPool:
-		if a.LiquidityPoolId == nil {
-			return nil, fmt.Errorf("scAddress.liquidityPool: nil poolId")
+		if len(a.ClaimableBalance.V0) != 32 {
+			return nil, fmt.Errorf("scAddress.claimableBalance: v0 must be 32 bytes, got %d", len(a.ClaimableBalance.V0))
 		}
-		return &scval.ScAddress{Address: &scval.ScAddress_LiquidityPoolId{LiquidityPoolId: (*a.LiquidityPoolId)[:]}}, nil
+		return &scval.ScAddress{Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: &scval.ClaimableBalanceId{
+			V0: a.ClaimableBalance.V0,
+		}}}, nil
+	case stellarservicetypes.ScAddressTypeLiquidityPoolID:
+		if len(a.LiquidityPoolID) != 32 {
+			return nil, fmt.Errorf("scAddress.liquidityPool: poolId must be 32 bytes, got %d", len(a.LiquidityPoolID))
+		}
+		return &scval.ScAddress{Address: &scval.ScAddress_LiquidityPoolId{LiquidityPoolId: a.LiquidityPoolID}}, nil
 	default:
 		return nil, fmt.Errorf("unsupported ScAddress type: %d", a.Type)
 	}
 }
 
-func xdrContractExecutableToProto(exec xdr.ContractExecutable) (*scval.ContractExecutable, error) {
+func contractExecutableToProto(exec *stellarservicetypes.ContractExecutable) (*scval.ContractExecutable, error) {
+	if exec == nil {
+		return nil, fmt.Errorf("contractExecutable: nil")
+	}
 	switch exec.Type {
-	case xdr.ContractExecutableTypeContractExecutableWasm:
-		if exec.WasmHash == nil {
-			return nil, fmt.Errorf("contractExecutable.wasm: nil wasmHash")
+	case stellarservicetypes.ContractExecutableTypeWasmHash:
+		if len(exec.WasmHash) != 32 {
+			return nil, fmt.Errorf("contractExecutable.wasm: wasmHash must be 32 bytes, got %d", len(exec.WasmHash))
 		}
-		return &scval.ContractExecutable{Type: &scval.ContractExecutable_WasmHash{WasmHash: (*exec.WasmHash)[:]}}, nil
-	case xdr.ContractExecutableTypeContractExecutableStellarAsset:
+		return &scval.ContractExecutable{Type: &scval.ContractExecutable_WasmHash{WasmHash: exec.WasmHash}}, nil
+	case stellarservicetypes.ContractExecutableTypeStellarAsset:
 		return &scval.ContractExecutable{Type: &scval.ContractExecutable_StellarAsset{StellarAsset: true}}, nil
 	default:
 		return nil, fmt.Errorf("unsupported ContractExecutable type: %d", exec.Type)
 	}
 }
 
-func xdrScContractInstanceToProtoAt(inst *xdr.ScContractInstance, depth int) (*scval.ScContractInstance, error) {
-	pExec, err := xdrContractExecutableToProto(inst.Executable)
+func scContractInstanceToProtoAt(inst *stellarservicetypes.ScContractInstance, depth int) (*scval.ScContractInstance, error) {
+	pExec, err := contractExecutableToProto(inst.Executable)
 	if err != nil {
 		return nil, err
 	}
 	pi := &scval.ScContractInstance{Executable: pExec}
-	if inst.Storage != nil {
-		xMap := *inst.Storage
-		entries := make([]*scval.ScMapEntry, len(xMap))
-		for i, entry := range xMap {
-			pk, err := xdrScValToProtoAt(entry.Key, depth+1)
+	if len(inst.Storage) > 0 {
+		entries := make([]*scval.ScMapEntry, len(inst.Storage))
+		for i, entry := range inst.Storage {
+			if entry.Key == nil {
+				return nil, fmt.Errorf("instance.storage[%d].key: nil", i)
+			}
+			if entry.Val == nil {
+				return nil, fmt.Errorf("instance.storage[%d].val: nil", i)
+			}
+			pk, err := scValToProtoAt(*entry.Key, depth+1)
 			if err != nil {
 				return nil, fmt.Errorf("instance.storage[%d].key: %w", i, err)
 			}
-			pv, err := xdrScValToProtoAt(entry.Val, depth+1)
+			pv, err := scValToProtoAt(*entry.Val, depth+1)
 			if err != nil {
 				return nil, fmt.Errorf("instance.storage[%d].val: %w", i, err)
 			}
@@ -364,280 +353,248 @@ func xdrScContractInstanceToProtoAt(inst *xdr.ScContractInstance, depth int) (*s
 	return pi, nil
 }
 
-// ProtoScValToXDR converts a proto ScVal to its XDR representation.
+// ProtoToScVal converts a proto ScVal to its domain representation.
 // Returns an error if nesting depth exceeds 64 levels.
-func ProtoScValToXDR(sv *scval.ScVal) (xdr.ScVal, error) {
-	return protoScValToXDRAt(sv, 0)
+func ProtoToScVal(sv *scval.ScVal) (stellarservicetypes.ScVal, error) {
+	return protoToScValAt(sv, 0)
 }
 
-func protoScValToXDRAt(sv *scval.ScVal, depth int) (xdr.ScVal, error) {
+func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, error) {
 	if depth > 64 {
-		return xdr.ScVal{}, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+		return stellarservicetypes.ScVal{}, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
 	}
 	if sv == nil {
-		return xdr.ScVal{}, fmt.Errorf("proto ScVal is nil")
+		return stellarservicetypes.ScVal{}, fmt.Errorf("proto ScVal is nil")
 	}
 	switch v := sv.Value.(type) {
 	case *scval.ScVal_B:
 		b := v.B
-		return xdr.ScVal{Type: xdr.ScValTypeScvBool, B: &b}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeBool, Bool: &b}, nil
 	case *scval.ScVal_VoidVal:
-		return xdr.ScVal{Type: xdr.ScValTypeScvVoid}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeVoid, Void: &stellarservicetypes.Void{}}, nil
 	case *scval.ScVal_Error:
-		xe, err := protoScErrorToXDR(v.Error)
+		e, err := protoToScError(v.Error)
 		if err != nil {
-			return xdr.ScVal{}, err
+			return stellarservicetypes.ScVal{}, err
 		}
-		return xdr.ScVal{Type: xdr.ScValTypeScvError, Error: &xe}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeError, Error: e}, nil
 	case *scval.ScVal_U32:
-		u := xdr.Uint32(v.U32)
-		return xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}, nil
+		u := v.U32
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeU32, U32: &u}, nil
 	case *scval.ScVal_I32:
-		i := xdr.Int32(v.I32)
-		return xdr.ScVal{Type: xdr.ScValTypeScvI32, I32: &i}, nil
+		i := v.I32
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeI32, I32: &i}, nil
 	case *scval.ScVal_U64:
-		u := xdr.Uint64(v.U64)
-		return xdr.ScVal{Type: xdr.ScValTypeScvU64, U64: &u}, nil
+		u := v.U64
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeU64, U64: &u}, nil
 	case *scval.ScVal_I64:
-		i := xdr.Int64(v.I64)
-		return xdr.ScVal{Type: xdr.ScValTypeScvI64, I64: &i}, nil
+		i := v.I64
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeI64, I64: &i}, nil
 	case *scval.ScVal_Timepoint:
-		t := xdr.TimePoint(v.Timepoint)
-		return xdr.ScVal{Type: xdr.ScValTypeScvTimepoint, Timepoint: &t}, nil
+		t := v.Timepoint
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeTimepoint, Timepoint: &t}, nil
 	case *scval.ScVal_Duration:
-		d := xdr.Duration(v.Duration)
-		return xdr.ScVal{Type: xdr.ScValTypeScvDuration, Duration: &d}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeDuration, Duration: time.Duration(v.Duration)}, nil
 	case *scval.ScVal_U128:
 		if v.U128 == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvU128: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvU128: nil")
 		}
-		u128 := xdr.UInt128Parts{Hi: xdr.Uint64(v.U128.Hi), Lo: xdr.Uint64(v.U128.Lo)}
-		return xdr.ScVal{Type: xdr.ScValTypeScvU128, U128: &u128}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeU128, U128: &stellarservicetypes.UInt128Parts{Hi: v.U128.Hi, Lo: v.U128.Lo}}, nil
 	case *scval.ScVal_I128:
 		if v.I128 == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvI128: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvI128: nil")
 		}
-		// Per XDR spec for signed integer types: Hi is signed, Lo is unsigned.
-		i128 := xdr.Int128Parts{Hi: xdr.Int64(v.I128.Hi), Lo: xdr.Uint64(v.I128.Lo)}
-		return xdr.ScVal{Type: xdr.ScValTypeScvI128, I128: &i128}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeI128, I128: &stellarservicetypes.Int128Parts{Hi: v.I128.Hi, Lo: v.I128.Lo}}, nil
 	case *scval.ScVal_U256:
 		if v.U256 == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvU256: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvU256: nil")
 		}
-		u256 := xdr.UInt256Parts{
-			HiHi: xdr.Uint64(v.U256.HiHi),
-			HiLo: xdr.Uint64(v.U256.HiLo),
-			LoHi: xdr.Uint64(v.U256.LoHi),
-			LoLo: xdr.Uint64(v.U256.LoLo),
-		}
-		return xdr.ScVal{Type: xdr.ScValTypeScvU256, U256: &u256}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeU256, U256: &stellarservicetypes.UInt256Parts{
+			HiHi: v.U256.HiHi, HiLo: v.U256.HiLo, LoHi: v.U256.LoHi, LoLo: v.U256.LoLo,
+		}}, nil
 	case *scval.ScVal_I256:
 		if v.I256 == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvI256: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvI256: nil")
 		}
-		// Per XDR spec for signed integer types: HiHi is signed, remaining parts are unsigned.
-		i256 := xdr.Int256Parts{
-			HiHi: xdr.Int64(v.I256.HiHi),
-			HiLo: xdr.Uint64(v.I256.HiLo),
-			LoHi: xdr.Uint64(v.I256.LoHi),
-			LoLo: xdr.Uint64(v.I256.LoLo),
-		}
-		return xdr.ScVal{Type: xdr.ScValTypeScvI256, I256: &i256}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeI256, I256: &stellarservicetypes.Int256Parts{
+			HiHi: v.I256.HiHi, HiLo: v.I256.HiLo, LoHi: v.I256.LoHi, LoLo: v.I256.LoLo,
+		}}, nil
 	case *scval.ScVal_BytesVal:
-		xb := xdr.ScBytes(v.BytesVal)
-		return xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: &xb}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeBytes, Bytes: v.BytesVal}, nil
 	case *scval.ScVal_Str:
-		xs := xdr.ScString(v.Str)
-		return xdr.ScVal{Type: xdr.ScValTypeScvString, Str: &xs}, nil
+		s := v.Str
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeString, String: &s}, nil
 	case *scval.ScVal_Sym:
-		xs := xdr.ScSymbol(v.Sym)
-		return xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &xs}, nil
+		s := v.Sym
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeSymbol, Symbol: &s}, nil
 	case *scval.ScVal_Vec:
 		if v.Vec == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvVec: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvVec: nil")
 		}
-		xVec := make(xdr.ScVec, len(v.Vec.Values))
+		values := make([]*stellarservicetypes.ScVal, len(v.Vec.Values))
 		for i, pv := range v.Vec.Values {
-			xv, err := protoScValToXDRAt(pv, depth+1)
+			dv, err := protoToScValAt(pv, depth+1)
 			if err != nil {
-				return xdr.ScVal{}, fmt.Errorf("vec[%d]: %w", i, err)
+				return stellarservicetypes.ScVal{}, fmt.Errorf("vec[%d]: %w", i, err)
 			}
-			xVec[i] = xv
+			values[i] = &dv
 		}
-		xVecP := &xVec
-		return xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &xVecP}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeVec, Vec: &stellarservicetypes.ScVec{Values: values}}, nil
 	case *scval.ScVal_Map:
 		if v.Map == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvMap: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvMap: nil")
 		}
-		xMap := make(xdr.ScMap, len(v.Map.Entries))
+		entries := make([]stellarservicetypes.ScMapEntry, len(v.Map.Entries))
 		for i, pe := range v.Map.Entries {
 			if pe == nil {
-				return xdr.ScVal{}, fmt.Errorf("map[%d]: nil entry", i)
+				return stellarservicetypes.ScVal{}, fmt.Errorf("map[%d]: nil entry", i)
 			}
-			xk, err := protoScValToXDRAt(pe.Key, depth+1)
+			dk, err := protoToScValAt(pe.Key, depth+1)
 			if err != nil {
-				return xdr.ScVal{}, fmt.Errorf("map[%d].key: %w", i, err)
+				return stellarservicetypes.ScVal{}, fmt.Errorf("map[%d].key: %w", i, err)
 			}
-			xv, err := protoScValToXDRAt(pe.Val, depth+1)
+			dv, err := protoToScValAt(pe.Val, depth+1)
 			if err != nil {
-				return xdr.ScVal{}, fmt.Errorf("map[%d].val: %w", i, err)
+				return stellarservicetypes.ScVal{}, fmt.Errorf("map[%d].val: %w", i, err)
 			}
-			xMap[i] = xdr.ScMapEntry{Key: xk, Val: xv}
+			entries[i] = stellarservicetypes.ScMapEntry{Key: &dk, Val: &dv}
 		}
-		xMapP := &xMap
-		return xdr.ScVal{Type: xdr.ScValTypeScvMap, Map: &xMapP}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeMap, Map: &stellarservicetypes.ScMap{Entries: entries}}, nil
 	case *scval.ScVal_Address:
-		xa, err := protoScAddressToXDR(v.Address)
+		a, err := protoToScAddress(v.Address)
 		if err != nil {
-			return xdr.ScVal{}, err
+			return stellarservicetypes.ScVal{}, err
 		}
-		return xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xa}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeAddress, Address: a}, nil
 	case *scval.ScVal_ContractInstance:
-		xi, err := protoScContractInstanceToXDRAt(v.ContractInstance, depth+1)
+		ci, err := protoToScContractInstanceAt(v.ContractInstance, depth+1)
 		if err != nil {
-			return xdr.ScVal{}, err
+			return stellarservicetypes.ScVal{}, err
 		}
-		return xdr.ScVal{Type: xdr.ScValTypeScvContractInstance, Instance: &xi}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeContractInstance, ContractInstance: ci}, nil
 	case *scval.ScVal_LedgerKeyContractInstance:
-		return xdr.ScVal{Type: xdr.ScValTypeScvLedgerKeyContractInstance}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContract: &stellarservicetypes.Void{}}, nil
 	case *scval.ScVal_NonceKey:
 		if v.NonceKey == nil {
-			return xdr.ScVal{}, fmt.Errorf("scvLedgerKeyNonce: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvLedgerKeyNonce: nil")
 		}
-		return xdr.ScVal{Type: xdr.ScValTypeScvLedgerKeyNonce, NonceKey: &xdr.ScNonceKey{Nonce: xdr.Int64(v.NonceKey.Nonce)}}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeNonceKey, NonceKey: &stellarservicetypes.ScNonceKey{Nonce: v.NonceKey.Nonce}}, nil
 	default:
-		return xdr.ScVal{}, fmt.Errorf("unsupported proto ScVal type: %T", sv.Value)
+		return stellarservicetypes.ScVal{}, fmt.Errorf("unsupported proto ScVal type: %T", sv.Value)
 	}
 }
 
-func protoScErrorToXDR(e *scval.ScError) (xdr.ScError, error) {
+func protoToScError(e *scval.ScError) (*stellarservicetypes.ScError, error) {
 	if e == nil {
-		return xdr.ScError{}, fmt.Errorf("proto ScError is nil")
+		return nil, fmt.Errorf("proto ScError is nil")
 	}
-	xe := xdr.ScError{Type: xdr.ScErrorType(e.Type)}
+	de := &stellarservicetypes.ScError{Type: stellarservicetypes.ScErrorType(e.Type)}
 	switch v := e.CodeOrContract.(type) {
 	case *scval.ScError_ContractCode:
-		cc := xdr.Uint32(v.ContractCode)
-		xe.ContractCode = &cc
+		cc := v.ContractCode
+		de.ContractCode = &cc
 	case *scval.ScError_Code_:
-		code := xdr.ScErrorCode(v.Code)
-		xe.Code = &code
+		code := stellarservicetypes.ScErrorCode(v.Code)
+		de.Code = &code
 	default:
-		return xdr.ScError{}, fmt.Errorf("unsupported ScError oneof: %T", e.CodeOrContract)
+		return nil, fmt.Errorf("unsupported ScError oneof: %T", e.CodeOrContract)
 	}
-	return xe, nil
+	return de, nil
 }
 
-func protoScAddressToXDR(a *scval.ScAddress) (xdr.ScAddress, error) {
+func protoToScAddress(a *scval.ScAddress) (*stellarservicetypes.ScAddress, error) {
 	if a == nil {
-		return xdr.ScAddress{}, fmt.Errorf("proto ScAddress is nil")
+		return nil, fmt.Errorf("proto ScAddress is nil")
 	}
 	switch v := a.Address.(type) {
 	case *scval.ScAddress_AccountId:
 		if len(v.AccountId) != 32 {
-			return xdr.ScAddress{}, fmt.Errorf("accountId must be 32 bytes, got %d", len(v.AccountId))
+			return nil, fmt.Errorf("accountId must be 32 bytes, got %d", len(v.AccountId))
 		}
-		var ed25519 xdr.Uint256
-		copy(ed25519[:], v.AccountId)
-		aid := xdr.AccountId(xdr.PublicKey{Type: xdr.PublicKeyTypePublicKeyTypeEd25519, Ed25519: &ed25519})
-		return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeAccount, AccountId: &aid}, nil
+		return &stellarservicetypes.ScAddress{Type: stellarservicetypes.ScAddressTypeAccountID, AccountID: v.AccountId}, nil
 	case *scval.ScAddress_ContractId:
 		if len(v.ContractId) != 32 {
-			return xdr.ScAddress{}, fmt.Errorf("contractId must be 32 bytes, got %d", len(v.ContractId))
+			return nil, fmt.Errorf("contractId must be 32 bytes, got %d", len(v.ContractId))
 		}
-		var cid xdr.ContractId
-		copy(cid[:], v.ContractId)
-		return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeContract, ContractId: &cid}, nil
+		return &stellarservicetypes.ScAddress{Type: stellarservicetypes.ScAddressTypeContractID, ContractID: v.ContractId}, nil
 	case *scval.ScAddress_MuxedAccount:
 		if v.MuxedAccount == nil {
-			return xdr.ScAddress{}, fmt.Errorf("muxedAccount: nil")
+			return nil, fmt.Errorf("muxedAccount: nil")
 		}
 		if len(v.MuxedAccount.Ed25519) != 32 {
-			return xdr.ScAddress{}, fmt.Errorf("muxedAccount.ed25519 must be 32 bytes, got %d", len(v.MuxedAccount.Ed25519))
+			return nil, fmt.Errorf("muxedAccount.ed25519 must be 32 bytes, got %d", len(v.MuxedAccount.Ed25519))
 		}
-		var ed25519 xdr.Uint256
-		copy(ed25519[:], v.MuxedAccount.Ed25519)
-		return xdr.ScAddress{
-			Type: xdr.ScAddressTypeScAddressTypeMuxedAccount,
-			MuxedAccount: &xdr.MuxedEd25519Account{
-				Id:      xdr.Uint64(v.MuxedAccount.Id),
-				Ed25519: ed25519,
+		return &stellarservicetypes.ScAddress{
+			Type: stellarservicetypes.ScAddressTypeMuxedAccount,
+			MuxedAccount: &stellarservicetypes.MuxedEd25519Account{
+				ID:      v.MuxedAccount.Id,
+				Ed25519: v.MuxedAccount.Ed25519,
 			},
 		}, nil
 	case *scval.ScAddress_ClaimableBalanceId:
 		if v.ClaimableBalanceId == nil {
-			return xdr.ScAddress{}, fmt.Errorf("claimableBalanceId: nil")
+			return nil, fmt.Errorf("claimableBalanceId: nil")
 		}
 		if len(v.ClaimableBalanceId.V0) != 32 {
-			return xdr.ScAddress{}, fmt.Errorf("claimableBalanceId.v0 must be 32 bytes, got %d", len(v.ClaimableBalanceId.V0))
+			return nil, fmt.Errorf("claimableBalanceId.v0 must be 32 bytes, got %d", len(v.ClaimableBalanceId.V0))
 		}
-		var h xdr.Hash
-		copy(h[:], v.ClaimableBalanceId.V0)
-		return xdr.ScAddress{
-			Type: xdr.ScAddressTypeScAddressTypeClaimableBalance,
-			ClaimableBalanceId: &xdr.ClaimableBalanceId{
-				Type: xdr.ClaimableBalanceIdTypeClaimableBalanceIdTypeV0,
-				V0:   &h,
-			},
+		return &stellarservicetypes.ScAddress{
+			Type:             stellarservicetypes.ScAddressTypeClaimableBalanceID,
+			ClaimableBalance: &stellarservicetypes.ClaimableBalanceID{V0: v.ClaimableBalanceId.V0},
 		}, nil
 	case *scval.ScAddress_LiquidityPoolId:
 		if len(v.LiquidityPoolId) != 32 {
-			return xdr.ScAddress{}, fmt.Errorf("liquidityPoolId must be 32 bytes, got %d", len(v.LiquidityPoolId))
+			return nil, fmt.Errorf("liquidityPoolId must be 32 bytes, got %d", len(v.LiquidityPoolId))
 		}
-		var poolId xdr.PoolId
-		copy(poolId[:], v.LiquidityPoolId)
-		return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeLiquidityPool, LiquidityPoolId: &poolId}, nil
+		return &stellarservicetypes.ScAddress{Type: stellarservicetypes.ScAddressTypeLiquidityPoolID, LiquidityPoolID: v.LiquidityPoolId}, nil
 	default:
-		return xdr.ScAddress{}, fmt.Errorf("unsupported proto ScAddress type: %T", a.Address)
+		return nil, fmt.Errorf("unsupported proto ScAddress type: %T", a.Address)
 	}
 }
 
-func protoContractExecutableToXDR(exec *scval.ContractExecutable) (xdr.ContractExecutable, error) {
+func protoToContractExecutable(exec *scval.ContractExecutable) (*stellarservicetypes.ContractExecutable, error) {
 	if exec == nil {
-		return xdr.ContractExecutable{}, fmt.Errorf("proto ContractExecutable is nil")
+		return nil, fmt.Errorf("proto ContractExecutable is nil")
 	}
 	switch v := exec.Type.(type) {
 	case *scval.ContractExecutable_WasmHash:
 		if len(v.WasmHash) != 32 {
-			return xdr.ContractExecutable{}, fmt.Errorf("wasmHash must be 32 bytes, got %d", len(v.WasmHash))
+			return nil, fmt.Errorf("wasmHash must be 32 bytes, got %d", len(v.WasmHash))
 		}
-		var h xdr.Hash
-		copy(h[:], v.WasmHash)
-		return xdr.ContractExecutable{Type: xdr.ContractExecutableTypeContractExecutableWasm, WasmHash: &h}, nil
+		return &stellarservicetypes.ContractExecutable{Type: stellarservicetypes.ContractExecutableTypeWasmHash, WasmHash: v.WasmHash}, nil
 	case *scval.ContractExecutable_StellarAsset:
-		return xdr.ContractExecutable{Type: xdr.ContractExecutableTypeContractExecutableStellarAsset}, nil
+		return &stellarservicetypes.ContractExecutable{Type: stellarservicetypes.ContractExecutableTypeStellarAsset, StellarAsset: true}, nil
 	default:
-		return xdr.ContractExecutable{}, fmt.Errorf("unsupported proto ContractExecutable type: %T", exec.Type)
+		return nil, fmt.Errorf("unsupported proto ContractExecutable type: %T", exec.Type)
 	}
 }
 
-func protoScContractInstanceToXDRAt(inst *scval.ScContractInstance, depth int) (xdr.ScContractInstance, error) {
+func protoToScContractInstanceAt(inst *scval.ScContractInstance, depth int) (*stellarservicetypes.ScContractInstance, error) {
 	if inst == nil {
-		return xdr.ScContractInstance{}, fmt.Errorf("proto ScContractInstance is nil")
+		return nil, fmt.Errorf("proto ScContractInstance is nil")
 	}
-	xExec, err := protoContractExecutableToXDR(inst.Executable)
+	dExec, err := protoToContractExecutable(inst.Executable)
 	if err != nil {
-		return xdr.ScContractInstance{}, err
+		return nil, err
 	}
-	xi := xdr.ScContractInstance{Executable: xExec}
+	di := &stellarservicetypes.ScContractInstance{Executable: dExec}
 	if len(inst.Storage) > 0 {
-		xMap := make(xdr.ScMap, len(inst.Storage))
+		entries := make([]stellarservicetypes.ScMapEntry, len(inst.Storage))
 		for i, pe := range inst.Storage {
 			if pe == nil {
-				return xdr.ScContractInstance{}, fmt.Errorf("instance.storage[%d]: nil entry", i)
+				return nil, fmt.Errorf("instance.storage[%d]: nil entry", i)
 			}
-			xk, err := protoScValToXDRAt(pe.Key, depth+1)
+			dk, err := protoToScValAt(pe.Key, depth+1)
 			if err != nil {
-				return xdr.ScContractInstance{}, fmt.Errorf("instance.storage[%d].key: %w", i, err)
+				return nil, fmt.Errorf("instance.storage[%d].key: %w", i, err)
 			}
-			xv, err := protoScValToXDRAt(pe.Val, depth+1)
+			dv, err := protoToScValAt(pe.Val, depth+1)
 			if err != nil {
-				return xdr.ScContractInstance{}, fmt.Errorf("instance.storage[%d].val: %w", i, err)
+				return nil, fmt.Errorf("instance.storage[%d].val: %w", i, err)
 			}
-			xMap[i] = xdr.ScMapEntry{Key: xk, Val: xv}
+			entries[i] = stellarservicetypes.ScMapEntry{Key: &dk, Val: &dv}
 		}
-		xi.Storage = &xMap
+		di.Storage = entries
 	}
-	return xi, nil
+	return di, nil
 }

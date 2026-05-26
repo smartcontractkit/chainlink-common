@@ -6,12 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stellar/go-stellar-sdk/xdr"
 	"github.com/stretchr/testify/require"
 
 	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
-	conv "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	stellartypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 )
 
@@ -136,120 +134,114 @@ func TestConvertReadContractRequestFromProto_Cap(t *testing.T) {
 		require.Equal(t, "transfer", got.Function)
 		require.Equal(t, uint32(7), got.LedgerSequence)
 		require.Len(t, got.Args, 2)
-		require.Equal(t, xdr.ScValTypeScvU32, got.Args[0].Type)
-		require.Equal(t, xdr.Uint32(42), *got.Args[0].U32)
-		require.Equal(t, xdr.ScValTypeScvSymbol, got.Args[1].Type)
-		require.Equal(t, xdr.ScSymbol("transfer"), *got.Args[1].Sym)
+		require.Equal(t, stellartypes.ScValTypeU32, got.Args[0].Type)
+		require.Equal(t, uint32(42), *got.Args[0].U32)
+		require.Equal(t, stellartypes.ScValTypeSymbol, got.Args[1].Type)
+		require.Equal(t, "transfer", *got.Args[1].Symbol)
 	})
 }
 
-func TestXdrScValToProto_NilArmPointers(t *testing.T) {
+func TestScValToProto_NilArmPointers(t *testing.T) {
 	tests := []struct {
 		name    string
-		sv      xdr.ScVal
+		sv      stellartypes.ScVal
 		wantErr string
 	}{
-		{"bool nil", xdr.ScVal{Type: xdr.ScValTypeScvBool}, "scvBool: nil"},
-		{"error nil", xdr.ScVal{Type: xdr.ScValTypeScvError}, "scvError: nil"},
-		{"u32 nil", xdr.ScVal{Type: xdr.ScValTypeScvU32}, "scvU32: nil"},
-		{"i32 nil", xdr.ScVal{Type: xdr.ScValTypeScvI32}, "scvI32: nil"},
-		{"u64 nil", xdr.ScVal{Type: xdr.ScValTypeScvU64}, "scvU64: nil"},
-		{"i64 nil", xdr.ScVal{Type: xdr.ScValTypeScvI64}, "scvI64: nil"},
-		{"timepoint nil", xdr.ScVal{Type: xdr.ScValTypeScvTimepoint}, "scvTimepoint: nil"},
-		{"duration nil", xdr.ScVal{Type: xdr.ScValTypeScvDuration}, "scvDuration: nil"},
-		{"u128 nil", xdr.ScVal{Type: xdr.ScValTypeScvU128}, "scvU128: nil"},
-		{"i128 nil", xdr.ScVal{Type: xdr.ScValTypeScvI128}, "scvI128: nil"},
-		{"u256 nil", xdr.ScVal{Type: xdr.ScValTypeScvU256}, "scvU256: nil"},
-		{"i256 nil", xdr.ScVal{Type: xdr.ScValTypeScvI256}, "scvI256: nil"},
-		{"bytes nil", xdr.ScVal{Type: xdr.ScValTypeScvBytes}, "scvBytes: nil"},
-		{"string nil", xdr.ScVal{Type: xdr.ScValTypeScvString}, "scvString: nil"},
-		{"symbol nil", xdr.ScVal{Type: xdr.ScValTypeScvSymbol}, "scvSymbol: nil"},
-		{"address nil", xdr.ScVal{Type: xdr.ScValTypeScvAddress}, "scvAddress: nil"},
-		{"contractInstance nil", xdr.ScVal{Type: xdr.ScValTypeScvContractInstance}, "scvContractInstance: nil"},
-		{"nonceKey nil", xdr.ScVal{Type: xdr.ScValTypeScvLedgerKeyNonce}, "scvLedgerKeyNonce: nil"},
+		{"bool nil", stellartypes.ScVal{Type: stellartypes.ScValTypeBool}, "scvBool: nil"},
+		{"error nil", stellartypes.ScVal{Type: stellartypes.ScValTypeError}, "scvError: nil"},
+		{"u32 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU32}, "scvU32: nil"},
+		{"i32 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI32}, "scvI32: nil"},
+		{"u64 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU64}, "scvU64: nil"},
+		{"i64 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI64}, "scvI64: nil"},
+		{"timepoint nil", stellartypes.ScVal{Type: stellartypes.ScValTypeTimepoint}, "scvTimepoint: nil"},
+		{"u128 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU128}, "scvU128: nil"},
+		{"i128 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI128}, "scvI128: nil"},
+		{"u256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU256}, "scvU256: nil"},
+		{"i256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI256}, "scvI256: nil"},
+		{"bytes nil", stellartypes.ScVal{Type: stellartypes.ScValTypeBytes}, "scvBytes: nil"},
+		{"string nil", stellartypes.ScVal{Type: stellartypes.ScValTypeString}, "scvString: nil"},
+		{"symbol nil", stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol}, "scvSymbol: nil"},
+		{"vec nil", stellartypes.ScVal{Type: stellartypes.ScValTypeVec}, "scvVec: nil"},
+		{"map nil", stellartypes.ScVal{Type: stellartypes.ScValTypeMap}, "scvMap: nil"},
+		{"address nil", stellartypes.ScVal{Type: stellartypes.ScValTypeAddress}, "scvAddress: nil"},
+		{"contractInstance nil", stellartypes.ScVal{Type: stellartypes.ScValTypeContractInstance}, "scvContractInstance: nil"},
+		{"nonceKey nil", stellartypes.ScVal{Type: stellartypes.ScValTypeNonceKey}, "scvLedgerKeyNonce: nil"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			req := stellartypes.ReadContractRequest{
-				ContractID: "C_X", Function: "fn", Args: []xdr.ScVal{tc.sv},
-			}
-			_, err := conv.ConvertReadContractRequestToProto(req)
+			_, err := stellarcap.ScValToProto(tc.sv)
 			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
 }
 
-func TestXdrScValToProto_UnsupportedType(t *testing.T) {
-	req := stellartypes.ReadContractRequest{
-		ContractID: "C_X", Function: "fn",
-		Args: []xdr.ScVal{{Type: xdr.ScValType(999)}},
-	}
-	_, err := conv.ConvertReadContractRequestToProto(req)
+func TestScValToProto_UnsupportedType(t *testing.T) {
+	_, err := stellarcap.ScValToProto(stellartypes.ScVal{Type: stellartypes.ScValType(999)})
 	require.ErrorContains(t, err, "unsupported ScVal type")
 }
 
-func TestXdrScValToProto_InvalidArgs(t *testing.T) {
+func TestScValToProto_InvalidArgs(t *testing.T) {
 	tests := []struct {
 		name    string
-		sv      xdr.ScVal
+		sv      stellartypes.ScVal
 		wantErr string
 	}{
 		{
 			"scError contractCode nil",
-			xdr.ScVal{Type: xdr.ScValTypeScvError, Error: &xdr.ScError{Type: xdr.ScErrorTypeSceContract}},
+			stellartypes.ScVal{Type: stellartypes.ScValTypeError, Error: &stellartypes.ScError{Type: stellartypes.ScErrorTypeContract}},
 			"scError.contractCode: nil",
 		},
 		{
 			"scError code nil",
-			xdr.ScVal{Type: xdr.ScValTypeScvError, Error: &xdr.ScError{Type: xdr.ScErrorTypeSceWasmVm}},
+			stellartypes.ScVal{Type: stellartypes.ScValTypeError, Error: &stellartypes.ScError{Type: stellartypes.ScErrorTypeWasmVM}},
 			"nil code",
 		},
 		{
-			"scAddress account nil accountId",
-			xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeAccount}},
+			"scAddress account wrong size",
+			stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{Type: stellartypes.ScAddressTypeAccountID}},
 			"scAddress.account",
 		},
 		{
-			"scAddress contract nil contractId",
-			xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeContract}},
-			"scAddress.contract: nil contractId",
+			"scAddress contract wrong size",
+			stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{Type: stellartypes.ScAddressTypeContractID}},
+			"scAddress.contract: contractId must be 32 bytes",
 		},
 		{
 			"scAddress muxed nil",
-			xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeMuxedAccount}},
+			stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{Type: stellartypes.ScAddressTypeMuxedAccount}},
 			"scAddress.muxed: nil",
 		},
 		{
 			"scAddress claimableBalance nil",
-			xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeClaimableBalance}},
+			stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{Type: stellartypes.ScAddressTypeClaimableBalanceID}},
 			"scAddress.claimableBalance: nil",
 		},
 		{
-			"scAddress liquidityPool nil poolId",
-			xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeLiquidityPool}},
-			"scAddress.liquidityPool: nil poolId",
+			"scAddress liquidityPool wrong size",
+			stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{Type: stellartypes.ScAddressTypeLiquidityPoolID}},
+			"scAddress.liquidityPool: poolId must be 32 bytes",
 		},
 		{
 			"scAddress unsupported type",
-			xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{Type: xdr.ScAddressType(999)}},
+			stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{Type: stellartypes.ScAddressType(999)}},
 			"unsupported ScAddress type",
 		},
 		{
-			"contractExecutable wasm nil wasmHash",
-			xdr.ScVal{
-				Type: xdr.ScValTypeScvContractInstance,
-				Instance: &xdr.ScContractInstance{
-					Executable: xdr.ContractExecutable{Type: xdr.ContractExecutableTypeContractExecutableWasm},
+			"contractExecutable wasm wrong size",
+			stellartypes.ScVal{
+				Type: stellartypes.ScValTypeContractInstance,
+				ContractInstance: &stellartypes.ScContractInstance{
+					Executable: &stellartypes.ContractExecutable{Type: stellartypes.ContractExecutableTypeWasmHash},
 				},
 			},
-			"contractExecutable.wasm: nil wasmHash",
+			"contractExecutable.wasm: wasmHash must be 32 bytes",
 		},
 		{
 			"contractExecutable unsupported type",
-			xdr.ScVal{
-				Type: xdr.ScValTypeScvContractInstance,
-				Instance: &xdr.ScContractInstance{
-					Executable: xdr.ContractExecutable{Type: xdr.ContractExecutableType(999)},
+			stellartypes.ScVal{
+				Type: stellartypes.ScValTypeContractInstance,
+				ContractInstance: &stellartypes.ScContractInstance{
+					Executable: &stellartypes.ContractExecutable{Type: stellartypes.ContractExecutableType(999)},
 				},
 			},
 			"unsupported ContractExecutable type",
@@ -257,471 +249,333 @@ func TestXdrScValToProto_InvalidArgs(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			req := stellartypes.ReadContractRequest{
-				ContractID: "C_X", Function: "fn", Args: []xdr.ScVal{tc.sv},
-			}
-			_, err := conv.ConvertReadContractRequestToProto(req)
+			_, err := stellarcap.ScValToProto(tc.sv)
 			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
 }
 
-// ---- Proto→XDR nil/invalid cases (table-driven) ----------------------------
+// ---- Round-trip helpers ----------------------------------------------------
 
-func scValRoundTrip(t *testing.T, sv xdr.ScVal) xdr.ScVal {
+// scValRoundTrip exercises the cap-level ScValToProto/ProtoToScVal pair directly.
+func scValRoundTrip(t *testing.T, sv stellartypes.ScVal) stellartypes.ScVal {
 	t.Helper()
-	req := stellartypes.ReadContractRequest{
-		ContractID: "C_TESTCONTRACT",
-		Function:   "fn",
-		Args:       []xdr.ScVal{sv},
-	}
-	proto, err := conv.ConvertReadContractRequestToProto(req)
+	proto, err := stellarcap.ScValToProto(sv)
 	require.NoError(t, err)
-	got, err := conv.ConvertReadContractRequestFromProto(proto)
+	got, err := stellarcap.ProtoToScVal(proto)
 	require.NoError(t, err)
-	require.Len(t, got.Args, 1)
-	return got.Args[0]
+	return got
 }
 
 func TestScVal_Bool(t *testing.T) {
 	b := true
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvBool, B: &b}
-	got := scValRoundTrip(t, sv)
-	require.Equal(t, sv, got)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeBool, Bool: &b}
+	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Void(t *testing.T) {
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvVoid}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeVoid, Void: &stellartypes.Void{}}
 	got := scValRoundTrip(t, sv)
-	require.Equal(t, xdr.ScValTypeScvVoid, got.Type)
+	require.Equal(t, stellartypes.ScValTypeVoid, got.Type)
 }
 
 func TestScVal_Error_ContractCode(t *testing.T) {
-	cc := xdr.Uint32(42)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvError, Error: &xdr.ScError{
-		Type:         xdr.ScErrorTypeSceContract,
+	cc := uint32(42)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeError, Error: &stellartypes.ScError{
+		Type:         stellartypes.ScErrorTypeContract,
 		ContractCode: &cc,
 	}}
-	got := scValRoundTrip(t, sv)
-	require.Equal(t, sv, got)
+	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Error_Code(t *testing.T) {
-	code := xdr.ScErrorCodeScecArithDomain
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvError, Error: &xdr.ScError{
-		Type: xdr.ScErrorTypeSceWasmVm,
+	code := stellartypes.ScErrorCodeArithDomain
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeError, Error: &stellartypes.ScError{
+		Type: stellartypes.ScErrorTypeWasmVM,
 		Code: &code,
 	}}
-	got := scValRoundTrip(t, sv)
-	require.Equal(t, sv, got)
+	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_U32(t *testing.T) {
-	u := xdr.Uint32(0xDEAD)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}
+	u := uint32(0xDEAD)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_I32(t *testing.T) {
-	i := xdr.Int32(-1234)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvI32, I32: &i}
+	i := int32(-1234)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeI32, I32: &i}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_U64(t *testing.T) {
-	u := xdr.Uint64(1 << 40)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvU64, U64: &u}
+	u := uint64(1 << 40)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeU64, U64: &u}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_I64(t *testing.T) {
-	i := xdr.Int64(-1 << 40)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvI64, I64: &i}
+	i := int64(-1 << 40)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeI64, I64: &i}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Timepoint(t *testing.T) {
-	tp := xdr.TimePoint(1_700_000_000)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvTimepoint, Timepoint: &tp}
+	tp := uint64(1_700_000_000)
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeTimepoint, Timepoint: &tp}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Duration(t *testing.T) {
-	d := xdr.Duration(3600)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvDuration, Duration: &d}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeDuration, Duration: 3600}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_U128(t *testing.T) {
-	u := xdr.UInt128Parts{Hi: xdr.Uint64(0xAAAA), Lo: xdr.Uint64(0xBBBB)}
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvU128, U128: &u}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeU128, U128: &stellartypes.UInt128Parts{Hi: 0xAAAA, Lo: 0xBBBB}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_I128(t *testing.T) {
-	i := xdr.Int128Parts{Hi: xdr.Int64(-7), Lo: xdr.Uint64(999)}
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvI128, I128: &i}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeI128, I128: &stellartypes.Int128Parts{Hi: -7, Lo: 999}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_U256(t *testing.T) {
-	u := xdr.UInt256Parts{
-		HiHi: xdr.Uint64(1), HiLo: xdr.Uint64(2),
-		LoHi: xdr.Uint64(3), LoLo: xdr.Uint64(4),
-	}
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvU256, U256: &u}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeU256, U256: &stellartypes.UInt256Parts{
+		HiHi: 1, HiLo: 2, LoHi: 3, LoLo: 4,
+	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_I256(t *testing.T) {
-	i := xdr.Int256Parts{
-		HiHi: xdr.Int64(-1), HiLo: xdr.Uint64(2),
-		LoHi: xdr.Uint64(3), LoLo: xdr.Uint64(4),
-	}
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvI256, I256: &i}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeI256, I256: &stellartypes.Int256Parts{
+		HiHi: -1, HiLo: 2, LoHi: 3, LoLo: 4,
+	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Bytes(t *testing.T) {
-	xb := xdr.ScBytes([]byte{0x01, 0x02, 0x03})
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: &xb}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeBytes, Bytes: []byte{0x01, 0x02, 0x03}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_String(t *testing.T) {
-	s := xdr.ScString("hello world")
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvString, Str: &s}
+	s := "hello world"
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeString, String: &s}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Symbol(t *testing.T) {
-	sym := xdr.ScSymbol("transfer")
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &sym}
+	sym := "transfer"
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Vec(t *testing.T) {
-	u := xdr.Uint32(1)
-	inner := xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}
-	vec := xdr.ScVec{inner}
-	vecp := &vec
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &vecp}
-	got := scValRoundTrip(t, sv)
-	require.Equal(t, sv, got)
+	u := uint32(1)
+	inner := &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{inner}}}
+	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Map(t *testing.T) {
-	sym := xdr.ScSymbol("key")
-	u := xdr.Uint32(99)
-	xmap := xdr.ScMap{
-		{Key: xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &sym}, Val: xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}},
+	sym := "key"
+	u := uint32(99)
+	key := &stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
+	val := &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeMap, Map: &stellartypes.ScMap{Entries: []stellartypes.ScMapEntry{
+		{Key: key, Val: val},
+	}}}
+	require.Equal(t, sv, scValRoundTrip(t, sv))
+}
+
+func bytes32(b byte) []byte {
+	out := make([]byte, 32)
+	for i := range out {
+		out[i] = b
 	}
-	xmapp := &xmap
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvMap, Map: &xmapp}
-	got := scValRoundTrip(t, sv)
-	require.Equal(t, sv, got)
+	return out
 }
 
 func TestScVal_Address_Account(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x01
-	}
-	ed := b
-	ed256 := xdr.Uint256(ed)
-	aid := xdr.AccountId(xdr.PublicKey{
-		Type:    xdr.PublicKeyTypePublicKeyTypeEd25519,
-		Ed25519: &ed256,
-	})
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{
-		Type:      xdr.ScAddressTypeScAddressTypeAccount,
-		AccountId: &aid,
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{
+		Type:      stellartypes.ScAddressTypeAccountID,
+		AccountID: bytes32(0x01),
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Address_Contract(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x02
-	}
-	cid := xdr.ContractId(b)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{
-		Type:       xdr.ScAddressTypeScAddressTypeContract,
-		ContractId: &cid,
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{
+		Type:       stellartypes.ScAddressTypeContractID,
+		ContractID: bytes32(0x02),
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Address_MuxedAccount(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x03
-	}
-	ed := xdr.Uint256(b)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{
-		Type: xdr.ScAddressTypeScAddressTypeMuxedAccount,
-		MuxedAccount: &xdr.MuxedEd25519Account{
-			Id:      xdr.Uint64(777),
-			Ed25519: ed,
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{
+		Type: stellartypes.ScAddressTypeMuxedAccount,
+		MuxedAccount: &stellartypes.MuxedEd25519Account{
+			ID:      777,
+			Ed25519: bytes32(0x03),
 		},
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Address_ClaimableBalance(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x04
-	}
-	h := xdr.Hash(b)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{
-		Type: xdr.ScAddressTypeScAddressTypeClaimableBalance,
-		ClaimableBalanceId: &xdr.ClaimableBalanceId{
-			Type: xdr.ClaimableBalanceIdTypeClaimableBalanceIdTypeV0,
-			V0:   &h,
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{
+		Type: stellartypes.ScAddressTypeClaimableBalanceID,
+		ClaimableBalance: &stellartypes.ClaimableBalanceID{
+			V0: bytes32(0x04),
 		},
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_Address_LiquidityPool(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x05
-	}
-	pid := xdr.PoolId(b)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvAddress, Address: &xdr.ScAddress{
-		Type:            xdr.ScAddressTypeScAddressTypeLiquidityPool,
-		LiquidityPoolId: &pid,
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeAddress, Address: &stellartypes.ScAddress{
+		Type:            stellartypes.ScAddressTypeLiquidityPoolID,
+		LiquidityPoolID: bytes32(0x05),
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_ContractInstance_Wasm(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x06
-	}
-	wh := xdr.Hash(b)
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvContractInstance, Instance: &xdr.ScContractInstance{
-		Executable: xdr.ContractExecutable{
-			Type:     xdr.ContractExecutableTypeContractExecutableWasm,
-			WasmHash: &wh,
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeContractInstance, ContractInstance: &stellartypes.ScContractInstance{
+		Executable: &stellartypes.ContractExecutable{
+			Type:     stellartypes.ContractExecutableTypeWasmHash,
+			WasmHash: bytes32(0x06),
 		},
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_ContractInstance_StellarAsset(t *testing.T) {
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvContractInstance, Instance: &xdr.ScContractInstance{
-		Executable: xdr.ContractExecutable{Type: xdr.ContractExecutableTypeContractExecutableStellarAsset},
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeContractInstance, ContractInstance: &stellartypes.ScContractInstance{
+		Executable: &stellartypes.ContractExecutable{
+			Type:         stellartypes.ContractExecutableTypeStellarAsset,
+			StellarAsset: true,
+		},
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_ContractInstance_WithStorage(t *testing.T) {
-	var b [32]byte
-	for i := range b {
-		b[i] = 0x07
-	}
-	wh := xdr.Hash(b)
-	sym := xdr.ScSymbol("slot")
-	u := xdr.Uint32(1)
-	storage := xdr.ScMap{
-		{Key: xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &sym}, Val: xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}},
-	}
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvContractInstance, Instance: &xdr.ScContractInstance{
-		Executable: xdr.ContractExecutable{
-			Type:     xdr.ContractExecutableTypeContractExecutableWasm,
-			WasmHash: &wh,
+	sym := "slot"
+	u := uint32(1)
+	key := &stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
+	val := &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeContractInstance, ContractInstance: &stellartypes.ScContractInstance{
+		Executable: &stellartypes.ContractExecutable{
+			Type:     stellartypes.ContractExecutableTypeWasmHash,
+			WasmHash: bytes32(0x07),
 		},
-		Storage: &storage,
+		Storage: []stellartypes.ScMapEntry{
+			{Key: key, Val: val},
+		},
 	}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_LedgerKeyContractInstance(t *testing.T) {
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvLedgerKeyContractInstance}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContract: &stellartypes.Void{}}
 	got := scValRoundTrip(t, sv)
-	require.Equal(t, xdr.ScValTypeScvLedgerKeyContractInstance, got.Type)
+	require.Equal(t, stellartypes.ScValTypeLedgerKeyContractInstance, got.Type)
 }
 
 func TestScVal_LedgerKeyNonce(t *testing.T) {
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvLedgerKeyNonce, NonceKey: &xdr.ScNonceKey{Nonce: xdr.Int64(12345)}}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeNonceKey, NonceKey: &stellartypes.ScNonceKey{Nonce: 12345}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_NestedVecMap(t *testing.T) {
 	// Vec containing a Map: [{sym:"x" -> u32:1}]
-	sym := xdr.ScSymbol("x")
-	u := xdr.Uint32(1)
-	innerMap := xdr.ScMap{{
-		Key: xdr.ScVal{Type: xdr.ScValTypeScvSymbol, Sym: &sym},
-		Val: xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u},
-	}}
-	innerMapP := &innerMap
-	mapVal := xdr.ScVal{Type: xdr.ScValTypeScvMap, Map: &innerMapP}
-	vec := xdr.ScVec{mapVal}
-	vecp := &vec
-	sv := xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &vecp}
+	sym := "x"
+	u := uint32(1)
+	mapVal := &stellartypes.ScVal{Type: stellartypes.ScValTypeMap, Map: &stellartypes.ScMap{Entries: []stellartypes.ScMapEntry{
+		{
+			Key: &stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
+			Val: &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u},
+		},
+	}}}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{mapVal}}}
 
-	got := scValRoundTrip(t, sv)
-	require.Equal(t, sv, got)
+	require.Equal(t, sv, scValRoundTrip(t, sv))
 }
 
 func TestScVal_ExceedsMaxDepth(t *testing.T) {
-	// Build a ScVal nested 66 levels deep via ReadContract args conversion.
-	// We construct the nesting bottom-up.
-	u := xdr.Uint32(0)
-	leaf := xdr.ScVal{Type: xdr.ScValTypeScvU32, U32: &u}
-	cur := leaf
+	// Build a domain ScVal nested 66 levels deep and confirm ScValToProto rejects it.
+	u := uint32(0)
+	cur := &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
 	for i := 0; i < 66; i++ {
-		vec := xdr.ScVec{cur}
-		vecp := &vec
-		cur = xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &vecp}
+		cur = &stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{cur}}}
 	}
-
-	req := stellartypes.ReadContractRequest{
-		ContractID: "C_DEEP",
-		Function:   "fn",
-		Args:       []xdr.ScVal{cur},
-	}
-	_, err := conv.ConvertReadContractRequestToProto(req)
+	_, err := stellarcap.ScValToProto(*cur)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nesting exceeds maximum depth")
 }
 
-func TestProtoScVal_NilValue(t *testing.T) {
-	// A proto ReadContractRequest carrying a nil ScVal should fail gracefully.
-	p := &conv.ReadContractRequest{
-		ContractId: "C_X",
-		Function:   "fn",
-		Args:       []*scval.ScVal{nil},
-	}
-	_, err := conv.ConvertReadContractRequestFromProto(p)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "args[0]")
+func TestProtoScVal_Nil(t *testing.T) {
+	_, err := stellarcap.ProtoToScVal(nil)
+	require.ErrorContains(t, err, "proto ScVal is nil")
 }
 
 func TestProtoScVal_AccountId_WrongLength(t *testing.T) {
-	p := &conv.ReadContractRequest{
-		ContractId: "C_X",
-		Function:   "fn",
-		Args: []*scval.ScVal{
-			{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-				Address: &scval.ScAddress_AccountId{AccountId: []byte{0x01, 0x02}},
-			}}},
-		},
-	}
-	_, err := conv.ConvertReadContractRequestFromProto(p)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "accountId must be 32 bytes")
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_AccountId{AccountId: []byte{0x01, 0x02}},
+	}}})
+	require.ErrorContains(t, err, "accountId must be 32 bytes")
 }
 
 func TestProtoScVal_ContractId_WrongLength(t *testing.T) {
-	p := &conv.ReadContractRequest{
-		ContractId: "C_X",
-		Function:   "fn",
-		Args: []*scval.ScVal{
-			{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-				Address: &scval.ScAddress_ContractId{ContractId: []byte("short")},
-			}}},
-		},
-	}
-	_, err := conv.ConvertReadContractRequestFromProto(p)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "contractId must be 32 bytes")
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_ContractId{ContractId: []byte("short")},
+	}}})
+	require.ErrorContains(t, err, "contractId must be 32 bytes")
 }
 
 func TestProtoScVal_WasmHash_WrongLength(t *testing.T) {
-	p := &conv.ReadContractRequest{
-		ContractId: "C_X",
-		Function:   "fn",
-		Args: []*scval.ScVal{
-			{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
-				Executable: &scval.ContractExecutable{
-					Type: &scval.ContractExecutable_WasmHash{WasmHash: []byte("tooshort")},
-				},
-			}}},
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
+		Executable: &scval.ContractExecutable{
+			Type: &scval.ContractExecutable_WasmHash{WasmHash: []byte("tooshort")},
 		},
-	}
-	_, err := conv.ConvertReadContractRequestFromProto(p)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "wasmHash must be 32 bytes")
+	}}})
+	require.ErrorContains(t, err, "wasmHash must be 32 bytes")
 }
 
 func TestProtoScVal_ExceedsMaxDepth(t *testing.T) {
-	// Build proto ScVal nested 66 levels deep.
+	// Build a proto ScVal nested 66 levels deep and confirm ProtoToScVal rejects it.
 	u := uint32(0)
-	leaf := &scval.ScVal{Value: &scval.ScVal_U32{U32: u}}
-	cur := leaf
+	cur := &scval.ScVal{Value: &scval.ScVal_U32{U32: u}}
 	for i := 0; i < 66; i++ {
 		cur = &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: []*scval.ScVal{cur}}}}
 	}
-	p := &conv.ReadContractRequest{
-		ContractId: "C_X",
-		Function:   "fn",
-		Args:       []*scval.ScVal{cur},
-	}
-	_, err := conv.ConvertReadContractRequestFromProto(p)
+	_, err := stellarcap.ProtoToScVal(cur)
 	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), "nesting exceeds maximum depth"), "unexpected error: %v", err)
-}
-
-func protoScValArg(val *scval.ScVal) *conv.ReadContractRequest {
-	return &conv.ReadContractRequest{
-		ContractId: "C_X",
-		Function:   "fn",
-		Args:       []*scval.ScVal{val},
-	}
 }
 
 func TestProtoScVal_NilInnerFields(t *testing.T) {
 	tests := []struct {
 		name    string
-		req     *conv.ReadContractRequest
+		in      *scval.ScVal
 		wantErr string
 	}{
-		{
-			"u128 nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_U128{U128: nil}}),
-			"scvU128: nil",
-		},
-		{
-			"i128 nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_I128{I128: nil}}),
-			"scvI128: nil",
-		},
-		{
-			"u256 nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_U256{U256: nil}}),
-			"scvU256: nil",
-		},
-		{
-			"i256 nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_I256{I256: nil}}),
-			"scvI256: nil",
-		},
-		{
-			"vec nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_Vec{Vec: nil}}),
-			"scvVec: nil",
-		},
-		{
-			"map nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_Map{Map: nil}}),
-			"scvMap: nil",
-		},
-		{
-			"nonceKey nil",
-			protoScValArg(&scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: nil}}),
-			"scvLedgerKeyNonce: nil",
-		},
+		{"u128 nil", &scval.ScVal{Value: &scval.ScVal_U128{U128: nil}}, "scvU128: nil"},
+		{"i128 nil", &scval.ScVal{Value: &scval.ScVal_I128{I128: nil}}, "scvI128: nil"},
+		{"u256 nil", &scval.ScVal{Value: &scval.ScVal_U256{U256: nil}}, "scvU256: nil"},
+		{"i256 nil", &scval.ScVal{Value: &scval.ScVal_I256{I256: nil}}, "scvI256: nil"},
+		{"vec nil", &scval.ScVal{Value: &scval.ScVal_Vec{Vec: nil}}, "scvVec: nil"},
+		{"map nil", &scval.ScVal{Value: &scval.ScVal_Map{Map: nil}}, "scvMap: nil"},
+		{"nonceKey nil", &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: nil}}, "scvLedgerKeyNonce: nil"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := conv.ConvertReadContractRequestFromProto(tc.req)
+			_, err := stellarcap.ProtoToScVal(tc.in)
 			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
@@ -729,109 +583,85 @@ func TestProtoScVal_NilInnerFields(t *testing.T) {
 
 func TestProtoScVal_UnsupportedOneof(t *testing.T) {
 	// A zero-value ScVal (nil Value oneof) hits the default case.
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(&scval.ScVal{}))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{})
 	require.ErrorContains(t, err, "unsupported proto ScVal type")
 }
 
 func TestProtoScAddress_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: nil}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: nil}})
 	require.ErrorContains(t, err, "proto ScAddress is nil")
 }
 
 func TestProtoScAddress_MuxedAccount_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-			Address: &scval.ScAddress_MuxedAccount{MuxedAccount: nil},
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_MuxedAccount{MuxedAccount: nil},
+	}}})
 	require.ErrorContains(t, err, "muxedAccount: nil")
 }
 
 func TestProtoScAddress_MuxedAccount_WrongEd25519Size(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-			Address: &scval.ScAddress_MuxedAccount{MuxedAccount: &scval.MuxedEd25519Account{
-				Id:      1,
-				Ed25519: []byte{0x01, 0x02}, // not 32 bytes
-			}},
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_MuxedAccount{MuxedAccount: &scval.MuxedEd25519Account{
+			Id:      1,
+			Ed25519: []byte{0x01, 0x02}, // not 32 bytes
+		}},
+	}}})
 	require.ErrorContains(t, err, "muxedAccount.ed25519 must be 32 bytes")
 }
 
 func TestProtoScAddress_ClaimableBalanceId_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-			Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: nil},
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: nil},
+	}}})
 	require.ErrorContains(t, err, "claimableBalanceId: nil")
 }
 
 func TestProtoScAddress_ClaimableBalanceId_WrongV0Size(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-			Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: &scval.ClaimableBalanceId{
-				V0: []byte{0x01, 0x02}, // not 32 bytes
-			}},
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_ClaimableBalanceId{ClaimableBalanceId: &scval.ClaimableBalanceId{
+			V0: []byte{0x01, 0x02}, // not 32 bytes
+		}},
+	}}})
 	require.ErrorContains(t, err, "claimableBalanceId.v0 must be 32 bytes")
 }
 
 func TestProtoScAddress_LiquidityPoolId_WrongSize(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
-			Address: &scval.ScAddress_LiquidityPoolId{LiquidityPoolId: []byte("short")},
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{
+		Address: &scval.ScAddress_LiquidityPoolId{LiquidityPoolId: []byte("short")},
+	}}})
 	require.ErrorContains(t, err, "liquidityPoolId must be 32 bytes")
 }
 
 func TestProtoScAddress_UnsupportedOneof(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{Address: nil}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Address{Address: &scval.ScAddress{Address: nil}}})
 	require.ErrorContains(t, err, "unsupported proto ScAddress type")
 }
 
 func TestProtoContractExecutable_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
-			Executable: nil,
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
+		Executable: nil,
+	}}})
 	require.ErrorContains(t, err, "proto ContractExecutable is nil")
 }
 
 func TestProtoContractExecutable_UnsupportedOneof(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
-			Executable: &scval.ContractExecutable{Type: nil},
-		}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
+		Executable: &scval.ContractExecutable{Type: nil},
+	}}})
 	require.ErrorContains(t, err, "unsupported proto ContractExecutable type")
 }
 
 func TestProtoScContractInstance_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: nil}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: nil}})
 	require.ErrorContains(t, err, "proto ScContractInstance is nil")
 }
 
 func TestProtoScError_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Error{Error: nil}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Error{Error: nil}})
 	require.ErrorContains(t, err, "proto ScError is nil")
 }
 
 func TestProtoScError_UnsupportedOneof(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(protoScValArg(
-		&scval.ScVal{Value: &scval.ScVal_Error{Error: &scval.ScError{CodeOrContract: nil}}},
-	))
+	_, err := stellarcap.ProtoToScVal(&scval.ScVal{Value: &scval.ScVal_Error{Error: &scval.ScError{CodeOrContract: nil}}})
 	require.ErrorContains(t, err, "unsupported ScError oneof")
 }

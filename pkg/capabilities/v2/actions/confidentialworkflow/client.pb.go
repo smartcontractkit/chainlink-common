@@ -22,35 +22,88 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type SecretIdentifier struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// namespace defaults to "main" when unset.
+	Namespace     *string `protobuf:"bytes,2,opt,name=namespace,proto3,oneof" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SecretIdentifier) Reset() {
+	*x = SecretIdentifier{}
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SecretIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SecretIdentifier) ProtoMessage() {}
+
+func (x *SecretIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SecretIdentifier.ProtoReflect.Descriptor instead.
+func (*SecretIdentifier) Descriptor() ([]byte, []int) {
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SecretIdentifier) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *SecretIdentifier) GetNamespace() string {
+	if x != nil && x.Namespace != nil {
+		return *x.Namespace
+	}
+	return ""
+}
+
 // WorkflowExecution is the public data sent to the enclave.
-// Becomes ComputeRequest.PublicData after proto serialization, which is
-// covered by ComputeRequest.Hash() for F+1 quorum matching at the enclave.
-// All fields here must be byte-identical across workflow DON nodes.
+// Becomes ComputeRequest.PublicData after proto serialization.
 type WorkflowExecution struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// workflow_id identifies the workflow to execute.
 	WorkflowId string `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
+	// binary_url is the URL from which the enclave fetches the compiled WASM binary.
+	BinaryUrl string `protobuf:"bytes,2,opt,name=binary_url,json=binaryUrl,proto3" json:"binary_url,omitempty"`
 	// binary_hash is the expected SHA-256 hash of the WASM binary, for integrity verification.
-	BinaryHash []byte `protobuf:"bytes,2,opt,name=binary_hash,json=binaryHash,proto3" json:"binary_hash,omitempty"`
+	BinaryHash []byte `protobuf:"bytes,3,opt,name=binary_hash,json=binaryHash,proto3" json:"binary_hash,omitempty"`
 	// execute_request is a serialized sdk.v1alpha.ExecuteRequest proto.
 	// Contains either a subscribe request or a trigger execution request.
-	ExecuteRequest []byte `protobuf:"bytes,3,opt,name=execute_request,json=executeRequest,proto3" json:"execute_request,omitempty"`
+	ExecuteRequest []byte `protobuf:"bytes,4,opt,name=execute_request,json=executeRequest,proto3" json:"execute_request,omitempty"`
 	// owner is the on-chain owner address of the workflow (hex, 0x-prefixed).
 	// Used by the enclave for runtime secret fetching from VaultDON.
-	Owner string `protobuf:"bytes,4,opt,name=owner,proto3" json:"owner,omitempty"`
+	Owner string `protobuf:"bytes,5,opt,name=owner,proto3" json:"owner,omitempty"`
 	// execution_id is the unique execution identifier (64 hex chars, 32 bytes).
 	// Used by the enclave for runtime secret fetching from VaultDON.
-	ExecutionId string `protobuf:"bytes,5,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	ExecutionId string `protobuf:"bytes,6,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
 	// org_id is the organization identifier for the workflow owner.
 	// Used by the enclave when fetching secrets from VaultDON with org-based ownership.
-	OrgId         string `protobuf:"bytes,6,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	OrgId         string `protobuf:"bytes,7,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WorkflowExecution) Reset() {
 	*x = WorkflowExecution{}
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -62,7 +115,7 @@ func (x *WorkflowExecution) String() string {
 func (*WorkflowExecution) ProtoMessage() {}
 
 func (x *WorkflowExecution) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -75,12 +128,19 @@ func (x *WorkflowExecution) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkflowExecution.ProtoReflect.Descriptor instead.
 func (*WorkflowExecution) Descriptor() ([]byte, []int) {
-	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *WorkflowExecution) GetWorkflowId() string {
 	if x != nil {
 		return x.WorkflowId
+	}
+	return ""
+}
+
+func (x *WorkflowExecution) GetBinaryUrl() string {
+	if x != nil {
+		return x.BinaryUrl
 	}
 	return ""
 }
@@ -121,35 +181,18 @@ func (x *WorkflowExecution) GetOrgId() string {
 }
 
 // ConfidentialWorkflowRequest is the input provided to the confidential workflows capability.
-// It carries a WorkflowExecution (deterministic across workflow DON nodes,
-// hashed for F+1 quorum) plus per-node-varying data that must live outside
-// the hash envelope.
+// It combines a WorkflowExecution with secrets from VaultDON.
 type ConfidentialWorkflowRequest struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	Execution *WorkflowExecution     `protobuf:"bytes,1,opt,name=execution,proto3" json:"execution,omitempty"`
-	// binary_url is the pre-signed CloudFront URL used by the enclave to fetch
-	// the WASM binary. The workflow node mints this URL per-execution via
-	// NodeService.DownloadArtifact and ships it alongside the WorkflowExecution.
-	//
-	// This field is deliberately on ConfidentialWorkflowRequest rather than
-	// inside WorkflowExecution: every workflow DON node mints its own URL with
-	// its own AWS signature and expiry timestamp, so the value differs across
-	// nodes. WorkflowExecution serializes into ComputeRequest.PublicData,
-	// which is covered by ComputeRequest.Hash() for F+1 quorum matching at the
-	// enclave. A per-node value inside that envelope would break quorum.
-	//
-	// The integrity anchor for the fetched bytes is execution.binary_hash,
-	// inside PublicData (and therefore signed and quorum-checked). The URL is
-	// a fetch hint; tampering with it is caught by the hash check on the
-	// returned bytes.
-	BinaryUrl     string `protobuf:"bytes,2,opt,name=binary_url,json=binaryUrl,proto3" json:"binary_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	VaultDonSecrets []*SecretIdentifier    `protobuf:"bytes,1,rep,name=vault_don_secrets,json=vaultDonSecrets,proto3" json:"vault_don_secrets,omitempty"`
+	Execution       *WorkflowExecution     `protobuf:"bytes,2,opt,name=execution,proto3" json:"execution,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ConfidentialWorkflowRequest) Reset() {
 	*x = ConfidentialWorkflowRequest{}
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[1]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -161,7 +204,7 @@ func (x *ConfidentialWorkflowRequest) String() string {
 func (*ConfidentialWorkflowRequest) ProtoMessage() {}
 
 func (x *ConfidentialWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[1]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -174,7 +217,14 @@ func (x *ConfidentialWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfidentialWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*ConfidentialWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ConfidentialWorkflowRequest) GetVaultDonSecrets() []*SecretIdentifier {
+	if x != nil {
+		return x.VaultDonSecrets
+	}
+	return nil
 }
 
 func (x *ConfidentialWorkflowRequest) GetExecution() *WorkflowExecution {
@@ -182,13 +232,6 @@ func (x *ConfidentialWorkflowRequest) GetExecution() *WorkflowExecution {
 		return x.Execution
 	}
 	return nil
-}
-
-func (x *ConfidentialWorkflowRequest) GetBinaryUrl() string {
-	if x != nil {
-		return x.BinaryUrl
-	}
-	return ""
 }
 
 // ConfidentialWorkflowResponse is the output from the confidential workflows capability.
@@ -202,7 +245,7 @@ type ConfidentialWorkflowResponse struct {
 
 func (x *ConfidentialWorkflowResponse) Reset() {
 	*x = ConfidentialWorkflowResponse{}
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +257,7 @@ func (x *ConfidentialWorkflowResponse) String() string {
 func (*ConfidentialWorkflowResponse) ProtoMessage() {}
 
 func (x *ConfidentialWorkflowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +270,7 @@ func (x *ConfidentialWorkflowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfidentialWorkflowResponse.ProtoReflect.Descriptor instead.
 func (*ConfidentialWorkflowResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ConfidentialWorkflowResponse) GetExecutionResult() []byte {
@@ -241,20 +284,26 @@ var File_capabilities_compute_confidentialworkflow_v1alpha_client_proto protoref
 
 const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"\xce\x01\n" +
+	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"U\n" +
+	"\x10SecretIdentifier\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
+	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
+	"\n" +
+	"_namespace\"\xed\x01\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
-	"workflowId\x12\x1f\n" +
-	"\vbinary_hash\x18\x02 \x01(\fR\n" +
-	"binaryHash\x12'\n" +
-	"\x0fexecute_request\x18\x03 \x01(\fR\x0eexecuteRequest\x12\x14\n" +
-	"\x05owner\x18\x04 \x01(\tR\x05owner\x12!\n" +
-	"\fexecution_id\x18\x05 \x01(\tR\vexecutionId\x12\x15\n" +
-	"\x06org_id\x18\x06 \x01(\tR\x05orgId\"\xa0\x01\n" +
-	"\x1bConfidentialWorkflowRequest\x12b\n" +
-	"\texecution\x18\x01 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\x12\x1d\n" +
+	"workflowId\x12\x1d\n" +
 	"\n" +
-	"binary_url\x18\x02 \x01(\tR\tbinaryUrl\"I\n" +
+	"binary_url\x18\x02 \x01(\tR\tbinaryUrl\x12\x1f\n" +
+	"\vbinary_hash\x18\x03 \x01(\fR\n" +
+	"binaryHash\x12'\n" +
+	"\x0fexecute_request\x18\x04 \x01(\fR\x0eexecuteRequest\x12\x14\n" +
+	"\x05owner\x18\x05 \x01(\tR\x05owner\x12!\n" +
+	"\fexecution_id\x18\x06 \x01(\tR\vexecutionId\x12\x15\n" +
+	"\x06org_id\x18\a \x01(\tR\x05orgId\"\xf2\x01\n" +
+	"\x1bConfidentialWorkflowRequest\x12o\n" +
+	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
+	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\"I\n" +
 	"\x1cConfidentialWorkflowResponse\x12)\n" +
 	"\x10execution_result\x18\x01 \x01(\fR\x0fexecutionResult2\xe1\x01\n" +
 	"\x06Client\x12\xaa\x01\n" +
@@ -272,21 +321,23 @@ func file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc
 	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescData
 }
 
-var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_goTypes = []any{
-	(*WorkflowExecution)(nil),            // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
-	(*ConfidentialWorkflowRequest)(nil),  // 1: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
-	(*ConfidentialWorkflowResponse)(nil), // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
+	(*SecretIdentifier)(nil),             // 0: capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
+	(*WorkflowExecution)(nil),            // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
+	(*ConfidentialWorkflowRequest)(nil),  // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
+	(*ConfidentialWorkflowResponse)(nil), // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
 }
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_depIdxs = []int32{
-	0, // 0: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
-	1, // 1: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
-	2, // 2: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
+	1, // 1: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
+	2, // 2: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
+	3, // 3: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() }
@@ -294,13 +345,14 @@ func file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() 
 	if File_capabilities_compute_confidentialworkflow_v1alpha_client_proto != nil {
 		return
 	}
+	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc), len(file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -229,6 +229,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 		if err := s.startBeholderClient(ctx, beholderCfg); err != nil {
 			return err
 		}
+
+		// TODO: Initialize DurableEmitter; Move setup method
 	}
 
 	if addr := s.EnvConfig.PyroscopeServerAddress; addr != "" {

@@ -97,9 +97,9 @@ func testEmitAttrs() []any {
 	return []any{"source", "test-source", "type", "test-type"}
 }
 
-func newTestDurableEmitter(t *testing.T, store DurableEventStore, be BatchEmitter, cfgOverride *DurableEmitterConfig) *DurableEmitter {
+func newTestDurableEmitter(t *testing.T, store DurableEventStore, be BatchEmitter, cfgOverride *Config) *DurableEmitter {
 	t.Helper()
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	if cfgOverride != nil {
 		cfg = *cfgOverride
 	}
@@ -128,7 +128,7 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 		stall:                stall,
 	}
 	be := newTestBatchEmitter()
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.InsertBatchSize = 1
 	cfg.InsertBatchWorkers = 1
 	cfg.DisablePruning = true
@@ -174,8 +174,8 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()
 	var pubCalls, markCalls atomic.Int32
-	cfg := DefaultDurableEmitterConfig()
-	cfg.Hooks = &DurableEmitterHooks{
+	cfg := DefaultConfig()
+	cfg.Hooks = &Hooks{
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
@@ -195,8 +195,8 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	be := newTestBatchEmitter()
 	be.setPublishErr(errors.New("down"))
 	var pubCalls, markCalls atomic.Int32
-	cfg := DefaultDurableEmitterConfig()
-	cfg.Hooks = &DurableEmitterHooks{
+	cfg := DefaultConfig()
+	cfg.Hooks = &Hooks{
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
@@ -215,7 +215,7 @@ func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 	be := newTestBatchEmitter()
 	be.setPublishErr(errors.New("chip unavailable"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 40 * time.Millisecond
 	cfg.RetransmitAfter = 15 * time.Millisecond
 	cfg.ExpiryInterval = 40 * time.Millisecond
@@ -243,7 +243,7 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()
 
-	em, err := NewDurableEmitter(store, be, nil, false, DefaultDurableEmitterConfig(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, false, DefaultConfig(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -299,7 +299,7 @@ func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	be := newTestBatchEmitter()
 	be.setPublishErr(errors.New("connection refused"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
@@ -328,7 +328,7 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	be := newTestBatchEmitter()
 	be.setPublishErr(errors.New("immediate fail"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
@@ -354,7 +354,7 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 	be := newTestBatchEmitter()
 	be.setPublishErr(errors.New("always fail"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.ExpiryInterval = 100 * time.Millisecond
 	cfg.EventTTL = 50 * time.Millisecond
 	cfg.RetransmitInterval = 10 * time.Minute // effectively disable retransmit
@@ -386,7 +386,7 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	_, err = store.Insert(context.Background(), payload)
 	require.NoError(t, err)
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 50 * time.Millisecond
 	cfg.RetransmitAfter = 30 * time.Millisecond
 
@@ -432,7 +432,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 
 func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 	log := logger.Test(t)
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	be := newTestBatchEmitter()
 
 	_, err := NewDurableEmitter(nil, be, nil, true, cfg, log, nil)
@@ -465,7 +465,7 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = time.Hour
 	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
 
@@ -607,8 +607,8 @@ func emitAttrs() []any {
 	return []any{"source", "test-domain", "type", "test-entity"}
 }
 
-func fastCfg() DurableEmitterConfig {
-	return DurableEmitterConfig{
+func fastCfg() Config {
+	return Config{
 		RetransmitInterval:  100 * time.Millisecond,
 		RetransmitAfter:     50 * time.Millisecond,
 		RetransmitBatchSize: 50,
@@ -656,7 +656,7 @@ func TestDurableEmitter_FallbackDeliversOnBatchFailure(t *testing.T) {
 	be.setPublishErr(errors.New("batch down"))
 	fallback := &testFallbackClient{}
 
-	em, err := NewDurableEmitter(store, be, fallback, true, DefaultDurableEmitterConfig(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, fallback, true, DefaultConfig(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -684,7 +684,7 @@ func TestDurableEmitter_FallbackFailureEventRemainsForRetransmit(t *testing.T) {
 	fallback := &testFallbackClient{}
 	fallback.setPublishErr(errors.New("fallback down too"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 10 * time.Minute // disable retransmit for this test
 	em, err := NewDurableEmitter(store, be, fallback, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -709,7 +709,7 @@ func TestDurableEmitter_FallbackClientClosedOnStop(t *testing.T) {
 	be := newTestBatchEmitter()
 	fallback := &testFallbackClient{}
 
-	em, err := NewDurableEmitter(store, be, fallback, true, DefaultDurableEmitterConfig(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, fallback, true, DefaultConfig(), logger.Test(t), nil)
 	require.NoError(t, err)
 	require.NoError(t, em.Start(t.Context()))
 

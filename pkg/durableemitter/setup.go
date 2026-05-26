@@ -63,8 +63,8 @@ type SetupConfig struct {
 	MaxPublishTimeout  time.Duration // default: 5s
 	ShutdownTimeout    time.Duration // default: 30s
 
-	// EmitterConfig overrides DefaultDurableEmitterConfig when non-nil.
-	EmitterConfig *DurableEmitterConfig
+	// EmitterConfig overrides DefaultConfig when non-nil.
+	EmitterConfig *Config
 	// Meter is the OpenTelemetry meter for instrumentation. Nil disables metrics.
 	Meter metric.Meter
 }
@@ -117,7 +117,7 @@ func Setup(
 		return nil, fmt.Errorf("failed to create fallback chip ingress client: %w", err)
 	}
 
-	emitterCfg := DefaultDurableEmitterConfig()
+	emitterCfg := DefaultConfig()
 	if cfg.EmitterConfig != nil {
 		emitterCfg = *cfg.EmitterConfig
 	}

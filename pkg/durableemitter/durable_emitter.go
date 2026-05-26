@@ -19,7 +19,7 @@ import (
 )
 
 // BatchEmitter is the transport interface DurableEmitter delegates to for
-// batched, at-most-once delivery of CloudEvents to Chip Ingress.
+// batched delivery of CloudEvents to Chip Ingress.
 //
 // *batch.Client from pkg/chipingress/batch satisfies this interface and
 // handles seqnum stamping, gRPC size splitting, concurrency limiting, and
@@ -42,8 +42,8 @@ type BatchEmitter interface {
 	Stop()
 }
 
-// DurableEmitterConfig configures the DurableEmitter behaviour.
-type DurableEmitterConfig struct {
+// Config configures the DurableEmitter behaviour.
+type Config struct {
 	// RetransmitInterval controls how often the retransmit loop ticks.
 	RetransmitInterval time.Duration
 	// RetransmitAfter is the minimum age of an event before the retransmit
@@ -70,7 +70,7 @@ type DurableEmitterConfig struct {
 	DisablePruning bool
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
-	Hooks *DurableEmitterHooks
+	Hooks *Hooks
 	// Metrics enables OpenTelemetry instruments (queue, publish, store, optional process stats).
 	// When non-nil, a meter must be supplied to NewDurableEmitter; nil disables instrumentation.
 	Metrics *DurableEmitterMetricsConfig
@@ -87,8 +87,8 @@ type DurableEmitterConfig struct {
 	InsertBatchWorkers int
 }
 
-// DurableEmitterHooks records delivery latency to locate pipeline bottlenecks.
-type DurableEmitterHooks struct {
+// Hooks records delivery latency to locate pipeline bottlenecks.
+type Hooks struct {
 	// OnEmitInsert is called after each store.Insert in Emit (the DB write that
 	// blocks the caller). elapsed covers only the INSERT; err is nil on success.
 	OnEmitInsert func(elapsed time.Duration, err error)
@@ -101,8 +101,8 @@ type DurableEmitterHooks struct {
 	OnBatchMarkDelivered func(elapsed time.Duration, count int)
 }
 
-func DefaultDurableEmitterConfig() DurableEmitterConfig {
-	return DurableEmitterConfig{
+func DefaultConfig() Config {
+	return Config{
 		RetransmitInterval:  5 * time.Second,
 		RetransmitAfter:     10 * time.Second,
 		RetransmitBatchSize: 100,
@@ -161,7 +161,7 @@ type DurableEmitter struct {
 	// retransmitEnabled controls whether this instance runs the retransmit and
 	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
 	retransmitEnabled bool
-	cfg               DurableEmitterConfig
+	cfg               Config
 
 	metrics *durableEmitterMetrics
 
@@ -194,7 +194,7 @@ var _ interface {
 	io.Closer
 } = (*DurableEmitter)(nil)
 
-// NewDurableEmitter constructs a DurableEmitter as a services.Service.
+// NewDurableEmitter constructs a DurableEmitter as a service.
 //
 // batchEmitter is the transport layer (typically *batch.Client from
 // pkg/chipingress/batch) responsible for batched gRPC delivery, seqnum
@@ -205,18 +205,12 @@ var _ interface {
 // failure. This gives a fast second-chance path before the DB-backed
 // retransmit loop kicks in. Pass nil to disable single-event fallback
 // (events are left in the DB and delivered by the retransmit loop).
-// DurableEmitter takes ownership of fallbackClient and closes it on Stop.
-//
-// meter is the OpenTelemetry Meter used for instrument registration. It is
-// required when cfg.Metrics is non-nil and must be supplied by the caller
-// (e.g. otel.Meter("durableemitter") or a meter from the host's
-// MeterProvider). Pass nil when metrics are disabled.
 func NewDurableEmitter(
 	store DurableEventStore,
 	batchEmitter BatchEmitter,
 	fallbackClient chipingress.Client,
 	retransmitEnabled bool,
-	cfg DurableEmitterConfig,
+	cfg Config,
 	lggr logger.Logger,
 	meter metric.Meter,
 ) (*DurableEmitter, error) {
@@ -718,7 +712,6 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		"total_pending", len(pending),
 	)
 }
-
 
 func (d *DurableEmitter) purgeLoop() {
 	interval := d.cfg.PurgeInterval

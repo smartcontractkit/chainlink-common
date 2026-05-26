@@ -148,12 +148,14 @@ func TestScValToProto_NilArmPointers(t *testing.T) {
 		wantErr string
 	}{
 		{"bool nil", stellartypes.ScVal{Type: stellartypes.ScValTypeBool}, "scvBool: nil"},
+		{"void nil", stellartypes.ScVal{Type: stellartypes.ScValTypeVoid}, "scvVoid: nil"},
 		{"error nil", stellartypes.ScVal{Type: stellartypes.ScValTypeError}, "scvError: nil"},
 		{"u32 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU32}, "scvU32: nil"},
 		{"i32 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI32}, "scvI32: nil"},
 		{"u64 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU64}, "scvU64: nil"},
 		{"i64 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI64}, "scvI64: nil"},
 		{"timepoint nil", stellartypes.ScVal{Type: stellartypes.ScValTypeTimepoint}, "scvTimepoint: nil"},
+		{"duration nil", stellartypes.ScVal{Type: stellartypes.ScValTypeDuration}, "scvDuration: nil"},
 		{"u128 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU128}, "scvU128: nil"},
 		{"i128 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI128}, "scvI128: nil"},
 		{"u256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU256}, "scvU256: nil"},
@@ -165,7 +167,8 @@ func TestScValToProto_NilArmPointers(t *testing.T) {
 		{"map nil", stellartypes.ScVal{Type: stellartypes.ScValTypeMap}, "scvMap: nil"},
 		{"address nil", stellartypes.ScVal{Type: stellartypes.ScValTypeAddress}, "scvAddress: nil"},
 		{"contractInstance nil", stellartypes.ScVal{Type: stellartypes.ScValTypeContractInstance}, "scvContractInstance: nil"},
-		{"nonceKey nil", stellartypes.ScVal{Type: stellartypes.ScValTypeNonceKey}, "scvLedgerKeyNonce: nil"},
+		{"ledgerKeyContractInstance nil", stellartypes.ScVal{Type: stellartypes.ScValTypeLedgerKeyContractInstance}, "scvLedgerKeyContractInstance: nil"},
+		{"nonceKey nil", stellartypes.ScVal{Type: stellartypes.ScValTypeNonceKey}, "scvNonceKey: nil"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -483,7 +486,7 @@ func TestScVal_ContractInstance_WithStorage(t *testing.T) {
 }
 
 func TestScVal_LedgerKeyContractInstance(t *testing.T) {
-	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContract: &stellartypes.Void{}}
+	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContractInstance: &stellartypes.Void{}}
 	got := scValRoundTrip(t, sv)
 	require.Equal(t, stellartypes.ScValTypeLedgerKeyContractInstance, got.Type)
 }
@@ -513,6 +516,25 @@ func TestScVal_ExceedsMaxDepth(t *testing.T) {
 	u := uint32(0)
 	cur := &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
 	for i := 0; i < 66; i++ {
+		cur = &stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{cur}}}
+	}
+	_, err := stellarcap.ScValToProto(*cur)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "nesting exceeds maximum depth")
+}
+
+func TestScVal_ExceedsMaxDepth_EmptyStorageContractInstance(t *testing.T) {
+	leaf := &stellartypes.ScVal{
+		Type: stellartypes.ScValTypeContractInstance,
+		ContractInstance: &stellartypes.ScContractInstance{
+			Executable: &stellartypes.ContractExecutable{
+				Type:         stellartypes.ContractExecutableTypeStellarAsset,
+				StellarAsset: true,
+			},
+		},
+	}
+	cur := leaf
+	for i := 0; i < 64; i++ {
 		cur = &stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{cur}}}
 	}
 	_, err := stellarcap.ScValToProto(*cur)
@@ -560,6 +582,19 @@ func TestProtoScVal_ExceedsMaxDepth(t *testing.T) {
 	require.True(t, strings.Contains(err.Error(), "nesting exceeds maximum depth"), "unexpected error: %v", err)
 }
 
+func TestProtoScVal_ExceedsMaxDepth_EmptyStorageContractInstance(t *testing.T) {
+	leaf := &scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: &scval.ScContractInstance{
+		Executable: &scval.ContractExecutable{Type: &scval.ContractExecutable_StellarAsset{StellarAsset: true}},
+	}}}
+	cur := leaf
+	for i := 0; i < 64; i++ {
+		cur = &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: []*scval.ScVal{cur}}}}
+	}
+	_, err := stellarcap.ProtoToScVal(cur)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "nesting exceeds maximum depth")
+}
+
 func TestProtoScVal_NilInnerFields(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -572,7 +607,7 @@ func TestProtoScVal_NilInnerFields(t *testing.T) {
 		{"i256 nil", &scval.ScVal{Value: &scval.ScVal_I256{I256: nil}}, "scvI256: nil"},
 		{"vec nil", &scval.ScVal{Value: &scval.ScVal_Vec{Vec: nil}}, "scvVec: nil"},
 		{"map nil", &scval.ScVal{Value: &scval.ScVal_Map{Map: nil}}, "scvMap: nil"},
-		{"nonceKey nil", &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: nil}}, "scvLedgerKeyNonce: nil"},
+		{"nonceKey nil", &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: nil}}, "scvNonceKey: nil"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

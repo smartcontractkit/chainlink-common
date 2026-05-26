@@ -92,7 +92,7 @@ func ScValToProto(sv stellarservicetypes.ScVal) (*scval.ScVal, error) {
 
 func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, error) {
 	if depth > 64 {
-		return nil, fmt.Errorf("ScVal nesting exceeds maximum depth of 64")
+		return nil, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
 	}
 	switch sv.Type {
 	case stellarservicetypes.ScValTypeBool:
@@ -101,6 +101,9 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		}
 		return &scval.ScVal{Value: &scval.ScVal_B{B: *sv.Bool}}, nil
 	case stellarservicetypes.ScValTypeVoid:
+		if sv.Void == nil {
+			return nil, fmt.Errorf("scvVoid: nil")
+		}
 		return &scval.ScVal{Value: &scval.ScVal_VoidVal{VoidVal: &scval.Void{}}}, nil
 	case stellarservicetypes.ScValTypeError:
 		if sv.Error == nil {
@@ -238,10 +241,13 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		}
 		return &scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: pi}}, nil
 	case stellarservicetypes.ScValTypeLedgerKeyContractInstance:
+		if sv.LedgerKeyContractInstance == nil {
+			return nil, fmt.Errorf("scvLedgerKeyContractInstance: nil")
+		}
 		return &scval.ScVal{Value: &scval.ScVal_LedgerKeyContractInstance{LedgerKeyContractInstance: &scval.Void{}}}, nil
 	case stellarservicetypes.ScValTypeNonceKey:
 		if sv.NonceKey == nil {
-			return nil, fmt.Errorf("scvLedgerKeyNonce: nil")
+			return nil, fmt.Errorf("scvNonceKey: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: &scval.ScNonceKey{Nonce: sv.NonceKey.Nonce}}}, nil
 	default:
@@ -326,6 +332,9 @@ func contractExecutableToProto(exec *stellarservicetypes.ContractExecutable) (*s
 }
 
 func scContractInstanceToProtoAt(inst *stellarservicetypes.ScContractInstance, depth int) (*scval.ScContractInstance, error) {
+	if depth > 64 {
+		return nil, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+	}
 	pExec, err := contractExecutableToProto(inst.Executable)
 	if err != nil {
 		return nil, err
@@ -396,7 +405,8 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		t := v.Timepoint
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeTimepoint, Timepoint: &t}, nil
 	case *scval.ScVal_Duration:
-		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeDuration, Duration: &v.Duration}, nil
+		d := v.Duration
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeDuration, Duration: &d}, nil
 	case *scval.ScVal_U128:
 		if v.U128 == nil {
 			return stellarservicetypes.ScVal{}, fmt.Errorf("scvU128: nil")
@@ -477,10 +487,10 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeContractInstance, ContractInstance: ci}, nil
 	case *scval.ScVal_LedgerKeyContractInstance:
-		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContract: &stellarservicetypes.Void{}}, nil
+		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContractInstance: &stellarservicetypes.Void{}}, nil
 	case *scval.ScVal_NonceKey:
 		if v.NonceKey == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvLedgerKeyNonce: nil")
+			return stellarservicetypes.ScVal{}, fmt.Errorf("scvNonceKey: nil")
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeNonceKey, NonceKey: &stellarservicetypes.ScNonceKey{Nonce: v.NonceKey.Nonce}}, nil
 	default:
@@ -574,6 +584,9 @@ func protoToContractExecutable(exec *scval.ContractExecutable) (*stellarservicet
 }
 
 func protoToScContractInstanceAt(inst *scval.ScContractInstance, depth int) (*stellarservicetypes.ScContractInstance, error) {
+	if depth > 64 {
+		return nil, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+	}
 	if inst == nil {
 		return nil, fmt.Errorf("proto ScContractInstance is nil")
 	}

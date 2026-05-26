@@ -7,31 +7,31 @@ import (
 type ScErrorType int32
 
 const (
-	ScErrorTypeContract ScErrorType = iota
-	ScErrorTypeWasmVM
-	ScErrorTypeContext
-	ScErrorTypeStorage
-	ScErrorTypeObject
-	ScErrorTypeCrypto
-	ScErrorTypeEvents
-	ScErrorTypeBudget
-	ScErrorTypeValue
-	ScErrorTypeAuth
+	ScErrorTypeContract ScErrorType = 0
+	ScErrorTypeWasmVM   ScErrorType = 1
+	ScErrorTypeContext  ScErrorType = 2
+	ScErrorTypeStorage  ScErrorType = 3
+	ScErrorTypeObject   ScErrorType = 4
+	ScErrorTypeCrypto   ScErrorType = 5
+	ScErrorTypeEvents   ScErrorType = 6
+	ScErrorTypeBudget   ScErrorType = 7
+	ScErrorTypeValue    ScErrorType = 8
+	ScErrorTypeAuth     ScErrorType = 9
 )
 
 type ScErrorCode int32
 
 const (
-	ScErrorCodeArithDomain ScErrorCode = iota
-	ScErrorCodeIndexBounds
-	ScErrorCodeInvalidInput
-	ScErrorCodeMissingValue
-	ScErrorCodeExistingValue
-	ScErrorCodeExceededLimit
-	ScErrorCodeInvalidAction
-	ScErrorCodeInternalError
-	ScErrorCodeUnexpectedType
-	ScErrorCodeUnexpectedSize
+	ScErrorCodeArithDomain    ScErrorCode = 0
+	ScErrorCodeIndexBounds    ScErrorCode = 1
+	ScErrorCodeInvalidInput   ScErrorCode = 2
+	ScErrorCodeMissingValue   ScErrorCode = 3
+	ScErrorCodeExistingValue  ScErrorCode = 4
+	ScErrorCodeExceededLimit  ScErrorCode = 5
+	ScErrorCodeInvalidAction  ScErrorCode = 6
+	ScErrorCodeInternalError  ScErrorCode = 7
+	ScErrorCodeUnexpectedType ScErrorCode = 8
+	ScErrorCodeUnexpectedSize ScErrorCode = 9
 )
 
 // Client wraps Stellar RPC calls via the type/chains/stellar domain types.
@@ -42,7 +42,7 @@ type Client interface {
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
 	// ReadContract simulates a read-only Soroban contract function call.
-	// Each element of Args is an XDR ScVal value.
+	// Each element of req.Args is a domain ScVal value.
 	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
 }
 
@@ -135,12 +135,12 @@ type ScVal struct {
 	String *string
 	Symbol *string
 
-	Vec               *ScVec
-	Map               *ScMap
-	Address           *ScAddress
-	ContractInstance  *ScContractInstance
-	LedgerKeyContract *Void
-	NonceKey          *ScNonceKey
+	Vec                       *ScVec
+	Map                       *ScMap
+	Address                   *ScAddress
+	ContractInstance          *ScContractInstance
+	LedgerKeyContractInstance *Void
+	NonceKey                  *ScNonceKey
 }
 
 // ===== Integer Parts =====

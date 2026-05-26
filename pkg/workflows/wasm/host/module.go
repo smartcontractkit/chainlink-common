@@ -504,13 +504,6 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
-	if err = linker.FuncWrap(
-		"env",
-		"sleep",
-		exec.sleep); err != nil {
-		return nil, fmt.Errorf("error wrapping sleep func: %w", err)
-	}
-
 	return linker.Instantiate(store, m.module)
 }
 

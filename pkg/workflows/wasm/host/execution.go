@@ -321,11 +321,6 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 	return ErrnoSuccess
 }
 
-// TODO: comment
-func (e *execution[T]) sleep(caller *wasmtime.Caller, ms int32) {
-	time.Sleep(time.Millisecond * time.Duration(ms))
-}
-
 // Loosely based off the implementation here:
 // https://github.com/tetratelabs/wazero/blob/main/imports/wasi_snapshot_preview1/poll.go#L52
 // For an overview of the spec, including the datatypes being referred to, see:

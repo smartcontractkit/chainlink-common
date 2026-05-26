@@ -11,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
@@ -313,8 +314,9 @@ func Test_NoDAG_EmitMetricDisabled(t *testing.T) {
 
 func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	return &ModuleConfig{
-		Logger:         logger.Test(t),
-		IsUncompressed: true,
+		Logger:              logger.Test(t),
+		IsUncompressed:      true,
+		PendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 	}
 }
 

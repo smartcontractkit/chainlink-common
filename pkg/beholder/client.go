@@ -567,16 +567,18 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	if err != nil {
 		return nil, err
 	}
-	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
-				exporter,
-				sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
-			)),
+
+	readerOpts := []sdkmetric.PeriodicReaderOption{
+		sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
+	}
+	for _, p := range cfg.MetricProducers {
+		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))
+	}
+	return sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, readerOpts...)),
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithView(cfg.MetricViews...),
-	)
-	return mp, nil
+	), nil
 }
 
 // newLoggerOpts creates options for a logger exporter

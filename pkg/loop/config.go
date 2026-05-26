@@ -82,11 +82,13 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 
-	envChipIngressEndpoint             = "CL_CHIP_INGRESS_ENDPOINT"
-	envChipIngressInsecureConnection   = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
-	envChipIngressBatchEmitterEnabled  = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
+	envChipIngressEndpoint            = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressInsecureConnection  = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressBatchEmitterEnabled = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -97,8 +99,8 @@ const (
 type EnvConfig struct {
 	AppID string
 
-	ChipIngressEndpoint           string
-	ChipIngressInsecureConnection bool
+	ChipIngressEndpoint            string
+	ChipIngressInsecureConnection  bool
 	ChipIngressBatchEmitterEnabled bool
 
 	CRESettings        string
@@ -139,15 +141,15 @@ type EnvConfig struct {
 	PyroscopePPROFBlockProfileRate     int
 	PyroscopePPROFMutexProfileFraction int
 
-	TelemetryEnabled                   bool
-	TelemetryEndpoint                  string
-	TelemetryInsecureConnection        bool
-	TelemetryCACertFile                string
-	TelemetryAttributes                OtelAttributes
-	TelemetryTraceSampleRatio          float64
-	TelemetryAuthHeaders               map[string]string
-	TelemetryAuthPubKeyHex             string
-	TelemetryAuthHeadersTTL            time.Duration
+	TelemetryEnabled            bool
+	TelemetryEndpoint           string
+	TelemetryInsecureConnection bool
+	TelemetryCACertFile         string
+	TelemetryAttributes         OtelAttributes
+	TelemetryTraceSampleRatio   float64
+	TelemetryAuthHeaders        map[string]string
+	TelemetryAuthPubKeyHex      string
+	TelemetryAuthHeadersTTL     time.Duration
 	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor
 	// (batched async custom-message export vs immediate per-record export).
 	TelemetryEmitterBatchProcessor     bool
@@ -164,6 +166,8 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
+	TelemetryPrometheusBridgeEnabled   bool
+	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
 
 	TracingEnabled         bool
@@ -255,6 +259,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
+	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
@@ -484,6 +490,11 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)
+		}
+		e.TelemetryPrometheusBridgePrefixes = strings.Split(os.Getenv(envTelemetryPrometheusBridgePrefixes), ",")
 		e.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)

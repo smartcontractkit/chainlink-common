@@ -42,6 +42,7 @@ type Config struct {
 	MetricViews          []metric.View
 	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "none".
 	MetricCompressor string
+	MetricProducers  []metric.Producer // For example, a prometheus bridge
 
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool

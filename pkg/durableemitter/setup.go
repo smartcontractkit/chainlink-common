@@ -22,8 +22,7 @@ func SetGlobalEmitter(d *DurableEmitter) {
 	globalEmitter.Store(d)
 }
 
-// GetGlobalEmitter returns the global DurableEmitter, or nil if Setup has not
-// been called or DurableEmitterEnabled was false.
+// GetGlobalEmitter returns the global DurableEmitter, or nil if Setup has not been called.
 func GetGlobalEmitter() *DurableEmitter {
 	return globalEmitter.Load()
 }
@@ -41,9 +40,6 @@ func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 // SetupConfig holds all configuration required to create and start a
 // DurableEmitter including its chip ingress transport clients.
 type SetupConfig struct {
-	// DurableEmitterEnabled gates the entire setup. Setup returns (nil, nil)
-	// when false — callers do not need an outer guard.
-	DurableEmitterEnabled bool
 	// Endpoint is the gRPC address for the Chip Ingress service.
 	Endpoint string
 	// InsecureConnection disables TLS when true.
@@ -76,9 +72,6 @@ func Setup(
 	cfg SetupConfig,
 	lggr logger.Logger,
 ) (*DurableEmitter, error) {
-	if !cfg.DurableEmitterEnabled {
-		return nil, nil
-	}
 	if cfg.Endpoint == "" {
 		return nil, errors.New("chip ingress endpoint is required for DurableEmitter")
 	}

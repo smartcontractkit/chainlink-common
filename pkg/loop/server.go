@@ -2,6 +2,7 @@ package loop
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -342,18 +343,19 @@ func (s *Server) start(opts ...ServerOpt) error {
 		s.LimitsFactory.Settings = s.cfg.settingsGetter
 	}
 
-	if s.DataSource != nil {
+	if s.EnvConfig.ChipIngressDurableEmitterEnabled && s.EnvConfig.ChipIngressEndpoint != "" {
+		if s.DataSource == nil {
+			return errors.New("data source required when durable emitter is enabled")
+		}
 		var auth beholder.Auth
 		if len(s.EnvConfig.TelemetryAuthHeaders) > 0 {
 			auth = beholder.NewStaticAuth(s.EnvConfig.TelemetryAuthHeaders, !s.EnvConfig.ChipIngressInsecureConnection)
 		}
-
 		durableCfg := durableemitter.SetupConfig{
-			DurableEmitterEnabled: s.EnvConfig.ChipIngressDurableEmitterEnabled,
-			Endpoint:              s.EnvConfig.ChipIngressEndpoint,
-			InsecureConnection:    s.EnvConfig.ChipIngressInsecureConnection,
-			Auth:                  auth,
-			RetransmitEnabled:     false, // LOOP plugins do not run the retransmit loop; the host process handles it.
+			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
+			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,
+			Auth:               auth,
+			RetransmitEnabled:  false, // LOOP plugins do not run the retransmit loop; the host process handles it.
 		}
 		store := durableemitter.NewPgDurableEventStore(s.DataSource)
 		var err error

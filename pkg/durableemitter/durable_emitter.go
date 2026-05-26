@@ -421,7 +421,6 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		// DB round-trip.
 		t0Publish := time.Now()
 		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish)); qErr != nil {
-			// Buffer full — event is safely in the DB; retransmit loop will deliver it.
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
 		}
 		return nil
@@ -492,8 +491,8 @@ func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb
 }
 
 // singleEventFallback sends a single event directly via the fallback
-// chipingress.Client. On success it marks the event delivered and decrements
-// the pending counter. On failure it logs and returns — the event remains in
+// chipingress.Client. On success, it marks the event delivered and decrements
+// the pending counter. On failure, it logs and returns — the event remains in
 // the DB and the retransmit loop will eventually deliver it.
 func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
 	pubCtx, pubCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
@@ -706,7 +705,7 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		}
 
 		id := pe.ID
-		if err := d.batchEmitter.QueueMessage(eventPb, d.retransmitCallback(id, eventPb)); err != nil {
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now())); err != nil {
 			skipped++
 		} else {
 			enqueued++
@@ -720,30 +719,6 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 	)
 }
 
-// retransmitCallback returns the delivery callback used for retransmit rows.
-// When the batch emitter reports failure, it falls back to a single-event
-// direct Publish (same as the primary delivery path).
-func (d *DurableEmitter) retransmitCallback(id int64, eventPb *chipingress.CloudEventPb) func(error) {
-	return func(sendErr error) {
-		if sendErr != nil {
-			// Batch path failed; try single-event fallback before leaving to next tick.
-			d.tryFallback(id, eventPb)
-			return
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-		defer cancel()
-
-		marked, markErr := d.store.MarkDeliveredBatch(ctx, []int64{id})
-		if markErr != nil {
-			d.eng.Errorw("failed to mark retransmit event delivered", "id", id, "error", markErr)
-			return
-		}
-		d.decPending(marked)
-		if d.metrics != nil {
-			d.metrics.deliverComplete.Add(ctx, marked)
-		}
-	}
-}
 
 func (d *DurableEmitter) purgeLoop() {
 	interval := d.cfg.PurgeInterval

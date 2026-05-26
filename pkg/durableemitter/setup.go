@@ -71,14 +71,6 @@ type SetupConfig struct {
 
 // Setup creates a DurableEmitter with dedicated batch and fallback chip ingress
 // clients, registers it as the global emitter, and returns it unconfigured.
-//
-// The caller is responsible for starting and stopping the emitter:
-//   - In chainlink application: append the returned emitter to srvcs so the
-//     service runner manages Start/Close.
-//   - In LOOP server: call emitter.Start(ctx) then emitter.Close() on shutdown.
-//
-// When cfg.DurableEmitterEnabled is false, Setup is a no-op and returns
-// (nil, nil) — callers do not need to guard the call.
 func Setup(
 	store DurableEventStore,
 	cfg SetupConfig,

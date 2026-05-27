@@ -6,6 +6,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"maps"
 	"sync"
@@ -218,4 +220,33 @@ func NewAuthHeaderV2(ctx context.Context, pubKey ed25519.PublicKey, signer Signe
 
 func authDialOpt(auth PerRPCCredentialsProvider) grpc.DialOption {
 	return grpc.WithPerRPCCredentials(auth.Credentials())
+}
+
+// newRotatingAuthFromConfig validates config and returns a rotating Auth and its lazySigner.
+// Returns (nil, nil, nil) if AuthHeadersTTL == 0 (no rotating auth configured).
+func newRotatingAuthFromConfig(cfg Config) (Auth, *lazySigner, error) {
+	if cfg.AuthHeadersTTL <= 0 {
+		return nil, nil, nil
+	}
+
+	if cfg.AuthPublicKeyHex == "" {
+		return nil, nil, errors.New("auth: public key hex required for rotating auth (TTL > 0)")
+	}
+
+	if cfg.AuthHeadersTTL < 10*time.Minute {
+		return nil, nil, errors.New("auth: headers TTL must be at least 10 minutes")
+	}
+
+	key, err := hex.DecodeString(cfg.AuthPublicKeyHex)
+	if err != nil {
+		return nil, nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
+	}
+
+	signer := &lazySigner{}
+	if cfg.AuthKeySigner != nil {
+		signer.Set(cfg.AuthKeySigner)
+	}
+
+	auth := NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
+	return auth, signer, nil
 }

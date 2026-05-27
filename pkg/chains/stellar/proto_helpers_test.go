@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/stellar/go-stellar-sdk/xdr"
 	"github.com/stretchr/testify/require"
 
 	conv "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
@@ -140,17 +139,84 @@ func TestConvertGetLatestLedgerResponseFromProto_Nil(t *testing.T) {
 
 func TestConvertReadContractRequest_RoundTrip(t *testing.T) {
 	boolVal := true
-	u32 := xdr.Uint32(77)
-	sym := xdr.ScSymbol("hello")
+	u32 := uint32(77)
+	sym := "hello"
 	domain := stellartypes.ReadContractRequest{
 		ContractID: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
 		Function:   "transfer",
-		Args: []xdr.ScVal{
-			{Type: xdr.ScValTypeScvBool, B: &boolVal},
-			{Type: xdr.ScValTypeScvU32, U32: &u32},
-			{Type: xdr.ScValTypeScvSymbol, Sym: &sym},
+		Args: []stellartypes.ScVal{
+			{Type: stellartypes.ScValTypeBool, Bool: &boolVal},
+			{Type: stellartypes.ScValTypeU32, U32: &u32},
+			{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
 		},
 		LedgerSequence: 42,
+	}
+
+	proto, err := conv.ConvertReadContractRequestToProto(domain)
+	require.NoError(t, err)
+	require.Len(t, proto.GetArgs(), 3)
+
+	got, err := conv.ConvertReadContractRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertReadContractRequest_RoundTrip_RichArgs(t *testing.T) {
+	// End-to-end coverage of the chains-level pipeline with a mix of ScVal shapes:
+	// address (account), nested vec-of-map, and contract-instance-with-storage.
+	accountBytes := make([]byte, 32)
+	for i := range accountBytes {
+		accountBytes[i] = 0x11
+	}
+	wasmHash := make([]byte, 32)
+	for i := range wasmHash {
+		wasmHash[i] = 0x22
+	}
+	addrArg := stellartypes.ScVal{
+		Type: stellartypes.ScValTypeAddress,
+		Address: &stellartypes.ScAddress{
+			Type:      stellartypes.ScAddressTypeAccountID,
+			AccountID: accountBytes,
+		},
+	}
+	mapKey := "amount"
+	mapVal := uint64(1_000_000)
+	innerMap := &stellartypes.ScVal{
+		Type: stellartypes.ScValTypeMap,
+		Map: &stellartypes.ScMap{Entries: []stellartypes.ScMapEntry{
+			{
+				Key: &stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &mapKey},
+				Val: &stellartypes.ScVal{Type: stellartypes.ScValTypeU64, U64: &mapVal},
+			},
+		}},
+	}
+	vecArg := stellartypes.ScVal{
+		Type: stellartypes.ScValTypeVec,
+		Vec:  &stellartypes.ScVec{Values: []*stellartypes.ScVal{innerMap}},
+	}
+	slot := "slot"
+	slotVal := uint32(7)
+	instanceArg := stellartypes.ScVal{
+		Type: stellartypes.ScValTypeContractInstance,
+		ContractInstance: &stellartypes.ScContractInstance{
+			Executable: &stellartypes.ContractExecutable{
+				Type:     stellartypes.ContractExecutableTypeWasmHash,
+				WasmHash: wasmHash,
+			},
+			Storage: []stellartypes.ScMapEntry{
+				{
+					Key: &stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &slot},
+					Val: &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &slotVal},
+				},
+			},
+		},
+	}
+
+	domain := stellartypes.ReadContractRequest{
+		ContractID:     "C_RICH",
+		Function:       "do_work",
+		Args:           []stellartypes.ScVal{addrArg, vecArg, instanceArg},
+		LedgerSequence: 9,
 	}
 
 	proto, err := conv.ConvertReadContractRequestToProto(domain)
@@ -192,7 +258,7 @@ func TestConvertReadContractRequestToProto_BadArg(t *testing.T) {
 	_, err := conv.ConvertReadContractRequestToProto(stellartypes.ReadContractRequest{
 		ContractID: "C_X",
 		Function:   "fn",
-		Args:       []xdr.ScVal{{Type: xdr.ScValTypeScvBool}}, // B is nil
+		Args:       []stellartypes.ScVal{{Type: stellartypes.ScValTypeBool}}, // Bool is nil
 	})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "args[0]")

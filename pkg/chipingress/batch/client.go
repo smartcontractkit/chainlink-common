@@ -31,10 +31,11 @@ type seqnumKey struct {
 
 // Client is a batching client that accumulates messages and sends them in batches.
 type Client struct {
-	client             chipingress.Client
-	batchSize          int
-	maxGRPCRequestSize int
-	cloneEvent         bool
+	client                  chipingress.Client
+	batchSize               int
+	maxGRPCRequestSize      int // configured max, used for metrics/error reporting
+	effectiveMaxRequestSize int // maxGRPCRequestSize minus grpcFramingOverhead, used for splitting
+	cloneEvent              bool
 	maxConcurrentSends chan struct{}
 	batchInterval      time.Duration
 	maxPublishTimeout  time.Duration
@@ -45,7 +46,7 @@ type Client struct {
 	shutdownTimeout    time.Duration
 	shutdownOnce       sync.Once
 	batcherDone        chan struct{}
-	cancelBatcher      context.CancelFunc
+	started            bool
 	counters           sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
 
 	metrics batchClientMetrics
@@ -57,6 +58,7 @@ type batchClientMetrics struct {
 	requestSizeBytes    otelmetric.Int64Histogram
 	requestLatencyMS    otelmetric.Float64Histogram
 	configInfo          otelmetric.Int64Gauge
+	batchSplitsTotal    otelmetric.Int64Counter
 	batchSizeAttr       otelmetric.MeasurementOption
 	maxGRPCReqSizeAttr  otelmetric.MeasurementOption
 	successStatusAttr   otelmetric.MeasurementOption
@@ -69,11 +71,12 @@ type Opt func(*Client)
 // NewBatchClient creates a new batching client with the given options.
 func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c := &Client{
-		client:             client,
-		log:                zap.NewNop().Sugar(),
-		batchSize:          10,
-		maxGRPCRequestSize: 10 * 1024 * 1024,
-		cloneEvent:         true,
+		client:                  client,
+		log:                     zap.NewNop().Sugar(),
+		batchSize:               10,
+		maxGRPCRequestSize:      10 * 1024 * 1024,
+		effectiveMaxRequestSize: 10*1024*1024 - grpcFramingOverhead,
+		cloneEvent:              true,
 		maxConcurrentSends: make(chan struct{}, 1),
 		messageBuffer:      make(chan *messageWithCallback, 200),
 		batchInterval:      100 * time.Millisecond,
@@ -97,21 +100,23 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	return c, nil
 }
 
-// Start begins processing messages from the queue and sending them in batches
+// Start begins processing messages from the queue and sending them in batches.
+// The context is used only for the initial metrics recording call and is NOT
+// retained after Start returns. The client manages its own internal lifecycle
+// context that is cancelled when Stop is called.
 func (b *Client) Start(ctx context.Context) {
 	b.metrics.recordConfig(ctx, b)
+	b.started = true
 
-	// Create a cancellable context for the batcher
-	batcherCtx, cancel := context.WithCancel(ctx)
-	b.cancelBatcher = cancel
+	// Detach from the caller's cancellation but keep its values (trace IDs, etc.).
+	// This avoids retaining a startup context whose cancellation we don't control.
+	batcherCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 
 	go func() {
 		defer close(b.batcherDone)
 
 		go func() {
 			select {
-			case <-ctx.Done():
-				b.Stop()
 			case <-b.stopCh:
 				cancel()
 			}
@@ -143,15 +148,11 @@ func (b *Client) Stop() {
 		ctx, cancel := context.WithTimeout(context.Background(), b.shutdownTimeout)
 		defer cancel()
 
-		started := b.cancelBatcher != nil
-		if started {
-			b.cancelBatcher()
-		}
 		close(b.stopCh)
 
 		// Only wait for the batcher goroutine when Start() was called;
 		// otherwise batcherDone is never closed and we'd block until timeout.
-		if started {
+		if b.started {
 			done := make(chan struct{})
 			go func() {
 				<-b.batcherDone
@@ -262,7 +263,11 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 	go func() {
 		defer func() { <-b.maxConcurrentSends }()
 
-		for _, batchMessages := range splitMessagesByRequestSize(messages, b.maxGRPCRequestSize) {
+		splitBatches := splitMessagesByRequestSize(messages, b.effectiveMaxRequestSize)
+		if len(splitBatches) > 1 {
+			b.metrics.batchSplitsTotal.Add(ctx, 1)
+		}
+		for _, batchMessages := range splitBatches {
 			batchReq, batchBytes := newBatchRequest(batchMessages)
 			if b.maxGRPCRequestSize > 0 && batchBytes > b.maxGRPCRequestSize {
 				err := fmt.Errorf("publish batch serialized size %d exceeds max gRPC request size %d", batchBytes, b.maxGRPCRequestSize)
@@ -299,6 +304,15 @@ func (b *Client) completeBatchCallbacks(messages []*messageWithCallback, err err
 		}
 	})
 }
+
+// grpcFramingOverhead accounts for gRPC framing, HTTP/2 headers, auth tokens,
+// tracing metadata, and other per-request overhead not captured by proto.Size.
+const grpcFramingOverhead = 10 * 1024 // 10 KiB
+
+// minMaxGRPCRequestSize is the minimum allowed value for maxGRPCRequestSize.
+// Values below this threshold are clamped to ensure the framing overhead
+// reservation remains meaningful.
+const minMaxGRPCRequestSize = 1024 * 1024 // 1 MiB
 
 func splitMessagesByRequestSize(messages []*messageWithCallback, maxRequestSize int) [][]*messageWithCallback {
 	if len(messages) == 0 {
@@ -342,10 +356,14 @@ func WithBatchSize(batchSize int) Opt {
 	}
 }
 
-// WithMaxGRPCRequestSize sets the max gRPC request size in bytes used for metric comparison attributes.
+// WithMaxGRPCRequestSize sets the max gRPC request size in bytes used for splitting batches.
+// Values below minMaxGRPCRequestSize (1 MiB) are clamped up to ensure the framing
+// overhead reservation remains meaningful.
 func WithMaxGRPCRequestSize(maxReqSize int) Opt {
 	return func(c *Client) {
-		c.maxGRPCRequestSize = maxReqSize
+		clamped := max(maxReqSize, minMaxGRPCRequestSize)
+		c.maxGRPCRequestSize = clamped
+		c.effectiveMaxRequestSize = clamped - grpcFramingOverhead
 	}
 }
 
@@ -441,6 +459,14 @@ func newBatchClientMetrics() (batchClientMetrics, error) {
 	if err != nil {
 		return batchClientMetrics{}, err
 	}
+	batchSplitsTotal, err := meter.Int64Counter(
+		"chip_ingress.batch.batch_splits_total",
+		otelmetric.WithDescription("Total number of times a batch was split due to exceeding the effective gRPC request size limit (max request size minus reserved framing overhead)"),
+		otelmetric.WithUnit("{split}"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
 
 	return batchClientMetrics{
 		sendRequestsTotal: sendRequestsTotal,
@@ -449,6 +475,7 @@ func newBatchClientMetrics() (batchClientMetrics, error) {
 		requestSizeBytes:    requestSizeBytes,
 		requestLatencyMS:    requestLatencyMS,
 		configInfo:          configInfo,
+		batchSplitsTotal:    batchSplitsTotal,
 		successStatusAttr: otelmetric.WithAttributeSet(attribute.NewSet(
 			attribute.String("status", "success"),
 		)),

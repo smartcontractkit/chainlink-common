@@ -20,17 +20,18 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestGlobal(t *testing.T) {
 	// Get global logger, tracer, meter, messageEmitter
 	// If not initialized with beholder.SetClient will return noop client
 	logger, tracer, meter, messageEmitter := beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
-	noopClient := beholder.NewNoopClient()
+	noopClient := beholder.NoopClientConfig{Lggr: pkglogger.Test(t)}.New()
 	assert.IsType(t, otellognoop.Logger{}, logger)
 	assert.IsType(t, oteltracenoop.Tracer{}, tracer)
 	assert.IsType(t, otelmetricnoop.Meter{}, meter)
-	expectedMessageEmitter := beholder.NewNoopClient().Emitter
+	expectedMessageEmitter := beholder.NoopClientConfig{Lggr: pkglogger.Test(t)}.New().Emitter
 	assert.IsType(t, expectedMessageEmitter, messageEmitter)
 
 	assert.IsType(t, noopClient, beholder.GetClient())
@@ -76,6 +77,10 @@ func TestClient_SetGlobalOtelProviders(t *testing.T) {
 	var b strings.Builder
 	client, err := beholder.NewWriterClient(&b)
 	require.NoError(t, err)
+	require.NoError(t, client.Start(t.Context()))
+	defer func() {
+		require.NoError(t, client.Close())
+	}()
 	// Set global Otel Client
 	beholder.SetClient(client)
 

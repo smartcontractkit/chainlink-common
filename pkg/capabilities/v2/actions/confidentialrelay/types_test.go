@@ -319,7 +319,7 @@ func TestRelayResponseSignaturePayload_UsesExpectedPrefix(t *testing.T) {
 }
 
 // TestValidateEnclaveConfig covers the EnclaveConfig validation added for
-// PRIV-458 / CL112-01. The relay needs each request to carry a non-empty
+// PRIV-458. The relay needs each request to carry a non-empty
 // signers list, non-zero F, and a non-empty MasterPublicKey so it can
 // meaningfully compare against onchain DON state.
 func TestValidateEnclaveConfig(t *testing.T) {

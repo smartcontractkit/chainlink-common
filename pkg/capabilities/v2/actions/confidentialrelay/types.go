@@ -30,7 +30,7 @@ const (
 // relay needs to verify against onchain DON state. The enclave fills this
 // from its local types.EnclaveConfig before sending each relay request.
 //
-// PRIV-458 / Sigma Prime CL112-01: without this field the request's Nitro
+// PRIV-458: without this field the request's Nitro
 // attestation cryptographically binds the request hash but does not let the
 // relay compare the enclave's config against any reference. A malicious host
 // can produce genuinely-attested requests over a forged enclave config and

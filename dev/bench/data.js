@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779825983038,
+  "lastUpdate": 1779880532974,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48180,6 +48180,66 @@ window.BENCHMARK_DATA = {
             "value": 132151,
             "unit": "ns/op",
             "extra": "9051 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "883689d933be57ea9d0f2f1a6782091ed3f878de",
+          "message": "Bump chainlink-protos/cre/go to additive ConfidentialWorkflow proto (#2093)\n\n* Bump chainlink-protos/cre/go to additive ConfidentialWorkflow proto\n\nBumps cre/go to v0.0.0-20260526195338-adcf8013a1b7 (chainlink-protos #376) and\nregenerates the confidentialworkflow client. The additive proto keeps the old\nGo API (SecretIdentifier, vault_don_secrets, WorkflowExecution.binary_url, bytes\nexecute_request/execution_result) so existing chainlink consumers compile\nunchanged, while adding the per-node binary_url, requirements, ProvidedTees, and\nthe typed sdk_execute_request/sdk_execution_result fields.\n\nRebased onto main after #2091 (revert) merged; supersedes that revert.\n\n* Regenerate http/evm/solana cre clients for the cre/go bump\n\nThe cre/go bump to adcf8013 also advances the http, evm, and solana protos\n(reorganized on capabilities-development between a827acdffe43 and adcf8013), so\nmake generate regenerates their clients. No proto field changes here beyond what\nthose upstream commits introduced; required to keep check-tidy green.",
+          "timestamp": "2026-05-27T11:02:43Z",
+          "tree_id": "490e1d63284c367f346ff559e1c6ee81deb7c14e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/883689d933be57ea9d0f2f1a6782091ed3f878de"
+        },
+        "date": 1779880529903,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 591.5,
+            "unit": "ns/op",
+            "extra": "1983373 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 65180,
+            "unit": "ns/op",
+            "extra": "17358 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 312.5,
+            "unit": "ns/op",
+            "extra": "3374348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 60799,
+            "unit": "ns/op",
+            "extra": "19687 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22688,
+            "unit": "ns/op",
+            "extra": "52902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 101334,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

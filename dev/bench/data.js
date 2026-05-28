@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780002020661,
+  "lastUpdate": 1780005529226,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48420,6 +48420,66 @@ window.BENCHMARK_DATA = {
             "value": 141969,
             "unit": "ns/op",
             "extra": "8276 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sishirg27@gmail.com",
+            "name": "Sishir Giri",
+            "username": "stackman27"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cf893cdf41184b2124167c9e57b8cc336f889b61",
+          "message": "feat(ocr2key): expose raw EVM onchain signing public key (#2087)\n\n* get raw pubKey\n\n* optional interface + cast\n\n* keep changes out of interface\n\n* fix(ocr2key): implement RawEVMOnChainPublicKey without generic alias\n\nDefine RawEVMOnChainPublicKey via a type assertion on *keyBundle[*evmKeyring]\nso the keystore module compiles under Go generics.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* test(ocr2key): cover RawEVMOnChainPublicKey helper\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n---------\n\nCo-authored-by: Cursor <cursoragent@cursor.com>",
+          "timestamp": "2026-05-28T21:47:26Z",
+          "tree_id": "bb454718cf871b019256b9f983b05914b2a572d5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cf893cdf41184b2124167c9e57b8cc336f889b61"
+        },
+        "date": 1780005526275,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353,
+            "unit": "ns/op",
+            "extra": "3373431 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 80306,
+            "unit": "ns/op",
+            "extra": "15110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 384,
+            "unit": "ns/op",
+            "extra": "3119362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79637,
+            "unit": "ns/op",
+            "extra": "15142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29691,
+            "unit": "ns/op",
+            "extra": "40156 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 133047,
+            "unit": "ns/op",
+            "extra": "8832 times\n4 procs"
           }
         ]
       }

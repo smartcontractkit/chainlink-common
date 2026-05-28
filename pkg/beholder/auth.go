@@ -222,9 +222,9 @@ func authDialOpt(auth PerRPCCredentialsProvider) grpc.DialOption {
 	return grpc.WithPerRPCCredentials(auth.Credentials())
 }
 
-// newRotatingAuthFromConfig validates config and returns a rotating Auth and its lazySigner.
-// Returns (nil, nil, nil) if AuthHeadersTTL == 0 (no rotating auth configured).
-func newRotatingAuthFromConfig(cfg Config) (Auth, *lazySigner, error) {
+// buildRotatingAuth validates cfg and returns a rotating Auth and its lazySigner.
+// Returns (nil, nil, nil) when AuthHeadersTTL == 0 (no rotating auth configured).
+func buildRotatingAuth(cfg Config) (Auth, *lazySigner, error) {
 	if cfg.AuthHeadersTTL <= 0 {
 		return nil, nil, nil
 	}

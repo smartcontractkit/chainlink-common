@@ -127,7 +127,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// Two modes are supported:
 	// 1. Static auth: If AuthHeadersTTL == 0, use AuthHeaders as-is and never change
 	// 2. Rotating auth: If AuthHeadersTTL > 0, create lazySigner for deferred keystore injection
-	auth, signer, err := newRotatingAuthFromConfig(cfg)
+	auth, signer, err := buildRotatingAuth(cfg)
 	if err != nil {
 		return nil, err
 	}

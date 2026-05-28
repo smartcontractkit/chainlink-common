@@ -20,6 +20,7 @@ message SecretRequest {
 message EncryptedShares {
     repeated string shares = 1;
     string encryption_key = 2;
+    repeated bytes binary_shares = 3;
 }
 
 message SecretData {
@@ -212,6 +213,14 @@ message StoredPendingQueueIndex {
 message StoredPendingQueueItem {
   google.protobuf.Any item = 1;
   string id = 2;
+}
+
+// Wire format for pending queue blobs. Not persisted.
+// When is_batch=false, wire-compatible with StoredPendingQueueItem (field 1 = Any, field 2 = string).
+message PendingQueueBlobItems {
+  repeated google.protobuf.Any items = 1;  // non-batch: raw payload Any; batch: each Any wraps a StoredPendingQueueItem
+  string id = 2;                            // non-batch: request ID; batch: empty
+  bool is_batch = 3;                        // disambiguates single-item from batch during unmarshalling
 }
 
 message ReportingPluginConfig {

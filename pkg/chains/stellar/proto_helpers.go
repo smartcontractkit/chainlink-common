@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/stellar/go-stellar-sdk/xdr"
-
 	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
 
@@ -180,7 +178,7 @@ func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadCo
 	}
 	args := make([]*scval.ScVal, len(req.Args))
 	for i, sv := range req.Args {
-		psv, err := stellarcap.XdrScValToProto(sv)
+		psv, err := stellarcap.ScValToProto(sv)
 		if err != nil {
 			return nil, fmt.Errorf("args[%d]: %w", i, err)
 		}
@@ -207,9 +205,9 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadCo
 		return stellar.ReadContractRequest{}, fmt.Errorf("function is required")
 	}
 	pArgs := p.GetArgs()
-	args := make([]xdr.ScVal, len(pArgs))
+	args := make([]stellar.ScVal, len(pArgs))
 	for i, psv := range pArgs {
-		sv, err := stellarcap.ProtoScValToXDR(psv)
+		sv, err := stellarcap.ProtoToScVal(psv)
 		if err != nil {
 			return stellar.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
 		}

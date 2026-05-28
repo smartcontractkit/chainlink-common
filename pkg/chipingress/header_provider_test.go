@@ -81,9 +81,9 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(tsr)
+		requirer, ok := provider.(tsr)
 		require.True(t, ok)
-		assert.True(t, tsr.RequireTransportSecurity())
+		assert.True(t, requirer.RequireTransportSecurity())
 	})
 
 	t.Run("static auth does not require transport security when insecure", func(t *testing.T) {
@@ -98,9 +98,9 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(tsr)
+		requirer, ok := provider.(tsr)
 		require.True(t, ok)
-		assert.False(t, tsr.RequireTransportSecurity())
+		assert.False(t, requirer.RequireTransportSecurity())
 	})
 
 	t.Run("returns rotating auth when TTL > 0 with valid config", func(t *testing.T) {
@@ -115,9 +115,9 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(tsr)
+		requirer, ok := provider.(tsr)
 		require.True(t, ok)
-		assert.False(t, tsr.RequireTransportSecurity())
+		assert.False(t, requirer.RequireTransportSecurity())
 	})
 
 	t.Run("rotating auth requires transport security when not insecure", func(t *testing.T) {
@@ -132,9 +132,9 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(tsr)
+		requirer, ok := provider.(tsr)
 		require.True(t, ok)
-		assert.True(t, tsr.RequireTransportSecurity())
+		assert.True(t, requirer.RequireTransportSecurity())
 	})
 
 	t.Run("rotating auth without AuthKeySigner still succeeds", func(t *testing.T) {

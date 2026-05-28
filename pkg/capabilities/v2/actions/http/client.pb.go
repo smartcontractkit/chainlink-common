@@ -320,9 +320,9 @@ const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1as\n" +
 	"\x11MultiHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
-	"\x05value\x18\x02 \x01(\v22.capabilities.networking.http.v1alpha.HeaderValuesR\x05value:\x028\x012\x98\x01\n" +
+	"\x05value\x18\x02 \x01(\v22.capabilities.networking.http.v1alpha.HeaderValuesR\x05value:\x028\x012\x9b\x01\n" +
 	"\x06Client\x12l\n" +
-	"\vSendRequest\x12-.capabilities.networking.http.v1alpha.Request\x1a..capabilities.networking.http.v1alpha.Response\x1a \x82\xb5\x18\x1c\b\x02\x12\x18http-actions@1.0.0-alphab\x06proto3"
+	"\vSendRequest\x12-.capabilities.networking.http.v1alpha.Request\x1a..capabilities.networking.http.v1alpha.Response\x1a#\x82\xb5\x18\x1f\b\x02\x12\x18http-actions@1.0.0-alpha\"\x01\x01b\x06proto3"
 
 var (
 	file_capabilities_networking_http_v1alpha_client_proto_rawDescOnce sync.Once

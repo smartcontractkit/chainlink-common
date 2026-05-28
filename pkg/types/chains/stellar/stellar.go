@@ -2,8 +2,36 @@ package stellar
 
 import (
 	"context"
+)
 
-	"github.com/stellar/go-stellar-sdk/xdr"
+type ScErrorType int32
+
+const (
+	ScErrorTypeContract ScErrorType = 0
+	ScErrorTypeWasmVM   ScErrorType = 1
+	ScErrorTypeContext  ScErrorType = 2
+	ScErrorTypeStorage  ScErrorType = 3
+	ScErrorTypeObject   ScErrorType = 4
+	ScErrorTypeCrypto   ScErrorType = 5
+	ScErrorTypeEvents   ScErrorType = 6
+	ScErrorTypeBudget   ScErrorType = 7
+	ScErrorTypeValue    ScErrorType = 8
+	ScErrorTypeAuth     ScErrorType = 9
+)
+
+type ScErrorCode int32
+
+const (
+	ScErrorCodeArithDomain    ScErrorCode = 0
+	ScErrorCodeIndexBounds    ScErrorCode = 1
+	ScErrorCodeInvalidInput   ScErrorCode = 2
+	ScErrorCodeMissingValue   ScErrorCode = 3
+	ScErrorCodeExistingValue  ScErrorCode = 4
+	ScErrorCodeExceededLimit  ScErrorCode = 5
+	ScErrorCodeInvalidAction  ScErrorCode = 6
+	ScErrorCodeInternalError  ScErrorCode = 7
+	ScErrorCodeUnexpectedType ScErrorCode = 8
+	ScErrorCodeUnexpectedSize ScErrorCode = 9
 )
 
 // Client wraps Stellar RPC calls via the type/chains/stellar domain types.
@@ -14,7 +42,7 @@ type Client interface {
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
 	// ReadContract simulates a read-only Soroban contract function call.
-	// Each element of Args is an XDR ScVal value.
+	// Each element of req.Args is a domain ScVal value.
 	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
 }
 
@@ -47,15 +75,14 @@ type GetLedgerEntriesResponse struct {
 }
 
 // ReadContractRequest is the domain representation of a Soroban read-only call.
-// Use the proto helpers to construct XDR ScVal values conveniently.
 type ReadContractRequest struct {
 	// ContractID is the Stellar contract address in C… StrKey encoding.
 	ContractID string
 	// Function is the Soroban function name to call.
 	Function string
-	// Args holds one XDR ScVal per contract argument.
+	// Args holds one ScVal per contract argument.
 	// An empty slice is valid for zero-argument functions.
-	Args []xdr.ScVal
+	Args []ScVal
 	// LedgerSequence is the ledger to simulate against; 0 means use the latest.
 	LedgerSequence uint32
 }
@@ -86,22 +113,174 @@ type GetLatestLedgerResponse struct {
 	LedgerMetadataXDR string
 }
 
-// RMNSigner is a single signer entry in the RMN Remote contract config.
-type RMNSigner struct {
-	// NodeIndex is the index of the RMN node.
-	NodeIndex uint64
-	// OnchainPubKey is the hex-encoded 32-byte Ed25519 public key used for on-chain verification.
-	OnchainPubKey string
+type ScVal struct {
+	Type ScValType
+
+	Bool      *bool
+	Void      *Void
+	Error     *ScError
+	U32       *uint32
+	I32       *int32
+	U64       *uint64
+	I64       *int64
+	Timepoint *uint64
+	Duration  *uint64
+
+	U128 *UInt128Parts
+	I128 *Int128Parts
+	U256 *UInt256Parts
+	I256 *Int256Parts
+
+	Bytes  []byte
+	String *string
+	Symbol *string
+
+	Vec                       *ScVec
+	Map                       *ScMap
+	Address                   *ScAddress
+	ContractInstance          *ScContractInstance
+	LedgerKeyContractInstance *Void
+	NonceKey                  *ScNonceKey
 }
 
-// RMNConfig holds the active configuration of the RMN Remote contract.
-type RMNConfig struct {
-	// Version is the config version number.
-	Version uint32
-	// FSign is the minimum number of valid signatures required.
-	FSign uint64
-	// RMNHomeConfigDigest is the hex-encoded 32-byte digest of the corresponding RMN Home config.
-	RMNHomeConfigDigest string
-	// Signers is the ordered list of RMN signers for this config.
-	Signers []RMNSigner
+// ===== Integer Parts =====
+
+type UInt128Parts struct {
+	Hi uint64
+	Lo uint64
 }
+
+type Int128Parts struct {
+	Hi int64
+	Lo uint64
+}
+
+type UInt256Parts struct {
+	HiHi uint64
+	HiLo uint64
+	LoHi uint64
+	LoLo uint64
+}
+
+type Int256Parts struct {
+	HiHi int64
+	HiLo uint64
+	LoHi uint64
+	LoLo uint64
+}
+
+// ===== Error =====
+
+type ScError struct {
+	Type ScErrorType
+
+	// only one should be set
+	ContractCode *uint32
+	Code         *ScErrorCode
+}
+
+// ===== Accounts / Addresses =====
+
+type MuxedEd25519Account struct {
+	ID      uint64
+	Ed25519 []byte // 32-byte pubkey
+}
+
+type ClaimableBalanceID struct {
+	V0 []byte // 32-byte SHA256 hash
+}
+
+type ScAddressType int
+
+const (
+	ScAddressTypeAccountID ScAddressType = iota
+	ScAddressTypeContractID
+	ScAddressTypeMuxedAccount
+	ScAddressTypeClaimableBalanceID
+	ScAddressTypeLiquidityPoolID
+)
+
+type ScAddress struct {
+	Type ScAddressType
+
+	AccountID        []byte
+	ContractID       []byte
+	MuxedAccount     *MuxedEd25519Account
+	ClaimableBalance *ClaimableBalanceID
+	LiquidityPoolID  []byte
+}
+
+// ===== Contract Executable =====
+
+type ContractExecutableType int
+
+const (
+	ContractExecutableTypeWasmHash ContractExecutableType = iota
+	ContractExecutableTypeStellarAsset
+)
+
+type ContractExecutable struct {
+	Type ContractExecutableType
+
+	WasmHash     []byte
+	StellarAsset bool
+}
+
+// ===== Contract Instance =====
+
+type ScContractInstance struct {
+	Executable *ContractExecutable
+	Storage    []ScMapEntry
+}
+
+// ===== Misc =====
+
+type ScNonceKey struct {
+	Nonce int64
+}
+
+type Void struct{}
+
+// ===== Collections =====
+
+type ScMapEntry struct {
+	Key *ScVal
+	Val *ScVal
+}
+
+type ScVec struct {
+	Values []*ScVal
+}
+
+type ScMap struct {
+	Entries []ScMapEntry
+}
+
+// ===== SCVal =====
+
+type ScValType int
+
+const (
+	ScValTypeBool ScValType = iota
+	ScValTypeVoid
+	ScValTypeError
+	ScValTypeU32
+	ScValTypeI32
+	ScValTypeU64
+	ScValTypeI64
+	ScValTypeTimepoint
+	ScValTypeDuration
+	ScValTypeU128
+	ScValTypeI128
+	ScValTypeU256
+	ScValTypeI256
+	ScValTypeBytes
+	ScValTypeString
+	ScValTypeSymbol
+	ScValTypeVec
+	ScValTypeMap
+	ScValTypeAddress
+	ScValTypeContractInstance
+	ScValTypeLedgerKeyContractInstance
+	ScValTypeNonceKey
+)

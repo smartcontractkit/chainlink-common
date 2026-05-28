@@ -39,12 +39,6 @@ type KeyBundle interface {
 	NaclBoxOpenAnonymous(ciphertext []byte) (plaintext []byte, err error)
 }
 
-// EVMRawOnChainPublicKeyer is implemented by EVM OCR2 key bundles only.
-type EVMRawOnChainPublicKeyer interface {
-	// RawOnChainPublicKey returns the full uncompressed secp256k1 public key (65 bytes, hex-encoded).
-	RawOnChainPublicKey() string
-}
-
 // check generic keybundle for each chain conforms to KeyBundle interface
 var _ KeyBundle = &keyBundle[*evmKeyring]{}
 var _ KeyBundle = &keyBundle[*cosmosKeyring]{}
@@ -53,8 +47,6 @@ var _ KeyBundle = &keyBundle[*starkkey.OCR2Key]{}
 var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
 var _ KeyBundle = &keyBundle[*tonKeyring]{}
 var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
-
-var _ EVMRawOnChainPublicKeyer = (*evmKeyBundle)(nil)
 
 var curve = secp256k1.S256()
 

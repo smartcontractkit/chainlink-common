@@ -23,6 +23,13 @@ func (fakeSigner) Sign(_ context.Context, _ string, _ []byte) ([]byte, error) {
 }
 
 func TestNewHeaderProvider(t *testing.T) {
+	// tsr is an inline interface used to assert the TLS requirement on
+	// providers returned by NewHeaderProvider without depending on an
+	// exported type assertion helper.
+	type tsr interface {
+		RequireTransportSecurity() bool
+	}
+
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	pubKeyHex := hex.EncodeToString(pubKey)
@@ -74,7 +81,7 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(chipingress.TransportSecurityRequirer)
+		tsr, ok := provider.(tsr)
 		require.True(t, ok)
 		assert.True(t, tsr.RequireTransportSecurity())
 	})
@@ -91,7 +98,7 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(chipingress.TransportSecurityRequirer)
+		tsr, ok := provider.(tsr)
 		require.True(t, ok)
 		assert.False(t, tsr.RequireTransportSecurity())
 	})
@@ -108,7 +115,7 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(chipingress.TransportSecurityRequirer)
+		tsr, ok := provider.(tsr)
 		require.True(t, ok)
 		assert.False(t, tsr.RequireTransportSecurity())
 	})
@@ -125,7 +132,7 @@ func TestNewHeaderProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
-		tsr, ok := provider.(chipingress.TransportSecurityRequirer)
+		tsr, ok := provider.(tsr)
 		require.True(t, ok)
 		assert.True(t, tsr.RequireTransportSecurity())
 	})

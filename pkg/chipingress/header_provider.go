@@ -29,12 +29,6 @@ type Signer interface {
 	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
 }
 
-// TransportSecurityRequirer is implemented by HeaderProviders built by this
-// package, allowing callers to inspect whether TLS is required.
-type TransportSecurityRequirer interface {
-	RequireTransportSecurity() bool
-}
-
 // HeaderProviderConfig captures the inputs needed by NewHeaderProvider.
 type HeaderProviderConfig struct {
 	// AuthHeaders are returned as-is for static auth, or used as the initial
@@ -59,8 +53,22 @@ type HeaderProviderConfig struct {
 	InsecureConnection bool
 }
 
-// NewHeaderProvider creates a HeaderProvider from cfg using the same logic
-// previously implemented in beholder:
+// NewHeaderProvider creates a HeaderProvider from cfg.
+//
+// Selection rules — these match the inline switch in pkg/beholder/client.go
+// that wires the chipingress emitter's auth, so a chipingress.HeaderProvider
+// built here is observationally equivalent to the one beholder builds from
+// the corresponding fields on beholder.Config:
+//
+//	beholder.Config field             chipingress.HeaderProviderConfig field
+//	------------------------------    --------------------------------------
+//	AuthHeaders                       AuthHeaders
+//	AuthHeadersTTL                    AuthHeadersTTL
+//	AuthPublicKeyHex                  AuthPublicKeyHex
+//	AuthKeySigner                     AuthKeySigner
+//	ChipIngressInsecureConnection     InsecureConnection
+//
+// Resulting provider:
 //
 //   - AuthHeadersTTL > 0: returns a rotating provider. Requires
 //     AuthPublicKeyHex and AuthHeadersTTL >= 10 minutes.
@@ -78,7 +86,7 @@ func NewHeaderProvider(cfg HeaderProviderConfig) (HeaderProvider, error) {
 		if err != nil {
 			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
 		}
-		return NewRotatingHeaderProvider(
+		return newRotatingHeaderProvider(
 			key,
 			cfg.AuthKeySigner,
 			cfg.AuthHeadersTTL,
@@ -88,22 +96,22 @@ func NewHeaderProvider(cfg HeaderProviderConfig) (HeaderProvider, error) {
 	}
 
 	if len(cfg.AuthHeaders) > 0 {
-		return NewStaticHeaderProvider(cfg.AuthHeaders, !cfg.InsecureConnection), nil
+		return newStaticHeaderProvider(cfg.AuthHeaders, !cfg.InsecureConnection), nil
 	}
 
 	return nil, nil
 }
 
-// NewStaticHeaderProvider returns a HeaderProvider that always returns the
+// newStaticHeaderProvider returns a HeaderProvider that always returns the
 // given headers.
-func NewStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderProvider {
+func newStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderProvider {
 	return &staticHeaderProvider{headers: headers, requireTLS: requireTLS}
 }
 
-// NewRotatingHeaderProvider returns a HeaderProvider that refreshes its
+// newRotatingHeaderProvider returns a HeaderProvider that refreshes its
 // headers every ttl using signer. initialHeaders, if non-empty, are served
 // until the first rotation occurs.
-func NewRotatingHeaderProvider(
+func newRotatingHeaderProvider(
 	pubKey ed25519.PublicKey,
 	signer Signer,
 	ttl time.Duration,

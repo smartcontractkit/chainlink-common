@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779981389206,
+  "lastUpdate": 1780002020661,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48360,6 +48360,66 @@ window.BENCHMARK_DATA = {
             "value": 132215,
             "unit": "ns/op",
             "extra": "8805 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "58c7145c53f88b4655d443d55b9fc535b1a9c4a9",
+          "message": "refactor(beholder): extract newRotatingAuthFromConfig helper and add NewChipIngressHeaderProvider (#2096)\n\n* refactor(beholder): extract newRotatingAuthFromConfig helper and add NewChipIngressHeaderProvider\n\n- Extract rotating auth setup logic from NewGRPCClient into\n  newRotatingAuthFromConfig helper in auth.go\n- Add NewChipIngressHeaderProvider in chipingress_auth.go for external\n  consumers needing a chipingress.HeaderProvider from beholder config\n- Add exhaustive test coverage for all auth paths (static, rotating,\n  error cases, boundary conditions)\n\n* refactor(chipingress): move NewChipIngressHeaderProvider to pkg/chipingress\n\nMove the header-provider construction logic out of pkg/beholder and into\npkg/chipingress so the chipingress module owns its auth surface.\n\n- Add chipingress.NewHeaderProvider plus HeaderProviderConfig, Signer, and\n  TransportSecurityRequirer, along with internal static/rotating providers\n  and the V2 auth-header helper. The X-Beholder-Node-Auth-Token header name\n  and wire format are preserved verbatim.\n- Port the 18 existing test cases to pkg/chipingress, using a local fake\n  signer and TransportSecurityRequirer type assertions.\n- Delete pkg/beholder/chipingress_auth.go and its test (the function was\n  new in this PR; no external callers exist).\n- Rename beholder's internal newRotatingAuthFromConfig to buildRotatingAuth\n  and update its single call site in client.go.\n\n* refactor(chipingress): minimize header provider public surface\n\nTrim the chipingress header-provider API to the minimum needed by callers\nthat want to build an auth provider from the same config beholder uses.\n\n- Unexport newStaticHeaderProvider and newRotatingHeaderProvider; the\n  config-driven NewHeaderProvider is the sole entry point.\n- Delete the TransportSecurityRequirer interface; tests use a local inline\n  interface for the RequireTransportSecurity() type assertion.\n- Document the parity contract on NewHeaderProvider, mapping each\n  beholder.Config field to its HeaderProviderConfig counterpart so the\n  two code paths stay in lockstep. Note: ChipIngressInsecureConnection\n  on beholder.Config maps to InsecureConnection here (the chipingress\n  package has no need for a redundant prefix on its own type names).\n\nPublic surface is now exactly: Signer, HeaderProviderConfig,\nNewHeaderProvider.\n\nA defensive parity test against beholder's internal wiring will land in\na follow-up PR after the chipingress module version is bumped in\nchainlink-common's root go.mod.\n\n* test(chipingress): fix govet shadow in header provider test",
+          "timestamp": "2026-05-28T20:48:32Z",
+          "tree_id": "f94799e3e7cff62241a49d276a0b97b6477d83e9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/58c7145c53f88b4655d443d55b9fc535b1a9c4a9"
+        },
+        "date": 1780002017696,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357,
+            "unit": "ns/op",
+            "extra": "3361410 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94248,
+            "unit": "ns/op",
+            "extra": "12746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.8,
+            "unit": "ns/op",
+            "extra": "2986791 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93909,
+            "unit": "ns/op",
+            "extra": "12836 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27082,
+            "unit": "ns/op",
+            "extra": "44346 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141969,
+            "unit": "ns/op",
+            "extra": "8276 times\n4 procs"
           }
         ]
       }

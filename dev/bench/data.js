@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779890133097,
+  "lastUpdate": 1779981389206,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48300,6 +48300,66 @@ window.BENCHMARK_DATA = {
             "value": 133169,
             "unit": "ns/op",
             "extra": "8476 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b12054695b25bb9be6e1957a3cfd3338995ebd5d",
+          "message": "Add EnclaveConfig to confidentialrelay request params (PRIV-458) (#2063)\n\n* Add EnclaveConfig to confidentialrelay request params (PRIV-458)\n\nSecretsRequestParams and CapabilityRequestParams now carry an\nEnclaveConfig field describing the enclave's current Signers,\nMasterPublicKey, T, and F. The relay-DON handler in chainlink/core\nuses this to compare against onchain DON state before treating an\nattested request as trusted.\n\nWithout this field, the request's Nitro attestation cryptographically\nbinds the request hash but does not let the relay see the enclave's\nconfig. A malicious host can produce a genuinely-attested request\nover a forged enclave config and have it accepted. This closes the\ngap Sigma Prime CL112-01 identified, mirroring the pool.go-side\nhardening in confidential-compute #329.\n\nEnclaveConfig is defined as a parallel struct in this package rather\nthan imported from confidential-compute to keep the dependency\ndirection one-way. The fields match types.EnclaveConfig there and\nthe enclave fills this struct from its local instance before sending.\n\nValidate enforces non-empty Signers, F > 0, and non-empty\nMasterPublicKey. The canonical hash for relay-response signing now\nbinds every field with Signers sorted so that two logically-equivalent\nconfigs hash the same regardless of Signer ordering.\n\n* Mark EnclavePublicKey on SecretsRequestParams as Deprecated\n\nThe relay will source the enclave's ephemeral encryption key from a\ndifferent mechanism in a future change, not from this request payload.\nFlag the field so new callers know not to depend on it.\n\nNo functional change. Validate still enforces the field is set for now,\nbecause removing it is a separate rollout.\n\n* Revert EnclavePublicKey Deprecated annotation\n\nEnclavePublicKey is the enclave's ephemeral encryption key the relay\nencrypts returned shares to. EnclaveConfig.MasterPublicKey is the DKG\nmaster public key, which is a different key. The field is not being\nsuperseded by EnclaveConfig and there is no plan to remove it.\n\n* Drop audit tags from code comments per review\n\nCedric: audit refs should not live in code. Keep the JIRA link\n(PRIV-458) and let the audit ref (CL112-01) live in the ticket\ninstead. Removes \"Sigma Prime CL112-01\" / \"CL112-01\" from the\nEnclaveConfig doc-comment and the TestValidateEnclaveConfig comment.",
+          "timestamp": "2026-05-28T15:05:32Z",
+          "tree_id": "fd5f51280458fb68b79a8ad2c5789e80d24fa5b8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b12054695b25bb9be6e1957a3cfd3338995ebd5d"
+        },
+        "date": 1779981387204,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 379.1,
+            "unit": "ns/op",
+            "extra": "3137826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 77888,
+            "unit": "ns/op",
+            "extra": "15182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.6,
+            "unit": "ns/op",
+            "extra": "3073348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 81179,
+            "unit": "ns/op",
+            "extra": "14754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29175,
+            "unit": "ns/op",
+            "extra": "41079 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132215,
+            "unit": "ns/op",
+            "extra": "8805 times\n4 procs"
           }
         ]
       }

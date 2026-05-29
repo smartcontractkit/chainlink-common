@@ -44,8 +44,9 @@ type SetupConfig struct {
 	Endpoint string
 	// InsecureConnection disables TLS when true.
 	InsecureConnection bool
-	// Auth is the per-RPC credential provider. Nil means no auth.
-	Auth chipingress.HeaderProvider
+	// Auth configures chip ingress credentials. AuthKeySigner may be nil at init
+	// for LOOP plugins; call SetGlobalSigner after the CSA keystore is available.
+	Auth AuthConfig
 	// RetransmitEnabled controls whether the retransmit and cleanup loops run.
 	// Set to true for the host (chainlink node) process.
 	// Set to false for LOOP plugin processes — the host's retransmit loop picks
@@ -82,7 +83,12 @@ func Setup(
 		return nil, errors.New("logger is required for DurableEmitter")
 	}
 
-	chipOpts := buildChipOpts(cfg)
+	auth, err := NewAuthHeaderProvider(cfg.Auth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build chip ingress auth: %w", err)
+	}
+
+	chipOpts := buildChipOpts(cfg, auth)
 
 	// Primary client — owned by batch.Client, closed on batch.Client.Stop().
 	batchChipClient, err := chipingress.NewClient(cfg.Endpoint, chipOpts...)
@@ -131,15 +137,15 @@ func Setup(
 	return emitter, nil
 }
 
-func buildChipOpts(cfg SetupConfig) []chipingress.Opt {
+func buildChipOpts(cfg SetupConfig, auth chipingress.HeaderProvider) []chipingress.Opt {
 	var opts []chipingress.Opt
 	if cfg.InsecureConnection {
 		opts = append(opts, chipingress.WithInsecureConnection())
 	} else {
 		opts = append(opts, chipingress.WithTLS())
 	}
-	if cfg.Auth != nil {
-		opts = append(opts, chipingress.WithTokenAuth(cfg.Auth))
+	if auth != nil {
+		opts = append(opts, chipingress.WithTokenAuth(auth))
 	}
 	return opts
 }

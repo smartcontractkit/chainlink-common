@@ -347,15 +347,18 @@ func (s *Server) start(opts ...ServerOpt) error {
 		if s.DataSource == nil {
 			return errors.New("data source required when durable emitter is enabled")
 		}
-		var auth beholder.Auth
-		if len(s.EnvConfig.TelemetryAuthHeaders) > 0 {
-			auth = beholder.NewStaticAuth(s.EnvConfig.TelemetryAuthHeaders, !s.EnvConfig.ChipIngressInsecureConnection)
-		}
+
+		// Rotating auth: signer is injected later via durableemitter.SetGlobalSigner when the host
+		// provides the CSA keystore (see relayer and standard capabilities startup).
 		durableCfg := durableemitter.SetupConfig{
 			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
 			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,
-			Auth:               auth,
-			RetransmitEnabled:  false, // LOOP plugins do not run the retransmit loop; the host process handles it.
+			Auth: durableemitter.AuthConfig{
+				AuthHeaders:      s.EnvConfig.TelemetryAuthHeaders,
+				AuthHeadersTTL:   s.EnvConfig.TelemetryAuthHeadersTTL,
+				AuthPublicKeyHex: s.EnvConfig.TelemetryAuthPubKeyHex,
+			},
+			RetransmitEnabled: false, // LOOP plugins do not run the retransmit loop; the host process handles it.
 		}
 		store := durableemitter.NewPgDurableEventStore(s.DataSource)
 		var err error

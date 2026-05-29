@@ -4,6 +4,7 @@ import (
 	"context"
 )
 
+// aaa
 type Keystore interface {
 	Accounts(ctx context.Context) (accounts []string, err error)
 	// Sign returns data signed by account.

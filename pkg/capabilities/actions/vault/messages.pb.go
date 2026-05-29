@@ -245,6 +245,7 @@ type EncryptedShares struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Shares        []string               `protobuf:"bytes,1,rep,name=shares,proto3" json:"shares,omitempty"`
 	EncryptionKey string                 `protobuf:"bytes,2,opt,name=encryption_key,json=encryptionKey,proto3" json:"encryption_key,omitempty"`
+	BinaryShares  [][]byte               `protobuf:"bytes,3,rep,name=binary_shares,json=binaryShares,proto3" json:"binary_shares,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -291,6 +292,13 @@ func (x *EncryptedShares) GetEncryptionKey() string {
 		return x.EncryptionKey
 	}
 	return ""
+}
+
+func (x *EncryptedShares) GetBinaryShares() [][]byte {
+	if x != nil {
+		return x.BinaryShares
+	}
+	return nil
 }
 
 type SecretData struct {
@@ -2099,6 +2107,68 @@ func (x *StoredPendingQueueItem) GetId() string {
 	return ""
 }
 
+// Wire format for pending queue blobs. Not persisted.
+// When is_batch=false, wire-compatible with StoredPendingQueueItem (field 1 = Any, field 2 = string).
+type PendingQueueBlobItems struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*anypb.Any           `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`                     // non-batch: raw payload Any; batch: each Any wraps a StoredPendingQueueItem
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                           // non-batch: request ID; batch: empty
+	IsBatch       bool                   `protobuf:"varint,3,opt,name=is_batch,json=isBatch,proto3" json:"is_batch,omitempty"` // disambiguates single-item from batch during unmarshalling
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PendingQueueBlobItems) Reset() {
+	*x = PendingQueueBlobItems{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PendingQueueBlobItems) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PendingQueueBlobItems) ProtoMessage() {}
+
+func (x *PendingQueueBlobItems) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PendingQueueBlobItems.ProtoReflect.Descriptor instead.
+func (*PendingQueueBlobItems) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *PendingQueueBlobItems) GetItems() []*anypb.Any {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *PendingQueueBlobItems) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *PendingQueueBlobItems) GetIsBatch() bool {
+	if x != nil {
+		return x.IsBatch
+	}
+	return false
+}
+
 type ReportingPluginConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Plugin-specific configuration
@@ -2126,7 +2196,7 @@ type ReportingPluginConfig struct {
 
 func (x *ReportingPluginConfig) Reset() {
 	*x = ReportingPluginConfig{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2138,7 +2208,7 @@ func (x *ReportingPluginConfig) String() string {
 func (*ReportingPluginConfig) ProtoMessage() {}
 
 func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2151,7 +2221,7 @@ func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginConfig.ProtoReflect.Descriptor instead.
 func (*ReportingPluginConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{28}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ReportingPluginConfig) GetBatchSize() int32 {
@@ -2284,10 +2354,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x05owner\x18\x03 \x01(\tR\x05owner\"a\n" +
 	"\rSecretRequest\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\"P\n" +
+	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\"u\n" +
 	"\x0fEncryptedShares\x12\x16\n" +
 	"\x06shares\x18\x01 \x03(\tR\x06shares\x12%\n" +
-	"\x0eencryption_key\x18\x02 \x01(\tR\rencryptionKey\"\x94\x01\n" +
+	"\x0eencryption_key\x18\x02 \x01(\tR\rencryptionKey\x12#\n" +
+	"\rbinary_shares\x18\x03 \x03(\fR\fbinaryShares\"\x94\x01\n" +
 	"\n" +
 	"SecretData\x12'\n" +
 	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\x12]\n" +
@@ -2406,7 +2477,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x06length\x18\x01 \x01(\x03R\x06length\"R\n" +
 	"\x16StoredPendingQueueItem\x12(\n" +
 	"\x04item\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x04item\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"\xa0\t\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"n\n" +
+	"\x15PendingQueueBlobItems\x12*\n" +
+	"\x05items\x18\x01 \x03(\v2\x14.google.protobuf.AnyR\x05items\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x19\n" +
+	"\bis_batch\x18\x03 \x01(\bR\aisBatch\"\xa0\t\n" +
 	"\x15ReportingPluginConfig\x12\x1c\n" +
 	"\tBatchSize\x18\x01 \x01(\x05R\tBatchSize\x12.\n" +
 	"\x12MaxSecretsPerOwner\x18\x02 \x01(\x05R\x12MaxSecretsPerOwner\x12:\n" +
@@ -2451,7 +2526,7 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(RequestType)(0),                      // 0: vault.RequestType
 	(ReportFormat)(0),                     // 1: vault.ReportFormat
@@ -2483,8 +2558,9 @@ var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(*StoredMetadata)(nil),                // 27: vault.StoredMetadata
 	(*StoredPendingQueueIndex)(nil),       // 28: vault.StoredPendingQueueIndex
 	(*StoredPendingQueueItem)(nil),        // 29: vault.StoredPendingQueueItem
-	(*ReportingPluginConfig)(nil),         // 30: vault.ReportingPluginConfig
-	(*anypb.Any)(nil),                     // 31: google.protobuf.Any
+	(*PendingQueueBlobItems)(nil),         // 30: vault.PendingQueueBlobItems
+	(*ReportingPluginConfig)(nil),         // 31: vault.ReportingPluginConfig
+	(*anypb.Any)(nil),                     // 32: google.protobuf.Any
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	2,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
@@ -2531,12 +2607,13 @@ var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	0,  // 41: vault.ReportInfo.request_type:type_name -> vault.RequestType
 	1,  // 42: vault.ReportInfo.format:type_name -> vault.ReportFormat
 	2,  // 43: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
-	31, // 44: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
-	45, // [45:45] is the sub-list for method output_type
-	45, // [45:45] is the sub-list for method input_type
-	45, // [45:45] is the sub-list for extension type_name
-	45, // [45:45] is the sub-list for extension extendee
-	0,  // [0:45] is the sub-list for field type_name
+	32, // 44: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
+	32, // 45: vault.PendingQueueBlobItems.items:type_name -> google.protobuf.Any
+	46, // [46:46] is the sub-list for method output_type
+	46, // [46:46] is the sub-list for method input_type
+	46, // [46:46] is the sub-list for extension type_name
+	46, // [46:46] is the sub-list for extension extendee
+	0,  // [0:46] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }
@@ -2572,14 +2649,14 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*Outcome_DeleteSecretsResponse)(nil),
 		(*Outcome_ListSecretIdentifiersResponse)(nil),
 	}
-	file_capabilities_actions_vault_messages_proto_msgTypes[28].OneofWrappers = []any{}
+	file_capabilities_actions_vault_messages_proto_msgTypes[29].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   29,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -210,6 +210,7 @@ message StoredMetadata {
 // backwards compatible
 message StoredPendingQueueIndex {
   int64 length = 1;
+  uint64 written_seq_nr = 2;
 }
 
 // IMPORTANT: this record is persisted so any changes must be

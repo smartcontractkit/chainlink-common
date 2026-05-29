@@ -131,6 +131,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.False(t, cfg.VaultForceEmptyOCRRounds.DefaultValue)
 	assert.False(t, cfg.VaultOptimizationsEnabled.DefaultValue)
 	assert.False(t, cfg.VaultSignedResponseRequestIDEnabled.DefaultValue)
+	assert.False(t, cfg.VaultPendingQueueStaleAutoEmpty.DefaultValue)
+	assert.Equal(t, 30, cfg.VaultPendingQueueStaleRoundThreshold.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)

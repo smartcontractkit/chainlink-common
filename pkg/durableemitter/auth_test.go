@@ -21,7 +21,7 @@ func (mockSigner) Sign(_ context.Context, _ string, _ []byte) ([]byte, error) {
 func TestNewAuthHeaderProvider_Static(t *testing.T) {
 	t.Parallel()
 
-	headers := map[string]string{"X-Beholder-Node-Auth-Token": "static"}
+	headers := map[string]string{"X-Node-Auth-Token": "static"}
 	provider, err := durableemitter.NewAuthHeaderProvider(durableemitter.AuthConfig{
 		AuthHeaders: headers,
 	})
@@ -38,7 +38,7 @@ func TestNewAuthHeaderProvider_RotatingDeferredSigner(t *testing.T) {
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
-	initial := map[string]string{"X-Beholder-Node-Auth-Token": "initial"}
+	initial := map[string]string{"X-Node-Auth-Token": "initial"}
 	provider, err := durableemitter.NewAuthHeaderProvider(durableemitter.AuthConfig{
 		AuthHeaders:      initial,
 		AuthHeadersTTL:   10 * time.Minute,
@@ -62,7 +62,7 @@ func TestNewAuthHeaderProvider_RotatingWithSigner(t *testing.T) {
 	require.NoError(t, err)
 
 	provider, err := durableemitter.NewAuthHeaderProvider(durableemitter.AuthConfig{
-		AuthHeaders:      map[string]string{"X-Beholder-Node-Auth-Token": "initial"},
+		AuthHeaders:      map[string]string{"X-Node-Auth-Token": "initial"},
 		AuthHeadersTTL:   10 * time.Minute,
 		AuthPublicKeyHex: hex.EncodeToString(pubKey),
 		AuthKeySigner:    mockSigner{},
@@ -72,7 +72,7 @@ func TestNewAuthHeaderProvider_RotatingWithSigner(t *testing.T) {
 
 	got, err := provider.Headers(t.Context())
 	require.NoError(t, err)
-	require.NotEmpty(t, got["X-Beholder-Node-Auth-Token"])
+	require.NotEmpty(t, got["X-Node-Auth-Token"])
 }
 
 func TestNewAuthHeaderProvider_Validation(t *testing.T) {

@@ -82,6 +82,8 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 
 	envChipIngressEndpoint            = "CL_CHIP_INGRESS_ENDPOINT"
@@ -164,6 +166,8 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
+	TelemetryPrometheusBridgeEnabled   bool
+	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
 
 	TracingEnabled         bool
@@ -255,6 +259,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
+	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
@@ -484,6 +490,11 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)
+		}
+		e.TelemetryPrometheusBridgePrefixes = strings.Split(os.Getenv(envTelemetryPrometheusBridgePrefixes), ",")
 		e.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
 		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)

@@ -27,6 +27,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
@@ -62,16 +63,20 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval                 time.Duration
-	Timeout                      *time.Duration
-	MaxMemoryMBs                 uint64
-	MinMemoryMBs                 uint64
-	MemoryLimiter                limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
-	InitialFuel                  uint64
-	Logger                       logger.Logger
-	IsUncompressed               bool
-	Fetch                        func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
-	MaxFetchRequests             int
+	TickInterval     time.Duration
+	Timeout          *time.Duration
+	MaxMemoryMBs     uint64
+	MinMemoryMBs     uint64
+	MemoryLimiter    limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
+	InitialFuel      uint64
+	Logger           logger.Logger
+	IsUncompressed   bool
+	Fetch            func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
+	MaxFetchRequests int
+	// PendingCallsLimiter bounds concurrent in-flight capability and secrets
+	// calls. When scoped (e.g. ScopeWorkflow), each workflow ID gets its own
+	// pool; when global/unscoped, the limit is shared across all callers.
+	PendingCallsLimiter          limits.ResourcePoolLimiter[int]
 	MaxCompressedBinarySize      uint64
 	MaxCompressedBinaryLimiter   limits.BoundLimiter[config.Size] // supersedes MaxCompressedBinarySize if set
 	MaxDecompressedBinarySize    uint64
@@ -167,6 +172,15 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.MaxFetchRequests == 0 {
 		modCfg.MaxFetchRequests = defaultMaxFetchRequests
+	}
+
+	if modCfg.PendingCallsLimiter == nil {
+		lf := limits.Factory{Logger: modCfg.Logger}
+		var err error
+		modCfg.PendingCallsLimiter, err = limits.MakeResourcePoolLimiter(lf, cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make pending calls limiter: %w", err)
+		}
 	}
 
 	if modCfg.Labeler == nil {
@@ -670,6 +684,7 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,

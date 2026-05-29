@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
@@ -21,6 +22,7 @@ type execution[T any] struct {
 	ctx                  context.Context
 	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
 	secretsResponses     map[int32]<-chan *secretsResponse
+	pendingCallsLimiter  limits.ResourcePoolLimiter[int]
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
@@ -38,12 +40,20 @@ type execution[T any] struct {
 // channel and storing each channel with a unique identifier for future
 // retrieval on await.
 func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) error {
+	// Acquire a slot from the pool limiter to bound concurrency.
+	free, err := e.pendingCallsLimiter.Wait(ctx, 1)
+	if err != nil {
+		return err
+	}
+
 	ch := make(chan *sdkpb.CapabilityResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.capabilityResponses[req.CallbackId] = ch
 
 	go func() {
+		defer free()
+
 		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
@@ -95,12 +105,20 @@ type secretsResponse struct {
 }
 
 func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecretsRequest) error {
+	// Acquire a slot from the pool limiter to bound concurrency.
+	free, err := e.pendingCallsLimiter.Wait(ctx, 1)
+	if err != nil {
+		return err
+	}
+
 	ch := make(chan *secretsResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.secretsResponses[req.CallbackId] = ch
 
 	go func() {
+		defer free()
+
 		resp, err := e.executor.GetSecrets(ctx, req)
 		sr := &secretsResponse{responses: resp, err: err}
 

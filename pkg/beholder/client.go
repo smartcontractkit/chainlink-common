@@ -2,11 +2,9 @@ package beholder
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
-	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
@@ -129,32 +127,9 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// Two modes are supported:
 	// 1. Static auth: If AuthHeadersTTL == 0, use AuthHeaders as-is and never change
 	// 2. Rotating auth: If AuthHeadersTTL > 0, create lazySigner for deferred keystore injection
-	var signer *lazySigner
-	var auth Auth
-
-	if cfg.AuthHeadersTTL > 0 {
-		if cfg.AuthPublicKeyHex == "" {
-			return nil, errors.New("auth: public key hex required for rotating auth (TTL > 0)")
-		}
-
-		// Clamp lowest possible value to 10mins
-		if cfg.AuthHeadersTTL < 10*time.Minute {
-			return nil, errors.New("auth: headers TTL must be at least 10 minutes")
-		}
-
-		key, err := hex.DecodeString(cfg.AuthPublicKeyHex)
-		if err != nil {
-			return nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
-		}
-
-		// Optionally wrap the signer in a lazySigner if AuthKeySigner was provided
-		// This allows the signer to be set both before and after client initialization
-		signer = &lazySigner{}
-		if cfg.AuthKeySigner != nil {
-			signer.Set(cfg.AuthKeySigner)
-		}
-
-		auth = NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
+	auth, signer, err := buildRotatingAuth(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	// Tracer
@@ -567,16 +542,18 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	if err != nil {
 		return nil, err
 	}
-	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
-				exporter,
-				sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
-			)),
+
+	readerOpts := []sdkmetric.PeriodicReaderOption{
+		sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
+	}
+	for _, p := range cfg.MetricProducers {
+		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))
+	}
+	return sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, readerOpts...)),
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithView(cfg.MetricViews...),
-	)
-	return mp, nil
+	), nil
 }
 
 // newLoggerOpts creates options for a logger exporter

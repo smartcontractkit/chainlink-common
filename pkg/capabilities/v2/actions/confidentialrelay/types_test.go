@@ -29,6 +29,20 @@ func mustCapabilityHash(t *testing.T, r CapabilityResponseResult, p CapabilityRe
 	return h
 }
 
+func validEnclaveConfig() EnclaveConfig {
+	return EnclaveConfig{
+		Signers: [][]byte{
+			{0x01, 0x02, 0x03},
+			{0x04, 0x05, 0x06},
+			{0x07, 0x08, 0x09},
+			{0x0a, 0x0b, 0x0c},
+		},
+		MasterPublicKey: []byte("master-public-key"),
+		T:               2,
+		F:               1,
+	}
+}
+
 func validSecretsParams() SecretsRequestParams {
 	return SecretsRequestParams{
 		WorkflowID:       "wf-1",
@@ -36,6 +50,7 @@ func validSecretsParams() SecretsRequestParams {
 		ExecutionID:      validExecutionID,
 		OrgID:            "org-1",
 		EnclavePublicKey: validEnclavePubKey,
+		EnclaveConfig:    validEnclaveConfig(),
 		Attestation:      "att-a",
 		Secrets: []SecretIdentifier{
 			{Key: "alpha", Namespace: "ns-a"},
@@ -45,13 +60,14 @@ func validSecretsParams() SecretsRequestParams {
 
 func validCapabilityParams() CapabilityRequestParams {
 	return CapabilityRequestParams{
-		WorkflowID:   "wf-1",
-		Owner:        validOwnerA,
-		ExecutionID:  validExecutionID,
-		ReferenceID:  "42",
-		CapabilityID: "write_ethereum-testnet-sepolia@1.0.0",
-		Payload:      "request-payload",
-		Attestation:  "att-a",
+		WorkflowID:    "wf-1",
+		Owner:         validOwnerA,
+		ExecutionID:   validExecutionID,
+		ReferenceID:   "42",
+		CapabilityID:  "write_ethereum-testnet-sepolia@1.0.0",
+		Payload:       "request-payload",
+		EnclaveConfig: validEnclaveConfig(),
+		Attestation:   "att-a",
 	}
 }
 
@@ -157,6 +173,10 @@ func TestCapabilityResponseResultHash_IgnoresAttestationAndBindsRequestAndRespon
 	differentRequest := params
 	differentRequest.ReferenceID = "43"
 	require.NotEqual(t, mustCapabilityHash(t, result, params), mustCapabilityHash(t, result, differentRequest))
+
+	differentOrg := params
+	differentOrg.OrgID = "org-other"
+	require.NotEqual(t, mustCapabilityHash(t, result, params), mustCapabilityHash(t, result, differentOrg))
 
 	differentResponse := result
 	differentResponse.Error = "boom"
@@ -296,4 +316,123 @@ func TestRelayResponseSignaturePayload_UsesExpectedPrefix(t *testing.T) {
 	expected := peeridhelper.MakePeerIDSignatureDomainSeparatedPayload(RelayResponseSignaturePrefix, hash[:])
 	require.Equal(t, expected, RelayResponseSignaturePayload(hash))
 	require.NotEqual(t, hash[:], RelayResponseSignaturePayload(hash))
+}
+
+// TestValidateEnclaveConfig covers the EnclaveConfig validation added for
+// PRIV-458. The relay needs each request to carry a non-empty
+// signers list, non-zero F, and a non-empty MasterPublicKey so it can
+// meaningfully compare against onchain DON state.
+func TestValidateEnclaveConfig(t *testing.T) {
+	t.Run("valid config accepted", func(t *testing.T) {
+		require.NoError(t, validateEnclaveConfig(validEnclaveConfig()))
+	})
+	t.Run("missing signers rejected", func(t *testing.T) {
+		c := validEnclaveConfig()
+		c.Signers = nil
+		require.Error(t, validateEnclaveConfig(c))
+	})
+	t.Run("empty signer rejected", func(t *testing.T) {
+		c := validEnclaveConfig()
+		c.Signers = append(c.Signers, []byte{})
+		err := validateEnclaveConfig(c)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "signers[")
+	})
+	t.Run("F=0 rejected", func(t *testing.T) {
+		c := validEnclaveConfig()
+		c.F = 0
+		require.Error(t, validateEnclaveConfig(c))
+	})
+	t.Run("empty master_public_key rejected", func(t *testing.T) {
+		c := validEnclaveConfig()
+		c.MasterPublicKey = nil
+		require.Error(t, validateEnclaveConfig(c))
+	})
+}
+
+// TestSecretsRequestParams_Validate_RequiresEnclaveConfig covers that the
+// Validate gate rejects requests missing the EnclaveConfig.
+func TestSecretsRequestParams_Validate_RequiresEnclaveConfig(t *testing.T) {
+	p := validSecretsParams()
+	p.EnclaveConfig = EnclaveConfig{}
+	require.Error(t, p.Validate())
+}
+
+// TestCapabilityRequestParams_Validate_RequiresEnclaveConfig same as above
+// for the capability execute path.
+func TestCapabilityRequestParams_Validate_RequiresEnclaveConfig(t *testing.T) {
+	p := validCapabilityParams()
+	p.EnclaveConfig = EnclaveConfig{}
+	require.Error(t, p.Validate())
+}
+
+// TestSecretsResponseHash_BindsEnclaveConfig proves the response signature
+// hash differs when EnclaveConfig differs. If the hash did not bind
+// EnclaveConfig, two responses signed over the same secrets but with
+// different enclave configs would have indistinguishable signatures.
+func TestSecretsResponseHash_BindsEnclaveConfig(t *testing.T) {
+	params := validSecretsParams()
+	result := SecretsResponseResult{
+		Secrets: []SecretEntry{
+			{
+				ID:              SecretIdentifier{Key: "alpha", Namespace: "ns-a"},
+				Ciphertext:      "cipher-a",
+				EncryptedShares: []string{"share-a1"},
+			},
+		},
+	}
+	base := mustSecretsHash(t, result, params)
+
+	changed := params
+	changed.EnclaveConfig.F = params.EnclaveConfig.F + 1
+	require.NotEqual(t, base, mustSecretsHash(t, result, changed))
+
+	changed2 := params
+	changed2.EnclaveConfig.T = params.EnclaveConfig.T + 1
+	require.NotEqual(t, base, mustSecretsHash(t, result, changed2))
+
+	changed3 := params
+	changed3.EnclaveConfig.MasterPublicKey = append([]byte(nil), params.EnclaveConfig.MasterPublicKey...)
+	changed3.EnclaveConfig.MasterPublicKey[0] ^= 0xff
+	require.NotEqual(t, base, mustSecretsHash(t, result, changed3))
+
+	changed4 := params
+	changed4.EnclaveConfig.Signers = append([][]byte(nil), params.EnclaveConfig.Signers...)
+	changed4.EnclaveConfig.Signers = append(changed4.EnclaveConfig.Signers, []byte{0xff})
+	require.NotEqual(t, base, mustSecretsHash(t, result, changed4))
+}
+
+// TestCapabilityResponseHash_BindsEnclaveConfig same as above for the
+// capability execute path.
+func TestCapabilityResponseHash_BindsEnclaveConfig(t *testing.T) {
+	params := validCapabilityParams()
+	result := CapabilityResponseResult{Payload: "out"}
+	base := mustCapabilityHash(t, result, params)
+
+	changed := params
+	changed.EnclaveConfig.F = params.EnclaveConfig.F + 1
+	require.NotEqual(t, base, mustCapabilityHash(t, result, changed))
+}
+
+// TestSecretsResponseHash_StableUnderSignerReordering proves that the
+// EnclaveConfig.Signers ordering does not affect the hash. The relay-side
+// comparison against onchain state is order-independent so the hash must be
+// too, otherwise an enclave permuting Signers (or a different ordering
+// emitted across reboots) would invalidate signatures over identical
+// logical state.
+func TestSecretsResponseHash_StableUnderSignerReordering(t *testing.T) {
+	params := validSecretsParams()
+	result := SecretsResponseResult{
+		Secrets: []SecretEntry{
+			{ID: SecretIdentifier{Key: "alpha", Namespace: "ns-a"}, Ciphertext: "c", EncryptedShares: []string{"s"}},
+		},
+	}
+	base := mustSecretsHash(t, result, params)
+
+	reversed := params
+	reversed.EnclaveConfig.Signers = make([][]byte, len(params.EnclaveConfig.Signers))
+	for i, s := range params.EnclaveConfig.Signers {
+		reversed.EnclaveConfig.Signers[len(params.EnclaveConfig.Signers)-1-i] = s
+	}
+	require.Equal(t, base, mustSecretsHash(t, result, reversed))
 }

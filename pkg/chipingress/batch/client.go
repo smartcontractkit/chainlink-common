@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -36,18 +37,18 @@ type Client struct {
 	maxGRPCRequestSize      int // configured max, used for metrics/error reporting
 	effectiveMaxRequestSize int // maxGRPCRequestSize minus grpcFramingOverhead, used for splitting
 	cloneEvent              bool
-	maxConcurrentSends chan struct{}
-	batchInterval      time.Duration
-	maxPublishTimeout  time.Duration
-	messageBuffer      chan *messageWithCallback
-	stopCh             stopCh
-	log                *zap.SugaredLogger
-	callbackWg         sync.WaitGroup
-	shutdownTimeout    time.Duration
-	shutdownOnce       sync.Once
-	batcherDone        chan struct{}
-	started            bool
-	counters           sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
+	maxConcurrentSends      chan struct{}
+	batchInterval           time.Duration
+	maxPublishTimeout       time.Duration
+	messageBuffer           chan *messageWithCallback
+	stopCh                  stopCh
+	log                     *zap.SugaredLogger
+	callbackWg              sync.WaitGroup
+	shutdownTimeout         time.Duration
+	shutdownOnce            sync.Once
+	batcherDone             chan struct{}
+	started                 bool
+	counters                sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
 
 	metrics batchClientMetrics
 }
@@ -73,18 +74,18 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c := &Client{
 		client:                  client,
 		log:                     zap.NewNop().Sugar(),
-		batchSize:               10,
+		batchSize:               100,
 		maxGRPCRequestSize:      10 * 1024 * 1024,
 		effectiveMaxRequestSize: 10*1024*1024 - grpcFramingOverhead,
 		cloneEvent:              true,
-		maxConcurrentSends: make(chan struct{}, 1),
-		messageBuffer:      make(chan *messageWithCallback, 200),
-		batchInterval:      100 * time.Millisecond,
-		maxPublishTimeout:  5 * time.Second,
-		stopCh:             make(chan struct{}),
-		callbackWg:         sync.WaitGroup{},
-		shutdownTimeout:    5 * time.Second,
-		batcherDone:        make(chan struct{}),
+		maxConcurrentSends:      make(chan struct{}, 1),
+		messageBuffer:           make(chan *messageWithCallback, 200),
+		batchInterval:           100 * time.Millisecond,
+		maxPublishTimeout:       5 * time.Second,
+		stopCh:                  make(chan struct{}),
+		callbackWg:              sync.WaitGroup{},
+		shutdownTimeout:         5 * time.Second,
+		batcherDone:             make(chan struct{}),
 	}
 
 	for _, opt := range opts {
@@ -322,22 +323,45 @@ func splitMessagesByRequestSize(messages []*messageWithCallback, maxRequestSize 
 		return [][]*messageWithCallback{messages}
 	}
 
+	// A CloudEventBatch encodes its events as a repeated field, so the serialized
+	// request size is a fixed base (everything except the events) plus the
+	// independent contribution of each event. Accumulating per-event sizes keeps
+	// splitting O(n): previously each message re-serialized the whole growing
+	// batch via newBatchRequest -> proto.Size, costing O(n^2) bytes walked.
+	_, baseBytes := newBatchRequest(nil)
+
 	var batches [][]*messageWithCallback
+	// Size the first batch for the common case where everything fits in one
+	// request. Subsequent batches (only created when splitting) start small and
+	// grow, so we don't allocate a full-length backing array per split.
 	current := make([]*messageWithCallback, 0, len(messages))
+	currentBytes := baseBytes
 	for _, msg := range messages {
-		candidate := append(current, msg)
-		_, candidateBytes := newBatchRequest(candidate)
-		if len(current) > 0 && candidateBytes > maxRequestSize {
+		eventBytes := eventFieldSize(msg.event)
+		// Start a new batch once adding this event would exceed the limit, but
+		// always keep at least one event per batch (an oversized single event is
+		// rejected later in sendBatch).
+		if len(current) > 0 && currentBytes+eventBytes > maxRequestSize {
 			batches = append(batches, current)
-			current = []*messageWithCallback{msg}
-			continue
+			current = nil
+			currentBytes = baseBytes
 		}
-		current = candidate
+		current = append(current, msg)
+		currentBytes += eventBytes
 	}
 	if len(current) > 0 {
 		batches = append(batches, current)
 	}
 	return batches
+}
+
+// eventFieldSize returns the number of bytes a single event contributes to a
+// CloudEventBatch: the repeated events field tag plus the length-delimited
+// message. This matches proto.Size's accounting for that field exactly, so the
+// running total stays identical to proto.Size(batch).
+func eventFieldSize(event *chipingress.CloudEventPb) int {
+	const eventsFieldNumber = 1 // CloudEventBatch.events
+	return protowire.SizeTag(eventsFieldNumber) + protowire.SizeBytes(proto.Size(event))
 }
 
 func newBatchRequest(messages []*messageWithCallback) (*chipingress.CloudEventBatch, int) {

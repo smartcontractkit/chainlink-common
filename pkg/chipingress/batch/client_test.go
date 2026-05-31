@@ -28,6 +28,10 @@ func TestNewBatchClient(t *testing.T) {
 		client, err := NewBatchClient(mocks.NewClient(t))
 		require.NoError(t, err)
 		assert.NotNil(t, client)
+		// Default batchSize is 100. Guard the default explicitly: it changes the
+		// gRPC payload size and events-per-callback for every caller that doesn't
+		// pass WithBatchSize, so an accidental revert should fail loudly.
+		assert.Equal(t, 100, client.batchSize)
 	})
 
 	t.Run("WithBatchSize", func(t *testing.T) {
@@ -1640,6 +1644,25 @@ func TestSplitMessagesByRequestSize(t *testing.T) {
 			total += len(batch)
 		}
 		assert.Equal(t, len(msgs), total, "no events dropped across splits")
+	})
+
+	t.Run("event larger than the limit gets its own batch and is not dropped", func(t *testing.T) {
+		big := largeTestEvent("big")
+		// A limit below a single event's contribution forces every event into its
+		// own batch. Splitting keeps the event (sendBatch is responsible for
+		// rejecting it against maxGRPCRequestSize), never drops it.
+		maxRequestSize := eventFieldSize(big) - 1
+		msgs := []*messageWithCallback{
+			{event: big},
+			{event: largeTestEvent("small")},
+		}
+
+		result := splitMessagesByRequestSize(msgs, maxRequestSize)
+		require.Len(t, result, 2, "each oversized event must land in its own batch")
+		for _, batch := range result {
+			require.Len(t, batch, 1)
+		}
+		assert.Same(t, big, result[0][0].event, "oversized event preserved, not dropped")
 	})
 }
 

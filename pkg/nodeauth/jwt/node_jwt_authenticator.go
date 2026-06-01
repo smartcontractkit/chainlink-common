@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
 )
@@ -25,10 +26,19 @@ type NodeJWTAuthenticatorConfig struct {
 type NodeJWTAuthenticator struct {
 	nodeAuthProvider NodeAuthProvider // Source of truth to validate public key in the JWT claim.
 	parser           *jwt.Parser      // JWT parser to parse the JWT token.
-	logger           *slog.Logger
+	logger           logger.Logger
 }
 
-func NewNodeJWTAuthenticator(nodeAuthProvider NodeAuthProvider, logger *slog.Logger, config ...*NodeJWTAuthenticatorConfig) *NodeJWTAuthenticator {
+// Deprecated: use NewNodeJWTAuthenticatorWithLogger.
+func NewNodeJWTAuthenticator(nodeAuthProvider NodeAuthProvider, slogger *slog.Logger, config ...*NodeJWTAuthenticatorConfig) *NodeJWTAuthenticator {
+	return NewNodeJWTAuthenticatorWithLogger(nodeAuthProvider, newSlogLoggerAdapter(slogger), config...)
+}
+
+func NewNodeJWTAuthenticatorWithLogger(nodeAuthProvider NodeAuthProvider, lggr logger.Logger, config ...*NodeJWTAuthenticatorConfig) *NodeJWTAuthenticator {
+	if lggr == nil {
+		lggr = logger.Nop()
+	}
+
 	parserOpts := []jwt.ParserOption{
 		jwt.WithIssuedAt(),
 		jwt.WithExpirationRequired(),
@@ -46,7 +56,7 @@ func NewNodeJWTAuthenticator(nodeAuthProvider NodeAuthProvider, logger *slog.Log
 	return &NodeJWTAuthenticator{
 		nodeAuthProvider: nodeAuthProvider,
 		parser:           parser,
-		logger:           logger,
+		logger:           lggr,
 	}
 }
 
@@ -78,7 +88,7 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 	// Public Key Validation: Verify node's CSA pubkey against the whitelisted registry via NodeAuthProvider.
 	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, publicKey)
 	if err != nil {
-		v.logger.Error("Node validation failed",
+		v.logger.Errorw("Node validation failed",
 			"csaPubKey", hex.EncodeToString(publicKey),
 			"error", err,
 		)
@@ -86,13 +96,13 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 	}
 
 	if !isValid {
-		v.logger.Warn("Unauthorized node attempted access",
+		v.logger.Warnw("Unauthorized node attempted access",
 			"csaPubKey", hex.EncodeToString(publicKey),
 		)
 		return false, claims, fmt.Errorf("unauthorized node: %s", hex.EncodeToString(publicKey))
 	}
 
-	v.logger.Debug("JWT validation successful",
+	v.logger.Debugw("JWT validation successful",
 		"csaPubKey", hex.EncodeToString(publicKey),
 	)
 

@@ -192,6 +192,8 @@ func convertEncodingTypeToProto(e typesolana.EncodingType) (EncodingType, error)
 		return EncodingType_ENCODING_TYPE_JSON_PARSED, nil
 	case typesolana.EncodingJSON:
 		return EncodingType_ENCODING_TYPE_JSON, nil
+	case "":
+		return EncodingType_ENCODING_TYPE_NONE, nil // RPC may return empty string in a response, since we do not know which encoding is default for that RPC client return none.
 	default:
 		return 0, fmt.Errorf("unknown encoding type: %q", e)
 	}
@@ -246,6 +248,8 @@ func convertDataSliceFromProto(p *DataSlice) *typesolana.DataSlice {
 	if p == nil {
 		return nil
 	}
+	// Offset and length are required, so do not treat 0 as nil.
+	// If nil values are need user may pass nil DataSlice
 	return &typesolana.DataSlice{
 		Offset: &p.Offset,
 		Length: &p.Length,
@@ -708,7 +712,7 @@ func ConvertGetTransactionReplyToProto(r *typesolana.GetTransactionReply) (*GetT
 		var err error
 		tx, err = convertTransactionEnvelopeToProto(*r.Transaction)
 		if err != nil {
-			return nil, fmt.Errorf("failved to convert transaction: %w", err)
+			return nil, fmt.Errorf("failed to convert transaction: %w", err)
 		}
 	}
 	meta, err := convertTransactionMetaToProto(r.Meta)

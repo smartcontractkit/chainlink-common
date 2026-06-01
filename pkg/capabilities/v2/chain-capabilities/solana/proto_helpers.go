@@ -237,8 +237,6 @@ func convertConfirmationStatusTypeToProto(c typesolana.ConfirmationStatusType) (
 		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED, nil
 	case typesolana.ConfirmationStatusProcessed:
 		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_PROCESSED, nil
-	case "":
-		return ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_NONE, nil
 	default:
 		return 0, fmt.Errorf("unknown confirmation status type: %q", c)
 	}
@@ -249,40 +247,9 @@ func convertDataSliceFromProto(p *DataSlice) *typesolana.DataSlice {
 		return nil
 	}
 	return &typesolana.DataSlice{
-		Offset: ptr(p.Offset),
-		Length: ptr(p.Length),
+		Offset: &p.Offset,
+		Length: &p.Length,
 	}
-}
-
-func convertDataSliceToProto(d *typesolana.DataSlice) *DataSlice {
-	if d == nil {
-		return nil
-	}
-	var off, ln uint64
-	if d.Offset != nil {
-		off = *d.Offset
-	}
-	if d.Length != nil {
-		ln = *d.Length
-	}
-	return &DataSlice{
-		Offset: off,
-		Length: ln,
-	}
-}
-
-func convertUiTokenAmountFromProto(p *UiTokenAmount) (*typesolana.UiTokenAmount, error) {
-	if p == nil {
-		return nil, nil
-	}
-	if p.Decimals > math.MaxUint8 {
-		return nil, fmt.Errorf("decimals %d exceeds max uint8", p.Decimals)
-	}
-	return &typesolana.UiTokenAmount{
-		Amount:         p.Amount,
-		Decimals:       uint8(p.Decimals),
-		UiAmountString: p.UiAmountString,
-	}, nil
 }
 
 func convertUiTokenAmountToProto(u *typesolana.UiTokenAmount) *UiTokenAmount {
@@ -293,30 +260,6 @@ func convertUiTokenAmountToProto(u *typesolana.UiTokenAmount) *UiTokenAmount {
 		Amount:         u.Amount,
 		Decimals:       uint32(u.Decimals),
 		UiAmountString: u.UiAmountString,
-	}
-}
-
-func convertDataBytesOrJSONFromProto(p *DataBytesOrJSON) (*typesolana.DataBytesOrJSON, error) {
-	if p == nil {
-		return nil, nil
-	}
-	enc, err := convertEncodingTypeFromProto(p.Encoding)
-	if err != nil {
-		return nil, fmt.Errorf("encoding: %w", err)
-	}
-	switch t := p.GetBody().(type) {
-	case *DataBytesOrJSON_Raw:
-		return &typesolana.DataBytesOrJSON{
-			AsDecodedBinary: t.Raw,
-			RawDataEncoding: enc,
-		}, nil
-	case *DataBytesOrJSON_Json:
-		return &typesolana.DataBytesOrJSON{
-			AsJSON:          t.Json,
-			RawDataEncoding: enc,
-		}, nil
-	default:
-		return nil, fmt.Errorf("data bytes or json has no body")
 	}
 }
 
@@ -375,7 +318,7 @@ func convertGetAccountInfoOptsFromProto(p *GetAccountInfoOpts) (*typesolana.GetA
 		Encoding:       enc,
 		Commitment:     commit,
 		DataSlice:      convertDataSliceFromProto(p.DataSlice),
-		MinContextSlot: ptr(p.MinContextSlot),
+		MinContextSlot: ptrUint64(p.MinContextSlot),
 	}, nil
 }
 
@@ -395,7 +338,7 @@ func convertGetMultipleAccountsOptsFromProto(p *GetMultipleAccountsOpts) (*types
 		Encoding:       enc,
 		Commitment:     commit,
 		DataSlice:      convertDataSliceFromProto(p.DataSlice),
-		MinContextSlot: ptr(p.MinContextSlot),
+		MinContextSlot: ptrUint64(p.MinContextSlot),
 	}, nil
 }
 
@@ -613,21 +556,6 @@ func convertParsedMessageToProto(m typesolana.Message) *ParsedMessage {
 	return out
 }
 
-func convertParsedTransactionFromProto(p *ParsedTransaction) (typesolana.Transaction, error) {
-	if p == nil {
-		return typesolana.Transaction{}, nil
-	}
-	sigs, err := chainsolana.ConvertSignaturesFromProto(p.Signatures)
-	if err != nil {
-		return typesolana.Transaction{}, fmt.Errorf("signatures: %w", err)
-	}
-	msg, err := convertParsedMessageFromProto(p.Message)
-	if err != nil {
-		return typesolana.Transaction{}, fmt.Errorf("message: %w", err)
-	}
-	return typesolana.Transaction{Signatures: sigs, Message: msg}, nil
-}
-
 func convertParsedTransactionToProto(t typesolana.Transaction) *ParsedTransaction {
 	return &ParsedTransaction{
 		Signatures: chainsolana.ConvertSignaturesToProto(t.Signatures),
@@ -635,20 +563,20 @@ func convertParsedTransactionToProto(t typesolana.Transaction) *ParsedTransactio
 	}
 }
 
-func convertTransactionEnvelopeToProto(e typesolana.TransactionResultEnvelope) *TransactionEnvelope {
+func convertTransactionEnvelopeToProto(e typesolana.TransactionResultEnvelope) (*TransactionEnvelope, error) {
 	switch {
 	case e.AsParsedTransaction != nil:
 		return &TransactionEnvelope{
 			Transaction: &TransactionEnvelope_Parsed{
 				Parsed: convertParsedTransactionToProto(*e.AsParsedTransaction),
 			},
-		}
+		}, nil
 	case len(e.AsDecodedBinary.Content) > 0:
 		return &TransactionEnvelope{
 			Transaction: &TransactionEnvelope_Raw{Raw: e.AsDecodedBinary.Content},
-		}
+		}, nil
 	default:
-		return nil
+		return nil, fmt.Errorf("transaction envelope has no content")
 	}
 }
 
@@ -667,20 +595,6 @@ func convertSimulateTransactionAccountsOptsFromProto(p *SimulateTransactionAccou
 	return &typesolana.SimulateTransactionAccountsOpts{
 		Encoding:  enc,
 		Addresses: addrs,
-	}, nil
-}
-
-func convertSimulateTransactionAccountsOptsToProto(o *typesolana.SimulateTransactionAccountsOpts) (*SimulateTransactionAccountsOpts, error) {
-	if o == nil {
-		return nil, nil
-	}
-	enc, err := convertEncodingTypeToProto(o.Encoding)
-	if err != nil {
-		return nil, fmt.Errorf("encoding: %w", err)
-	}
-	return &SimulateTransactionAccountsOpts{
-		Encoding:  enc,
-		Addresses: chainsolana.ConvertPublicKeysToProto(o.Addresses),
 	}, nil
 }
 
@@ -791,7 +705,11 @@ func ConvertGetTransactionReplyToProto(r *typesolana.GetTransactionReply) (*GetT
 	}
 	var tx *TransactionEnvelope
 	if r.Transaction != nil {
-		tx = convertTransactionEnvelopeToProto(*r.Transaction)
+		var err error
+		tx, err = convertTransactionEnvelopeToProto(*r.Transaction)
+		if err != nil {
+			return nil, fmt.Errorf("failved to convert transaction: %w", err)
+		}
 	}
 	meta, err := convertTransactionMetaToProto(r.Meta)
 	if err != nil {
@@ -995,6 +913,10 @@ func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest)
 	return &typesolana.GetSignatureStatusesRequest{Sigs: sigs}, nil
 }
 
-func ptr[T any](v T) *T {
+func ptrUint64(v uint64) *uint64 {
+	if v == 0 {
+		return nil
+	}
+
 	return &v
 }

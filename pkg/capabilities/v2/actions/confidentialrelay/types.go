@@ -61,6 +61,13 @@ type SecretsRequestParams struct {
 	// the EnclaveConfig type doc-comment for the threat model.
 	EnclaveConfig EnclaveConfig `json:"enclave_config"`
 	Attestation   string        `json:"attestation,omitempty"`
+
+	// SignedComputeRequests carries the F+1 Workflow-DON-signed compute requests the
+	// enclave forwards verbatim. The relay DON verifies the signatures over
+	// ComputeRequest.Hash() against its Workflow DON signer set and reads the
+	// authorized identity from PublicData (the WorkflowExecution proto). Like
+	// Attestation, it is authorization input and is excluded from the response hash.
+	SignedComputeRequests []SignedComputeRequest `json:"signed_compute_requests,omitempty"`
 }
 
 // SecretEntry is a single secret in the relay DON's response.

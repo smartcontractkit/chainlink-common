@@ -436,7 +436,9 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		cbCtx, cbCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 		defer cbCancel()
 
-		d.metrics.recordPublish(cbCtx, publishElapsed, "batch", sendErr)
+		if d.metrics != nil {
+			d.metrics.recordPublish(cbCtx, publishElapsed, "batch", sendErr)
+		}
 
 		if sendErr != nil {
 			if d.metrics != nil {

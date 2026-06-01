@@ -436,3 +436,112 @@ func TestSecretsResponseHash_StableUnderSignerReordering(t *testing.T) {
 	}
 	require.Equal(t, base, mustSecretsHash(t, result, reversed))
 }
+
+func validWorkflowAuthz() WorkflowAuthz {
+	return WorkflowAuthz{
+		Owner:       validOwnerA,
+		OrgID:       "org-1",
+		WorkflowID:  "wf-1",
+		ExecutionID: validExecutionID,
+		Expiry:      1893456000,
+	}
+}
+
+func mustWorkflowAuthzHash(t *testing.T, w WorkflowAuthz) [32]byte {
+	t.Helper()
+	h, err := w.Hash()
+	require.NoError(t, err)
+	return h
+}
+
+func TestWorkflowAuthz_Hash_Deterministic(t *testing.T) {
+	w := validWorkflowAuthz()
+	require.Equal(t, mustWorkflowAuthzHash(t, w), mustWorkflowAuthzHash(t, w))
+}
+
+// Every field WorkflowAuthz claims to bind must actually change the hash, or a
+// compromised enclave could mutate that field without invalidating the F+1
+// signatures the relay verifies.
+func TestWorkflowAuthz_Hash_BindsEveryField(t *testing.T) {
+	base := mustWorkflowAuthzHash(t, validWorkflowAuthz())
+
+	mutations := map[string]func(*WorkflowAuthz){
+		"owner":       func(w *WorkflowAuthz) { w.Owner = validOwnerB },
+		"org_id":      func(w *WorkflowAuthz) { w.OrgID = "org-2" },
+		"workflow_id": func(w *WorkflowAuthz) { w.WorkflowID = "wf-2" },
+		"execution_id": func(w *WorkflowAuthz) {
+			w.ExecutionID = "2222222222222222222222222222222222222222222222222222222222222222"
+		},
+		"expiry": func(w *WorkflowAuthz) { w.Expiry = 1893456001 },
+	}
+	for name, mutate := range mutations {
+		t.Run(name, func(t *testing.T) {
+			w := validWorkflowAuthz()
+			mutate(&w)
+			require.NotEqual(t, base, mustWorkflowAuthzHash(t, w), "hash must change when %s changes", name)
+		})
+	}
+}
+
+// The relay reconstructs WorkflowAuthz from the request the enclave forwards. Its
+// hash must equal the one the Workflow DON signed, or a faithful request would
+// fail verification. This is the core round-trip the whole scheme rests on.
+func TestWorkflowAuthz_ReconstructionMatchesSignedHash(t *testing.T) {
+	w := validWorkflowAuthz()
+	signed := mustWorkflowAuthzHash(t, w)
+
+	p := SecretsRequestParams{
+		WorkflowID:  w.WorkflowID,
+		Owner:       w.Owner,
+		ExecutionID: w.ExecutionID,
+		OrgID:       w.OrgID,
+		Expiry:      w.Expiry,
+	}
+	require.Equal(t, w, p.WorkflowAuthz())
+	require.Equal(t, signed, mustWorkflowAuthzHash(t, p.WorkflowAuthz()))
+}
+
+func TestWorkflowAuthz_Validate(t *testing.T) {
+	t.Run("valid", func(t *testing.T) {
+		require.NoError(t, validWorkflowAuthz().Validate())
+	})
+	t.Run("empty org_id is allowed", func(t *testing.T) {
+		w := validWorkflowAuthz()
+		w.OrgID = ""
+		require.NoError(t, w.Validate())
+	})
+
+	cases := map[string]func(*WorkflowAuthz){
+		"empty owner":            func(w *WorkflowAuthz) { w.Owner = "" },
+		"malformed owner":        func(w *WorkflowAuthz) { w.Owner = "0xnothex" },
+		"empty workflow_id":      func(w *WorkflowAuthz) { w.WorkflowID = "" },
+		"empty execution_id":     func(w *WorkflowAuthz) { w.ExecutionID = "" },
+		"malformed execution_id": func(w *WorkflowAuthz) { w.ExecutionID = "abc" },
+		"zero expiry":            func(w *WorkflowAuthz) { w.Expiry = 0 },
+		"negative expiry":        func(w *WorkflowAuthz) { w.Expiry = -1 },
+	}
+	for name, mutate := range cases {
+		t.Run(name, func(t *testing.T) {
+			w := validWorkflowAuthz()
+			mutate(&w)
+			require.Error(t, w.Validate())
+		})
+	}
+}
+
+func TestWorkflowAuthz_Hash_RejectsInvalid(t *testing.T) {
+	w := validWorkflowAuthz()
+	w.Owner = ""
+	_, err := w.Hash()
+	require.Error(t, err)
+}
+
+// The signing payload must be domain-separated from relay-response signatures so
+// a WorkflowAuthz signature can never be replayed as one (and vice versa).
+func TestWorkflowAuthzSignaturePayload_DomainSeparated(t *testing.T) {
+	h := mustWorkflowAuthzHash(t, validWorkflowAuthz())
+
+	got := WorkflowAuthzSignaturePayload(h)
+	require.Equal(t, peeridhelper.MakePeerIDSignatureDomainSeparatedPayload(WorkflowAuthzSignaturePrefix, h[:]), got)
+	require.NotEqual(t, RelayResponseSignaturePayload(h), got)
+}

@@ -24,6 +24,11 @@ const (
 	// RelayResponseSignaturePrefix domain-separates signatures over relay
 	// response hashes from other ed25519 payloads in the system.
 	RelayResponseSignaturePrefix = "CONFIDENTIAL_RELAY_PAYLOAD_"
+
+	// WorkflowAuthzSignaturePrefix domain-separates Workflow DON signatures over a
+	// WorkflowAuthz hash from relay-response signatures and every other ed25519
+	// payload, so an authorization signature can never be replayed as one.
+	WorkflowAuthzSignaturePrefix = "WORKFLOW_DON_AUTHZ_BLOB_"
 )
 
 // EnclaveConfig mirrors the confidential-compute EnclaveConfig fields the
@@ -61,6 +66,110 @@ type SecretsRequestParams struct {
 	// the EnclaveConfig type doc-comment for the threat model.
 	EnclaveConfig EnclaveConfig `json:"enclave_config"`
 	Attestation   string        `json:"attestation,omitempty"`
+
+	// Expiry and AuthzSignatures carry the Workflow DON authorization (WRAB).
+	// The enclave forwards the F+1 signatures it received from the Workflow DON
+	// (via the per-node-data seam); the relay reconstructs WorkflowAuthz() and
+	// verifies the signatures against EnclaveConfig.Signers.
+	Expiry          int64                    `json:"expiry,omitempty"`
+	AuthzSignatures []WorkflowAuthzSignature `json:"authz_signatures,omitempty"`
+}
+
+// WorkflowAuthz (WRAB: workflow-DON-to-relay-DON authorization blob) is the
+// identity the Workflow DON attests for a confidential execution. Each Workflow
+// DON node signs WorkflowAuthz.Hash(); the relay DON verifies F+1 of those
+// signatures (against EnclaveConfig.Signers) before honoring a GetSecrets
+// request, so a compromised enclave cannot self-assert a different Owner than the
+// one the Workflow DON authorized. Owner is the ownership gate (the Vault DON
+// keys secrets on Owner::Namespace::Key). OrgID is bound but not gating (org_id
+// is deprecated for ownership). ExecutionID binds the blob to a single execution
+// and Expiry bounds the replay window.
+type WorkflowAuthz struct {
+	Owner       string `json:"owner"`  // Ethereum address (hex, 0x-prefixed)
+	OrgID       string `json:"org_id"` // bound, not gating
+	WorkflowID  string `json:"workflow_id"`
+	ExecutionID string `json:"execution_id"` // 32 bytes, hex-encoded
+	Expiry      int64  `json:"expiry"`       // unix seconds; relay rejects if now > Expiry
+}
+
+// WorkflowAuthzSignature is a single Workflow DON node signature over a
+// WorkflowAuthz hash.
+type WorkflowAuthzSignature struct {
+	Signer    []byte `json:"signer"`
+	Signature []byte `json:"signature"`
+}
+
+// Validate rejects a WorkflowAuthz missing or malforming a field the canonical
+// hash binds to. OrgID is intentionally not required: it is deprecated for
+// ownership and may be empty, but it is still bound so it cannot be spoofed for
+// downstream metadata.
+func (w WorkflowAuthz) Validate() error {
+	if w.Owner == "" {
+		return errors.New("owner is required")
+	}
+	if err := validateOwnerAddress(w.Owner); err != nil {
+		return err
+	}
+	if w.WorkflowID == "" {
+		return errors.New("workflow_id is required")
+	}
+	if w.ExecutionID == "" {
+		return errors.New("execution_id is required")
+	}
+	if err := validateExecutionID(w.ExecutionID); err != nil {
+		return err
+	}
+	if w.Expiry <= 0 {
+		return errors.New("expiry is required")
+	}
+	return nil
+}
+
+// Hash computes the canonical hash a Workflow DON node signs and the relay DON
+// reconstructs from the request. Returns an error if the WorkflowAuthz fails
+// Validate so a caller cannot accidentally sign over an unbinding payload.
+func (w WorkflowAuthz) Hash() ([32]byte, error) {
+	if err := w.Validate(); err != nil {
+		return [32]byte{}, fmt.Errorf("invalid workflow authz: %w", err)
+	}
+
+	h := sha256.New()
+	h.Write([]byte(teeattestation.DomainSeparator))
+	h.Write([]byte("\nWorkflowAuthz\n"))
+
+	writeString(h, w.Owner)
+	writeString(h, w.OrgID)
+	writeString(h, w.WorkflowID)
+	writeString(h, w.ExecutionID)
+
+	var buf [8]byte
+	binary.BigEndian.PutUint64(buf[:], uint64(w.Expiry))
+	h.Write(buf[:])
+
+	var result [32]byte
+	h.Sum(result[:0])
+	return result, nil
+}
+
+// WorkflowAuthz reconstructs the authorization blob from the request the enclave
+// forwards. The relay DON computes WorkflowAuthz().Hash() and verifies it against
+// the carried AuthzSignatures; if the enclave lied about Owner/OrgID/etc. the
+// hash will not match what the Workflow DON signed.
+func (p SecretsRequestParams) WorkflowAuthz() WorkflowAuthz {
+	return WorkflowAuthz{
+		Owner:       p.Owner,
+		OrgID:       p.OrgID,
+		WorkflowID:  p.WorkflowID,
+		ExecutionID: p.ExecutionID,
+		Expiry:      p.Expiry,
+	}
+}
+
+// WorkflowAuthzSignaturePayload prepares a WorkflowAuthz hash for signing with
+// the standard peerid domain-separated payload format, using a prefix distinct
+// from relay-response signatures so it can never be replayed as one.
+func WorkflowAuthzSignaturePayload(authzHash [32]byte) []byte {
+	return peeridhelper.MakePeerIDSignatureDomainSeparatedPayload(WorkflowAuthzSignaturePrefix, authzHash[:])
 }
 
 // SecretEntry is a single secret in the relay DON's response.

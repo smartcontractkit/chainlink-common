@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -81,10 +80,10 @@ func GetBuildCmd(inputFile string, outputFile string, rootFolder string) *exec.C
 			inputFile,
 		)
 		env := append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
-		// Pin GOTOOLCHAIN to the version declared in the nearest go.mod so the
-		// compiled WASM is reproducible across machines whose local Go differs
-		// from go.mod (GOTOOLCHAIN=auto uses the local Go when it's newer).
-		if toolchain := goToolchainFromMod(rootFolder); toolchain != "" {
+		// Pin GOTOOLCHAIN so the compiled WASM is reproducible. Prefer the
+		// configured GOTOOLCHAIN; when it's unset, fall back to the version
+		// declared in the module's go.mod (the local Go version wouldn't pin).
+		if toolchain := goToolchain(rootFolder); toolchain != "" {
 			env = append(env, "GOTOOLCHAIN="+toolchain)
 		}
 		buildCmd.Env = env
@@ -95,13 +94,37 @@ func GetBuildCmd(inputFile string, outputFile string, rootFolder string) *exec.C
 	return buildCmd
 }
 
-// goToolchainFromMod returns a GOTOOLCHAIN value (e.g. "go1.26.2") derived
-// from the nearest go.mod walking up from startDir. Prefers the toolchain
-// directive when present, falling back to the go directive. Returns "" when
-// no go.mod or version can be determined.
-func goToolchainFromMod(startDir string) string {
-	goModPath := findNearestGoMod(startDir)
-	if goModPath == "" {
+// goToolchain returns a GOTOOLCHAIN value (e.g. "go1.26.2") to pin the build
+// to. It prefers the configured `go env GOTOOLCHAIN`; when that is unset (e.g.
+// "auto") it falls back to the go version declared in the module's go.mod. The
+// local Go version is not used as a fallback because it would not pin a
+// reproducible toolchain. Returns "" when nothing can be determined.
+func goToolchain(dir string) string {
+	if v := goEnv(dir, "GOTOOLCHAIN"); v != "" && v != "auto" {
+		return v
+	}
+	return goToolchainFromMod(dir)
+}
+
+// goEnv runs `go env <name>` in dir and returns the trimmed value, or "" on error.
+func goEnv(dir, name string) string {
+	cmd := exec.Command("go", "env", name)
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// goToolchainFromMod returns a GOTOOLCHAIN value derived from the go directive
+// in the module's go.mod, located via `go env GOMOD`. Returns "" when no go.mod
+// or go version can be determined.
+func goToolchainFromMod(dir string) string {
+	goModPath := goEnv(dir, "GOMOD")
+	// `go env GOMOD` returns "" outside a module and os.DevNull when modules
+	// are disabled (GO111MODULE=off); neither is a real go.mod file.
+	if goModPath == "" || goModPath == os.DevNull {
 		return ""
 	}
 	f, err := os.Open(goModPath)
@@ -110,47 +133,12 @@ func goToolchainFromMod(startDir string) string {
 	}
 	defer f.Close()
 
-	var goVersion, toolchain string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "//") {
-			continue
+		fields := strings.Fields(scanner.Text())
+		if len(fields) == 2 && fields[0] == "go" {
+			return "go" + fields[1]
 		}
-		fields := strings.Fields(line)
-		if len(fields) < 2 {
-			continue
-		}
-		switch fields[0] {
-		case "go":
-			goVersion = fields[1]
-		case "toolchain":
-			toolchain = fields[1]
-		}
-	}
-	if toolchain != "" {
-		return toolchain
-	}
-	if goVersion != "" {
-		return "go" + goVersion
 	}
 	return ""
-}
-
-func findNearestGoMod(startDir string) string {
-	dir, err := filepath.Abs(startDir)
-	if err != nil {
-		return ""
-	}
-	for {
-		candidate := filepath.Join(dir, "go.mod")
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
-			return candidate
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return ""
-		}
-		dir = parent
-	}
 }

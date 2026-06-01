@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780344592407,
+  "lastUpdate": 1780349131545,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48840,6 +48840,66 @@ window.BENCHMARK_DATA = {
             "value": 137770,
             "unit": "ns/op",
             "extra": "8328 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9f526774fef0ae2ce336e5a827a2e0339f1df8b1",
+          "message": "DurableEmitter: Refactor with Chip BatchEmitter (#2090)\n\n* Refactor using batch emitter\n\n* Loop support\n\n* Rename isHostProcess to retransmitEnabled\n\n* Add setup\n\n* Fix setup\n\n* Update comments and callback\n\n* Update naming\n\n* Update setup\n\n* Create durableemitter/auth\n\n* Bump chipingress\n\n* refactor(durableemitter): delegate auth header logic to chipingress\n\nCollapse pkg/durableemitter/auth.go onto chipingress.NewHeaderProvider,\nremoving the duplicated static/rotating header provider, newAuthHeaderV2,\nand auth header constants. Keep a thin lazySigner wrapper plus the\npackage-level SetGlobalSigner/IsGlobalSignerSet so LOOP plugins can still\ninject the CSA keystore after startup.\n\nNewAuthHeaderProvider now wraps the (possibly nil) signer in the lazy\nholder, delegates provider construction to chipingress, and publishes the\nwrapper globally only for rotating auth. setup.go and the existing call\nsites are unchanged.\n\n* Update auth_test.go\n\n* metrics nil check\n\n---------\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>",
+          "timestamp": "2026-06-01T21:12:38Z",
+          "tree_id": "0cc595f780a87c5f7a11b3f0375fcd6e9d467511",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9f526774fef0ae2ce336e5a827a2e0339f1df8b1"
+        },
+        "date": 1780349128818,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 470.3,
+            "unit": "ns/op",
+            "extra": "2439988 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 71779,
+            "unit": "ns/op",
+            "extra": "16620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 425.3,
+            "unit": "ns/op",
+            "extra": "2851147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 72423,
+            "unit": "ns/op",
+            "extra": "16425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24940,
+            "unit": "ns/op",
+            "extra": "48698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 113810,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

@@ -62,10 +62,12 @@ var Default = Schema{
 	PropagateOrgIDInRequestMetadata:        Bool(false),
 	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
+	VaultOptimizationsEnabled:              Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:       Rate(rate.Every(30*time.Second), 0),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
@@ -128,6 +130,9 @@ var Default = Schema{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
+		HTTPAction: perOrgHTTPAction{
+			MtlsRateLimit: Rate(rate.Every(30*time.Second), 3),
+		},
 	},
 	PerOwner: Owners{
 		WorkflowLimit:                     Int(1000),
@@ -257,10 +262,12 @@ type Schema struct {
 	PropagateOrgIDInRequestMetadata        Setting[bool]
 	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
+	VaultOptimizationsEnabled              Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate       Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
@@ -295,6 +302,7 @@ type Orgs struct {
 	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
+	HTTPAction                        perOrgHTTPAction
 }
 
 type Owners struct {
@@ -398,6 +406,9 @@ type httpAction struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+type perOrgHTTPAction struct {
+	MtlsRateLimit Setting[config.Rate]
 }
 type confidentialHTTP struct {
 	CallLimit         Setting[int] `unit:"{call}"`

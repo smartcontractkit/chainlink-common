@@ -41,6 +41,7 @@ flowchart
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
+        VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -49,6 +50,7 @@ flowchart
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
         GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
         GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
+        GatewayHTTPActionMtlsRequestRate[\GatewayHTTPActionMtlsRequestRate/]:::rate
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -214,6 +216,9 @@ flowchart
         end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
+        end
+        subgraph PerOrg.HTTPAction
+            PerOrg.HTTPAction.MtlsRateLimit{{PerOrg.HTTPAction.MtlsRateLimit}}:::bound
         end
     end
     subgraph vault

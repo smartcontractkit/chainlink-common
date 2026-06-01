@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780307371477,
+  "lastUpdate": 1780308764776,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48600,6 +48600,66 @@ window.BENCHMARK_DATA = {
             "value": 130437,
             "unit": "ns/op",
             "extra": "8898 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d1ced0e51eb4dd05348b206c5022fc1eee9a76c2",
+          "message": "CRE-4343/CRE-4352: Add mtls support in OutboundHTTPRequest + feature … (#2067)\n\n* CRE-4343/CRE-4352: Add mtls support in OutboundHTTPRequest + feature flag for mtls\n\n* Add rate limit",
+          "timestamp": "2026-06-01T10:01:30Z",
+          "tree_id": "65ef2070ae4c36fad896dd82beaba5442c06286b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d1ced0e51eb4dd05348b206c5022fc1eee9a76c2"
+        },
+        "date": 1780308762681,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.6,
+            "unit": "ns/op",
+            "extra": "3266758 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96079,
+            "unit": "ns/op",
+            "extra": "12481 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.5,
+            "unit": "ns/op",
+            "extra": "2944209 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93900,
+            "unit": "ns/op",
+            "extra": "12780 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26791,
+            "unit": "ns/op",
+            "extra": "44426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 146899,
+            "unit": "ns/op",
+            "extra": "8373 times\n4 procs"
           }
         ]
       }

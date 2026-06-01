@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"sort"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
@@ -131,10 +132,13 @@ func (w WorkflowAuthz) Hash() ([32]byte, error) {
 	h.Write([]byte(teeattestation.DomainSeparator))
 	h.Write([]byte("\nWorkflowAuthz\n"))
 
-	writeString(h, w.Owner)
+	// Owner and ExecutionID are hex whose validators accept any case, so lowercase
+	// them before hashing to keep the hash canonical w.r.t. hex case. OrgID and
+	// WorkflowID are opaque identifiers, hashed as-is.
+	writeString(h, strings.ToLower(w.Owner))
 	writeString(h, w.OrgID)
 	writeString(h, w.WorkflowID)
-	writeString(h, w.ExecutionID)
+	writeString(h, strings.ToLower(w.ExecutionID))
 
 	var result [32]byte
 	h.Sum(result[:0])

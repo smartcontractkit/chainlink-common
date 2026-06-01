@@ -1,6 +1,7 @@
 package confidentialrelay
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -479,6 +480,20 @@ func TestWorkflowAuthz_Hash_BindsEveryField(t *testing.T) {
 			require.NotEqual(t, base, mustWorkflowAuthzHash(t, w), "hash must change when %s changes", name)
 		})
 	}
+}
+
+// Owner and ExecutionID are hex with case-insensitive validators, so the hash must
+// be invariant to hex case or a signer and verifier could disagree.
+func TestWorkflowAuthz_Hash_CanonicalHexCase(t *testing.T) {
+	lower := validWorkflowAuthz()
+	lower.Owner = "0x" + strings.Repeat("a", 40)
+	lower.ExecutionID = strings.Repeat("a", 64)
+
+	upper := lower
+	upper.Owner = "0x" + strings.Repeat("A", 40)
+	upper.ExecutionID = strings.Repeat("A", 64)
+
+	require.Equal(t, mustWorkflowAuthzHash(t, lower), mustWorkflowAuthzHash(t, upper))
 }
 
 // The relay reconstructs WorkflowAuthz from the request the enclave forwards. Its

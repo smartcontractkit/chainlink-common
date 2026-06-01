@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780339241017,
+  "lastUpdate": 1780344592407,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48780,6 +48780,66 @@ window.BENCHMARK_DATA = {
             "value": 130775,
             "unit": "ns/op",
             "extra": "9116 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6a4c28faa3c5d7ea6e3c5c2320f7b586c3640641",
+          "message": "chipingress: batch partial delivery support (#2085)\n\nAdd proto types and client wiring for chipingress batch publishing with\nper-event partial-delivery semantics. All wire-format changes are\nadditive and backwards-compatible with origin/main.\n\nProto (pkg/chipingress/pb/chip_ingress.proto):\n- Add PublishOptions{optional bool transaction_enabled = 1}.\n  Unset or false => partial delivery (server default): valid events are\n  produced, per-event errors reported in PublishResponse.results.\n  Explicit true => all-or-nothing: any per-event failure fails the batch.\n- Add CloudEventBatch.options = 2 (PublishOptions).\n- Add PublishResult.error = 2 (PublishError).\n- Add PublishError{PublishErrorCode error_code, string reason}.\n- Add PublishErrorCode enum:\n    PUBLISH_ERROR_CODE_UNKNOWN = 0,\n    PUBLISH_ERROR_CODE_VALIDATION_FAILED = 1,\n    PUBLISH_ERROR_CODE_SCHEMA_MISSING = 2,\n    PUBLISH_ERROR_CODE_ENCODE_ERROR = 3,\n    PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION = 4.\n- Rename PublishResult.eventId => event_id (same tag 1, same wire type,\n  same generated Go field 'EventId').\n\nSingle-shot client (pkg/chipingress/client.go):\n- BatchOpt + WithTransactionEnabled(bool) helper.\n- EventsToBatchWithOpts(events, opts...) variadic constructor.\n- EventsToBatch and EventsToBatchWithOpts default-populate\n  Options{TransactionEnabled: false} so client intent is always\n  explicit on the wire (defensive against future server-default drift).\n- Type aliases in types.go: PublishOptions, PublishError,\n  PublishErrorCode.\n\nBatch client (pkg/chipingress/batch):\n- New batching client (NewBatchClient) that accumulates messages and\n  flushes by batch size, byte budget, or interval.\n- transactionEnabled flag (default false = partial delivery);\n  Opt: WithTransactionEnabled(bool).\n- newBatchRequest always emits PublishOptions explicitly (both true and\n  false) to match the single-shot client's contract.\n- splitMessagesByRequestSize splits oversized batches by gRPC max\n  request size, dropping any single event that exceeds the limit.\n- Per-event callbacks: completeBatchCallbacksFromResults dispatches\n  PublishResult outcomes; partial-delivery path returns *PublishError\n  per failed event; mismatch detection emits a synthetic\n  ErrCodeResultsMismatch when results length != messages length;\n  positional event_id mismatch is logged and counted via\n  resultsMismatchTotal.\n- PublishError{Code chipingress.PublishErrorCode, Reason string} with\n  re-exported ErrCode* constants.\n- OTel metrics: sendRequestsTotal, requestSizeMessages,\n  requestSizeBytes, requestLatencyMS, configInfo (carries\n  transaction_enabled bool attribute), batchSplitsTotal,\n  resultsMismatchTotal.\n\nTests:\n- Proto roundtrip (PublishResult with PublishError;\n  PublishOptions.GetTransactionEnabled edge cases).\n- Single-shot helper covers default, WithTransactionEnabled(true),\n  WithTransactionEnabled(false).\n- Batch client: partial-delivery callbacks, RPC error fallback,\n  WithTransactionEnabled(true) wire matcher, results-mismatch\n  synthetic error, split-on-size with explicit-Options sizing.",
+          "timestamp": "2026-06-01T19:58:12Z",
+          "tree_id": "62a938da5c27ee1650b6be5ebc67d32fd75588ee",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6a4c28faa3c5d7ea6e3c5c2320f7b586c3640641"
+        },
+        "date": 1780344589885,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.9,
+            "unit": "ns/op",
+            "extra": "3354670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92317,
+            "unit": "ns/op",
+            "extra": "13056 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.6,
+            "unit": "ns/op",
+            "extra": "3000333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92890,
+            "unit": "ns/op",
+            "extra": "12945 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26625,
+            "unit": "ns/op",
+            "extra": "45044 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 137770,
+            "unit": "ns/op",
+            "extra": "8328 times\n4 procs"
           }
         ]
       }

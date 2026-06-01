@@ -443,7 +443,6 @@ func validWorkflowAuthz() WorkflowAuthz {
 		OrgID:       "org-1",
 		WorkflowID:  "wf-1",
 		ExecutionID: validExecutionID,
-		Expiry:      1893456000,
 	}
 }
 
@@ -472,7 +471,6 @@ func TestWorkflowAuthz_Hash_BindsEveryField(t *testing.T) {
 		"execution_id": func(w *WorkflowAuthz) {
 			w.ExecutionID = "2222222222222222222222222222222222222222222222222222222222222222"
 		},
-		"expiry": func(w *WorkflowAuthz) { w.Expiry = 1893456001 },
 	}
 	for name, mutate := range mutations {
 		t.Run(name, func(t *testing.T) {
@@ -495,7 +493,6 @@ func TestWorkflowAuthz_ReconstructionMatchesSignedHash(t *testing.T) {
 		Owner:       w.Owner,
 		ExecutionID: w.ExecutionID,
 		OrgID:       w.OrgID,
-		Expiry:      w.Expiry,
 	}
 	require.Equal(t, w, p.WorkflowAuthz())
 	require.Equal(t, signed, mustWorkflowAuthzHash(t, p.WorkflowAuthz()))
@@ -517,8 +514,6 @@ func TestWorkflowAuthz_Validate(t *testing.T) {
 		"empty workflow_id":      func(w *WorkflowAuthz) { w.WorkflowID = "" },
 		"empty execution_id":     func(w *WorkflowAuthz) { w.ExecutionID = "" },
 		"malformed execution_id": func(w *WorkflowAuthz) { w.ExecutionID = "abc" },
-		"zero expiry":            func(w *WorkflowAuthz) { w.Expiry = 0 },
-		"negative expiry":        func(w *WorkflowAuthz) { w.Expiry = -1 },
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {

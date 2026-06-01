@@ -67,11 +67,10 @@ type SecretsRequestParams struct {
 	EnclaveConfig EnclaveConfig `json:"enclave_config"`
 	Attestation   string        `json:"attestation,omitempty"`
 
-	// Expiry and AuthzSignatures carry the Workflow DON authorization (WRAB).
-	// The enclave forwards the F+1 signatures it received from the Workflow DON
-	// (via the per-node-data seam); the relay reconstructs WorkflowAuthz() and
-	// verifies the signatures against EnclaveConfig.Signers.
-	Expiry          int64                    `json:"expiry,omitempty"`
+	// AuthzSignatures carry the Workflow DON authorization (WRAB). The enclave
+	// forwards the F+1 signatures it received from the Workflow DON (via the
+	// per-node-data seam); the relay reconstructs WorkflowAuthz() and verifies the
+	// signatures against EnclaveConfig.Signers.
 	AuthzSignatures []WorkflowAuthzSignature `json:"authz_signatures,omitempty"`
 }
 
@@ -82,14 +81,12 @@ type SecretsRequestParams struct {
 // request, so a compromised enclave cannot self-assert a different Owner than the
 // one the Workflow DON authorized. Owner is the ownership gate (the Vault DON
 // keys secrets on Owner::Namespace::Key). OrgID is bound but not gating (org_id
-// is deprecated for ownership). ExecutionID binds the blob to a single execution
-// and Expiry bounds the replay window.
+// is deprecated for ownership). ExecutionID binds the blob to a single execution.
 type WorkflowAuthz struct {
 	Owner       string `json:"owner"`  // Ethereum address (hex, 0x-prefixed)
 	OrgID       string `json:"org_id"` // bound, not gating
 	WorkflowID  string `json:"workflow_id"`
 	ExecutionID string `json:"execution_id"` // 32 bytes, hex-encoded
-	Expiry      int64  `json:"expiry"`       // unix seconds; relay rejects if now > Expiry
 }
 
 // WorkflowAuthzSignature is a single Workflow DON node signature over a
@@ -119,9 +116,6 @@ func (w WorkflowAuthz) Validate() error {
 	if err := validateExecutionID(w.ExecutionID); err != nil {
 		return err
 	}
-	if w.Expiry <= 0 {
-		return errors.New("expiry is required")
-	}
 	return nil
 }
 
@@ -142,10 +136,6 @@ func (w WorkflowAuthz) Hash() ([32]byte, error) {
 	writeString(h, w.WorkflowID)
 	writeString(h, w.ExecutionID)
 
-	var buf [8]byte
-	binary.BigEndian.PutUint64(buf[:], uint64(w.Expiry))
-	h.Write(buf[:])
-
 	var result [32]byte
 	h.Sum(result[:0])
 	return result, nil
@@ -161,7 +151,6 @@ func (p SecretsRequestParams) WorkflowAuthz() WorkflowAuthz {
 		OrgID:       p.OrgID,
 		WorkflowID:  p.WorkflowID,
 		ExecutionID: p.ExecutionID,
-		Expiry:      p.Expiry,
 	}
 }
 

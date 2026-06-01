@@ -1,6 +1,10 @@
 package confidentialrelay
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+
+	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
+)
 
 // computeRequestDomainSeparator is vendored verbatim from confidential-compute
 // types.DomainSeparator. It MUST stay byte-identical to the source, or
@@ -9,6 +13,21 @@ import "crypto/sha256"
 // confidential-compute, so the byte-for-byte conformance check lives in that repo
 // (which can import this package).
 const computeRequestDomainSeparator = "CONFIDENTIAL_COMPUTE_PAYLOAD"
+
+// signedComputeRequestSignaturePrefix is vendored verbatim from confidential-compute
+// util.GetConfidentialComputePayloadPrefix(). Each Workflow DON node signs the peerid
+// domain-separated payload over ComputeRequest.Hash() using this prefix; the relay DON
+// reconstructs the same payload (via SignedComputeRequestSignaturePayload) to verify the
+// F+1 signatures against the Workflow DON signer set. Note the trailing underscore: this
+// is the signature prefix, distinct from computeRequestDomainSeparator (the hash prefix).
+const signedComputeRequestSignaturePrefix = "CONFIDENTIAL_COMPUTE_PAYLOAD_"
+
+// SignedComputeRequestSignaturePayload reconstructs the exact payload a Workflow DON node
+// signed over a ComputeRequest hash, so the relay DON can verify the signature with the
+// node's public key.
+func SignedComputeRequestSignaturePayload(computeRequestHash [32]byte) []byte {
+	return peeridhelper.MakePeerIDSignatureDomainSeparatedPayload(signedComputeRequestSignaturePrefix, computeRequestHash[:])
+}
 
 // ComputeRequest is vendored from confidential-compute types.ComputeRequest. The
 // relay DON cannot import confidential-compute (the dependency runs the other way),

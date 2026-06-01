@@ -226,6 +226,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 		OrgResolverId:       orgResolverID,
 		CreSettingsId:       creSettingsID,
 		TriggerEventStoreId: triggerEventStoreID,
+		CapabilityDonId:     dependencies.CapabilityDonID,
 	})
 
 	if err != nil {
@@ -418,6 +419,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		OrgResolver:        orgResolver,
 		CRESettings:        creSettings,
 		TriggerEventStore:  triggerEventStoreClient,
+		CapabilityDonID:    request.CapabilityDonId,
 	}
 
 	if err = s.impl.Initialise(ctx, dependencies); err != nil {

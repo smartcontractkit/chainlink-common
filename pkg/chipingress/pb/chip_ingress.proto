@@ -11,34 +11,82 @@ option go_package = "./pb";
 service ChipIngress {
     // Publish sends a single CloudEvent to the ChipIngress service.
     rpc Publish (io.cloudevents.v1.CloudEvent) returns (PublishResponse) {}
-// PublishBatch sends a batch of CloudEvents to the ChipIngress service.
-// This method is atomic, meaning it will either succeed or fail for the entire batch.
-// When the server receives a batch of events, it will open a kafka transaction, and begin producing each event sequentially in order received.
-// If any 1 message fails, all previous messages in the same batch that were already produced won't be marked as committed,
-// and the server will respond with an error.
-// Consumers can set isolation.level=read_committed to only read committed records
+    // PublishBatch sends a batch of CloudEvents to the ChipIngress service.
+    // Default behavior is partial delivery (the default for both server and client):
+    // when transaction_enabled is unset (PublishOptions absent or the field omitted)
+    // or explicitly false, the server produces valid events and returns per-event
+    // errors in PublishResult for invalid ones.
+    // When transaction_enabled is explicitly true, any per-event failure fails the
+    // entire batch (all-or-nothing).
+    // Results in PublishResponse are positionally ordered: results[i] corresponds to events[i].
     rpc PublishBatch (CloudEventBatch) returns (PublishResponse) {}
-// Ping sends a request to the ChipIngress service to check if it is alive.
+    // Ping sends a request to the ChipIngress service to check if it is alive.
     rpc Ping(EmptyRequest) returns (PingResponse);
-// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
-// This API is experimental and may change in the future.
+    // StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
+    // This API is experimental and may change in the future.
     rpc StreamEvents (stream StreamEventsRequest) returns (stream StreamEventsResponse) {} // New streaming endpoint
 
-// RegisterSchema allows registering one or more schemas that define the structure of CloudEvent data.
+    // RegisterSchema allows registering one or more schemas that define the structure of CloudEvent data.
     rpc RegisterSchema(RegisterSchemaRequest) returns (RegisterSchemaResponse) {}
 }
 
+message PublishOptions {
+    // When unset or false, valid events are produced and invalid ones are
+    // skipped; per-event outcomes are reported in PublishResponse.results
+    // (partial delivery — the server default).
+    // When explicitly true, any per-event failure fails the entire batch
+    // (all-or-nothing).
+    optional bool transaction_enabled = 1;
+}
+
+enum PublishErrorCode {
+    // Default value.
+    PUBLISH_ERROR_CODE_UNKNOWN = 0;
+
+    // The CloudEvent structure is invalid. Common causes: missing required fields
+    // (id, source, type, specversion), a nil attribute value, or an unsupported
+    // attribute type in the extensions map. Fix the CloudEvent and retry.
+    PUBLISH_ERROR_CODE_VALIDATION_FAILED = 1;
+
+    // No schema was found in the Schema Registry for the subject derived from
+    // this event's source and type. The schema must be registered before
+    // publishing events of this type. Note: registry connectivity failures are
+    // returned as a gRPC INTERNAL error, not this code.
+    PUBLISH_ERROR_CODE_SCHEMA_MISSING = 2;
+
+    // The event payload could not be encoded against its registered schema.
+    // Common causes: the data bytes are not valid protobuf (e.g. JSON was used
+    // instead of proto.Marshal), or the event type does not match any message
+    // descriptor in the registered schema.
+    PUBLISH_ERROR_CODE_ENCODE_ERROR = 3;
+
+    // The event source does not map to a recognized domain. Either the source
+    // field is set to an unknown value or is missing entirely. Verify the source
+    // field matches a domain configured in chip-ingress.
+    PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION = 4;
+}
+
+// PublishError carries machine- and human-readable detail for a non-produced event.
+message PublishError {
+    PublishErrorCode error_code = 1;
+    string reason = 2;
+}
+
 // CloudEventBatch is used to send many ChipIngress
-message CloudEventBatch{
+message CloudEventBatch {
     repeated io.cloudevents.v1.CloudEvent events = 1;
+    PublishOptions options = 2;
 }
 
 message PublishResponse {
-  repeated PublishResult results = 1;
+    repeated PublishResult results = 1;
 }
 
+// PublishResult reports the outcome for one input event.
+// Invariant: error is set if and only if the event was not produced to Kafka.
 message PublishResult {
-  string eventId = 1;
+    string event_id = 1;
+    PublishError error = 2;
 }
 
 // EmptyRequest is just an empty request
@@ -46,7 +94,7 @@ message EmptyRequest{}
 
 // PingResponse responds to pings
 message PingResponse {
-	string message = 1;
+    string message = 1;
 }
 
 // Define request and response messages for the new streaming endpoint

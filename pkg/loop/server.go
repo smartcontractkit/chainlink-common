@@ -2,6 +2,7 @@ package loop
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -105,6 +107,7 @@ type Server struct {
 	LimitsFactory   limits.Factory
 	profiler        *pyroscope.Profiler
 	beholderClient  *beholder.Client
+	durableEmitter  *durableemitter.DurableEmitter
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -340,6 +343,34 @@ func (s *Server) start(opts ...ServerOpt) error {
 		s.LimitsFactory.Settings = s.cfg.settingsGetter
 	}
 
+	if s.EnvConfig.ChipIngressDurableEmitterEnabled && s.EnvConfig.ChipIngressEndpoint != "" {
+		if s.DataSource == nil {
+			return errors.New("data source required when durable emitter is enabled")
+		}
+
+		// Rotating auth: signer is injected later via durableemitter.SetGlobalSigner when the host
+		// provides the CSA keystore (see relayer and standard capabilities startup).
+		durableCfg := durableemitter.SetupConfig{
+			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
+			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,
+			Auth: durableemitter.AuthConfig{
+				AuthHeaders:      s.EnvConfig.TelemetryAuthHeaders,
+				AuthHeadersTTL:   s.EnvConfig.TelemetryAuthHeadersTTL,
+				AuthPublicKeyHex: s.EnvConfig.TelemetryAuthPubKeyHex,
+			},
+			RetransmitEnabled: false, // LOOP plugins do not run the retransmit loop; the host process handles it.
+		}
+		store := durableemitter.NewPgDurableEventStore(s.DataSource)
+		var err error
+		s.durableEmitter, err = durableemitter.Setup(store, durableCfg, s.Logger)
+		if err != nil {
+			return fmt.Errorf("failed to set up durable emitter: %w", err)
+		}
+		if err = s.durableEmitter.Start(ctx); err != nil {
+			return fmt.Errorf("failed to start durable emitter: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -379,6 +410,9 @@ func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.C
 func (s *Server) Stop() {
 	if s.beholderClient != nil {
 		s.Logger.ErrorIfFn(s.beholderClient.Close, "Failed to close beholder client")
+	}
+	if s.durableEmitter != nil {
+		s.Logger.ErrorIfFn(s.durableEmitter.Close, "Failed to close durable emitter")
 	}
 	if s.dbStatsReporter != nil {
 		s.dbStatsReporter.Stop()

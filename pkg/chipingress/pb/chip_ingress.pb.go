@@ -22,17 +22,190 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type PublishErrorCode int32
+
+const (
+	// Default value.
+	PublishErrorCode_PUBLISH_ERROR_CODE_UNKNOWN PublishErrorCode = 0
+	// The CloudEvent structure is invalid. Common causes: missing required fields
+	// (id, source, type, specversion), a nil attribute value, or an unsupported
+	// attribute type in the extensions map. Fix the CloudEvent and retry.
+	PublishErrorCode_PUBLISH_ERROR_CODE_VALIDATION_FAILED PublishErrorCode = 1
+	// No schema was found in the Schema Registry for the subject derived from
+	// this event's source and type. The schema must be registered before
+	// publishing events of this type. Note: registry connectivity failures are
+	// returned as a gRPC INTERNAL error, not this code.
+	PublishErrorCode_PUBLISH_ERROR_CODE_SCHEMA_MISSING PublishErrorCode = 2
+	// The event payload could not be encoded against its registered schema.
+	// Common causes: the data bytes are not valid protobuf (e.g. JSON was used
+	// instead of proto.Marshal), or the event type does not match any message
+	// descriptor in the registered schema.
+	PublishErrorCode_PUBLISH_ERROR_CODE_ENCODE_ERROR PublishErrorCode = 3
+	// The event source does not map to a recognized domain. Either the source
+	// field is set to an unknown value or is missing entirely. Verify the source
+	// field matches a domain configured in chip-ingress.
+	PublishErrorCode_PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION PublishErrorCode = 4
+)
+
+// Enum value maps for PublishErrorCode.
+var (
+	PublishErrorCode_name = map[int32]string{
+		0: "PUBLISH_ERROR_CODE_UNKNOWN",
+		1: "PUBLISH_ERROR_CODE_VALIDATION_FAILED",
+		2: "PUBLISH_ERROR_CODE_SCHEMA_MISSING",
+		3: "PUBLISH_ERROR_CODE_ENCODE_ERROR",
+		4: "PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION",
+	}
+	PublishErrorCode_value = map[string]int32{
+		"PUBLISH_ERROR_CODE_UNKNOWN":                 0,
+		"PUBLISH_ERROR_CODE_VALIDATION_FAILED":       1,
+		"PUBLISH_ERROR_CODE_SCHEMA_MISSING":          2,
+		"PUBLISH_ERROR_CODE_ENCODE_ERROR":            3,
+		"PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION": 4,
+	}
+)
+
+func (x PublishErrorCode) Enum() *PublishErrorCode {
+	p := new(PublishErrorCode)
+	*p = x
+	return p
+}
+
+func (x PublishErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PublishErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_pb_chip_ingress_proto_enumTypes[0].Descriptor()
+}
+
+func (PublishErrorCode) Type() protoreflect.EnumType {
+	return &file_pb_chip_ingress_proto_enumTypes[0]
+}
+
+func (x PublishErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PublishErrorCode.Descriptor instead.
+func (PublishErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{0}
+}
+
+type PublishOptions struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// When unset or false, valid events are produced and invalid ones are
+	// skipped; per-event outcomes are reported in PublishResponse.results
+	// (partial delivery — the server default).
+	// When explicitly true, any per-event failure fails the entire batch
+	// (all-or-nothing).
+	TransactionEnabled *bool `protobuf:"varint,1,opt,name=transaction_enabled,json=transactionEnabled,proto3,oneof" json:"transaction_enabled,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *PublishOptions) Reset() {
+	*x = PublishOptions{}
+	mi := &file_pb_chip_ingress_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PublishOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PublishOptions) ProtoMessage() {}
+
+func (x *PublishOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_chip_ingress_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PublishOptions.ProtoReflect.Descriptor instead.
+func (*PublishOptions) Descriptor() ([]byte, []int) {
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *PublishOptions) GetTransactionEnabled() bool {
+	if x != nil && x.TransactionEnabled != nil {
+		return *x.TransactionEnabled
+	}
+	return false
+}
+
+// PublishError carries machine- and human-readable detail for a non-produced event.
+type PublishError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode     PublishErrorCode       `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=chipingress.pb.PublishErrorCode" json:"error_code,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PublishError) Reset() {
+	*x = PublishError{}
+	mi := &file_pb_chip_ingress_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PublishError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PublishError) ProtoMessage() {}
+
+func (x *PublishError) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_chip_ingress_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PublishError.ProtoReflect.Descriptor instead.
+func (*PublishError) Descriptor() ([]byte, []int) {
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *PublishError) GetErrorCode() PublishErrorCode {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return PublishErrorCode_PUBLISH_ERROR_CODE_UNKNOWN
+}
+
+func (x *PublishError) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 // CloudEventBatch is used to send many ChipIngress
 type CloudEventBatch struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Events        []*pb.CloudEvent       `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	Options       *PublishOptions        `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CloudEventBatch) Reset() {
 	*x = CloudEventBatch{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[0]
+	mi := &file_pb_chip_ingress_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +217,7 @@ func (x *CloudEventBatch) String() string {
 func (*CloudEventBatch) ProtoMessage() {}
 
 func (x *CloudEventBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[0]
+	mi := &file_pb_chip_ingress_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,12 +230,19 @@ func (x *CloudEventBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CloudEventBatch.ProtoReflect.Descriptor instead.
 func (*CloudEventBatch) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{0}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CloudEventBatch) GetEvents() []*pb.CloudEvent {
 	if x != nil {
 		return x.Events
+	}
+	return nil
+}
+
+func (x *CloudEventBatch) GetOptions() *PublishOptions {
+	if x != nil {
+		return x.Options
 	}
 	return nil
 }
@@ -76,7 +256,7 @@ type PublishResponse struct {
 
 func (x *PublishResponse) Reset() {
 	*x = PublishResponse{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[1]
+	mi := &file_pb_chip_ingress_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +268,7 @@ func (x *PublishResponse) String() string {
 func (*PublishResponse) ProtoMessage() {}
 
 func (x *PublishResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[1]
+	mi := &file_pb_chip_ingress_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +281,7 @@ func (x *PublishResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishResponse.ProtoReflect.Descriptor instead.
 func (*PublishResponse) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{1}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PublishResponse) GetResults() []*PublishResult {
@@ -111,16 +291,19 @@ func (x *PublishResponse) GetResults() []*PublishResult {
 	return nil
 }
 
+// PublishResult reports the outcome for one input event.
+// Invariant: error is set if and only if the event was not produced to Kafka.
 type PublishResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EventId       string                 `protobuf:"bytes,1,opt,name=eventId,proto3" json:"eventId,omitempty"`
+	EventId       string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	Error         *PublishError          `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PublishResult) Reset() {
 	*x = PublishResult{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[2]
+	mi := &file_pb_chip_ingress_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +315,7 @@ func (x *PublishResult) String() string {
 func (*PublishResult) ProtoMessage() {}
 
 func (x *PublishResult) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[2]
+	mi := &file_pb_chip_ingress_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +328,7 @@ func (x *PublishResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishResult.ProtoReflect.Descriptor instead.
 func (*PublishResult) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{2}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PublishResult) GetEventId() string {
@@ -153,6 +336,13 @@ func (x *PublishResult) GetEventId() string {
 		return x.EventId
 	}
 	return ""
+}
+
+func (x *PublishResult) GetError() *PublishError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
 }
 
 // EmptyRequest is just an empty request
@@ -164,7 +354,7 @@ type EmptyRequest struct {
 
 func (x *EmptyRequest) Reset() {
 	*x = EmptyRequest{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[3]
+	mi := &file_pb_chip_ingress_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -176,7 +366,7 @@ func (x *EmptyRequest) String() string {
 func (*EmptyRequest) ProtoMessage() {}
 
 func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[3]
+	mi := &file_pb_chip_ingress_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -189,7 +379,7 @@ func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyRequest.ProtoReflect.Descriptor instead.
 func (*EmptyRequest) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{3}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{5}
 }
 
 // PingResponse responds to pings
@@ -202,7 +392,7 @@ type PingResponse struct {
 
 func (x *PingResponse) Reset() {
 	*x = PingResponse{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[4]
+	mi := &file_pb_chip_ingress_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +404,7 @@ func (x *PingResponse) String() string {
 func (*PingResponse) ProtoMessage() {}
 
 func (x *PingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[4]
+	mi := &file_pb_chip_ingress_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +417,7 @@ func (x *PingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
 func (*PingResponse) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{4}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PingResponse) GetMessage() string {
@@ -247,7 +437,7 @@ type StreamEventsRequest struct {
 
 func (x *StreamEventsRequest) Reset() {
 	*x = StreamEventsRequest{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[5]
+	mi := &file_pb_chip_ingress_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -259,7 +449,7 @@ func (x *StreamEventsRequest) String() string {
 func (*StreamEventsRequest) ProtoMessage() {}
 
 func (x *StreamEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[5]
+	mi := &file_pb_chip_ingress_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -272,7 +462,7 @@ func (x *StreamEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEventsRequest.ProtoReflect.Descriptor instead.
 func (*StreamEventsRequest) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{5}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StreamEventsRequest) GetEvent() *pb.CloudEvent {
@@ -292,7 +482,7 @@ type StreamEventsResponse struct {
 
 func (x *StreamEventsResponse) Reset() {
 	*x = StreamEventsResponse{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[6]
+	mi := &file_pb_chip_ingress_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -304,7 +494,7 @@ func (x *StreamEventsResponse) String() string {
 func (*StreamEventsResponse) ProtoMessage() {}
 
 func (x *StreamEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[6]
+	mi := &file_pb_chip_ingress_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -317,7 +507,7 @@ func (x *StreamEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEventsResponse.ProtoReflect.Descriptor instead.
 func (*StreamEventsResponse) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{6}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StreamEventsResponse) GetEventId() string {
@@ -344,7 +534,7 @@ type RegisterSchemaRequest struct {
 
 func (x *RegisterSchemaRequest) Reset() {
 	*x = RegisterSchemaRequest{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[7]
+	mi := &file_pb_chip_ingress_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -356,7 +546,7 @@ func (x *RegisterSchemaRequest) String() string {
 func (*RegisterSchemaRequest) ProtoMessage() {}
 
 func (x *RegisterSchemaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[7]
+	mi := &file_pb_chip_ingress_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -369,7 +559,7 @@ func (x *RegisterSchemaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterSchemaRequest.ProtoReflect.Descriptor instead.
 func (*RegisterSchemaRequest) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{7}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RegisterSchemaRequest) GetSchemas() []*Schema {
@@ -389,7 +579,7 @@ type RegisterSchemaResponse struct {
 
 func (x *RegisterSchemaResponse) Reset() {
 	*x = RegisterSchemaResponse{}
-	mi := &file_pb_chip_ingress_proto_msgTypes[8]
+	mi := &file_pb_chip_ingress_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -401,7 +591,7 @@ func (x *RegisterSchemaResponse) String() string {
 func (*RegisterSchemaResponse) ProtoMessage() {}
 
 func (x *RegisterSchemaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_chip_ingress_proto_msgTypes[8]
+	mi := &file_pb_chip_ingress_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,7 +604,7 @@ func (x *RegisterSchemaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterSchemaResponse.ProtoReflect.Descriptor instead.
 func (*RegisterSchemaResponse) Descriptor() ([]byte, []int) {
-	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{8}
+	return file_pb_chip_ingress_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RegisterSchemaResponse) GetRegistered() []*RegisteredSchema {
@@ -428,13 +618,22 @@ var File_pb_chip_ingress_proto protoreflect.FileDescriptor
 
 const file_pb_chip_ingress_proto_rawDesc = "" +
 	"\n" +
-	"\x15pb/chip_ingress.proto\x12\x0echipingress.pb\x1aLgithub.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto\x1a\x14pb/chip_common.proto\"H\n" +
+	"\x15pb/chip_ingress.proto\x12\x0echipingress.pb\x1aLgithub.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb/cloudevent.proto\x1a\x14pb/chip_common.proto\"^\n" +
+	"\x0ePublishOptions\x124\n" +
+	"\x13transaction_enabled\x18\x01 \x01(\bH\x00R\x12transactionEnabled\x88\x01\x01B\x16\n" +
+	"\x14_transaction_enabled\"g\n" +
+	"\fPublishError\x12?\n" +
+	"\n" +
+	"error_code\x18\x01 \x01(\x0e2 .chipingress.pb.PublishErrorCodeR\terrorCode\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x82\x01\n" +
 	"\x0fCloudEventBatch\x125\n" +
-	"\x06events\x18\x01 \x03(\v2\x1d.io.cloudevents.v1.CloudEventR\x06events\"J\n" +
+	"\x06events\x18\x01 \x03(\v2\x1d.io.cloudevents.v1.CloudEventR\x06events\x128\n" +
+	"\aoptions\x18\x02 \x01(\v2\x1e.chipingress.pb.PublishOptionsR\aoptions\"J\n" +
 	"\x0fPublishResponse\x127\n" +
-	"\aresults\x18\x01 \x03(\v2\x1d.chipingress.pb.PublishResultR\aresults\")\n" +
-	"\rPublishResult\x12\x18\n" +
-	"\aeventId\x18\x01 \x01(\tR\aeventId\"\x0e\n" +
+	"\aresults\x18\x01 \x03(\v2\x1d.chipingress.pb.PublishResultR\aresults\"^\n" +
+	"\rPublishResult\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x122\n" +
+	"\x05error\x18\x02 \x01(\v2\x1c.chipingress.pb.PublishErrorR\x05error\"\x0e\n" +
 	"\fEmptyRequest\"(\n" +
 	"\fPingResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"J\n" +
@@ -448,7 +647,13 @@ const file_pb_chip_ingress_proto_rawDesc = "" +
 	"\x16RegisterSchemaResponse\x12=\n" +
 	"\n" +
 	"registered\x18\x01 \x03(\v2\x1d.chip_common.RegisteredSchemaR\n" +
-	"registered2\xb6\x03\n" +
+	"registered*\xd8\x01\n" +
+	"\x10PublishErrorCode\x12\x1e\n" +
+	"\x1aPUBLISH_ERROR_CODE_UNKNOWN\x10\x00\x12(\n" +
+	"$PUBLISH_ERROR_CODE_VALIDATION_FAILED\x10\x01\x12%\n" +
+	"!PUBLISH_ERROR_CODE_SCHEMA_MISSING\x10\x02\x12#\n" +
+	"\x1fPUBLISH_ERROR_CODE_ENCODE_ERROR\x10\x03\x12.\n" +
+	"*PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION\x10\x042\xb6\x03\n" +
 	"\vChipIngress\x12K\n" +
 	"\aPublish\x12\x1d.io.cloudevents.v1.CloudEvent\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12R\n" +
 	"\fPublishBatch\x12\x1f.chipingress.pb.CloudEventBatch\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12B\n" +
@@ -468,42 +673,49 @@ func file_pb_chip_ingress_proto_rawDescGZIP() []byte {
 	return file_pb_chip_ingress_proto_rawDescData
 }
 
-var file_pb_chip_ingress_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_pb_chip_ingress_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_pb_chip_ingress_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_pb_chip_ingress_proto_goTypes = []any{
-	(*CloudEventBatch)(nil),        // 0: chipingress.pb.CloudEventBatch
-	(*PublishResponse)(nil),        // 1: chipingress.pb.PublishResponse
-	(*PublishResult)(nil),          // 2: chipingress.pb.PublishResult
-	(*EmptyRequest)(nil),           // 3: chipingress.pb.EmptyRequest
-	(*PingResponse)(nil),           // 4: chipingress.pb.PingResponse
-	(*StreamEventsRequest)(nil),    // 5: chipingress.pb.StreamEventsRequest
-	(*StreamEventsResponse)(nil),   // 6: chipingress.pb.StreamEventsResponse
-	(*RegisterSchemaRequest)(nil),  // 7: chipingress.pb.RegisterSchemaRequest
-	(*RegisterSchemaResponse)(nil), // 8: chipingress.pb.RegisterSchemaResponse
-	(*pb.CloudEvent)(nil),          // 9: io.cloudevents.v1.CloudEvent
-	(*Schema)(nil),                 // 10: chip_common.Schema
-	(*RegisteredSchema)(nil),       // 11: chip_common.RegisteredSchema
+	(PublishErrorCode)(0),          // 0: chipingress.pb.PublishErrorCode
+	(*PublishOptions)(nil),         // 1: chipingress.pb.PublishOptions
+	(*PublishError)(nil),           // 2: chipingress.pb.PublishError
+	(*CloudEventBatch)(nil),        // 3: chipingress.pb.CloudEventBatch
+	(*PublishResponse)(nil),        // 4: chipingress.pb.PublishResponse
+	(*PublishResult)(nil),          // 5: chipingress.pb.PublishResult
+	(*EmptyRequest)(nil),           // 6: chipingress.pb.EmptyRequest
+	(*PingResponse)(nil),           // 7: chipingress.pb.PingResponse
+	(*StreamEventsRequest)(nil),    // 8: chipingress.pb.StreamEventsRequest
+	(*StreamEventsResponse)(nil),   // 9: chipingress.pb.StreamEventsResponse
+	(*RegisterSchemaRequest)(nil),  // 10: chipingress.pb.RegisterSchemaRequest
+	(*RegisterSchemaResponse)(nil), // 11: chipingress.pb.RegisterSchemaResponse
+	(*pb.CloudEvent)(nil),          // 12: io.cloudevents.v1.CloudEvent
+	(*Schema)(nil),                 // 13: chip_common.Schema
+	(*RegisteredSchema)(nil),       // 14: chip_common.RegisteredSchema
 }
 var file_pb_chip_ingress_proto_depIdxs = []int32{
-	9,  // 0: chipingress.pb.CloudEventBatch.events:type_name -> io.cloudevents.v1.CloudEvent
-	2,  // 1: chipingress.pb.PublishResponse.results:type_name -> chipingress.pb.PublishResult
-	9,  // 2: chipingress.pb.StreamEventsRequest.event:type_name -> io.cloudevents.v1.CloudEvent
-	10, // 3: chipingress.pb.RegisterSchemaRequest.schemas:type_name -> chip_common.Schema
-	11, // 4: chipingress.pb.RegisterSchemaResponse.registered:type_name -> chip_common.RegisteredSchema
-	9,  // 5: chipingress.pb.ChipIngress.Publish:input_type -> io.cloudevents.v1.CloudEvent
-	0,  // 6: chipingress.pb.ChipIngress.PublishBatch:input_type -> chipingress.pb.CloudEventBatch
-	3,  // 7: chipingress.pb.ChipIngress.Ping:input_type -> chipingress.pb.EmptyRequest
-	5,  // 8: chipingress.pb.ChipIngress.StreamEvents:input_type -> chipingress.pb.StreamEventsRequest
-	7,  // 9: chipingress.pb.ChipIngress.RegisterSchema:input_type -> chipingress.pb.RegisterSchemaRequest
-	1,  // 10: chipingress.pb.ChipIngress.Publish:output_type -> chipingress.pb.PublishResponse
-	1,  // 11: chipingress.pb.ChipIngress.PublishBatch:output_type -> chipingress.pb.PublishResponse
-	4,  // 12: chipingress.pb.ChipIngress.Ping:output_type -> chipingress.pb.PingResponse
-	6,  // 13: chipingress.pb.ChipIngress.StreamEvents:output_type -> chipingress.pb.StreamEventsResponse
-	8,  // 14: chipingress.pb.ChipIngress.RegisterSchema:output_type -> chipingress.pb.RegisterSchemaResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	0,  // 0: chipingress.pb.PublishError.error_code:type_name -> chipingress.pb.PublishErrorCode
+	12, // 1: chipingress.pb.CloudEventBatch.events:type_name -> io.cloudevents.v1.CloudEvent
+	1,  // 2: chipingress.pb.CloudEventBatch.options:type_name -> chipingress.pb.PublishOptions
+	5,  // 3: chipingress.pb.PublishResponse.results:type_name -> chipingress.pb.PublishResult
+	2,  // 4: chipingress.pb.PublishResult.error:type_name -> chipingress.pb.PublishError
+	12, // 5: chipingress.pb.StreamEventsRequest.event:type_name -> io.cloudevents.v1.CloudEvent
+	13, // 6: chipingress.pb.RegisterSchemaRequest.schemas:type_name -> chip_common.Schema
+	14, // 7: chipingress.pb.RegisterSchemaResponse.registered:type_name -> chip_common.RegisteredSchema
+	12, // 8: chipingress.pb.ChipIngress.Publish:input_type -> io.cloudevents.v1.CloudEvent
+	3,  // 9: chipingress.pb.ChipIngress.PublishBatch:input_type -> chipingress.pb.CloudEventBatch
+	6,  // 10: chipingress.pb.ChipIngress.Ping:input_type -> chipingress.pb.EmptyRequest
+	8,  // 11: chipingress.pb.ChipIngress.StreamEvents:input_type -> chipingress.pb.StreamEventsRequest
+	10, // 12: chipingress.pb.ChipIngress.RegisterSchema:input_type -> chipingress.pb.RegisterSchemaRequest
+	4,  // 13: chipingress.pb.ChipIngress.Publish:output_type -> chipingress.pb.PublishResponse
+	4,  // 14: chipingress.pb.ChipIngress.PublishBatch:output_type -> chipingress.pb.PublishResponse
+	7,  // 15: chipingress.pb.ChipIngress.Ping:output_type -> chipingress.pb.PingResponse
+	9,  // 16: chipingress.pb.ChipIngress.StreamEvents:output_type -> chipingress.pb.StreamEventsResponse
+	11, // 17: chipingress.pb.ChipIngress.RegisterSchema:output_type -> chipingress.pb.RegisterSchemaResponse
+	13, // [13:18] is the sub-list for method output_type
+	8,  // [8:13] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_pb_chip_ingress_proto_init() }
@@ -512,18 +724,20 @@ func file_pb_chip_ingress_proto_init() {
 		return
 	}
 	file_pb_chip_common_proto_init()
+	file_pb_chip_ingress_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pb_chip_ingress_proto_rawDesc), len(file_pb_chip_ingress_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   9,
+			NumEnums:      1,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_pb_chip_ingress_proto_goTypes,
 		DependencyIndexes: file_pb_chip_ingress_proto_depIdxs,
+		EnumInfos:         file_pb_chip_ingress_proto_enumTypes,
 		MessageInfos:      file_pb_chip_ingress_proto_msgTypes,
 	}.Build()
 	File_pb_chip_ingress_proto = out.File

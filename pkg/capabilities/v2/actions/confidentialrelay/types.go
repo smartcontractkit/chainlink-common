@@ -68,17 +68,16 @@ type SecretsRequestParams struct {
 	EnclaveConfig EnclaveConfig `json:"enclave_config"`
 	Attestation   string        `json:"attestation,omitempty"`
 
-	// AuthzSignatures carry the Workflow DON authorization (WRAB). The enclave
+	// AuthzSignatures carry the Workflow->Relay authorization. The enclave
 	// forwards the F+1 signatures it received from the Workflow DON (via the
 	// per-node-data seam); the relay reconstructs WorkflowAuthz() and verifies the
 	// signatures against EnclaveConfig.Signers.
 	AuthzSignatures []WorkflowAuthzSignature `json:"authz_signatures,omitempty"`
 }
 
-// WorkflowAuthz (WRAB: workflow-DON-to-relay-DON authorization blob) is the
-// identity the Workflow DON attests for a confidential execution. Each Workflow
-// DON node signs WorkflowAuthz.Hash(); the relay DON verifies F+1 of those
-// signatures (against EnclaveConfig.Signers) before honoring a GetSecrets
+// WorkflowAuthz is the identity the Workflow DON attests for a confidential execution.
+// Each Workflow DON node signs WorkflowAuthz.Hash(); the relay DON verifies F+1 of 
+// those signatures (against EnclaveConfig.Signers) before honoring a GetSecrets
 // request, so a compromised enclave cannot self-assert a different Owner than the
 // one the Workflow DON authorized. Owner is the ownership gate (the Vault DON
 // keys secrets on Owner::Namespace::Key). OrgID is bound but not gating (org_id

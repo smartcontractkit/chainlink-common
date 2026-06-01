@@ -264,12 +264,7 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			if err != nil {
 				return false, err
 			}
-			for _, env := range md.AdditionalEnvironments {
-				if env == generator.AdditionalEnvironments_ADDITIONAL_ENVIRONMENTS_TEE {
-					return true, nil
-				}
-			}
-			return false, nil
+			return slices.Contains(md.AdditionalEnvironments, generator.AdditionalEnvironments_ADDITIONAL_ENVIRONMENTS_TEE), nil
 		},
 	}).Funcs(t.ExtraFns)
 

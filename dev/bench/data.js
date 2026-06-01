@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780308764776,
+  "lastUpdate": 1780331753968,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48660,6 +48660,66 @@ window.BENCHMARK_DATA = {
             "value": 146899,
             "unit": "ns/op",
             "extra": "8373 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5b4f632b33c87d836912bde38ee687c73ea68248",
+          "message": "Enable workflows to request a TEE (#2004)\n\n* Add TeeEnabled to template generator, and add a new requirements callback\n\n* Add region\n\n* Requirements selecting runner\n\n* update proto and fix requirement not met test\n\n* Update proto, allow individual triggers to choose where to run\n\n* Add max time for requirements selection\n\n* Use subscription for the trigger requirement\n\n* Main module satisfies requirements\n\n* remove unused hook from module, the selecting one is now responsible for the decision\n\n* Hook to ask implementation to determine if it supports regions\n\n* Update protos to use full TEE requirement and not use bytes for the embedded request\n\n* Send full requirements to modules that accept them\n\n* Regions with any is allowed too, and let the TEE say everything it is, not just region.\n\n* Update protos for unknown TEE Type\n\n* Fix misc tests that were fixed on a different branch, update to use protos from the cap-devs\n\n* Remove file left from prior genreation and update to use the one from the public package\n\n* AI feedback addressed\n\n* Pin artifacts test build\n\n* Undo whitespaces changes to unrealated files\n\n* Cleaner go version pinning\n\n* Undo whitespaces changes to unrealated files\n\n* Use slices.Contains in template_generator\n\n* Undo whitespaces changes to unrealated files\n\n* Revert whitespace changes for real...",
+          "timestamp": "2026-06-01T16:24:33Z",
+          "tree_id": "0f9b6c397156d4fb919f3798a27e9454fbdaade1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5b4f632b33c87d836912bde38ee687c73ea68248"
+        },
+        "date": 1780331751782,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3271843 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94266,
+            "unit": "ns/op",
+            "extra": "12734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.4,
+            "unit": "ns/op",
+            "extra": "2958484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 96066,
+            "unit": "ns/op",
+            "extra": "12471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26901,
+            "unit": "ns/op",
+            "extra": "43050 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142022,
+            "unit": "ns/op",
+            "extra": "8220 times\n4 procs"
           }
         ]
       }

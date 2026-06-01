@@ -43,7 +43,7 @@ func (c ChipIngressEmitterConfig) New(client chipingress.Client) (Emitter, error
 
 	return &ChipIngressEmitter{
 		client: client,
-		lggr:   lggr,
+		lggr:    lggr,
 		stopCh: make(services.StopChan),
 	}, nil
 }

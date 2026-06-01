@@ -36,18 +36,18 @@ type Client struct {
 	maxGRPCRequestSize      int // configured max, used for metrics/error reporting
 	effectiveMaxRequestSize int // maxGRPCRequestSize minus grpcFramingOverhead, used for splitting
 	cloneEvent              bool
-	maxConcurrentSends      chan struct{}
-	batchInterval           time.Duration
-	maxPublishTimeout       time.Duration
-	messageBuffer           chan *messageWithCallback
-	stopCh                  stopCh
-	log                     *zap.SugaredLogger
-	callbackWg              sync.WaitGroup
-	shutdownTimeout         time.Duration
-	shutdownOnce            sync.Once
-	batcherDone             chan struct{}
-	started                 bool
-	counters                sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
+	maxConcurrentSends chan struct{}
+	batchInterval      time.Duration
+	maxPublishTimeout  time.Duration
+	messageBuffer      chan *messageWithCallback
+	stopCh             stopCh
+	log                *zap.SugaredLogger
+	callbackWg         sync.WaitGroup
+	shutdownTimeout    time.Duration
+	shutdownOnce       sync.Once
+	batcherDone        chan struct{}
+	started            bool
+	counters           sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
 
 	metrics batchClientMetrics
 }
@@ -77,14 +77,14 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		maxGRPCRequestSize:      10 * 1024 * 1024,
 		effectiveMaxRequestSize: 10*1024*1024 - grpcFramingOverhead,
 		cloneEvent:              true,
-		maxConcurrentSends:      make(chan struct{}, 1),
-		messageBuffer:           make(chan *messageWithCallback, 200),
-		batchInterval:           100 * time.Millisecond,
-		maxPublishTimeout:       5 * time.Second,
-		stopCh:                  make(chan struct{}),
-		callbackWg:              sync.WaitGroup{},
-		shutdownTimeout:         5 * time.Second,
-		batcherDone:             make(chan struct{}),
+		maxConcurrentSends: make(chan struct{}, 1),
+		messageBuffer:      make(chan *messageWithCallback, 200),
+		batchInterval:      100 * time.Millisecond,
+		maxPublishTimeout:  5 * time.Second,
+		stopCh:             make(chan struct{}),
+		callbackWg:         sync.WaitGroup{},
+		shutdownTimeout:    5 * time.Second,
+		batcherDone:        make(chan struct{}),
 	}
 
 	for _, opt := range opts {

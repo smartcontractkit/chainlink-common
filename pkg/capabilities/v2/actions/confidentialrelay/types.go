@@ -10,9 +10,8 @@ import (
 	"hash"
 	"sort"
 
-	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
+	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
 const (

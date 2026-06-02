@@ -1951,6 +1951,55 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		assert.Contains(t, results["e3"].Error(), "server returned 1 results for 3 events")
 	})
 
+	t.Run("event_id mismatch still dispatches by index and records mismatch metric", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1"},
+					// EventId disagrees with messages[1].event.Id ("e2"); the
+					// error must still be dispatched positionally to e2's callback.
+					{EventId: "wrong-id", Error: &chipingress.PublishError{ErrorCode: chipingress.PublishErrorCode(1), Reason: "bad"}},
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		var mu sync.Mutex
+		results := make(map[string]error)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e1"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e2"] = err; mu.Unlock() }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.maxConcurrentSends <- struct{}{}
+		<-client.maxConcurrentSends
+		client.callbackWg.Wait()
+
+		mu.Lock()
+		require.NoError(t, results["e1"])
+		require.Error(t, results["e2"], "positional dispatch: e2 gets the error despite the event_id mismatch")
+		var re *PublishError
+		require.ErrorAs(t, results["e2"], &re)
+		assert.Equal(t, ErrCodeValidationFailed, re.Code)
+		mu.Unlock()
+
+		client.Stop()
+		rm := collectResourceMetrics(t, reader)
+		mismatch := mustMetric(t, rm, "chip_ingress.batch.results_mismatch_total")
+		mismatchSum, ok := mismatch.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		require.NotEmpty(t, mismatchSum.DataPoints)
+		assert.GreaterOrEqual(t, mismatchSum.DataPoints[0].Value, int64(1))
+	})
+
 	t.Run("more results than messages does not panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()

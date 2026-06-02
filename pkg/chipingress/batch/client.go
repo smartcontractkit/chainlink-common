@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipingresspb "github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
 type messageWithCallback struct {
@@ -43,12 +44,12 @@ func (e *PublishError) Error() string {
 // Error codes returned by the server in PublishError.Code.
 // Re-exported from the proto package for convenience.
 const (
-	ErrCodeUnknown                = chipingress.PublishErrorCode(0)  // PUBLISH_ERROR_CODE_UNKNOWN
-	ErrCodeValidationFailed       = chipingress.PublishErrorCode(1)  // PUBLISH_ERROR_CODE_VALIDATION_FAILED
-	ErrCodeSchemaMissing          = chipingress.PublishErrorCode(2)  // PUBLISH_ERROR_CODE_SCHEMA_MISSING
-	ErrCodeEncodeError            = chipingress.PublishErrorCode(3)  // PUBLISH_ERROR_CODE_ENCODE_ERROR
-	ErrCodeDomainMisconfiguration = chipingress.PublishErrorCode(4)  // PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION
-	ErrCodeResultsMismatch        = chipingress.PublishErrorCode(-1) // client-side synthetic code
+	ErrCodeUnknown                = chipingresspb.PublishErrorCode_PUBLISH_ERROR_CODE_UNKNOWN
+	ErrCodeValidationFailed       = chipingresspb.PublishErrorCode_PUBLISH_ERROR_CODE_VALIDATION_FAILED
+	ErrCodeSchemaMissing          = chipingresspb.PublishErrorCode_PUBLISH_ERROR_CODE_SCHEMA_MISSING
+	ErrCodeEncodeError            = chipingresspb.PublishErrorCode_PUBLISH_ERROR_CODE_ENCODE_ERROR
+	ErrCodeDomainMisconfiguration = chipingresspb.PublishErrorCode_PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION
+	ErrCodeResultsMismatch        = chipingress.PublishErrorCode(-1) // client-side synthetic code; no proto equivalent
 )
 
 // Client is a batching client that accumulates messages and sends them in batches.
@@ -314,8 +315,15 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 				b.log.Errorw("failed to publish batch", "error", err)
 				b.completeBatchCallbacks(batchMessages, err)
 			} else if !b.transactionEnabled && resp != nil && len(resp.Results) > 0 {
-				b.completeBatchCallbacksFromResults(batchMessages, resp.Results)
+				b.completeBatchCallbacksFromResults(ctx, batchMessages, resp.Results)
 			} else {
+				// All-or-nothing (transactionEnabled), or partial delivery with no
+				// per-event results to dispatch. The latter assumes a server in
+				// partial-delivery mode always returns per-event results for a
+				// non-empty batch; if it returns an empty/nil response instead
+				// (e.g. an older server unaware of results), we treat the whole
+				// batch as succeeded for backwards compatibility. This means a
+				// silent server-side drop would be reported as success.
 				b.completeBatchCallbacks(batchMessages, nil)
 			}
 		}
@@ -344,13 +352,13 @@ func (b *Client) completeBatchCallbacks(messages []*messageWithCallback, err err
 //   - If len(results) < len(messages): remaining callbacks get a synthetic RESULTS_MISMATCH error.
 //   - If len(results) > len(messages): extras are ignored.
 //   - If results[i].EventId != messages[i].event.Id: a warning is logged.
-func (b *Client) completeBatchCallbacksFromResults(messages []*messageWithCallback, results []*chipingress.PublishResult) {
+func (b *Client) completeBatchCallbacksFromResults(ctx context.Context, messages []*messageWithCallback, results []*chipingress.PublishResult) {
 	if len(results) != len(messages) {
 		b.log.Warnw("publish results length mismatch",
 			"results", len(results),
 			"messages", len(messages),
 		)
-		b.metrics.resultsMismatchTotal.Add(context.Background(), 1)
+		b.metrics.resultsMismatchTotal.Add(ctx, 1)
 	}
 
 	b.callbackWg.Go(func() {
@@ -377,7 +385,7 @@ func (b *Client) completeBatchCallbacksFromResults(messages []*messageWithCallba
 					"expected", msg.event.Id,
 					"got", result.EventId,
 				)
-				b.metrics.resultsMismatchTotal.Add(context.Background(), 1)
+				b.metrics.resultsMismatchTotal.Add(ctx, 1)
 			}
 			if result.Error != nil {
 				msg.callback(&PublishError{

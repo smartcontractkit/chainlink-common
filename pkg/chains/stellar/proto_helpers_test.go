@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	conv "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
 	stellartypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 )
 
@@ -429,6 +430,32 @@ func TestConvertSubmitTransactionResponseToProto_Nil(t *testing.T) {
 func TestConvertSubmitTransactionResponseFromProto_Nil(t *testing.T) {
 	_, err := conv.ConvertSubmitTransactionResponseFromProto(nil)
 	require.EqualError(t, err, "submit transaction reply is nil")
+}
+
+func TestConvertSubmitTransactionResponseToProto_InvalidResultXDR(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseToProto(&stellartypes.SubmitTransactionResponse{
+		ResultXDR: "!!!invalid!!!",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid result xdr")
+}
+
+func TestConvertSubmitTransactionResponseToProto_InvalidResultMetaXDR(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseToProto(&stellartypes.SubmitTransactionResponse{
+		ResultMetaXDR: "!!!invalid!!!",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid result meta xdr")
+}
+
+func TestConvertSubmitTransactionRequestFromProto_BadArg(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestFromProto(&conv.SubmitTransactionRequest{
+		ContractId: "C_X",
+		Function:   "fn",
+		Args:       []*scval.ScVal{{}}, // missing oneof value
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "args[0]")
 }
 
 func TestConvertGetLatestLedgerResponseToProto_InvalidFields(t *testing.T) {

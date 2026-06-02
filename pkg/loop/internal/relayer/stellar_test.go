@@ -2,6 +2,8 @@ package relayer
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 	"net"
 	"testing"
 
@@ -202,6 +204,45 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, stellartypes.TxSuccess, reply.TxStatus)
 		require.Equal(t, "hash123", reply.TxHash)
 		require.Equal(t, "idem-key", reply.TxIdempotencyKey)
+	})
+
+	t.Run("SubmitTransaction_withResultXDR", func(t *testing.T) {
+		svc.submitTransaction = func(_ context.Context, _ stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error) {
+			return &stellartypes.SubmitTransactionResponse{
+				TxStatus:         stellartypes.TxSuccess,
+				TxHash:           "hash-with-xdr",
+				TxIdempotencyKey: "idem-xdr",
+				ResultXDR:        base64.StdEncoding.EncodeToString([]byte("result")),
+				ResultMetaXDR:    base64.StdEncoding.EncodeToString([]byte("meta")),
+			}, nil
+		}
+
+		reply, err := client.SubmitTransaction(ctx, stellartypes.SubmitTransactionRequest{
+			ContractID: "CABC123",
+			Function:   "my_fn",
+		})
+		require.NoError(t, err)
+		require.Equal(t, "hash-with-xdr", reply.TxHash)
+		require.Equal(t, base64.StdEncoding.EncodeToString([]byte("result")), reply.ResultXDR)
+		require.Equal(t, base64.StdEncoding.EncodeToString([]byte("meta")), reply.ResultMetaXDR)
+	})
+
+	t.Run("SubmitTransaction_invalidRequest", func(t *testing.T) {
+		_, err := client.SubmitTransaction(ctx, stellartypes.SubmitTransactionRequest{Function: "fn"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid SubmitTransaction request")
+	})
+
+	t.Run("SubmitTransaction_implError", func(t *testing.T) {
+		svc.submitTransaction = func(_ context.Context, _ stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error) {
+			return nil, errors.New("submit failed")
+		}
+
+		_, err := client.SubmitTransaction(ctx, stellartypes.SubmitTransactionRequest{
+			ContractID: "CABC123",
+			Function:   "my_fn",
+		})
+		require.Error(t, err)
 	})
 
 	t.Run("ReadContract_noArgs_noResult", func(t *testing.T) {

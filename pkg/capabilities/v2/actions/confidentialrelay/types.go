@@ -1,6 +1,7 @@
 package confidentialrelay
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -25,6 +26,22 @@ const (
 	RelayResponseSignaturePrefix = "CONFIDENTIAL_RELAY_PAYLOAD_"
 )
 
+// EnclaveConfig mirrors the confidential-compute EnclaveConfig fields the
+// relay needs to verify against onchain DON state. The enclave fills this
+// from its local types.EnclaveConfig before sending each relay request.
+//
+// PRIV-458: without this field the request's Nitro
+// attestation cryptographically binds the request hash but does not let the
+// relay compare the enclave's config against any reference. A malicious host
+// can produce genuinely-attested requests over a forged enclave config and
+// have them accepted unless the relay can see and verify the config value.
+type EnclaveConfig struct {
+	Signers         [][]byte `json:"signers"`
+	MasterPublicKey []byte   `json:"master_public_key"`
+	T               uint32   `json:"t"`
+	F               uint32   `json:"f"`
+}
+
 // SecretIdentifier identifies a secret by key and namespace.
 type SecretIdentifier struct {
 	Key       string `json:"key"`
@@ -39,7 +56,16 @@ type SecretsRequestParams struct {
 	OrgID            string             `json:"org_id,omitempty"` // Organization identifier for org-based secret ownership
 	Secrets          []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey string             `json:"enclave_public_key"`
-	Attestation      string             `json:"attestation,omitempty"`
+	// EnclaveConfig is the enclave's current config, included so the relay can
+	// verify it against onchain DON state after attestation validation. See
+	// the EnclaveConfig type doc-comment for the threat model.
+	//
+	// Optional: a nil EnclaveConfig means the sender did not provide one (e.g.
+	// an enclave on an older protocol). Validate and the canonical hash skip it
+	// when nil, so a verifier on this version stays compatible with senders
+	// that omit the field. When present, it is validated and hash-bound.
+	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
+	Attestation   string         `json:"attestation,omitempty"`
 }
 
 // SecretEntry is a single secret in the relay DON's response.
@@ -88,6 +114,11 @@ func (p SecretsRequestParams) Validate() error {
 	}
 	if err := validateSecretIdentifiers(p.Secrets); err != nil {
 		return err
+	}
+	if p.EnclaveConfig != nil {
+		if err := validateEnclaveConfig(*p.EnclaveConfig); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -142,7 +173,16 @@ type CapabilityRequestParams struct {
 	ReferenceID  string `json:"reference_id"`
 	CapabilityID string `json:"capability_id"`
 	Payload      string `json:"payload"`
-	Attestation  string `json:"attestation,omitempty"`
+	// EnclaveConfig is the enclave's current config, included so the relay can
+	// verify it against onchain DON state after attestation validation. See
+	// the EnclaveConfig type doc-comment for the threat model.
+	//
+	// Optional: a nil EnclaveConfig means the sender did not provide one (e.g.
+	// an enclave on an older protocol). Validate and the canonical hash skip it
+	// when nil, so a verifier on this version stays compatible with senders
+	// that omit the field. When present, it is validated and hash-bound.
+	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
+	Attestation   string         `json:"attestation,omitempty"`
 }
 
 // CapabilityResponseResult is the JSON-RPC result for "confidential.capability.execute".
@@ -181,6 +221,11 @@ func (p CapabilityRequestParams) Validate() error {
 	if p.Payload == "" {
 		return errors.New("payload is required")
 	}
+	if p.EnclaveConfig != nil {
+		if err := validateEnclaveConfig(*p.EnclaveConfig); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -214,6 +259,30 @@ func validateExecutionID(s string) error {
 func validateEnclavePublicKey(s string) error {
 	if _, err := hex.DecodeString(s); err != nil {
 		return errors.New("enclave_public_key must be hex-encoded")
+	}
+	return nil
+}
+
+// validateEnclaveConfig rejects configs missing fields the canonical hash binds to.
+// Signers must be non-empty (the relay needs to compare against the onchain DON
+// membership). F must be > 0 (a DON with no fault tolerance is not a configuration
+// the relay will trust). MasterPublicKey is checked for presence only; encoding is
+// the enclave's contract. T is allowed to be zero in case some future enclave
+// configurations carry it implicitly, but in practice the enclave will set it.
+func validateEnclaveConfig(c EnclaveConfig) error {
+	if len(c.Signers) == 0 {
+		return errors.New("enclave_config.signers must be non-empty")
+	}
+	for i, s := range c.Signers {
+		if len(s) == 0 {
+			return fmt.Errorf("enclave_config.signers[%d] is empty", i)
+		}
+	}
+	if c.F == 0 {
+		return errors.New("enclave_config.f must be > 0")
+	}
+	if len(c.MasterPublicKey) == 0 {
+		return errors.New("enclave_config.master_public_key must be non-empty")
 	}
 	return nil
 }
@@ -297,6 +366,12 @@ func writeSecretsRequestParams(h hash.Hash, params SecretsRequestParams) {
 	}
 
 	writeString(h, params.EnclavePublicKey)
+	// Hash the config only when present so a nil EnclaveConfig produces the
+	// same digest a sender that omits the field would, preserving
+	// compatibility across the optional rollout.
+	if params.EnclaveConfig != nil {
+		writeEnclaveConfig(h, *params.EnclaveConfig)
+	}
 }
 
 func writeCapabilityRequestParams(h hash.Hash, params CapabilityRequestParams) {
@@ -307,6 +382,12 @@ func writeCapabilityRequestParams(h hash.Hash, params CapabilityRequestParams) {
 	writeString(h, params.ReferenceID)
 	writeString(h, params.CapabilityID)
 	writeString(h, params.Payload)
+	// Hash the config only when present so a nil EnclaveConfig produces the
+	// same digest a sender that omits the field would, preserving
+	// compatibility across the optional rollout.
+	if params.EnclaveConfig != nil {
+		writeEnclaveConfig(h, *params.EnclaveConfig)
+	}
 }
 
 func writeSecretIdentifier(h hash.Hash, id SecretIdentifier) {
@@ -342,6 +423,27 @@ func writeString(h hash.Hash, s string) {
 func writeBytes(h hash.Hash, b []byte) {
 	writeLengthPrefix(h, len(b))
 	h.Write(b)
+}
+
+// writeEnclaveConfig binds every field of EnclaveConfig into the hash with
+// canonical length prefixes. Signers are sorted so two logically-equivalent
+// configs that differ only in Signer ordering produce the same hash; the
+// relay-side comparison against onchain state is order-independent so the
+// hashing must be too.
+func writeEnclaveConfig(h hash.Hash, c EnclaveConfig) {
+	signers := append([][]byte(nil), c.Signers...)
+	sort.Slice(signers, func(i, j int) bool { return bytes.Compare(signers[i], signers[j]) < 0 })
+	writeLengthPrefix(h, len(signers))
+	for _, s := range signers {
+		writeBytes(h, s)
+	}
+	writeBytes(h, c.MasterPublicKey)
+
+	var buf [4]byte
+	binary.BigEndian.PutUint32(buf[:], c.T)
+	h.Write(buf[:])
+	binary.BigEndian.PutUint32(buf[:], c.F)
+	h.Write(buf[:])
 }
 
 func writeLengthPrefix(h hash.Hash, length int) {

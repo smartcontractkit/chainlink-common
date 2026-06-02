@@ -19,9 +19,12 @@ type (
 	// Message types
 	CloudEventBatch      = pb.CloudEventBatch
 	EmptyRequest         = pb.EmptyRequest
+	PublishErrorCode     = pb.PublishErrorCode
 	PingResponse         = pb.PingResponse
+	PublishOptions       = pb.PublishOptions
 	PublishResponse      = pb.PublishResponse
 	PublishResult        = pb.PublishResult
+	PublishError         = pb.PublishError
 	StreamEventsRequest  = pb.StreamEventsRequest
 	StreamEventsResponse = pb.StreamEventsResponse
 )

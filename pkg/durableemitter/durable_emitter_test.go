@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
@@ -39,76 +40,70 @@ func newTestMeter(t *testing.T) (metric.Meter, *sdkmetric.ManualReader) {
 	return mp.Meter("durableemitter"), reader
 }
 
-// testChipClient is a minimal chipingress.Client for tests.
-type testChipClient struct {
-	chipingress.NoopClient
+// testBatchEmitter is a minimal BatchEmitter for unit tests.
+// QueueMessage invokes the callback asynchronously (like batch.Client), using
+// publishErr as the result. callCount tracks how many events were enqueued.
+type testBatchEmitter struct {
+	mu         sync.Mutex
+	publishErr error
+	callCount  atomic.Int64
 
-	mu           sync.Mutex
-	publishErr   error
-	publishCount atomic.Int64
-	batchCount   atomic.Int64
-	publishedIDs []string
+	stopOnce sync.Once
+	stopCh   chan struct{}
+	wg       sync.WaitGroup
 }
 
-func (c *testChipClient) Publish(_ context.Context, ev *chipingress.CloudEventPb, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
-	c.publishCount.Add(1)
-	c.mu.Lock()
-	if ev != nil {
-		c.publishedIDs = append(c.publishedIDs, ev.Id)
+func newTestBatchEmitter() *testBatchEmitter {
+	return &testBatchEmitter{stopCh: make(chan struct{})}
+}
+
+func (b *testBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb func(error)) error {
+	select {
+	case <-b.stopCh:
+		return errors.New("batch emitter stopped")
+	default:
 	}
-	err := c.publishErr
-	c.mu.Unlock()
-	return &chipingress.PublishResponse{}, err
-}
+	b.mu.Lock()
+	err := b.publishErr
+	b.mu.Unlock()
 
-// PublishBatch mirrors production semantics: respect publishErr and count as a
-// separate RPC (batch path / tests that assert Publish only would miss it).
-func (c *testChipClient) PublishBatch(_ context.Context, b *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
-	c.batchCount.Add(1)
-	c.mu.Lock()
-	if b != nil {
-		for _, ev := range b.Events {
-			if ev != nil {
-				c.publishedIDs = append(c.publishedIDs, ev.Id)
-			}
-		}
+	b.callCount.Add(1)
+	if cb != nil {
+		b.wg.Add(1)
+		go func() {
+			defer b.wg.Done()
+			cb(err)
+		}()
 	}
-	err := c.publishErr
-	c.mu.Unlock()
-	return &chipingress.PublishResponse{}, err
+	return nil
 }
 
-// totalChipRPCs is unary Publish + PublishBatch for assertions that do not care which path ran.
-func (c *testChipClient) totalChipRPCs() int64 {
-	return c.publishCount.Load() + c.batchCount.Load()
+func (b *testBatchEmitter) Start(_ context.Context) {}
+
+func (b *testBatchEmitter) Stop() {
+	b.stopOnce.Do(func() {
+		close(b.stopCh)
+		b.wg.Wait()
+	})
 }
 
-func (c *testChipClient) setPublishErr(err error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.publishErr = err
-}
-
-func (c *testChipClient) getPublishedIDs() []string {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	out := make([]string, len(c.publishedIDs))
-	copy(out, c.publishedIDs)
-	return out
+func (b *testBatchEmitter) setPublishErr(err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.publishErr = err
 }
 
 func testEmitAttrs() []any {
 	return []any{"source", "test-source", "type", "test-type"}
 }
 
-func newTestDurableEmitter(t *testing.T, store DurableEventStore, client chipingress.Client, cfgOverride *DurableEmitterConfig) *DurableEmitter {
+func newTestDurableEmitter(t *testing.T, store DurableEventStore, be BatchEmitter, cfgOverride *Config) *DurableEmitter {
 	t.Helper()
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	if cfgOverride != nil {
 		cfg = *cfgOverride
 	}
-	// Tests that need metrics build the emitter directly with an injected meter.
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	return em
 }
@@ -132,13 +127,13 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 		MemDurableEventStore: NewMemDurableEventStore(),
 		stall:                stall,
 	}
-	client := &testChipClient{}
-	cfg := DefaultDurableEmitterConfig()
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
 	cfg.InsertBatchSize = 1
 	cfg.InsertBatchWorkers = 1
 	cfg.DisablePruning = true
 
-	em := newTestDurableEmitter(t, store, client, &cfg)
+	em := newTestDurableEmitter(t, store, be, &cfg)
 	ctx := t.Context()
 	require.NoError(t, em.Start(ctx))
 
@@ -177,14 +172,14 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 
 func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
+	be := newTestBatchEmitter()
 	var pubCalls, markCalls atomic.Int32
-	cfg := DefaultDurableEmitterConfig()
-	cfg.Hooks = &DurableEmitterHooks{
+	cfg := DefaultConfig()
+	cfg.Hooks = &Hooks{
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -197,15 +192,15 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 
 func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	client.setPublishErr(errors.New("down"))
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("down"))
 	var pubCalls, markCalls atomic.Int32
-	cfg := DefaultDurableEmitterConfig()
-	cfg.Hooks = &DurableEmitterHooks{
+	cfg := DefaultConfig()
+	cfg.Hooks = &Hooks{
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
 		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
 	}
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -217,16 +212,16 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 
 func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	client.setPublishErr(errors.New("chip unavailable"))
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("chip unavailable"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 40 * time.Millisecond
 	cfg.RetransmitAfter = 15 * time.Millisecond
 	cfg.ExpiryInterval = 40 * time.Millisecond
 	cfg.EventTTL = 25 * time.Millisecond
 
-	em, err := NewDurableEmitter(store, client, false, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, false, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -234,21 +229,21 @@ func TestDurableEmitter_NonHostProcessSkipsRetransmitAndExpiry(t *testing.T) {
 	require.NoError(t, em.Emit(ctx, []byte("plugin-row"), testEmitAttrs()...))
 
 	require.Eventually(t, func() bool {
-		return client.batchCount.Load() >= 1 && store.Len() == 1
-	}, 2*time.Second, 5*time.Millisecond, "initial PublishBatch should fail and leave the row")
+		return be.callCount.Load() >= 1 && store.Len() == 1
+	}, 2*time.Second, 5*time.Millisecond, "initial QueueMessage should fail and leave the row")
 
 	// Several host-only ticks would have cleared or retried by now.
 	time.Sleep(250 * time.Millisecond)
 
 	assert.Equal(t, 1, store.Len(), "non-host must not run retransmit or expiry loops")
-	assert.Equal(t, int64(1), client.batchCount.Load(), "non-host must not schedule extra PublishBatch via retransmit")
+	assert.Equal(t, int64(1), be.callCount.Load(), "non-host must not schedule extra QueueMessage via retransmit")
 }
 
 func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
+	be := newTestBatchEmitter()
 
-	em, err := NewDurableEmitter(store, client, false, DefaultDurableEmitterConfig(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, false, DefaultConfig(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -256,23 +251,22 @@ func TestDurableEmitter_NonHostProcessStillDeliversViaBatchWorkers(t *testing.T)
 	require.NoError(t, em.Emit(ctx, []byte("loop-plugin"), testEmitAttrs()...))
 
 	require.Eventually(t, func() bool {
-		return store.Len() == 0 && client.batchCount.Load() >= 1
-	}, 2*time.Second, 10*time.Millisecond, "batch publish workers must still run when isHostProcess is false")
+		return store.Len() == 0 && be.callCount.Load() >= 1
+	}, 2*time.Second, 10*time.Millisecond, "batch emitter must deliver even when retransmitEnabled is false")
 }
 
 func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	em := newTestDurableEmitter(t, store, client, nil)
+	be := newTestBatchEmitter()
+	em := newTestDurableEmitter(t, store, be, nil)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err)
 
-	// Batch publish should fire (PublishBatch with batch size 1) and delete the record.
 	require.Eventually(t, func() bool {
-		return client.batchCount.Load() == 1
+		return be.callCount.Load() == 1
 	}, 2*time.Second, 10*time.Millisecond)
 
 	require.Eventually(t, func() bool {
@@ -282,19 +276,18 @@ func TestDurableEmitter_EmitPersistsAndPublishes(t *testing.T) {
 
 func TestDurableEmitter_EmitReturnSuccessEvenWhenPublishFails(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	client.setPublishErr(errors.New("connection refused"))
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("connection refused"))
 
-	em := newTestDurableEmitter(t, store, client, nil)
+	em := newTestDurableEmitter(t, store, be, nil)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("hello"), testEmitAttrs()...)
 	require.NoError(t, err, "Emit must succeed once the DB insert succeeds")
 
-	// Wait for the async PublishBatch attempt to complete.
 	require.Eventually(t, func() bool {
-		return client.batchCount.Load() == 1
+		return be.callCount.Load() == 1
 	}, 2*time.Second, 10*time.Millisecond)
 
 	// Event must remain in the store for retransmit.
@@ -303,46 +296,43 @@ func TestDurableEmitter_EmitReturnSuccessEvenWhenPublishFails(t *testing.T) {
 
 func TestDurableEmitter_RetransmitLoopDeliversFailedEvents(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	client.setPublishErr(errors.New("connection refused"))
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("connection refused"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
-	em := newTestDurableEmitter(t, store, client, &cfg)
+	em := newTestDurableEmitter(t, store, be, &cfg)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
 	err := em.Emit(ctx, []byte("retry-me"), testEmitAttrs()...)
 	require.NoError(t, err)
 
-	// Wait until the async immediate path has run with the error and the row
-	// is still pending (not a success race after we clear the error).
 	require.Eventually(t, func() bool {
-		return client.batchCount.Load() >= 1 && store.Len() == 1
-	}, 2*time.Second, 5*time.Millisecond, "failed PublishBatch should leave the row")
+		return be.callCount.Load() >= 1 && store.Len() == 1
+	}, 2*time.Second, 5*time.Millisecond, "failed delivery should leave the row")
 
-	client.setPublishErr(nil)
+	be.setPublishErr(nil)
 
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond, "retransmit loop should eventually deliver and delete the event")
 
-	// At least: one failed PublishBatch + one successful delivery (retransmit uses PublishBatch too).
-	assert.GreaterOrEqual(t, client.batchCount.Load(), int64(2))
+	assert.GreaterOrEqual(t, be.callCount.Load(), int64(2))
 }
 
 func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	client.setPublishErr(errors.New("immediate fail"))
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("immediate fail"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 
-	em := newTestDurableEmitter(t, store, client, &cfg)
+	em := newTestDurableEmitter(t, store, be, &cfg)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
@@ -350,33 +340,26 @@ func TestDurableEmitter_RetransmitSerialDistinctCloudEvents(t *testing.T) {
 	require.NoError(t, em.Emit(ctx, []byte("second"), testEmitAttrs()...))
 
 	require.Eventually(t, func() bool {
-		return client.batchCount.Load() >= 2 && store.Len() == 2
-	}, 2*time.Second, 5*time.Millisecond, "both failed PublishBatch calls should leave two rows")
+		return be.callCount.Load() >= 2 && store.Len() == 2
+	}, 2*time.Second, 5*time.Millisecond, "both failed deliveries should leave two rows")
 
-	client.setPublishErr(nil)
+	be.setPublishErr(nil)
 
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 5*time.Second, 50*time.Millisecond)
-
-	ids := client.getPublishedIDs()
-	require.GreaterOrEqual(t, len(ids), 4, "two failed attempts then two successful deliveries (IDs recorded)")
-	require.GreaterOrEqual(t, client.batchCount.Load(), int64(4))
-	a, b := ids[len(ids)-2], ids[len(ids)-1]
-	assert.NotEmpty(t, a)
-	assert.NotEmpty(t, b)
-	assert.NotEqualf(t, a, b, "retransmit must publish two distinct CloudEvents, not one pointer reused for every row")
+	assert.GreaterOrEqual(t, be.callCount.Load(), int64(4))
 }
 
 func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	client.setPublishErr(errors.New("always fail"))
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("always fail"))
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.ExpiryInterval = 100 * time.Millisecond
 	cfg.EventTTL = 50 * time.Millisecond
 	cfg.RetransmitInterval = 10 * time.Minute // effectively disable retransmit
 
-	em := newTestDurableEmitter(t, store, client, &cfg)
+	em := newTestDurableEmitter(t, store, be, &cfg)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
@@ -391,7 +374,7 @@ func TestDurableEmitter_ExpiryLoopDeletesOldEvents(t *testing.T) {
 
 func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
+	be := newTestBatchEmitter()
 
 	ev, err := chipingress.NewEvent("unknown-domain", "t", []byte("b"), nil)
 	require.NoError(t, err)
@@ -403,22 +386,22 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	_, err = store.Insert(context.Background(), payload)
 	require.NoError(t, err)
 
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = 50 * time.Millisecond
 	cfg.RetransmitAfter = 30 * time.Millisecond
 
-	em := newTestDurableEmitter(t, store, client, &cfg)
+	em := newTestDurableEmitter(t, store, be, &cfg)
 	servicetest.Run(t, em)
 
 	require.Eventually(t, func() bool {
-		return store.Len() == 0 && client.batchCount.Load() >= 1
-	}, 3*time.Second, 20*time.Millisecond, "pending row should be delivered via PublishBatch")
+		return store.Len() == 0 && be.callCount.Load() >= 1
+	}, 3*time.Second, 20*time.Millisecond, "pending row should be delivered via batch emitter")
 }
 
 func TestDurableEmitter_EmitRejectsInvalidAttributes(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	em := newTestDurableEmitter(t, store, client, nil)
+	be := newTestBatchEmitter()
+	em := newTestDurableEmitter(t, store, be, nil)
 
 	err := em.Emit(context.Background(), []byte("no-attrs"))
 	require.Error(t, err)
@@ -427,8 +410,8 @@ func TestDurableEmitter_EmitRejectsInvalidAttributes(t *testing.T) {
 
 func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	em := newTestDurableEmitter(t, store, client, nil)
+	be := newTestBatchEmitter()
+	em := newTestDurableEmitter(t, store, be, nil)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
@@ -439,7 +422,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	}
 
 	require.Eventually(t, func() bool {
-		return client.batchCount.Load() == int64(n)
+		return be.callCount.Load() == int64(n)
 	}, 5*time.Second, 10*time.Millisecond)
 
 	require.Eventually(t, func() bool {
@@ -449,25 +432,26 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 
 func TestNewDurableEmitter_ValidationErrors(t *testing.T) {
 	log := logger.Test(t)
-	cfg := DefaultDurableEmitterConfig()
+	cfg := DefaultConfig()
+	be := newTestBatchEmitter()
 
-	_, err := NewDurableEmitter(nil, &testChipClient{}, true, cfg, log, nil)
+	_, err := NewDurableEmitter(nil, be, nil, true, cfg, log, nil)
 	assert.ErrorContains(t, err, "store")
 
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), nil, true, cfg, log, nil)
-	assert.ErrorContains(t, err, "client")
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), nil, nil, true, cfg, log, nil)
+	assert.ErrorContains(t, err, "batch emitter")
 
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfg, nil, nil)
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), be, nil, true, cfg, nil, nil)
 	assert.ErrorContains(t, err, "logger")
 
 	cfgWithMetrics := cfg
 	cfgWithMetrics.Metrics = &DurableEmitterMetricsConfig{}
-	_, err = NewDurableEmitter(NewMemDurableEventStore(), &testChipClient{}, true, cfgWithMetrics, log, nil)
+	_, err = NewDurableEmitter(NewMemDurableEventStore(), be, nil, true, cfgWithMetrics, log, nil)
 	assert.ErrorContains(t, err, "meter")
 }
 
 func TestDurableEmitter_HealthReport(t *testing.T) {
-	em := newTestDurableEmitter(t, NewMemDurableEventStore(), &testChipClient{}, nil)
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), newTestBatchEmitter(), nil)
 	servicetest.Run(t, em)
 
 	report := em.HealthReport()
@@ -480,12 +464,12 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	meter, reader := newTestMeter(t)
 
 	store := NewMemDurableEventStore()
-	client := &testChipClient{}
-	cfg := DefaultDurableEmitterConfig()
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
 	cfg.RetransmitInterval = time.Hour
 	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
 
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), meter)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), meter)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -600,25 +584,137 @@ func newChipClient(t *testing.T, addr string) chipingress.Client {
 	t.Helper()
 	c, err := chipingress.NewClient(addr, chipingress.WithInsecureConnection())
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = c.Close() })
 	return c
+}
+
+// newIntegrationBatchEmitter creates a batch.Client suitable for integration tests.
+// Batch size 1 and a short interval ensure one event per RPC, matching the
+// assertion style of the integration tests.
+func newIntegrationBatchEmitter(t *testing.T, addr string) *batch.Client {
+	t.Helper()
+	chipClient := newChipClient(t, addr)
+	bc, err := batch.NewBatchClient(chipClient,
+		batch.WithBatchSize(1),
+		batch.WithBatchInterval(10*time.Millisecond),
+		batch.WithMaxPublishTimeout(2*time.Second),
+		batch.WithShutdownTimeout(5*time.Second),
+	)
+	require.NoError(t, err)
+	return bc
 }
 
 func emitAttrs() []any {
 	return []any{"source", "test-domain", "type", "test-entity"}
 }
 
-func fastCfg() DurableEmitterConfig {
-	return DurableEmitterConfig{
-		PublishBatchSize:          1,
-		PublishBatchFlushInterval: 10 * time.Millisecond,
-		RetransmitInterval:        100 * time.Millisecond,
-		RetransmitAfter:           50 * time.Millisecond,
-		RetransmitBatchSize:       50,
-		ExpiryInterval:            200 * time.Millisecond,
-		EventTTL:                  500 * time.Millisecond,
-		PublishTimeout:            2 * time.Second,
+func fastCfg() Config {
+	return Config{
+		RetransmitInterval:  100 * time.Millisecond,
+		RetransmitAfter:     50 * time.Millisecond,
+		RetransmitBatchSize: 50,
+		ExpiryInterval:      200 * time.Millisecond,
+		EventTTL:            500 * time.Millisecond,
+		PublishTimeout:      2 * time.Second,
 	}
+}
+
+// testFallbackClient is a minimal chipingress.Client for fallback testing.
+type testFallbackClient struct {
+	chipingress.NoopClient
+
+	mu           sync.Mutex
+	publishErr   error
+	publishCount atomic.Int64
+	closed       atomic.Bool
+}
+
+func (c *testFallbackClient) Publish(_ context.Context, _ *chipingress.CloudEventPb, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+	c.mu.Lock()
+	err := c.publishErr
+	c.mu.Unlock()
+	c.publishCount.Add(1)
+	return &chipingress.PublishResponse{}, err
+}
+
+func (c *testFallbackClient) Close() error {
+	c.closed.Store(true)
+	return nil
+}
+
+func (c *testFallbackClient) setPublishErr(err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.publishErr = err
+}
+
+// TestDurableEmitter_FallbackDeliversOnBatchFailure verifies that when the
+// batch emitter fails, the fallback client delivers the event directly and
+// marks it delivered (removing it from the DB).
+func TestDurableEmitter_FallbackDeliversOnBatchFailure(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("batch down"))
+	fallback := &testFallbackClient{}
+
+	em, err := NewDurableEmitter(store, be, fallback, true, DefaultConfig(), logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.NoError(t, em.Emit(ctx, []byte("needs-fallback"), testEmitAttrs()...))
+
+	// Batch emitter fires callback with error → fallback client should deliver.
+	require.Eventually(t, func() bool {
+		return fallback.publishCount.Load() >= 1
+	}, 2*time.Second, 10*time.Millisecond, "fallback client should receive one Publish call")
+
+	// Event should be marked delivered and removed from the store.
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 2*time.Second, 10*time.Millisecond, "event should be marked delivered after fallback")
+}
+
+// TestDurableEmitter_FallbackFailureEventRemainsForRetransmit verifies that
+// when both the batch emitter and the fallback client fail, the event stays
+// in the DB for the retransmit loop to pick up.
+func TestDurableEmitter_FallbackFailureEventRemainsForRetransmit(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("batch down"))
+	fallback := &testFallbackClient{}
+	fallback.setPublishErr(errors.New("fallback down too"))
+
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute // disable retransmit for this test
+	em, err := NewDurableEmitter(store, be, fallback, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.NoError(t, em.Emit(ctx, []byte("both-fail"), testEmitAttrs()...))
+
+	require.Eventually(t, func() bool {
+		return fallback.publishCount.Load() >= 1
+	}, 2*time.Second, 10*time.Millisecond, "fallback should have been attempted")
+
+	// Event must still be in the store for the retransmit loop.
+	time.Sleep(50 * time.Millisecond)
+	assert.Equal(t, 1, store.Len(), "event must remain in DB when fallback also fails")
+}
+
+// TestDurableEmitter_FallbackClientClosedOnStop verifies that the fallback
+// client's Close() method is called when DurableEmitter shuts down.
+func TestDurableEmitter_FallbackClientClosedOnStop(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	fallback := &testFallbackClient{}
+
+	em, err := NewDurableEmitter(store, be, fallback, true, DefaultConfig(), logger.Test(t), nil)
+	require.NoError(t, err)
+	require.NoError(t, em.Start(t.Context()))
+
+	require.NoError(t, em.Close())
+	assert.True(t, fallback.closed.Load(), "fallback client should be closed after Stop")
 }
 
 // ---------- Test cases ----------
@@ -626,10 +722,10 @@ func fastCfg() DurableEmitterConfig {
 func TestIntegration_HappyPath(t *testing.T) {
 	srv := &mockChipServer{}
 	_, addr := startMockServer(t, srv)
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -647,14 +743,13 @@ func TestIntegration_HappyPath(t *testing.T) {
 }
 
 func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
-	// Start with server returning UNAVAILABLE on PublishBatch.
 	srv := &mockChipServer{}
 	srv.setBatchErr(status.Error(codes.Unavailable, "chip down"))
 	_, addr := startMockServer(t, srv)
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -665,7 +760,6 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 		return srv.batchCount.Load() >= 1 && store.Len() == 1
 	}, 2*time.Second, 10*time.Millisecond, "failed PublishBatch should leave the row pending")
 
-	// "Recover" the server.
 	srv.setBatchErr(nil)
 
 	require.Eventually(t, func() bool {
@@ -678,15 +772,14 @@ func TestIntegration_ServerUnavailable_RetransmitRecovers(t *testing.T) {
 }
 
 func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
-	// Start server, then stop it to simulate total outage.
 	srv := &mockChipServer{}
 	gs, addr := startMockServer(t, srv)
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
 	cfg := fastCfg()
 	cfg.PublishTimeout = 500 * time.Millisecond
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -713,13 +806,9 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	go func() { _ = gs2.Serve(lis) }()
 	t.Cleanup(func() { gs2.GracefulStop() })
 
-	// Create a new client and DurableEmitter re-using the same store
-	// (simulating node restart with Postgres).
-	client2, err := chipingress.NewClient(addr, chipingress.WithInsecureConnection())
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = client2.Close() })
-
-	em2, err := NewDurableEmitter(store, client2, true, cfg, logger.Test(t), nil)
+	// Create a new batch emitter re-using the same store (simulating node restart with Postgres).
+	be2 := newIntegrationBatchEmitter(t, addr)
+	em2, err := NewDurableEmitter(store, be2, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em2)
 
@@ -735,12 +824,12 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 func TestIntegration_HighThroughput(t *testing.T) {
 	srv := &mockChipServer{}
 	_, addr := startMockServer(t, srv)
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
 	cfg := fastCfg()
 	cfg.RetransmitBatchSize = 200
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -764,13 +853,13 @@ func TestIntegration_EventExpiry(t *testing.T) {
 	srv := &mockChipServer{}
 	srv.setBatchErr(status.Error(codes.Internal, "permanent failure"))
 	_, addr := startMockServer(t, srv)
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
 	cfg := fastCfg()
 	cfg.EventTTL = 100 * time.Millisecond
 	cfg.ExpiryInterval = 100 * time.Millisecond
-	em, err := NewDurableEmitter(store, client, true, cfg, logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -785,14 +874,13 @@ func TestIntegration_EventExpiry(t *testing.T) {
 }
 
 func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
-	// PublishBatch fails for each emit; retransmit recovers via PublishBatch.
 	srv := &mockChipServer{}
 	srv.setBatchErr(status.Error(codes.Unavailable, "reject batch"))
 	_, addr := startMockServer(t, srv)
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
@@ -801,8 +889,6 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
 	}
 
-	// All five async PublishBatch attempts must observe the error before we clear
-	// it, or they succeed immediately and the retransmit loop has nothing to do.
 	require.Eventually(t, func() bool {
 		return srv.batchCount.Load() >= 5 && store.Len() == 5
 	}, 3*time.Second, 10*time.Millisecond, "all five PublishBatch RPCs should have failed and left five rows")
@@ -812,7 +898,7 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 5*time.Second, 50*time.Millisecond,
-		"retransmit should deliver via PublishBatch")
+		"retransmit should deliver via batch emitter")
 
 	assert.GreaterOrEqual(t, srv.batchCount.Load(), int64(10),
 		"five failed PublishBatch plus five successful PublishBatch (retransmit)")
@@ -836,11 +922,10 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "pong", pong.Message)
 
-	// Now use the chipingress.Client wrapper with DurableEmitter.
-	client := newChipClient(t, addr)
+	be := newIntegrationBatchEmitter(t, addr)
 	store := NewMemDurableEventStore()
 
-	em, err := NewDurableEmitter(store, client, true, fastCfg(), logger.Test(t), nil)
+	em, err := NewDurableEmitter(store, be, nil, true, fastCfg(), logger.Test(t), nil)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()

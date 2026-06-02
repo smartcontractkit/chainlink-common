@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -309,9 +310,21 @@ func TestSendBatch(t *testing.T) {
 			largeTestEvent("test-id-4"),
 			largeTestEvent("test-id-5"),
 		}
-		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: events[:2]})
-		require.LessOrEqual(t, proto.Size(&chipingress.CloudEventBatch{Events: events[:1]}), maxRequestSize)
-		require.Greater(t, proto.Size(&chipingress.CloudEventBatch{Events: events[:3]}), maxRequestSize)
+		// Default NewBatchClient is partial delivery but always emits
+		// PublishOptions{TransactionEnabled: false} to make intent explicit
+		// on the wire. Size via newBatchRequest so we match what the
+		// production path actually emits.
+		sizeOf := func(evs []*chipingress.CloudEventPb) int {
+			msgs := make([]*messageWithCallback, len(evs))
+			for i, e := range evs {
+				msgs[i] = &messageWithCallback{event: e}
+			}
+			_, n := newBatchRequest(msgs, false)
+			return n
+		}
+		maxRequestSize := sizeOf(events[:2])
+		require.LessOrEqual(t, sizeOf(events[:1]), maxRequestSize)
+		require.Greater(t, sizeOf(events[:3]), maxRequestSize)
 
 		mockClient := mocks.NewClient(t)
 		done := make(chan struct{})
@@ -389,8 +402,11 @@ func TestSendBatch(t *testing.T) {
 			largeTestEvent("split-metric-2"),
 			largeTestEvent("split-metric-3"),
 		}
-		// Set maxRequestSize so that 2 events fit but 3 do not, forcing a split.
-		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: events[:2]})
+		// Set maxRequestSize so that 2 events fit but 3 do not, forcing a
+		// split. Size via newBatchRequest to include the always-emitted
+		// PublishOptions, matching the production wire form.
+		msgs2 := []*messageWithCallback{{event: events[0]}, {event: events[1]}}
+		_, maxRequestSize := newBatchRequest(msgs2, false)
 
 		mockClient := mocks.NewClient(t)
 		done := make(chan struct{})
@@ -439,7 +455,8 @@ func TestSendBatch(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		callbackDone := make(chan error, 1)
 		event := largeTestEvent("oversized-id")
-		maxRequestSize := proto.Size(&chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{event}}) - 1
+		_, oneEventSize := newBatchRequest([]*messageWithCallback{{event: event}}, false)
+		maxRequestSize := oneEventSize - 1
 
 		client, err := NewBatchClient(mockClient)
 		require.NoError(t, err)
@@ -1551,7 +1568,7 @@ func TestBatchClient_Metrics(t *testing.T) {
 
 func TestSplitMessagesByRequestSize(t *testing.T) {
 	t.Run("empty messages returns nil", func(t *testing.T) {
-		result := splitMessagesByRequestSize(nil, 1024)
+		result := splitMessagesByRequestSize(nil, 1024, false)
 		assert.Nil(t, result)
 	})
 
@@ -1560,7 +1577,7 @@ func TestSplitMessagesByRequestSize(t *testing.T) {
 			{event: largeTestEvent("a")},
 			{event: largeTestEvent("b")},
 		}
-		result := splitMessagesByRequestSize(msgs, 0)
+		result := splitMessagesByRequestSize(msgs, 0, false)
 		require.Len(t, result, 1)
 		assert.Len(t, result[0], 2)
 	})
@@ -1569,7 +1586,7 @@ func TestSplitMessagesByRequestSize(t *testing.T) {
 		msgs := []*messageWithCallback{
 			{event: largeTestEvent("a")},
 		}
-		result := splitMessagesByRequestSize(msgs, -1)
+		result := splitMessagesByRequestSize(msgs, -1, false)
 		require.Len(t, result, 1)
 		assert.Len(t, result[0], 1)
 	})
@@ -1580,7 +1597,7 @@ func TestSplitMessagesByRequestSize(t *testing.T) {
 			{event: largeTestEvent("b")},
 		}
 		allBatch := &chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{msgs[0].event, msgs[1].event}}
-		result := splitMessagesByRequestSize(msgs, proto.Size(allBatch)+100)
+		result := splitMessagesByRequestSize(msgs, proto.Size(allBatch)+100, false)
 		require.Len(t, result, 1)
 		assert.Len(t, result[0], 2)
 	})
@@ -1593,7 +1610,7 @@ func TestSplitMessagesByRequestSize(t *testing.T) {
 		}
 		singleBatch := &chipingress.CloudEventBatch{Events: []*chipingress.CloudEventPb{msgs[0].event}}
 		// Set limit to exactly fit one event but not two.
-		result := splitMessagesByRequestSize(msgs, proto.Size(singleBatch))
+		result := splitMessagesByRequestSize(msgs, proto.Size(singleBatch), false)
 		require.Len(t, result, 3)
 		for _, batch := range result {
 			assert.Len(t, batch, 1)
@@ -1773,4 +1790,380 @@ func hasIntAttr(set attribute.Set, key string, want int) bool {
 		}
 	}
 	return false
+}
+
+func TestTransactionEnabledCallbacks(t *testing.T) {
+	t.Run("per-event error dispatched to callback", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1"},
+					{EventId: "e2", Error: &chipingress.PublishError{ErrorCode: chipingress.PublishErrorCode(2), Reason: "no schema"}},
+					{EventId: "e3"},
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		var mu sync.Mutex
+		callbackResults := make(map[string]error)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); callbackResults["e1"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); callbackResults["e2"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e3", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); callbackResults["e3"] = err; mu.Unlock() }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		// Wait for callbacks
+		time.Sleep(50 * time.Millisecond)
+		client.callbackWg.Wait()
+
+		mu.Lock()
+		defer mu.Unlock()
+		require.NoError(t, callbackResults["e1"])
+		require.Error(t, callbackResults["e2"])
+		assert.Equal(t, "PUBLISH_ERROR_CODE_SCHEMA_MISSING: no schema", callbackResults["e2"].Error())
+		var re *PublishError
+		require.ErrorAs(t, callbackResults["e2"], &re)
+		assert.Equal(t, ErrCodeSchemaMissing, re.Code)
+		assert.NoError(t, callbackResults["e3"])
+	})
+
+	t.Run("all success results yield nil callbacks", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1"},
+					{EventId: "e2"},
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 2)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		for range 2 {
+			assert.NoError(t, <-errs)
+		}
+	})
+
+	t.Run("RPC error still fails all callbacks when partial delivery enabled", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, errors.New("connection refused"))
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 2)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		for range 2 {
+			err := <-errs
+			assert.EqualError(t, err, "connection refused")
+		}
+	})
+
+	t.Run("WithTransactionEnabled(true) emits PublishOptions{TransactionEnabled: true}", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.MatchedBy(func(batch *chipingress.CloudEventBatch) bool {
+				return batch.Options != nil && batch.Options.GetTransactionEnabled()
+			})).
+			Return(&chipingress.PublishResponse{}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(true))
+		require.NoError(t, err)
+
+		errs := make(chan error, 1)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		require.NoError(t, <-errs)
+		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestTransactionEnabledEdgeCases(t *testing.T) {
+	t.Run("fewer results than messages fails remaining with RESULTS_MISMATCH", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1"},
+					// only 1 result for 3 messages
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		var mu sync.Mutex
+		results := make(map[string]error)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e1"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e2"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e3", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e3"] = err; mu.Unlock() }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		// Wait for send goroutine to finish (acquire+release semaphore slot).
+		client.maxConcurrentSends <- struct{}{}
+		<-client.maxConcurrentSends
+		client.callbackWg.Wait()
+
+		mu.Lock()
+		defer mu.Unlock()
+		require.NoError(t, results["e1"])
+		require.Error(t, results["e2"])
+		assert.Contains(t, results["e2"].Error(), "server returned 1 results for 3 events")
+		require.Error(t, results["e3"])
+		assert.Contains(t, results["e3"].Error(), "server returned 1 results for 3 events")
+	})
+
+	t.Run("more results than messages does not panic", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1"},
+					{EventId: "e2"},
+					{EventId: "extra"},
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 2)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		for range 2 {
+			assert.NoError(t, <-errs)
+		}
+	})
+
+	t.Run("nil result entry treated as success", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					nil,
+					{EventId: "e2"},
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 2)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		for range 2 {
+			assert.NoError(t, <-errs)
+		}
+	})
+
+	t.Run("all events fail individually", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1", Error: &chipingress.PublishError{ErrorCode: chipingress.PublishErrorCode(1), Reason: "bad1"}},
+					{EventId: "e2", Error: &chipingress.PublishError{ErrorCode: chipingress.PublishErrorCode(2), Reason: "bad2"}},
+				},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 2)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		err1 := <-errs
+		err2 := <-errs
+		require.Error(t, err1)
+		require.Error(t, err2)
+		// Both should be PublishError
+		var re1, re2 *PublishError
+		require.ErrorAs(t, err1, &re1)
+		require.ErrorAs(t, err2, &re2)
+	})
+
+	t.Run("nil response with partial delivery enabled treats as all success", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return((*chipingress.PublishResponse)(nil), nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 2)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		for range 2 {
+			assert.NoError(t, <-errs)
+		}
+	})
+
+	t.Run("empty results with partial delivery enabled treats as all success", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{Results: []*chipingress.PublishResult{}}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		errs := make(chan error, 1)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs <- err }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		client.callbackWg.Wait()
+
+		assert.NoError(t, <-errs)
+	})
+
+	t.Run("PublishError with unknown code", func(t *testing.T) {
+		re := &PublishError{Code: 0, Reason: ""}
+		assert.Equal(t, "PUBLISH_ERROR_CODE_UNKNOWN: ", re.Error())
+	})
+
+	t.Run("split batch with mixed partial and RPC failure", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+
+		callCount := 0
+		var mu sync.Mutex
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, nil).
+			Run(func(args mock.Arguments) {
+				mu.Lock()
+				callCount++
+				count := callCount
+				mu.Unlock()
+				// We can't easily control per-call return values with Run,
+				// so we use a different approach below.
+				_ = count
+			})
+
+		// Use a more targeted approach: mock returns different values per call
+		mockClient.ExpectedCalls = nil // reset
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+
+		// First call: partial success
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{
+					{EventId: "e1"},
+					{EventId: "e2", Error: &chipingress.PublishError{ErrorCode: chipingress.PublishErrorCode(2), Reason: "no schema"}},
+				},
+			}, nil).Once()
+		// Second call: RPC error
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, errors.New("kafka unavailable")).Once()
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+		// Set very small effective size so 2 events split into 2 batches of 1 each...
+		// Actually we need 2 events per batch. Let's use direct sendBatch calls instead.
+
+		// Batch 1: gets partial response
+		errs1 := make(chan error, 2)
+		batch1 := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs1 <- err }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs1 <- err }},
+		}
+		client.sendBatch(t.Context(), batch1)
+
+		// Batch 2: gets RPC error
+		errs2 := make(chan error, 1)
+		batch2 := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e3", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { errs2 <- err }},
+		}
+		client.sendBatch(t.Context(), batch2)
+
+		// Wait for semaphore release
+		time.Sleep(50 * time.Millisecond)
+		client.callbackWg.Wait()
+
+		// Batch 1: e1 success, e2 partial error
+		require.NoError(t, <-errs1)
+		err2 := <-errs1
+		require.Error(t, err2)
+		assert.Contains(t, err2.Error(), "SCHEMA_MISSING")
+
+		// Batch 2: RPC failure
+		err3 := <-errs2
+		require.Error(t, err3)
+		assert.EqualError(t, err3, "kafka unavailable")
+	})
 }

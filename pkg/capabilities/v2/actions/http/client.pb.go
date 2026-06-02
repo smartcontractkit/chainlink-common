@@ -121,6 +121,59 @@ func (x *HeaderValues) GetValues() []string {
 	return nil
 }
 
+// MtlsAuth represents the private-key/cert pair for mtls auth.
+type MtlsAuth struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PrivateKey    []byte                 `protobuf:"bytes,1,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
+	Certificate   []byte                 `protobuf:"bytes,2,opt,name=certificate,proto3" json:"certificate,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MtlsAuth) Reset() {
+	*x = MtlsAuth{}
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MtlsAuth) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MtlsAuth) ProtoMessage() {}
+
+func (x *MtlsAuth) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MtlsAuth.ProtoReflect.Descriptor instead.
+func (*MtlsAuth) Descriptor() ([]byte, []int) {
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *MtlsAuth) GetPrivateKey() []byte {
+	if x != nil {
+		return x.PrivateKey
+	}
+	return nil
+}
+
+func (x *MtlsAuth) GetCertificate() []byte {
+	if x != nil {
+		return x.Certificate
+	}
+	return nil
+}
+
 type Request struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Url    string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
@@ -131,13 +184,14 @@ type Request struct {
 	Timeout       *durationpb.Duration     `protobuf:"bytes,5,opt,name=timeout,proto3" json:"timeout,omitempty"` // Request timeout duration
 	CacheSettings *CacheSettings           `protobuf:"bytes,6,opt,name=cache_settings,json=cacheSettings,proto3" json:"cache_settings,omitempty"`
 	MultiHeaders  map[string]*HeaderValues `protobuf:"bytes,7,rep,name=multi_headers,json=multiHeaders,proto3" json:"multi_headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Mtls          *MtlsAuth                `protobuf:"bytes,8,opt,name=mtls,proto3,oneof" json:"mtls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +203,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +216,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Request) GetUrl() string {
@@ -215,6 +269,13 @@ func (x *Request) GetMultiHeaders() map[string]*HeaderValues {
 	return nil
 }
 
+func (x *Request) GetMtls() *MtlsAuth {
+	if x != nil {
+		return x.Mtls
+	}
+	return nil
+}
+
 type Response struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	StatusCode uint32                 `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
@@ -228,7 +289,7 @@ type Response struct {
 
 func (x *Response) Reset() {
 	*x = Response{}
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +301,7 @@ func (x *Response) String() string {
 func (*Response) ProtoMessage() {}
 
 func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +314,7 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
-	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Response) GetStatusCode() uint32 {
@@ -294,7 +355,11 @@ const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"\x05store\x18\x01 \x01(\bR\x05store\x122\n" +
 	"\amax_age\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x06maxAge\"&\n" +
 	"\fHeaderValues\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values\"\xc9\x04\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"M\n" +
+	"\bMtlsAuth\x12\x1f\n" +
+	"\vprivate_key\x18\x01 \x01(\fR\n" +
+	"privateKey\x12 \n" +
+	"\vcertificate\x18\x02 \x01(\fR\vcertificate\"\x9b\x05\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12X\n" +
@@ -302,13 +367,15 @@ const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x123\n" +
 	"\atimeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12Z\n" +
 	"\x0ecache_settings\x18\x06 \x01(\v23.capabilities.networking.http.v1alpha.CacheSettingsR\rcacheSettings\x12d\n" +
-	"\rmulti_headers\x18\a \x03(\v2?.capabilities.networking.http.v1alpha.Request.MultiHeadersEntryR\fmultiHeaders\x1a:\n" +
+	"\rmulti_headers\x18\a \x03(\v2?.capabilities.networking.http.v1alpha.Request.MultiHeadersEntryR\fmultiHeaders\x12G\n" +
+	"\x04mtls\x18\b \x01(\v2..capabilities.networking.http.v1alpha.MtlsAuthH\x00R\x04mtls\x88\x01\x01\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1as\n" +
 	"\x11MultiHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
-	"\x05value\x18\x02 \x01(\v22.capabilities.networking.http.v1alpha.HeaderValuesR\x05value:\x028\x01\"\xb2\x03\n" +
+	"\x05value\x18\x02 \x01(\v22.capabilities.networking.http.v1alpha.HeaderValuesR\x05value:\x028\x01B\a\n" +
+	"\x05_mtls\"\xb2\x03\n" +
 	"\bResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\rR\n" +
 	"statusCode\x12Y\n" +
@@ -336,35 +403,37 @@ func file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP() []byte
 	return file_capabilities_networking_http_v1alpha_client_proto_rawDescData
 }
 
-var file_capabilities_networking_http_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_capabilities_networking_http_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_capabilities_networking_http_v1alpha_client_proto_goTypes = []any{
 	(*CacheSettings)(nil),       // 0: capabilities.networking.http.v1alpha.CacheSettings
 	(*HeaderValues)(nil),        // 1: capabilities.networking.http.v1alpha.HeaderValues
-	(*Request)(nil),             // 2: capabilities.networking.http.v1alpha.Request
-	(*Response)(nil),            // 3: capabilities.networking.http.v1alpha.Response
-	nil,                         // 4: capabilities.networking.http.v1alpha.Request.HeadersEntry
-	nil,                         // 5: capabilities.networking.http.v1alpha.Request.MultiHeadersEntry
-	nil,                         // 6: capabilities.networking.http.v1alpha.Response.HeadersEntry
-	nil,                         // 7: capabilities.networking.http.v1alpha.Response.MultiHeadersEntry
-	(*durationpb.Duration)(nil), // 8: google.protobuf.Duration
+	(*MtlsAuth)(nil),            // 2: capabilities.networking.http.v1alpha.MtlsAuth
+	(*Request)(nil),             // 3: capabilities.networking.http.v1alpha.Request
+	(*Response)(nil),            // 4: capabilities.networking.http.v1alpha.Response
+	nil,                         // 5: capabilities.networking.http.v1alpha.Request.HeadersEntry
+	nil,                         // 6: capabilities.networking.http.v1alpha.Request.MultiHeadersEntry
+	nil,                         // 7: capabilities.networking.http.v1alpha.Response.HeadersEntry
+	nil,                         // 8: capabilities.networking.http.v1alpha.Response.MultiHeadersEntry
+	(*durationpb.Duration)(nil), // 9: google.protobuf.Duration
 }
 var file_capabilities_networking_http_v1alpha_client_proto_depIdxs = []int32{
-	8,  // 0: capabilities.networking.http.v1alpha.CacheSettings.max_age:type_name -> google.protobuf.Duration
-	4,  // 1: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
-	8,  // 2: capabilities.networking.http.v1alpha.Request.timeout:type_name -> google.protobuf.Duration
+	9,  // 0: capabilities.networking.http.v1alpha.CacheSettings.max_age:type_name -> google.protobuf.Duration
+	5,  // 1: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
+	9,  // 2: capabilities.networking.http.v1alpha.Request.timeout:type_name -> google.protobuf.Duration
 	0,  // 3: capabilities.networking.http.v1alpha.Request.cache_settings:type_name -> capabilities.networking.http.v1alpha.CacheSettings
-	5,  // 4: capabilities.networking.http.v1alpha.Request.multi_headers:type_name -> capabilities.networking.http.v1alpha.Request.MultiHeadersEntry
-	6,  // 5: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
-	7,  // 6: capabilities.networking.http.v1alpha.Response.multi_headers:type_name -> capabilities.networking.http.v1alpha.Response.MultiHeadersEntry
-	1,  // 7: capabilities.networking.http.v1alpha.Request.MultiHeadersEntry.value:type_name -> capabilities.networking.http.v1alpha.HeaderValues
-	1,  // 8: capabilities.networking.http.v1alpha.Response.MultiHeadersEntry.value:type_name -> capabilities.networking.http.v1alpha.HeaderValues
-	2,  // 9: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
-	3,  // 10: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
-	10, // [10:11] is the sub-list for method output_type
-	9,  // [9:10] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	6,  // 4: capabilities.networking.http.v1alpha.Request.multi_headers:type_name -> capabilities.networking.http.v1alpha.Request.MultiHeadersEntry
+	2,  // 5: capabilities.networking.http.v1alpha.Request.mtls:type_name -> capabilities.networking.http.v1alpha.MtlsAuth
+	7,  // 6: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
+	8,  // 7: capabilities.networking.http.v1alpha.Response.multi_headers:type_name -> capabilities.networking.http.v1alpha.Response.MultiHeadersEntry
+	1,  // 8: capabilities.networking.http.v1alpha.Request.MultiHeadersEntry.value:type_name -> capabilities.networking.http.v1alpha.HeaderValues
+	1,  // 9: capabilities.networking.http.v1alpha.Response.MultiHeadersEntry.value:type_name -> capabilities.networking.http.v1alpha.HeaderValues
+	3,  // 10: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
+	4,  // 11: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
+	11, // [11:12] is the sub-list for method output_type
+	10, // [10:11] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_networking_http_v1alpha_client_proto_init() }
@@ -372,13 +441,14 @@ func file_capabilities_networking_http_v1alpha_client_proto_init() {
 	if File_capabilities_networking_http_v1alpha_client_proto != nil {
 		return
 	}
+	file_capabilities_networking_http_v1alpha_client_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_networking_http_v1alpha_client_proto_rawDesc), len(file_capabilities_networking_http_v1alpha_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

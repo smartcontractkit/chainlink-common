@@ -19,6 +19,15 @@ func TestOutboundHTTPRequest_Hash(t *testing.T) {
 		WorkflowOwner: "owner",
 		MultiHeaders:  map[string][]string{"A": {"1", "2"}},
 	}
+	baseWithMtls := OutboundHTTPRequest{
+		Method:        "GET",
+		URL:           "https://example.com/",
+		WorkflowOwner: "owner",
+		Mtls: &MtlsAuth{
+			PrivateKey:  Secret("priv-key"),
+			Certificate: []byte("cert"),
+		},
+	}
 
 	tests := []struct {
 		name     string
@@ -108,6 +117,80 @@ func TestOutboundHTTPRequest_Hash(t *testing.T) {
 				URL:           "https://example.com/",
 				WorkflowOwner: "owner",
 				MultiHeaders:  map[string][]string{"A": {"1", "3"}},
+			},
+			sameHash: false,
+		},
+		{
+			name: "Same Mtls values yields same hash",
+			reqA: baseWithMtls,
+			reqB: OutboundHTTPRequest{
+				Method:        "GET",
+				URL:           "https://example.com/",
+				WorkflowOwner: "owner",
+				Mtls: &MtlsAuth{
+					PrivateKey:  Secret("priv-key"),
+					Certificate: []byte("cert"),
+				},
+			},
+			sameHash: true,
+		},
+		{
+			name: "Nil Mtls vs non-nil Mtls yields different hash",
+			reqA: OutboundHTTPRequest{
+				Method:        "GET",
+				URL:           "https://example.com/",
+				WorkflowOwner: "owner",
+			},
+			reqB:     baseWithMtls,
+			sameHash: false,
+		},
+		{
+			name: "Different Mtls PrivateKey yields different hash",
+			reqA: baseWithMtls,
+			reqB: OutboundHTTPRequest{
+				Method:        "GET",
+				URL:           "https://example.com/",
+				WorkflowOwner: "owner",
+				Mtls: &MtlsAuth{
+					PrivateKey:  Secret("other-key"),
+					Certificate: []byte("cert"),
+				},
+			},
+			sameHash: false,
+		},
+		{
+			name: "Different Mtls Certificate yields different hash",
+			reqA: baseWithMtls,
+			reqB: OutboundHTTPRequest{
+				Method:        "GET",
+				URL:           "https://example.com/",
+				WorkflowOwner: "owner",
+				Mtls: &MtlsAuth{
+					PrivateKey:  Secret("priv-key"),
+					Certificate: []byte("other-cert"),
+				},
+			},
+			sameHash: false,
+		},
+		{
+			name: "Shifting bytes between Mtls PrivateKey and Certificate yields different hash",
+			reqA: OutboundHTTPRequest{
+				Method:        "GET",
+				URL:           "https://example.com/",
+				WorkflowOwner: "owner",
+				Mtls: &MtlsAuth{
+					PrivateKey:  Secret("ab"),
+					Certificate: []byte("cd"),
+				},
+			},
+			reqB: OutboundHTTPRequest{
+				Method:        "GET",
+				URL:           "https://example.com/",
+				WorkflowOwner: "owner",
+				Mtls: &MtlsAuth{
+					PrivateKey:  Secret("abc"),
+					Certificate: []byte("d"),
+				},
 			},
 			sameHash: false,
 		},

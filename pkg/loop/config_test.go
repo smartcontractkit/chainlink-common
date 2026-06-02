@@ -200,9 +200,10 @@ var envCfgFull = EnvConfig{
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 
-	ChipIngressEndpoint:            "chip-ingress.example.com:50051",
-	ChipIngressInsecureConnection:  true,
-	ChipIngressBatchEmitterEnabled: false,
+	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
+	ChipIngressInsecureConnection:    true,
+	ChipIngressBatchEmitterEnabled:   false,
+	ChipIngressDurableEmitterEnabled: false,
 
 	CRESettings:        `{"global":{}}`,
 	CRESettingsDefault: `{"foo":"bar"}`,

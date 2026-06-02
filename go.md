@@ -7,6 +7,7 @@ flowchart LR
 	chainlink-common --> chainlink-common/pkg/chipingress
 	chainlink-common --> chainlink-common/pkg/values
 	chainlink-common --> chainlink-protos/billing/go
+	chainlink-common --> chainlink-protos/cre/go
 	chainlink-common --> chainlink-protos/linking-service/go
 	chainlink-common --> chainlink-protos/node-platform
 	chainlink-common --> chainlink-protos/storage-service
@@ -18,16 +19,12 @@ flowchart LR
 	chainlink-common/keystore --> smdkg
 	chainlink-common/keystore --> wsrpc
 	click chainlink-common/keystore href "https://github.com/smartcontractkit/chainlink-common"
-	chainlink-common/observability-lib --> chainlink-protos/cre/go
-	click chainlink-common/observability-lib href "https://github.com/smartcontractkit/chainlink-common"
-	chainlink-common/pkg/chipingress --> chainlink-protos/cre/go
+	chainlink-common/pkg/chipingress
 	click chainlink-common/pkg/chipingress href "https://github.com/smartcontractkit/chainlink-common"
 	chainlink-common/pkg/monitoring --> chainlink-common
 	click chainlink-common/pkg/monitoring href "https://github.com/smartcontractkit/chainlink-common"
-	chainlink-common/pkg/values --> chainlink-protos/cre/go
+	chainlink-common/pkg/values
 	click chainlink-common/pkg/values href "https://github.com/smartcontractkit/chainlink-common"
-	chainlink-common/pkg/workflows/sdk/v2/pb --> chainlink-protos/cre/go
-	click chainlink-common/pkg/workflows/sdk/v2/pb href "https://github.com/smartcontractkit/chainlink-common"
 	chainlink-protos/billing/go --> chainlink-protos/workflows/go
 	click chainlink-protos/billing/go href "https://github.com/smartcontractkit/chainlink-protos"
 	chainlink-protos/cre/go --> chain-selectors
@@ -59,11 +56,9 @@ flowchart LR
 	subgraph chainlink-common-repo[chainlink-common]
 		 chainlink-common
 		 chainlink-common/keystore
-		 chainlink-common/observability-lib
 		 chainlink-common/pkg/chipingress
 		 chainlink-common/pkg/monitoring
 		 chainlink-common/pkg/values
-		 chainlink-common/pkg/workflows/sdk/v2/pb
 	end
 	click chainlink-common-repo href "https://github.com/smartcontractkit/chainlink-common"
 

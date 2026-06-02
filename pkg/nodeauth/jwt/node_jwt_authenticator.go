@@ -79,11 +79,14 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, publicKey)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			v.logger.Warn("Node validation skipped: context canceled or deadline exceeded",
+			attrs := []any{
 				"csaPubKey", hex.EncodeToString(publicKey),
 				"error", err,
-				"contextErr", ctx.Err(),
-			)
+			}
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				attrs = append(attrs, "contextErr", ctxErr)
+			}
+			v.logger.Warn("Node validation skipped: context canceled or deadline exceeded", attrs...)
 		} else {
 			v.logger.Error("Node validation failed",
 				"csaPubKey", hex.EncodeToString(publicKey),

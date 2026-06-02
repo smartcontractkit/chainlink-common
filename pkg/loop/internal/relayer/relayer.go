@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
@@ -142,6 +143,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 
 	// Sets the auth header signing mechanism
 	beholder.GetClient().SetSigner(csaKeystore)
+	durableemitter.SetGlobalSigner(csaKeystore)
 
 	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), csaKeystore, capRegistry)
 	if err != nil {

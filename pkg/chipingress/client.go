@@ -327,9 +327,41 @@ func ProtoToEvent(eventPb *CloudEventPb) (CloudEvent, error) {
 	return *event, nil
 }
 
+// BatchOpt configures optional fields on a CloudEventBatch.
+type BatchOpt func(*CloudEventBatch)
+
+// WithTransactionEnabled sets PublishOptions.transaction_enabled on a single
+// batch. The option is always emitted on the wire (both true and false) so the
+// client's intent is explicit; the server treats unset and explicit false
+// identically (partial delivery).
+//   - true: all-or-nothing; any per-event failure fails the entire batch.
+//   - false: partial delivery; valid events are produced and per-event errors
+//     are returned for invalid ones.
+//
+// Omitting this option leaves the default applied by EventsToBatchWithOpts in
+// place: PublishOptions{TransactionEnabled: false} (explicit partial delivery).
+func WithTransactionEnabled(enabled bool) BatchOpt {
+	return func(b *CloudEventBatch) {
+		if b.Options == nil {
+			b.Options = &pb.PublishOptions{}
+		}
+		e := enabled
+		b.Options.TransactionEnabled = &e
+	}
+}
+
 func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
+	return EventsToBatchWithOpts(events)
+}
+
+func EventsToBatchWithOpts(events []CloudEvent, opts ...BatchOpt) (*CloudEventBatch, error) {
+	// Default to explicit transaction_enabled=false (partial delivery) so the
+	// wire form unambiguously reflects client intent. Options remain mutable
+	// via BatchOpts below.
+	defaultFalse := false
 	batch := &CloudEventBatch{
-		Events: make([]*CloudEventPb, 0, len(events)),
+		Events:  make([]*CloudEventPb, 0, len(events)),
+		Options: &pb.PublishOptions{TransactionEnabled: &defaultFalse},
 	}
 	for _, event := range events {
 		eventPb, err := EventToProto(event)
@@ -337,6 +369,9 @@ func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
 			return nil, fmt.Errorf("could not convert event to proto: %w", err)
 		}
 		batch.Events = append(batch.Events, eventPb)
+	}
+	for _, opt := range opts {
+		opt(batch)
 	}
 	return batch, nil
 }

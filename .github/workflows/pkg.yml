@@ -23,11 +23,7 @@ jobs:
       - name: Unit Tests
         id: run-tests
         continue-on-error: true
-        run: gotestsum --format standard-quiet --junitfile test-results.xml -- ./... -coverpkg=./... -coverprofile=coverage.raw.txt
-
-      - name: Dedupe Go coverage profile
-        if: always()
-        run: go run ./script/cmd/coverdedupe -in coverage.raw.txt -out coverage.txt
+        run: gotestsum --format standard-quiet --junitfile test-results.xml -- ./... -coverpkg=./... -coverprofile=coverage.txt
 
       - name: Analyze and upload test results
         uses: smartcontractkit/.github/actions/branch-out-upload@branch-out-upload/v1

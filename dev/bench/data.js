@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780349131545,
+  "lastUpdate": 1780395973718,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -48900,6 +48900,66 @@ window.BENCHMARK_DATA = {
             "value": 113810,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "208ae6ddea43794d4ee2dddbfb84540aaf90bcbf",
+          "message": "Make EnclaveConfig optional on confidentialrelay request params (#2111)\n\n* Make EnclaveConfig optional on confidentialrelay request params\n\nEnclaveConfig was mandatory: a value field that Validate required non-empty\nand the canonical hash always bound. That broke every consumer bumping\nchainlink-common whose request params did not set it (Validate failed inside\nHash on the response-signing path), e.g. core confidentialrelay handler tests.\n\nMake it optional:\n- *EnclaveConfig with json:\"enclave_config,omitempty\" (absent omits from JSON\n  and hashes identically to a sender that never had the field).\n- Validate skips the config checks when nil; still rejects a present-but-empty\n  config.\n- The canonical hash binds it only when non-nil.\n\nA verifier on this version stays compatible with senders that omit the field\n(PRIV-458 enclave rollout), and validates and hash-binds it when present.\n\n* Address review: accurate nil-config test + capability-path coverage\n\n- Reword/strengthen the secrets nil-EnclaveConfig test: it now hashes two\n  independent nil-config param constructions and asserts equality (plus the\n  no-error property via mustSecretsHash), instead of hashing one input twice\n  and overclaiming equivalence to an omitted field.\n- Add the capability-path counterpart so CapabilityResponseResult.Hash with\n  EnclaveConfig=nil is also covered.",
+          "timestamp": "2026-06-02T10:14:58Z",
+          "tree_id": "2a16d8e7bb40590950bb699e3e1f01808c915ee9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/208ae6ddea43794d4ee2dddbfb84540aaf90bcbf"
+        },
+        "date": 1780395971485,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358,
+            "unit": "ns/op",
+            "extra": "3338815 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95177,
+            "unit": "ns/op",
+            "extra": "12585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.5,
+            "unit": "ns/op",
+            "extra": "2946991 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94922,
+            "unit": "ns/op",
+            "extra": "12654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26679,
+            "unit": "ns/op",
+            "extra": "44958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142439,
+            "unit": "ns/op",
+            "extra": "8431 times\n4 procs"
           }
         ]
       }

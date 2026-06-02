@@ -302,10 +302,6 @@ func convertAccountToProto(a *typesolana.Account) (*Account, error) {
 	}, nil
 }
 
-func convertRPCContextToProto(r typesolana.RPCContext) *RPCContext {
-	return &RPCContext{Slot: r.Slot}
-}
-
 func convertGetAccountInfoOptsFromProto(p *GetAccountInfoOpts) (*typesolana.GetAccountInfoOpts, error) {
 	if p == nil {
 		return nil, nil
@@ -634,8 +630,7 @@ func ConvertGetAccountInfoReplyToProto(r *typesolana.GetAccountInfoReply) (*GetA
 		return nil, fmt.Errorf("value: %w", err)
 	}
 	return &GetAccountInfoWithOptsReply{
-		RpcContext: convertRPCContextToProto(r.RPCContext),
-		Value:      val,
+		Value: val,
 	}, nil
 }
 
@@ -653,8 +648,7 @@ func ConvertGetMultipleAccountsReplyToProto(r *typesolana.GetMultipleAccountsRep
 		val = append(val, &OptionalAccountWrapper{Account: acc})
 	}
 	return &GetMultipleAccountsWithOptsReply{
-		RpcContext: convertRPCContextToProto(r.RPCContext),
-		Value:      val,
+		Value: val,
 	}, nil
 }
 

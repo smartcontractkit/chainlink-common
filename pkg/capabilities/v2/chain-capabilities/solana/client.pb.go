@@ -2953,6 +2953,7 @@ type FilterLogTriggerRequest struct {
 	ContractIdlJson []byte                 `protobuf:"bytes,4,opt,name=contract_idl_json,json=contractIdlJson,proto3" json:"contract_idl_json,omitempty"`
 	Subkeys         []*SubkeyConfig        `protobuf:"bytes,5,rep,name=subkeys,proto3" json:"subkeys,omitempty"`
 	CpiFilterConfig *CPIFilterConfig       `protobuf:"bytes,6,opt,name=cpi_filter_config,json=cpiFilterConfig,proto3,oneof" json:"cpi_filter_config,omitempty"`
+	IncludeReverted bool                   `protobuf:"varint,7,opt,name=include_reverted,json=includeReverted,proto3" json:"include_reverted,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -3027,6 +3028,13 @@ func (x *FilterLogTriggerRequest) GetCpiFilterConfig() *CPIFilterConfig {
 		return x.CpiFilterConfig
 	}
 	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetIncludeReverted() bool {
+	if x != nil {
+		return x.IncludeReverted
+	}
+	return false
 }
 
 type Log struct {
@@ -3557,7 +3565,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x0fCPIFilterConfig\x12!\n" +
 	"\fdest_address\x18\x01 \x01(\fR\vdestAddress\x12\x1f\n" +
 	"\vmethod_name\x18\x02 \x01(\fR\n" +
-	"methodName\"\xe2\x02\n" +
+	"methodName\"\x8d\x03\n" +
 	"\x17FilterLogTriggerRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\fR\aaddress\x12\x1d\n" +
@@ -3565,7 +3573,8 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"event_name\x18\x03 \x01(\tR\teventName\x12*\n" +
 	"\x11contract_idl_json\x18\x04 \x01(\fR\x0fcontractIdlJson\x12N\n" +
 	"\asubkeys\x18\x05 \x03(\v24.capabilities.blockchain.solana.v1alpha.SubkeyConfigR\asubkeys\x12h\n" +
-	"\x11cpi_filter_config\x18\x06 \x01(\v27.capabilities.blockchain.solana.v1alpha.CPIFilterConfigH\x00R\x0fcpiFilterConfig\x88\x01\x01B\x14\n" +
+	"\x11cpi_filter_config\x18\x06 \x01(\v27.capabilities.blockchain.solana.v1alpha.CPIFilterConfigH\x00R\x0fcpiFilterConfig\x88\x01\x01\x12)\n" +
+	"\x10include_reverted\x18\a \x01(\bR\x0fincludeRevertedB\x14\n" +
 	"\x12_cpi_filter_config\"\xd4\x02\n" +
 	"\x03Log\x12\x19\n" +
 	"\bchain_id\x18\x01 \x01(\tR\achainId\x12\x1b\n" +

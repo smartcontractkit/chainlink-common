@@ -378,18 +378,33 @@ func TestCapabilityRequestParams_Validate_EnclaveConfigOptional(t *testing.T) {
 	require.Error(t, p.Validate())
 }
 
-// TestSecretsResponseHash_NilEnclaveConfigStable proves a nil EnclaveConfig
-// hashes deterministically (and identically to a sender that omits the
-// field), so a verifier on this version stays compatible with older senders.
-func TestSecretsResponseHash_NilEnclaveConfigStable(t *testing.T) {
-	params := validSecretsParams()
-	params.EnclaveConfig = nil
+// TestSecretsResponseHash_NilEnclaveConfig proves that a nil EnclaveConfig is
+// accepted (Hash returns no error, exercised by mustSecretsHash) and hashes
+// deterministically across independent constructions of the same params.
+func TestSecretsResponseHash_NilEnclaveConfig(t *testing.T) {
 	result := SecretsResponseResult{
 		Secrets: []SecretEntry{
 			{ID: SecretIdentifier{Key: "alpha", Namespace: "ns-a"}, Ciphertext: "c", EncryptedShares: []string{"s"}},
 		},
 	}
-	require.Equal(t, mustSecretsHash(t, result, params), mustSecretsHash(t, result, params))
+
+	p1 := validSecretsParams()
+	p1.EnclaveConfig = nil
+	p2 := validSecretsParams()
+	p2.EnclaveConfig = nil
+	require.Equal(t, mustSecretsHash(t, result, p1), mustSecretsHash(t, result, p2))
+}
+
+// TestCapabilityResponseHash_NilEnclaveConfig is the capability-path counterpart:
+// a nil EnclaveConfig is accepted and hashes deterministically.
+func TestCapabilityResponseHash_NilEnclaveConfig(t *testing.T) {
+	result := CapabilityResponseResult{Payload: "out"}
+
+	p1 := validCapabilityParams()
+	p1.EnclaveConfig = nil
+	p2 := validCapabilityParams()
+	p2.EnclaveConfig = nil
+	require.Equal(t, mustCapabilityHash(t, result, p1), mustCapabilityHash(t, result, p2))
 }
 
 // TestSecretsResponseHash_BindsEnclaveConfig proves the response signature

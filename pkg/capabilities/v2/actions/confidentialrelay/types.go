@@ -59,8 +59,13 @@ type SecretsRequestParams struct {
 	// EnclaveConfig is the enclave's current config, included so the relay can
 	// verify it against onchain DON state after attestation validation. See
 	// the EnclaveConfig type doc-comment for the threat model.
-	EnclaveConfig EnclaveConfig `json:"enclave_config"`
-	Attestation   string        `json:"attestation,omitempty"`
+	//
+	// Optional: a nil EnclaveConfig means the sender did not provide one (e.g.
+	// an enclave on an older protocol). Validate and the canonical hash skip it
+	// when nil, so a verifier on this version stays compatible with senders
+	// that omit the field. When present, it is validated and hash-bound.
+	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
+	Attestation   string         `json:"attestation,omitempty"`
 }
 
 // SecretEntry is a single secret in the relay DON's response.
@@ -110,8 +115,10 @@ func (p SecretsRequestParams) Validate() error {
 	if err := validateSecretIdentifiers(p.Secrets); err != nil {
 		return err
 	}
-	if err := validateEnclaveConfig(p.EnclaveConfig); err != nil {
-		return err
+	if p.EnclaveConfig != nil {
+		if err := validateEnclaveConfig(*p.EnclaveConfig); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -169,8 +176,13 @@ type CapabilityRequestParams struct {
 	// EnclaveConfig is the enclave's current config, included so the relay can
 	// verify it against onchain DON state after attestation validation. See
 	// the EnclaveConfig type doc-comment for the threat model.
-	EnclaveConfig EnclaveConfig `json:"enclave_config"`
-	Attestation   string        `json:"attestation,omitempty"`
+	//
+	// Optional: a nil EnclaveConfig means the sender did not provide one (e.g.
+	// an enclave on an older protocol). Validate and the canonical hash skip it
+	// when nil, so a verifier on this version stays compatible with senders
+	// that omit the field. When present, it is validated and hash-bound.
+	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
+	Attestation   string         `json:"attestation,omitempty"`
 }
 
 // CapabilityResponseResult is the JSON-RPC result for "confidential.capability.execute".
@@ -209,8 +221,10 @@ func (p CapabilityRequestParams) Validate() error {
 	if p.Payload == "" {
 		return errors.New("payload is required")
 	}
-	if err := validateEnclaveConfig(p.EnclaveConfig); err != nil {
-		return err
+	if p.EnclaveConfig != nil {
+		if err := validateEnclaveConfig(*p.EnclaveConfig); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -352,7 +366,12 @@ func writeSecretsRequestParams(h hash.Hash, params SecretsRequestParams) {
 	}
 
 	writeString(h, params.EnclavePublicKey)
-	writeEnclaveConfig(h, params.EnclaveConfig)
+	// Hash the config only when present so a nil EnclaveConfig produces the
+	// same digest a sender that omits the field would, preserving
+	// compatibility across the optional rollout.
+	if params.EnclaveConfig != nil {
+		writeEnclaveConfig(h, *params.EnclaveConfig)
+	}
 }
 
 func writeCapabilityRequestParams(h hash.Hash, params CapabilityRequestParams) {
@@ -363,7 +382,12 @@ func writeCapabilityRequestParams(h hash.Hash, params CapabilityRequestParams) {
 	writeString(h, params.ReferenceID)
 	writeString(h, params.CapabilityID)
 	writeString(h, params.Payload)
-	writeEnclaveConfig(h, params.EnclaveConfig)
+	// Hash the config only when present so a nil EnclaveConfig produces the
+	// same digest a sender that omits the field would, preserving
+	// compatibility across the optional rollout.
+	if params.EnclaveConfig != nil {
+		writeEnclaveConfig(h, *params.EnclaveConfig)
+	}
 }
 
 func writeSecretIdentifier(h hash.Hash, id SecretIdentifier) {

@@ -270,9 +270,12 @@ type AptosService interface {
 }
 
 // StellarService exposes the Stellar RPC operations needed by CRE:
-// fetch ledger entries and get the latest ledger.
+// fetch ledger entries, get the latest ledger, and submit transactions.
 type StellarService interface {
 	stellar.Client
+
+	// SubmitTransaction submits a prebuilt transaction envelope XDR to the network.
+	SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)
 }
 
 // Relayer extends ChainService with providers for each product.
@@ -659,4 +662,8 @@ func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stel
 
 func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stellar.GetLatestLedgerResponse, error) {
 	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
+}
+
+func (u *UnimplementedStellarService) SubmitTransaction(_ context.Context, _ stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }

@@ -308,6 +308,129 @@ func TestConvertGetLedgerEntriesResponseFromProto_NilEntry(t *testing.T) {
 
 // ---- ConvertGetLatestLedgerResponseToProto error cases ----------------------
 
+func TestConvertSubmitTransactionRequest_RoundTrip(t *testing.T) {
+	boolVal := true
+	u64 := uint64(42)
+	sym := "amount"
+	domain := stellartypes.SubmitTransactionRequest{
+		IdempotencyKey:     "idem-123",
+		FromAddress:        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+		ContractID:         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+		Function:           "transfer",
+		Args:               []stellartypes.ScVal{
+			{Type: stellartypes.ScValTypeBool, Bool: &boolVal},
+			{Type: stellartypes.ScValTypeU64, U64: &u64},
+			{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
+		},
+		LedgerBoundsOffset: 10,
+	}
+
+	proto, err := conv.ConvertSubmitTransactionRequestToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, "idem-123", proto.GetIdempotencyKey())
+	require.Equal(t, "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4", proto.GetContractId())
+	require.Equal(t, "transfer", proto.GetFunction())
+	require.Len(t, proto.GetArgs(), 3)
+	require.Equal(t, uint32(10), proto.GetLedgerBoundsOffset())
+
+	got, err := conv.ConvertSubmitTransactionRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertSubmitTransactionRequest_NoArgs(t *testing.T) {
+	domain := stellartypes.SubmitTransactionRequest{
+		ContractID: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+		Function:   "ping",
+	}
+
+	proto, err := conv.ConvertSubmitTransactionRequestToProto(domain)
+	require.NoError(t, err)
+	require.Empty(t, proto.GetArgs())
+
+	got, err := conv.ConvertSubmitTransactionRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertSubmitTransactionRequestToProto_MissingContractID(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestToProto(stellartypes.SubmitTransactionRequest{Function: "fn"})
+	require.EqualError(t, err, "contract_id is required")
+}
+
+func TestConvertSubmitTransactionRequestToProto_MissingFunction(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestToProto(stellartypes.SubmitTransactionRequest{ContractID: "C_X"})
+	require.EqualError(t, err, "function is required")
+}
+
+func TestConvertSubmitTransactionRequestToProto_BadArg(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestToProto(stellartypes.SubmitTransactionRequest{
+		ContractID: "C_X",
+		Function:   "fn",
+		Args:       []stellartypes.ScVal{{Type: stellartypes.ScValTypeBool}}, // Bool is nil
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "args[0]")
+}
+
+func TestConvertSubmitTransactionRequestFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestFromProto(nil)
+	require.EqualError(t, err, "submit transaction request is nil")
+}
+
+func TestConvertSubmitTransactionRequestFromProto_MissingContractID(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestFromProto(&conv.SubmitTransactionRequest{Function: "fn"})
+	require.EqualError(t, err, "contract_id is required")
+}
+
+func TestConvertSubmitTransactionRequestFromProto_MissingFunction(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionRequestFromProto(&conv.SubmitTransactionRequest{ContractId: "C_X"})
+	require.EqualError(t, err, "function is required")
+}
+
+func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
+	domain := &stellartypes.SubmitTransactionResponse{
+		TxStatus:         stellartypes.TxSuccess,
+		TxHash:           "abc123hash",
+		TxIdempotencyKey: "idem-456",
+		ResultXDR:        base64.StdEncoding.EncodeToString([]byte("result")),
+		ResultMetaXDR:    base64.StdEncoding.EncodeToString([]byte("meta")),
+	}
+
+	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, conv.TxStatus_TX_STATUS_SUCCESS, proto.GetTxStatus())
+
+	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertSubmitTransactionResponse_RoundTrip_EmptyResultFields(t *testing.T) {
+	domain := &stellartypes.SubmitTransactionResponse{
+		TxStatus:         stellartypes.TxFatal,
+		TxHash:           "",
+		TxIdempotencyKey: "idem-789",
+	}
+
+	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
+	require.NoError(t, err)
+
+	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertSubmitTransactionResponseToProto_Nil(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseToProto(nil)
+	require.EqualError(t, err, "submit transaction reply is nil")
+}
+
+func TestConvertSubmitTransactionResponseFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseFromProto(nil)
+	require.EqualError(t, err, "submit transaction reply is nil")
+}
+
 func TestConvertGetLatestLedgerResponseToProto_InvalidFields(t *testing.T) {
 	tests := []struct {
 		name    string

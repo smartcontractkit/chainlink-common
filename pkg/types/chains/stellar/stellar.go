@@ -44,6 +44,8 @@ type Client interface {
 	// ReadContract simulates a read-only Soroban contract function call.
 	// Each element of req.Args is a domain ScVal value.
 	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
+	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.
+	SubmitTransaction(ctx context.Context, req SubmitTransactionRequest) (*SubmitTransactionResponse, error)
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
@@ -95,6 +97,49 @@ type ReadContractResponse struct {
 	LedgerSequence uint32
 	// Error is non-empty when the call failed.
 	Error string
+}
+
+// SubmitTransactionRequest invokes a Soroban contract via the chain's TXM pipeline.
+// The TXM handles simulation, sequence management, signing, fee bumping, and on-chain confirmation;
+// callers only need to supply the logical contract invocation parameters.
+type SubmitTransactionRequest struct {
+	// IdempotencyKey optionally identifies the transaction for deduplication and status look-up.
+	IdempotencyKey string
+	// FromAddress is the source/signer account (G… StrKey).
+	// Leave empty to use the TXM's default keystore account.
+	FromAddress string
+	// ContractID is the Soroban contract address to invoke (C… StrKey).
+	ContractID string
+	// Function is the Soroban function name to call.
+	Function string
+	// Args holds the typed Soroban function arguments.
+	Args []ScVal
+	// LedgerBoundsOffset overrides the TXM's configured ledger bounds for this transaction.
+	// Zero means use the TXM default.
+	LedgerBoundsOffset uint32
+}
+
+// TransactionStatus is the outcome of a submitted transaction.
+type TransactionStatus int
+
+const (
+	// TxFatal indicates submission failed before reaching the network (RPC, signing, validation).
+	TxFatal TransactionStatus = iota
+	// TxFailed indicates the transaction was accepted but failed on-chain.
+	TxFailed
+	// TxSuccess indicates the transaction was accepted and succeeded on-chain.
+	TxSuccess
+)
+
+// SubmitTransactionResponse carries the result of SubmitTransaction.
+type SubmitTransactionResponse struct {
+	TxStatus         TransactionStatus
+	TxHash           string
+	TxIdempotencyKey string
+	// ResultXDR is the base64-encoded transaction result XDR when available.
+	ResultXDR string
+	// ResultMetaXDR is the base64-encoded result meta XDR when available.
+	ResultMetaXDR string
 }
 
 // GetLatestLedgerResponse holds the current ledger state.

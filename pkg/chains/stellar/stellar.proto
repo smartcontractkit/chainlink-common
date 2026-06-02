@@ -10,6 +10,7 @@ service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
   rpc ReadContract(ReadContractRequest) returns (ReadContractResponse);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 }
 
 // ReadContractRequest invokes a read-only (simulation) Soroban contract function.
@@ -48,6 +49,32 @@ message LedgerEntryResult {
 message GetLedgerEntriesResponse {
   repeated LedgerEntryResult entries = 1;
   uint32 latest_ledger = 2;
+}
+
+// SubmitTransactionRequest invokes a Soroban contract via the TXM pipeline.
+// The TXM handles simulation, sequence management, fee bumping, signing, and confirmation.
+message SubmitTransactionRequest {
+  string idempotency_key     = 1;  // Optional idempotency / deduplication key
+  string from_address        = 2;  // Source/signer account (G… StrKey); empty = TXM default
+  string contract_id         = 3;  // Soroban contract address (C… StrKey)
+  string function            = 4;  // Soroban function name
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal args = 5;  // Typed Soroban arguments
+  uint32 ledger_bounds_offset = 6; // Per-tx ledger-bounds override; 0 = use TXM default
+}
+
+enum TxStatus {
+  TX_STATUS_FATAL = 0;   // Submission failed before on-chain inclusion
+  TX_STATUS_FAILED = 1;  // Included on-chain but execution failed
+  TX_STATUS_SUCCESS = 2; // Included on-chain and succeeded
+}
+
+// SubmitTransactionResponse carries the outcome of a transaction submission.
+message SubmitTransactionResponse {
+  TxStatus tx_status = 1;
+  string   tx_hash = 2;
+  string   tx_idempotency_key = 3;
+  bytes    result_xdr = 4;       // TransactionResult binary XDR; empty if unavailable
+  bytes    result_meta_xdr = 5;  // TransactionMeta binary XDR; empty if unavailable
 }
 
 // GetLatestLedgerResponse holds current ledger state.

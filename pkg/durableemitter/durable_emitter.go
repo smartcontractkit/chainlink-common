@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
@@ -181,6 +182,11 @@ type DurableEmitter struct {
 	// MarkDelivered, Delete, or DeleteExpired. No polling required.
 	pendingCount atomic.Int64
 	pendingMax   atomic.Int64
+
+	// fallbackInFlightCount is incremented when a single-event fallback
+	// goroutine starts and decremented on its defer. metricsLoop samples
+	// this into the fallback.in_flight gauge.
+	fallbackInFlightCount atomic.Int64
 
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
@@ -418,6 +424,10 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		t0Publish := time.Now()
 		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish)); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
+			if d.metrics != nil {
+				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
+					metric.WithAttributes(attribute.String("phase", "immediate")))
+			}
 		}
 		return nil
 	})
@@ -482,8 +492,10 @@ func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb
 		return
 	}
 	d.fallbackWg.Add(1)
+	d.fallbackInFlightCount.Add(1)
 	go func() {
 		defer d.fallbackWg.Done()
+		defer d.fallbackInFlightCount.Add(-1)
 		d.singleEventFallback(id, eventPb)
 	}()
 }
@@ -681,12 +693,12 @@ func (d *DurableEmitter) retransmitPending() {
 		return
 	}
 
-	d.retransmit(pending)
+	d.retransmit(ctx, pending)
 }
 
 // retransmit re-enqueues pending DB rows through the batch emitter. Each row
 // gets its own delivery callback that marks it delivered on success.
-func (d *DurableEmitter) retransmit(pending []DurableEvent) {
+func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent) {
 	var enqueued, skipped int
 
 	for _, pe := range pending {
@@ -705,6 +717,10 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		id := pe.ID
 		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now())); err != nil {
 			skipped++
+			if d.metrics != nil {
+				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
+					metric.WithAttributes(attribute.String("phase", "retransmit")))
+			}
 		} else {
 			enqueued++
 		}
@@ -804,6 +820,14 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-ticker.C:
 			d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
 			d.metrics.queueDepthMax.Record(ctx, d.pendingMax.Load())
+			d.metrics.fallbackInFlight.Record(ctx, d.fallbackInFlightCount.Load())
+			if d.insertCh != nil {
+				if c := cap(d.insertCh); c > 0 {
+					d.metrics.insertCoalescerFill.Record(ctx, float64(len(d.insertCh))/float64(c))
+				}
+			} else {
+				d.metrics.insertCoalescerFill.Record(ctx, 0)
+			}
 			if obs, ok := d.store.(DurableQueueObserver); ok {
 				d.metrics.pollQueueGauges(ctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}

@@ -52,6 +52,16 @@ type durableEmitterMetrics struct {
 	procHeapSys        metric.Int64Gauge
 	procCPUUser        metric.Float64Gauge
 	procCPUSys         metric.Float64Gauge
+	// batchEnqueueBufferFull counts events that could not be handed to the
+	// batch emitter because its internal queue was full and must be picked up
+	// by the retransmit loop instead. Labels: phase={immediate,retransmit}.
+	batchEnqueueBufferFull metric.Int64Counter
+	// insertCoalescerFill reports the write-coalescer channel fill ratio
+	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
+	insertCoalescerFill metric.Float64Gauge
+	// fallbackInFlight reports the number of single-event fallback Publish
+	// goroutines currently in flight.
+	fallbackInFlight metric.Int64Gauge
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -248,6 +258,27 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 		"durable_emitter.process.cpu.system_seconds",
 		metric.WithUnit("s"),
 		metric.WithDescription("Cumulative system CPU seconds (getrusage; Unix only)"),
+	); err != nil {
+		return nil, err
+	}
+	if m.batchEnqueueBufferFull, err = meter.Int64Counter(
+		"durable_emitter.batch_enqueue.buffer_full",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={immediate,retransmit}."),
+	); err != nil {
+		return nil, err
+	}
+	if m.insertCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.insert_coalescer.queue_fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Write-coalescer channel fill ratio (len/cap); 0 when write coalescing is disabled"),
+	); err != nil {
+		return nil, err
+	}
+	if m.fallbackInFlight, err = meter.Int64Gauge(
+		"durable_emitter.fallback.in_flight",
+		metric.WithUnit("{goroutine}"),
+		metric.WithDescription("Single-event fallback Publish goroutines currently in flight"),
 	); err != nil {
 		return nil, err
 	}

@@ -175,7 +175,7 @@ func (ss *solServer) QueryTrackedLogs(ctx context.Context, req *solpb.QueryTrack
 		return nil, net.WrapRPCErr(err)
 	}
 
-	logs, err := solService.QueryTrackedLogs(ctx, dExprs, ls)
+	logs, err := solService.QueryTrackedLogs(ctx, dExprs, ls, req.GetFilterName())
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}

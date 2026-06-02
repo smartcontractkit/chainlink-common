@@ -254,7 +254,7 @@ type SolanaService interface {
 	// query expression, sorting, and confidence level. It only returns logs that were
 	// collected through previously registered log filters.
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
-		limitAndSort query.LimitAndSort) ([]*solana.Log, error)
+		limitAndSort query.LimitAndSort, filterName string) ([]*solana.Log, error)
 
 	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
 	GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error)
@@ -573,7 +573,7 @@ func (uss *UnimplementedSolanaService) RegisterLogTracking(ctx context.Context, 
 func (uss *UnimplementedSolanaService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
-func (uss *UnimplementedSolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort) ([]*solana.Log, error) {
+func (uss *UnimplementedSolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, filterName string) ([]*solana.Log, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
 func (uss *UnimplementedSolanaService) GetBalance(ctx context.Context, req solana.GetBalanceRequest) (*solana.GetBalanceReply, error) {

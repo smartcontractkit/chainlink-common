@@ -1,10 +1,13 @@
 package jwt
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -449,4 +452,92 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		assert.NotNil(t, authenticator)
 		assert.NotNil(t, authenticator.parser)
 	})
+}
+
+func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderNonContextError(t *testing.T) {
+	// Non-context provider errors must be logged at ERROR level.
+	privateKey, csaPubKey := createValidatorTestKeys()
+	providerErr := errors.New("database unavailable")
+	mockProvider := &mocks.NodeAuthProvider{}
+	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, providerErr)
+
+	logger, buf := newCaptureLogger()
+	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+
+	testRequest := testRequest{Field: "test-request"}
+	valid, claims, err := authenticator.AuthenticateJWT(context.Background(), createValidJWT(privateKey, csaPubKey), testRequest)
+
+	require.Error(t, err)
+	assert.False(t, valid)
+	assert.NotNil(t, claims)
+	assert.Contains(t, err.Error(), "node validation failed")
+
+	entry := readLogEntry(t, buf)
+	assert.Equal(t, "ERROR", entry["level"], "non-context provider errors should log at ERROR")
+	mockProvider.AssertExpectations(t)
+}
+
+func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderContextCancelledError(t *testing.T) {
+	// Context-cancellation errors from the provider must be logged at WARN, not ERROR,
+	// because they are caused by the caller cancelling the request — not a system fault.
+	privateKey, csaPubKey := createValidatorTestKeys()
+	mockProvider := &mocks.NodeAuthProvider{}
+	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, context.Canceled)
+
+	logger, buf := newCaptureLogger()
+	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // already cancelled
+
+	testRequest := testRequest{Field: "test-request"}
+	valid, claims, err := authenticator.AuthenticateJWT(ctx, createValidJWT(privateKey, csaPubKey), testRequest)
+
+	require.Error(t, err)
+	assert.False(t, valid)
+	assert.NotNil(t, claims)
+	assert.ErrorIs(t, err, context.Canceled)
+
+	entry := readLogEntry(t, buf)
+	assert.Equal(t, "WARN", entry["level"], "context cancellation from provider should log at WARN not ERROR")
+	mockProvider.AssertExpectations(t)
+}
+
+func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderDeadlineExceededError(t *testing.T) {
+	// context.DeadlineExceeded from the provider must also be logged at WARN, not ERROR,
+	// because it is an expected transient condition (e.g. slow upstream), not a system fault.
+	privateKey, csaPubKey := createValidatorTestKeys()
+	mockProvider := &mocks.NodeAuthProvider{}
+	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, context.DeadlineExceeded)
+
+	logger, buf := newCaptureLogger()
+	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 0) // immediately expired
+	defer cancel()
+
+	testRequest := testRequest{Field: "test-request"}
+	valid, claims, err := authenticator.AuthenticateJWT(ctx, createValidJWT(privateKey, csaPubKey), testRequest)
+
+	require.Error(t, err)
+	assert.False(t, valid)
+	assert.NotNil(t, claims)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+
+	entry := readLogEntry(t, buf)
+	assert.Equal(t, "WARN", entry["level"], "deadline exceeded from provider should log at WARN not ERROR")
+	mockProvider.AssertExpectations(t)
+}
+
+func newCaptureLogger() (*slog.Logger, *bytes.Buffer) {
+	var buf bytes.Buffer
+	return slog.New(slog.NewJSONHandler(&buf, nil)), &buf
+}
+
+func readLogEntry(t *testing.T, buf *bytes.Buffer) map[string]any {
+	t.Helper()
+
+	var entry map[string]any
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
+	return entry
 }

@@ -78,10 +78,21 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 	// Public Key Validation: Verify node's CSA pubkey against the whitelisted registry via NodeAuthProvider.
 	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, publicKey)
 	if err != nil {
-		v.logger.Error("Node validation failed",
-			"csaPubKey", hex.EncodeToString(publicKey),
-			"error", err,
-		)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			attrs := []any{
+				"csaPubKey", hex.EncodeToString(publicKey),
+				"error", err,
+			}
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				attrs = append(attrs, "contextErr", ctxErr)
+			}
+			v.logger.Warn("Node validation skipped: context canceled or deadline exceeded", attrs...)
+		} else {
+			v.logger.Error("Node validation failed",
+				"csaPubKey", hex.EncodeToString(publicKey),
+				"error", err,
+			)
+		}
 		return false, claims, fmt.Errorf("node validation failed: %w", err)
 	}
 

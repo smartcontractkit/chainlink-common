@@ -449,3 +449,51 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		assert.NotNil(t, authenticator.parser)
 	})
 }
+
+func TestNodeJWTAuthenticatorConfig_New(t *testing.T) {
+	t.Run("basic construction via config.New", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		cfg := NodeJWTAuthenticatorConfig{
+			Logger: createTestLogger(t),
+		}
+		authenticator := cfg.New(mockProvider)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+
+	t.Run("config.New with leeway", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		cfg := NodeJWTAuthenticatorConfig{
+			Logger: createTestLogger(t),
+			Leeway: 5 * time.Second,
+		}
+		authenticator := cfg.New(mockProvider)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
+
+	t.Run("config.New with nil logger uses Nop", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		cfg := NodeJWTAuthenticatorConfig{}
+		authenticator := cfg.New(mockProvider)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.logger)
+	})
+
+	t.Run("config.New full auth flow", func(t *testing.T) {
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
+
+		cfg := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}
+		authenticator := cfg.New(mockProvider)
+
+		testReq := testRequest{Field: "test-request"}
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), createValidJWT(privateKey, csaPubKey), testReq)
+
+		require.NoError(t, err)
+		assert.True(t, valid)
+		assert.NotNil(t, claims)
+		mockProvider.AssertExpectations(t)
+	})
+}

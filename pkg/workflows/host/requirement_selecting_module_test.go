@@ -2,6 +2,7 @@ package host_test
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"testing"
 
@@ -149,24 +150,20 @@ func TestRequirementSelectingModule_IsLegacyDAG(t *testing.T) {
 }
 
 func TestRequirementSelectingModule_Execute(t *testing.T) {
-	t.Run("trigger with no cached entry goes to main", func(t *testing.T) {
-		want := &sdk.ExecutionResult{}
+	t.Run("trigger with no cached entry errors", func(t *testing.T) {
 		main := host.ModuleAndHandler{Module: &stubModule{
 			startFn: noop,
 			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
-				if req.GetTrigger() != nil {
-					return want, nil
-				}
-				return subscribeResult(), nil
+				assert.Fail(t, "main should not be called for trigger when no subscriptions")
+				return nil, errors.New("unexpected callback")
 			},
 		}}
 
 		m := host.NewRequirementSelectingModule(main, nil)
 		m.Start()
 
-		got, err := m.Execute(t.Context(), triggerRequest(1), nil)
-		require.NoError(t, err)
-		assert.Equal(t, want, got)
+		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
+		require.ErrorContains(t, err, "cannot trigger before gathering subscriptions")
 	})
 
 	t.Run("main error on subscribe propagates", func(t *testing.T) {

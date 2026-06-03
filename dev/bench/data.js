@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780425105594,
+  "lastUpdate": 1780477087164,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49080,6 +49080,66 @@ window.BENCHMARK_DATA = {
             "value": 132367,
             "unit": "ns/op",
             "extra": "8530 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "pl.jakub.nowak@gmail.com",
+            "name": "Jakub Nowak",
+            "username": "j-nowak"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5669969e693f4ac600279515b51b09788c664b14",
+          "message": "refactor(jwt): migrate authenticator logger (#2107)\n\n* refactor(jwt): migrate authenticator logger\n\nSwitch NodeJWTAuthenticator to chainlink logger with a slog adapter and new constructor.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* refactor(jwt): use NodeJWTAuthenticatorConfig.New() pattern; deprecate separate constructors\n\nImplements reviewer suggestion to consolidate logger + config into a single\nNodeJWTAuthenticatorConfig.New(provider) factory method, avoiding constructor\nproliferation. Keeps deprecated NewNodeJWTAuthenticator and NewNodeJWTAuthenticatorWithLogger\nas shims for backward compat.\n\nAdds tests for the Config.New() path.\n\n* refactor(jwt): use config logger interface\n\nIntroduce a minimal node jwt logger interface and construct via config.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* refactor(jwt): rename logger adapters file\n\nMove slog adapter file to a more generic name for multiple adapters.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n---------\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\nCo-authored-by: Dzianis Vashchuk <dzianis.vashchuk@smartcontract.com>",
+          "timestamp": "2026-06-03T08:46:21Z",
+          "tree_id": "f34d9aafb39a42931a92fac1a0aaea18ee23e115",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5669969e693f4ac600279515b51b09788c664b14"
+        },
+        "date": 1780477085244,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.8,
+            "unit": "ns/op",
+            "extra": "3394342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78676,
+            "unit": "ns/op",
+            "extra": "15182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 381.3,
+            "unit": "ns/op",
+            "extra": "3163540 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79129,
+            "unit": "ns/op",
+            "extra": "15175 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29168,
+            "unit": "ns/op",
+            "extra": "41133 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131412,
+            "unit": "ns/op",
+            "extra": "9403 times\n4 procs"
           }
         ]
       }

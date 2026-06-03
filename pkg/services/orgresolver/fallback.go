@@ -2,20 +2,43 @@ package orgresolver
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/jpillora/backoff"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	log "github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/retry"
 )
 
 const (
-	maxGetAttempts      = 4
+	maxGetRetries       = 3
 	initialRetryBackoff = 100 * time.Millisecond
 	maxRetryBackoff     = 1 * time.Second
 )
+
+var getRetryBackoff = backoff.Backoff{
+	Min:    initialRetryBackoff,
+	Max:    maxRetryBackoff,
+	Factor: 2,
+}
+
+func getRetryStrategy() *retry.Strategy[getResult] {
+	return &retry.Strategy[getResult]{
+		MaxRetries: maxGetRetries,
+		Backoff:    getRetryBackoff.Copy(),
+	}
+}
+
+// getResult carries the outcome of a single Get attempt. When err is non-nil the
+// attempt is terminal; the retry loop must receive a nil error to stop.
+type getResult struct {
+	orgID string
+	err   error
+}
 
 // OrgResolverFallback wraps an OrgResolver and maintains an in-memory cache of
 // owner->orgID mappings. On successful resolution the cache is updated. When
@@ -29,73 +52,47 @@ type OrgResolverFallback struct {
 	inner  OrgResolver
 	cache  sync.Map // owner (string) -> orgID (string)
 	logger log.SugaredLogger
-	after  func(time.Duration) <-chan time.Time
 }
 
 func NewOrgResolverWithFallback(inner OrgResolver, logger log.Logger) *OrgResolverFallback {
 	return &OrgResolverFallback{
 		inner:  inner,
 		logger: log.Sugared(logger).Named("OrgResolverFallback"),
-		after:  time.After,
 	}
-}
-
-func (c *OrgResolverFallback) waitForRetry(backoff time.Duration) <-chan time.Time {
-	after := c.after
-	if after == nil {
-		after = time.After
-	}
-	return after(backoff)
 }
 
 func (c *OrgResolverFallback) Get(ctx context.Context, owner string) (string, error) {
-	var (
-		lastErr error
-		backoff = initialRetryBackoff
-	)
-
-	for attempt := 1; attempt <= maxGetAttempts; attempt++ {
+	result, err := getRetryStrategy().Do(ctx, c.logger, func(ctx context.Context) (getResult, error) {
 		orgID, err := c.inner.Get(ctx, owner)
 		if err == nil {
 			c.cache.Store(owner, orgID)
-			return orgID, nil
+			return getResult{orgID: orgID}, nil
 		}
-		lastErr = err
 
 		code := grpcStatusCode(err)
 		if code == codes.NotFound {
-			return c.fallbackToCache(owner, err)
+			orgID, err := c.fallbackToCache(owner, err)
+			if err != nil {
+				return getResult{err: err}, nil
+			}
+			return getResult{orgID: orgID}, nil
 		}
 		if !isRetriableGRPCCode(code) {
-			return "", err
+			return getResult{err: err}, nil
 		}
-		if attempt == maxGetAttempts {
-			break
+		return getResult{}, err
+	})
+	if err == nil {
+		if result.err != nil {
+			return "", result.err
 		}
-
-		c.logger.Warnw("Org resolver call failed, retrying",
-			"owner", owner,
-			"attempt", attempt,
-			"maxAttempts", maxGetAttempts,
-			"backoff", backoff,
-			"err", err,
-		)
-
-		select {
-		case <-ctx.Done():
-			return c.fallbackToCache(owner, context.Cause(ctx))
-		case <-c.waitForRetry(backoff):
-		}
-
-		backoff = min(backoff*2, maxRetryBackoff)
+		return result.orgID, nil
 	}
 
-	c.logger.Warnw("Org resolver retries exhausted",
-		"owner", owner,
-		"attempts", maxGetAttempts,
-		"err", lastErr,
-	)
-	return c.fallbackToCache(owner, lastErr)
+	if ctx.Err() != nil {
+		return c.fallbackToCache(owner, context.Cause(ctx))
+	}
+	return c.fallbackToCache(owner, errors.Unwrap(err))
 }
 
 func isRetriableGRPCCode(code codes.Code) bool {

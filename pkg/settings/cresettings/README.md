@@ -43,6 +43,7 @@ flowchart
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
+        VaultCiphertextlessObservationsEnabled[/VaultCiphertextlessObservationsEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]

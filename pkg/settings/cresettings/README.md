@@ -222,7 +222,6 @@ flowchart
         end
     end
     subgraph vault
-        VaultCiphertextSizeLimit{{VaultCiphertextSizeLimit}}:::bound
         VaultShareSizeLimit{{VaultShareSizeLimit}}:::bound
         VaultIdentifierKeySizeLimit{{VaultIdentifierKeySizeLimit}}:::bound
         VaultIdentifierOwnerSizeLimit{{VaultIdentifierOwnerSizeLimit}}:::bound
@@ -239,6 +238,7 @@ flowchart
         VaultMaxBlobPayloadSizeLimit{{VaultMaxBlobPayloadSizeLimit}}:::bound
         VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit{{VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit}}:::bound
         VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
+        PerOwner.VaultCiphertextSizeLimit{{PerOwner.VaultCiphertextSizeLimit}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 

@@ -78,7 +78,6 @@ var Default = Schema{
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 	// must ensure that we are overriding the default in the onchain configuration for the contract.
-	VaultCiphertextSizeLimit:          Size(2 * config.KByte),
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
@@ -138,11 +137,12 @@ var Default = Schema{
 		WorkflowLimit:                     Int(1000),
 		WorkflowExecutionConcurrencyLimit: Int(5),
 
-		// DANGER(cedric): Be extremely careful changing this vault limit as it acts as a default value
-		// used by the Vault OCR plugin -- changing this value could cause issues with the plugin during an image
+		// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
+		// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 		// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
-		VaultSecretsLimit: Int(100),
+		VaultCiphertextSizeLimit: Size(2 * config.KByte),
+		VaultSecretsLimit:        Int(100),
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
@@ -275,7 +275,6 @@ type Schema struct {
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
-	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
 	VaultIdentifierOwnerSizeLimit     Setting[config.Size]
@@ -306,9 +305,10 @@ type Orgs struct {
 }
 
 type Owners struct {
-	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
-	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
+	WorkflowLimit                     Setting[int]         `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int]         `unit:"{workflow}"`
+	VaultCiphertextSizeLimit          Setting[config.Size]
+	VaultSecretsLimit                 Setting[int]         `unit:"{secret}"`
 }
 
 type Workflows struct {

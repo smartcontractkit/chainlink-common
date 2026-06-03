@@ -19,7 +19,6 @@
 	"BaseTriggerMaxRetries": "20",
 	"BaseTriggerPruneAge": "24h0m0s",
 	"BaseTriggerMaxSendsPerTick": "20",
-	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",
 	"VaultIdentifierOwnerSizeLimit": "64b",
@@ -47,6 +46,7 @@
 	"PerOwner": {
 		"WorkflowLimit": "1000",
 		"WorkflowExecutionConcurrencyLimit": "5",
+		"VaultCiphertextSizeLimit": "2kb",
 		"VaultSecretsLimit": "100"
 	},
 	"PerWorkflow": {

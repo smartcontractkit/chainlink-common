@@ -74,7 +74,7 @@ func (sc *SolClient) UnregisterLogTracking(ctx context.Context, filterName strin
 	return net.WrapRPCErr(err)
 }
 
-func (sc *SolClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort) ([]*solana.Log, error) {
+func (sc *SolClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, filterName string) ([]*solana.Log, error) {
 	pExprs, err := solpb.ConvertExpressionsToProto(filterQuery)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -88,6 +88,7 @@ func (sc *SolClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.E
 	pReq := &solpb.QueryTrackedLogsRequest{
 		FilterQuery:  pExprs,
 		LimitAndSort: protoLimitAndSort,
+		FilterName:   filterName,
 	}
 
 	pResp, err := sc.grpcClient.QueryTrackedLogs(ctx, pReq)
@@ -308,7 +309,7 @@ func (s *solServer) QueryTrackedLogs(ctx context.Context, req *solpb.QueryTracke
 		return nil, net.WrapRPCErr(err)
 	}
 
-	logs, err := s.impl.QueryTrackedLogs(ctx, dExprs, ls)
+	logs, err := s.impl.QueryTrackedLogs(ctx, dExprs, ls, req.GetFilterName())
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}

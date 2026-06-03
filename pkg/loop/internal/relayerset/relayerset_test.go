@@ -896,12 +896,14 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 					{BlockNumber: 2, LogIndex: 5},
 				}
 
+				filterName := "query-filter"
+
 				expLimitAndSort := query.NewLimitAndSort(query.CountLimit(10), query.SortByTimestamp{})
 				mockSol.EXPECT().
-					QueryTrackedLogs(mock.Anything, filterExpr, expLimitAndSort).
+					QueryTrackedLogs(mock.Anything, filterExpr, expLimitAndSort, filterName).
 					Return(expected, nil)
 
-				out, err := sol.QueryTrackedLogs(ctx, filterExpr, expLimitAndSort)
+				out, err := sol.QueryTrackedLogs(ctx, filterExpr, expLimitAndSort, filterName)
 				require.NoError(t, err)
 				require.Len(t, out, 2)
 				require.Equal(t, int64(2), out[1].BlockNumber)

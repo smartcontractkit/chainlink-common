@@ -611,9 +611,9 @@ func (_c *SolanaService_GetTransaction_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// QueryTrackedLogs provides a mock function with given fields: ctx, filterQuery, limitAndSort
-func (_m *SolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort) ([]*solana.Log, error) {
-	ret := _m.Called(ctx, filterQuery, limitAndSort)
+// QueryTrackedLogs provides a mock function with given fields: ctx, filterQuery, limitAndSort, filterName
+func (_m *SolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, filterName string) ([]*solana.Log, error) {
+	ret := _m.Called(ctx, filterQuery, limitAndSort, filterName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for QueryTrackedLogs")
@@ -621,19 +621,19 @@ func (_m *SolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []que
 
 	var r0 []*solana.Log
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []query.Expression, query.LimitAndSort) ([]*solana.Log, error)); ok {
-		return rf(ctx, filterQuery, limitAndSort)
+	if rf, ok := ret.Get(0).(func(context.Context, []query.Expression, query.LimitAndSort, string) ([]*solana.Log, error)); ok {
+		return rf(ctx, filterQuery, limitAndSort, filterName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []query.Expression, query.LimitAndSort) []*solana.Log); ok {
-		r0 = rf(ctx, filterQuery, limitAndSort)
+	if rf, ok := ret.Get(0).(func(context.Context, []query.Expression, query.LimitAndSort, string) []*solana.Log); ok {
+		r0 = rf(ctx, filterQuery, limitAndSort, filterName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*solana.Log)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []query.Expression, query.LimitAndSort) error); ok {
-		r1 = rf(ctx, filterQuery, limitAndSort)
+	if rf, ok := ret.Get(1).(func(context.Context, []query.Expression, query.LimitAndSort, string) error); ok {
+		r1 = rf(ctx, filterQuery, limitAndSort, filterName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -650,13 +650,14 @@ type SolanaService_QueryTrackedLogs_Call struct {
 //   - ctx context.Context
 //   - filterQuery []query.Expression
 //   - limitAndSort query.LimitAndSort
-func (_e *SolanaService_Expecter) QueryTrackedLogs(ctx interface{}, filterQuery interface{}, limitAndSort interface{}) *SolanaService_QueryTrackedLogs_Call {
-	return &SolanaService_QueryTrackedLogs_Call{Call: _e.mock.On("QueryTrackedLogs", ctx, filterQuery, limitAndSort)}
+//   - filterName string
+func (_e *SolanaService_Expecter) QueryTrackedLogs(ctx interface{}, filterQuery interface{}, limitAndSort interface{}, filterName interface{}) *SolanaService_QueryTrackedLogs_Call {
+	return &SolanaService_QueryTrackedLogs_Call{Call: _e.mock.On("QueryTrackedLogs", ctx, filterQuery, limitAndSort, filterName)}
 }
 
-func (_c *SolanaService_QueryTrackedLogs_Call) Run(run func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort)) *SolanaService_QueryTrackedLogs_Call {
+func (_c *SolanaService_QueryTrackedLogs_Call) Run(run func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, filterName string)) *SolanaService_QueryTrackedLogs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]query.Expression), args[2].(query.LimitAndSort))
+		run(args[0].(context.Context), args[1].([]query.Expression), args[2].(query.LimitAndSort), args[3].(string))
 	})
 	return _c
 }
@@ -666,7 +667,7 @@ func (_c *SolanaService_QueryTrackedLogs_Call) Return(_a0 []*solana.Log, _a1 err
 	return _c
 }
 
-func (_c *SolanaService_QueryTrackedLogs_Call) RunAndReturn(run func(context.Context, []query.Expression, query.LimitAndSort) ([]*solana.Log, error)) *SolanaService_QueryTrackedLogs_Call {
+func (_c *SolanaService_QueryTrackedLogs_Call) RunAndReturn(run func(context.Context, []query.Expression, query.LimitAndSort, string) ([]*solana.Log, error)) *SolanaService_QueryTrackedLogs_Call {
 	_c.Call.Return(run)
 	return _c
 }

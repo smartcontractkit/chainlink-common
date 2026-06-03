@@ -250,9 +250,10 @@ type SolanaService interface {
 	// noop guaranteed when filterName doesn't exist
 	UnregisterLogTracking(ctx context.Context, filterName string) error
 
-	// QueryTrackedLogs retrieves logs from the  log storage based on the provided
-	// query expression, sorting, and confidence level. It only returns logs that were
-	// collected through previously registered log filters.
+	// QueryTrackedLogs retrieves logs from log storage based on the provided query
+	// expression and sorting. When filterName is non-empty, results are scoped to
+	// that registered filter; an empty filterName queries across all filters (legacy).
+	// Confidence is expressed via query.Confidence in filterQuery (a no-op for Solana).
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, filterName string) ([]*solana.Log, error)
 

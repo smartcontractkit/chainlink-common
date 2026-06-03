@@ -229,6 +229,7 @@ flowchart
         VaultIdentifierNamespaceSizeLimit{{VaultIdentifierNamespaceSizeLimit}}:::bound
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
+        VaultPendingQueueWriteSizeLimit{{VaultPendingQueueWriteSizeLimit}}:::bound
         VaultMaxQuerySizeLimit{{VaultMaxQuerySizeLimit}}:::bound
         VaultMaxObservationSizeLimit{{VaultMaxObservationSizeLimit}}:::bound
         VaultMaxReportsPlusPrecursorSizeLimit{{VaultMaxReportsPlusPrecursorSizeLimit}}:::bound

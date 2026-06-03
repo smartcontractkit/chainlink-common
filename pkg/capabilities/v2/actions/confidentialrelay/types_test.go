@@ -43,6 +43,11 @@ func validEnclaveConfig() EnclaveConfig {
 	}
 }
 
+func validEnclaveConfigPtr() *EnclaveConfig {
+	c := validEnclaveConfig()
+	return &c
+}
+
 func validSecretsParams() SecretsRequestParams {
 	return SecretsRequestParams{
 		WorkflowID:       "wf-1",
@@ -50,7 +55,7 @@ func validSecretsParams() SecretsRequestParams {
 		ExecutionID:      validExecutionID,
 		OrgID:            "org-1",
 		EnclavePublicKey: validEnclavePubKey,
-		EnclaveConfig:    validEnclaveConfig(),
+		EnclaveConfig:    validEnclaveConfigPtr(),
 		Attestation:      "att-a",
 		Secrets: []SecretIdentifier{
 			{Key: "alpha", Namespace: "ns-a"},
@@ -66,7 +71,7 @@ func validCapabilityParams() CapabilityRequestParams {
 		ReferenceID:   "42",
 		CapabilityID:  "write_ethereum-testnet-sepolia@1.0.0",
 		Payload:       "request-payload",
-		EnclaveConfig: validEnclaveConfig(),
+		EnclaveConfig: validEnclaveConfigPtr(),
 		Attestation:   "att-a",
 	}
 }
@@ -350,20 +355,56 @@ func TestValidateEnclaveConfig(t *testing.T) {
 	})
 }
 
-// TestSecretsRequestParams_Validate_RequiresEnclaveConfig covers that the
-// Validate gate rejects requests missing the EnclaveConfig.
-func TestSecretsRequestParams_Validate_RequiresEnclaveConfig(t *testing.T) {
+// TestSecretsRequestParams_Validate_EnclaveConfigOptional covers that a nil
+// EnclaveConfig is accepted (sender on an older protocol), while a present
+// but invalid one is still rejected.
+func TestSecretsRequestParams_Validate_EnclaveConfigOptional(t *testing.T) {
 	p := validSecretsParams()
-	p.EnclaveConfig = EnclaveConfig{}
+	p.EnclaveConfig = nil
+	require.NoError(t, p.Validate())
+
+	p.EnclaveConfig = &EnclaveConfig{} // present but empty
 	require.Error(t, p.Validate())
 }
 
-// TestCapabilityRequestParams_Validate_RequiresEnclaveConfig same as above
+// TestCapabilityRequestParams_Validate_EnclaveConfigOptional same as above
 // for the capability execute path.
-func TestCapabilityRequestParams_Validate_RequiresEnclaveConfig(t *testing.T) {
+func TestCapabilityRequestParams_Validate_EnclaveConfigOptional(t *testing.T) {
 	p := validCapabilityParams()
-	p.EnclaveConfig = EnclaveConfig{}
+	p.EnclaveConfig = nil
+	require.NoError(t, p.Validate())
+
+	p.EnclaveConfig = &EnclaveConfig{} // present but empty
 	require.Error(t, p.Validate())
+}
+
+// TestSecretsResponseHash_NilEnclaveConfig proves that a nil EnclaveConfig is
+// accepted (Hash returns no error, exercised by mustSecretsHash) and hashes
+// deterministically across independent constructions of the same params.
+func TestSecretsResponseHash_NilEnclaveConfig(t *testing.T) {
+	result := SecretsResponseResult{
+		Secrets: []SecretEntry{
+			{ID: SecretIdentifier{Key: "alpha", Namespace: "ns-a"}, Ciphertext: "c", EncryptedShares: []string{"s"}},
+		},
+	}
+
+	p1 := validSecretsParams()
+	p1.EnclaveConfig = nil
+	p2 := validSecretsParams()
+	p2.EnclaveConfig = nil
+	require.Equal(t, mustSecretsHash(t, result, p1), mustSecretsHash(t, result, p2))
+}
+
+// TestCapabilityResponseHash_NilEnclaveConfig is the capability-path counterpart:
+// a nil EnclaveConfig is accepted and hashes deterministically.
+func TestCapabilityResponseHash_NilEnclaveConfig(t *testing.T) {
+	result := CapabilityResponseResult{Payload: "out"}
+
+	p1 := validCapabilityParams()
+	p1.EnclaveConfig = nil
+	p2 := validCapabilityParams()
+	p2.EnclaveConfig = nil
+	require.Equal(t, mustCapabilityHash(t, result, p1), mustCapabilityHash(t, result, p2))
 }
 
 // TestSecretsResponseHash_BindsEnclaveConfig proves the response signature
@@ -384,21 +425,29 @@ func TestSecretsResponseHash_BindsEnclaveConfig(t *testing.T) {
 	base := mustSecretsHash(t, result, params)
 
 	changed := params
-	changed.EnclaveConfig.F = params.EnclaveConfig.F + 1
+	c1 := *params.EnclaveConfig
+	c1.F = params.EnclaveConfig.F + 1
+	changed.EnclaveConfig = &c1
 	require.NotEqual(t, base, mustSecretsHash(t, result, changed))
 
 	changed2 := params
-	changed2.EnclaveConfig.T = params.EnclaveConfig.T + 1
+	c2 := *params.EnclaveConfig
+	c2.T = params.EnclaveConfig.T + 1
+	changed2.EnclaveConfig = &c2
 	require.NotEqual(t, base, mustSecretsHash(t, result, changed2))
 
 	changed3 := params
-	changed3.EnclaveConfig.MasterPublicKey = append([]byte(nil), params.EnclaveConfig.MasterPublicKey...)
-	changed3.EnclaveConfig.MasterPublicKey[0] ^= 0xff
+	c3 := *params.EnclaveConfig
+	c3.MasterPublicKey = append([]byte(nil), params.EnclaveConfig.MasterPublicKey...)
+	c3.MasterPublicKey[0] ^= 0xff
+	changed3.EnclaveConfig = &c3
 	require.NotEqual(t, base, mustSecretsHash(t, result, changed3))
 
 	changed4 := params
-	changed4.EnclaveConfig.Signers = append([][]byte(nil), params.EnclaveConfig.Signers...)
-	changed4.EnclaveConfig.Signers = append(changed4.EnclaveConfig.Signers, []byte{0xff})
+	c4 := *params.EnclaveConfig
+	c4.Signers = append([][]byte(nil), params.EnclaveConfig.Signers...)
+	c4.Signers = append(c4.Signers, []byte{0xff})
+	changed4.EnclaveConfig = &c4
 	require.NotEqual(t, base, mustSecretsHash(t, result, changed4))
 }
 
@@ -410,7 +459,9 @@ func TestCapabilityResponseHash_BindsEnclaveConfig(t *testing.T) {
 	base := mustCapabilityHash(t, result, params)
 
 	changed := params
-	changed.EnclaveConfig.F = params.EnclaveConfig.F + 1
+	c := *params.EnclaveConfig
+	c.F = params.EnclaveConfig.F + 1
+	changed.EnclaveConfig = &c
 	require.NotEqual(t, base, mustCapabilityHash(t, result, changed))
 }
 
@@ -430,9 +481,11 @@ func TestSecretsResponseHash_StableUnderSignerReordering(t *testing.T) {
 	base := mustSecretsHash(t, result, params)
 
 	reversed := params
-	reversed.EnclaveConfig.Signers = make([][]byte, len(params.EnclaveConfig.Signers))
+	rc := *params.EnclaveConfig
+	rc.Signers = make([][]byte, len(params.EnclaveConfig.Signers))
 	for i, s := range params.EnclaveConfig.Signers {
-		reversed.EnclaveConfig.Signers[len(params.EnclaveConfig.Signers)-1-i] = s
+		rc.Signers[len(params.EnclaveConfig.Signers)-1-i] = s
 	}
+	reversed.EnclaveConfig = &rc
 	require.Equal(t, base, mustSecretsHash(t, result, reversed))
 }

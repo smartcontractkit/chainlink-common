@@ -198,6 +198,7 @@ message InitialiseRequest {
   uint32 org_resolver_id = 11;
   uint32 cre_settings_id = 12;
   uint32 trigger_event_store_id = 13;
+  uint32 capability_don_id = 14;
 }
 
 message CapabilityInfosReply {

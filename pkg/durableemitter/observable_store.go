@@ -28,7 +28,7 @@ type DurableQueueStats struct {
 // so DurableEmitter can export queue depth and age gauges when metrics are enabled.
 type DurableQueueObserver interface {
 	// ObserveDurableQueue returns live queue statistics. eventTTL and nearExpiryLead
-	// match DurableEmitterConfig (nearExpiryLead should be << eventTTL).
+	// match Config (nearExpiryLead should be << eventTTL).
 	ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error)
 }
 

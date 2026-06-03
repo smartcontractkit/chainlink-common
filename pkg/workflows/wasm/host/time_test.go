@@ -8,13 +8,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 func TestTimeFetcher_GetTime_NODE(t *testing.T) {
 	ctx := t.Context()
 
-	mockExec := NewMockExecutionHelper(t)
+	mockExec := mocks.NewMockExecutionHelper(t)
 	expected := time.Now()
 	mockExec.EXPECT().GetNodeTime().Return(expected)
 
@@ -29,7 +30,7 @@ func TestTimeFetcher_GetTime_NODE(t *testing.T) {
 func TestTimeFetcher_GetTime_DON(t *testing.T) {
 	ctx := t.Context()
 
-	mockExec := NewMockExecutionHelper(t)
+	mockExec := mocks.NewMockExecutionHelper(t)
 	expected := time.Now()
 	mockExec.EXPECT().GetDONTime().Return(expected, nil)
 
@@ -44,7 +45,7 @@ func TestTimeFetcher_GetTime_DON(t *testing.T) {
 func TestTimeFetcher_GetTime_DON_Error(t *testing.T) {
 	ctx := t.Context()
 
-	mockExec := NewMockExecutionHelper(t)
+	mockExec := mocks.NewMockExecutionHelper(t)
 	mockExec.EXPECT().GetDONTime().Return(time.Time{}, errors.New("don error"))
 
 	tf := newTimeFetcher(ctx, mockExec)
@@ -58,7 +59,7 @@ func TestTimeFetcher_ContextCancelledBeforeRequest(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	mockExec := NewMockExecutionHelper(t)
+	mockExec := mocks.NewMockExecutionHelper(t)
 	mockExec.EXPECT().GetDONTime().Return(time.Time{}, context.Canceled).Maybe()
 
 	tf := newTimeFetcher(ctx, mockExec)
@@ -81,7 +82,7 @@ func TestTimeFetcher_ContextCancelledDuringResponse(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	mockExec := NewMockExecutionHelper(t)
+	mockExec := mocks.NewMockExecutionHelper(t)
 	mockExec.EXPECT().GetDONTime().Run(func() {
 		time.Sleep(20 * time.Millisecond) // force timeout
 	}).Return(time.Time{}, nil)

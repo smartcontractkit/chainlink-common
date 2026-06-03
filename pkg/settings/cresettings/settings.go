@@ -81,6 +81,7 @@ var Default = Schema{
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
+	VaultCiphertextlessObservationsEnabled:            Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -386,6 +387,7 @@ type Schema struct {
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
+	VaultCiphertextlessObservationsEnabled            Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]

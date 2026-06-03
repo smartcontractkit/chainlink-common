@@ -62,6 +62,7 @@ flowchart
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
         VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
         PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate
+        VaultCiphertextlessObservationsEnabled[/VaultCiphertextlessObservationsEnabled\]:::gate
     end
 
     subgraph executableServer[remote executable capability server.OnMessage]

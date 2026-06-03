@@ -3,6 +3,7 @@ package orgresolver
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
 	"time"
 
@@ -96,12 +97,8 @@ func (c *OrgResolverFallback) Get(ctx context.Context, owner string) (string, er
 }
 
 func isRetriableGRPCCode(code codes.Code) bool {
-	switch code {
-	case codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted, codes.Aborted, codes.Unknown:
-		return true
-	default:
-		return false
-	}
+	return slices.Contains([]codes.Code{codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted, codes.Aborted, codes.Unknown},
+		code)
 }
 
 func (c *OrgResolverFallback) fallbackToCache(owner string, originalErr error) (string, error) {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780477087164,
+  "lastUpdate": 1780483294588,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49140,6 +49140,66 @@ window.BENCHMARK_DATA = {
             "value": 131412,
             "unit": "ns/op",
             "extra": "9403 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "071d30a405910a62c0ee9272e10bfecd5cb16b16",
+          "message": "Update chainlink-protos to cap-dev (#2112)",
+          "timestamp": "2026-06-03T10:30:51Z",
+          "tree_id": "f34d9aafb39a42931a92fac1a0aaea18ee23e115",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/071d30a405910a62c0ee9272e10bfecd5cb16b16"
+        },
+        "date": 1780483292672,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.7,
+            "unit": "ns/op",
+            "extra": "3339674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 80856,
+            "unit": "ns/op",
+            "extra": "14821 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 379.5,
+            "unit": "ns/op",
+            "extra": "3147916 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 80803,
+            "unit": "ns/op",
+            "extra": "14814 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29171,
+            "unit": "ns/op",
+            "extra": "41085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 130436,
+            "unit": "ns/op",
+            "extra": "9003 times\n4 procs"
           }
         ]
       }

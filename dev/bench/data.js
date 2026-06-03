@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780483294588,
+  "lastUpdate": 1780497537426,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49200,6 +49200,66 @@ window.BENCHMARK_DATA = {
             "value": 130436,
             "unit": "ns/op",
             "extra": "9003 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6fa7bdc4379ec8c3caa7a113418e87468b874b5c",
+          "message": "[CRE-3889] Retry org resolution (#2097)\n\n* fix: increase the scope of errors in which we retry + adding exponential backoff with a max of 4 retries\n\n* chore: use retry util\n\n* Update pkg/services/orgresolver/fallback.go\n\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>\n\n---------\n\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>",
+          "timestamp": "2026-06-03T14:26:32Z",
+          "tree_id": "23db28be42587f74c892fdc22d030a1d5b5205a0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6fa7bdc4379ec8c3caa7a113418e87468b874b5c"
+        },
+        "date": 1780497535547,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362,
+            "unit": "ns/op",
+            "extra": "3173904 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94569,
+            "unit": "ns/op",
+            "extra": "12648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 398.4,
+            "unit": "ns/op",
+            "extra": "2997253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94253,
+            "unit": "ns/op",
+            "extra": "12708 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27756,
+            "unit": "ns/op",
+            "extra": "43125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141135,
+            "unit": "ns/op",
+            "extra": "7393 times\n4 procs"
           }
         ]
       }

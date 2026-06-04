@@ -4067,6 +4067,7 @@ type QueryTrackedLogsRequest struct {
 	state         protoimpl.MessageState     `protogen:"open.v1"`
 	FilterQuery   []*Expression              `protobuf:"bytes,1,rep,name=filterQuery,proto3" json:"filterQuery,omitempty"`                         // filter tree
 	LimitAndSort  *chain_common.LimitAndSort `protobuf:"bytes,2,opt,name=limit_and_sort,json=limitAndSort,proto3" json:"limit_and_sort,omitempty"` // paging
+	FilterName    string                     `protobuf:"bytes,3,opt,name=filter_name,json=filterName,proto3" json:"filter_name,omitempty"`         // registered filter name for query scoping
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4113,6 +4114,13 @@ func (x *QueryTrackedLogsRequest) GetLimitAndSort() *chain_common.LimitAndSort {
 		return x.LimitAndSort
 	}
 	return nil
+}
+
+func (x *QueryTrackedLogsRequest) GetFilterName() string {
+	if x != nil {
+		return x.FilterName
+	}
+	return ""
 }
 
 type QueryTrackedLogsReply struct {
@@ -4720,10 +4728,12 @@ const file_solana_proto_rawDesc = "" +
 	"\x04data\x18\t \x01(\fR\x04data\x12!\n" +
 	"\fsequence_num\x18\n" +
 	" \x01(\x03R\vsequenceNum\x12\x14\n" +
-	"\x05error\x18\v \x01(\tR\x05error\"\x9b\x01\n" +
+	"\x05error\x18\v \x01(\tR\x05error\"\xbc\x01\n" +
 	"\x17QueryTrackedLogsRequest\x129\n" +
 	"\vfilterQuery\x18\x01 \x03(\v2\x17.loop.solana.ExpressionR\vfilterQuery\x12E\n" +
-	"\x0elimit_and_sort\x18\x02 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\"=\n" +
+	"\x0elimit_and_sort\x18\x02 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\x12\x1f\n" +
+	"\vfilter_name\x18\x03 \x01(\tR\n" +
+	"filterName\"=\n" +
 	"\x15QueryTrackedLogsReply\x12$\n" +
 	"\x04logs\x18\x01 \x03(\v2\x10.loop.solana.LogR\x04logs\"P\n" +
 	"\x1aRegisterLogTrackingRequest\x122\n" +

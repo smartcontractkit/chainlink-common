@@ -489,6 +489,7 @@ message Log {
 message QueryTrackedLogsRequest {
   repeated Expression filterQuery = 1;             // filter tree
   loop.chain.common.LimitAndSort limit_and_sort = 2; // paging
+  string filter_name = 3; // registered filter name for query scoping
 }
 
 message QueryTrackedLogsReply {

@@ -434,6 +434,65 @@ func (_c *SolanaService_GetMultipleAccountsWithOpts_Call) RunAndReturn(run func(
 	return _c
 }
 
+// GetProgramAccounts provides a mock function with given fields: ctx, req
+func (_m *SolanaService) GetProgramAccounts(ctx context.Context, req solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetProgramAccounts")
+	}
+
+	var r0 *solana.GetProgramAccountsReply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, solana.GetProgramAccountsRequest) *solana.GetProgramAccountsReply); ok {
+		r0 = rf(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*solana.GetProgramAccountsReply)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, solana.GetProgramAccountsRequest) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SolanaService_GetProgramAccounts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProgramAccounts'
+type SolanaService_GetProgramAccounts_Call struct {
+	*mock.Call
+}
+
+// GetProgramAccounts is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req solana.GetProgramAccountsRequest
+func (_e *SolanaService_Expecter) GetProgramAccounts(ctx interface{}, req interface{}) *SolanaService_GetProgramAccounts_Call {
+	return &SolanaService_GetProgramAccounts_Call{Call: _e.mock.On("GetProgramAccounts", ctx, req)}
+}
+
+func (_c *SolanaService_GetProgramAccounts_Call) Run(run func(ctx context.Context, req solana.GetProgramAccountsRequest)) *SolanaService_GetProgramAccounts_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(solana.GetProgramAccountsRequest))
+	})
+	return _c
+}
+
+func (_c *SolanaService_GetProgramAccounts_Call) Return(_a0 *solana.GetProgramAccountsReply, _a1 error) *SolanaService_GetProgramAccounts_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SolanaService_GetProgramAccounts_Call) RunAndReturn(run func(context.Context, solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error)) *SolanaService_GetProgramAccounts_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSignatureStatuses provides a mock function with given fields: ctx, req
 func (_m *SolanaService) GetSignatureStatuses(ctx context.Context, req solana.GetSignatureStatusesRequest) (*solana.GetSignatureStatusesReply, error) {
 	ret := _m.Called(ctx, req)

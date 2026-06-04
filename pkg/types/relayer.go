@@ -585,6 +585,9 @@ func (uss *UnimplementedSolanaService) GetAccountInfoWithOpts(ctx context.Contex
 func (uss *UnimplementedSolanaService) GetMultipleAccountsWithOpts(ctx context.Context, req solana.GetMultipleAccountsRequest) (*solana.GetMultipleAccountsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMultipleAccountsWithOpts not implemented")
 }
+func (uss *UnimplementedSolanaService) GetProgramAccounts(ctx context.Context, req solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProgramAccounts not implemented")
+}
 func (uss *UnimplementedSolanaService) GetBlock(ctx context.Context, req solana.GetBlockRequest) (*solana.GetBlockReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlock not implemented")
 }

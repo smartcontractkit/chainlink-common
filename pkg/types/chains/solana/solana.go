@@ -110,6 +110,11 @@ type Client interface {
 	// In: ctx, {Receiver, EncodedTransaction, Opts(SigVerify, Commitment, ReplaceRecentBlockhash, Accounts)}.
 	// Out: {Err, Logs, Accounts, UnitsConsumed}, error.
 	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
+
+	// GetProgramAccounts: all accounts owned by program.
+	// In: ctx, {Program, Opts(Encoding, Commitment, DataSlice, Filters), IsExternal}.
+	// Out: {Value([]*KeyedAccount)}, error.
+	GetProgramAccounts(ctx context.Context, req GetProgramAccountsRequest) (*GetProgramAccountsReply, error)
 }
 
 // represents solana-go DataSlice
@@ -523,7 +528,7 @@ type SimulateTXRequest struct {
 	Receiver PublicKey
 	// Encoded
 	EncodedTransaction string
-	Opts *SimulateTXOpts
+	Opts               *SimulateTXOpts
 	// If true, limits like response size limit may be applied.
 	IsExternal bool
 }
@@ -565,4 +570,60 @@ type GetSignatureStatusesResult struct {
 
 type GetSignatureStatusesReply struct {
 	Results []GetSignatureStatusesResult
+}
+
+// represents solana-go rpc.RPCFilterMemcmp
+type RPCFilterMemcmp struct {
+	Offset uint64
+	Bytes  []byte
+}
+
+// represents solana-go rpc.RPCFilter
+type RPCFilter struct {
+	Memcmp   *RPCFilterMemcmp
+	DataSize uint64
+}
+
+// represents solana-go rpc.GetProgramAccountsOpts
+type GetProgramAccountsOpts struct {
+	// Encoding for Account data.
+	// Either "base58" (slow), "base64", "base64+zstd", or "jsonParsed".
+	//
+	// This parameter is optional.
+	Encoding EncodingType
+
+	// Commitment requirement.
+	//
+	// This parameter is optional. Default value is Finalized
+	Commitment CommitmentType
+
+	// dataSlice parameters for limiting returned account data:
+	// Limits the returned account data using the provided offset and length fields;
+	// only available for "base58", "base64" or "base64+zstd" encodings.
+	//
+	// This parameter is optional.
+	DataSlice *DataSlice
+
+	// Filter on accounts, implicit AND between filters.
+	// Account must meet all filter criteria to be included in results.
+	//
+	// This parameter is optional.
+	Filters []RPCFilter
+}
+
+// represents solana-go rpc.KeyedAccount
+type KeyedAccount struct {
+	Pubkey  PublicKey
+	Account *Account
+}
+
+type GetProgramAccountsRequest struct {
+	Program PublicKey
+	Opts    *GetProgramAccountsOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
+}
+
+type GetProgramAccountsReply struct {
+	Value []*KeyedAccount
 }

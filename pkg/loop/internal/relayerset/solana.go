@@ -47,6 +47,10 @@ func (sc *solClient) GetMultipleAccountsWithOpts(ctx context.Context, in *solpb.
 	return sc.client.GetMultipleAccountsWithOpts(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *solClient) GetProgramAccounts(ctx context.Context, in *solpb.GetProgramAccountsRequest, opts ...grpc.CallOption) (*solpb.GetProgramAccountsReply, error) {
+	return sc.client.GetProgramAccounts(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 func (sc *solClient) GetSignatureStatuses(ctx context.Context, in *solpb.GetSignatureStatusesRequest, opts ...grpc.CallOption) (*solpb.GetSignatureStatusesReply, error) {
 	return sc.client.GetSignatureStatuses(appendRelayID(ctx, sc.relayID), in, opts...)
 }
@@ -242,6 +246,25 @@ func (ss *solServer) GetMultipleAccountsWithOpts(ctx context.Context, req *solpb
 	}
 
 	return solpb.ConvertGetMultipleAccountsReplyToProto(dResp), nil
+}
+
+func (ss *solServer) GetProgramAccounts(ctx context.Context, req *solpb.GetProgramAccountsRequest) (*solpb.GetProgramAccountsReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dReq, err := solpb.ConvertGetProgramAccountsRequestFromProto(req)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	dResp, err := solService.GetProgramAccounts(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return solpb.ConvertGetProgramAccountsReplyToProto(dResp), nil
 }
 
 func (ss *solServer) GetBlock(ctx context.Context, req *solpb.GetBlockRequest) (*solpb.GetBlockReply, error) {

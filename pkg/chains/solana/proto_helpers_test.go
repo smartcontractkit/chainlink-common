@@ -424,6 +424,32 @@ func TestExternalRequestProtoRoundTrip(t *testing.T) {
 		require.Equal(t, d.Opts, got.Opts)
 	})
 
+	t.Run("GetProgramAccountsRequest", func(t *testing.T) {
+		program := typesolana.PublicKey{}
+		copy(program[:], mkBytes(typesolana.PublicKeyLength, 0x42))
+		d := typesolana.GetProgramAccountsRequest{
+			Program: program,
+			Opts: &typesolana.GetProgramAccountsOpts{
+				Encoding:   typesolana.EncodingBase64,
+				Commitment: typesolana.CommitmentFinalized,
+				Filters: []typesolana.RPCFilter{
+					{DataSize: 165},
+					{
+						Memcmp: &typesolana.RPCFilterMemcmp{
+							Offset: 0,
+							Bytes:  []byte{1, 2, 3},
+						},
+					},
+				},
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertGetProgramAccountsRequestToProto(d)
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+
 	t.Run("GetTransactionRequest", func(t *testing.T) {
 		var sig typesolana.Signature
 		copy(sig[:], mkBytes(typesolana.SignatureLength, 0xEF))

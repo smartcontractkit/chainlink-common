@@ -222,6 +222,7 @@ flowchart
         end
     end
     subgraph vault
+        VaultCiphertextSizeLimit{{VaultCiphertextSizeLimit}}:::bound
         VaultShareSizeLimit{{VaultShareSizeLimit}}:::bound
         VaultIdentifierKeySizeLimit{{VaultIdentifierKeySizeLimit}}:::bound
         VaultIdentifierOwnerSizeLimit{{VaultIdentifierOwnerSizeLimit}}:::bound

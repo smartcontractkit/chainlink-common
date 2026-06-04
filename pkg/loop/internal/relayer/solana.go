@@ -151,7 +151,10 @@ func (sc *SolClient) GetMultipleAccountsWithOpts(ctx context.Context, req solana
 }
 
 func (sc *SolClient) GetProgramAccounts(ctx context.Context, req solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error) {
-	pReq := solpb.ConvertGetProgramAccountsRequestToProto(req)
+	pReq, err := solpb.ConvertGetProgramAccountsRequestToProto(req)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
 	pResp, err := sc.grpcClient.GetProgramAccounts(ctx, pReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)

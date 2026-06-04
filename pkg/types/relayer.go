@@ -558,9 +558,10 @@ var _ SolanaService = &UnimplementedSolanaService{}
 
 // UnimplementedSolanaService implements the SolanaService interface with stubbed methods that return codes.Unimplemented errors or panic.
 // It is meant to be embedded in real SolanaService implementations in order to get default behavior for new methods without having
-// to react to each change.
-// In the future, embedding this type may be required to implement SolanaService (through use of an unexported method).
-type UnimplementedSolanaService struct{}
+// to react to each change. Embedding this type is required to implement SolanaService (through solana.Client's mustEmbedUnimplementedClient).
+type UnimplementedSolanaService struct {
+	solana.UnimplementedSolanaClient
+}
 
 func (uss *UnimplementedSolanaService) SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
@@ -576,44 +577,12 @@ func (uss *UnimplementedSolanaService) UnregisterLogTracking(ctx context.Context
 func (uss *UnimplementedSolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort) ([]*solana.Log, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
-func (uss *UnimplementedSolanaService) GetBalance(ctx context.Context, req solana.GetBalanceRequest) (*solana.GetBalanceReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
-}
-func (uss *UnimplementedSolanaService) GetAccountInfoWithOpts(ctx context.Context, req solana.GetAccountInfoRequest) (*solana.GetAccountInfoReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAccountInfoWithOpts not implemented")
-}
-func (uss *UnimplementedSolanaService) GetMultipleAccountsWithOpts(ctx context.Context, req solana.GetMultipleAccountsRequest) (*solana.GetMultipleAccountsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMultipleAccountsWithOpts not implemented")
-}
-func (uss *UnimplementedSolanaService) GetProgramAccounts(ctx context.Context, req solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProgramAccounts not implemented")
-}
-func (uss *UnimplementedSolanaService) GetBlock(ctx context.Context, req solana.GetBlockRequest) (*solana.GetBlockReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBlock not implemented")
-}
-func (uss *UnimplementedSolanaService) GetSlotHeight(ctx context.Context, req solana.GetSlotHeightRequest) (*solana.GetSlotHeightReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSlotHeight not implemented")
-}
-func (uss *UnimplementedSolanaService) GetTransaction(ctx context.Context, req solana.GetTransactionRequest) (*solana.GetTransactionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
-}
-func (uss *UnimplementedSolanaService) GetFeeForMessage(ctx context.Context, req solana.GetFeeForMessageRequest) (*solana.GetFeeForMessageReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFeeForMessage not implemented")
-}
-func (uss *UnimplementedSolanaService) GetSignatureStatuses(ctx context.Context, req solana.GetSignatureStatusesRequest) (*solana.GetSignatureStatusesReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSignatureStatuses not implemented")
-}
-func (uss *UnimplementedSolanaService) SimulateTX(ctx context.Context, req solana.SimulateTXRequest) (*solana.SimulateTXReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SimulateTX not implemented")
-}
 func (uss *UnimplementedSolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }
 func (uss *UnimplementedSolanaService) GetFiltersNames(ctx context.Context) ([]string, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
-
-func (uss *UnimplementedSolanaService) mustEmbedUnimplementedClient() {}
 
 var _ AptosService = &UnimplementedAptosService{}
 

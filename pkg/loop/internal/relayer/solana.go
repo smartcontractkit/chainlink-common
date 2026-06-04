@@ -17,6 +17,8 @@ import (
 var _ types.SolanaService = (*SolClient)(nil)
 
 type SolClient struct {
+	solana.UnimplementedSolanaClient
+
 	grpcClient solpb.SolanaClient
 }
 

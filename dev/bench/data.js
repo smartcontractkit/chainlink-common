@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780504790760,
+  "lastUpdate": 1780597802524,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49320,6 +49320,66 @@ window.BENCHMARK_DATA = {
             "value": 140313,
             "unit": "ns/op",
             "extra": "8751 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b78cfe68de23e18fc9478d1bf7f1d7d6e6b162a",
+          "message": "(feat): Enable per-owner overrides for the max ciphertext size (#2121)\n\n* (feat): Enable per-owner overrides for the max ciphertext size\n\n* Re-add deprecated field\n\n* Generate\n\n* Re-add missing README schema mermaid",
+          "timestamp": "2026-06-04T18:18:46Z",
+          "tree_id": "02db33c7894f06a04847c3e1357e09b04e6ea405",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1b78cfe68de23e18fc9478d1bf7f1d7d6e6b162a"
+        },
+        "date": 1780597798844,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.6,
+            "unit": "ns/op",
+            "extra": "3182521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 73666,
+            "unit": "ns/op",
+            "extra": "16156 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.2,
+            "unit": "ns/op",
+            "extra": "2902988 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 73628,
+            "unit": "ns/op",
+            "extra": "16165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24893,
+            "unit": "ns/op",
+            "extra": "46999 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 120712,
+            "unit": "ns/op",
+            "extra": "9320 times\n4 procs"
           }
         ]
       }

@@ -13,6 +13,12 @@ var _ Client = UnimplementedSolanaClient{}
 
 func (UnimplementedSolanaClient) mustEmbedUnimplementedClient() {}
 
+// ClientMustEmbed satisfies Client.mustEmbedUnimplementedClient without stub RPC methods.
+// Embed alongside another Client implementation (e.g. a testify mock) when the mock cannot live in this package.
+type ClientMustEmbed struct{}
+
+func (ClientMustEmbed) mustEmbedUnimplementedClient() {}
+
 func (UnimplementedSolanaClient) GetBalance(context.Context, GetBalanceRequest) (*GetBalanceReply, error) {
 	return nil, fmt.Errorf("method GetBalance not implemented")
 }

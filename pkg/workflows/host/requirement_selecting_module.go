@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -125,7 +126,7 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 
 		return m.Execute(ctx, request, handler)
 	}
-	return r.modules[0].Execute(ctx, request, handler)
+	return nil, errors.New("cannot trigger before gathering subscriptions")
 }
 
 var _ Module = &requirementSelectingModule{}

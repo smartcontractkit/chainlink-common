@@ -74,10 +74,13 @@ var Default = Schema{
 	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
 	BaseTriggerMaxSendsPerTick:             Int(20),
 
-	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
+	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 	// must ensure that we are overriding the default in the onchain configuration for the contract.
+
+	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
+	VaultCiphertextSizeLimit:          Size(2 * config.KByte),
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
@@ -137,7 +140,7 @@ var Default = Schema{
 		WorkflowLimit:                     Int(1000),
 		WorkflowExecutionConcurrencyLimit: Int(5),
 
-		// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
+		// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 		// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 		// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
@@ -275,6 +278,8 @@ type Schema struct {
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
+	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
+	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
 	VaultIdentifierOwnerSizeLimit     Setting[config.Size]
@@ -305,10 +310,10 @@ type Orgs struct {
 }
 
 type Owners struct {
-	WorkflowLimit                     Setting[int]         `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit Setting[int]         `unit:"{workflow}"`
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	VaultCiphertextSizeLimit          Setting[config.Size]
-	VaultSecretsLimit                 Setting[int]         `unit:"{secret}"`
+	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 }
 
 type Workflows struct {

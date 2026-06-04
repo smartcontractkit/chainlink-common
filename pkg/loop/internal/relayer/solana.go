@@ -17,6 +17,8 @@ import (
 var _ types.SolanaService = (*SolClient)(nil)
 
 type SolClient struct {
+	solana.UnimplementedSolanaClient
+
 	grpcClient solpb.SolanaClient
 }
 
@@ -147,6 +149,22 @@ func (sc *SolClient) GetMultipleAccountsWithOpts(ctx context.Context, req solana
 		return nil, net.WrapRPCErr(err)
 	}
 
+	return reply, nil
+}
+
+func (sc *SolClient) GetProgramAccounts(ctx context.Context, req solana.GetProgramAccountsRequest) (*solana.GetProgramAccountsReply, error) {
+	pReq, err := solpb.ConvertGetProgramAccountsRequestToProto(req)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := sc.grpcClient.GetProgramAccounts(ctx, pReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	reply, err := solpb.ConvertGetProgramAccountsReplyFromProto(pResp)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
 	return reply, nil
 }
 
@@ -359,6 +377,18 @@ func (s *solServer) GetMultipleAccountsWithOpts(ctx context.Context, req *solpb.
 		return nil, net.WrapRPCErr(err)
 	}
 	return solpb.ConvertGetMultipleAccountsReplyToProto(dResp), nil
+}
+
+func (s *solServer) GetProgramAccounts(ctx context.Context, req *solpb.GetProgramAccountsRequest) (*solpb.GetProgramAccountsReply, error) {
+	dReq, err := solpb.ConvertGetProgramAccountsRequestFromProto(req)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	dResp, err := s.impl.GetProgramAccounts(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return solpb.ConvertGetProgramAccountsReplyToProto(dResp), nil
 }
 
 func (s *solServer) GetBlock(ctx context.Context, req *solpb.GetBlockRequest) (*solpb.GetBlockReply, error) {

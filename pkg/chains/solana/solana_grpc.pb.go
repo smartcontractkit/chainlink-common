@@ -25,6 +25,7 @@ const (
 	Solana_GetBlock_FullMethodName                    = "/loop.solana.Solana/GetBlock"
 	Solana_GetFeeForMessage_FullMethodName            = "/loop.solana.Solana/GetFeeForMessage"
 	Solana_GetMultipleAccountsWithOpts_FullMethodName = "/loop.solana.Solana/GetMultipleAccountsWithOpts"
+	Solana_GetProgramAccounts_FullMethodName          = "/loop.solana.Solana/GetProgramAccounts"
 	Solana_GetSignatureStatuses_FullMethodName        = "/loop.solana.Solana/GetSignatureStatuses"
 	Solana_GetSlotHeight_FullMethodName               = "/loop.solana.Solana/GetSlotHeight"
 	Solana_GetTransaction_FullMethodName              = "/loop.solana.Solana/GetTransaction"
@@ -46,6 +47,7 @@ type SolanaClient interface {
 	GetBlock(ctx context.Context, in *GetBlockRequest, opts ...grpc.CallOption) (*GetBlockReply, error)
 	GetFeeForMessage(ctx context.Context, in *GetFeeForMessageRequest, opts ...grpc.CallOption) (*GetFeeForMessageReply, error)
 	GetMultipleAccountsWithOpts(ctx context.Context, in *GetMultipleAccountsWithOptsRequest, opts ...grpc.CallOption) (*GetMultipleAccountsWithOptsReply, error)
+	GetProgramAccounts(ctx context.Context, in *GetProgramAccountsRequest, opts ...grpc.CallOption) (*GetProgramAccountsReply, error)
 	GetSignatureStatuses(ctx context.Context, in *GetSignatureStatusesRequest, opts ...grpc.CallOption) (*GetSignatureStatusesReply, error)
 	GetSlotHeight(ctx context.Context, in *GetSlotHeightRequest, opts ...grpc.CallOption) (*GetSlotHeightReply, error)
 	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionReply, error)
@@ -110,6 +112,16 @@ func (c *solanaClient) GetMultipleAccountsWithOpts(ctx context.Context, in *GetM
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMultipleAccountsWithOptsReply)
 	err := c.cc.Invoke(ctx, Solana_GetMultipleAccountsWithOpts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solanaClient) GetProgramAccounts(ctx context.Context, in *GetProgramAccountsRequest, opts ...grpc.CallOption) (*GetProgramAccountsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProgramAccountsReply)
+	err := c.cc.Invoke(ctx, Solana_GetProgramAccounts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -225,6 +237,7 @@ type SolanaServer interface {
 	GetBlock(context.Context, *GetBlockRequest) (*GetBlockReply, error)
 	GetFeeForMessage(context.Context, *GetFeeForMessageRequest) (*GetFeeForMessageReply, error)
 	GetMultipleAccountsWithOpts(context.Context, *GetMultipleAccountsWithOptsRequest) (*GetMultipleAccountsWithOptsReply, error)
+	GetProgramAccounts(context.Context, *GetProgramAccountsRequest) (*GetProgramAccountsReply, error)
 	GetSignatureStatuses(context.Context, *GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error)
 	GetSlotHeight(context.Context, *GetSlotHeightRequest) (*GetSlotHeightReply, error)
 	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionReply, error)
@@ -259,6 +272,9 @@ func (UnimplementedSolanaServer) GetFeeForMessage(context.Context, *GetFeeForMes
 }
 func (UnimplementedSolanaServer) GetMultipleAccountsWithOpts(context.Context, *GetMultipleAccountsWithOptsRequest) (*GetMultipleAccountsWithOptsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMultipleAccountsWithOpts not implemented")
+}
+func (UnimplementedSolanaServer) GetProgramAccounts(context.Context, *GetProgramAccountsRequest) (*GetProgramAccountsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProgramAccounts not implemented")
 }
 func (UnimplementedSolanaServer) GetSignatureStatuses(context.Context, *GetSignatureStatusesRequest) (*GetSignatureStatusesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSignatureStatuses not implemented")
@@ -397,6 +413,24 @@ func _Solana_GetMultipleAccountsWithOpts_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SolanaServer).GetMultipleAccountsWithOpts(ctx, req.(*GetMultipleAccountsWithOptsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Solana_GetProgramAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProgramAccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolanaServer).GetProgramAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Solana_GetProgramAccounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolanaServer).GetProgramAccounts(ctx, req.(*GetProgramAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -607,6 +641,10 @@ var Solana_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMultipleAccountsWithOpts",
 			Handler:    _Solana_GetMultipleAccountsWithOpts_Handler,
+		},
+		{
+			MethodName: "GetProgramAccounts",
+			Handler:    _Solana_GetProgramAccounts_Handler,
 		},
 		{
 			MethodName: "GetSignatureStatuses",

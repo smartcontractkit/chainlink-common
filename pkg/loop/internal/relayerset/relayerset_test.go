@@ -912,7 +912,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			mockSol := mocks2.NewSolanaService(t)
-			relayer1.On("Solana", mock.Anything, mock.Anything).Return(mockSol, nil).Once()
+			relayer1.On("Solana", mock.Anything, mock.Anything).Return(mocks2.WrapSolanaService(mockSol), nil).Once()
 
 			fetchedSol, err := retrievedRelayer.Solana()
 			require.NoError(t, err)

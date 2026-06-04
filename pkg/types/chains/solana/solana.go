@@ -115,6 +115,8 @@ type Client interface {
 	// In: ctx, {Program, Opts(Encoding, Commitment, DataSlice, Filters), IsExternal}.
 	// Out: {Value([]*KeyedAccount)}, error.
 	GetProgramAccounts(ctx context.Context, req GetProgramAccountsRequest) (*GetProgramAccountsReply, error)
+
+	mustEmbedUnimplementedClient()
 }
 
 // represents solana-go DataSlice

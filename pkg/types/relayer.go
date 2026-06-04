@@ -613,6 +613,8 @@ func (uss *UnimplementedSolanaService) GetFiltersNames(ctx context.Context) ([]s
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
 
+func (uss *UnimplementedSolanaService) mustEmbedUnimplementedClient() {}
+
 var _ AptosService = &UnimplementedAptosService{}
 
 // UnimplementedAptosService implements the AptosService interface with stubbed methods that return codes.Unimplemented errors or panic.

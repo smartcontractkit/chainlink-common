@@ -450,6 +450,17 @@ func TestExternalRequestProtoRoundTrip(t *testing.T) {
 		require.Equal(t, d, got)
 	})
 
+	t.Run("GetProgramAccountsRequest nil opts roundtrip", func(t *testing.T) {
+		program := typesolana.PublicKey{}
+		copy(program[:], mkBytes(typesolana.PublicKeyLength, 0x42))
+		d := typesolana.GetProgramAccountsRequest{Program: program}
+		pb := conv.ConvertGetProgramAccountsRequestToProto(d)
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d.Program, got.Program)
+		require.Nil(t, got.Opts)
+	})
+
 	t.Run("GetTransactionRequest", func(t *testing.T) {
 		var sig typesolana.Signature
 		copy(sig[:], mkBytes(typesolana.SignatureLength, 0xEF))
@@ -476,6 +487,105 @@ func TestExternalRequestProtoRoundTrip(t *testing.T) {
 		got, err := conv.ConvertSimulateTXRequestFromProto(pb)
 		require.NoError(t, err)
 		require.Equal(t, d, got)
+	})
+}
+
+func TestGetProgramAccountsProtoConvertersNil(t *testing.T) {
+	t.Run("ConvertGetProgramAccountsRequestFromProto nil request", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "nil GetProgramAccountsRequest")
+		require.Equal(t, typesolana.GetProgramAccountsRequest{}, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsRequestFromProto nil program", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(&conv.GetProgramAccountsRequest{})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "address can't be nil")
+		require.Equal(t, typesolana.GetProgramAccountsRequest{}, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsOptsFromProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertGetProgramAccountsOptsFromProto(nil))
+	})
+
+	t.Run("ConvertGetProgramAccountsOptsToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertGetProgramAccountsOptsToProto(nil))
+	})
+
+	t.Run("ConvertGetProgramAccountsReplyFromProto nil", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsReplyFromProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsReplyToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertGetProgramAccountsReplyToProto(nil))
+	})
+
+	t.Run("ConvertGetProgramAccountsReplyFromProto nil keyed account entry", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsReplyFromProto(&conv.GetProgramAccountsReply{
+			Value: []*conv.KeyedAccount{nil},
+		})
+		require.NoError(t, err)
+		require.Len(t, got.Value, 1)
+		require.Nil(t, got.Value[0])
+	})
+
+	t.Run("ConvertKeyedAccountFromProto nil", func(t *testing.T) {
+		got, err := conv.ConvertKeyedAccountFromProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("ConvertKeyedAccountFromProto nil pubkey", func(t *testing.T) {
+		got, err := conv.ConvertKeyedAccountFromProto(&conv.KeyedAccount{Account: &conv.Account{}})
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "address can't be nil")
+	})
+
+	t.Run("ConvertKeyedAccountToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertKeyedAccountToProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterMemcmpFromProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFilterMemcmpFromProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterMemcmpToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFilterMemcmpToProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterFromProto nil", func(t *testing.T) {
+		require.Equal(t, typesolana.RPCFilter{}, conv.ConvertRPCFilterFromProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterToProto empty", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFilterToProto(typesolana.RPCFilter{}))
+	})
+
+	t.Run("ConvertRPCFiltersFromProto nil and empty", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFiltersFromProto(nil))
+		require.Nil(t, conv.ConvertRPCFiltersFromProto([]*conv.RPCFilter{}))
+	})
+
+	t.Run("ConvertRPCFiltersToProto nil and empty", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFiltersToProto(nil))
+		require.Nil(t, conv.ConvertRPCFiltersToProto([]typesolana.RPCFilter{}))
+	})
+
+	t.Run("ConvertRPCFiltersFromProto skips nil filter entries", func(t *testing.T) {
+		got := conv.ConvertRPCFiltersFromProto([]*conv.RPCFilter{nil, {DataSize: 8}})
+		require.Len(t, got, 2)
+		require.Equal(t, typesolana.RPCFilter{}, got[0])
+		require.Equal(t, uint64(8), got[1].DataSize)
+	})
+
+	t.Run("ConvertRPCFiltersToProto skips empty filters", func(t *testing.T) {
+		got := conv.ConvertRPCFiltersToProto([]typesolana.RPCFilter{{}, {DataSize: 42}})
+		require.Len(t, got, 1)
+		require.Equal(t, uint64(42), got[0].DataSize)
 	})
 }
 

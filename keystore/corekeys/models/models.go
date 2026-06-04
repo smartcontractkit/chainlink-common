@@ -20,6 +20,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/p2pkey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/solkey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/starkkey"
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/stellarkey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/suikey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/tonkey"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/tronkey"
@@ -162,6 +163,7 @@ type KeyRing struct {
 	StarkNet     map[string]starkkey.Key
 	Sui          map[string]suikey.Key
 	Aptos        map[string]aptoskey.Key
+	Stellar      map[string]stellarkey.Key
 	Tron         map[string]tronkey.Key
 	TON          map[string]tonkey.Key
 	VRF          map[string]vrfkey.KeyV2
@@ -182,6 +184,7 @@ func NewKeyRing() *KeyRing {
 		StarkNet:     make(map[string]starkkey.Key),
 		Sui:          make(map[string]suikey.Key),
 		Aptos:        make(map[string]aptoskey.Key),
+		Stellar:      make(map[string]stellarkey.Key),
 		Tron:         make(map[string]tronkey.Key),
 		TON:          make(map[string]tonkey.Key),
 		VRF:          make(map[string]vrfkey.KeyV2),
@@ -247,6 +250,9 @@ func (kr *KeyRing) raw() (rawKeys rawKeyRing) {
 	for _, aptoskey := range kr.Aptos {
 		rawKeys.Aptos = append(rawKeys.Aptos, internal.RawBytes(aptoskey))
 	}
+	for _, stellarkey := range kr.Stellar {
+		rawKeys.Stellar = append(rawKeys.Stellar, internal.RawBytes(stellarkey))
+	}
 	for _, tronkey := range kr.Tron {
 		rawKeys.Tron = append(rawKeys.Tron, internal.RawBytes(tronkey))
 	}
@@ -282,6 +288,7 @@ type rawKeyRing struct {
 	StarkNet     [][]byte
 	Sui          [][]byte
 	Aptos        [][]byte
+	Stellar      [][]byte
 	Tron         [][]byte
 	TON          [][]byte
 	VRF          [][]byte
@@ -328,6 +335,10 @@ func (rawKeys rawKeyRing) keys() (*KeyRing, error) {
 	for _, rawAptosKey := range rawKeys.Aptos {
 		aptosKey := aptoskey.KeyFor(internal.NewRaw(rawAptosKey))
 		keyRing.Aptos[aptosKey.ID()] = aptosKey
+	}
+	for _, rawStellarKey := range rawKeys.Stellar {
+		stellarKey := stellarkey.KeyFor(internal.NewRaw(rawStellarKey))
+		keyRing.Stellar[stellarKey.ID()] = stellarKey
 	}
 	for _, rawTronKey := range rawKeys.Tron {
 		tronKey := tronkey.KeyFor(internal.NewRaw(rawTronKey))

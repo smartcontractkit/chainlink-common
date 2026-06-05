@@ -14,7 +14,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-var _ core.GatewayConnector = (*GatewayConnectorClient)(nil)
+var (
+	_ core.GatewayConnector         = (*GatewayConnectorClient)(nil)
+	_ core.MultiGatewayDonConnector = (*GatewayConnectorClient)(nil)
+)
 
 type GatewayConnectorClient struct {
 	*net.BrokerExt
@@ -68,6 +71,32 @@ func (c GatewayConnectorClient) DonID(ctx context.Context) (string, error) {
 	resp, err := c.grpc.DonID(ctx, &emptypb.Empty{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get DON ID: %w", err)
+	}
+	return resp.DonId, nil
+}
+
+func (c GatewayConnectorClient) GatewayIDsForDon(ctx context.Context, donID string) ([]string, error) {
+	resp, err := c.grpc.GatewayIDsForDon(ctx, &pb.GatewayIDsForDonRequest{DonId: donID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gateway IDs for DON: %w", err)
+	}
+	gatewayIDs := make([]string, len(resp.GatewayIds))
+	copy(gatewayIDs, resp.GatewayIds)
+	return gatewayIDs, nil
+}
+
+func (c GatewayConnectorClient) DonIDForGateway(ctx context.Context, gatewayID string) (string, error) {
+	resp, err := c.grpc.DonIDForGateway(ctx, &pb.GatewayIDRequest{GatewayId: gatewayID})
+	if err != nil {
+		return "", fmt.Errorf("failed to get DON ID for gateway: %w", err)
+	}
+	return resp.DonId, nil
+}
+
+func (c GatewayConnectorClient) PrimaryDonID(ctx context.Context) (string, error) {
+	resp, err := c.grpc.PrimaryDonID(ctx, &emptypb.Empty{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get primary DON ID: %w", err)
 	}
 	return resp.DonId, nil
 }
@@ -172,6 +201,30 @@ func (s GatewayConnectorServer) DonID(ctx context.Context, _ *emptypb.Empty) (*p
 	return &pb.DonIDReply{DonId: donID}, nil
 }
 
+func (s GatewayConnectorServer) GatewayIDsForDon(ctx context.Context, req *pb.GatewayIDsForDonRequest) (*pb.GatewayIDsReply, error) {
+	gatewayIDs, err := s.getMultiImpl().GatewayIDsForDon(ctx, req.GetDonId())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gateway IDs for DON: %w", err)
+	}
+	return &pb.GatewayIDsReply{GatewayIds: gatewayIDs}, nil
+}
+
+func (s GatewayConnectorServer) DonIDForGateway(ctx context.Context, req *pb.GatewayIDRequest) (*pb.DonIDReply, error) {
+	donID, err := s.getMultiImpl().DonIDForGateway(ctx, req.GetGatewayId())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DON ID for gateway: %w", err)
+	}
+	return &pb.DonIDReply{DonId: donID}, nil
+}
+
+func (s GatewayConnectorServer) PrimaryDonID(ctx context.Context, _ *emptypb.Empty) (*pb.DonIDReply, error) {
+	donID, err := s.getMultiImpl().PrimaryDonID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get primary DON ID: %w", err)
+	}
+	return &pb.DonIDReply{DonId: donID}, nil
+}
+
 func (s GatewayConnectorServer) AwaitConnection(ctx context.Context, req *pb.GatewayIDRequest) (*emptypb.Empty, error) {
 	if err := s.getImpl().AwaitConnection(ctx, req.GatewayId); err != nil {
 		return nil, fmt.Errorf("failed to await connection to gateway: %s: %w", req.GatewayId, err)
@@ -184,4 +237,14 @@ func (s GatewayConnectorServer) getImpl() core.GatewayConnector {
 		return &core.UnimplementedGatewayConnector{}
 	}
 	return s.impl
+}
+
+func (s GatewayConnectorServer) getMultiImpl() core.MultiGatewayDonConnector {
+	if s.impl == nil {
+		return &core.UnimplementedGatewayConnector{}
+	}
+	if m, ok := s.impl.(core.MultiGatewayDonConnector); ok {
+		return m
+	}
+	return &core.UnimplementedGatewayConnector{}
 }

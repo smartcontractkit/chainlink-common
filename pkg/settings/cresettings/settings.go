@@ -212,7 +212,7 @@ var Default = Schema{
 				GasLimit:        PerChainSelector(Uint32(300_000), map[string]uint32{}),
 			},
 			Aptos: aptosChainWrite{
-				ReportSizeLimit: Size(6 * config.KByte),
+				ReportSizeLimit: Size(5 * config.KByte), // Deprecated
 				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
 		},

@@ -12,16 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
-        id: changes
         with:
-          filters: |
-            settings:
-              - 'pkg/settings/cresettings/**'
+          fetch-depth: 0
+
+      - name: Check for // Deprecated in settings.go diff
+        id: deprecated
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+          if git diff "origin/${{ github.base_ref }}...HEAD" -- pkg/settings/cresettings/settings.go \
+            | grep -E '^\+.*// Deprecated' -q; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: PR reminder
-        if: steps.changes.outputs.settings == 'true'
+        if: steps.deprecated.outputs.found == 'true'
         uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -29,11 +35,13 @@ jobs:
           body-includes: "<!-- cre-settings-schema-reminder -->"
           body: |
             <!-- cre-settings-schema-reminder -->
-            ### CRE settings touched
-            This PR changes files under `pkg/settings/cresettings/`.
-            If the **settings schema** changed (new/renamed/removed fields or different defaults), before merge:
+            ### CRE settings field deprecated
 
-            1. Check [chainlink-deployments](https://github.com/smartcontractkit/chainlink-deployments) for existing overrides on the affected fields (e.g. `domains/cre/*/settings/*.toml`).
-            2. Whenever this change goes live,
-              - Update any deployment TOMLs that still reference changed fields.
-              - Plan to **re-propose jobs** with the updated settings TOMLs.
+            This PR adds `// Deprecated` in [`pkg/settings/cresettings/settings.go`](https://github.com/smartcontractkit/chainlink-common/blob/main/pkg/settings/cresettings/settings.go).
+
+            When making the corresponding **capabilities** change (where this settings field is consumed), keep the change **backward compatible** — the new code should still respect the old field.
+
+            **Rollout:**
+            1. Ship the capability change that reads both old and new fields.
+            2. After the release is live, propose job specs in [chainlink-deployments](https://github.com/smartcontractkit/chainlink-deployments) using the new schema (check `domains/cre/*/settings/*.toml` for existing overrides on the deprecated field).
+            3. In a **subsequent** release, remove the old field from the capability code.

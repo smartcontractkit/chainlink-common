@@ -39,9 +39,7 @@ jobs:
 
             This PR adds `// Deprecated` in [`pkg/settings/cresettings/settings.go`](https://github.com/smartcontractkit/chainlink-common/blob/main/pkg/settings/cresettings/settings.go).
 
-            When making the corresponding **capabilities** change (where this settings field is consumed), keep the change **backward compatible** — the new code should still respect the old field.
+			If the deprecated field is being replaced by a new one, then a smooth deployment migration requires:
 
-            **Rollout:**
-            1. Ship the capability change that reads both old and new fields.
-            2. After the release is live, propose job specs in [chainlink-deployments](https://github.com/smartcontractkit/chainlink-deployments) using the new schema (check `domains/cre/*/settings/*.toml` for existing overrides on the deprecated field).
-            3. In a **subsequent** release, remove the old field from the capability code.
+			1. Before deploying the code, any overridden values on the old field must be duplicated to the new field.
+			2. Old field overrides must remain in-place and kept in-sync until all nodes are migrated.

@@ -65,6 +65,22 @@ func TestTime(t *testing.T) {
 	})
 }
 
+func TestString(t *testing.T) {
+	s := String("default-don")
+
+	got, err := s.Parse("don-abc")
+	require.NoError(t, err)
+	assert.Equal(t, "don-abc", got)
+
+	got, err = s.Parse("")
+	require.NoError(t, err)
+	assert.Equal(t, "", got)
+
+	got, err = s.GetOrDefault(t.Context(), nil)
+	require.NoError(t, err)
+	assert.Equal(t, "default-don", got)
+}
+
 func TestInitConfig(t *testing.T) {
 	require.Error(t, InitConfig(&struct{ Field int }{Field: 10})) // fields must be type Setting
 

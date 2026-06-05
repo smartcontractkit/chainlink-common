@@ -10,7 +10,7 @@ import (
 )
 
 // DurableEmitterMetricsConfig enables OpenTelemetry metrics for DurableEmitter.
-// Set on DurableEmitterConfig.Metrics; nil disables instrumentation.
+// Set on Config.Metrics; nil disables instrumentation.
 //
 // When non-nil, an otel Meter must be supplied to NewDurableEmitter so that
 // instruments can be registered. DurableEmitter does not look up a global

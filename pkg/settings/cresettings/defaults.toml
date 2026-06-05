@@ -12,6 +12,7 @@ GatewayHTTPGlobalRate = '500rps:500'
 GatewayHTTPPerNodeRate = '100rps:100'
 GatewayConfidentialRelayGlobalRate = '50rps:10'
 GatewayConfidentialRelayPerNodeRate = '10rps:10'
+GatewayHTTPActionMtlsRequestRate = 'every30s:0'
 TriggerRegistrationStatusUpdateTimeout = '0s'
 BaseTriggerRetryInterval = '30s'
 BaseTriggerMaxRetries = '20'
@@ -40,9 +41,13 @@ BaseTriggerRetransmitEnabled = 'false'
 WorkflowExecutionConcurrencyLimit = '100'
 ZeroBalancePruningTimeout = '24h0m0s'
 
+[PerOrg.HTTPAction]
+MtlsRateLimit = 'every30s:3'
+
 [PerOwner]
 WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'
+VaultCiphertextSizeLimit = '2kb'
 VaultSecretsLimit = '100'
 
 [PerWorkflow]
@@ -141,6 +146,7 @@ CacheAgeLimit = '10m0s'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
+GatewayProxyDonID = ''
 
 [PerWorkflow.ConfidentialHTTP]
 CallLimit = '5'

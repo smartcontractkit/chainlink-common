@@ -67,16 +67,19 @@ var Default = Schema{
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:       Rate(rate.Every(30*time.Second), 0),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
 	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
 	BaseTriggerMaxSendsPerTick:             Int(20),
 
-	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
+	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 	// must ensure that we are overriding the default in the onchain configuration for the contract.
+
+	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit:          Size(2 * config.KByte),
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
@@ -129,16 +132,20 @@ var Default = Schema{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
+		HTTPAction: perOrgHTTPAction{
+			MtlsRateLimit: Rate(rate.Every(30*time.Second), 3),
+		},
 	},
 	PerOwner: Owners{
 		WorkflowLimit:                     Int(1000),
 		WorkflowExecutionConcurrencyLimit: Int(5),
 
-		// DANGER(cedric): Be extremely careful changing this vault limit as it acts as a default value
-		// used by the Vault OCR plugin -- changing this value could cause issues with the plugin during an image
+		// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
+		// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 		// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
-		VaultSecretsLimit: Int(100),
+		VaultCiphertextSizeLimit: Size(2 * config.KByte),
+		VaultSecretsLimit:        Int(100),
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
@@ -219,11 +226,12 @@ var Default = Schema{
 			CallLimit:            Int(20),
 		},
 		HTTPAction: httpAction{
-			CallLimit:         Int(5),
-			CacheAgeLimit:     Duration(10 * time.Minute),
-			ConnectionTimeout: Duration(10 * time.Second),
-			RequestSizeLimit:  Size(10 * config.KByte),
-			ResponseSizeLimit: Size(100 * config.KByte),
+			CallLimit:           Int(5),
+			CacheAgeLimit:       Duration(10 * time.Minute),
+			ConnectionTimeout:   Duration(10 * time.Second),
+			RequestSizeLimit:    Size(10 * config.KByte),
+			ResponseSizeLimit:   Size(100 * config.KByte),
+			GatewayProxyDonID:   String(""),
 		},
 		ConfidentialHTTP: confidentialHTTP{
 			CallLimit:         Int(5),
@@ -263,6 +271,7 @@ type Schema struct {
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate       Setting[config.Rate]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
@@ -270,6 +279,7 @@ type Schema struct {
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
+	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
@@ -297,11 +307,13 @@ type Orgs struct {
 	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
+	HTTPAction                        perOrgHTTPAction
 }
 
 type Owners struct {
 	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 }
 
@@ -395,11 +407,15 @@ type chainRead struct {
 	PayloadSizeLimit   Setting[config.Size]
 }
 type httpAction struct {
-	CallLimit         Setting[int] `unit:"{call}"`
-	CacheAgeLimit     Setting[time.Duration]
-	ConnectionTimeout Setting[time.Duration]
-	RequestSizeLimit  Setting[config.Size]
-	ResponseSizeLimit Setting[config.Size]
+	CallLimit           Setting[int] `unit:"{call}"`
+	CacheAgeLimit       Setting[time.Duration]
+	ConnectionTimeout   Setting[time.Duration]
+	RequestSizeLimit    Setting[config.Size]
+	ResponseSizeLimit   Setting[config.Size]
+	GatewayProxyDonID   Setting[string]
+}
+type perOrgHTTPAction struct {
+	MtlsRateLimit Setting[config.Rate]
 }
 type confidentialHTTP struct {
 	CallLimit         Setting[int] `unit:"{call}"`

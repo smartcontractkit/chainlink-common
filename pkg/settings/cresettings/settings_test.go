@@ -70,7 +70,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	"GatewayUnauthenticatedRequestRateLimit": "200rps:50",
 	"GatewayUnauthenticatedRequestRateLimitPerIP": "1rps:100",
 	"GatewayIncomingPayloadSizeLimit": "14kb",
-    "GatewayVaultManagementEnabled": "true",
+	"GatewayVaultManagementEnabled": "true",
 	"GatewayConfidentialRelayGlobalRate": "20rps:7",
 	"GatewayConfidentialRelayPerNodeRate": "4rps:2",
 	"PerOrg": {
@@ -157,6 +157,46 @@ func TestSchema_Unmarshal(t *testing.T) {
 		Lower: config.Timestamp(time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC).Unix()),
 		Upper: config.Timestamp(time.Date(2025, 10, 15, 0, 0, 0, 0, time.UTC).Unix()),
 	}, cfg.PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod.DefaultValue)
+}
+
+func TestGatewayProxyDonIDKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
+
+	assert.Equal(t, "PerWorkflow.HTTPAction.GatewayProxyDonID", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, "", s.DefaultValue)
+
+	got, err := s.Parse("don-123")
+	require.NoError(t, err)
+	assert.Equal(t, "don-123", got)
+}
+
+func TestGatewayProxyDonIDGetOrDefault(t *testing.T) {
+	setting := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Org: "test-org", Owner: "test-owner", Workflow: "test-wf"})
+
+	got, err := setting.GetOrDefault(ctx, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "", got)
+
+	t.Cleanup(reinit)
+	t.Setenv(EnvNameSettings, `{
+	"org": {
+		"test-org": {
+			"PerWorkflow": {
+				"HTTPAction": {
+					"GatewayProxyDonID": "org-don"
+				}
+			}
+		}
+	}
+}`)
+	reinit()
+
+	got, err = setting.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, "org-don", got)
 }
 
 func TestDefaultGetter(t *testing.T) {

@@ -2,6 +2,7 @@ package limits
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -14,6 +15,32 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
+
+func TestLimitError_As(t *testing.T) {
+	t.Parallel()
+
+	cases := []error{
+		ErrorRateLimited{Key: "rate"},
+		ErrorResourceLimited[int]{Key: "resource"},
+		ErrorTimeLimited{Key: "time"},
+		ErrorBoundLimited[int]{Key: "bound"},
+		ErrorRangeLimited[int]{Key: "range"},
+		ErrorQueueFull{Key: "queue"},
+		ErrorNotAllowed{Key: "gate"},
+	}
+	for _, err := range cases {
+		t.Run(err.Error(), func(t *testing.T) {
+			t.Parallel()
+			var limitErr LimitError
+			require.True(t, errors.As(err, &limitErr))
+			require.True(t, errors.As(fmt.Errorf("wrapped: %w", err), &limitErr))
+		})
+	}
+
+	var limitErr LimitError
+	require.False(t, errors.As(errors.New("other"), &limitErr))
+	require.False(t, errors.As(ErrQueueEmpty, &limitErr))
+}
 
 func TestErrorRateLimited(t *testing.T) {
 	wrapped := errors.New("wrapper")

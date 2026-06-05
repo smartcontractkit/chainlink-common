@@ -689,8 +689,7 @@ func (x *GetAccountInfoOpts) GetMinContextSlot() uint64 {
 // Reply for GetAccountInfoWithOpts.
 type GetAccountInfoWithOptsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcContext    *RPCContext            `protobuf:"bytes,1,opt,name=rpc_context,json=rpcContext,proto3" json:"rpc_context,omitempty"` // read slot
-	Value         *Account               `protobuf:"bytes,2,opt,name=value,proto3,oneof" json:"value,omitempty"`                       // account (may be empty)
+	Value         *Account               `protobuf:"bytes,2,opt,name=value,proto3,oneof" json:"value,omitempty"` // account (may be empty)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -723,13 +722,6 @@ func (x *GetAccountInfoWithOptsReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetAccountInfoWithOptsReply.ProtoReflect.Descriptor instead.
 func (*GetAccountInfoWithOptsReply) Descriptor() ([]byte, []int) {
 	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *GetAccountInfoWithOptsReply) GetRpcContext() *RPCContext {
-	if x != nil {
-		return x.RpcContext
-	}
-	return nil
 }
 
 func (x *GetAccountInfoWithOptsReply) GetValue() *Account {
@@ -1278,8 +1270,7 @@ func (x *OptionalAccountWrapper) GetAccount() *Account {
 // Reply for GetMultipleAccountsWithOpts.
 type GetMultipleAccountsWithOptsReply struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
-	RpcContext    *RPCContext               `protobuf:"bytes,1,opt,name=rpc_context,json=rpcContext,proto3" json:"rpc_context,omitempty"` // read slot
-	Value         []*OptionalAccountWrapper `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`                             // accounts (nil entries allowed)
+	Value         []*OptionalAccountWrapper `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"` // accounts (nil entries allowed)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1312,13 +1303,6 @@ func (x *GetMultipleAccountsWithOptsReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetMultipleAccountsWithOptsReply.ProtoReflect.Descriptor instead.
 func (*GetMultipleAccountsWithOptsReply) Descriptor() ([]byte, []int) {
 	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *GetMultipleAccountsWithOptsReply) GetRpcContext() *RPCContext {
-	if x != nil {
-		return x.RpcContext
-	}
-	return nil
 }
 
 func (x *GetMultipleAccountsWithOptsReply) GetValue() []*OptionalAccountWrapper {
@@ -1381,6 +1365,332 @@ func (x *GetMultipleAccountsWithOptsRequest) GetOpts() *GetMultipleAccountsOpts 
 	return nil
 }
 
+// Memcmp filter for getProgramAccounts.
+type RPCFilterMemcmp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offset        uint64                 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"` // byte offset into account data
+	Bytes         []byte                 `protobuf:"bytes,2,opt,name=bytes,proto3" json:"bytes,omitempty"`    // data to match (RPC encodes as base58)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RPCFilterMemcmp) Reset() {
+	*x = RPCFilterMemcmp{}
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RPCFilterMemcmp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RPCFilterMemcmp) ProtoMessage() {}
+
+func (x *RPCFilterMemcmp) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RPCFilterMemcmp.ProtoReflect.Descriptor instead.
+func (*RPCFilterMemcmp) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RPCFilterMemcmp) GetOffset() uint64 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *RPCFilterMemcmp) GetBytes() []byte {
+	if x != nil {
+		return x.Bytes
+	}
+	return nil
+}
+
+// Account filter for getProgramAccounts (memcmp or data size).
+type RPCFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Memcmp        *RPCFilterMemcmp       `protobuf:"bytes,1,opt,name=memcmp,proto3" json:"memcmp,omitempty"`
+	DataSize      uint64                 `protobuf:"varint,2,opt,name=data_size,json=dataSize,proto3" json:"data_size,omitempty"` // match accounts with this data length
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RPCFilter) Reset() {
+	*x = RPCFilter{}
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RPCFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RPCFilter) ProtoMessage() {}
+
+func (x *RPCFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RPCFilter.ProtoReflect.Descriptor instead.
+func (*RPCFilter) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *RPCFilter) GetMemcmp() *RPCFilterMemcmp {
+	if x != nil {
+		return x.Memcmp
+	}
+	return nil
+}
+
+func (x *RPCFilter) GetDataSize() uint64 {
+	if x != nil {
+		return x.DataSize
+	}
+	return 0
+}
+
+// Options for GetProgramAccounts.
+type GetProgramAccountsOpts struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Encoding      EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=capabilities.blockchain.solana.v1alpha.EncodingType" json:"encoding,omitempty"`
+	Commitment    CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=capabilities.blockchain.solana.v1alpha.CommitmentType" json:"commitment,omitempty"`
+	DataSlice     *DataSlice             `protobuf:"bytes,3,opt,name=data_slice,json=dataSlice,proto3" json:"data_slice,omitempty"`
+	Filters       []*RPCFilter           `protobuf:"bytes,4,rep,name=filters,proto3" json:"filters,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProgramAccountsOpts) Reset() {
+	*x = GetProgramAccountsOpts{}
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProgramAccountsOpts) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProgramAccountsOpts) ProtoMessage() {}
+
+func (x *GetProgramAccountsOpts) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProgramAccountsOpts.ProtoReflect.Descriptor instead.
+func (*GetProgramAccountsOpts) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetProgramAccountsOpts) GetEncoding() EncodingType {
+	if x != nil {
+		return x.Encoding
+	}
+	return EncodingType_ENCODING_TYPE_NONE
+}
+
+func (x *GetProgramAccountsOpts) GetCommitment() CommitmentType {
+	if x != nil {
+		return x.Commitment
+	}
+	return CommitmentType_COMMITMENT_TYPE_NONE
+}
+
+func (x *GetProgramAccountsOpts) GetDataSlice() *DataSlice {
+	if x != nil {
+		return x.DataSlice
+	}
+	return nil
+}
+
+func (x *GetProgramAccountsOpts) GetFilters() []*RPCFilter {
+	if x != nil {
+		return x.Filters
+	}
+	return nil
+}
+
+// Program-owned account with its pubkey.
+type KeyedAccount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pubkey        []byte                 `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"` // 32-byte Pubkey
+	Account       *Account               `protobuf:"bytes,2,opt,name=account,proto3" json:"account,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KeyedAccount) Reset() {
+	*x = KeyedAccount{}
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KeyedAccount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KeyedAccount) ProtoMessage() {}
+
+func (x *KeyedAccount) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KeyedAccount.ProtoReflect.Descriptor instead.
+func (*KeyedAccount) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *KeyedAccount) GetPubkey() []byte {
+	if x != nil {
+		return x.Pubkey
+	}
+	return nil
+}
+
+func (x *KeyedAccount) GetAccount() *Account {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
+// Reply for GetProgramAccounts.
+type GetProgramAccountsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         []*KeyedAccount        `protobuf:"bytes,1,rep,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProgramAccountsReply) Reset() {
+	*x = GetProgramAccountsReply{}
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProgramAccountsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProgramAccountsReply) ProtoMessage() {}
+
+func (x *GetProgramAccountsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProgramAccountsReply.ProtoReflect.Descriptor instead.
+func (*GetProgramAccountsReply) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetProgramAccountsReply) GetValue() []*KeyedAccount {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+// Request for GetProgramAccounts.
+type GetProgramAccountsRequest struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Program       []byte                  `protobuf:"bytes,1,opt,name=program,proto3" json:"program,omitempty"` // 32-byte program Pubkey
+	Opts          *GetProgramAccountsOpts `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProgramAccountsRequest) Reset() {
+	*x = GetProgramAccountsRequest{}
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProgramAccountsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProgramAccountsRequest) ProtoMessage() {}
+
+func (x *GetProgramAccountsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProgramAccountsRequest.ProtoReflect.Descriptor instead.
+func (*GetProgramAccountsRequest) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetProgramAccountsRequest) GetProgram() []byte {
+	if x != nil {
+		return x.Program
+	}
+	return nil
+}
+
+func (x *GetProgramAccountsRequest) GetOpts() *GetProgramAccountsOpts {
+	if x != nil {
+		return x.Opts
+	}
+	return nil
+}
+
 // Reply for GetSignatureStatuses.
 type GetSignatureStatusesReply struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
@@ -1391,7 +1701,7 @@ type GetSignatureStatusesReply struct {
 
 func (x *GetSignatureStatusesReply) Reset() {
 	*x = GetSignatureStatusesReply{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[18]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1403,7 +1713,7 @@ func (x *GetSignatureStatusesReply) String() string {
 func (*GetSignatureStatusesReply) ProtoMessage() {}
 
 func (x *GetSignatureStatusesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[18]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1416,7 +1726,7 @@ func (x *GetSignatureStatusesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSignatureStatusesReply.ProtoReflect.Descriptor instead.
 func (*GetSignatureStatusesReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{18}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetSignatureStatusesReply) GetResults() []*GetSignatureStatusesResult {
@@ -1436,7 +1746,7 @@ type GetSignatureStatusesRequest struct {
 
 func (x *GetSignatureStatusesRequest) Reset() {
 	*x = GetSignatureStatusesRequest{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[19]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1448,7 +1758,7 @@ func (x *GetSignatureStatusesRequest) String() string {
 func (*GetSignatureStatusesRequest) ProtoMessage() {}
 
 func (x *GetSignatureStatusesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[19]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1461,7 +1771,7 @@ func (x *GetSignatureStatusesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSignatureStatusesRequest.ProtoReflect.Descriptor instead.
 func (*GetSignatureStatusesRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{19}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetSignatureStatusesRequest) GetSigs() [][]byte {
@@ -1484,7 +1794,7 @@ type GetSignatureStatusesResult struct {
 
 func (x *GetSignatureStatusesResult) Reset() {
 	*x = GetSignatureStatusesResult{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[20]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1496,7 +1806,7 @@ func (x *GetSignatureStatusesResult) String() string {
 func (*GetSignatureStatusesResult) ProtoMessage() {}
 
 func (x *GetSignatureStatusesResult) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[20]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1509,7 +1819,7 @@ func (x *GetSignatureStatusesResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSignatureStatusesResult.ProtoReflect.Descriptor instead.
 func (*GetSignatureStatusesResult) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{20}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetSignatureStatusesResult) GetSlot() uint64 {
@@ -1550,7 +1860,7 @@ type GetSlotHeightReply struct {
 
 func (x *GetSlotHeightReply) Reset() {
 	*x = GetSlotHeightReply{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[21]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1562,7 +1872,7 @@ func (x *GetSlotHeightReply) String() string {
 func (*GetSlotHeightReply) ProtoMessage() {}
 
 func (x *GetSlotHeightReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[21]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1575,7 +1885,7 @@ func (x *GetSlotHeightReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSlotHeightReply.ProtoReflect.Descriptor instead.
 func (*GetSlotHeightReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{21}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetSlotHeightReply) GetHeight() uint64 {
@@ -1594,7 +1904,7 @@ type GetSlotHeightRequest struct {
 
 func (x *GetSlotHeightRequest) Reset() {
 	*x = GetSlotHeightRequest{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[22]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1606,7 +1916,7 @@ func (x *GetSlotHeightRequest) String() string {
 func (*GetSlotHeightRequest) ProtoMessage() {}
 
 func (x *GetSlotHeightRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[22]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1619,7 +1929,7 @@ func (x *GetSlotHeightRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSlotHeightRequest.ProtoReflect.Descriptor instead.
 func (*GetSlotHeightRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{22}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetSlotHeightRequest) GetCommitment() CommitmentType {
@@ -1641,7 +1951,7 @@ type MessageHeader struct {
 
 func (x *MessageHeader) Reset() {
 	*x = MessageHeader{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[23]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1653,7 +1963,7 @@ func (x *MessageHeader) String() string {
 func (*MessageHeader) ProtoMessage() {}
 
 func (x *MessageHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[23]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1666,7 +1976,7 @@ func (x *MessageHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageHeader.ProtoReflect.Descriptor instead.
 func (*MessageHeader) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{23}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *MessageHeader) GetNumRequiredSignatures() uint32 {
@@ -1703,7 +2013,7 @@ type ParsedMessage struct {
 
 func (x *ParsedMessage) Reset() {
 	*x = ParsedMessage{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[24]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1715,7 +2025,7 @@ func (x *ParsedMessage) String() string {
 func (*ParsedMessage) ProtoMessage() {}
 
 func (x *ParsedMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[24]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1728,7 +2038,7 @@ func (x *ParsedMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParsedMessage.ProtoReflect.Descriptor instead.
 func (*ParsedMessage) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{24}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ParsedMessage) GetRecentBlockhash() []byte {
@@ -1770,7 +2080,7 @@ type ParsedTransaction struct {
 
 func (x *ParsedTransaction) Reset() {
 	*x = ParsedTransaction{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[25]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1782,7 +2092,7 @@ func (x *ParsedTransaction) String() string {
 func (*ParsedTransaction) ProtoMessage() {}
 
 func (x *ParsedTransaction) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[25]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1795,7 +2105,7 @@ func (x *ParsedTransaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParsedTransaction.ProtoReflect.Descriptor instead.
 func (*ParsedTransaction) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{25}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ParsedTransaction) GetSignatures() [][]byte {
@@ -1824,7 +2134,7 @@ type UiTokenAmount struct {
 
 func (x *UiTokenAmount) Reset() {
 	*x = UiTokenAmount{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[26]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1836,7 +2146,7 @@ func (x *UiTokenAmount) String() string {
 func (*UiTokenAmount) ProtoMessage() {}
 
 func (x *UiTokenAmount) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[26]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1849,7 +2159,7 @@ func (x *UiTokenAmount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UiTokenAmount.ProtoReflect.Descriptor instead.
 func (*UiTokenAmount) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{26}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *UiTokenAmount) GetAmount() string {
@@ -1887,7 +2197,7 @@ type TokenBalance struct {
 
 func (x *TokenBalance) Reset() {
 	*x = TokenBalance{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[27]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1899,7 +2209,7 @@ func (x *TokenBalance) String() string {
 func (*TokenBalance) ProtoMessage() {}
 
 func (x *TokenBalance) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[27]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1912,7 +2222,7 @@ func (x *TokenBalance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenBalance.ProtoReflect.Descriptor instead.
 func (*TokenBalance) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{27}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *TokenBalance) GetAccountIndex() uint32 {
@@ -1961,7 +2271,7 @@ type InnerInstruction struct {
 
 func (x *InnerInstruction) Reset() {
 	*x = InnerInstruction{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[28]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1973,7 +2283,7 @@ func (x *InnerInstruction) String() string {
 func (*InnerInstruction) ProtoMessage() {}
 
 func (x *InnerInstruction) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[28]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1986,7 +2296,7 @@ func (x *InnerInstruction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InnerInstruction.ProtoReflect.Descriptor instead.
 func (*InnerInstruction) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{28}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *InnerInstruction) GetIndex() uint32 {
@@ -2014,7 +2324,7 @@ type LoadedAddresses struct {
 
 func (x *LoadedAddresses) Reset() {
 	*x = LoadedAddresses{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[29]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2026,7 +2336,7 @@ func (x *LoadedAddresses) String() string {
 func (*LoadedAddresses) ProtoMessage() {}
 
 func (x *LoadedAddresses) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[29]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2039,7 +2349,7 @@ func (x *LoadedAddresses) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadedAddresses.ProtoReflect.Descriptor instead.
 func (*LoadedAddresses) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{29}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *LoadedAddresses) GetReadonly() [][]byte {
@@ -2069,7 +2379,7 @@ type CompiledInstruction struct {
 
 func (x *CompiledInstruction) Reset() {
 	*x = CompiledInstruction{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[30]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2081,7 +2391,7 @@ func (x *CompiledInstruction) String() string {
 func (*CompiledInstruction) ProtoMessage() {}
 
 func (x *CompiledInstruction) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[30]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2094,7 +2404,7 @@ func (x *CompiledInstruction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompiledInstruction.ProtoReflect.Descriptor instead.
 func (*CompiledInstruction) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{30}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *CompiledInstruction) GetProgramIdIndex() uint32 {
@@ -2136,7 +2446,7 @@ type Data struct {
 
 func (x *Data) Reset() {
 	*x = Data{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[31]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2148,7 +2458,7 @@ func (x *Data) String() string {
 func (*Data) ProtoMessage() {}
 
 func (x *Data) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[31]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2161,7 +2471,7 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data.ProtoReflect.Descriptor instead.
 func (*Data) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{31}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *Data) GetContent() []byte {
@@ -2189,7 +2499,7 @@ type ReturnData struct {
 
 func (x *ReturnData) Reset() {
 	*x = ReturnData{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[32]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2201,7 +2511,7 @@ func (x *ReturnData) String() string {
 func (*ReturnData) ProtoMessage() {}
 
 func (x *ReturnData) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[32]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2214,7 +2524,7 @@ func (x *ReturnData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReturnData.ProtoReflect.Descriptor instead.
 func (*ReturnData) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{32}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ReturnData) GetProgramId() []byte {
@@ -2251,7 +2561,7 @@ type TransactionMeta struct {
 
 func (x *TransactionMeta) Reset() {
 	*x = TransactionMeta{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[33]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2263,7 +2573,7 @@ func (x *TransactionMeta) String() string {
 func (*TransactionMeta) ProtoMessage() {}
 
 func (x *TransactionMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[33]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2276,7 +2586,7 @@ func (x *TransactionMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionMeta.ProtoReflect.Descriptor instead.
 func (*TransactionMeta) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{33}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *TransactionMeta) GetErrJson() string {
@@ -2370,7 +2680,7 @@ type TransactionEnvelope struct {
 
 func (x *TransactionEnvelope) Reset() {
 	*x = TransactionEnvelope{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[34]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2382,7 +2692,7 @@ func (x *TransactionEnvelope) String() string {
 func (*TransactionEnvelope) ProtoMessage() {}
 
 func (x *TransactionEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[34]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2395,7 +2705,7 @@ func (x *TransactionEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionEnvelope.ProtoReflect.Descriptor instead.
 func (*TransactionEnvelope) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{34}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *TransactionEnvelope) GetTransaction() isTransactionEnvelope_Transaction {
@@ -2452,7 +2762,7 @@ type GetTransactionReply struct {
 
 func (x *GetTransactionReply) Reset() {
 	*x = GetTransactionReply{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[35]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2464,7 +2774,7 @@ func (x *GetTransactionReply) String() string {
 func (*GetTransactionReply) ProtoMessage() {}
 
 func (x *GetTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[35]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2477,7 +2787,7 @@ func (x *GetTransactionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{35}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetTransactionReply) GetSlot() uint64 {
@@ -2518,7 +2828,7 @@ type GetTransactionRequest struct {
 
 func (x *GetTransactionRequest) Reset() {
 	*x = GetTransactionRequest{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[36]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2530,7 +2840,7 @@ func (x *GetTransactionRequest) String() string {
 func (*GetTransactionRequest) ProtoMessage() {}
 
 func (x *GetTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[36]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2543,7 +2853,7 @@ func (x *GetTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{36}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetTransactionRequest) GetSignature() []byte {
@@ -2551,51 +2861,6 @@ func (x *GetTransactionRequest) GetSignature() []byte {
 		return x.Signature
 	}
 	return nil
-}
-
-// RPC read context.
-type RPCContext struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Slot          uint64                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RPCContext) Reset() {
-	*x = RPCContext{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[37]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RPCContext) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RPCContext) ProtoMessage() {}
-
-func (x *RPCContext) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[37]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RPCContext.ProtoReflect.Descriptor instead.
-func (*RPCContext) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{37}
-}
-
-func (x *RPCContext) GetSlot() uint64 {
-	if x != nil {
-		return x.Slot
-	}
-	return 0
 }
 
 // Simulation options.
@@ -2611,7 +2876,7 @@ type SimulateTXOpts struct {
 
 func (x *SimulateTXOpts) Reset() {
 	*x = SimulateTXOpts{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[38]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2623,7 +2888,7 @@ func (x *SimulateTXOpts) String() string {
 func (*SimulateTXOpts) ProtoMessage() {}
 
 func (x *SimulateTXOpts) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[38]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2636,7 +2901,7 @@ func (x *SimulateTXOpts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXOpts.ProtoReflect.Descriptor instead.
 func (*SimulateTXOpts) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{38}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *SimulateTXOpts) GetSigVerify() bool {
@@ -2680,7 +2945,7 @@ type SimulateTXReply struct {
 
 func (x *SimulateTXReply) Reset() {
 	*x = SimulateTXReply{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[39]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2692,7 +2957,7 @@ func (x *SimulateTXReply) String() string {
 func (*SimulateTXReply) ProtoMessage() {}
 
 func (x *SimulateTXReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[39]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2705,7 +2970,7 @@ func (x *SimulateTXReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXReply.ProtoReflect.Descriptor instead.
 func (*SimulateTXReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{39}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *SimulateTXReply) GetErr() string {
@@ -2748,7 +3013,7 @@ type SimulateTXRequest struct {
 
 func (x *SimulateTXRequest) Reset() {
 	*x = SimulateTXRequest{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[40]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2760,7 +3025,7 @@ func (x *SimulateTXRequest) String() string {
 func (*SimulateTXRequest) ProtoMessage() {}
 
 func (x *SimulateTXRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[40]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2773,7 +3038,7 @@ func (x *SimulateTXRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXRequest.ProtoReflect.Descriptor instead.
 func (*SimulateTXRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{40}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *SimulateTXRequest) GetReceiver() []byte {
@@ -2808,7 +3073,7 @@ type SimulateTransactionAccountsOpts struct {
 
 func (x *SimulateTransactionAccountsOpts) Reset() {
 	*x = SimulateTransactionAccountsOpts{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[41]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2820,7 +3085,7 @@ func (x *SimulateTransactionAccountsOpts) String() string {
 func (*SimulateTransactionAccountsOpts) ProtoMessage() {}
 
 func (x *SimulateTransactionAccountsOpts) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[41]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2833,7 +3098,7 @@ func (x *SimulateTransactionAccountsOpts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTransactionAccountsOpts.ProtoReflect.Descriptor instead.
 func (*SimulateTransactionAccountsOpts) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{41}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *SimulateTransactionAccountsOpts) GetEncoding() EncodingType {
@@ -2860,7 +3125,7 @@ type ValueComparator struct {
 
 func (x *ValueComparator) Reset() {
 	*x = ValueComparator{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[42]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2872,7 +3137,7 @@ func (x *ValueComparator) String() string {
 func (*ValueComparator) ProtoMessage() {}
 
 func (x *ValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[42]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2885,7 +3150,7 @@ func (x *ValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValueComparator.ProtoReflect.Descriptor instead.
 func (*ValueComparator) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{42}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ValueComparator) GetValue() []byte {
@@ -2912,7 +3177,7 @@ type SubkeyConfig struct {
 
 func (x *SubkeyConfig) Reset() {
 	*x = SubkeyConfig{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[43]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2924,7 +3189,7 @@ func (x *SubkeyConfig) String() string {
 func (*SubkeyConfig) ProtoMessage() {}
 
 func (x *SubkeyConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[43]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2937,7 +3202,7 @@ func (x *SubkeyConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubkeyConfig.ProtoReflect.Descriptor instead.
 func (*SubkeyConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{43}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *SubkeyConfig) GetPath() []string {
@@ -2964,7 +3229,7 @@ type CPIFilterConfig struct {
 
 func (x *CPIFilterConfig) Reset() {
 	*x = CPIFilterConfig{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[44]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2976,7 +3241,7 @@ func (x *CPIFilterConfig) String() string {
 func (*CPIFilterConfig) ProtoMessage() {}
 
 func (x *CPIFilterConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[44]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2989,7 +3254,7 @@ func (x *CPIFilterConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CPIFilterConfig.ProtoReflect.Descriptor instead.
 func (*CPIFilterConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{44}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *CPIFilterConfig) GetDestAddress() []byte {
@@ -3014,13 +3279,14 @@ type FilterLogTriggerRequest struct {
 	ContractIdlJson []byte                 `protobuf:"bytes,4,opt,name=contract_idl_json,json=contractIdlJson,proto3" json:"contract_idl_json,omitempty"`
 	Subkeys         []*SubkeyConfig        `protobuf:"bytes,5,rep,name=subkeys,proto3" json:"subkeys,omitempty"`
 	CpiFilterConfig *CPIFilterConfig       `protobuf:"bytes,6,opt,name=cpi_filter_config,json=cpiFilterConfig,proto3,oneof" json:"cpi_filter_config,omitempty"`
+	IncludeReverted bool                   `protobuf:"varint,7,opt,name=include_reverted,json=includeReverted,proto3" json:"include_reverted,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *FilterLogTriggerRequest) Reset() {
 	*x = FilterLogTriggerRequest{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[45]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3032,7 +3298,7 @@ func (x *FilterLogTriggerRequest) String() string {
 func (*FilterLogTriggerRequest) ProtoMessage() {}
 
 func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[45]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3045,7 +3311,7 @@ func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
 func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{45}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *FilterLogTriggerRequest) GetName() string {
@@ -3090,6 +3356,13 @@ func (x *FilterLogTriggerRequest) GetCpiFilterConfig() *CPIFilterConfig {
 	return nil
 }
 
+func (x *FilterLogTriggerRequest) GetIncludeReverted() bool {
+	if x != nil {
+		return x.IncludeReverted
+	}
+	return false
+}
+
 type Log struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ChainId        string                 `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`                       // Chain identifier
@@ -3109,7 +3382,7 @@ type Log struct {
 
 func (x *Log) Reset() {
 	*x = Log{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[46]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3121,7 +3394,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[46]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3134,7 +3407,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{46}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *Log) GetChainId() string {
@@ -3225,7 +3498,7 @@ type AccountMeta struct {
 
 func (x *AccountMeta) Reset() {
 	*x = AccountMeta{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[47]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3237,7 +3510,7 @@ func (x *AccountMeta) String() string {
 func (*AccountMeta) ProtoMessage() {}
 
 func (x *AccountMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[47]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3250,7 +3523,7 @@ func (x *AccountMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountMeta.ProtoReflect.Descriptor instead.
 func (*AccountMeta) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{47}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *AccountMeta) GetPublicKey() []byte {
@@ -3279,7 +3552,7 @@ type WriteReportRequest struct {
 
 func (x *WriteReportRequest) Reset() {
 	*x = WriteReportRequest{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[48]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3291,7 +3564,7 @@ func (x *WriteReportRequest) String() string {
 func (*WriteReportRequest) ProtoMessage() {}
 
 func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[48]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3304,7 +3577,7 @@ func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
 func (*WriteReportRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{48}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *WriteReportRequest) GetRemainingAccounts() []*AccountMeta {
@@ -3348,7 +3621,7 @@ type WriteReportReply struct {
 
 func (x *WriteReportReply) Reset() {
 	*x = WriteReportReply{}
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[49]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3360,7 +3633,7 @@ func (x *WriteReportReply) String() string {
 func (*WriteReportReply) ProtoMessage() {}
 
 func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[49]
+	mi := &file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3373,7 +3646,7 @@ func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
 func (*WriteReportReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{49}
+	return file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *WriteReportReply) GetTxStatus() TxStatus {
@@ -3443,10 +3716,8 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"commitment\x12P\n" +
 	"\n" +
 	"data_slice\x18\x03 \x01(\v21.capabilities.blockchain.solana.v1alpha.DataSliceR\tdataSlice\x12(\n" +
-	"\x10min_context_slot\x18\x04 \x01(\x04R\x0eminContextSlot\"\xc8\x01\n" +
-	"\x1bGetAccountInfoWithOptsReply\x12S\n" +
-	"\vrpc_context\x18\x01 \x01(\v22.capabilities.blockchain.solana.v1alpha.RPCContextR\n" +
-	"rpcContext\x12J\n" +
+	"\x10min_context_slot\x18\x04 \x01(\x04R\x0eminContextSlot\"s\n" +
+	"\x1bGetAccountInfoWithOptsReply\x12J\n" +
 	"\x05value\x18\x02 \x01(\v2/.capabilities.blockchain.solana.v1alpha.AccountH\x00R\x05value\x88\x01\x01B\b\n" +
 	"\x06_value\"\x89\x01\n" +
 	"\x1dGetAccountInfoWithOptsRequest\x12\x18\n" +
@@ -3493,14 +3764,34 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x16OptionalAccountWrapper\x12N\n" +
 	"\aaccount\x18\x01 \x01(\v2/.capabilities.blockchain.solana.v1alpha.AccountH\x00R\aaccount\x88\x01\x01B\n" +
 	"\n" +
-	"\b_account\"\xcd\x01\n" +
-	" GetMultipleAccountsWithOptsReply\x12S\n" +
-	"\vrpc_context\x18\x01 \x01(\v22.capabilities.blockchain.solana.v1alpha.RPCContextR\n" +
-	"rpcContext\x12T\n" +
+	"\b_account\"x\n" +
+	" GetMultipleAccountsWithOptsReply\x12T\n" +
 	"\x05value\x18\x02 \x03(\v2>.capabilities.blockchain.solana.v1alpha.OptionalAccountWrapperR\x05value\"\x95\x01\n" +
 	"\"GetMultipleAccountsWithOptsRequest\x12\x1a\n" +
 	"\baccounts\x18\x01 \x03(\fR\baccounts\x12S\n" +
-	"\x04opts\x18\x02 \x01(\v2?.capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOptsR\x04opts\"y\n" +
+	"\x04opts\x18\x02 \x01(\v2?.capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOptsR\x04opts\"?\n" +
+	"\x0fRPCFilterMemcmp\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x04R\x06offset\x12\x14\n" +
+	"\x05bytes\x18\x02 \x01(\fR\x05bytes\"y\n" +
+	"\tRPCFilter\x12O\n" +
+	"\x06memcmp\x18\x01 \x01(\v27.capabilities.blockchain.solana.v1alpha.RPCFilterMemcmpR\x06memcmp\x12\x1b\n" +
+	"\tdata_size\x18\x02 \x01(\x04R\bdataSize\"\xe1\x02\n" +
+	"\x16GetProgramAccountsOpts\x12P\n" +
+	"\bencoding\x18\x01 \x01(\x0e24.capabilities.blockchain.solana.v1alpha.EncodingTypeR\bencoding\x12V\n" +
+	"\n" +
+	"commitment\x18\x02 \x01(\x0e26.capabilities.blockchain.solana.v1alpha.CommitmentTypeR\n" +
+	"commitment\x12P\n" +
+	"\n" +
+	"data_slice\x18\x03 \x01(\v21.capabilities.blockchain.solana.v1alpha.DataSliceR\tdataSlice\x12K\n" +
+	"\afilters\x18\x04 \x03(\v21.capabilities.blockchain.solana.v1alpha.RPCFilterR\afilters\"q\n" +
+	"\fKeyedAccount\x12\x16\n" +
+	"\x06pubkey\x18\x01 \x01(\fR\x06pubkey\x12I\n" +
+	"\aaccount\x18\x02 \x01(\v2/.capabilities.blockchain.solana.v1alpha.AccountR\aaccount\"e\n" +
+	"\x17GetProgramAccountsReply\x12J\n" +
+	"\x05value\x18\x01 \x03(\v24.capabilities.blockchain.solana.v1alpha.KeyedAccountR\x05value\"\x89\x01\n" +
+	"\x19GetProgramAccountsRequest\x12\x18\n" +
+	"\aprogram\x18\x01 \x01(\fR\aprogram\x12R\n" +
+	"\x04opts\x18\x02 \x01(\v2>.capabilities.blockchain.solana.v1alpha.GetProgramAccountsOptsR\x04opts\"y\n" +
 	"\x19GetSignatureStatusesReply\x12\\\n" +
 	"\aresults\x18\x01 \x03(\v2B.capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResultR\aresults\"1\n" +
 	"\x1bGetSignatureStatusesRequest\x12\x12\n" +
@@ -3592,10 +3883,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\f_transactionB\a\n" +
 	"\x05_meta\"5\n" +
 	"\x15GetTransactionRequest\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignature\" \n" +
-	"\n" +
-	"RPCContext\x12\x12\n" +
-	"\x04slot\x18\x01 \x01(\x04R\x04slot\"\xa6\x02\n" +
+	"\tsignature\x18\x01 \x01(\fR\tsignature\"\xa6\x02\n" +
 	"\x0eSimulateTXOpts\x12\x1d\n" +
 	"\n" +
 	"sig_verify\x18\x01 \x01(\bR\tsigVerify\x12V\n" +
@@ -3625,7 +3913,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x0fCPIFilterConfig\x12!\n" +
 	"\fdest_address\x18\x01 \x01(\fR\vdestAddress\x12\x1f\n" +
 	"\vmethod_name\x18\x02 \x01(\fR\n" +
-	"methodName\"\xe2\x02\n" +
+	"methodName\"\x8d\x03\n" +
 	"\x17FilterLogTriggerRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\fR\aaddress\x12\x1d\n" +
@@ -3633,7 +3921,8 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"event_name\x18\x03 \x01(\tR\teventName\x12*\n" +
 	"\x11contract_idl_json\x18\x04 \x01(\fR\x0fcontractIdlJson\x12N\n" +
 	"\asubkeys\x18\x05 \x03(\v24.capabilities.blockchain.solana.v1alpha.SubkeyConfigR\asubkeys\x12h\n" +
-	"\x11cpi_filter_config\x18\x06 \x01(\v27.capabilities.blockchain.solana.v1alpha.CPIFilterConfigH\x00R\x0fcpiFilterConfig\x88\x01\x01B\x14\n" +
+	"\x11cpi_filter_config\x18\x06 \x01(\v27.capabilities.blockchain.solana.v1alpha.CPIFilterConfigH\x00R\x0fcpiFilterConfig\x88\x01\x01\x12)\n" +
+	"\x10include_reverted\x18\a \x01(\bR\x0fincludeRevertedB\x14\n" +
 	"\x12_cpi_filter_config\"\xd4\x02\n" +
 	"\x03Log\x12\x19\n" +
 	"\bchain_id\x18\x01 \x01(\tR\achainId\x12\x1b\n" +
@@ -3701,27 +3990,24 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x17COMPARISON_OPERATOR_LTE\x10\x05*\x82\x01\n" +
 	"\x1fReceiverContractExecutionStatus\x12.\n" +
 	"*RECEIVER_CONTRACT_EXECUTION_STATUS_SUCCESS\x10\x00\x12/\n" +
-	"+RECEIVER_CONTRACT_EXECUTION_STATUS_REVERTED\x10\x012\xb8\f\n" +
+	"+RECEIVER_CONTRACT_EXECUTION_STATUS_REVERTED\x10\x012\x9b\r\n" +
 	"\x06Client\x12\xa4\x01\n" +
 	"\x16GetAccountInfoWithOpts\x12E.capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest\x1aC.capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply\x12\x80\x01\n" +
 	"\n" +
 	"GetBalance\x129.capabilities.blockchain.solana.v1alpha.GetBalanceRequest\x1a7.capabilities.blockchain.solana.v1alpha.GetBalanceReply\x12z\n" +
 	"\bGetBlock\x127.capabilities.blockchain.solana.v1alpha.GetBlockRequest\x1a5.capabilities.blockchain.solana.v1alpha.GetBlockReply\x12\x92\x01\n" +
 	"\x10GetFeeForMessage\x12?.capabilities.blockchain.solana.v1alpha.GetFeeForMessageRequest\x1a=.capabilities.blockchain.solana.v1alpha.GetFeeForMessageReply\x12\xb3\x01\n" +
-	"\x1bGetMultipleAccountsWithOpts\x12J.capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest\x1aH.capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply\x12\x9e\x01\n" +
+	"\x1bGetMultipleAccountsWithOpts\x12J.capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest\x1aH.capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply\x12\x98\x01\n" +
+	"\x12GetProgramAccounts\x12A.capabilities.blockchain.solana.v1alpha.GetProgramAccountsRequest\x1a?.capabilities.blockchain.solana.v1alpha.GetProgramAccountsReply\x12\x9e\x01\n" +
 	"\x14GetSignatureStatuses\x12C.capabilities.blockchain.solana.v1alpha.GetSignatureStatusesRequest\x1aA.capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply\x12\x89\x01\n" +
 	"\rGetSlotHeight\x12<.capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest\x1a:.capabilities.blockchain.solana.v1alpha.GetSlotHeightReply\x12\x8c\x01\n" +
 	"\x0eGetTransaction\x12=.capabilities.blockchain.solana.v1alpha.GetTransactionRequest\x1a;.capabilities.blockchain.solana.v1alpha.GetTransactionReply\x12|\n" +
 	"\n" +
 	"LogTrigger\x12?.capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest\x1a+.capabilities.blockchain.solana.v1alpha.Log0\x01\x12\x83\x01\n" +
-	"\vWriteReport\x12:.capabilities.blockchain.solana.v1alpha.WriteReportRequest\x1a8.capabilities.blockchain.solana.v1alpha.WriteReportReply\x1a}\x82\xb5\x18y\b\x01\x12\fsolana@1.0.0\x1ag\n" +
-	"\rChainSelector\x12V\x12T\n" +
+	"\vWriteReport\x12:.capabilities.blockchain.solana.v1alpha.WriteReportRequest\x1a8.capabilities.blockchain.solana.v1alpha.WriteReportReply\x1aE\x82\xb5\x18A\b\x01\x12\fsolana@1.0.0\x1a/\n" +
+	"\rChainSelector\x12\x1e\x12\x1c\n" +
 	"\x1a\n" +
-	"\rsolana-devnet\x10\xdf\uf327\xa9\xfc\xb1\xf6\xe3\x01\n" +
-	"\x1a\n" +
-	"\x0esolana-mainnet\x10\xe7\x93ߌ\xb6\x9f\xae\xdd\x01\n" +
-	"\x1a\n" +
-	"\x0esolana-testnet\x10\xaf\x9a\xea\xd0šӻWb\x06proto3"
+	"\rsolana-devnet\x10\xdf\uf327\xa9\xfc\xb1\xf6\xe3\x01b\x06proto3"
 
 var (
 	file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescOnce sync.Once
@@ -3736,7 +4022,7 @@ func file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescGZIP() []by
 }
 
 var file_capabilities_blockchain_solana_v1alpha_client_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
+var file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
 var file_capabilities_blockchain_solana_v1alpha_client_proto_goTypes = []any{
 	(EncodingType)(0),                          // 0: capabilities.blockchain.solana.v1alpha.EncodingType
 	(CommitmentType)(0),                        // 1: capabilities.blockchain.solana.v1alpha.CommitmentType
@@ -3762,119 +4048,132 @@ var file_capabilities_blockchain_solana_v1alpha_client_proto_goTypes = []any{
 	(*OptionalAccountWrapper)(nil),             // 21: capabilities.blockchain.solana.v1alpha.OptionalAccountWrapper
 	(*GetMultipleAccountsWithOptsReply)(nil),   // 22: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply
 	(*GetMultipleAccountsWithOptsRequest)(nil), // 23: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest
-	(*GetSignatureStatusesReply)(nil),          // 24: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply
-	(*GetSignatureStatusesRequest)(nil),        // 25: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesRequest
-	(*GetSignatureStatusesResult)(nil),         // 26: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResult
-	(*GetSlotHeightReply)(nil),                 // 27: capabilities.blockchain.solana.v1alpha.GetSlotHeightReply
-	(*GetSlotHeightRequest)(nil),               // 28: capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest
-	(*MessageHeader)(nil),                      // 29: capabilities.blockchain.solana.v1alpha.MessageHeader
-	(*ParsedMessage)(nil),                      // 30: capabilities.blockchain.solana.v1alpha.ParsedMessage
-	(*ParsedTransaction)(nil),                  // 31: capabilities.blockchain.solana.v1alpha.ParsedTransaction
-	(*UiTokenAmount)(nil),                      // 32: capabilities.blockchain.solana.v1alpha.UiTokenAmount
-	(*TokenBalance)(nil),                       // 33: capabilities.blockchain.solana.v1alpha.TokenBalance
-	(*InnerInstruction)(nil),                   // 34: capabilities.blockchain.solana.v1alpha.InnerInstruction
-	(*LoadedAddresses)(nil),                    // 35: capabilities.blockchain.solana.v1alpha.LoadedAddresses
-	(*CompiledInstruction)(nil),                // 36: capabilities.blockchain.solana.v1alpha.CompiledInstruction
-	(*Data)(nil),                               // 37: capabilities.blockchain.solana.v1alpha.Data
-	(*ReturnData)(nil),                         // 38: capabilities.blockchain.solana.v1alpha.ReturnData
-	(*TransactionMeta)(nil),                    // 39: capabilities.blockchain.solana.v1alpha.TransactionMeta
-	(*TransactionEnvelope)(nil),                // 40: capabilities.blockchain.solana.v1alpha.TransactionEnvelope
-	(*GetTransactionReply)(nil),                // 41: capabilities.blockchain.solana.v1alpha.GetTransactionReply
-	(*GetTransactionRequest)(nil),              // 42: capabilities.blockchain.solana.v1alpha.GetTransactionRequest
-	(*RPCContext)(nil),                         // 43: capabilities.blockchain.solana.v1alpha.RPCContext
-	(*SimulateTXOpts)(nil),                     // 44: capabilities.blockchain.solana.v1alpha.SimulateTXOpts
-	(*SimulateTXReply)(nil),                    // 45: capabilities.blockchain.solana.v1alpha.SimulateTXReply
-	(*SimulateTXRequest)(nil),                  // 46: capabilities.blockchain.solana.v1alpha.SimulateTXRequest
-	(*SimulateTransactionAccountsOpts)(nil),    // 47: capabilities.blockchain.solana.v1alpha.SimulateTransactionAccountsOpts
-	(*ValueComparator)(nil),                    // 48: capabilities.blockchain.solana.v1alpha.ValueComparator
-	(*SubkeyConfig)(nil),                       // 49: capabilities.blockchain.solana.v1alpha.SubkeyConfig
-	(*CPIFilterConfig)(nil),                    // 50: capabilities.blockchain.solana.v1alpha.CPIFilterConfig
-	(*FilterLogTriggerRequest)(nil),            // 51: capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest
-	(*Log)(nil),                                // 52: capabilities.blockchain.solana.v1alpha.Log
-	(*AccountMeta)(nil),                        // 53: capabilities.blockchain.solana.v1alpha.AccountMeta
-	(*WriteReportRequest)(nil),                 // 54: capabilities.blockchain.solana.v1alpha.WriteReportRequest
-	(*WriteReportReply)(nil),                   // 55: capabilities.blockchain.solana.v1alpha.WriteReportReply
-	(*pb.BigInt)(nil),                          // 56: values.v1.BigInt
-	(*sdk.ReportResponse)(nil),                 // 57: sdk.v1alpha.ReportResponse
+	(*RPCFilterMemcmp)(nil),                    // 24: capabilities.blockchain.solana.v1alpha.RPCFilterMemcmp
+	(*RPCFilter)(nil),                          // 25: capabilities.blockchain.solana.v1alpha.RPCFilter
+	(*GetProgramAccountsOpts)(nil),             // 26: capabilities.blockchain.solana.v1alpha.GetProgramAccountsOpts
+	(*KeyedAccount)(nil),                       // 27: capabilities.blockchain.solana.v1alpha.KeyedAccount
+	(*GetProgramAccountsReply)(nil),            // 28: capabilities.blockchain.solana.v1alpha.GetProgramAccountsReply
+	(*GetProgramAccountsRequest)(nil),          // 29: capabilities.blockchain.solana.v1alpha.GetProgramAccountsRequest
+	(*GetSignatureStatusesReply)(nil),          // 30: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply
+	(*GetSignatureStatusesRequest)(nil),        // 31: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesRequest
+	(*GetSignatureStatusesResult)(nil),         // 32: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResult
+	(*GetSlotHeightReply)(nil),                 // 33: capabilities.blockchain.solana.v1alpha.GetSlotHeightReply
+	(*GetSlotHeightRequest)(nil),               // 34: capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest
+	(*MessageHeader)(nil),                      // 35: capabilities.blockchain.solana.v1alpha.MessageHeader
+	(*ParsedMessage)(nil),                      // 36: capabilities.blockchain.solana.v1alpha.ParsedMessage
+	(*ParsedTransaction)(nil),                  // 37: capabilities.blockchain.solana.v1alpha.ParsedTransaction
+	(*UiTokenAmount)(nil),                      // 38: capabilities.blockchain.solana.v1alpha.UiTokenAmount
+	(*TokenBalance)(nil),                       // 39: capabilities.blockchain.solana.v1alpha.TokenBalance
+	(*InnerInstruction)(nil),                   // 40: capabilities.blockchain.solana.v1alpha.InnerInstruction
+	(*LoadedAddresses)(nil),                    // 41: capabilities.blockchain.solana.v1alpha.LoadedAddresses
+	(*CompiledInstruction)(nil),                // 42: capabilities.blockchain.solana.v1alpha.CompiledInstruction
+	(*Data)(nil),                               // 43: capabilities.blockchain.solana.v1alpha.Data
+	(*ReturnData)(nil),                         // 44: capabilities.blockchain.solana.v1alpha.ReturnData
+	(*TransactionMeta)(nil),                    // 45: capabilities.blockchain.solana.v1alpha.TransactionMeta
+	(*TransactionEnvelope)(nil),                // 46: capabilities.blockchain.solana.v1alpha.TransactionEnvelope
+	(*GetTransactionReply)(nil),                // 47: capabilities.blockchain.solana.v1alpha.GetTransactionReply
+	(*GetTransactionRequest)(nil),              // 48: capabilities.blockchain.solana.v1alpha.GetTransactionRequest
+	(*SimulateTXOpts)(nil),                     // 49: capabilities.blockchain.solana.v1alpha.SimulateTXOpts
+	(*SimulateTXReply)(nil),                    // 50: capabilities.blockchain.solana.v1alpha.SimulateTXReply
+	(*SimulateTXRequest)(nil),                  // 51: capabilities.blockchain.solana.v1alpha.SimulateTXRequest
+	(*SimulateTransactionAccountsOpts)(nil),    // 52: capabilities.blockchain.solana.v1alpha.SimulateTransactionAccountsOpts
+	(*ValueComparator)(nil),                    // 53: capabilities.blockchain.solana.v1alpha.ValueComparator
+	(*SubkeyConfig)(nil),                       // 54: capabilities.blockchain.solana.v1alpha.SubkeyConfig
+	(*CPIFilterConfig)(nil),                    // 55: capabilities.blockchain.solana.v1alpha.CPIFilterConfig
+	(*FilterLogTriggerRequest)(nil),            // 56: capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest
+	(*Log)(nil),                                // 57: capabilities.blockchain.solana.v1alpha.Log
+	(*AccountMeta)(nil),                        // 58: capabilities.blockchain.solana.v1alpha.AccountMeta
+	(*WriteReportRequest)(nil),                 // 59: capabilities.blockchain.solana.v1alpha.WriteReportRequest
+	(*WriteReportReply)(nil),                   // 60: capabilities.blockchain.solana.v1alpha.WriteReportReply
+	(*pb.BigInt)(nil),                          // 61: values.v1.BigInt
+	(*sdk.ReportResponse)(nil),                 // 62: sdk.v1alpha.ReportResponse
 }
 var file_capabilities_blockchain_solana_v1alpha_client_proto_depIdxs = []int32{
 	8,  // 0: capabilities.blockchain.solana.v1alpha.Account.data:type_name -> capabilities.blockchain.solana.v1alpha.DataBytesOrJSON
-	56, // 1: capabilities.blockchain.solana.v1alpha.Account.rent_epoch:type_name -> values.v1.BigInt
+	61, // 1: capabilities.blockchain.solana.v1alpha.Account.rent_epoch:type_name -> values.v1.BigInt
 	0,  // 2: capabilities.blockchain.solana.v1alpha.DataBytesOrJSON.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
 	0,  // 3: capabilities.blockchain.solana.v1alpha.GetAccountInfoOpts.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
 	1,  // 4: capabilities.blockchain.solana.v1alpha.GetAccountInfoOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
 	9,  // 5: capabilities.blockchain.solana.v1alpha.GetAccountInfoOpts.data_slice:type_name -> capabilities.blockchain.solana.v1alpha.DataSlice
-	43, // 6: capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply.rpc_context:type_name -> capabilities.blockchain.solana.v1alpha.RPCContext
-	6,  // 7: capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply.value:type_name -> capabilities.blockchain.solana.v1alpha.Account
-	10, // 8: capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetAccountInfoOpts
-	1,  // 9: capabilities.blockchain.solana.v1alpha.GetBalanceRequest.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
-	1,  // 10: capabilities.blockchain.solana.v1alpha.GetBlockOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
-	15, // 11: capabilities.blockchain.solana.v1alpha.GetBlockRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetBlockOpts
-	1,  // 12: capabilities.blockchain.solana.v1alpha.GetFeeForMessageRequest.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
-	0,  // 13: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
-	1,  // 14: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
-	9,  // 15: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts.data_slice:type_name -> capabilities.blockchain.solana.v1alpha.DataSlice
-	6,  // 16: capabilities.blockchain.solana.v1alpha.OptionalAccountWrapper.account:type_name -> capabilities.blockchain.solana.v1alpha.Account
-	43, // 17: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply.rpc_context:type_name -> capabilities.blockchain.solana.v1alpha.RPCContext
-	21, // 18: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply.value:type_name -> capabilities.blockchain.solana.v1alpha.OptionalAccountWrapper
-	20, // 19: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts
-	26, // 20: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply.results:type_name -> capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResult
-	2,  // 21: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResult.confirmation_status:type_name -> capabilities.blockchain.solana.v1alpha.ConfirmationStatusType
-	1,  // 22: capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
-	29, // 23: capabilities.blockchain.solana.v1alpha.ParsedMessage.header:type_name -> capabilities.blockchain.solana.v1alpha.MessageHeader
-	36, // 24: capabilities.blockchain.solana.v1alpha.ParsedMessage.instructions:type_name -> capabilities.blockchain.solana.v1alpha.CompiledInstruction
-	30, // 25: capabilities.blockchain.solana.v1alpha.ParsedTransaction.message:type_name -> capabilities.blockchain.solana.v1alpha.ParsedMessage
-	32, // 26: capabilities.blockchain.solana.v1alpha.TokenBalance.ui:type_name -> capabilities.blockchain.solana.v1alpha.UiTokenAmount
-	36, // 27: capabilities.blockchain.solana.v1alpha.InnerInstruction.instructions:type_name -> capabilities.blockchain.solana.v1alpha.CompiledInstruction
-	0,  // 28: capabilities.blockchain.solana.v1alpha.Data.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
-	37, // 29: capabilities.blockchain.solana.v1alpha.ReturnData.data:type_name -> capabilities.blockchain.solana.v1alpha.Data
-	33, // 30: capabilities.blockchain.solana.v1alpha.TransactionMeta.pre_token_balances:type_name -> capabilities.blockchain.solana.v1alpha.TokenBalance
-	33, // 31: capabilities.blockchain.solana.v1alpha.TransactionMeta.post_token_balances:type_name -> capabilities.blockchain.solana.v1alpha.TokenBalance
-	34, // 32: capabilities.blockchain.solana.v1alpha.TransactionMeta.inner_instructions:type_name -> capabilities.blockchain.solana.v1alpha.InnerInstruction
-	35, // 33: capabilities.blockchain.solana.v1alpha.TransactionMeta.loaded_addresses:type_name -> capabilities.blockchain.solana.v1alpha.LoadedAddresses
-	38, // 34: capabilities.blockchain.solana.v1alpha.TransactionMeta.return_data:type_name -> capabilities.blockchain.solana.v1alpha.ReturnData
-	31, // 35: capabilities.blockchain.solana.v1alpha.TransactionEnvelope.parsed:type_name -> capabilities.blockchain.solana.v1alpha.ParsedTransaction
-	40, // 36: capabilities.blockchain.solana.v1alpha.GetTransactionReply.transaction:type_name -> capabilities.blockchain.solana.v1alpha.TransactionEnvelope
-	39, // 37: capabilities.blockchain.solana.v1alpha.GetTransactionReply.meta:type_name -> capabilities.blockchain.solana.v1alpha.TransactionMeta
-	1,  // 38: capabilities.blockchain.solana.v1alpha.SimulateTXOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
-	47, // 39: capabilities.blockchain.solana.v1alpha.SimulateTXOpts.accounts:type_name -> capabilities.blockchain.solana.v1alpha.SimulateTransactionAccountsOpts
-	6,  // 40: capabilities.blockchain.solana.v1alpha.SimulateTXReply.accounts:type_name -> capabilities.blockchain.solana.v1alpha.Account
-	44, // 41: capabilities.blockchain.solana.v1alpha.SimulateTXRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.SimulateTXOpts
-	0,  // 42: capabilities.blockchain.solana.v1alpha.SimulateTransactionAccountsOpts.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
-	4,  // 43: capabilities.blockchain.solana.v1alpha.ValueComparator.operator:type_name -> capabilities.blockchain.solana.v1alpha.ComparisonOperator
-	48, // 44: capabilities.blockchain.solana.v1alpha.SubkeyConfig.comparers:type_name -> capabilities.blockchain.solana.v1alpha.ValueComparator
-	49, // 45: capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest.subkeys:type_name -> capabilities.blockchain.solana.v1alpha.SubkeyConfig
-	50, // 46: capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest.cpi_filter_config:type_name -> capabilities.blockchain.solana.v1alpha.CPIFilterConfig
-	53, // 47: capabilities.blockchain.solana.v1alpha.WriteReportRequest.remaining_accounts:type_name -> capabilities.blockchain.solana.v1alpha.AccountMeta
-	7,  // 48: capabilities.blockchain.solana.v1alpha.WriteReportRequest.compute_config:type_name -> capabilities.blockchain.solana.v1alpha.ComputeConfig
-	57, // 49: capabilities.blockchain.solana.v1alpha.WriteReportRequest.report:type_name -> sdk.v1alpha.ReportResponse
-	3,  // 50: capabilities.blockchain.solana.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.solana.v1alpha.TxStatus
-	5,  // 51: capabilities.blockchain.solana.v1alpha.WriteReportReply.receiver_contract_execution_status:type_name -> capabilities.blockchain.solana.v1alpha.ReceiverContractExecutionStatus
-	12, // 52: capabilities.blockchain.solana.v1alpha.Client.GetAccountInfoWithOpts:input_type -> capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest
-	14, // 53: capabilities.blockchain.solana.v1alpha.Client.GetBalance:input_type -> capabilities.blockchain.solana.v1alpha.GetBalanceRequest
-	17, // 54: capabilities.blockchain.solana.v1alpha.Client.GetBlock:input_type -> capabilities.blockchain.solana.v1alpha.GetBlockRequest
-	19, // 55: capabilities.blockchain.solana.v1alpha.Client.GetFeeForMessage:input_type -> capabilities.blockchain.solana.v1alpha.GetFeeForMessageRequest
-	23, // 56: capabilities.blockchain.solana.v1alpha.Client.GetMultipleAccountsWithOpts:input_type -> capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest
-	25, // 57: capabilities.blockchain.solana.v1alpha.Client.GetSignatureStatuses:input_type -> capabilities.blockchain.solana.v1alpha.GetSignatureStatusesRequest
-	28, // 58: capabilities.blockchain.solana.v1alpha.Client.GetSlotHeight:input_type -> capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest
-	42, // 59: capabilities.blockchain.solana.v1alpha.Client.GetTransaction:input_type -> capabilities.blockchain.solana.v1alpha.GetTransactionRequest
-	51, // 60: capabilities.blockchain.solana.v1alpha.Client.LogTrigger:input_type -> capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest
-	54, // 61: capabilities.blockchain.solana.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.solana.v1alpha.WriteReportRequest
-	11, // 62: capabilities.blockchain.solana.v1alpha.Client.GetAccountInfoWithOpts:output_type -> capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply
-	13, // 63: capabilities.blockchain.solana.v1alpha.Client.GetBalance:output_type -> capabilities.blockchain.solana.v1alpha.GetBalanceReply
-	16, // 64: capabilities.blockchain.solana.v1alpha.Client.GetBlock:output_type -> capabilities.blockchain.solana.v1alpha.GetBlockReply
-	18, // 65: capabilities.blockchain.solana.v1alpha.Client.GetFeeForMessage:output_type -> capabilities.blockchain.solana.v1alpha.GetFeeForMessageReply
-	22, // 66: capabilities.blockchain.solana.v1alpha.Client.GetMultipleAccountsWithOpts:output_type -> capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply
-	24, // 67: capabilities.blockchain.solana.v1alpha.Client.GetSignatureStatuses:output_type -> capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply
-	27, // 68: capabilities.blockchain.solana.v1alpha.Client.GetSlotHeight:output_type -> capabilities.blockchain.solana.v1alpha.GetSlotHeightReply
-	41, // 69: capabilities.blockchain.solana.v1alpha.Client.GetTransaction:output_type -> capabilities.blockchain.solana.v1alpha.GetTransactionReply
-	52, // 70: capabilities.blockchain.solana.v1alpha.Client.LogTrigger:output_type -> capabilities.blockchain.solana.v1alpha.Log
-	55, // 71: capabilities.blockchain.solana.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.solana.v1alpha.WriteReportReply
-	62, // [62:72] is the sub-list for method output_type
-	52, // [52:62] is the sub-list for method input_type
-	52, // [52:52] is the sub-list for extension type_name
-	52, // [52:52] is the sub-list for extension extendee
-	0,  // [0:52] is the sub-list for field type_name
+	6,  // 6: capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply.value:type_name -> capabilities.blockchain.solana.v1alpha.Account
+	10, // 7: capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetAccountInfoOpts
+	1,  // 8: capabilities.blockchain.solana.v1alpha.GetBalanceRequest.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	1,  // 9: capabilities.blockchain.solana.v1alpha.GetBlockOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	15, // 10: capabilities.blockchain.solana.v1alpha.GetBlockRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetBlockOpts
+	1,  // 11: capabilities.blockchain.solana.v1alpha.GetFeeForMessageRequest.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	0,  // 12: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
+	1,  // 13: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	9,  // 14: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts.data_slice:type_name -> capabilities.blockchain.solana.v1alpha.DataSlice
+	6,  // 15: capabilities.blockchain.solana.v1alpha.OptionalAccountWrapper.account:type_name -> capabilities.blockchain.solana.v1alpha.Account
+	21, // 16: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply.value:type_name -> capabilities.blockchain.solana.v1alpha.OptionalAccountWrapper
+	20, // 17: capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetMultipleAccountsOpts
+	24, // 18: capabilities.blockchain.solana.v1alpha.RPCFilter.memcmp:type_name -> capabilities.blockchain.solana.v1alpha.RPCFilterMemcmp
+	0,  // 19: capabilities.blockchain.solana.v1alpha.GetProgramAccountsOpts.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
+	1,  // 20: capabilities.blockchain.solana.v1alpha.GetProgramAccountsOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	9,  // 21: capabilities.blockchain.solana.v1alpha.GetProgramAccountsOpts.data_slice:type_name -> capabilities.blockchain.solana.v1alpha.DataSlice
+	25, // 22: capabilities.blockchain.solana.v1alpha.GetProgramAccountsOpts.filters:type_name -> capabilities.blockchain.solana.v1alpha.RPCFilter
+	6,  // 23: capabilities.blockchain.solana.v1alpha.KeyedAccount.account:type_name -> capabilities.blockchain.solana.v1alpha.Account
+	27, // 24: capabilities.blockchain.solana.v1alpha.GetProgramAccountsReply.value:type_name -> capabilities.blockchain.solana.v1alpha.KeyedAccount
+	26, // 25: capabilities.blockchain.solana.v1alpha.GetProgramAccountsRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.GetProgramAccountsOpts
+	32, // 26: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply.results:type_name -> capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResult
+	2,  // 27: capabilities.blockchain.solana.v1alpha.GetSignatureStatusesResult.confirmation_status:type_name -> capabilities.blockchain.solana.v1alpha.ConfirmationStatusType
+	1,  // 28: capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	35, // 29: capabilities.blockchain.solana.v1alpha.ParsedMessage.header:type_name -> capabilities.blockchain.solana.v1alpha.MessageHeader
+	42, // 30: capabilities.blockchain.solana.v1alpha.ParsedMessage.instructions:type_name -> capabilities.blockchain.solana.v1alpha.CompiledInstruction
+	36, // 31: capabilities.blockchain.solana.v1alpha.ParsedTransaction.message:type_name -> capabilities.blockchain.solana.v1alpha.ParsedMessage
+	38, // 32: capabilities.blockchain.solana.v1alpha.TokenBalance.ui:type_name -> capabilities.blockchain.solana.v1alpha.UiTokenAmount
+	42, // 33: capabilities.blockchain.solana.v1alpha.InnerInstruction.instructions:type_name -> capabilities.blockchain.solana.v1alpha.CompiledInstruction
+	0,  // 34: capabilities.blockchain.solana.v1alpha.Data.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
+	43, // 35: capabilities.blockchain.solana.v1alpha.ReturnData.data:type_name -> capabilities.blockchain.solana.v1alpha.Data
+	39, // 36: capabilities.blockchain.solana.v1alpha.TransactionMeta.pre_token_balances:type_name -> capabilities.blockchain.solana.v1alpha.TokenBalance
+	39, // 37: capabilities.blockchain.solana.v1alpha.TransactionMeta.post_token_balances:type_name -> capabilities.blockchain.solana.v1alpha.TokenBalance
+	40, // 38: capabilities.blockchain.solana.v1alpha.TransactionMeta.inner_instructions:type_name -> capabilities.blockchain.solana.v1alpha.InnerInstruction
+	41, // 39: capabilities.blockchain.solana.v1alpha.TransactionMeta.loaded_addresses:type_name -> capabilities.blockchain.solana.v1alpha.LoadedAddresses
+	44, // 40: capabilities.blockchain.solana.v1alpha.TransactionMeta.return_data:type_name -> capabilities.blockchain.solana.v1alpha.ReturnData
+	37, // 41: capabilities.blockchain.solana.v1alpha.TransactionEnvelope.parsed:type_name -> capabilities.blockchain.solana.v1alpha.ParsedTransaction
+	46, // 42: capabilities.blockchain.solana.v1alpha.GetTransactionReply.transaction:type_name -> capabilities.blockchain.solana.v1alpha.TransactionEnvelope
+	45, // 43: capabilities.blockchain.solana.v1alpha.GetTransactionReply.meta:type_name -> capabilities.blockchain.solana.v1alpha.TransactionMeta
+	1,  // 44: capabilities.blockchain.solana.v1alpha.SimulateTXOpts.commitment:type_name -> capabilities.blockchain.solana.v1alpha.CommitmentType
+	52, // 45: capabilities.blockchain.solana.v1alpha.SimulateTXOpts.accounts:type_name -> capabilities.blockchain.solana.v1alpha.SimulateTransactionAccountsOpts
+	6,  // 46: capabilities.blockchain.solana.v1alpha.SimulateTXReply.accounts:type_name -> capabilities.blockchain.solana.v1alpha.Account
+	49, // 47: capabilities.blockchain.solana.v1alpha.SimulateTXRequest.opts:type_name -> capabilities.blockchain.solana.v1alpha.SimulateTXOpts
+	0,  // 48: capabilities.blockchain.solana.v1alpha.SimulateTransactionAccountsOpts.encoding:type_name -> capabilities.blockchain.solana.v1alpha.EncodingType
+	4,  // 49: capabilities.blockchain.solana.v1alpha.ValueComparator.operator:type_name -> capabilities.blockchain.solana.v1alpha.ComparisonOperator
+	53, // 50: capabilities.blockchain.solana.v1alpha.SubkeyConfig.comparers:type_name -> capabilities.blockchain.solana.v1alpha.ValueComparator
+	54, // 51: capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest.subkeys:type_name -> capabilities.blockchain.solana.v1alpha.SubkeyConfig
+	55, // 52: capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest.cpi_filter_config:type_name -> capabilities.blockchain.solana.v1alpha.CPIFilterConfig
+	58, // 53: capabilities.blockchain.solana.v1alpha.WriteReportRequest.remaining_accounts:type_name -> capabilities.blockchain.solana.v1alpha.AccountMeta
+	7,  // 54: capabilities.blockchain.solana.v1alpha.WriteReportRequest.compute_config:type_name -> capabilities.blockchain.solana.v1alpha.ComputeConfig
+	62, // 55: capabilities.blockchain.solana.v1alpha.WriteReportRequest.report:type_name -> sdk.v1alpha.ReportResponse
+	3,  // 56: capabilities.blockchain.solana.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.solana.v1alpha.TxStatus
+	5,  // 57: capabilities.blockchain.solana.v1alpha.WriteReportReply.receiver_contract_execution_status:type_name -> capabilities.blockchain.solana.v1alpha.ReceiverContractExecutionStatus
+	12, // 58: capabilities.blockchain.solana.v1alpha.Client.GetAccountInfoWithOpts:input_type -> capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest
+	14, // 59: capabilities.blockchain.solana.v1alpha.Client.GetBalance:input_type -> capabilities.blockchain.solana.v1alpha.GetBalanceRequest
+	17, // 60: capabilities.blockchain.solana.v1alpha.Client.GetBlock:input_type -> capabilities.blockchain.solana.v1alpha.GetBlockRequest
+	19, // 61: capabilities.blockchain.solana.v1alpha.Client.GetFeeForMessage:input_type -> capabilities.blockchain.solana.v1alpha.GetFeeForMessageRequest
+	23, // 62: capabilities.blockchain.solana.v1alpha.Client.GetMultipleAccountsWithOpts:input_type -> capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsRequest
+	29, // 63: capabilities.blockchain.solana.v1alpha.Client.GetProgramAccounts:input_type -> capabilities.blockchain.solana.v1alpha.GetProgramAccountsRequest
+	31, // 64: capabilities.blockchain.solana.v1alpha.Client.GetSignatureStatuses:input_type -> capabilities.blockchain.solana.v1alpha.GetSignatureStatusesRequest
+	34, // 65: capabilities.blockchain.solana.v1alpha.Client.GetSlotHeight:input_type -> capabilities.blockchain.solana.v1alpha.GetSlotHeightRequest
+	48, // 66: capabilities.blockchain.solana.v1alpha.Client.GetTransaction:input_type -> capabilities.blockchain.solana.v1alpha.GetTransactionRequest
+	56, // 67: capabilities.blockchain.solana.v1alpha.Client.LogTrigger:input_type -> capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest
+	59, // 68: capabilities.blockchain.solana.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.solana.v1alpha.WriteReportRequest
+	11, // 69: capabilities.blockchain.solana.v1alpha.Client.GetAccountInfoWithOpts:output_type -> capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply
+	13, // 70: capabilities.blockchain.solana.v1alpha.Client.GetBalance:output_type -> capabilities.blockchain.solana.v1alpha.GetBalanceReply
+	16, // 71: capabilities.blockchain.solana.v1alpha.Client.GetBlock:output_type -> capabilities.blockchain.solana.v1alpha.GetBlockReply
+	18, // 72: capabilities.blockchain.solana.v1alpha.Client.GetFeeForMessage:output_type -> capabilities.blockchain.solana.v1alpha.GetFeeForMessageReply
+	22, // 73: capabilities.blockchain.solana.v1alpha.Client.GetMultipleAccountsWithOpts:output_type -> capabilities.blockchain.solana.v1alpha.GetMultipleAccountsWithOptsReply
+	28, // 74: capabilities.blockchain.solana.v1alpha.Client.GetProgramAccounts:output_type -> capabilities.blockchain.solana.v1alpha.GetProgramAccountsReply
+	30, // 75: capabilities.blockchain.solana.v1alpha.Client.GetSignatureStatuses:output_type -> capabilities.blockchain.solana.v1alpha.GetSignatureStatusesReply
+	33, // 76: capabilities.blockchain.solana.v1alpha.Client.GetSlotHeight:output_type -> capabilities.blockchain.solana.v1alpha.GetSlotHeightReply
+	47, // 77: capabilities.blockchain.solana.v1alpha.Client.GetTransaction:output_type -> capabilities.blockchain.solana.v1alpha.GetTransactionReply
+	57, // 78: capabilities.blockchain.solana.v1alpha.Client.LogTrigger:output_type -> capabilities.blockchain.solana.v1alpha.Log
+	60, // 79: capabilities.blockchain.solana.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.solana.v1alpha.WriteReportReply
+	69, // [69:80] is the sub-list for method output_type
+	58, // [58:69] is the sub-list for method input_type
+	58, // [58:58] is the sub-list for extension type_name
+	58, // [58:58] is the sub-list for extension extendee
+	0,  // [0:58] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_blockchain_solana_v1alpha_client_proto_init() }
@@ -3889,25 +4188,25 @@ func file_capabilities_blockchain_solana_v1alpha_client_proto_init() {
 	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[5].OneofWrappers = []any{}
 	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[10].OneofWrappers = []any{}
 	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[15].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[20].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[27].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[26].OneofWrappers = []any{}
 	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[33].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[34].OneofWrappers = []any{
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[39].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[40].OneofWrappers = []any{
 		(*TransactionEnvelope_Raw)(nil),
 		(*TransactionEnvelope_Parsed)(nil),
 	}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[35].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[45].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[46].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[48].OneofWrappers = []any{}
-	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[49].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[41].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[50].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[51].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[53].OneofWrappers = []any{}
+	file_capabilities_blockchain_solana_v1alpha_client_proto_msgTypes[54].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc), len(file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   50,
+			NumMessages:   55,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

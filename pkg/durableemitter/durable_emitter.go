@@ -11,58 +11,66 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/metric"
-	"google.golang.org/grpc"
-	grpcEncoding "google.golang.org/grpc/encoding"
-	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// DurableEmitterConfig configures the DurableEmitter behaviour.
-type DurableEmitterConfig struct {
+// BatchEmitter is the transport interface DurableEmitter delegates to for
+// batched delivery of CloudEvents to Chip Ingress.
+//
+// *batch.Client from pkg/chipingress/batch satisfies this interface and
+// handles seqnum stamping, gRPC size splitting, concurrency limiting, and
+// graceful shutdown with a configurable timeout.
+//
+// The callback passed to QueueMessage is invoked once after the batch
+// containing the event is sent. A nil error means the RPC succeeded; a
+// non-nil error means the batch was dropped — the event remains in the DB
+// and the retransmit loop will retry it.
+type BatchEmitter interface {
+	// QueueMessage enqueues a single CloudEvent for batched delivery.
+	// Returns an error only if the internal buffer is full or the client
+	// has been stopped. Callers must treat a non-nil return as a
+	// drop (the event is still persisted; retransmit will retry).
+	QueueMessage(event *chipingress.CloudEventPb, callback func(error)) error
+	// Start begins background processing. Must be called before QueueMessage.
+	Start(ctx context.Context)
+	// Stop flushes any queued events, waits for all in-flight network calls
+	// and callbacks to complete, then closes the underlying transport.
+	Stop()
+}
+
+// Config configures the DurableEmitter behaviour.
+type Config struct {
 	// RetransmitInterval controls how often the retransmit loop ticks.
 	RetransmitInterval time.Duration
 	// RetransmitAfter is the minimum age of an event before the retransmit
 	// loop considers it. This gives the batch publish path time to succeed.
 	RetransmitAfter time.Duration
-	// RetransmitBatchSize caps how many pending rows are listed per retransmit tick
-	// (each row is enqueued for the batch publish workers).
+	// RetransmitBatchSize caps how many pending rows are listed per retransmit tick.
 	RetransmitBatchSize int
 	// ExpiryInterval controls how often the expiry loop ticks.
 	ExpiryInterval time.Duration
 	// EventTTL is the maximum age of an event before it is expired.
 	EventTTL time.Duration
-	// PublishTimeout is the per-RPC deadline for each Publish call.
+	// PublishTimeout is the deadline for DB operations in delivery callbacks
+	// (MarkDeliveredBatch). The actual gRPC publish timeout is configured on
+	// the BatchEmitter (batch.Client) directly.
 	PublishTimeout time.Duration
 	// PurgeInterval is how often the purge loop runs to batch-delete rows that
 	// were marked delivered (Postgres). Zero defaults to 250ms.
 	PurgeInterval time.Duration
 	// PurgeBatchSize is the maximum rows removed per PurgeDelivered call. Zero defaults to 500.
 	PurgeBatchSize int
-	// PublishBatchSize is the target number of events per PublishBatch RPC. Values below 1 are
-	// clamped to 1 in NewDurableEmitter.
-	PublishBatchSize int
-	// PublishBatchWorkers is the number of concurrent goroutines that read from
-	// the batch channel and call PublishBatch. More workers means higher
-	// throughput (each worker handles one in-flight batch at a time). Zero defaults to 1.
-	PublishBatchWorkers int
-	// PublishBatchFlushInterval is the maximum time to wait for a full batch
-	// before flushing a partial one. Zero defaults to 50ms.
-	PublishBatchFlushInterval time.Duration
-	// PublishBatchChannelSize overrides the publishCh buffer capacity. Zero
-	// defaults to max(PublishBatchSize*2000, 200_000).
-	PublishBatchChannelSize int
 	// DisablePruning disables the background purge (PurgeDelivered) and expiry
 	// (DeleteExpired) loops. Events remain in the DB after delivery. Useful for
 	// post-test analysis of created_at / delivered_at timestamps.
 	DisablePruning bool
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
-	Hooks *DurableEmitterHooks
+	Hooks *Hooks
 	// Metrics enables OpenTelemetry instruments (queue, publish, store, optional process stats).
 	// When non-nil, a meter must be supplied to NewDurableEmitter; nil disables instrumentation.
 	Metrics *DurableEmitterMetricsConfig
@@ -79,20 +87,22 @@ type DurableEmitterConfig struct {
 	InsertBatchWorkers int
 }
 
-// DurableEmitterHooks records Publish vs Delete latency to locate pipeline bottlenecks.
-type DurableEmitterHooks struct {
+// Hooks records delivery latency to locate pipeline bottlenecks.
+type Hooks struct {
 	// OnEmitInsert is called after each store.Insert in Emit (the DB write that
 	// blocks the caller). elapsed covers only the INSERT; err is nil on success.
 	OnEmitInsert func(elapsed time.Duration, err error)
-	// OnBatchPublish is called after each PublishBatch RPC in the batch publish loop.
-	// batchSize is the number of events in the batch; err is nil on success.
+	// OnBatchPublish is called from the delivery callback after each event's
+	// batch is sent. elapsed is measured from QueueMessage call to callback
+	// invocation; batchSize is always 1 (one callback per event); err is nil
+	// on success.
 	OnBatchPublish func(elapsed time.Duration, batchSize int, err error)
-	// OnBatchMarkDelivered is called after MarkDeliveredBatch following a successful batch publish.
+	// OnBatchMarkDelivered is called after MarkDeliveredBatch following a successful delivery.
 	OnBatchMarkDelivered func(elapsed time.Duration, count int)
 }
 
-func DefaultDurableEmitterConfig() DurableEmitterConfig {
-	return DurableEmitterConfig{
+func DefaultConfig() Config {
+	return Config{
 		RetransmitInterval:  5 * time.Second,
 		RetransmitAfter:     10 * time.Second,
 		RetransmitBatchSize: 100,
@@ -101,7 +111,6 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 		PublishTimeout:      5 * time.Second,
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,
-		PublishBatchSize:    1,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
 		Metrics: nil,
@@ -110,21 +119,15 @@ func DefaultDurableEmitterConfig() DurableEmitterConfig {
 
 // DurableEmitter implements Emitter with persistence-backed delivery guarantees.
 //
-// Emit writes to a DurableEventStore, returns nil after insert, and enqueues the
-// row for async PublishBatch delivery. Successful publishes are followed by
-// MarkDeliveredBatch; the purge loop removes delivered rows from Postgres. When
-// Chip is down or the publish channel is full, a retransmit loop lists stale
-// pending rows and re-enqueues them to the same batch workers (up to
+// Emit writes to a DurableEventStore then hands the event to the BatchEmitter
+// for async delivery. The delivery callback from BatchEmitter marks the row
+// delivered; the purge loop removes delivered rows from Postgres. When the
+// batch emitter buffer is full or the network is down, a retransmit loop lists
+// stale pending rows and re-enqueues them through the same BatchEmitter (up to
 // RetransmitBatchSize per tick).
 //
 // A separate expiry loop garbage-collects events older than EventTTL to bound
 // table growth.
-// publishWork is a unit of work for the batch publish channel.
-type publishWork struct {
-	id      int64
-	payload []byte                    // serialized CloudEvent proto (always set)
-	event   *chipingress.CloudEventPb // original struct; set from Emit(), nil from retransmit
-}
 
 // insertRequest is a single Emit() caller waiting for a coalesced batch INSERT.
 type insertRequest struct {
@@ -141,18 +144,26 @@ type DurableEmitter struct {
 	services.Service
 	eng *services.Engine
 
-	store  DurableEventStore
-	client chipingress.Client
-	// isHostProcess determines if the emitter runs retransmit and cleanup loops.
-	// Should be set to false when initialized inside LOOP plugins.
-	isHostProcess bool
-	cfg           DurableEmitterConfig
+	store        DurableEventStore
+	batchEmitter BatchEmitter
+	// fallbackClient, when non-nil, is used for single-event per-RPC retry
+	// whenever the batch emitter reports a delivery failure. Each failed event
+	// is retried individually via Publish (not PublishBatch) in a goroutine.
+	// If the single-event retry also fails the event stays in the DB and the
+	// retransmit loop will eventually deliver it. DurableEmitter owns this
+	// client and closes it during shutdown.
+	fallbackClient chipingress.Client
+	// fallbackWg tracks in-flight single-event fallback goroutines. It is
+	// waited on after batchEmitter.Stop() so that all fallback attempts that
+	// were spawned during the final flush can complete before we close the
+	// fallback client connection.
+	fallbackWg sync.WaitGroup
+	// retransmitEnabled controls whether this instance runs the retransmit and
+	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
+	retransmitEnabled bool
+	cfg               Config
 
 	metrics *durableEmitterMetrics
-
-	// rawConn is the underlying gRPC connection when the client exposes it.
-	// Non-nil enables zero-copy batch publishing (protowire + ForceCodec).
-	rawConn *grpc.ClientConn
 
 	// batchInserter is non-nil when the store supports multi-row INSERTs
 	// and InsertBatchSize > 0.
@@ -171,63 +182,9 @@ type DurableEmitter struct {
 	pendingCount atomic.Int64
 	pendingMax   atomic.Int64
 
-	// publishCh buffers events for the batch publish loop.
-	publishCh chan publishWork
-
-	// stopCh signals background loops to exit. It is owned by DurableEmitter
-	// (not the service engine) because shutdown must drain coalesced inserts
-	// and close publishCh in a specific order after all workers stop.
+	// stopCh signals background loops to exit.
 	stopCh services.StopChan
 	wg     sync.WaitGroup
-}
-
-// grpcConnProvider is an optional interface for clients that expose the
-// underlying gRPC connection. When satisfied, DurableEmitter uses zero-copy
-// batch publishing to avoid protobuf marshal/unmarshal overhead.
-type grpcConnProvider interface {
-	Conn() *grpc.ClientConn
-}
-
-// rawBytesCodec is a gRPC codec that passes []byte through without
-// marshal/unmarshal. Name returns "proto" so the wire content-type is
-// application/grpc+proto, matching what Chip Ingress expects.
-type rawBytesCodec struct{}
-
-func (rawBytesCodec) Marshal(v any) ([]byte, error) {
-	b, ok := v.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("rawBytesCodec.Marshal: expected []byte, got %T", v)
-	}
-	return b, nil
-}
-
-func (rawBytesCodec) Unmarshal(data []byte, v any) error {
-	bp, ok := v.(*[]byte)
-	if !ok {
-		return fmt.Errorf("rawBytesCodec.Unmarshal: expected *[]byte, got %T", v)
-	}
-	*bp = data
-	return nil
-}
-
-func (rawBytesCodec) Name() string { return "proto" }
-
-var _ grpcEncoding.Codec = rawBytesCodec{}
-
-// buildBatchBytes constructs the protobuf wire format for a CloudEventBatch
-// directly from already-serialized CloudEvent payloads. Each payload is
-// wrapped with the field-1 tag and length prefix — no unmarshal/re-marshal.
-func buildBatchBytes(payloads [][]byte) []byte {
-	size := 0
-	for _, p := range payloads {
-		size += protowire.SizeTag(1) + protowire.SizeBytes(len(p))
-	}
-	buf := make([]byte, 0, size)
-	for _, p := range payloads {
-		buf = protowire.AppendTag(buf, 1, protowire.BytesType)
-		buf = protowire.AppendBytes(buf, p)
-	}
-	return buf
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -237,31 +194,34 @@ var _ interface {
 	io.Closer
 } = (*DurableEmitter)(nil)
 
-// NewDurableEmitter constructs a DurableEmitter as a services.Service.
+// NewDurableEmitter constructs a DurableEmitter as a service.
 //
-// meter is the OpenTelemetry Meter used for instrument registration. It is
-// required when cfg.Metrics is non-nil and must be supplied by the caller
-// (e.g. otel.Meter("durableemitter") or a meter from the host's
-// MeterProvider). Pass nil when metrics are disabled.
+// batchEmitter is the transport layer (typically *batch.Client from
+// pkg/chipingress/batch) responsible for batched gRPC delivery, seqnum
+// stamping, size splitting, and concurrency limiting.
+//
+// fallbackClient, when non-nil, is used to retry individual events via a
+// direct unary Publish RPC whenever the batch emitter reports a delivery
+// failure. This gives a fast second-chance path before the DB-backed
+// retransmit loop kicks in. Pass nil to disable single-event fallback
+// (events are left in the DB and delivered by the retransmit loop).
 func NewDurableEmitter(
 	store DurableEventStore,
-	client chipingress.Client,
-	isHostProcess bool,
-	cfg DurableEmitterConfig,
+	batchEmitter BatchEmitter,
+	fallbackClient chipingress.Client,
+	retransmitEnabled bool,
+	cfg Config,
 	lggr logger.Logger,
 	meter metric.Meter,
 ) (*DurableEmitter, error) {
 	if store == nil {
 		return nil, errors.New("durable event store is nil")
 	}
-	if client == nil {
-		return nil, errors.New("chipingress client is nil")
+	if batchEmitter == nil {
+		return nil, errors.New("batch emitter is nil")
 	}
 	if lggr == nil {
 		return nil, errors.New("logger is nil")
-	}
-	if cfg.PublishBatchSize < 1 {
-		cfg.PublishBatchSize = 1
 	}
 	var m *durableEmitterMetrics
 	if cfg.Metrics != nil {
@@ -276,12 +236,13 @@ func NewDurableEmitter(
 		store = newMetricsInstrumentedStore(store, m)
 	}
 	d := &DurableEmitter{
-		store:         store,
-		client:        client,
-		isHostProcess: isHostProcess,
-		cfg:           cfg,
-		metrics:       m,
-		stopCh:        make(chan struct{}),
+		store:             store,
+		batchEmitter:      batchEmitter,
+		fallbackClient:    fallbackClient,
+		retransmitEnabled: retransmitEnabled,
+		cfg:               cfg,
+		metrics:           m,
+		stopCh:            make(chan struct{}),
 	}
 	d.Service, d.eng = services.Config{
 		Name:  "DurableEmitter",
@@ -289,10 +250,6 @@ func NewDurableEmitter(
 		Close: d.stop,
 	}.NewServiceEngine(lggr)
 
-	if cp, ok := client.(grpcConnProvider); ok {
-		d.rawConn = cp.Conn()
-		d.eng.Infow("DurableEmitter: raw-codec batch publishing enabled (zero-copy protowire)")
-	}
 	if cfg.InsertBatchSize > 0 {
 		if bi, ok := store.(BatchInserter); ok {
 			d.batchInserter = bi
@@ -307,48 +264,31 @@ func NewDurableEmitter(
 				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
 		}
 	}
-	bufSize := cfg.PublishBatchChannelSize
-	if bufSize <= 0 {
-		bufSize = cfg.PublishBatchSize * 2000
-		if bufSize < 200_000 {
-			bufSize = 200_000
-		}
-	}
-	d.publishCh = make(chan publishWork, bufSize)
 	return d, nil
 }
 
-// start launches the retransmit, expiry, purge, and (optionally) batch publish
-// background loops. It is invoked by the services.Engine when the embedded
-// Service is started; callers should not call this directly. The supplied
-// context must not be retained beyond start (per services.Service contract);
-// loops use d.stopCh.NewCtx() for their own lifecycle.
-func (d *DurableEmitter) start(_ context.Context) error {
-	batchWorkers := d.cfg.PublishBatchWorkers
-	if batchWorkers <= 0 {
-		d.eng.Warnw("configured batchWorkers <=0; defaulting to 1")
-		batchWorkers = 1
-	}
+// start launches the retransmit, expiry, purge, and insert-coalescing background
+// loops, then starts the batch emitter transport. It is invoked by the
+// services.Engine when the embedded Service is started.
+func (d *DurableEmitter) start(ctx context.Context) error {
+	d.batchEmitter.Start(ctx)
+
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
-		d.eng.Warnw("configured insertWorkers <=0; defaulting to 4")
 		insertWorkers = 4
-	}
-
-	if d.isHostProcess {
-		d.wg.Go(d.retransmitLoop)
-		if !d.cfg.DisablePruning {
-			d.wg.Go(d.expiryLoop)
-			d.wg.Go(d.purgeLoop)
-		}
 	}
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
 			d.wg.Go(d.insertBatchLoop)
 		}
 	}
-	for i := 0; i < batchWorkers; i++ {
-		d.wg.Go(d.batchPublishLoop)
+
+	if d.retransmitEnabled {
+		d.wg.Go(d.retransmitLoop)
+		if !d.cfg.DisablePruning {
+			d.wg.Go(d.expiryLoop)
+			d.wg.Go(d.purgeLoop)
+		}
 	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		d.wg.Go(d.metricsLoop)
@@ -356,9 +296,10 @@ func (d *DurableEmitter) start(_ context.Context) error {
 	return nil
 }
 
-// Emit persists the event then enqueues it for async PublishBatch delivery. Returns nil once
-// the insert is accepted (or the coalesced insert path completes successfully). Returns an
-// error when the service is not in the Started state (e.g. before Start or after Close).
+// Emit persists the event then hands it to the BatchEmitter for async delivery.
+// Returns nil once the insert is accepted (or the coalesced insert path
+// completes successfully). Returns an error when the service is not in the
+// Started state (e.g. before Start or after Close).
 func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return d.eng.IfStarted(func() error {
 		tEmitTotal := time.Now()
@@ -468,32 +409,115 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 
 		d.incPending(1)
 
-		// Batch path: enqueue for batch publish loop (PublishBatchSize is always >= 1).
-		work := publishWork{id: id, payload: payload}
-		if d.rawConn == nil {
-			work.event = eventPb
-		}
-		select {
-		case d.publishCh <- work:
-			return nil
-		default:
-			// Channel full — event is safely in the DB; retransmit loop will deliver it.
-			d.eng.Warnw("DurableEmitter: batch publish channel full, relying on retransmit",
-				"id", id, "ch_len", len(d.publishCh), "ch_cap", cap(d.publishCh))
+		// Hand off to the batch emitter. The callback fires once the batch
+		// containing this event is sent (success or failure). eventPb is
+		// captured in the closure so the fallback path can retry without a
+		// DB round-trip.
+		t0Publish := time.Now()
+		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish)); qErr != nil {
+			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
 		}
 		return nil
 	})
 }
 
-// stop signals background loops to stop and waits for them to finish. It is
-// invoked by the services.Engine when the embedded Service is closed; callers
-// should not call this directly.
-//
-// When coalesced inserts are enabled, insertShutdown and insertInFlight drain
-// before close(stopCh) so Emit can finish enqueueing to publishCh after a
-// successful insert (receive on a closed stopCh in select would race with
-// default). Then stopCh is closed, workers exit, and publishCh is closed
-// after wg.Wait.
+// deliveryCallback returns the function passed to BatchEmitter.QueueMessage.
+// On success, it marks the event delivered. On failure, it attempts a
+// single-event fallback via fallbackClient (when configured) in a goroutine
+// before leaving the event in the DB for the retransmit loop.
+func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time) func(error) {
+	return func(sendErr error) {
+		publishElapsed := time.Since(t0Publish)
+
+		if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
+			h.OnBatchPublish(publishElapsed, 1, sendErr)
+		}
+
+		cbCtx, cbCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		defer cbCancel()
+
+		if d.metrics != nil {
+			d.metrics.recordPublish(cbCtx, publishElapsed, "batch", sendErr)
+		}
+
+		if sendErr != nil {
+			if d.metrics != nil {
+				d.metrics.publishBatchEvErr.Add(cbCtx, 1)
+			}
+			// Batch path failed. If a fallback client is configured, retry the
+			// single event directly; otherwise leave in DB for retransmit.
+			d.tryFallback(id, eventPb)
+			return
+		}
+
+		if d.metrics != nil {
+			d.metrics.publishBatchEvOK.Add(cbCtx, 1)
+		}
+
+		tMark := time.Now()
+		marked, markErr := d.store.MarkDeliveredBatch(cbCtx, []int64{id})
+		markElapsed := time.Since(tMark)
+
+		if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
+			h.OnBatchMarkDelivered(markElapsed, int(marked))
+		}
+		if markErr != nil {
+			d.eng.Errorw("failed to mark event delivered", "id", id, "error", markErr)
+			return
+		}
+		d.decPending(marked)
+		if d.metrics != nil {
+			d.metrics.deliverComplete.Add(cbCtx, marked)
+		}
+	}
+}
+
+// tryFallback spawns a goroutine that retries a single event via the direct
+// chipingress.Client.Publish RPC. If fallbackClient is nil this is a no-op
+// and the event is left in the DB for the retransmit loop.
+func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb) {
+	if d.fallbackClient == nil {
+		return
+	}
+	d.fallbackWg.Add(1)
+	go func() {
+		defer d.fallbackWg.Done()
+		d.singleEventFallback(id, eventPb)
+	}()
+}
+
+// singleEventFallback sends a single event directly via the fallback
+// chipingress.Client. On success, it marks the event delivered and decrements
+// the pending counter. On failure, it logs and returns — the event remains in
+// the DB and the retransmit loop will eventually deliver it.
+func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
+	pubCtx, pubCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer pubCancel()
+
+	if _, err := d.fallbackClient.Publish(pubCtx, eventPb); err != nil {
+		d.eng.Warnw("DurableEmitter: single-event fallback publish failed, relying on retransmit",
+			"id", id, "error", err)
+		return
+	}
+
+	markCtx, markCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer markCancel()
+
+	marked, markErr := d.store.MarkDeliveredBatch(markCtx, []int64{id})
+	if markErr != nil {
+		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
+		return
+	}
+	d.decPending(marked)
+	if d.metrics != nil {
+		d.metrics.deliverComplete.Add(markCtx, marked)
+	}
+}
+
+// stop signals background loops to stop and waits for them to finish, then
+// stops the batch emitter (which flushes any queued events and waits for all
+// in-flight callbacks). It is invoked by the services.Engine when the embedded
+// Service is closed.
 func (d *DurableEmitter) stop() error {
 	if d.insertCh != nil {
 		d.insertShutdown.Store(true)
@@ -504,14 +528,22 @@ func (d *DurableEmitter) stop() error {
 	}
 	close(d.stopCh)
 	d.wg.Wait()
-	close(d.publishCh)
+	// Stop the batch emitter: flushes remaining queued events, waits for all
+	// in-flight PublishBatch RPCs, and waits for all delivery callbacks.
+	// Delivery callbacks may spawn single-event fallback goroutines tracked by
+	// fallbackWg, so we wait on those next.
+	d.batchEmitter.Stop()
+	d.fallbackWg.Wait()
+	if d.fallbackClient != nil {
+		if err := d.fallbackClient.Close(); err != nil {
+			d.eng.Warnw("DurableEmitter: error closing fallback chip client", "error", err)
+		}
+	}
 	return nil
 }
 
 // insertBatchLoop collects insertRequest items from insertCh and flushes them
-// as multi-row INSERTs via BatchInserter.InsertBatch. Uses a linger pattern:
-// blocks for the first request, then collects more until the batch is full or
-// the flush interval elapses.
+// as multi-row INSERTs via BatchInserter.InsertBatch.
 func (d *DurableEmitter) insertBatchLoop() {
 	batchSize := d.cfg.InsertBatchSize
 	linger := d.cfg.InsertBatchFlushInterval
@@ -523,15 +555,12 @@ func (d *DurableEmitter) insertBatchLoop() {
 	for {
 		batch = batch[:0]
 
-		// Exit only when insertCh is closed and drained; do not exit on stopCh
-		// or Emit callers blocked on req.result would hang.
 		req, ok := <-d.insertCh
 		if !ok {
 			return
 		}
 		batch = append(batch, req)
 
-		// Linger to collect more.
 		timer := time.NewTimer(linger)
 	collecting:
 		for len(batch) < batchSize {
@@ -552,8 +581,6 @@ func (d *DurableEmitter) insertBatchLoop() {
 		for i, r := range batch {
 			payloads[i] = r.payload
 		}
-		// Detached from stopCh so closing stopCh does not cancel inserts while
-		// draining insertCh during shutdown.
 		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
 		cancel()
@@ -606,213 +633,6 @@ func (d *DurableEmitter) decPending(n int64) {
 	}
 }
 
-// batchPublishLoop reads events from publishCh, collects them into batches of
-// PublishBatchSize, and sends each batch via PublishBatch RPC. It blocks until
-// the batch is full or PublishBatchFlushInterval elapses after the first event
-// arrives (linger pattern), guaranteeing full batches at high throughput.
-func (d *DurableEmitter) batchPublishLoop() {
-	batchSize := d.cfg.PublishBatchSize
-	flushInterval := d.cfg.PublishBatchFlushInterval
-	if flushInterval <= 0 {
-		flushInterval = 50 * time.Millisecond
-	}
-
-	batch := make([]publishWork, 0, batchSize)
-
-	for {
-		// Stage 1: block until at least one event arrives (or shutdown).
-		select {
-		case w, ok := <-d.publishCh:
-			if !ok {
-				return
-			}
-			batch = append(batch, w)
-		case <-d.stopCh:
-			d.drainPublishChOnShutdown(batch)
-			return
-		}
-
-		// Stage 2: linger — keep reading until batch is full or deadline.
-		linger := time.NewTimer(flushInterval)
-	fill:
-		for len(batch) < batchSize {
-			select {
-			case w, ok := <-d.publishCh:
-				if !ok {
-					linger.Stop()
-					if len(batch) > 0 {
-						d.flushBatch(batch)
-					}
-					return
-				}
-				batch = append(batch, w)
-			case <-linger.C:
-				break fill
-			case <-d.stopCh:
-				linger.Stop()
-				d.drainPublishChOnShutdown(batch)
-				return
-			}
-		}
-		linger.Stop()
-
-		d.flushBatch(batch)
-		batch = batch[:0]
-	}
-}
-
-// drainPublishChOnShutdown empties publishCh after stopCh has fired but before
-// Close closes publishCh; finishes any in-flight batches.
-func (d *DurableEmitter) drainPublishChOnShutdown(batch []publishWork) {
-	bs := d.cfg.PublishBatchSize
-	if bs < 1 {
-		bs = 1
-	}
-	for {
-		select {
-		case w, ok := <-d.publishCh:
-			if !ok {
-				if len(batch) > 0 {
-					d.flushBatch(batch)
-				}
-				return
-			}
-			batch = append(batch, w)
-			if len(batch) >= bs {
-				d.flushBatch(batch)
-				batch = batch[:0]
-			}
-		default:
-			if len(batch) > 0 {
-				d.flushBatch(batch)
-			}
-			return
-		}
-	}
-}
-
-// drainPublishCh flushes the given partial batch plus any remaining items on
-// publishCh in batchSize chunks. Called during shutdown (ctx cancelled or
-// channel closed).
-func (d *DurableEmitter) drainPublishCh(batch []publishWork) {
-	for w := range d.publishCh {
-		batch = append(batch, w)
-		if len(batch) >= d.cfg.PublishBatchSize {
-			d.flushBatch(batch)
-			batch = batch[:0]
-		}
-	}
-	if len(batch) > 0 {
-		d.flushBatch(batch)
-	}
-}
-
-// flushBatch publishes a collected batch via PublishBatch and marks all events
-// as delivered in a single MarkDeliveredBatch call.
-//
-// When rawConn is available, batch wire bytes are built directly from the
-// already-serialized payloads using protowire — zero unmarshal/re-marshal.
-// Otherwise, falls back to the typed PublishBatch RPC.
-func (d *DurableEmitter) flushBatch(batch []publishWork) {
-	ids := make([]int64, len(batch))
-	for i, w := range batch {
-		ids[i] = w.id
-	}
-
-	ctx, cancel := d.stopCh.NewCtx()
-	defer cancel()
-	pubCtx, pubCancel := context.WithTimeout(ctx, d.cfg.PublishTimeout)
-	defer pubCancel()
-
-	t0 := time.Now()
-	var err error
-	if d.rawConn != nil {
-		err = d.flushBatchRaw(pubCtx, batch)
-	} else {
-		err = d.flushBatchTyped(pubCtx, batch)
-	}
-	elapsed := time.Since(t0)
-
-	if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
-		h.OnBatchPublish(elapsed, len(batch), err)
-	}
-	d.metrics.recordPublish(ctx, elapsed, "batch", err)
-
-	if err != nil {
-		if d.metrics != nil {
-			d.metrics.publishBatchEvErr.Add(ctx, int64(len(batch)))
-		}
-		d.eng.Warnw("DurableEmitter: PublishBatch failed, events will be retransmitted",
-			"batch_size", len(batch), "error", err,
-			"elapsed_ms", elapsed.Milliseconds())
-		return
-	}
-
-	if d.metrics != nil {
-		d.metrics.publishBatchEvOK.Add(pubCtx, int64(len(batch)))
-	}
-
-	// Async MarkDelivered: the DB UPDATE runs in a background goroutine so
-	// the batch worker can immediately start collecting the next batch.
-	// If MarkDelivered fails, events stay pending and the retransmit loop
-	// delivers them (at-least-once semantics are unchanged).
-	d.wg.Go(func() {
-		tMark := time.Now()
-		marked, markErr := d.store.MarkDeliveredBatch(ctx, ids)
-		markElapsed := time.Since(tMark)
-		if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
-			h.OnBatchMarkDelivered(markElapsed, int(marked))
-		}
-		if markErr != nil {
-			d.eng.Errorw("failed to batch-mark events delivered", "batch_size", len(ids), "error", markErr)
-			return
-		}
-		d.decPending(marked)
-		if d.metrics != nil {
-			d.metrics.deliverComplete.Add(ctx, marked)
-		}
-	})
-}
-
-// flushBatchRaw builds the CloudEventBatch wire format directly from
-// already-serialized payloads and sends it via raw gRPC Invoke — zero
-// protobuf unmarshal/re-marshal overhead.
-func (d *DurableEmitter) flushBatchRaw(ctx context.Context, batch []publishWork) error {
-	payloads := make([][]byte, len(batch))
-	for i, w := range batch {
-		payloads[i] = w.payload
-	}
-	batchBytes := buildBatchBytes(payloads)
-	var respBytes []byte
-	return d.rawConn.Invoke(
-		ctx,
-		pb.ChipIngress_PublishBatch_FullMethodName,
-		batchBytes,
-		&respBytes,
-		grpc.ForceCodec(rawBytesCodec{}),
-	)
-}
-
-// flushBatchTyped builds a typed CloudEventBatch and sends it via the
-// standard gRPC client. Used as fallback when rawConn is not available.
-func (d *DurableEmitter) flushBatchTyped(ctx context.Context, batch []publishWork) error {
-	events := make([]*chipingress.CloudEventPb, len(batch))
-	for i, w := range batch {
-		if w.event != nil {
-			events[i] = w.event
-		} else {
-			ev := new(chipingress.CloudEventPb)
-			if err := proto.Unmarshal(w.payload, ev); err != nil {
-				return fmt.Errorf("unmarshal event %d for typed publish: %w", i, err)
-			}
-			events[i] = ev
-		}
-	}
-	batchPb := &chipingress.CloudEventBatch{Events: events}
-	_, err := d.client.PublishBatch(ctx, batchPb)
-	return err
-}
-
 func (d *DurableEmitter) retransmitLoop() {
 	ticker := time.NewTicker(d.cfg.RetransmitInterval)
 	defer ticker.Stop()
@@ -862,11 +682,10 @@ func (d *DurableEmitter) retransmitPending() {
 	d.retransmit(pending)
 }
 
-// retransmit enqueues pending DB rows to publishCh so the batch workers handle
-// publishing. When rawConn is set, payloads are passed through without
-// proto.Unmarshal — the batch workers use buildBatchBytes for the wire format.
+// retransmit re-enqueues pending DB rows through the batch emitter. Each row
+// gets its own delivery callback that marks it delivered on success.
 func (d *DurableEmitter) retransmit(pending []DurableEvent) {
-	var enqueued int
+	var enqueued, skipped int
 
 	for _, pe := range pending {
 		select {
@@ -874,21 +693,25 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 			return
 		default:
 		}
-		work := publishWork{id: pe.ID, payload: pe.Payload}
 
-		select {
-		case d.publishCh <- work:
+		eventPb := new(chipingress.CloudEventPb)
+		if err := proto.Unmarshal(pe.Payload, eventPb); err != nil {
+			d.eng.Errorw("DurableEmitter: failed to unmarshal event for retransmit", "id", pe.ID, "error", err)
+			continue
+		}
+
+		id := pe.ID
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now())); err != nil {
+			skipped++
+		} else {
 			enqueued++
-		default:
 		}
 	}
 
-	d.eng.Infow("DurableEmitter: retransmit enqueued to batch workers",
+	d.eng.Infow("DurableEmitter: retransmit queued to batch emitter",
 		"enqueued", enqueued,
-		"skipped_ch_full", len(pending)-enqueued,
+		"skipped_buffer_full", skipped,
 		"total_pending", len(pending),
-		"ch_len", len(d.publishCh),
-		"ch_cap", cap(d.publishCh),
 	)
 }
 

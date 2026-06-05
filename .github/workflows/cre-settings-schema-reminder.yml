@@ -1,0 +1,43 @@
+name: CRE settings schema reminder
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: changes
+        with:
+          filters: |
+            settings:
+              - 'pkg/settings/cresettings/**'
+
+      - name: PR reminder
+        if: steps.changes.outputs.settings == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body-includes: "<!-- cre-settings-schema-reminder -->"
+          body: |
+            <!-- cre-settings-schema-reminder -->
+            ### CRE settings touched
+
+            This PR changes files under `pkg/settings/`.
+
+            If the **settings schema** changed (new/renamed/removed fields or different defaults), before merge:
+
+            1. Check [chainlink-deployments](https://github.com/smartcontractkit/chainlink-deployments) for existing overrides on the affected fields (e.g. `domains/cre/*/settings/*.toml`).
+            2. Whenever this change goes live,
+              - Update any deployment TOMLs that still reference changed fields.
+              - Plan to **re-propose jobs** with the updated settings TOMLs.
+
+            Test-only changes under `pkg/settings/` can ignore this.

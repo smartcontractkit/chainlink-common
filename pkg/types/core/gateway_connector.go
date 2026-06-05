@@ -24,9 +24,9 @@ type GatewayConnector interface {
 	AwaitConnection(ctx context.Context, gatewayID string) error
 }
 
-// MultiGatewayDonConnector extends GatewayConnector with multi-DON routing methods.
+// MultiGatewayConnector extends GatewayConnector with multi-gateway routing methods.
 // Implementations delegate GatewayIDs to GatewayIDsForDon for backward-compatible routing.
-type MultiGatewayDonConnector interface {
+type MultiGatewayConnector interface {
 	GatewayConnector
 
 	// GatewayIDsForDon returns gateway IDs whose per-gateway DonID (gateway DON) matches donID.
@@ -49,7 +49,7 @@ type GatewayConnectorHandler interface {
 
 var (
 	_ GatewayConnector         = (*UnimplementedGatewayConnector)(nil)
-	_ MultiGatewayDonConnector = (*UnimplementedGatewayConnector)(nil)
+	_ MultiGatewayConnector = (*UnimplementedGatewayConnector)(nil)
 )
 
 type UnimplementedGatewayConnector struct{}

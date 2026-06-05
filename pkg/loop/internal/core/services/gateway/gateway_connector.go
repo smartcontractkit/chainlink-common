@@ -16,7 +16,7 @@ import (
 
 var (
 	_ core.GatewayConnector         = (*GatewayConnectorClient)(nil)
-	_ core.MultiGatewayDonConnector = (*GatewayConnectorClient)(nil)
+	_ core.MultiGatewayConnector = (*GatewayConnectorClient)(nil)
 )
 
 type GatewayConnectorClient struct {
@@ -239,11 +239,11 @@ func (s GatewayConnectorServer) getImpl() core.GatewayConnector {
 	return s.impl
 }
 
-func (s GatewayConnectorServer) getMultiImpl() core.MultiGatewayDonConnector {
+func (s GatewayConnectorServer) getMultiImpl() core.MultiGatewayConnector {
 	if s.impl == nil {
 		return &core.UnimplementedGatewayConnector{}
 	}
-	if m, ok := s.impl.(core.MultiGatewayDonConnector); ok {
+	if m, ok := s.impl.(core.MultiGatewayConnector); ok {
 		return m
 	}
 	return &core.UnimplementedGatewayConnector{}

@@ -30,9 +30,7 @@ jobs:
           body: |
             <!-- cre-settings-schema-reminder -->
             ### CRE settings touched
-
-            This PR changes files under `pkg/settings/`.
-
+            This PR changes files under `pkg/settings/cresettings/`.
             If the **settings schema** changed (new/renamed/removed fields or different defaults), before merge:
 
             1. Check [chainlink-deployments](https://github.com/smartcontractkit/chainlink-deployments) for existing overrides on the affected fields (e.g. `domains/cre/*/settings/*.toml`).

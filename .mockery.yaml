@@ -30,6 +30,7 @@ packages:
       CapabilitiesRegistry:
       Relayer:
       GatewayConnector:
+      MultiGatewayDonConnector:
       GatewayConnectorHandler:
       RelayerSet:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:

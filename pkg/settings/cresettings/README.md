@@ -205,6 +205,7 @@ flowchart
             PerWorkflow.HTTPAction.ConnectionTimeout{{ConnectionTimeout}}:::bound
             PerWorkflow.HTTPAction.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.HTTPAction.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
+            PerWorkflow.HTTPAction.GatewayProxyDonID{{GatewayProxyDonID}}
         end
         subgraph PerWorkflow.ConfidentialHTTP
             direction LR

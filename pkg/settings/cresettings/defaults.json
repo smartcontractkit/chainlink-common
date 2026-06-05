@@ -138,7 +138,8 @@
 			"CacheAgeLimit": "10m0s",
 			"ConnectionTimeout": "10s",
 			"RequestSizeLimit": "10kb",
-			"ResponseSizeLimit": "100kb"
+			"ResponseSizeLimit": "100kb",
+			"GatewayProxyDonID": ""
 		},
 		"ConfidentialHTTP": {
 			"CallLimit": "5",

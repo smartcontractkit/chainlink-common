@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780677345119,
+  "lastUpdate": 1780683234283,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49560,6 +49560,66 @@ window.BENCHMARK_DATA = {
             "value": 132940,
             "unit": "ns/op",
             "extra": "8420 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9678dea7f44381daa072c9b40fa18606d1b8c692",
+          "message": "feat(cre): extends gateway connector to support multiple DONs (#2131)\n\n* feat(cre): extends gateway connector to support multiple DONs\n\n* chore(cre): bumps gateway connector protos\n\n* refactor(cre): renames interface to drop Don",
+          "timestamp": "2026-06-05T18:01:38Z",
+          "tree_id": "c89e156822571b76a1f214007efe997658dcdfe1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9678dea7f44381daa072c9b40fa18606d1b8c692"
+        },
+        "date": 1780683232338,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.6,
+            "unit": "ns/op",
+            "extra": "3337465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78952,
+            "unit": "ns/op",
+            "extra": "15076 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 381.2,
+            "unit": "ns/op",
+            "extra": "3142612 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79740,
+            "unit": "ns/op",
+            "extra": "15076 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29139,
+            "unit": "ns/op",
+            "extra": "41221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 130831,
+            "unit": "ns/op",
+            "extra": "8736 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780610018418,
+  "lastUpdate": 1780660864024,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49440,6 +49440,66 @@ window.BENCHMARK_DATA = {
             "value": 136700,
             "unit": "ns/op",
             "extra": "8662 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0a11f78477a04cbe7690fbc4909abbfda3e1daf2",
+          "message": "Add stellar key support (#2125)",
+          "timestamp": "2026-06-05T11:49:54Z",
+          "tree_id": "df4eaef07d0672243587eb53bd26e76661d234ed",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0a11f78477a04cbe7690fbc4909abbfda3e1daf2"
+        },
+        "date": 1780660861457,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.8,
+            "unit": "ns/op",
+            "extra": "3270278 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92537,
+            "unit": "ns/op",
+            "extra": "12928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.4,
+            "unit": "ns/op",
+            "extra": "2921583 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93719,
+            "unit": "ns/op",
+            "extra": "12768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26658,
+            "unit": "ns/op",
+            "extra": "44967 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141868,
+            "unit": "ns/op",
+            "extra": "8475 times\n4 procs"
           }
         ]
       }

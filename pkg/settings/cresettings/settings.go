@@ -226,11 +226,12 @@ var Default = Schema{
 			CallLimit:            Int(20),
 		},
 		HTTPAction: httpAction{
-			CallLimit:         Int(5),
-			CacheAgeLimit:     Duration(10 * time.Minute),
-			ConnectionTimeout: Duration(10 * time.Second),
-			RequestSizeLimit:  Size(10 * config.KByte),
-			ResponseSizeLimit: Size(100 * config.KByte),
+			CallLimit:           Int(5),
+			CacheAgeLimit:       Duration(10 * time.Minute),
+			ConnectionTimeout:   Duration(10 * time.Second),
+			RequestSizeLimit:    Size(10 * config.KByte),
+			ResponseSizeLimit:   Size(100 * config.KByte),
+			GatewayProxyDonID:   String(""),
 		},
 		ConfidentialHTTP: confidentialHTTP{
 			CallLimit:         Int(5),
@@ -406,11 +407,12 @@ type chainRead struct {
 	PayloadSizeLimit   Setting[config.Size]
 }
 type httpAction struct {
-	CallLimit         Setting[int] `unit:"{call}"`
-	CacheAgeLimit     Setting[time.Duration]
-	ConnectionTimeout Setting[time.Duration]
-	RequestSizeLimit  Setting[config.Size]
-	ResponseSizeLimit Setting[config.Size]
+	CallLimit           Setting[int] `unit:"{call}"`
+	CacheAgeLimit       Setting[time.Duration]
+	ConnectionTimeout   Setting[time.Duration]
+	RequestSizeLimit    Setting[config.Size]
+	ResponseSizeLimit   Setting[config.Size]
+	GatewayProxyDonID   Setting[string]
 }
 type perOrgHTTPAction struct {
 	MtlsRateLimit Setting[config.Rate]

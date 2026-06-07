@@ -30,10 +30,23 @@ func (s ServerLanguage) Validate() error {
 //go:embed templates/server.go.tmpl
 var goServerTemplate string
 
+//go:embed templates/server_with_monitoring.go.tmpl
+var goServerWithMonitoringTemplate string
+
 var serverTemplates = map[ServerLanguage]TemplateGenerator{
 	ServerLangaugeGo: {
 		Name:               "go_server",
 		Template:           goServerTemplate,
+		FileNameTemplate:   "server/{{.}}_server_gen.go",
+		StringLblValue:     StringLblValue(true),
+		PbLabelTLangLabels: PbLabelToGoLabels,
+	},
+}
+
+var serverWithMonitoringTemplates = map[ServerLanguage]TemplateGenerator{
+	ServerLangaugeGo: {
+		Name:               "go_server_with_monitoring",
+		Template:           goServerWithMonitoringTemplate,
 		FileNameTemplate:   "server/{{.}}_server_gen.go",
 		StringLblValue:     StringLblValue(true),
 		PbLabelTLangLabels: PbLabelToGoLabels,
@@ -45,16 +58,22 @@ func GenerateServer(
 	file *protogen.File,
 	serverLanguage ServerLanguage,
 	toolName,
-	localPrefix string) error {
+	localPrefix string,
+	withMonitoring bool) error {
 	if len(file.Services) == 0 {
 		return nil
 	}
 
-	template, ok := serverTemplates[serverLanguage]
+	templates := serverTemplates
+	if withMonitoring {
+		templates = serverWithMonitoringTemplates
+	}
+
+	tmpl, ok := templates[serverLanguage]
 	if !ok {
 		return fmt.Errorf("unsupported server language: %s", serverLanguage)
 	}
 
 	args := serverArgs{File: file}
-	return template.GenerateFile(file, plugin, args, toolName, localPrefix)
+	return tmpl.GenerateFile(file, plugin, args, toolName, localPrefix)
 }

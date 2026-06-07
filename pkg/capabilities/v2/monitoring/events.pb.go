@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v5.29.3
-// source: events.proto
+// source: monitoring/events.proto
 
 package monitoring
 
@@ -32,7 +32,7 @@ type CapabilityActionInitiated struct {
 
 func (x *CapabilityActionInitiated) Reset() {
 	*x = CapabilityActionInitiated{}
-	mi := &file_events_proto_msgTypes[0]
+	mi := &file_monitoring_events_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *CapabilityActionInitiated) String() string {
 func (*CapabilityActionInitiated) ProtoMessage() {}
 
 func (x *CapabilityActionInitiated) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[0]
+	mi := &file_monitoring_events_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *CapabilityActionInitiated) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityActionInitiated.ProtoReflect.Descriptor instead.
 func (*CapabilityActionInitiated) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{0}
+	return file_monitoring_events_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CapabilityActionInitiated) GetMethod() string {
@@ -85,7 +85,7 @@ type CapabilityActionSuccess struct {
 
 func (x *CapabilityActionSuccess) Reset() {
 	*x = CapabilityActionSuccess{}
-	mi := &file_events_proto_msgTypes[1]
+	mi := &file_monitoring_events_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +97,7 @@ func (x *CapabilityActionSuccess) String() string {
 func (*CapabilityActionSuccess) ProtoMessage() {}
 
 func (x *CapabilityActionSuccess) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[1]
+	mi := &file_monitoring_events_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +110,7 @@ func (x *CapabilityActionSuccess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityActionSuccess.ProtoReflect.Descriptor instead.
 func (*CapabilityActionSuccess) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{1}
+	return file_monitoring_events_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CapabilityActionSuccess) GetMethod() string {
@@ -141,7 +141,7 @@ type CapabilityActionError struct {
 
 func (x *CapabilityActionError) Reset() {
 	*x = CapabilityActionError{}
-	mi := &file_events_proto_msgTypes[2]
+	mi := &file_monitoring_events_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -153,7 +153,7 @@ func (x *CapabilityActionError) String() string {
 func (*CapabilityActionError) ProtoMessage() {}
 
 func (x *CapabilityActionError) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[2]
+	mi := &file_monitoring_events_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -166,7 +166,7 @@ func (x *CapabilityActionError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityActionError.ProtoReflect.Descriptor instead.
 func (*CapabilityActionError) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{2}
+	return file_monitoring_events_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CapabilityActionError) GetMethod() string {
@@ -204,11 +204,11 @@ func (x *CapabilityActionError) GetExecutionContext() *ExecutionContext {
 	return nil
 }
 
-var File_events_proto protoreflect.FileDescriptor
+var File_monitoring_events_proto protoreflect.FileDescriptor
 
-const file_events_proto_rawDesc = "" +
+const file_monitoring_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x1acapabilities.v2.monitoring\x1a\x17execution_context.proto\"\x8e\x01\n" +
+	"\x17monitoring/events.proto\x12\x1acapabilities.v2.monitoring\x1a\"monitoring/execution_context.proto\"\x8e\x01\n" +
 	"\x19CapabilityActionInitiated\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12Y\n" +
 	"\x11execution_context\x18\x14 \x01(\v2,.capabilities.v2.monitoring.ExecutionContextR\x10executionContext\"\x8c\x01\n" +
@@ -223,25 +223,25 @@ const file_events_proto_rawDesc = "" +
 	"\x11execution_context\x18\x14 \x01(\v2,.capabilities.v2.monitoring.ExecutionContextR\x10executionContextBMZKgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoringb\x06proto3"
 
 var (
-	file_events_proto_rawDescOnce sync.Once
-	file_events_proto_rawDescData []byte
+	file_monitoring_events_proto_rawDescOnce sync.Once
+	file_monitoring_events_proto_rawDescData []byte
 )
 
-func file_events_proto_rawDescGZIP() []byte {
-	file_events_proto_rawDescOnce.Do(func() {
-		file_events_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_events_proto_rawDesc), len(file_events_proto_rawDesc)))
+func file_monitoring_events_proto_rawDescGZIP() []byte {
+	file_monitoring_events_proto_rawDescOnce.Do(func() {
+		file_monitoring_events_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_monitoring_events_proto_rawDesc), len(file_monitoring_events_proto_rawDesc)))
 	})
-	return file_events_proto_rawDescData
+	return file_monitoring_events_proto_rawDescData
 }
 
-var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_events_proto_goTypes = []any{
+var file_monitoring_events_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_monitoring_events_proto_goTypes = []any{
 	(*CapabilityActionInitiated)(nil), // 0: capabilities.v2.monitoring.CapabilityActionInitiated
 	(*CapabilityActionSuccess)(nil),   // 1: capabilities.v2.monitoring.CapabilityActionSuccess
 	(*CapabilityActionError)(nil),     // 2: capabilities.v2.monitoring.CapabilityActionError
 	(*ExecutionContext)(nil),          // 3: capabilities.v2.monitoring.ExecutionContext
 }
-var file_events_proto_depIdxs = []int32{
+var file_monitoring_events_proto_depIdxs = []int32{
 	3, // 0: capabilities.v2.monitoring.CapabilityActionInitiated.execution_context:type_name -> capabilities.v2.monitoring.ExecutionContext
 	3, // 1: capabilities.v2.monitoring.CapabilityActionSuccess.execution_context:type_name -> capabilities.v2.monitoring.ExecutionContext
 	3, // 2: capabilities.v2.monitoring.CapabilityActionError.execution_context:type_name -> capabilities.v2.monitoring.ExecutionContext
@@ -252,27 +252,27 @@ var file_events_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_events_proto_init() }
-func file_events_proto_init() {
-	if File_events_proto != nil {
+func init() { file_monitoring_events_proto_init() }
+func file_monitoring_events_proto_init() {
+	if File_monitoring_events_proto != nil {
 		return
 	}
-	file_execution_context_proto_init()
+	file_monitoring_execution_context_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_events_proto_rawDesc), len(file_events_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_monitoring_events_proto_rawDesc), len(file_monitoring_events_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_events_proto_goTypes,
-		DependencyIndexes: file_events_proto_depIdxs,
-		MessageInfos:      file_events_proto_msgTypes,
+		GoTypes:           file_monitoring_events_proto_goTypes,
+		DependencyIndexes: file_monitoring_events_proto_depIdxs,
+		MessageInfos:      file_monitoring_events_proto_msgTypes,
 	}.Build()
-	File_events_proto = out.File
-	file_events_proto_goTypes = nil
-	file_events_proto_depIdxs = nil
+	File_monitoring_events_proto = out.File
+	file_monitoring_events_proto_goTypes = nil
+	file_monitoring_events_proto_depIdxs = nil
 }

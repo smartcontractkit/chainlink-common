@@ -3,7 +3,7 @@ package capabilities.v2.monitoring;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring";
 
-import "execution_context.proto";
+import "monitoring/execution_context.proto";
 
 // CapabilityActionInitiated is emitted just before a capability action method executes.
 message CapabilityActionInitiated {

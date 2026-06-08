@@ -28,11 +28,12 @@ func GetGlobalEmitter() *DurableEmitter {
 }
 
 // GlobalEmit emits an event via the global DurableEmitter.
-// Returns a non-nil error when the global emitter has not been initialized.
+// Returns nil if the global emitter has not been initialized, so callers can
+// treat a non-nil error as a real emission failure rather than "disabled".
 func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	d := globalEmitter.Load()
 	if d == nil {
-		return errors.New("global DurableEmitter not initialized; call durableemitter.Setup first")
+		return nil
 	}
 	return d.Emit(ctx, body, attrKVs...)
 }

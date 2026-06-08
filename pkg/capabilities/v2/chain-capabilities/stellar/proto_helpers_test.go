@@ -160,7 +160,9 @@ func TestScValToProto_NilArmPointers(t *testing.T) {
 		{"i128 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI128}, "scvI128: nil"},
 		{"u256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU256}, "scvU256: nil"},
 		{"i256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI256}, "scvI256: nil"},
-		{"bytes nil", stellartypes.ScVal{Type: stellartypes.ScValTypeBytes}, "scvBytes: nil"},
+		// Bytes intentionally omitted: nil and empty are indistinguishable for
+		// []byte and empty ScBytes is valid, so nil must NOT error. Covered by
+		// TestScVal_Bytes_EmptyAndNil instead.
 		{"string nil", stellartypes.ScVal{Type: stellartypes.ScValTypeString}, "scvString: nil"},
 		{"symbol nil", stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol}, "scvSymbol: nil"},
 		{"vec nil", stellartypes.ScVal{Type: stellartypes.ScValTypeVec}, "scvVec: nil"},
@@ -363,6 +365,24 @@ func TestScVal_I256(t *testing.T) {
 func TestScVal_Bytes(t *testing.T) {
 	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeBytes, Bytes: []byte{0x01, 0x02, 0x03}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
+}
+
+// TestScVal_Bytes_EmptyAndNil guards the decode→encode idempotency of an empty
+// ScBytes. ProtoToScVal yields a nil Bytes for an empty byte string, so
+// ScValToProto must accept nil rather than erroring — otherwise a valid empty
+// bytes argument breaks the R2→R3→R4 conversion pipeline.
+func TestScVal_Bytes_EmptyAndNil(t *testing.T) {
+	for _, b := range [][]byte{nil, {}} {
+		sv := stellartypes.ScVal{Type: stellartypes.ScValTypeBytes, Bytes: b}
+		proto, err := stellarcap.ScValToProto(sv)
+		require.NoError(t, err)
+		got, err := stellarcap.ProtoToScVal(proto)
+		require.NoError(t, err)
+		require.Equal(t, stellartypes.ScValTypeBytes, got.Type)
+		// Re-encode the decoded value — this is what the chains layer does.
+		_, err = stellarcap.ScValToProto(got)
+		require.NoError(t, err)
+	}
 }
 
 func TestScVal_String(t *testing.T) {

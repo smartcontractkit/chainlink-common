@@ -171,18 +171,21 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 // proto representation.
 func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadContractRequest, error) {
 	if req.ContractID == "" {
-		return nil, fmt.Errorf("contractID is required")
+		return nil, errors.New("contractID is required")
 	}
 	if req.Function == "" {
-		return nil, fmt.Errorf("function is required")
+		return nil, errors.New("function is required")
 	}
-	args := make([]*scval.ScVal, len(req.Args))
-	for i, sv := range req.Args {
-		psv, err := stellarcap.ScValToProto(sv)
-		if err != nil {
-			return nil, fmt.Errorf("args[%d]: %w", i, err)
+	var args []*scval.ScVal
+	if len(req.Args) > 0 {
+		args = make([]*scval.ScVal, len(req.Args))
+		for i, sv := range req.Args {
+			psv, err := stellarcap.ScValToProto(sv)
+			if err != nil {
+				return nil, fmt.Errorf("args[%d]: %w", i, err)
+			}
+			args[i] = psv
 		}
-		args[i] = psv
 	}
 	return &ReadContractRequest{
 		ContractId:     req.ContractID,
@@ -196,22 +199,25 @@ func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadCo
 // domain type.
 func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadContractRequest, error) {
 	if p == nil {
-		return stellar.ReadContractRequest{}, fmt.Errorf("readContractRequest is nil")
+		return stellar.ReadContractRequest{}, errors.New("readContractRequest is nil")
 	}
 	if p.GetContractId() == "" {
-		return stellar.ReadContractRequest{}, fmt.Errorf("contractID is required")
+		return stellar.ReadContractRequest{}, errors.New("contractID is required")
 	}
 	if p.GetFunction() == "" {
-		return stellar.ReadContractRequest{}, fmt.Errorf("function is required")
+		return stellar.ReadContractRequest{}, errors.New("function is required")
 	}
 	pArgs := p.GetArgs()
-	args := make([]stellar.ScVal, len(pArgs))
-	for i, psv := range pArgs {
-		sv, err := stellarcap.ProtoToScVal(psv)
-		if err != nil {
-			return stellar.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
+	var args []stellar.ScVal
+	if len(pArgs) > 0 {
+		args = make([]stellar.ScVal, len(pArgs))
+		for i, psv := range pArgs {
+			sv, err := stellarcap.ProtoToScVal(psv)
+			if err != nil {
+				return stellar.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
+			}
+			args[i] = sv
 		}
-		args[i] = sv
 	}
 	return stellar.ReadContractRequest{
 		ContractID:     p.GetContractId(),

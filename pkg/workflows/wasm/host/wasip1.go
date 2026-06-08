@@ -122,7 +122,9 @@ func clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTime
 const (
 	subscriptionLen = 48
 	eventsLen       = 32
+)
 
+const (
 	eventTypeClock = iota
 	eventTypeFDRead
 	eventTypeFDWrite

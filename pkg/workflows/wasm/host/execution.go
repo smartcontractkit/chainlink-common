@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
@@ -57,9 +59,15 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
+			errString := err.Error()
+
+			var caperror caperrors.Error
+			if errors.As(err, &caperror) {
+				errString = caperror.SerializeToString()
+			}
 			resp = &sdkpb.CapabilityResponse{
 				Response: &sdkpb.CapabilityResponse_Error{
-					Error: err.Error(),
+					Error: errString,
 				},
 			}
 		}

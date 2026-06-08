@@ -47,6 +47,7 @@
 	"PerOwner": {
 		"WorkflowLimit": "1000",
 		"WorkflowExecutionConcurrencyLimit": "5",
+		"VaultCiphertextSizeLimit": "2kb",
 		"VaultSecretsLimit": "100"
 	},
 	"PerWorkflow": {
@@ -137,7 +138,8 @@
 			"CacheAgeLimit": "10m0s",
 			"ConnectionTimeout": "10s",
 			"RequestSizeLimit": "10kb",
-			"ResponseSizeLimit": "100kb"
+			"ResponseSizeLimit": "100kb",
+			"GatewayProxyDonID": ""
 		},
 		"ConfidentialHTTP": {
 			"CallLimit": "5",

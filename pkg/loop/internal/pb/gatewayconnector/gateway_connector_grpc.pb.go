@@ -20,13 +20,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GatewayConnector_AddHandler_FullMethodName      = "/loop.GatewayConnector/AddHandler"
-	GatewayConnector_RemoveHandler_FullMethodName   = "/loop.GatewayConnector/RemoveHandler"
-	GatewayConnector_SendToGateway_FullMethodName   = "/loop.GatewayConnector/SendToGateway"
-	GatewayConnector_SignMessage_FullMethodName     = "/loop.GatewayConnector/SignMessage"
-	GatewayConnector_GatewayIDs_FullMethodName      = "/loop.GatewayConnector/GatewayIDs"
-	GatewayConnector_DonID_FullMethodName           = "/loop.GatewayConnector/DonID"
-	GatewayConnector_AwaitConnection_FullMethodName = "/loop.GatewayConnector/AwaitConnection"
+	GatewayConnector_AddHandler_FullMethodName       = "/loop.GatewayConnector/AddHandler"
+	GatewayConnector_RemoveHandler_FullMethodName    = "/loop.GatewayConnector/RemoveHandler"
+	GatewayConnector_SendToGateway_FullMethodName    = "/loop.GatewayConnector/SendToGateway"
+	GatewayConnector_SignMessage_FullMethodName      = "/loop.GatewayConnector/SignMessage"
+	GatewayConnector_GatewayIDs_FullMethodName       = "/loop.GatewayConnector/GatewayIDs"
+	GatewayConnector_DonID_FullMethodName            = "/loop.GatewayConnector/DonID"
+	GatewayConnector_AwaitConnection_FullMethodName  = "/loop.GatewayConnector/AwaitConnection"
+	GatewayConnector_GatewayIDsForDon_FullMethodName = "/loop.GatewayConnector/GatewayIDsForDon"
+	GatewayConnector_DonIDForGateway_FullMethodName  = "/loop.GatewayConnector/DonIDForGateway"
+	GatewayConnector_PrimaryDonID_FullMethodName     = "/loop.GatewayConnector/PrimaryDonID"
 )
 
 // GatewayConnectorClient is the client API for GatewayConnector service.
@@ -40,6 +43,9 @@ type GatewayConnectorClient interface {
 	GatewayIDs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayIDsReply, error)
 	DonID(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DonIDReply, error)
 	AwaitConnection(ctx context.Context, in *GatewayIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GatewayIDsForDon(ctx context.Context, in *GatewayIDsForDonRequest, opts ...grpc.CallOption) (*GatewayIDsReply, error)
+	DonIDForGateway(ctx context.Context, in *GatewayIDRequest, opts ...grpc.CallOption) (*DonIDReply, error)
+	PrimaryDonID(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DonIDReply, error)
 }
 
 type gatewayConnectorClient struct {
@@ -120,6 +126,36 @@ func (c *gatewayConnectorClient) AwaitConnection(ctx context.Context, in *Gatewa
 	return out, nil
 }
 
+func (c *gatewayConnectorClient) GatewayIDsForDon(ctx context.Context, in *GatewayIDsForDonRequest, opts ...grpc.CallOption) (*GatewayIDsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GatewayIDsReply)
+	err := c.cc.Invoke(ctx, GatewayConnector_GatewayIDsForDon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gatewayConnectorClient) DonIDForGateway(ctx context.Context, in *GatewayIDRequest, opts ...grpc.CallOption) (*DonIDReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DonIDReply)
+	err := c.cc.Invoke(ctx, GatewayConnector_DonIDForGateway_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gatewayConnectorClient) PrimaryDonID(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DonIDReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DonIDReply)
+	err := c.cc.Invoke(ctx, GatewayConnector_PrimaryDonID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GatewayConnectorServer is the server API for GatewayConnector service.
 // All implementations must embed UnimplementedGatewayConnectorServer
 // for forward compatibility.
@@ -131,6 +167,9 @@ type GatewayConnectorServer interface {
 	GatewayIDs(context.Context, *emptypb.Empty) (*GatewayIDsReply, error)
 	DonID(context.Context, *emptypb.Empty) (*DonIDReply, error)
 	AwaitConnection(context.Context, *GatewayIDRequest) (*emptypb.Empty, error)
+	GatewayIDsForDon(context.Context, *GatewayIDsForDonRequest) (*GatewayIDsReply, error)
+	DonIDForGateway(context.Context, *GatewayIDRequest) (*DonIDReply, error)
+	PrimaryDonID(context.Context, *emptypb.Empty) (*DonIDReply, error)
 	mustEmbedUnimplementedGatewayConnectorServer()
 }
 
@@ -161,6 +200,15 @@ func (UnimplementedGatewayConnectorServer) DonID(context.Context, *emptypb.Empty
 }
 func (UnimplementedGatewayConnectorServer) AwaitConnection(context.Context, *GatewayIDRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AwaitConnection not implemented")
+}
+func (UnimplementedGatewayConnectorServer) GatewayIDsForDon(context.Context, *GatewayIDsForDonRequest) (*GatewayIDsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GatewayIDsForDon not implemented")
+}
+func (UnimplementedGatewayConnectorServer) DonIDForGateway(context.Context, *GatewayIDRequest) (*DonIDReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DonIDForGateway not implemented")
+}
+func (UnimplementedGatewayConnectorServer) PrimaryDonID(context.Context, *emptypb.Empty) (*DonIDReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrimaryDonID not implemented")
 }
 func (UnimplementedGatewayConnectorServer) mustEmbedUnimplementedGatewayConnectorServer() {}
 func (UnimplementedGatewayConnectorServer) testEmbeddedByValue()                          {}
@@ -309,6 +357,60 @@ func _GatewayConnector_AwaitConnection_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GatewayConnector_GatewayIDsForDon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GatewayIDsForDonRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GatewayConnectorServer).GatewayIDsForDon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GatewayConnector_GatewayIDsForDon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GatewayConnectorServer).GatewayIDsForDon(ctx, req.(*GatewayIDsForDonRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GatewayConnector_DonIDForGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GatewayIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GatewayConnectorServer).DonIDForGateway(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GatewayConnector_DonIDForGateway_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GatewayConnectorServer).DonIDForGateway(ctx, req.(*GatewayIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GatewayConnector_PrimaryDonID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GatewayConnectorServer).PrimaryDonID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GatewayConnector_PrimaryDonID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GatewayConnectorServer).PrimaryDonID(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GatewayConnector_ServiceDesc is the grpc.ServiceDesc for GatewayConnector service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -343,6 +445,18 @@ var GatewayConnector_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AwaitConnection",
 			Handler:    _GatewayConnector_AwaitConnection_Handler,
+		},
+		{
+			MethodName: "GatewayIDsForDon",
+			Handler:    _GatewayConnector_GatewayIDsForDon_Handler,
+		},
+		{
+			MethodName: "DonIDForGateway",
+			Handler:    _GatewayConnector_DonIDForGateway_Handler,
+		},
+		{
+			MethodName: "PrimaryDonID",
+			Handler:    _GatewayConnector_PrimaryDonID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

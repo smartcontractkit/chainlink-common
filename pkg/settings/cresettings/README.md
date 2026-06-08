@@ -205,6 +205,7 @@ flowchart
             PerWorkflow.HTTPAction.ConnectionTimeout{{ConnectionTimeout}}:::bound
             PerWorkflow.HTTPAction.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.HTTPAction.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
+            PerWorkflow.HTTPAction.GatewayProxyDonID{{GatewayProxyDonID}}
         end
         subgraph PerWorkflow.ConfidentialHTTP
             direction LR
@@ -239,6 +240,7 @@ flowchart
         VaultMaxBlobPayloadSizeLimit{{VaultMaxBlobPayloadSizeLimit}}:::bound
         VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit{{VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit}}:::bound
         VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
+        PerOwner.VaultCiphertextSizeLimit{{PerOwner.VaultCiphertextSizeLimit}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 

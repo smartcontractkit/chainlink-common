@@ -529,7 +529,7 @@ func TestStandardTeeRuntime(t *testing.T) {
 	t.Parallel()
 
 	cfg := defaultNoDAGModCfg(t)
-	m := makeTestModuleWithConfig(t, cfg)
+	m := makeOptionalTestModuleWithConfig(t, cfg)
 	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
@@ -612,14 +612,29 @@ func makeTestModule(t *testing.T) *module {
 
 func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, cfg)
+	return makeTestModuleByName(t, testName, cfg, true)
 }
 
-func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
+func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return makeTestModuleByName(t, testName, cfg, false)
+}
+
+func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig, required bool) *module {
 	wasmName := path.Join(testName, "test.wasm")
-	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
+
+	// An optional test is one whose SDK feature may not be released yet, in which case its
+	// source directory won't exist. Skip only in that case; any other make failure (e.g. a
+	// compilation error in an existing test) must still fail so we don't hide regressions.
+	if !required {
+		if _, statErr := os.Stat(filepath.Join(absPath, testName)); errors.Is(statErr, os.ErrNotExist) {
+			t.Skipf("Optional test %q not found", testName)
+		}
+	}
+
+	cmd := exec.Command("make", wasmName) // #nosec
 	cmd.Dir = absPath
 
 	output, err := cmd.CombinedOutput()

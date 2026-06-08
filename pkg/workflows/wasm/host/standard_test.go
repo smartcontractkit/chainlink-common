@@ -529,7 +529,7 @@ func TestStandardTeeRuntime(t *testing.T) {
 	t.Parallel()
 
 	cfg := defaultNoDAGModCfg(t)
-	m := makeTestModuleWithConfig(t, cfg)
+	m := makeOptionalTestModuleWithConfig(t, cfg)
 	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
@@ -612,10 +612,15 @@ func makeTestModule(t *testing.T) *module {
 
 func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, cfg)
+	return makeTestModuleByName(t, testName, cfg, true)
 }
 
-func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
+func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return makeTestModuleByName(t, testName, cfg, false)
+}
+
+func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig, required bool) *module {
 	wasmName := path.Join(testName, "test.wasm")
 	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
@@ -623,7 +628,11 @@ func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *mod
 	cmd.Dir = absPath
 
 	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
+	if required {
+		require.NoError(t, err, string(output))
+	} else if err != nil {
+		t.Skip("Optional test not found")
+	}
 
 	binary, err := os.ReadFile(filepath.Join(absPath, wasmName))
 	require.NoError(t, err)

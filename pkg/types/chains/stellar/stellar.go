@@ -34,8 +34,8 @@ const (
 	ScErrorCodeUnexpectedSize ScErrorCode = 9
 )
 
-// Client wraps Stellar RPC calls via the type/chains/stellar domain types.
-// Both methods map 1:1 to the Stellar RPC API.
+// Client wraps native Stellar RPC calls via the type/chains/stellar domain types.
+// Methods map 1:1 to the Stellar RPC API.
 type Client interface {
 	// GetLedgerEntries fetches ledger entries by XDR key (used for sequence number lookups).
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
@@ -44,8 +44,6 @@ type Client interface {
 	// ReadContract simulates a read-only Soroban contract function call.
 	// Each element of req.Args is a domain ScVal value.
 	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
-	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.
-	SubmitTransaction(ctx context.Context, req SubmitTransactionRequest) (*SubmitTransactionResponse, error)
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.

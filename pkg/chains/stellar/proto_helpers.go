@@ -230,7 +230,7 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadCo
 // ConvertSubmitTransactionRequestToProto converts a domain SubmitTransactionRequest to proto.
 func ConvertSubmitTransactionRequestToProto(req stellar.SubmitTransactionRequest) (*SubmitTransactionRequest, error) {
 	if req.ContractID == "" {
-		return nil, errors.New("contract_id is required")
+		return nil, errors.New("contractId is required")
 	}
 	if req.Function == "" {
 		return nil, errors.New("function is required")
@@ -259,7 +259,7 @@ func ConvertSubmitTransactionRequestFromProto(p *SubmitTransactionRequest) (stel
 		return stellar.SubmitTransactionRequest{}, errors.New("submit transaction request is nil")
 	}
 	if p.GetContractId() == "" {
-		return stellar.SubmitTransactionRequest{}, errors.New("contract_id is required")
+		return stellar.SubmitTransactionRequest{}, errors.New("contractId is required")
 	}
 	if p.GetFunction() == "" {
 		return stellar.SubmitTransactionRequest{}, errors.New("function is required")

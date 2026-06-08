@@ -274,7 +274,7 @@ type AptosService interface {
 type StellarService interface {
 	stellar.Client
 
-	// SubmitTransaction submits a prebuilt transaction envelope XDR to the network.
+	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.
 	SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)
 }
 

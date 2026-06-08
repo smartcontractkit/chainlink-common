@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	commonv1 "github.com/smartcontractkit/chainlink-protos/node-platform/common/v1"
@@ -103,6 +104,17 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 	if err != nil {
 		e.eng.Errorw(
 			"failed to emit ChainPluginConfig",
+			"err", err,
+			"payloadBytes", len(payloadBytes),
+			"chainID", e.chainID,
+			"nodes", len(payload.Nodes),
+		)
+		return
+	}
+
+	if err := durableemitter.GlobalEmit(ctx, payloadBytes, "source", beholderDomain, "type", beholderEntity); err != nil {
+		e.eng.Errorw(
+			"failed to durable-emit ChainPluginConfig",
 			"err", err,
 			"payloadBytes", len(payloadBytes),
 			"chainID", e.chainID,

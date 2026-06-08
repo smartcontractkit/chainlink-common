@@ -356,7 +356,7 @@ func TestConvertSubmitTransactionRequest_NoArgs(t *testing.T) {
 
 func TestConvertSubmitTransactionRequestToProto_MissingContractID(t *testing.T) {
 	_, err := conv.ConvertSubmitTransactionRequestToProto(stellartypes.SubmitTransactionRequest{Function: "fn"})
-	require.EqualError(t, err, "contract_id is required")
+	require.EqualError(t, err, "contractId is required")
 }
 
 func TestConvertSubmitTransactionRequestToProto_MissingFunction(t *testing.T) {
@@ -381,7 +381,7 @@ func TestConvertSubmitTransactionRequestFromProto_Nil(t *testing.T) {
 
 func TestConvertSubmitTransactionRequestFromProto_MissingContractID(t *testing.T) {
 	_, err := conv.ConvertSubmitTransactionRequestFromProto(&conv.SubmitTransactionRequest{Function: "fn"})
-	require.EqualError(t, err, "contract_id is required")
+	require.EqualError(t, err, "contractId is required")
 }
 
 func TestConvertSubmitTransactionRequestFromProto_MissingFunction(t *testing.T) {

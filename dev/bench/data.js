@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780916669888,
+  "lastUpdate": 1780937978953,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49740,6 +49740,66 @@ window.BENCHMARK_DATA = {
             "value": 138473,
             "unit": "ns/op",
             "extra": "8532 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2718c28e145f893f0a076cc606c5ba2701397451",
+          "message": "Allow cre sdk tests to be optional if they aren't released yet. (#2133)\n\n* Allow cre sdk tests to be optional if they aren't released yet. This enables testing on capabilites-dev while still allowing the standard tests to evolve for main if a feature isn't released\n\n* Stricter, only allow skipping the test if the directory doens't exist. This means if you intend to implment it you can still fail if complication fails",
+          "timestamp": "2026-06-08T16:48:31Z",
+          "tree_id": "8b68e739d186d292ab9868baddd305f3d3656c68",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2718c28e145f893f0a076cc606c5ba2701397451"
+        },
+        "date": 1780937977060,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.8,
+            "unit": "ns/op",
+            "extra": "3339631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 80823,
+            "unit": "ns/op",
+            "extra": "14863 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 392.1,
+            "unit": "ns/op",
+            "extra": "3109267 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 80396,
+            "unit": "ns/op",
+            "extra": "15093 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29201,
+            "unit": "ns/op",
+            "extra": "41096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131454,
+            "unit": "ns/op",
+            "extra": "8859 times\n4 procs"
           }
         ]
       }

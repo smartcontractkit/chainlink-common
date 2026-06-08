@@ -40,7 +40,6 @@ func (s *callCapAsyncErrorStub) EmitUserMetric(context.Context, *wfpb.WorkflowUs
 var _ ExecutionHelper = (*callCapAsyncErrorStub)(nil)
 
 func TestCallCapAsync_errorSerialization(t *testing.T) {
-	t.Parallel()
 
 	capErr := caperrors.NewPublicUserError(errors.New("capability failed"), caperrors.InvalidArgument)
 	plainErr := errors.New("plain error")
@@ -64,13 +63,9 @@ func TestCallCapAsync_errorSerialization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
-			exec := &execution[*sdkpb.ExecutionResult]{
-				ctx:                 t.Context(),
-				capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
-				executor:            &callCapAsyncErrorStub{err: tt.err},
-			}
+			exec := newTestExec(1, &callCapAsyncErrorStub{err: tt.err})
+			exec.ctx = t.Context()
 
 			const callbackID int32 = 1
 			require.NoError(t, exec.callCapAsync(t.Context(), &sdkpb.CapabilityRequest{CallbackId: callbackID}))

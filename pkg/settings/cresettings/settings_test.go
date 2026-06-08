@@ -159,6 +159,46 @@ func TestSchema_Unmarshal(t *testing.T) {
 	}, cfg.PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod.DefaultValue)
 }
 
+func TestGatewayProxyDonIDKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
+
+	assert.Equal(t, "PerWorkflow.HTTPAction.GatewayProxyDonID", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, "", s.DefaultValue)
+
+	got, err := s.Parse("don-123")
+	require.NoError(t, err)
+	assert.Equal(t, "don-123", got)
+}
+
+func TestGatewayProxyDonIDGetOrDefault(t *testing.T) {
+	setting := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Org: "test-org", Owner: "test-owner", Workflow: "test-wf"})
+
+	got, err := setting.GetOrDefault(ctx, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "", got)
+
+	t.Cleanup(reinit)
+	t.Setenv(EnvNameSettings, `{
+	"org": {
+		"test-org": {
+			"PerWorkflow": {
+				"HTTPAction": {
+					"GatewayProxyDonID": "org-don"
+				}
+			}
+		}
+	}
+}`)
+	reinit()
+
+	got, err = setting.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, "org-don", got)
+}
+
 func TestDefaultGetter(t *testing.T) {
 	limit := Default.PerWorkflow.HTTPAction.CallLimit
 

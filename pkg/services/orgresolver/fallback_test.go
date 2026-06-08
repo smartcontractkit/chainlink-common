@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,13 +52,18 @@ func newMockInner(fn func(ctx context.Context, owner string) (string, error)) *m
 	return &mockInnerResolver{getFunc: fn, name: "mockInner"}
 }
 
+func newTestOrgResolverWithFallback(t *testing.T, inner OrgResolver) *OrgResolverFallback {
+	t.Helper()
+	return NewOrgResolverWithFallback(inner, logger.Test(t))
+}
+
 // -- Happy path tests --
 
 func TestOrgResolverFallback_Success_PopulatesCache(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
 		return "org-123", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	orgID, err := c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
@@ -84,7 +90,7 @@ func TestOrgResolverFallback_Success_UpdatesCache(t *testing.T) {
 		}
 		return "org-new", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	orgID, err := c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
@@ -105,7 +111,7 @@ func TestOrgResolverFallback_Unavailable_RetrySucceeds(t *testing.T) {
 		}
 		return "org-retry-ok", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	orgID, err := c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
@@ -117,7 +123,7 @@ func TestOrgResolverFallback_Unavailable_RetryFails_CacheHit(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "org-first", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	// Populate cache.
 	_, err := c.Get(context.Background(), "owner-a")
@@ -132,19 +138,71 @@ func TestOrgResolverFallback_Unavailable_RetryFails_CacheHit(t *testing.T) {
 	orgID, err := c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
 	assert.Equal(t, "org-first", orgID, "should return cached value")
-	assert.Equal(t, int32(3), inner.calls.Load(), "initial + retry = 2 more calls")
+	assert.Equal(t, int32(5), inner.calls.Load(), "initial + 3 retries = 4 more calls")
 }
 
 func TestOrgResolverFallback_Unavailable_RetryFails_CacheMiss(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "", status.Error(codes.Unavailable, "down")
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	_, err := c.Get(context.Background(), "owner-never-seen")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Unavailable")
-	assert.Equal(t, int32(2), inner.calls.Load(), "initial + retry")
+	assert.Equal(t, int32(4), inner.calls.Load(), "initial + 3 retries")
+}
+
+func TestOrgResolverFallback_DeadlineExceeded_RetrySucceeds(t *testing.T) {
+	callCount := atomic.Int32{}
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
+		if callCount.Add(1) < 3 {
+			return "", status.Error(codes.DeadlineExceeded, "timeout")
+		}
+		return "org-after-retries", nil
+	})
+	c := newTestOrgResolverWithFallback(t, inner)
+
+	orgID, err := c.Get(context.Background(), "owner-a")
+	require.NoError(t, err)
+	assert.Equal(t, "org-after-retries", orgID)
+	assert.Equal(t, int32(3), inner.calls.Load())
+}
+
+func TestOrgResolverFallback_ContextCancelledDuringBackoff_CacheMiss(t *testing.T) {
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
+		return "", status.Error(codes.Unavailable, "down")
+	})
+	c := newTestOrgResolverWithFallback(t, inner)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	_, err := c.Get(ctx, "owner-never-seen")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.NotContains(t, err.Error(), "Unavailable")
+}
+
+func TestOrgResolverFallback_ContextCancelledDuringBackoff_CacheHit(t *testing.T) {
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
+		return "org-cached", nil
+	})
+	c := newTestOrgResolverWithFallback(t, inner)
+
+	_, err := c.Get(context.Background(), "owner-a")
+	require.NoError(t, err)
+
+	inner.setGetFunc(func(_ context.Context, _ string) (string, error) {
+		return "", status.Error(codes.Unavailable, "down")
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	orgID, err := c.Get(ctx, "owner-a")
+	require.NoError(t, err)
+	assert.Equal(t, "org-cached", orgID)
 }
 
 // -- NotFound error tests --
@@ -153,7 +211,7 @@ func TestOrgResolverFallback_NotFound_CacheHit(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "org-known", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	// Populate cache.
 	_, err := c.Get(context.Background(), "owner-a")
@@ -174,7 +232,7 @@ func TestOrgResolverFallback_NotFound_CacheMiss(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "", status.Error(codes.NotFound, "not found")
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	_, err := c.Get(context.Background(), "owner-unknown")
 	require.Error(t, err)
@@ -188,7 +246,7 @@ func TestOrgResolverFallback_OtherError_NoFallback(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "org-good", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	// Populate cache.
 	_, err := c.Get(context.Background(), "owner-a")
@@ -211,7 +269,7 @@ func TestOrgResolverFallback_WrappedGRPCError(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "org-good", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	// Populate cache.
 	_, err := c.Get(context.Background(), "owner-a")
@@ -231,7 +289,7 @@ func TestOrgResolverFallback_WrappedUnavailableError(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "org-cached", nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	// Populate cache.
 	_, err := c.Get(context.Background(), "owner-a")
@@ -244,7 +302,8 @@ func TestOrgResolverFallback_WrappedUnavailableError(t *testing.T) {
 
 	orgID, err := c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
-	assert.Equal(t, "org-cached", orgID, "should detect Unavailable through wrapping and fall back to cache after retry")
+	assert.Equal(t, "org-cached", orgID, "should detect Unavailable through wrapping and fall back to cache after retries")
+	assert.Equal(t, int32(5), inner.calls.Load(), "initial + 3 retries = 4 more calls")
 }
 
 // -- Service interface delegation tests --
@@ -257,7 +316,7 @@ func TestOrgResolverFallback_DelegatesServiceMethods(t *testing.T) {
 		readyErr: errors.New("ready-err"),
 		name:     "test-resolver",
 	}
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	assert.Equal(t, inner.startErr, c.Start(context.Background()))
 	assert.Equal(t, inner.closeErr, c.Close())
@@ -281,7 +340,7 @@ func TestOrgResolverFallback_ConcurrentAccess(t *testing.T) {
 		}
 		return "org-for-" + owner, nil
 	})
-	c := NewOrgResolverWithFallback(inner, logger.Test(t))
+	c := newTestOrgResolverWithFallback(t, inner)
 
 	var wg sync.WaitGroup
 	owners := []string{"owner-1", "owner-2", "owner-3", "owner-4", "owner-5"}

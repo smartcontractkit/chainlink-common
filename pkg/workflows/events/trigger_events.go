@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	workflowsevents "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
@@ -88,8 +90,17 @@ func EmitTriggerExecutionStarted(ctx context.Context, labeler custmsg.MessageEmi
 		return fmt.Errorf("failed to marshal TriggerExecutionStarted event: %w", err)
 	}
 
-	return beholder.GetEmitter().Emit(ctx, b,
+	const entity = "workflows.v2.TriggerExecutionStarted"
+	if err := beholder.GetEmitter().Emit(ctx, b,
 		"beholder_data_schema", "workflows.v2.trigger_execution_started", // required
 		"beholder_domain", "platform", // required
-		"beholder_entity", "workflows.v2.TriggerExecutionStarted") // required
+		"beholder_entity", entity); err != nil { // required
+		return err
+	}
+
+	err = durableemitter.GlobalEmit(ctx, b, "source", "platform", "type", entity)
+	if err != nil && !errors.Is(err, durableemitter.ErrNotInitialized) {
+		return err
+	}
+	return nil
 }

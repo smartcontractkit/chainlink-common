@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780937978953,
+  "lastUpdate": 1780996113726,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49800,6 +49800,66 @@ window.BENCHMARK_DATA = {
             "value": 131454,
             "unit": "ns/op",
             "extra": "8859 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yashvardhan.nevatia@smartcontract.com",
+            "name": "Yashvardhan Nevatia",
+            "username": "yashnevatia"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ad25dc28b02f8e354c6e4ef016246b2ea552ab2e",
+          "message": "Remind user that cre_settings changes might involve re-proposing job-specs (#2129)\n\n* Test CI\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* Fix\n\n* deprecated\n\n* Update .github/workflows/cre-settings-schema-reminder.yml\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Update settings.go\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2026-06-09T08:57:08Z",
+          "tree_id": "e6b3211adef9ebf3f7686e0fff14da65cd06dd84",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ad25dc28b02f8e354c6e4ef016246b2ea552ab2e"
+        },
+        "date": 1780996110483,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.1,
+            "unit": "ns/op",
+            "extra": "3330146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 87468,
+            "unit": "ns/op",
+            "extra": "13674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.2,
+            "unit": "ns/op",
+            "extra": "2934112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 87552,
+            "unit": "ns/op",
+            "extra": "13669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26651,
+            "unit": "ns/op",
+            "extra": "44850 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135272,
+            "unit": "ns/op",
+            "extra": "8422 times\n4 procs"
           }
         ]
       }

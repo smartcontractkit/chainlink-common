@@ -52,6 +52,22 @@ func (sc *StellarClient) GetLatestLedger(ctx context.Context) (stellar.GetLatest
 	return resp, nil
 }
 
+func (sc *StellarClient) SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
+	pReq, err := stelpb.ConvertSubmitTransactionRequestToProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction request: %w", err)
+	}
+	pResp, err := sc.grpcClient.SubmitTransaction(ctx, pReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	resp, err := stelpb.ConvertSubmitTransactionResponseFromProto(pResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction response: %w", err)
+	}
+	return resp, nil
+}
+
 func (sc *StellarClient) ReadContract(ctx context.Context, req stellar.ReadContractRequest) (stellar.ReadContractResponse, error) {
 	pReq, err := stelpb.ConvertReadContractRequestToProto(req)
 	if err != nil {
@@ -107,6 +123,22 @@ func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (
 	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
 	if err != nil {
 		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (s *stellarServer) SubmitTransaction(ctx context.Context, req *stelpb.SubmitTransactionRequest) (*stelpb.SubmitTransactionResponse, error) {
+	dReq, err := stelpb.ConvertSubmitTransactionRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction request: %w", err)
+	}
+	dResp, err := s.impl.SubmitTransaction(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertSubmitTransactionResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction response: %w", err)
 	}
 	return pResp, nil
 }

@@ -17,6 +17,11 @@ import (
 // globalEmitter holds the process-wide DurableEmitter instance, set by Setup.
 var globalEmitter atomic.Pointer[DurableEmitter]
 
+var (
+	ErrNotInitialized = errors.New("durable emitter not initialized")
+	ErrEmitFailed     = errors.New("durable emitter emit failed")
+)
+
 // SetGlobalEmitter sets the global DurableEmitter.
 func SetGlobalEmitter(d *DurableEmitter) {
 	globalEmitter.Store(d)
@@ -28,14 +33,15 @@ func GetGlobalEmitter() *DurableEmitter {
 }
 
 // GlobalEmit emits an event via the global DurableEmitter.
-// Returns nil if the global emitter has not been initialized, so callers can
-// treat a non-nil error as a real emission failure rather than "disabled".
 func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	d := globalEmitter.Load()
 	if d == nil {
-		return nil
+		return ErrNotInitialized
 	}
-	return d.Emit(ctx, body, attrKVs...)
+	if err := d.Emit(ctx, body, attrKVs...); err != nil {
+		return fmt.Errorf("%w: %w", ErrEmitFailed, err)
+	}
+	return nil
 }
 
 // SetupConfig holds all configuration required to create and start a

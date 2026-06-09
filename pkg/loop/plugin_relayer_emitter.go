@@ -2,6 +2,7 @@ package loop
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"strings"
 	"time"
@@ -112,7 +113,8 @@ func (e *pluginRelayerConfigEmitter) emit(ctx context.Context) {
 		return
 	}
 
-	if err := durableemitter.GlobalEmit(ctx, payloadBytes, "source", beholderDomain, "type", beholderEntity); err != nil {
+	err = durableemitter.GlobalEmit(ctx, payloadBytes, "source", beholderDomain, "type", beholderEntity)
+	if err != nil && !errors.Is(err, durableemitter.ErrNotInitialized) {
 		e.eng.Errorw(
 			"failed to durable-emit ChainPluginConfig",
 			"err", err,

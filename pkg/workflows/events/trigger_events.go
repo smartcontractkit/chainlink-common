@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -97,5 +98,9 @@ func EmitTriggerExecutionStarted(ctx context.Context, labeler custmsg.MessageEmi
 		return err
 	}
 
-	return durableemitter.GlobalEmit(ctx, b, "source", "platform", "type", entity)
+	err = durableemitter.GlobalEmit(ctx, b, "source", "platform", "type", entity)
+	if err != nil && !errors.Is(err, durableemitter.ErrNotInitialized) {
+		return err
+	}
+	return nil
 }

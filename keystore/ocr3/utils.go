@@ -1,4 +1,4 @@
-package ocr3
+package ocr3util
 
 import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"

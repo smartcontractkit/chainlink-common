@@ -150,7 +150,6 @@ func TestConvertReadContractRequest_RoundTrip(t *testing.T) {
 			{Type: stellartypes.ScValTypeU32, U32: &u32},
 			{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
 		},
-		LedgerSequence: 42,
 	}
 
 	proto, err := conv.ConvertReadContractRequestToProto(domain)
@@ -214,10 +213,9 @@ func TestConvertReadContractRequest_RoundTrip_RichArgs(t *testing.T) {
 	}
 
 	domain := stellartypes.ReadContractRequest{
-		ContractID:     "C_RICH",
-		Function:       "do_work",
-		Args:           []stellartypes.ScVal{addrArg, vecArg, instanceArg},
-		LedgerSequence: 9,
+		ContractID: "C_RICH",
+		Function:   "do_work",
+		Args:       []stellartypes.ScVal{addrArg, vecArg, instanceArg},
 	}
 
 	proto, err := conv.ConvertReadContractRequestToProto(domain)

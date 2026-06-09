@@ -120,14 +120,12 @@ func (ReceiverContractExecutionStatus) EnumDescriptor() ([]byte, []int) {
 }
 
 type ReadContractRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	ContractId string                 `protobuf:"bytes,1,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"`
-	Function   string                 `protobuf:"bytes,2,opt,name=function,proto3" json:"function,omitempty"`
-	Args       []*scval.ScVal         `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"` // Typed Soroban contract arguments (replaces raw XDR bytes)
-	// Optional: 0 = latest
-	LedgerSequence uint32 `protobuf:"varint,4,opt,name=ledger_sequence,json=ledgerSequence,proto3" json:"ledger_sequence,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContractId    string                 `protobuf:"bytes,1,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"`
+	Function      string                 `protobuf:"bytes,2,opt,name=function,proto3" json:"function,omitempty"`
+	Args          []*scval.ScVal         `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"` // Typed Soroban contract arguments (replaces raw XDR bytes)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadContractRequest) Reset() {
@@ -179,13 +177,6 @@ func (x *ReadContractRequest) GetArgs() []*scval.ScVal {
 		return x.Args
 	}
 	return nil
-}
-
-func (x *ReadContractRequest) GetLedgerSequence() uint32 {
-	if x != nil {
-		return x.LedgerSequence
-	}
-	return 0
 }
 
 type ReadContractResponse struct {
@@ -503,13 +494,12 @@ var File_capabilities_blockchain_stellar_v1alpha_client_proto protoreflect.FileD
 
 const file_capabilities_blockchain_stellar_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"4capabilities/blockchain/stellar/v1alpha/client.proto\x12'capabilities.blockchain.stellar.v1alpha\x1a3capabilities/blockchain/stellar/v1alpha/scval.proto\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"\xbf\x01\n" +
+	"4capabilities/blockchain/stellar/v1alpha/client.proto\x12'capabilities.blockchain.stellar.v1alpha\x1a3capabilities/blockchain/stellar/v1alpha/scval.proto\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"\x96\x01\n" +
 	"\x13ReadContractRequest\x12\x1f\n" +
 	"\vcontract_id\x18\x01 \x01(\tR\n" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x02 \x01(\tR\bfunction\x12B\n" +
-	"\x04args\x18\x03 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x12'\n" +
-	"\x0fledger_sequence\x18\x04 \x01(\rR\x0eledgerSequence\"m\n" +
+	"\x04args\x18\x03 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\"m\n" +
 	"\x14ReadContractResponse\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\tR\x06result\x12'\n" +
 	"\x0fledger_sequence\x18\x02 \x01(\rR\x0eledgerSequence\x12\x14\n" +

@@ -74,14 +74,12 @@ func (TxStatus) EnumDescriptor() ([]byte, []int) {
 
 // ReadContractRequest invokes a read-only (simulation) Soroban contract function.
 type ReadContractRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	ContractId string                 `protobuf:"bytes,1,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"` // Stellar contract address (C… StrKey)
-	Function   string                 `protobuf:"bytes,2,opt,name=function,proto3" json:"function,omitempty"`                       // Soroban function name
-	Args       []*scval.ScVal         `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`                               // Typed Soroban arguments
-	// Optional: ledger to simulate against; 0 means use the latest.
-	LedgerSequence uint32 `protobuf:"varint,4,opt,name=ledger_sequence,json=ledgerSequence,proto3" json:"ledger_sequence,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContractId    string                 `protobuf:"bytes,1,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"` // Stellar contract address (C… StrKey)
+	Function      string                 `protobuf:"bytes,2,opt,name=function,proto3" json:"function,omitempty"`                       // Soroban function name
+	Args          []*scval.ScVal         `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`                               // Typed Soroban arguments
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadContractRequest) Reset() {
@@ -133,13 +131,6 @@ func (x *ReadContractRequest) GetArgs() []*scval.ScVal {
 		return x.Args
 	}
 	return nil
-}
-
-func (x *ReadContractRequest) GetLedgerSequence() uint32 {
-	if x != nil {
-		return x.LedgerSequence
-	}
-	return 0
 }
 
 // ReadContractResponse carries the return value of the simulated call.
@@ -639,13 +630,12 @@ var File_stellar_proto protoreflect.FileDescriptor
 
 const file_stellar_proto_rawDesc = "" +
 	"\n" +
-	"\rstellar.proto\x12\floop.stellar\x1a\x1bgoogle/protobuf/empty.proto\x1a3capabilities/blockchain/stellar/v1alpha/scval.proto\"\xbf\x01\n" +
+	"\rstellar.proto\x12\floop.stellar\x1a\x1bgoogle/protobuf/empty.proto\x1a3capabilities/blockchain/stellar/v1alpha/scval.proto\"\x96\x01\n" +
 	"\x13ReadContractRequest\x12\x1f\n" +
 	"\vcontract_id\x18\x01 \x01(\tR\n" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x02 \x01(\tR\bfunction\x12B\n" +
-	"\x04args\x18\x03 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x12'\n" +
-	"\x0fledger_sequence\x18\x04 \x01(\rR\x0eledgerSequence\"m\n" +
+	"\x04args\x18\x03 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\"m\n" +
 	"\x14ReadContractResponse\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\tR\x06result\x12'\n" +
 	"\x0fledger_sequence\x18\x02 \x01(\rR\x0eledgerSequence\x12\x14\n" +

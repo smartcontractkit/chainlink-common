@@ -150,7 +150,6 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
 			require.Equal(t, "CABC123", req.ContractID)
 			require.Equal(t, "my_fn", req.Function)
-			require.Equal(t, uint32(100), req.LedgerSequence)
 			require.Len(t, req.Args, 1)
 			require.Equal(t, stellartypes.ScValTypeSymbol, req.Args[0].Type)
 			require.NotNil(t, req.Args[0].Symbol)
@@ -162,10 +161,9 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		}
 
 		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
-			ContractID:     "CABC123",
-			Function:       "my_fn",
-			Args:           []stellartypes.ScVal{argVal},
-			LedgerSequence: 100,
+			ContractID: "CABC123",
+			Function:   "my_fn",
+			Args:       []stellartypes.ScVal{argVal},
 		})
 		require.NoError(t, err)
 		require.Equal(t, uint32(101), resp.LedgerSequence)

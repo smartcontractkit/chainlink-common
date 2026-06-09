@@ -17,9 +17,7 @@ service Stellar {
 message ReadContractRequest {
   string                                           contract_id     = 1; // Stellar contract address (C… StrKey)
   string                                           function        = 2; // Soroban function name
-  repeated capabilities.blockchain.stellar.v1alpha.ScVal args     = 3; // Typed Soroban arguments
-  // Optional: ledger to simulate against; 0 means use the latest.
-  uint32                                           ledger_sequence = 4;
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal args      = 3; // Typed Soroban arguments
 }
 
 // ReadContractResponse carries the return value of the simulated call.

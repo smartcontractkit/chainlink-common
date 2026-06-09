@@ -83,8 +83,10 @@ type ReadContractRequest struct {
 	// Args holds one ScVal per contract argument.
 	// An empty slice is valid for zero-argument functions.
 	Args []ScVal
-	// LedgerSequence is the ledger to simulate against; 0 means use the latest.
-	LedgerSequence uint32
+	// SourceAccount is the G… account to simulate the call as (the invoker).
+	// It is required for contracts whose result depends on the caller, e.g. that
+	// call require_auth or branch on the invoker. Leave empty for source-insensitive reads.
+	SourceAccount string
 }
 
 // ReadContractResponse is the domain representation of a Soroban simulation result.

@@ -126,13 +126,11 @@ func TestConvertReadContractRequestFromProto_Cap(t *testing.T) {
 				{Value: &scval.ScVal_U32{U32: u}},
 				{Value: &scval.ScVal_Sym{Sym: sym}},
 			},
-			LedgerSequence: 7,
 		}
 		got, err := stellarcap.ConvertReadContractRequestFromProto(p)
 		require.NoError(t, err)
 		require.Equal(t, "C_TESTCONTRACT", got.ContractID)
 		require.Equal(t, "transfer", got.Function)
-		require.Equal(t, uint32(7), got.LedgerSequence)
 		require.Len(t, got.Args, 2)
 		require.Equal(t, stellartypes.ScValTypeU32, got.Args[0].Type)
 		require.Equal(t, uint32(42), *got.Args[0].U32)

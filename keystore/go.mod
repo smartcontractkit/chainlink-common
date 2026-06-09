@@ -19,7 +19,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mr-tron/base58 v1.2.0
 	github.com/smartcontractkit/chainlink-common v0.11.2-0.20260422075950-29f37fa83c8a
-	github.com/smartcontractkit/libocr v0.0.0-20251027221354-bdc84e1ed858
+	github.com/smartcontractkit/libocr v0.0.0-20260529134643-c101335a64cd
 	github.com/smartcontractkit/smdkg v0.0.0-20251029093710-c38905e58aeb
 	github.com/smartcontractkit/wsrpc v0.8.5-0.20250502134807-c57d3d995945
 	github.com/spf13/cobra v1.9.1

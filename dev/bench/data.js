@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780996113726,
+  "lastUpdate": 1781020718448,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -49860,6 +49860,66 @@ window.BENCHMARK_DATA = {
             "value": 135272,
             "unit": "ns/op",
             "extra": "8422 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "152236536+Krish-vemula@users.noreply.github.com",
+            "name": "Krish-vemula",
+            "username": "Krish-vemula"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "40b8e300db9ac734048126ec92f4545a66ddb3e8",
+          "message": "feat(stellar): add SubmitTransaction to relayer service and gRPC (#2116)\n\n* feat(stellar): add SubmitTransaction to relayer service and gRPC\n\nDefine SubmitTransaction RPC with Soroban invoke request/response types,\nthread through Stellar client/server and relayerset, and add converter and\nround-trip test coverage.\n\n* add test coverage\n\n* Deduplicate Go coverage before Sonar\n\n* revert: remove coverage dedupe helper\n\n* minor fixes to proto helpers\n\n* review fix\n\n* updated test\n\n---------\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>\nCo-authored-by: ilija42 <pavlovicilija42@gmail.com>",
+          "timestamp": "2026-06-09T15:46:10Z",
+          "tree_id": "6f765d9d9a3d63b6bc7738272148f75a8942171b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/40b8e300db9ac734048126ec92f4545a66ddb3e8"
+        },
+        "date": 1781020715888,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.2,
+            "unit": "ns/op",
+            "extra": "3283386 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95258,
+            "unit": "ns/op",
+            "extra": "12576 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.3,
+            "unit": "ns/op",
+            "extra": "3029203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95859,
+            "unit": "ns/op",
+            "extra": "12572 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26704,
+            "unit": "ns/op",
+            "extra": "44785 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 143462,
+            "unit": "ns/op",
+            "extra": "7825 times\n4 procs"
           }
         ]
       }

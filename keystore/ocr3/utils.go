@@ -6,8 +6,8 @@ import (
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-// OnchainKeyring2Genericless is a genericless counterpart of ocr3types.OnchainKeyring2. If generic RI does not matter,
-// then it is more convenient to implement this interface and then use OnchainKeyring2ToGenericAdapter to use it as
+// OnchainKeyring2 is a genericless counterpart of ocr3types.OnchainKeyring2. If generic RI does not matter,
+// then it is more convenient to implement this interface and then use AsOCR3OnchainKeyring2 to use it as
 // ocr3types.OnchainKeyring2.
 type OnchainKeyring2 interface {
 	Sign(configDigest ocrtypes.ConfigDigest, seqNr uint64, report types.Report) (signature []byte, err error)

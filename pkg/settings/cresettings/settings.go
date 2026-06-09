@@ -86,6 +86,7 @@ var Default = Schema{
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
 	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
+	VaultPendingQueueWriteSizeLimit:   Int(1000),
 	VaultShareSizeLimit:               Size(600 * config.Byte),
 
 	VaultMaxQuerySizeLimit:       Size(102400 * config.Byte),
@@ -287,6 +288,7 @@ type Schema struct {
 	VaultIdentifierNamespaceSizeLimit Setting[config.Size]
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
+	VaultPendingQueueWriteSizeLimit   Setting[int] `unit:"{request}"`
 
 	VaultMaxQuerySizeLimit                                   Setting[config.Size]
 	VaultMaxObservationSizeLimit                             Setting[config.Size]

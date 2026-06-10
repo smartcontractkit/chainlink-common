@@ -1121,12 +1121,12 @@ func read(memory []byte, ptr int32, size int32) ([]byte, error) {
 
 	endLoc := ptr + size
 	// users control both ptr and size, a malicious user can overflow them.
-	if endLoc > int32(len(memory)) || endLoc < 0 {
+	if int(endLoc) > len(memory) || endLoc < 0 {
 		return nil, errors.New("out of bounds memory access")
 	}
 
 	cd := make([]byte, size)
-	copy(cd, memory[ptr:ptr+size])
+	copy(cd, memory[ptr:endLoc])
 	return cd, nil
 }
 

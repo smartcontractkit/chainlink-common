@@ -386,6 +386,7 @@ type GetBalanceRequest struct {
 type GetBalanceReply struct {
 	// Balance in lamports
 	Value uint64
+	Slot  uint64
 }
 
 type GetBlockRequest struct {

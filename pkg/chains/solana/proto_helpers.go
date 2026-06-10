@@ -859,14 +859,14 @@ func ConvertGetBalanceReplyFromProto(p *GetBalanceReply) *solana.GetBalanceReply
 	if p == nil {
 		return nil
 	}
-	return &solana.GetBalanceReply{Value: p.Value}
+	return &solana.GetBalanceReply{Value: p.Value, Slot: p.Slot}
 }
 
 func ConvertGetBalanceReplyToProto(r *solana.GetBalanceReply) *GetBalanceReply {
 	if r == nil {
 		return nil
 	}
-	return &GetBalanceReply{Value: r.Value}
+	return &GetBalanceReply{Value: r.Value, Slot: r.Slot}
 }
 
 func ConvertGetBalanceRequestFromProto(p *GetBalanceRequest) (solana.GetBalanceRequest, error) {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781109985765,
+  "lastUpdate": 1781117978999,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -50280,6 +50280,66 @@ window.BENCHMARK_DATA = {
             "value": 131554,
             "unit": "ns/op",
             "extra": "9379 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96d1e031407ba800e9d567e926ce711d48b02396",
+          "message": "CRE module int32 overflow panic fix (#2142)\n\n* CRE module int32 overflow panic fix\n\n* Small cleanup to re-use endloc and cast to int instead of int32\n\n* Clearer comment on the test WASM",
+          "timestamp": "2026-06-10T18:48:03Z",
+          "tree_id": "e732fcaae37e8d97c5ded4f054b8aa8c8993f128",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/96d1e031407ba800e9d567e926ce711d48b02396"
+        },
+        "date": 1781117977029,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.8,
+            "unit": "ns/op",
+            "extra": "3362934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 84982,
+            "unit": "ns/op",
+            "extra": "14235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 381.6,
+            "unit": "ns/op",
+            "extra": "3142676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 83843,
+            "unit": "ns/op",
+            "extra": "14209 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29217,
+            "unit": "ns/op",
+            "extra": "40890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 134156,
+            "unit": "ns/op",
+            "extra": "8124 times\n4 procs"
           }
         ]
       }

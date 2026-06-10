@@ -988,7 +988,8 @@ func (x *GetBlockRequest) GetOpts() *GetBlockOpts {
 // Fee quote for a base58-encoded Message.
 type GetFeeForMessageReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Fee           uint64                 `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"` // lamports
+	Fee           uint64                 `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"`   // lamports
+	Slot          uint64                 `protobuf:"varint,2,opt,name=slot,proto3" json:"slot,omitempty"` // processed slot
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1026,6 +1027,13 @@ func (*GetFeeForMessageReply) Descriptor() ([]byte, []int) {
 func (x *GetFeeForMessageReply) GetFee() uint64 {
 	if x != nil {
 		return x.Fee
+	}
+	return 0
+}
+
+func (x *GetFeeForMessageReply) GetSlot() uint64 {
+	if x != nil {
+		return x.Slot
 	}
 	return 0
 }
@@ -4486,9 +4494,10 @@ const file_solana_proto_rawDesc = "" +
 	"\v_block_time\"T\n" +
 	"\x0fGetBlockRequest\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\x04R\x04slot\x12-\n" +
-	"\x04opts\x18\x02 \x01(\v2\x19.loop.solana.GetBlockOptsR\x04opts\")\n" +
+	"\x04opts\x18\x02 \x01(\v2\x19.loop.solana.GetBlockOptsR\x04opts\"=\n" +
 	"\x15GetFeeForMessageReply\x12\x10\n" +
-	"\x03fee\x18\x01 \x01(\x04R\x03fee\"p\n" +
+	"\x03fee\x18\x01 \x01(\x04R\x03fee\x12\x12\n" +
+	"\x04slot\x18\x02 \x01(\x04R\x04slot\"p\n" +
 	"\x17GetFeeForMessageRequest\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12;\n" +
 	"\n" +

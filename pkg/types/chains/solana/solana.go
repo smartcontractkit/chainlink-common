@@ -514,7 +514,8 @@ type GetFeeForMessageRequest struct {
 
 type GetFeeForMessageReply struct {
 	// The amount in lamports the network will charge for a particular message
-	Fee uint64
+	Fee  uint64
+	Slot uint64
 }
 
 type GetLatestBlockhashRequest struct {

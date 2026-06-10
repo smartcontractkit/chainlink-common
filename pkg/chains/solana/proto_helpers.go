@@ -1003,14 +1003,14 @@ func ConvertGetFeeForMessageReplyFromProto(p *GetFeeForMessageReply) *solana.Get
 	if p == nil {
 		return nil
 	}
-	return &solana.GetFeeForMessageReply{Fee: p.Fee}
+	return &solana.GetFeeForMessageReply{Fee: p.Fee, Slot: p.Slot}
 }
 
 func ConvertGetFeeForMessageReplyToProto(r *solana.GetFeeForMessageReply) *GetFeeForMessageReply {
 	if r == nil {
 		return nil
 	}
-	return &GetFeeForMessageReply{Fee: r.Fee}
+	return &GetFeeForMessageReply{Fee: r.Fee, Slot: r.Slot}
 }
 
 func ConvertGetMultipleAccountsRequestFromProto(p *GetMultipleAccountsWithOptsRequest) *solana.GetMultipleAccountsRequest {

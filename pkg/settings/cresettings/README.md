@@ -51,6 +51,7 @@ flowchart
         GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
         GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
         GatewayHTTPActionMtlsRequestRate[\GatewayHTTPActionMtlsRequestRate/]:::rate
+        GatewayHTTPActionMtlsConcurrencyLimit([GatewayHTTPActionMtlsConcurrencyLimit]):::resource
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout

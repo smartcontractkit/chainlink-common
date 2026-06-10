@@ -68,6 +68,7 @@ var Default = Schema{
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
 	GatewayHTTPActionMtlsRequestRate:       Rate(rate.Every(30*time.Second), 0),
+	GatewayHTTPActionMtlsConcurrencyLimit:  Int(50),
 	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
 	BaseTriggerRetryInterval:               Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                  Int(20),
@@ -273,6 +274,7 @@ type Schema struct {
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
 	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
 	GatewayHTTPActionMtlsRequestRate       Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit  Setting[int] `unit:"{request}"`
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]

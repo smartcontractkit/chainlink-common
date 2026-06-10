@@ -612,15 +612,15 @@ func makeTestModule(t *testing.T) *module {
 
 func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, cfg, true)
+	return makeTestModuleByName(t, testPath, testName, cfg, true)
 }
 
 func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, cfg, false)
+	return makeTestModuleByName(t, testPath, testName, cfg, false)
 }
 
-func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig, required bool) *module {
+func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) *module {
 	wasmName := path.Join(testName, "test.wasm")
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")

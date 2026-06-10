@@ -1119,12 +1119,14 @@ func read(memory []byte, ptr int32, size int32) ([]byte, error) {
 		return nil, fmt.Errorf("invalid memory access: ptr: %d, size: %d", ptr, size)
 	}
 
-	if ptr+size > int32(len(memory)) {
+	endLoc := ptr + size
+	// users control both ptr and size, a malicious user can overflow them.
+	if int(endLoc) > len(memory) || endLoc < 0 {
 		return nil, errors.New("out of bounds memory access")
 	}
 
 	cd := make([]byte, size)
-	copy(cd, memory[ptr:ptr+size])
+	copy(cd, memory[ptr:endLoc])
 	return cd, nil
 }
 

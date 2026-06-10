@@ -192,6 +192,65 @@ func (_c *StellarService_ReadContract_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
+// SubmitTransaction provides a mock function with given fields: ctx, req
+func (_m *StellarService) SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SubmitTransaction")
+	}
+
+	var r0 *stellar.SubmitTransactionResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.SubmitTransactionRequest) *stellar.SubmitTransactionResponse); ok {
+		r0 = rf(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*stellar.SubmitTransactionResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, stellar.SubmitTransactionRequest) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_SubmitTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SubmitTransaction'
+type StellarService_SubmitTransaction_Call struct {
+	*mock.Call
+}
+
+// SubmitTransaction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req stellar.SubmitTransactionRequest
+func (_e *StellarService_Expecter) SubmitTransaction(ctx interface{}, req interface{}) *StellarService_SubmitTransaction_Call {
+	return &StellarService_SubmitTransaction_Call{Call: _e.mock.On("SubmitTransaction", ctx, req)}
+}
+
+func (_c *StellarService_SubmitTransaction_Call) Run(run func(ctx context.Context, req stellar.SubmitTransactionRequest)) *StellarService_SubmitTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(stellar.SubmitTransactionRequest))
+	})
+	return _c
+}
+
+func (_c *StellarService_SubmitTransaction_Call) Return(_a0 *stellar.SubmitTransactionResponse, _a1 error) *StellarService_SubmitTransaction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_SubmitTransaction_Call) RunAndReturn(run func(context.Context, stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)) *StellarService_SubmitTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewStellarService creates a new instance of StellarService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewStellarService(t interface {

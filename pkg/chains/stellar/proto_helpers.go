@@ -171,10 +171,67 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 // proto representation.
 func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadContractRequest, error) {
 	if req.ContractID == "" {
-		return nil, fmt.Errorf("contractID is required")
+		return nil, errors.New("contractID is required")
 	}
 	if req.Function == "" {
-		return nil, fmt.Errorf("function is required")
+		return nil, errors.New("function is required")
+	}
+	var args []*scval.ScVal
+	if len(req.Args) > 0 {
+		args = make([]*scval.ScVal, len(req.Args))
+		for i, sv := range req.Args {
+			psv, err := stellarcap.ScValToProto(sv)
+			if err != nil {
+				return nil, fmt.Errorf("args[%d]: %w", i, err)
+			}
+			args[i] = psv
+		}
+	}
+	return &ReadContractRequest{
+		ContractId: req.ContractID,
+		Function:   req.Function,
+		Args:       args,
+	}, nil
+}
+
+// ConvertReadContractRequestFromProto converts a proto ReadContractRequest to the
+// domain type.
+func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadContractRequest, error) {
+	if p == nil {
+		return stellar.ReadContractRequest{}, errors.New("readContractRequest is nil")
+	}
+	if p.GetContractId() == "" {
+		return stellar.ReadContractRequest{}, errors.New("contractID is required")
+	}
+	if p.GetFunction() == "" {
+		return stellar.ReadContractRequest{}, errors.New("function is required")
+	}
+	pArgs := p.GetArgs()
+	var args []stellar.ScVal
+	if len(pArgs) > 0 {
+		args = make([]stellar.ScVal, len(pArgs))
+		for i, psv := range pArgs {
+			sv, err := stellarcap.ProtoToScVal(psv)
+			if err != nil {
+				return stellar.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
+			}
+			args[i] = sv
+		}
+	}
+	return stellar.ReadContractRequest{
+		ContractID: p.GetContractId(),
+		Function:   p.GetFunction(),
+		Args:       args,
+	}, nil
+}
+
+// ConvertSubmitTransactionRequestToProto converts a domain SubmitTransactionRequest to proto.
+func ConvertSubmitTransactionRequestToProto(req stellar.SubmitTransactionRequest) (*SubmitTransactionRequest, error) {
+	if req.ContractID == "" {
+		return nil, errors.New("contractId is required")
+	}
+	if req.Function == "" {
+		return nil, errors.New("function is required")
 	}
 	args := make([]*scval.ScVal, len(req.Args))
 	for i, sv := range req.Args {
@@ -184,39 +241,88 @@ func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadCo
 		}
 		args[i] = psv
 	}
-	return &ReadContractRequest{
-		ContractId:     req.ContractID,
-		Function:       req.Function,
-		Args:           args,
-		LedgerSequence: req.LedgerSequence,
+	return &SubmitTransactionRequest{
+		IdempotencyKey:     req.IdempotencyKey,
+		FromAddress:        req.FromAddress,
+		ContractId:         req.ContractID,
+		Function:           req.Function,
+		Args:               args,
+		LedgerBoundsOffset: req.LedgerBoundsOffset,
 	}, nil
 }
 
-// ConvertReadContractRequestFromProto converts a proto ReadContractRequest to the
-// domain type.
-func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadContractRequest, error) {
+// ConvertSubmitTransactionRequestFromProto converts proto SubmitTransactionRequest to domain.
+func ConvertSubmitTransactionRequestFromProto(p *SubmitTransactionRequest) (stellar.SubmitTransactionRequest, error) {
 	if p == nil {
-		return stellar.ReadContractRequest{}, fmt.Errorf("readContractRequest is nil")
+		return stellar.SubmitTransactionRequest{}, errors.New("submit transaction request is nil")
 	}
 	if p.GetContractId() == "" {
-		return stellar.ReadContractRequest{}, fmt.Errorf("contractID is required")
+		return stellar.SubmitTransactionRequest{}, errors.New("contractId is required")
 	}
 	if p.GetFunction() == "" {
-		return stellar.ReadContractRequest{}, fmt.Errorf("function is required")
+		return stellar.SubmitTransactionRequest{}, errors.New("function is required")
 	}
 	pArgs := p.GetArgs()
-	args := make([]stellar.ScVal, len(pArgs))
-	for i, psv := range pArgs {
-		sv, err := stellarcap.ProtoToScVal(psv)
-		if err != nil {
-			return stellar.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
+	var args []stellar.ScVal
+	if len(pArgs) > 0 {
+		args = make([]stellar.ScVal, len(pArgs))
+		for i, psv := range pArgs {
+			sv, err := stellarcap.ProtoToScVal(psv)
+			if err != nil {
+				return stellar.SubmitTransactionRequest{}, fmt.Errorf("args[%d]: %w", i, err)
+			}
+			args[i] = sv
 		}
-		args[i] = sv
 	}
-	return stellar.ReadContractRequest{
-		ContractID:     p.GetContractId(),
-		Function:       p.GetFunction(),
-		Args:           args,
-		LedgerSequence: p.GetLedgerSequence(),
+	return stellar.SubmitTransactionRequest{
+		IdempotencyKey:     p.GetIdempotencyKey(),
+		FromAddress:        p.GetFromAddress(),
+		ContractID:         p.GetContractId(),
+		Function:           p.GetFunction(),
+		Args:               args,
+		LedgerBoundsOffset: p.GetLedgerBoundsOffset(),
+	}, nil
+}
+
+// ConvertSubmitTransactionResponseToProto converts a domain SubmitTransactionResponse to proto.
+func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionResponse) (*SubmitTransactionResponse, error) {
+	if reply == nil {
+		return nil, errors.New("submit transaction reply is nil")
+	}
+	var resultXDR, resultMetaXDR []byte
+	if reply.ResultXDR != "" {
+		var err error
+		resultXDR, err = base64.StdEncoding.DecodeString(reply.ResultXDR)
+		if err != nil {
+			return nil, fmt.Errorf("invalid result xdr %q: %w", reply.ResultXDR, err)
+		}
+	}
+	if reply.ResultMetaXDR != "" {
+		var err error
+		resultMetaXDR, err = base64.StdEncoding.DecodeString(reply.ResultMetaXDR)
+		if err != nil {
+			return nil, fmt.Errorf("invalid result meta xdr %q: %w", reply.ResultMetaXDR, err)
+		}
+	}
+	return &SubmitTransactionResponse{
+		TxStatus:         TxStatus(reply.TxStatus),
+		TxHash:           reply.TxHash,
+		TxIdempotencyKey: reply.TxIdempotencyKey,
+		ResultXdr:        resultXDR,
+		ResultMetaXdr:    resultMetaXDR,
+	}, nil
+}
+
+// ConvertSubmitTransactionResponseFromProto converts proto SubmitTransactionResponse to domain.
+func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*stellar.SubmitTransactionResponse, error) {
+	if p == nil {
+		return nil, errors.New("submit transaction reply is nil")
+	}
+	return &stellar.SubmitTransactionResponse{
+		TxStatus:         stellar.TransactionStatus(p.GetTxStatus()),
+		TxHash:           p.GetTxHash(),
+		TxIdempotencyKey: p.GetTxIdempotencyKey(),
+		ResultXDR:        base64.StdEncoding.EncodeToString(p.GetResultXdr()),
+		ResultMetaXDR:    base64.StdEncoding.EncodeToString(p.GetResultMetaXdr()),
 	}, nil
 }

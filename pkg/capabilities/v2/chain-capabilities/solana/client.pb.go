@@ -3981,7 +3981,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x17COMPARISON_OPERATOR_LTE\x10\x05*\x82\x01\n" +
 	"\x1fReceiverContractExecutionStatus\x12.\n" +
 	"*RECEIVER_CONTRACT_EXECUTION_STATUS_SUCCESS\x10\x00\x12/\n" +
-	"+RECEIVER_CONTRACT_EXECUTION_STATUS_REVERTED\x10\x012\x9b\r\n" +
+	"+RECEIVER_CONTRACT_EXECUTION_STATUS_REVERTED\x10\x012\xb7\r\n" +
 	"\x06Client\x12\xa4\x01\n" +
 	"\x16GetAccountInfoWithOpts\x12E.capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest\x1aC.capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply\x12\x80\x01\n" +
 	"\n" +
@@ -3995,10 +3995,12 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x0eGetTransaction\x12=.capabilities.blockchain.solana.v1alpha.GetTransactionRequest\x1a;.capabilities.blockchain.solana.v1alpha.GetTransactionReply\x12|\n" +
 	"\n" +
 	"LogTrigger\x12?.capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest\x1a+.capabilities.blockchain.solana.v1alpha.Log0\x01\x12\x83\x01\n" +
-	"\vWriteReport\x12:.capabilities.blockchain.solana.v1alpha.WriteReportRequest\x1a8.capabilities.blockchain.solana.v1alpha.WriteReportReply\x1aE\x82\xb5\x18A\b\x01\x12\fsolana@1.0.0\x1a/\n" +
-	"\rChainSelector\x12\x1e\x12\x1c\n" +
+	"\vWriteReport\x12:.capabilities.blockchain.solana.v1alpha.WriteReportRequest\x1a8.capabilities.blockchain.solana.v1alpha.WriteReportReply\x1aa\x82\xb5\x18]\b\x01\x12\fsolana@1.0.0\x1aK\n" +
+	"\rChainSelector\x12:\x128\n" +
 	"\x1a\n" +
-	"\rsolana-devnet\x10\xdf\uf327\xa9\xfc\xb1\xf6\xe3\x01b\x06proto3"
+	"\rsolana-devnet\x10\xdf\uf327\xa9\xfc\xb1\xf6\xe3\x01\n" +
+	"\x1a\n" +
+	"\x0esolana-mainnet\x10\xe7\x93ߌ\xb6\x9f\xae\xdd\x01b\x06proto3"
 
 var (
 	file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescOnce sync.Once

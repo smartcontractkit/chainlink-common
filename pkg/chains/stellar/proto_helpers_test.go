@@ -150,6 +150,7 @@ func TestConvertReadContractRequest_RoundTrip(t *testing.T) {
 			{Type: stellartypes.ScValTypeU32, U32: &u32},
 			{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
 		},
+		SourceAccount: "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H",
 	}
 
 	proto, err := conv.ConvertReadContractRequestToProto(domain)

@@ -312,6 +312,7 @@ func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionRes
 		TxIdempotencyKey: reply.TxIdempotencyKey,
 		ResultXdr:        resultXDR,
 		ResultMetaXdr:    resultMetaXDR,
+		Error:            reply.Error,
 	}, nil
 }
 
@@ -326,5 +327,6 @@ func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*s
 		TxIdempotencyKey: p.GetTxIdempotencyKey(),
 		ResultXDR:        base64.StdEncoding.EncodeToString(p.GetResultXdr()),
 		ResultMetaXDR:    base64.StdEncoding.EncodeToString(p.GetResultMetaXdr()),
+		Error:            p.GetError(),
 	}, nil
 }

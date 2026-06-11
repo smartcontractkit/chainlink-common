@@ -140,6 +140,8 @@ type SubmitTransactionResponse struct {
 	ResultXDR string
 	// ResultMetaXDR is the base64-encoded result meta XDR when available.
 	ResultMetaXDR string
+	// Error is non-empty when the transaction was accepted but failed on-chain.
+	Error string
 }
 
 // GetLatestLedgerResponse holds the current ledger state.

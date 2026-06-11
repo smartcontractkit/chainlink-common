@@ -66,6 +66,13 @@ type SecretsRequestParams struct {
 	// that omit the field. When present, it is validated and hash-bound.
 	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
 	Attestation   string         `json:"attestation,omitempty"`
+
+	// SignedComputeRequests carries the F+1 Workflow-DON-signed compute requests the
+	// enclave forwards verbatim. The relay DON verifies the signatures over
+	// ComputeRequest.Hash() against its Workflow DON signer set and reads the
+	// authorized identity from PublicData (the WorkflowExecution proto). Like
+	// Attestation, it is authorization input and is excluded from the response hash.
+	SignedComputeRequests []SignedComputeRequest `json:"signed_compute_requests,omitempty"`
 }
 
 // SecretEntry is a single secret in the relay DON's response.
@@ -331,18 +338,50 @@ type RelayResponseSignature struct {
 	Signature []byte `json:"signature"`
 }
 
-// SignedSecretsResponseResult wraps a logical secrets response with the relay
-// signatures that attest to it.
+// SignedSecretsResponseResult is one relay-DON node's signed secrets response:
+// the logical result plus that single node's signature over the response hash.
+// A node signs only its own response, so it carries exactly one signature; the
+// gateway forwards a SignedSecretsResponseBundle of these without merging or
+// trusting them, and the enclave verifies each against the relay-DON signer set.
 type SignedSecretsResponseResult struct {
-	Result     SecretsResponseResult    `json:"result"`
-	Signatures []RelayResponseSignature `json:"signatures"`
+	Result SecretsResponseResult `json:"result"`
+	// Deprecated: use Signature. A relay node signs only its own response, so this
+	// array always carries exactly one entry. Retained for backward compatibility
+	// while chainlink and confidential-compute migrate to the single-signature
+	// field; it will be removed once nothing reads it.
+	Signatures []RelayResponseSignature `json:"signatures,omitempty"`
+	// Signature is this relay node's single signature over the response hash.
+	Signature RelayResponseSignature `json:"signature"`
 }
 
-// SignedCapabilityResponseResult wraps a logical capability response with the
-// relay signatures that attest to it.
+// SignedCapabilityResponseResult is one relay-DON node's signed capability
+// response: the logical result plus that single node's signature over the
+// response hash. See SignedSecretsResponseResult for the trust model.
 type SignedCapabilityResponseResult struct {
-	Result     CapabilityResponseResult `json:"result"`
-	Signatures []RelayResponseSignature `json:"signatures"`
+	Result CapabilityResponseResult `json:"result"`
+	// Deprecated: use Signature. A relay node signs only its own response, so this
+	// array always carries exactly one entry. Retained for backward compatibility
+	// while chainlink and confidential-compute migrate to the single-signature
+	// field; it will be removed once nothing reads it.
+	Signatures []RelayResponseSignature `json:"signatures,omitempty"`
+	// Signature is this relay node's single signature over the response hash.
+	Signature RelayResponseSignature `json:"signature"`
+}
+
+// SignedSecretsResponseBundle is the gateway's response to the enclave: the
+// unverified set of per-node signed responses the gateway collected. The gateway
+// makes no quorum decision and holds no signer keys; it is a dumb fan-in. The
+// enclave groups the responses by their canonical hash, verifies each signature
+// against the relay-DON signer set, and accepts the result backed by F+1 valid
+// distinct signers. Invalid or foreign signatures are skipped, not fatal.
+type SignedSecretsResponseBundle struct {
+	Responses []SignedSecretsResponseResult `json:"responses"`
+}
+
+// SignedCapabilityResponseBundle is the gateway's response to the enclave for a
+// capability execution. See SignedSecretsResponseBundle for the trust model.
+type SignedCapabilityResponseBundle struct {
+	Responses []SignedCapabilityResponseResult `json:"responses"`
 }
 
 // RelayResponseSignaturePayload prepares a relay response hash for signing with

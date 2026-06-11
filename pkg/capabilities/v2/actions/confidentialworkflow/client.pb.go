@@ -84,10 +84,12 @@ type WorkflowExecution struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// workflow_id identifies the workflow to execute.
 	WorkflowId string `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
-	// binary_url is retained for backward compatibility with existing consumers.
-	// New consumers must use ConfidentialWorkflowRequest.binary_url, which lives
-	// outside the hash envelope so each node can mint its own per-node URL
-	// without breaking F+1 quorum. See ConfidentialWorkflowRequest.binary_url.
+	// binary_url is the URL from which the enclave fetches the compiled WASM
+	// binary. It lives inside WorkflowExecution (PublicData), covered by
+	// ComputeRequest.Hash() for F+1 quorum, so every node agrees on the same
+	// canonical locator. Authentication to the storage service is handled out of
+	// band by the fetch sidecar, so this is a stable, node-agnostic locator
+	// rather than a per-node pre-signed URL.
 	BinaryUrl string `protobuf:"bytes,2,opt,name=binary_url,json=binaryUrl,proto3" json:"binary_url,omitempty"`
 	// binary_hash is the expected SHA-256 hash of the WASM binary, for integrity verification.
 	BinaryHash []byte `protobuf:"bytes,3,opt,name=binary_hash,json=binaryHash,proto3" json:"binary_hash,omitempty"`
@@ -215,17 +217,12 @@ type ConfidentialWorkflowRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	VaultDonSecrets []*SecretIdentifier    `protobuf:"bytes,1,rep,name=vault_don_secrets,json=vaultDonSecrets,proto3" json:"vault_don_secrets,omitempty"`
 	Execution       *WorkflowExecution     `protobuf:"bytes,2,opt,name=execution,proto3" json:"execution,omitempty"`
-	// binary_url is the pre-signed URL used by the enclave to fetch the WASM
-	// binary. It lives here, on ConfidentialWorkflowRequest, rather than inside
-	// WorkflowExecution: every workflow DON node mints its own URL with its own
-	// signature and expiry timestamp, so the value differs across nodes.
-	// WorkflowExecution serializes into ComputeRequest.PublicData, which is
-	// covered by ComputeRequest.Hash() for F+1 quorum matching at the enclave.
-	// A per-node value inside that envelope would break quorum.
+	// Deprecated: the per-node pre-signed URL approach is superseded. binary_url
+	// now travels inside WorkflowExecution (PublicData) as a canonical locator,
+	// with authentication to the storage service handled out of band by the fetch
+	// sidecar. Retained for back-compat; no longer populated.
 	//
-	// The integrity anchor for the fetched bytes is execution.binary_hash, inside
-	// PublicData (and therefore signed and quorum-checked). The URL is a fetch
-	// hint; tampering with it is caught by the hash check on the returned bytes.
+	// Deprecated: Marked as deprecated in capabilities/compute/confidentialworkflow/v1alpha/client.proto.
 	BinaryUrl     string `protobuf:"bytes,3,opt,name=binary_url,json=binaryUrl,proto3" json:"binary_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -275,6 +272,7 @@ func (x *ConfidentialWorkflowRequest) GetExecution() *WorkflowExecution {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in capabilities/compute/confidentialworkflow/v1alpha/client.proto.
 func (x *ConfidentialWorkflowRequest) GetBinaryUrl() string {
 	if x != nil {
 		return x.BinaryUrl
@@ -405,12 +403,12 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\fexecution_id\x18\x06 \x01(\tR\vexecutionId\x12\x15\n" +
 	"\x06org_id\x18\a \x01(\tR\x05orgId\x12=\n" +
 	"\frequirements\x18\b \x01(\v2\x19.sdk.v1alpha.RequirementsR\frequirements\x12K\n" +
-	"\x13sdk_execute_request\x18\t \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x11sdkExecuteRequest\"\x91\x02\n" +
+	"\x13sdk_execute_request\x18\t \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x11sdkExecuteRequest\"\x95\x02\n" +
 	"\x1bConfidentialWorkflowRequest\x12o\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
-	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\x12\x1d\n" +
+	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\x12!\n" +
 	"\n" +
-	"binary_url\x18\x03 \x01(\tR\tbinaryUrl\"\x99\x01\n" +
+	"binary_url\x18\x03 \x01(\tB\x02\x18\x01R\tbinaryUrl\"\x99\x01\n" +
 	"\x1cConfidentialWorkflowResponse\x12)\n" +
 	"\x10execution_result\x18\x01 \x01(\fR\x0fexecutionResult\x12N\n" +
 	"\x14sdk_execution_result\x18\x02 \x01(\v2\x1c.sdk.v1alpha.ExecutionResultR\x12sdkExecutionResult\"H\n" +

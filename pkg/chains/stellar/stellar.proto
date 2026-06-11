@@ -18,6 +18,7 @@ message ReadContractRequest {
   string                                           contract_id     = 1; // Stellar contract address (C… StrKey)
   string                                           function        = 2; // Soroban function name
   repeated capabilities.blockchain.stellar.v1alpha.ScVal args      = 3; // Typed Soroban arguments
+  string                                           source_account  = 4; // Account (G… StrKey) to simulate the call as; empty uses a deterministic placeholder
 }
 
 // ReadContractResponse carries the return value of the simulated call.

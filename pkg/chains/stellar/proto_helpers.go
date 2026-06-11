@@ -188,9 +188,10 @@ func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadCo
 		}
 	}
 	return &ReadContractRequest{
-		ContractId: req.ContractID,
-		Function:   req.Function,
-		Args:       args,
+		ContractId:    req.ContractID,
+		Function:      req.Function,
+		Args:          args,
+		SourceAccount: req.SourceAccount,
 	}, nil
 }
 
@@ -219,9 +220,10 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadCo
 		}
 	}
 	return stellar.ReadContractRequest{
-		ContractID: p.GetContractId(),
-		Function:   p.GetFunction(),
-		Args:       args,
+		ContractID:    p.GetContractId(),
+		Function:      p.GetFunction(),
+		SourceAccount: p.GetSourceAccount(),
+		Args:          args,
 	}, nil
 }
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781190647619,
+  "lastUpdate": 1781194378284,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -50520,6 +50520,66 @@ window.BENCHMARK_DATA = {
             "value": 142821,
             "unit": "ns/op",
             "extra": "7303 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87b1e75d2c3385e5c6f2474ef6394c53c027b4f9",
+          "message": "feat(confidentialrelay): vendor SignedComputeRequest + relay response bundle (PRIV-433) (#2109)\n\n* feat(confidentialrelay): vendor SignedComputeRequest + canonical Hash\n\nThe relay DON (chainlink/core) cannot import confidential-compute (the dependency runs\nthe other way), so vendor ComputeRequest/SignedComputeRequest and the canonical\nComputeRequest.Hash into the confidentialrelay package. This lets the relay verify the\nWorkflow DON's F+1 signatures over a forwarded compute request directly, the basis for\nreplacing the separate WorkflowAuthz blob.\n\nHash reuses this package's existing length-prefix helpers (byte-identical to the source's\nwriteWithLength/writeLengthPrefix), so no duplicate helpers. Tests cover determinism,\nfield-binding, and the intentional exclusion of EncryptedDecryptionKeyShares. Byte-for-byte\nconformance with the source Hash will be enforced by a test in confidential-compute (which\ncan import this package); common cannot import CC.\n\n* feat(confidentialrelay): carry SignedComputeRequests on SecretsRequestParams\n\nAdd SignedComputeRequests []SignedComputeRequest to SecretsRequestParams: the F+1\nWorkflow-DON-signed compute requests the enclave forwards for the relay DON to verify.\nExcluded from the response hash, matching Attestation/EnclaveConfig.\n\n* feat(confidentialrelay): add SignedComputeRequest signature-payload helper\n\nThe relay DON verifies the F+1 Workflow DON signatures over a forwarded SignedComputeRequest\nby reconstructing the peerid domain-separated payload the nodes signed. Adds\nSignedComputeRequestSignaturePayload + the vendored prefix CONFIDENTIAL_COMPUTE_PAYLOAD_\n(from CC util.GetConfidentialComputePayloadPrefix). The relay cannot import\nconfidential-compute, so this lives here.\n\n* feat(confidentialrelay): add relay response bundle types\n\nAdd SignedSecretsResponseBundle and SignedCapabilityResponseBundle, the\ngateway->enclave envelope for forwarding every relay node's signed\nresponse without the gateway merging, trusting, or deciding quorum over\nthem. The enclave groups by response hash, verifies each signature\nagainst the relay-DON signer set, and accepts the result backed by F+1\nvalid distinct signers.\n\nAdd a single Signature field to the per-node signed-result types (a node\nsigns only its own response) and deprecate the Signatures array. The\narray is kept and still populated for backward compatibility until\nchainlink and confidential-compute migrate to Signature.",
+          "timestamp": "2026-06-11T16:01:04Z",
+          "tree_id": "ef6b90258f912b45e9dd856da334a4e452372d7b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/87b1e75d2c3385e5c6f2474ef6394c53c027b4f9"
+        },
+        "date": 1781194376169,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3363642 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92743,
+            "unit": "ns/op",
+            "extra": "12884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.5,
+            "unit": "ns/op",
+            "extra": "2896390 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94131,
+            "unit": "ns/op",
+            "extra": "12715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26851,
+            "unit": "ns/op",
+            "extra": "43707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148763,
+            "unit": "ns/op",
+            "extra": "8265 times\n4 procs"
           }
         ]
       }

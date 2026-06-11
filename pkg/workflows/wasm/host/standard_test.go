@@ -27,6 +27,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -72,6 +73,44 @@ func TestStandardErrors(t *testing.T) {
 	}).Maybe()
 	errMsg := runWithBasicTrigger(t, mockExecutionHelper)
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
+}
+
+func TestStandardCapabilityErrors(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+
+	callIndex := 0
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+		assert.Equal(t, "basic-test-action@1.0.0", request.Id)
+		assert.Equal(t, "PerformAction", request.Method)
+		input := &basicaction.Inputs{}
+		assert.NoError(t, request.Payload.UnmarshalTo(input))
+
+		if callIndex < len(caperrors.AllErrorCodes) {
+			code := caperrors.AllErrorCodes[callIndex]
+			callIndex++
+			return nil, caperrors.NewPublicSystemError(errors.New(code.String()+" error"), code)
+		}
+
+		callIndex++
+		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: "Done"})
+		require.NoError(t, err)
+		return &sdk.CapabilityResponse{
+			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
+		}, nil
+	}).Times(len(caperrors.AllErrorCodes) + 1)
+
+	m := makeTestModule(t)
+	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+	result := executeWithResult[string](t, m, request, mockExecutionHelper)
+	assert.Equal(t, "Done", result)
 }
 
 func TestStandardCapabilityCallsAreAsync(t *testing.T) {

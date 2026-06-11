@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781203632911,
+  "lastUpdate": 1781213341115,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -50640,6 +50640,66 @@ window.BENCHMARK_DATA = {
             "value": 132238,
             "unit": "ns/op",
             "extra": "8688 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a034c8d80da35449a4831dc2ce69cc40743c906b",
+          "message": "Add request_id to vault signed OCR response protos (#2143)\n\n* Add request_id to vault signed OCR response protos\nInclude request_id on create, update, delete, and list secret response\nmessages so vault nodes can bind signed OCR payloads to gateway requests.\n\n* make generate\n\n* add a new gate limiter for this change",
+          "timestamp": "2026-06-11T21:17:00Z",
+          "tree_id": "05b69e5c61ea828cb35c3299ce2e388e5a9158b4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a034c8d80da35449a4831dc2ce69cc40743c906b"
+        },
+        "date": 1781213339181,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.9,
+            "unit": "ns/op",
+            "extra": "3282002 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 75442,
+            "unit": "ns/op",
+            "extra": "16341 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 385.3,
+            "unit": "ns/op",
+            "extra": "3069021 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79824,
+            "unit": "ns/op",
+            "extra": "14912 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29162,
+            "unit": "ns/op",
+            "extra": "41162 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131693,
+            "unit": "ns/op",
+            "extra": "8833 times\n4 procs"
           }
         ]
       }

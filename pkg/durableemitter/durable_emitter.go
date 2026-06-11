@@ -325,6 +325,8 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return err
 		}
 
+		event.SetExtension("emitter", "DurableEmitter")
+
 		eventPb, err := chipingress.EventToProto(event)
 		if err != nil {
 			emitFail()

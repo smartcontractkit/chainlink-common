@@ -154,6 +154,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			require.Equal(t, stellartypes.ScValTypeSymbol, req.Args[0].Type)
 			require.NotNil(t, req.Args[0].Symbol)
 			require.Equal(t, "transfer", *req.Args[0].Symbol)
+			require.Equal(t, "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H", req.SourceAccount)
 			return stellartypes.ReadContractResponse{
 				Result:         resultB64,
 				LedgerSequence: 101,
@@ -161,9 +162,10 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		}
 
 		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
-			ContractID: "CABC123",
-			Function:   "my_fn",
-			Args:       []stellartypes.ScVal{argVal},
+			ContractID:    "CABC123",
+			Function:      "my_fn",
+			Args:          []stellartypes.ScVal{argVal},
+			SourceAccount: "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H",
 		})
 		require.NoError(t, err)
 		require.Equal(t, uint32(101), resp.LedgerSequence)
@@ -246,6 +248,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 	t.Run("ReadContract_noArgs_noResult", func(t *testing.T) {
 		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
 			require.Empty(t, req.Args)
+			require.Empty(t, req.SourceAccount)
 			return stellartypes.ReadContractResponse{
 				Error:          "contract error: not found",
 				LedgerSequence: 200,

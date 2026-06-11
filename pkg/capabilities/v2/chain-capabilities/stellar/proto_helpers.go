@@ -77,9 +77,10 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellarservice
 		args[i] = sv
 	}
 	return stellarservicetypes.ReadContractRequest{
-		ContractID: p.GetContractId(),
-		Function:   p.GetFunction(),
-		Args:       args,
+		ContractID:    p.GetContractId(),
+		Function:      p.GetFunction(),
+		Args:          args,
+		SourceAccount: p.GetSourceAccount(),
 	}, nil
 }
 

@@ -831,6 +831,7 @@ func (d *DurableEmitter) metricsLoop() {
 			if obs, ok := d.store.(DurableQueueObserver); ok {
 				d.metrics.pollQueueGauges(ctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}
+			d.metrics.pollProcessGauges(ctx)
 		}
 	}
 }

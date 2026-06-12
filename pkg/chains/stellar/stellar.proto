@@ -74,6 +74,7 @@ message SubmitTransactionResponse {
   string   tx_idempotency_key = 3;
   bytes    result_xdr = 4;       // TransactionResult binary XDR; empty if unavailable
   bytes    result_meta_xdr = 5;  // TransactionMeta binary XDR; empty if unavailable
+  string   error = 6;            // Non-empty when the transaction was accepted but failed on-chain
 }
 
 // GetLatestLedgerResponse holds current ledger state.

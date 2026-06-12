@@ -395,11 +395,32 @@ func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
 		TxIdempotencyKey: "idem-456",
 		ResultXDR:        base64.StdEncoding.EncodeToString([]byte("result")),
 		ResultMetaXDR:    base64.StdEncoding.EncodeToString([]byte("meta")),
+		Error:            "",
 	}
 
 	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
 	require.NoError(t, err)
 	require.Equal(t, conv.TxStatus_TX_STATUS_SUCCESS, proto.GetTxStatus())
+	require.Empty(t, proto.GetError())
+
+	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertSubmitTransactionResponse_RoundTrip_WithError(t *testing.T) {
+	domain := &stellartypes.SubmitTransactionResponse{
+		TxStatus:         stellartypes.TxFailed,
+		TxHash:           "failhash",
+		TxIdempotencyKey: "idem-fail",
+		ResultXDR:        base64.StdEncoding.EncodeToString([]byte("failed-result")),
+		Error:            "transaction result: InvokeHostFunctionTrapped",
+	}
+
+	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, conv.TxStatus_TX_STATUS_FAILED, proto.GetTxStatus())
+	require.Equal(t, domain.Error, proto.GetError())
 
 	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
 	require.NoError(t, err)

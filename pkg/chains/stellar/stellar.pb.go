@@ -480,6 +480,7 @@ type SubmitTransactionResponse struct {
 	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"`
 	ResultXdr        []byte                 `protobuf:"bytes,4,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`               // TransactionResult binary XDR; empty if unavailable
 	ResultMetaXdr    []byte                 `protobuf:"bytes,5,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"` // TransactionMeta binary XDR; empty if unavailable
+	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`                                        // Non-empty when the transaction was accepted but failed on-chain
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -547,6 +548,13 @@ func (x *SubmitTransactionResponse) GetResultMetaXdr() []byte {
 		return x.ResultMetaXdr
 	}
 	return nil
+}
+
+func (x *SubmitTransactionResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
 }
 
 // GetLatestLedgerResponse holds current ledger state.
@@ -668,14 +676,15 @@ const file_stellar_proto_rawDesc = "" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x04 \x01(\tR\bfunction\x12B\n" +
 	"\x04args\x18\x05 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x120\n" +
-	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xde\x01\n" +
+	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xf4\x01\n" +
 	"\x19SubmitTransactionResponse\x123\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x16.loop.stellar.TxStatusR\btxStatus\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +
 	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\x12\x1d\n" +
 	"\n" +
 	"result_xdr\x18\x04 \x01(\fR\tresultXdr\x12&\n" +
-	"\x0fresult_meta_xdr\x18\x05 \x01(\fR\rresultMetaXdr\"\xfc\x01\n" +
+	"\x0fresult_meta_xdr\x18\x05 \x01(\fR\rresultMetaXdr\x12\x14\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\"\xfc\x01\n" +
 	"\x17GetLatestLedgerResponse\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\fR\x04hash\x12)\n" +
 	"\x10protocol_version\x18\x02 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +

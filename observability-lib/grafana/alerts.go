@@ -210,7 +210,7 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 	}
 
 	if options.RuleExecErrState == "" {
-		options.RuleExecErrState = alerting.RuleExecErrStateAlerting
+		options.RuleExecErrState = alerting.RuleExecErrStateError
 	}
 
 	if options.QueryRefCondition == "" {

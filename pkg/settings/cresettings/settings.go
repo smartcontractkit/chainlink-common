@@ -64,6 +64,7 @@ var Default = Schema{
 	VaultForceEmptyOCRRounds:               Bool(false),
 	VaultOptimizationsEnabled:              Bool(false),
 	VaultSignedResponseRequestIDEnabled:    Bool(false),
+	VaultCiphertextlessObservationsEnabled: Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
@@ -229,12 +230,12 @@ var Default = Schema{
 			CallLimit:            Int(20),
 		},
 		HTTPAction: httpAction{
-			CallLimit:           Int(5),
-			CacheAgeLimit:       Duration(10 * time.Minute),
-			ConnectionTimeout:   Duration(10 * time.Second),
-			RequestSizeLimit:    Size(10 * config.KByte),
-			ResponseSizeLimit:   Size(100 * config.KByte),
-			GatewayProxyDonID:   String(""),
+			CallLimit:         Int(5),
+			CacheAgeLimit:     Duration(10 * time.Minute),
+			ConnectionTimeout: Duration(10 * time.Second),
+			RequestSizeLimit:  Size(10 * config.KByte),
+			ResponseSizeLimit: Size(100 * config.KByte),
+			GatewayProxyDonID: String(""),
 		},
 		ConfidentialHTTP: confidentialHTTP{
 			CallLimit:         Int(5),
@@ -271,6 +272,7 @@ type Schema struct {
 	VaultForceEmptyOCRRounds               Setting[bool]
 	VaultOptimizationsEnabled              Setting[bool]
 	VaultSignedResponseRequestIDEnabled    Setting[bool]
+	VaultCiphertextlessObservationsEnabled Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
@@ -413,12 +415,12 @@ type chainRead struct {
 	PayloadSizeLimit   Setting[config.Size]
 }
 type httpAction struct {
-	CallLimit           Setting[int] `unit:"{call}"`
-	CacheAgeLimit       Setting[time.Duration]
-	ConnectionTimeout   Setting[time.Duration]
-	RequestSizeLimit    Setting[config.Size]
-	ResponseSizeLimit   Setting[config.Size]
-	GatewayProxyDonID   Setting[string]
+	CallLimit         Setting[int] `unit:"{call}"`
+	CacheAgeLimit     Setting[time.Duration]
+	ConnectionTimeout Setting[time.Duration]
+	RequestSizeLimit  Setting[config.Size]
+	ResponseSizeLimit Setting[config.Size]
+	GatewayProxyDonID Setting[string]
 }
 type perOrgHTTPAction struct {
 	MtlsRateLimit Setting[config.Rate]

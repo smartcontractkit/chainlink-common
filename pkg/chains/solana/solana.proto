@@ -114,6 +114,7 @@ message GetAccountInfoWithOptsRequest {
 // Reply for GetBalance.
 message GetBalanceReply {
   uint64 value = 1; // lamports
+  uint64 slot = 2;  // processed slot
 }
 
 // Request for GetBalance.
@@ -144,7 +145,8 @@ message GetBlockRequest {
 
 // Fee quote for a base58-encoded Message.
 message GetFeeForMessageReply {
-  uint64 fee = 1; // lamports
+  uint64 fee = 1;  // lamports
+  uint64 slot = 2; // processed slot
 }
 
 message GetFeeForMessageRequest {

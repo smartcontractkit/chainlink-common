@@ -401,6 +401,7 @@ func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
 	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
 	require.NoError(t, err)
 	require.Equal(t, conv.TxStatus_TX_STATUS_SUCCESS, proto.GetTxStatus())
+	require.Empty(t, proto.GetError())
 
 	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
 	require.NoError(t, err)

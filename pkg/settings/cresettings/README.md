@@ -135,6 +135,7 @@ flowchart
         end
 
         subgraph metrics
+            direction TB
             PerWorkflow.UserMetricEnabled[/PerWorkflow.UserMetricEnabled\]:::gate
             PerWorkflow.UserMetricPayloadLimit{{PerWorkflow.UserMetricPayloadLimit}}:::bound
             PerWorkflow.UserMetricNameLengthLimit{{PerWorkflow.UserMetricNameLengthLimit}}:::bound
@@ -176,15 +177,18 @@ flowchart
             PerWorkflow.ChainWrite.ReportSizeLimit{{ReportSizeLimit}}:::bound
 
             subgraph EVM
+                direction LR
                 PerWorkflow.ChainWrite.EVM.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.EVM.GasLimit{{GasLimit}}:::bound
 %%                PerWorkflow.ChainWrite.EVM.TransactionGasLimit - Deprecated
             end
             subgraph Solana
+                direction LR
                 PerWorkflow.ChainWrite.Solana.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.Solana.GasLimit{{GasLimit}}:::bound
             end
             subgraph Aptos
+                direction LR
                 PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.Aptos.GasLimit{{GasLimit}}:::bound
             end

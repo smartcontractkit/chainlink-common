@@ -10,6 +10,8 @@
 	"VaultForceEmptyOCRRounds": "false",
 	"VaultOptimizationsEnabled": "false",
 	"VaultSignedResponseRequestIDEnabled": "false",
+	"VaultPendingQueueStaleAutoEmpty": "false",
+	"VaultPendingQueueStaleRoundThreshold": "30",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"GatewayConfidentialRelayGlobalRate": "50rps:10",

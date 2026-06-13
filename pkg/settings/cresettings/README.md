@@ -43,6 +43,8 @@ flowchart
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
+        VaultPendingQueueStaleAutoEmpty[/VaultPendingQueueStaleAutoEmpty\]:::gate
+        VaultPendingQueueStaleRoundThreshold{{VaultPendingQueueStaleRoundThreshold}}:::bound
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]

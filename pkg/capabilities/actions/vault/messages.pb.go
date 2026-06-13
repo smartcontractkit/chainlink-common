@@ -2044,6 +2044,7 @@ func (x *StoredMetadata) GetSecretIdentifiers() []*SecretIdentifier {
 type StoredPendingQueueIndex struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Length        int64                  `protobuf:"varint,1,opt,name=length,proto3" json:"length,omitempty"`
+	WrittenSeqNr  uint64                 `protobuf:"varint,2,opt,name=written_seq_nr,json=writtenSeqNr,proto3" json:"written_seq_nr,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2081,6 +2082,13 @@ func (*StoredPendingQueueIndex) Descriptor() ([]byte, []int) {
 func (x *StoredPendingQueueIndex) GetLength() int64 {
 	if x != nil {
 		return x.Length
+	}
+	return 0
+}
+
+func (x *StoredPendingQueueIndex) GetWrittenSeqNr() uint64 {
+	if x != nil {
+		return x.WrittenSeqNr
 	}
 	return 0
 }
@@ -2512,9 +2520,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\fStoredSecret\x12)\n" +
 	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"X\n" +
 	"\x0eStoredMetadata\x12F\n" +
-	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"1\n" +
+	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers\"W\n" +
 	"\x17StoredPendingQueueIndex\x12\x16\n" +
-	"\x06length\x18\x01 \x01(\x03R\x06length\"R\n" +
+	"\x06length\x18\x01 \x01(\x03R\x06length\x12$\n" +
+	"\x0ewritten_seq_nr\x18\x02 \x01(\x04R\fwrittenSeqNr\"R\n" +
 	"\x16StoredPendingQueueItem\x12(\n" +
 	"\x04item\x18\x01 \x01(\v2\x14.google.protobuf.AnyR\x04item\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"n\n" +

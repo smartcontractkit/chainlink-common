@@ -346,7 +346,6 @@ func TestSubmitTransactionConverters(t *testing.T) {
 			TxStatus:         typeaptos.TxSuccess,
 			TxHash:           "0xabc123",
 			TxIdempotencyKey: "key-456",
-			TxTimestamp:      1234567890,
 		}
 
 		protoReply, err := conv.ConvertSubmitTransactionReplyToProto(reply)

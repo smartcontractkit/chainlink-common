@@ -484,7 +484,6 @@ func ConvertSubmitTransactionReplyToProto(reply *typeaptos.SubmitTransactionRepl
 		TxStatus:         TxStatus(reply.TxStatus),
 		TxHash:           reply.TxHash,
 		TxIdempotencyKey: reply.TxIdempotencyKey,
-		TxTimestamp:      reply.TxTimestamp,
 	}, nil
 }
 
@@ -497,6 +496,5 @@ func ConvertSubmitTransactionReplyFromProto(proto *SubmitTransactionReply) (*typ
 		TxStatus:         typeaptos.TransactionStatus(proto.TxStatus),
 		TxHash:           proto.TxHash,
 		TxIdempotencyKey: proto.TxIdempotencyKey,
-		TxTimestamp:      proto.TxTimestamp,
 	}, nil
 }

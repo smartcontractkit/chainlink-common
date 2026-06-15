@@ -1189,7 +1189,6 @@ type SubmitTransactionReply struct {
 	TxStatus         TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.aptos.TxStatus" json:"tx_status,omitempty"`
 	TxHash           string                 `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"`
-	TxTimestamp      uint64                 `protobuf:"varint,4,opt,name=tx_timestamp,json=txTimestamp,proto3" json:"tx_timestamp,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1243,13 +1242,6 @@ func (x *SubmitTransactionReply) GetTxIdempotencyKey() string {
 		return x.TxIdempotencyKey
 	}
 	return ""
-}
-
-func (x *SubmitTransactionReply) GetTxTimestamp() uint64 {
-	if x != nil {
-		return x.TxTimestamp
-	}
-	return 0
 }
 
 type GasConfig struct {
@@ -1376,12 +1368,11 @@ const file_aptos_proto_rawDesc = "" +
 	"\x0fencoded_payload\x18\x02 \x01(\fR\x0eencodedPayload\x129\n" +
 	"\n" +
 	"gas_config\x18\x03 \x01(\v2\x15.loop.aptos.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
-	"\v_gas_config\"\xb5\x01\n" +
+	"\v_gas_config\"\x92\x01\n" +
 	"\x16SubmitTransactionReply\x121\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x14.loop.aptos.TxStatusR\btxStatus\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +
-	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\x12!\n" +
-	"\ftx_timestamp\x18\x04 \x01(\x04R\vtxTimestamp\"W\n" +
+	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\"W\n" +
 	"\tGasConfig\x12$\n" +
 	"\x0emax_gas_amount\x18\x01 \x01(\x04R\fmaxGasAmount\x12$\n" +
 	"\x0egas_unit_price\x18\x02 \x01(\x04R\fgasUnitPrice*\xb4\x02\n" +

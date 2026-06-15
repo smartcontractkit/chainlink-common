@@ -114,30 +114,8 @@ func (sk *OCR2Key) Verify(publicKey types.OnchainPublicKey, reportCtx types.Repo
 		return false
 	}
 
-	_, ok := yCoordinateForX(pubX)
-	if !ok {
-		return false
-	}
-
 	verified, err := curve.Verify(hash, r, s, pubX)
 	return err == nil && verified
-}
-
-func yCoordinateForX(x *big.Int) (y *big.Int, ok bool) {
-	defer func() {
-		if recover() != nil {
-			ok = false
-			y = nil
-		}
-	}()
-
-	xFelt := new(felt.Felt).SetBigInt(x)
-	yFelt := curve.GetYCoordinate(xFelt)
-	if yFelt == nil {
-		return nil, false
-	}
-
-	return yFelt.BigInt(new(big.Int)), true
 }
 
 func (sk *OCR2Key) Verify3(publicKey types.OnchainPublicKey, cd types.ConfigDigest, seqNr uint64, r types.Report, signature []byte) bool {

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"time"
 
@@ -137,7 +138,7 @@ const (
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It doesn't actually sleep though, and will instead advance our fake clock by the sleep duration.
 func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
-	if nsubscriptions == 0 {
+	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 		return ErrnoInval
 	}
 

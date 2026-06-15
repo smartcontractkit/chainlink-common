@@ -39,8 +39,10 @@ func GenerateKey(material io.Reader) (k Key, err error) {
 // pad bytes to privateKeyLen
 func padBytes(a []byte) []byte {
 	if len(a) < privateKeyLen {
-		pad := make([]byte, privateKeyLen-len(a))
-		return append(pad, a...)
+		padLen := privateKeyLen - len(a)
+		out := make([]byte, privateKeyLen)
+		copy(out[padLen:], a)
+		return out
 	}
 
 	// return original if length is >= to specified length

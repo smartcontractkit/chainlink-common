@@ -64,7 +64,7 @@ func TestStarknetKeyring_TestVector(t *testing.T) {
 		},
 	}
 
-	var report []byte
+	var report = make([]byte, 0, 8*32) // b1, b2, b3, b4×4, b1
 	b1 := new(felt.Felt).SetUint64(1).Bytes()
 	report = append(report, b1[:]...)
 	b2Bytes, err := hex.DecodeString("00010203000000000000000000000000000000000000000000000000000000")

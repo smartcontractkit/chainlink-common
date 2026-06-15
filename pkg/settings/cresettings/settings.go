@@ -62,8 +62,9 @@ var Default = Schema{
 	PropagateOrgIDInRequestMetadata:        Bool(false),
 	VaultBase64EncodingEnabled:             Bool(false),
 	VaultForceEmptyOCRRounds:               Bool(false),
-	VaultOptimizationsEnabled:              Bool(false),
-	VaultSignedResponseRequestIDEnabled:    Bool(false),
+	VaultOptimizationsEnabled:                      Bool(false),
+	VaultOwnerAddressCanonicalizationEnabled:       Bool(false),
+	VaultSignedResponseRequestIDEnabled:            Bool(false),
 	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
@@ -269,8 +270,9 @@ type Schema struct {
 	PropagateOrgIDInRequestMetadata        Setting[bool]
 	VaultBase64EncodingEnabled             Setting[bool]
 	VaultForceEmptyOCRRounds               Setting[bool]
-	VaultOptimizationsEnabled              Setting[bool]
-	VaultSignedResponseRequestIDEnabled    Setting[bool]
+	VaultOptimizationsEnabled                    Setting[bool]
+	VaultOwnerAddressCanonicalizationEnabled     Setting[bool]
+	VaultSignedResponseRequestIDEnabled          Setting[bool]
 	GatewayHTTPGlobalRate                  Setting[config.Rate]
 	GatewayHTTPPerNodeRate                 Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]

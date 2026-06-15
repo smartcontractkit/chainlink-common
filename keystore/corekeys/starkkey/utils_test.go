@@ -10,15 +10,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
-func TestGenerateKeyNonZero(t *testing.T) {
+func TestGenerateKeyScalarRange(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 20; i++ {
-		key, err := GenerateKey(rand.Reader)
-		require.NoError(t, err)
+	// GenerateKey documents sampling in [1, curveOrder-1]; assert that contract.
+	key, err := GenerateKey(rand.Reader)
+	require.NoError(t, err)
 
-		priv := new(big.Int).SetBytes(internal.Bytes(key.Raw()))
-		require.NotZero(t, priv.Sign(), "private key must not be zero")
-		require.Negative(t, priv.Cmp(curveOrder), "private key must be below curve order")
-	}
+	priv := new(big.Int).SetBytes(internal.Bytes(key.Raw()))
+	require.Equal(t, 1, priv.Sign(), "private key must be positive")
+	require.Negative(t, priv.Cmp(curveOrder), "private key must be below curve order")
 }

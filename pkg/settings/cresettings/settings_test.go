@@ -119,7 +119,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC",
 		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2025-07-15 00:00:00 +0000 UTC,2025-08-15 00:00:00 +0000 UTC]",
-		"FeatureEVMWriteReportL1FeeActivePeriod": "[2025-09-15 00:00:00 +0000 UTC,2025-10-15 00:00:00 +0000 UTC]"
+		"FeatureEVMWriteReportL1FeeActivePeriod": "[2025-09-15 00:00:00 +0000 UTC,2025-10-15 00:00:00 +0000 UTC]",
+		"FeatureAptosWriteReportTxTimestampActivePeriod": "[2025-11-15 00:00:00 +0000 UTC,2025-12-15 00:00:00 +0000 UTC]"
 	}
 }`), &cfg))
 
@@ -158,6 +159,10 @@ func TestSchema_Unmarshal(t *testing.T) {
 		Lower: config.Timestamp(time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC).Unix()),
 		Upper: config.Timestamp(time.Date(2025, 10, 15, 0, 0, 0, 0, time.UTC).Unix()),
 	}, cfg.PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2025, 11, 15, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureAptosWriteReportTxTimestampActivePeriod.DefaultValue)
 }
 
 func TestGatewayProxyDonIDKeyInit(t *testing.T) {

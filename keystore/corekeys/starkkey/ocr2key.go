@@ -9,6 +9,7 @@ import (
 
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/curve"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fr"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/chains/evmutil"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -17,6 +18,10 @@ import (
 )
 
 var _ types.OnchainKeyring = &OCR2Key{}
+
+// curveOrder is the STARK curve field modulus (N), used to enforce canonical OCR2
+// signatures (s <= N/2). starknet.go v0.17 no longer exports this via curve.Curve.
+var curveOrder = fr.Modulus()
 
 type OCR2Key struct {
 	Key

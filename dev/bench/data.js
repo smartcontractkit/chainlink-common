@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781526886548,
+  "lastUpdate": 1781538961797,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -50940,6 +50940,66 @@ window.BENCHMARK_DATA = {
             "value": 101072,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2bc73adfe23c6052897155ab6efcf961b50758b4",
+          "message": "Add VaultOwnerAddressCanonicalizationEnabled CRE setting. (#2156)\n\nGate rollout of vault owner address validation and EIP-55 canonicalization behind a default-off flag.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>",
+          "timestamp": "2026-06-15T15:44:15Z",
+          "tree_id": "8dca1a331b0cbc2322c121d29db872554264efd9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2bc73adfe23c6052897155ab6efcf961b50758b4"
+        },
+        "date": 1781538959640,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.3,
+            "unit": "ns/op",
+            "extra": "3318732 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95020,
+            "unit": "ns/op",
+            "extra": "12595 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.8,
+            "unit": "ns/op",
+            "extra": "2933258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94985,
+            "unit": "ns/op",
+            "extra": "12560 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26757,
+            "unit": "ns/op",
+            "extra": "44942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148526,
+            "unit": "ns/op",
+            "extra": "7808 times\n4 procs"
           }
         ]
       }

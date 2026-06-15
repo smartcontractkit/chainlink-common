@@ -398,6 +398,113 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	}, 3*time.Second, 20*time.Millisecond, "pending row should be delivered via batch emitter")
 }
 
+func TestDurableEmitter_SeedsPendingCountFromStoreOnStart(t *testing.T) {
+	store := NewMemDurableEventStore()
+
+	// Pre-populate the store with rows that look like leftovers from a
+	// crashed prior incarnation: real CloudEvent payloads, no delivered_at.
+	const preExisting = 7
+	for i := 0; i < preExisting; i++ {
+		ev, err := chipingress.NewEvent("seed-domain", "seed-type", []byte("seed"), nil)
+		require.NoError(t, err)
+		evPb, err := chipingress.EventToProto(ev)
+		require.NoError(t, err)
+		payload, err := proto.Marshal(evPb)
+		require.NoError(t, err)
+		_, err = store.Insert(context.Background(), payload)
+		require.NoError(t, err)
+	}
+	require.Equal(t, preExisting, store.Len(), "pre-flight: store should hold the seeded rows")
+
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 50 * time.Millisecond
+	cfg.RetransmitAfter = 30 * time.Millisecond
+	cfg.DisablePruning = true // keep expiry / purge out of the way so the assertions are deterministic
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	t.Cleanup(func() { require.NoError(t, em.Close()) })
+
+	// Seed runs synchronously inside start(), so the depth should be
+	// visible immediately after Start returns — no Eventually needed.
+	assert.Equal(t, int64(preExisting), em.PendingDepth(),
+		"pendingCount should be seeded from the on-disk queue depth")
+	assert.Equal(t, int64(preExisting), em.PendingMax(),
+		"pendingMax should reflect the seeded depth, otherwise a freshly-restarted "+
+			"process under-reports its high-water mark")
+
+	// Let retransmit pick up the rows and the test batch emitter deliver them.
+	require.Eventually(t, func() bool {
+		return store.Len() == 0 && be.callCount.Load() >= int64(preExisting)
+	}, 3*time.Second, 20*time.Millisecond, "retransmit should drain the seeded rows")
+
+	// After delivery the counter must land at exactly 0 — not negative,
+	// which is the bug this seeding step prevents.
+	require.Eventually(t, func() bool {
+		return em.PendingDepth() == 0
+	}, 2*time.Second, 10*time.Millisecond,
+		"pendingCount should equal 0 after drain (negative value would indicate the seed regression)")
+}
+
+// nonObservableStore wraps MemDurableEventStore but deliberately hides the
+// DurableQueueObserver implementation so we can exercise the start-time
+// seeding fallback path: stores that cannot answer ObserveDurableQueue
+// must leave pendingCount at its zero initial value without panicking.
+type nonObservableStore struct {
+	inner *MemDurableEventStore
+}
+
+func (n *nonObservableStore) Insert(ctx context.Context, payload []byte) (int64, error) {
+	return n.inner.Insert(ctx, payload)
+}
+func (n *nonObservableStore) Delete(ctx context.Context, id int64) error {
+	return n.inner.Delete(ctx, id)
+}
+func (n *nonObservableStore) MarkDelivered(ctx context.Context, id int64) error {
+	return n.inner.MarkDelivered(ctx, id)
+}
+func (n *nonObservableStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+	return n.inner.MarkDeliveredBatch(ctx, ids)
+}
+func (n *nonObservableStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
+	return n.inner.PurgeDelivered(ctx, batchLimit)
+}
+func (n *nonObservableStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+	return n.inner.ListPending(ctx, createdBefore, limit)
+}
+func (n *nonObservableStore) DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error) {
+	return n.inner.DeleteExpired(ctx, ttl)
+}
+
+func TestDurableEmitter_SeedingIsNoOpWhenStoreLacksObserver(t *testing.T) {
+	mem := NewMemDurableEventStore()
+	// Insert a row so a buggy seeder that ignored the type assertion would
+	// surface a non-zero pendingCount — making the regression visible.
+	ev, err := chipingress.NewEvent("seed-domain", "seed-type", []byte("seed"), nil)
+	require.NoError(t, err)
+	evPb, err := chipingress.EventToProto(ev)
+	require.NoError(t, err)
+	payload, err := proto.Marshal(evPb)
+	require.NoError(t, err)
+	_, err = mem.Insert(context.Background(), payload)
+	require.NoError(t, err)
+
+	store := &nonObservableStore{inner: mem}
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.RetransmitInterval = 50 * time.Millisecond
+	cfg.RetransmitAfter = 30 * time.Millisecond
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	t.Cleanup(func() { require.NoError(t, em.Close()) })
+
+	assert.Equal(t, int64(0), em.PendingDepth(),
+		"non-observable store should leave pendingCount at zero (graceful degrade, no panic)")
+}
+
 func TestDurableEmitter_EmitRejectsInvalidAttributes(t *testing.T) {
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()

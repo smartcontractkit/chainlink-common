@@ -108,7 +108,7 @@ func DefaultConfig() Config {
 		RetransmitAfter:     10 * time.Second,
 		RetransmitBatchSize: 100,
 		ExpiryInterval:      1 * time.Minute,
-		EventTTL:            72 * time.Hour,
+		EventTTL:            1 * time.Hour,
 		PublishTimeout:      5 * time.Second,
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,
@@ -279,6 +279,10 @@ func NewDurableEmitter(
 func (d *DurableEmitter) start(ctx context.Context) error {
 	d.batchEmitter.Start(ctx)
 
+	// Seed pendingCount from the on-disk queue depth so the gauge survives
+	// process restarts.
+	d.seedPendingFromStore(ctx)
+
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
 		insertWorkers = 4
@@ -300,6 +304,32 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		d.wg.Go(d.metricsLoop)
 	}
 	return nil
+}
+
+// seedPendingFromStore initializes pendingCount with the current on-disk
+// queue depth. It runs once at Start and is a no-op when the store does
+// not implement DurableQueueObserver (e.g. in-memory test stores) or when
+// the observation call fails.
+func (d *DurableEmitter) seedPendingFromStore(ctx context.Context) {
+	obs, ok := d.store.(DurableQueueObserver)
+	if !ok {
+		return
+	}
+	st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
+	if err != nil {
+		d.eng.Warnw("DurableEmitter: failed to seed pendingCount from store on start", "error", err)
+		return
+	}
+	if st.Depth <= 0 {
+		return
+	}
+	d.pendingCount.Store(st.Depth)
+	d.pendingMax.Store(st.Depth)
+	if d.metrics != nil {
+		d.metrics.queueDepth.Record(ctx, st.Depth)
+		d.metrics.queueDepthMax.Record(ctx, st.Depth)
+	}
+	d.eng.Infow("DurableEmitter: seeded pendingCount from store", "depth", st.Depth)
 }
 
 // Emit persists the event then hands it to the BatchEmitter for async delivery.

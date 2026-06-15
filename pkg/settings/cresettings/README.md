@@ -237,6 +237,7 @@ flowchart
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
         VaultPendingQueueWriteSizeLimit{{VaultPendingQueueWriteSizeLimit}}:::bound
+        VaultPendingQueueStuckRoundThreshold{{VaultPendingQueueStuckRoundThreshold}}:::bound
         VaultMaxQuerySizeLimit{{VaultMaxQuerySizeLimit}}:::bound
         VaultMaxObservationSizeLimit{{VaultMaxObservationSizeLimit}}:::bound
         VaultMaxReportsPlusPrecursorSizeLimit{{VaultMaxReportsPlusPrecursorSizeLimit}}:::bound

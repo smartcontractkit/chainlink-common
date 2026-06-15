@@ -12,11 +12,9 @@ import (
 
 // GenerateKey creates a Starknet key pair using starknet.go's GetRandomKeys.
 //
-// material is kept for API compatibility with other keystore key types; starknet.go
-// v0.17 key generation uses crypto/rand internally.
-func GenerateKey(material io.Reader) (k Key, err error) {
-	_ = material
-
+// The io.Reader parameter is kept for API compatibility with other keystore key types;
+// starknet.go v0.17 key generation uses crypto/rand internally.
+func GenerateKey(_ io.Reader) (k Key, err error) {
 	priv, x, y, err := curve.GetRandomKeys()
 	if err != nil {
 		return k, err
@@ -39,10 +37,8 @@ func GenerateKey(material io.Reader) (k Key, err error) {
 // pad bytes to privateKeyLen
 func padBytes(a []byte) []byte {
 	if len(a) < privateKeyLen {
-		padLen := privateKeyLen - len(a)
-		out := make([]byte, privateKeyLen)
-		copy(out[padLen:], a)
-		return out
+		pad := make([]byte, privateKeyLen-len(a))
+		return append(pad, a...)
 	}
 
 	// return original if length is >= to specified length

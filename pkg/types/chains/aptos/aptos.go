@@ -1,6 +1,8 @@
 package aptos
 
-import "context"
+import (
+	"context"
+)
 
 const (
 	AccountAddressLength = 32
@@ -227,6 +229,7 @@ type SubmitTransactionReply struct {
 	TxStatus         TransactionStatus
 	TxHash           string
 	TxIdempotencyKey string
+	TxTimestamp      uint64
 }
 
 // GasConfig represents gas configuration for a transaction

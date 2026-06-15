@@ -34,4 +34,28 @@ type StandardCapabilitiesDependencies struct {
 	// registry in that case, but the fallback path cannot disambiguate when
 	// the local node belongs to multiple DONs running the same capability.
 	CapabilityDonID uint32
+
+	// Product is the host-injected deployment product (e.g. "cre-mainline"),
+	// sourced once from node config by the host and provided before Initialise
+	// is called. Plugins use it as a coarse metering/billing identity
+	// dimension. An empty value means the host did not provide one (a legacy
+	// node or a boot path not yet updated to populate it).
+	Product string
+
+	// Environment is the host-injected deployment environment (e.g.
+	// "production", "staging"), provided by the host before Initialise. Plugins
+	// use it as a coarse metering/billing identity dimension. Empty means the
+	// host did not provide one.
+	Environment string
+
+	// Zone is the host-injected deployment zone (e.g. "wf-zone-a"), provided by
+	// the host before Initialise. Plugins use it as a coarse metering/billing
+	// identity dimension. Empty means the host did not provide one.
+	Zone string
+
+	// NodeID is the host-injected node identity: the node's CSA public key
+	// (hex), provided by the host before Initialise. Plugins use it as a coarse
+	// metering/billing identity dimension to dedup a node's retries and count
+	// distinct nodes for quorum. Empty means the host did not provide one.
+	NodeID string
 }

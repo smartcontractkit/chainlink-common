@@ -1,8 +1,6 @@
 package aptos
 
-import (
-	"context"
-)
+import "context"
 
 const (
 	AccountAddressLength = 32

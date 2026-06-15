@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -336,7 +337,7 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It sleeps based on the largest timeout
 func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
-	if nsubscriptions == 0 {
+	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 		return ErrnoInval
 	}
 

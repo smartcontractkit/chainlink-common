@@ -13,7 +13,7 @@ import (
 func TestGenerateKeyScalarRange(t *testing.T) {
 	t.Parallel()
 
-	// GenerateKey documents sampling in [1, curveOrder-1]; assert that contract.
+	// GetRandomKeys samples a valid Stark private scalar; assert it is in-range.
 	key, err := GenerateKey(rand.Reader)
 	require.NoError(t, err)
 

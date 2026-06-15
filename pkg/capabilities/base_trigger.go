@@ -612,7 +612,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 
 	sendCap := b.maxSendsPerTick(ctx)
 	if len(toResend) > sendCap {
-		b.lggr.Warnw("base trigger capping sends per tick",
+		b.lggr.Debugw("base trigger capping sends per tick",
 			"capabilityID", b.capabilityId,
 			"eligible", len(toResend), "sendCap", sendCap)
 		toResend = toResend[:sendCap]

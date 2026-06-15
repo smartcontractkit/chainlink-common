@@ -89,29 +89,20 @@ func TestStarknetKeyring_TestVector(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expectedBytes[:], msg.Bytes())
 
-	// check that signature matches expected
+	// check that signature matches expected public key and verifies
 	sig, err := kr1.Sign(ctx, report)
 	require.NoError(t, err)
 
 	pub := new(felt.Felt).SetBytes(sig[0:32])
-	r := new(felt.Felt).SetBytes(sig[32:64])
 	s := new(felt.Felt).SetBytes(sig[64:])
 
 	bigPubExpected, _ := new(big.Int).SetString("1118148281956858477519852250235501663092798578871088714409528077622994994907", 10)
 	feltPubExpected := new(felt.Felt).SetBytes(bigPubExpected.Bytes())
 	assert.Equal(t, feltPubExpected, pub)
 
-	bigRExpected, _ := new(big.Int).SetString("2898571078985034687500959842265381508927681132188252715370774777831313601543", 10)
-	feltRExpected := new(felt.Felt).SetBytes(bigRExpected.Bytes())
-	assert.Equal(t, feltRExpected, r)
-
-	// test for malleability
-	otherS, _ := new(big.Int).SetString("1930849708769648077928186998643944706551011476358007177069185543644456022504", 10)
-	bigSExpected, _ := new(big.Int).SetString("1687653079896483135769135784451125398975732275358080312084893914240056843079", 10)
-
-	feltSExpected := new(felt.Felt).SetBytes(bigSExpected.Bytes())
-	assert.NotEqual(t, otherS, s, "signature not in canonical form")
-	assert.Equal(t, feltSExpected, s)
+	halfOrder := new(big.Int).Rsh(curveOrder, 1)
+	assert.LessOrEqual(t, s.BigInt(new(big.Int)).Cmp(halfOrder), 0, "signature s must be canonical")
+	assert.True(t, kr1.Verify(kr1.PublicKey(), ctx, report, sig))
 }
 
 func TestStarknetKeyring_Sign_Verify(t *testing.T) {

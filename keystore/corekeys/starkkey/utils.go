@@ -16,27 +16,29 @@ import (
 // generate the PK as a pseudo-random number in the interval [1, CurveOrder - 1]
 // using io.Reader, and Key struct
 func GenerateKey(material io.Reader) (k Key, err error) {
-	max := new(big.Int).Sub(curve.Curve.N, big.NewInt(1))
+	order := curveOrder
 
-	priv, err := rand.Int(material, max)
-	if err != nil {
-		return k, err
-	}
-	k.signFn = func(hash *big.Int) (x, y *big.Int, err error) {
-		return curve.Curve.Sign(hash, priv)
-	}
+	for {
+		priv, err := rand.Int(material, order)
+		if err != nil {
+			return k, err
+		}
+		if priv.Sign() == 0 {
+			continue
+		}
 
-	k.pub.X, k.pub.Y, err = curve.Curve.PrivateToPoint(priv)
-	if err != nil {
-		return k, err
-	}
+		k.signFn = func(hash *big.Int) (x, y *big.Int, err error) {
+			return curve.Sign(hash, priv)
+		}
 
-	if !curve.Curve.IsOnCurve(k.pub.X, k.pub.Y) {
-		return k, errors.New("key gen is not on stark curve")
-	}
-	k.raw = internal.NewRaw(padBytes(priv.Bytes()))
+		k.pub.X, k.pub.Y = curve.PrivateKeyToPoint(priv)
+		if k.pub.X == nil || k.pub.Y == nil {
+			return k, errors.New("key gen is not on stark curve")
+		}
+		k.raw = internal.NewRaw(padBytes(priv.Bytes()))
 
-	return k, nil
+		return k, nil
+	}
 }
 
 // pad bytes to privateKeyLen

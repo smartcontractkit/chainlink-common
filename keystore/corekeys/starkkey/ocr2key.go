@@ -64,8 +64,8 @@ func (sk *OCR2Key) Sign(reportCtx types.ReportContext, report types.Report) ([]b
 	}
 
 	// enforce s <= N/2 to prevent signature malleability
-	if s.Cmp(new(big.Int).Rsh(curve.Curve.N, 1)) > 0 {
-		s.Sub(curve.Curve.N, s)
+	if s.Cmp(new(big.Int).Rsh(curveOrder, 1)) > 0 {
+		s.Sub(curveOrder, s)
 	}
 
 	// encoding: public key (32 bytes) + r (32 bytes) + s (32 bytes)
@@ -98,18 +98,8 @@ func (sk *OCR2Key) Verify(publicKey types.OnchainPublicKey, reportCtx types.Repo
 		return false
 	}
 
-	// convert OnchainPublicKey (starkkey) into ecdsa public keys (prepend 2 or 3 to indicate +/- Y coord)
-	var keys [2]PublicKey
-	keys[0].X = new(big.Int).SetBytes(publicKey)
-	keys[0].Y = curve.Curve.GetYCoordinate(keys[0].X)
-
-	// When there is no point with the provided x-coordinate, the GetYCoordinate function returns the nil value.
-	if keys[0].Y == nil {
-		return false
-	}
-
-	keys[1].X = keys[0].X
-	keys[1].Y = new(big.Int).Mul(keys[0].Y, big.NewInt(-1))
+	// convert OnchainPublicKey (starkkey) into ecdsa public key x-coordinate
+	pubX := new(big.Int).SetBytes(publicKey)
 
 	hash, err := ReportToSigData(reportCtx, report)
 	if err != nil {
@@ -120,11 +110,34 @@ func (sk *OCR2Key) Verify(publicKey types.OnchainPublicKey, reportCtx types.Repo
 	s := new(big.Int).SetBytes(signature[64:])
 
 	// Only allow canonical signatures to avoid signature malleability. Verify s <= N/2
-	if s.Cmp(new(big.Int).Rsh(curve.Curve.N, 1)) == 1 {
+	if s.Cmp(new(big.Int).Rsh(curveOrder, 1)) == 1 {
 		return false
 	}
 
-	return curve.Curve.Verify(hash, r, s, keys[0].X, keys[0].Y) || curve.Curve.Verify(hash, r, s, keys[1].X, keys[1].Y)
+	_, ok := yCoordinateForX(pubX)
+	if !ok {
+		return false
+	}
+
+	verified, err := curve.Verify(hash, r, s, pubX)
+	return err == nil && verified
+}
+
+func yCoordinateForX(x *big.Int) (y *big.Int, ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+			y = nil
+		}
+	}()
+
+	xFelt := new(felt.Felt).SetBigInt(x)
+	yFelt := curve.GetYCoordinate(xFelt)
+	if yFelt == nil {
+		return nil, false
+	}
+
+	return yFelt.BigInt(new(big.Int)), true
 }
 
 func (sk *OCR2Key) Verify3(publicKey types.OnchainPublicKey, cd types.ConfigDigest, seqNr uint64, r types.Report, signature []byte) bool {

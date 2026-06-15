@@ -108,7 +108,7 @@ func DefaultConfig() Config {
 		RetransmitAfter:     10 * time.Second,
 		RetransmitBatchSize: 100,
 		ExpiryInterval:      1 * time.Minute,
-		EventTTL:            72 * time.Hour,
+		EventTTL:            1 * time.Hour,
 		PublishTimeout:      5 * time.Second,
 		PurgeInterval:       250 * time.Millisecond,
 		PurgeBatchSize:      500,

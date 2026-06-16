@@ -130,6 +130,21 @@ enum RequestType {
   LIST_SECRET_IDENTIFIERS = 5;
 }
 
+// DON-wide settings committed by per-field 2f+1 consensus.
+// Add fields freely; never reuse field numbers (use reserved instead).
+message NodeSettings {
+  bool   vault_optimizations_enabled             = 1;
+  bool   vault_force_empty_ocr_rounds            = 2;
+  uint64 max_ciphertext_length_bytes             = 3;
+  uint64 max_identifier_key_length_bytes         = 4;
+  uint64 max_identifier_owner_length_bytes       = 5;
+  uint64 max_identifier_namespace_length_bytes   = 6;
+  uint64 max_share_length_bytes                  = 7;
+  uint64 max_blob_payload_bytes                  = 8;
+  uint64 max_pending_queue_write_size            = 9;
+  uint64 max_request_batch_size                  = 10;
+}
+
 message Observation {
   string id = 1;
   RequestType request_type = 2;
@@ -155,6 +170,7 @@ message Observations {
   repeated Observation observations = 1;
   repeated bytes pending_queue_items = 2;
   bytes sortNonce = 3;
+  NodeSettings node_settings = 4;
 }
 
 message Outcome {
@@ -217,6 +233,12 @@ message StoredPendingQueueIndex {
 message StoredPendingQueueItem {
   google.protobuf.Any item = 1;
   string id = 2;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredDONSettings {
+  NodeSettings settings = 1;
 }
 
 // Wire format for pending queue blobs. Not persisted.

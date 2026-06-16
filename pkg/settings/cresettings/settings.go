@@ -257,6 +257,9 @@ var Default = Schema{
 		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -374,6 +377,7 @@ type Workflows struct {
 	FeatureMultiTriggerExecutionIDsActivePeriod    Setting[Range[config.Timestamp]]
 	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod         Setting[Range[config.Timestamp]]
+	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

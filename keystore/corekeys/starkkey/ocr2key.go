@@ -9,6 +9,7 @@ import (
 
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/curve"
+	"github.com/consensys/gnark-crypto/ecc/stark-curve/fr"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/chains/evmutil"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
@@ -17,6 +18,10 @@ import (
 )
 
 var _ types.OnchainKeyring = &OCR2Key{}
+
+// curveOrder is the STARK curve field modulus (N), used to enforce canonical OCR2
+// signatures (s <= N/2). starknet.go v0.17 no longer exports this via curve.Curve.
+var curveOrder = fr.Modulus()
 
 type OCR2Key struct {
 	Key
@@ -64,8 +69,8 @@ func (sk *OCR2Key) Sign(reportCtx types.ReportContext, report types.Report) ([]b
 	}
 
 	// enforce s <= N/2 to prevent signature malleability
-	if s.Cmp(new(big.Int).Rsh(curve.Curve.N, 1)) > 0 {
-		s.Sub(curve.Curve.N, s)
+	if s.Cmp(new(big.Int).Rsh(curveOrder, 1)) > 0 {
+		s.Sub(curveOrder, s)
 	}
 
 	// encoding: public key (32 bytes) + r (32 bytes) + s (32 bytes)
@@ -98,33 +103,30 @@ func (sk *OCR2Key) Verify(publicKey types.OnchainPublicKey, reportCtx types.Repo
 		return false
 	}
 
-	// convert OnchainPublicKey (starkkey) into ecdsa public keys (prepend 2 or 3 to indicate +/- Y coord)
-	var keys [2]PublicKey
-	keys[0].X = new(big.Int).SetBytes(publicKey)
-	keys[0].Y = curve.Curve.GetYCoordinate(keys[0].X)
-
-	// When there is no point with the provided x-coordinate, the GetYCoordinate function returns the nil value.
-	if keys[0].Y == nil {
-		return false
-	}
-
-	keys[1].X = keys[0].X
-	keys[1].Y = new(big.Int).Mul(keys[0].Y, big.NewInt(-1))
+	// convert OnchainPublicKey (starkkey) into ecdsa public key x-coordinate
+	pubX := new(big.Int).SetBytes(publicKey)
 
 	hash, err := ReportToSigData(reportCtx, report)
 	if err != nil {
 		return false
 	}
 
-	r := new(big.Int).SetBytes(signature[32:64])
-	s := new(big.Int).SetBytes(signature[64:])
+	rOffset := 32
+	sOffset := 64
+	componentLen := 32
+	if len(signature) < sOffset+componentLen {
+		return false
+	}
+	r := new(big.Int).SetBytes(signature[rOffset : rOffset+componentLen])
+	s := new(big.Int).SetBytes(signature[sOffset : sOffset+componentLen])
 
 	// Only allow canonical signatures to avoid signature malleability. Verify s <= N/2
-	if s.Cmp(new(big.Int).Rsh(curve.Curve.N, 1)) == 1 {
+	if s.Cmp(new(big.Int).Rsh(curveOrder, 1)) == 1 {
 		return false
 	}
 
-	return curve.Curve.Verify(hash, r, s, keys[0].X, keys[0].Y) || curve.Curve.Verify(hash, r, s, keys[1].X, keys[1].Y)
+	verified, err := curve.Verify(hash, r, s, pubX)
+	return err == nil && verified
 }
 
 func (sk *OCR2Key) Verify3(publicKey types.OnchainPublicKey, cd types.ConfigDigest, seqNr uint64, r types.Report, signature []byte) bool {

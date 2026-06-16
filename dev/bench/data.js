@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781541626509,
+  "lastUpdate": 1781614429224,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51060,6 +51060,66 @@ window.BENCHMARK_DATA = {
             "value": 117924,
             "unit": "ns/op",
             "extra": "9243 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cawthornegd@gmail.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bdae88e1c73271b0c21ce5d2a571f745dd3cc39d",
+          "message": "Update starkkey for starknet.go v0.17.1 (#2154)\n\n* Update starkkey for starknet.go v0.17.1 compatibility.\n\nMigrate OCR2 signing and verification off removed curve.Curve APIs,\nbump keystore starknet.go/juno deps, and adjust tests for non-deterministic\nv0.17 signatures.\n\n* Add starkkey key tests and fix testifylint empty check.\n\nCover Key.Sign round-trip and MustNewInsecure without workflow changes.\n\n* Document why curveOrder is defined locally in starkkey.\n\nstarknet.go v0.17 no longer exports the curve order, but we still need it for key generation and canonical OCR2 signatures.\n\n* Expand curveOrder comment with v0.17 migration context.\n\nDocument gnark-crypto migration rationale and link to the Starknet protocol constant.\n\n* Remove recover wrapper from OCR2 Verify.\n\ncurve.Verify already rejects invalid public keys via juno without panicking,\nso the yCoordinateForX pre-check was redundant.\n\n* Simplify GenerateKey range test per review feedback.\n\nUse a single assertion of the documented [1, N-1] scalar range instead of\nrepeated sampling in a loop.\n\n* Use curve.GetRandomKeys in starkkey GenerateKey.\n\nAddress review feedback: delegate key sampling to starknet.go v0.17 instead\nof reimplementing rand.Int over curveOrder. curveOrder remains for OCR2\ncanonical s enforcement.\n\n* Fix starkkey lint: gosec G602 bounds and prealloc hints.\n\nUse explicit signature component bounds in OCR2 Verify, preallocate padBytes\noutput, and pre-size test report buffer.\n\n* Address review feedback on GenerateKey and padBytes.\n\nUse _ io.Reader in the signature instead of blanking material in the body,\nand restore the original padBytes append implementation.\n\n* Use gnark-crypto fr.Modulus for OCR2 curve order.\n\nAddress review feedback by sourcing N from gnark-crypto instead of a\nhardcoded constant, and drop curve_compat.go now that it only wrapped Modulus.",
+          "timestamp": "2026-06-16T12:42:19Z",
+          "tree_id": "22d7ec7bb0f3b8fa4eaed39816efb870f465f9f0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bdae88e1c73271b0c21ce5d2a571f745dd3cc39d"
+        },
+        "date": 1781614426707,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 486.8,
+            "unit": "ns/op",
+            "extra": "2303359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 71114,
+            "unit": "ns/op",
+            "extra": "16780 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.6,
+            "unit": "ns/op",
+            "extra": "2959525 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 72235,
+            "unit": "ns/op",
+            "extra": "16672 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25315,
+            "unit": "ns/op",
+            "extra": "48488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 115174,
+            "unit": "ns/op",
+            "extra": "8973 times\n4 procs"
           }
         ]
       }

@@ -177,6 +177,20 @@ func (b *BaseTriggerCapability[T]) retryInterval(ctx context.Context) time.Durat
 	return interval
 }
 
+// maxEventAge returns how long an event may remain pending before BaseTrigger
+// stops resending it, independent of the per-attempt counter. It is derived from
+// the retry schedule (retryInterval * maxRetries) so it tracks the configured
+// retry timeout automatically. This prevents against restarted nodes losing pre-ACKd
+// cache and trying to resend past a sensible TTL.
+func (b *BaseTriggerCapability[T]) maxEventAge(ctx context.Context) time.Duration {
+	interval := b.retryInterval(ctx)
+	maxRetries := b.maxRetries(ctx)
+	if interval <= 0 || maxRetries <= 0 {
+		return 0
+	}
+	return interval * time.Duration(maxRetries)
+}
+
 // maxRetries returns the configured maximum number of send attempts. 0 means unlimited.
 func (b *BaseTriggerCapability[T]) maxRetries(ctx context.Context) int {
 	defaultMaxRetries := 20
@@ -543,11 +557,23 @@ type stoppedResendingEvent struct {
 	triggerID string
 	eventID   string
 	attempts  int
+	reason    string
 }
+
+const (
+	stopReasonMaxRetries = "max_retries_exhausted"
+	stopReasonMaxAge     = "max_age_exceeded"
+)
 
 // reachedMaxRetries returns true when the event has exhausted its allowed send attempts.
 func reachedMaxRetries(attempts, maxRetries int) bool {
 	return maxRetries > 0 && attempts >= maxRetries
+}
+
+// exceededMaxAge returns true when the event has been pending longer than maxAge.
+// maxAge <= 0 disables the age-based stop.
+func exceededMaxAge(firstAt, now time.Time, maxAge time.Duration) bool {
+	return maxAge > 0 && !firstAt.IsZero() && now.Sub(firstAt) >= maxAge
 }
 
 // isDuplicateKeyError returns true if err is a PostgreSQL unique constraint
@@ -571,6 +597,7 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	}
 
 	maxRetries := b.maxRetries(ctx)
+	maxAge := b.maxEventAge(ctx)
 
 	b.mu.Lock()
 
@@ -583,11 +610,18 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 			continue // registration hasn't arrived yet — skip to avoid wasting retry attempts
 		}
 		for eventID, rec := range reg.pending {
-			if reachedMaxRetries(rec.Attempts, maxRetries) {
-				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, reg.pending))
-				continue
+			switch {
+			case reachedMaxRetries(rec.Attempts, maxRetries):
+				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, reg.pending, stopReasonMaxRetries))
+			case exceededMaxAge(rec.FirstAt, now, maxAge):
+				// Durable age-based backstop: retire events that have been pending
+				// longer than the retry timeout even if the attempt counter was
+				// under-persisted (e.g. across a restart). Prevents a stale event
+				// from being resurrected and re-aggregated hours later.
+				toStop = append(toStop, b.collectStoppedResending(triggerID, eventID, rec, reg.pending, stopReasonMaxAge))
+			default:
+				b.collectResendCandidate(rec, now, interval, &toResend)
 			}
-			b.collectResendCandidate(rec, now, interval, &toResend)
 		}
 	}
 	b.mu.Unlock()
@@ -645,12 +679,14 @@ func (b *BaseTriggerCapability[T]) collectStoppedResending(
 	triggerID, eventID string,
 	rec *PendingEvent,
 	pendingForTrigger map[string]*PendingEvent,
+	reason string,
 ) stoppedResendingEvent {
 	delete(pendingForTrigger, eventID)
 	return stoppedResendingEvent{
 		triggerID: triggerID,
 		eventID:   eventID,
 		attempts:  rec.Attempts,
+		reason:    reason,
 	}
 }
 
@@ -679,10 +715,10 @@ func (b *BaseTriggerCapability[T]) collectResendCandidate(
 // The event is NOT deleted from the store here — the prune loop handles cleanup,
 // giving operators time to investigate unrecoverable payloads (e.g. HTTP triggers).
 func (b *BaseTriggerCapability[T]) emitStoppedResending(ev stoppedResendingEvent, maxRetries int) {
-	b.lggr.Errorw("base trigger stopped resending event after max retries",
+	b.lggr.Errorw("base trigger stopped resending event",
 		"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
 		"attempts", ev.attempts, "maxRetries", maxRetries,
-		"reason", "max_retries_exhausted")
+		"reason", ev.reason)
 	b.metrics.IncStoppedResending(ev.triggerID, ev.eventID, ev.attempts)
 	b.metrics.AddPendingEvents(-1)
 }

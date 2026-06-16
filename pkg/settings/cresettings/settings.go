@@ -70,6 +70,7 @@ var Default = Schema{
 	VaultOptimizationsEnabled: Bool(false),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
+	VaultNodeSettingsConsensusEnabled:                 Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled: Bool(false),
@@ -383,6 +384,7 @@ type Schema struct {
 	VaultOptimizationsEnabled Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
+	VaultNodeSettingsConsensusEnabled                 Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled Setting[bool]

@@ -39,6 +39,9 @@ var (
 type verifyResult struct {
 	document    *attestationDocument
 	signatureOK bool
+	// leafPublicKey is the SPKI (DER) encoding of the end-entity certificate
+	// public key. Populated only when signatureOK is true.
+	leafPublicKey []byte
 }
 
 type attestationDocument struct {
@@ -139,7 +142,12 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 		return &verifyResult{document: &doc, signatureOK: false}, errBadSignature
 	}
 
-	return &verifyResult{document: &doc, signatureOK: true}, nil
+	leafPublicKey, err := x509.MarshalPKIXPublicKey(leafCert.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("marshal leaf public key: %w", err)
+	}
+
+	return &verifyResult{document: &doc, signatureOK: true, leafPublicKey: leafPublicKey}, nil
 }
 
 func validateProtectedAlgorithm(alg any) error {

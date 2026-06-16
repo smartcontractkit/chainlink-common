@@ -202,6 +202,10 @@ func (b *BaseTriggerCapability[T]) maxRetries(ctx context.Context) int {
 		b.lggr.Warnw("CRE settings read failed for BaseTriggerMaxRetries; using default (20)", "err", err)
 		return defaultMaxRetries
 	}
+	if v <= 0 {
+		b.lggr.Warnw("CRE settings max retries <= 0; using default (20)", "err", err)
+		v = defaultMaxRetries
+	}
 	return v
 }
 

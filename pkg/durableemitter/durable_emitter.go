@@ -492,6 +492,8 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			return
 		}
 
+		d.eng.Debugw("DurableEmitter: delivered event", "eventID", eventPb.Id)
+
 		if d.metrics != nil {
 			d.metrics.publishBatchEvOK.Add(cbCtx, 1)
 		}

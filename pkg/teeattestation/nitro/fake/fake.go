@@ -96,9 +96,24 @@ func NewAttestor() (*Attestor, error) {
 	}, nil
 }
 
+// Option customizes the optional fields of a fake attestation document.
+type Option func(*attestationDocument)
+
+// WithNonce sets the attestation nonce field.
+func WithNonce(nonce []byte) Option {
+	return func(d *attestationDocument) { d.Nonce = nonce }
+}
+
+// WithPublicKey sets the attestation public_key field, modeling an enclave
+// that publishes a long-lived identity key.
+func WithPublicKey(publicKey []byte) Option {
+	return func(d *attestationDocument) { d.PublicKey = publicKey }
+}
+
 // CreateAttestation builds a COSE Sign1 document encoding a Nitro-like
-// attestation with the given userData.
-func (f *Attestor) CreateAttestation(userData []byte) ([]byte, error) {
+// attestation with the given userData. Optional nonce and public_key fields
+// can be set via opts.
+func (f *Attestor) CreateAttestation(userData []byte, opts ...Option) ([]byte, error) {
 	doc := attestationDocument{
 		ModuleID:    "fake-enclave-module",
 		Timestamp:   uint64(time.Now().UnixMilli()), //nolint:gosec // timestamp is always positive
@@ -107,6 +122,9 @@ func (f *Attestor) CreateAttestation(userData []byte) ([]byte, error) {
 		Certificate: f.leafCertDER,
 		CABundle:    [][]byte{f.rootCertDER},
 		UserData:    userData,
+	}
+	for _, opt := range opts {
+		opt(&doc)
 	}
 
 	payloadBytes, err := cbor.Marshal(doc)
@@ -153,6 +171,12 @@ func (f *Attestor) CreateAttestation(userData []byte) ([]byte, error) {
 		return nil, fmt.Errorf("cbor encode cose sign1: %w", err)
 	}
 	return result, nil
+}
+
+// LeafPublicKeyDER returns the SPKI (DER) encoding of the leaf certificate
+// public key, matching the format of nitro.Document.LeafPublicKey.
+func (f *Attestor) LeafPublicKeyDER() ([]byte, error) {
+	return x509.MarshalPKIXPublicKey(&f.leafKey.PublicKey)
 }
 
 // CARoots returns an x509.CertPool containing the fake root CA certificate.

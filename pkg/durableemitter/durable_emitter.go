@@ -486,8 +486,16 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			if d.metrics != nil {
 				d.metrics.publishBatchEvErr.Add(cbCtx, 1)
 			}
-			// Batch path failed. If a fallback client is configured, retry the
-			// single event directly; otherwise leave in DB for retransmit.
+			// Permanent failures (e.g. a missing schema) will never succeed on
+			// retry. Drop the event from persistence instead of falling back or
+			// retransmitting it forever.
+			if reason, ok := nonRetryablePublishError(sendErr); ok {
+				d.dropNonRetryable(id, eventPb, reason)
+				return
+			}
+			// Batch path failed with a retryable error. If a fallback client is
+			// configured, retry the single event directly; otherwise leave in DB
+			// for retransmit.
 			d.tryFallback(id, eventPb)
 			return
 		}

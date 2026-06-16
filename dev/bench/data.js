@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781624477025,
+  "lastUpdate": 1781631098994,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51240,6 +51240,66 @@ window.BENCHMARK_DATA = {
             "value": 142408,
             "unit": "ns/op",
             "extra": "8523 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "16271fdba62c442dee8e6f01d7759b74bcb0a2af",
+          "message": "teeattestation: expose parsed Nitro attestation via ValidateAndParse (#2162)\n\nAdd ValidateAndParse[WithRoots], which run the same validation as\nValidateAttestation and, on success, return a Document with the parsed\nfields: all PCRs, the end-entity (leaf) certificate public key, the\nenclave-supplied public_key, the nonce, and the module id.\n\nValidateAttestation[WithRoots] become thin wrappers over the new\nfunctions, so existing callers are unchanged.\n\nThis lets confidential-compute bind an attestation to a specific enclave\nidentity (via the enclave public_key) and check freshness (via the\nnonce), neither of which was reachable before because the parsed\ndocument was package-private. The fake attestor gains WithNonce and\nWithPublicKey options plus LeafPublicKeyDER so the new fields are\ntestable.",
+          "timestamp": "2026-06-16T17:20:18Z",
+          "tree_id": "07d0b82e4c31ce90a1164efb2a914b58c77e91be",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/16271fdba62c442dee8e6f01d7759b74bcb0a2af"
+        },
+        "date": 1781631097053,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356,
+            "unit": "ns/op",
+            "extra": "3359785 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 81140,
+            "unit": "ns/op",
+            "extra": "14770 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 383.3,
+            "unit": "ns/op",
+            "extra": "3119698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 81548,
+            "unit": "ns/op",
+            "extra": "14739 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29208,
+            "unit": "ns/op",
+            "extra": "41084 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132286,
+            "unit": "ns/op",
+            "extra": "8085 times\n4 procs"
           }
         ]
       }

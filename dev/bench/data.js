@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781618744432,
+  "lastUpdate": 1781624477025,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51180,6 +51180,66 @@ window.BENCHMARK_DATA = {
             "value": 99570,
             "unit": "ns/op",
             "extra": "12038 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yashvardhan.nevatia@smartcontract.com",
+            "name": "Yashvardhan Nevatia",
+            "username": "yashnevatia"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f567bdca923a97053e283b03d274e8420186a93d",
+          "message": "Txn Timestamp in Aptos WriteReportReply (behind feature flag) (#2153)\n\n* Txn Timestamp in SubmitTransactionReply Aptos\n\n* Bump protos and rebuild client server gen\n\n* only writereport reply\n\n* Add feature flag\n\n* Bump protos to latest cap-dev branch\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* tidy\n\n* block timestamp instead of tx timestamp\n\n* Bump cap-dev\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-06-16T15:27:32Z",
+          "tree_id": "042621712c0749a29bf48deaebee4a0e2fb7e77b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f567bdca923a97053e283b03d274e8420186a93d"
+        },
+        "date": 1781624474861,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 807.4,
+            "unit": "ns/op",
+            "extra": "1385806 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 98208,
+            "unit": "ns/op",
+            "extra": "11844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.6,
+            "unit": "ns/op",
+            "extra": "2917360 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93795,
+            "unit": "ns/op",
+            "extra": "12858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26679,
+            "unit": "ns/op",
+            "extra": "45024 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142408,
+            "unit": "ns/op",
+            "extra": "8523 times\n4 procs"
           }
         ]
       }

@@ -18,6 +18,7 @@ import (
 	prombridge "go.opentelemetry.io/contrib/bridges/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
@@ -338,7 +339,9 @@ func (s *Server) start(opts ...ServerOpt) error {
 	}
 
 	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
+	var meter otelmetric.Meter
 	if bc := beholder.GetClient(); bc != nil {
+		meter = bc.Meter
 		s.LimitsFactory.Meter = bc.Meter
 		s.LimitsFactory.Settings = s.cfg.settingsGetter
 	}
@@ -350,6 +353,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 
 		// Rotating auth: signer is injected later via durableemitter.SetGlobalSigner when the host
 		// provides the CSA keystore (see relayer and standard capabilities startup).
+		emitterCfg := durableemitter.DefaultConfig()
+		emitterCfg.Metrics = &durableemitter.DurableEmitterMetricsConfig{}
 		durableCfg := durableemitter.SetupConfig{
 			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
 			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,
@@ -359,6 +364,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 				AuthPublicKeyHex: s.EnvConfig.TelemetryAuthPubKeyHex,
 			},
 			RetransmitEnabled: false, // LOOP plugins do not run the retransmit loop; the host process handles it.
+			EmitterConfig:     &emitterCfg,
+			Meter:             meter,
 		}
 		store := durableemitter.NewPgDurableEventStore(s.DataSource)
 		var err error

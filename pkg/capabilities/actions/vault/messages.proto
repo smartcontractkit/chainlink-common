@@ -133,16 +133,15 @@ enum RequestType {
 // DON-wide settings committed by per-field 2f+1 consensus.
 // Add fields freely; never reuse field numbers (use reserved instead).
 message NodeSettings {
-  bool   vault_optimizations_enabled             = 1;
-  bool   vault_force_empty_ocr_rounds            = 2;
-  uint64 max_ciphertext_length_bytes             = 3;
-  uint64 max_identifier_key_length_bytes         = 4;
-  uint64 max_identifier_owner_length_bytes       = 5;
-  uint64 max_identifier_namespace_length_bytes   = 6;
-  uint64 max_share_length_bytes                  = 7;
-  uint64 max_blob_payload_bytes                  = 8;
-  uint64 max_pending_queue_write_size            = 9;
-  uint64 max_request_batch_size                  = 10;
+  uint64 max_identifier_key_length_bytes         = 1;
+  uint64 max_identifier_owner_length_bytes       = 2;
+  uint64 max_identifier_namespace_length_bytes   = 3;
+  uint64 max_share_length_bytes                  = 4;
+  uint64 max_blob_payload_bytes                  = 5;
+  uint64 max_pending_queue_write_size            = 6;
+  uint64 max_request_batch_size                  = 7;
+  bool   vault_optimizations_enabled             = 8;
+  bool   vault_force_empty_ocr_rounds            = 9;
 }
 
 message Observation {

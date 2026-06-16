@@ -1307,16 +1307,15 @@ func (x *ListSecretIdentifiersResponse) GetRequestId() string {
 // Add fields freely; never reuse field numbers (use reserved instead).
 type NodeSettings struct {
 	state                             protoimpl.MessageState `protogen:"open.v1"`
-	VaultOptimizationsEnabled         bool                   `protobuf:"varint,1,opt,name=vault_optimizations_enabled,json=vaultOptimizationsEnabled,proto3" json:"vault_optimizations_enabled,omitempty"`
-	VaultForceEmptyOcrRounds          bool                   `protobuf:"varint,2,opt,name=vault_force_empty_ocr_rounds,json=vaultForceEmptyOcrRounds,proto3" json:"vault_force_empty_ocr_rounds,omitempty"`
-	MaxCiphertextLengthBytes          uint64                 `protobuf:"varint,3,opt,name=max_ciphertext_length_bytes,json=maxCiphertextLengthBytes,proto3" json:"max_ciphertext_length_bytes,omitempty"`
-	MaxIdentifierKeyLengthBytes       uint64                 `protobuf:"varint,4,opt,name=max_identifier_key_length_bytes,json=maxIdentifierKeyLengthBytes,proto3" json:"max_identifier_key_length_bytes,omitempty"`
-	MaxIdentifierOwnerLengthBytes     uint64                 `protobuf:"varint,5,opt,name=max_identifier_owner_length_bytes,json=maxIdentifierOwnerLengthBytes,proto3" json:"max_identifier_owner_length_bytes,omitempty"`
-	MaxIdentifierNamespaceLengthBytes uint64                 `protobuf:"varint,6,opt,name=max_identifier_namespace_length_bytes,json=maxIdentifierNamespaceLengthBytes,proto3" json:"max_identifier_namespace_length_bytes,omitempty"`
-	MaxShareLengthBytes               uint64                 `protobuf:"varint,7,opt,name=max_share_length_bytes,json=maxShareLengthBytes,proto3" json:"max_share_length_bytes,omitempty"`
-	MaxBlobPayloadBytes               uint64                 `protobuf:"varint,8,opt,name=max_blob_payload_bytes,json=maxBlobPayloadBytes,proto3" json:"max_blob_payload_bytes,omitempty"`
-	MaxPendingQueueWriteSize          uint64                 `protobuf:"varint,9,opt,name=max_pending_queue_write_size,json=maxPendingQueueWriteSize,proto3" json:"max_pending_queue_write_size,omitempty"`
-	MaxRequestBatchSize               uint64                 `protobuf:"varint,10,opt,name=max_request_batch_size,json=maxRequestBatchSize,proto3" json:"max_request_batch_size,omitempty"`
+	MaxIdentifierKeyLengthBytes       uint64                 `protobuf:"varint,1,opt,name=max_identifier_key_length_bytes,json=maxIdentifierKeyLengthBytes,proto3" json:"max_identifier_key_length_bytes,omitempty"`
+	MaxIdentifierOwnerLengthBytes     uint64                 `protobuf:"varint,2,opt,name=max_identifier_owner_length_bytes,json=maxIdentifierOwnerLengthBytes,proto3" json:"max_identifier_owner_length_bytes,omitempty"`
+	MaxIdentifierNamespaceLengthBytes uint64                 `protobuf:"varint,3,opt,name=max_identifier_namespace_length_bytes,json=maxIdentifierNamespaceLengthBytes,proto3" json:"max_identifier_namespace_length_bytes,omitempty"`
+	MaxShareLengthBytes               uint64                 `protobuf:"varint,4,opt,name=max_share_length_bytes,json=maxShareLengthBytes,proto3" json:"max_share_length_bytes,omitempty"`
+	MaxBlobPayloadBytes               uint64                 `protobuf:"varint,5,opt,name=max_blob_payload_bytes,json=maxBlobPayloadBytes,proto3" json:"max_blob_payload_bytes,omitempty"`
+	MaxPendingQueueWriteSize          uint64                 `protobuf:"varint,6,opt,name=max_pending_queue_write_size,json=maxPendingQueueWriteSize,proto3" json:"max_pending_queue_write_size,omitempty"`
+	MaxRequestBatchSize               uint64                 `protobuf:"varint,7,opt,name=max_request_batch_size,json=maxRequestBatchSize,proto3" json:"max_request_batch_size,omitempty"`
+	VaultOptimizationsEnabled         bool                   `protobuf:"varint,8,opt,name=vault_optimizations_enabled,json=vaultOptimizationsEnabled,proto3" json:"vault_optimizations_enabled,omitempty"`
+	VaultForceEmptyOcrRounds          bool                   `protobuf:"varint,9,opt,name=vault_force_empty_ocr_rounds,json=vaultForceEmptyOcrRounds,proto3" json:"vault_force_empty_ocr_rounds,omitempty"`
 	unknownFields                     protoimpl.UnknownFields
 	sizeCache                         protoimpl.SizeCache
 }
@@ -1349,27 +1348,6 @@ func (x *NodeSettings) ProtoReflect() protoreflect.Message {
 // Deprecated: Use NodeSettings.ProtoReflect.Descriptor instead.
 func (*NodeSettings) Descriptor() ([]byte, []int) {
 	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *NodeSettings) GetVaultOptimizationsEnabled() bool {
-	if x != nil {
-		return x.VaultOptimizationsEnabled
-	}
-	return false
-}
-
-func (x *NodeSettings) GetVaultForceEmptyOcrRounds() bool {
-	if x != nil {
-		return x.VaultForceEmptyOcrRounds
-	}
-	return false
-}
-
-func (x *NodeSettings) GetMaxCiphertextLengthBytes() uint64 {
-	if x != nil {
-		return x.MaxCiphertextLengthBytes
-	}
-	return 0
 }
 
 func (x *NodeSettings) GetMaxIdentifierKeyLengthBytes() uint64 {
@@ -1419,6 +1397,20 @@ func (x *NodeSettings) GetMaxRequestBatchSize() uint64 {
 		return x.MaxRequestBatchSize
 	}
 	return 0
+}
+
+func (x *NodeSettings) GetVaultOptimizationsEnabled() bool {
+	if x != nil {
+		return x.VaultOptimizationsEnabled
+	}
+	return false
+}
+
+func (x *NodeSettings) GetVaultForceEmptyOcrRounds() bool {
+	if x != nil {
+		return x.VaultForceEmptyOcrRounds
+	}
+	return false
 }
 
 type Observation struct {
@@ -2635,19 +2627,17 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x04 \x01(\tR\trequestId\"\x8e\x05\n" +
-	"\fNodeSettings\x12>\n" +
-	"\x1bvault_optimizations_enabled\x18\x01 \x01(\bR\x19vaultOptimizationsEnabled\x12>\n" +
-	"\x1cvault_force_empty_ocr_rounds\x18\x02 \x01(\bR\x18vaultForceEmptyOcrRounds\x12=\n" +
-	"\x1bmax_ciphertext_length_bytes\x18\x03 \x01(\x04R\x18maxCiphertextLengthBytes\x12D\n" +
-	"\x1fmax_identifier_key_length_bytes\x18\x04 \x01(\x04R\x1bmaxIdentifierKeyLengthBytes\x12H\n" +
-	"!max_identifier_owner_length_bytes\x18\x05 \x01(\x04R\x1dmaxIdentifierOwnerLengthBytes\x12P\n" +
-	"%max_identifier_namespace_length_bytes\x18\x06 \x01(\x04R!maxIdentifierNamespaceLengthBytes\x123\n" +
-	"\x16max_share_length_bytes\x18\a \x01(\x04R\x13maxShareLengthBytes\x123\n" +
-	"\x16max_blob_payload_bytes\x18\b \x01(\x04R\x13maxBlobPayloadBytes\x12>\n" +
-	"\x1cmax_pending_queue_write_size\x18\t \x01(\x04R\x18maxPendingQueueWriteSize\x123\n" +
-	"\x16max_request_batch_size\x18\n" +
-	" \x01(\x04R\x13maxRequestBatchSize\"\xec\a\n" +
+	"request_id\x18\x04 \x01(\tR\trequestId\"\xcf\x04\n" +
+	"\fNodeSettings\x12D\n" +
+	"\x1fmax_identifier_key_length_bytes\x18\x01 \x01(\x04R\x1bmaxIdentifierKeyLengthBytes\x12H\n" +
+	"!max_identifier_owner_length_bytes\x18\x02 \x01(\x04R\x1dmaxIdentifierOwnerLengthBytes\x12P\n" +
+	"%max_identifier_namespace_length_bytes\x18\x03 \x01(\x04R!maxIdentifierNamespaceLengthBytes\x123\n" +
+	"\x16max_share_length_bytes\x18\x04 \x01(\x04R\x13maxShareLengthBytes\x123\n" +
+	"\x16max_blob_payload_bytes\x18\x05 \x01(\x04R\x13maxBlobPayloadBytes\x12>\n" +
+	"\x1cmax_pending_queue_write_size\x18\x06 \x01(\x04R\x18maxPendingQueueWriteSize\x123\n" +
+	"\x16max_request_batch_size\x18\a \x01(\x04R\x13maxRequestBatchSize\x12>\n" +
+	"\x1bvault_optimizations_enabled\x18\b \x01(\bR\x19vaultOptimizationsEnabled\x12>\n" +
+	"\x1cvault_force_empty_ocr_rounds\x18\t \x01(\bR\x18vaultForceEmptyOcrRounds\"\xec\a\n" +
 	"\vObservation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +

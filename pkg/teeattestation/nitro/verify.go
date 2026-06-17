@@ -2,7 +2,6 @@ package nitro
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"crypto/sha512"
 	"crypto/x509"
 	"errors"
@@ -252,21 +251,16 @@ func verifyECDSASignature(publicKey *ecdsa.PublicKey, sigStructure, signature []
 	return ecdsa.Verify(publicKey, hash, r, s)
 }
 
+// hashForCurve returns the SHA-384 digest of sigStructure for P-384 keys, the
+// only curve valid for Nitro attestations. The COSE algorithm is enforced as
+// ES384 (validateProtectedAlgorithm) and AWS's Private CA only issues P-384
+// leaf keys, so any other curve means the declared algorithm and the actual
+// key disagree; reject it rather than silently hashing with a different
+// function. [CL112-12]
 func hashForCurve(publicKey *ecdsa.PublicKey, sigStructure []byte) ([]byte, bool) {
-	switch publicKey.Curve.Params().Name {
-	case "P-224":
-		sum := sha256.Sum224(sigStructure)
-		return sum[:], true
-	case "P-256":
-		sum := sha256.Sum256(sigStructure)
-		return sum[:], true
-	case "P-384":
-		sum := sha512.Sum384(sigStructure)
-		return sum[:], true
-	case "P-521":
-		sum := sha512.Sum512(sigStructure)
-		return sum[:], true
-	default:
+	if publicKey.Curve.Params().Name != "P-384" {
 		return nil, false
 	}
+	sum := sha512.Sum384(sigStructure)
+	return sum[:], true
 }

@@ -389,6 +389,7 @@ func TestConvertSubmitTransactionRequestFromProto_MissingFunction(t *testing.T) 
 }
 
 func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
+	fee := uint64(12_345)
 	domain := &stellartypes.SubmitTransactionResponse{
 		TxStatus:         stellartypes.TxSuccess,
 		TxHash:           "abc123hash",
@@ -396,6 +397,7 @@ func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
 		ResultXDR:        base64.StdEncoding.EncodeToString([]byte("result")),
 		ResultMetaXDR:    base64.StdEncoding.EncodeToString([]byte("meta")),
 		Error:            "",
+		TransactionFee:   &fee,
 	}
 
 	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)

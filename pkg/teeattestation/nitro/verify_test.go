@@ -296,28 +296,53 @@ func TestCOSESign1_ES512Rejected(t *testing.T) {
 		"ES512/P-521 vector must be rejected; Nitro accepts P-384 only")
 }
 
-// TestCOSESign1_FailTamperedPayload verifies sign-fail-02 from cose-wg/Examples.
-// The last byte of the payload was changed from 0x2E ('.') to 0x2F ('/').
-// The signature was computed over the original payload, so verification must fail.
-func TestCOSESign1_FailTamperedPayload(t *testing.T) {
-	coseHex := "D28443A10126A10442313154546869732069732074686520636F6E74656E742F" +
-		"58408EB33E4CA31D1C465AB05AAC34CC6B23D58FEF5C083106C4D25A91AEF0B0117E" +
-		"2AF9A291AA32E14AB834DC56ED2A223444547E01F11D3B0916E5A4C345CACB36"
+// TestCOSESign1_ES384TamperRejected ports the cose-wg sign-fail cases to the
+// supported curve (P-384/ES384), so payload and protected-header tamper
+// detection is still exercised now that non-P-384 curves are rejected outright.
+// It starts from the valid ecdsa-sig-02 vector and mutates the parsed fields. [CL112-12]
+func TestCOSESign1_ES384TamperRejected(t *testing.T) {
+	coseHex := "D28444A1013822A104445033383454546869732069732074686520636F6E74656E742E" +
+		"58605F150ABD1C7D25B32065A14E05D6CB1F665D10769FF455EA9A2E0ADAB5DE63838D" +
+		"B257F0949C41E13330E110EBA7B912F34E1546FB1366A2568FAA91EC3E6C8D42F4A67A" +
+		"0EDF731D88C9AEAD52258B2E2C4740EF614F02E9D91E9B7B59622A3C"
+	data, err := hex.DecodeString(coseHex)
+	require.NoError(t, err)
+	var sign1 coseSign1
+	require.NoError(t, cbor.Unmarshal(data, &sign1))
 
-	assert.False(t, verifyCOSESign1WithKey(t, coseHex, coseWGKeyP256),
-		"sign-fail-02: tampered payload must not verify")
+	// Baseline: the untouched ES384 vector verifies under the P-384 key.
+	require.True(t, verifyParsedCOSESign1(t, &sign1, coseWGKeyP384),
+		"baseline ES384 vector should verify")
+
+	t.Run("tampered payload", func(t *testing.T) {
+		bad := sign1
+		bad.Payload = append([]byte(nil), sign1.Payload...)
+		bad.Payload[len(bad.Payload)-1] ^= 0x01
+		assert.False(t, verifyParsedCOSESign1(t, &bad, coseWGKeyP384),
+			"tampered payload must not verify")
+	})
+
+	t.Run("tampered protected header", func(t *testing.T) {
+		bad := sign1
+		bad.Protected = append([]byte(nil), sign1.Protected...)
+		bad.Protected[len(bad.Protected)-1] ^= 0x01
+		assert.False(t, verifyParsedCOSESign1(t, &bad, coseWGKeyP384),
+			"modified protected header must not verify")
+	})
 }
 
-// TestCOSESign1_FailModifiedProtectedHeader verifies sign-fail-06 from
-// cose-wg/Examples. An extra attribute (ctyp: 0) was added to the protected
-// header after signing. The Sig_structure changes, so the signature is invalid.
-func TestCOSESign1_FailModifiedProtectedHeader(t *testing.T) {
-	coseHex := "D28445A201260300A10442313154546869732069732074686520636F6E74656E742E" +
-		"58408EB33E4CA31D1C465AB05AAC34CC6B23D58FEF5C083106C4D25A91AEF0B0117E" +
-		"2AF9A291AA32E14AB834DC56ED2A223444547E01F11D3B0916E5A4C345CACB36"
-
-	assert.False(t, verifyCOSESign1WithKey(t, coseHex, coseWGKeyP256),
-		"sign-fail-06: modified protected header must not verify")
+// verifyParsedCOSESign1 builds the COSE Sig_structure from an already-parsed
+// Sign1 and verifies it, so tests can mutate fields before verification.
+func verifyParsedCOSESign1(t *testing.T, sign1 *coseSign1, pub *ecdsa.PublicKey) bool {
+	t.Helper()
+	sigStructure, err := cbor.Marshal(&coseSignatureInput{
+		Context:     "Signature1",
+		Protected:   sign1.Protected,
+		ExternalAAD: []byte{},
+		Payload:     sign1.Payload,
+	})
+	require.NoError(t, err)
+	return verifyECDSASignature(pub, sigStructure, sign1.Signature)
 }
 
 // TestCOSESign1_WrongKeyRejectsValidVector uses the valid RFC 8152 C.2.1

@@ -31,6 +31,7 @@ var (
 	errBadUserData                   = errors.New("attestation user_data length is invalid")
 	errBadNonce                      = errors.New("attestation nonce length is invalid")
 	errBadCertificatePublicKeyAlgo   = errors.New("attestation certificate public key algorithm is not ECDSA")
+	errUnsupportedLeafCurve          = errors.New("attestation certificate public key curve is not P-384")
 	errBadCertificateSigningAlgo     = errors.New("attestation certificate signature algorithm is not ECDSAWithSHA384")
 	errBadSignature                  = errors.New("attestation signature does not match certificate")
 )
@@ -135,6 +136,12 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 	pubKey, ok := leafCert.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
 		return nil, errBadCertificatePublicKeyAlgo
+	}
+	// Pin the leaf key to P-384 here so an unsupported curve surfaces as a
+	// distinct error rather than a misleading "bad signature" from
+	// hashForCurve's rejection. Mirrors the ES384 alg enforcement. [CL112-12]
+	if pubKey.Curve.Params().Name != "P-384" {
+		return nil, errUnsupportedLeafCurve
 	}
 	signatureOK := verifyECDSASignature(pubKey, sigStructure, sign1.Signature)
 	if !signatureOK {

@@ -432,8 +432,8 @@ type WriteReportReply struct {
 	TxHash                          *string                          `protobuf:"bytes,3,opt,name=tx_hash,json=txHash,proto3,oneof" json:"tx_hash,omitempty"`
 	TransactionFee                  *uint64                          `protobuf:"varint,4,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // total fee paid in stroops
 	LedgerSequence                  *uint32                          `protobuf:"varint,5,opt,name=ledger_sequence,json=ledgerSequence,proto3,oneof" json:"ledger_sequence,omitempty"`
-	ErrorMessage                    *string                          `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
-	BlockTimestamp                  *uint64                          `protobuf:"varint,7,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"`
+	ErrorMessage                    *string                          `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`        // user-actionable failure reason
+	BlockTimestamp                  *uint64                          `protobuf:"varint,7,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // block timestamp in microseconds
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }

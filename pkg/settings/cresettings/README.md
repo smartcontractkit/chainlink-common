@@ -223,6 +223,9 @@ flowchart
             PerWorkflow.ConfidentialHTTP.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.ConfidentialHTTP.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
         end
+        subgraph PerWorkflow.ConfidentialWorkflows
+            PerWorkflow.ConfidentialWorkflows.Enabled[/Enabled\]:::gate
+        end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
         end

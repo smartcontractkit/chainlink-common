@@ -389,6 +389,8 @@ func TestConvertSubmitTransactionRequestFromProto_MissingFunction(t *testing.T) 
 }
 
 func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
+	fee := uint64(12_345)
+	blockTimestamp := uint64(1_700_000_000_000_000) // microseconds
 	domain := &stellartypes.SubmitTransactionResponse{
 		TxStatus:         stellartypes.TxSuccess,
 		TxHash:           "abc123hash",
@@ -396,12 +398,15 @@ func TestConvertSubmitTransactionResponse_RoundTrip(t *testing.T) {
 		ResultXDR:        base64.StdEncoding.EncodeToString([]byte("result")),
 		ResultMetaXDR:    base64.StdEncoding.EncodeToString([]byte("meta")),
 		Error:            "",
+		TransactionFee:   &fee,
+		BlockTimestamp:   &blockTimestamp,
 	}
 
 	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
 	require.NoError(t, err)
 	require.Equal(t, conv.TxStatus_TX_STATUS_SUCCESS, proto.GetTxStatus())
 	require.Empty(t, proto.GetError())
+	require.Equal(t, blockTimestamp, proto.GetBlockTimestamp())
 
 	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
 	require.NoError(t, err)

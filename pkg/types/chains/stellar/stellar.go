@@ -142,6 +142,10 @@ type SubmitTransactionResponse struct {
 	ResultMetaXDR string
 	// Error is non-empty when the transaction was accepted but failed on-chain.
 	Error string
+	// TransactionFee is the total fee charged in stroops (FeeCharged), when available.
+	TransactionFee *uint64
+	// BlockTimestamp is the ledger close time in microseconds, when available.
+	BlockTimestamp *uint64
 }
 
 // GetLatestLedgerResponse holds the current ledger state.

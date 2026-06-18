@@ -75,6 +75,8 @@ message SubmitTransactionResponse {
   bytes    result_xdr = 4;       // TransactionResult binary XDR; empty if unavailable
   bytes    result_meta_xdr = 5;  // TransactionMeta binary XDR; empty if unavailable
   string   error = 6;            // Non-empty when the transaction was accepted but failed on-chain
+  optional uint64 transaction_fee = 7; // Total fee charged in stroops (FeeCharged); unset when unavailable
+  optional uint64 block_timestamp = 8; // Block timestamp in microseconds; unset when unavailable
 }
 
 // GetLatestLedgerResponse holds current ledger state.

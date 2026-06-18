@@ -179,11 +179,6 @@ type DurableEmitter struct {
 	insertShutdown atomic.Bool
 	insertInFlight atomic.Int32
 
-	// pendingCount is an exact, atomic count of rows inserted but not yet
-	// delivered/deleted. Incremented on successful Insert, decremented on
-	// MarkDelivered, Delete, or DeleteExpired.
-	pendingCount atomic.Int64
-
 	// fallbackInFlightCount is incremented when a single-event fallback
 	// goroutine starts and decremented on its defer. metricsLoop samples
 	// this into the fallback.in_flight gauge.
@@ -280,10 +275,6 @@ func NewDurableEmitter(
 func (d *DurableEmitter) start(ctx context.Context) error {
 	d.batchEmitter.Start(ctx)
 
-	// Seed pendingCount from the on-disk queue depth so the gauge survives
-	// process restarts.
-	d.seedPendingFromStore(ctx)
-
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
 		insertWorkers = 4
@@ -305,41 +296,6 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		d.wg.Go(d.metricsLoop)
 	}
 	return nil
-}
-
-// seedPendingFromStore initializes pendingCount from the authoritative on-disk
-// row count so the gauge is correct immediately after a restart. It runs once at
-// Start and is a no-op when the store does not implement DurableQueueObserver
-// (e.g. in-memory test stores) or when the observation call fails.
-func (d *DurableEmitter) seedPendingFromStore(ctx context.Context) {
-	obs, ok := d.store.(DurableQueueObserver)
-	if !ok {
-		return
-	}
-	st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
-	if err != nil {
-		d.eng.Warnw("DurableEmitter: failed to seed pendingCount from store on start", "error", err)
-		return
-	}
-	d.reconcileDepth(ctx, st.TotalRows)
-	d.eng.Infow("DurableEmitter: seeded pendingCount from store",
-		"total_rows", st.TotalRows, "undelivered", st.Depth)
-}
-
-// reconcileDepth sets the queue-depth state to an authoritative value read from
-// the store (count of physical rows). This is the single source of truth for the
-// gauge: incPending/decPending only maintain a fast between-reconcile estimate,
-// and every reconcile snaps that estimate back to the real table count. That is
-// what makes the metric correct regardless of multi-writer races, double counts,
-// or in-memory delta updates lost to failed/partial DB operations.
-func (d *DurableEmitter) reconcileDepth(ctx context.Context, total int64) {
-	if total < 0 {
-		total = 0
-	}
-	d.pendingCount.Store(total)
-	if d.metrics != nil {
-		d.metrics.queueDepth.Record(ctx, total)
-	}
 }
 
 // Emit persists the event then hands it to the BatchEmitter for async delivery.
@@ -455,8 +411,6 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			}
 		}
 
-		d.incPending(1)
-
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure). eventPb is
 		// captured in the closure so the fallback path can retry without a
@@ -519,7 +473,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			d.eng.Errorw("failed to mark event delivered", "id", id, "error", markErr)
 			return
 		}
-		d.decPending(marked)
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(cbCtx, marked)
 		}
@@ -543,9 +496,9 @@ func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb
 }
 
 // singleEventFallback sends a single event directly via the fallback
-// chipingress.Client. On success, it marks the event delivered and decrements
-// the pending counter. On failure, it logs and returns — the event remains in
-// the DB and the retransmit loop will eventually deliver it.
+// chipingress.Client. On success, it marks the event delivered. On failure, it
+// logs and returns — the event remains in the DB and the retransmit loop will
+// eventually deliver it.
 func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
 	stopCtx, stopCancel := d.stopCh.NewCtx()
 	defer stopCancel()
@@ -564,7 +517,6 @@ func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.Clou
 		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
 		return
 	}
-	d.decPending(marked)
 	if d.metrics != nil {
 		d.metrics.deliverComplete.Add(stopCtx, marked)
 	}
@@ -646,42 +598,6 @@ func (d *DurableEmitter) insertBatchLoop() {
 			} else {
 				r.result <- insertResult{id: ids[i]}
 			}
-		}
-	}
-}
-
-// PendingDepth returns the current exact pending queue depth (inserted but not
-// yet delivered/deleted). Thread-safe; no DB query required.
-func (d *DurableEmitter) PendingDepth() int64 { return d.pendingCount.Load() }
-
-// incPending bumps the between-reconcile estimate up by n. It deliberately does
-// not record the gauge: the gauge is only ever sourced from reconcileDepth (the
-// authoritative DB count) so a drifting or transiently-wrong estimate can never
-// be published. The estimate is corrected on the next metrics poll.
-func (d *DurableEmitter) incPending(n int64) {
-	if n <= 0 {
-		return
-	}
-	d.pendingCount.Add(n)
-}
-
-// decPending lowers the between-reconcile estimate by n, clamped at zero so the
-// estimate can never go negative no matter how the deltas drift (e.g. a shared
-// table where another writer's rows are expired/purged here, or a mark that
-// failed at the client but committed in the DB). Like incPending it does not
-// record the gauge; reconcileDepth is the only writer of the gauge.
-func (d *DurableEmitter) decPending(n int64) {
-	if n <= 0 {
-		return
-	}
-	for {
-		old := d.pendingCount.Load()
-		next := old - n
-		if next < 0 {
-			next = 0
-		}
-		if d.pendingCount.CompareAndSwap(old, next) {
-			return
 		}
 	}
 }
@@ -822,7 +738,6 @@ func (d *DurableEmitter) expiryLoop() {
 				continue
 			}
 			if deleted > 0 {
-				d.decPending(deleted)
 				if d.metrics != nil {
 					d.metrics.expiredPurged.Add(ctx, deleted)
 				}
@@ -857,21 +772,20 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			// Reconcile queue depth against the actual DB row count. This is the
-			// authoritative gauge update; if the observation fails we keep the
-			// last value rather than publishing a drifting in-memory estimate.
+			// Queue depth is recorded straight from the actual DB row count —
+			// this is the single source of truth for the gauge (no in-memory
+			// counter), so it is correct regardless of how many emitters share
+			// the table or which DB operations failed. On observe failure we keep
+			// the last value rather than publishing a guess. Stores that are not
+			// observable (e.g. test doubles) simply do not report depth.
 			if obs, ok := d.store.(DurableQueueObserver); ok {
 				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
 				if err != nil {
 					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
 				} else {
-					d.reconcileDepth(ctx, st.TotalRows)
+					d.metrics.queueDepth.Record(ctx, st.TotalRows)
 					d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
 				}
-			} else {
-				// Store cannot be observed (e.g. a test double): fall back to the
-				// in-memory estimate so the gauge still moves.
-				d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
 			}
 			d.metrics.fallbackInFlight.Record(ctx, d.fallbackInFlightCount.Load())
 			if d.insertCh != nil {

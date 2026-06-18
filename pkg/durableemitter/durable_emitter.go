@@ -475,7 +475,7 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			h.OnBatchPublish(publishElapsed, 1, sendErr)
 		}
 
-		cbCtx, cbCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		cbCtx, cbCancel := d.stopCh.NewCtx()
 		defer cbCancel()
 
 		if d.metrics != nil {
@@ -537,7 +537,10 @@ func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb
 // the pending counter. On failure, it logs and returns — the event remains in
 // the DB and the retransmit loop will eventually deliver it.
 func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
-	pubCtx, pubCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	stopCtx, stopCancel := d.stopCh.NewCtx()
+	defer stopCancel()
+
+	pubCtx, pubCancel := context.WithTimeout(stopCtx, d.cfg.PublishTimeout)
 	defer pubCancel()
 
 	if _, err := d.fallbackClient.Publish(pubCtx, eventPb); err != nil {
@@ -546,17 +549,14 @@ func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.Clou
 		return
 	}
 
-	markCtx, markCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-	defer markCancel()
-
-	marked, markErr := d.store.MarkDeliveredBatch(markCtx, []int64{id})
+	marked, markErr := d.store.MarkDeliveredBatch(stopCtx, []int64{id})
 	if markErr != nil {
 		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
 		return
 	}
 	d.decPending(marked)
 	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(markCtx, marked)
+		d.metrics.deliverComplete.Add(stopCtx, marked)
 	}
 }
 

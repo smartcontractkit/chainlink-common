@@ -23,9 +23,9 @@ func TestValidateAttestation_Attestor(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TestVerifyAttestationDocument_MaxAge covers PRIV-438 / CL112-10: a fresh
-// attestation verifies, but one older than MaxAttestationAge is rejected even
-// though the leaf cert is still valid.
+// TestVerifyAttestationDocument_MaxAge covers PRIV-438 / CL112-10: fresh
+// attestations verify; stale or far-future ones are rejected even while the
+// leaf cert is still valid.
 func TestVerifyAttestationDocument_MaxAge(t *testing.T) {
 	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
@@ -37,8 +37,12 @@ func TestVerifyAttestationDocument_MaxAge(t *testing.T) {
 	_, err = verifyAttestationDocument(doc, pool, time.Now())
 	require.NoError(t, err)
 
-	// Older than the window: rejected (cert is still valid, only age fails).
-	_, err = verifyAttestationDocument(doc, pool, time.Now().Add(MaxAttestationAge+time.Minute))
+	// Too old: rejected (cert is still valid, only age fails).
+	_, err = verifyAttestationDocument(doc, pool, time.Now().Add(maxAttestationAge+time.Minute))
+	require.ErrorIs(t, err, errStaleAttestation)
+
+	// Too far in the future: also rejected.
+	_, err = verifyAttestationDocument(doc, pool, time.Now().Add(-(maxAttestationAge + time.Minute)))
 	require.ErrorIs(t, err, errStaleAttestation)
 }
 

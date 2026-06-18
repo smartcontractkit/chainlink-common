@@ -759,7 +759,7 @@ func (d *DurableEmitter) metricsLoop() {
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
-		poll = 10 * time.Second
+		poll = 500 * time.Millisecond
 	}
 
 	ctx, cancel := d.stopCh.NewCtx()

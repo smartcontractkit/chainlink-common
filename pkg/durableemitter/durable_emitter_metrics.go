@@ -43,7 +43,6 @@ type durableEmitterMetrics struct {
 	storeOps           metric.Int64Counter
 	storeOpDuration    metric.Float64Histogram
 	queueDepth         metric.Int64Gauge
-	queueDepthMax      metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
 	queueNearTTL       metric.Int64Gauge
@@ -198,13 +197,6 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.queueDepthMax, err = meter.Int64Gauge(
-		"durable_emitter.queue.depth_max",
-		metric.WithUnit("{row}"),
-		metric.WithDescription("High-water mark of pending queue depth since start"),
-	); err != nil {
-		return nil, err
-	}
 	if m.queuePayloadBytes, err = meter.Int64Gauge(
 		"durable_emitter.queue.payload_bytes",
 		metric.WithUnit("By"),
@@ -297,15 +289,12 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 	m.storeOpDuration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("operation", op)))
 }
 
-// pollQueueGauges refreshes DB-derived queue statistics (payload bytes, oldest
-// pending age, near-TTL count). Queue depth itself is tracked atomically by
-// DurableEmitter.incPending/decPending and recorded there.
-func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs DurableQueueObserver, ttl, lead time.Duration, maxBytes int64) {
-	if m == nil || obs == nil {
-		return
-	}
-	st, err := obs.ObserveDurableQueue(ctx, ttl, lead)
-	if err != nil {
+// recordQueueStats records the DB-derived queue statistics (payload bytes,
+// oldest pending age, near-TTL count) from an already-observed snapshot. The
+// queue depth gauge itself is recorded separately by DurableEmitter from the
+// same snapshot's authoritative TotalRows count.
+func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st DurableQueueStats, maxBytes int64) {
+	if m == nil {
 		return
 	}
 	m.queuePayloadBytes.Record(ctx, st.PayloadBytes)

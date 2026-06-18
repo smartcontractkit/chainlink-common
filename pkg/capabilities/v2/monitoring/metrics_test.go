@@ -35,11 +35,20 @@ func TestActionMetrics_OnSuccessRecordsMetrics(t *testing.T) {
 	metrics.OnSuccess(t.Context(), "WriteReport", start, emit, attrs...)
 
 	rm := collectMetrics(t, reader)
-	metric := mustMetric(t, rm, MetricName("WriteReport", OutcomeSuccess, MetricSuffixCount))
+	metric := mustMetric(t, rm, ActionCountMetric)
 	sum, ok := metric.Data.(metricdata.Sum[int64])
 	require.True(t, ok)
 	require.Len(t, sum.DataPoints, 1)
 	assert.Equal(t, int64(1), sum.DataPoints[0].Value)
+	requireAttrValue(t, sum.DataPoints[0].Attributes, LabelMethod, "WriteReport")
+	requireAttrValue(t, sum.DataPoints[0].Attributes, LabelOutcome, OutcomeSuccess)
+	requireAttrValue(t, sum.DataPoints[0].Attributes, LabelCapabilityID, "solana:ChainSelector:1@1.0.0")
+
+	durationMetric := mustMetric(t, rm, ActionDurationMetric)
+	hist, ok := durationMetric.Data.(metricdata.Histogram[int64])
+	require.True(t, ok)
+	require.Len(t, hist.DataPoints, 1)
+	requireAttrValue(t, hist.DataPoints[0].Attributes, LabelOutcome, OutcomeSuccess)
 }
 
 func TestActionMetrics_OnErrorSkipsUserErrors(t *testing.T) {
@@ -64,7 +73,7 @@ func TestActionMetrics_OnErrorRecordsSystemErrors(t *testing.T) {
 	start := time.Now()
 	emit := time.Now()
 	attrs := ActionMetricAttributes(
-		"WriteReport",
+		"GetBalance",
 		capabilities.RequestMetadata{WorkflowDonID: 1},
 		func() []attribute.KeyValue {
 			return []attribute.KeyValue{attribute.String(LabelCapabilityID, "solana:ChainSelector:1@1.0.0")}
@@ -72,14 +81,41 @@ func TestActionMetrics_OnErrorRecordsSystemErrors(t *testing.T) {
 		nil,
 	)
 
-	metrics.OnError(t.Context(), "WriteReport", start, emit, false, attrs...)
+	metrics.OnError(t.Context(), "GetBalance", start, emit, false, attrs...)
 
 	rm := collectMetrics(t, reader)
-	metric := mustMetric(t, rm, MetricName("WriteReport", OutcomeError, MetricSuffixCount))
+	metric := mustMetric(t, rm, ActionCountMetric)
 	sum, ok := metric.Data.(metricdata.Sum[int64])
 	require.True(t, ok)
 	require.Len(t, sum.DataPoints, 1)
 	assert.Equal(t, int64(1), sum.DataPoints[0].Value)
+	requireAttrValue(t, sum.DataPoints[0].Attributes, LabelMethod, "GetBalance")
+	requireAttrValue(t, sum.DataPoints[0].Attributes, LabelOutcome, OutcomeError)
+}
+
+func TestActionMetrics_UsesSingleCounterAcrossMethods(t *testing.T) {
+	reader, cleanup := useTestMeterProvider(t)
+	defer cleanup()
+
+	metrics := NewActionMetrics()
+	now := time.Now()
+	capAttrs := func() []attribute.KeyValue {
+		return []attribute.KeyValue{attribute.String(LabelCapabilityID, "solana:ChainSelector:1@1.0.0")}
+	}
+
+	metrics.OnSuccess(t.Context(), "GetBalance", now, now, ActionMetricAttributes("GetBalance", capabilities.RequestMetadata{}, capAttrs, nil)...)
+	metrics.OnSuccess(t.Context(), "WriteReport", now, now, ActionMetricAttributes("WriteReport", capabilities.RequestMetadata{}, capAttrs, nil)...)
+
+	rm := collectMetrics(t, reader)
+	countMetrics := 0
+	for _, sm := range rm.ScopeMetrics {
+		for _, metric := range sm.Metrics {
+			if metric.Name == ActionCountMetric {
+				countMetrics++
+			}
+		}
+	}
+	assert.Equal(t, 1, countMetrics)
 }
 
 func TestNoopActionMetrics(t *testing.T) {
@@ -128,4 +164,11 @@ func mustMetric(t *testing.T, rm metricdata.ResourceMetrics, name string) metric
 	}
 	t.Fatalf("metric %q not found", name)
 	return metricdata.Metrics{}
+}
+
+func requireAttrValue(t *testing.T, set attribute.Set, key, want string) {
+	t.Helper()
+	val, ok := set.Value(attribute.Key(key))
+	require.True(t, ok, "missing attribute %q", key)
+	assert.Equal(t, want, val.AsString())
 }

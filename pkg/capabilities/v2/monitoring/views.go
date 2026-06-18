@@ -7,7 +7,7 @@ import sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 func MetricViews() []sdkmetric.View {
 	return []sdkmetric.View{
 		sdkmetric.NewView(
-			sdkmetric.Instrument{Name: DurationInstrumentPattern},
+			sdkmetric.Instrument{Name: ActionDurationMetric},
 			sdkmetric.Stream{Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 				Boundaries: ActionLatencyBucketBoundariesMs,
 			}},

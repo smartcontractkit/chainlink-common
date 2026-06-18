@@ -25,97 +25,58 @@ func NewActionMetrics() ActionMetrics {
 }
 
 type actionMetrics struct {
-	success sync.Map // method -> metricsCapBasic
-	error   sync.Map // method -> metricsCapBasic
+	once        sync.Once
+	instruments actionInstruments
+	initErr     error
 }
 
-type metricsCapBasic struct {
-	count             metric.Int64Counter
-	capTimestampStart metric.Int64Gauge
-	capTimestampEmit  metric.Int64Gauge
-	capDuration       metric.Int64Histogram
-}
-
-type metricsInfoCapBasic struct {
-	count             beholder.MetricInfo
-	capTimestampStart beholder.MetricInfo
-	capTimestampEmit  beholder.MetricInfo
-	capDuration       beholder.MetricInfo
+type actionInstruments struct {
+	count    metric.Int64Counter
+	duration metric.Int64Histogram
 }
 
 func (m *actionMetrics) OnSuccess(ctx context.Context, method string, tsStart, tsEmit time.Time, attrs ...attribute.KeyValue) {
-	instruments, err := m.successInstruments(method)
-	if err != nil {
-		return
-	}
-	instruments.recordEmit(ctx, tsStart, tsEmit, attrs...)
+	m.record(ctx, OutcomeSuccess, tsStart, tsEmit, attrs...)
 }
 
 func (m *actionMetrics) OnError(ctx context.Context, method string, tsStart, tsEmit time.Time, isUserError bool, attrs ...attribute.KeyValue) {
 	if isUserError {
 		return
 	}
-	instruments, err := m.errorInstruments(method)
+	m.record(ctx, OutcomeError, tsStart, tsEmit, attrs...)
+}
+
+func (m *actionMetrics) record(ctx context.Context, outcome string, tsStart, tsEmit time.Time, attrs ...attribute.KeyValue) {
+	instruments, err := m.loadInstruments()
 	if err != nil {
 		return
 	}
-	instruments.recordEmit(ctx, tsStart, tsEmit, attrs...)
-}
 
-func (m *actionMetrics) successInstruments(method string) (metricsCapBasic, error) {
-	return m.loadInstruments(&m.success, method, OutcomeSuccess)
-}
-
-func (m *actionMetrics) errorInstruments(method string) (metricsCapBasic, error) {
-	return m.loadInstruments(&m.error, method, OutcomeError)
-}
-
-func (m *actionMetrics) loadInstruments(store *sync.Map, method, outcome string) (metricsCapBasic, error) {
-	if cached, ok := store.Load(method); ok {
-		return cached.(metricsCapBasic), nil
-	}
-
-	instruments, err := newMetricsCapBasic(ActionMetricInfo(method, outcome))
-	if err != nil {
-		return metricsCapBasic{}, err
-	}
-
-	actual, _ := store.LoadOrStore(method, instruments)
-	return actual.(metricsCapBasic), nil
-}
-
-func newMetricsCapBasic(info metricsInfoCapBasic) (metricsCapBasic, error) {
-	meter := beholder.GetMeter()
-	set := metricsCapBasic{}
-	var err error
-
-	set.count, err = info.count.NewInt64Counter(meter)
-	if err != nil {
-		return set, fmt.Errorf("failed to create counter: %w", err)
-	}
-	set.capTimestampStart, err = info.capTimestampStart.NewInt64Gauge(meter)
-	if err != nil {
-		return set, fmt.Errorf("failed to create start gauge: %w", err)
-	}
-	set.capTimestampEmit, err = info.capTimestampEmit.NewInt64Gauge(meter)
-	if err != nil {
-		return set, fmt.Errorf("failed to create emit gauge: %w", err)
-	}
-	set.capDuration, err = info.capDuration.NewInt64Histogram(meter)
-	if err != nil {
-		return set, fmt.Errorf("failed to create duration histogram: %w", err)
-	}
-	return set, nil
-}
-
-func (m *metricsCapBasic) recordEmit(ctx context.Context, tsStart, tsEmit time.Time, attrKVs ...attribute.KeyValue) {
 	startMs := tsStart.UnixMilli()
 	emitMs := tsEmit.UnixMilli()
-	attrs := metric.WithAttributes(attrKVs...)
-	m.count.Add(ctx, 1, attrs)
-	m.capTimestampStart.Record(ctx, startMs, attrs)
-	m.capTimestampEmit.Record(ctx, emitMs, attrs)
-	m.capDuration.Record(ctx, emitMs-startMs, attrs)
+	recordAttrs := metric.WithAttributes(append(attrs, attribute.String(LabelOutcome, outcome))...)
+	instruments.count.Add(ctx, 1, recordAttrs)
+	instruments.duration.Record(ctx, emitMs-startMs, recordAttrs)
+}
+
+func (m *actionMetrics) loadInstruments() (actionInstruments, error) {
+	m.once.Do(func() {
+		info := newActionInstrumentInfo()
+		meter := beholder.GetMeter()
+
+		count, err := info.count.NewInt64Counter(meter)
+		if err != nil {
+			m.initErr = fmt.Errorf("failed to create action count counter: %w", err)
+			return
+		}
+		duration, err := info.duration.NewInt64Histogram(meter)
+		if err != nil {
+			m.initErr = fmt.Errorf("failed to create action duration histogram: %w", err)
+			return
+		}
+		m.instruments = actionInstruments{count: count, duration: duration}
+	})
+	return m.instruments, m.initErr
 }
 
 type noopActionMetrics struct{}

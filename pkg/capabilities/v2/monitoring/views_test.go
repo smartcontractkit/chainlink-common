@@ -11,18 +11,12 @@ func TestMetricViews_ActionLatencyBuckets(t *testing.T) {
 	views := MetricViews()
 	require.Len(t, views, 1)
 
-	sampleNames := []string{
-		MetricName("WriteReport", OutcomeSuccess, MetricSuffixCapDuration),
-		MetricName("GetBalance", OutcomeError, MetricSuffixCapDuration),
-	}
-	for _, name := range sampleNames {
-		stream, ok := metricViewStream(views, name)
-		require.True(t, ok, "missing metric view for %s", name)
+	stream, ok := metricViewStream(views, ActionDurationMetric)
+	require.True(t, ok, "missing metric view for %s", ActionDurationMetric)
 
-		aggregation, ok := stream.Aggregation.(sdkmetric.AggregationExplicitBucketHistogram)
-		require.True(t, ok, "expected explicit bucket histogram for %s", name)
-		require.Equal(t, ActionLatencyBucketBoundariesMs, aggregation.Boundaries)
-	}
+	aggregation, ok := stream.Aggregation.(sdkmetric.AggregationExplicitBucketHistogram)
+	require.True(t, ok, "expected explicit bucket histogram for %s", ActionDurationMetric)
+	require.Equal(t, ActionLatencyBucketBoundariesMs, aggregation.Boundaries)
 }
 
 func metricViewStream(views []sdkmetric.View, name string) (sdkmetric.Stream, bool) {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781805598560,
+  "lastUpdate": 1781807985080,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51540,6 +51540,66 @@ window.BENCHMARK_DATA = {
             "value": 141595,
             "unit": "ns/op",
             "extra": "7935 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "152236536+Krish-vemula@users.noreply.github.com",
+            "name": "Krish-vemula",
+            "username": "Krish-vemula"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7a1ff6408df5926ce571438826d7740ee811ae48",
+          "message": "TransactionFee on Stellar SubmitTransactionResponse (#2169)\n\n* TransactionFee on Stellar SubmitTransactionResponse\n\n* Added generated pb files\n\n* bumped with protos and added blocktimestamp\n\n---------\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2026-06-18T18:26:32Z",
+          "tree_id": "d1a67717a673329cd55b9728b077b6e96c8e11d0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7a1ff6408df5926ce571438826d7740ee811ae48"
+        },
+        "date": 1781807982839,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 711,
+            "unit": "ns/op",
+            "extra": "1444383 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95881,
+            "unit": "ns/op",
+            "extra": "12438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.1,
+            "unit": "ns/op",
+            "extra": "2960605 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95356,
+            "unit": "ns/op",
+            "extra": "12639 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26677,
+            "unit": "ns/op",
+            "extra": "44949 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 151800,
+            "unit": "ns/op",
+            "extra": "7579 times\n4 procs"
           }
         ]
       }

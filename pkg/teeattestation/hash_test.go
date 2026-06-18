@@ -1,6 +1,7 @@
 package teeattestation
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"testing"
 )
@@ -13,8 +14,8 @@ func TestDomainHash(t *testing.T) {
 
 	h := sha256.New()
 	h.Write([]byte(DomainSeparator))
-	h.Write([]byte("\n" + tag + "\n"))
-	h.Write(data)
+	writeWithLength(h, []byte(tag))
+	writeWithLength(h, data)
 	want := h.Sum(nil)
 
 	if len(got) != sha256.Size {
@@ -51,4 +52,11 @@ func TestDomainHash_DifferentData(t *testing.T) {
 		}
 	}
 	t.Fatal("different data should produce different hashes")
+}
+
+// CL112-14 regression: the old newline scheme let ("A\nB","C") and ("A","B\nC") collide.
+func TestDomainHash_NoBoundaryCollision(t *testing.T) {
+	if bytes.Equal(DomainHash("A\nB", []byte("C")), DomainHash("A", []byte("B\nC"))) {
+		t.Fatal("tag/data boundary collision: distinct pairs must not share a hash")
+	}
 }

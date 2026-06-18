@@ -772,12 +772,6 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			// Queue depth is recorded straight from the actual DB row count —
-			// this is the single source of truth for the gauge (no in-memory
-			// counter), so it is correct regardless of how many emitters share
-			// the table or which DB operations failed. On observe failure we keep
-			// the last value rather than publishing a guess. Stores that are not
-			// observable (e.g. test doubles) simply do not report depth.
 			if obs, ok := d.store.(DurableQueueObserver); ok {
 				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
 				if err != nil {

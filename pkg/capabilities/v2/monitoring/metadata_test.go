@@ -38,22 +38,15 @@ func TestRequestLogKVs(t *testing.T) {
 	assert.Equal(t, "exec-1:ref-1", fields["requestID"])
 }
 
-func TestKVsToAttributes(t *testing.T) {
-	t.Parallel()
-
-	attrs := KVsToAttributes([]any{"receiver", "abc123", "method", "WriteReport"})
-	require.Len(t, attrs, 2)
-	assert.Equal(t, attribute.String("receiver", "abc123"), attrs[0])
-	assert.Equal(t, attribute.String("method", "WriteReport"), attrs[1])
-}
-
 func TestActionMetricAttributes(t *testing.T) {
 	t.Parallel()
 
 	capAttrsFn := func() []attribute.KeyValue {
 		return []attribute.KeyValue{attribute.String(LabelCapabilityID, "cap-1")}
 	}
-	attrs := ActionMetricAttributes("WriteReport", capabilities.RequestMetadata{WorkflowDonID: 3}, capAttrsFn, []any{"region", "us-east"})
+	attrs := ActionMetricAttributes("WriteReport", capabilities.RequestMetadata{WorkflowDonID: 3}, capAttrsFn, []attribute.KeyValue{
+		attribute.String("region", "us-east"),
+	})
 	require.Len(t, attrs, 4)
 	assert.Equal(t, attribute.String(LabelCapabilityID, "cap-1"), attrs[0])
 	assert.Equal(t, attribute.String(LabelMethod, "WriteReport"), attrs[1])

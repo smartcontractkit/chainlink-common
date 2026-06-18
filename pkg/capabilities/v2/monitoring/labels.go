@@ -1,5 +1,7 @@
 package monitoring
 
+import "go.opentelemetry.io/otel/attribute"
+
 // MonitoringLabels is an optional interface that request proto types may implement
 // to contribute method-specific fields to structured logs and metrics emitted by the
 // generated server (--with-monitoring). Returning nil or an empty slice is valid.
@@ -7,9 +9,8 @@ package monitoring
 // LogKVs are appended to lifecycle log lines (initiated / succeeded / failed).
 // High-cardinality values (addresses, IDs, etc.) belong here.
 //
-// MetricKVs are converted to OTel attributes and recorded by ActionMetrics on lifecycle
-// events. Metrics are exported via Beholder OTLP and appear in Prometheus after collector
-// ingestion. Keep MetricKVs low-cardinality to avoid overloading metrics storage.
+// MetricKVs are appended to ActionMetrics lifecycle events as OTel attributes.
+// Keep MetricKVs low-cardinality to avoid overloading metrics storage.
 //
 // Example (in chainlink-common, package solana):
 //
@@ -17,7 +18,7 @@ package monitoring
 //	    return []any{"receiver", hex.EncodeToString(r.GetReceiver())}
 //	}
 //
-//	func (r *WriteReportRequest) MetricKVs() []any {
+//	func (r *WriteReportRequest) MetricKVs() []attribute.KeyValue {
 //	    return nil
 //	}
 //
@@ -26,5 +27,5 @@ package monitoring
 // lines just carry the method name and request metadata fields.
 type MonitoringLabels interface {
 	LogKVs() []any
-	MetricKVs() []any
+	MetricKVs() []attribute.KeyValue
 }

@@ -1,6 +1,10 @@
 package solana
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+
+	"go.opentelemetry.io/otel/attribute"
+)
 
 // LogKVs and MetricKVs implement monitoring.MonitoringLabels on *WriteReportRequest.
 // Receiver is high-cardinality and is included in logs only.
@@ -10,6 +14,6 @@ func (r *WriteReportRequest) LogKVs() []any {
 	}
 }
 
-func (r *WriteReportRequest) MetricKVs() []any {
+func (r *WriteReportRequest) MetricKVs() []attribute.KeyValue {
 	return nil
 }

@@ -23,6 +23,7 @@ import (
     caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
     {{- if $.WithMonitoring }}
     capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
+    "go.opentelemetry.io/otel/attribute"
     {{- end }}
     "github.com/smartcontractkit/chainlink-common/pkg/loop"
 )
@@ -238,10 +239,10 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
                 tsStart := time.Now()
                 mc := c.{{$service.GoName}}Capability.MonitoringContext()
                 logKvs := append([]any{"method", "{{.GoName}}"}, capmon.RequestLogKVs(metadata)...)
-                var metricKvs []any
+                var metricAttrs []attribute.KeyValue
                 if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
                     logKvs = append(logKvs, labeled.LogKVs()...)
-                    metricKvs = labeled.MetricKVs()
+                    metricAttrs = labeled.MetricKVs()
                 }
                 mc.Logger.Debugw("capability initiated", logKvs...)
                 {{- end }}
@@ -254,13 +255,13 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
                     } else {
                         mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
                     }
-                    c.actionMetrics.OnError(ctx, "{{.GoName}}", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                    c.actionMetrics.OnError(ctx, "{{.GoName}}", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
                     {{- end }}
                     return nil, capabilities.ResponseMetadata{}, nil, err
                 }
                 {{- if $.WithMonitoring }}
                 mc.Logger.Infow("capability succeeded", logKvs...)
-                c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
                 {{- end }}
                 if output == nil {
                     return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
@@ -281,10 +282,10 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
                  tsStart := time.Now()
                  mc := c.{{$service.GoName}}Capability.MonitoringContext()
                  logKvs := append([]any{"method", "{{.GoName}}"}, capmon.RequestLogKVs(metadata)...)
-                 var metricKvs []any
+                 var metricAttrs []attribute.KeyValue
                  if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
                      logKvs = append(logKvs, labeled.LogKVs()...)
-                     metricKvs = labeled.MetricKVs()
+                     metricAttrs = labeled.MetricKVs()
                  }
                  mc.Logger.Debugw("capability initiated", logKvs...)
                  {{- end }}
@@ -297,13 +298,13 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
                     } else {
                         mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
                     }
-                    c.actionMetrics.OnError(ctx, "{{.GoName}}", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                    c.actionMetrics.OnError(ctx, "{{.GoName}}", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
                     {{- end }}
                     return nil, capabilities.ResponseMetadata{}, nil, err
                  }
                  {{- if $.WithMonitoring }}
                  mc.Logger.Infow("capability succeeded", logKvs...)
-                 c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                 c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
                  {{- end }}
                  if output == nil {
                      return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")

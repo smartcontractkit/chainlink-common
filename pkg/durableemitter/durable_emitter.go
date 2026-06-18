@@ -654,10 +654,13 @@ func (d *DurableEmitter) insertBatchLoop() {
 		for i, r := range batch {
 			payloads[i] = r.payload
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
-		cancel()
-		for i, r := range batch {
+	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+	cancel()
+	if batchErr == nil {
+		d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
+	}
+	for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
 			} else {
@@ -743,6 +746,7 @@ func (d *DurableEmitter) flushMarks(ids []int64) {
 		d.eng.Errorw("failed to batch mark events delivered", "count", len(ids), "error", err)
 		return
 	}
+	d.eng.Debugw("DurableEmitter: coalesced mark delivered flushed", "submitted", len(ids), "marked", marked)
 	if d.metrics != nil {
 		d.metrics.deliverComplete.Add(ctx, marked)
 	}
@@ -853,15 +857,20 @@ func (d *DurableEmitter) purgeLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
+			var purged int64
 			for {
 				n, err := d.store.PurgeDelivered(ctx, batch)
 				if err != nil {
 					d.eng.Errorw("failed to purge delivered chip durable events", "error", err)
 					break
 				}
+				purged += n
 				if n == 0 {
 					break
 				}
+			}
+			if purged > 0 {
+				d.eng.Debugw("DurableEmitter: purged delivered events", "count", purged)
 			}
 		}
 	}

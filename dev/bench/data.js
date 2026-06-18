@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781799778832,
+  "lastUpdate": 1781805598560,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51480,6 +51480,66 @@ window.BENCHMARK_DATA = {
             "value": 136233,
             "unit": "ns/op",
             "extra": "8871 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c25fda831c09fe665d7c3c4761baa78fc661d6e6",
+          "message": "DurableEmitter: Poll DB queue depth + Update defaults (#2173)\n\n* Fix defaults + reconcile queue depth\n\n* Metrics loop queue depth\n\n* Update durable_emitter.go\n\n* Update durable_emitter.go",
+          "timestamp": "2026-06-18T17:47:31Z",
+          "tree_id": "09e86914077ad05f08d61e9580d8144ad70d451e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c25fda831c09fe665d7c3c4761baa78fc661d6e6"
+        },
+        "date": 1781805595994,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.2,
+            "unit": "ns/op",
+            "extra": "3385341 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93196,
+            "unit": "ns/op",
+            "extra": "12786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.4,
+            "unit": "ns/op",
+            "extra": "2964816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94966,
+            "unit": "ns/op",
+            "extra": "12606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26768,
+            "unit": "ns/op",
+            "extra": "44907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141595,
+            "unit": "ns/op",
+            "extra": "7935 times\n4 procs"
           }
         ]
       }

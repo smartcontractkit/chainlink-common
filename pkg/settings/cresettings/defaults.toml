@@ -160,7 +160,7 @@ RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
 
 [PerWorkflow.ConfidentialWorkflows]
-Enabled = 'true'
+Enabled = 'false'
 
 [PerWorkflow.Secrets]
 CallLimit = '5'

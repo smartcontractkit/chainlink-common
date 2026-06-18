@@ -152,7 +152,7 @@
 			"ResponseSizeLimit": "100kb"
 		},
 		"ConfidentialWorkflows": {
-			"Enabled": "true"
+			"Enabled": "false"
 		},
 		"Secrets": {
 			"CallLimit": "5"

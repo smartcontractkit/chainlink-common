@@ -244,7 +244,7 @@ var Default = Schema{
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
 		ConfidentialWorkflows: confidentialWorkflows{
-			Enabled: Bool(true),
+			Enabled: Bool(false),
 		},
 		Secrets: secrets{
 			CallLimit: Int(5),

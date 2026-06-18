@@ -61,7 +61,12 @@ type DurableEventStore interface {
 	// ListPending returns events created before the given cutoff, ordered by
 	// creation time ascending, up to limit rows.
 	ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error)
-	// DeleteExpired removes events older than ttl and returns the count deleted.
+	// DeleteExpired removes undelivered events older than ttl and returns the
+	// count deleted. Implementations MUST NOT delete or count already-delivered
+	// rows here (those are reclaimed by PurgeDelivered): the returned count is
+	// used to decrement the in-memory pending/queue-depth counter, which only
+	// tracks undelivered events. Counting delivered rows would double-subtract
+	// them and drive the queue-depth gauge negative.
 	DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error)
 }
 

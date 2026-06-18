@@ -37,11 +37,11 @@ func main() {
 	defaultPathToV2 := filepath.Join("..", "..")
 	pathToV2 := flag.String("pathToV2", defaultPathToV2, "path to the v2 directory")
 	importedProto := flag.String("import", "", "path to proto to be imported by the main proto")
-	withMonitoring := flag.Bool("with-monitoring", false, "generate ExecutionMonitor lifecycle hooks in the server dispatch layer")
+	withMonitoring := flag.Bool("with-monitoring", false, "generate v2 monitoring lifecycle hooks in the server dispatch layer")
 	flag.Parse()
 
 	if *withMonitoring {
-		os.Setenv("CHAINLINK_PROTOC_WITH_MONITORING", "true")
+		os.Setenv("CL_PROTOC_WITH_MONITORING", "true")
 	}
 
 	gen := &pkg.ProtocGen{Plugins: []pkg.Plugin{pkg.GoPlugin, {Name: "cre", Path: filepath.Join(*pathToV2, "protoc")}}}

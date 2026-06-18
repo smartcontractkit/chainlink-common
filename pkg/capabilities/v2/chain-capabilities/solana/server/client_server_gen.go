@@ -61,8 +61,12 @@ type ClientCapability interface {
 func NewClientServer(capability ClientCapability) *ClientServer {
 	stopCh := make(chan struct{})
 	return &ClientServer{
-		clientCapability: clientCapability{ClientCapability: capability, stopCh: stopCh},
-		stopCh:           stopCh,
+		clientCapability: clientCapability{
+			ClientCapability: capability,
+			stopCh:           stopCh,
+			actionMetrics:    capmon.NewActionMetrics(),
+		},
+		stopCh: stopCh,
 	}
 }
 
@@ -79,9 +83,7 @@ func (c *ClientServer) Initialise(ctx context.Context, dependencies core.Standar
 
 	c.capabilityRegistry = dependencies.CapabilityRegistry
 
-	if err := dependencies.CapabilityRegistry.Add(ctx, &clientCapability{
-		ClientCapability: c.ClientCapability,
-	}); err != nil {
+	if err := dependencies.CapabilityRegistry.Add(ctx, &c.clientCapability); err != nil {
 		return fmt.Errorf("error when adding %s to the registry: %w", "solana"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", err)
 	}
 
@@ -115,7 +117,8 @@ func (c *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo
 
 type clientCapability struct {
 	ClientCapability
-	stopCh chan struct{}
+	stopCh        chan struct{}
+	actionMetrics capmon.ActionMetrics
 }
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -180,25 +183,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetAccountInfoWithOptsRequest, _ *emptypb.Empty) (*solana.GetAccountInfoWithOptsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetAccountInfoWithOpts", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetAccountInfoWithOpts"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetAccountInfoWithOpts", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetAccountInfoWithOpts(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetAccountInfoWithOpts", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetAccountInfoWithOpts", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetAccountInfoWithOpts", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetAccountInfoWithOpts", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetAccountInfoWithOpts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetAccountInfoWithOpts", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetAccountInfoWithOpts(..) (if output is nil error must be present)")
 			}
@@ -211,25 +215,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBalanceRequest, _ *emptypb.Empty) (*solana.GetBalanceReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetBalance", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetBalance"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetBalance", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetBalance(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetBalance", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetBalance", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetBalance", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetBalance", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetBalance", tsStart, time.Now(), capmon.ActionMetricAttributes("GetBalance", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetBalance(..) (if output is nil error must be present)")
 			}
@@ -242,25 +247,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetBlockRequest, _ *emptypb.Empty) (*solana.GetBlockReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetBlock", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetBlock"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetBlock", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetBlock(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetBlock", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetBlock", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetBlock", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetBlock", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetBlock", tsStart, time.Now(), capmon.ActionMetricAttributes("GetBlock", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetBlock(..) (if output is nil error must be present)")
 			}
@@ -273,25 +279,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetFeeForMessageRequest, _ *emptypb.Empty) (*solana.GetFeeForMessageReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetFeeForMessage", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetFeeForMessage"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetFeeForMessage", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetFeeForMessage(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetFeeForMessage", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetFeeForMessage", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetFeeForMessage", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetFeeForMessage", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetFeeForMessage", tsStart, time.Now(), capmon.ActionMetricAttributes("GetFeeForMessage", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetFeeForMessage(..) (if output is nil error must be present)")
 			}
@@ -304,25 +311,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetMultipleAccountsWithOptsRequest, _ *emptypb.Empty) (*solana.GetMultipleAccountsWithOptsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetMultipleAccountsWithOpts", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetMultipleAccountsWithOpts"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetMultipleAccountsWithOpts", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetMultipleAccountsWithOpts(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetMultipleAccountsWithOpts", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetMultipleAccountsWithOpts", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetMultipleAccountsWithOpts", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetMultipleAccountsWithOpts", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetMultipleAccountsWithOpts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetMultipleAccountsWithOpts", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetMultipleAccountsWithOpts(..) (if output is nil error must be present)")
 			}
@@ -335,25 +343,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetProgramAccountsRequest, _ *emptypb.Empty) (*solana.GetProgramAccountsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetProgramAccounts", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetProgramAccounts"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetProgramAccounts", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetProgramAccounts(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetProgramAccounts", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetProgramAccounts", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetProgramAccounts", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetProgramAccounts", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetProgramAccounts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetProgramAccounts", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetProgramAccounts(..) (if output is nil error must be present)")
 			}
@@ -366,25 +375,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSignatureStatusesRequest, _ *emptypb.Empty) (*solana.GetSignatureStatusesReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetSignatureStatuses", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetSignatureStatuses"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetSignatureStatuses", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetSignatureStatuses(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetSignatureStatuses", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetSignatureStatuses", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetSignatureStatuses", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetSignatureStatuses", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetSignatureStatuses", tsStart, time.Now(), capmon.ActionMetricAttributes("GetSignatureStatuses", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetSignatureStatuses(..) (if output is nil error must be present)")
 			}
@@ -397,25 +407,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSlotHeightRequest, _ *emptypb.Empty) (*solana.GetSlotHeightReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetSlotHeight", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetSlotHeight"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetSlotHeight", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetSlotHeight(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetSlotHeight", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetSlotHeight", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetSlotHeight", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetSlotHeight", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetSlotHeight", tsStart, time.Now(), capmon.ActionMetricAttributes("GetSlotHeight", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetSlotHeight(..) (if output is nil error must be present)")
 			}
@@ -428,25 +439,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetTransactionRequest, _ *emptypb.Empty) (*solana.GetTransactionReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "GetTransaction", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "GetTransaction"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "GetTransaction", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.GetTransaction(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "GetTransaction", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "GetTransaction", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetTransaction", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "GetTransaction", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetTransaction", tsStart, time.Now(), capmon.ActionMetricAttributes("GetTransaction", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransaction(..) (if output is nil error must be present)")
 			}
@@ -459,25 +471,26 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.WriteReportRequest, _ *emptypb.Empty) (*solana.WriteReportReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
 			tsStart := time.Now()
 			mc := c.ClientCapability.MonitoringContext()
-			kvs := []any{"method", "WriteReport", "executionID", metadata.WorkflowExecutionID}
-			if labeled, ok := any(input).(capabilities.MonitoringLabels); ok {
-				kvs = append(kvs, labeled.KVs()...)
+			logKvs := append([]any{"method", "WriteReport"}, capmon.RequestLogKVs(metadata)...)
+			var metricKvs []any
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricKvs = labeled.MetricKVs()
 			}
-			mc.Logger.Debugw("capability initiated", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionInitiated{Method: "WriteReport", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Debugw("capability initiated", logKvs...)
 			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
 			if err != nil {
 				isUserError := err.Origin() == caperrors.OriginUser
 				if isUserError {
-					mc.Logger.Warnw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
 				} else {
-					mc.Logger.Errorw("capability failed", append(kvs, "err", err)...)
+					mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
 				}
-				_ = mc.Processor.Process(ctx, &capmon.CapabilityActionError{Method: "WriteReport", Summary: err.Error(), Cause: err.Error(), IsUserError: isUserError, ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+				c.actionMetrics.OnError(ctx, "WriteReport", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricKvs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("capability succeeded", kvs...)
-			_ = mc.Processor.Process(ctx, &capmon.CapabilityActionSuccess{Method: "WriteReport", ExecutionContext: mc.ExecCtx(metadata, tsStart)})
+			mc.Logger.Infow("capability succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "WriteReport", tsStart, time.Now(), capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricKvs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}

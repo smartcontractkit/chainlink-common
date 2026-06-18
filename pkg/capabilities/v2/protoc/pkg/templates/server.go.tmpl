@@ -21,6 +21,9 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/types/core"
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+    {{- if $.WithMonitoring }}
+    capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
+    {{- end }}
     "github.com/smartcontractkit/chainlink-common/pkg/loop"
 )
 
@@ -52,6 +55,10 @@ type {{.GoName}}Capability interface {
         {{.Name}}() {{.Type}}
     {{ end }}
 
+    {{- if $.WithMonitoring }}
+    MonitoringContext() capmon.MonitoringContext
+    {{- end }}
+
     Start(ctx context.Context) error
     Close() error
     HealthReport() map[string]error
@@ -64,7 +71,15 @@ type {{.GoName}}Capability interface {
 func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
     stopCh := make(chan struct{})
     return &{{.GoName}}Server{
+        {{- if $.WithMonitoring }}
+        {{.GoName|LowerFirst}}Capability: {{.GoName|LowerFirst}}Capability{
+            {{.GoName}}Capability: capability,
+            stopCh: stopCh,
+            actionMetrics: capmon.NewActionMetrics(),
+        },
+        {{- else }}
         {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability, stopCh: stopCh},
+        {{- end }}
         stopCh: stopCh,
     }
 }
@@ -83,9 +98,13 @@ func (c *{{.GoName}}Server) Initialise(ctx context.Context, dependencies core.St
 
     c.capabilityRegistry = dependencies.CapabilityRegistry
 
+    {{ if $.WithMonitoring }}
+	if err := dependencies.CapabilityRegistry.Add(ctx, &c.{{.GoName|LowerFirst}}Capability); err != nil {
+    {{ else }}
 	if err := dependencies.CapabilityRegistry.Add(ctx, &{{.GoName|LowerFirst}}Capability{
 	    {{.GoName}}Capability: c.{{.GoName}}Capability,
 	}); err != nil {
+    {{ end -}}
 		return fmt.Errorf("error when adding %s to the registry: %w", {{$fullCapabilityId}}, err)
 	}
 
@@ -121,6 +140,9 @@ func (c *{{.GoName}}Server) Infos(ctx context.Context) ([]capabilities.Capabilit
 type {{.GoName|LowerFirst}}Capability struct {
     {{.GoName}}Capability
     stopCh chan struct{}
+    {{- if $.WithMonitoring }}
+    actionMetrics capmon.ActionMetrics
+    {{- end }}
 }
 
 func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -212,10 +234,34 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
             config := &{{ConfigType $service}}{}
             {{- if eq "emptypb.Empty" (ConfigType $service) }}
             wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+                {{- if $.WithMonitoring }}
+                tsStart := time.Now()
+                mc := c.{{$service.GoName}}Capability.MonitoringContext()
+                logKvs := append([]any{"method", "{{.GoName}}"}, capmon.RequestLogKVs(metadata)...)
+                var metricKvs []any
+                if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+                    logKvs = append(logKvs, labeled.LogKVs()...)
+                    metricKvs = labeled.MetricKVs()
+                }
+                mc.Logger.Debugw("capability initiated", logKvs...)
+                {{- end }}
                 output, err := c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
                 if err != nil {
+                    {{- if $.WithMonitoring }}
+                    isUserError := err.Origin() == caperrors.OriginUser
+                    if isUserError {
+                        mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
+                    } else {
+                        mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
+                    }
+                    c.actionMetrics.OnError(ctx, "{{.GoName}}", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                    {{- end }}
                     return nil, capabilities.ResponseMetadata{}, nil, err
                 }
+                {{- if $.WithMonitoring }}
+                mc.Logger.Infow("capability succeeded", logKvs...)
+                c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                {{- end }}
                 if output == nil {
                     return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
                 }
@@ -231,10 +277,34 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
              config := &{{ConfigType $service}}{}
              {{- if eq "emptypb.Empty" (ConfigType $service) }}
              wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}, _ *emptypb.Empty) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, capabilities.ResponseMetadata, error) {
+                 {{- if $.WithMonitoring }}
+                 tsStart := time.Now()
+                 mc := c.{{$service.GoName}}Capability.MonitoringContext()
+                 logKvs := append([]any{"method", "{{.GoName}}"}, capmon.RequestLogKVs(metadata)...)
+                 var metricKvs []any
+                 if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+                     logKvs = append(logKvs, labeled.LogKVs()...)
+                     metricKvs = labeled.MetricKVs()
+                 }
+                 mc.Logger.Debugw("capability initiated", logKvs...)
+                 {{- end }}
                  output, err := c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
                  if err != nil {
+                    {{- if $.WithMonitoring }}
+                    isUserError := err.Origin() == caperrors.OriginUser
+                    if isUserError {
+                        mc.Logger.Warnw("capability failed", append(logKvs, "err", err)...)
+                    } else {
+                        mc.Logger.Errorw("capability failed", append(logKvs, "err", err)...)
+                    }
+                    c.actionMetrics.OnError(ctx, "{{.GoName}}", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                    {{- end }}
                     return nil, capabilities.ResponseMetadata{}, nil, err
                  }
+                 {{- if $.WithMonitoring }}
+                 mc.Logger.Infow("capability succeeded", logKvs...)
+                 c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricKvs)...)
+                 {{- end }}
                  if output == nil {
                      return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
                  }

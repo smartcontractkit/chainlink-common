@@ -33,7 +33,7 @@ func main() {
 			return err
 		}
 
-		withMonitoring := os.Getenv("CHAINLINK_PROTOC_WITH_MONITORING") == "true"
+		withMonitoring := os.Getenv("CL_PROTOC_WITH_MONITORING") == "true"
 
 		for _, file := range plugin.Files {
 			if !file.Generate {

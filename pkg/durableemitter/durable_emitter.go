@@ -668,11 +668,9 @@ func (d *DurableEmitter) insertBatchLoop() {
 }
 
 // enqueueMark hands a delivered event id to the mark coalescer. It returns
-// false when mark coalescing is disabled so the caller can mark inline. The
-// send is a blocking hand-off (the channel is large); back-pressure here slows
-// the delivery callback rather than dropping a mark. It never sends after
-// markCh is closed because stop() closes the channel only once all producers
-// (delivery callbacks and fallback goroutines) have quiesced.
+// false when mark coalescing is disabled so the caller can mark inline.
+// Send is a blocking hand-off; back-pressure here slows the delivery callback
+// rather than dropping a mark.
 func (d *DurableEmitter) enqueueMark(id int64) bool {
 	if d.markCh == nil {
 		return false

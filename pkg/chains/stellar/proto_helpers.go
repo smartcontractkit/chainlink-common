@@ -317,6 +317,9 @@ func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionRes
 	if reply.TransactionFee != nil {
 		resp.TransactionFee = reply.TransactionFee
 	}
+	if reply.BlockTimestamp != nil {
+		resp.BlockTimestamp = reply.BlockTimestamp
+	}
 	return resp, nil
 }
 
@@ -336,6 +339,10 @@ func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*s
 	if p.TransactionFee != nil {
 		fee := p.GetTransactionFee()
 		resp.TransactionFee = &fee
+	}
+	if p.BlockTimestamp != nil {
+		ts := p.GetBlockTimestamp()
+		resp.BlockTimestamp = &ts
 	}
 	return resp, nil
 }

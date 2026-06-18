@@ -482,6 +482,7 @@ type SubmitTransactionResponse struct {
 	ResultMetaXdr    []byte                 `protobuf:"bytes,5,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"`         // TransactionMeta binary XDR; empty if unavailable
 	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`                                                // Non-empty when the transaction was accepted but failed on-chain
 	TransactionFee   *uint64                `protobuf:"varint,7,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // Total fee charged in stroops (FeeCharged); unset when unavailable
+	BlockTimestamp   *uint64                `protobuf:"varint,8,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // Block timestamp in microseconds; unset when unavailable
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -561,6 +562,13 @@ func (x *SubmitTransactionResponse) GetError() string {
 func (x *SubmitTransactionResponse) GetTransactionFee() uint64 {
 	if x != nil && x.TransactionFee != nil {
 		return *x.TransactionFee
+	}
+	return 0
+}
+
+func (x *SubmitTransactionResponse) GetBlockTimestamp() uint64 {
+	if x != nil && x.BlockTimestamp != nil {
+		return *x.BlockTimestamp
 	}
 	return 0
 }
@@ -684,7 +692,7 @@ const file_stellar_proto_rawDesc = "" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x04 \x01(\tR\bfunction\x12B\n" +
 	"\x04args\x18\x05 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x120\n" +
-	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xb6\x02\n" +
+	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xf8\x02\n" +
 	"\x19SubmitTransactionResponse\x123\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x16.loop.stellar.TxStatusR\btxStatus\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +
@@ -693,8 +701,10 @@ const file_stellar_proto_rawDesc = "" +
 	"result_xdr\x18\x04 \x01(\fR\tresultXdr\x12&\n" +
 	"\x0fresult_meta_xdr\x18\x05 \x01(\fR\rresultMetaXdr\x12\x14\n" +
 	"\x05error\x18\x06 \x01(\tR\x05error\x12,\n" +
-	"\x0ftransaction_fee\x18\a \x01(\x04H\x00R\x0etransactionFee\x88\x01\x01B\x12\n" +
-	"\x10_transaction_fee\"\xfc\x01\n" +
+	"\x0ftransaction_fee\x18\a \x01(\x04H\x00R\x0etransactionFee\x88\x01\x01\x12,\n" +
+	"\x0fblock_timestamp\x18\b \x01(\x04H\x01R\x0eblockTimestamp\x88\x01\x01B\x12\n" +
+	"\x10_transaction_feeB\x12\n" +
+	"\x10_block_timestamp\"\xfc\x01\n" +
 	"\x17GetLatestLedgerResponse\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\fR\x04hash\x12)\n" +
 	"\x10protocol_version\x18\x02 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +

@@ -23,6 +23,7 @@ var (
 	errMandatoryFieldsMissing        = errors.New("attestation document is missing mandatory fields")
 	errBadDigest                     = errors.New("attestation digest is not SHA384")
 	errBadTimestamp                  = errors.New("attestation timestamp is 0")
+	errStaleAttestation              = errors.New("attestation is older than the max allowed age")
 	errBadPCRs                       = errors.New("attestation pcrs is less than 1 or more than 32")
 	errBadPCRIndex                   = errors.New("attestation pcr index is not in [0, 32)")
 	errBadPCRValue                   = errors.New("attestation pcr value length is invalid")
@@ -35,6 +36,9 @@ var (
 	errBadCertificateSigningAlgo     = errors.New("attestation certificate signature algorithm is not ECDSAWithSHA384")
 	errBadSignature                  = errors.New("attestation signature does not match certificate")
 )
+
+// MaxAttestationAge rejects attestations not consumed promptly after issuance. [CL112-10]
+const MaxAttestationAge = 5 * time.Minute
 
 type verifyResult struct {
 	document    *attestationDocument
@@ -113,6 +117,12 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 	}
 	if currentTime.IsZero() {
 		currentTime = time.Now()
+	}
+
+	// doc.Timestamp is epoch milliseconds (already validated non-zero).
+	issued := time.UnixMilli(int64(doc.Timestamp)) //nolint:gosec // timestamp is positive and within int64
+	if currentTime.Sub(issued) > MaxAttestationAge {
+		return nil, errStaleAttestation
 	}
 	if _, err := leafCert.Verify(x509.VerifyOptions{
 		Intermediates: intermediates,

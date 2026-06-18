@@ -430,9 +430,6 @@ func TestDurableEmitter_SeedsPendingCountFromStoreOnStart(t *testing.T) {
 	// visible immediately after Start returns — no Eventually needed.
 	assert.Equal(t, int64(preExisting), em.PendingDepth(),
 		"pendingCount should be seeded from the on-disk queue depth")
-	assert.Equal(t, int64(preExisting), em.PendingMax(),
-		"pendingMax should reflect the seeded depth, otherwise a freshly-restarted "+
-			"process under-reports its high-water mark")
 
 	// Let retransmit pick up the rows and the test batch emitter deliver them.
 	require.Eventually(t, func() bool {
@@ -1176,6 +1173,7 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, 
 	defer m.mu.Unlock()
 	now := time.Now()
 	var st DurableQueueStats
+	st.TotalRows = int64(len(m.events))
 	if len(m.events) == 0 {
 		return st, nil
 	}

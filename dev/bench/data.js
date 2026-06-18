@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781726040209,
+  "lastUpdate": 1781798929231,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51360,6 +51360,66 @@ window.BENCHMARK_DATA = {
             "value": 141065,
             "unit": "ns/op",
             "extra": "8030 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f6ff5b1133b54e299655f1482ab3b36d8c067a37",
+          "message": "fix(teeattestation/nitro): reject non-P-384 curves in hashForCurve [CL112-12] (#2166)\n\n* fix(teeattestation/nitro): reject non-P-384 curves in hashForCurve [CL112-12]\n\nvalidateProtectedAlgorithm enforces ES384 in the COSE header, but\nhashForCurve derived the hash from whatever curve the leaf key carried,\nso the alg check and signature check could disagree if upstream cert\nvalidation ever weakened. Restrict hashForCurve to P-384 (SHA-384) and\nreject all other curves. Update tests: P-384 accepted, P-224/256/521\nrejected, and the cose-wg ES256/ES512 vectors now assert rejection.\n\nDefense-in-depth; not exploitable today since AWS's PCA only issues\nP-384 leaf keys (external audit finding #6).\n\n* address Copilot review on PR #2166\n\n- verify.go: return a distinct errUnsupportedLeafCurve when the leaf key\n  is not P-384, instead of a misleading errBadSignature.\n- verify_test.go: replace the P-256 sign-fail vectors (which now passed\n  only due to curve rejection) with P-384/ES384 payload and\n  protected-header tamper tests, preserving tamper-detection coverage.",
+          "timestamp": "2026-06-18T15:56:19Z",
+          "tree_id": "a47a85dc8af4c061e64388473a1a592eb896ebe8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f6ff5b1133b54e299655f1482ab3b36d8c067a37"
+        },
+        "date": 1781798927242,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3387230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97273,
+            "unit": "ns/op",
+            "extra": "12321 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.1,
+            "unit": "ns/op",
+            "extra": "2923369 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97491,
+            "unit": "ns/op",
+            "extra": "12291 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26644,
+            "unit": "ns/op",
+            "extra": "45048 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 146402,
+            "unit": "ns/op",
+            "extra": "7843 times\n4 procs"
           }
         ]
       }

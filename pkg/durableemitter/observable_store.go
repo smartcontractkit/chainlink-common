@@ -15,7 +15,15 @@ type DurableEvent struct {
 
 // DurableQueueStats is a point-in-time snapshot of the pending queue for metrics.
 type DurableQueueStats struct {
-	Depth            int64
+	// Depth is the number of undelivered (delivered_at IS NULL) rows — the
+	// delivery backlog.
+	Depth int64
+	// TotalRows is the number of rows physically present in the table, including
+	// delivered-but-not-yet-purged rows. This is the authoritative "queue depth"
+	// (actual table count): it is read directly from the DB so it stays correct
+	// regardless of how many writers share the table or which in-memory delta
+	// updates were lost to failed/partial DB operations.
+	TotalRows        int64
 	PayloadBytes     int64
 	OldestPendingAge time.Duration // 0 if the queue is empty
 	// NearTTLCount is the number of rows within nearExpiryLead of EventTTL (still

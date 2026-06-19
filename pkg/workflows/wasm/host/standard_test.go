@@ -777,9 +777,14 @@ func runSecretTest(t *testing.T, m *module, secretResponse *sdk.SecretResponse) 
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
-			assert.Len(t, request.Requests, 1)
+			assert.Len(t, request.Requests, 2)
 			assert.Equal(t, "Foo", request.Requests[0].Id)
-			return []*sdk.SecretResponse{secretResponse}, nil
+			assert.Equal(t, "Bar", request.Requests[1].Id)
+			responses := make([]*sdk.SecretResponse, len(request.Requests))
+			for i := range request.Requests {
+				responses[i] = secretResponse
+			}
+			return responses, nil
 		}).
 		Once()
 

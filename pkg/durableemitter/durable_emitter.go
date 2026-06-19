@@ -104,14 +104,16 @@ type Hooks struct {
 
 func DefaultConfig() Config {
 	return Config{
-		RetransmitInterval:  5 * time.Second,
-		RetransmitAfter:     10 * time.Second,
-		RetransmitBatchSize: 100,
-		ExpiryInterval:      1 * time.Minute,
-		EventTTL:            1 * time.Hour,
-		PublishTimeout:      5 * time.Second,
-		PurgeInterval:       250 * time.Millisecond,
-		PurgeBatchSize:      500,
+		RetransmitInterval:       5 * time.Second,
+		RetransmitAfter:          10 * time.Second,
+		RetransmitBatchSize:      100,
+		ExpiryInterval:           1 * time.Minute,
+		EventTTL:                 1 * time.Hour,
+		PublishTimeout:           5 * time.Second,
+		PurgeInterval:            250 * time.Millisecond,
+		PurgeBatchSize:           500,
+		InsertBatchFlushInterval: 100 * time.Millisecond,
+		InsertBatchSize:          100,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
 		Metrics: nil,
@@ -176,12 +178,6 @@ type DurableEmitter struct {
 	// callers inside the coalesced path so stop can close(insertCh) after wait
 	insertShutdown atomic.Bool
 	insertInFlight atomic.Int32
-
-	// pendingCount is an exact, atomic count of rows inserted but not yet
-	// delivered/deleted. Incremented on successful Insert, decremented on
-	// MarkDelivered, Delete, or DeleteExpired. No polling required.
-	pendingCount atomic.Int64
-	pendingMax   atomic.Int64
 
 	// fallbackInFlightCount is incremented when a single-event fallback
 	// goroutine starts and decremented on its defer. metricsLoop samples
@@ -279,10 +275,6 @@ func NewDurableEmitter(
 func (d *DurableEmitter) start(ctx context.Context) error {
 	d.batchEmitter.Start(ctx)
 
-	// Seed pendingCount from the on-disk queue depth so the gauge survives
-	// process restarts.
-	d.seedPendingFromStore(ctx)
-
 	insertWorkers := d.cfg.InsertBatchWorkers
 	if insertWorkers <= 0 {
 		insertWorkers = 4
@@ -304,32 +296,6 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		d.wg.Go(d.metricsLoop)
 	}
 	return nil
-}
-
-// seedPendingFromStore initializes pendingCount with the current on-disk
-// queue depth. It runs once at Start and is a no-op when the store does
-// not implement DurableQueueObserver (e.g. in-memory test stores) or when
-// the observation call fails.
-func (d *DurableEmitter) seedPendingFromStore(ctx context.Context) {
-	obs, ok := d.store.(DurableQueueObserver)
-	if !ok {
-		return
-	}
-	st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
-	if err != nil {
-		d.eng.Warnw("DurableEmitter: failed to seed pendingCount from store on start", "error", err)
-		return
-	}
-	if st.Depth <= 0 {
-		return
-	}
-	d.pendingCount.Store(st.Depth)
-	d.pendingMax.Store(st.Depth)
-	if d.metrics != nil {
-		d.metrics.queueDepth.Record(ctx, st.Depth)
-		d.metrics.queueDepthMax.Record(ctx, st.Depth)
-	}
-	d.eng.Infow("DurableEmitter: seeded pendingCount from store", "depth", st.Depth)
 }
 
 // Emit persists the event then hands it to the BatchEmitter for async delivery.
@@ -445,8 +411,6 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			}
 		}
 
-		d.incPending(1)
-
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure). eventPb is
 		// captured in the closure so the fallback path can retry without a
@@ -509,7 +473,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			d.eng.Errorw("failed to mark event delivered", "id", id, "error", markErr)
 			return
 		}
-		d.decPending(marked)
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(cbCtx, marked)
 		}
@@ -533,9 +496,9 @@ func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb
 }
 
 // singleEventFallback sends a single event directly via the fallback
-// chipingress.Client. On success, it marks the event delivered and decrements
-// the pending counter. On failure, it logs and returns — the event remains in
-// the DB and the retransmit loop will eventually deliver it.
+// chipingress.Client. On success, it marks the event delivered. On failure, it
+// logs and returns — the event remains in the DB and the retransmit loop will
+// eventually deliver it.
 func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
 	stopCtx, stopCancel := d.stopCh.NewCtx()
 	defer stopCancel()
@@ -554,7 +517,6 @@ func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.Clou
 		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
 		return
 	}
-	d.decPending(marked)
 	if d.metrics != nil {
 		d.metrics.deliverComplete.Add(stopCtx, marked)
 	}
@@ -594,7 +556,7 @@ func (d *DurableEmitter) insertBatchLoop() {
 	batchSize := d.cfg.InsertBatchSize
 	linger := d.cfg.InsertBatchFlushInterval
 	if linger <= 0 {
-		linger = 2 * time.Millisecond
+		linger = 100 * time.Millisecond
 	}
 	batch := make([]*insertRequest, 0, batchSize)
 
@@ -637,45 +599,6 @@ func (d *DurableEmitter) insertBatchLoop() {
 				r.result <- insertResult{id: ids[i]}
 			}
 		}
-	}
-}
-
-// PendingDepth returns the current exact pending queue depth (inserted but not
-// yet delivered/deleted). Thread-safe; no DB query required.
-func (d *DurableEmitter) PendingDepth() int64 { return d.pendingCount.Load() }
-
-// PendingMax returns the highest pending queue depth observed since Start.
-func (d *DurableEmitter) PendingMax() int64 { return d.pendingMax.Load() }
-
-func (d *DurableEmitter) incPending(n int64) {
-	cur := d.pendingCount.Add(n)
-	updated := false
-	for {
-		old := d.pendingMax.Load()
-		if cur <= old {
-			break
-		}
-		if d.pendingMax.CompareAndSwap(old, cur) {
-			updated = true
-			break
-		}
-	}
-	if d.metrics != nil {
-		ctx, cancel := d.stopCh.NewCtx()
-		defer cancel()
-		d.metrics.queueDepth.Record(ctx, cur)
-		if updated {
-			d.metrics.queueDepthMax.Record(ctx, cur)
-		}
-	}
-}
-
-func (d *DurableEmitter) decPending(n int64) {
-	cur := d.pendingCount.Add(-n)
-	if d.metrics != nil {
-		ctx, cancel := d.stopCh.NewCtx()
-		defer cancel()
-		d.metrics.queueDepth.Record(ctx, cur)
 	}
 }
 
@@ -815,7 +738,6 @@ func (d *DurableEmitter) expiryLoop() {
 				continue
 			}
 			if deleted > 0 {
-				d.decPending(deleted)
 				if d.metrics != nil {
 					d.metrics.expiredPurged.Add(ctx, deleted)
 				}
@@ -837,7 +759,7 @@ func (d *DurableEmitter) metricsLoop() {
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
-		poll = 10 * time.Second
+		poll = 500 * time.Millisecond
 	}
 
 	ctx, cancel := d.stopCh.NewCtx()
@@ -850,8 +772,15 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
-			d.metrics.queueDepthMax.Record(ctx, d.pendingMax.Load())
+			if obs, ok := d.store.(DurableQueueObserver); ok {
+				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
+				if err != nil {
+					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
+				} else {
+					d.metrics.queueDepth.Record(ctx, st.TotalRows)
+					d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
+				}
+			}
 			d.metrics.fallbackInFlight.Record(ctx, d.fallbackInFlightCount.Load())
 			if d.insertCh != nil {
 				if c := cap(d.insertCh); c > 0 {
@@ -859,9 +788,6 @@ func (d *DurableEmitter) metricsLoop() {
 				}
 			} else {
 				d.metrics.insertCoalescerFill.Record(ctx, 0)
-			}
-			if obs, ok := d.store.(DurableQueueObserver); ok {
-				d.metrics.pollQueueGauges(ctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
 			}
 			d.metrics.pollProcessGauges(ctx)
 		}

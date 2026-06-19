@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +12,19 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 )
+
+// globalSigner tests share process-wide state via globalSigner; serialize them.
+var globalSignerTestMu sync.Mutex
+
+func withIsolatedGlobalSigner(t *testing.T) {
+	t.Helper()
+	globalSignerTestMu.Lock()
+	durableemitter.ResetGlobalSignerForTest()
+	t.Cleanup(func() {
+		durableemitter.ResetGlobalSignerForTest()
+		globalSignerTestMu.Unlock()
+	})
+}
 
 type mockSigner struct{}
 
@@ -33,7 +47,7 @@ func TestNewAuthHeaderProvider_Static(t *testing.T) {
 }
 
 func TestNewAuthHeaderProvider_RotatingDeferredSigner(t *testing.T) {
-	t.Parallel()
+	withIsolatedGlobalSigner(t)
 
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
@@ -56,7 +70,7 @@ func TestNewAuthHeaderProvider_RotatingDeferredSigner(t *testing.T) {
 }
 
 func TestNewAuthHeaderProvider_RotatingWithSigner(t *testing.T) {
-	t.Parallel()
+	withIsolatedGlobalSigner(t)
 
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)

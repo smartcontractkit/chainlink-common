@@ -92,3 +92,9 @@ func IsGlobalSignerSet() bool {
 	lazy := globalSigner.Load()
 	return lazy != nil && lazy.IsSet()
 }
+
+// ResetGlobalSignerForTest clears the process-wide rotating-auth signer holder.
+// It is intended for tests that assert on global signer state.
+func ResetGlobalSignerForTest() {
+	globalSigner.Store(nil)
+}

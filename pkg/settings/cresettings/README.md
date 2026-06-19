@@ -253,6 +253,10 @@ flowchart
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 
+    subgraph confidentialCompute[confidential compute executor]
+        ConfidentialComputeExecutionIDAsRequestIDEnabled[/ConfidentialComputeExecutionIDAsRequestIDEnabled\]:::gate
+    end
+
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault

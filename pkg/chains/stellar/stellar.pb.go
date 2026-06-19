@@ -478,9 +478,11 @@ type SubmitTransactionResponse struct {
 	TxStatus         TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.stellar.TxStatus" json:"tx_status,omitempty"`
 	TxHash           string                 `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"`
-	ResultXdr        []byte                 `protobuf:"bytes,4,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`               // TransactionResult binary XDR; empty if unavailable
-	ResultMetaXdr    []byte                 `protobuf:"bytes,5,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"` // TransactionMeta binary XDR; empty if unavailable
-	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`                                        // Non-empty when the transaction was accepted but failed on-chain
+	ResultXdr        []byte                 `protobuf:"bytes,4,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`                       // TransactionResult binary XDR; empty if unavailable
+	ResultMetaXdr    []byte                 `protobuf:"bytes,5,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"`         // TransactionMeta binary XDR; empty if unavailable
+	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`                                                // Non-empty when the transaction was accepted but failed on-chain
+	TransactionFee   *uint64                `protobuf:"varint,7,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // Total fee charged in stroops (FeeCharged); unset when unavailable
+	BlockTimestamp   *uint64                `protobuf:"varint,8,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // Block timestamp in microseconds; unset when unavailable
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -555,6 +557,20 @@ func (x *SubmitTransactionResponse) GetError() string {
 		return x.Error
 	}
 	return ""
+}
+
+func (x *SubmitTransactionResponse) GetTransactionFee() uint64 {
+	if x != nil && x.TransactionFee != nil {
+		return *x.TransactionFee
+	}
+	return 0
+}
+
+func (x *SubmitTransactionResponse) GetBlockTimestamp() uint64 {
+	if x != nil && x.BlockTimestamp != nil {
+		return *x.BlockTimestamp
+	}
+	return 0
 }
 
 // GetLatestLedgerResponse holds current ledger state.
@@ -676,7 +692,7 @@ const file_stellar_proto_rawDesc = "" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x04 \x01(\tR\bfunction\x12B\n" +
 	"\x04args\x18\x05 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x120\n" +
-	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xf4\x01\n" +
+	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xf8\x02\n" +
 	"\x19SubmitTransactionResponse\x123\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x16.loop.stellar.TxStatusR\btxStatus\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +
@@ -684,7 +700,11 @@ const file_stellar_proto_rawDesc = "" +
 	"\n" +
 	"result_xdr\x18\x04 \x01(\fR\tresultXdr\x12&\n" +
 	"\x0fresult_meta_xdr\x18\x05 \x01(\fR\rresultMetaXdr\x12\x14\n" +
-	"\x05error\x18\x06 \x01(\tR\x05error\"\xfc\x01\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\x12,\n" +
+	"\x0ftransaction_fee\x18\a \x01(\x04H\x00R\x0etransactionFee\x88\x01\x01\x12,\n" +
+	"\x0fblock_timestamp\x18\b \x01(\x04H\x01R\x0eblockTimestamp\x88\x01\x01B\x12\n" +
+	"\x10_transaction_feeB\x12\n" +
+	"\x10_block_timestamp\"\xfc\x01\n" +
 	"\x17GetLatestLedgerResponse\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\fR\x04hash\x12)\n" +
 	"\x10protocol_version\x18\x02 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +
@@ -754,6 +774,7 @@ func file_stellar_proto_init() {
 	if File_stellar_proto != nil {
 		return
 	}
+	file_stellar_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

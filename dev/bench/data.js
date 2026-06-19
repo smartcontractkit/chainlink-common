@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781807985080,
+  "lastUpdate": 1781882377334,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51600,6 +51600,66 @@ window.BENCHMARK_DATA = {
             "value": 151800,
             "unit": "ns/op",
             "extra": "7579 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "7d7514e2391f50c8242f28b583523cb515658cc8",
+          "message": "Durable emitter flaky test fix (#2178)\n\n* Flaky auth test fix\n\n* parallel is enough",
+          "timestamp": "2026-06-19T15:08:25Z",
+          "tree_id": "a3087f1edde8d2445635e2baa2aec390811cd07b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7d7514e2391f50c8242f28b583523cb515658cc8"
+        },
+        "date": 1781882375249,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363,
+            "unit": "ns/op",
+            "extra": "3382573 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 82248,
+            "unit": "ns/op",
+            "extra": "14545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 386.2,
+            "unit": "ns/op",
+            "extra": "3146781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 82766,
+            "unit": "ns/op",
+            "extra": "14551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29416,
+            "unit": "ns/op",
+            "extra": "40563 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132942,
+            "unit": "ns/op",
+            "extra": "8937 times\n4 procs"
           }
         ]
       }

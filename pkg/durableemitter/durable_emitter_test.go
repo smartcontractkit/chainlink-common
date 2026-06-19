@@ -197,6 +197,7 @@ func TestDurableEmitter_MarkCoalescingBatchesIds(t *testing.T) {
 
 	cfg := DefaultConfig()
 	cfg.DisablePruning = true
+	cfg.InsertBatchSize = 0 // disable insert coalescing so deliveries arrive in a burst
 	cfg.MarkBatchSize = 100
 	cfg.MarkBatchWorkers = 1
 	cfg.MarkBatchFlushInterval = 200 * time.Millisecond

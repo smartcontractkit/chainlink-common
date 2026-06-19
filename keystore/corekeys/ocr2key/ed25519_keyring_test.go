@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 )
 
 func TestAptosKeyRing_Sign_Verify(t *testing.T) {
@@ -56,4 +58,34 @@ func TestAptosKeyRing_Marshalling(t *testing.T) {
 
 	// Invalid seed size should error
 	require.Error(t, kr2.Unmarshal([]byte{0x01}))
+}
+
+// TestStellarKeyBundle_Sign_Verify exercises the chain-type wiring (not just the raw keyring):
+// New(corekeys.Stellar) must produce an ed25519-backed OCR2 key bundle (same scheme as Aptos)
+// that reports ChainType == Stellar and round-trips sign/verify. This guards the
+// New() → ed25519Keyring mapping for Stellar, on top of the shared keyring crypto above.
+func TestStellarKeyBundle_Sign_Verify(t *testing.T) {
+	kb1, err := New(corekeys.Stellar)
+	require.NoError(t, err)
+	require.Equal(t, corekeys.Stellar, kb1.ChainType())
+
+	kb2, err := New(corekeys.Stellar)
+	require.NoError(t, err)
+
+	ctx := ocrtypes.ReportContext{}
+	report := ocrtypes.Report{}
+
+	sig, err := kb1.Sign(ctx, report)
+	require.NoError(t, err)
+	require.NotEmpty(t, sig)
+
+	t.Run("cross-bundle verify succeeds", func(t *testing.T) {
+		require.True(t, kb2.Verify(kb1.PublicKey(), ctx, report, sig))
+	})
+	t.Run("invalid sig fails", func(t *testing.T) {
+		require.False(t, kb2.Verify(kb1.PublicKey(), ctx, report, []byte{0x01}))
+	})
+	t.Run("invalid pubkey fails", func(t *testing.T) {
+		require.False(t, kb2.Verify([]byte{0x01}, ctx, report, sig))
+	})
 }

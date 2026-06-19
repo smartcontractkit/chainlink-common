@@ -2,7 +2,6 @@ package nitro
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"crypto/sha512"
 	"crypto/x509"
 	"errors"
@@ -34,6 +33,7 @@ var (
 	errBadUserData                   = errors.New("attestation user_data length is invalid")
 	errBadNonce                      = errors.New("attestation nonce length is invalid")
 	errBadCertificatePublicKeyAlgo   = errors.New("attestation certificate public key algorithm is not ECDSA")
+	errUnsupportedLeafCurve          = errors.New("attestation certificate public key curve is not P-384")
 	errBadCertificateSigningAlgo     = errors.New("attestation certificate signature algorithm is not ECDSAWithSHA384")
 	errBadSignature                  = errors.New("attestation signature does not match certificate")
 )
@@ -152,6 +152,12 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 	if !ok {
 		return nil, errBadCertificatePublicKeyAlgo
 	}
+	// Pin the leaf key to P-384 here so an unsupported curve surfaces as a
+	// distinct error rather than a misleading "bad signature" from
+	// hashForCurve's rejection. Mirrors the ES384 alg enforcement. [CL112-12]
+	if pubKey.Curve.Params().Name != "P-384" {
+		return nil, errUnsupportedLeafCurve
+	}
 	signatureOK := verifyECDSASignature(pubKey, sigStructure, sign1.Signature)
 	if !signatureOK {
 		return &verifyResult{document: &doc, signatureOK: false}, errBadSignature
@@ -267,21 +273,16 @@ func verifyECDSASignature(publicKey *ecdsa.PublicKey, sigStructure, signature []
 	return ecdsa.Verify(publicKey, hash, r, s)
 }
 
+// hashForCurve returns the SHA-384 digest of sigStructure for P-384 keys, the
+// only curve valid for Nitro attestations. The COSE algorithm is enforced as
+// ES384 (validateProtectedAlgorithm) and AWS's Private CA only issues P-384
+// leaf keys, so any other curve means the declared algorithm and the actual
+// key disagree; reject it rather than silently hashing with a different
+// function. [CL112-12]
 func hashForCurve(publicKey *ecdsa.PublicKey, sigStructure []byte) ([]byte, bool) {
-	switch publicKey.Curve.Params().Name {
-	case "P-224":
-		sum := sha256.Sum224(sigStructure)
-		return sum[:], true
-	case "P-256":
-		sum := sha256.Sum256(sigStructure)
-		return sum[:], true
-	case "P-384":
-		sum := sha512.Sum384(sigStructure)
-		return sum[:], true
-	case "P-521":
-		sum := sha512.Sum512(sigStructure)
-		return sum[:], true
-	default:
+	if publicKey.Curve.Params().Name != "P-384" {
 		return nil, false
 	}
+	sum := sha512.Sum384(sigStructure)
+	return sum[:], true
 }

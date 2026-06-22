@@ -86,6 +86,18 @@ type Config struct {
 	// InsertBatchWorkers is the number of concurrent batch-insert goroutines.
 	// Zero defaults to 4.
 	InsertBatchWorkers int
+	// MarkBatchSize enables mark coalescing when > 0. Instead of issuing one
+	// MarkDeliveredBatch UPDATE per delivered event from the delivery callback,
+	// ids are funneled to background workers that collapse many ids into a
+	// single UPDATE, drastically reducing per-event UPDATE/connection churn.
+	// Each worker collects up to MarkBatchSize ids before flushing.
+	MarkBatchSize int
+	// MarkBatchFlushInterval is the linger time after the first id arrives in a
+	// coalescing batch before it is flushed. Zero defaults to 100ms.
+	MarkBatchFlushInterval time.Duration
+	// MarkBatchWorkers is the number of concurrent batch-mark goroutines.
+	// Zero defaults to 2.
+	MarkBatchWorkers int
 }
 
 // Hooks records delivery latency to locate pipeline bottlenecks.
@@ -114,6 +126,9 @@ func DefaultConfig() Config {
 		PurgeBatchSize:           500,
 		InsertBatchFlushInterval: 100 * time.Millisecond,
 		InsertBatchSize:          100,
+		MarkBatchSize:            100,
+		MarkBatchFlushInterval:   100 * time.Millisecond,
+		MarkBatchWorkers:         2,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
 		Metrics: nil,
@@ -178,6 +193,15 @@ type DurableEmitter struct {
 	// callers inside the coalesced path so stop can close(insertCh) after wait
 	insertShutdown atomic.Bool
 	insertInFlight atomic.Int32
+
+	// markCh funnels delivered event ids to the mark coalescer. Nil when mark
+	// coalescing is disabled (MarkBatchSize <= 0). Its only producers are the
+	// delivery callbacks and single-event fallback goroutines, so it is closed
+	// during shutdown only after both have quiesced (see stop). markWg tracks
+	// the markBatchLoop workers, which must outlive d.wg so callbacks running
+	// during the batch emitter's final flush can still enqueue marks.
+	markCh chan int64
+	markWg sync.WaitGroup
 
 	// fallbackInFlightCount is incremented when a single-event fallback
 	// goroutine starts and decremented on its defer. metricsLoop samples
@@ -266,6 +290,18 @@ func NewDurableEmitter(
 				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
 		}
 	}
+
+	if cfg.MarkBatchSize > 0 {
+		chanSize := cfg.MarkBatchSize * 200
+		if chanSize < 10_000 {
+			chanSize = 10_000
+		}
+		d.markCh = make(chan int64, chanSize)
+		d.eng.Infow("DurableEmitter: mark coalescing enabled",
+			"markBatchSize", cfg.MarkBatchSize,
+			"markBatchWorkers", cfg.MarkBatchWorkers,
+			"markBatchFlushInterval", cfg.MarkBatchFlushInterval)
+	}
 	return d, nil
 }
 
@@ -282,6 +318,18 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
 			d.wg.Go(d.insertBatchLoop)
+		}
+	}
+
+	if d.markCh != nil {
+		markWorkers := d.cfg.MarkBatchWorkers
+		if markWorkers <= 0 {
+			markWorkers = 2
+		}
+		// markWg (not d.wg) so the workers keep draining while the batch
+		// emitter flushes its final callbacks during stop().
+		for i := 0; i < markWorkers; i++ {
+			d.markWg.Go(d.markBatchLoop)
 		}
 	}
 
@@ -462,6 +510,12 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			d.metrics.publishBatchEvOK.Add(cbCtx, 1)
 		}
 
+		// When mark coalescing is enabled the id is handed to the batch-mark
+		// workers (one UPDATE for many ids); otherwise mark it inline.
+		if d.enqueueMark(id) {
+			return
+		}
+
 		tMark := time.Now()
 		marked, markErr := d.store.MarkDeliveredBatch(cbCtx, []int64{id})
 		markElapsed := time.Since(tMark)
@@ -512,6 +566,10 @@ func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.Clou
 		return
 	}
 
+	if d.enqueueMark(id) {
+		return
+	}
+
 	marked, markErr := d.store.MarkDeliveredBatch(stopCtx, []int64{id})
 	if markErr != nil {
 		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
@@ -542,6 +600,13 @@ func (d *DurableEmitter) stop() error {
 	// fallbackWg, so we wait on those next.
 	d.batchEmitter.Stop()
 	d.fallbackWg.Wait()
+	// The delivery callbacks (drained by batchEmitter.Stop) and the fallback
+	// goroutines (drained by fallbackWg) are the only producers of markCh, so
+	// it is now safe to close it and let the workers flush any buffered marks.
+	if d.markCh != nil {
+		close(d.markCh)
+		d.markWg.Wait()
+	}
 	if d.fallbackClient != nil {
 		if err := d.fallbackClient.Close(); err != nil {
 			d.eng.Warnw("DurableEmitter: error closing fallback chip client", "error", err)
@@ -589,16 +654,101 @@ func (d *DurableEmitter) insertBatchLoop() {
 		for i, r := range batch {
 			payloads[i] = r.payload
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
-		cancel()
-		for i, r := range batch {
+	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+	cancel()
+	if batchErr == nil {
+		d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
+	}
+	for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
 			} else {
 				r.result <- insertResult{id: ids[i]}
 			}
 		}
+	}
+}
+
+// enqueueMark hands a delivered event id to the mark coalescer. It returns
+// false when mark coalescing is disabled so the caller can mark inline.
+// Send is a blocking hand-off; back-pressure here slows the delivery callback
+// rather than dropping a mark.
+func (d *DurableEmitter) enqueueMark(id int64) bool {
+	if d.markCh == nil {
+		return false
+	}
+	d.markCh <- id
+	return true
+}
+
+// markBatchLoop collects delivered event ids from markCh and flushes them as
+// batched MarkDeliveredBatch UPDATEs, collapsing many single-row UPDATEs into
+// one and decoupling the mark from the delivery-callback path. On channel close
+// it flushes any partially-collected batch before returning.
+func (d *DurableEmitter) markBatchLoop() {
+	batchSize := d.cfg.MarkBatchSize
+	linger := d.cfg.MarkBatchFlushInterval
+	if linger <= 0 {
+		linger = 100 * time.Millisecond
+	}
+	batch := make([]int64, 0, batchSize)
+
+	for {
+		batch = batch[:0]
+
+		id, ok := <-d.markCh
+		if !ok {
+			return
+		}
+		batch = append(batch, id)
+
+		timer := time.NewTimer(linger)
+	collecting:
+		for len(batch) < batchSize {
+			select {
+			case id, ok := <-d.markCh:
+				if !ok {
+					timer.Stop()
+					d.flushMarks(batch)
+					return
+				}
+				batch = append(batch, id)
+			case <-timer.C:
+				break collecting
+			}
+		}
+		timer.Stop()
+		d.flushMarks(batch)
+	}
+}
+
+// flushMarks marks a batch of delivered event ids in a single UPDATE. Marks are
+// best-effort: on failure the rows keep delivered_at IS NULL and the retransmit
+// loop re-delivers them (MarkDeliveredBatch is idempotent via the
+// delivered_at IS NULL predicate), so failures are logged rather than retried
+// here.
+func (d *DurableEmitter) flushMarks(ids []int64) {
+	if len(ids) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer cancel()
+
+	tMark := time.Now()
+	marked, err := d.store.MarkDeliveredBatch(ctx, ids)
+	markElapsed := time.Since(tMark)
+
+	if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
+		h.OnBatchMarkDelivered(markElapsed, int(marked))
+	}
+	if err != nil {
+		d.eng.Errorw("failed to batch mark events delivered", "count", len(ids), "error", err)
+		return
+	}
+	d.eng.Debugw("DurableEmitter: coalesced mark delivered flushed", "submitted", len(ids), "marked", marked)
+	if d.metrics != nil {
+		d.metrics.deliverComplete.Add(ctx, marked)
 	}
 }
 
@@ -707,15 +857,20 @@ func (d *DurableEmitter) purgeLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
+			var purged int64
 			for {
 				n, err := d.store.PurgeDelivered(ctx, batch)
 				if err != nil {
 					d.eng.Errorw("failed to purge delivered chip durable events", "error", err)
 					break
 				}
+				purged += n
 				if n == 0 {
 					break
 				}
+			}
+			if purged > 0 {
+				d.eng.Debugw("DurableEmitter: purged delivered events", "count", purged)
 			}
 		}
 	}
@@ -788,6 +943,13 @@ func (d *DurableEmitter) metricsLoop() {
 				}
 			} else {
 				d.metrics.insertCoalescerFill.Record(ctx, 0)
+			}
+			if d.markCh != nil {
+				if c := cap(d.markCh); c > 0 {
+					d.metrics.markCoalescerFill.Record(ctx, float64(len(d.markCh))/float64(c))
+				}
+			} else {
+				d.metrics.markCoalescerFill.Record(ctx, 0)
 			}
 			d.metrics.pollProcessGauges(ctx)
 		}

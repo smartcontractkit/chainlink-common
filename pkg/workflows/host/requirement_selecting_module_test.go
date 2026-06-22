@@ -1,33 +1,32 @@
-package host_test
+package host
 
 import (
 	"context"
 	"errors"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
-
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
 type stubModule struct {
-	startFn   func()
-	closeFn   func()
-	legacyFn  func() bool
-	executeFn func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error)
+	executeFn  func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error)
+	startCount atomic.Int32
+	closeCount atomic.Int32
+	legacy     bool
 }
 
-func (s *stubModule) Start()            { s.startFn() }
-func (s *stubModule) Close()            { s.closeFn() }
-func (s *stubModule) IsLegacyDAG() bool { return s.legacyFn() }
-func (s *stubModule) Execute(ctx context.Context, req *sdk.ExecuteRequest, h host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+func (s *stubModule) Start()            { s.startCount.Add(1) }
+func (s *stubModule) Close()            { s.closeCount.Add(1) }
+func (s *stubModule) IsLegacyDAG() bool { return s.legacy }
+func (s *stubModule) Execute(ctx context.Context, req *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
 	return s.executeFn(ctx, req, h)
 }
 
@@ -40,8 +39,14 @@ func (s *requirementEnforcingStub) SetRequirements(executionID string, requireme
 	s.setRequirementsFn(executionID, requirements)
 }
 
-func noop()      {}
-func noopClose() {}
+type restrictionAwareStub struct {
+	*stubModule
+	setRestrictionsFn func(string, *sdk.Restrictions)
+}
+
+func (s *restrictionAwareStub) SetRestrictions(executionID string, restrictions *sdk.Restrictions) {
+	s.setRestrictionsFn(executionID, restrictions)
+}
 
 func triggerRequest(id uint64) *sdk.ExecuteRequest {
 	return &sdk.ExecuteRequest{
@@ -73,63 +78,60 @@ func subWithReqs(reqs *sdk.Requirements) *sdk.TriggerSubscription {
 
 func TestRequirementSelectingModule_Start(t *testing.T) {
 	t.Run("starts only main module", func(t *testing.T) {
-		var mainStarted, additionalStarted bool
-		main := host.ModuleAndHandler{Module: &stubModule{startFn: func() { mainStarted = true }}}
-		add := host.ModuleAndHandler{Module: &stubModule{startFn: func() { additionalStarted = true }}}
+		main := &stubModule{}
+		unused := &stubModule{}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(
+			ModuleAndHandler{Module: main},
+			[]ModuleAndHandler{{Module: unused}},
+		)
 		m.Start()
 
-		assert.True(t, mainStarted)
-		assert.False(t, additionalStarted)
+		assert.Equal(t, int32(1), main.startCount.Load())
+		assert.Equal(t, int32(0), unused.startCount.Load())
 	})
 }
 
 func TestRequirementSelectingModule_Close(t *testing.T) {
 	t.Run("closes main and no additional when none started", func(t *testing.T) {
-		var mainClosed, addClosed bool
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop, closeFn: func() { mainClosed = true },
-		}}
-		add := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop, closeFn: func() { addClosed = true },
-		}}
+		main := &stubModule{}
+		unused := &stubModule{}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(
+			ModuleAndHandler{Module: main},
+			[]ModuleAndHandler{{Module: unused}},
+		)
 		m.Start()
 		m.Close()
 
-		assert.True(t, mainClosed)
-		assert.False(t, addClosed)
+		assert.Equal(t, int32(1), main.closeCount.Load())
+		assert.Equal(t, int32(0), unused.closeCount.Load())
 	})
 
 	t.Run("closes main and all started additional modules", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 
-		var mainClosed, add0Closed, add1Closed bool
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			closeFn: func() { mainClosed = true },
-			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := &stubModule{
+			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
-		}}
-		add0 := host.ModuleAndHandler{
-			Module: &stubModule{
-				startFn: noop,
-				closeFn: func() { add0Closed = true },
-			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
-		add1 := host.ModuleAndHandler{
-			Module: &stubModule{
-				startFn: noop,
-				closeFn: func() { add1Closed = true },
-			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
-		}
+		requirementsSatisfier := &stubModule{}
+		nonMatcher := &stubModule{}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add0, add1})
+		m := NewRequirementSelectingModule(
+			ModuleAndHandler{Module: main},
+			[]ModuleAndHandler{
+				{
+					Module:              requirementsSatisfier,
+					RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+				},
+				{
+					Module:              nonMatcher,
+					RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+				},
+			},
+		)
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -137,29 +139,28 @@ func TestRequirementSelectingModule_Close(t *testing.T) {
 
 		m.Close()
 
-		assert.True(t, mainClosed, "main should be closed")
-		assert.True(t, add0Closed, "started additional should be closed")
-		assert.False(t, add1Closed, "never-started additional should not be closed")
+		assert.Equal(t, int32(1), main.closeCount.Load(), "main should be closed")
+		assert.Equal(t, int32(1), requirementsSatisfier.closeCount.Load(), "started additional should be closed")
+		assert.Equal(t, int32(0), nonMatcher.closeCount.Load(), "never-started additional should not be closed")
 	})
 }
 
 func TestRequirementSelectingModule_IsLegacyDAG(t *testing.T) {
-	main := host.ModuleAndHandler{Module: &stubModule{legacyFn: func() bool { return true }}}
-	m := host.NewRequirementSelectingModule(main, nil)
+	main := &stubModule{legacy: true}
+	m := NewRequirementSelectingModule(ModuleAndHandler{Module: main}, nil)
 	assert.True(t, m.IsLegacyDAG())
 }
 
 func TestRequirementSelectingModule_Execute(t *testing.T) {
 	t.Run("trigger with no cached entry errors", func(t *testing.T) {
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				assert.Fail(t, "main should not be called for trigger when no subscriptions")
 				return nil, errors.New("unexpected callback")
 			},
 		}}
 
-		m := host.NewRequirementSelectingModule(main, nil)
+		m := NewRequirementSelectingModule(main, nil)
 		m.Start()
 
 		_, err := m.Execute(t.Context(), triggerRequest(1), nil)
@@ -167,24 +168,22 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 	})
 
 	t.Run("main error on subscribe propagates", func(t *testing.T) {
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return nil, assert.AnError
 			},
 		}}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					t.Fatal("additional module should not be called")
 					return nil, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -195,24 +194,21 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		want := &sdk.ExecutionResult{}
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					return want, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -226,18 +222,17 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 	t.Run("subscribe with unmatched requirements returns error", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
-		add := host.ModuleAndHandler{
-			Module:              &stubModule{startFn: noop},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+		add := ModuleAndHandler{
+			Module:              &stubModule{},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -249,28 +244,25 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		want := &sdk.ExecutionResult{}
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
-		add0 := host.ModuleAndHandler{
-			Module:              &stubModule{startFn: noop},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+		add0 := ModuleAndHandler{
+			Module:              &stubModule{},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
 		}
-		add1 := host.ModuleAndHandler{
+		add1 := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					return want, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add0, add1})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add0, add1})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -283,47 +275,42 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 
 	t.Run("additional module started lazily during subscribe", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
-		var addStartCount int32
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
-		add := host.ModuleAndHandler{
-			Module: &stubModule{
-				startFn: func() { atomic.AddInt32(&addStartCount, 1) },
-				closeFn: noopClose,
-			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		requirementsSatisfier := &stubModule{}
+		add := ModuleAndHandler{
+			Module:              requirementsSatisfier,
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
-		assert.Equal(t, int32(0), atomic.LoadInt32(&addStartCount))
+		assert.Equal(t, int32(0), requirementsSatisfier.startCount.Load())
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&addStartCount))
+		assert.Equal(t, int32(1), requirementsSatisfier.startCount.Load())
 
 		// Second subscribe does not start additional again (sync.Once).
 		_, err = m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&addStartCount))
+		assert.Equal(t, int32(1), requirementsSatisfier.startCount.Load())
 	})
 
 	t.Run("subscribe with no requirements returns main result", func(t *testing.T) {
 		want := subscribeResult()
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return want, nil
 			},
 		}}
 
-		m := host.NewRequirementSelectingModule(main, nil)
+		m := NewRequirementSelectingModule(main, nil)
 		m.Start()
 
 		got, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -336,10 +323,9 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		want := &sdk.ExecutionResult{}
 
 		var mainTriggerCalls int32
-		main := host.ModuleAndHandler{
+		main := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 					if req.GetTrigger() != nil {
 						atomic.AddInt32(&mainTriggerCalls, 1)
 						return want, nil
@@ -347,20 +333,19 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return subscribeResult(subWithReqs(teeReqs)), nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					t.Fatal("additional module should not be called when main satisfies requirements")
 					return nil, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -377,14 +362,13 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		want := &sdk.ExecutionResult{}
 		executionID := "wf-exec-1"
 
-		main := host.ModuleAndHandler{
+		main := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 					return subscribeResult(subWithReqs(teeReqs)), nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
 		}
 
 		var calls []string
@@ -392,9 +376,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		var gotExecutionID string
 		enforcingAdd := &requirementEnforcingStub{
 			stubModule: &stubModule{
-				startFn: noop,
-				closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					calls = append(calls, "execute")
 					return want, nil
 				},
@@ -405,16 +387,15 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 				gotReqs = requirements
 			},
 		}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module:              enforcingAdd,
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		helper := &mocks.MockExecutionHelper{}
-		helper.On("GetWorkflowExecutionID").Return(executionID).Once()
+		helper := &stubExecutionHelper{executionID: executionID}
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.NoError(t, err)
@@ -425,7 +406,6 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		assert.Equal(t, []string{"set", "execute"}, calls)
 		assert.Equal(t, executionID, gotExecutionID)
 		assert.Same(t, teeReqs, gotReqs)
-		helper.AssertExpectations(t)
 	})
 }
 
@@ -434,27 +414,24 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		var mainTriggerCalls int32
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				if req.GetTrigger() != nil {
 					atomic.AddInt32(&mainTriggerCalls, 1)
 				}
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -473,9 +450,8 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		var mainTriggerCalls int32
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				if req.GetTrigger() != nil {
 					atomic.AddInt32(&mainTriggerCalls, 1)
 					return &sdk.ExecutionResult{}, nil
@@ -484,18 +460,16 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 				return subscribeResult(subWithReqs(teeReqs), subWithReqs(nil)), nil
 			},
 		}}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop,
-				closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -517,9 +491,8 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		var mainTriggerCalls int32
 		wantAdditional := &sdk.ExecutionResult{}
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				if req.GetTrigger() != nil {
 					atomic.AddInt32(&mainTriggerCalls, 1)
 					return &sdk.ExecutionResult{}, nil
@@ -527,17 +500,16 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 				return subscribeResult(subWithReqs(teeReqs), subWithReqs(nil)), nil
 			},
 		}}
-		add := host.ModuleAndHandler{
+		add := ModuleAndHandler{
 			Module: &stubModule{
-				startFn: noop, closeFn: noopClose,
-				executeFn: func(context.Context, *sdk.ExecuteRequest, host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
 					return wantAdditional, nil
 				},
 			},
-			RequirementsHandler: host.RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
 		}
 
-		m := host.NewRequirementSelectingModule(main, []host.ModuleAndHandler{add})
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
@@ -558,18 +530,294 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 	t.Run("no additional modules when subscribe has requirements returns error", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 
-		main := host.ModuleAndHandler{Module: &stubModule{
-			startFn: noop,
-			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ host.ExecutionHelper) (*sdk.ExecutionResult, error) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
 		}}
 
-		m := host.NewRequirementSelectingModule(main, nil)
+		m := NewRequirementSelectingModule(main, nil)
 		m.Start()
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot find a runner")
 	})
+}
+
+func subWithReqsAndPreHook(reqs *sdk.Requirements) *sdk.TriggerSubscription {
+	return &sdk.TriggerSubscription{Requirements: reqs, PreHook: true}
+}
+
+func restrictionsResult(r *sdk.Restrictions) *sdk.ExecutionResult {
+	return &sdk.ExecutionResult{
+		Result: &sdk.ExecutionResult_Restrictions{Restrictions: r},
+	}
+}
+
+func TestRequirementSelectingModule_PreHook(t *testing.T) {
+	teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+
+	t.Run("pre-hook runs in main, trigger runs in additional with restricted helper", func(t *testing.T) {
+		restrictions := &sdk.Restrictions{
+			Capabilities: &sdk.CapabilityRestrictions{
+				MaxTotalCalls: 1,
+				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_OPEN,
+			},
+		}
+
+		var helperSeenByAdditional ExecutionHelper
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return restrictionsResult(restrictions), nil
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+					helperSeenByAdditional = h
+					return &sdk.ExecutionResult{}, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+
+		_, isRestricted := helperSeenByAdditional.(*executionRestrictions)
+		assert.True(t, isRestricted, "additional module should receive a restricted helper")
+	})
+
+	t.Run("pre-hook error propagates", func(t *testing.T) {
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return nil, assert.AnError
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+					t.Fatal("additional module should not be called when pre-hook fails")
+					return nil, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pre-hook execution failed")
+	})
+
+	t.Run("pre-hook on main-routed trigger applies restrictions to main", func(t *testing.T) {
+		restrictions := &sdk.Restrictions{
+			Capabilities: &sdk.CapabilityRestrictions{MaxTotalCalls: 0},
+		}
+		var helperSeenByMain ExecutionHelper
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return restrictionsResult(restrictions), nil
+				}
+				if req.GetTrigger() != nil {
+					helperSeenByMain = h
+					return &sdk.ExecutionResult{}, nil
+				}
+				// Subscribe: no requirements, PreHook=true
+				return subscribeResult(&sdk.TriggerSubscription{PreHook: true}), nil
+			},
+		}}
+
+		m := NewRequirementSelectingModule(main, nil)
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+
+		_, isRestricted := helperSeenByMain.(*executionRestrictions)
+		assert.True(t, isRestricted, "main should receive a restricted helper when pre-hook is set")
+	})
+
+	t.Run("no pre-hook passes original helper to additional", func(t *testing.T) {
+		var helperSeenByAdditional ExecutionHelper
+		inner := &stubExecutionHelper{}
+
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if req.GetTrigger() != nil {
+					t.Fatal("main should not be called for trigger when cached in additional")
+				}
+				return subscribeResult(subWithReqs(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+					helperSeenByAdditional = h
+					return &sdk.ExecutionResult{}, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), inner)
+		require.NoError(t, err)
+
+		assert.Same(t, inner, helperSeenByAdditional, "without pre-hook, original helper should be passed unchanged")
+	})
+
+	t.Run("pre-hook restrictions are forwarded to RestrictionAwareModule", func(t *testing.T) {
+		restrictions := &sdk.Restrictions{
+			Capabilities: &sdk.CapabilityRestrictions{MaxTotalCalls: 3},
+		}
+		executionID := "wf-exec-restricted"
+
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return restrictionsResult(restrictions), nil
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+
+		var calls []string
+		var gotExecutionID string
+		var gotRestrictions *sdk.Restrictions
+		awareAdd := &restrictionAwareStub{
+			stubModule: &stubModule{
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+					calls = append(calls, "execute")
+					return &sdk.ExecutionResult{}, nil
+				},
+			},
+			setRestrictionsFn: func(id string, r *sdk.Restrictions) {
+				calls = append(calls, "setRestrictions")
+				gotExecutionID = id
+				gotRestrictions = r
+			},
+		}
+		add := ModuleAndHandler{
+			Module:              awareAdd,
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		helper := &stubExecutionHelper{executionID: executionID}
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), helper)
+		require.NoError(t, err)
+
+		assert.Equal(t, []string{"setRestrictions", "execute"}, calls)
+		assert.Equal(t, executionID, gotExecutionID)
+		assert.Same(t, restrictions, gotRestrictions)
+	})
+
+	t.Run("pre-hook restrictions are forwarded to module implementing both Restriction- and Requirement-aware interfaces", func(t *testing.T) {
+		restrictions := &sdk.Restrictions{
+			Capabilities: &sdk.CapabilityRestrictions{MaxTotalCalls: 5},
+		}
+		executionID := "wf-exec-both"
+
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return restrictionsResult(restrictions), nil
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+
+		var calls []string
+		bothAware := &requirementAndRestrictionAwareStub{
+			restrictionAwareStub: &restrictionAwareStub{
+				stubModule: &stubModule{
+					executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+						calls = append(calls, "execute")
+						return &sdk.ExecutionResult{}, nil
+					},
+				},
+				setRestrictionsFn: func(string, *sdk.Restrictions) { calls = append(calls, "setRestrictions") },
+			},
+			setRequirementsFn: func(string, *sdk.Requirements) { calls = append(calls, "setRequirements") },
+		}
+		add := ModuleAndHandler{
+			Module:              bothAware,
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		helper := &stubExecutionHelper{executionID: executionID}
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		_, err = m.Execute(t.Context(), triggerRequest(0), helper)
+		require.NoError(t, err)
+
+		// Restrictions must be set before requirements, both before execute.
+		assert.Equal(t, []string{"setRestrictions", "setRequirements", "execute"}, calls)
+	})
+}
+
+// requirementAndRestrictionAwareStub implements both RestrictionAwareModule and RequirementEnforcingModule.
+type requirementAndRestrictionAwareStub struct {
+	*restrictionAwareStub
+	setRequirementsFn func(string, *sdk.Requirements)
+}
+
+func (s *requirementAndRestrictionAwareStub) SetRequirements(executionID string, requirements *sdk.Requirements) {
+	s.setRequirementsFn(executionID, requirements)
+}
+
+// stubExecutionHelper is a minimal ExecutionHelper implementation for testing.
+type stubExecutionHelper struct{ executionID string }
+
+func (s *stubExecutionHelper) CallCapability(context.Context, *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+	return nil, nil
+}
+func (s *stubExecutionHelper) GetSecrets(context.Context, *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
+	return nil, nil
+}
+func (s *stubExecutionHelper) GetWorkflowExecutionID() string { return s.executionID }
+func (s *stubExecutionHelper) GetNodeTime() time.Time         { return time.Time{} }
+func (s *stubExecutionHelper) GetDONTime() (time.Time, error) { return time.Time{}, nil }
+func (s *stubExecutionHelper) EmitUserLog(string) error       { return nil }
+func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetric) error {
+	return nil
 }

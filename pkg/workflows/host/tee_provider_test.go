@@ -137,6 +137,11 @@ func TestNewTeeProvider(t *testing.T) {
 		assert.False(t, provides(tee))
 	})
 
+	t.Run("returns true when tee item is nil", func(t *testing.T) {
+		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, []string{"us-west-2"})
+		assert.True(t, provides(nil))
+	})
+
 	t.Run("returns false when tee item is nil", func(t *testing.T) {
 		provides := NewTeeProvider(sdkpb.TeeType_TEE_TYPE_AWS_NITRO, []string{"us-west-2"})
 		tee := &sdkpb.Tee{}

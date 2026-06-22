@@ -41,6 +41,7 @@ const v2ImportPrefix = "version_v2"
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute
+	defaultPreeHookTimeout           = 10 * time.Second
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
@@ -65,6 +66,7 @@ type DeterminismConfig struct {
 type ModuleConfig struct {
 	TickInterval     time.Duration
 	Timeout          *time.Duration
+	PrehookTimeout   *time.Duration
 	MaxMemoryMBs     uint64
 	MinMemoryMBs     uint64
 	MemoryLimiter    limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
@@ -197,6 +199,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.Timeout == nil {
 		modCfg.Timeout = &defaultTimeout
+	}
+
+	if modCfg.PrehookTimeout == nil {
+		modCfg.PrehookTimeout = &defaultPreeHookTimeout
 	}
 
 	if modCfg.MinMemoryMBs == 0 {
@@ -575,7 +581,12 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 		r.MaxResponseSize = maxSize
 	}
 
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor)
+	timeout := *m.cfg.Timeout
+	switch req.Request.(type) {
+	case *sdkpb.ExecuteRequest_PreHook:
+		timeout = *m.cfg.PrehookTimeout
+	}
+	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
 }
 
 // Run is deprecated, use execute instead
@@ -601,7 +612,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		}
 	}
 
-	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil)
+	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil, *m.cfg.Timeout)
 }
 
 func runWasm[I, O proto.Message](
@@ -610,17 +621,19 @@ func runWasm[I, O proto.Message](
 	request I,
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
-	helper ExecutionHelper) (O, error) {
+	helper ExecutionHelper,
+	maxTimeout time.Duration) (O, error) {
 	var o O
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
 	ctxDeadline, hasDeadline := ctx.Deadline()
 	var ctxWithTimeout context.Context
 	var cancel func()
-	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
+
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(maxTimeout)) {
 		ctxWithTimeout, cancel = context.WithCancel(ctx)
 	} else {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, maxTimeout)
 	}
 
 	defer cancel()

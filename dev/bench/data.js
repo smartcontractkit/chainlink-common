@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782145281057,
+  "lastUpdate": 1782151575866,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51900,6 +51900,66 @@ window.BENCHMARK_DATA = {
             "value": 98142,
             "unit": "ns/op",
             "extra": "12226 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fff78a26150a8dad7d0c9458d3859c494c8dce33",
+          "message": "DurableEmitter: Increase default flush intervals (#2179)\n\n* Increase default flush intervals\n\n* Update durable_emitter_test.go\n\n---------\n\nCo-authored-by: Tarcísio Zotelli Ferraz <tar-2008.ferraz@hotmail.com>",
+          "timestamp": "2026-06-22T17:54:20Z",
+          "tree_id": "b38066c6301cd47b40598171ffdd38816d367785",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fff78a26150a8dad7d0c9458d3859c494c8dce33"
+        },
+        "date": 1782151573930,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369.3,
+            "unit": "ns/op",
+            "extra": "3159997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94999,
+            "unit": "ns/op",
+            "extra": "12564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.9,
+            "unit": "ns/op",
+            "extra": "2913136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92484,
+            "unit": "ns/op",
+            "extra": "12820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26748,
+            "unit": "ns/op",
+            "extra": "44830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141591,
+            "unit": "ns/op",
+            "extra": "8230 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781884162678,
+  "lastUpdate": 1782138332679,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -51780,6 +51780,66 @@ window.BENCHMARK_DATA = {
             "value": 146778,
             "unit": "ns/op",
             "extra": "8007 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fde1bc6ad94dba5b18b2f068620c56edefb52513",
+          "message": "fix(teeattestation): length-prefix tag and data in DomainHash [CL112-14] (#2172)\n\nDomainHash delimited DomainSeparator, tag, and data with newlines, so a\ntag or data value containing a newline could make distinct (tag, data)\npairs share a pre-image. Length-prefix each field instead, matching\nComputeRequest.Hash's writeWithLength scheme. Not exploitable today (tags\nare newline-free constants); hardens against future tag changes.\n\nNote: changes DomainHash output, so producers and verifiers must run the\nsame version. Acceptable as confidential workflows is unreleased.",
+          "timestamp": "2026-06-22T14:13:53Z",
+          "tree_id": "97e19508ec06c5dbee91cd263145cb89ae24c854",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fde1bc6ad94dba5b18b2f068620c56edefb52513"
+        },
+        "date": 1782138330084,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356,
+            "unit": "ns/op",
+            "extra": "3377331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 72412,
+            "unit": "ns/op",
+            "extra": "16560 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.9,
+            "unit": "ns/op",
+            "extra": "2960355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 72707,
+            "unit": "ns/op",
+            "extra": "16370 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24697,
+            "unit": "ns/op",
+            "extra": "48513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 118140,
+            "unit": "ns/op",
+            "extra": "9207 times\n4 procs"
           }
         ]
       }

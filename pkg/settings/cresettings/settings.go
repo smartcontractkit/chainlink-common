@@ -66,6 +66,7 @@ var Default = Schema{
 	VaultBase64EncodingEnabled:                        Bool(false),
 	VaultForceEmptyOCRRounds:                          Bool(false),
 	VaultOptimizationsEnabled:                         Bool(false),
+	VaultFastPathGetSecretsEnabled:                    Bool(false),
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
@@ -318,24 +319,25 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                                     Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit                 Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
-	GatewayVaultManagementEnabled                     Setting[bool]
-	VaultJWTAuthEnabled                               Setting[bool]
-	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
+	GatewayVaultManagementEnabled               Setting[bool]
+	VaultJWTAuthEnabled                         Setting[bool]
+	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
 	// executable capability server reject any request whose
 	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
-	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
+	RemoteExecutableWorkflowDONBindingEnabled         Setting[bool]
 	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]
 	VaultForceEmptyOCRRounds                          Setting[bool]
 	VaultOptimizationsEnabled                         Setting[bool]
+	VaultFastPathGetSecretsEnabled                    Setting[bool]
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]

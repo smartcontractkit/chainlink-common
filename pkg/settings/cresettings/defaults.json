@@ -12,6 +12,7 @@
 	"VaultBase64EncodingEnabled": "false",
 	"VaultForceEmptyOCRRounds": "false",
 	"VaultOptimizationsEnabled": "false",
+	"VaultFastPathGetSecretsEnabled": "false",
 	"VaultGetSecretsShareAggregationIncludesPublicKeys": "false",
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
 	"VaultJSONOmitUnpopulatedEnabled": "false",

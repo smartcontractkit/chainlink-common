@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -21,7 +22,8 @@ var (
 	errBadAttestationDocument        = errors.New("bad attestation document")
 	errMandatoryFieldsMissing        = errors.New("attestation document is missing mandatory fields")
 	errBadDigest                     = errors.New("attestation digest is not SHA384")
-	errBadTimestamp                  = errors.New("attestation timestamp is 0")
+	errBadTimestamp                  = errors.New("attestation timestamp is zero or out of range")
+	errStaleAttestation              = errors.New("attestation timestamp is outside the allowed window")
 	errBadPCRs                       = errors.New("attestation pcrs is less than 1 or more than 32")
 	errBadPCRIndex                   = errors.New("attestation pcr index is not in [0, 32)")
 	errBadPCRValue                   = errors.New("attestation pcr value length is invalid")
@@ -35,6 +37,9 @@ var (
 	errBadCertificateSigningAlgo     = errors.New("attestation certificate signature algorithm is not ECDSAWithSHA384")
 	errBadSignature                  = errors.New("attestation signature does not match certificate")
 )
+
+// maxAttestationAge rejects attestations not consumed promptly after issuance. [CL112-10]
+const maxAttestationAge = 5 * time.Minute
 
 type verifyResult struct {
 	document    *attestationDocument
@@ -113,6 +118,16 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 	}
 	if currentTime.IsZero() {
 		currentTime = time.Now()
+	}
+
+	// doc.Timestamp is epoch milliseconds; reject if it overflows int64.
+	if doc.Timestamp > math.MaxInt64 {
+		return nil, errBadTimestamp
+	}
+	issued := time.UnixMilli(int64(doc.Timestamp))
+	// Reject both stale and far-future timestamps (absolute skew).
+	if skew := currentTime.Sub(issued); skew > maxAttestationAge || skew < -maxAttestationAge {
+		return nil, errStaleAttestation
 	}
 	if _, err := leafCert.Verify(x509.VerifyOptions{
 		Intermediates: intermediates,

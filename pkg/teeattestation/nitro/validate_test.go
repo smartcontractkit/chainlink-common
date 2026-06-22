@@ -2,6 +2,7 @@ package nitro
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,29 @@ func TestValidateAttestation_Attestor(t *testing.T) {
 
 	err = ValidateAttestationWithRoots(doc, userData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
 	require.NoError(t, err)
+}
+
+// TestVerifyAttestationDocument_MaxAge covers PRIV-438 / CL112-10: fresh
+// attestations verify; stale or far-future ones are rejected even while the
+// leaf cert is still valid.
+func TestVerifyAttestationDocument_MaxAge(t *testing.T) {
+	fa, err := nitrofake.NewAttestor()
+	require.NoError(t, err)
+	doc, err := fa.CreateAttestation([]byte("user-data"))
+	require.NoError(t, err)
+	pool := fa.CARoots()
+
+	// Fresh: accepted.
+	_, err = verifyAttestationDocument(doc, pool, time.Now())
+	require.NoError(t, err)
+
+	// Too old: rejected (cert is still valid, only age fails).
+	_, err = verifyAttestationDocument(doc, pool, time.Now().Add(maxAttestationAge+time.Minute))
+	require.ErrorIs(t, err, errStaleAttestation)
+
+	// Too far in the future: also rejected.
+	_, err = verifyAttestationDocument(doc, pool, time.Now().Add(-(maxAttestationAge + time.Minute)))
+	require.ErrorIs(t, err, errStaleAttestation)
 }
 
 func TestValidateAttestation_WrongUserData(t *testing.T) {

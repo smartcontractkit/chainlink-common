@@ -109,6 +109,9 @@ func TestSchema_Unmarshal(t *testing.T) {
 		"Secrets": {
 			"CallLimit": "5"
 		},
+		"DONTime": {
+			"RequestTimeout": "45s"
+		},
 		"ChainWrite": {
 			"EVM": {
 				"TransactionGasLimit": "500000"
@@ -118,6 +121,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 			"CallLimit": "3"
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC",
+		"FeatureUseSingleDONTimeProviderPerExecutionActivePeriod": "[2025-08-15 00:00:00 +0000 UTC,2025-09-15 00:00:00 +0000 UTC]",
 		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2025-07-15 00:00:00 +0000 UTC,2025-08-15 00:00:00 +0000 UTC]",
 		"FeatureEVMWriteReportL1FeeActivePeriod": "[2025-09-15 00:00:00 +0000 UTC,2025-10-15 00:00:00 +0000 UTC]",
 		"FeatureAptosWriteReportBlockTimestampActivePeriod": "[2025-11-15 00:00:00 +0000 UTC,2025-12-15 00:00:00 +0000 UTC]"
@@ -149,9 +153,14 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 5, cfg.PerWorkflow.ConfidentialHTTP.CallLimit.DefaultValue)
 	assert.Equal(t, 10*config.KByte, cfg.PerWorkflow.ConfidentialHTTP.RequestSizeLimit.DefaultValue)
 	assert.Equal(t, 5, cfg.PerWorkflow.Secrets.CallLimit.DefaultValue)
+	assert.Equal(t, 45*time.Second, cfg.PerWorkflow.DONTime.RequestTimeout.DefaultValue)
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 	assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2025, 8, 15, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod.DefaultValue)
 	assert.Equal(t, settings.Range[config.Timestamp]{
 		Lower: config.Timestamp(time.Date(2025, 7, 15, 0, 0, 0, 0, time.UTC).Unix()),
 		Upper: config.Timestamp(time.Date(2025, 8, 15, 0, 0, 0, 0, time.UTC).Unix()),
@@ -164,6 +173,67 @@ func TestSchema_Unmarshal(t *testing.T) {
 		Lower: config.Timestamp(time.Date(2025, 11, 15, 0, 0, 0, 0, time.UTC).Unix()),
 		Upper: config.Timestamp(time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC).Unix()),
 	}, cfg.PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod.DefaultValue)
+}
+
+func TestDONTimeRequestTimeoutKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.DONTime.RequestTimeout
+
+	assert.Equal(t, "PerWorkflow.DONTime.RequestTimeout", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, 30*time.Second, s.DefaultValue)
+
+	got, err := s.Parse("1m")
+	require.NoError(t, err)
+	assert.Equal(t, time.Minute, got)
+}
+
+func TestDONTimeRequestTimeoutGetOrDefault(t *testing.T) {
+	setting := Default.PerWorkflow.DONTime.RequestTimeout
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Org: "test-org", Owner: "test-owner", Workflow: "test-wf"})
+	overrideCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "test-wf-id"})
+
+	got, err := setting.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, 30*time.Second, got)
+
+	got, err = setting.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, 30*time.Second, got)
+
+	t.Cleanup(reinit)
+	t.Setenv(EnvNameSettings, `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"DONTime": {
+					"RequestTimeout": "1m"
+				}
+			}
+		}
+	}
+}`)
+	reinit()
+
+	got, err = setting.GetOrDefault(ctx, DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, 30*time.Second, got)
+
+	got, err = setting.GetOrDefault(overrideCtx, DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, time.Minute, got)
+}
+
+func TestFeatureUseSingleDONTimeProviderPerExecutionActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
 }
 
 func TestGatewayProxyDonIDKeyInit(t *testing.T) {

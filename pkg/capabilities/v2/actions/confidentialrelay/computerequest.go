@@ -22,6 +22,14 @@ const computeRequestDomainSeparator = "CONFIDENTIAL_COMPUTE_PAYLOAD"
 // is the signature prefix, distinct from computeRequestDomainSeparator (the hash prefix).
 const signedComputeRequestSignaturePrefix = "CONFIDENTIAL_COMPUTE_PAYLOAD_"
 
+// computeRequestLegacyVersion is vendored from confidential-compute
+// types.ServiceConfidentialComputeVersionLegacy. Hash includes the Version field only
+// when it equals this value, matching the source (confidential-compute is migrating
+// Version out of the hash for newer versions). It MUST stay in sync with the source, or
+// ComputeRequest.Hash will diverge from the digest the Workflow DON nodes signed once the
+// enclave moves past the legacy version.
+const computeRequestLegacyVersion = "0.0.6"
+
 // SignedComputeRequestSignaturePayload reconstructs the exact payload a Workflow DON node
 // signed over a ComputeRequest hash, so the relay DON can verify the signature with the
 // node's public key.
@@ -53,8 +61,8 @@ type ComputeRequest struct {
 // Hash mirrors confidential-compute types.ComputeRequest.Hash byte-for-byte. It
 // reuses this package's length-prefix helpers (writeBytes/writeString/
 // writeLengthPrefix), which are identical to the source's writeWithLength/
-// writeLengthPrefix. EncryptedDecryptionKeyShares is intentionally excluded,
-// matching the source.
+// writeLengthPrefix. EncryptedDecryptionKeyShares is intentionally excluded, and
+// Version is included only for the legacy version, both matching the source.
 func (cr ComputeRequest) Hash() [32]byte {
 	h := sha256.New()
 
@@ -79,7 +87,11 @@ func (cr ComputeRequest) Hash() [32]byte {
 	writeBytes(h, cr.MasterPublicKey)
 
 	writeString(h, cr.AppID)
-	writeString(h, cr.Version)
+	// Version is included in the hash only for the legacy version, matching
+	// confidential-compute (which is migrating Version out of the hash).
+	if cr.Version == computeRequestLegacyVersion {
+		writeString(h, cr.Version)
+	}
 
 	var result [32]byte
 	h.Sum(result[:0])

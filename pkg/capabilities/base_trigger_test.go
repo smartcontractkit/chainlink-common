@@ -870,14 +870,13 @@ func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	require.Equal(t, "recentEvent", recs[0].EventId)
 }
 
-func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
+func TestBaseTrigger_PrunePurgesStaleInMemoryEvents(t *testing.T) {
 	lggr, err := logger.New()
 	require.NoError(t, err)
 	ctx := t.Context()
 
 	store := NewMemEventStore()
 
-	// Old event that IS tracked in memory.
 	oldRec := PendingEvent{
 		TriggerId: "trig",
 		EventId:   "inMemory",
@@ -900,7 +899,6 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
 		lggr, "testCap", 0, getter)
 
-	// Manually put event in memory to simulate it being actively tracked.
 	b.mu.Lock()
 	reg := b.getOrCreateRegLocked("trig")
 	reg.pending["inMemory"] = &oldRec
@@ -910,7 +908,12 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 
 	recs, err := store.List(ctx)
 	require.NoError(t, err)
-	require.Len(t, recs, 1, "in-memory event should not be pruned even if old")
+	require.Empty(t, recs, "stale in-memory event should be purged from the store")
+
+	b.mu.Lock()
+	_, stillPending := b.byTrigger["trig"].pending["inMemory"]
+	b.mu.Unlock()
+	require.False(t, stillPending, "stale in-memory event should be removed from memory")
 }
 
 func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {

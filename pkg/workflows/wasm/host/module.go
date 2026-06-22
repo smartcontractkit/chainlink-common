@@ -682,7 +682,7 @@ func runWasm[I, O proto.Message](
 		1,  // memories
 	)
 
-	deadline := *m.cfg.Timeout / m.cfg.TickInterval
+	deadline := maxTimeout / m.cfg.TickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()
@@ -744,7 +744,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

@@ -93,7 +93,7 @@ func (e *executionRestrictionsWithRawSecrets) GetRawSecrets(ctx context.Context,
 var _ ExecutionHelperWithRawSecrets = (*executionRestrictionsWithRawSecrets)(nil)
 
 // NewRestrictedExecutionHelper wraps ExecutionHelper with restriction enforcement derived from r.
-// If r implements ExecutionHelperWithRawSecrets, the returned value will as well.
+// If inner implements ExecutionHelperWithRawSecrets, the returned value will as well.
 // If r is nil, ExecutionHelper is returned unchanged.
 func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) ExecutionHelper {
 	if r == nil {
@@ -158,20 +158,22 @@ func (e *executionRestrictions) reserveCapabilityCall(request *sdk.CapabilityReq
 		return false
 	}
 
-	switch request.Payload.MessageName() {
-	case confHttpRequest:
-		conf := &confidentialhttp.ConfidentialHTTPRequest{}
-		if err := request.Payload.UnmarshalTo(conf); err != nil {
-			return false
-		}
-
-		secrets := conf.GetVaultDonSecrets()
-		for _, secret := range secrets {
-			if !e.reserveSecret(&sdk.SecretRequest{
-				Id:        secret.Key,
-				Namespace: secret.Namespace,
-			}) {
+	if request.Payload != nil {
+		switch request.Payload.MessageName() {
+		case confHttpRequest:
+			conf := &confidentialhttp.ConfidentialHTTPRequest{}
+			if err := request.Payload.UnmarshalTo(conf); err != nil {
 				return false
+			}
+
+			secrets := conf.GetVaultDonSecrets()
+			for _, secret := range secrets {
+				if !e.reserveSecret(&sdk.SecretRequest{
+					Id:        secret.Key,
+					Namespace: secret.Namespace,
+				}) {
+					return false
+				}
 			}
 		}
 	}

@@ -419,6 +419,20 @@ func TestRequirementSelectingModule_ConfidentialHTTPWithRestrictions(t *testing.
 		assert.Same(t, want, got)
 	})
 
+	t.Run("nil payload is not treated as confidential http and reaches inner", func(t *testing.T) {
+		// A capability call sharing the confidential-http method id but carrying no
+		// payload must skip the vault-secret reservation branch entirely (guarded by
+		// request.Payload != nil) and fall through to the normal method check.
+		inner := mocks.NewMockExecutionHelper(t)
+		want := &sdk.CapabilityResponse{}
+		inner.EXPECT().CallCapability(matches.AnyContext, mock.Anything).Return(want, nil)
+		h := host.NewRestrictedExecutionHelper(inner, restrictions())
+
+		got, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "confhttp@1.0.0", Method: "Call"})
+		require.NoError(t, err)
+		assert.Same(t, want, got)
+	})
+
 	t.Run("disallowed confidential http call is denied without calling inner", func(t *testing.T) {
 		inner := mocks.NewMockExecutionHelper(t) // no expectations: inner must not be called
 		h := host.NewRestrictedExecutionHelper(inner, restrictions())

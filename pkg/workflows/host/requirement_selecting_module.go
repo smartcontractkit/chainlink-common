@@ -128,6 +128,12 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 			if err != nil {
 				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
 			}
+
+			switch preHookResult.Result.(type) {
+			case *sdk.ExecutionResult_Error:
+				return preHookResult, nil
+			}
+
 			restrictions := preHookResult.GetRestrictions()
 
 			handler = NewRestrictedExecutionHelper(handler, restrictions)

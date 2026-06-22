@@ -706,7 +706,6 @@ func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleCo
 
 	cmd := exec.Command("make", wasmName) // #nosec
 	cmd.Dir = absPath
-	fmt.Printf("Compiling test module from %s with command %s\n:", cmd.Dir, cmd.String())
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))

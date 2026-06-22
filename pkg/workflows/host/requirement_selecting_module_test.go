@@ -598,6 +598,43 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 		assert.True(t, isRestricted, "additional module should receive a restricted helper")
 	})
 
+	t.Run("pre-hook error result is returned directly without running the trigger", func(t *testing.T) {
+		errResult := &sdk.ExecutionResult{
+			Result: &sdk.ExecutionResult_Error{Error: "denied by pre-hook"},
+		}
+
+		var helperSeenByAdditional ExecutionHelper
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				if _, ok := req.Request.(*sdk.ExecuteRequest_PreHook); ok {
+					return errResult, nil
+				}
+				return subscribeResult(subWithReqsAndPreHook(teeReqs)), nil
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				executeFn: func(_ context.Context, _ *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
+					helperSeenByAdditional = h
+					t.Fatal("additional module should not be called when pre-hook returns an error result")
+					return nil, nil
+				},
+			},
+			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
+		require.NoError(t, err)
+
+		got, err := m.Execute(t.Context(), triggerRequest(0), &stubExecutionHelper{})
+		require.NoError(t, err)
+		assert.Same(t, errResult, got, "pre-hook error result should be returned unchanged")
+		assert.Nil(t, helperSeenByAdditional, "additional module must not be invoked")
+	})
+
 	t.Run("pre-hook error propagates", func(t *testing.T) {
 		main := ModuleAndHandler{Module: &stubModule{
 			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {

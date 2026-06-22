@@ -56,7 +56,7 @@ type ExecutionHelperWithRawSecrets interface {
 
 // RestrictionAwareModule allows the module to know of the user-enforced restrictions.
 // Enforcement by this module is NOT to be trusted by the host,
-// however a violation is considered an indicator of a serious issues, such as compromise
+// however a violation is considered an indicator of a serious issue, such as compromise.
 type RestrictionAwareModule interface {
 	Module
 

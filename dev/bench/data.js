@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782162670382,
+  "lastUpdate": 1782212306785,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52020,6 +52020,66 @@ window.BENCHMARK_DATA = {
             "value": 144066,
             "unit": "ns/op",
             "extra": "7471 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f39eba3e2bc66158996c00d3f1db7cdb26d5ce90",
+          "message": "[CRE-4317] Implement genericless adapter for ocr3types.OnchainKeyring2 (#2137)\n\n* Minor.\n\n* Minor.\n\n* Apply suggestion from @jmank88\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Apply suggestion from @jmank88\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Minor.\n\n* Minor.\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2026-06-23T10:46:56Z",
+          "tree_id": "927670c80e076b43f2786ca4c772ca9c232ca68f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f39eba3e2bc66158996c00d3f1db7cdb26d5ce90"
+        },
+        "date": 1782212304746,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.1,
+            "unit": "ns/op",
+            "extra": "3371522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 87633,
+            "unit": "ns/op",
+            "extra": "13704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 391.9,
+            "unit": "ns/op",
+            "extra": "3051206 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 84826,
+            "unit": "ns/op",
+            "extra": "14198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26776,
+            "unit": "ns/op",
+            "extra": "44413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132707,
+            "unit": "ns/op",
+            "extra": "8871 times\n4 procs"
           }
         ]
       }

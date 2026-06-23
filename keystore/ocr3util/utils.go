@@ -43,6 +43,8 @@ func (o *onchainKeyring2[RI]) DebugIdentifier() string {
 	return o.k.DebugIdentifier()
 }
 
-func AsOCR3OnchainKeyring2[RI any](k OnchainKeyring2) ocr3types.OnchainKeyring2[RI] {
+// Be careful! If you use this shim, any information in RI is dropped and *not* signed over.
+// If you have security-critical information in RI, you should make your own ocr3types.OnchainKeyring2 that does use the information in RI for signing.
+func AsOCR3OnchainKeyring2IgnoringRI[RI any](k OnchainKeyring2) ocr3types.OnchainKeyring2[RI] {
 	return &onchainKeyring2[RI]{k}
 }

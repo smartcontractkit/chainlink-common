@@ -33,8 +33,6 @@ func TestNewAuthHeaderProvider_Static(t *testing.T) {
 }
 
 func TestNewAuthHeaderProvider_RotatingDeferredSigner(t *testing.T) {
-	t.Parallel()
-
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
@@ -56,8 +54,6 @@ func TestNewAuthHeaderProvider_RotatingDeferredSigner(t *testing.T) {
 }
 
 func TestNewAuthHeaderProvider_RotatingWithSigner(t *testing.T) {
-	t.Parallel()
-
 	pubKey, _, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 

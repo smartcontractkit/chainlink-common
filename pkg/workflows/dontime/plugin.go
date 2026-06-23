@@ -113,15 +113,7 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 	}
 
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	timeoutCheck := time.Now()
 	for _, req := range p.store.GetRequests() {
-		if req.ExpiryTime().Before(timeoutCheck) {
-			// Request has been sitting in queue too long
-			p.store.RemoveRequest(req.WorkflowExecutionID)
-			req.SendTimeout(nil)
-			continue
-		}
-
 		// Validate request sequence number
 		numObservedDonTimes := 0
 		times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
@@ -132,14 +124,13 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 
 		if req.SeqNum > numObservedDonTimes {
 			p.store.RemoveRequest(req.WorkflowExecutionID)
-			req.SendResponse(nil,
-				Response{
-					WorkflowExecutionID: req.WorkflowExecutionID,
-					SeqNum:              req.SeqNum,
-					Timestamp:           0,
-					Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
-						req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
-				})
+			req.SendResponse(Response{
+				WorkflowExecutionID: req.WorkflowExecutionID,
+				SeqNum:              req.SeqNum,
+				Timestamp:           0,
+				Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
+					req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
+			})
 			continue
 		}
 

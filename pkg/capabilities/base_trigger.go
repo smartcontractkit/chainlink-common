@@ -741,21 +741,12 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 		}
 
 		b.mu.Lock()
-		inMemory := false
 		if reg, ok := b.byTrigger[rec.TriggerId]; ok {
-			_, inMemory = reg.pending[rec.EventId]
+			if _, inMemory := reg.pending[rec.EventId]; inMemory {
+				delete(reg.pending, rec.EventId)
+			}
 		}
 		b.mu.Unlock()
-
-		if inMemory {
-			// An event old enough to prune should not still be in memory —
-			// scanPending should have stopped resending it or an ACK should
-			// have removed it. Log a warning so we can investigate.
-			b.lggr.Warnw("prune: stale event still tracked in memory (possible inconsistency; skipping)",
-				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,
-				"firstAt", rec.FirstAt, "lastSentAt", rec.LastSentAt, "attempts", rec.Attempts, "pruneAge", age)
-			continue
-		}
 
 		b.lggr.Infow("prune: removing stale event from store",
 			"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId,

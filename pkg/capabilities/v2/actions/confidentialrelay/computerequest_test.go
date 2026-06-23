@@ -19,7 +19,7 @@ func sampleComputeRequest() ComputeRequest {
 		EnclaveEphemeralPublicKey: []byte("ephemeral-pub-key"),
 		MasterPublicKey:           []byte("master-pub-key"),
 		AppID:                     "test-app",
-		Version:                   "v1.2.3",
+		Version:                   computeRequestLegacyVersion,
 	}
 }
 
@@ -58,4 +58,19 @@ func TestComputeRequestHash_IgnoresEncryptedShares(t *testing.T) {
 	withShares := sampleComputeRequest()
 	withShares.EncryptedDecryptionKeyShares = [][][]byte{{[]byte("share")}}
 	require.Equal(t, sampleComputeRequest().Hash(), withShares.Hash())
+}
+
+// Version is hashed only for the legacy version, matching confidential-compute (which is
+// migrating Version out of the hash). Non-legacy versions are excluded, so different
+// non-legacy versions hash identically, while the legacy version is bound.
+func TestComputeRequestHash_VersionOnlyHashedForLegacy(t *testing.T) {
+	nonLegacyA := sampleComputeRequest()
+	nonLegacyA.Version = "0.0.7"
+	nonLegacyB := sampleComputeRequest()
+	nonLegacyB.Version = "1.2.3"
+	require.Equal(t, nonLegacyA.Hash(), nonLegacyB.Hash(), "non-legacy Version must not affect the hash")
+
+	legacy := sampleComputeRequest()
+	legacy.Version = computeRequestLegacyVersion
+	require.NotEqual(t, legacy.Hash(), nonLegacyA.Hash(), "legacy Version must be bound into the hash")
 }

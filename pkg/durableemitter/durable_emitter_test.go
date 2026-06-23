@@ -120,6 +120,27 @@ func (s *stallBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([
 	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
 }
 
+// markRecordingStore wraps MemDurableEventStore and records the size of every
+// MarkDeliveredBatch call so tests can assert how marks were coalesced.
+type markRecordingStore struct {
+	*MemDurableEventStore
+	mu        sync.Mutex
+	callSizes []int
+}
+
+func (s *markRecordingStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+	s.mu.Lock()
+	s.callSizes = append(s.callSizes, len(ids))
+	s.mu.Unlock()
+	return s.MemDurableEventStore.MarkDeliveredBatch(ctx, ids)
+}
+
+func (s *markRecordingStore) sizes() []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]int(nil), s.callSizes...)
+}
+
 func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 	stall := new(sync.Mutex)
 	stall.Lock()
@@ -168,6 +189,105 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 	err := em.Emit(ctx, []byte("after-close"), testEmitAttrs()...)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not started")
+}
+
+func TestDurableEmitter_MarkCoalescingBatchesIds(t *testing.T) {
+	store := &markRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
+	be := newTestBatchEmitter()
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.InsertBatchSize = 0 // disable insert coalescing so deliveries arrive in a burst
+	cfg.MarkBatchSize = 100
+	cfg.MarkBatchWorkers = 1
+	cfg.MarkBatchFlushInterval = 200 * time.Millisecond
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	const n = 25
+	for i := 0; i < n; i++ {
+		require.NoError(t, em.Emit(ctx, []byte("coalesce-me"), testEmitAttrs()...))
+	}
+
+	// Every delivered event must end up marked (MemStore deletes on mark).
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 3*time.Second, 10*time.Millisecond, "all delivered events should be marked")
+
+	sizes := store.sizes()
+	total, maxBatch := 0, 0
+	for _, s := range sizes {
+		total += s
+		if s > maxBatch {
+			maxBatch = s
+		}
+	}
+	assert.Equal(t, n, total, "every delivered id must be marked exactly once")
+	assert.Less(t, len(sizes), n, "marks must be coalesced into fewer UPDATEs than events")
+	assert.Greater(t, maxBatch, 1, "at least one UPDATE must mark multiple ids")
+}
+
+func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.MarkBatchSize = 100
+	cfg.MarkBatchWorkers = 1
+	// Long linger so marks stay buffered until Close drains them.
+	cfg.MarkBatchFlushInterval = time.Hour
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+
+	const n = 5
+	for i := 0; i < n; i++ {
+		require.NoError(t, em.Emit(t.Context(), []byte("buffer-me"), testEmitAttrs()...))
+	}
+
+	require.Eventually(t, func() bool {
+		return be.callCount.Load() == int64(n)
+	}, 2*time.Second, 10*time.Millisecond, "all events should be handed to the batch emitter")
+
+	// Marks are buffered in the coalescer (1h linger), so nothing is flushed yet
+	// regardless of worker scheduling — rows are only removed on a flush.
+	time.Sleep(50 * time.Millisecond)
+	assert.Equal(t, n, store.Len(), "marks should still be buffered before Close")
+
+	require.NoError(t, em.Close())
+
+	assert.Equal(t, 0, store.Len(), "Close must flush buffered marks before returning")
+}
+
+func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {
+	store := &markRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
+	be := newTestBatchEmitter()
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.MarkBatchSize = 0 // disable coalescing
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.Nil(t, em.markCh, "mark coalescer channel must be nil when disabled")
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	const n = 3
+	for i := 0; i < n; i++ {
+		require.NoError(t, em.Emit(ctx, []byte("inline"), testEmitAttrs()...))
+	}
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 2*time.Second, 10*time.Millisecond)
+
+	sizes := store.sizes()
+	assert.Len(t, sizes, n, "one inline UPDATE per delivered event when coalescing is disabled")
+	for _, s := range sizes {
+		assert.Equal(t, 1, s, "inline marks must be single-id UPDATEs")
+	}
 }
 
 func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {

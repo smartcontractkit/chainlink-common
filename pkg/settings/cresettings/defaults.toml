@@ -136,6 +136,10 @@ CallLimit = '15'
 LogQueryBlockLimit = '100'
 PayloadSizeLimit = '5kb'
 
+[PerWorkflow.ChainRead.Solana]
+BatchItemLimit = '100'
+PayloadSizeLimit = '5kb'
+
 [PerWorkflow.Consensus]
 ObservationSizeLimit = '100kb'
 CallLimit = '20'

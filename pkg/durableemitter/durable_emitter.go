@@ -124,10 +124,10 @@ func DefaultConfig() Config {
 		PublishTimeout:           5 * time.Second,
 		PurgeInterval:            250 * time.Millisecond,
 		PurgeBatchSize:           500,
-		InsertBatchFlushInterval: 100 * time.Millisecond,
+		InsertBatchFlushInterval: 500 * time.Millisecond,
 		InsertBatchSize:          100,
 		MarkBatchSize:            100,
-		MarkBatchFlushInterval:   100 * time.Millisecond,
+		MarkBatchFlushInterval:   500 * time.Millisecond,
 		MarkBatchWorkers:         2,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
@@ -654,13 +654,13 @@ func (d *DurableEmitter) insertBatchLoop() {
 		for i, r := range batch {
 			payloads[i] = r.payload
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-	ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
-	cancel()
-	if batchErr == nil {
-		d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
-	}
-	for i, r := range batch {
+		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+		cancel()
+		if batchErr == nil {
+			d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
+		}
+		for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
 			} else {

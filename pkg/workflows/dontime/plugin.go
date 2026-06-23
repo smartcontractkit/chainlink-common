@@ -22,9 +22,11 @@ import (
 )
 
 type pluginMetrics struct {
-	donTime        metric.Int64Gauge
-	donTimeEntries metric.Int64Gauge
-	outcomeSize    metric.Int64Gauge
+	donTime                  metric.Int64Gauge
+	donTimeEntries           metric.Int64Gauge
+	outcomeSize              metric.Int64Gauge
+	observationBatchOverflow metric.Int64Gauge
+	outcomeBatchOverflow     metric.Int64Gauge
 }
 
 func newPluginMetrics() (pluginMetrics, error) {
@@ -54,10 +56,28 @@ func newPluginMetrics() (pluginMetrics, error) {
 		return pluginMetrics{}, fmt.Errorf("failed to create outcome_size gauge: %w", err)
 	}
 
+	observationBatchOverflow, err := meter.Int64Gauge("platform_dontime_observation_batch_overflow",
+		metric.WithDescription("Number of pending requests excluded from the observation due to batch size limit"),
+		metric.WithUnit("{request}"),
+	)
+	if err != nil {
+		return pluginMetrics{}, fmt.Errorf("failed to create observation_batch_overflow gauge: %w", err)
+	}
+
+	outcomeBatchOverflow, err := meter.Int64Gauge("platform_dontime_outcome_batch_overflow",
+		metric.WithDescription("Number of workflow execution entries removed from the outcome due to batch size limit"),
+		metric.WithUnit("{entry}"),
+	)
+	if err != nil {
+		return pluginMetrics{}, fmt.Errorf("failed to create outcome_batch_overflow gauge: %w", err)
+	}
+
 	return pluginMetrics{
-		donTime:        donTime,
-		donTimeEntries: donTimeEntries,
-		outcomeSize:    outcomeSize,
+		donTime:                  donTime,
+		donTimeEntries:           donTimeEntries,
+		outcomeSize:              outcomeSize,
+		observationBatchOverflow: observationBatchOverflow,
+		outcomeBatchOverflow:     outcomeBatchOverflow,
 	}, nil
 }
 
@@ -106,14 +126,33 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 	return nil, nil
 }
 
-func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
+func sortedRequests(requests map[string]*Request) []*Request {
+	if len(requests) == 0 {
+		return nil
+	}
+
+	ids := make([]string, 0, len(requests))
+	for id := range requests {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+
+	sorted := make([]*Request, 0, len(ids))
+	for _, id := range ids {
+		sorted = append(sorted, requests[id])
+	}
+	return sorted
+}
+
+func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
 	previousOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, previousOutcome); err != nil {
 		p.lggr.Errorf("failed to unmarshal previous outcome in Observation phase")
 	}
 
+	sortedRequests := sortedRequests(p.store.GetRequests())
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	for _, req := range p.store.GetRequests() {
+	for _, req := range sortedRequests {
 		// Validate request sequence number
 		numObservedDonTimes := 0
 		times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
@@ -135,12 +174,27 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 		}
 
 		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
+		if len(requests) >= p.batchSize {
+			break
+		}
 	}
 
+	overflowCount := len(sortedRequests) - len(requests)
+	p.lggr.Debugw("Observation batch processed",
+		"inputRequests", len(sortedRequests),
+		"batchSize", p.batchSize,
+		"includedRequests", len(requests),
+		"overflowRequests", overflowCount,
+	)
+	if overflowCount > 0 {
+		p.lggr.Warnw("Observation batch overflow", "overflowRequests", overflowCount)
+	}
+	p.metrics.observationBatchOverflow.Record(ctx, int64(overflowCount))
+
 	observation := &pb.Observation{
-		Timestamp:       time.Now().UTC().UnixMilli(),
-		Requests:        requests,
-		PruneExecutions: true,
+		Timestamp:            time.Now().UTC().UnixMilli(),
+		Requests:             requests,
+		LimitByBatchSizeFlag: true,
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)
@@ -162,6 +216,7 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		OffsetFromMedian int64
 	}
 	var timestampNodePairs []timestampNodePair
+	limitByBatchSizeFlagEnabled := true
 
 	prevOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
@@ -176,6 +231,10 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
 			continue
+		}
+
+		if !observation.GetLimitByBatchSizeFlag() {
+			limitByBatchSizeFlagEnabled = false
 		}
 
 		for id, requestSeqNum := range observation.Requests {
@@ -249,6 +308,23 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		}
 	}
 
+	var outcomeBatchOverflowCount int64
+	if len(outcome.ObservedDonTimes) > p.batchSize && limitByBatchSizeFlagEnabled {
+		ids := make([]string, 0, len(outcome.ObservedDonTimes))
+		for id := range outcome.ObservedDonTimes {
+			ids = append(ids, id)
+		}
+		slices.Sort(ids)
+		outcomeBatchOverflowCount = int64(len(ids) - p.batchSize)
+		for _, id := range ids[p.batchSize:] {
+			delete(outcome.ObservedDonTimes, id)
+		}
+		p.lggr.Warnw("Trimmed outcome observed don times to batch size",
+			"batchSize", p.batchSize,
+			"removedEntries", outcomeBatchOverflowCount,
+		)
+	}
+
 	outcomeBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
 	p.lggr.Infow("Outcome computed",
 		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
@@ -256,6 +332,7 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 	)
 	p.metrics.donTime.Record(ctx, outcome.Timestamp)
 	p.metrics.donTimeEntries.Record(ctx, int64(len(outcome.ObservedDonTimes)))
+	p.metrics.outcomeBatchOverflow.Record(ctx, outcomeBatchOverflowCount)
 	p.metrics.outcomeSize.Record(ctx, int64(len(outcomeBytes)))
 	return outcomeBytes, err
 }

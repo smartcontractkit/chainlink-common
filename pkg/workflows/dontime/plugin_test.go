@@ -82,6 +82,35 @@ func TestPlugin_Observation(t *testing.T) {
 		require.Equal(t, expectedRequests, obsProto.Requests)
 		store.deleteExecutionID("workflow-123")
 	})
+
+	t.Run("batch limit excludes overflow requests", func(t *testing.T) {
+		offchainCfg := newTestPluginOffchainConfig(t)
+		offchainCfg.MaxBatchSize = 2
+		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+		require.NoError(t, err)
+
+		for _, id := range []string{"workflow-c", "workflow-a", "workflow-b"} {
+			_ = store.RequestDonTime(id, 0)
+		}
+
+		observation, err := plugin.Observation(ctx, outcomeCtx, query)
+		require.NoError(t, err)
+
+		obsProto := &pb.Observation{}
+		err = proto.Unmarshal(observation, obsProto)
+		require.NoError(t, err)
+
+		expectedRequests := map[string]int64{
+			"workflow-a": 0,
+			"workflow-b": 0,
+		}
+		require.Equal(t, expectedRequests, obsProto.Requests)
+		require.NotNil(t, store.GetRequest("workflow-c"))
+
+		for _, id := range []string{"workflow-a", "workflow-b", "workflow-c"} {
+			store.deleteExecutionID(id)
+		}
+	})
 }
 
 func TestPlugin_ValidateObservation(t *testing.T) {
@@ -515,6 +544,73 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 		_, err = store.GetDonTimes("workflow-123")
 		require.ErrorContains(t, err, "no don time for executionID workflow-123")
+	})
+}
+
+func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	offchainCfg.MaxBatchSize = 2
+	ctx := t.Context()
+
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+	require.NoError(t, err)
+
+	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
+
+	timestamp := time.Now().UnixMilli()
+	makeObservations := func(limitByBatchSize bool) []types.AttributedObservation {
+		aos := make([]types.AttributedObservation, 4)
+		for i := 0; i < 4; i++ {
+			obs := &pb.Observation{
+				Timestamp:            timestamp + int64(i),
+				Requests:             map[string]int64{},
+				LimitByBatchSizeFlag: limitByBatchSize,
+			}
+			rawObs, err := proto.Marshal(obs)
+			require.NoError(t, err)
+			aos[i] = types.AttributedObservation{
+				Observation: rawObs,
+				Observer:    commontypes.OracleID(i),
+			}
+		}
+		return aos
+	}
+
+	prevOutcome := &pb.Outcome{
+		Timestamp: timestamp - 1000,
+		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+			"workflow-a": {Timestamps: []int64{timestamp - 1000}},
+			"workflow-b": {Timestamps: []int64{timestamp - 1000}},
+			"workflow-c": {Timestamps: []int64{timestamp - 1000}},
+		},
+	}
+	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+	require.NoError(t, err)
+
+	t.Run("trims when all observations set batch size flag", func(t *testing.T) {
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(true))
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+		require.Len(t, outcomeProto.ObservedDonTimes, 2)
+		require.Contains(t, outcomeProto.ObservedDonTimes, "workflow-a")
+		require.Contains(t, outcomeProto.ObservedDonTimes, "workflow-b")
+		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-c")
+	})
+
+	t.Run("does not trim when batch size flag is missing", func(t *testing.T) {
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(false))
+		require.NoError(t, err)
+
+		outcomeProto := &pb.Outcome{}
+		err = proto.Unmarshal(outcome, outcomeProto)
+		require.NoError(t, err)
+		require.Len(t, outcomeProto.ObservedDonTimes, 3)
 	})
 }
 

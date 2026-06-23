@@ -41,7 +41,7 @@ const v2ImportPrefix = "version_v2"
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute
-	defaultPreeHookTimeout           = 10 * time.Second
+	defaultPrehookTimeout            = 10 * time.Second
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
@@ -202,7 +202,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	}
 
 	if modCfg.PrehookTimeout == nil {
-		modCfg.PrehookTimeout = &defaultPreeHookTimeout
+		modCfg.PrehookTimeout = &defaultPrehookTimeout
 	}
 
 	if modCfg.MinMemoryMBs == 0 {

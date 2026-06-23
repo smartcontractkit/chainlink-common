@@ -10,6 +10,7 @@ import (
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"google.golang.org/protobuf/proto"
 )
 
 type methodKey struct {
@@ -58,23 +59,42 @@ func (e *executionRestrictionsWithRawSecrets) GetRawSecrets(ctx context.Context,
 	rawSecretsHelper := e.ExecutionHelper.(ExecutionHelperWithRawSecrets)
 	owner := rawSecretsHelper.GetOwner()
 
+	getter := func(request *sdk.GetSecretsRequest) ([]*vault.SecretResponse, error) {
+		return rawSecretsHelper.GetRawSecrets(ctx, request, fetcher)
+	}
+
+	failer := func(id, ns string) *vault.SecretResponse {
+		return &vault.SecretResponse{
+			Id: &vault.SecretIdentifier{
+				Key:       id,
+				Namespace: ns,
+				Owner:     owner,
+			},
+			Result: &vault.SecretResponse_Error{
+				Error: fmt.Sprintf("secret %q in namespace %q denied by user pre-hook restrictions", id, ns),
+			},
+		}
+	}
+
+	return getSecretsHelper(e.executionRestrictions, request, getter, failer)
+}
+
+func getSecretsHelper[T proto.Message](
+	e *executionRestrictions,
+	request *sdk.GetSecretsRequest,
+	getter func(request *sdk.GetSecretsRequest) ([]T, error),
+	failer func(id, ns string) T) ([]T, error) {
+
 	e.mu.Lock()
 	var allowed []*sdk.SecretRequest
-	var responses []*vault.SecretResponse
-	for _, req := range request.Requests {
+	responses := make([]T, len(request.Requests))
+	var remaining []int
+	for i, req := range request.Requests {
 		if e.reserveSecret(req) {
 			allowed = append(allowed, req)
+			remaining = append(remaining, i)
 		} else {
-			responses = append(responses, &vault.SecretResponse{
-				Id: &vault.SecretIdentifier{
-					Key:       req.Id,
-					Namespace: req.Namespace,
-					Owner:     owner,
-				},
-				Result: &vault.SecretResponse_Error{
-					Error: fmt.Sprintf("secret %q in namespace %q denied by user pre-hook restrictions", req.Id, req.Namespace),
-				},
-			})
+			responses[i] = failer(req.Id, req.Namespace)
 		}
 	}
 	e.mu.Unlock()
@@ -83,11 +103,15 @@ func (e *executionRestrictionsWithRawSecrets) GetRawSecrets(ctx context.Context,
 		return responses, nil
 	}
 
-	inner, err := rawSecretsHelper.GetRawSecrets(ctx, &sdk.GetSecretsRequest{Requests: allowed}, fetcher)
+	inner, err := getter(&sdk.GetSecretsRequest{Requests: allowed})
 	if err != nil {
 		return nil, err
 	}
-	return append(responses, inner...), nil
+	for i, resp := range inner {
+		responses[remaining[i]] = resp
+	}
+
+	return responses, nil
 }
 
 var _ ExecutionHelperWithRawSecrets = (*executionRestrictionsWithRawSecrets)(nil)
@@ -253,33 +277,22 @@ func (e *executionRestrictions) CallCapability(ctx context.Context, request *sdk
 }
 
 func (e *executionRestrictions) GetSecrets(ctx context.Context, request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
-	e.mu.Lock()
-	var allowed []*sdk.SecretRequest
-	var responses []*sdk.SecretResponse
-	for _, req := range request.Requests {
-		if e.reserveSecret(req) {
-			allowed = append(allowed, req)
-		} else {
-			responses = append(responses, &sdk.SecretResponse{
-				Response: &sdk.SecretResponse_Error{
-					Error: &sdk.SecretError{
-						Id:        req.Id,
-						Namespace: req.Namespace,
-						Error:     fmt.Sprintf("secret %q in namespace %q denied by user pre-hook restrictions", req.Id, req.Namespace),
-					},
+	getter := func(request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
+		return e.ExecutionHelper.GetSecrets(ctx, request)
+	}
+
+	failer := func(id, ns string) *sdk.SecretResponse {
+		return &sdk.SecretResponse{
+			Response: &sdk.SecretResponse_Error{
+				Error: &sdk.SecretError{
+					Id:        id,
+					Namespace: ns,
+					Error:     fmt.Sprintf("secret %q in namespace %q denied by user pre-hook restrictions", id, ns),
 				},
-			})
+			},
 		}
 	}
-	e.mu.Unlock()
 
-	if len(allowed) == 0 {
-		return responses, nil
-	}
+	return getSecretsHelper(e, request, getter, failer)
 
-	inner, err := e.ExecutionHelper.GetSecrets(ctx, &sdk.GetSecretsRequest{Requests: allowed})
-	if err != nil {
-		return nil, err
-	}
-	return append(responses, inner...), nil
 }

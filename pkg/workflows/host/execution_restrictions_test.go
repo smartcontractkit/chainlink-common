@@ -482,22 +482,6 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("mixed batch: blocked gets error response, allowed goes to inner", func(t *testing.T) {
-		inner := mocks.NewMockExecutionHelper(t)
-		inner.EXPECT().GetSecrets(matches.AnyContext, mock.MatchedBy(func(r *sdk.GetSecretsRequest) bool {
-			return len(r.Requests) == 1 && r.Requests[0].Id == "allowed-secret"
-		})).Return([]*sdk.SecretResponse{{}}, nil)
-		h := host.NewRestrictedExecutionHelper(inner, restrictions)
-		resp, err := h.GetSecrets(t.Context(), &sdk.GetSecretsRequest{
-			Requests: []*sdk.SecretRequest{
-				{Id: "allowed-secret", Namespace: "ns"},
-				{Id: "blocked-secret", Namespace: "ns"},
-			},
-		})
-		require.NoError(t, err)
-		require.Len(t, resp, 2)
-	})
-
 	t.Run("allows when nil restrictions", func(t *testing.T) {
 		got := secretSequence(t, nil, &sdk.SecretRequest{Id: "my-secret", Namespace: "ns"})
 		assert.Equal(t, []bool{true}, got)
@@ -807,6 +791,41 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 			&sdk.SecretRequest{Id: "db-host", Namespace: "infra"},
 		)
 		assert.Equal(t, []bool{true, false, true}, got)
+	})
+
+	t.Run("ordering is preserved when some secrets are blocked", func(t *testing.T) {
+		t.Helper()
+		inner := mocks.NewMockExecutionHelper(t)
+		secretRequest := &sdk.SecretRequest{Id: "123", Namespace: "ns"}
+		otherSecret := &sdk.SecretRequest{Id: "124", Namespace: "ns"}
+		otherSecret2 := &sdk.SecretRequest{Id: "123", Namespace: "ns2"}
+		secret := &sdk.Secret{
+			Id:        "123",
+			Namespace: "ns",
+			Owner:     "o",
+			Value:     "v",
+		}
+		inner.EXPECT().GetSecrets(matches.AnyContext, mock.Anything).
+			RunAndReturn(func(_ context.Context, request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
+				assert.Len(t, request.Requests, 1)
+				assert.Equal(t, secretRequest, request.Requests[0])
+				return []*sdk.SecretResponse{{Response: &sdk.SecretResponse_Secret{Secret: secret}}}, nil
+			}).Once()
+
+		h := host.NewRestrictedExecutionHelper(inner, &sdk.Restrictions{Secrets: &sdk.SecretsRestritions{
+			MaxSecrets:   -1,
+			Restrictions: []*sdk.SecretRestriction{{Restriction: &sdk.SecretRestriction_ExactSecret{ExactSecret: secret}}},
+		}})
+
+		result, err := h.GetSecrets(t.Context(), &sdk.GetSecretsRequest{
+			Requests: []*sdk.SecretRequest{otherSecret, secretRequest, otherSecret2},
+		})
+
+		require.NoError(t, err)
+		assert.Len(t, result, 3)
+		assert.NotNil(t, result[0].GetError())
+		assert.Equal(t, secret, result[1].GetSecret())
+		assert.NotNil(t, result[2].GetError())
 	})
 }
 

@@ -7,6 +7,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
+// IdempotencyKeyAttr is the CloudEvent extension attribute name for the per-event
+// idempotency key. Callers may pass this as a key in the attrKVs variadics to
+// supply their own key; when absent, the durable emitter defaults to sha256(body).
+const IdempotencyKeyAttr = "idempotencykey"
+
 type (
 	// Cloudevents types
 	CloudEvent   = ce.Event
@@ -19,6 +24,7 @@ type (
 	// Message types
 	CloudEventBatch      = pb.CloudEventBatch
 	EmptyRequest         = pb.EmptyRequest
+	Idempotency          = pb.Idempotency
 	PublishErrorCode     = pb.PublishErrorCode
 	PingResponse         = pb.PingResponse
 	PublishOptions       = pb.PublishOptions

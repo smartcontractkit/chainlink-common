@@ -428,8 +428,14 @@ func splitMessagesByRequestSize(messages []*messageWithCallback, maxRequestSize 
 
 func newBatchRequest(messages []*messageWithCallback, transactionEnabled bool) (*chipingress.CloudEventBatch, int) {
 	events := make([]*chipingress.CloudEventPb, len(messages))
+	idem := make([]*chipingress.Idempotency, len(messages))
 	for i, msg := range messages {
 		events[i] = msg.event
+		key := ""
+		if av := msg.event.Attributes[chipingress.IdempotencyKeyAttr]; av != nil {
+			key = av.GetCeString()
+		}
+		idem[i] = &chipingress.Idempotency{Key: key}
 	}
 	// Always emit PublishOptions so the wire form unambiguously reflects
 	// client intent. The server treats unset and explicit false identically,
@@ -437,8 +443,9 @@ func newBatchRequest(messages []*messageWithCallback, transactionEnabled bool) (
 	// and makes traces/logs self-describing.
 	te := transactionEnabled
 	batchReq := &chipingress.CloudEventBatch{
-		Events:  events,
-		Options: &chipingress.PublishOptions{TransactionEnabled: &te},
+		Events:      events,
+		Options:     &chipingress.PublishOptions{TransactionEnabled: &te},
+		Idempotency: idem,
 	}
 	return batchReq, proto.Size(batchReq)
 }
